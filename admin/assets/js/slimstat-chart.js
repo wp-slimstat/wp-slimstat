@@ -502,7 +502,47 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (unitTime === "monthly") {
             const labelToParse = justTranslation || label;
-            const date = new Date(`${labelToParse} 1`);
+            
+            // Fix: Properly parse month names and years instead of concatenating strings
+            let date;
+            try {
+                // Try to parse the label as a month name + year format
+                const monthNames = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                
+                // Extract month and year from the label
+                const parts = labelToParse.trim().split(' ');
+                if (parts.length >= 2) {
+                    const monthName = parts[0];
+                    const year = parseInt(parts[1]);
+                    const monthIndex = monthNames.findIndex(name => 
+                        name.toLowerCase() === monthName.toLowerCase()
+                    );
+                    
+                    if (monthIndex !== -1 && !isNaN(year)) {
+                        // Create date using proper month index (0-based) and year
+                        date = new Date(year, monthIndex, 1);
+                    } else {
+                        // Fallback to the old method if parsing fails
+                        date = new Date(`${labelToParse} 1`);
+                    }
+                } else {
+                    // Fallback to the old method if parsing fails
+                    date = new Date(`${labelToParse} 1`);
+                }
+                
+                // Validate the date
+                if (isNaN(date.getTime())) {
+                    throw new Error('Invalid date');
+                }
+            } catch (error) {
+                // If all parsing methods fail, create a fallback date
+                console.warn('Failed to parse monthly date:', labelToParse, error);
+                date = new Date();
+            }
+            
             const { month, year } = getMonthYear(date);
             const isThisMonth = now.getMonth() === date.getMonth() && now.getFullYear() === year;
             const baseLabel = `${month}, ${year}`;

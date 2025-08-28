@@ -137,7 +137,7 @@ class DataBuckets
 
     private function initSeqMonth(): void
     {
-        $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modifY('midnight');
+        $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modify('midnight');
         $end  = (new \DateTime())->setTimestamp($this->end);
         while ($date <= $end) {
             $label          = $date->format($this->labelFormat);
@@ -219,7 +219,12 @@ class DataBuckets
 
     public function mapPrevLabels(array $labels, array $params): void
     {
-        $this->prev_labels = array_map(fn ($label, $index) => date($params['data_points_label'], strtotime(sprintf('+%s %s', $index, $params['granularity']), $params['previous_start'])), $labels, array_keys($labels));
+        $this->prev_labels = array_map(function($label, $index) use ($params) {
+            $baseTime = $params['previous_start'];
+            $offset = sprintf('+%s %s', $index, $params['granularity']);
+            $timestamp = strtotime($offset, $baseTime);
+            return date($params['data_points_label'], $timestamp);
+        }, $labels, array_keys($labels));
     }
 
     private function shiftDatasets(): void
