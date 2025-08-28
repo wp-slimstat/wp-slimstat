@@ -157,6 +157,17 @@ class wp_slimstat
      */
     public static function slimtrack_ajax()
     {
+        // Simple IP-based rate limiter (transient)
+        $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!empty($remote_ip)) {
+            $key        = 'slimstat_rl_' . md5($remote_ip);
+            $hits_in_5s = (int) get_transient($key);
+            if ($hits_in_5s >= 10) {
+                exit(self::_log_error(429));
+            }
+            set_transient($key, $hits_in_5s + 1, 5);
+        }
+
         // If the website is using a caching plugin, the tracking code might still be there, even if the user turned off tracking
         if ('on' != self::$settings['is_tracking']) {
             exit(self::_log_error(204));
@@ -1138,6 +1149,32 @@ class wp_slimstat
     // end string_to_array
 
     /**
+     * Returns Matomo search engine mapping JSON, cached.
+     */
+    public static function get_search_engines()
+    {
+        static $cached_search_engines = null;
+        if (null !== $cached_search_engines) {
+            return $cached_search_engines;
+        }
+
+        $data = get_transient('slimstat_matomo_searchengine');
+        if (false === $data) {
+            $json_path = plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json';
+            $json      = @file_get_contents($json_path);
+            $data      = json_decode($json, true);
+            if (!is_array($data)) {
+                $data = [];
+            }
+            set_transient('slimstat_matomo_searchengine', $data, WEEK_IN_SECONDS);
+        }
+
+        $cached_search_engines = $data;
+        return $cached_search_engines;
+    }
+    // end get_search_engines
+
+    /**
      * Toggles WordPress filters on date_i18n function
      */
     public static function toggle_date_i18n_filters($_turn_on = true)
@@ -1738,8 +1775,7 @@ class wp_slimstat
         // - backlink: format of the URL point to the search engine result page
         // - charsets: list of charset used to encode the keywords
         //
-        $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json');
-        $search_engines = json_decode($search_engines, true);
+        $search_engines = self::get_search_engines();
 
         $parsed_url = @parse_url($_url);
 

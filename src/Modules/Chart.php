@@ -354,14 +354,14 @@ class Chart
             plugins_url('/admin/assets/js/chartjs/chart.min.js', SLIMSTAT_FILE),
             [],
             '4.2.1',
-            false
+            true
         );
         wp_enqueue_script(
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
             ['slimstat_chartjs'],
             '1.0',
-            false
+            true
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
             // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
