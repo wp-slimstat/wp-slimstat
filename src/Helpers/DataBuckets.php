@@ -182,8 +182,10 @@ class DataBuckets
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);
-            $start  = $start->modify('first day of previous month')->modify('midnight');
-            $target = new \DateTime('@' . $dt);
+            $start  = $start->modify('first day of this month')->modify('midnight');
+            // Guard against invalid/empty $dt
+            $safeDt = is_numeric($dt) ? (int) $dt : 0;
+            $target = new \DateTime('@' . $safeDt);
             if ($target->getTimestamp() < $start->getTimestamp()) {
                 $offset = -1;
             } else {
