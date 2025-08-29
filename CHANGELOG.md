@@ -1,3 +1,14 @@
+= 5.4.0 - 2025-09-05 =
+- **New**: Enhanced caching mechanism for Matomo search engine mappings to improve performance.
+- **Enhancement**: Optimized script enqueuing to load scripts in the footer for better page load times.
+- **Enhancement**: Improved flag icon rendering in reports with better readability checks.
+- **Enhancement**: Optimized transient caching for remote API responses in the i18n module.
+- **Enhancement**: Refactored code structure with new Query manager and improved caching system.
+- **Enhancement**: Added 'Clear Cache' button functionality for better cache management.
+- **Enhancement**: Moved Query class to src directory following PSR-4 autoloading standards.
+- **Fix**: Enhanced query security and cleanup for better data integrity.
+- **Fix**: Optimized database indexing, caching, and AJAX handling.
+
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
