@@ -2084,7 +2084,7 @@ class wp_slimstat
         }
 
         $binary_ip = '';
-        if ([] !== $unpacked && false !== $unpacked) {
+        if (isset($unpacked) && [] !== $unpacked && false !== $unpacked) {
             $unpacked = str_split($unpacked[1]);
             foreach ($unpacked as $char) {
                 $binary_ip .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
