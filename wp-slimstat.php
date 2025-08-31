@@ -2077,6 +2077,8 @@ class wp_slimstat
      */
     protected static function _dtr_pton($_ip)
     {
+        $unpacked = false;
+        
         if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $unpacked = unpack('A4', inet_pton($_ip));
         } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
@@ -2084,7 +2086,7 @@ class wp_slimstat
         }
 
         $binary_ip = '';
-        if ([] !== $unpacked && false !== $unpacked) {
+        if ([] !== $unpacked && false !== $unpacked && isset($unpacked[1])) {
             $unpacked = str_split($unpacked[1]);
             foreach ($unpacked as $char) {
                 $binary_ip .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
