@@ -7,9 +7,11 @@ use SlimStat\Services\GeoService;
 use SlimStat\Services\GeoIP;
 use SlimStat\Services\Browscap;
 use SlimStat\Utils\Query;
+use SlimStat\Tracker\TrackerGDPRTrait;
 
 trait TrackerTrackTrait
 {
+    use TrackerGDPRTrait;
     /**
      * THE Slimstat tracker
      */
@@ -28,6 +30,11 @@ trait TrackerTrackTrait
         }
 
         unset(self::$stat['id']);
+
+        // GDPR Consent Check
+        if (!self::applyGDPRConsentCheck()) {
+            return false;
+        }
 
         // Opt-out via cookie
         if ('on' == self::$settings['display_opt_out']) {
