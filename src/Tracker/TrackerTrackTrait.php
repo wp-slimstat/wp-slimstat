@@ -122,8 +122,6 @@ trait TrackerTrackTrait
             $daily_salt = get_option('slimstat_daily_salt');
             if (!empty($daily_salt)) {
                 // Use HMAC-SHA256 with secret as key. We include UA here to
-                // follow the requested formula (daily_salt + ip + ua). If you
-                // prefer not to include UA for privacy, remove "$ua".
                 $data = $daily_salt . '|' . $original_ip . '|' . $ua;
                 $hash = hash_hmac('sha256', $data, $secret);
 
