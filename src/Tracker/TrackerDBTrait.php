@@ -157,7 +157,7 @@ trait TrackerDBTrait
 
         $searchterms = '';
 
-        $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json');
+        $search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, true);
 
         $parsed_url = @parse_url($_url);

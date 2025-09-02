@@ -171,7 +171,7 @@ class Query
                 $this->setClauses[]      = sprintf('%s = %%s', $column);
                 $this->valuesToPrepare[] = $value;
             } elseif (is_numeric($value)) {
-                $this->setClauses[]      = '%s = ' . $column;
+                $this->setClauses[]      = $column . ' = %s';
                 $this->valuesToPrepare[] = $value;
             } elseif (is_null($value)) {
                 $this->setClauses[] = $column . ' = NULL';

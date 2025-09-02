@@ -35,6 +35,9 @@ require_once __DIR__ . '/src/Tracker/TrackerTrackTrait.php';
 require_once __DIR__ . '/src/Tracker/TrackerDBTrait.php';
 require_once __DIR__ . '/src/Tracker/TrackerHelpersTrait.php';
 
+// Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
+require_once __DIR__ . '/src/Constants.php';
+
 class wp_slimstat
 {
     // Tracker methods have been moved to src/Tracker/TrackerTrait.php
@@ -150,7 +153,6 @@ class wp_slimstat
 
         // Load the admin library
         if (is_user_logged_in()) {
-            include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
         }

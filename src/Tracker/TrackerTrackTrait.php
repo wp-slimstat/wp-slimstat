@@ -133,7 +133,7 @@ trait TrackerTrackTrait
             } else {
                 // Fallback to existing Privacy helper if no daily salt is set.
                 if (!class_exists(Privacy::class)) {
-                    @include_once plugin_dir_path(__FILE__) . 'src/Services/Privacy.php';
+                    @include_once SLIMSTAT_ANALYTICS_DIR . 'src/Services/Privacy.php';
                 }
 
                 if (class_exists(Privacy::class)) {
@@ -337,7 +337,7 @@ trait TrackerTrackTrait
         self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
         if (empty(self::$stat['id'])) {
-            include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
+            include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
             wp_slimstat_admin::init_environment();
 
             self::$stat['id'] = self::_insert_row(self::$stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
