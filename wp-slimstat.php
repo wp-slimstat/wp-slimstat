@@ -407,6 +407,11 @@ class wp_slimstat
 
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
+
+        // Initialize adblock bypass functionality
+        self::rewrite_rule_tracker();
+        add_action('template_redirect', [self::class, 'adblocker_javascript']);
+        add_action('init', [self::class, 'rewrite_rule_tracker']);
     }
 
     /**

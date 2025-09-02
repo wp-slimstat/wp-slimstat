@@ -177,6 +177,13 @@ trait TrackerAjaxTrait
             'index.php?slimstat_tracker=$matches[1]',
             'top'
         );
+
+        // Also add a more generic rule for better compatibility
+        add_rewrite_rule(
+            '^([a-f0-9]{32})$',
+            'index.php?slimstat_tracker=$matches[1]',
+            'top'
+        );
     }
 
     /**
@@ -186,23 +193,30 @@ trait TrackerAjaxTrait
     {
         // Always handle the tracker JS endpoint for fallback
         $tracker_hash = get_query_var('slimstat_tracker');
-        if ($tracker_hash && $tracker_hash === md5(site_url() . 'slimstat')) {
-            // Set the content type to JavaScript
-            header('Content-Type: application/javascript');
 
-            // Set caching headers for one year
-            header('Cache-Control: public, max-age=31536000');
-            header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
+        // Check if this is a tracker request
+        if ($tracker_hash) {
+            // Verify the hash matches our expected pattern
+            $expected_hash = md5(site_url() . 'slimstat');
 
-            $js_path = SLIMSTAT_ANALYTICS_DIR . 'wp-slimstat.min.js';
+            if ($tracker_hash === $expected_hash) {
+                // Set the content type to JavaScript
+                header('Content-Type: application/javascript');
 
-            if (file_exists($js_path)) {
-                readfile($js_path);
-                exit;
-            } else {
-                status_header(404);
-                echo '// Tracker not found';
-                exit;
+                // Set caching headers for one year
+                header('Cache-Control: public, max-age=31536000');
+                header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
+
+                $js_path = SLIMSTAT_ANALYTICS_DIR . 'wp-slimstat.min.js';
+
+                if (file_exists($js_path)) {
+                    readfile($js_path);
+                    exit;
+                } else {
+                    status_header(404);
+                    echo '// Tracker not found';
+                    exit;
+                }
             }
         }
     }
