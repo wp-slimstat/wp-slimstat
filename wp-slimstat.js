@@ -21,6 +21,12 @@ var SlimStat = (function () {
     let lastInteractionTime = 0;
     const PENDING_INTERACTIONS_LIMIT = 20;
     const pendingInteractions = [];
+    // Add tracking state management to prevent duplicates
+    let pageviewInProgress = false;
+    let finalizationInProgress = false;
+    let lastFinalizationReason = "";
+    let lastFinalizationTime = 0;
+    const FINALIZATION_COOLDOWN = 1000; // 1 second cooldown between finalizations
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
@@ -217,6 +223,12 @@ var SlimStat = (function () {
 
         // Enqueue logic (default: queued). Pass opts.immediate=true to bypass queue.
         if (!opts.immediate) {
+            // Check for duplicate payloads in queue to prevent duplicates
+            const isDuplicate = requestQueue.some((item) => item.payload === payload);
+            if (isDuplicate) {
+                return false;
+            }
+
             // Queue pressure control: drop oldest non-high if above high watermark
             if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
                 for (let i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
@@ -463,16 +475,31 @@ var SlimStat = (function () {
         const params = currentSlimStatParams();
         const payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
+
+        // Prevent duplicate pageview requests
+        if (pageviewInProgress) {
+            return;
+        }
+
         // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
         const now = Date.now();
-        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) return; // skip
+        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) {
+            return;
+        }
+
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
         const waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         const useBeacon = !waitForId; // need sync response when creating id
+
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) return;
         inflightPageview = waitForId;
+        pageviewInProgress = true;
+
+        // Reset finalization state when starting new pageview
+        finalizationInProgress = false;
+        finalized = false;
 
         const run = function () {
             Fingerprint2.get(FP_EXCLUDES, function (components) {
@@ -481,6 +508,12 @@ var SlimStat = (function () {
                 sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
                 inflightPageview = false;
+                pageviewInProgress = false;
+
+                // Reset pageview state after successful completion
+                setTimeout(() => {
+                    pageviewInProgress = false;
+                }, 100);
             });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
@@ -534,6 +567,11 @@ var SlimStat = (function () {
     function setupNavigationHooks() {
         // WordPress Interactivity API Event
         addEvent(document, "wp-interactivity:navigate", function () {
+            // Prevent duplicate navigation events
+            if (pageviewInProgress) {
+                return;
+            }
+
             // Finalize current pageview (if any) before starting a new one
             const params = currentSlimStatParams();
             if (params.id && parseInt(params.id, 10) > 0) {
@@ -548,6 +586,11 @@ var SlimStat = (function () {
             const originalPush = history.pushState;
             const originalReplace = history.replaceState;
             history.pushState = function () {
+                // Prevent duplicate pushState events
+                if (pageviewInProgress) {
+                    return originalPush.apply(this, arguments);
+                }
+
                 const params = currentSlimStatParams();
                 if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
                 params.id = null; // force new id
@@ -556,11 +599,21 @@ var SlimStat = (function () {
                 return res;
             };
             history.replaceState = function () {
+                // Prevent duplicate replaceState events
+                if (pageviewInProgress) {
+                    return originalReplace.apply(this, arguments);
+                }
+
                 const res = originalReplace.apply(this, arguments);
                 sendPageview();
                 return res;
             };
             addEvent(window, "popstate", function () {
+                // Prevent duplicate popstate events
+                if (pageviewInProgress) {
+                    return;
+                }
+
                 currentSlimStatParams().id = null;
                 sendPageview();
             });
@@ -640,12 +693,28 @@ if (!window.requestIdleCallback) {
 
     function finalizeCurrent(reason) {
         if (finalized) return;
+
+        // Prevent duplicate finalization requests
+        const now = Date.now();
+        if (finalizationInProgress || (reason === lastFinalizationReason && now - lastFinalizationTime < FINALIZATION_COOLDOWN)) {
+            return;
+        }
+
         const p = window.SlimStatParams || {};
         if (p.id && parseInt(p.id, 10) > 0) {
+            finalizationInProgress = true;
+            lastFinalizationReason = reason;
+            lastFinalizationTime = now;
+
             // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
             const payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
             SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
             finalized = true;
+
+            // Reset finalization state after a delay
+            setTimeout(() => {
+                finalizationInProgress = false;
+            }, 100);
         }
     }
 
@@ -674,14 +743,25 @@ if (!window.requestIdleCallback) {
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
-        if (document.visibilityState === "hidden") finalizeCurrent("visibility");
+        if (document.visibilityState === "hidden") debouncedFinalize("visibility");
     });
     SlimStat.add_event(window, "pagehide", function () {
-        finalizeCurrent("pagehide");
+        debouncedFinalize("pagehide");
     });
     SlimStat.add_event(window, "beforeunload", function () {
-        finalizeCurrent("beforeunload");
+        debouncedFinalize("beforeunload");
     });
+
+    // Add a small delay between finalization attempts to prevent rapid-fire duplicates
+    let finalizationTimeout = null;
+    function debouncedFinalize(reason) {
+        if (finalizationTimeout) {
+            clearTimeout(finalizationTimeout);
+        }
+        finalizationTimeout = setTimeout(() => {
+            finalizeCurrent(reason);
+        }, 50);
+    }
 
     // Online event to resend offline queue
     SlimStat.add_event(window, "online", function () {
