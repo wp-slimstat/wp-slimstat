@@ -473,6 +473,17 @@ var SlimStat = (function () {
     function sendPageview(options = {}) {
         extractSlimStatParams();
         const params = currentSlimStatParams();
+
+        // Check if this is a navigation event (not initial page load)
+        const isNavigationEvent = options.isNavigation || false;
+
+        // For navigation events, always track regardless of javascript_mode
+        // For initial page load, skip if server-side tracking is active
+        if (!isNavigationEvent && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
+            // Server-side tracking is active for initial page load, skip pageview but allow interactions
+            return;
+        }
+
         const payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
 
@@ -577,8 +588,11 @@ var SlimStat = (function () {
             if (params.id && parseInt(params.id, 10) > 0) {
                 sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
             }
+
+            // Always track navigation events for Gutenberg Interactivity
+            // This ensures navigation is tracked even when server-side tracking is active
             params.id = null; // force new id on next pageview
-            sendPageview();
+            sendPageview({ isNavigation: true });
         });
 
         // History API overrides (fallback for SPAs / Interactivity polyfills)
@@ -593,9 +607,12 @@ var SlimStat = (function () {
 
                 const params = currentSlimStatParams();
                 if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
+
+                // Always track navigation events for SPA behavior
+                // This ensures navigation is tracked even when server-side tracking is active
                 params.id = null; // force new id
                 const res = originalPush.apply(this, arguments);
-                sendPageview();
+                sendPageview({ isNavigation: true });
                 return res;
             };
             history.replaceState = function () {
@@ -605,7 +622,12 @@ var SlimStat = (function () {
                 }
 
                 const res = originalReplace.apply(this, arguments);
-                sendPageview();
+
+                // Always track navigation events for SPA behavior
+                // This ensures navigation is tracked even when server-side tracking is active
+                const params = currentSlimStatParams();
+                sendPageview({ isNavigation: true });
+
                 return res;
             };
             addEvent(window, "popstate", function () {
@@ -614,8 +636,10 @@ var SlimStat = (function () {
                     return;
                 }
 
+                // Always track navigation events for SPA behavior
+                // This ensures navigation is tracked even when server-side tracking is active
                 currentSlimStatParams().id = null;
-                sendPageview();
+                sendPageview({ isNavigation: true });
             });
         }
     }
