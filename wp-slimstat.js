@@ -748,11 +748,16 @@ if (!window.requestIdleCallback) {
     }
 
     // Observe for parameter mutations (meta tag or script changes)
+    // Only observe if we don't have an ID yet (to avoid unnecessary tracking requests)
     let lastParams = JSON.stringify(window.SlimStatParams || {});
     const observer = new MutationObserver(function () {
-        SlimStat._extract_params();
-        const serialized = JSON.stringify(window.SlimStatParams || {});
-        if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
+        const params = window.SlimStatParams || {};
+        // Only extract params if we don't have an ID yet (initial page load)
+        if (isEmpty(params.id) || parseInt(params.id, 10) <= 0) {
+            SlimStat._extract_params();
+            const serialized = JSON.stringify(window.SlimStatParams || {});
+            if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
+        }
     });
     observer.observe(document.head, { childList: true, subtree: true });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -772,18 +777,33 @@ if (!window.requestIdleCallback) {
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
-        if (document.visibilityState === "hidden") debouncedFinalize("visibility");
+        // Only finalize if we have an active ID and the page is actually hidden
+        const params = window.SlimStatParams || {};
+        if (document.visibilityState === "hidden" && params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("visibility");
+        }
     });
     SlimStat.add_event(window, "pagehide", function () {
-        debouncedFinalize("pagehide");
+        // Only finalize if we have an active ID
+        const params = window.SlimStatParams || {};
+        if (params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("pagehide");
+        }
     });
     SlimStat.add_event(window, "beforeunload", function () {
-        debouncedFinalize("beforeunload");
+        // Only finalize if we have an active ID
+        const params = window.SlimStatParams || {};
+        if (params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("beforeunload");
+        }
     });
 
     // Add a small delay between finalization attempts to prevent rapid-fire duplicates
     let finalizationTimeout = null;
     function debouncedFinalize(reason) {
+        // Don't finalize if already finalized
+        if (finalized) return;
+
         if (finalizationTimeout) {
             clearTimeout(finalizationTimeout);
         }
