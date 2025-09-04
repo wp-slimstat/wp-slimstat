@@ -484,6 +484,12 @@ var SlimStat = (function () {
             return;
         }
 
+        // For navigation events, we need to track the new page, not the current one
+        if (isNavigationEvent) {
+            // Force a new pageview for the navigation event
+            params.id = null;
+        }
+
         const payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
 
@@ -591,7 +597,7 @@ var SlimStat = (function () {
 
             // Always track navigation events for Gutenberg Interactivity
             // This ensures navigation is tracked even when server-side tracking is active
-            params.id = null; // force new id on next pageview
+            // Don't set params.id = null here, let the new page set its own ID
             sendPageview({ isNavigation: true });
         });
 
@@ -610,7 +616,6 @@ var SlimStat = (function () {
 
                 // Always track navigation events for SPA behavior
                 // This ensures navigation is tracked even when server-side tracking is active
-                params.id = null; // force new id
                 const res = originalPush.apply(this, arguments);
                 sendPageview({ isNavigation: true });
                 return res;
