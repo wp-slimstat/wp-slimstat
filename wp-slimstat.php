@@ -362,13 +362,14 @@ class wp_slimstat
      */
     public static function rewrite_rule_tracker()
     {
-        // Always register the tracker rewrite rule for adblock bypass and fallback
-        add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
-        add_rewrite_rule(
-            '^([a-f0-9]{32})\\.js$',
-            'index.php?slimstat_tracker=$matches[1]',
-            'top'
-        );
+        if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'rest')) {
+            add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
+            add_rewrite_rule(
+                '^([a-f0-9]{32})\\.js$',
+                'index.php?slimstat_tracker=$matches[1]',
+                'top'
+            );
+        }
     }
 
     /**
@@ -376,7 +377,11 @@ class wp_slimstat
      */
     public static function adblocker_javascript()
     {
-        // Always handle the tracker JS endpoint for fallback
+        // Only handle the tracker JS endpoint if adblock bypass is enabled
+        if ('adblock_bypass' !== (self::$settings['tracking_request_method'] ?? 'rest')) {
+            return;
+        }
+
         $tracker_hash = get_query_var('slimstat_tracker');
         if ($tracker_hash && $tracker_hash === md5(site_url() . 'slimstat')) {
             // Set the content type to JavaScript
@@ -2078,7 +2083,7 @@ class wp_slimstat
     protected static function _dtr_pton($_ip)
     {
         $unpacked = false;
-        
+
         if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $unpacked = unpack('A4', inet_pton($_ip));
         } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
