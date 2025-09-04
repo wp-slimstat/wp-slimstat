@@ -204,7 +204,21 @@ class wp_slimstat
 
                 // Visitor is still on this page, record the timestamp in the corresponding field if this WAS NOT a request to update a "server-side" pageview with client-side info
                 if (empty(self::$stat['resolution'])) {
-                    self::$stat['dt_out'] = self::date_i18n('U');
+                    // Heartbeat / finalize update of dt_out
+                    if (!empty(self::$data_js['hb'])) {
+                        // Use provided ts if valid, else current time
+                        $heartbeat_ts = 0;
+                        if (!empty(self::$data_js['ts'])) {
+                            $heartbeat_ts = intval(self::$data_js['ts']);
+                        }
+                        if ($heartbeat_ts > 0 && $heartbeat_ts <= (time() + 300)) { // sanity: not too far future
+                            self::$stat['dt_out'] = $heartbeat_ts;
+                        } else {
+                            self::$stat['dt_out'] = self::date_i18n('U');
+                        }
+                    } else {
+                        self::$stat['dt_out'] = self::date_i18n('U');
+                    }
                 }
 
                 // Is this a new visitor, based on his fingerprint?
