@@ -2076,7 +2076,7 @@ class wp_slimstat
         return 0 == $count_fingerprint;
     }
     // end _is_new_visitor
-
+ 
     /**
      * Validates and unpacks an IP Address
      */

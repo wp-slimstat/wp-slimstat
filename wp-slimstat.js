@@ -441,7 +441,16 @@ var SlimStat = (function () {
         if (payload === lastInteractionPayload && now - lastInteractionTime < 1000) return false; // dedupe bursts
         lastInteractionPayload = payload;
         lastInteractionTime = now;
-        return sendToServer(payload, useBeacon);
+        const sent = sendToServer(payload, useBeacon);
+        if (sent) {
+            // Flag that at least one meaningful interaction happened this pageview
+            try {
+                window.__slimstatHasInteraction = true;
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        return sent;
     }
 
     function buildInteractionRaw(event, note) {
@@ -719,6 +728,12 @@ if (!window.requestIdleCallback) {
 (function initSlimStatRuntime() {
     // Track whether we've already finalized the current pageview (avoid duplicate beacons)
     let finalized = false;
+    // Global interaction flag used to avoid sending a duplicate pageview when the user leaves
+    try {
+        if (typeof window.__slimstatHasInteraction === "undefined") window.__slimstatHasInteraction = false;
+    } catch (e) {
+        /* ignore */
+    }
 
     function finalizeCurrent(reason) {
         if (finalized) return;
@@ -727,6 +742,16 @@ if (!window.requestIdleCallback) {
         const now = Date.now();
         if (finalizationInProgress || (reason === lastFinalizationReason && now - lastFinalizationTime < FINALIZATION_COOLDOWN)) {
             return;
+        }
+
+        // If there were no interactions after the initial pageview, skip finalization to prevent a duplicate
+        // pageview being logged when the tab is closed or the page is hidden.
+        try {
+            if (!window.__slimstatHasInteraction) {
+                return;
+            }
+        } catch (e) {
+            /* ignore */
         }
 
         const p = window.SlimStatParams || {};
