@@ -545,6 +545,16 @@ var SlimStatAdmin = {
                 data[filters_input[i]["name"]] = filters_input[i]["value"];
             }
 
+            // If this is the real-time report, remove date filters to get fresh data
+            if (id == "slim_p7_02") {
+                delete data.hour;
+                delete data.day;
+                delete data.month;
+                delete data.year;
+                delete data.interval;
+                delete data.interval_hours;
+            }
+
             jQuery
                 .ajax({ method: "POST", url: ajaxurl, data: data })
                 .done(function (response) {
