@@ -21,8 +21,16 @@ var SlimStat = (function () {
     var lastInteractionTime = 0;
     var PENDING_INTERACTIONS_LIMIT = 20;
 
-    // We will define this in the outer scope
-    var pendingInteractions, loadOfflineQueue, saveOfflineQueue, currentSlimStatParams, pageviewInProgress;
+    // Initialize these variables with default values to prevent runtime errors
+    var pendingInteractions = [];
+    var loadOfflineQueue = function () {
+        return [];
+    };
+    var saveOfflineQueue = function () {};
+    var currentSlimStatParams = function () {
+        return {};
+    };
+    var pageviewInProgress = false;
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
