@@ -547,12 +547,19 @@ var SlimStatAdmin = {
 
             // If this is the real-time report, remove date filters to get fresh data
             if (id == "slim_p7_02") {
+                // Remove both prefixed (fs[]) and non-prefixed date filters
                 delete data.hour;
                 delete data.day;
                 delete data.month;
                 delete data.year;
                 delete data.interval;
                 delete data.interval_hours;
+                delete data["fs[hour]"];
+                delete data["fs[day]"];
+                delete data["fs[month]"];
+                delete data["fs[year]"];
+                delete data["fs[interval]"];
+                delete data["fs[interval_hours]"];
             }
 
             jQuery
