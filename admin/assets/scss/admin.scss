@@ -1175,6 +1175,48 @@ body {
     font-size: 1em;
     line-height: 1.5em;
   }
+  .wrap.slimstat .postbox p span.details {
+    float: none !important;
+    display: block;
+    padding: 0px !important;
+    margin-top: 10px;
+    align-items: center;
+
+    & > *:nth-last-child(1) {
+      position: relative;
+      float: right;
+      right: -25px;
+    }
+
+    & > *:nth-last-child(2) {
+      position: relative;
+      float: right;
+      right: 25px;
+    }
+  }
+  [id^="slim_"] .spaced {
+    margin: 0;
+  }
+}
+
+.index-php {
+  div#slim_p7_02.postbox {
+    .pageview-screenres {
+      float: none;
+    }
+    .details {
+      position: relative;
+      float: none;
+      display: block;
+
+      .slimstat-font-edit {
+        float: right;
+      }
+      .spaced {
+        margin-left: 0px;
+      }
+    }
+  }
 }
 
 @media screen and (max-width: 1080px) {
@@ -1250,7 +1292,162 @@ body {
   [id^="slim_"] .users .column-name {
     display: none;
   }
+
+  /* Real-Time Access Log Responsive Improvements */
+  [id^="slim_"] p {
+    padding: 8px 10px;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  [id^="slim_"] p .slimstat-filter-link {
+    max-width: 100%;
+    display: inline-block;
+    word-break: break-all;
+    overflow-wrap: break-word;
+  }
+
+  [id^="slim_"] p .details {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.9em;
+    line-height: 1.3em;
+  }
+
+  [id^="slim_"] p .spaced {
+    margin-left: 8px;
+    margin-right: 8px;
+  }
+
+  [id^="slim_"] .inline-icon {
+    margin-right: 3px;
+  }
+
+  [id^="slim_"] p span.pageview-screenres {
+    margin-left: 5px;
+    font-size: 0.8em;
+  }
+
+  /* URL truncation and tooltip improvements */
+  [id^="slim_"] p .slimstat-filter-link {
+    position: relative;
+  }
+
+  [id^="slim_"] p .slimstat-filter-link[title] {
+    cursor: help;
+  }
+
+  /* Ensure long URLs don't break the layout */
+  [id^="slim_"] p {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  [id^="slim_"] p .slimstat-filter-link {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  /* Show full URL on hover for truncated links */
+  [id^="slim_"] p .slimstat-filter-link:hover {
+    white-space: normal;
+    word-break: break-all;
+    overflow: visible;
+    position: relative;
+    z-index: 10;
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    padding: 4px;
+    border-radius: 3px;
+  }
+
+  /* Access Log Entry specific styles */
+  [id^="slim_"] p.access-log-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  [id^="slim_"] p.access-log-entry .details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 4px;
+  }
+
+  /* Responsive improvements for access log entries */
+  [id^="slim_"] p.access-log-entry {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  [id^="slim_"] p.access-log-entry .details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  [id^="slim_"] p.access-log-entry .details > * {
+    margin-bottom: 2px;
+  }
 }
+/* Additional responsive improvements for very small screens */
+@media screen and (max-width: 600px) {
+  [id^="slim_"] p {
+    padding: 6px 8px;
+    font-size: 0.9em;
+  }
+
+  [id^="slim_"] p .details {
+    font-size: 0.8em;
+    margin-top: 3px;
+  }
+
+  [id^="slim_"] .spaced {
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
+  [id^="slim_"] .inline-icon {
+    margin-right: 2px;
+    width: 14px;
+    height: 16px;
+  }
+
+  [id^="slim_"] p span.pageview-screenres {
+    font-size: 0.7em;
+    margin-left: 3px;
+  }
+
+  /* Stack header elements vertically on very small screens */
+  [id^="slim_"] p.header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  [id^="slim_"] p.header .inline-icon {
+    margin-bottom: 2px;
+  }
+
+  /* Access Log Entry specific styles for very small screens */
+  [id^="slim_"] p.access-log-entry .details {
+    font-size: 0.8em;
+  }
+}
+
+/* URL truncation and tooltip improvements - moved to media queries */
+
+/* Access Log Entry specific styles - moved to media queries */
 
 /* Fontello - Custom Icon Fonts for SlimStat | Uses Fontelico (C) 2012 by Fontello project, Elusive (C) 2013 by Aristeides Stathopoulos, Font Awesome (C) 2012 by Dave Gandy | https://www.fontello.com */
 @font-face {
