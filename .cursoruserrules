@@ -1,0 +1,101 @@
+# WP-SlimStat User Rules
+
+## Adhere to Project Coding Conventions
+
+* **Follow Project Rules:** Strictly follow all Project Rules defined for WP-SlimStat.
+* **Style Consistency:** Match existing spacing, naming, and file structure; PHPCS (WordPress rules) must pass.
+* **Compatibility:** New code must support **WordPress 5.6+** and **PHP 7.4+** (and not break on PHP 8.0–8.3).
+* **Blend In:** Code should read as if written by the original authors.
+
+## Thorough Testing Before PR
+
+* **Staging Validation:** Test on a staging WordPress site; verify both front-end tracking and admin pages.
+* **Version Matrix:** Where possible, test multiple PHP versions (7.4, 8.0–8.3) and WP 5.6+.
+* **Edge Cases:** Cover no-data states, large datasets, different user roles, multisite where relevant.
+* **WP_DEBUG Clean:** Enable `WP_DEBUG`; fix all notices/warnings.
+* **Regression Sweep:** Confirm opt-out, shortcodes/widgets, and existing reports still function.
+
+## Pull Request Etiquette
+
+* **Focused Changes:** One concern per PR; mark WIP PRs as **Draft**.
+* **Clear Description:** Explain *what* and *why*; include setup/verification steps.
+* **Issue Links:** Reference issues (e.g., `Fixes #123` / `Addresses #456`).
+* **Small & Reviewable:** Split big changes into smaller PRs.
+* **Clean Diffs:** No drive-by formatting or unrelated edits.
+* **Docs Included:** Update user-facing docs/readme/changelog when behavior changes.
+
+## Commit Message Guidelines
+
+* **Imperative Present:** "Fix …", "Add …", "Refactor …".
+* **Be Specific:** Describe what changed and why; avoid "update/minor fixes".
+* **Issue References:** Use keywords (e.g., `fix:`) and link issues where applicable.
+* **Logical Scope:** Each commit should be coherent and reversible.
+
+## Code Review Process
+
+* **Responsive:** Address all reviewer comments promptly; push updates and resolve threads.
+* **Constructive:** Keep discussion professional and solution-oriented.
+* **AI Review:** Consider suggestions from the AI Code Reviewer; fix or justify deviations.
+* **Meet the Bar:** Aim for zero stylistic or security nits before requesting review.
+
+## Respect Privacy & Security Requirements
+
+* **Consent First:** Never introduce tracking that bypasses existing consent/opt-out.
+* **Sanitize/Escape:** Validate inputs, escape outputs, use nonces; `$wpdb->prepare()` for all SQL.
+* **No Plain PII:** Do not log or expose personal data; anonymize IPs before storage.
+* **External Calls:** No data sent off-site without explicit, revocable opt-in and clear disclosure.
+* **Flag Risks:** Call out uncertain security/privacy implications in the PR.
+
+### 🛡️ Enhanced Security & Permissions
+
+* **Nonces + Caps:** All state-changing actions require nonce + capability checks (`manage_options` or `slimstat_*`).
+* **AJAX/REST:** Register endpoints with `permission_callback`; never expose raw queries.
+* **Indexes & Limits:** Ensure queries on SlimStat tables are indexed, bounded, and efficient.
+
+### 🔐 Enhanced Privacy & GDPR
+
+* **Opt-Out Honored:** Respect front-end opt-out signals globally.
+* **Retention:** Use/configure data retention; purge via WP-Cron.
+* **No Defaults to Remote:** Geolocation/3rd-party services are opt-in only.
+
+## Performance & Data Handling
+
+* **Scalable Patterns:** Avoid `SELECT *` on large tables; select needed columns, paginate, batch.
+* **Async/Batch:** Heavy tasks (IP lookups, aggregations, migrations) must run via cron/batches.
+* **Cache Wisely:** Use transients/object cache for repeated aggregates.
+
+## Architecture & Extensibility
+
+* **Hooks First:** Prefer `do_action()`/`apply_filters()` for extensibility; don't hardwire flows.
+* **Free ↔ Pro Boundary:** No crippleware; Pro extends via hooks/classes, not switches in Free.
+* **Schema Versioning:** DB changes must include version checks and `dbDelta()` migrations.
+
+## Backward Compatibility
+
+* **Stable Hooks:** Don't remove/rename public hooks or options without deprecation.
+* **Deprecation Path:** Use `_deprecated_hook()`/`_deprecated_function()` and document migrations.
+
+## Packaging, CI, and Hygiene
+
+* **Headers/Readme:** Ensure main plugin headers reflect `Requires at least: 5.6` & `Requires PHP: 7.4`; keep changelog current.
+* **CI Required:** PRs should pass PHPCS (WP rules), unit tests, and static analysis (PHPStan/Psalm) if configured.
+* **No Secrets:** Never commit credentials, API keys, or site data; scrub fixtures.
+
+## Community Standards
+
+* **Professional Conduct:** Follow WordPress.org community guidelines; no harassment or personal attacks.
+* **Helpful Tone:** Treat support and review feedback as opportunities to improve.
+
+## PR Approval & Merging
+
+* **Maintainer Merge:** Only maintainers (or delegated roles) merge PRs; no self-merges.
+* **PRs Only:** No direct pushes to `main` except emergency hotfixes by maintainers.
+* **Aftercare:** Be available for follow-ups post-merge (docs, fixes, support).
+
+## Final Pre-PR Checklist
+
+* **Security:** Nonce/cap checks ✅ — Inputs sanitized ✅ — Outputs escaped ✅
+* **Privacy:** Consent/opt-out honored ✅ — IP anonymized ✅ — No unexpected remote calls ✅
+* **Performance:** Queries efficient/indexed ✅ — Heavy work batched ✅ — Caching applied where useful ✅
+* **Compatibility:** WP 5.6+ & PHP 7.4–8.3 ✅ — No BC breaks (hooks/options/schema) ✅
+* **Quality:** PHPCS clean ✅ — Tests pass ✅ — Docs/Changelog updated ✅ — Clear PR description ✅

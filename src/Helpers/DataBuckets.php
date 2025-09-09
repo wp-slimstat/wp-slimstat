@@ -221,7 +221,12 @@ class DataBuckets
 
     public function mapPrevLabels(array $labels, array $params): void
     {
-        $this->prev_labels = array_map(fn ($label, $index) => date($params['data_points_label'], strtotime(sprintf('+%s %s', $index, $params['granularity']), $params['previous_start'])), $labels, array_keys($labels));
+        $this->prev_labels = array_map(function($label, $index) use ($params) {
+            $baseTime = $params['previous_start'];
+            $offset = sprintf('+%s %s', $index, $params['granularity']);
+            $timestamp = strtotime($offset, $baseTime);
+            return date($params['data_points_label'], $timestamp);
+        }, $labels, array_keys($labels));
     }
 
     private function shiftDatasets(): void
