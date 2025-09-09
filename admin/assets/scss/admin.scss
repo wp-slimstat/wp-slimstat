@@ -1199,6 +1199,26 @@ body {
   }
 }
 
+.index-php {
+  div#slim_p7_02.postbox {
+    .pageview-screenres {
+      float: none;
+    }
+    .details {
+      position: relative;
+      float: none;
+      display: block;
+
+      .slimstat-font-edit {
+        float: right;
+      }
+      .spaced {
+        margin-left: 0px;
+      }
+    }
+  }
+}
+
 @media screen and (max-width: 1080px) {
   .wrap.slimstat .postbox {
     width: 49.125%;
