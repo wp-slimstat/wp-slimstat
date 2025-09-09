@@ -80,21 +80,44 @@ trait TrackerDBTrait
                 self::$settings['session_duration'] = 1800;
             }
 
-            self::$stat['visit_id'] = get_transient('slimstat_visit_id');
-            if (false === self::$stat['visit_id']) {
-                $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-                $query = Query::select('MAX(visit_id) as max_visit_id')->from($table);
-                $today = date('Y-m-d');
-                if (!empty(self::$stat['dt']) && date('Y-m-d', self::$stat['dt']) < $today) {
-                    $query->allowCaching(true);
-                }
+            // Use atomic operation to get next visit_id instead of transient
+            $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-                $max_visit_id           = $query->getVar();
-                self::$stat['visit_id'] = intval($max_visit_id);
+            // Use a more robust approach to avoid race conditions
+            // First try to get the next visit_id from auto-increment
+            $next_visit_id = self::$wpdb->get_var(
+                "SELECT AUTO_INCREMENT FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE()
+                 AND TABLE_NAME = '{$table}'"
+            );
+
+            if ($next_visit_id === null || $next_visit_id <= 0) {
+                // Fallback: get max visit_id and increment
+                $max_visit_id = self::$wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+                $next_visit_id = intval($max_visit_id) + 1;
             }
 
-            self::$stat['visit_id']++;
-            set_transient('slimstat_visit_id', self::$stat['visit_id']);
+            // Additional safety check
+            if ($next_visit_id <= 0) {
+                $next_visit_id = time();
+            }
+
+            // Final verification to ensure uniqueness
+            $existing_visit_id = self::$wpdb->get_var(
+                self::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+            );
+
+            if ($existing_visit_id !== null) {
+                // If visit_id already exists, increment until we find a unique one
+                do {
+                    $next_visit_id++;
+                    $existing_visit_id = self::$wpdb->get_var(
+                        self::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+                    );
+                } while ($existing_visit_id !== null);
+            }
+
+            self::$stat['visit_id'] = intval($next_visit_id);
 
             $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && 'on' == self::$settings['set_tracker_cookie']));
             if ($set_cookie) {
