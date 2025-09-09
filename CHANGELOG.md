@@ -1,9 +1,18 @@
+= 5.3.1 - 2025-09-09 =
+- **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
+- **Fix**: Real-time report date filters not properly cleared during auto-refresh.
+- **Fix**: Real-time report not updating at midnight with filters.
+- **Fix**: Undefined variable $unpacked in PHP tracking logic;
+- **Enhancement**: Enhanced responsive design for the "Access Log" report.
+- **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
+- **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
+
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
 - **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
 - **Enhancement**: Redesigned line charts for better readability.
-- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
+- **Enhancement**: Compatibility with WordPress's Interactivity API for seamless integration.
 - **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
 
 = 5.2.13 - 2025-04-29 =
