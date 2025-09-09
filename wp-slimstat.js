@@ -7,20 +7,30 @@ import Fingerprint2 from "fingerprintjs2";
  */
 // eslint-disable-next-line no-var
 var SlimStat = (function () {
-    const BASE64_KEY_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-";
-    let fingerprintHash = "";
-    let lastPageviewPayload = "";
-    let lastPageviewSentAt = 0;
-    let inflightPageview = false;
+    var BASE64_KEY_STR = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-";
+    var fingerprintHash = "";
+    var lastPageviewPayload = "";
+    var lastPageviewSentAt = 0;
+    var inflightPageview = false;
     // Queue to enforce sequential sending order for tracking requests
-    const requestQueue = [];
-    let queueInFlight = false;
-    const MAX_QUEUE_ATTEMPTS = 4;
-    const QUEUE_HIGH_WATERMARK = 80; // drop low-priority if exceeded
-    let lastInteractionPayload = "";
-    let lastInteractionTime = 0;
-    const PENDING_INTERACTIONS_LIMIT = 20;
-    const pendingInteractions = [];
+    var requestQueue = [];
+    var queueInFlight = false;
+    var MAX_QUEUE_ATTEMPTS = 4;
+    var QUEUE_HIGH_WATERMARK = 80; // drop low-priority if exceeded
+    var lastInteractionPayload = "";
+    var lastInteractionTime = 0;
+    var PENDING_INTERACTIONS_LIMIT = 20;
+
+    // Initialize these variables with default values to prevent runtime errors
+    var pendingInteractions = [];
+    var loadOfflineQueue = function () {
+        return [];
+    };
+    var saveOfflineQueue = function () {};
+    var currentSlimStatParams = function () {
+        return {};
+    };
+    var pageviewInProgress = false;
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
@@ -29,54 +39,24 @@ var SlimStat = (function () {
 
     function flushPendingInteractions() {
         if (!pendingInteractions.length) return;
-        const params = currentSlimStatParams();
+        var params = currentSlimStatParams();
         if (!params.id || parseInt(params.id, 10) <= 0) return; // still can't flush
         while (pendingInteractions.length) {
-            const raw = pendingInteractions.shift();
-            const payload = "action=slimtrack&id=" + params.id + raw;
+            var raw = pendingInteractions.shift();
+            var payload = "action=slimtrack&id=" + params.id + raw;
             sendToServer(payload, true, { priority: "normal" });
         }
     }
 
-    // Offline persistence helpers
-    const OFFLINE_KEY = "slimstat_offline_queue";
-    function loadOfflineQueue() {
-        try {
-            const raw = localStorage.getItem(OFFLINE_KEY);
-            if (!raw) return [];
-            const arr = JSON.parse(raw);
-            return Array.isArray(arr) ? arr : [];
-        } catch (e) {
-            return [];
-        }
-    }
-    function saveOfflineQueue(arr) {
-        try {
-            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
-        } catch (e) {
-            /* ignore */
-        }
-    }
-    function storeOffline(payload) {
-        const arr = loadOfflineQueue();
-        arr.push({ p: payload, t: Date.now() });
-        saveOfflineQueue(arr);
-    }
-    function flushOfflineQueue() {
-        const arr = loadOfflineQueue();
-        if (!arr.length) return;
-        saveOfflineQueue([]); // clear first to avoid loops
-        arr.forEach((item) => {
-            sendToServer(item.p, true, { priority: "normal" });
-        });
-    }
+    // Offline persistence helpers will be defined in the outer scope and assigned here
+    var OFFLINE_KEY = "slimstat_offline_queue";
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
         string = (string || "").replace(/\r\n/g, "\n");
-        let utftext = "";
-        for (let n = 0; n < string.length; n++) {
-            const c = string.charCodeAt(n);
+        var utftext = "";
+        for (var n = 0; n < string.length; n++) {
+            var c = string.charCodeAt(n);
             if (c < 128) utftext += String.fromCharCode(c);
             else if (c < 2048) {
                 utftext += String.fromCharCode((c >> 6) | 192, (c & 63) | 128);
@@ -88,17 +68,17 @@ var SlimStat = (function () {
     }
 
     function base64Encode(input) {
-        let output = "";
-        let i = 0;
+        var output = "";
+        var i = 0;
         input = utf8Encode(input);
         while (i < input.length) {
-            const chr1 = input.charCodeAt(i++);
-            const chr2 = input.charCodeAt(i++);
-            const chr3 = input.charCodeAt(i++);
-            const enc1 = chr1 >> 2;
-            const enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
-            let enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
-            let enc4 = chr3 & 63;
+            var chr1 = input.charCodeAt(i++);
+            var chr2 = input.charCodeAt(i++);
+            var chr3 = input.charCodeAt(i++);
+            var enc1 = chr1 >> 2;
+            var enc2 = ((chr1 & 3) << 4) | (chr2 >> 4);
+            var enc3 = ((chr2 & 15) << 2) | (chr3 >> 6);
+            var enc4 = chr3 & 63;
             if (isNaN(chr2)) enc3 = enc4 = 64;
             else if (isNaN(chr3)) enc4 = 64;
             output += BASE64_KEY_STR.charAt(enc1) + BASE64_KEY_STR.charAt(enc2) + BASE64_KEY_STR.charAt(enc3) + BASE64_KEY_STR.charAt(enc4);
@@ -108,7 +88,7 @@ var SlimStat = (function () {
 
     function isEmpty(v) {
         if (v === undefined || v === null) return true;
-        const t = typeof v;
+        var t = typeof v;
         if (t === "boolean") return !v;
         if (t === "number") return isNaN(v) || v === 0;
         if (t === "string") return v.length === 0;
@@ -119,15 +99,15 @@ var SlimStat = (function () {
 
     function anySubstring(str, needles) {
         if (!str || !needles || !needles.length) return false;
-        for (let i = 0; i < needles.length; i++) {
+        for (var i = 0; i < needles.length; i++) {
             if (str.indexOf(needles[i].trim()) !== -1) return true;
         }
         return false;
     }
 
     function getCookie(name) {
-        const value = "; " + document.cookie;
-        const parts = value.split("; " + name + "=");
+        var value = "; " + document.cookie;
+        var parts = value.split("; " + name + "=");
         if (parts.length === 2) return parts.pop().split(";").shift();
         return "";
     }
@@ -140,31 +120,28 @@ var SlimStat = (function () {
     }
 
     function getServerLatency() {
-        const timing = (window.performance || {}).timing || {};
+        var timing = (window.performance || {}).timing || {};
         if (!timing.responseEnd || !timing.connectEnd) return 0;
         return timing.responseEnd - timing.connectEnd;
     }
 
     function getPagePerformance() {
-        const timing = (window.performance || {}).timing || {};
+        var timing = (window.performance || {}).timing || {};
         if (!timing.loadEventEnd || !timing.responseEnd) return 0;
         return timing.loadEventEnd - timing.responseEnd;
     }
 
     function getComponentValue(components, key, def) {
-        for (let i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
+        for (var i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
         return def;
     }
 
-    function currentSlimStatParams() {
-        // Ensure global object exists
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        return window.SlimStatParams;
-    }
+    // This function will be defined in the outer scope and assigned to SlimStat
+    // function currentSlimStatParams() { ... }
 
     // -------------------------- Parameters Extraction -------------------------- //
     function extractSlimStatParams() {
-        const meta = document.querySelector('meta[name="slimstat-params"]');
+        var meta = document.querySelector('meta[name="slimstat-params"]');
         if (meta) {
             try {
                 window.SlimStatParams = JSON.parse(meta.getAttribute("content")) || {};
@@ -173,9 +150,9 @@ var SlimStat = (function () {
             }
         } else {
             // Fallback: look through inline scripts (same as legacy)
-            const scripts = document.querySelectorAll("script");
-            for (let i = scripts.length - 1; i >= 0; i--) {
-                const match = scripts[i].textContent.match(/var\s+SlimStatParams\s*=\s*({[\s\S]*?});/);
+            var scripts = document.querySelectorAll("script");
+            for (var i = scripts.length - 1; i >= 0; i--) {
+                var match = scripts[i].textContent.match(/var\s+SlimStatParams\s*=\s*({[\s\S]*?});/);
                 if (match) {
                     try {
                         // eslint-disable-next-line no-new-func
@@ -193,7 +170,9 @@ var SlimStat = (function () {
     // -------------------------- Fingerprint -------------------------- //
     function initFingerprintHash(components) {
         try {
-            const values = components.map((c) => c.value);
+            var values = components.map(function (c) {
+                return c.value;
+            });
             fingerprintHash = Fingerprint2.x64hash128(values.join(""), 31);
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
@@ -201,7 +180,7 @@ var SlimStat = (function () {
     }
 
     function buildSlimStatData(components) {
-        const screenres = getComponentValue(components, "screenResolution", [0, 0]);
+        var screenres = getComponentValue(components, "screenResolution", [0, 0]);
         return "&sw=" + screenres[0] + "&sh=" + screenres[1] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + getServerLatency() + "&pp=" + getPagePerformance() + "&fh=" + fingerprintHash + "&tz=" + getComponentValue(components, "timezoneOffset", 0);
     }
 
@@ -209,32 +188,87 @@ var SlimStat = (function () {
     function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
         opts = opts || {};
-        const params = currentSlimStatParams();
-        const transports = ["rest", "ajax", "adblock"];
-        const endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
-        const selected = params.transport;
-        const order = [selected].concat(transports.filter((t) => t !== selected));
 
-        // Enqueue logic (default: queued). Pass opts.immediate=true to bypass queue.
-        if (!opts.immediate) {
-            // Queue pressure control: drop oldest non-high if above high watermark
-            if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
-                for (let i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
-                    if (requestQueue[i].opts.priority !== "high") requestQueue.splice(i, 1);
-                }
-            }
-            if (opts.priority === "high") {
-                // Avoid duplicates of same payload at head
-                if (!requestQueue.length || requestQueue[0].payload !== payload) requestQueue.unshift({ payload, useBeacon, opts });
-            } else {
-                requestQueue.push({ payload, useBeacon, opts });
-            }
-            processQueue();
-            return true;
+        // All requests now go through the queue to ensure consistent handling.
+        // Immediate sends are pushed to the front.
+        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0 };
+
+        // Check for duplicate payloads in queue to prevent duplicates
+        var isDuplicate = requestQueue.some(function (qItem) {
+            return qItem.payload === payload;
+        });
+        if (isDuplicate) {
+            return false;
         }
 
-        function sendXHR(url, onFail) {
-            let xhr;
+        // Queue pressure control: drop oldest non-high if above high watermark
+        if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
+            for (var i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
+                if (requestQueue[i].opts.priority !== "high") requestQueue.splice(i, 1);
+            }
+        }
+
+        if (opts.immediate || opts.priority === "high") {
+            // Avoid duplicates of same payload at head
+            if (!requestQueue.length || requestQueue[0].payload !== payload) {
+                requestQueue.unshift(item);
+            }
+        } else {
+            requestQueue.push(item);
+        }
+
+        // Start processing if not already running
+        if (!queueInFlight) {
+            processQueue();
+        }
+
+        return true;
+    }
+
+    function processQueue() {
+        if (queueInFlight || !requestQueue.length) return;
+        var item = requestQueue.shift();
+        if (!item) return;
+
+        queueInFlight = true;
+
+        var done = function (success) {
+            if (!success && item) {
+                item.attempts = (item.attempts || 0) + 1;
+                if (item.attempts < MAX_QUEUE_ATTEMPTS) {
+                    // Re-queue with a delay and exponential backoff
+                    var delay = 500 * Math.pow(2, item.attempts);
+                    setTimeout(function () {
+                        requestQueue.unshift(item);
+                    }, delay);
+                } else {
+                    // Max attempts reached, move to offline storage
+                    storeOffline(item.payload);
+                }
+            }
+            queueInFlight = false;
+            // Process next after a micro delay to allow ID assignment, etc.
+            setTimeout(processQueue, 50); // increased delay to prevent tight loops on failure
+        };
+
+        processQueueItem(item, done);
+    }
+
+    function processQueueItem(item, callback) {
+        var params = currentSlimStatParams();
+        var payload = item.payload;
+        var useBeacon = item.useBeacon;
+        var transports = ["rest", "ajax", "adblock"];
+        var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
+        var selected = params.transport;
+        var order = [selected].concat(
+            transports.filter(function (t) {
+                return t !== selected;
+            })
+        );
+        function sendXHR(url, onFail, xhrOpts) {
+            xhrOpts = xhrOpts || { useNonce: true };
+            var xhr;
             try {
                 xhr = new XMLHttpRequest();
             } catch (e) {
@@ -244,115 +278,75 @@ var SlimStat = (function () {
             xhr.open("POST", url, true);
             xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-            if (params.wp_rest_nonce) xhr.setRequestHeader("X-WP-Nonce", params.wp_rest_nonce);
+            if (xhrOpts.useNonce && params.wp_rest_nonce) xhr.setRequestHeader("X-WP-Nonce", params.wp_rest_nonce);
             xhr.withCredentials = true;
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
+                    // Special handling for nonce failure: retry immediately without nonce
+                    if (xhr.status === 403 && xhrOpts.useNonce && params.wp_rest_nonce) {
+                        // To prevent loops, we only retry once without the nonce.
+                        // The onFail logic will be handled by the retry's result.
+                        sendXHR(url, onFail, { useNonce: false });
+                        return;
+                    }
                     if (xhr.status === 200) {
-                        const parsed = parseInt(xhr.responseText, 10);
-                        if (!isNaN(parsed) && parsed > 0) params.id = xhr.responseText; // store new id
-                    } else if (onFail) onFail();
+                        var parsed = parseInt(xhr.responseText, 10);
+                        if (!isNaN(parsed) && parsed > 0) {
+                            params.id = xhr.responseText; // store new id
+                            flushPendingInteractions(); // Flush buffered interactions now that we have an ID
+                        }
+                        callback(true);
+                    } else {
+                        // Non-200 status is a failure, trigger retry/failover
+                        if (onFail) onFail();
+                    }
                 }
             };
-            xhr.send(payload);
+            try {
+                xhr.send(payload);
+            } catch (e) {
+                // This catches network errors before send, also a failure
+                if (onFail) onFail();
+            }
             return true;
         }
-
         function trySend(i) {
-            if (i >= order.length) return false;
-            const method = order[i];
-            const url = endpoints[method];
+            if (i >= order.length) {
+                // All transport methods have been tried and failed
+                callback(false);
+                return false;
+            }
+            var method = order[i];
+            var url = endpoints[method];
             if (!url) return trySend(i + 1);
             if (useBeacon && navigator.sendBeacon && i === 0) {
-                const ok = navigator.sendBeacon(url, payload);
-                return ok || trySend(i + 1);
-            }
-            return sendXHR(url, function () {
-                trySend(i + 1);
-            });
-        }
-        return trySend(0);
-    }
-
-    function processQueue() {
-        if (queueInFlight) return;
-        const item = requestQueue.shift();
-        if (!item) return;
-        queueInFlight = true;
-        // Force immediate send (not enqueuing again)
-        const done = function () {
-            queueInFlight = false;
-            // Process next after a micro delay to allow ID assignment, etc.
-            setTimeout(processQueue, 0);
-        };
-        // Wrap original send with callback hooking via XHR readyState (monkey patch)
-        const params = currentSlimStatParams();
-        const originalId = params.id;
-        // We can't directly get callback from sendToServer; instead we replicate logic here for queue items
-        (function queuedSend(payload, useBeacon, opts) {
-            opts = opts || {};
-            const transports = ["rest", "ajax", "adblock"];
-            const endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
-            const selected = params.transport;
-            const order = [selected].concat(transports.filter((t) => t !== selected));
-            function sendXHR(url, onFail) {
-                let xhr;
-                try {
-                    xhr = new XMLHttpRequest();
-                } catch (e) {
-                    if (onFail) onFail();
-                    return false;
-                }
-                xhr.open("POST", url, true);
-                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-                if (params.wp_rest_nonce) xhr.setRequestHeader("X-WP-Nonce", params.wp_rest_nonce);
-                xhr.withCredentials = true;
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState === 4) {
-                        if (xhr.status === 200) {
-                            const parsed = parseInt(xhr.responseText, 10);
-                            if (!isNaN(parsed) && parsed > 0) params.id = xhr.responseText; // store new id
-                        }
-                        done();
-                    }
-                };
-                try {
-                    xhr.send(payload);
-                } catch (e) {
-                    done();
-                }
-                return true;
-            }
-            function trySend(i) {
-                if (i >= order.length) {
-                    done();
-                    return false;
-                }
-                const method = order[i];
-                const url = endpoints[method];
-                if (!url) return trySend(i + 1);
-                if (useBeacon && navigator.sendBeacon && i === 0) {
-                    navigator.sendBeacon(url, payload);
-                    // Beacon is fire-and-forget; we mark done immediately
-                    done();
+                // Beacon is fire-and-forget; we assume success for queue processing
+                var ok = navigator.sendBeacon(url, payload);
+                if (ok) {
+                    callback(true);
                     return true;
                 }
-                return sendXHR(url, function () {
-                    trySend(i + 1);
-                });
+                // If beacon fails, immediately try next method
+                return trySend(i + 1);
             }
-            trySend(0);
-        })(item.payload, item.useBeacon, item.opts);
+            return sendXHR(
+                url,
+                function () {
+                    trySend(i + 1);
+                },
+                { useNonce: true }
+            );
+        }
+        trySend(0);
     }
 
     // -------------------------- Interaction Tracking -------------------------- //
     function trackInteraction(event, note, useBeacon) {
-        const params = currentSlimStatParams();
+        var params = currentSlimStatParams();
         if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) {
             // Buffer interaction until we have an id
             try {
-                const minimal = buildInteractionRaw(event, note);
+                var minimal = buildInteractionRaw(event, note);
                 bufferInteraction(minimal);
             } catch (e) {
                 /* ignore */
@@ -362,26 +356,26 @@ var SlimStat = (function () {
         if (!event || isEmpty(event.type) || event.type === "focus") return false;
 
         useBeacon = typeof useBeacon === "boolean" ? useBeacon : true;
-        const target = event.target || event.srcElement;
+        var target = event.target || event.srcElement;
         if (!target) return false;
 
-        const noteObj = {};
+        var noteObj = {};
         if (!isEmpty(note)) noteObj.note = note;
 
         // Derive resource URL
-        let resourceUrl = "";
+        var resourceUrl = "";
         (function derive() {
             if (!target.nodeName) return;
-            const node = target.nodeName.toLowerCase();
+            var node = target.nodeName.toLowerCase();
             if (node === "input" || node === "button") {
-                let p = target.parentNode;
+                var p = target.parentNode;
                 while (p && p.nodeName && p.nodeName.toLowerCase() !== "form") p = p.parentNode;
                 if (p && p.action) resourceUrl = p.action;
                 return;
             }
             // anchor resolution (support nested nodes)
             if (!target.href || typeof target.href !== "string") {
-                let p = target.parentNode;
+                var p = target.parentNode;
                 while (p && p.nodeName && !p.href) p = p.parentNode;
                 if (p) {
                     if (p.hash && p.hostname === location.hostname) resourceUrl = p.hash;
@@ -394,93 +388,145 @@ var SlimStat = (function () {
         // Element attributes
         if (typeof target.getAttribute === "function") {
             if (target.textContent) noteObj.text = target.textContent;
-            const val = target.getAttribute("value");
+            var val = target.getAttribute("value");
             if (val) noteObj.value = val;
-            const title = target.getAttribute("title");
+            var title = target.getAttribute("title");
             if (title) noteObj.title = title;
-            const idAttr = target.getAttribute("id");
+            var idAttr = target.getAttribute("id");
             if (idAttr) noteObj.id = idAttr;
         }
         noteObj.type = event.type;
         if (event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
         else if (event.type === "mousedown") noteObj.button = event.which === 1 ? "left" : event.which === 2 ? "middle" : "right";
 
-        const doNotTrack = params.dnt ? params.dnt.split(",") : [];
+        var doNotTrack = params.dnt ? params.dnt.split(",") : [];
         if (resourceUrl && doNotTrack.length && anySubstring(resourceUrl, doNotTrack)) return false;
 
         // class-based do not track
         if (doNotTrack.length && target.className && typeof target.className === "string") {
-            const classes = target.className.split(" ");
-            if (classes.some((c) => doNotTrack.indexOf(c) !== -1)) return false;
+            var classes = target.className.split(" ");
+            if (
+                classes.some(function (c) {
+                    return doNotTrack.indexOf(c) !== -1;
+                })
+            )
+                return false;
         }
         if (doNotTrack.length && target.attributes && target.attributes.rel && target.attributes.rel.value) {
             if (anySubstring(target.attributes.rel.value, doNotTrack)) return false;
         }
 
         // Coordinates
-        let position = "0,0";
+        var position = "0,0";
         if (!isEmpty(event.pageX) && !isEmpty(event.pageY)) position = event.pageX + "," + event.pageY;
         else if (!isEmpty(event.clientX)) position = event.clientX + (document.body.scrollLeft || 0) + (document.documentElement.scrollLeft || 0) + "," + (event.clientY + (document.body.scrollTop || 0) + (document.documentElement.scrollTop || 0));
 
-        const fingerprintParam = resourceUrl ? "&fh=" + fingerprintHash : "";
-        const raw = "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj)) + fingerprintParam;
-        const payload = "action=slimtrack&id=" + params.id + raw;
-        const now = Date.now();
+        var fingerprintParam = resourceUrl ? "&fh=" + fingerprintHash : "";
+        var raw = "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj)) + fingerprintParam;
+        var payload = "action=slimtrack&id=" + params.id + raw;
+        var now = Date.now();
         if (payload === lastInteractionPayload && now - lastInteractionTime < 1000) return false; // dedupe bursts
         lastInteractionPayload = payload;
         lastInteractionTime = now;
-        return sendToServer(payload, useBeacon);
+        var sent = sendToServer(payload, useBeacon);
+        if (sent) {
+            // Flag that at least one meaningful interaction happened this pageview
+            try {
+                window.__slimstatHasInteraction = true;
+            } catch (e) {
+                /* ignore */
+            }
+        }
+        return sent;
     }
 
     function buildInteractionRaw(event, note) {
         // Reconstruct minimal raw (without id) for buffering.
-        const target = (event && (event.target || event.srcElement)) || {};
-        let resourceUrl = "";
+        var target = (event && (event.target || event.srcElement)) || {};
+        var resourceUrl = "";
         try {
             if (target.href) resourceUrl = target.href;
         } catch (e) {
             /* ignore */
         }
-        const noteObj = { type: event ? event.type : "unknown" };
+        var noteObj = { type: event ? event.type : "unknown" };
         if (note) noteObj.note = note;
-        let position = "0,0";
+        var position = "0,0";
         if (event && !isEmpty(event.pageX) && !isEmpty(event.pageY)) position = event.pageX + "," + event.pageY;
         return "&res=" + base64Encode(resourceUrl) + "&pos=" + position + "&no=" + base64Encode(JSON.stringify(noteObj));
     }
 
     // -------------------------- Pageview Logic -------------------------- //
-    const FP_EXCLUDES = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+    var FP_EXCLUDES = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
 
     function buildPageviewBase(params) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
-        let base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
+        var base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
         if (!isEmpty(params.ci)) base += "&ci=" + params.ci;
         return base;
     }
 
-    function sendPageview(options = {}) {
+    function sendPageview(options) {
+        options = options || {};
         extractSlimStatParams();
-        const params = currentSlimStatParams();
-        const payloadBase = buildPageviewBase(params);
+        var params = currentSlimStatParams();
+
+        // Check if this is a navigation event (not initial page load)
+        var isNavigationEvent = options.isNavigation || false;
+
+        // For navigation events, always track regardless of javascript_mode
+        // For initial page load, skip if server-side tracking is active
+        if (!isNavigationEvent && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
+            // Server-side tracking is active for initial page load, skip pageview but allow interactions
+            return;
+        }
+
+        // For navigation events, we need to track the new page, not the current one
+        if (isNavigationEvent) {
+            // Force a new pageview for the navigation event
+            params.id = null;
+        }
+
+        var payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
+
+        // Prevent duplicate pageview requests
+        if (pageviewInProgress) {
+            return;
+        }
+
         // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
-        const now = Date.now();
-        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) return; // skip
+        var now = Date.now();
+        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) {
+            return;
+        }
+
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        const waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
-        const useBeacon = !waitForId; // need sync response when creating id
+        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var useBeacon = !waitForId; // need sync response when creating id
+
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) return;
         inflightPageview = waitForId;
+        pageviewInProgress = true;
 
-        const run = function () {
+        // Reset finalization state when starting new pageview
+        // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
+
+        var run = function () {
             Fingerprint2.get(FP_EXCLUDES, function (components) {
                 initFingerprintHash(components);
                 // Initial pageview (no id yet) should be immediate for faster id assignment
                 sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
                 inflightPageview = false;
+                pageviewInProgress = false;
+
+                // Reset pageview state after successful completion
+                setTimeout(function () {
+                    pageviewInProgress = false;
+                }, 100);
             });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
@@ -489,16 +535,16 @@ var SlimStat = (function () {
 
     // -------------------------- Opt-out UI -------------------------- //
     function showOptoutMessage() {
-        const params = currentSlimStatParams();
-        const optCookies = params.oc ? params.oc.split(",") : [];
-        let show = optCookies.length > 0;
-        for (let i = 0; i < optCookies.length; i++)
+        var params = currentSlimStatParams();
+        var optCookies = params.oc ? params.oc.split(",") : [];
+        var show = optCookies.length > 0;
+        for (var i = 0; i < optCookies.length; i++)
             if (getCookie(optCookies[i])) {
                 show = false;
                 break;
             }
         if (!show) return false;
-        let xhr;
+        var xhr;
         try {
             xhr = new XMLHttpRequest();
         } catch (e) {
@@ -510,7 +556,7 @@ var SlimStat = (function () {
         xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                const div = document.createElement("div");
+                var div = document.createElement("div");
                 div.innerHTML = xhr.responseText;
                 document.body.appendChild(div);
             }
@@ -523,62 +569,11 @@ var SlimStat = (function () {
         event = event || window.event;
         if (event && event.preventDefault) event.preventDefault();
         else if (event) event.returnValue = false;
-        const params = currentSlimStatParams();
-        const expiration = new Date(Date.now() + 31536000000); // 1 year
+        var params = currentSlimStatParams();
+        var expiration = new Date(Date.now() + 31536000000); // 1 year
         document.cookie = "slimstat_optout_tracking=" + cookieValue + ";path=" + (params.baseurl || "/") + ";expires=" + expiration.toGMTString();
-        const target = event.target || event.srcElement;
+        var target = event.target || event.srcElement;
         if (target && target.parentNode && target.parentNode.parentNode) target.parentNode.parentNode.removeChild(target.parentNode);
-    }
-
-    // -------------------------- Navigation / Interactivity Integration -------------------------- //
-    function setupNavigationHooks() {
-        // WordPress Interactivity API Event
-        addEvent(document, "wp-interactivity:navigate", function () {
-            // Finalize current pageview (if any) before starting a new one
-            const params = currentSlimStatParams();
-            if (params.id && parseInt(params.id, 10) > 0) {
-                sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
-            }
-            params.id = null; // force new id on next pageview
-            sendPageview();
-        });
-
-        // History API overrides (fallback for SPAs / Interactivity polyfills)
-        if (window.history && history.pushState) {
-            const originalPush = history.pushState;
-            const originalReplace = history.replaceState;
-            history.pushState = function () {
-                const params = currentSlimStatParams();
-                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
-                params.id = null; // force new id
-                const res = originalPush.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            history.replaceState = function () {
-                const res = originalReplace.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            addEvent(window, "popstate", function () {
-                currentSlimStatParams().id = null;
-                sendPageview();
-            });
-        }
-    }
-
-    // -------------------------- Event Delegation for Clicks -------------------------- //
-    function setupClickDelegation() {
-        addEvent(document.body, "click", function (e) {
-            let target = e.target;
-            while (target && target !== document.body) {
-                if (target.matches && target.matches("a,button,input,area")) {
-                    trackInteraction(e, null, null);
-                    break;
-                }
-                target = target.parentNode;
-            }
-        });
     }
 
     // -------------------------- Public API (legacy names preserved) -------------------------- //
@@ -611,12 +606,33 @@ var SlimStat = (function () {
         // New internal helpers (not documented previously)
         _extract_params: extractSlimStatParams,
         _send_pageview: sendPageview,
-        _setup_navigation_hooks: setupNavigationHooks,
-        _setup_click_delegation: setupClickDelegation,
+        // Expose functions for the runtime
+        _assign_runtime_helpers: function (helpers) {
+            pendingInteractions = helpers.pendingInteractions;
+            loadOfflineQueue = helpers.loadOfflineQueue;
+            saveOfflineQueue = helpers.saveOfflineQueue;
+            currentSlimStatParams = helpers.currentSlimStatParams;
+            pageviewInProgress = helpers.pageviewInProgress;
+        },
     };
 })();
 
 // Polyfills for ES5 and older browsers
+if (!Element.prototype.matches) {
+    Element.prototype.matches =
+        Element.prototype.matchesSelector ||
+        Element.prototype.mozMatchesSelector ||
+        Element.prototype.msMatchesSelector ||
+        Element.prototype.oMatchesSelector ||
+        Element.prototype.webkitMatchesSelector ||
+        function (s) {
+            var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+                i = matches.length;
+            // eslint-disable-next-line no-empty
+            while (--i >= 0 && matches.item(i) !== this) {}
+            return i > -1;
+        };
+}
 if (!String.prototype.trim) {
     String.prototype.trim = function () {
         return this.replace(/^\s+|\s+$/g, "");
@@ -635,26 +651,91 @@ if (!window.requestIdleCallback) {
 
 // Main initialization (refactored)
 (function initSlimStatRuntime() {
-    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
-    let finalized = false;
+    // These functions and variables are now defined in this scope
+    // and will be shared with the SlimStat object.
+    var pendingInteractions = [];
+    var OFFLINE_KEY = "slimstat_offline_queue";
+    var pageviewInProgress = false;
 
-    function finalizeCurrent(reason) {
-        if (finalized) return;
-        const p = window.SlimStatParams || {};
-        if (p.id && parseInt(p.id, 10) > 0) {
-            // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
-            const payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
-            SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
-            finalized = true;
+    function loadOfflineQueue() {
+        try {
+            var raw = localStorage.getItem(OFFLINE_KEY);
+            if (!raw) return [];
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
         }
     }
 
+    function saveOfflineQueue(arr) {
+        try {
+            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function currentSlimStatParams() {
+        // Ensure global object exists
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        return window.SlimStatParams;
+    }
+
+    // Share these with the SlimStat IIFE
+    SlimStat._assign_runtime_helpers({
+        pendingInteractions: pendingInteractions,
+        loadOfflineQueue: loadOfflineQueue,
+        saveOfflineQueue: saveOfflineQueue,
+        currentSlimStatParams: currentSlimStatParams,
+        pageviewInProgress: pageviewInProgress,
+    });
+
+    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
+    var finalizedPageviews = {};
+    // Finalization state management (moved from SlimStat closure to avoid scope issues)
+    var finalizationInProgress = false;
+    var lastFinalizationReason = "";
+    var lastFinalizationTime = 0;
+    var FINALIZATION_COOLDOWN = 1000; // 1 second cooldown between finalizations
+    // Global interaction flag used to avoid sending a duplicate pageview when the user leaves
+    try {
+        if (typeof window.__slimstatHasInteraction === "undefined") window.__slimstatHasInteraction = false;
+    } catch (e) {
+        /* ignore */
+    }
+
+    function finalizeCurrent(reason) {
+        var p = window.SlimStatParams || {};
+        if (!p.id || parseInt(p.id, 10) <= 0 || finalizedPageviews[p.id]) return; // no pageview id yet or already finalized
+
+        var now = Date.now();
+        if (finalizationInProgress || (reason === lastFinalizationReason && now - lastFinalizationTime < FINALIZATION_COOLDOWN)) return;
+
+        finalizationInProgress = true;
+        lastFinalizationReason = reason;
+        lastFinalizationTime = now;
+
+        // Old behavior: send a simple finalize to let the server compute dt_out
+        var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+        SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
+        finalizedPageviews[p.id] = true;
+        setTimeout(function () {
+            finalizationInProgress = false;
+        }, 120);
+    }
+
     // Observe for parameter mutations (meta tag or script changes)
-    let lastParams = JSON.stringify(window.SlimStatParams || {});
-    const observer = new MutationObserver(function () {
-        SlimStat._extract_params();
-        const serialized = JSON.stringify(window.SlimStatParams || {});
-        if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
+    // Only observe if we don't have an ID yet (to avoid unnecessary tracking requests)
+    var lastParams = JSON.stringify(window.SlimStatParams || {});
+    var observer = new MutationObserver(function () {
+        var params = window.SlimStatParams || {};
+        // Only extract params if we don't have an ID yet (initial page load)
+        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
+            SlimStat._extract_params();
+            var serialized = JSON.stringify(window.SlimStatParams || {});
+            if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
+        }
     });
     observer.observe(document.head, { childList: true, subtree: true });
     observer.observe(document.body, { childList: true, subtree: true });
@@ -674,14 +755,41 @@ if (!window.requestIdleCallback) {
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
-        if (document.visibilityState === "hidden") finalizeCurrent("visibility");
+        // Only finalize if we have an active ID and the page is actually hidden
+        var params = window.SlimStatParams || {};
+        if (document.visibilityState === "hidden" && params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("visibility");
+        }
     });
     SlimStat.add_event(window, "pagehide", function () {
-        finalizeCurrent("pagehide");
+        // Only finalize if we have an active ID
+        var params = window.SlimStatParams || {};
+        if (params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("pagehide");
+        }
     });
     SlimStat.add_event(window, "beforeunload", function () {
-        finalizeCurrent("beforeunload");
+        // Only finalize if we have an active ID
+        var params = window.SlimStatParams || {};
+        if (params.id && parseInt(params.id, 10) > 0) {
+            debouncedFinalize("beforeunload");
+        }
     });
+
+    // Add a small delay between finalization attempts to prevent rapid-fire duplicates
+    var finalizationTimeout = null;
+    function debouncedFinalize(reason) {
+        // Don't finalize if already finalized for this pageview ID
+        var p = window.SlimStatParams || {};
+        if (!p.id || finalizedPageviews[p.id]) return;
+
+        if (finalizationTimeout) {
+            clearTimeout(finalizationTimeout);
+        }
+        finalizationTimeout = setTimeout(function () {
+            finalizeCurrent(reason);
+        }, 50);
+    }
 
     // Online event to resend offline queue
     SlimStat.add_event(window, "online", function () {
@@ -689,7 +797,125 @@ if (!window.requestIdleCallback) {
         flushPendingInteractions();
     });
 
+    // Before unload, persist any pending interactions that don't have an ID yet
+    SlimStat.add_event(window, "beforeunload", function () {
+        var params = currentSlimStatParams();
+        if ((!params.id || parseInt(params.id, 10) <= 0) && pendingInteractions.length > 0) {
+            // No ID assigned, so we can't send these. Store them offline.
+            // We assume they are for the most recent pageview attempt.
+            var offline = loadOfflineQueue();
+            pendingInteractions.forEach(function (raw) {
+                // To send these later, we need to stub a payload.
+                // We'll add a placeholder that the server-side can reconcile.
+                var placeholderPayload = "action=slimtrack&id=pending" + raw;
+                offline.push({ p: placeholderPayload, t: Date.now() });
+            });
+            saveOfflineQueue(offline);
+            pendingInteractions.length = 0; // Clear buffer
+        }
+    });
+
+    function setupClickDelegation() {
+        SlimStat.add_event(document.body, "click", function (e) {
+            var target = e.target;
+            while (target && target !== document.body) {
+                if (target.matches && target.matches("a,button,input,area")) {
+                    SlimStat.ss_track(e, null, null);
+                    break;
+                }
+                target = target.parentNode;
+            }
+        });
+    }
+
+    function setupNavigationHooks() {
+        // WordPress Interactivity API Event
+        SlimStat.add_event(document, "wp-interactivity:navigate", function () {
+            // Prevent duplicate navigation events
+            if (pageviewInProgress) {
+                return;
+            }
+
+            // Capture current URL; only act if it actually changes
+            var oldPathname = window.location.pathname;
+            var oldSearch = window.location.search;
+
+            // Defer the new pageview call to allow the DOM and URL to update
+            setTimeout(function () {
+                var newPathname = window.location.pathname;
+                var newSearch = window.location.search;
+                if (newPathname !== oldPathname || newSearch !== oldSearch) {
+                    var params = currentSlimStatParams();
+                    if (params.id && parseInt(params.id, 10) > 0) {
+                        debouncedFinalize("navigation");
+                    }
+                    SlimStat._send_pageview({ isNavigation: true });
+                }
+            }, 150);
+        });
+
+        // History API overrides (fallback for SPAs / Interactivity polyfills)
+        if (window.history && history.pushState) {
+            var originalPush = history.pushState;
+            var originalReplace = history.replaceState;
+
+            var stateChangeHandler = function (isReplace) {
+                var oldPathname = window.location.pathname;
+                var oldSearch = window.location.search;
+
+                // Apply original function
+                var originalFunc = isReplace ? originalReplace : originalPush;
+                var originalArgs = Array.prototype.slice.call(arguments, 1);
+                var res = originalFunc.apply(this, originalArgs);
+
+                // After a short delay, check if navigation occurred
+                setTimeout(function () {
+                    var newPathname = window.location.pathname;
+                    var newSearch = window.location.search;
+
+                    // A navigation is a change in pathname or a significant change in search params
+                    if (newPathname !== oldPathname || newSearch !== oldSearch) {
+                        var params = currentSlimStatParams();
+                        if (params.id && parseInt(params.id, 10) > 0) {
+                            debouncedFinalize("history");
+                        }
+                        SlimStat._send_pageview({ isNavigation: true });
+                    }
+                }, 150);
+
+                return res;
+            };
+
+            history.pushState = function () {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(false);
+                return stateChangeHandler.apply(this, args);
+            };
+
+            history.replaceState = function () {
+                var args = Array.prototype.slice.call(arguments);
+                args.unshift(true);
+                return stateChangeHandler.apply(this, args);
+            };
+
+            SlimStat.add_event(window, "popstate", function () {
+                // Prevent duplicate popstate events
+                if (pageviewInProgress) {
+                    return;
+                }
+
+                // Defer to allow URL to update
+                setTimeout(function () {
+                    // Always track navigation events for SPA behavior
+                    // This ensures navigation is tracked even when server-side tracking is active
+                    currentSlimStatParams().id = null;
+                    SlimStat._send_pageview({ isNavigation: true });
+                }, 150);
+            });
+        }
+    }
+
     // Setup interaction tracking
-    SlimStat._setup_click_delegation();
-    SlimStat._setup_navigation_hooks();
+    setupClickDelegation();
+    setupNavigationHooks();
 })();

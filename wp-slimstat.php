@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.3.0
+ * Version: 5.3.1
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -24,7 +24,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.3.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.3.1');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -204,7 +204,21 @@ class wp_slimstat
 
                 // Visitor is still on this page, record the timestamp in the corresponding field if this WAS NOT a request to update a "server-side" pageview with client-side info
                 if (empty(self::$stat['resolution'])) {
-                    self::$stat['dt_out'] = self::date_i18n('U');
+                    // Heartbeat / finalize update of dt_out
+                    if (!empty(self::$data_js['hb'])) {
+                        // Use provided ts if valid, else current time
+                        $heartbeat_ts = 0;
+                        if (!empty(self::$data_js['ts'])) {
+                            $heartbeat_ts = intval(self::$data_js['ts']);
+                        }
+                        if ($heartbeat_ts > 0 && $heartbeat_ts <= (time() + 300)) { // sanity: not too far future
+                            self::$stat['dt_out'] = $heartbeat_ts;
+                        } else {
+                            self::$stat['dt_out'] = self::date_i18n('U');
+                        }
+                    } else {
+                        self::$stat['dt_out'] = self::date_i18n('U');
+                    }
                 }
 
                 // Is this a new visitor, based on his fingerprint?
@@ -362,13 +376,14 @@ class wp_slimstat
      */
     public static function rewrite_rule_tracker()
     {
-        // Always register the tracker rewrite rule for adblock bypass and fallback
-        add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
-        add_rewrite_rule(
-            '^([a-f0-9]{32})\\.js$',
-            'index.php?slimstat_tracker=$matches[1]',
-            'top'
-        );
+        if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'rest')) {
+            add_rewrite_tag('%slimstat_tracker%', '([a-f0-9]{32})');
+            add_rewrite_rule(
+                '^([a-f0-9]{32})\\.js$',
+                'index.php?slimstat_tracker=$matches[1]',
+                'top'
+            );
+        }
     }
 
     /**
@@ -376,7 +391,11 @@ class wp_slimstat
      */
     public static function adblocker_javascript()
     {
-        // Always handle the tracker JS endpoint for fallback
+        // Only handle the tracker JS endpoint if adblock bypass is enabled
+        if ('adblock_bypass' !== (self::$settings['tracking_request_method'] ?? 'rest')) {
+            return;
+        }
+
         $tracker_hash = get_query_var('slimstat_tracker');
         if ($tracker_hash && $tracker_hash === md5(site_url() . 'slimstat')) {
             // Set the content type to JavaScript
@@ -2077,6 +2096,8 @@ class wp_slimstat
      */
     protected static function _dtr_pton($_ip)
     {
+        $unpacked = false;
+
         if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $unpacked = unpack('A4', inet_pton($_ip));
         } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
@@ -2084,7 +2105,7 @@ class wp_slimstat
         }
 
         $binary_ip = '';
-        if ([] !== $unpacked && false !== $unpacked) {
+        if ([] !== $unpacked && false !== $unpacked && isset($unpacked[1])) {
             $unpacked = str_split($unpacked[1]);
             foreach ($unpacked as $char) {
                 $binary_ip .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);

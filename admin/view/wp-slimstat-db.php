@@ -782,6 +782,11 @@ class wp_slimstat_db
         // Turn date_i18n filters off
         wp_slimstat::toggle_date_i18n_filters(false);
 
+        // Ensure pageviews is initialized for Dashboard widgets
+        if (0 === self::$pageviews) {
+            self::$pageviews = wp_slimstat_db::count_records();
+        }
+
         $results[0]['metric']  = __('Pageviews', 'wp-slimstat');
         $results[0]['value']   = number_format_i18n(self::$pageviews, 0);
         $results[0]['tooltip'] = __('A pageview is a request to load a single HTML page on your website.', 'wp-slimstat');
