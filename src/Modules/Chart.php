@@ -32,6 +32,7 @@ class Chart
 
     public function showChart(array $args): void
     {
+        \SlimStat\Modules\SlimStat_Debug_Logger::init();
         $this->init($args);
         $this->enqueueAssets();
         $this->renderChart();
@@ -71,6 +72,25 @@ class Chart
                     'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
                 ],
             ];
+
+            // Debug logging for AJAX chart data request
+            if ($granularity === 'monthly' && class_exists('\SlimStat\Modules\SlimStat_Debug_Logger')) {
+                \SlimStat\Modules\SlimStat_Debug_Logger::ensure_ready_for_ajax();
+                \SlimStat\Modules\SlimStat_Debug_Logger::log('=== Monthly Chart Request (AJAX via Chart) ===');
+                \SlimStat\Modules\SlimStat_Debug_Logger::log_server_context();
+                \SlimStat\Modules\SlimStat_Debug_Logger::log('AJAX Monthly Chart Params (Chart)', [
+                    'granularity' => $chart->args['granularity'],
+                    'start' => $chart->args['start'] ?? null,
+                    'labels' => $chart->chartLabels,
+                    'prev_labels' => $chart->prevData['labels'],
+                    'end' => $chart->args['end'] ?? null,
+                    'range' => isset($chart->args['start'], $chart->args['end']) ? ($chart->args['end'] - $chart->args['start']) : null,
+                    'wp_time' => current_time('Y-m-d H:i:s'),
+                    'server_time' => date('Y-m-d H:i:s'),
+                    'timezone' => wp_timezone_string(),
+                ]);
+            }
+
             wp_send_json_success([
                 'args'         => $chart->args,
                 'data'         => $chart->data,
@@ -305,12 +325,42 @@ class Chart
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
+        // Debug logging for chart data processing
+        if (class_exists('\SlimStat\Modules\SlimStat_Debug_Logger')) {
+            if ($params['gran'] === 'MONTH') {
+                \SlimStat\Modules\SlimStat_Debug_Logger::log('Processing chart results (Chart)', [
+                    'rows_count' => count($rows),
+                    'gran' => $params['gran'],
+                    'label_format' => $params['label'] ?? null,
+                    'start' => $start,
+                    'end' => $end,
+                    'prev_start' => $prevStart,
+                    'prev_end' => $prevEnd,
+                    'start_date' => date('Y-m-d H:i:s', $start),
+                    'end_date' => date('Y-m-d H:i:s', $end),
+                    'prev_start_date' => date('Y-m-d H:i:s', $prevStart),
+                    'prev_end_date' => date('Y-m-d H:i:s', $prevEnd)
+                ]);
+            }
+        }
+
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totals);
         foreach ($rows as $row) {
             $buckets->addRow((int) $row->dt, (int) $row->v1, (int) $row->v2, (string) $row->period);
         }
 
-        return $buckets->toArray();
+        $result = $buckets->toArray();
+
+        // Debug the final result
+        if (class_exists('\SlimStat\Modules\SlimStat_Debug_Logger')) {
+            if (($params['gran'] ?? null) === 'MONTH') {
+                \SlimStat\Modules\SlimStat_Debug_Logger::log('Chart data processing complete (Chart)', [
+                    'granularity' => $result['granularity'] ?? 'unknown'
+                ]);
+            }
+        }
+
+        return $result;
     }
 
     private function extractPreviousData(array $data): array
@@ -351,6 +401,27 @@ class Chart
 
     private function renderChart(): void
     {
+
+
+        if (
+			isset($this->args['granularity'])
+			&& $this->args['granularity'] === 'monthly'
+			&& class_exists('\SlimStat\Modules\SlimStat_Debug_Logger')
+		) {
+            \SlimStat\Modules\SlimStat_Debug_Logger::log_server_context();
+			\SlimStat\Modules\SlimStat_Debug_Logger::log('Render Chart (Chart)', [
+				'granularity' => $this->args['granularity'],
+				'start' => $this->args['start'] ?? null,
+                'labels' => $this->chartLabels,
+                'prev_labels' => $this->prevData['labels'],
+				'end' => $this->args['end'] ?? null,
+				'range' => isset($this->args['start'], $this->args['end']) ? ($this->args['end'] - $this->args['start']) : null,
+				'wp_time' => current_time('Y-m-d H:i:s'),
+				'server_time' => date('Y-m-d H:i:s'),
+				'timezone' => wp_timezone_string(),
+			]);
+		}
+
         View::load('modules/chart-view', [
             'args'         => $this->args,
             'data'         => $this->data,

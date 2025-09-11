@@ -336,7 +336,33 @@ document.addEventListener("DOMContentLoaded", function () {
             if (labels.length <= maxTicks || uniqueTickIndexes.indexOf(index) !== -1) {
                 var label = this.getLabelForValue(value).replace(/'/g, "");
                 try {
-                    return slimstatGetLabel(label, false, unitTime, translations);
+                    var result = slimstatGetLabel(label, false, unitTime, translations);
+
+                    // Debug logging for invalid dates
+                    if (result === "Invalid Date, NaN" || result.includes("Invalid Date")) {
+                        console.error("SlimStat: Invalid date detected in tick callback", {
+                            originalLabel: label,
+                            unitTime: unitTime,
+                            result: result,
+                            index: index,
+                            value: value,
+                            timestamp: new Date().toISOString(),
+                        });
+
+                        // Send to server for logging
+                        if (typeof jQuery !== "undefined" && typeof ajaxurl !== "undefined") {
+                            jQuery.post(ajaxurl, {
+                                action: "slimstat_debug_log_js",
+                                label: label,
+                                unit_time: unitTime,
+                                result: result,
+                                context: "tick_callback",
+                                nonce: slimstat_chart_vars.nonce,
+                            });
+                        }
+                    }
+
+                    return result;
                 } catch (e) {
                     console.warn("SlimStat: Error processing label:", label, e);
                     return label; // Return original label if processing fails
@@ -607,12 +633,31 @@ document.addEventListener("DOMContentLoaded", function () {
             var labelToParse = justTranslation || label;
             var monthYearRegex = /^([A-Za-z]+)\s+(\d{4})$/;
             var match = (labelToParse || "").match(monthYearRegex);
+
+            // Debug logging for monthly processing
+            console.debug("SlimStat: Processing monthly label", {
+                originalLabel: label,
+                labelToParse: labelToParse,
+                match: match,
+                unitTime: unitTime,
+            });
+
             if (match) {
                 try {
                     var monthName = match[1];
                     var year = parseInt(match[2], 10);
                     var monthIndex = new Date(monthName + " 1, 2000").getMonth();
                     var d = new Date(year, monthIndex, 1);
+
+                    // Debug the date creation
+                    console.debug("SlimStat: Monthly date creation", {
+                        monthName: monthName,
+                        year: year,
+                        monthIndex: monthIndex,
+                        createdDate: d,
+                        isValidDate: !isNaN(d.getTime()),
+                    });
+
                     var my = getMonthYear(d);
                     var isThisMonth = now.getMonth() === d.getMonth() && now.getFullYear() === my.year;
                     var baseLabel = my.month + ", " + my.year;
