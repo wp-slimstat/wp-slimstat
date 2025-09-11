@@ -5,6 +5,7 @@ namespace SlimStat\Tracker;
 use SlimStat\Services\Privacy;
 use SlimStat\Services\GeoService;
 use SlimStat\Services\GeoIP;
+use SlimStat\Providers\IPHashProvider;
 
 class Processor
 {
@@ -83,38 +84,8 @@ class Processor
 			}
 		}
 
-		$originalIp = \wp_slimstat::$stat['ip'];
-		if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
-			\wp_slimstat::$stat['ip'] = wp_privacy_anonymize_ip(\wp_slimstat::$stat['ip']);
-			if (!empty(\wp_slimstat::$stat['other_ip'])) {
-				\wp_slimstat::$stat['other_ip'] = wp_privacy_anonymize_ip(\wp_slimstat::$stat['other_ip']);
-			}
-		}
-
-		if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
-			$ua     = $_SERVER['HTTP_USER_AGENT'] ?? '';
-			$secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
-			$daily_salt = get_option('slimstat_daily_salt');
-			if (!empty($daily_salt)) {
-				$data = $daily_salt . '|' . $originalIp . '|' . $ua;
-				$hash = hash_hmac('sha256', $data, $secret);
-				if ('on' != \wp_slimstat::$settings['anonymize_ip']) {
-					\wp_slimstat::$stat['other_ip'] = '';
-				}
-				\wp_slimstat::$stat['ip'] = $hash;
-			} else {
-				if (!class_exists(Privacy::class)) {
-					@include_once SLIMSTAT_ANALYTICS_DIR . 'src/Services/Privacy.php';
-				}
-				if (class_exists(Privacy::class)) {
-					$hash = Privacy::computeVisitorId($originalIp, $ua, time(), $secret);
-					if ('on' != \wp_slimstat::$settings['anonymize_ip']) {
-						\wp_slimstat::$stat['other_ip'] = '';
-					}
-					\wp_slimstat::$stat['ip'] = $hash;
-				}
-			}
-		}
+		// Process IP address with anonymization and hashing
+		\wp_slimstat::$stat = IPHashProvider::processIP(\wp_slimstat::$stat);
 
 		if (!isset(\wp_slimstat::$stat['resource'])) {
 			\wp_slimstat::$stat['resource'] = \wp_slimstat::get_request_uri();

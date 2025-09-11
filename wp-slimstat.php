@@ -400,6 +400,9 @@ class wp_slimstat
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
 
+        // Initialize IP hash provider daily salt
+        \SlimStat\Providers\IPHashProvider::generateDailySalt();
+
         // Initialize adblock bypass functionality
         \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
         add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
