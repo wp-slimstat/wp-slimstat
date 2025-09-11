@@ -871,12 +871,60 @@ body {
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout {
     /* Hide all non-Slimstat notices in the admin */
-    div[class*="-notice"]:not(.slimstat-notice),
-    div[class*="admin-notice"]:not(.slimstat-notice),
-    .notice:not(.slimstat-notice),
-    .update-nag:not(.slimstat-notice),
-    .error:not(.slimstat-notice) {
+    div[class*="-notice"]:not(.slimstat-notice):not(.slimstat-debug-notice),
+    div[class*="admin-notice"]:not(.slimstat-notice):not(.slimstat-debug-notice),
+    .notice:not(.slimstat-notice):not(.slimstat-debug-notice),
+    .update-nag:not(.slimstat-notice):not(.slimstat-debug-notice),
+    .error:not(.slimstat-notice):not(.slimstat-debug-notice) {
       display: none !important;
+    }
+  }
+}
+
+/* SlimStat Debug Log Notice - Always visible */
+.slimstat-debug-notice {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  background: #fff3cd !important;
+  border: 1px solid #ffeaa7 !important;
+  border-radius: 8px !important;
+  padding: 15px 20px !important;
+  margin: 20px 0 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+
+  .notice-dismiss {
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    background: none !important;
+    border: none !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    color: #666 !important;
+
+    &:hover {
+      color: #000 !important;
+    }
+  }
+
+  p {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #856404 !important;
+
+    a {
+      color: #e8294c !important;
+      text-decoration: none !important;
+      font-weight: 600 !important;
+
+      &:hover {
+        text-decoration: underline !important;
+      }
     }
   }
 }
@@ -3025,7 +3073,7 @@ x:-o-prefocus {
   box-sizing: border-box;
 
   .logo {
-    width: 180px;
+    width: 280px;
     height: auto;
   }
 

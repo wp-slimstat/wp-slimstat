@@ -1,9 +1,9 @@
 <?php
 /*
- * Plugin Name: SlimStat Analytics
+ * Plugin Name: Dedicated SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.3.1
+ * Version: 5.3.11
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -31,6 +31,11 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
+
+// Include debug logger for development
+if (defined('WP_DEBUG') && WP_DEBUG) {
+    require_once __DIR__ . '/debug-slimstat.php';
+}
 
 class wp_slimstat
 {
@@ -2184,6 +2189,85 @@ class wp_slimstat
         }
         return $timeInterval;
     }
+
+    /**
+     * Show an admin notice with a secure link to download SlimStat debug log.
+     */
+    public static function admin_debug_log_notice()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        // Only show on Dashboard screen
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        if (empty($screen) || strpos($screen->id, 'slimview') === false) {
+            return;
+        }
+
+        if (!class_exists('SlimStat\\Modules\\SlimStat_Debug_Logger')) {
+            return;
+        }
+
+        $size = filesize($logFile) || 0;
+
+        $url = wp_nonce_url(admin_url('admin-post.php?action=slimstat_download_debug_log'), 'slimstat_download_debug_log');
+        $size_kb = number_format_i18n(max(1, (int) ceil($size / 1024)));
+        ?>
+        <div class="notice notice-info is-dismissible slimstat-debug-notice">
+            <p>
+                <strong><?php echo esc_html__('SlimStat Debug Log', 'wp-slimstat'); ?></strong>
+                <?php echo wp_kses_post(sprintf(
+                    __(
+                        'To collect debug information, please follow these steps:<br>
+                        1. Reproduce the issue - Switch to the 12-months range in any chart<br>
+                        2. Download the debug log - Click "Download Debug Log" in the admin notice or check wp-content/uploads/debug-slimstat.log<br>
+                        3. After completing the steps, click the download button (%s KB)<br>
+                        4. Send the debug log to the SlimStat support team.',
+                        'wp-slimstat'
+                    ),
+                    $size_kb
+                )); ?>
+                <a class="button button-primary" href="<?php echo esc_url($url); ?>" style="margin-left:8px;color:#fff !important;">
+                    <?php echo esc_html__('Download Debug Log', 'wp-slimstat'); ?>
+                </a>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
+     * Admin-post handler to download SlimStat debug log securely.
+     */
+    public static function handle_download_debug_log()
+    {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have permission to access this file.', 'wp-slimstat'));
+        }
+
+        check_admin_referer('slimstat_download_debug_log');
+
+        if (!class_exists('SlimStat\\Modules\\SlimStat_Debug_Logger')) {
+            wp_die(__('Debug logger not available.', 'wp-slimstat'));
+        }
+
+        $logFile = \SlimStat\Modules\SlimStat_Debug_Logger::ensure_ready_for_ajax();
+        $logFile = \SlimStat\Modules\SlimStat_Debug_Logger::get_log_file();
+        if (empty($logFile) || !file_exists($logFile) || !is_readable($logFile)) {
+            wp_die(__('Log file not found.', 'wp-slimstat'));
+        }
+
+        $filename = 'debug-slimstat-' . gmdate('Ymd-His') . '.log';
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        header('Content-Type: text/plain; charset=utf-8');
+        header('Content-Disposition: attachment; filename=' . $filename);
+        header('Content-Length: ' . filesize($logFile));
+        readfile($logFile);
+        exit;
+    }
 }
 
 // end of class declaration
@@ -2323,4 +2407,7 @@ if (function_exists('add_action')) {
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);
     // Add the action to fetch chart data
     add_action('wp_ajax_slimstat_fetch_chart_data', [\SlimStat\Modules\Chart::class, 'ajaxFetchChartData']);
+    // Admin notice and download handler for debug log
+    add_action('admin_notices', ['wp_slimstat', 'admin_debug_log_notice']);
+    add_action('admin_post_slimstat_download_debug_log', ['wp_slimstat', 'handle_download_debug_log']);
 }
