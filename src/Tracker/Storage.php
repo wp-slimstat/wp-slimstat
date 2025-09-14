@@ -38,15 +38,23 @@ class Storage
 
 		$data = array_filter($data);
 
+		// Sanitize column names to prevent SQL injection
+		$sanitized_columns = [];
+		foreach (array_keys($data) as $column) {
+			$sanitized_columns[] = sanitize_key($column);
+		}
+
 		$notes = '';
 		if (!empty($data['notes']) && is_array($data['notes'])) {
 			$notes = (count($data) > 1 ? ',' : '') . "notes=CONCAT( IFNULL( notes, '' ), '[" . esc_sql(implode('][', $data['notes'])) . "]' )";
 			unset($data['notes']);
 		}
 
+		// Use consistent database prefix and parameterized query for ID
+		$table_name = \wp_slimstat::$wpdb->prefix . 'slim_stats';
 		$prepared_query = \wp_slimstat::$wpdb->prepare(
-			"UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET " . implode('=%s,', array_keys($data)) . "=%s WHERE id = {$id}",
-			$data
+			"UPDATE IGNORE {$table_name} SET " . implode('=%s,', $sanitized_columns) . "=%s WHERE id = %d",
+			array_merge(array_values($data), [$id])
 		);
 
 		if ('' !== $notes && '0' !== $notes) {
