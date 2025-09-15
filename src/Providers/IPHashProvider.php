@@ -33,7 +33,7 @@ class IPHashProvider
      * @param array $stat The statistics array containing IP data
      * @return array Modified statistics array with processed IP
      */
-    public static function processIP(array $stat): array
+    public static function processIp(array $stat): array
     {
         if (empty($stat['ip'])) {
             return $stat;

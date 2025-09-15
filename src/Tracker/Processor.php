@@ -85,7 +85,7 @@ class Processor
 		}
 
 		// Process IP address with anonymization and hashing
-		\wp_slimstat::$stat = IPHashProvider::processIP(\wp_slimstat::$stat);
+		\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
 
 		if (!isset(\wp_slimstat::$stat['resource'])) {
 			\wp_slimstat::$stat['resource'] = \wp_slimstat::get_request_uri();
