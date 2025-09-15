@@ -836,8 +836,6 @@ class wp_slimstat
             $params['oc'] = implode(',', $params['oc']);
         }
 
-                // GDPR Consent Banner - handled by GDPRProvider
-
         if ('on' != self::$settings['javascript_mode']) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
