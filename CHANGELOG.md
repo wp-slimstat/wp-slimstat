@@ -1,13 +1,14 @@
 = 5.4.0 - 2025-09-05 =
-- **New**: GDPR Consent Management System with customizable consent banner and cookie management.
+- **New**: GDPR Consent Management System integrated with existing "Allow Opt-out" setting for seamless compatibility.
 - **New**: GDPR-compliant tracking with consent-based analytics collection.
 - **New**: Consent management shortcode `[slimstat_consent]` for user consent control.
-- **New**: Configurable consent banner with customizable messages and button text.
-- **New**: Cookie duration settings for GDPR consent management.
+- **New**: Modern GDPR consent banner with customizable messages and button text.
+- **New**: Cookie duration settings for GDPR consent management (365 days default).
 - **New**: GDPR-compliant salted hash IP address functionality for enhanced privacy protection.
 - **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 - **Enhancement**: Improved tracking compliance with privacy regulations.
 - **Enhancement**: Better user privacy control with explicit consent options.
+- **Enhancement**: Backward compatibility maintained with existing opt-out system.
 
 = 5.3.1 - 2025-09-09 =
 - **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
