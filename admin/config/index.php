@@ -785,7 +785,10 @@ foreach ($index_names as $idx) {
     }
 }
 if ([] !== $missing_indexes) {
-    echo '<div class="notice notice-warning"><b>Performance Notice:</b> The following DB indexes are missing and should be created for optimal performance: <code>' . implode(', ', $missing_indexes) . '</code>. Please visit the Slimstat settings or re-activate the plugin to trigger index creation.</div>';
+    echo '<div class="notice notice-warning"><b>' . esc_html__('Performance Notice:', 'wp-slimstat') . '</b> ' . sprintf(
+        esc_html__('The following DB indexes are missing and should be created for optimal performance: %s. Please visit the Slimstat settings or re-activate the plugin to trigger index creation.', 'wp-slimstat'),
+        '<code>' . esc_html(implode(', ', $missing_indexes)) . '</code>'
+    ) . '</div>';
 }
 
 $tabs_html = '';
