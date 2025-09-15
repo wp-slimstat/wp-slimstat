@@ -738,7 +738,6 @@ class wp_slimstat
             'notice_browscap'    => 'on',
             'notice_geolite'     => 'on',
             'notice_caching'     => 'on',
-            'notice_translate'   => 'on',
 
             // Network-wide Settings
             'locked_options' => '',
