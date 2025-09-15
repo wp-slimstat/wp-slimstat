@@ -137,7 +137,7 @@ class DataBuckets
 
     private function initSeqMonth(): void
     {
-        $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modifY('midnight');
+        $date = (new \DateTime())->setTimestamp($this->start)->modify('first day of this month')->modify('midnight');
         $end  = (new \DateTime())->setTimestamp($this->end);
         while ($date <= $end) {
             $label          = $date->format($this->labelFormat);
@@ -182,8 +182,10 @@ class DataBuckets
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);
-            $start  = $start->modify('first day of previous month')->modify('midnight');
-            $target = new \DateTime('@' . $dt);
+            $start  = $start->modify('first day of this month')->modify('midnight');
+            // Guard against invalid/empty $dt
+            $safeDt = is_numeric($dt) ? (int) $dt : 0;
+            $target = new \DateTime('@' . $safeDt);
             if ($target->getTimestamp() < $start->getTimestamp()) {
                 $offset = -1;
             } else {
@@ -219,7 +221,12 @@ class DataBuckets
 
     public function mapPrevLabels(array $labels, array $params): void
     {
-        $this->prev_labels = array_map(fn ($label, $index) => date($params['data_points_label'], strtotime(sprintf('+%s %s', $index, $params['granularity']), $params['previous_start'])), $labels, array_keys($labels));
+        $this->prev_labels = array_map(function($label, $index) use ($params) {
+            $baseTime = $params['previous_start'];
+            $offset = sprintf('+%s %s', $index, $params['granularity']);
+            $timestamp = strtotime($offset, $baseTime);
+            return date($params['data_points_label'], $timestamp);
+        }, $labels, array_keys($labels));
     }
 
     private function shiftDatasets(): void

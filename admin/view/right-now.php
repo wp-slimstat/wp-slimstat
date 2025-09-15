@@ -13,8 +13,10 @@ $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 // - backlink: format of the URL point to the search engine result page
 // - charsets: list of charset used to encode the keywords
 //
-$search_engines = file_get_contents(plugin_dir_path(dirname(__FILE__, 2)) . 'admin/assets/data/matomo-searchengine.json');
-$search_engines = json_decode($search_engines, true);
+if (!class_exists('wp_slimstat')) {
+    include_once dirname(__FILE__, 3) . '/wp-slimstat.php';
+}
+$search_engines = \wp_slimstat::get_search_engines();
 // COMPLETE THIS FEATURE!!
 
 // Available icons
@@ -156,9 +158,17 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $ip_address .= sprintf(' %s</a>', $display_user_name);
+            $display_ip_value = $results[$i]['ip'];
+            if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+                $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
+            } elseif ('on' == wp_slimstat::$settings['anonymize_ip']) {
+                // already masked in storage; still truncate for UI clarity
+                $display_ip_value = $results[$i]['ip'];
+            }
+
             $ip_address .= " <a class='slimstat-filter-link' href='"
                . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
-               . sprintf("'>(%s)</a>", $host_by_ip);
+               . sprintf("'>(%s)</a>", esc_html($display_ip_value));
             $highlight_row = (false !== strpos($results[$i]['notes'], 'user:')) ? ' is-known-user' : ' is-known-visitor';
         }
 
@@ -219,6 +229,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
         }
 
         $results[$i]['resource'] = __('Local search results page', 'wp-slimstat');
+    }
+
+    // Defensive: ensure 'searchterms' and 'referer' keys exist to avoid undefined index
+    if (!isset($results[$i]['searchterms'])) {
+        $results[$i]['searchterms'] = '';
+    }
+
+    if (!isset($results[$i]['referer'])) {
+        $results[$i]['referer'] = '';
     }
 
     if (empty($search_terms_info)) {

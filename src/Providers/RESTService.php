@@ -52,7 +52,7 @@ class RESTService
      */
     public static function handleTracking(\WP_REST_Request $request)
     {
-        \wp_slimstat::slimtrack_ajax();
+        \SlimStat\Tracker\Tracker::slimtrack_ajax();
     }
 
     /**
@@ -88,7 +88,7 @@ class RESTService
         // Always handle adblock bypass endpoint for fallback
         $request_hash = get_query_var('slimstat_request');
         if ($request_hash && $request_hash === md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION)) {
-            \wp_slimstat::slimtrack_ajax();
+            \SlimStat\Tracker\Tracker::slimtrack_ajax();
         }
     }
 }
