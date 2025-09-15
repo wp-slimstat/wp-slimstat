@@ -122,7 +122,7 @@ class wp_slimstat_reports
                     ],
                     'chart_labels' => [
                         __('Pageviews', 'wp-slimstat'),
-                        __('Unique IPs', 'wp-slimstat'),
+                        (('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) ? __('Unique Visitors', 'wp-slimstat') : __('Unique IPs', 'wp-slimstat')),
                     ],
                 ],
                 'classes'   => ['extralarge', 'chart'],

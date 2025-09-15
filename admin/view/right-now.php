@@ -158,9 +158,17 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $ip_address .= sprintf(' %s</a>', $display_user_name);
+            $display_ip_value = $results[$i]['ip'];
+            if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+                $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
+            } elseif ('on' == wp_slimstat::$settings['anonymize_ip']) {
+                // already masked in storage; still truncate for UI clarity
+                $display_ip_value = $results[$i]['ip'];
+            }
+
             $ip_address .= " <a class='slimstat-filter-link' href='"
                . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
-               . sprintf("'>(%s)</a>", $host_by_ip);
+               . sprintf("'>(%s)</a>", esc_html($display_ip_value));
             $highlight_row = (false !== strpos($results[$i]['notes'], 'user:')) ? ' is-known-user' : ' is-known-visitor';
         }
 
