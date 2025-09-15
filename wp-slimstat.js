@@ -472,6 +472,12 @@ var SlimStat = (function () {
 
         var params = currentSlimStatParams();
 
+        // Check GDPR consent before tracking
+        if (params.gdpr_enabled === "1" && getCookie("slimstat_gdpr_consent") !== "accepted") {
+            showGdprConsentBanner();
+            return;
+        }
+
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
 
@@ -537,18 +543,18 @@ var SlimStat = (function () {
 
     // -------------------------- GDPR Consent & Opt-out UI -------------------------- //
     function showGdprConsentBanner() {
-        const params = currentSlimStatParams();
+        var params = currentSlimStatParams();
         if (params.gdpr_enabled !== "1") {
             return false;
         }
 
         // Check if consent cookie already exists
-        const consentCookie = getCookie("slimstat_gdpr_consent");
+        var consentCookie = getCookie("slimstat_gdpr_consent");
         if (consentCookie) {
             return false;
         }
 
-        let xhr;
+        var xhr;
         try {
             xhr = new XMLHttpRequest();
         } catch (e) {
@@ -561,16 +567,16 @@ var SlimStat = (function () {
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 try {
-                    const response = JSON.parse(xhr.responseText);
+                    var response = JSON.parse(xhr.responseText);
                     if (response.success && response.data && response.data.html) {
-                        const div = document.createElement("div");
+                        var div = document.createElement("div");
                         div.innerHTML = response.data.html;
                         document.body.appendChild(div);
 
                         // Add event listeners to the buttons
                         setTimeout(function () {
-                            const acceptBtn = document.querySelector(".slimstat-gdpr-accept");
-                            const denyBtn = document.querySelector(".slimstat-gdpr-deny");
+                            var acceptBtn = document.querySelector(".slimstat-gdpr-accept");
+                            var denyBtn = document.querySelector(".slimstat-gdpr-deny");
 
                             if (acceptBtn) {
                                 acceptBtn.addEventListener("click", function () {
@@ -596,14 +602,14 @@ var SlimStat = (function () {
     }
 
     function handleGdprConsent(consent) {
-        const params = currentSlimStatParams();
-        const banner = document.getElementById("slimstat-gdpr-banner");
+        var params = currentSlimStatParams();
+        var banner = document.getElementById("slimstat-gdpr-banner");
 
         if (banner) {
             banner.style.display = "none";
         }
 
-        let xhr;
+        var xhr;
         try {
             xhr = new XMLHttpRequest();
         } catch (e) {
@@ -616,10 +622,13 @@ var SlimStat = (function () {
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 try {
-                    const response = JSON.parse(xhr.responseText);
+                    var response = JSON.parse(xhr.responseText);
                     if (response.success && response.data.consent === "accepted") {
                         // User accepted consent, start tracking
-                        sendPageview();
+                        // Only send pageview if we don't already have an ID (avoid duplicates)
+                        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
+                            sendPageview();
+                        }
                     }
                 } catch (e) {
                     // Handle non-JSON response
@@ -631,9 +640,9 @@ var SlimStat = (function () {
     }
 
     function updateGdprConsent(consent) {
-        const params = currentSlimStatParams();
+        var params = currentSlimStatParams();
 
-        let xhr;
+        var xhr;
         try {
             xhr = new XMLHttpRequest();
         } catch (e) {
@@ -646,7 +655,7 @@ var SlimStat = (function () {
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 try {
-                    const response = JSON.parse(xhr.responseText);
+                    var response = JSON.parse(xhr.responseText);
                     if (response.success) {
                         // Reload page to apply new consent settings
                         window.location.reload();
@@ -953,6 +962,14 @@ if (!window.requestIdleCallback) {
                     break;
                 }
                 target = target.parentNode;
+            }
+        });
+
+        // Add event delegation for GDPR consent update buttons
+        SlimStat.add_event(document.body, "click", function (e) {
+            if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-consent-update")) {
+                var consent = e.target.getAttribute("data-consent-update");
+                updateGdprConsent(consent);
             }
         });
     }
