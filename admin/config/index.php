@@ -148,6 +148,16 @@ $settings = [
                 'use_code_editor' => 'htmlmixed',
                 'description'     => __('Customize the GDPR consent banner message. Use modern HTML with proper styling. The banner will appear at the bottom of the page.', 'wp-slimstat'),
             ],
+            'gdpr_theme_mode' => [
+                'title'         => __('Banner Theme Mode', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('Choose the theme mode for the GDPR consent banner. <strong>Light</strong> uses light colors, <strong>Dark</strong> uses dark colors, and <strong>Auto</strong> follows the user\'s system preference.', 'wp-slimstat'),
+                'select_values' => [
+                    'light' => __('Light Mode', 'wp-slimstat'),
+                    'dark'  => __('Dark Mode', 'wp-slimstat'),
+                    'auto'  => __('Auto (Follow System)', 'wp-slimstat'),
+                ],
+            ],
             'gdpr_accept_button_text' => [
                 'title'       => __('Accept Button Text', 'wp-slimstat'),
                 'type'        => 'text',
@@ -971,6 +981,7 @@ jQuery(document).ready(function($) {
         'opt_in_cookie_names',
         'opt_out_message',
         'gdpr_accept_button_text',
+        'gdpr_theme_mode',
         'gdpr_decline_button_text'
     ];
 

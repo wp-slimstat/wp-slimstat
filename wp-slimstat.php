@@ -129,18 +129,14 @@ class wp_slimstat
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
+		// GDPR Services Registration
+		$gdprProvider = \SlimStat\GDPR\Factories\GDPRFactory::create(self::$settings);
+		$gdprProvider->registerHooks();
+
 		// GDPR: Opt-out Ajax Handler
 		if (defined('DOING_AJAX') && DOING_AJAX) {
 			add_action('wp_ajax_slimstat_optout_html', [self::class, 'get_optout_html']);
 			add_action('wp_ajax_nopriv_slimstat_optout_html', [self::class, 'get_optout_html']);
-
-		// GDPR Consent Handler
-		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handle_gdpr_consent']);
-		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handle_gdpr_consent']);
-
-		// GDPR Banner Handler
-		add_action('wp_ajax_slimstat_gdpr_banner', [self::class, 'get_gdpr_banner']);
-		add_action('wp_ajax_nopriv_slimstat_gdpr_banner', [self::class, 'get_gdpr_banner']);
 		}
 
 		// Enqueue GDPR CSS
@@ -407,6 +403,7 @@ class wp_slimstat
 
     // end slimstat_shortcode
 
+
     public static function init_plugin()
     {
         // Include our browser detector library
@@ -667,6 +664,7 @@ class wp_slimstat
             'opt_out_cookie_names' => '',
             'opt_in_cookie_names'  => '',
             'opt_out_message'      => 'This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.<br><br>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time.',
+            'gdpr_theme_mode'      => 'auto',
             'gdpr_accept_button_text' => 'Accept',
             'gdpr_decline_button_text' => 'Deny',
 
@@ -838,6 +836,7 @@ class wp_slimstat
 
         if ('on' == self::$settings['display_opt_out']) {
             $params['gdpr_enabled'] = '1';
+            $params['gdpr_theme_mode'] = self::$settings['gdpr_theme_mode'] ?? 'auto';
             $params['oc'] = ['slimstat_optout_tracking'];
             if (!empty(self::$settings['opt_out_cookie_names'])) {
                 foreach (self::string_to_array(self::$settings['opt_out_cookie_names']) as $a_cookie_pair) {
@@ -971,59 +970,12 @@ class wp_slimstat
 	 */
 	public static function get_optout_html()
 	{
-		// Use GDPR consent banner HTML instead of old opt-out message
-		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
-		if ($gdprService->isEnabled()) {
-			die($gdprService->getBannerHtml());
-		} else {
-			// Fallback to old message for backward compatibility
-			die(stripslashes(self::$settings['opt_out_message']));
-		}
+		// Use new GDPR structure
+		$gdprProvider = \SlimStat\GDPR\Factories\GDPRFactory::create(self::$settings);
+		$controller = $gdprProvider->getController();
+		$controller->handleOptOutRequest();
 	}
 
-	/**
-	 * Returns GDPR banner HTML via Ajax request
-	 */
-	public static function get_gdpr_banner()
-	{
-		// Check if GDPR is enabled
-		if ('on' !== self::$settings['display_opt_out']) {
-			wp_send_json_error('GDPR banner is not enabled');
-		}
-
-		// Check if consent cookie already exists
-		if (isset($_COOKIE['slimstat_gdpr_consent'])) {
-			wp_send_json_error('Consent already given');
-		}
-
-		// Get GDPR banner HTML
-		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
-		$bannerHtml = $gdprService->getBannerHtml();
-
-		wp_send_json_success(['html' => $bannerHtml]);
-	}
-
-	// end get_optout_html
-
-	/**
-	 * Handle GDPR consent AJAX request
-	 */
-	public static function handle_gdpr_consent()
-	{
-		if (empty($_POST['consent']) || !in_array($_POST['consent'], ['accepted', 'denied'])) {
-			wp_send_json_error('Invalid consent value');
-		}
-
-		$consent = sanitize_text_field($_POST['consent']);
-		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
-		$success = $gdprService->setConsent($consent);
-
-		if ($success) {
-			wp_send_json_success(['consent' => $consent]);
-		} else {
-			wp_send_json_error('Failed to set consent');
-		}
-	}
 
 	/**
 	 * Enqueue GDPR consent styles

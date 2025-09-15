@@ -556,6 +556,9 @@ var SlimStat = (function () {
             return false;
         }
 
+        // Apply theme mode before showing banner
+        SlimStat.init_gdpr_theme_mode();
+
         // Check if consent cookie already exists
         var consentCookie = getCookie("slimstat_gdpr_consent");
         if (consentCookie) {
@@ -582,22 +585,8 @@ var SlimStat = (function () {
                         document.body.appendChild(div);
 
                         // Add event listeners to the buttons
-                        setTimeout(function () {
-                            var acceptBtn = document.querySelector(".slimstat-gdpr-accept");
-                            var denyBtn = document.querySelector(".slimstat-gdpr-deny");
-
-                            if (acceptBtn) {
-                                acceptBtn.addEventListener("click", function () {
-                                    handleGdprConsent("accepted");
-                                });
-                            }
-
-                            if (denyBtn) {
-                                denyBtn.addEventListener("click", function () {
-                                    handleGdprConsent("denied");
-                                });
-                            }
-                        }, 100);
+                        // Event listeners are handled by event delegation in setupClickDelegation()
+                        // No need to add individual listeners here
                     }
                 } catch (e) {
                     // Handle non-JSON response or error
@@ -633,44 +622,42 @@ var SlimStat = (function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
                 try {
                     var response = JSON.parse(xhr.responseText);
-                    if (response.success && response.data.consent === "accepted") {
-                        // User accepted consent, start tracking
-                        // Only send pageview if we don't already have an ID (avoid duplicates)
-                        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
-                            sendPageview();
-                        }
-                    }
-                } catch (e) {
-                    // Handle non-JSON response
-                }
-            }
-        };
-        xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent));
-        return true;
-    }
-
-    function updateGdprConsent(consent) {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-
-        var xhr;
-        try {
-            xhr = new XMLHttpRequest();
-        } catch (e) {
-            return false;
-        }
-        xhr.open("POST", params.ajaxurl, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        xhr.withCredentials = true;
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        // Reload page to apply new consent settings
-                        window.location.reload();
+                        // Hide banner with smooth animation and update consent status without page reload
+                        var banner = document.getElementById("slimstat-gdpr-banner");
+                        if (banner) {
+                            banner.classList.add("hiding");
+                            setTimeout(function () {
+                                banner.style.display = "none";
+                            }, 300); // Wait for animation to complete
+                        }
+
+                        // Update consent status in any management interfaces
+                        var statusElements = document.querySelectorAll(".slimstat-consent-status");
+                        for (var i = 0; i < statusElements.length; i++) {
+                            if (consent === "accepted") {
+                                statusElements[i].textContent = "Analytics tracking is enabled.";
+                            } else if (consent === "denied") {
+                                statusElements[i].textContent = "Analytics tracking is disabled.";
+                            }
+                        }
+
+                        // Trigger custom event for other scripts to listen to
+                        var event = new CustomEvent("slimstat_consent_updated", {
+                            detail: { consent: consent },
+                        });
+                        document.dispatchEvent(event);
+
+                        if (response.data.consent === "accepted") {
+                            // User accepted consent, start tracking
+                            // Small delay to ensure cookie is set
+                            setTimeout(function () {
+                                // Only send pageview if we don't already have an ID (avoid duplicates)
+                                if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
+                                    sendPageview();
+                                }
+                            }, 100);
+                        }
                     }
                 } catch (e) {
                     // Handle non-JSON response
@@ -733,6 +720,52 @@ var SlimStat = (function () {
         if (target && target.parentNode && target.parentNode.parentNode) target.parentNode.parentNode.removeChild(target.parentNode);
     }
 
+    // GDPR Theme Mode Helper
+    function initGdprThemeMode() {
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
+
+        // Get theme mode setting
+        var themeMode = params.gdpr_theme_mode || "auto";
+
+        // Remove any existing theme classes
+        document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
+
+        switch (themeMode) {
+            case "light":
+                document.body.classList.add("gdpr-light-mode");
+                break;
+            case "dark":
+                document.body.classList.add("gdpr-dark-mode");
+                break;
+            case "auto":
+            default:
+                // Follow system preference - no class means CSS media query will apply
+                if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+                    document.body.classList.add("gdpr-dark-mode");
+                } else {
+                    document.body.classList.add("gdpr-light-mode");
+                }
+
+                // Listen for system theme changes
+                if (window.matchMedia) {
+                    var mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+                    mediaQuery.addListener(function (e) {
+                        if (themeMode === "auto") {
+                            document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
+                            if (e.matches) {
+                                document.body.classList.add("gdpr-dark-mode");
+                            } else {
+                                document.body.classList.add("gdpr-light-mode");
+                            }
+                        }
+                    });
+                }
+                break;
+        }
+    }
+
     // -------------------------- Public API (legacy names preserved) -------------------------- //
     return {
         // legacy constant (used by base64 algorithm)
@@ -753,7 +786,7 @@ var SlimStat = (function () {
         show_optout_message: showOptoutMessage,
         handle_gdpr_consent: handleGdprConsent,
         show_gdpr_consent_banner: showGdprConsentBanner,
-        update_gdpr_consent: updateGdprConsent,
+        init_gdpr_theme_mode: initGdprThemeMode,
         add_event: addEvent,
         in_array: anySubstring,
         empty: isEmpty,
@@ -908,6 +941,9 @@ if (!window.requestIdleCallback) {
         if (!window.SlimStatParams) window.SlimStatParams = {};
         var params = window.SlimStatParams;
 
+        // Initialize theme mode BEFORE showing banner
+        SlimStat.init_gdpr_theme_mode();
+
         if (params.gdpr_enabled === "1" && SlimStat.get_cookie("slimstat_gdpr_consent") !== "accepted") {
             // Show GDPR banner instead of tracking
             SlimStat.show_gdpr_consent_banner();
@@ -991,6 +1027,10 @@ if (!window.requestIdleCallback) {
         SlimStat.add_event(document.body, "click", function (e) {
             var target = e.target;
             while (target && target !== document.body) {
+                // Skip GDPR consent buttons to avoid duplicate processing
+                if (target.hasAttribute && target.hasAttribute("data-consent-update")) {
+                    break;
+                }
                 if (target.matches && target.matches("a,button,input,area")) {
                     SlimStat.ss_track(e, null, null);
                     break;
@@ -1003,7 +1043,7 @@ if (!window.requestIdleCallback) {
         SlimStat.add_event(document.body, "click", function (e) {
             if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-consent-update")) {
                 var consent = e.target.getAttribute("data-consent-update");
-                updateGdprConsent(consent);
+                SlimStat.handle_gdpr_consent(consent);
             }
         });
     }
