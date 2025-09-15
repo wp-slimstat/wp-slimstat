@@ -28,17 +28,12 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
 
-// Explicitly require trait files to ensure they are loaded
-require_once __DIR__ . '/src/Tracker/TrackerTrait.php';
-require_once __DIR__ . '/src/Tracker/TrackerAjaxTrait.php';
-require_once __DIR__ . '/src/Tracker/TrackerTrackTrait.php';
-require_once __DIR__ . '/src/Tracker/TrackerDBTrait.php';
-require_once __DIR__ . '/src/Tracker/TrackerHelpersTrait.php';
+
+// Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
+require_once __DIR__ . '/src/Constants.php';
 
 class wp_slimstat
 {
-    // Tracker methods have been moved to src/Tracker/TrackerTrait.php
-    use \SlimStat\Tracker\TrackerTrait;
     public static $settings = [];
 
     public static $wpdb;
@@ -47,8 +42,8 @@ class wp_slimstat
     public static $update_checker = [];
     public static $raw_post_array = [];
 
-    protected static $data_js           = ['id' => 0];
-    protected static $stat              = [];
+    public static $data_js           = ['id' => 0];
+    public static $stat              = [];
     protected static $date_i18n_filters = [];
 
     /**
@@ -105,10 +100,10 @@ class wp_slimstat
 
             // Is server-side tracking active?
             if ('on' != self::$settings['javascript_mode']) {
-                add_action(is_admin() ? 'admin_init' : 'wp', [self::class, 'slimtrack'], 5);
+                add_action(is_admin() ? 'admin_init' : 'wp', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 5);
 
                 if ('on' != self::$settings['ignore_wp_users']) {
-                    add_action('login_init', [self::class, 'slimtrack'], 10);
+                    add_action('login_init', [\SlimStat\Tracker\Tracker::class, 'slimtrack'], 10);
                 }
             }
 
@@ -137,7 +132,7 @@ class wp_slimstat
         }
 
         // If this request was a redirect, we should update the content type accordingly
-        add_filter('wp_redirect_status', [self::class, 'update_content_type'], 10, 2);
+        add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
 
         // Shortcodes
         add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
@@ -150,7 +145,6 @@ class wp_slimstat
 
         // Load the admin library
         if (is_user_logged_in()) {
-            include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
         }
@@ -422,6 +416,14 @@ class wp_slimstat
                 error_log('SlimStat GDPR initialization error: ' . $e->getMessage());
             }
         }
+
+        // Initialize IP hash provider daily salt
+        \SlimStat\Providers\IPHashProvider::generateDailySalt();
+
+        // Initialize adblock bypass functionality
+        \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
+        add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
+        add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
     }
 
     /**
@@ -760,7 +762,6 @@ class wp_slimstat
             'notice_browscap'    => 'on',
             'notice_geolite'     => 'on',
             'notice_caching'     => 'on',
-            'notice_translate'   => 'on',
 
             // Network-wide Settings
             'locked_options' => '',
@@ -840,9 +841,9 @@ class wp_slimstat
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
                 return false;
             }
-            $params['id'] = self::_get_value_with_checksum(intval(self::$stat['id']));
+            $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']));
         } else {
-            $params['ci'] = self::_get_value_with_checksum(self::_base64_url_encode(serialize(self::_get_content_info())));
+            $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(serialize(\SlimStat\Tracker\Utils::getContentInfo())));
         }
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
@@ -1202,11 +1203,10 @@ if (function_exists('add_action')) {
             $_POST['action'] = wp_slimstat::$raw_post_array['action'];
         }
 
-        add_action('wp_ajax_nopriv_slimtrack', ['wp_slimstat', 'slimtrack_ajax']);
-        add_action('wp_ajax_slimtrack', ['wp_slimstat', 'slimtrack_ajax']);
+        add_action('wp_ajax_nopriv_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
+        add_action('wp_ajax_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
     }
 
-    include_once(plugin_dir_path(__FILE__) . 'src/Constants.php');
 
     // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {

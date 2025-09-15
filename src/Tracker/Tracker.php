@@ -2,11 +2,39 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Services\Privacy;
+use SlimStat\Services\GeoService;
+use SlimStat\Services\GeoIP;
 use SlimStat\Utils\Query;
 
-trait TrackerDBTrait
+class Tracker
 {
-    protected static function _insert_row($_data = [], $_table = '')
+    public static function slimtrack_ajax()
+    {
+        Ajax::handle();
+    }
+
+    public static function rewrite_rule_tracker()
+    {
+        Routing::addRewriteRules();
+    }
+
+    public static function adblocker_javascript()
+    {
+        Routing::outputTrackerJsIfRequested();
+    }
+
+    public static function slimtrack()
+    {
+        return Processor::process();
+    }
+
+    public static function update_content_type($_status = 301, $_location = '')
+    {
+        return Processor::updateContentType($_status, $_location);
+    }
+
+    public static function _insert_row($_data = [], $_table = '')
     {
         if (empty($_data) || empty($_table)) {
             return -1;
@@ -21,15 +49,15 @@ trait TrackerDBTrait
             $_data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
         }
 
-        self::$wpdb->query(self::$wpdb->prepare(
+        \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
             "INSERT IGNORE INTO {$_table} (" . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ')',
             $_data
         ));
 
-        return intval(self::$wpdb->insert_id);
+        return intval(\wp_slimstat::$wpdb->insert_id);
     }
 
-    protected static function _update_row($_data = [])
+    public static function _update_row($_data = [])
     {
         if (empty($_data) || empty($_data['id'])) {
             return false;
@@ -46,7 +74,7 @@ trait TrackerDBTrait
             unset($_data['notes']);
         }
 
-        $prepared_query = self::$wpdb->prepare(
+        $prepared_query = \wp_slimstat::$wpdb->prepare(
             "UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET " . implode('=%s,', array_keys($_data)) . "=%s WHERE id = {$id}",
             $_data
         );
@@ -55,12 +83,12 @@ trait TrackerDBTrait
             $prepared_query = str_replace('WHERE id =', $notes . ' WHERE id =', $prepared_query);
         }
 
-        self::$wpdb->query($prepared_query);
+        \wp_slimstat::$wpdb->query($prepared_query);
 
         return $id;
     }
 
-    protected static function _set_visit_id($_force_assign = false)
+    public static function _set_visit_id($_force_assign = false)
     {
         $is_new_session = true;
         $identifier     = 0;
@@ -75,48 +103,64 @@ trait TrackerDBTrait
             $identifier     = intval($identifier);
         }
 
-        if ($is_new_session && ($_force_assign || 'on' == self::$settings['javascript_mode'])) {
-            if (empty(self::$settings['session_duration'])) {
-                self::$settings['session_duration'] = 1800;
+        if ($is_new_session && ($_force_assign || 'on' == \wp_slimstat::$settings['javascript_mode'])) {
+            if (empty(\wp_slimstat::$settings['session_duration'])) {
+                \wp_slimstat::$settings['session_duration'] = 1800;
             }
 
-            self::$stat['visit_id'] = get_transient('slimstat_visit_id');
-            if (false === self::$stat['visit_id']) {
-                $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-                $query = Query::select('MAX(visit_id) as max_visit_id')->from($table);
-                $today = date('Y-m-d');
-                if (!empty(self::$stat['dt']) && date('Y-m-d', self::$stat['dt']) < $today) {
-                    $query->allowCaching(true);
-                }
+            $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-                $max_visit_id           = $query->getVar();
-                self::$stat['visit_id'] = intval($max_visit_id);
+            $next_visit_id = \wp_slimstat::$wpdb->get_var(
+                "SELECT AUTO_INCREMENT FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE()
+                 AND TABLE_NAME = '{$table}'"
+            );
+
+            if ($next_visit_id === null || $next_visit_id <= 0) {
+                $max_visit_id  = \wp_slimstat::$wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+                $next_visit_id = intval($max_visit_id) + 1;
             }
 
-            self::$stat['visit_id']++;
-            set_transient('slimstat_visit_id', self::$stat['visit_id']);
+            if ($next_visit_id <= 0) {
+                $next_visit_id = time();
+            }
 
-            $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(self::$settings['set_tracker_cookie']) && 'on' == self::$settings['set_tracker_cookie']));
+            $existing_visit_id = \wp_slimstat::$wpdb->get_var(
+                \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+            );
+
+            if ($existing_visit_id !== null) {
+                do {
+                    $next_visit_id++;
+                    $existing_visit_id = \wp_slimstat::$wpdb->get_var(
+                        \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+                    );
+                } while ($existing_visit_id !== null);
+            }
+
+            \wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
+
+            $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
             if ($set_cookie) {
-                @setcookie('slimstat_tracking_code', self::_get_value_with_checksum(self::$stat['visit_id']), ['expires' => time() + self::$settings['session_duration'], 'path' => COOKIEPATH]);
+                @setcookie('slimstat_tracking_code', self::_get_value_with_checksum(\wp_slimstat::$stat['visit_id']), ['expires' => time() + \wp_slimstat::$settings['session_duration'], 'path' => COOKIEPATH]);
             }
 
         } elseif ($identifier > 0) {
-            self::$stat['visit_id'] = $identifier;
+            \wp_slimstat::$stat['visit_id'] = $identifier;
         }
 
         if ($is_new_session && $identifier > 0) {
-            self::$wpdb->query(self::$wpdb->prepare(
+            \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
                 "UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats SET visit_id = %d WHERE id = %d AND visit_id = 0",
-                self::$stat['visit_id'],
+                \wp_slimstat::$stat['visit_id'],
                 $identifier
             ));
         }
 
-        return ($is_new_session && ($_force_assign || 'on' == self::$settings['javascript_mode']));
+        return ($is_new_session && ($_force_assign || 'on' == \wp_slimstat::$settings['javascript_mode']));
     }
 
-    protected static function _get_remote_ip()
+    public static function _get_remote_ip()
     {
         $ip_array = ['', ''];
 
@@ -139,7 +183,7 @@ trait TrackerDBTrait
         return apply_filters('slimstat_filter_ip_address', $ip_array);
     }
 
-    protected static function _get_language()
+    public static function _get_language()
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
             preg_match('/([^,;]*)/', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $array_languages);
@@ -149,7 +193,7 @@ trait TrackerDBTrait
         return '';
     }
 
-    protected static function _get_search_terms($_url = '')
+    public static function _get_search_terms($_url = '')
     {
         if (empty($_url)) {
             return '';
@@ -157,7 +201,7 @@ trait TrackerDBTrait
 
         $searchterms = '';
 
-        $search_engines = file_get_contents(plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json');
+        $search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, true);
 
         $parsed_url = @parse_url($_url);
@@ -166,7 +210,7 @@ trait TrackerDBTrait
             return '';
         }
 
-        $sek = self::get_lossy_url($parsed_url['host']);
+        $sek = \wp_slimstat::get_lossy_url($parsed_url['host']);
 
         if (!empty($search_engines[$sek])) {
             if (empty($search_engines[$sek]['params'])) {
@@ -208,7 +252,7 @@ trait TrackerDBTrait
         return sanitize_text_field($searchterms);
     }
 
-    protected static function _get_param_from_query_string($_query = '', $_parameter = '')
+    public static function _get_param_from_query_string($_query = '', $_parameter = '')
     {
         if (empty($_query)) {
             return '';
@@ -219,7 +263,7 @@ trait TrackerDBTrait
         return empty($values[$_parameter]) ? '' : $values[$_parameter];
     }
 
-    protected static function _get_content_info()
+    public static function _get_content_info()
     {
         $content_info = ['content_type' => ''];
 
@@ -307,7 +351,7 @@ trait TrackerDBTrait
         return $content_info;
     }
 
-    protected static function _get_client_info($_data_js = [], $_stat = [])
+    public static function _get_client_info($_data_js = [], $_stat = [])
     {
         if (!empty($_data_js['bw'])) {
             $_stat['resolution'] = strip_tags(trim($_data_js['bw'] . 'x' . $_data_js['bh']));
@@ -329,7 +373,7 @@ trait TrackerDBTrait
             $_stat['page_performance'] = intval($_data_js['pp']);
         }
 
-        if (!empty($_data_js['fh']) && 'on' != self::$settings['anonymize_ip']) {
+        if (!empty($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
             $_stat['fingerprint'] = sanitize_text_field($_data_js['fh']);
         }
 
@@ -338,5 +382,99 @@ trait TrackerDBTrait
         }
 
         return $_stat;
+    }
+
+    public static function _log_error($_error_code = 0)
+    {
+        \wp_slimstat::update_option('slimstat_tracker_error', [$_error_code, \wp_slimstat::date_i18n('U')]);
+        do_action('slimstat_track_exit_' . abs($_error_code), \wp_slimstat::$stat);
+        return -$_error_code;
+    }
+
+    public static function _get_value_with_checksum($_value = 0)
+    {
+        return $_value . '.' . md5($_value . (\wp_slimstat::$settings['secret'] ?? ''));
+    }
+
+    public static function _get_value_without_checksum($_value_with_checksum = '')
+    {
+        [$value, $checksum] = explode('.', $_value_with_checksum);
+        if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
+            return $value;
+        }
+        return false;
+    }
+
+    public static function _is_blacklisted($_needles = [], $_haystack_string = '')
+    {
+        foreach (\wp_slimstat::string_to_array($_haystack_string) as $a_item) {
+            $pattern = str_replace(['\\*', '\\!'], ['(.*)', '.'], preg_quote($a_item, '@'));
+            if (!is_array($_needles)) {
+                $_needles = [$_needles];
+            }
+            foreach ($_needles as $a_needle) {
+                if (preg_match(sprintf('@^%s$@i', $pattern), $a_needle)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static function _is_new_visitor($_fingerprint = '')
+    {
+        if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+            return false;
+        }
+        if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
+            return false;
+        }
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
+        $today = date('Y-m-d');
+        if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
+            $query->allowCaching(true);
+        }
+        $count_fingerprint = $query->getVar();
+        return 0 == $count_fingerprint;
+    }
+
+    public static function _dtr_pton($_ip)
+    {
+        if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $unpacked = unpack('A4', inet_pton($_ip));
+        } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
+            $unpacked = unpack('A16', inet_pton($_ip));
+        }
+
+        $binary_ip = '';
+        if ([] !== $unpacked && false !== $unpacked) {
+            $unpacked = str_split($unpacked[1]);
+            foreach ($unpacked as $char) {
+                $binary_ip .= str_pad(decbin(ord($char)), 8, '0', STR_PAD_LEFT);
+            }
+        }
+
+        return $binary_ip;
+    }
+
+    public static function _get_mask_length($ip)
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return 32;
+        } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            return 128;
+        }
+        return false;
+    }
+
+    public static function _base64_url_encode($_input = '')
+    {
+        return strtr(base64_encode($_input), '+/=', '._-');
+    }
+
+    public static function _base64_url_decode($_input = '')
+    {
+        return strip_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
     }
 }
