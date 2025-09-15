@@ -66,7 +66,7 @@
 }
 
 /* Consent Management Shortcode Styles */
-.slimstat-consent-management {
+.slimstat-gdpr-management {
     max-width: 600px;
     margin: 2em auto;
     padding: 2em;
@@ -76,25 +76,25 @@
     font-family: Arial, sans-serif;
 }
 
-.slimstat-consent-management h3 {
+.slimstat-gdpr-management h3 {
     margin-top: 0;
     color: #333;
     font-size: 1.5em;
 }
 
-.slimstat-consent-management p {
+.slimstat-gdpr-management p {
     margin-bottom: 1em;
     color: #555;
 }
 
-.slimstat-consent-buttons {
+.slimstat-gdpr-buttons {
     display: flex;
     gap: 1em;
     margin: 1.5em 0;
 }
 
-.slimstat-consent-accept,
-.slimstat-consent-deny {
+.slimstat-gdpr-accept,
+.slimstat-gdpr-deny {
     padding: 0.75em 1.5em;
     border: none;
     border-radius: 4px;
@@ -104,25 +104,25 @@
     transition: background-color 0.2s ease;
 }
 
-.slimstat-consent-accept {
+.slimstat-gdpr-accept {
     background-color: #28a745;
     color: white;
 }
 
-.slimstat-consent-accept:hover {
+.slimstat-gdpr-accept:hover {
     background-color: #218838;
 }
 
-.slimstat-consent-deny {
+.slimstat-gdpr-deny {
     background-color: #dc3545;
     color: white;
 }
 
-.slimstat-consent-deny:hover {
+.slimstat-gdpr-deny:hover {
     background-color: #c82333;
 }
 
-.slimstat-consent-management small {
+.slimstat-gdpr-management small {
     color: #6c757d;
     font-size: 0.875em;
 }
@@ -146,11 +146,11 @@
         justify-content: center;
     }
 
-    .slimstat-consent-buttons {
+    .slimstat-gdpr-buttons {
         flex-direction: column;
     }
 
-    .slimstat-consent-management {
+    .slimstat-gdpr-management {
         margin: 1em;
         padding: 1em;
     }

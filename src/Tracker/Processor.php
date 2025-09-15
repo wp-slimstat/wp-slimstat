@@ -22,21 +22,32 @@ class Processor
 		unset(\wp_slimstat::$stat['id']);
 
 		if ('on' == \wp_slimstat::$settings['display_opt_out']) {
-			$cookie_names = ['slimstat_optout_tracking' => 'true'];
-			if (!empty(\wp_slimstat::$settings['opt_out_cookie_names'])) {
-				$cookie_names = [];
-				foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_out_cookie_names']) as $pair) {
-					[$name, $value] = explode('=', $pair);
-					if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
-						$cookie_names[$name] = $value;
-					}
-				}
-			}
-			foreach ($cookie_names as $n => $v) {
-				if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
+			// Check GDPR consent cookie first (new system)
+			if (isset($_COOKIE['slimstat_gdpr_consent'])) {
+				if ($_COOKIE['slimstat_gdpr_consent'] === 'denied') {
 					unset($_COOKIE['slimstat_tracking_code']);
 					@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
 					return false;
+				}
+				// If consent is 'accepted', continue with tracking
+			} else {
+				// Fallback to old opt-out system for backward compatibility
+				$cookie_names = ['slimstat_optout_tracking' => 'true'];
+				if (!empty(\wp_slimstat::$settings['opt_out_cookie_names'])) {
+					$cookie_names = [];
+					foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_out_cookie_names']) as $pair) {
+						[$name, $value] = explode('=', $pair);
+						if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
+							$cookie_names[$name] = $value;
+						}
+					}
+				}
+				foreach ($cookie_names as $n => $v) {
+					if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
+						unset($_COOKIE['slimstat_tracking_code']);
+						@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
+						return false;
+					}
 				}
 			}
 		}

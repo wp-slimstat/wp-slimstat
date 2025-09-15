@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "scripts": {
     "watch": "watch \"npm run sass-compile\" ./admin/assets/scss",
     "sass-compile": "concurrently \"node-sass admin/assets/scss/admin.scss admin/assets/css/admin.css --output-style compressed\"",

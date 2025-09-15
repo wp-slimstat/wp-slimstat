@@ -35,8 +35,8 @@ class GDPRService
      */
     public function isEnabled(): bool
     {
-        return isset($this->settings['enable_gdpr_consent']) &&
-               $this->settings['enable_gdpr_consent'] === 'on';
+        return isset($this->settings['display_opt_out']) &&
+               $this->settings['display_opt_out'] === 'on';
     }
 
     /**
@@ -82,7 +82,7 @@ class GDPRService
             return false;
         }
 
-        $duration = intval($this->settings['gdpr_consent_cookie_duration'] ?? 365) * DAY_IN_SECONDS;
+        $duration = 365 * DAY_IN_SECONDS; // Default to 1 year
 
         $cookieOptions = [
             'expires' => time() + $duration,
@@ -131,9 +131,53 @@ class GDPRService
      */
     public function getBannerHtml(): string
     {
-        $message = stripslashes($this->settings['gdpr_consent_message'] ?? '');
-        $acceptText = stripslashes($this->settings['gdpr_consent_accept_text'] ?? 'Accept');
-        $denyText = stripslashes($this->settings['gdpr_consent_deny_text'] ?? 'Deny');
+        // Use opt_out_message setting for backward compatibility
+        $message = stripslashes($this->settings['opt_out_message'] ?? '');
+
+        // Check if this is the old default message and convert it
+        $old_default_message = '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>';
+
+        // Check if message contains the full HTML banner structure (new default that needs fixing)
+        if (strpos($message, '<div id="slimstat-gdpr-banner">') !== false) {
+            // Extract text content from the banner structure
+            $message = strip_tags($message);
+            $message = trim($message);
+
+            // Update the database with the clean message
+            $this->updateOptOutMessage($message);
+        } elseif ($message === $old_default_message) {
+            // Convert to new format - extract just the text content
+            $new_message = 'This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.';
+
+            // Update the database with the new message
+            $this->updateOptOutMessage($new_message);
+
+            $message = $new_message;
+        }
+
+        // Allow only basic HTML tags for formatting while maintaining security
+        $allowed_tags = array(
+            'p' => array(),
+            'br' => array(),
+            'b' => array(),
+            'i' => array(),
+            'strong' => array(),
+            'em' => array(),
+        );
+        $message = wp_kses($message, $allowed_tags);
+
+        // If message is empty, use default message
+        if (empty($message)) {
+            $message = __('This website uses cookies to analyze site traffic and improve your experience. By continuing to use this site, you consent to our use of cookies.', 'wp-slimstat');
+        }
+
+        // Create a modern banner with safe content
+        $acceptText = !empty($this->settings['gdpr_accept_button_text'])
+            ? $this->settings['gdpr_accept_button_text']
+            : __('Accept', 'wp-slimstat');
+        $denyText = !empty($this->settings['gdpr_decline_button_text'])
+            ? $this->settings['gdpr_decline_button_text']
+            : __('Deny', 'wp-slimstat');
 
         $acceptButton = sprintf(
             '<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">%s</button>',
@@ -145,9 +189,6 @@ class GDPRService
             esc_html($denyText)
         );
 
-        $message = str_replace('{{accept_button}}', $acceptButton, $message);
-        $message = str_replace('{{deny_button}}', $denyButton, $message);
-
         return sprintf(
             '<div id="slimstat-gdpr-banner">
                 <div class="banner-content">
@@ -155,7 +196,7 @@ class GDPRService
                     <div class="banner-buttons">%s%s</div>
                 </div>
             </div>',
-            wp_kses_post($message),
+            $message,
             $denyButton,
             $acceptButton
         );
@@ -167,8 +208,12 @@ class GDPRService
     public function getConsentManagementHtml(): string
     {
         $currentConsent = $this->getConsentStatus();
-        $acceptText = stripslashes($this->settings['gdpr_consent_accept_text'] ?? 'Accept');
-        $denyText = stripslashes($this->settings['gdpr_consent_deny_text'] ?? 'Deny');
+        $acceptText = !empty($this->settings['gdpr_accept_button_text'])
+            ? $this->settings['gdpr_accept_button_text']
+            : __('Accept', 'wp-slimstat');
+        $denyText = !empty($this->settings['gdpr_decline_button_text'])
+            ? $this->settings['gdpr_decline_button_text']
+            : __('Deny', 'wp-slimstat');
 
         $statusMessage = $this->getConsentStatusMessage($currentConsent);
 
@@ -228,5 +273,46 @@ class GDPRService
 
         // If no decision has been made, don't track until consent is given
         return false;
+    }
+
+    /**
+     * Update the opt_out_message setting in the database
+     */
+    private function updateOptOutMessage(string $message): void
+    {
+        global $wpdb;
+
+        // Update the setting in the database
+        $wpdb->update(
+            $wpdb->prefix . 'slimstat_options',
+            array('value' => $message),
+            array('option_name' => 'opt_out_message'),
+            array('%s'),
+            array('%s')
+        );
+
+        // Update the local settings array to reflect the change
+        $this->settings['opt_out_message'] = $message;
+
+        // Also update the global settings array
+        \wp_slimstat::$settings['opt_out_message'] = $message;
+    }
+
+    /**
+     * Migrate old opt_out_message to new format
+     */
+    public static function migrateOptOutMessage(): void
+    {
+        $settings = \wp_slimstat::$settings;
+        $message = stripslashes($settings['opt_out_message'] ?? '');
+        $old_default_message = stripslashes('<p style=\"display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;\">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href=\"#\" onclick=\"javascript:SlimStat.optout(event, false);\">Accept</a> or <a href=\"#\" onclick=\"javascript:SlimStat.optout(event, true);\">Deny</a></p>');
+        // Check if message is the old default message
+        if ($message === $old_default_message) {
+            // Set the new default message
+            $new_message = esc_html__('This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.', 'wp-slimstat');
+            // Update the global settings
+            \wp_slimstat::$settings['opt_out_message'] = $new_message;
+            \wp_slimstat::update_option('slimstat_options', \wp_slimstat::$settings);
+        }
     }
 }

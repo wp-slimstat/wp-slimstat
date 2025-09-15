@@ -39,7 +39,9 @@ var SlimStat = (function () {
 
     function flushPendingInteractions() {
         if (!pendingInteractions.length) return;
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
         if (!params.id || parseInt(params.id, 10) <= 0) return; // still can't flush
         while (pendingInteractions.length) {
             var raw = pendingInteractions.shift();
@@ -255,7 +257,9 @@ var SlimStat = (function () {
     }
 
     function processQueueItem(item, callback) {
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
         var payload = item.payload;
         var useBeacon = item.useBeacon;
         var transports = ["rest", "ajax", "adblock"];
@@ -470,11 +474,13 @@ var SlimStat = (function () {
         options = options || {};
         extractSlimStatParams();
 
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
 
         // Check GDPR consent before tracking
-        if (params.gdpr_enabled === "1" && getCookie("slimstat_gdpr_consent") !== "accepted") {
-            showGdprConsentBanner();
+        if (params.gdpr_enabled === "1" && SlimStat.get_cookie("slimstat_gdpr_consent") !== "accepted") {
+            SlimStat.show_gdpr_consent_banner();
             return;
         }
 
@@ -543,7 +549,9 @@ var SlimStat = (function () {
 
     // -------------------------- GDPR Consent & Opt-out UI -------------------------- //
     function showGdprConsentBanner() {
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
         if (params.gdpr_enabled !== "1") {
             return false;
         }
@@ -602,7 +610,9 @@ var SlimStat = (function () {
     }
 
     function handleGdprConsent(consent) {
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
         var banner = document.getElementById("slimstat-gdpr-banner");
 
         if (banner) {
@@ -640,7 +650,9 @@ var SlimStat = (function () {
     }
 
     function updateGdprConsent(consent) {
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
 
         var xhr;
         try {
@@ -670,11 +682,19 @@ var SlimStat = (function () {
     }
 
     function showOptoutMessage() {
-        var params = currentSlimStatParams();
+        // Ensure global object exists and get params directly
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
+
+        // Don't show opt-out message if GDPR is enabled (GDPR banner handles this)
+        if (params.gdpr_enabled === "1") {
+            return false;
+        }
+
         var optCookies = params.oc ? params.oc.split(",") : [];
         var show = optCookies.length > 0;
         for (var i = 0; i < optCookies.length; i++)
-            if (getCookie(optCookies[i])) {
+            if (SlimStat.get_cookie(optCookies[i])) {
                 show = false;
                 break;
             }
@@ -704,9 +724,11 @@ var SlimStat = (function () {
         event = event || window.event;
         if (event && event.preventDefault) event.preventDefault();
         else if (event) event.returnValue = false;
-        var params = currentSlimStatParams();
-        var expiration = new Date(Date.now() + 31536000000); // 1 year
-        document.cookie = "slimstat_optout_tracking=" + cookieValue + ";path=" + (params.baseurl || "/") + ";expires=" + expiration.toGMTString();
+
+        // Use GDPR consent system instead of old opt-out
+        var consent = cookieValue ? "denied" : "accepted";
+        handleGdprConsent(consent);
+
         var target = event.target || event.srcElement;
         if (target && target.parentNode && target.parentNode.parentNode) target.parentNode.parentNode.removeChild(target.parentNode);
     }
@@ -881,7 +903,19 @@ if (!window.requestIdleCallback) {
     // Initial pageview
     SlimStat.add_event(window, "load", function () {
         SlimStat._extract_params();
-        SlimStat._send_pageview();
+
+        // Check GDPR consent before initial pageview
+        if (!window.SlimStatParams) window.SlimStatParams = {};
+        var params = window.SlimStatParams;
+
+        if (params.gdpr_enabled === "1" && SlimStat.get_cookie("slimstat_gdpr_consent") !== "accepted") {
+            // Show GDPR banner instead of tracking
+            SlimStat.show_gdpr_consent_banner();
+        } else {
+            // Proceed with normal tracking
+            SlimStat._send_pageview();
+        }
+
         // Flush any offline stored payloads after initial pageview queued
         setTimeout(function () {
             try {

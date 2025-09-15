@@ -71,6 +71,9 @@ class wp_slimstat
         // Allow third party tools to edit the options
         self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
+        // Migrate old opt_out_message format if needed
+        \SlimStat\Services\GDPRService::migrateOptOutMessage();
+
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
@@ -126,11 +129,22 @@ class wp_slimstat
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
-                // GDPR: Opt-out Ajax Handler
-        if (defined('DOING_AJAX') && DOING_AJAX) {
-            add_action('wp_ajax_slimstat_optout_html', [self::class, 'get_optout_html']);
-            add_action('wp_ajax_nopriv_slimstat_optout_html', [self::class, 'get_optout_html']);
-        }
+		// GDPR: Opt-out Ajax Handler
+		if (defined('DOING_AJAX') && DOING_AJAX) {
+			add_action('wp_ajax_slimstat_optout_html', [self::class, 'get_optout_html']);
+			add_action('wp_ajax_nopriv_slimstat_optout_html', [self::class, 'get_optout_html']);
+
+		// GDPR Consent Handler
+		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handle_gdpr_consent']);
+		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handle_gdpr_consent']);
+
+		// GDPR Banner Handler
+		add_action('wp_ajax_slimstat_gdpr_banner', [self::class, 'get_gdpr_banner']);
+		add_action('wp_ajax_nopriv_slimstat_gdpr_banner', [self::class, 'get_gdpr_banner']);
+		}
+
+		// Enqueue GDPR CSS
+		add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_styles']);
 
         // If this request was a redirect, we should update the content type accordingly
         add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
@@ -652,14 +666,10 @@ class wp_slimstat
             'display_opt_out'      => 'no',
             'opt_out_cookie_names' => '',
             'opt_in_cookie_names'  => '',
-            'opt_out_message'      => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
+            'opt_out_message'      => 'This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.<br><br>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time.',
+            'gdpr_accept_button_text' => 'Accept',
+            'gdpr_decline_button_text' => 'Deny',
 
-            // GDPR Consent Banner
-            'enable_gdpr_consent'              => 'no',
-            'gdpr_consent_message'             => '<p>This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.</p><p>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time by clicking the link in the footer.</p>',
-            'gdpr_consent_accept_text'         => 'Accept',
-            'gdpr_consent_deny_text'           => 'Deny',
-            'gdpr_consent_cookie_duration'     => 365,
 
             // Tracker - Link Tracking
             'track_same_domain_referers'             => 'no',
@@ -827,6 +837,7 @@ class wp_slimstat
         }
 
         if ('on' == self::$settings['display_opt_out']) {
+            $params['gdpr_enabled'] = '1';
             $params['oc'] = ['slimstat_optout_tracking'];
             if (!empty(self::$settings['opt_out_cookie_names'])) {
                 foreach (self::string_to_array(self::$settings['opt_out_cookie_names']) as $a_cookie_pair) {
@@ -955,17 +966,79 @@ class wp_slimstat
         }
     }
 
-    /**
-     * Displays the opt-out box via Ajax request
-     */
-    public static function get_optout_html()
-    {
-        die(stripslashes(self::$settings['opt_out_message']));
-    }
+	/**
+	 * Displays the opt-out box via Ajax request
+	 */
+	public static function get_optout_html()
+	{
+		// Use GDPR consent banner HTML instead of old opt-out message
+		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
+		if ($gdprService->isEnabled()) {
+			die($gdprService->getBannerHtml());
+		} else {
+			// Fallback to old message for backward compatibility
+			die(stripslashes(self::$settings['opt_out_message']));
+		}
+	}
 
-    // end get_optout_html
+	/**
+	 * Returns GDPR banner HTML via Ajax request
+	 */
+	public static function get_gdpr_banner()
+	{
+		// Check if GDPR is enabled
+		if ('on' !== self::$settings['display_opt_out']) {
+			wp_send_json_error('GDPR banner is not enabled');
+		}
 
+		// Check if consent cookie already exists
+		if (isset($_COOKIE['slimstat_gdpr_consent'])) {
+			wp_send_json_error('Consent already given');
+		}
 
+		// Get GDPR banner HTML
+		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
+		$bannerHtml = $gdprService->getBannerHtml();
+
+		wp_send_json_success(['html' => $bannerHtml]);
+	}
+
+	// end get_optout_html
+
+	/**
+	 * Handle GDPR consent AJAX request
+	 */
+	public static function handle_gdpr_consent()
+	{
+		if (empty($_POST['consent']) || !in_array($_POST['consent'], ['accepted', 'denied'])) {
+			wp_send_json_error('Invalid consent value');
+		}
+
+		$consent = sanitize_text_field($_POST['consent']);
+		$gdprService = new \SlimStat\Services\GDPRService(self::$settings);
+		$success = $gdprService->setConsent($consent);
+
+		if ($success) {
+			wp_send_json_success(['consent' => $consent]);
+		} else {
+			wp_send_json_error('Failed to set consent');
+		}
+	}
+
+	/**
+	 * Enqueue GDPR consent styles
+	 */
+	public static function enqueue_gdpr_styles()
+	{
+		if ('on' == self::$settings['display_opt_out']) {
+			wp_enqueue_style(
+				'slimstat-gdpr-consent',
+				plugins_url('assets/css/gdpr-consent.css', __FILE__),
+				[],
+				SLIMSTAT_ANALYTICS_VERSION
+			);
+		}
+	}
 
     public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
     {

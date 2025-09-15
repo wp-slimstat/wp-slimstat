@@ -126,9 +126,9 @@ $settings = [
                 'description' => __('Disable this option if, for legal or security reasons, you do not want Slimstat to assign a <a href="https://en.wikipedia.org/wiki/HTTP_cookie" target="_blank">cookie</a> to your visitors. Please note that by deactivating this feature, Slimstat will not be able to identify returning visitors as such.', 'wp-slimstat'),
             ],
             'display_opt_out' => [
-                'title'       => __('Allow Opt-out', 'wp-slimstat'),
+                'title'       => __('GDPR Consent Banner', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("The European <a href='https://en.wikipedia.org/wiki/General_Data_Protection_Regulation' target='_blank'>General Data Protection Regulation (GDPR)</a> requires website owners to provide a way for their visitors to opt-out of tracking. By enabling this option, the message here below will be displayed to all users who don't have the corresponding cookie set.", 'wp-slimstat'),
+                'description' => __("Enable a GDPR-compliant consent banner that appears before any tracking occurs. Users must explicitly consent to data collection. The banner will be displayed to all users who haven't made a consent decision yet.", 'wp-slimstat'),
             ],
             'opt_out_cookie_names' => [
                 'title'       => __('Opt-out Cookies', 'wp-slimstat'),
@@ -141,47 +141,24 @@ $settings = [
                 'description' => __('Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie whose value <strong>CONTAINS</strong> the string you specified. Separate multiple pairs with commas.', 'wp-slimstat'),
             ],
             'opt_out_message' => [
-                'title'           => __('Opt-out Message', 'wp-slimstat'),
-                'type'            => 'textarea',
-                'rows'            => 4,
-                'use_tag_list'    => false,
-                'use_code_editor' => 'htmlmixed',
-                'description'     => __('Customize the message displayed to your visitors here below. Match your website styles and layout by adding the appropriate HTML markup to your message.', 'wp-slimstat'),
-            ],
-
-            // GDPR Consent Banner
-            'gdpr_consent_header' => [
-                'title' => __('GDPR Consent Banner', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'enable_gdpr_consent' => [
-                'title'       => __('Enable GDPR Consent Banner', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('Enable a GDPR-compliant consent banner that appears before any tracking occurs. Users must explicitly consent to data collection.', 'wp-slimstat'),
-            ],
-            'gdpr_consent_message' => [
                 'title'           => __('Consent Banner Message', 'wp-slimstat'),
                 'type'            => 'textarea',
                 'rows'            => 4,
                 'use_tag_list'    => false,
                 'use_code_editor' => 'htmlmixed',
-                'description'     => __('Message displayed in the consent banner. Use {{accept_button}} and {{deny_button}} placeholders for the action buttons.', 'wp-slimstat'),
+                'description'     => __('Customize the GDPR consent banner message. Use modern HTML with proper styling. The banner will appear at the bottom of the page.', 'wp-slimstat'),
             ],
-            'gdpr_consent_accept_text' => [
+            'gdpr_accept_button_text' => [
                 'title'       => __('Accept Button Text', 'wp-slimstat'),
                 'type'        => 'text',
-                'description' => __('Text for the accept/consent button.', 'wp-slimstat'),
+                'description' => __('Customize the text displayed on the Accept button in the GDPR consent banner.', 'wp-slimstat'),
             ],
-            'gdpr_consent_deny_text' => [
-                'title'       => __('Deny Button Text', 'wp-slimstat'),
+            'gdpr_decline_button_text' => [
+                'title'       => __('Decline Button Text', 'wp-slimstat'),
                 'type'        => 'text',
-                'description' => __('Text for the deny/reject button.', 'wp-slimstat'),
+                'description' => __('Customize the text displayed on the Decline button in the GDPR consent banner.', 'wp-slimstat'),
             ],
-            'gdpr_consent_cookie_duration' => [
-                'title'       => __('Consent Cookie Duration (days)', 'wp-slimstat'),
-                'type'        => 'integer',
-                'description' => __('How long to remember the user\'s consent choice (in days).', 'wp-slimstat'),
-            ],
+
 
             // Tracker - Link Tracking
             'filters_outbound_header' => [
@@ -639,6 +616,7 @@ $settings = [
     ],
 ];
 
+
 // Allow third-party tools to add their own settings
 $settings = apply_filters('slimstat_options_on_page', $settings);
 
@@ -892,7 +870,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                     case 'toggle':
                         echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
-						<input type="hidden" value="no" name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug . '">
+						<input type="hidden" value="no" name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug . '_hidden">
 						<span class="block-element">
 							<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
 								name="options[' . $a_setting_slug . ']"
@@ -984,3 +962,38 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
         <?php endif ?>
     </div>
 </div>
+
+<script>
+jQuery(document).ready(function($) {
+    // GDPR options to show/hide
+    var gdprOptions = [
+        'opt_out_cookie_names',
+        'opt_in_cookie_names',
+        'opt_out_message',
+        'gdpr_accept_button_text',
+        'gdpr_decline_button_text'
+    ];
+
+    // Function to toggle GDPR options visibility
+    function toggleGdprOptions() {
+        var isEnabled = $('#display_opt_out').is(':checked');
+        console.log(isEnabled);
+
+        gdprOptions.forEach(function(optionName) {
+            var $row = $('tr:has(*[name="options[' + optionName + ']"])');
+            if (isEnabled) {
+                $row.show();
+            } else {
+                $row.hide();
+            }
+        });
+    }
+
+    // Initial state
+    toggleGdprOptions();
+
+    // Toggle on change - listen to both change and bootstrap switch events
+    $('#display_opt_out').on('change', toggleGdprOptions);
+    $('#display_opt_out').on('switchChange.bootstrapSwitch', toggleGdprOptions);
+});
+</script>
