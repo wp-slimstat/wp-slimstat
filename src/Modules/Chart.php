@@ -338,6 +338,14 @@ class Chart
             '1.0',
             false
         );
+        // Build localized month names to avoid JS Date parsing issues with non-English labels
+        $months_long  = [];
+        $months_short = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $ts             = gmmktime(0, 0, 0, $i, 1, 2000);
+            $months_long[]  = wp_date('F', $ts, wp_timezone());
+            $months_short[] = wp_date('M', $ts, wp_timezone());
+        }
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
             // Use a relative admin-ajax path for the admin chart to avoid cross-origin issues in dev setups
             'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
@@ -346,6 +354,8 @@ class Chart
             'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,
             'timezone'        => get_option('timezone_string') ?: 'UTC',
             'start_of_week'   => get_option('start_of_week', 1),
+            'months_long'     => $months_long,
+            'months_short'    => $months_short,
         ]);
     }
 

@@ -604,37 +604,41 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (unitTime === "monthly") {
-            var labelToParse = justTranslation || label;
-            var monthYearRegex = /^([A-Za-z]+)\s+(\d{4})$/;
-            var match = (labelToParse || "").match(monthYearRegex);
-            if (match) {
-                try {
-                    var monthName = match[1];
-                    var year = parseInt(match[2], 10);
-                    var monthIndex = new Date(monthName + " 1, 2000").getMonth();
-                    var d = new Date(year, monthIndex, 1);
-                    var my = getMonthYear(d);
-                    var isThisMonth = now.getMonth() === d.getMonth() && now.getFullYear() === my.year;
-                    var baseLabel = my.month + ", " + my.year;
-                    var shortBaseLabel = my.shortMonth + ", " + my.year;
-                    var extra = isThisMonth ? " (" + translations.now + ")" : "";
-                    var formattedLabel = label + ' <span class="slimstat-postbox-chart--item--prev">' + baseLabel + "</span>";
-
-                    if (long) {
-                        return justTranslation ? formattedLabel : baseLabel + extra;
-                    } else {
-                        return justTranslation ? formattedLabel : shortBaseLabel;
+            // Robust parsing for localized month names without relying on JS Date English parsing
+            var labelToParse = (justTranslation || label || "").trim();
+            // Expect something like "F Y" where F is localized month name
+            var parts = labelToParse.split(/\s+/);
+            if (parts.length >= 2) {
+                var monthName = parts.slice(0, parts.length - 1).join(" ");
+                var year = parseInt(parts[parts.length - 1], 10);
+                if (!isNaN(year)) {
+                    var monthIndex = -1;
+                    var mLong = (slimstat_chart_vars.months_long || []).map(function (s) {
+                        return String(s).toLowerCase();
+                    });
+                    var mShort = (slimstat_chart_vars.months_short || []).map(function (s) {
+                        return String(s).toLowerCase();
+                    });
+                    var mNameLower = monthName.toLowerCase();
+                    monthIndex = mLong.indexOf(mNameLower);
+                    if (monthIndex === -1) monthIndex = mShort.indexOf(mNameLower);
+                    // Also try first 3 letters of provided label against short list (covers cases like "Sept")
+                    if (monthIndex === -1 && mNameLower.length >= 3) {
+                        monthIndex = mShort.indexOf(mNameLower.slice(0, 3));
                     }
-                } catch (e) {
-                    console.warn("SlimStat: Error processing monthly label:", label, e);
-                    return label; // Return original label if processing fails
+                    if (monthIndex >= 0) {
+                        var d = new Date(Date.UTC(year, monthIndex, 1));
+                        var my = getMonthYear(d);
+                        var isThisMonth = new Date().getUTCFullYear() === year && new Date().getUTCMonth() === monthIndex;
+                        var baseLabel = my.month + ", " + my.year;
+                        var shortBaseLabel = my.shortMonth + ", " + my.year;
+                        var extra = isThisMonth ? " (" + translations.now + ")" : "";
+                        var formattedLabel = label + ' <span class="slimstat-postbox-chart--item--prev">' + baseLabel + "</span>";
+                        return justTranslation ? formattedLabel : long ? baseLabel + extra : shortBaseLabel;
+                    }
                 }
             }
-            // Debug: Log labels that don't match the expected format
-            if (console && console.debug) {
-                console.debug("SlimStat: Monthly label does not match expected format:", label);
-            }
-            // If the label doesn't match the expected format, return it as-is to prevent "Invalid Date, NaN"
+            // Fallback: return the label as-is; do not construct a Date to avoid Invalid Date/NaN
             return label;
         } else if (unitTime === "weekly") {
             var rawDate = (justTranslation || label).replace(/\//g, "-");
