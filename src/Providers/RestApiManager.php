@@ -1,6 +1,10 @@
 <?php
+declare(strict_types=1);
 
 namespace SlimStat\Providers;
+
+use SlimStat\Controllers\Rest\GDPRRestController;
+use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
 if (! defined('ABSPATH')) {
@@ -9,66 +13,70 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-class RESTService
+class RestApiManager
 {
+    /** @var array */
+    private static $controllers = [];
+
     /**
      * Runs the service.
      *
      * Hooks into the `rest_api_init` action to register the tracking route.
      *
-     * @since 5.2.14
+     * @since 5.4.0
      */
-    public static function run()
+    public static function run(): void
     {
-        add_action('rest_api_init', [self::class, 'registerRoutes']);
+        self::load_controllers();
+        add_action('rest_api_init', [self::class, 'register_routes']);
         add_action('init', [self::class, 'rewriteRuleRequest']);
         add_action('template_redirect', [self::class, 'handleAdblockTracking']);
     }
 
     /**
-     * Registers the REST API routes.
+     * Loads the REST controllers.
      *
-     * Registers the `/hit` endpoint for tracking hits and GDPR endpoints.
-     *
-     * @since 5.2.14
+     * @since 5.4.0
      */
-    public static function registerRoutes()
+    private static function load_controllers(): void
     {
-        register_rest_route('slimstat/v1', '/hit', [
-            'methods'             => 'POST',
-            'callback'            => [self::class, 'handleTracking'],
-            'permission_callback' => '__return_true',
-        ]);
+        // Default core controllers
+        $controllers = [
+            new GDPRRestController(),
+            new TrackingRestController(),
+        ];
 
-        // GDPR endpoints are now centralized in the GDPR factory and handled via AJAX/RESTService
-        $gdpr_provider = \SlimStat\GDPR\Factories\GDPRFactory::create(\wp_slimstat::$settings);
-        $controller = $gdpr_provider->getController();
+        /**
+         * Filter: slimstat_rest_controllers
+         *
+         * Allows third parties or Pro add-ons to register additional REST controllers.
+         * Each controller must implement SlimStat\Interfaces\RestControllerInterface.
+         *
+         * @param array $controllers Array of controller instances
+         */
+        $controllers = apply_filters('slimstat_rest_controllers', $controllers);
 
-        register_rest_route('slimstat/v1', '/gdpr/banner', [
-            'methods'             => 'POST',
-            'callback'            => [$controller, 'handleBannerRequest'],
-            'permission_callback' => '__return_true',
-        ]);
+        // Validate instances defensively
+        $validated = [];
+        foreach ((array) $controllers as $controller) {
+            if (is_object($controller) && method_exists($controller, 'register_routes')) {
+                $validated[] = $controller;
+            }
+        }
 
-        register_rest_route('slimstat/v1', '/gdpr/consent', [
-            'methods'             => 'POST',
-            'callback'            => [$controller, 'handleConsentRequest'],
-            'permission_callback' => '__return_true',
-        ]);
+        self::$controllers = $validated;
     }
 
     /**
-     * Handles the tracking request.
+     * Registers the REST API routes.
      *
-     * @since 5.2.14
-     *
-     * @param WP_REST_Request $request The request object.
-     *
-     * @return WP_REST_Response The response object.
+     * @since 5.4.0
      */
-    public static function handleTracking(\WP_REST_Request $request)
+    public static function register_routes(): void
     {
-        \SlimStat\Tracker\Tracker::slimtrack_ajax();
+        foreach (self::$controllers as $controller) {
+            $controller->register_routes();
+        }
     }
 
     /**
@@ -76,7 +84,7 @@ class RESTService
      *
      * @since 5.2.14
      */
-    public static function rewriteRuleRequest()
+    public static function rewriteRuleRequest(): void
     {
         if (get_option('slimstat_permalink_structure_updated', false)) {
             // If the permalink structure has been updated, we need to flush rewrite rules
@@ -87,7 +95,7 @@ class RESTService
         if (isset(\wp_slimstat::$settings['tracking_request_method']) && 'adblock_bypass' === \wp_slimstat::$settings['tracking_request_method']) {
             add_rewrite_tag('%slimstat_request%', '([a-f0-9]{32})');
             add_rewrite_rule(
-                '^request/([a-f0-9]{32})$',
+                '^request/([a-f0-9]{32})/?$',
                 'index.php?slimstat_request=$matches[1]',
                 'top'
             );
@@ -99,7 +107,7 @@ class RESTService
      *
      * @since 5.2.14
      */
-    public static function handleAdblockTracking()
+    public static function handleAdblockTracking(): void
     {
         $request_param = get_query_var('slimstat_request');
         if (empty($request_param)) {

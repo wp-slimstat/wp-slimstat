@@ -721,7 +721,7 @@ var SlimStat = (function () {
         } catch (e) {
             return false;
         }
-        xhr.open("POST", params.ajaxurl, true);
+        xhr.open("POST", params.ajaxurl_ajax, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         xhr.withCredentials = true;

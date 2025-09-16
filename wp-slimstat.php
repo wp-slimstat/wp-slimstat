@@ -52,7 +52,7 @@ class wp_slimstat
      */
     public static function init()
     {
-        \SlimStat\Providers\RESTService::run();
+        \SlimStat\Providers\RestApiManager::run();
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {

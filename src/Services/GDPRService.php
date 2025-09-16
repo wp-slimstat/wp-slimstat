@@ -280,22 +280,12 @@ class GDPRService
      */
     private function updateOptOutMessage(string $message): void
     {
-        global $wpdb;
-
-        // Update the setting in the database
-        $wpdb->update(
-            $wpdb->prefix . 'slimstat_options',
-            array('value' => $message),
-            array('option_name' => 'opt_out_message'),
-            array('%s'),
-            array('%s')
-        );
-
-        // Update the local settings array to reflect the change
+        // Update the global and local settings arrays
+        \wp_slimstat::$settings['opt_out_message'] = $message;
         $this->settings['opt_out_message'] = $message;
 
-        // Also update the global settings array
-        \wp_slimstat::$settings['opt_out_message'] = $message;
+        // Persist via WordPress options API (network-aware via wrapper)
+        \wp_slimstat::update_option('slimstat_options', \wp_slimstat::$settings);
     }
 
     /**
