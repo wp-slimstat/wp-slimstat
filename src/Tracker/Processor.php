@@ -11,16 +11,7 @@ class Processor
 {
 	public static function process()
 	{
-		\wp_slimstat::$stat['dt'] = \wp_slimstat::date_i18n('U');
-		if (empty(\wp_slimstat::$stat['notes'])) {
-			\wp_slimstat::$stat['notes'] = [];
-		}
-		\wp_slimstat::$stat = apply_filters('slimstat_filter_pageview_stat_init', \wp_slimstat::$stat);
-		if (\wp_slimstat::$stat === [] || empty(\wp_slimstat::$stat['dt'])) {
-			return false;
-		}
-		unset(\wp_slimstat::$stat['id']);
-
+		// Check GDPR consent FIRST before any data processing
 		if ('on' == \wp_slimstat::$settings['display_opt_out']) {
 			// Check GDPR consent cookie first (new system)
 			if (isset($_COOKIE['slimstat_gdpr_consent'])) {
@@ -31,23 +22,38 @@ class Processor
 				}
 				// If consent is 'accepted', continue with tracking
 			} else {
-				// Fallback to old opt-out system for backward compatibility
-				$cookie_names = ['slimstat_optout_tracking' => 'true'];
-				if (!empty(\wp_slimstat::$settings['opt_out_cookie_names'])) {
-					$cookie_names = [];
-					foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_out_cookie_names']) as $pair) {
-						[$name, $value] = explode('=', $pair);
-						if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
-							$cookie_names[$name] = $value;
-						}
+				// No consent decision made yet - don't track until consent is given
+				return false;
+			}
+		}
+
+		\wp_slimstat::$stat['dt'] = \wp_slimstat::date_i18n('U');
+		if (empty(\wp_slimstat::$stat['notes'])) {
+			\wp_slimstat::$stat['notes'] = [];
+		}
+		\wp_slimstat::$stat = apply_filters('slimstat_filter_pageview_stat_init', \wp_slimstat::$stat);
+		if (\wp_slimstat::$stat === [] || empty(\wp_slimstat::$stat['dt'])) {
+			return false;
+		}
+		unset(\wp_slimstat::$stat['id']);
+
+		// Check old opt-out system for backward compatibility (only if GDPR is not enabled)
+		if ('on' != \wp_slimstat::$settings['display_opt_out']) {
+			$cookie_names = ['slimstat_optout_tracking' => 'true'];
+			if (!empty(\wp_slimstat::$settings['opt_out_cookie_names'])) {
+				$cookie_names = [];
+				foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_out_cookie_names']) as $pair) {
+					[$name, $value] = explode('=', $pair);
+					if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
+						$cookie_names[$name] = $value;
 					}
 				}
-				foreach ($cookie_names as $n => $v) {
-					if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
-						unset($_COOKIE['slimstat_tracking_code']);
-						@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
-						return false;
-					}
+			}
+			foreach ($cookie_names as $n => $v) {
+				if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
+					unset($_COOKIE['slimstat_tracking_code']);
+					@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
+					return false;
 				}
 			}
 		}

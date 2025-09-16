@@ -262,8 +262,8 @@ var SlimStat = (function () {
         var params = window.SlimStatParams;
         var payload = item.payload;
         var useBeacon = item.useBeacon;
-        var transports = ["rest", "ajax", "adblock"];
-        var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
+        var transports = ["rest", "ajax", "adblock_bypass"];
+        var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock_bypass: params.ajaxurl_adblock };
         var selected = params.transport;
         var order = [selected].concat(
             transports.filter(function (t) {
@@ -556,12 +556,14 @@ var SlimStat = (function () {
             return false;
         }
 
+        // CSS is enqueued by the plugin; no inline injection
+
         // Apply theme mode before showing banner
         SlimStat.init_gdpr_theme_mode();
 
-        // Check if consent cookie already exists
+        // Check if consent decision has already been made
         var consentCookie = getCookie("slimstat_gdpr_consent");
-        if (consentCookie) {
+        if (consentCookie === "accepted" || consentCookie === "denied") {
             return false;
         }
 
@@ -571,7 +573,21 @@ var SlimStat = (function () {
         } catch (e) {
             return false;
         }
-        xhr.open("POST", params.ajaxurl, true);
+
+        // Use the appropriate endpoint based on tracking method
+        var endpoint = params.ajaxurl;
+        var action = "action=slimstat_gdpr_banner";
+
+        if (params.transport === "rest") {
+            endpoint = params.ajaxurl_rest.replace("/hit", "/gdpr/banner");
+            action = ""; // REST API doesn't use action parameter
+        } else if (params.transport === "adblock_bypass") {
+            endpoint = params.ajaxurl_adblock;
+            // The ad-blocker bypass endpoint now correctly routes based on action
+            action = "action=slimstat_gdpr_banner";
+        }
+
+        xhr.open("POST", endpoint, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         xhr.withCredentials = true;
@@ -594,7 +610,7 @@ var SlimStat = (function () {
                 }
             }
         };
-        xhr.send("action=slimstat_gdpr_banner");
+        xhr.send(action);
         return true;
     }
 
@@ -614,7 +630,20 @@ var SlimStat = (function () {
         } catch (e) {
             return false;
         }
-        xhr.open("POST", params.ajaxurl, true);
+
+        // Use the appropriate endpoint based on tracking method
+        var endpoint = params.ajaxurl;
+        var action = "action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent);
+
+        if (params.transport === "rest") {
+            endpoint = params.ajaxurl_rest.replace("/hit", "/gdpr/consent");
+            action = "consent=" + encodeURIComponent(consent); // REST API doesn't use action parameter
+        } else if (params.transport === "adblock_bypass") {
+            endpoint = params.ajaxurl_adblock;
+            action = "action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent);
+        }
+
+        xhr.open("POST", endpoint, true);
         xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         xhr.withCredentials = true;
@@ -664,7 +693,7 @@ var SlimStat = (function () {
                 }
             }
         };
-        xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent));
+        xhr.send(action);
         return true;
     }
 
@@ -765,6 +794,8 @@ var SlimStat = (function () {
                 break;
         }
     }
+
+    // Inline GDPR CSS injection removed; stylesheet is loaded server-side
 
     // -------------------------- Public API (legacy names preserved) -------------------------- //
     return {

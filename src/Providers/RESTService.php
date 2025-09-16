@@ -28,7 +28,7 @@ class RESTService
     /**
      * Registers the REST API routes.
      *
-     * Registers the `/hit` endpoint for tracking hits.
+     * Registers the `/hit` endpoint for tracking hits and GDPR endpoints.
      *
      * @since 5.2.14
      */
@@ -37,6 +37,22 @@ class RESTService
         register_rest_route('slimstat/v1', '/hit', [
             'methods'             => 'POST',
             'callback'            => [self::class, 'handleTracking'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        // GDPR endpoints are now centralized in the GDPR factory and handled via AJAX/RESTService
+        $gdpr_provider = \SlimStat\GDPR\Factories\GDPRFactory::create(\wp_slimstat::$settings);
+        $controller = $gdpr_provider->getController();
+
+        register_rest_route('slimstat/v1', '/gdpr/banner', [
+            'methods'             => 'POST',
+            'callback'            => [$controller, 'handleBannerRequest'],
+            'permission_callback' => '__return_true',
+        ]);
+
+        register_rest_route('slimstat/v1', '/gdpr/consent', [
+            'methods'             => 'POST',
+            'callback'            => [$controller, 'handleConsentRequest'],
             'permission_callback' => '__return_true',
         ]);
     }
@@ -85,9 +101,32 @@ class RESTService
      */
     public static function handleAdblockTracking()
     {
-        // Always handle adblock bypass endpoint for fallback
-        $request_hash = get_query_var('slimstat_request');
-        if ($request_hash && $request_hash === md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION)) {
+        $request_param = get_query_var('slimstat_request');
+        if (empty($request_param)) {
+            return;
+        }
+
+        // Use the safe raw post array, as $_POST may not be populated on template_redirect
+        $post_data = \wp_slimstat::$raw_post_array;
+        $action = $post_data['action'] ?? '';
+
+        // Route GDPR actions to the central GDPR controller
+        if (in_array($action, ['slimstat_gdpr_banner', 'slimstat_gdpr_consent'], true)) {
+            $gdpr_provider = \SlimStat\GDPR\Factories\GDPRFactory::create(\wp_slimstat::$settings);
+            $controller = $gdpr_provider->getController();
+
+            if ('slimstat_gdpr_banner' === $action) {
+                $controller->handleBannerRequest();
+            }
+            elseif ('slimstat_gdpr_consent' === $action) {
+                $controller->handleConsentRequest();
+            }
+            exit;
+        }
+
+        // Handle tracking hits if it's not a GDPR action
+        $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
+        if ($request_param === $expected_tracking_hash) {
             \SlimStat\Tracker\Tracker::slimtrack_ajax();
         }
     }

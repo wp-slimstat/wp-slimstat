@@ -412,23 +412,6 @@ class wp_slimstat
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
 
-        // Initialize GDPR functionality
-        if (class_exists('\SlimStat\Providers\GDPRProvider')) {
-            try {
-                $gdprProvider = new \SlimStat\Providers\GDPRProvider(self::$settings);
-                $gdprProvider->init();
-
-                // Add GDPR parameters to JavaScript
-                add_filter('slimstat_js_params', function($params) use ($gdprProvider) {
-                    $gdprProvider->addJavaScriptParams($params);
-                    return $params;
-                });
-            } catch (Exception $e) {
-                // Log error but don't break the plugin
-                error_log('SlimStat GDPR initialization error: ' . $e->getMessage());
-            }
-        }
-
         // Initialize IP hash provider daily salt
         \SlimStat\Providers\IPHashProvider::generateDailySalt();
 
@@ -821,8 +804,8 @@ class wp_slimstat
             $params['ajaxurl'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
         } elseif ('adblock_bypass' === $method) {
             $params['ajaxurl'] = $adblock_url;
-            // Also set transport to 'adblock' for JS clarity
-            $params['transport'] = 'adblock';
+            // Also set transport to 'adblock_bypass' for JS clarity
+            $params['transport'] = 'adblock_bypass';
         } else {
             $params['ajaxurl'] = $rest_url;
         }
@@ -861,8 +844,19 @@ class wp_slimstat
 
         // Register the correct script for adblock bypass, CDN, or default
         if ('adblock_bypass' === $method) {
-            $hash = md5(site_url() . 'slimstat');
-            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash)), [], SLIMSTAT_ANALYTICS_VERSION, true);
+            $hash_js  = md5(site_url() . 'slimstat');
+            $hash_css = md5(site_url() . 'slimstat_gdpr_banner_css');
+            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), [], SLIMSTAT_ANALYTICS_VERSION, true);
+
+            // Enqueue GDPR CSS via unique hashed URL so adblockers won't match default paths
+            if ('on' == self::$settings['display_opt_out']) {
+                wp_enqueue_style(
+                    'slimstat-gdpr-consent',
+                    home_url(sprintf('/%s.css/', $hash_css)),
+                    [],
+                    SLIMSTAT_ANALYTICS_VERSION
+                );
+            }
         } elseif ('on' == self::$settings['enable_cdn']) {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', [], null, true);
         } else {

@@ -27,6 +27,10 @@ class GDPRController implements AjaxHandlerInterface
      */
     public function handleConsentRequest(): void
     {
+        if (empty($_POST['consent']) && ! empty(\wp_slimstat::$raw_post_array['consent'])) {
+            $_POST['consent'] = \wp_slimstat::$raw_post_array['consent'];
+        }
+
         if (empty($_POST['consent']) || !in_array($_POST['consent'], ['accepted', 'denied'])) {
             wp_send_json_error('Invalid consent value');
         }
