@@ -614,14 +614,34 @@ var SlimStat = (function () {
         return true;
     }
 
-    function handleGdprConsent(consent) {
+    function handleGdprConsent(consent, targetElement) {
         // Ensure global object exists and get params directly
         if (!window.SlimStatParams) window.SlimStatParams = {};
         var params = window.SlimStatParams;
-        var banner = document.getElementById("slimstat-gdpr-banner");
 
-        if (banner) {
-            banner.style.display = "none";
+        var banner = document.getElementById("slimstat-gdpr-banner");
+        var managementContainer = targetElement ? targetElement.closest(".slimstat-gdpr-management") : null;
+        var isManagementShortcode = managementContainer !== null;
+
+        // Add loading state to the clicked button if it's inside a shortcode.
+        if (isManagementShortcode && targetElement) {
+            targetElement.classList.add("loading");
+            targetElement.disabled = true;
+
+            // Also disable the other button in the container to prevent race conditions.
+            var otherButton = consent === "accepted" ? managementContainer.querySelector(".slimstat-gdpr-deny") : managementContainer.querySelector(".slimstat-gdpr-accept");
+            if (otherButton) {
+                otherButton.disabled = true;
+            }
+        }
+
+        // Immediately start the hiding animation for the main banner.
+        // The management shortcode will be updated by a page reload.
+        if (!isManagementShortcode && banner) {
+            banner.classList.add("hiding");
+            setTimeout(function () {
+                banner.style.display = "none";
+            }, 300); // Match animation duration
         }
 
         var xhr;
@@ -637,7 +657,7 @@ var SlimStat = (function () {
 
         if (params.transport === "rest") {
             endpoint = params.ajaxurl_rest.replace("/hit", "/gdpr/consent");
-            action = "consent=" + encodeURIComponent(consent); // REST API doesn't use action parameter
+            action = "consent=" + encodeURIComponent(consent);
         } else if (params.transport === "adblock_bypass") {
             endpoint = params.ajaxurl_adblock;
             action = "action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent);
@@ -648,49 +668,46 @@ var SlimStat = (function () {
         xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
         xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success) {
-                        // Hide banner with smooth animation and update consent status without page reload
-                        var banner = document.getElementById("slimstat-gdpr-banner");
-                        if (banner) {
-                            banner.classList.add("hiding");
-                            setTimeout(function () {
-                                banner.style.display = "none";
-                            }, 300); // Wait for animation to complete
-                        }
+            if (xhr.readyState !== 4 || xhr.status !== 200) {
+                return;
+            }
 
-                        // Update consent status in any management interfaces
-                        var statusElements = document.querySelectorAll(".slimstat-consent-status");
-                        for (var i = 0; i < statusElements.length; i++) {
-                            if (consent === "accepted") {
-                                statusElements[i].textContent = "Analytics tracking is enabled.";
-                            } else if (consent === "denied") {
-                                statusElements[i].textContent = "Analytics tracking is disabled.";
-                            }
-                        }
-
-                        // Trigger custom event for other scripts to listen to
-                        var event = new CustomEvent("slimstat_consent_updated", {
-                            detail: { consent: consent },
-                        });
-                        document.dispatchEvent(event);
-
-                        if (response.data.consent === "accepted") {
-                            // User accepted consent, start tracking
-                            // Small delay to ensure cookie is set
-                            setTimeout(function () {
-                                // Only send pageview if we don't already have an ID (avoid duplicates)
-                                if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
-                                    sendPageview();
-                                }
-                            }, 100);
-                        }
-                    }
-                } catch (e) {
-                    // Handle non-JSON response
+            try {
+                var response = JSON.parse(xhr.responseText);
+                if (!response.success) {
+                    return;
                 }
+
+                // Update status text on the page, if it exists
+                var statusElements = document.querySelectorAll(".slimstat-consent-status");
+                for (var i = 0; i < statusElements.length; i++) {
+                    if (consent === "accepted") {
+                        statusElements[i].textContent = "Analytics tracking is enabled.";
+                    } else if (consent === "denied") {
+                        statusElements[i].textContent = "Analytics tracking is disabled.";
+                    }
+                }
+
+                var event = new CustomEvent("slimstat_consent_updated", {
+                    detail: { consent: consent },
+                });
+                document.dispatchEvent(event);
+
+                if (isManagementShortcode) {
+                    // For management shortcodes, reload the page to show the updated state.
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 150);
+                } else if (response.data.consent === "accepted") {
+                    // For the main banner, start tracking if consent was accepted.
+                    setTimeout(function () {
+                        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
+                            sendPageview();
+                        }
+                    }, 100);
+                }
+            } catch (e) {
+                console.error("Error handling GDPR consent response:", e);
             }
         };
         xhr.send(action);
@@ -764,13 +781,18 @@ var SlimStat = (function () {
         switch (themeMode) {
             case "light":
                 document.body.classList.add("gdpr-light-mode");
+                document.body.classList.remove("gdpr-dark-mode", "gdpr-auto-mode");
                 break;
             case "dark":
                 document.body.classList.add("gdpr-dark-mode");
+                document.body.classList.remove("gdpr-light-mode", "gdpr-auto-mode");
                 break;
             case "auto":
             default:
-                // Follow system preference - no class means CSS media query will apply
+                document.body.classList.add("gdpr-auto-mode");
+                document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
+
+                // Follow system preference
                 if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
                     document.body.classList.add("gdpr-dark-mode");
                 } else {
@@ -1059,7 +1081,7 @@ if (!window.requestIdleCallback) {
             var target = e.target;
             while (target && target !== document.body) {
                 // Skip GDPR consent buttons to avoid duplicate processing
-                if (target.hasAttribute && target.hasAttribute("data-consent-update")) {
+                if (target.hasAttribute && target.hasAttribute("data-consent")) {
                     break;
                 }
                 if (target.matches && target.matches("a,button,input,area")) {
@@ -1072,9 +1094,10 @@ if (!window.requestIdleCallback) {
 
         // Add event delegation for GDPR consent update buttons
         SlimStat.add_event(document.body, "click", function (e) {
-            if (e.target && e.target.hasAttribute && e.target.hasAttribute("data-consent-update")) {
-                var consent = e.target.getAttribute("data-consent-update");
-                SlimStat.handle_gdpr_consent(consent);
+            var target = e.target.closest("[data-consent]");
+            if (target) {
+                var consent = target.getAttribute("data-consent");
+                SlimStat.handle_gdpr_consent(consent, target);
             }
         });
     }

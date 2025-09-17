@@ -114,8 +114,8 @@ class BannerRenderer implements BannerRendererInterface
                 <div class="slimstat-gdpr-content">
                     <div class="slimstat-gdpr-message">%s</div>
                     <div class="slimstat-gdpr-buttons">
-                        <button type="button" class="slimstat-gdpr-accept" data-consent-update="accepted">%s</button>
-                        <button type="button" class="slimstat-gdpr-deny" data-consent-update="denied">%s</button>
+                        <button type="button" class="slimstat-gdpr-accept" data-consent="accepted">%s</button>
+                        <button type="button" class="slimstat-gdpr-deny" data-consent="denied">%s</button>
                     </div>
                 </div>
             </div>',
@@ -139,11 +139,11 @@ class BannerRenderer implements BannerRendererInterface
         $html .= '<div class="slimstat-gdpr-buttons">';
 
         if ($consentStatus !== 'accepted') {
-            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent-update="accepted">' . esc_html($acceptText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">' . esc_html($acceptText) . '</button>';
         }
 
         if ($consentStatus !== 'denied') {
-            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent-update="denied">' . esc_html($declineText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
         $html .= '</div>';
@@ -164,11 +164,11 @@ class BannerRenderer implements BannerRendererInterface
         $html .= '<div class="slimstat-gdpr-buttons">';
 
         if ($consentStatus !== 'accepted') {
-            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent-update="accepted">' . esc_html($acceptText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">' . esc_html($acceptText) . '</button>';
         }
 
         if ($consentStatus !== 'denied') {
-            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent-update="denied">' . esc_html($declineText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
         $html .= '</div>';
@@ -194,11 +194,11 @@ class BannerRenderer implements BannerRendererInterface
         $html .= '<div class="slimstat-gdpr-buttons">';
 
         if ($consentStatus !== 'accepted') {
-            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent-update="accepted">' . esc_html($acceptText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">' . esc_html($acceptText) . '</button>';
         }
 
         if ($consentStatus !== 'denied') {
-            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent-update="denied">' . esc_html($declineText) . '</button>';
+            $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
         $html .= '</div>';

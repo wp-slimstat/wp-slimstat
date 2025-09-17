@@ -646,7 +646,7 @@ class wp_slimstat
             'display_opt_out'      => 'no',
             'opt_out_cookie_names' => '',
             'opt_in_cookie_names'  => '',
-            'opt_out_message'      => 'This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.<br><br>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time.',
+            'opt_out_message'      => 'This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.<br>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time.',
             'gdpr_theme_mode'      => 'auto',
             'gdpr_accept_button_text' => 'Accept',
             'gdpr_decline_button_text' => 'Deny',
