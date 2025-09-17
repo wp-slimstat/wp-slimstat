@@ -3,11 +3,10 @@
 namespace SlimStat\Utils;
 
 use InvalidArgumentException;
-use SlimStat\Traits\TransientCacheTrait;
 
 class Query
 {
-    use TransientCacheTrait;
+    // Caching helpers inlined to avoid traits
 
     private $queries = [];
 
@@ -414,6 +413,32 @@ class Query
     protected function getTodayDate()
     {
         return strtotime(date('Y-m-d 00:00:00'));
+    }
+
+    protected function getCacheKey($input)
+    {
+        $normalized = $input;
+        if (preg_match('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', $input, $matches)) {
+            $from       = $matches[1];
+            $to         = $matches[2];
+            $normalized = preg_replace('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', sprintf("BETWEEN '%s' AND '%s'", $from, $to), $input);
+        }
+
+        $normalized = preg_replace_callback('/(\d{4}-\d{2}-\d{2})[\s\d:]{0,8}/', fn ($m) => $m[1], $normalized);
+        $hash       = substr(md5($normalized), 0, 10);
+        return sprintf('wp_slimstat_cache_%s', $hash);
+    }
+
+    protected function getCachedResult($input)
+    {
+        $cacheKey = $this->getCacheKey($input);
+        return get_transient($cacheKey);
+    }
+
+    protected function setCachedResult($input, $result, $expiration = DAY_IN_SECONDS)
+    {
+        $cacheKey = $this->getCacheKey($input);
+        return set_transient($cacheKey, $result, $expiration);
     }
 
     /**

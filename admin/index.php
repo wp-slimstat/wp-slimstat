@@ -163,9 +163,6 @@ class wp_slimstat_admin
                 add_action('admin_notices', [self::class, 'show_latest_news']);
             }
 
-            if ('on' == wp_slimstat::$settings['notice_translate'] && is_super_admin()) {
-                add_filter('admin_notices', [self::class, 'show_translate_notice']);
-            }
         }
 
         // Remove spammers from the database
@@ -240,7 +237,6 @@ class wp_slimstat_admin
                 'slimstat_notice_geolite'        => 'notices_handler',
                 'slimstat_notice_browscap'       => 'notices_handler',
                 'slimstat_notice_caching'        => 'notices_handler',
-                'slimstat_notice_translate'      => 'notices_handler',
                 'slimstat_manage_filters'        => 'manage_filters',
                 'slimstat_delete_pageview'       => 'delete_pageview',
                 'slimstat_update_geoip_database' => 'update_geoip_database',
@@ -470,10 +466,10 @@ class wp_slimstat_admin
 
         // Table that stores the actual data about visits
         $stats_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
-				id INT UNSIGNED NOT NULL auto_increment,
-				ip VARCHAR(39) DEFAULT NULL,
-				other_ip VARCHAR(39) DEFAULT NULL,
+            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
+                id INT UNSIGNED NOT NULL auto_increment,
+                ip VARCHAR(39) DEFAULT NULL,
+                other_ip VARCHAR(39) DEFAULT NULL,
 				username VARCHAR(256) DEFAULT NULL,
 				email VARCHAR(256) DEFAULT NULL,
 
@@ -513,7 +509,7 @@ class wp_slimstat_admin
 				dt INT(10) UNSIGNED DEFAULT 0,
 
 				CONSTRAINT PRIMARY KEY (id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
+                INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
@@ -580,6 +576,7 @@ class wp_slimstat_admin
             }
             update_option($idx['option'], 'yes');
         }
+
     }
 
     // END: init_tables
@@ -1072,27 +1069,6 @@ class wp_slimstat_admin
 
     // END: show_latest_news
 
-    /**
-     * Displays a message if this user speaks a language other than English, to encourage them to help us translate Slimstat in their language
-     */
-    public static function show_translate_notice()
-    {
-        // echo '<div class="notice slimstat-notice" style="padding:10px"><span>'.self::$admin_notice.'</span></div>';
-        include_once(plugin_dir_path(__FILE__) . '../languages/i18n-v3.php');
-        include_once(plugin_dir_path(__FILE__) . '../languages/i18n-wordpressorg-v3.php');
-
-        $i18n_module = new Yoast_I18n_WordPressOrg_v3(
-            [
-                'textdomain'  => 'wp-slimstat',
-                'plugin_name' => 'Slimstat Analytics',
-            ],
-            false
-        );
-
-        self::show_message($i18n_module->get_promo_message(), 'warning', 'translate');
-    }
-
-    // END: show_translate_notice
 
     /**
      * Handles the Ajax request to hide the admin notice

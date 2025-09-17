@@ -27,6 +27,7 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+<<<<<<< HEAD
         'SlimStat\\Components\\View' => __DIR__ . '/../..' . '/src/Components/View.php',
         'SlimStat\\Dependencies\\BrowscapPHP\\Browscap' => __DIR__ . '/../..' . '/src/Dependencies/BrowscapPHP/Browscap.php',
         'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapInterface' => __DIR__ . '/../..' . '/src/Dependencies/BrowscapPHP/BrowscapInterface.php',
@@ -450,6 +451,8 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
         'SlimStat\\Utils\\MaxMindUtil' => __DIR__ . '/../..' . '/src/Utils/MaxMindUtil.php',
         'SlimStat\\Utils\\Query' => __DIR__ . '/../..' . '/src/Utils/Query.php',
         'SlimStat\\Utils\\UADetector' => __DIR__ . '/../..' . '/src/Utils/UADetector.php',
+=======
+>>>>>>> b8a1d39a445a06cd651158c8ba2b7061918fb968
     );
 
     public static function getInitializer(ClassLoader $loader)

@@ -6,6 +6,7 @@
 - **Enhancement**: Refactored code structure with new Query manager and improved caching system.
 - **Enhancement**: Added 'Clear Cache' button functionality for better cache management.
 - **Enhancement**: Moved Query class to src directory following PSR-4 autoloading standards.
+- **Enhancement**: The geolocation functionality has been completely refactored and improved. It now correctly handles different providers, including DB-IP (the default), MaxMind (which requires a free license key), and Cloudflare. The underlying logic for downloading, updating, and using the geolocation database has been fixed to ensure that location data is accurately tracked and stored.
 - **Fix**: Enhanced query security and cleanup for better data integrity.
 - **Fix**: Optimized database indexing, caching, and AJAX handling.
 

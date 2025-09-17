@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+<<<<<<< HEAD
     'SlimStat\\Components\\View' => $baseDir . '/src/Components/View.php',
     'SlimStat\\Dependencies\\BrowscapPHP\\Browscap' => $baseDir . '/src/Dependencies/BrowscapPHP/Browscap.php',
     'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapInterface' => $baseDir . '/src/Dependencies/BrowscapPHP/BrowscapInterface.php',
@@ -430,4 +431,6 @@ return array(
     'SlimStat\\Utils\\MaxMindUtil' => $baseDir . '/src/Utils/MaxMindUtil.php',
     'SlimStat\\Utils\\Query' => $baseDir . '/src/Utils/Query.php',
     'SlimStat\\Utils\\UADetector' => $baseDir . '/src/Utils/UADetector.php',
+=======
+>>>>>>> b8a1d39a445a06cd651158c8ba2b7061918fb968
 );
