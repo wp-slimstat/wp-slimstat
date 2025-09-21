@@ -51,13 +51,35 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
         // Download and extract the MaxMind database from tar.gz
         $tmp = wp_tempnam('mmdb');
         if (!$tmp) {
+            \wp_slimstat::update_option('slimstat_geoip_error', [
+                'time'  => time(),
+                'error' => __('Failed to create temporary file for MaxMind database download.', 'wp-slimstat'),
+            ]);
             return false;
         }
 
         $response = wp_remote_get($this->dbUrl, [ 'timeout' => 300, 'decompress' => false, 'headers' => [ 'Accept-Encoding' => 'identity', 'User-Agent' => 'wp-slimstat (geolocation maxmind updater)' ] ]);
-        if (is_wp_error($response) || 200 !== wp_remote_retrieve_response_code($response)) {
+        if (is_wp_error($response)) {
+            \wp_slimstat::update_option('slimstat_geoip_error', [
+                'time'  => time(),
+                'error' => sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $response->get_error_message()),
+            ]);
             return false;
         }
+
+            $response_code = wp_remote_retrieve_response_code($response);
+            if (200 !== $response_code) {
+                $response_body = wp_remote_retrieve_body($response);
+                $error_msg = sprintf(__('HTTP %d error downloading MaxMind database', 'wp-slimstat'), $response_code);
+                if (!empty($response_body)) {
+                    $error_msg .= ': ' . substr($response_body, 0, 200);
+                }
+                \wp_slimstat::update_option('slimstat_geoip_error', [
+                    'time'  => time(),
+                    'error' => $error_msg,
+                ]);
+                return false;
+            }
 
         // Ensure tmp has .tgz so PharData can detect archive type
         $tgzPath = $tmp . '.tgz';
@@ -67,7 +89,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
             // Store a helpful error for admins and bail gracefully
             \wp_slimstat::update_option('slimstat_geoip_error', [
                 'time'  => time(),
-                'error' => 'MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar or upload the .mmdb manually to wp-content/uploads/wp-slimstat/.',
+                'error' => __('MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar or upload the .mmdb manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
             ]);
             @unlink($tgzPath);
             return false;
@@ -78,6 +100,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
             $tarPath = $tmp . '.tar';
             $tgz->decompress(); // creates .tar
             $tar = new \PharData($tarPath);
+            $mmdb_found = false;
             foreach (new \RecursiveIteratorIterator($tar) as $file) {
                 $name = basename((string)$file);
                 if ('.mmdb' === substr($name, -5)) {
@@ -87,16 +110,29 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
                     if ($found !== $this->dbPath && file_exists($found)) {
                         @rename($found, $this->dbPath);
                     }
-
+                    $mmdb_found = true;
                     break;
                 }
             }
 
             @unlink($tarPath);
             @unlink($tgzPath);
+
+            if (!$mmdb_found) {
+                \wp_slimstat::update_option('slimstat_geoip_error', [
+                    'time'  => time(),
+                    'error' => __('No .mmdb file found in MaxMind database archive.', 'wp-slimstat'),
+                ]);
+                return false;
+            }
+
             return file_exists($this->dbPath);
         } catch (\Exception $exception) {
             @unlink($tgzPath);
+            \wp_slimstat::update_option('slimstat_geoip_error', [
+                'time'  => time(),
+                'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
+            ]);
             return false;
         }
     }

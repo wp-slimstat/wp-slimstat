@@ -1229,6 +1229,15 @@ class wp_slimstat_admin
             if ('cloudflare' === $provider) {
                 wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
             }
+
+            // Check if MaxMind license key is required but missing
+            if ('maxmind' === $provider) {
+                $license = \wp_slimstat::$settings['maxmind_license_key'] ?? '';
+                if (empty($license)) {
+                    wp_send_json_error(__('MaxMind license key is required but not configured. Please go to Settings and enter your MaxMind license key.', 'wp-slimstat'));
+                }
+            }
+
             $options = [
                 'dbPath'    => \wp_slimstat::$upload_dir,
                 'license'   => \wp_slimstat::$settings['maxmind_license_key'] ?? '',
@@ -1236,11 +1245,18 @@ class wp_slimstat_admin
             ];
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
             $ok      = $service->updateDatabase();
-            $result  = [ 'notice' => $ok ? __('GeoIP Database Successfully Updated!', 'wp-slimstat') : __('Failed to update GeoIP Database.', 'wp-slimstat') ];
 
-            wp_send_json_success($result['notice']);
+            if ($ok) {
+                wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
+            } else {
+                // Log the error for debugging
+                $error_message = __('Failed to update GeoIP Database.', 'wp-slimstat');
+                if ('maxmind' === $provider) {
+                    $error_message .= ' ' . __('Please check your MaxMind license key and try again.', 'wp-slimstat');
+                }
+                wp_send_json_error($error_message);
+            }
         } catch (\Exception $exception) {
-
             wp_send_json_error($exception->getMessage());
         }
     }
