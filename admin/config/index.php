@@ -186,13 +186,13 @@ $settings = [
             'maxmind_license_key' => [
                 'title'       => __('MaxMind License Key', 'wp-slimstat'),
                 'type'        => 'text',
-                'description' => __('Enter your MaxMind license key to enable automatic downloads of the GeoLite2 database. Required only if you select MaxMind as the provider. Note: If the PHP Phar extension is not available on your server, automatic extraction may fail-upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
+                'description' => __('Enter your MaxMind license key to enable automatic downloads of the GeoLite2 database. The license key should be 16-40 characters containing only letters, numbers, and underscores. Required only if you select MaxMind as the provider. <strong>Important:</strong> If the PHP Phar extension is not available on your server, automatic extraction will fail—upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
             ],
             'geolocation_db_actions' => [
                 'title'             => __('Geolocation Database', 'wp-slimstat'),
                 'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
                 'type'              => 'plain-text',
-                'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: “Update Database” runs it now; after saving settings, Slimstat also schedules a background update to avoid timeouts. “Check Database” verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
+                'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, Slimstat also schedules a background update to avoid timeouts. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
             ],
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),

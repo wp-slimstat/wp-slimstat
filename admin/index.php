@@ -1756,5 +1756,6 @@ class wp_slimstat_admin
         </script>
         <?php
     }
+
 }
 // END: class declaration
