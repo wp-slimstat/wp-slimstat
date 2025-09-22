@@ -65,20 +65,21 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 	public function updateDatabase()
 	{
-		// Validate license key before attempting download
-		$license = $this->getLicense();
-		if (!$this->isValidLicenseKey($license)) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => __('Invalid MaxMind license key format. License key should be 16-40 characters containing only letters, numbers, and underscores.', 'wp-slimstat'),
-			]);
-			return false;
-		}
+		try {
+			// Validate license key before attempting download
+			$license = $this->getLicense();
+			if (!$this->isValidLicenseKey($license)) {
+				\wp_slimstat::update_option('slimstat_geoip_error', [
+					'time'  => time(),
+					'error' => __('Invalid MaxMind license key format. License key should be 16-40 characters containing only letters, numbers, and underscores.', 'wp-slimstat'),
+				]);
+				return false;
+			}
 
-		// Check network connectivity
-		if (!$this->checkConnectivity()) {
-			return false;
-		}
+			// Check network connectivity
+			if (!$this->checkConnectivity()) {
+				return false;
+			}
 
 		// Download and extract the MaxMind database from tar.gz using WP APIs
 		if (!function_exists('download_url')) {
@@ -230,6 +231,14 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			]);
 			return false;
 		}
+		} catch (\Exception $e) {
+			// Catch any fatal errors in the entire updateDatabase method
+			\wp_slimstat::update_option('slimstat_geoip_error', [
+				'time'  => time(),
+				'error' => sprintf(__('Fatal error updating MaxMind database: %s', 'wp-slimstat'), $e->getMessage()),
+			]);
+			return false;
+		}
 	}
 
 	protected function isValidLicenseKey($license)
@@ -242,24 +251,32 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 	protected function checkConnectivity()
 	{
-		$host = 'download.maxmind.com';
-		$ip = gethostbyname($host);
-		if ($ip === $host) {
+		try {
+			$host = 'download.maxmind.com';
+			$ip = gethostbyname($host);
+			if ($ip === $host) {
+				\wp_slimstat::update_option('slimstat_geoip_error', [
+					'time'  => time(),
+					'error' => sprintf(__('DNS resolution failed for %s. Please check your internet connection and DNS settings.', 'wp-slimstat'), $host),
+				]);
+				return false;
+			}
+			$test_response = wp_remote_get('https://download.maxmind.com/', ['timeout' => 30]);
+			if (is_wp_error($test_response)) {
+				\wp_slimstat::update_option('slimstat_geoip_error', [
+					'time'  => time(),
+					'error' => sprintf(__('Cannot connect to MaxMind servers. Network error: %s', 'wp-slimstat'), $test_response->get_error_message()),
+				]);
+				return false;
+			}
+			return true;
+		} catch (\Exception $e) {
 			\wp_slimstat::update_option('slimstat_geoip_error', [
 				'time'  => time(),
-				'error' => sprintf(__('DNS resolution failed for %s. Please check your internet connection and DNS settings.', 'wp-slimstat'), $host),
+				'error' => sprintf(__('Network connectivity check failed: %s', 'wp-slimstat'), $e->getMessage()),
 			]);
 			return false;
 		}
-		$test_response = wp_remote_get('https://download.maxmind.com/', ['timeout' => 30]);
-		if (is_wp_error($test_response)) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => sprintf(__('Cannot connect to MaxMind servers. Network error: %s', 'wp-slimstat'), $test_response->get_error_message()),
-			]);
-			return false;
-		}
-		return true;
 	}
 
 	protected function getDetailedHttpError($response_code, $response_body)
