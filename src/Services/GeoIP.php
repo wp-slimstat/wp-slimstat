@@ -2,8 +2,8 @@
 
 namespace SlimStat\Services;
 
-use SlimStat\Utils\InvalidDatabaseException;
-use SlimStat\Utils\MaxMindReader;
+use SlimStat\Dependencies\GeoIp2\Database\Reader;
+use SlimStat\Dependencies\GeoIp2\Exception\AddressNotFoundException;
 
 class GeoIP
 {
@@ -190,8 +190,17 @@ class GeoIP
 
         if (self::database_exists()) {
             try {
-                $reader     = new MaxMindReader(self::get_database_file());
-                $record     = $reader->get(sanitize_text_field($ip));
+                $reader = new Reader(self::get_database_file());
+                $ip = sanitize_text_field($ip);
+
+                // Determine which method to use based on database type
+                $precision = self::get_pack();
+                if ('city' === $precision) {
+                    $record = $reader->city($ip);
+                } else {
+                    $record = $reader->country($ip);
+                }
+
                 return self::normalizeRecord($record);
             } catch (\Exception $e) {
                 error_log('Slimstat Error - ' . $e->getMessage() . ' in ' . $e->getFile() . ' on line ' . $e->getLine());
@@ -207,6 +216,42 @@ class GeoIP
      */
     protected static function normalizeRecord($record)
     {
+        // Convert GeoIp2 object to array format for compatibility
+        if (is_object($record)) {
+            $normalized = [
+                'country' => [
+                    'iso_code' => $record->country->isoCode ?? null,
+                ],
+                'city' => [
+                    'names' => [
+                        'en' => $record->city->name ?? null,
+                    ],
+                ],
+                'subdivisions' => [
+                    [
+                        'iso_code' => $record->mostSpecificSubdivision->isoCode ?? null,
+                    ],
+                ],
+                'continent' => [
+                    'code' => $record->continent->code ?? null,
+                ],
+                'location' => [
+                    'latitude' => $record->location->latitude ?? null,
+                    'longitude' => $record->location->longitude ?? null,
+                ],
+                'postal' => [
+                    'code' => $record->postal->code ?? null,
+                ],
+            ];
+
+            // Ensure country.iso_code is uppercase 2-letter
+            if (!empty($normalized['country']['iso_code'])) {
+                $normalized['country']['iso_code'] = strtoupper($normalized['country']['iso_code']);
+            }
+
+            return $normalized;
+        }
+
         if (!is_array($record)) {
             return $record;
         }

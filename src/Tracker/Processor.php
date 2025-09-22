@@ -201,11 +201,23 @@ class Processor
 		try {
 			$geolocation_data = $geographicProvider->locate(\wp_slimstat::$stat['ip']);
 		} catch (\Exception $e) {
-			Utils::logError(205);
-			return false;
+			$geolocation_data = null;
 		}
 
-		if (!empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
+		// Fallback to DB-IP if primary provider failed or returned empty
+		if (empty($geolocation_data) || empty($geolocation_data['country_code'])) {
+			try {
+				$fallbackProvider = new GeolocationService('dbip', []);
+				$fallbackData     = $fallbackProvider->locate(\wp_slimstat::$stat['ip']);
+				if (!empty($fallbackData) && !empty($fallbackData['country_code'])) {
+					$geolocation_data = $fallbackData;
+				}
+			} catch (\Exception $e) {
+				// ignore
+			}
+		}
+
+		if (!empty($geolocation_data['country_code']) && 'xx' !== strtolower($geolocation_data['country_code'])) {
 			\wp_slimstat::$stat['country'] = strtolower($geolocation_data['country_code']);
 			if (!empty($geolocation_data['city'])) {
 				\wp_slimstat::$stat['city'] = $geolocation_data['city'];

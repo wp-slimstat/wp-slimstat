@@ -2,7 +2,7 @@
 
 namespace SlimStat\Services;
 
-use SlimStat\Utils\MaxMindReader;
+use SlimStat\Dependencies\GeoIp2\Database\Reader;
 
 class GeoService
 {
@@ -137,8 +137,16 @@ class GeoService
                 throw new \Exception(__('GeoIP database not found!', 'wp-slimstat'));
             }
 
-            $reader = new MaxMindReader(GeoIP::get_database_file());
-            $reader->get($this->getUserIP());
+            $reader = new Reader(GeoIP::get_database_file());
+            $ip = $this->getUserIP();
+
+            // Determine which method to use based on database type
+            $precision = GeoIP::get_pack();
+            if ('city' === $precision) {
+                $reader->city($ip);
+            } else {
+                $reader->country($ip);
+            }
 
             $response = [
                 'status' => true,

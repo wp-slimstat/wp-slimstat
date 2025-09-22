@@ -1,25 +1,27 @@
 <?php
 
-namespace SlimStat\Utils;
+declare(strict_types=1);
 
-class MaxMindUtil
+namespace SlimStat\Dependencies\MaxMind\Db\Reader;
+
+class Util
 {
     /**
-     * @throws InvalidDatabaseException
+     * @param resource    $stream
+     * @param int<0, max> $numberOfBytes
      */
-    public static function read($stream, $offset, $numberOfBytes)
+    public static function read($stream, int $offset, int $numberOfBytes): string
     {
-        if (0 == $numberOfBytes) {
+        if ($numberOfBytes === 0) {
             return '';
         }
-
-        if (0 == fseek($stream, $offset)) {
+        if (fseek($stream, $offset) === 0) {
             $value = fread($stream, $numberOfBytes);
 
             // We check that the number of bytes read is equal to the number
             // asked for. We use ftell as getting the length of $value is
             // much slower.
-            if (ftell($stream) - $offset === $numberOfBytes) {
+            if ($value !== false && ftell($stream) - $offset === $numberOfBytes) {
                 return $value;
             }
         }

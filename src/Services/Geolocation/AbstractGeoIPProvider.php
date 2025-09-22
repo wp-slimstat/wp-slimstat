@@ -104,7 +104,11 @@ abstract class AbstractGeoIPProvider implements GeoServiceProviderInterface
 
     protected function getLicense(): string
     {
-        return (string) ($this->getOption('license', '') ?? '');
+		$license = $this->getOption('license', '');
+		if ('' === $license || $license === null) {
+			$license = $this->getOption('license_key', '');
+		}
+		return (string) ($license ?? '');
     }
 
     protected function getDbDir(): string

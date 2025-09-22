@@ -192,7 +192,7 @@ $settings = [
                 'title'             => __('Geolocation Database', 'wp-slimstat'),
                 'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
                 'type'              => 'plain-text',
-                'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, Slimstat also schedules a background update to avoid timeouts. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
+					'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, Slimstat also schedules a background update. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
             ],
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),

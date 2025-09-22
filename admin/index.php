@@ -1246,15 +1246,19 @@ class wp_slimstat_admin
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
             $ok      = $service->updateDatabase();
 
-            if ($ok) {
+			if ($ok) {
                 wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
             } else {
                 // Log the error for debugging
-                $error_message = __('Failed to update GeoIP Database.', 'wp-slimstat');
-                if ('maxmind' === $provider) {
-                    $error_message .= ' ' . __('Please check your MaxMind license key and try again.', 'wp-slimstat');
-                }
-                wp_send_json_error($error_message);
+				$error_message = __('Failed to update GeoIP Database.', 'wp-slimstat');
+				if ('maxmind' === $provider) {
+					$error_message .= ' ' . __('Please check your MaxMind license key and try again.', 'wp-slimstat');
+				}
+				$geoip_error = get_option('slimstat_geoip_error', []);
+				if (!empty($geoip_error) && !empty($geoip_error['error'])) {
+					$error_message .= ' ' . sprintf(__('Details: %s', 'wp-slimstat'), $geoip_error['error']);
+				}
+				wp_send_json_error($error_message);
             }
         } catch (\Exception $exception) {
             wp_send_json_error($exception->getMessage());

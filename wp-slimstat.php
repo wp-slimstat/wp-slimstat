@@ -916,10 +916,11 @@ class wp_slimstat
             $provider = self::$settings['geolocation_provider'] ?? 'dbip';
             $options  = [];
 
-            if ('maxmind' === $provider) {
-                $options['license_key'] = self::$settings['maxmind_license_key'] ?? '';
-                $options['precision']   = (self::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city';
-            }
+			if ('maxmind' === $provider) {
+				// GeolocationService/MaxmindGeoIPProvider expects 'license' key
+				$options['license']   = self::$settings['maxmind_license_key'] ?? '';
+				$options['precision'] = (self::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city';
+			}
 
             $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, $options);
 
