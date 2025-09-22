@@ -245,7 +245,7 @@ var SlimStat = (function () {
                     }, delay);
                 } else {
                     // Max attempts reached, move to offline storage
-                    storeOffline(item.payload);
+                    SlimStat.store_offline(item.payload);
                 }
             }
             queueInFlight = false;
@@ -819,6 +819,58 @@ var SlimStat = (function () {
 
     // Inline GDPR CSS injection removed; stylesheet is loaded server-side
 
+    // -------------------------- Offline Data Handling -------------------------- //
+    function storeOffline(payload) {
+        try {
+            var offline = loadOfflineQueue();
+            offline.push({ p: payload, t: Date.now() });
+            saveOfflineQueue(offline);
+        } catch (e) {
+            // Silently fail if localStorage is not available
+        }
+    }
+
+    function flushOfflineQueue() {
+        try {
+            var offline = loadOfflineQueue();
+            if (!offline.length) return;
+
+            var params = currentSlimStatParams();
+            if (!params.id || parseInt(params.id, 10) <= 0) return; // need valid ID to send
+
+            // Send offline items in batches to avoid overwhelming the server
+            var batchSize = 5;
+            var sent = 0;
+            var toRemove = [];
+
+            for (var i = 0; i < offline.length && sent < batchSize; i++) {
+                var item = offline[i];
+                if (item && item.p) {
+                    // Update payload with current ID if it has a placeholder
+                    var payload = item.p;
+                    if (payload.indexOf("id=pending") !== -1) {
+                        payload = payload.replace("id=pending", "id=" + params.id);
+                    }
+
+                    if (sendToServer(payload, false, { priority: "normal" })) {
+                        toRemove.push(i);
+                        sent++;
+                    }
+                }
+            }
+
+            // Remove sent items from offline queue
+            if (toRemove.length > 0) {
+                for (var j = toRemove.length - 1; j >= 0; j--) {
+                    offline.splice(toRemove[j], 1);
+                }
+                saveOfflineQueue(offline);
+            }
+        } catch (e) {
+            // Silently fail if there are any issues
+        }
+    }
+
     // -------------------------- Public API (legacy names preserved) -------------------------- //
     return {
         // legacy constant (used by base64 algorithm)
@@ -849,6 +901,9 @@ var SlimStat = (function () {
         init_fingerprint_hash: initFingerprintHash,
         get_slimstat_data: buildSlimStatData,
         get_component_value: getComponentValue,
+        // Offline data handling
+        store_offline: storeOffline,
+        flush_offline_queue: flushOfflineQueue,
         // New internal helpers (not documented previously)
         _extract_params: extractSlimStatParams,
         _send_pageview: sendPageview,
@@ -1008,7 +1063,7 @@ if (!window.requestIdleCallback) {
         // Flush any offline stored payloads after initial pageview queued
         setTimeout(function () {
             try {
-                if (navigator.onLine !== false) typeof flushOfflineQueue === "function" && flushOfflineQueue();
+                if (navigator.onLine !== false) SlimStat.flush_offline_queue();
             } catch (e) {}
         }, 500);
     });
@@ -1054,7 +1109,7 @@ if (!window.requestIdleCallback) {
 
     // Online event to resend offline queue
     SlimStat.add_event(window, "online", function () {
-        flushOfflineQueue();
+        SlimStat.flush_offline_queue();
         flushPendingInteractions();
     });
 
