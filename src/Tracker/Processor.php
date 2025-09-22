@@ -83,9 +83,6 @@ class Processor
 			}
 		}
 
-		// Process IP address with anonymization and hashing
-		\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
-
 		if (!isset(\wp_slimstat::$stat['resource'])) {
 			\wp_slimstat::$stat['resource'] = \wp_slimstat::get_request_uri();
 		}
@@ -233,6 +230,9 @@ class Processor
 		if (isset(\wp_slimstat::$stat['country']) && (\wp_slimstat::$stat['country'] !== '' && \wp_slimstat::$stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], \wp_slimstat::$stat['country'])) {
 			return false;
 		}
+
+		// Process IP address with anonymization and hashing
+		\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
 
 		if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
 			if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
