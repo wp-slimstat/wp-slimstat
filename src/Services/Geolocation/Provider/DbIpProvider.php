@@ -143,7 +143,7 @@ class DbIpProvider extends AbstractGeoIPProvider
 			try {
 				$reader = new Reader($destTmp);
 				// Try a common public IP; ignore result content, we just need to ensure it doesn't throw
-				$reader->get('8.8.8.8');
+				$reader->city('8.8.8.8');
 				$valid = true;
 			} catch (\Exception $e) {
 				$valid = false;
