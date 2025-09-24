@@ -4,6 +4,18 @@ namespace SlimStat\Services\Geolocation\Provider;
 
 class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 {
+    protected $options = [];
+
+    public function __construct($options = [])
+    {
+        $this->options = $options;
+    }
+
+    protected function getPrecision(): string
+    {
+        return $this->options['precision'] ?? 'country';
+    }
+
     public function locate($ip)
     {
         // Build a lowercased map of server headers for case-insensitive access
@@ -48,16 +60,23 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
         $city      = $city ? trim($city) : null;
         $postal    = $postal ? trim($postal) : null;
 
-        return [
+        $precision = $this->getPrecision();
+        $result = [
             'provider'     => 'cloudflare',
             'ip'           => $ip,
             'country_code' => $country,
             'continent'    => $continent,
-            'region'       => $region,
-            'city'         => $city,
-            'latitude'     => $latitude,
-            'longitude'    => $longitude,
-            'postal_code'  => $postal,
         ];
+
+        // Only include city-level data when precision is set to 'city'
+        if ('city' === $precision) {
+            $result['region']       = $region;
+            $result['city']         = $city;
+            $result['latitude']     = $latitude;
+            $result['longitude']    = $longitude;
+            $result['postal_code']  = $postal;
+        }
+
+        return $result;
     }
 }

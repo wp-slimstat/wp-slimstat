@@ -29,15 +29,22 @@ class DbIpProvider extends AbstractGeoIPProvider
 			$ip = sanitize_text_field($ip);
 			$record = $reader->city($ip);
 
-			return [
-				'country_code' => $record->country->isoCode ?? null,
-				'city'         => $record->city->name ?? null,
-				'subdivision'  => $record->mostSpecificSubdivision->isoCode ?? null,
-				'latitude'     => $record->location->latitude ?? null,
-				'longitude'    => $record->location->longitude ?? null,
-				'ip'           => $ip,
-				'provider'     => 'dbip',
-			];
+		$precision = $this->getPrecision();
+		$result = [
+			'country_code' => $record->country->isoCode ?? null,
+			'ip'           => $ip,
+			'provider'     => 'dbip',
+		];
+
+		// Only include city-level data when precision is set to 'city'
+		if ('city' === $precision) {
+			$result['city']         = $record->city->name ?? null;
+			$result['subdivision']  = $record->mostSpecificSubdivision->isoCode ?? null;
+			$result['latitude']     = $record->location->latitude ?? null;
+			$result['longitude']    = $record->location->longitude ?? null;
+		}
+
+		return $result;
 		} catch (\Exception $exception) {
 			return null;
 		}

@@ -48,16 +48,22 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				$record = $reader->country($ip);
 			}
 
-			return [
-				'country_code' => $record->country->isoCode ?? $record->registeredCountry->isoCode ?? null,
-				'city'         => $record->city->name ?? null,
-				'subdivision'  => $record->mostSpecificSubdivision->isoCode ?? null,
-				'continent'    => $record->continent->code ?? null,
-				'latitude'     => $record->location->latitude ?? null,
-				'longitude'    => $record->location->longitude ?? null,
-				'postal_code'  => $record->postal->code ?? null,
-				'provider'     => 'maxmind',
-			];
+		$result = [
+			'country_code' => $record->country->isoCode ?? $record->registeredCountry->isoCode ?? null,
+			'continent'    => $record->continent->code ?? null,
+			'provider'     => 'maxmind',
+		];
+
+		// Only include city-level data when precision is set to 'city'
+		if ('city' === $precision) {
+			$result['city']         = $record->city->name ?? null;
+			$result['subdivision']  = $record->mostSpecificSubdivision->isoCode ?? null;
+			$result['latitude']     = $record->location->latitude ?? null;
+			$result['longitude']    = $record->location->longitude ?? null;
+			$result['postal_code']  = $record->postal->code ?? null;
+		}
+
+		return $result;
 		} catch (\Exception $e) {
 			return null;
 		}

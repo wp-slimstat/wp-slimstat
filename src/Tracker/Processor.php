@@ -188,9 +188,11 @@ class Processor
 		$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
 		$options  = [];
 
+		// Set precision for all providers
+		$options['precision'] = (\wp_slimstat::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city';
+
 		if ('maxmind' === $provider) {
 			$options['license_key'] = \wp_slimstat::$settings['maxmind_license_key'] ?? '';
-			$options['precision']   = (\wp_slimstat::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city';
 		}
 
 		$geographicProvider = new GeolocationService($provider, $options);
@@ -204,7 +206,8 @@ class Processor
 		// Fallback to DB-IP if primary provider failed or returned empty
 		if (empty($geolocation_data) || empty($geolocation_data['country_code'])) {
 			try {
-				$fallbackProvider = new GeolocationService('dbip', []);
+				$fallbackOptions = ['precision' => $options['precision'] ?? 'country'];
+				$fallbackProvider = new GeolocationService('dbip', $fallbackOptions);
 				$fallbackData     = $fallbackProvider->locate(\wp_slimstat::$stat['ip']);
 				if (!empty($fallbackData) && !empty($fallbackData['country_code'])) {
 					$geolocation_data = $fallbackData;
