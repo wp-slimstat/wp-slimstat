@@ -466,6 +466,74 @@
     }
 }
 
+/* RTL Support */
+[dir="rtl"] #slimstat-gdpr-banner {
+    left: auto;
+    right: 1rem;
+}
+
+[dir="rtl"] #slimstat-gdpr-banner .slimstat-gdpr-content {
+    direction: rtl;
+}
+
+[dir="rtl"] #slimstat-gdpr-banner .slimstat-gdpr-buttons {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .slimstat-gdpr-accept::before,
+[dir="rtl"] .slimstat-gdpr-deny::before {
+    left: 100%;
+    right: -100%;
+    background: linear-gradient(270deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: right 0.5s;
+}
+
+[dir="rtl"] .slimstat-gdpr-accept:hover::before,
+[dir="rtl"] .slimstat-gdpr-deny:hover::before {
+    right: 100%;
+    left: -100%;
+}
+
+[dir="rtl"] .slimstat-consent-status::before {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+[dir="rtl"] .slimstat-gdpr-management .slimstat-gdpr-info {
+    text-align: right;
+}
+
+[dir="rtl"] .slimstat-gdpr-management .slimstat-gdpr-buttons {
+    flex-direction: row-reverse;
+}
+
+[dir="rtl"] .slimstat-gdpr-management .slimstat-gdpr-buttons .slimstat-gdpr-accept,
+[dir="rtl"] .slimstat-gdpr-management .slimstat-gdpr-buttons .slimstat-gdpr-deny {
+    text-align: center;
+}
+
+/* RTL Responsive adjustments */
+@media (max-width: 768px) {
+    [dir="rtl"] #slimstat-gdpr-banner .slimstat-gdpr-content {
+        text-align: center;
+    }
+
+    [dir="rtl"] #slimstat-gdpr-banner .slimstat-gdpr-buttons {
+        flex-direction: column;
+    }
+
+    [dir="rtl"] .slimstat-gdpr-management .slimstat-gdpr-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    [dir="rtl"] #slimstat-gdpr-banner {
+        right: 0.5rem;
+        left: auto;
+    }
+}
+
 /* Print styles */
 @media print {
     #slimstat-gdpr-banner {
