@@ -75,6 +75,28 @@ jQuery(document).ready(function () {
         }
     };
 
+    const updateNotificationBadge = () => {
+        // Count unread notifications (those in inbox tab)
+        let inboxCards = jQuery('#tab-1 .slimstat-notification-sidebar__card:not(.slimstat-notification-sidebar__no-card)');
+        let notificationBell = jQuery('.slimstat-notifications');
+        let notificationBadge = jQuery('.notification-badge');
+        
+        if (inboxCards.length === 0) {
+            // No unread notifications - remove badge and 'has-items' class
+            notificationBell.removeClass('slimstat-notifications--has-items');
+            notificationBadge.hide();
+        } else {
+            // Has unread notifications - show badge and add 'has-items' class
+            notificationBell.addClass('slimstat-notifications--has-items');
+            if (notificationBadge.length === 0) {
+                // Create badge if it doesn't exist
+                notificationBell.find('.dashicons-bell').after('<span class="notification-badge"></span>');
+            } else {
+                notificationBadge.show();
+            }
+        }
+    };
+
     const checkEmptyNotifications = () => {
         let notificationsHasItems = jQuery('.slimstat-notifications--has-items');
         let helpNotification = jQuery('.slimstat-help__notification');
@@ -116,6 +138,9 @@ jQuery(document).ready(function () {
         if (noCardMessages.length > 1) {
             noCardMessages.last().hide();
         }
+        
+        // Update the badge status
+        updateNotificationBadge();
     }
 
     tabs.forEach(tab => {
@@ -129,6 +154,7 @@ jQuery(document).ready(function () {
 
     updateDismissAllVisibility();
     checkEmptyNotifications();
+    updateNotificationBadge();
 
     jQuery(document).on('click', "a.slimstat-notification-sidebar__dismiss, a.slimstat-notification-sidebar__dismiss-all", function (e) {
         e.preventDefault();
@@ -153,6 +179,7 @@ jQuery(document).ready(function () {
                 $card.fadeOut(300, function () {
                     jQuery(this).remove();
                     checkEmptyNotifications();
+                    updateNotificationBadge();
                 });
             });
         } else {
@@ -163,6 +190,7 @@ jQuery(document).ready(function () {
             $card.fadeOut(300, function () {
                 jQuery(this).remove();
                 checkEmptyNotifications();
+                updateNotificationBadge();
             });
 
         }
@@ -185,6 +213,9 @@ jQuery(document).ready(function () {
             success: function ({data, success}) {
                 if (!success) {
                     console.log(data);
+                } else {
+                    // Ensure badge is updated after successful dismissal
+                    updateNotificationBadge();
                 }
             },
             error: function (xhr, status, error) {
