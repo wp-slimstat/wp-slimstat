@@ -116,9 +116,14 @@ $settings = [
                 'type'  => 'section_header',
             ],
             'anonymize_ip' => [
-                'title'       => __('Privacy Mode', 'wp-slimstat'),
+                'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("Mask your visitors' IP addresses (by converting the last number into a zero) and do not track their browser fingerprint, to comply with European privacy laws.", 'wp-slimstat'),
+                'description' => __("Mask visitors' IP addresses (IPv4 last octet / IPv6 last 80 bits) before storage to reduce identifiability.", 'wp-slimstat'),
+            ],
+            'hash_ip' => [
+                'title'       => __('Hash IP addresses', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Generate a daily visitor ID (HMAC-SHA256 of masked IP + User Agent + date) to count unique visitors without storing full IP or using cookies.', 'wp-slimstat'),
             ],
             'set_tracker_cookie' => [
                 'title'       => __('Set Cookie', 'wp-slimstat'),
@@ -770,6 +775,26 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 $index_enabled = wp_slimstat::$wpdb->get_results(
     sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%sstats_resource_idx'", $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix)
 );
+
+$index_names = [
+    $GLOBALS[ 'wpdb' ]->prefix . 'stats_resource_idx',
+    $GLOBALS[ 'wpdb' ]->prefix . 'stats_browser_idx',
+    $GLOBALS[ 'wpdb' ]->prefix . 'stats_searchterms_idx',
+    $GLOBALS[ 'wpdb' ]->prefix . 'stats_fingerprint_idx',
+];
+$missing_indexes = [];
+foreach ($index_names as $idx) {
+    $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS[ 'wpdb' ]->prefix, $idx));
+    if (empty($exists)) {
+        $missing_indexes[] = $idx;
+    }
+}
+if ([] !== $missing_indexes) {
+    echo '<div class="notice notice-warning"><b>' . esc_html__('Performance Notice:', 'wp-slimstat') . '</b> ' . sprintf(
+        esc_html__('The following DB indexes are missing and should be created for optimal performance: %s. Please visit the Slimstat settings or re-activate the plugin to trigger index creation.', 'wp-slimstat'),
+        '<code>' . esc_html(implode(', ', $missing_indexes)) . '</code>'
+    ) . '</div>';
+}
 
 $tabs_html = '';
 foreach ($settings as $a_tab_id => $a_tab_info) {

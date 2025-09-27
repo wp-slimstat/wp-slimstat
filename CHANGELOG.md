@@ -1,11 +1,6 @@
-= 5.3.1 - 2025-09-09 =
-- **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
-- **Fix**: Real-time report date filters not properly cleared during auto-refresh.
-- **Fix**: Real-time report not updating at midnight with filters.
-- **Fix**: Undefined variable $unpacked in PHP tracking logic;
-- **Enhancement**: Enhanced responsive design for the "Access Log" report.
-- **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
-- **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
+= 5.4.0 - 2025-09-05 =
+- **New**: GDPR-compliant salted hash IP address functionality for enhanced privacy protection.
+- **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
