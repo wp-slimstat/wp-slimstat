@@ -1,4 +1,13 @@
 <!-- Header File-->
+<?php
+$hasUpdatedNotifications = false;
+$displayNotifications    = (wp_slimstat::$settings['display_notifications'] == 'on') ? true : false;
+
+// Check if notification classes are available
+if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\NotificationFactory')) {
+    $hasUpdatedNotifications = \SlimStat\Service\Admin\Notification\NotificationFactory::hasUpdatedNotifications();
+}
+?>
 
 <div class="slimstat-header">
     <img src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-logo.png'); ?>" class="logo"/>
@@ -18,4 +27,22 @@
         </div>
     <?php endif; ?>
 
+    <?php if ($displayNotifications): ?>
+        <div class="slimstat-header-notifications">
+            <a href="#" title="<?php esc_html_e('Notifications', 'wp-slimstat'); ?>" class="slimstat-notifications js-slimstat-open-notification <?php echo $hasUpdatedNotifications ? esc_attr('slimstat-notifications--has-items') : ''; ?>">
+                <span class="dashicons dashicons-bell"></span>
+                <?php if ($hasUpdatedNotifications): ?>
+                    <span class="notification-badge"></span>
+                <?php endif; ?>
+            </a>
+        </div>
+    <?php endif; ?>
+
 </div>
+
+<?php
+if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\NotificationFactory')) {
+    $notifications = \SlimStat\Service\Admin\Notification\NotificationFactory::getAllNotifications();
+    include __DIR__ . '/../components/notification/side-bar.php';
+}
+?>

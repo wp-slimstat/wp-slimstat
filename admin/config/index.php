@@ -82,6 +82,11 @@ $settings = [
                 'custom_label_off' => __('IPs', 'wp-slimstat'),
                 'description'      => __('Customize the information displayed when activating the option here above: <strong>hits</strong> refers to the total amount of pageviews, regardless of the user; <strong>(unique) IPs</strong> displays the amount of distinct IP addresses tracked in the given time range.', 'wp-slimstat'),
             ],
+            'display_notifications' => [
+                'title'       => __('Slimstat Notifications', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Display important notifications inside the plugin, such as new version releases, feature updates, news, and special offers.', 'wp-slimstat'),
+            ],
 
             // General - Database
             'general_database_header' => [
