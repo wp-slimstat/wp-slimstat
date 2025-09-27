@@ -27,7 +27,11 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'SlimStat\\Components\\Ajax' => __DIR__ . '/../..' . '/src/Components/Ajax.php',
+        'SlimStat\\Components\\Event' => __DIR__ . '/../..' . '/src/Components/Event.php',
+        'SlimStat\\Components\\RemoteRequest' => __DIR__ . '/../..' . '/src/Components/RemoteRequest.php',
         'SlimStat\\Components\\View' => __DIR__ . '/../..' . '/src/Components/View.php',
+        'SlimStat\\Decorators\\NotificationDecorator' => __DIR__ . '/../..' . '/src/Decorators/NotificationDecorator.php',
         'SlimStat\\Dependencies\\BrowscapPHP\\Browscap' => __DIR__ . '/../..' . '/src/Dependencies/BrowscapPHP/Browscap.php',
         'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapInterface' => __DIR__ . '/../..' . '/src/Dependencies/BrowscapPHP/BrowscapInterface.php',
         'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapUpdater' => __DIR__ . '/../..' . '/src/Dependencies/BrowscapPHP/BrowscapUpdater.php',
@@ -432,6 +436,13 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
         'SlimStat\\Helpers\\DataBuckets' => __DIR__ . '/../..' . '/src/Helpers/DataBuckets.php',
         'SlimStat\\Modules\\Chart' => __DIR__ . '/../..' . '/src/Modules/Chart.php',
         'SlimStat\\Providers\\RESTService' => __DIR__ . '/../..' . '/src/Providers/RESTService.php',
+        'SlimStat\\Service\\Admin\\ConditionTagEvaluator' => __DIR__ . '/../..' . '/src/Service/Admin/ConditionTagEvaluator.php',
+        'SlimStat\\Service\\Admin\\Notification\\NotificationActions' => __DIR__ . '/../..' . '/src/Service/Admin/Notification/NotificationActions.php',
+        'SlimStat\\Service\\Admin\\Notification\\NotificationFactory' => __DIR__ . '/../..' . '/src/Service/Admin/Notification/NotificationFactory.php',
+        'SlimStat\\Service\\Admin\\Notification\\NotificationFetcher' => __DIR__ . '/../..' . '/src/Service/Admin/Notification/NotificationFetcher.php',
+        'SlimStat\\Service\\Admin\\Notification\\NotificationManager' => __DIR__ . '/../..' . '/src/Service/Admin/Notification/NotificationManager.php',
+        'SlimStat\\Service\\Admin\\Notification\\NotificationProcessor' => __DIR__ . '/../..' . '/src/Service/Admin/Notification/NotificationProcessor.php',
+        'SlimStat\\Service\\CronEventManager' => __DIR__ . '/../..' . '/src/Service/CronEventManager.php',
         'SlimStat\\Services\\Browscap' => __DIR__ . '/../..' . '/src/Services/Browscap.php',
         'SlimStat\\Services\\GeoIP' => __DIR__ . '/../..' . '/src/Services/GeoIP.php',
         'SlimStat\\Services\\GeoService' => __DIR__ . '/../..' . '/src/Services/GeoService.php',
@@ -440,6 +451,7 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
         'SlimStat\\Utils\\MaxMindMetadata' => __DIR__ . '/../..' . '/src/Utils/MaxMindMetadata.php',
         'SlimStat\\Utils\\MaxMindReader' => __DIR__ . '/../..' . '/src/Utils/MaxMindReader.php',
         'SlimStat\\Utils\\MaxMindUtil' => __DIR__ . '/../..' . '/src/Utils/MaxMindUtil.php',
+        'SlimStat\\Utils\\Request' => __DIR__ . '/../..' . '/src/Utils/Request.php',
         'SlimStat\\Utils\\UADetector' => __DIR__ . '/../..' . '/src/Utils/UADetector.php',
     );
 

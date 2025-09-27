@@ -7,7 +7,11 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'SlimStat\\Components\\Ajax' => $baseDir . '/src/Components/Ajax.php',
+    'SlimStat\\Components\\Event' => $baseDir . '/src/Components/Event.php',
+    'SlimStat\\Components\\RemoteRequest' => $baseDir . '/src/Components/RemoteRequest.php',
     'SlimStat\\Components\\View' => $baseDir . '/src/Components/View.php',
+    'SlimStat\\Decorators\\NotificationDecorator' => $baseDir . '/src/Decorators/NotificationDecorator.php',
     'SlimStat\\Dependencies\\BrowscapPHP\\Browscap' => $baseDir . '/src/Dependencies/BrowscapPHP/Browscap.php',
     'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapInterface' => $baseDir . '/src/Dependencies/BrowscapPHP/BrowscapInterface.php',
     'SlimStat\\Dependencies\\BrowscapPHP\\BrowscapUpdater' => $baseDir . '/src/Dependencies/BrowscapPHP/BrowscapUpdater.php',
@@ -412,6 +416,13 @@ return array(
     'SlimStat\\Helpers\\DataBuckets' => $baseDir . '/src/Helpers/DataBuckets.php',
     'SlimStat\\Modules\\Chart' => $baseDir . '/src/Modules/Chart.php',
     'SlimStat\\Providers\\RESTService' => $baseDir . '/src/Providers/RESTService.php',
+    'SlimStat\\Service\\Admin\\ConditionTagEvaluator' => $baseDir . '/src/Service/Admin/ConditionTagEvaluator.php',
+    'SlimStat\\Service\\Admin\\Notification\\NotificationActions' => $baseDir . '/src/Service/Admin/Notification/NotificationActions.php',
+    'SlimStat\\Service\\Admin\\Notification\\NotificationFactory' => $baseDir . '/src/Service/Admin/Notification/NotificationFactory.php',
+    'SlimStat\\Service\\Admin\\Notification\\NotificationFetcher' => $baseDir . '/src/Service/Admin/Notification/NotificationFetcher.php',
+    'SlimStat\\Service\\Admin\\Notification\\NotificationManager' => $baseDir . '/src/Service/Admin/Notification/NotificationManager.php',
+    'SlimStat\\Service\\Admin\\Notification\\NotificationProcessor' => $baseDir . '/src/Service/Admin/Notification/NotificationProcessor.php',
+    'SlimStat\\Service\\CronEventManager' => $baseDir . '/src/Service/CronEventManager.php',
     'SlimStat\\Services\\Browscap' => $baseDir . '/src/Services/Browscap.php',
     'SlimStat\\Services\\GeoIP' => $baseDir . '/src/Services/GeoIP.php',
     'SlimStat\\Services\\GeoService' => $baseDir . '/src/Services/GeoService.php',
@@ -420,5 +431,6 @@ return array(
     'SlimStat\\Utils\\MaxMindMetadata' => $baseDir . '/src/Utils/MaxMindMetadata.php',
     'SlimStat\\Utils\\MaxMindReader' => $baseDir . '/src/Utils/MaxMindReader.php',
     'SlimStat\\Utils\\MaxMindUtil' => $baseDir . '/src/Utils/MaxMindUtil.php',
+    'SlimStat\\Utils\\Request' => $baseDir . '/src/Utils/Request.php',
     'SlimStat\\Utils\\UADetector' => $baseDir . '/src/Utils/UADetector.php',
 );
