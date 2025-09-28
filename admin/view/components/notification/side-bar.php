@@ -1,4 +1,7 @@
 <?php
+
+use SlimStat\Components\View;
+
 // Notification sidebar component
 ?>
 <div class="slimstat-notification-sidebar">
@@ -42,12 +45,11 @@
                         foreach ($notifications as $notification) :
                             if ($notification->getDismiss()) continue;
                             $hasNotifications = true;
-                            include __DIR__ . '/card.php';
+                            View::load('components/notification/card', ['notification' => $notification]);
                         endforeach;
                     endif;
                     if (!$hasNotifications) {
-                        $tab = __('inbox', 'wp-slimstat');
-                        include __DIR__ . '/no-data.php';
+                        View::load('components/notification/no-data', ['tab' => __('inbox', 'wp-slimstat')]);
                     }
                     ?>
                 </div>
@@ -60,12 +62,11 @@
                         foreach ($notifications as $notification) :
                             if (!$notification->getDismiss()) continue;
                             $hasDismissed = true;
-                            include __DIR__ . '/card.php';
+                            View::load('components/notification/card', ['notification' => $notification]);
                         endforeach;
                     endif;
                     if (!$hasDismissed) {
-                        $tab = __('dismissed list', 'wp-slimstat');
-                        include __DIR__ . '/no-data.php';
+                        View::load('components/notification/no-data', ['tab' => __('dismissed list', 'wp-slimstat')]);
                     }
                     ?>
                 </div>

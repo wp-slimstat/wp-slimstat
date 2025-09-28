@@ -14,11 +14,11 @@ class Event
      */
     public static function schedule($hook, $timestamp, $recurrence, $callback)
     {
-        if (!\wp_next_scheduled($hook)) {
-            \wp_schedule_event($timestamp, $recurrence, $hook);
+        if (!wp_next_scheduled($hook)) {
+            wp_schedule_event($timestamp, $recurrence, $hook);
         }
 
-        \add_action($hook, $callback);
+        add_action($hook, $callback);
     }
 
     /**
@@ -28,9 +28,9 @@ class Event
      */
     public static function unschedule($hook)
     {
-        $timestamp = \wp_next_scheduled($hook);
+        $timestamp = wp_next_scheduled($hook);
         if ($timestamp) {
-            \wp_unschedule_event($timestamp, $hook);
+            wp_unschedule_event($timestamp, $hook);
         }
     }
 }
