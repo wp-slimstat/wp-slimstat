@@ -36,6 +36,10 @@ class Query
 
     private $valuesToPrepare = [];
 
+    private $insertValues = [];
+
+    private $ignore = false;
+
     private $allowCaching = false;
 
     private $cacheExpiration = 3600;
@@ -118,6 +122,18 @@ class Query
     }
 
     /**
+     * Adds IGNORE to the query.
+     *
+     * @param bool $ignore
+     * @return $this
+     */
+    public function ignore($ignore = true)
+    {
+        $this->ignore = $ignore;
+        return $this;
+    }
+
+    /**
      * Combines multiple query instances into a single UNION query.
      *
      * @param array $queries An array of Query instances to be united.
@@ -142,6 +158,29 @@ class Query
     public function from($table)
     {
         $this->table = $table;
+        return $this;
+    }
+
+    /**
+     * Sets the values for an insert operation.
+     *
+     * @param array $values
+     * @return $this
+     */
+    public function values(array $values)
+    {
+        if (empty($values)) {
+            return $this;
+        }
+
+        // Check if it's an array of arrays for bulk insert
+        if (isset($values[0]) && is_array($values[0])) {
+            // Bulk insert
+            $this->insertValues = $values;
+        } else {
+            // Single row insert
+            $this->insertValues[] = $values;
+        }
         return $this;
     }
 
@@ -177,6 +216,23 @@ class Query
             }
         }
 
+        return $this;
+    }
+
+    /**
+     * Sets a raw value for a column, allowing for SQL expressions.
+     *
+     * @param string $column
+     * @param string $expression
+     * @param array $params
+     * @return $this
+     */
+    public function setRaw($column, $expression, $params = [])
+    {
+        $this->setClauses[] = sprintf('`%s` = %s', str_replace('`', '``', $column), $expression);
+        if (!empty($params)) {
+            $this->valuesToPrepare = array_merge($this->valuesToPrepare, $params);
+        }
         return $this;
     }
 
@@ -518,6 +574,12 @@ class Query
                 $condition = sprintf('%s %s %%s', $field, $operator);
                 $values[]  = $value;
                 break;
+            case 'IS':
+            case 'IS NOT':
+                if (is_null($value)) {
+                    $condition = sprintf('%s %s NULL', $field, $operator);
+                }
+                break;
             case 'IN':
             case 'NOT IN':
                 if (is_string($value)) {
@@ -576,13 +638,30 @@ class Query
                 $query = sprintf('SELECT %s FROM %s', $this->fields, $this->table);
                 break;
             case 'update':
-                $query = sprintf('UPDATE %s SET ', $this->table) . implode(', ', $this->setClauses);
+                $operation = $this->ignore ? 'UPDATE IGNORE' : 'UPDATE';
+                $query = sprintf('%s %s SET ', $operation, $this->table) . implode(', ', $this->setClauses);
                 break;
             case 'delete':
                 $query = 'DELETE FROM ' . $this->table;
                 break;
             case 'insert':
-                $query = '';
+                if (empty($this->insertValues)) {
+                    return '';
+                }
+                $operation = $this->ignore ? 'INSERT IGNORE INTO' : 'INSERT INTO';
+                $sampleRow = $this->insertValues[0];
+                $keys      = array_keys($sampleRow);
+                $query     = sprintf('%s %s (`%s`) VALUES ', $operation, $this->table, implode('`, `', $keys));
+
+                $valueSets = [];
+                foreach ($this->insertValues as $row) {
+                    $placeholders  = implode(', ', array_fill(0, count($row), '%s'));
+                    $valueSets[]   = '(' . $placeholders . ')';
+                    foreach ($row as $value) {
+                        $this->valuesToPrepare[] = $value;
+                    }
+                }
+                $query .= implode(', ', $valueSets);
                 break;
             case 'union':
                 $query = implode(' UNION ', $this->queries);
@@ -937,124 +1016,6 @@ class Query
     }
 
     /**
-     * Get all results from a query.
-     * If this is a live query (i.e. the query has a live date range), this function will
-     * split the query into two parts: a historical part that can be safely cached, and a live
-     * part that should not be cached.
-     * If this is not a live query, the function will simply return the result of the query.
-     *
-     * @return array The result of the query
-     */
-    public function getAll()
-    {
-        if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
-            $query = $this->buildQuery();
-            $query = $this->prepareQuery($query, $this->valuesToPrepare);
-            return $this->db->get_results($query, ARRAY_A);
-        }
-
-        $ranges = $this->extractDateRangesFromWhere();
-        if (count($ranges) > 1) {
-            $results = [];
-            foreach ($ranges as $range) {
-                if (empty($range['from']) || empty($range['to'])) {
-                    continue;
-                }
-
-                $baseWhereClauses    = $this->whereClauses;
-                $baseValuesToPrepare = $this->valuesToPrepare;
-                array_splice($baseWhereClauses, $range['clauseIdx'], 1);
-                array_splice($baseValuesToPrepare, $range['valueIdx'], 2);
-                $data = $this->processDateRange($range['from'], $range['to'], $baseWhereClauses, $baseValuesToPrepare);
-                if (is_array($data)) {
-                    $results = array_merge($results, $data);
-                }
-            }
-
-            return $results;
-        }
-
-        [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
-        if ($split) {
-            $baseWhereClauses    = $this->whereClauses;
-            $baseValuesToPrepare = $this->valuesToPrepare;
-            array_splice($baseWhereClauses, $dtClauseIdx, 1);
-            $baseValues = $baseValuesToPrepare;
-            array_splice($baseValues, $dtIdx, 2);
-
-            // Clone for historical
-            $histQuery                  = clone $this;
-            $histQuery->whereClauses    = $baseWhereClauses;
-            $histQuery->valuesToPrepare = $baseValues;
-            $histQuery->whereDate('dt', ['from' => $histFrom, 'to' => $histTo]);
-            $histQuery->allowCaching(true, $this->cacheExpiration);
-            try {
-                $historical = $histQuery->getAll();
-            } catch (Exception $e) {
-                $historical = [];
-            }
-
-            // Clone for live
-            $liveQuery                  = clone $this;
-            $liveQuery->whereClauses    = $baseWhereClauses;
-            $liveQuery->valuesToPrepare = $baseValues;
-            $liveQuery->whereDate('dt', ['from' => $liveFrom, 'to' => $liveTo], true);
-            $liveQuery->allowCaching(false, 0);
-            try {
-                $live = $liveQuery->getAll();
-            } catch (Exception $e) {
-                $live = [];
-            }
-
-            if (is_array($live)) {
-                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
-            }
-
-            $groupKey = null;
-            if (!empty($this->groupByClause) && preg_match('/GROUP BY (\w+)/', $this->groupByClause, $m)) {
-                $groupKey = $m[1];
-            }
-
-            $merged = $this->mergeGroupResults($live, $historical, $groupKey);
-            if (is_array($merged)) {
-                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
-            }
-
-            return $merged;
-        }
-
-        $query = $this->buildQuery();
-        $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
-            try {
-                $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
-            } catch (Exception $e) {
-                $cachedResult = false;
-            }
-
-            if (false !== $cachedResult) {
-                return $cachedResult;
-            }
-        }
-
-        try {
-            $result = $this->db->get_results($query, ARRAY_A);
-        } catch (Exception $exception) {
-            $result = [];
-        }
-
-        if ($this->allowCaching) {
-            try {
-                $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
-            } catch (Exception $exception) {
-                // ignore
-            }
-        }
-
-        return $result;
-    }
-
-    /**
      * Execute the query and return a single value from the first row
      *
      * This is a shortcut for `getAll()[0][0]`
@@ -1211,5 +1172,152 @@ class Query
         }
 
         return $this;
+    }
+
+    /**
+     * Executes a query for operations like INSERT, UPDATE, DELETE.
+     *
+     * @return int|bool Number of affected rows, or false on error. For INSERT, returns the insert ID.
+     * @throws \Exception
+     */
+    public function execute()
+    {
+        if ('select' === $this->operation) {
+            throw new \Exception('execute() cannot be used for SELECT queries. Use getAll(), getVar(), getRow(), or getCol().');
+        }
+
+        $query = $this->buildQuery();
+
+        if (empty($query)) {
+            return false;
+        }
+
+        $prepared_query = $this->prepareQuery($query, $this->valuesToPrepare);
+
+        $result = $this->db->query($prepared_query);
+
+        if ('insert' === $this->operation) {
+            return $this->db->insert_id ? $this->db->insert_id : $result;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get all results from a query.
+     * If this is a live query (i.e. the query has a live date range), this function will
+     * split the query into two parts: a historical part that can be safely cached, and a live
+     * part that should not be cached.
+     * If this is not a live query, the function will simply return the result of the query.
+     *
+     * @return array The result of the query
+     */
+    public function getAll()
+    {
+        if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
+            $query = $this->buildQuery();
+            $query = $this->prepareQuery($query, $this->valuesToPrepare);
+            return $this->db->get_results($query, ARRAY_A);
+        }
+
+        $ranges = $this->extractDateRangesFromWhere();
+        if (count($ranges) > 1) {
+            $results = [];
+            foreach ($ranges as $range) {
+                if (empty($range['from']) || empty($range['to'])) {
+                    continue;
+                }
+
+                $baseWhereClauses    = $this->whereClauses;
+                $baseValuesToPrepare = $this->valuesToPrepare;
+                array_splice($baseWhereClauses, $range['clauseIdx'], 1);
+                array_splice($baseValuesToPrepare, $range['valueIdx'], 2);
+                $data = $this->processDateRange($range['from'], $range['to'], $baseWhereClauses, $baseValuesToPrepare);
+                if (is_array($data)) {
+                    $results = array_merge($results, $data);
+                }
+            }
+
+            return $results;
+        }
+
+        [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
+        if ($split) {
+            $baseWhereClauses    = $this->whereClauses;
+            $baseValuesToPrepare = $this->valuesToPrepare;
+            array_splice($baseWhereClauses, $dtClauseIdx, 1);
+            $baseValues = $baseValuesToPrepare;
+            array_splice($baseValues, $dtIdx, 2);
+
+            // Clone for historical
+            $histQuery                  = clone $this;
+            $histQuery->whereClauses    = $baseWhereClauses;
+            $histQuery->valuesToPrepare = $baseValues;
+            $histQuery->whereDate('dt', ['from' => $histFrom, 'to' => $histTo]);
+            $histQuery->allowCaching(true, $this->cacheExpiration);
+            try {
+                $historical = $histQuery->getAll();
+            } catch (Exception $e) {
+                $historical = [];
+            }
+
+            // Clone for live
+            $liveQuery                  = clone $this;
+            $liveQuery->whereClauses    = $baseWhereClauses;
+            $liveQuery->valuesToPrepare = $baseValues;
+            $liveQuery->whereDate('dt', ['from' => $liveFrom, 'to' => $liveTo], true);
+            $liveQuery->allowCaching(false, 0);
+            try {
+                $live = $liveQuery->getAll();
+            } catch (Exception $e) {
+                $live = [];
+            }
+
+            if (is_array($live)) {
+                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
+            }
+
+            $groupKey = null;
+            if (!empty($this->groupByClause) && preg_match('/GROUP BY (\w+)/', $this->groupByClause, $m)) {
+                $groupKey = $m[1];
+            }
+
+            $merged = $this->mergeGroupResults($live, $historical, $groupKey);
+            if (is_array($merged)) {
+                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
+            }
+
+            return $merged;
+        }
+
+        $query = $this->buildQuery();
+        $query = $this->prepareQuery($query, $this->valuesToPrepare);
+        if ($this->allowCaching) {
+            try {
+                $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
+            } catch (Exception $e) {
+                $cachedResult = false;
+            }
+
+            if (false !== $cachedResult) {
+                return $cachedResult;
+            }
+        }
+
+        try {
+            $result = $this->db->get_results($query, ARRAY_A);
+        } catch (Exception $exception) {
+            $result = [];
+        }
+
+        if ($this->allowCaching) {
+            try {
+                $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
+            } catch (Exception $exception) {
+                // ignore
+            }
+        }
+
+        return $result;
     }
 }

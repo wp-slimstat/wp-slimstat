@@ -53,10 +53,6 @@ class Utils
 		}
 		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
-		$today = date('Y-m-d');
-		if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
-			$query->allowCaching(true);
-		}
 		$countFingerprint = $query->getVar();
 		return 0 == $countFingerprint;
 	}

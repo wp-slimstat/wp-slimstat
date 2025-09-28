@@ -164,15 +164,22 @@ class Processor
 			\wp_slimstat::$stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
 			$not_spam                        = true;
 		} elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-			$spam_comment = \wp_slimstat::$wpdb->get_row(\wp_slimstat::$wpdb->prepare('\n                SELECT comment_author, comment_author_email, COUNT(*) comment_count\n                FROM `' . DB_NAME . "`.{$GLOBALS['wpdb']->comments}\n                WHERE comment_author_IP = %s AND comment_approved = 'spam'\n                GROUP BY comment_author\n                LIMIT 0,1", \wp_slimstat::$stat['ip']), ARRAY_A);
-			if (!empty($spam_comment['comment_count'])) {
+			$spam_comment = \SlimStat\Utils\Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+				->from(DB_NAME . ".{$GLOBALS['wpdb']->comments}")
+				->where('comment_author_IP', '=', \wp_slimstat::$stat['ip'])
+				->where('comment_approved', '=', 'spam')
+				->groupBy('comment_author')
+				->limit(1)
+				->getRow();
+
+			if (!empty($spam_comment)) {
 				if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
 					return false;
-				} else {
-					\wp_slimstat::$stat['notes'][]  = 'spam:yes';
-					\wp_slimstat::$stat['username'] = $spam_comment['comment_author'];
-					\wp_slimstat::$stat['email']    = $spam_comment['comment_author_email'];
 				}
+
+				\wp_slimstat::$stat['notes'][]  = 'spam:yes';
+				\wp_slimstat::$stat['username'] = $spam_comment->comment_author;
+				\wp_slimstat::$stat['email']    = $spam_comment->comment_author_email;
 			} else {
 				if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
 					\wp_slimstat::$stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);

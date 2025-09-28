@@ -660,21 +660,19 @@ class wp_slimstat
             $not_spam               = true;
         } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Is this a spammer?
-            $spam_comment = self::$wpdb->get_row(self::$wpdb->prepare('
-                SELECT comment_author, comment_author_email, COUNT(*) comment_count
-                FROM `' . DB_NAME . "`.{$GLOBALS['wpdb']->comments}
-                WHERE comment_author_IP = %s AND comment_approved = 'spam'
-                GROUP BY comment_author
-                LIMIT 0,1", self::$stat['ip']), ARRAY_A);
+            $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+                ->from(DB_NAME . ".{$GLOBALS['wpdb']->comments}")
+                ->where('comment_author_IP', '=', self::$stat['ip'])
+                ->where('comment_approved', '=', 'spam')
+                ->groupBy('comment_author')
+                ->limit(1)
+                ->getRow();
 
-            if (!empty($spam_comment['comment_count'])) {
-                if ('on' == self::$settings['ignore_spammers']) {
-                    return false;
-                } else {
-                    self::$stat['notes'][]  = 'spam:yes';
-                    self::$stat['username'] = $spam_comment['comment_author'];
-                    self::$stat['email']    = $spam_comment['comment_author_email'];
-                }
+            if (!empty($spam_comment)) {
+                self::$stat['notes'][] = 'spam';
+                self::$stat['notes'][] = 'commenter:' . $spam_comment->comment_author . ':' . $spam_comment->comment_count;
+                self::$stat['username'] = $spam_comment->comment_author;
+                self::$stat['email']    = $spam_comment->comment_author_email;
             } else {
                 if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
                     self::$stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
@@ -2013,11 +2011,6 @@ class wp_slimstat
                 // Use Query builder for SELECT MAX(visit_id)
                 $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
                 $query = \SlimStat\Utils\Query::select('MAX(visit_id) as max_visit_id')->from($table);
-                // Enable caching for historical queries (all but today)
-                $today = date('Y-m-d');
-                if (!empty(self::$stat['dt']) && date('Y-m-d', self::$stat['dt']) < $today) {
-                    $query->allowCaching(true);
-                }
                 $max_visit_id           = $query->getVar();
                 self::$stat['visit_id'] = intval($max_visit_id);
             }
