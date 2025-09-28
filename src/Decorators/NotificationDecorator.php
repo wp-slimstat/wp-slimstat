@@ -56,7 +56,17 @@ class NotificationDecorator
      */
     public function getDescription()
     {
-        return \json_decode($this->notification->description) ?? null;
+        $description = \json_decode($this->notification->description) ?? null;
+        
+        // Additional sanitization for security
+        if ($description && is_string($description)) {
+            // Remove any potential script tags and other dangerous content
+            $description = \wp_strip_all_tags($description, false);
+            // Allow only safe HTML tags and attributes
+            $description = \wp_kses_post($description);
+        }
+        
+        return $description;
     }
 
     /**

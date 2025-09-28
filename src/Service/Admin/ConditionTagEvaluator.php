@@ -138,14 +138,33 @@ class ConditionTagEvaluator
             return false;
         }
 
-        // Simple country detection from timezone
-        $countryFromTimezone = \strtoupper(\substr($timezone, 0, 2));
+        // Get country code from timezone using proper timezone location detection
+        $countryCode = self::getTimezoneCountry($timezone);
 
-        if ($countryFromTimezone === \strtoupper($country)) {
+        if ($countryCode === \strtoupper($country)) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Retrieve the country code from a given timezone string.
+     *
+     * @param string $timezone The timezone string (e.g., 'Europe/London').
+     * @return string The country code corresponding to the timezone, or empty string if not found.
+     */
+    private static function getTimezoneCountry($timezone)
+    {
+        $countryCode = '';
+        $timezones = \timezone_identifiers_list();
+
+        if (\in_array($timezone, $timezones)) {
+            $location = \timezone_location_get(new \DateTimeZone($timezone));
+            $countryCode = $location['country_code'] ?? '';
+        }
+
+        return $countryCode;
     }
 
     /**

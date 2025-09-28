@@ -15,7 +15,7 @@
         </div>
         <?php if ($notification->getDescription()): ?>
             <div class="slimstat-notification-sidebar__card-content">
-                <?php echo $notification->getDescription() ?>
+                <?php echo wp_kses_post($notification->getDescription()) ?>
             </div>
         <?php endif; ?>
         <div class="slimstat-notification-sidebar__card-actions">
