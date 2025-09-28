@@ -1,5 +1,8 @@
 <!-- Header File-->
 <?php
+
+use SlimStat\Components\View;
+
 $hasUpdatedNotifications = false;
 $displayNotifications    = (wp_slimstat::$settings['display_notifications'] == 'on') ? true : false;
 
@@ -43,6 +46,6 @@ if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\N
 <?php
 if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\NotificationFactory')) {
     $notifications = \SlimStat\Service\Admin\Notification\NotificationFactory::getAllNotifications();
-    include __DIR__ . '/../components/notification/side-bar.php';
+    View::load('components/notification/side-bar', ['notifications' => $notifications]);
 }
 ?>
