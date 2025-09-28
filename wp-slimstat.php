@@ -14,9 +14,6 @@
  * Requires PHP: 7.4
 */
 
-if (!empty(wp_slimstat::$settings)) {
-    return true;
-}
 
 // check if composer autoloader exists
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
