@@ -152,7 +152,10 @@ var SlimStat = (function () {
     }
 
     function getComponentValue(components, key, def) {
-        for (let i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
+        // FingerprintJS v4 API - components is now an object with component names as keys
+        if (components && components[key] && components[key].value !== undefined) {
+            return components[key].value;
+        }
         return def;
     }
 
@@ -481,10 +484,21 @@ var SlimStat = (function () {
         inflightPageview = waitForId;
 
         const run = function () {
-            Fingerprint2.get(FP_EXCLUDES, function (components) {
+            FingerprintJS.load().then(function (agent) {
+                return agent.get(FP_EXCLUDES);
+            }).then(function (result) {
+                const components = result.components;
                 initFingerprintHash(components);
                 // Initial pageview (no id yet) should be immediate for faster id assignment
                 sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
+                showOptoutMessage();
+                inflightPageview = false;
+            }).catch(function (error) {
+                // Fallback if fingerprinting fails
+                console.warn('FingerprintJS failed:', error);
+                const fallbackComponents = {};
+                initFingerprintHash(fallbackComponents);
+                sendToServer(payloadBase + buildSlimStatData(fallbackComponents), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
                 inflightPageview = false;
             });
