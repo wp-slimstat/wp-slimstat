@@ -1,4 +1,4 @@
-import Fingerprint2 from "fingerprintjs2";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -193,8 +193,14 @@ var SlimStat = (function () {
     // -------------------------- Fingerprint -------------------------- //
     function initFingerprintHash(components) {
         try {
-            const values = components.map((c) => c.value);
-            fingerprintHash = Fingerprint2.x64hash128(values.join(""), 31);
+            // New FingerprintJS v4 API - components is now an object with component names as keys
+            const values = [];
+            for (const key in components) {
+                if (components.hasOwnProperty(key) && components[key].value !== undefined) {
+                    values.push(components[key].value);
+                }
+            }
+            fingerprintHash = FingerprintJS.murmurX64Hash128(values.join(""), 31);
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
         }
