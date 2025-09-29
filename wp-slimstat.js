@@ -194,16 +194,14 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Fingerprint -------------------------- //
-    function initFingerprintHash(components) {
+    function initFingerprintHash(result) {
         try {
-            // New FingerprintJS v4 API - components is now an object with component names as keys
-            const values = [];
-            for (const key in components) {
-                if (components.hasOwnProperty(key) && components[key].value !== undefined) {
-                    values.push(components[key].value);
-                }
+            // New FingerprintJS v4 API - result contains visitorId and components
+            if (result && result.visitorId) {
+                fingerprintHash = result.visitorId;
+            } else {
+                fingerprintHash = ""; // graceful fallback
             }
-            fingerprintHash = FingerprintJS.murmurX64Hash128(values.join(""), 31);
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
         }
@@ -488,7 +486,7 @@ var SlimStat = (function () {
                 return agent.get(FP_EXCLUDES);
             }).then(function (result) {
                 const components = result.components;
-                initFingerprintHash(components);
+                initFingerprintHash(result);
                 // Initial pageview (no id yet) should be immediate for faster id assignment
                 sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
@@ -496,9 +494,9 @@ var SlimStat = (function () {
             }).catch(function (error) {
                 // Fallback if fingerprinting fails
                 console.warn('FingerprintJS failed:', error);
-                const fallbackComponents = {};
-                initFingerprintHash(fallbackComponents);
-                sendToServer(payloadBase + buildSlimStatData(fallbackComponents), useBeacon, { immediate: isEmpty(params.id) });
+                const fallbackResult = { components: {}, visitorId: "" };
+                initFingerprintHash(fallbackResult);
+                sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
                 showOptoutMessage();
                 inflightPageview = false;
             });
