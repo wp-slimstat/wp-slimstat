@@ -707,6 +707,49 @@ class wp_slimstat_admin
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
+        // Enqueue date range picker assets for report pages
+        $should_load_datepicker = false;
+        if (isset($_GET['page'])) {
+            $page = sanitize_text_field($_GET['page']);
+            if (str_contains($page, 'slim') && !str_contains($page, 'setting')) {
+                $should_load_datepicker = true;
+            }
+        }
+        
+        if ($should_load_datepicker) {
+            
+            // Include the date range helper
+            if (class_exists('SlimStat_DateRange_Helper') === false) {
+                include_once(__DIR__ . '/view/class-slimstat-daterange-helper.php');
+            }
+            
+            // Enqueue moment.js
+            wp_enqueue_script('slimstat_moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
+            
+            // Enqueue daterangepicker
+            wp_enqueue_script('slimstat_daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat_moment'], '3.1.0', true);
+            
+            // Enqueue our custom date picker
+            wp_enqueue_script('slimstat_custom_datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat_daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
+            
+            // Enqueue date picker styles
+            wp_enqueue_style('slimstat_daterangepicker_base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
+            wp_enqueue_style('slimstat_daterangepicker_custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat_daterangepicker_base'], SLIMSTAT_ANALYTICS_VERSION);
+            
+            // Localize date picker script
+            $datepicker_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+                'options' => [
+                    'wp_timezone' => SlimStat_DateRange_Helper::get_wp_timezone(),
+                    'start_of_week' => SlimStat_DateRange_Helper::get_week_start(),
+                    'date_format' => SlimStat_DateRange_Helper::get_date_format()
+                ],
+                'strings' => SlimStat_DateRange_Helper::get_localized_strings()
+            ];
+            wp_localize_script('slimstat_custom_datepicker', 'SlimStatDatePicker', $datepicker_params);
+        }
+
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
 
         // Pass some information to Javascript

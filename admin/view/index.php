@@ -44,79 +44,42 @@ if (!empty($saved_filters)) {
 ?></fieldset><!-- #slimstat-filters -->
 
             <fieldset id="slimstat-date-filters" class="wp-ui-highlight">
-                <a href="#" class="noslimstat"><?php
-    if (!empty(wp_slimstat_db::$filters_normalized['date']['hour']) || !empty(wp_slimstat_db::$filters_normalized['date']['interval_hours'])) {
-        echo gmdate(get_option('date_format') . ' ' . get_option('time_format'), wp_slimstat_db::$filters_normalized['utime']['start']) . ' - ';
-
-        $end_format = (date('Ymd', wp_slimstat_db::$filters_normalized['utime']['start']) !== date('Ymd', wp_slimstat_db::$filters_normalized['utime']['end'])) ? get_option('date_format') . ' ' . get_option('time_format') : get_option('time_format');
-        echo gmdate($end_format, wp_slimstat_db::$filters_normalized['utime']['end']);
-    } else {
-        $start_date = gmdate(get_option('date_format'), wp_slimstat_db::$filters_normalized['utime']['start']);
-        $end_date   = gmdate(get_option('date_format'), wp_slimstat_db::$filters_normalized['utime']['end']);
-
-        if ($start_date === $end_date) {
-            echo ucwords($start_date);
-        } else {
-            echo ucwords($start_date) . ' &ndash; ' . ucwords($end_date);
-        }
-    }
-?></a>
-                <div class="dropdown">
-                    <div id="slimstat-quick-filters">
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -1') ?>"><?php _e('Today', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals yesterday&&&interval equals -1') ?>"><?php _e('Yesterday', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -7') ?>"><?php _e('Last 7 Days', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -14') ?>"><?php _e('Last 2 weeks', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -28') ?>"><?php _e('Last 4 weeks', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -84') ?>"><?php _e('Last 12 weeks', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -364') ?>"><?php _e('Last 12 months', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals today&&&interval equals -' . date('j')) ?>"><?php _e('This Month', 'wp-slimstat') ?></a>
-                        <a class="slimstat-filter-link noslimstat" href="<?php echo wp_slimstat_reports::fs_url('strtotime equals last day of -1 month 00:00:00 + 1 day &&&interval equals -' . date('d', strtotime('last day of -1 month 23:59:59'))) ?>"><?php _e('Previous Month', 'wp-slimstat') ?></a>
-                    </div>
-
-                    <strong><?php _e('Date Range', 'wp-slimstat') ?></strong>
-
-                    <label for="slimstat-filter-hour"><?php _e('Hour', 'wp-slimstat') ?></label>
-                    <input type="text" name="hour" id="slimstat-filter-hour" placeholder="<?php _e('Hour', 'wp-slimstat') ?>" class="short" value="">
-
-                    <label for="slimstat-filter-day"><?php _e('Day', 'wp-slimstat') ?></label>
-                    <input type="text" name="day" id="slimstat-filter-day" placeholder="<?php _e('Day', 'wp-slimstat') ?>" class="short" value="">
-
-                    <label for="slimstat-filter-month"><?php _e('Month', 'wp-slimstat') ?></label>
-                    <select name="month" id="slimstat-filter-month">
-                        <option value=""><?php _e('Month', 'wp-slimstat') ?></option><?php
-    for ($i = 1; $i <= 12; $i++) {
-        echo sprintf("<option value='%d'>", $i) . $GLOBALS['wp_locale']->get_month($i) . '</option>';
-    }
-?>
-                    </select>
-
-                    <label for="slimstat-filter-year">Year</label>
-                    <input type="text" name="year" id="slimstat-filter-year" placeholder="<?php _e('Year', 'wp-slimstat') ?>" class="short" value="">
-
-                    <input type="hidden" class="slimstat-filter-date" name="slimstat-filter-date" value=""/>
-                    <br/>
-
-                    <label for="slimstat-filter-interval"><?php _e('Days in interval', 'wp-slimstat') ?></label>
-                    <input type="text" name="interval" id="slimstat-filter-interval" placeholder="<?php _e('&plusmn; days', 'wp-slimstat') ?>" class="short" value="" title="<?php _e('To define an interval, enter the number of days (negative to go back in time).', 'wp-slimstat') ?>">
-
-                    <label for="slimstat-filter-interval_hours"><?php _e('Hours in interval', 'wp-slimstat') ?></label>
-                    <input type="text" name="interval_hours" id="slimstat-filter-interval_hours" placeholder="<?php _e('&plusmn; hours', 'wp-slimstat') ?>" class="short" value="">
-
-                    <input type="submit" value="<?php _e('Apply', 'wp-slimstat') ?>" class="button button-primary noslimstat right">
-                    <button type="button" id="slimstat-clear-cache" class="button button-secondary noslimstat right" style="margin-right:8px;"><?php _e('Clear Cache', 'wp-slimstat') ?></button>
-
-                    <?php
-                    wp_slimstat::toggle_date_i18n_filters(false);
-
-if (
-    wp_slimstat_db::$filters_normalized['date']['day'] != intval(date_i18n('j')) || wp_slimstat_db::$filters_normalized['date']['month'] != intval(date_i18n('n')) || wp_slimstat_db::$filters_normalized['date']['year'] != intval(date_i18n('Y')) || (wp_slimstat_db::$filters_normalized['date']['interval'] != -abs(wp_slimstat::$settings['posts_column_day_interval']) && wp_slimstat_db::$filters_normalized['date']['interval'] != -intval(date_i18n('j')) + 1)
-) {
-    echo '<a class="slimstat-filter-link button button-secondary noslimstat" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url() . '">' . __('Reset Filters', 'wp-slimstat') . '</a>';
-}
-?>
+                <?php
+                // Include the date range helper for display logic
+                if (class_exists('SlimStat_DateRange_Helper') === false) {
+                    include_once(__DIR__ . '/class-slimstat-daterange-helper.php');
+                }
+                
+                // Get current date range for display
+                $current_range = SlimStat_DateRange_Helper::get_current_date_range();
+                $display_label = SlimStat_DateRange_Helper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
+                ?>
+                
+                <!-- New Statistics-style Date Range Picker -->
+                <div class="slimstat-date-range-picker">
+                    <button type="button" class="slimstat-date-range-btn" aria-haspopup="true" aria-expanded="false">
+                        <div class="datepicker-badge-elements">
+                            <svg class="calendar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none">
+                                <defs>
+                                    <clipPath id="slimstat-calendar-clip">
+                                        <path fill="#fff" d="M0 0h16v16H0z"/>
+                                    </clipPath>
+                                </defs>
+                                <g clip-path="url(#slimstat-calendar-clip)" stroke="currentColor" stroke-linejoin="round">
+                                    <path d="M13 2.5H3a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5z"/>
+                                    <g stroke-linecap="round">
+                                        <path d="M11 1.5v2m-6-2v2m-2.5 2h11"/>
+                                    </g>
+                                </g>
+                            </svg>
+                            <span class="date-label"><?php echo esc_html($display_label); ?></span>
+                        </div>
+                        <div class="datepicker-badge-elements">
+                            <span class="caret"></span>
+                        </div>
+                    </button>
+                    <input type="text" class="slimstat-date-range-input" style="display: none;" />
                 </div>
-                <div id="datepicker-backdrop"></div>
             </fieldset><!-- .slimstat-date-filters -->
 
             <?php foreach (wp_slimstat_db::$filters_normalized['columns'] as $a_key => $a_details) : ?>
