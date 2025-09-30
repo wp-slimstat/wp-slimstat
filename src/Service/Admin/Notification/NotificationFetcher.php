@@ -7,7 +7,7 @@ use SlimStat\Components\RemoteRequest;
 
 class NotificationFetcher
 {
-    private $apiUrl = 'https://horizon.veronalabs.com';
+    private $apiUrl = 'https://connect.wp-slimstat.com';
 
     public function fetchNotification()
     {
