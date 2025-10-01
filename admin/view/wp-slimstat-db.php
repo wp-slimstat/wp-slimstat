@@ -143,17 +143,13 @@ class wp_slimstat_db
             
             if ($type !== 'custom') {
                 // Handle preset types
-                if (class_exists('SlimStat_DateRange_Helper') === false) {
-                    include_once(__DIR__ . '/class-slimstat-daterange-helper.php');
-                }
-                
                 // Validate that the type is a valid preset before using it
                 $valid_presets = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 
                                   'last_7_days', 'last_28_days', 'last_30_days', 'last_90_days', 
                                   'last_6_months', 'this_year'];
                 
                 if (in_array($type, $valid_presets, true)) {
-                    $preset_range = SlimStat_DateRange_Helper::get_range_by_preset($type);
+                    $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset($type);
                     if ($preset_range) {
                         $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $preset_range['end']));
                         $interval_days = ceil(($preset_range['end'] - $preset_range['start']) / 86400);

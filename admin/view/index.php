@@ -47,14 +47,9 @@ if (!empty($saved_filters)) {
 
             <fieldset id="slimstat-date-filters" class="wp-ui-highlight">
                 <?php
-                // Include the date range helper for display logic
-                if (class_exists('SlimStat_DateRange_Helper') === false) {
-                    include_once(__DIR__ . '/class-slimstat-daterange-helper.php');
-                }
-                
                 // Get current date range for display
-                $current_range = SlimStat_DateRange_Helper::get_current_date_range();
-                $display_label = SlimStat_DateRange_Helper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
+                $current_range = \SlimStat\Components\DateRangeHelper::get_current_date_range();
+                $display_label = \SlimStat\Components\DateRangeHelper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
                 ?>
                 
                 <!-- New Statistics-style Date Range Picker -->

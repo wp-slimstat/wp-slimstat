@@ -728,11 +728,6 @@ class wp_slimstat_admin
         
         if ($should_load_datepicker) {
             
-            // Include the date range helper
-            if (class_exists('SlimStat_DateRange_Helper') === false) {
-                include_once(__DIR__ . '/view/class-slimstat-daterange-helper.php');
-            }
-            
             // Enqueue moment.js
             wp_enqueue_script('slimstat_moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
             
@@ -751,11 +746,11 @@ class wp_slimstat_admin
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
                 'options' => [
-                    'wp_timezone' => SlimStat_DateRange_Helper::get_wp_timezone(),
-                    'start_of_week' => SlimStat_DateRange_Helper::get_week_start(),
-                    'date_format' => SlimStat_DateRange_Helper::get_date_format()
+                    'wp_timezone' => \SlimStat\Components\DateRangeHelper::get_wp_timezone(),
+                    'start_of_week' => \SlimStat\Components\DateRangeHelper::get_week_start(),
+                    'date_format' => \SlimStat\Components\DateRangeHelper::get_date_format()
                 ],
-                'strings' => SlimStat_DateRange_Helper::get_localized_strings()
+                'strings' => \SlimStat\Components\DateRangeHelper::get_localized_strings()
             ];
             wp_localize_script('slimstat_custom_datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
