@@ -1,6 +1,11 @@
 <?php
 
-if (!defined('ABSPATH')) {
+namespace SlimStat\Components;
+
+// don't load directly.
+if (! defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
     exit;
 }
 
@@ -9,7 +14,7 @@ if (!defined('ABSPATH')) {
  * Provides server-side date range calculations to keep logic consistent
  * between client-side picker and direct URL access
  */
-class SlimStat_DateRange_Helper
+class DateRangeHelper
 {
     /**
      * Get WordPress timezone string or UTC offset
@@ -70,23 +75,23 @@ class SlimStat_DateRange_Helper
         
         // Create DateTime object with site timezone
         if (strpos($timezone, '+') !== false || strpos($timezone, '-') !== false) {
-            $tz = new DateTimeZone($timezone);
+            $tz = new \DateTimeZone($timezone);
         } else {
             try {
-                $tz = new DateTimeZone($timezone);
-            } catch (Exception $e) {
-                $tz = new DateTimeZone('UTC');
+                $tz = new \DateTimeZone($timezone);
+            } catch (\Exception $e) {
+                $tz = new \DateTimeZone('UTC');
             }
         }
         
-        $now = new DateTime('now', $tz);
+        $now = new \DateTime('now', $tz);
         
         // Helper function to get start of week
         $get_week_start = function($date) use ($week_start) {
             $clone = clone $date;
             $current_day = (int) $clone->format('w'); // 0 = Sunday, 1 = Monday, etc.
             $days_to_subtract = ($current_day - $week_start + 7) % 7;
-            return $clone->sub(new DateInterval("P{$days_to_subtract}D"))->setTime(0, 0, 0);
+            return $clone->sub(new \DateInterval("P{$days_to_subtract}D"))->setTime(0, 0, 0);
         };
 
         $ranges = [
@@ -95,16 +100,16 @@ class SlimStat_DateRange_Helper
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'yesterday' => [
-                'start' => (clone $now)->sub(new DateInterval('P1D'))->setTime(0, 0, 0),
-                'end' => (clone $now)->sub(new DateInterval('P1D'))->setTime(23, 59, 59)
+                'start' => (clone $now)->sub(new \DateInterval('P1D'))->setTime(0, 0, 0),
+                'end' => (clone $now)->sub(new \DateInterval('P1D'))->setTime(23, 59, 59)
             ],
             'this_week' => [
                 'start' => $get_week_start($now),
-                'end' => (clone $get_week_start($now))->add(new DateInterval('P6D'))->setTime(23, 59, 59)
+                'end' => (clone $get_week_start($now))->add(new \DateInterval('P6D'))->setTime(23, 59, 59)
             ],
             'last_week' => [
-                'start' => $get_week_start((clone $now)->sub(new DateInterval('P1W'))),
-                'end' => (clone $get_week_start((clone $now)->sub(new DateInterval('P1W'))))->add(new DateInterval('P6D'))->setTime(23, 59, 59)
+                'start' => $get_week_start((clone $now)->sub(new \DateInterval('P1W'))),
+                'end' => (clone $get_week_start((clone $now)->sub(new \DateInterval('P1W'))))->add(new \DateInterval('P6D'))->setTime(23, 59, 59)
             ],
             'this_month' => [
                 'start' => (clone $now)->modify('first day of this month')->setTime(0, 0, 0),
@@ -115,23 +120,23 @@ class SlimStat_DateRange_Helper
                 'end' => (clone $now)->modify('last day of last month')->setTime(23, 59, 59)
             ],
             'last_7_days' => [
-                'start' => (clone $now)->sub(new DateInterval('P6D'))->setTime(0, 0, 0),
+                'start' => (clone $now)->sub(new \DateInterval('P6D'))->setTime(0, 0, 0),
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'last_28_days' => [
-                'start' => (clone $now)->sub(new DateInterval('P27D'))->setTime(0, 0, 0),
+                'start' => (clone $now)->sub(new \DateInterval('P27D'))->setTime(0, 0, 0),
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'last_30_days' => [
-                'start' => (clone $now)->sub(new DateInterval('P29D'))->setTime(0, 0, 0),
+                'start' => (clone $now)->sub(new \DateInterval('P29D'))->setTime(0, 0, 0),
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'last_90_days' => [
-                'start' => (clone $now)->sub(new DateInterval('P89D'))->setTime(0, 0, 0),
+                'start' => (clone $now)->sub(new \DateInterval('P89D'))->setTime(0, 0, 0),
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'last_6_months' => [
-                'start' => (clone $now)->sub(new DateInterval('P6M'))->setTime(0, 0, 0),
+                'start' => (clone $now)->sub(new \DateInterval('P6M'))->setTime(0, 0, 0),
                 'end' => (clone $now)->setTime(23, 59, 59)
             ],
             'this_year' => [
@@ -296,8 +301,8 @@ class SlimStat_DateRange_Helper
         }
 
         // Check SlimStat filters
-        if (!empty(wp_slimstat_db::$filters_normalized['date'])) {
-            $filters = wp_slimstat_db::$filters_normalized['date'];
+        if (!empty(\wp_slimstat_db::$filters_normalized['date'])) {
+            $filters = \wp_slimstat_db::$filters_normalized['date'];
             
             if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
                 $end_date = strtotime($filters['strtotime']);
@@ -383,3 +388,4 @@ class SlimStat_DateRange_Helper
         return $start_date . ' – ' . $end_date;
     }
 }
+
