@@ -3,6 +3,7 @@ if (!function_exists('add_action')) {
     exit();
 }
 
+use SlimStat\Components\DateRangeHelper;
 // Load header
 wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
 ?>
@@ -46,8 +47,8 @@ if (!empty($saved_filters)) {
             <fieldset id="slimstat-date-filters" class="wp-ui-highlight">
                 <?php
                 // Get current date range for display
-                $current_range = \SlimStat\Components\DateRangeHelper::get_current_date_range();
-                $display_label = \SlimStat\Components\DateRangeHelper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
+                $current_range = DateRangeHelper::get_current_date_range();
+                $display_label = DateRangeHelper::format_date_range($current_range['start'], $current_range['end'], $current_range['preset']);
                 ?>
                 
                 <!-- New Statistics-style Date Range Picker -->
