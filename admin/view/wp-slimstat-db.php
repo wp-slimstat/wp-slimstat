@@ -1,6 +1,7 @@
 <?php
 
 use SlimStat\Utils\Query;
+use SlimStat\Components\DateRangeHelper;
 
 // Ensure SlimStat autoloader is loaded for Query class
 if (!class_exists('SlimStat\\Includes\\Utils\\Query')) {
@@ -149,7 +150,7 @@ class wp_slimstat_db
                                   'last_6_months', 'this_year'];
                 
                 if (in_array($type, $valid_presets, true)) {
-                    $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset($type);
+                    $preset_range = DateRangeHelper::get_range_by_preset($type);
                     if ($preset_range) {
                         $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $preset_range['end']));
                         $interval_days = ceil(($preset_range['end'] - $preset_range['start']) / 86400);
