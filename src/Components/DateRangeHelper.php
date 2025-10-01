@@ -174,7 +174,7 @@ class DateRangeHelper
         $start_timestamp = is_numeric($start_date) ? $start_date : strtotime($start_date);
         $end_timestamp = is_numeric($end_date) ? $end_date : strtotime($end_date);
 
-        if (!$start_timestamp || !$end_timestamp) {
+        if ($start_timestamp === false || $end_timestamp === false) {
             return null;
         }
 
@@ -224,7 +224,7 @@ class DateRangeHelper
         $start = is_numeric($start_date) ? $start_date : strtotime($start_date);
         $end = is_numeric($end_date) ? $end_date : strtotime($end_date);
 
-        if (!$start || !$end) {
+        if ($start === false || $end === false) {
             return [
                 'valid' => false,
                 'error' => __('Invalid date format', 'wp-slimstat')

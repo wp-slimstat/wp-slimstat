@@ -173,7 +173,7 @@ class wp_slimstat_db
                         $start_timestamp > strtotime('-10 years')) {
                         
                         $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $end_timestamp));
-                        $interval_days = ceil(($end_timestamp - $start_timestamp) / 86400) + 1;
+                        $interval_days = ceil(($end_timestamp - $start_timestamp) / 86400);
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }

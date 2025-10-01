@@ -1,7 +1,7 @@
 <?php
 
 use SlimStat\Services\GeoService;
-
+use SlimStat\Components\DateRangeHelper;
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -746,11 +746,11 @@ class wp_slimstat_admin
                 'ajax_url' => admin_url('admin-ajax.php'),
                 'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
                 'options' => [
-                    'wp_timezone' => \SlimStat\Components\DateRangeHelper::get_wp_timezone(),
-                    'start_of_week' => \SlimStat\Components\DateRangeHelper::get_week_start(),
-                    'date_format' => \SlimStat\Components\DateRangeHelper::get_date_format()
+                    'wp_timezone' => DateRangeHelper::get_wp_timezone(),
+                    'start_of_week' => DateRangeHelper::get_week_start(),
+                    'date_format' => DateRangeHelper::get_date_format()
                 ],
-                'strings' => \SlimStat\Components\DateRangeHelper::get_localized_strings()
+                'strings' => DateRangeHelper::get_localized_strings()
             ];
             wp_localize_script('slimstat_custom_datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
