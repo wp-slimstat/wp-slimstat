@@ -288,7 +288,7 @@ class DateRangeHelper
             // Validate date format before processing
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
                 $start = strtotime($from_date);
-                $end = strtotime($to_date);
+                $end = strtotime($to_date . ' 23:59:59'); // Include the full end date
                 
                 if ($start && $end && $start <= $end && $end <= time()) {
                     return [
@@ -305,7 +305,7 @@ class DateRangeHelper
             $filters = \wp_slimstat_db::$filters_normalized['date'];
             
             if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
-                $end_date = strtotime($filters['strtotime']);
+                $end_date = strtotime($filters['strtotime'] . ' 23:59:59'); // Include the full end date
                 $interval_days = abs(intval($filters['interval']));
                 $start_date = $end_date - (($interval_days - 1) * 86400);
                 
