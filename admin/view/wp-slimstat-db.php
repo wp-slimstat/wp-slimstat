@@ -165,7 +165,7 @@ class wp_slimstat_db
                 // Validate date format (YYYY-MM-DD)
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
                     $start_timestamp = strtotime($from_date);
-                    $end_timestamp = strtotime($to_date);
+                    $end_timestamp = strtotime($to_date . ' 23:59:59'); // Include the full end date
                     
                     // Additional validation: ensure dates are valid and in reasonable range
                     if ($start_timestamp && $end_timestamp && 
@@ -173,7 +173,7 @@ class wp_slimstat_db
                         $end_timestamp <= time() && 
                         $start_timestamp > strtotime('-10 years')) {
                         
-                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $end_timestamp));
+                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', strtotime($to_date)));
                         $interval_days = ceil(($end_timestamp - $start_timestamp) / 86400);
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
