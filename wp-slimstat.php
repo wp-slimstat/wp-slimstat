@@ -1,4 +1,16 @@
 <?php
+/**
+ * Main plugin file
+ *
+ * @package Wp_SlimStat
+ */
+
+use SlimStat\Migration\MigrationService;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /*
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
@@ -139,6 +151,9 @@ class wp_slimstat
 
         // REST API Support
         add_action('rest_api_init', [self::class, 'register_rest_route']);
+
+        // Migration admin notice and page
+        MigrationService::init();
 
         // Load the admin library
         if (is_user_logged_in()) {

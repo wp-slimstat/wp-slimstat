@@ -9,8 +9,11 @@ class wp_slimstat_admin
     public static $current_screen    = 'slimview1';
     public static $page_location     = 'slimstat';
     public static $meta_user_reports = [];
+    public static $settings = [];
+    public static $user_reports = [];
+    public static $admin_notice    = '';
+    public static $main_menu_slug = 'slimview1';
 
-    protected static $admin_notice    = '';
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -738,28 +741,38 @@ class wp_slimstat_admin
         }
 
         // Find the first available location (screens with no reports assigned to them are hidden from the nav)
-        $parent = 'slimview1';
-        if (is_array(self::$meta_user_reports)) {
-            $parent = '';
-            foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
-                if (!empty(self::$meta_user_reports[$a_screen_id]) && $a_screen_info['show_in_sidebar']) {
-                    $parent = $a_screen_id;
-                    break;
-                }
-            }
+		$parent = '';
+		if (is_array(self::$meta_user_reports)) {
+			foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
+				if (!empty(self::$meta_user_reports[$a_screen_id]) && $a_screen_info['show_in_sidebar']) {
+					$parent = $a_screen_id;
+					break;
+				}
+			}
+		}
 
-            if (empty($parent)) {
-                $parent = 'slimlayout';
-            }
-        }
+		// If no parent was found in the user meta, use the first available screen as the parent
+		if (empty($parent) && !empty(self::$screens_info)) {
+			reset(self::$screens_info);
+			$parent = key(self::$screens_info);
+		}
 
-        // Get the current menu position
-        $new_entry = [];
-        if ('no' == wp_slimstat::$settings['use_separate_menu'] || is_network_admin()) {
-            $new_entry[] = add_menu_page(__('Slimstat', 'wp-slimstat'), __('Slimstat', 'wp-slimstat'), $minimum_capability, $parent, [self::class, 'wp_slimstat_include_view'], 'dashicons-chart-area');
-        } else {
-            $parent = 'admin.php';
-        }
+		// Don't show the menu if no screens are available at all
+		if (empty($parent) || !isset(self::$screens_info[$parent])) {
+			return;
+		}
+
+		self::$main_menu_slug = $parent;
+
+        // Add the main menu
+        $main_page_hook = add_menu_page(
+            __('SlimStat', 'wp-slimstat'),
+            __('SlimStat', 'wp-slimstat'),
+            $minimum_capability,
+            $parent,
+            [self::class, 'wp_slimstat_include_view'],
+            'dashicons-chart-area'
+        );
 
         foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
             if (isset(self::$meta_user_reports[$a_screen_id]) && empty(self::$meta_user_reports[$a_screen_id])) {
@@ -825,10 +838,6 @@ class wp_slimstat_admin
                     $parent = $a_screen_id;
                     break;
                 }
-            }
-
-            if (empty($parent)) {
-                $parent = 'slimlayout';
             }
         }
 
@@ -1539,6 +1548,10 @@ class wp_slimstat_admin
 
     public static function show_indexes_notice()
     {
+		// If new migration system is active, suppress legacy performance notice
+		if (class_exists('SlimStat\\Migration\\Admin\\MigrationAdmin')) {
+			return;
+		}
 
         if (!current_user_can('manage_options')) {
             return;
