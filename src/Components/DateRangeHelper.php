@@ -263,8 +263,8 @@ class DateRangeHelper
      */
     public static function get_current_date_range()
     {
-        $defaults = self::get_range_by_preset('last_7_days');
-        
+        $defaults = self::get_range_by_preset('last_30_days');
+
         // Check URL parameters - prioritize type parameter
         if (isset($_GET['type'])) {
             $type = sanitize_key($_GET['type']);
@@ -320,7 +320,7 @@ class DateRangeHelper
         return [
             'start' => $defaults['start'],
             'end' => $defaults['end'],
-            'preset' => 'last_7_days'
+            'preset' => 'last_30_days'
         ];
     }
 

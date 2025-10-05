@@ -169,30 +169,35 @@ jQuery(document).ready(function($) {
             }
         }
         
-        // If neither preset type nor from/to are provided, default to Last 7 Days preset
+        // If neither preset type nor from/to are provided, default to Last 30 Days preset
         const fromParam = urlParams.get('from');
         const toParam = urlParams.get('to');
         if (!fromParam && !toParam) {
-            const presetLabel = getPresetLabel('last_7_days');
+            const presetLabel = getPresetLabel('last_30_days');
             const presetRanges = getPresetRanges();
             const range = presetRanges[presetLabel];
             if (range && Array.isArray(range) && range.length === 2) {
                 return {
                     startDate: range[0],
                     endDate: range[1],
-                    preset: 'last_7_days'
+                    preset: 'last_30_days'
                 };
             }
         }
 
-        // Fallback to from/to parameters
-        const fromDate = fromParam || moment().subtract(6, 'days').format(CONFIG.SERVER_FORMAT);
-        const toDate = toParam || moment().format(CONFIG.SERVER_FORMAT);
-        return {
-            startDate: moment(fromDate),
-            endDate: moment(toDate),
-            preset: 'custom'
-        };
+		// Fallback to from/to parameters with site timezone normalization
+		const localTime = getLocalTime();
+		const fromDate = fromParam
+			? normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone)
+			: normalizeDate(localTime.clone().subtract(29, 'days'), validTimezone);
+		const toDate = toParam
+			? normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone)
+			: normalizeDate(localTime.clone(), validTimezone);
+		return {
+			startDate: fromDate,
+			endDate: toDate,
+			preset: 'custom'
+		};
     }
 
     /**
