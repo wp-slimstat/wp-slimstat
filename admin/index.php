@@ -243,6 +243,7 @@ class wp_slimstat_admin
                 'slimstat_delete_pageview'       => 'delete_pageview',
                 'slimstat_update_geoip_database' => 'update_geoip_database',
                 'slimstat_check_geoip_database'  => 'check_geoip_database',
+                'slimstat_get_filter_options'    => 'get_filter_options',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -1176,6 +1177,111 @@ class wp_slimstat_admin
     }
 
     // END: manage_filters
+
+    /**
+     * AJAX handler to get distinct filter options for a selected dimension
+     */
+    public static function get_filter_options()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+
+        // If this user is whitelisted, we use the minimum capability
+        $minimum_capability = 'read';
+        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
+        }
+
+        if (!current_user_can($minimum_capability)) {
+            wp_send_json_error('Insufficient permissions');
+            return;
+        }
+
+        $dimension = sanitize_text_field($_POST['dimension'] ?? '');
+
+        // Validate dimension exists in columns_names
+        include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
+        wp_slimstat_db::init();
+
+        if (empty($dimension) || !isset(wp_slimstat_db::$columns_names[$dimension])) {
+            wp_send_json_error('Invalid dimension');
+            return;
+        }
+
+        // Get distinct values for this dimension
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'slim_stats';
+
+        // Limit results to prevent overwhelming the dropdown (filterable for customization)
+        $limit = apply_filters('slimstat_filter_options_limit', 500, $dimension);
+        $limit = absint($limit); // Ensure it's a positive integer
+        
+        // Enforce reasonable bounds to prevent abuse
+        if ($limit < 1 || $limit > 5000) {
+            $limit = 500; // Reset to default if out of reasonable range
+        }
+
+        // Sanitize column name to prevent SQL injection (only allow known columns)
+        $allowed_columns = array_keys(wp_slimstat_db::$columns_names);
+        if (!in_array($dimension, $allowed_columns, true)) {
+            wp_send_json_error('Invalid column');
+            return;
+        }
+
+        // Additional sanitization layer for column name (defense in depth)
+        $safe_dimension = esc_sql($dimension);
+
+        // Get distinct non-empty values
+        $column_type = wp_slimstat_db::$columns_names[$dimension][1];
+        
+        if ($column_type === 'varchar') {
+            $sql = $wpdb->prepare(
+                "SELECT DISTINCT `{$safe_dimension}` as value 
+                FROM {$table_name} 
+                WHERE `{$safe_dimension}` IS NOT NULL AND `{$safe_dimension}` != '' 
+                ORDER BY `{$safe_dimension}` ASC 
+                LIMIT %d",
+                $limit
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT DISTINCT `{$safe_dimension}` as value 
+                FROM {$table_name} 
+                WHERE `{$safe_dimension}` IS NOT NULL AND `{$safe_dimension}` != 0 
+                ORDER BY `{$safe_dimension}` ASC 
+                LIMIT %d",
+                $limit
+            );
+        }
+
+        $results = $wpdb->get_results($sql, ARRAY_A);
+
+        // Check for database errors
+        if ($wpdb->last_error) {
+            error_log('SlimStat: Filter options query failed - ' . $wpdb->last_error);
+            wp_send_json_error('Database query failed');
+            return;
+        }
+
+        $options = [];
+        foreach ($results as $row) {
+            if (!empty($row['value'])) {
+                // Sanitize output to prevent XSS
+                $sanitized_value = sanitize_text_field($row['value']);
+                
+                // Limit individual option length to prevent DOM issues
+                if (strlen($sanitized_value) > 255) {
+                    $sanitized_value = substr($sanitized_value, 0, 255) . '...';
+                }
+                
+                $options[] = $sanitized_value;
+            }
+        }
+
+        wp_send_json_success($options);
+        exit();
+    }
+
+    // END: get_filter_options
 
     public static function update_geoip_database()
     {

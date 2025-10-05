@@ -210,12 +210,356 @@ jQuery(function () {
     // ----- BEGIN: FILTERS ----------------------------------------------------------
     //
 
+    // Custom Searchable Select Component
+    class SlimStatSearchableSelect {
+        constructor(element, options = {}) {
+            this.element = element;
+            this.options = {
+                placeholder: 'Select value...',
+                searchPlaceholder: 'Search...',
+                noResultsText: 'No results found',
+                loadingText: 'Loading...',
+                allowClear: true,
+                ...options
+            };
+            
+            this.selectedValue = '';
+            this.selectedText = '';
+            this.isOpen = false;
+            this.filteredOptions = [];
+            this.allOptions = [];
+            
+            this.init();
+        }
+
+        init() {
+            this.createWrapper();
+            this.bindEvents();
+        }
+
+        createWrapper() {
+            // Create wrapper structure
+            this.wrapper = document.createElement('div');
+            this.wrapper.className = 'slimstat-searchable-select';
+            
+            this.selectWrapper = document.createElement('div');
+            this.selectWrapper.className = 'slimstat-select-wrapper';
+            
+            this.display = document.createElement('div');
+            this.display.className = 'slimstat-select-display slimstat-placeholder';
+            // Create elements safely to prevent XSS
+            const textSpan = document.createElement('span');
+            textSpan.className = 'slimstat-select-text';
+            textSpan.textContent = this.options.placeholder;
+            
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'slimstat-select-arrow';
+            
+            this.display.appendChild(textSpan);
+            this.display.appendChild(arrowSpan);
+            
+            this.dropdown = document.createElement('div');
+            this.dropdown.className = 'slimstat-select-dropdown';
+            this.dropdown.style.display = 'none';
+            
+            this.searchContainer = document.createElement('div');
+            this.searchContainer.className = 'slimstat-select-search';
+            // Create search input safely to prevent XSS
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = this.options.searchPlaceholder;
+            this.searchContainer.appendChild(searchInput);
+            
+            this.optionsContainer = document.createElement('div');
+            this.optionsContainer.className = 'slimstat-select-options';
+            
+            this.dropdown.appendChild(this.searchContainer);
+            this.dropdown.appendChild(this.optionsContainer);
+            
+            this.selectWrapper.appendChild(this.display);
+            this.selectWrapper.appendChild(this.dropdown);
+            this.wrapper.appendChild(this.selectWrapper);
+            
+            // Insert wrapper before original element and hide original
+            this.element.parentNode.insertBefore(this.wrapper, this.element);
+            this.element.style.display = 'none';
+        }
+
+        bindEvents() {
+            // Display click to toggle dropdown
+            this.display.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.toggle();
+            });
+
+            // Search input
+            const searchInput = this.searchContainer.querySelector('input');
+            searchInput.addEventListener('input', (e) => {
+                this.filterOptions(e.target.value);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.close();
+                }
+            });
+
+            // Click outside to close
+            document.addEventListener('click', (e) => {
+                if (!this.wrapper.contains(e.target)) {
+                    this.close();
+                }
+            });
+
+            // Prevent dropdown from closing when clicking inside
+            this.dropdown.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        setOptions(options) {
+            this.allOptions = options;
+            this.filteredOptions = [...options];
+            this.renderOptions();
+        }
+
+        setLoading(loading = true) {
+            if (loading) {
+                // Create loading element safely to prevent XSS
+                this.optionsContainer.innerHTML = '';
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'slimstat-select-loading';
+                loadingDiv.textContent = this.options.loadingText;
+                this.optionsContainer.appendChild(loadingDiv);
+            }
+        }
+
+        filterOptions(searchTerm) {
+            const term = searchTerm.toLowerCase().trim();
+            
+            if (!term) {
+                this.filteredOptions = [...this.allOptions];
+            } else {
+                this.filteredOptions = this.allOptions.filter(option => 
+                    option.toLowerCase().includes(term)
+                );
+            }
+            
+            this.renderOptions();
+        }
+
+        renderOptions() {
+            this.optionsContainer.innerHTML = '';
+            
+            if (this.filteredOptions.length === 0) {
+                // Create no results element safely to prevent XSS
+                const noResultsDiv = document.createElement('div');
+                noResultsDiv.className = 'slimstat-select-no-results';
+                noResultsDiv.textContent = this.options.noResultsText;
+                this.optionsContainer.appendChild(noResultsDiv);
+                return;
+            }
+            
+            this.filteredOptions.forEach(option => {
+                const optionElement = document.createElement('button');
+                optionElement.type = 'button';
+                optionElement.className = 'slimstat-select-option';
+                if (option === this.selectedValue) {
+                    optionElement.classList.add('slimstat-selected');
+                }
+                optionElement.textContent = option;
+                optionElement.addEventListener('click', () => {
+                    this.selectOption(option);
+                });
+                this.optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        selectOption(value) {
+            this.selectedValue = value;
+            this.selectedText = value;
+            
+            // Update display
+            const textElement = this.display.querySelector('.slimstat-select-text');
+            textElement.textContent = value;
+            this.display.classList.remove('slimstat-placeholder');
+            
+            // Update hidden input
+            this.element.value = value;
+            
+            // Trigger change event on original element
+            const changeEvent = new Event('change', { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+            
+            this.close();
+        }
+
+        clear() {
+            this.selectedValue = '';
+            this.selectedText = '';
+            
+            // Reset display
+            const textElement = this.display.querySelector('.slimstat-select-text');
+            textElement.textContent = this.options.placeholder;
+            this.display.classList.add('slimstat-placeholder');
+            
+            // Clear hidden input
+            this.element.value = '';
+            
+            // Trigger change event
+            const changeEvent = new Event('change', { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+        }
+
+        getValue() {
+            return this.selectedValue;
+        }
+
+        setValue(value) {
+            if (this.allOptions.includes(value)) {
+                this.selectOption(value);
+            }
+        }
+
+        toggle() {
+            if (this.isOpen) {
+                this.close();
+            } else {
+                this.open();
+            }
+        }
+
+        open() {
+            if (this.isOpen) return;
+            
+            this.isOpen = true;
+            this.selectWrapper.classList.add('slimstat-select-open');
+            this.dropdown.style.display = 'block';
+            
+            // Focus search input
+            const searchInput = this.searchContainer.querySelector('input');
+            searchInput.focus();
+            searchInput.select();
+            
+            // Reset filter
+            this.filterOptions('');
+        }
+
+        close() {
+            if (!this.isOpen) return;
+            
+            this.isOpen = false;
+            this.selectWrapper.classList.remove('slimstat-select-open');
+            this.dropdown.style.display = 'none';
+            
+            // Clear search
+            const searchInput = this.searchContainer.querySelector('input');
+            searchInput.value = '';
+        }
+
+        destroy() {
+            // Remove wrapper and show original element
+            this.wrapper.remove();
+            this.element.style.display = '';
+        }
+    }
+
+    // Initialize searchable select instance
+    let searchableSelectInstance = null;
+
+    // Handle dimension change to load filter options dynamically
+    jQuery("#slimstat-filter-name").on("change", function () {
+        var dimension = jQuery(this).val();
+        var $textInput = jQuery("#slimstat-filter-value");
+
+        if (!dimension) {
+            // Destroy searchable select if it exists
+            if (searchableSelectInstance) {
+                searchableSelectInstance.destroy();
+                searchableSelectInstance = null;
+            }
+            return;
+        }
+
+        // Show loading state
+        $textInput.attr("placeholder", "Loading options...").attr("name", "v");
+
+        // Fetch options via AJAX
+        jQuery.ajax({
+            method: "POST",
+            url: ajaxurl,
+            data: {
+                action: "slimstat_get_filter_options",
+                dimension: dimension,
+                security: jQuery("#meta-box-order-nonce").val(),
+            },
+            dataType: "json",
+            timeout: 30000, // 30 second timeout to prevent hanging requests
+        })
+            .done(function (response) {
+                if (response.success && response.data && response.data.length > 0) {
+                    // Destroy existing searchable select if it exists
+                    if (searchableSelectInstance) {
+                        searchableSelectInstance.destroy();
+                        searchableSelectInstance = null;
+                    }
+                    
+                    // Initialize searchable select
+                    searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
+                        placeholder: 'Select value...',
+                        searchPlaceholder: 'Search options...',
+                        noResultsText: 'No matching options found',
+                        loadingText: 'Loading options...'
+                    });
+                    
+                    // Set the options from the AJAX response
+                    searchableSelectInstance.setOptions(response.data);
+                    
+                    $textInput.attr("name", "v");
+                } else {
+                    // Destroy searchable select if it exists
+                    if (searchableSelectInstance) {
+                        searchableSelectInstance.destroy();
+                        searchableSelectInstance = null;
+                    }
+                    
+                    // No options found, show text input instead
+                    $textInput.attr("placeholder", "Enter value...").attr("name", "v");
+                }
+            })
+            .fail(function () {
+                // Destroy searchable select if it exists
+                if (searchableSelectInstance) {
+                    searchableSelectInstance.destroy();
+                    searchableSelectInstance = null;
+                }
+                
+                // On error, fall back to text input
+                $textInput.attr("placeholder", "Enter value...").attr("name", "v");
+            });
+    });
+
     // Make input field read-only if certain operators are selected
     jQuery("#slimstat-filter-operator").on("change", function () {
-        if (this.value == "is_empty" || this.value == "is_not_empty") {
-            jQuery("#slimstat-filter-value").attr("readonly", "readonly");
+        var operator = this.value;
+        var $textInput = jQuery("#slimstat-filter-value");
+
+        if (operator == "is_empty" || operator == "is_not_empty") {
+            $textInput.attr("readonly", "readonly");
+            
+            // Disable searchable select if it exists
+            if (searchableSelectInstance) {
+                searchableSelectInstance.selectWrapper.style.pointerEvents = 'none';
+                searchableSelectInstance.selectWrapper.style.opacity = '0.5';
+            }
         } else {
-            jQuery("#slimstat-filter-value").removeAttr("readonly");
+            $textInput.removeAttr("readonly");
+            
+            // Enable searchable select if it exists
+            if (searchableSelectInstance) {
+                searchableSelectInstance.selectWrapper.style.pointerEvents = 'auto';
+                searchableSelectInstance.selectWrapper.style.opacity = '1';
+            }
         }
     });
 
