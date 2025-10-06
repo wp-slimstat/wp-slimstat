@@ -657,7 +657,7 @@ class wp_slimstat
 
             // Reports - Functionality
             'use_current_month_timespan'      => 'no',
-            'posts_column_day_interval'       => 30,
+            'posts_column_day_interval'       => 28,
             'rows_to_show'                    => '20',
             'show_hits'                       => 'no',
             'ip_lookup_service'               => 'https://ip-api.com/#',
