@@ -20,6 +20,8 @@ class Query
 
     private $groupByClause;
 
+    private $havingClauses = [];
+
     private $limitClause;
 
     private $whereRelation = 'AND';
@@ -178,7 +180,7 @@ class Query
             // Single row insert
             $this->insertValues[] = $values;
         }
-        
+
         return $this;
     }
 
@@ -231,7 +233,7 @@ class Query
         if (!empty($params)) {
             $this->valuesToPrepare = array_merge($this->valuesToPrepare, $params);
         }
-        
+
         return $this;
     }
 
@@ -287,6 +289,25 @@ class Query
     public function whereRaw($condition, $values = [])
     {
         $this->rawWhereClause[] = empty($values) ? $condition : $this->prepareQuery($condition, $values);
+
+        return $this;
+    }
+
+    /**
+     * Add a raw HAVING clause to the query. If values are provided, they will be
+     * escaped and inserted into the clause. Any leading "HAVING" keyword is stripped
+     * to ensure correct placement in the final query.
+     *
+     * @param string $condition The raw HAVING condition.
+     * @param array  $values    Values to be inserted into the condition.
+     *
+     * @return $this
+     */
+    public function havingRaw($condition, $values = [])
+    {
+        // Strip an optional leading HAVING keyword to avoid duplication
+        $condition = preg_replace('/^\s*HAVING\s+/i', '', $condition);
+        $this->havingClauses[] = empty($values) ? $condition : $this->prepareQuery($condition, $values);
 
         return $this;
     }
@@ -399,6 +420,7 @@ class Query
      */
     public function join($table, $on, $conditions = [], $joinType = 'INNER')
     {
+        $joinType = strtoupper($joinType);
         if (is_array($on) && 2 == count($on)) {
             $joinClause = sprintf('%s JOIN %s ON %s = %s', $joinType, $table, $on[0], $on[1]);
             if (!empty($conditions)) {
@@ -415,11 +437,22 @@ class Query
             }
 
             $this->joinClauses[] = $joinClause;
-        } else {
-            throw new InvalidArgumentException('Invalid join clause');
+            return $this;
         }
 
-        return $this;
+        // Backward compatibility: allow two string fields passed separately
+        if (is_string($on) && is_string($conditions) && '' !== $on && '' !== $conditions) {
+            $this->joinClauses[] = sprintf('%s JOIN %s ON %s = %s', $joinType, $table, $on, $conditions);
+            return $this;
+        }
+
+        // Allow raw ON condition string
+        if (is_string($on) && '' !== $on && (empty($conditions) || (is_array($conditions) && empty($conditions)))) {
+            $this->joinClauses[] = sprintf('%s JOIN %s ON %s', $joinType, $table, $on);
+            return $this;
+        }
+
+        throw new InvalidArgumentException('Invalid join clause');
     }
 
     /**
@@ -576,7 +609,7 @@ class Query
                 if (is_null($value)) {
                     $condition = sprintf('%s %s NULL', $field, $operator);
                 }
-                
+
                 break;
             case 'IN':
             case 'NOT IN':
@@ -646,7 +679,7 @@ class Query
                 if (empty($this->insertValues)) {
                     return '';
                 }
-                
+
                 $operation = $this->ignore ? 'INSERT IGNORE INTO' : 'INSERT INTO';
                 $sampleRow = $this->insertValues[0];
                 $keys      = array_keys($sampleRow);
@@ -660,7 +693,7 @@ class Query
                         $this->valuesToPrepare[] = $value;
                     }
                 }
-                
+
                 $query .= implode(', ', $valueSets);
                 break;
             case 'union':
@@ -688,6 +721,10 @@ class Query
 
         if (!empty($this->groupByClause)) {
             $query .= ' ' . $this->groupByClause;
+        }
+
+        if (!empty($this->havingClauses)) {
+            $query .= ' HAVING ' . implode(' AND ', $this->havingClauses);
         }
 
         if (!empty($this->orderClause)) {
@@ -898,26 +935,47 @@ class Query
     {
         $historical = is_array($historical) ? $historical : [];
         $live       = is_array($live) ? $live : [];
+
+        // If no group key provided, try to determine it from the data
         if (!$groupKey) {
-            return array_merge($historical, $live);
+            // Try to find a suitable group key from the first row
+            $firstRow = !empty($historical) ? $historical[0] : (!empty($live) ? $live[0] : null);
+            if ($firstRow && is_array($firstRow)) {
+                // Use the first column that's not a sum field
+                foreach (array_keys($firstRow) as $key) {
+                    if (!in_array($key, $sumFields)) {
+                        $groupKey = $key;
+                        break;
+                    }
+                }
+            }
+
+            // If still no group key, just merge without grouping
+            if (!$groupKey) {
+                return array_merge($historical, $live);
+            }
         }
 
         $result = [];
         foreach ($historical as $row) {
-            $key          = $row[$groupKey];
-            $result[$key] = $row;
+            if (isset($row[$groupKey])) {
+                $key          = $row[$groupKey];
+                $result[$key] = $row;
+            }
         }
 
         foreach ($live as $row) {
-            $key = $row[$groupKey];
-            if (isset($result[$key])) {
-                foreach ($sumFields as $field) {
-                    if (isset($row[$field])) {
-                        $result[$key][$field] += $row[$field];
+            if (isset($row[$groupKey])) {
+                $key = $row[$groupKey];
+                if (isset($result[$key])) {
+                    foreach ($sumFields as $field) {
+                        if (isset($row[$field])) {
+                            $result[$key][$field] += $row[$field];
+                        }
                     }
+                } else {
+                    $result[$key] = $row;
                 }
-            } else {
-                $result[$key] = $row;
             }
         }
 
@@ -1277,12 +1335,9 @@ class Query
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
             }
 
-            $groupKey = null;
-            if (!empty($this->groupByClause) && preg_match('/GROUP BY (\w+)/', $this->groupByClause, $m)) {
-                $groupKey = $m[1];
-            }
-
-            $merged = $this->mergeGroupResults($live, $historical, $groupKey);
+            // Let mergeGroupResults determine the group key automatically
+            // This handles complex GROUP BY expressions and aliases properly
+            $merged = $this->mergeGroupResults($live, $historical);
             if (is_array($merged)) {
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
             }

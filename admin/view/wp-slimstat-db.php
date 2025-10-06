@@ -461,7 +461,7 @@ class wp_slimstat_db
             // no subquery before count
             return true;
         }
-        
+
         return preg_match('/^select\s+count\s*\(\s*distinct\s+.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim) && (false === stripos($sql_trim, ' join ') && false === stripos($sql_trim, ' group by ') && false === stripos($sql_trim, ' having ') && false === stripos($sql_trim, ' union ') && false === stripos($sql_trim, ' as sub'));
     }
 
@@ -777,7 +777,7 @@ class wp_slimstat_db
         ));
     }
 
-    public static function count_records($_column = 'id', $_where = '', $_use_date_filters = true)
+    public static function count_records($_column = 'id', $_where = '', $_use_date_filters = true, $where_params = [])
     {
         // Validating the column
         if (false === in_array($_column, ['id', 'ip', 'other_ip', 'username', 'email', 'country', 'location', 'city', 'referer', 'resource', 'searchterms', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out', 'dt'])) {
@@ -792,6 +792,10 @@ class wp_slimstat_db
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
             $query->where('dt', 'BETWEEN', [intval(self::$filters_normalized['utime']['start']), intval(self::$filters_normalized['utime']['end'])]);
+        }
+
+        if (!empty($_where) && !empty($where_params)) {
+            $_where = $GLOBALS['wpdb']->prepare($_where, $where_params);
         }
 
         // Add custom where clause
@@ -1013,7 +1017,7 @@ class wp_slimstat_db
 
         // HAVING
         if (!empty($_having)) {
-            $query->whereRaw($_having);
+			$query->havingRaw($_having);
         }
 
         // ORDER BY
@@ -1063,7 +1067,13 @@ class wp_slimstat_db
     {
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
-            $_where            = empty($_column['where']) ? '' : $_column['where'];
+            $where_params = !empty($_column['where_params']) ? $_column['where_params'] : [];
+            $_where       = !empty($_column['where']) ? $_column['where'] : '';
+
+            if (!empty($_where) && !empty($where_params)) {
+                $_where = $GLOBALS['wpdb']->prepare($_where, $where_params);
+            }
+
             $_having           = empty($_column['having']) ? '' : $_column['having'];
             $_use_date_filters = empty($_column['use_date_filters']) ? true : $_column['use_date_filters'];
             $_as_column        = empty($_column['as_column']) ? '' : $_column['as_column'];
@@ -1103,9 +1113,9 @@ class wp_slimstat_db
         $query->groupBy($group_by_column);
 
         // HAVING
-        if (!empty($_having)) {
-            $query->whereRaw($_having);
-        }
+		if (!empty($_having)) {
+			$query->havingRaw($_having);
+		}
 
         // ORDER BY
         $query->orderBy('counthits DESC');
@@ -1141,13 +1151,10 @@ class wp_slimstat_db
         $_where = self::get_combined_where($_where, $_column);
         $table  = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-        $subQuery = Query::select(sprintf('%s, %s(id) as aggrid', $_column, $_aggr_function))
-            ->from($table)
-            ->whereRaw($_where)
-            ->groupBy($_column);
+		$subQuerySql = sprintf('SELECT %s, %s(id) as aggrid FROM %s WHERE %s GROUP BY %s', $_column, $_aggr_function, $table, $_where, $_column);
 
-        $query = Query::select(sprintf('%s, ts1.aggrid as %s, COUNT(*) as counthits', $_outer_select_column, $_column))
-            ->from(sprintf('(%s) AS ts1', $subQuery->buildQuery()))
+		$query = Query::select(sprintf('%s, ts1.aggrid as %s, COUNT(*) as counthits', $_outer_select_column, $_column))
+			->from(sprintf('(%s) AS ts1', $subQuerySql))
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
@@ -1222,7 +1229,7 @@ class wp_slimstat_db
         $results[0]['tooltip'] = __('A pageview is a request to load a single HTML page on your website.', 'wp-slimstat');
 
         $results[1]['metric']  = __('Unique Referrers', 'wp-slimstat');
-        $results[1]['value']   = number_format_i18n(wp_slimstat_db::count_records('referer', sprintf("referer NOT LIKE '%%%s%%'", $server_name)));
+        $results[1]['value']   = number_format_i18n(wp_slimstat_db::count_records('referer', 'referer NOT LIKE %s', true, ['%' . $GLOBALS['wpdb']->esc_like($server_name) . '%']));
         $results[1]['tooltip'] = __('A referrer (or referring site) is a site that a visitor previously visited before following a link to your site.', 'wp-slimstat');
 
         $results[2]['metric']  = __('Direct Pageviews', 'wp-slimstat');
@@ -1230,7 +1237,7 @@ class wp_slimstat_db
         $results[2]['tooltip'] = __("Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables.", 'wp-slimstat');
 
         $results[3]['metric']  = __('From External SERP', 'wp-slimstat');
-        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', "searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%'"));
+        $results[3]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL AND referer IS NOT NULL AND referer NOT LIKE %s', true, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
         $results[3]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages.', 'wp-slimstat');
 
         $results[4]['metric']  = __('Unique Landing Pages', 'wp-slimstat');
@@ -1246,7 +1253,7 @@ class wp_slimstat_db
         $results[6]['tooltip'] = __('Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page.', 'wp-slimstat');
 
         $results[7]['metric']  = __('Currently from search engines', 'wp-slimstat');
-        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', "searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE '%" . home_url() . "%' AND dt > UNIX_TIMESTAMP() - 300", false));
+        $results[7]['value']   = number_format_i18n(wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL  AND referer IS NOT NULL AND referer NOT LIKE %s AND dt > UNIX_TIMESTAMP() - 300', false, ['%' . $GLOBALS['wpdb']->esc_like(home_url()) . '%']));
         $results[7]['tooltip'] = __('Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes.', 'wp-slimstat');
 
         return $results;
