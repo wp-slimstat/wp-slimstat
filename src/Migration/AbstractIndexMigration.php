@@ -42,6 +42,7 @@ abstract class AbstractIndexMigration extends AbstractMigration
                 return false;
             }
         }
+
         return true;
     }
 
@@ -50,7 +51,7 @@ abstract class AbstractIndexMigration extends AbstractMigration
         // Use backticks for table name to avoid issues with %i placeholder
         $table_name = $this->getTableName();
         $exists = $this->wpdb->get_var($this->wpdb->prepare(
-            "SHOW INDEX FROM `{$table_name}` WHERE Key_name = %s",
+            sprintf('SHOW INDEX FROM `%s` WHERE Key_name = %%s', $table_name),
             $this->getIndexName()
         ));
         return empty($exists);

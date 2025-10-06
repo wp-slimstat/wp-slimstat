@@ -9,18 +9,11 @@ use wpdb;
 class MigrationManager
 {
     private const OPTION_STATUS = 'slimstat_migration_status';
-    private const OPTION_DISMISSED = 'slimstat_migration_dismissed';
 
-    /** @var wpdb */
-    private $wpdb;
+    private const OPTION_DISMISSED = 'slimstat_migration_dismissed';
 
     /** @var array<int, MigrationInterface> */
     private $migrations = [];
-
-    public function __construct(wpdb $wpdb)
-    {
-        $this->wpdb = $wpdb;
-    }
 
     /**
      * @return array<int, MigrationInterface>
@@ -36,9 +29,7 @@ class MigrationManager
      */
     public function getRequiredMigrations(): array
     {
-        return array_filter($this->migrations, function($migration) {
-            return $migration->shouldRun();
-        });
+        return array_filter($this->migrations, fn($migration) => $migration->shouldRun());
     }
 
     public function register(MigrationInterface $migration): void
@@ -57,6 +48,7 @@ class MigrationManager
                 return true;
             }
         }
+
 		return false;
     }
 
@@ -84,10 +76,12 @@ class MigrationManager
             $ok = !$migration->shouldRun() || $migration->run();
             $results[$migration->getName()] = $ok;
         }
+
         update_option(self::OPTION_STATUS, $results, false);
         if (!$this->needsMigration()) {
             $this->dismissNotice();
         }
+
         return $results;
     }
 
@@ -101,6 +95,7 @@ class MigrationManager
         foreach ($this->migrations as $migration) {
             $diagnostics = array_merge($diagnostics, $migration->getDiagnostics());
         }
+
         return $diagnostics;
     }
 }

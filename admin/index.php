@@ -163,10 +163,8 @@ class wp_slimstat_admin
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
 
         // Display a notice that hightlights this version's features
-        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview')) {
-            if (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin()) {
-                add_action('admin_notices', [self::class, 'show_latest_news']);
-            }
+        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
+            add_action('admin_notices', [self::class, 'show_latest_news']);
 
         }
 
@@ -753,19 +751,18 @@ class wp_slimstat_admin
 
 		// If no parent was found in the user meta, use the first available screen as the parent
 		if (empty($parent) && !empty(self::$screens_info)) {
-			reset(self::$screens_info);
-			$parent = key(self::$screens_info);
+			$parent = array_key_first(self::$screens_info);
 		}
 
 		// Don't show the menu if no screens are available at all
 		if (empty($parent) || !isset(self::$screens_info[$parent])) {
-			return;
+			return null;
 		}
 
 		self::$main_menu_slug = $parent;
 
         // Add the main menu
-        $main_page_hook = add_menu_page(
+        add_menu_page(
             __('SlimStat', 'wp-slimstat'),
             __('SlimStat', 'wp-slimstat'),
             $minimum_capability,
@@ -1549,7 +1546,7 @@ class wp_slimstat_admin
     public static function show_indexes_notice()
     {
 		// If new migration system is active, suppress legacy performance notice
-		if (class_exists('SlimStat\\Migration\\Admin\\MigrationAdmin')) {
+		if (class_exists(\SlimStat\Migration\Admin\MigrationAdmin::class)) {
 			return;
 		}
 

@@ -673,7 +673,7 @@ class wp_slimstat
         } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Is this a spammer?
             $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
-                ->from(DB_NAME . ".{$GLOBALS['wpdb']->comments}")
+                ->from(DB_NAME . ('.' . $GLOBALS['wpdb']->comments))
                 ->where('comment_author_IP', '=', self::$stat['ip'])
                 ->where('comment_approved', '=', 'spam')
                 ->groupBy('comment_author')

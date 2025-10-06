@@ -42,7 +42,7 @@ class Storage
 			unset($data['notes']);
 		}
 
-		if (!empty($data)) {
+		if ($data !== []) {
 			$query->set($data);
 		}
 

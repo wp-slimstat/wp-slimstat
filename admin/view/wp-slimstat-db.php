@@ -461,6 +461,7 @@ class wp_slimstat_db
             // no subquery before count
             return true;
         }
+        
         return preg_match('/^select\s+count\s*\(\s*distinct\s+.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim) && (false === stripos($sql_trim, ' join ') && false === stripos($sql_trim, ' group by ') && false === stripos($sql_trim, ' having ') && false === stripos($sql_trim, ' union ') && false === stripos($sql_trim, ' as sub'));
     }
 
@@ -485,7 +486,7 @@ class wp_slimstat_db
 
                 $query = Query::select($count_field)->from($table);
 
-                if (!empty($where_clause)) {
+                if ($where_clause !== '' && $where_clause !== '0') {
                     $query->whereRaw($where_clause);
                 }
 
@@ -501,7 +502,7 @@ class wp_slimstat_db
 
                 $query = Query::select($aggregate)->from($table);
 
-                if (!empty($where_clause)) {
+                if ($where_clause !== '' && $where_clause !== '0') {
                     $query->whereRaw($where_clause);
                 }
 
@@ -786,7 +787,7 @@ class wp_slimstat_db
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $distinct_column = ('id' != $_column) ? 'DISTINCT ' . $_column : $_column;
 
-        $query = Query::select("COUNT({$distinct_column}) as counthits")->from($table);
+        $query = Query::select(sprintf('COUNT(%s) as counthits', $distinct_column))->from($table);
 
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
@@ -859,7 +860,7 @@ class wp_slimstat_db
         $query = Query::select([
             $_args['group_by'],
             'COUNT(*) AS counthits',
-            "GROUP_CONCAT( DISTINCT {$_args['column_group']} SEPARATOR ';;;' ) as column_group"
+            sprintf("GROUP_CONCAT( DISTINCT %s SEPARATOR ';;;' ) as column_group", $_args['column_group'])
         ])->from($table);
 
         // Add date filters if needed
@@ -899,10 +900,10 @@ class wp_slimstat_db
         $where = self::get_combined_where('visit_id > 0');
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-        $subQuery = "SELECT count(ip) counthits, visit_id FROM {$table} WHERE {$where} GROUP BY visit_id";
+        $subQuery = sprintf('SELECT count(ip) counthits, visit_id FROM %s WHERE %s GROUP BY visit_id', $table, $where);
 
         $query = Query::select('AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits')
-            ->from("($subQuery) AS ts1");
+            ->from(sprintf('(%s) AS ts1', $subQuery));
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
@@ -1140,14 +1141,14 @@ class wp_slimstat_db
         $_where = self::get_combined_where($_where, $_column);
         $table  = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-        $subQuery = Query::select("{$_column}, {$_aggr_function}(id) as aggrid")
+        $subQuery = Query::select(sprintf('%s, %s(id) as aggrid', $_column, $_aggr_function))
             ->from($table)
             ->whereRaw($_where)
             ->groupBy($_column);
 
-        $query = Query::select("{$_outer_select_column}, ts1.aggrid as {$_column}, COUNT(*) as counthits")
-            ->from("({$subQuery->buildQuery()}) AS ts1")
-            ->join("{$table} t1", 'ts1.aggrid', 't1.id')
+        $query = Query::select(sprintf('%s, ts1.aggrid as %s, COUNT(*) as counthits', $_outer_select_column, $_column))
+            ->from(sprintf('(%s) AS ts1', $subQuery->buildQuery()))
+            ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
             ->perPage(self::$filters_normalized['misc']['start_from'], self::$filters_normalized['misc']['limit_results']);
@@ -1163,12 +1164,12 @@ class wp_slimstat_db
 
         if (empty(self::$filters_normalized['columns'])) {
             $query = Query::select('te.notes, COUNT(*) as counthits')
-                ->from("{$table_events} te")
+                ->from($table_events . ' te')
                 ->whereRaw(wp_slimstat_db::get_combined_where('notes NOT LIKE "type:click%"', 'notes'));
         } else {
             $query = Query::select('te.notes, COUNT(*) as counthits')
-                ->from("{$table_events} te")
-                ->join("{$table_stats} t1", 'te.id', 't1.id')
+                ->from($table_events . ' te')
+                ->join($table_stats . ' t1', 'te.id', 't1.id')
                 ->whereRaw(wp_slimstat_db::get_combined_where('te.notes NOT LIKE "_ype:click%"', 'te.notes', true, 't1'));
         }
 

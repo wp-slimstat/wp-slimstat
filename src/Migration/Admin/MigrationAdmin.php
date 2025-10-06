@@ -35,7 +35,7 @@ class MigrationAdmin
 			return;
 		}
 
-		$parent = !empty(wp_slimstat_admin::$main_menu_slug) ? wp_slimstat_admin::$main_menu_slug : 'slimview1';
+		$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 		$hook = add_submenu_page(
 			$parent,
 			__('Migration', 'wp-slimstat'),
@@ -144,6 +144,7 @@ class MigrationAdmin
 		foreach ($this->manager->getRequiredMigrations() as $migration) {
 			$diagnostics = array_merge($diagnostics, $migration->getDiagnostics());
 		}
+
 		return $diagnostics;
 	}
 
@@ -159,7 +160,7 @@ class MigrationAdmin
 
 		// If no migrations are needed, redirect to the main SlimStat page
 		if (!$has_required_migrations) {
-			$parent = !empty(wp_slimstat_admin::$main_menu_slug) ? wp_slimstat_admin::$main_menu_slug : 'slimview1';
+			$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 			wp_safe_redirect(admin_url('admin.php?page=' . $parent));
 			exit;
 		}
@@ -174,7 +175,7 @@ class MigrationAdmin
 		}
 
 		$screen = get_current_screen();
-		if (!$screen || !($screen->base === 'dashboard' || $this->isSlimStatPage($screen))) {
+		if (!$screen || $screen->base !== 'dashboard' && !$this->isSlimStatPage($screen)) {
 			return;
 		}
 
@@ -205,7 +206,7 @@ class MigrationAdmin
         echo '<h2>' . esc_html__('SlimStat database migration required', 'wp-slimstat') . '</h2>';
         echo '<p>' . esc_html__('To improve SlimStat performance and stability, your database needs to be migrated.', 'wp-slimstat') . '</p>';
 
-        if (!empty($diag)) {
+        if ($diag !== []) {
             echo '<details>';
             echo '<summary>' . esc_html__('Technical details', 'wp-slimstat') . '</summary>';
             echo '<ul>';
@@ -217,6 +218,7 @@ class MigrationAdmin
                 echo '<span class="details-col-desc">(' . esc_html($row['columns']) . ')</span>';
                 echo '</li>';
             }
+
             echo '</ul>';
             echo '</details>';
         }
@@ -255,6 +257,7 @@ class MigrationAdmin
                 if ($ok) {
                     wp_send_json_success([$migration_to_run->getName() => true]);
                 }
+
                 wp_send_json_error([$migration_to_run->getName() => false]);
             }
         }
@@ -278,6 +281,7 @@ class MigrationAdmin
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
 		}
+
 		$this->manager->dismissNotice();
 		wp_send_json_success();
 	}
@@ -291,6 +295,7 @@ class MigrationAdmin
 		if (!current_user_can('manage_options')) {
 			return;
 		}
+
 		$this->manager->resetDismissal();
 	}
 
@@ -303,6 +308,7 @@ class MigrationAdmin
 		if (!current_user_can('manage_options')) {
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
 		}
+
 		$this->manager->resetDismissal();
 		wp_send_json_success(__('Migration dismissal reset', 'wp-slimstat'));
 	}

@@ -70,7 +70,7 @@ class Tracker
             unset($_data['notes']);
         }
 
-        if (!empty($_data)) {
+        if ($_data !== []) {
             $query->set($_data);
         }
 
@@ -389,6 +389,7 @@ class Tracker
         if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
             return $value;
         }
+        
         return false;
     }
 
@@ -399,12 +400,14 @@ class Tracker
             if (!is_array($_needles)) {
                 $_needles = [$_needles];
             }
+            
             foreach ($_needles as $a_needle) {
                 if (preg_match(sprintf('@^%s$@i', $pattern), $a_needle)) {
                     return true;
                 }
             }
         }
+        
         return false;
     }
 
@@ -413,9 +416,11 @@ class Tracker
         if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
             return false;
         }
+        
         if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
             return false;
         }
+        
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
         $count_fingerprint = $query->getVar();
@@ -448,6 +453,7 @@ class Tracker
         } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return 128;
         }
+        
         return false;
     }
 

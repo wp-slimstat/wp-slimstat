@@ -16,8 +16,6 @@ class Query
 
     private $fields = '*';
 
-    private $subQuery;
-
     private $orderClause;
 
     private $groupByClause;
@@ -164,12 +162,11 @@ class Query
     /**
      * Sets the values for an insert operation.
      *
-     * @param array $values
      * @return $this
      */
     public function values(array $values)
     {
-        if (empty($values)) {
+        if ($values === []) {
             return $this;
         }
 
@@ -181,6 +178,7 @@ class Query
             // Single row insert
             $this->insertValues[] = $values;
         }
+        
         return $this;
     }
 
@@ -233,6 +231,7 @@ class Query
         if (!empty($params)) {
             $this->valuesToPrepare = array_merge($this->valuesToPrepare, $params);
         }
+        
         return $this;
     }
 
@@ -347,9 +346,7 @@ class Query
                 $orderParts[] = sprintf('%s %s', $field, $order);
             }
 
-            if ([] !== $orderParts) {
-                $this->orderClause = 'ORDER BY ' . implode(', ', $orderParts);
-            }
+            $this->orderClause = 'ORDER BY ' . implode(', ', $orderParts);
         }
 
         return $this;
@@ -579,6 +576,7 @@ class Query
                 if (is_null($value)) {
                     $condition = sprintf('%s %s NULL', $field, $operator);
                 }
+                
                 break;
             case 'IN':
             case 'NOT IN':
@@ -648,6 +646,7 @@ class Query
                 if (empty($this->insertValues)) {
                     return '';
                 }
+                
                 $operation = $this->ignore ? 'INSERT IGNORE INTO' : 'INSERT INTO';
                 $sampleRow = $this->insertValues[0];
                 $keys      = array_keys($sampleRow);
@@ -661,6 +660,7 @@ class Query
                         $this->valuesToPrepare[] = $value;
                     }
                 }
+                
                 $query .= implode(', ', $valueSets);
                 break;
             case 'union':
@@ -1197,7 +1197,7 @@ class Query
         $result = $this->db->query($prepared_query);
 
         if ('insert' === $this->operation) {
-            return $this->db->insert_id ? $this->db->insert_id : $result;
+            return $this->db->insert_id ?: $result;
         }
 
         return $result;
