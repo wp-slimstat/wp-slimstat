@@ -169,18 +169,18 @@ jQuery(document).ready(function($) {
             }
         }
         
-        // If neither preset type nor from/to are provided, default to Last 30 Days preset
+        // If neither preset type nor from/to are provided, default to Last 28 Days preset
         const fromParam = urlParams.get('from');
         const toParam = urlParams.get('to');
         if (!fromParam && !toParam) {
-            const presetLabel = getPresetLabel('last_30_days');
+            const presetLabel = getPresetLabel('last_28_days');
             const presetRanges = getPresetRanges();
             const range = presetRanges[presetLabel];
             if (range && Array.isArray(range) && range.length === 2) {
                 return {
                     startDate: range[0],
                     endDate: range[1],
-                    preset: 'last_30_days'
+                    preset: 'last_28_days'
                 };
             }
         }
@@ -189,7 +189,7 @@ jQuery(document).ready(function($) {
 		const localTime = getLocalTime();
 		const fromDate = fromParam
 			? normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone)
-			: normalizeDate(localTime.clone().subtract(29, 'days'), validTimezone);
+			: normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone);
 		const toDate = toParam
 			? normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone)
 			: normalizeDate(localTime.clone(), validTimezone);
@@ -399,7 +399,7 @@ jQuery(document).ready(function($) {
             ? getPresetLabel(currentRange.preset) 
             : SlimStatDatePicker.strings.custom_range;
         const displayLabel = formatDateRange(currentRange.startDate, currentRange.endDate, initialLabel);
-        // $button.find('.date-label').text(displayLabel);
+        $button.find('.date-label').text(displayLabel);
 
         // Add custom CSS class to the daterangepicker and handle calendar visibility
         $input.on('show.daterangepicker', function(ev, picker) {
@@ -476,7 +476,7 @@ jQuery(document).ready(function($) {
 
             // Update button label
             const displayLabel = formatDateRange(startDate, endDate, chosenLabel);
-            // $button.find('.date-label').text(displayLabel);
+            $button.find('.date-label').text(displayLabel);
 
             // Determine preset type from chosen label
             const presetType = detectPresetType(chosenLabel);

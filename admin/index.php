@@ -1001,7 +1001,7 @@ class wp_slimstat_admin
     public static function add_column_header($_columns = [])
     {
         if (0 == wp_slimstat::$settings['posts_column_day_interval']) {
-            wp_slimstat::$settings['posts_column_day_interval'] = 30;
+            wp_slimstat::$settings['posts_column_day_interval'] = 28;
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
