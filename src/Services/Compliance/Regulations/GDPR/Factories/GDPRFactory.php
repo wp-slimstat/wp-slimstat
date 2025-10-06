@@ -10,7 +10,7 @@ use SlimStat\Services\Compliance\Regulations\GDPR\Providers\GDPRServiceProvider;
  */
 class GDPRFactory
 {
-    private static ?GDPRServiceProvider $instance = null;
+    private static $instance = null;
 
     /**
      * Get GDPR Service Provider instance
