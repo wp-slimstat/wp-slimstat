@@ -9,8 +9,6 @@ interface RestControllerInterface
 {
     /**
      * Registers the REST API routes.
-     *
-     * @return void
      */
     public function register_routes(): void;
 }

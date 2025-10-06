@@ -20,7 +20,7 @@ class Storage
 		}
 
 		\wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
-			"INSERT IGNORE INTO {$table} (" . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($data)), 0, -1) . ')',
+			sprintf('INSERT IGNORE INTO %s (', $table) . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($data)), 0, -1) . ')',
 			$data
 		));
 
@@ -53,7 +53,7 @@ class Storage
 		// Use consistent database prefix and parameterized query for ID
 		$table_name = \wp_slimstat::$wpdb->prefix . 'slim_stats';
 		$prepared_query = \wp_slimstat::$wpdb->prepare(
-			"UPDATE IGNORE {$table_name} SET " . implode('=%s,', $sanitized_columns) . "=%s WHERE id = %d",
+			sprintf('UPDATE IGNORE %s SET ', $table_name) . implode('=%s,', $sanitized_columns) . "=%s WHERE id = %d",
 			array_merge(array_values($data), [$id])
 		);
 

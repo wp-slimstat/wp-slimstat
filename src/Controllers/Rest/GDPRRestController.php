@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace SlimStat\Controllers\Rest;
 
-use SlimStat\GDPR\Factories\GDPRFactory;
+use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
 use SlimStat\Interfaces\RestControllerInterface;
 
 // don't load directly.

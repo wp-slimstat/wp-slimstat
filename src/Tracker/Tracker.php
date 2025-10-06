@@ -50,7 +50,7 @@ class Tracker
         }
 
         \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
-            "INSERT IGNORE INTO {$_table} (" . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ')',
+            sprintf('INSERT IGNORE INTO %s (', $_table) . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ')',
             $_data
         ));
 
@@ -75,7 +75,7 @@ class Tracker
         }
 
         $prepared_query = \wp_slimstat::$wpdb->prepare(
-            "UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET " . implode('=%s,', array_keys($_data)) . "=%s WHERE id = {$id}",
+            sprintf('UPDATE IGNORE %sslim_stats SET ', $GLOBALS[ 'wpdb' ]->prefix) . implode('=%s,', array_keys($_data)) . ('=%s WHERE id = ' . $id),
             $_data
         );
 
@@ -117,7 +117,7 @@ class Tracker
             );
 
             if ($next_visit_id === null || $next_visit_id <= 0) {
-                $max_visit_id  = \wp_slimstat::$wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+                $max_visit_id  = \wp_slimstat::$wpdb->get_var('SELECT COALESCE(MAX(visit_id), 0) FROM ' . $table);
                 $next_visit_id = intval($max_visit_id) + 1;
             }
 
@@ -126,14 +126,14 @@ class Tracker
             }
 
             $existing_visit_id = \wp_slimstat::$wpdb->get_var(
-                \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+                \wp_slimstat::$wpdb->prepare('SELECT visit_id FROM %s WHERE visit_id = ' . $table, $next_visit_id)
             );
 
             if ($existing_visit_id !== null) {
                 do {
                     $next_visit_id++;
                     $existing_visit_id = \wp_slimstat::$wpdb->get_var(
-                        \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
+                        \wp_slimstat::$wpdb->prepare('SELECT visit_id FROM %s WHERE visit_id = ' . $table, $next_visit_id)
                     );
                 } while ($existing_visit_id !== null);
             }
@@ -151,7 +151,7 @@ class Tracker
 
         if ($is_new_session && $identifier > 0) {
             \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
-                "UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats SET visit_id = %d WHERE id = %d AND visit_id = 0",
+                sprintf('UPDATE %sslim_stats SET visit_id = %%d WHERE id = %%d AND visit_id = 0', $GLOBALS['wpdb' ]->prefix),
                 \wp_slimstat::$stat['visit_id'],
                 $identifier
             ));
@@ -402,6 +402,7 @@ class Tracker
         if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
             return $value;
         }
+        
         return false;
     }
 
@@ -412,12 +413,14 @@ class Tracker
             if (!is_array($_needles)) {
                 $_needles = [$_needles];
             }
+            
             foreach ($_needles as $a_needle) {
                 if (preg_match(sprintf('@^%s$@i', $pattern), $a_needle)) {
                     return true;
                 }
             }
         }
+        
         return false;
     }
 
@@ -426,15 +429,18 @@ class Tracker
         if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
             return false;
         }
+        
         if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
             return false;
         }
+        
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
         $today = date('Y-m-d');
         if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
             $query->allowCaching(true);
         }
+        
         $count_fingerprint = $query->getVar();
         return 0 == $count_fingerprint;
     }
@@ -465,6 +471,7 @@ class Tracker
         } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return 128;
         }
+        
         return false;
     }
 

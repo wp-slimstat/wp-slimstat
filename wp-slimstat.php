@@ -33,6 +33,8 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';
 
+use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
+
 class wp_slimstat
 {
     public static $settings = [];
@@ -130,7 +132,7 @@ class wp_slimstat
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
 		// GDPR Services Registration
-		$gdprProvider = \SlimStat\GDPR\Factories\GDPRFactory::create(self::$settings);
+		$gdprProvider = GDPRFactory::create(self::$settings);
 		$gdprProvider->registerHooks();
 
 		// GDPR: Opt-out Ajax Handler
@@ -965,7 +967,7 @@ class wp_slimstat
 	public static function get_optout_html()
 	{
 		// Use new GDPR structure
-		$gdprProvider = \SlimStat\GDPR\Factories\GDPRFactory::create(self::$settings);
+		$gdprProvider = GDPRFactory::create(self::$settings);
 		$controller = $gdprProvider->getController();
 		$controller->handleOptOutRequest();
 	}
@@ -1221,8 +1223,8 @@ if (function_exists('add_action')) {
             $_POST['action'] = wp_slimstat::$raw_post_array['action'];
         }
 
-        add_action('wp_ajax_nopriv_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
-        add_action('wp_ajax_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
+        add_action('wp_ajax_nopriv_slimtrack', [\SlimStat\Tracker\Tracker::class, 'slimtrack_ajax']);
+        add_action('wp_ajax_slimtrack', [\SlimStat\Tracker\Tracker::class, 'slimtrack_ajax']);
     }
 
 

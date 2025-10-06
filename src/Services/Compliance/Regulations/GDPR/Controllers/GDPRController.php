@@ -1,10 +1,11 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Controllers;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Controllers;
 
-use SlimStat\GDPR\Interfaces\AjaxHandlerInterface;
-use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
-use SlimStat\GDPR\Interfaces\BannerRendererInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\AjaxHandlerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\ConsentManagerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\BannerRendererInterface;
 
 /**
  * GDPR Controller for handling AJAX requests and shortcodes
@@ -12,6 +13,7 @@ use SlimStat\GDPR\Interfaces\BannerRendererInterface;
 class GDPRController implements AjaxHandlerInterface
 {
     private ConsentManagerInterface $consentManager;
+
     private BannerRendererInterface $bannerRenderer;
 
     public function __construct(

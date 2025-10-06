@@ -14,8 +14,6 @@ class Query
 
     private $fields = '*';
 
-    private $subQuery;
-
     private $orderClause;
 
     private $groupByClause;
@@ -289,9 +287,7 @@ class Query
                 $orderParts[] = sprintf('%s %s', $field, $order);
             }
 
-            if ([] !== $orderParts) {
-                $this->orderClause = 'ORDER BY ' . implode(', ', $orderParts);
-            }
+            $this->orderClause = 'ORDER BY ' . implode(', ', $orderParts);
         }
 
         return $this;
@@ -422,7 +418,7 @@ class Query
             $normalized = preg_replace('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', sprintf("BETWEEN '%s' AND '%s'", $from, $to), $input);
         }
 
-        $normalized = preg_replace_callback('/(\d{4}-\d{2}-\d{2})[\s\d:]{0,8}/', fn ($m) => $m[1], $normalized);
+        $normalized = preg_replace_callback('/(\d{4}-\d{2}-\d{2})[\s\d:]{0,8}/', function($m) { return $m[1]; }, $normalized);
         $hash       = substr(md5($normalized), 0, 10);
         return sprintf('wp_slimstat_cache_%s', $hash);
     }
@@ -1005,7 +1001,7 @@ class Query
             }
 
             if (is_array($live)) {
-                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
+                $dtList = array_map(function($row) { return $row['dt'] ?? null; }, $live);
             }
 
             $groupKey = null;
@@ -1015,7 +1011,7 @@ class Query
 
             $merged = $this->mergeGroupResults($live, $historical, $groupKey);
             if (is_array($merged)) {
-                $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
+                $dtList = array_map(function($row) { return $row['dt'] ?? null; }, $merged);
             }
 
             return $merged;

@@ -1,6 +1,7 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Interfaces;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Interfaces;
 
 /**
  * Interface for rendering GDPR banners

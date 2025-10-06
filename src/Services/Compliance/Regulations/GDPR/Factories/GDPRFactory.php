@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Factories;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Factories;
 
-use SlimStat\GDPR\Providers\GDPRServiceProvider;
+use SlimStat\Services\Compliance\Regulations\GDPR\Providers\GDPRServiceProvider;
 
 /**
  * Factory for creating GDPR services
@@ -16,7 +17,7 @@ class GDPRFactory
      */
     public static function create(array $settings): GDPRServiceProvider
     {
-        if (self::$instance === null) {
+        if (!self::$instance instanceof GDPRServiceProvider) {
             self::$instance = new GDPRServiceProvider($settings);
         }
 

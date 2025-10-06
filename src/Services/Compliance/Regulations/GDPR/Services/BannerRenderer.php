@@ -1,9 +1,10 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Services;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Services;
 
-use SlimStat\GDPR\Interfaces\BannerRendererInterface;
-use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\BannerRendererInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\ConsentManagerInterface;
 
 /**
  * GDPR Banner Renderer Service
@@ -11,6 +12,7 @@ use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
 class BannerRenderer implements BannerRendererInterface
 {
     private ConsentManagerInterface $consentManager;
+
     public array $settings;
 
     public function __construct(ConsentManagerInterface $consentManager, array $settings)
@@ -64,9 +66,7 @@ class BannerRenderer implements BannerRendererInterface
                 break;
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -146,9 +146,7 @@ class BannerRenderer implements BannerRendererInterface
             $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -171,9 +169,7 @@ class BannerRenderer implements BannerRendererInterface
             $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 
     /**
@@ -201,8 +197,6 @@ class BannerRenderer implements BannerRendererInterface
             $html .= '<button type="button" class="slimstat-gdpr-deny" data-consent="denied">' . esc_html($declineText) . '</button>';
         }
 
-        $html .= '</div>';
-
-        return $html;
+        return $html . '</div>';
     }
 }

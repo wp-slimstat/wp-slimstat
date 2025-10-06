@@ -20,11 +20,6 @@ class GDPRService
      */
     private const CONSENT_COOKIE_NAME = 'slimstat_gdpr_consent';
 
-    /**
-     * @var string
-     */
-    private const OPT_OUT_COOKIE_NAME = 'slimstat_optout_tracking';
-
     public function __construct(array $settings)
     {
         $this->settings = $settings;
@@ -156,14 +151,14 @@ class GDPRService
         }
 
         // Allow only basic HTML tags for formatting while maintaining security
-        $allowed_tags = array(
-            'p' => array(),
-            'br' => array(),
-            'b' => array(),
-            'i' => array(),
-            'strong' => array(),
-            'em' => array(),
-        );
+        $allowed_tags = [
+            'p' => [],
+            'br' => [],
+            'b' => [],
+            'i' => [],
+            'strong' => [],
+            'em' => [],
+        ];
         $message = wp_kses($message, $allowed_tags);
 
         // If message is empty, use default message
@@ -172,12 +167,12 @@ class GDPRService
         }
 
         // Create a modern banner with safe content
-        $acceptText = !empty($this->settings['gdpr_accept_button_text'])
-            ? $this->settings['gdpr_accept_button_text']
-            : __('Accept', 'wp-slimstat');
-        $denyText = !empty($this->settings['gdpr_decline_button_text'])
-            ? $this->settings['gdpr_decline_button_text']
-            : __('Deny', 'wp-slimstat');
+        $acceptText = empty($this->settings['gdpr_accept_button_text'])
+            ? __('Accept', 'wp-slimstat')
+            : $this->settings['gdpr_accept_button_text'];
+        $denyText = empty($this->settings['gdpr_decline_button_text'])
+            ? __('Deny', 'wp-slimstat')
+            : $this->settings['gdpr_decline_button_text'];
 
         $acceptButton = sprintf(
             '<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">%s</button>',
@@ -208,12 +203,12 @@ class GDPRService
     public function getConsentManagementHtml(): string
     {
         $currentConsent = $this->getConsentStatus();
-        $acceptText = !empty($this->settings['gdpr_accept_button_text'])
-            ? $this->settings['gdpr_accept_button_text']
-            : __('Accept', 'wp-slimstat');
-        $denyText = !empty($this->settings['gdpr_decline_button_text'])
-            ? $this->settings['gdpr_decline_button_text']
-            : __('Deny', 'wp-slimstat');
+        $acceptText = empty($this->settings['gdpr_accept_button_text'])
+            ? __('Accept', 'wp-slimstat')
+            : $this->settings['gdpr_accept_button_text'];
+        $denyText = empty($this->settings['gdpr_decline_button_text'])
+            ? __('Deny', 'wp-slimstat')
+            : $this->settings['gdpr_decline_button_text'];
 
         $statusMessage = $this->getConsentStatusMessage($currentConsent);
 
@@ -242,13 +237,12 @@ class GDPRService
     {
         switch ($status) {
             case 'not_set':
+            default:
                 return '<p>' . esc_html__('You have not yet made a choice regarding cookie consent.', 'wp-slimstat') . '</p>';
             case 'accepted':
                 return '<p>' . esc_html__('You have accepted analytics cookies.', 'wp-slimstat') . '</p>';
             case 'denied':
                 return '<p>' . esc_html__('You have denied analytics cookies.', 'wp-slimstat') . '</p>';
-            default:
-                return '<p>' . esc_html__('You have not yet made a choice regarding cookie consent.', 'wp-slimstat') . '</p>';
         }
     }
 
@@ -265,14 +259,9 @@ class GDPRService
         if ($this->hasDeniedConsent()) {
             return false;
         }
-
         // Check if user has given consent
-        if ($this->hasConsent()) {
-            return true;
-        }
-
         // If no decision has been made, don't track until consent is given
-        return false;
+        return $this->hasConsent();
     }
 
     /**

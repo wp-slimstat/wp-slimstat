@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Services;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Services;
 
-use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\ConsentManagerInterface;
 
 /**
  * GDPR Consent Manager Service
@@ -10,7 +11,9 @@ use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
 class ConsentManager implements ConsentManagerInterface
 {
     private array $settings;
+
     private string $cookieName = 'slimstat_gdpr_consent';
+
     private int $cookieDuration = 365; // days
 
     public function __construct(array $settings)

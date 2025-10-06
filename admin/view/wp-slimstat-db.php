@@ -454,6 +454,7 @@ class wp_slimstat_db
             // no subquery before count
             return true;
         }
+        
         return preg_match('/^select\s+count\s*\(\s*distinct\s+.*\)\s+as\s+[a-z_][a-z0-9_]*\s+from\s+[`\w]+/i', $sql_trim) && (false === stripos($sql_trim, ' join ') && false === stripos($sql_trim, ' group by ') && false === stripos($sql_trim, ' having ') && false === stripos($sql_trim, ' union ') && false === stripos($sql_trim, ' as sub'));
     }
 

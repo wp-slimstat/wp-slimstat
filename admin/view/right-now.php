@@ -16,6 +16,7 @@ $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 if (!class_exists('wp_slimstat')) {
     include_once dirname(__FILE__, 3) . '/wp-slimstat.php';
 }
+
 $search_engines = \wp_slimstat::get_search_engines();
 // COMPLETE THIS FEATURE!!
 

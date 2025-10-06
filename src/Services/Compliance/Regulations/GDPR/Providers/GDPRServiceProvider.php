@@ -1,13 +1,14 @@
 <?php
+declare(strict_types=1);
 
-namespace SlimStat\GDPR\Providers;
+namespace SlimStat\Services\Compliance\Regulations\GDPR\Providers;
 
-use SlimStat\GDPR\Interfaces\ConsentManagerInterface;
-use SlimStat\GDPR\Interfaces\BannerRendererInterface;
-use SlimStat\GDPR\Interfaces\AjaxHandlerInterface;
-use SlimStat\GDPR\Services\ConsentManager;
-use SlimStat\GDPR\Services\BannerRenderer;
-use SlimStat\GDPR\Controllers\GDPRController;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\ConsentManagerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\BannerRendererInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Interfaces\AjaxHandlerInterface;
+use SlimStat\Services\Compliance\Regulations\GDPR\Services\ConsentManager;
+use SlimStat\Services\Compliance\Regulations\GDPR\Services\BannerRenderer;
+use SlimStat\Services\Compliance\Regulations\GDPR\Controllers\GDPRController;
 
 /**
  * GDPR Service Provider for dependency injection
@@ -15,6 +16,7 @@ use SlimStat\GDPR\Controllers\GDPRController;
 class GDPRServiceProvider
 {
     private array $services = [];
+
     private array $settings;
 
     public function __construct(array $settings)

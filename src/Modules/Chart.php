@@ -21,15 +21,15 @@ class Chart
 
     private const GRANULARITIES = ['yearly', 'monthly', 'weekly', 'daily', 'hourly'];
 
-    private array $args = [];
+    private $args = [];
 
-    private array $data = [];
+    private $data = [];
 
-    private array $prevData = [];
+    private $prevData = [];
 
-    private array $chartLabels = [];
+    private $chartLabels = [];
 
-    private array $translations = [];
+    private $translations = [];
 
     public function showChart(array $args): void
     {

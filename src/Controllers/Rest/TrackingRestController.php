@@ -32,7 +32,7 @@ class TrackingRestController implements RestControllerInterface
             ob_start();
             $maybe = Tracker::slimtrack_ajax();
             $output = ob_get_clean();
-            $result = $maybe !== null ? $maybe : $output;
+            $result = $maybe ?? $output;
         } else {
             $result = Tracker::slimtrack_ajax();
         }

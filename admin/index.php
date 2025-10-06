@@ -160,10 +160,8 @@ class wp_slimstat_admin
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
 
         // Display a notice that hightlights this version's features
-        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview')) {
-            if (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin()) {
-                add_action('admin_notices', [self::class, 'show_latest_news']);
-            }
+        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
+            add_action('admin_notices', [self::class, 'show_latest_news']);
 
         }
 

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace SlimStat\Providers;
 
+use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
+use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\GDPRRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
@@ -120,7 +122,7 @@ class RestApiManager
 
         // Route GDPR actions to the central GDPR controller
         if (in_array($action, ['slimstat_gdpr_banner', 'slimstat_gdpr_consent'], true)) {
-            $gdpr_provider = \SlimStat\GDPR\Factories\GDPRFactory::create(\wp_slimstat::$settings);
+            $gdpr_provider = GDPRFactory::create(\wp_slimstat::$settings);
             $controller = $gdpr_provider->getController();
 
             if ('slimstat_gdpr_banner' === $action) {
@@ -129,13 +131,14 @@ class RestApiManager
             elseif ('slimstat_gdpr_consent' === $action) {
                 $controller->handleConsentRequest();
             }
+
             exit;
         }
 
         // Handle tracking hits if it's not a GDPR action
         $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
         if ($request_param === $expected_tracking_hash) {
-            \SlimStat\Tracker\Tracker::slimtrack_ajax();
+            Tracker::slimtrack_ajax();
         }
     }
 }

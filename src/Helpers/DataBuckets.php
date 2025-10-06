@@ -11,31 +11,31 @@ if (! defined('ABSPATH')) {
 
 class DataBuckets
 {
-    private array $labels = [];
+    private $labels = [];
 
-    private array $prev_labels = [];
+    private $prev_labels = [];
 
-    private array $datasets = ['v1' => [], 'v2' => []];
+    private $datasets = ['v1' => [], 'v2' => []];
 
-    private array $datasetsPrev = ['v1' => [], 'v2' => []];
+    private $datasetsPrev = ['v1' => [], 'v2' => []];
 
-    private array $totals;
+    private $totals;
 
-    private string $labelFormat;
+    private $labelFormat;
 
-    private string $gran;
+    private $gran;
 
-    private string $tzOffset;
+    private $tzOffset;
 
-    private int $start;
+    private $start;
 
-    private int $end;
+    private $end;
 
-    private int $prevStart;
+    private $prevStart;
 
-    private int $prevEnd;
+    private $prevEnd;
 
-    private int $points;
+    private $points;
 
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
     {
@@ -184,7 +184,7 @@ class DataBuckets
             $start  = new \DateTime('@' . $base);
             $start  = $start->modify('first day of this month')->modify('midnight');
             // Guard against invalid/empty $dt
-            $safeDt = is_numeric($dt) ? (int) $dt : 0;
+            $safeDt = is_numeric($dt) ? $dt : 0;
             $target = new \DateTime('@' . $safeDt);
             if ($target->getTimestamp() < $start->getTimestamp()) {
                 $offset = -1;
@@ -233,7 +233,7 @@ class DataBuckets
     {
         foreach (['v1', 'v2'] as $k) {
             if (isset($this->datasets[$k][-1])) {
-                $newKeys            = array_map(fn ($key) => $key + 1, array_keys($this->datasets[$k]));
+                $newKeys            = array_map(function($key) { return $key + 1; }, array_keys($this->datasets[$k]));
                 $this->datasets[$k] = array_combine($newKeys, array_values($this->datasets[$k]));
                 ksort($this->datasets[$k]);
                 if (empty(end($this->datasets[$k]))) {
@@ -242,7 +242,7 @@ class DataBuckets
             }
 
             if (isset($this->datasetsPrev[$k][-1])) {
-                $newKeys                = array_map(fn ($key) => $key + 1, array_keys($this->datasetsPrev[$k]));
+                $newKeys                = array_map(function($key) { return $key + 1; }, array_keys($this->datasetsPrev[$k]));
                 $this->datasetsPrev[$k] = array_combine($newKeys, array_values($this->datasetsPrev[$k]));
                 ksort($this->datasetsPrev[$k]);
                 if (empty(end($this->datasetsPrev[$k]))) {
