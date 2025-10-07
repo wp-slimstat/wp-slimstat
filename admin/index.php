@@ -1295,9 +1295,8 @@ class wp_slimstat_admin
             return;
         }
 
-        // Get distinct values for this dimension
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'slim_stats';
+        // Get distinct values for this dimension via SlimStat\Utils\Query abstraction
+        $table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
         // Limit results to prevent overwhelming the dropdown (filterable for customization)
         $limit = apply_filters('slimstat_filter_options_limit', 500, $dimension);
@@ -1320,29 +1319,25 @@ class wp_slimstat_admin
 
         // Get distinct non-empty values
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
-        
+
+        // Build the query using Query (avoid direct $wpdb SQL)
+        $query = \SlimStat\Utils\Query::select('DISTINCT `' . $safe_dimension . '` as value')
+            ->from($table_name);
+
         if ($column_type === 'varchar') {
-            $sql = $wpdb->prepare(
-                "SELECT DISTINCT `{$safe_dimension}` as value 
-                FROM {$table_name} 
-                WHERE `{$safe_dimension}` IS NOT NULL AND `{$safe_dimension}` != '' 
-                ORDER BY `{$safe_dimension}` ASC 
-                LIMIT %d",
-                $limit
-            );
+            // Exclude NULLs and empty strings for varchar columns
+            $query->whereRaw('`' . $safe_dimension . '` IS NOT NULL');
+            $query->whereRaw('`' . $safe_dimension . "` <> ''");
         } else {
-            $sql = $wpdb->prepare(
-                "SELECT DISTINCT `{$safe_dimension}` as value 
-                FROM {$table_name} 
-                WHERE `{$safe_dimension}` IS NOT NULL AND `{$safe_dimension}` != 0 
-                ORDER BY `{$safe_dimension}` ASC 
-                LIMIT %d",
-                $limit
-            );
+            // Exclude NULLs and zeros for numeric columns
+            $query->whereRaw('`' . $safe_dimension . '` IS NOT NULL');
+            $query->where('`' . $safe_dimension . '`', '!=', 0);
         }
 
-        $results = $wpdb->get_results($sql, ARRAY_A);
+        $query->orderBy('`' . $safe_dimension . '`', 'ASC')->limit($limit);
 
+        $results = $query->getAll();
+        
         // Check for database errors
         if ($wpdb->last_error) {
             error_log('SlimStat: Filter options query failed - ' . $wpdb->last_error);

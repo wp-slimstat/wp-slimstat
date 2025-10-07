@@ -211,14 +211,18 @@ jQuery(function () {
     //
 
     // Custom Searchable Select Component
+    // Make all texts translatable using wp.i18n if available, with fallbacks
+    const __ = (typeof window.wp !== 'undefined' && wp.i18n && typeof wp.i18n.__ === 'function')
+        ? wp.i18n.__
+        : (s) => s;
     class SlimStatSearchableSelect {
         constructor(element, options = {}) {
             this.element = element;
             this.options = {
-                placeholder: 'Select value...',
-                searchPlaceholder: 'Search...',
-                noResultsText: 'No results found',
-                loadingText: 'Loading...',
+                placeholder: __('Select value...', 'wp-slimstat'),
+                searchPlaceholder: __('Search...', 'wp-slimstat'),
+                noResultsText: __('No results found', 'wp-slimstat'),
+                loadingText: __('Loading...', 'wp-slimstat'),
                 allowClear: true,
                 ...options
             };
@@ -552,7 +556,7 @@ jQuery(function () {
         }
 
         // Show loading state
-        $textInput.attr("placeholder", "Loading options...").attr("name", "v");
+        $textInput.attr("placeholder", __('Loading options...', 'wp-slimstat')).attr("name", "v");
 
         // Fetch options via AJAX
         jQuery.ajax({
@@ -576,10 +580,10 @@ jQuery(function () {
                     
                     // Initialize searchable select
                     searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
-                        placeholder: 'Select value...',
-                        searchPlaceholder: 'Search options...',
-                        noResultsText: 'No matching options found',
-                        loadingText: 'Loading options...'
+                        placeholder: __('Select value...', 'wp-slimstat'),
+                        searchPlaceholder: __('Search options...', 'wp-slimstat'),
+                        noResultsText: __('No matching options found', 'wp-slimstat'),
+                        loadingText: __('Loading options...', 'wp-slimstat')
                     });
                     
                     // Set the options from the AJAX response
@@ -594,7 +598,7 @@ jQuery(function () {
                     }
                     
                     // No options found, show text input instead
-                    $textInput.attr("placeholder", "Enter value...").attr("name", "v");
+                    $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                 }
             })
             .fail(function () {
@@ -605,7 +609,7 @@ jQuery(function () {
                 }
                 
                 // On error, fall back to text input
-                $textInput.attr("placeholder", "Enter value...").attr("name", "v");
+                $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
             });
     });
 
