@@ -12,8 +12,6 @@ class ConditionTagEvaluator
     private static $tags = [
         'is-admin'   => 'isAdminUser',
         'is-premium' => 'isPremiumUser',
-        'is-free'    => 'isFreeVersion',
-        'has-addon'  => 'hasAddon',
         'no-premium' => 'noPremiumUser',
     ];
 
@@ -38,26 +36,6 @@ class ConditionTagEvaluator
     }
 
     /**
-     * Check if the current version is a free version (no premium license).
-     *
-     * @return bool True if the version is free, false otherwise.
-     */
-    public static function isFreeVersion()
-    {
-        return !\wp_slimstat::pro_is_installed();
-    }
-
-    /**
-     * Checks if any add-on is currently active.
-     *
-     * @return bool
-     */
-    public static function hasAddon()
-    {
-        return \wp_slimstat::pro_is_installed();
-    }
-
-    /**
      * Checks if the user does not have a premium license.
      *
      * @return bool
@@ -65,27 +43,6 @@ class ConditionTagEvaluator
     public static function noPremiumUser()
     {
         return !\wp_slimstat::pro_is_installed();
-    }
-
-    /**
-     * Check if a specific addon is active.
-     *
-     * @param string $addon The addon name.
-     * @return bool True if the addon is active, false otherwise.
-     */
-    public static function isAddon($addon)
-    {
-        return \is_plugin_active($addon);
-    }
-
-    /**
-     * Check if a specific addon is inactive.
-     *
-     * @return bool
-     */
-    public static function noAddon($addon)
-    {
-        return !\is_plugin_active($addon);
     }
 
     /**
@@ -168,6 +125,31 @@ class ConditionTagEvaluator
     }
 
     /**
+     * Check if the current user's email matches the specified email address.
+     *
+     * @param string $email The email address to check against.
+     * @return bool True if the current user's email matches, false otherwise.
+     */
+    public static function isUserEmail($email)
+    {
+        if (!\is_user_logged_in()) {
+            return false;
+        }
+
+        $currentUser = \wp_get_current_user();
+
+        if (empty($currentUser->user_email)) {
+            return false;
+        }
+
+        // Normalize both email addresses for comparison
+        $currentEmail = \strtolower(\trim($currentUser->user_email));
+        $targetEmail = \strtolower(\trim($email));
+
+        return $currentEmail === $targetEmail;
+    }
+
+    /**
      * Evaluate a given condition tag and return whether it is met.
      *
      * @param string $tag The condition tag to check.
@@ -183,20 +165,6 @@ class ConditionTagEvaluator
             }
         }
 
-        if (\strpos($tag, 'has-addon-') === 0) {
-            $addon = \substr($tag, \strlen('has-addon-'));
-            if ($addon) {
-                return self::isAddon('wp-slimstat-' . $addon);
-            }
-        }
-
-        if (\strpos($tag, 'no-addon-') === 0) {
-            $addon = \substr($tag, \strlen('no-addon-'));
-            if ($addon) {
-                return self::noAddon('wp-slimstat-' . $addon);
-            }
-        }
-
         if (\strpos($tag, 'is-locale-') === 0) {
             $locale = \substr($tag, \strlen('is-locale-'));
             if ($locale) {
@@ -208,6 +176,13 @@ class ConditionTagEvaluator
             $country = \substr($tag, \strlen('is-country-'));
             if ($country) {
                 return self::isCountry($country);
+            }
+        }
+
+        if (\strpos($tag, 'is-email-') === 0) {
+            $email = \substr($tag, \strlen('is-email-'));
+            if ($email) {
+                return self::isUserEmail($email);
             }
         }
 
