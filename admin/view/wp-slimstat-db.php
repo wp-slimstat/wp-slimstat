@@ -153,7 +153,10 @@ class wp_slimstat_db
                     $preset_range = DateRangeHelper::get_range_by_preset($type);
                     if ($preset_range) {
                         $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $preset_range['end']));
-                        $interval_days = ceil(($preset_range['end'] - $preset_range['start']) / 86400);
+                        // Calculate days by normalizing to midnight to avoid DST issues
+                        $start_day = strtotime(date('Y-m-d', $preset_range['start']));
+                        $end_day = strtotime(date('Y-m-d', $preset_range['end']));
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }
@@ -170,11 +173,16 @@ class wp_slimstat_db
                     // Additional validation: ensure dates are valid and in reasonable range
                     if ($start_timestamp && $end_timestamp && 
                         $start_timestamp <= $end_timestamp && 
+                        $start_timestamp <= time() &&  // Validate start date is not in the future
                         $end_timestamp <= time() && 
                         $start_timestamp > strtotime('-10 years')) {
                         
-                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', strtotime($to_date)));
-                        $interval_days = ceil(($end_timestamp - $start_timestamp) / 86400);
+                        // Use end_timestamp directly to preserve the 23:59:59 time
+                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $end_timestamp));
+                        // Calculate days by normalizing to midnight to avoid DST issues
+                        $start_day = strtotime(date('Y-m-d', $start_timestamp));
+                        $end_day = strtotime(date('Y-m-d', $end_timestamp));
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }

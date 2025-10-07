@@ -179,8 +179,10 @@ class DateRangeHelper
         }
 
         // Calculate interval in days (SlimStat style)
-        $interval_seconds = $end_timestamp - $start_timestamp;
-        $interval_days = ceil($interval_seconds / 86400); // 86400 seconds in a day
+        // Normalize to midnight to avoid DST issues and off-by-one errors
+        $start_day = strtotime(date('Y-m-d', $start_timestamp));
+        $end_day = strtotime(date('Y-m-d', $end_timestamp));
+        $interval_days = (($end_day - $start_day) / 86400) + 1;
 
         return [
             'strtotime' => date('Y-m-d', $end_timestamp),
@@ -248,6 +250,13 @@ class DateRangeHelper
         }
 
         // Check if dates are in the future
+        if ($start > time()) {
+            return [
+                'valid' => false,
+                'error' => __('Start date cannot be in the future', 'wp-slimstat')
+            ];
+        }
+
         if ($end > time()) {
             return [
                 'valid' => false,
@@ -300,8 +309,10 @@ class DateRangeHelper
             }
         }
 
-        // Check SlimStat filters
-        if (!empty(\wp_slimstat_db::$filters_normalized['date'])) {
+        // Check SlimStat filters - ensure class exists and property is accessible
+        if (class_exists('\wp_slimstat_db') && 
+            isset(\wp_slimstat_db::$filters_normalized['date']) && 
+            !empty(\wp_slimstat_db::$filters_normalized['date'])) {
             $filters = \wp_slimstat_db::$filters_normalized['date'];
             
             if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
