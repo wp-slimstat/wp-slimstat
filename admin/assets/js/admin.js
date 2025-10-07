@@ -225,6 +225,7 @@ jQuery(function () {
             
             this.selectedValue = '';
             this.selectedText = '';
+            this.selectedOption = null;
             this.isOpen = false;
             this.filteredOptions = [];
             this.allOptions = [];
@@ -280,8 +281,17 @@ jQuery(function () {
             this.selectWrapper.appendChild(this.dropdown);
             this.wrapper.appendChild(this.selectWrapper);
             
-            // Insert wrapper before original element and hide original
+            // Ensure the original input has the name attribute before hiding
+            if (!this.element.hasAttribute('name')) {
+                this.element.setAttribute('name', 'v');
+            }
+            
+            // Insert wrapper before original element
             this.element.parentNode.insertBefore(this.wrapper, this.element);
+            
+            // Move the original element inside the wrapper to keep it in the form
+            // but keep it hidden and maintain it as part of the form submission
+            this.wrapper.appendChild(this.element);
             this.element.style.display = 'none';
         }
 
@@ -318,8 +328,18 @@ jQuery(function () {
         }
 
         setOptions(options) {
-            this.allOptions = options;
-            this.filteredOptions = [...options];
+            // Normalize options to always be objects with value, label, and icon
+            this.allOptions = options.map(opt => {
+                if (typeof opt === 'string') {
+                    return { value: opt, label: opt, icon: null };
+                }
+                return {
+                    value: opt.value || opt,
+                    label: opt.label || opt.value || opt,
+                    icon: opt.icon || null
+                };
+            });
+            this.filteredOptions = [...this.allOptions];
             this.renderOptions();
         }
 
@@ -341,7 +361,8 @@ jQuery(function () {
                 this.filteredOptions = [...this.allOptions];
             } else {
                 this.filteredOptions = this.allOptions.filter(option => 
-                    option.toLowerCase().includes(term)
+                    option.label.toLowerCase().includes(term) || 
+                    option.value.toLowerCase().includes(term)
                 );
             }
             
@@ -364,10 +385,27 @@ jQuery(function () {
                 const optionElement = document.createElement('button');
                 optionElement.type = 'button';
                 optionElement.className = 'slimstat-select-option';
-                if (option === this.selectedValue) {
+                if (option.value === this.selectedValue) {
                     optionElement.classList.add('slimstat-selected');
                 }
-                optionElement.textContent = option;
+                
+                // Add icon if available
+                if (option.icon) {
+                    const iconElement = document.createElement('img');
+                    iconElement.className = 'slimstat-option-icon';
+                    iconElement.src = option.icon;
+                    iconElement.alt = '';
+                    iconElement.width = 20;
+                    iconElement.height = 20;
+                    optionElement.appendChild(iconElement);
+                }
+                
+                // Add label text
+                const labelElement = document.createElement('span');
+                labelElement.className = 'slimstat-option-label';
+                labelElement.textContent = option.label;
+                optionElement.appendChild(labelElement);
+                
                 optionElement.addEventListener('click', () => {
                     this.selectOption(option);
                 });
@@ -375,17 +413,47 @@ jQuery(function () {
             });
         }
 
-        selectOption(value) {
-            this.selectedValue = value;
-            this.selectedText = value;
+        selectOption(option) {
+            this.selectedValue = option.value;
+            this.selectedText = option.label;
+            this.selectedOption = option;
             
             // Update display
             const textElement = this.display.querySelector('.slimstat-select-text');
-            textElement.textContent = value;
+            textElement.innerHTML = ''; // Clear existing content
+            
+            // Add icon if available
+            if (option.icon) {
+                const iconElement = document.createElement('img');
+                iconElement.className = 'slimstat-option-icon';
+                iconElement.src = option.icon;
+                iconElement.alt = '';
+                iconElement.width = 16;
+                iconElement.height = 16;
+                iconElement.style.marginRight = '6px';
+                textElement.appendChild(iconElement);
+            }
+            
+            // Add label text
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = option.label;
+            textElement.appendChild(labelSpan);
+            
             this.display.classList.remove('slimstat-placeholder');
             
-            // Update hidden input
-            this.element.value = value;
+            // Update hidden input with the value
+            this.element.value = option.value;
+            
+            // Ensure the name attribute is set
+            if (!this.element.hasAttribute('name')) {
+                this.element.setAttribute('name', 'v');
+            }
+            
+            // Debug: Log the selected value and element state
+            console.log('SlimStat Filter - Selected value:', option.value);
+            console.log('SlimStat Filter - Element value:', this.element.value);
+            console.log('SlimStat Filter - Element name:', this.element.getAttribute('name'));
+            console.log('SlimStat Filter - Element in form:', this.element.form !== null);
             
             // Trigger change event on original element
             const changeEvent = new Event('change', { bubbles: true });
@@ -397,9 +465,11 @@ jQuery(function () {
         clear() {
             this.selectedValue = '';
             this.selectedText = '';
+            this.selectedOption = null;
             
             // Reset display
             const textElement = this.display.querySelector('.slimstat-select-text');
+            textElement.innerHTML = ''; // Clear any icons
             textElement.textContent = this.options.placeholder;
             this.display.classList.add('slimstat-placeholder');
             
