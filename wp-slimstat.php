@@ -1579,7 +1579,21 @@ class wp_slimstat
      */
     public static function get_optout_html()
     {
-        die(stripslashes(self::$settings['opt_out_message']));
+        $message = stripslashes(self::$settings['opt_out_message'] ?? '');
+
+        // Only return content if there's actually a message configured
+        if (empty($message)) {
+            status_header(204); // No Content
+            die();
+        }
+
+        // Ensure the message is properly formatted HTML
+        if (!preg_match('/<[^>]+>/', $message)) {
+            // If no HTML tags found, wrap in a basic div
+            $message = '<div class="slimstat-optout-notice">' . esc_html($message) . '</div>';
+        }
+
+        die($message);
     }
 
     // end get_optout_html

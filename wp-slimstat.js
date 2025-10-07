@@ -520,24 +520,27 @@ var SlimStat = (function () {
         // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
 
         const run = function () {
-            FingerprintJS.load().then(function (agent) {
-                return agent.get(FP_EXCLUDES);
-            }).then(function (result) {
-                const components = result.components;
-                initFingerprintHash(result);
-                // Initial pageview (no id yet) should be immediate for faster id assignment
-                sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
-                showOptoutMessage();
-                inflightPageview = false;
-            }).catch(function (error) {
-                // Fallback if fingerprinting fails
-                console.warn('FingerprintJS failed:', error);
-                const fallbackResult = { components: {}, visitorId: "" };
-                initFingerprintHash(fallbackResult);
-                sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
-                showOptoutMessage();
-                inflightPageview = false;
-            });
+            FingerprintJS.load()
+                .then(function (agent) {
+                    return agent.get(FP_EXCLUDES);
+                })
+                .then(function (result) {
+                    const components = result.components;
+                    initFingerprintHash(result);
+                    // Initial pageview (no id yet) should be immediate for faster id assignment
+                    sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
+                    showOptoutMessage();
+                    inflightPageview = false;
+                })
+                .catch(function (error) {
+                    // Fallback if fingerprinting fails
+                    console.warn("FingerprintJS failed:", error);
+                    const fallbackResult = { components: {}, visitorId: "" };
+                    initFingerprintHash(fallbackResult);
+                    sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
+                    showOptoutMessage();
+                    inflightPageview = false;
+                });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
         else setTimeout(run, 250);
@@ -548,12 +551,27 @@ var SlimStat = (function () {
         var params = currentSlimStatParams();
         var optCookies = params.oc ? params.oc.split(",") : [];
         var show = optCookies.length > 0;
+
+        // Check if user has already opted out
         for (var i = 0; i < optCookies.length; i++)
             if (getCookie(optCookies[i])) {
                 show = false;
                 break;
             }
+
+        // Don't show if no opt-out cookies configured or user already opted out
         if (!show) return false;
+
+        // Don't show opt-out message if server-side tracking is active (when we have an ID)
+        if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) {
+            return false;
+        }
+
+        // Check for existing consent management systems (Complianz, Cookiebot, etc.)
+        if (window.cmplz_consent || window.cookiebot || window.CookieConsent || document.querySelector('[id*="cookie"], [class*="cookie"], [id*="consent"], [class*="consent"]')) {
+            return false;
+        }
+
         var xhr;
         try {
             xhr = new XMLHttpRequest();
@@ -566,9 +584,16 @@ var SlimStat = (function () {
         xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                var div = document.createElement("div");
-                div.innerHTML = xhr.responseText;
-                document.body.appendChild(div);
+                // Only create and append div if response contains actual content
+                var responseText = xhr.responseText.trim();
+                if (responseText && responseText !== "") {
+                    var div = document.createElement("div");
+                    div.innerHTML = responseText;
+                    // Add a class to identify SlimStat opt-out messages
+                    div.className = (div.className ? div.className + " " : "") + "slimstat-optout-message";
+                    // Insert at the beginning of body to avoid interfering with footer scripts
+                    document.body.insertBefore(div, document.body.firstChild);
+                }
             }
         };
         xhr.send("action=slimstat_optout_html");
