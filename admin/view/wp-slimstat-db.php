@@ -716,6 +716,7 @@ class wp_slimstat_db
                 $fn['utime']['end'] = intval(date_i18n('U'));
             }
 
+            // Add 1 second to account for the time difference between midnight and 23:59:59
             $fn['utime']['range'] += 1;
             $fn['utime']['start'] = $fn['utime']['end'] + $fn['utime']['range'];
 
