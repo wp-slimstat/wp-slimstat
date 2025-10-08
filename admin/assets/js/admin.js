@@ -453,12 +453,6 @@ jQuery(function () {
                 this.element.setAttribute('name', 'v');
             }
             
-            // Debug: Log the selected value and element state
-            console.log('SlimStat Filter - Selected value:', option.value);
-            console.log('SlimStat Filter - Element value:', this.element.value);
-            console.log('SlimStat Filter - Element name:', this.element.getAttribute('name'));
-            console.log('SlimStat Filter - Element in form:', this.element.form !== null);
-            
             // Trigger change event on original element
             const changeEvent = new Event('change', { bubbles: true });
             this.element.dispatchEvent(changeEvent);
@@ -601,7 +595,7 @@ jQuery(function () {
                     $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                 }
             })
-            .fail(function () {
+            .fail(function (jqXHR, textStatus, errorThrown) {
                 // Destroy searchable select if it exists
                 if (searchableSelectInstance) {
                     searchableSelectInstance.destroy();

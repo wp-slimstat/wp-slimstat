@@ -1321,28 +1321,31 @@ class wp_slimstat_admin
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
 
         // Build the query using Query (avoid direct $wpdb SQL)
-        $query = \SlimStat\Utils\Query::select('DISTINCT `' . $safe_dimension . '` as value')
+        $query = \SlimStat\Utils\Query::select('DISTINCT ' . $safe_dimension . ' as value')
             ->from($table_name);
 
         if ($column_type === 'varchar') {
             // Exclude NULLs and empty strings for varchar columns
-            $query->whereRaw('`' . $safe_dimension . '` IS NOT NULL');
-            $query->whereRaw('`' . $safe_dimension . "` <> ''");
+            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . " <> ''");
         } else {
             // Exclude NULLs and zeros for numeric columns
-            $query->whereRaw('`' . $safe_dimension . '` IS NOT NULL');
-            $query->where('`' . $safe_dimension . '`', '!=', 0);
+            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . ' <> 0');
         }
 
-        $query->orderBy('`' . $safe_dimension . '`', 'ASC')->limit($limit);
+        $query->orderBy($safe_dimension, 'ASC')->limit($limit);
 
         $results = $query->getAll();
         
         // Check for database errors
-        if ($wpdb->last_error) {
-            error_log('SlimStat: Filter options query failed - ' . $wpdb->last_error);
+        if ($GLOBALS['wpdb']->last_error) {
+            error_log('SlimStat: Filter options query failed - ' . $GLOBALS['wpdb']->last_error);
             wp_send_json_error('Database query failed');
             return;
+        }
+        
+        // Ensure results is an array
+        if (!is_array($results)) {
+            $results = [];
         }
 
         $options = [];
