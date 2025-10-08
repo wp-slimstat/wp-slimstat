@@ -167,22 +167,16 @@ class wp_slimstat_db
                 
                 // Validate date format (YYYY-MM-DD)
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
-                    $start_timestamp = strtotime($from_date);
-                    $end_timestamp = strtotime($to_date . ' 23:59:59'); // Include the full end date
+                    // Calculate interval days directly from the date strings
+                    $start_day = strtotime($from_date);
+                    $end_day = strtotime($to_date);
                     
-                    // Additional validation: ensure dates are valid and in reasonable range
-                    if ($start_timestamp && $end_timestamp && 
-                        $start_timestamp <= $end_timestamp && 
-                        $start_timestamp <= time() &&  // Validate start date is not in the future
-                        $end_timestamp <= time() && 
-                        $start_timestamp > strtotime('-10 years')) {
-                        
-                        // Use end_timestamp directly to preserve the 23:59:59 time
-                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $end_timestamp));
-                        // Calculate days by normalizing to midnight to avoid DST issues
-                        $start_day = strtotime(date('Y-m-d', $start_timestamp));
-                        $end_day = strtotime(date('Y-m-d', $end_timestamp));
+                    // Basic validation
+                    if ($start_day && $end_day && $start_day <= $end_day) {
                         $interval_days = (($end_day - $start_day) / 86400) + 1;
+                        
+                        // Use the date strings directly without converting back and forth
+                        $filters_array['strtotime'] = 'strtotime equals ' . $to_date;
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }
@@ -1018,7 +1012,8 @@ class wp_slimstat_db
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
         $query->limit(sprintf('%d OFFSET %d', $limit, $start));
 
-        $query->allowCaching(true);
+        $query->allowCaching(false);
+
 
         return $query->getAll();
     }
