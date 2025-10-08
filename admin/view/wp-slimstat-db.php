@@ -716,7 +716,7 @@ class wp_slimstat_db
                 $fn['utime']['end'] = intval(date_i18n('U'));
             }
 
-            $fn['utime']['range'] += 1;
+            $fn['utime']['range'] += 86400;
             $fn['utime']['start'] = $fn['utime']['end'] + $fn['utime']['range'];
 
             // Store the absolute value for later (chart)
