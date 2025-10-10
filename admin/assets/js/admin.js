@@ -217,6 +217,11 @@ jQuery(function () {
         : (s) => s;
     class SlimStatSearchableSelect {
         constructor(element, options = {}) {
+            // Validate element exists
+            if (!element) {
+                throw new Error('SlimStatSearchableSelect: element is required');
+            }
+            
             this.element = element;
             this.options = {
                 placeholder: __('Select value...', 'wp-slimstat'),
@@ -526,9 +531,29 @@ jQuery(function () {
         }
 
         destroy() {
-            // Remove wrapper and show original element
-            this.wrapper.remove();
-            this.element.style.display = '';
+            // Close dropdown if open
+            if (this.isOpen) {
+                this.close();
+            }
+            
+            // Safely remove wrapper and restore original element
+            if (this.wrapper && this.element) {
+                // Move element back to its original position before wrapper
+                if (this.wrapper.parentNode) {
+                    this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
+                }
+                
+                // Show original element
+                this.element.style.display = '';
+                
+                // Clear value
+                this.element.value = '';
+                
+                // Remove wrapper
+                if (this.wrapper.parentNode) {
+                    this.wrapper.parentNode.removeChild(this.wrapper);
+                }
+            }
         }
     }
 
@@ -538,14 +563,17 @@ jQuery(function () {
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {
         var dimension = jQuery(this).val();
+
+        // Destroy existing searchable select FIRST before doing anything
+        if (searchableSelectInstance) {
+            searchableSelectInstance.destroy();
+            searchableSelectInstance = null;
+        }
+
+        // Get fresh reference to the input element after destroy
         var $textInput = jQuery("#slimstat-filter-value");
 
         if (!dimension) {
-            // Destroy searchable select if it exists
-            if (searchableSelectInstance) {
-                searchableSelectInstance.destroy();
-                searchableSelectInstance = null;
-            }
             return;
         }
 
@@ -566,42 +594,34 @@ jQuery(function () {
         })
             .done(function (response) {
                 if (response.success && response.data && response.data.length > 0) {
-                    // Destroy existing searchable select if it exists
-                    if (searchableSelectInstance) {
-                        searchableSelectInstance.destroy();
-                        searchableSelectInstance = null;
+                    // Verify the element still exists
+                    if (!$textInput.length || !$textInput[0]) {
+                        return;
                     }
                     
-                    // Initialize searchable select
-                    searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
-                        placeholder: __('Select value...', 'wp-slimstat'),
-                        searchPlaceholder: __('Search options...', 'wp-slimstat'),
-                        noResultsText: __('No matching options found', 'wp-slimstat'),
-                        loadingText: __('Loading options...', 'wp-slimstat')
-                    });
-                    
-                    // Set the options from the AJAX response
-                    searchableSelectInstance.setOptions(response.data);
-                    
-                    $textInput.attr("name", "v");
+                    try {
+                        // Initialize searchable select
+                        searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
+                            placeholder: __('Select value...', 'wp-slimstat'),
+                            searchPlaceholder: __('Search options...', 'wp-slimstat'),
+                            noResultsText: __('No matching options found', 'wp-slimstat'),
+                            loadingText: __('Loading options...', 'wp-slimstat')
+                        });
+                        
+                        // Set the options from the AJAX response
+                        searchableSelectInstance.setOptions(response.data);
+                        
+                        $textInput.attr("name", "v");
+                    } catch (error) {
+                        // Fall back to regular text input if searchable select fails
+                        $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                    }
                 } else {
-                    // Destroy searchable select if it exists
-                    if (searchableSelectInstance) {
-                        searchableSelectInstance.destroy();
-                        searchableSelectInstance = null;
-                    }
-                    
                     // No options found, show text input instead
                     $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                 }
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
-                // Destroy searchable select if it exists
-                if (searchableSelectInstance) {
-                    searchableSelectInstance.destroy();
-                    searchableSelectInstance = null;
-                }
-                
                 // On error, fall back to text input
                 $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
             });
