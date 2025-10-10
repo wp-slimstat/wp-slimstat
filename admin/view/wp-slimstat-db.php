@@ -152,10 +152,10 @@ class wp_slimstat_db
                 if (in_array($type, $valid_presets, true)) {
                     $preset_range = DateRangeHelper::get_range_by_preset($type);
                     if ($preset_range) {
-                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(date('Y-m-d', $preset_range['end']));
+                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(wp_date('Y-m-d', $preset_range['end']));
                         // Calculate days by normalizing to midnight to avoid DST issues
-                        $start_day = strtotime(date('Y-m-d', $preset_range['start']));
-                        $end_day = strtotime(date('Y-m-d', $preset_range['end']));
+                        $start_day = strtotime(wp_date('Y-m-d', $preset_range['start']));
+                        $end_day = strtotime(wp_date('Y-m-d', $preset_range['end']));
                         $interval_days = (($end_day - $start_day) / 86400) + 1;
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
@@ -438,7 +438,7 @@ class wp_slimstat_db
         // Use the end date from normalized filters (if available)
         if (!empty(self::$filters_normalized['utime']['end'])) {
             // Convert to Y-m-d for comparison (Query expects string date)
-            $to = date('Y-m-d', self::$filters_normalized['utime']['end']);
+            $to = wp_date('Y-m-d', self::$filters_normalized['utime']['end']);
             if (method_exists($query, 'canUseCacheForDateRange')) {
                 $query->canUseCacheForDateRange($to);
             }
@@ -546,11 +546,11 @@ class wp_slimstat_db
                     case 'strtotime':
                         $custom_date = strtotime($a_filter[3], wp_slimstat::date_i18n('U'));
 
-                        $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
-                        $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
-                        $filters_parsed['date']['day']    = intval(date('j', $custom_date));
-                        $filters_parsed['date']['month']  = intval(date('n', $custom_date));
-                        $filters_parsed['date']['year']   = intval(date('Y', $custom_date));
+                        $filters_parsed['date']['minute'] = intval(wp_date('i', $custom_date));
+                        $filters_parsed['date']['hour']   = intval(wp_date('H', $custom_date));
+                        $filters_parsed['date']['day']    = intval(wp_date('j', $custom_date));
+                        $filters_parsed['date']['month']  = intval(wp_date('n', $custom_date));
+                        $filters_parsed['date']['year']   = intval(wp_date('Y', $custom_date));
                         break;
 
                     case 'minute':
@@ -565,23 +565,23 @@ class wp_slimstat_db
                             self::toggle_date_i18n_filters(false);
                             switch ($a_filter[1]) {
                                 case 'minute':
-                                    $filters_parsed['date']['minute'] = intval(date('i', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'hour':
-                                    $filters_parsed['date']['hour'] = intval(date('H', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'day':
-                                    $filters_parsed['date']['day'] = intval(date('j', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'month':
-                                    $filters_parsed['date']['month'] = intval(date('n', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'year':
-                                    $filters_parsed['date']['year'] = intval(date('Y', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 default:
