@@ -146,11 +146,16 @@ class DateRangeHelper
         ];
 
         // Convert to timestamps for SlimStat compatibility
+        // Use UTC timestamps to avoid timezone offset issues
         $timestamp_ranges = [];
         foreach ($ranges as $key => $range) {
+            // Convert to UTC to avoid timezone offset issues
+            $start_utc = $range['start']->setTimezone(new \DateTimeZone('UTC'));
+            $end_utc = $range['end']->setTimezone(new \DateTimeZone('UTC'));
+
             $timestamp_ranges[$key] = [
-                'start' => $range['start']->getTimestamp(),
-                'end' => $range['end']->getTimestamp()
+                'start' => $start_utc->getTimestamp(),
+                'end' => $end_utc->getTimestamp()
             ];
         }
 
@@ -180,12 +185,13 @@ class DateRangeHelper
 
         // Calculate interval in days (SlimStat style)
         // Normalize to midnight to avoid DST issues and off-by-one errors
-        $start_day = strtotime(date('Y-m-d', $start_timestamp));
-        $end_day = strtotime(date('Y-m-d', $end_timestamp));
+        // Use UTC dates to avoid timezone offset issues
+        $start_day = strtotime(gmdate('Y-m-d', $start_timestamp) . ' 00:00:00');
+        $end_day = strtotime(gmdate('Y-m-d', $end_timestamp) . ' 23:59:59');
         $interval_days = (($end_day - $start_day) / 86400) + 1;
 
         return [
-            'strtotime' => date('Y-m-d', $end_timestamp),
+            'strtotime' => gmdate('Y-m-d', $end_timestamp),
             'interval' => -$interval_days
         ];
     }
@@ -316,7 +322,8 @@ class DateRangeHelper
             $filters = \wp_slimstat_db::$filters_normalized['date'];
 
             if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
-                $end_date = strtotime($filters['strtotime'] . ' 23:59:59'); // Include the full end date
+                // Use UTC to avoid timezone offset issues
+                $end_date = strtotime($filters['strtotime'] . ' 23:59:59 UTC'); // Include the full end date
                 $interval_days = abs(intval($filters['interval']));
                 $start_date = $end_date - (($interval_days - 1) * 86400);
 
