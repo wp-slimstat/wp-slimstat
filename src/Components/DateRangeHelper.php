@@ -22,18 +22,18 @@ class DateRangeHelper
     public static function get_wp_timezone()
     {
         $timezone_string = get_option('timezone_string');
-        
+
         if ($timezone_string) {
             return $timezone_string;
         }
-        
+
         $offset = get_option('gmt_offset');
         if ($offset) {
             $hours = (int) $offset;
             $minutes = abs(($offset - $hours) * 60);
             return sprintf('%+03d:%02d', $hours, $minutes);
         }
-        
+
         return 'UTC';
     }
 
@@ -51,7 +51,7 @@ class DateRangeHelper
     public static function get_date_format()
     {
         $wp_format = get_option('date_format', 'F j, Y');
-        
+
         // Convert common PHP date formats to display format
         $format_map = [
             'F j, Y' => 'DD/MM/YYYY',
@@ -61,7 +61,7 @@ class DateRangeHelper
             'j F Y' => 'DD/MM/YYYY',
             'M j, Y' => 'DD/MM/YYYY'
         ];
-        
+
         return $format_map[$wp_format] ?? 'DD/MM/YYYY';
     }
 
@@ -72,7 +72,7 @@ class DateRangeHelper
     {
         $timezone = self::get_wp_timezone();
         $week_start = self::get_week_start();
-        
+
         // Create DateTime object with site timezone
         if (strpos($timezone, '+') !== false || strpos($timezone, '-') !== false) {
             $tz = new \DateTimeZone($timezone);
@@ -83,9 +83,9 @@ class DateRangeHelper
                 $tz = new \DateTimeZone('UTC');
             }
         }
-        
+
         $now = new \DateTime('now', $tz);
-        
+
         // Helper function to get start of week
         $get_week_start = function($date) use ($week_start) {
             $clone = clone $date;
@@ -288,17 +288,17 @@ class DateRangeHelper
                 }
             }
         }
-        
+
         // Check from/to parameters if no valid type parameter
         if (isset($_GET['from']) && isset($_GET['to'])) {
             $from_date = sanitize_text_field($_GET['from']);
             $to_date = sanitize_text_field($_GET['to']);
-            
+
             // Validate date format before processing
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
                 $start = strtotime($from_date);
                 $end = strtotime($to_date . ' 23:59:59'); // Include the full end date
-                
+
                 if ($start && $end && $start <= $end && $end <= time()) {
                     return [
                         'start' => $start,
@@ -310,16 +310,16 @@ class DateRangeHelper
         }
 
         // Check SlimStat filters - ensure class exists and property is accessible
-        if (class_exists('\wp_slimstat_db') && 
-            isset(\wp_slimstat_db::$filters_normalized['date']) && 
+        if (class_exists('\wp_slimstat_db') &&
+            isset(\wp_slimstat_db::$filters_normalized['date']) &&
             !empty(\wp_slimstat_db::$filters_normalized['date'])) {
             $filters = \wp_slimstat_db::$filters_normalized['date'];
-            
+
             if (!empty($filters['strtotime']) && !empty($filters['interval'])) {
                 $end_date = strtotime($filters['strtotime'] . ' 23:59:59'); // Include the full end date
                 $interval_days = abs(intval($filters['interval']));
                 $start_date = $end_date - (($interval_days - 1) * 86400);
-                
+
                 return [
                     'start' => $start_date,
                     'end' => $end_date,
@@ -341,17 +341,17 @@ class DateRangeHelper
     public static function detect_preset($start_timestamp, $end_timestamp)
     {
         $ranges = self::get_preset_ranges();
-        
+
         foreach ($ranges as $preset => $range) {
             // Allow some tolerance for time differences (within same day)
             $start_diff = abs($start_timestamp - $range['start']);
             $end_diff = abs($end_timestamp - $range['end']);
-            
+
             if ($start_diff < 86400 && $end_diff < 86400) {
                 return $preset;
             }
         }
-        
+
         return 'custom';
     }
 
@@ -364,7 +364,7 @@ class DateRangeHelper
         if ($preset && $preset !== 'custom') {
             $strings = self::get_localized_strings();
             $preset_key = $preset;
-            
+
             // Map preset names to string keys
             $preset_map = [
                 'today' => 'today',
@@ -380,23 +380,22 @@ class DateRangeHelper
                 'last_6_months' => 'last_6_months',
                 'this_year' => 'this_year'
             ];
-            
+
             if (isset($preset_map[$preset]) && isset($strings[$preset_map[$preset]])) {
                 return $strings[$preset_map[$preset]];
             }
         }
-        
+
         // Fallback to date range display
         $date_format = get_option('date_format');
-        
+
         $start_date = date($date_format, $start_timestamp);
         $end_date = date($date_format, $end_timestamp);
-        
+
         if ($start_date === $end_date) {
             return $start_date;
         }
-        
+
         return $start_date . ' – ' . $end_date;
     }
 }
-
