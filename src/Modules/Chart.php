@@ -118,7 +118,7 @@ class Chart
         var_dump(date('Y-m-d H:i:s', $defaults['start']));
         var_dump(date('Y-m-d H:i:s', $defaults['end']));
         echo '</pre>';
-        die();
+        // die();
         $args = array_merge($defaults, $args);
 
         $args['granularity'] = $this->detectGranularity($args);

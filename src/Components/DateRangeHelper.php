@@ -150,8 +150,8 @@ class DateRangeHelper
         $timestamp_ranges = [];
         foreach ($ranges as $key => $range) {
             // Convert to UTC to avoid timezone offset issues
-            $start_utc = $range['start']->setTimezone(new \DateTimeZone('UTC'));
-            $end_utc = $range['end']->setTimezone(new \DateTimeZone('UTC'));
+            $start_utc = $range['start'];
+            $end_utc = $range['end'];
 
             $timestamp_ranges[$key] = [
                 'start' => $start_utc->getTimestamp(),
