@@ -84,7 +84,7 @@ class DateRangeHelper
             }
         }
 
-        $now = new \DateTime('now', $tz);
+        $now = new \DateTime('now');
 
         // Helper function to get start of week
         $get_week_start = function($date) use ($week_start) {
