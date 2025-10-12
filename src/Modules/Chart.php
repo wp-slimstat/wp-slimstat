@@ -114,6 +114,11 @@ class Chart
             'start' => \wp_slimstat_db::$filters_normalized['utime']['start'],
             'end'   => \wp_slimstat_db::$filters_normalized['utime']['end'],
         ];
+        echo '<pre>';
+        var_dump(date('Y-m-d H:i:s', $defaults['start']));
+        var_dump(date('Y-m-d H:i:s', $defaults['end']));
+        echo '</pre>';
+        die();
         $args = array_merge($defaults, $args);
 
         $args['granularity'] = $this->detectGranularity($args);
