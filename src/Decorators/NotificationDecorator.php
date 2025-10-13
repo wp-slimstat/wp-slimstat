@@ -58,11 +58,8 @@ class NotificationDecorator
     {
         $description = \json_decode($this->notification->description) ?? null;
         
-        // Additional sanitization for security
+        // Additional sanitization for security - wp_kses_post allows only safe HTML tags
         if ($description && is_string($description)) {
-            // Remove any potential script tags and other dangerous content
-            $description = \wp_strip_all_tags($description, false);
-            // Allow only safe HTML tags and attributes
             $description = \wp_kses_post($description);
         }
         
