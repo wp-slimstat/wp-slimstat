@@ -8,7 +8,7 @@ jQuery(document).ready(function($) {
     'use strict';
 
     // Configuration
-    const CONFIG = {
+    var CONFIG = {
         SELECTORS: {
             dateFilters: '#slimstat-date-filters',
             dateButton: '.slimstat-date-range-btn',
@@ -25,9 +25,9 @@ jQuery(document).ready(function($) {
     };
 
     // Global variables
-    const wpTimezone = SlimStatDatePicker.options?.wp_timezone || null;
-    const startOfWeek = parseInt(SlimStatDatePicker.options?.start_of_week) || 1;
-    let validTimezone = wpTimezone;
+    var wpTimezone = SlimStatDatePicker.options && SlimStatDatePicker.options.wp_timezone ? SlimStatDatePicker.options.wp_timezone : null;
+    var startOfWeek = parseInt(SlimStatDatePicker.options && SlimStatDatePicker.options.start_of_week ? SlimStatDatePicker.options.start_of_week : 1);
+    var validTimezone = wpTimezone;
 
     // Initialize moment locale with WordPress week start
     if (typeof moment !== 'undefined') {
@@ -44,9 +44,9 @@ jQuery(document).ready(function($) {
     function normalizeDate(date, timezone) {
         if (!date) return null;
         
-        let normalizedDate;
-        if (timezone && (timezone.startsWith('UTC') || timezone.startsWith('+') || timezone.startsWith('-'))) {
-            const offset = timezone.startsWith('UTC') ? timezone.replace('UTC', '') : timezone;
+        var normalizedDate;
+        if (timezone && (timezone.indexOf('UTC') === 0 || timezone.indexOf('+') === 0 || timezone.indexOf('-') === 0)) {
+            var offset = timezone.indexOf('UTC') === 0 ? timezone.replace('UTC', '') : timezone;
             normalizedDate = moment(date).utcOffset(offset);
         } else if (moment.tz && moment.tz.zone(timezone)) {
             normalizedDate = moment(date).tz(timezone);
@@ -62,8 +62,8 @@ jQuery(document).ready(function($) {
      */
     function getLocalTime() {
         if (validTimezone) {
-            if (validTimezone.startsWith('UTC') || validTimezone.startsWith('+') || validTimezone.startsWith('-')) {
-                const offset = validTimezone.startsWith('UTC') ? validTimezone.replace('UTC', '') : validTimezone;
+            if (validTimezone.indexOf('UTC') === 0 || validTimezone.indexOf('+') === 0 || validTimezone.indexOf('-') === 0) {
+                var offset = validTimezone.indexOf('UTC') === 0 ? validTimezone.replace('UTC', '') : validTimezone;
                 return moment().utcOffset(offset);
             } else if (moment.tz && moment.tz.zone(validTimezone)) {
                 return moment().tz(validTimezone);
@@ -76,58 +76,59 @@ jQuery(document).ready(function($) {
      * Get preset date ranges
      */
     function getPresetRanges() {
-        const localTime = getLocalTime();
+        var localTime = getLocalTime();
+        var ranges = {};
         
-        return {
-            [SlimStatDatePicker.strings.today]: [
-                normalizeDate(localTime.clone(), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.yesterday]: [
-                normalizeDate(localTime.clone().subtract(1, 'days'), validTimezone),
-                normalizeDate(localTime.clone().subtract(1, 'days'), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.this_week]: [
-                normalizeDate(localTime.clone().startOf('week'), validTimezone),
-                normalizeDate(localTime.clone().endOf('week'), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_week]: [
-                normalizeDate(localTime.clone().subtract(1, 'week').startOf('week'), validTimezone),
-                normalizeDate(localTime.clone().subtract(1, 'week').endOf('week'), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.this_month]: [
-                normalizeDate(localTime.clone().startOf('month'), validTimezone),
-                normalizeDate(localTime.clone().endOf('month'), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_month]: [
-                normalizeDate(localTime.clone().subtract(1, 'month').startOf('month'), validTimezone),
-                normalizeDate(localTime.clone().subtract(1, 'month').endOf('month'), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_7_days]: [
-                normalizeDate(localTime.clone().subtract(6, 'days'), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_28_days]: [
-                normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_30_days]: [
-                normalizeDate(localTime.clone().subtract(29, 'days'), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_90_days]: [
-                normalizeDate(localTime.clone().subtract(89, 'days'), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.last_6_months]: [
-                normalizeDate(localTime.clone().subtract(6, 'months'), validTimezone),
-                normalizeDate(localTime.clone(), validTimezone)
-            ],
-            [SlimStatDatePicker.strings.this_year]: [
-                normalizeDate(localTime.clone().startOf('year'), validTimezone),
-                normalizeDate(localTime.clone().endOf('year'), validTimezone)
-            ]
-        };
+        ranges[SlimStatDatePicker.strings.today] = [
+            normalizeDate(localTime.clone(), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.yesterday] = [
+            normalizeDate(localTime.clone().subtract(1, 'days'), validTimezone),
+            normalizeDate(localTime.clone().subtract(1, 'days'), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.this_week] = [
+            normalizeDate(localTime.clone().startOf('week'), validTimezone),
+            normalizeDate(localTime.clone().endOf('week'), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_week] = [
+            normalizeDate(localTime.clone().subtract(1, 'week').startOf('week'), validTimezone),
+            normalizeDate(localTime.clone().subtract(1, 'week').endOf('week'), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.this_month] = [
+            normalizeDate(localTime.clone().startOf('month'), validTimezone),
+            normalizeDate(localTime.clone().endOf('month'), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_month] = [
+            normalizeDate(localTime.clone().subtract(1, 'month').startOf('month'), validTimezone),
+            normalizeDate(localTime.clone().subtract(1, 'month').endOf('month'), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_7_days] = [
+            normalizeDate(localTime.clone().subtract(6, 'days'), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_28_days] = [
+            normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_30_days] = [
+            normalizeDate(localTime.clone().subtract(29, 'days'), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_90_days] = [
+            normalizeDate(localTime.clone().subtract(89, 'days'), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.last_6_months] = [
+            normalizeDate(localTime.clone().subtract(6, 'months'), validTimezone),
+            normalizeDate(localTime.clone(), validTimezone)
+        ];
+        ranges[SlimStatDatePicker.strings.this_year] = [
+            normalizeDate(localTime.clone().startOf('year'), validTimezone),
+            normalizeDate(localTime.clone().endOf('year'), validTimezone)
+        ];
+        
+        return ranges;
     }
 
     /**
@@ -136,29 +137,29 @@ jQuery(document).ready(function($) {
     function formatDateRange(startDate, endDate, label) {
         if (!startDate || !endDate) return label || '';
         
-        const start = moment(startDate).format(CONFIG.DATE_FORMAT);
-        const end = moment(endDate).format(CONFIG.DATE_FORMAT);
+        var start = moment(startDate).format(CONFIG.DATE_FORMAT);
+        var end = moment(endDate).format(CONFIG.DATE_FORMAT);
         
         if (start === end) {
-            return `${label} ${start}`;
+            return label + ' ' + start;
         }
         
-        return `${label} ${start} – ${end}`;
+        return label + ' ' + start + ' – ' + end;
     }
 
     /**
      * Get current date range from URL or default
      */
     function getCurrentDateRange() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const type = urlParams.get('type');
+        var urlParams = new URLSearchParams(window.location.search);
+        var type = urlParams.get('type');
         
         // If type parameter exists, get the preset range
         if (type && type !== 'custom') {
-            const presetLabel = getPresetLabel(type);
+            var presetLabel = getPresetLabel(type);
             if (presetLabel) {
-                const presetRanges = getPresetRanges();
-                const range = presetRanges[presetLabel];
+                var presetRanges = getPresetRanges();
+                var range = presetRanges[presetLabel];
                 if (range && Array.isArray(range) && range.length === 2) {
                     return {
                         startDate: range[0],
@@ -170,54 +171,53 @@ jQuery(document).ready(function($) {
         }
         
         // If neither preset type nor from/to are provided, default to Last 28 Days preset
-        const fromParam = urlParams.get('from');
-        const toParam = urlParams.get('to');
+        var fromParam = urlParams.get('from');
+        var toParam = urlParams.get('to');
         if (!fromParam && !toParam) {
-            const presetLabel = getPresetLabel('last_28_days');
-            const presetRanges = getPresetRanges();
-            const range = presetRanges[presetLabel];
-            if (range && Array.isArray(range) && range.length === 2) {
+            var presetLabel2 = getPresetLabel('last_28_days');
+            var presetRanges2 = getPresetRanges();
+            var range2 = presetRanges2[presetLabel2];
+            if (range2 && Array.isArray(range2) && range2.length === 2) {
                 return {
-                    startDate: range[0],
-                    endDate: range[1],
+                    startDate: range2[0],
+                    endDate: range2[1],
                     preset: 'last_28_days'
                 };
             }
         }
 
-		// Fallback to from/to parameters with site timezone normalization
-		const localTime = getLocalTime();
-		const fromDate = fromParam
-			? normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone)
-			: normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone);
-		const toDate = toParam
-			? normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone)
-			: normalizeDate(localTime.clone(), validTimezone);
-		return {
-			startDate: fromDate,
-			endDate: toDate,
-			preset: 'custom'
-		};
+        // Fallback to from/to parameters with site timezone normalization
+        var localTime = getLocalTime();
+        var fromDate = fromParam
+            ? normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone)
+            : normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone);
+        var toDate = toParam
+            ? normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone)
+            : normalizeDate(localTime.clone(), validTimezone);
+        return {
+            startDate: fromDate,
+            endDate: toDate,
+            preset: 'custom'
+        };
     }
 
     /**
      * Detect preset type from chosen label
      */
     function detectPresetType(chosenLabel) {
-        const labelMap = {
-            [SlimStatDatePicker.strings.today]: 'today',
-            [SlimStatDatePicker.strings.yesterday]: 'yesterday',
-            [SlimStatDatePicker.strings.this_week]: 'this_week',
-            [SlimStatDatePicker.strings.last_week]: 'last_week',
-            [SlimStatDatePicker.strings.this_month]: 'this_month',
-            [SlimStatDatePicker.strings.last_month]: 'last_month',
-            [SlimStatDatePicker.strings.last_7_days]: 'last_7_days',
-            [SlimStatDatePicker.strings.last_28_days]: 'last_28_days',
-            [SlimStatDatePicker.strings.last_30_days]: 'last_30_days',
-            [SlimStatDatePicker.strings.last_90_days]: 'last_90_days',
-            [SlimStatDatePicker.strings.last_6_months]: 'last_6_months',
-            [SlimStatDatePicker.strings.this_year]: 'this_year'
-        };
+        var labelMap = {};
+        labelMap[SlimStatDatePicker.strings.today] = 'today';
+        labelMap[SlimStatDatePicker.strings.yesterday] = 'yesterday';
+        labelMap[SlimStatDatePicker.strings.this_week] = 'this_week';
+        labelMap[SlimStatDatePicker.strings.last_week] = 'last_week';
+        labelMap[SlimStatDatePicker.strings.this_month] = 'this_month';
+        labelMap[SlimStatDatePicker.strings.last_month] = 'last_month';
+        labelMap[SlimStatDatePicker.strings.last_7_days] = 'last_7_days';
+        labelMap[SlimStatDatePicker.strings.last_28_days] = 'last_28_days';
+        labelMap[SlimStatDatePicker.strings.last_30_days] = 'last_30_days';
+        labelMap[SlimStatDatePicker.strings.last_90_days] = 'last_90_days';
+        labelMap[SlimStatDatePicker.strings.last_6_months] = 'last_6_months';
+        labelMap[SlimStatDatePicker.strings.this_year] = 'this_year';
         
         return labelMap[chosenLabel] || 'custom';
     }
@@ -226,7 +226,7 @@ jQuery(document).ready(function($) {
      * Get preset label from preset type
      */
     function getPresetLabel(presetType) {
-        const typeMap = {
+        var typeMap = {
             'today': SlimStatDatePicker.strings.today,
             'yesterday': SlimStatDatePicker.strings.yesterday,
             'this_week': SlimStatDatePicker.strings.this_week,
@@ -247,8 +247,10 @@ jQuery(document).ready(function($) {
     /**
      * Generate SlimStat compatible URL with date filters
      */
-    function generateSlimStatUrl(startDate, endDate, presetType = null) {
-        const url = new URL(window.location);
+    function generateSlimStatUrl(startDate, endDate, presetType) {
+        if (typeof presetType === 'undefined') presetType = null;
+        
+        var url = new URL(window.location);
         
         // Clear existing date-related parameters
         url.searchParams.delete('from');
@@ -256,13 +258,20 @@ jQuery(document).ready(function($) {
         url.searchParams.delete('type');
         
         // Remove existing SlimStat date filters
-        const paramsToDelete = [];
-        for (const [key, value] of url.searchParams.entries()) {
-            if (key.startsWith('fs[') && (key.includes('strtotime') || key.includes('interval'))) {
+        var paramsToDelete = [];
+        var entries = url.searchParams.entries();
+        var entry = entries.next();
+        while (!entry.done) {
+            var key = entry.value[0];
+            var value = entry.value[1];
+            if (key.indexOf('fs[') === 0 && (key.indexOf('strtotime') !== -1 || key.indexOf('interval') !== -1)) {
                 paramsToDelete.push(key);
             }
+            entry = entries.next();
         }
-        paramsToDelete.forEach(param => url.searchParams.delete(param));
+        for (var i = 0; i < paramsToDelete.length; i++) {
+            url.searchParams.delete(paramsToDelete[i]);
+        }
         
         // Add type parameter
         if (presetType && presetType !== 'custom') {
@@ -280,8 +289,10 @@ jQuery(document).ready(function($) {
     /**
      * Update URL parameters with new date range (for history management)
      */
-    function updateURL(startDate, endDate, presetType = null) {
-        const url = new URL(window.location);
+    function updateURL(startDate, endDate, presetType) {
+        if (typeof presetType === 'undefined') presetType = null;
+        
+        var url = new URL(window.location);
         
         // Clear existing date-related parameters
         url.searchParams.delete('from');
@@ -313,14 +324,14 @@ jQuery(document).ready(function($) {
      * Find the existing date range picker UI
      */
     function findDateRangePicker() {
-        const $dateFilters = $(CONFIG.SELECTORS.dateFilters);
+        var $dateFilters = $(CONFIG.SELECTORS.dateFilters);
         if (!$dateFilters.length) {
             console.warn('SlimStat DatePicker: #slimstat-date-filters not found');
             return null;
         }
 
         // The date range picker should already be in the HTML from PHP
-        const $picker = $dateFilters.find('.slimstat-date-range-picker');
+        var $picker = $dateFilters.find('.slimstat-date-range-picker');
         if (!$picker.length) {
             console.warn('SlimStat DatePicker: .slimstat-date-range-picker not found in HTML');
             console.log('Available elements in date filters:', $dateFilters.html());
@@ -339,21 +350,21 @@ jQuery(document).ready(function($) {
      * Initialize the daterangepicker
      */
     function initializeDateRangePicker() {
-        const $picker = findDateRangePicker();
+        var $picker = findDateRangePicker();
         if (!$picker) return;
 
-        const $button = $picker.find(CONFIG.SELECTORS.dateButton);
-        const $input = $picker.find(CONFIG.SELECTORS.dateInput);
+        var $button = $picker.find(CONFIG.SELECTORS.dateButton);
+        var $input = $picker.find(CONFIG.SELECTORS.dateInput);
 
         // Validate timezone
-        if (wpTimezone && (wpTimezone.startsWith('+') || wpTimezone.startsWith('-'))) {
-            validTimezone = `UTC${wpTimezone}`;
+        if (wpTimezone && (wpTimezone.indexOf('+') === 0 || wpTimezone.indexOf('-') === 0)) {
+            validTimezone = 'UTC' + wpTimezone;
         } else if (!moment.tz || !moment.tz.zone(validTimezone)) {
             validTimezone = 'UTC';
         }
 
-        const ranges = getPresetRanges();
-        const currentRange = getCurrentDateRange();
+        var ranges = getPresetRanges();
+        var currentRange = getCurrentDateRange();
 
         // Click handler for button
         $button.on('click', function(e) {
@@ -362,7 +373,7 @@ jQuery(document).ready(function($) {
         });
 
         // Initialize daterangepicker
-        const datePickerOptions = {
+        var datePickerOptions = {
             autoApply: false, // We'll handle apply logic manually for better control
             ranges: ranges,
             locale: {
@@ -386,7 +397,7 @@ jQuery(document).ready(function($) {
 
         // Set the chosen label if we have a preset
         if (currentRange.preset && currentRange.preset !== 'custom') {
-            const presetLabel = getPresetLabel(currentRange.preset);
+            var presetLabel = getPresetLabel(currentRange.preset);
             if (presetLabel) {
                 datePickerOptions.chosenLabel = presetLabel;
             }
@@ -395,10 +406,10 @@ jQuery(document).ready(function($) {
         $input.daterangepicker(datePickerOptions);
 
         // Set initial button label based on current range
-        const initialLabel = currentRange.preset && currentRange.preset !== 'custom' 
+        var initialLabel = currentRange.preset && currentRange.preset !== 'custom' 
             ? getPresetLabel(currentRange.preset) 
             : SlimStatDatePicker.strings.custom_range;
-        const displayLabel = formatDateRange(currentRange.startDate, currentRange.endDate, initialLabel);
+        var displayLabel = formatDateRange(currentRange.startDate, currentRange.endDate, initialLabel);
         $button.find('.date-label').text(displayLabel);
 
         // Add custom CSS class to the daterangepicker and handle calendar visibility
@@ -408,9 +419,9 @@ jQuery(document).ready(function($) {
             $button.attr('aria-expanded', 'true');
 
             // Position the dropdown below the button
-            const buttonOffset = $button.offset();
-            const buttonHeight = $button.outerHeight();
-            const buttonWidth = $button.outerWidth();
+            var buttonOffset = $button.offset();
+            var buttonHeight = $button.outerHeight();
+            var buttonWidth = $button.outerWidth();
             
             picker.container.css({
                 'top': buttonOffset.top + buttonHeight + 4,
@@ -418,7 +429,7 @@ jQuery(document).ready(function($) {
             });
 
             // Check if current selection is a custom range
-            const isCustomRange = currentRange.preset === 'custom';
+            var isCustomRange = currentRange.preset === 'custom';
             
             if (isCustomRange) {
                 // Show calendars and buttons for custom range
@@ -432,8 +443,8 @@ jQuery(document).ready(function($) {
             
             // Add click handlers to range options to show/hide calendars
             picker.container.find('.ranges li').on('click', function() {
-                const rangeText = $(this).attr('data-range-key') || $(this).text().trim();
-                const customRangeLabel = SlimStatDatePicker.strings.custom_range;
+                var rangeText = $(this).attr('data-range-key') || $(this).text().trim();
+                var customRangeLabel = SlimStatDatePicker.strings.custom_range;
                 
                 if (rangeText === customRangeLabel) {
                     // Show calendars for custom range
@@ -447,17 +458,17 @@ jQuery(document).ready(function($) {
                     picker.container.find('.drp-buttons').hide();
                     
                     // Apply the preset range immediately
-                    setTimeout(() => {
+                    setTimeout(function() {
                         picker.clickApply();
                     }, 200);
                 }
             });
 
             // Inject Clear Cache button under the preset ranges list (only once per open)
-            const $ranges = picker.container.find('.ranges');
+            var $ranges = picker.container.find('.ranges');
             if ($ranges.length && picker.container.find(CONFIG.SELECTORS.clearCacheBtn).length === 0) {
-                const $clearWrap = $('<div class="slimstat-clear-cache-wrap" style="padding:8px 12px 12px;">');
-                const $clearBtn = $('<button type="button" class="button button-secondary" id="slimstat-clear-cache"></button>')
+                var $clearWrap = $('<div class="slimstat-clear-cache-wrap" style="padding:8px 12px 12px;">');
+                var $clearBtn = $('<button type="button" class="button button-secondary" id="slimstat-clear-cache"></button>')
                     .text(SlimStatDatePicker.strings.clear_cache);
                 $clearWrap.append($clearBtn);
                 // Place it after the ranges list
@@ -469,20 +480,20 @@ jQuery(document).ready(function($) {
 
         // Handle date range application (both preset and custom ranges)
         $input.on('apply.daterangepicker', function(ev, picker) {
-            const startDate = picker.startDate;
-            const endDate = picker.endDate;
-            const chosenLabel = picker.chosenLabel || SlimStatDatePicker.strings.custom_range;
-            const customRangeLabel = SlimStatDatePicker.strings.custom_range;
+            var startDate = picker.startDate;
+            var endDate = picker.endDate;
+            var chosenLabel = picker.chosenLabel || SlimStatDatePicker.strings.custom_range;
+            var customRangeLabel = SlimStatDatePicker.strings.custom_range;
 
             // Update button label
-            const displayLabel = formatDateRange(startDate, endDate, chosenLabel);
+            var displayLabel = formatDateRange(startDate, endDate, chosenLabel);
             $button.find('.date-label').text(displayLabel);
 
             // Determine preset type from chosen label
-            const presetType = detectPresetType(chosenLabel);
+            var presetType = detectPresetType(chosenLabel);
 
             // Generate the proper SlimStat URL with date filters
-            const targetUrl = generateSlimStatUrl(startDate, endDate, presetType);
+            var targetUrl = generateSlimStatUrl(startDate, endDate, presetType);
             
             // Navigate to the new URL
             window.location.href = targetUrl;
@@ -508,18 +519,18 @@ jQuery(document).ready(function($) {
             
             // Arrow key navigation for ranges
             picker.container.find('.ranges li').on('keydown', function(e) {
-                const $items = picker.container.find('.ranges li');
-                const currentIndex = $items.index(this);
+                var $items = picker.container.find('.ranges li');
+                var currentIndex = $items.index(this);
                 
                 switch(e.key) {
                     case 'ArrowDown':
                         e.preventDefault();
-                        const nextIndex = (currentIndex + 1) % $items.length;
+                        var nextIndex = (currentIndex + 1) % $items.length;
                         $items.eq(nextIndex).focus();
                         break;
                     case 'ArrowUp':
                         e.preventDefault();
-                        const prevIndex = currentIndex === 0 ? $items.length - 1 : currentIndex - 1;
+                        var prevIndex = currentIndex === 0 ? $items.length - 1 : currentIndex - 1;
                         $items.eq(prevIndex).focus();
                         break;
                     case 'Enter':
@@ -543,21 +554,21 @@ jQuery(document).ready(function($) {
     function handleFormSubmission() {
         $(document).on('slimstat:dateRangeChanged', function(event, data) {
             // Update hidden form fields if they exist
-            const $form = $(CONFIG.SELECTORS.dateForm);
+            var $form = $(CONFIG.SELECTORS.dateForm);
             
             // Remove existing date filter inputs
             $form.find('input[name*="fs["]').filter(function() {
-                return this.name.includes('day') || this.name.includes('month') || this.name.includes('year') || this.name.includes('interval');
+                return this.name.indexOf('day') !== -1 || this.name.indexOf('month') !== -1 || this.name.indexOf('year') !== -1 || this.name.indexOf('interval') !== -1;
             }).remove();
 
             // Add new date range as interval filter (SlimStat style)
-            const startDate = moment(data.startDate);
-            const endDate = moment(data.endDate);
-            const intervalDays = endDate.diff(startDate, 'days') + 1;
+            var startDate = moment(data.startDate);
+            var endDate = moment(data.endDate);
+            var intervalDays = endDate.diff(startDate, 'days') + 1;
 
             // Add hidden inputs for the new date range
-            $form.append(`<input type="hidden" name="fs[strtotime]" value="equals ${data.endDate}" />`);
-            $form.append(`<input type="hidden" name="fs[interval]" value="equals -${intervalDays}" />`);
+            $form.append('<input type="hidden" name="fs[strtotime]" value="equals ' + data.endDate + '" />');
+            $form.append('<input type="hidden" name="fs[interval]" value="equals -' + intervalDays + '" />');
         });
     }
 
@@ -593,7 +604,7 @@ jQuery(document).ready(function($) {
         init: init,
         clearCache: function() {
             // Use existing global click handler in admin.js
-            const $btn = jQuery(CONFIG.SELECTORS.clearCacheBtn);
+            var $btn = jQuery(CONFIG.SELECTORS.clearCacheBtn);
             if ($btn.length) {
                 $btn.trigger('click');
             }
