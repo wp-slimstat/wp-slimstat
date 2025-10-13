@@ -551,27 +551,12 @@ var SlimStat = (function () {
         var params = currentSlimStatParams();
         var optCookies = params.oc ? params.oc.split(",") : [];
         var show = optCookies.length > 0;
-
-        // Check if user has already opted out
         for (var i = 0; i < optCookies.length; i++)
             if (getCookie(optCookies[i])) {
                 show = false;
                 break;
             }
-
-        // Don't show if no opt-out cookies configured or user already opted out
         if (!show) return false;
-
-        // Don't show opt-out message if server-side tracking is active (when we have an ID)
-        if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) {
-            return false;
-        }
-
-        // Check for existing consent management systems (Complianz, Cookiebot, etc.)
-        if (window.cmplz_consent || window.cookiebot || window.CookieConsent || document.querySelector('[id*="cookie"], [class*="cookie"], [id*="consent"], [class*="consent"]')) {
-            return false;
-        }
-
         var xhr;
         try {
             xhr = new XMLHttpRequest();
@@ -584,16 +569,9 @@ var SlimStat = (function () {
         xhr.withCredentials = true;
         xhr.onreadystatechange = function () {
             if (xhr.readyState === 4 && xhr.status === 200) {
-                // Only create and append div if response contains actual content
-                var responseText = xhr.responseText.trim();
-                if (responseText && responseText !== "") {
-                    var div = document.createElement("div");
-                    div.innerHTML = responseText;
-                    // Add a class to identify SlimStat opt-out messages
-                    div.className = (div.className ? div.className + " " : "") + "slimstat-optout-message";
-                    // Insert at the beginning of body to avoid interfering with footer scripts
-                    document.body.insertBefore(div, document.body.firstChild);
-                }
+                var div = document.createElement("div");
+                div.innerHTML = xhr.responseText;
+                document.body.appendChild(div);
             }
         };
         xhr.send("action=slimstat_optout_html");
