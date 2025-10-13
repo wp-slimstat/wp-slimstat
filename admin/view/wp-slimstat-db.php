@@ -141,14 +141,14 @@ class wp_slimstat_db
         if (isset($_GET['type'])) {
             // Sanitize the type parameter to prevent XSS
             $type = sanitize_key($_GET['type']);
-            
+
             if ($type !== 'custom') {
                 // Handle preset types
                 // Validate that the type is a valid preset before using it
-                $valid_presets = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 
-                                  'last_7_days', 'last_28_days', 'last_30_days', 'last_90_days', 
+                $valid_presets = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month',
+                                  'last_7_days', 'last_28_days', 'last_30_days', 'last_90_days',
                                   'last_6_months', 'this_year'];
-                
+
                 if (in_array($type, $valid_presets, true)) {
                     $preset_range = DateRangeHelper::get_range_by_preset($type);
                     if ($preset_range) {
@@ -164,17 +164,17 @@ class wp_slimstat_db
                 // Sanitize date inputs to prevent XSS
                 $from_date = sanitize_text_field($_GET['from']);
                 $to_date = sanitize_text_field($_GET['to']);
-                
+
                 // Validate date format (YYYY-MM-DD)
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
                     // Calculate interval days directly from the date strings
                     $start_day = strtotime($from_date);
                     $end_day = strtotime($to_date);
-                    
+
                     // Basic validation
                     if ($start_day && $end_day && $start_day <= $end_day) {
                         $interval_days = (($end_day - $start_day) / 86400) + 1;
-                        
+
                         // Use the date strings directly without converting back and forth
                         $filters_array['strtotime'] = 'strtotime equals ' . $to_date;
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
@@ -546,11 +546,11 @@ class wp_slimstat_db
                     case 'strtotime':
                         $custom_date = strtotime($a_filter[3], wp_slimstat::date_i18n('U'));
 
-                        $filters_parsed['date']['minute'] = intval(wp_date('i', $custom_date));
-                        $filters_parsed['date']['hour']   = intval(wp_date('H', $custom_date));
-                        $filters_parsed['date']['day']    = intval(wp_date('j', $custom_date));
-                        $filters_parsed['date']['month']  = intval(wp_date('n', $custom_date));
-                        $filters_parsed['date']['year']   = intval(wp_date('Y', $custom_date));
+                        $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
+                        $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
+                        $filters_parsed['date']['day']    = intval(date('j', $custom_date));
+                        $filters_parsed['date']['month']  = intval(date('n', $custom_date));
+                        $filters_parsed['date']['year']   = intval(date('Y', $custom_date));
                         break;
 
                     case 'minute':
