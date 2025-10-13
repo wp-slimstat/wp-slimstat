@@ -489,8 +489,9 @@ jQuery(function () {
         }
 
         setValue(value) {
-            if (this.allOptions.includes(value)) {
-                this.selectOption(value);
+            const option = this.allOptions.find(opt => opt.value === value);
+            if (option) {
+                this.selectOption(option);
             }
         }
 
