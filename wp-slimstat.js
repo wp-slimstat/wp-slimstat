@@ -1,4 +1,4 @@
-import Fingerprint2 from "fingerprintjs2";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -170,7 +170,7 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Fingerprint -------------------------- //
-    function initFingerprintHash(components) {
+    function initFingerprintHash(result) {
         try {
             var values = components.map(function (c) {
                 return c.value;
