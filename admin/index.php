@@ -698,13 +698,14 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
-        if (self::$current_screen && str_contains(self::$current_screen->id ?? '', 'slim')) {
+        $current_screen = get_current_screen();
+        if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
         }
 
         // Enqueue the built-in code editor to use on the Settings
-        if (self::$current_screen) {
+        if ($current_screen) {
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 

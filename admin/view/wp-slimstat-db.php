@@ -794,9 +794,13 @@ class wp_slimstat_db
             $query->where('dt', 'BETWEEN', [intval(self::$filters_normalized['utime']['start']), intval(self::$filters_normalized['utime']['end'])]);
         }
 
-        if (!empty($_where) && !empty($where_params)) {
-            $_where = $GLOBALS['wpdb']->prepare($_where, $where_params);
-        }
+		if (
+			!empty($_where)
+			&& !empty($where_params)
+			&& (false !== strpos($_where, '%s') || false !== strpos($_where, '%d') || false !== strpos($_where, '%f'))
+		) {
+			$_where = is_array($where_params) ? $GLOBALS['wpdb']->prepare($_where, ...$where_params) : $GLOBALS['wpdb']->prepare($_where, $where_params);
+		}
 
         // Add custom where clause
         if (!empty($_where)) {
@@ -1070,9 +1074,13 @@ class wp_slimstat_db
             $where_params = !empty($_column['where_params']) ? $_column['where_params'] : [];
             $_where       = !empty($_column['where']) ? $_column['where'] : '';
 
-            if (!empty($_where) && !empty($where_params)) {
-                $_where = $GLOBALS['wpdb']->prepare($_where, $where_params);
-            }
+			if (
+				!empty($_where)
+				&& !empty($where_params)
+				&& (false !== strpos($_where, '%s') || false !== strpos($_where, '%d') || false !== strpos($_where, '%f'))
+			) {
+				$_where = is_array($where_params) ? $GLOBALS['wpdb']->prepare($_where, ...$where_params) : $GLOBALS['wpdb']->prepare($_where, $where_params);
+			}
 
             $_having           = empty($_column['having']) ? '' : $_column['having'];
             $_use_date_filters = empty($_column['use_date_filters']) ? true : $_column['use_date_filters'];
