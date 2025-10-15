@@ -502,26 +502,53 @@ var SlimStat = (function () {
         if (!window.SlimStatParams) window.SlimStatParams = {};
         var params = window.SlimStatParams;
 
-        // CMP gating: only send if CMP grants consent or custom hook allows.
-        // Check common CMP globals; site owners can extend via slimstat_can_track filter on PHP.
+        // CMP gating: only send if CMP grants consent or custom hook allows (when PII-like features are active).
         var cmpAllows = true;
         try {
-            // Complianz
-            if (window.cmplzConsentStatus) {
-                cmpAllows = window.cmplzConsentStatus === "allow" || window.cmplzConsentStatus === "consented";
-            } else if (window.CMP && typeof window.CMP.hasConsent === "function") {
-                cmpAllows = !!window.CMP.hasConsent("statistics");
-            } else if (window.CookieYes && typeof window.CookieYes.consent === "function") {
-                cmpAllows = !!window.CookieYes.consent("analytics");
-            } else if (window.Cookiebot && window.Cookiebot.consent) {
-                cmpAllows = !!(window.Cookiebot.consent.statistics || window.Cookiebot.consent.analytics);
-            } else if (window.OneTrust && typeof window.OnetrustActiveGroups === "string") {
-                cmpAllows = window.OnetrustActiveGroups.indexOf(",C0002") !== -1; // performance/analytics
+            var integrationKey = (window.SlimStatParams && window.SlimStatParams.consent_integration) || "";
+            var consentLevel = (window.SlimStatParams && window.SlimStatParams.consent_level_integration) || "functional";
+            if (integrationKey === "wp_consent_api" && typeof window.wp_has_consent === "function") {
+                cmpAllows = !!window.wp_has_consent(consentLevel);
+            } else if (integrationKey === "real_cookie_banner_pro") {
+                // Real Cookie Banner: use consentApi to check service consent (service keys are site-configured)
+                var p = window.consentApi && typeof window.consentApi.consent === "function" ? window.consentApi.consent("analytics") : null;
+                if (p && typeof p.then === "function") {
+                    // Async; pessimistically block now, init will run when promise resolves externally
+                    cmpAllows = false;
+                } else {
+                    try {
+                        var dp = window.consentApi && typeof window.consentApi.consentSync === "function" ? window.consentApi.consentSync("analytics-with-data-processing") : null;
+                        cmpAllows = !!(dp && dp.cookie != null && dp.cookieOptIn);
+                    } catch (ee) {
+                        cmpAllows = false;
+                    }
+                }
+            } else if (integrationKey === "borlabs_cookie") {
+                // Borlabs Cookie: analytics typically allowed when integration active; we allow and rely on server/CMP to block if needed
+                cmpAllows = true;
             }
         } catch (e) {
             cmpAllows = true;
         }
-        if (!cmpAllows) return;
+        // Respect DNT if enabled and header present
+        try {
+            var dntEnabled = window.SlimStatParams && window.SlimStatParams.respect_dnt === "on";
+            if (dntEnabled && navigator && navigator.doNotTrack == "1") return;
+        } catch (e) {}
+
+        // Mirror server policy: if PII-like features likely active (tracker cookie on OR IP not anonymized & not hashed), require explicit consent
+        var likelyPII = true;
+        try {
+            var s = window.SlimStatParams || {};
+            var anonMode = s.anonymous_tracking === "on";
+            var setCookie = true; // assume cookies unless disabled server-side
+            var anonymize = s.anonymize_ip === "on" || anonMode;
+            var hash = s.hash_ip === "on" || anonMode;
+            likelyPII = !anonMode && (setCookie || (!anonymize && !hash));
+        } catch (e) {
+            likelyPII = true;
+        }
+        if (likelyPII && !cmpAllows) return;
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;

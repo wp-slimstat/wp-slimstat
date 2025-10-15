@@ -110,6 +110,38 @@ $settings = [
                 'title' => __('Data Protection', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
+            'consent_integration' => [
+                'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('Enable integration with supported consent management plugins (WP Consent API, Real Cookie Banner, Borlabs Cookie). When enabled, SlimStat will only track data according to your consent manager\'s settings. With WP Consent API, select a Consent Category below.', 'wp-slimstat'),
+                'select_values' => [
+                    ''               => __('None', 'wp-slimstat'),
+                    'wp_consent_api' => __('Via WP Consent API', 'wp-slimstat'),
+                    'real_cookie_banner_pro' => __('Real Cookie Banner PRO', 'wp-slimstat'),
+                    'borlabs_cookie' => __('Borlabs Cookie', 'wp-slimstat'),
+                ],
+            ],
+            'consent_level_integration' => [
+                'title'         => __('Consent Category', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __('When using WP Consent API, select the consent category that SlimStat should track. Only visitors who have consented to the selected category will be tracked.', 'wp-slimstat'),
+                'select_values' => [
+                    'functional'            => __('Functional', 'wp-slimstat'),
+                    'statistics-anonymous'  => __('Statistics-Anonymous', 'wp-slimstat'),
+                    'statistics'            => __('Statistics', 'wp-slimstat'),
+                    'marketing'             => __('Marketing', 'wp-slimstat'),
+                ],
+            ],
+            'anonymous_tracking' => [
+                'title'       => __('Anonymous Tracking', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('When enabled, all visitors are tracked anonymously by default (no cookies, no PII), regardless of consent. This anonymous tracking is treated as "Functional". PII is collected only after explicit consent is provided by the visitor.', 'wp-slimstat'),
+            ],
+            'do_not_track' => [
+                'title'       => __('Do Not Track (DNT)', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Respects the visitor\'s browser setting to not track their web activity. Privacy laws like GDPR do not mandate this feature, but enabling it demonstrates a commitment to privacy. With DNT respected, visitors who prefer not to be tracked will not be collected.', 'wp-slimstat'),
+            ],
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -123,18 +155,8 @@ $settings = [
             'set_tracker_cookie' => [
                 'title'       => __('Set Cookie', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Disable this option if, for legal or security reasons, you do not want Slimstat to assign a <a href="https://en.wikipedia.org/wiki/HTTP_cookie" target="_blank">cookie</a> to your visitors. Please note that by deactivating this feature, Slimstat will not be able to identify returning visitors as such.', 'wp-slimstat'),
+                'description' => __('Disable this option to keep SlimStat cookie-less. When disabled, SlimStat will not assign a tracking cookie; recognition of returning visitors may be limited. If enabled, SlimStat may set a cookie to improve visit identification.', 'wp-slimstat'),
             ],
-            'consent_fallback' => [
-                'title'         => __('Consent Fallback (when no CMP)', 'wp-slimstat'),
-                'type'          => 'select',
-                'description'   => __('Choose what SlimStat should do if no Consent Management Platform (CMP) is present or no integration provides a signal. Recommended: Allow only when your CMP explicitly approves via hooks/filters.', 'wp-slimstat'),
-                'select_values' => [
-                    'allow' => __('Allow tracking by default', 'wp-slimstat'),
-                    'deny'  => __('Deny tracking by default', 'wp-slimstat'),
-                ],
-            ],
-
 
             // Tracker - Link Tracking
             'filters_outbound_header' => [
@@ -939,6 +961,43 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
     </div>
 </div>
 
+<?php
+// Detect companion consent plugins to disable unavailable options in UI
+if (!function_exists('is_plugin_active')) {
+    include_once ABSPATH . 'wp-admin/includes/plugin.php';
+}
+$has_wp_consent_api   = function_exists('is_plugin_active') && is_plugin_active('wp-consent-api/wp-consent-api.php');
+$has_real_cookie_pro  = false; // Placeholder; enable when integration added
+$has_borlabs_cookie   = false; // Placeholder; enable when integration added
+?>
 <script>
-// No GDPR banner settings; SlimStat integrates with CMPs via hooks/filters.
+(function($){
+    function toggleConsentRows(){
+        var v = $('#consent_integration').val();
+        var $level = $('#consent_level_integration').closest('tr');
+        var $anon = $('#anonymous_tracking').closest('tr');
+        if(v === 'wp_consent_api'){
+            $level.removeClass('hidden').show();
+            $anon.removeClass('hidden').show();
+        } else if(v === 'borlabs_cookie'){
+            $level.hide();
+            $anon.removeClass('hidden').show();
+        } else {
+            $level.hide();
+            $anon.hide();
+        }
+    }
+    $(function(){
+        // Disable integrations that are not installed
+        var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
+        var hasRCBPro    = <?php echo $has_real_cookie_pro ? 'true' : 'false'; ?>;
+        var hasBorlabs   = <?php echo $has_borlabs_cookie ? 'true' : 'false'; ?>;
+        var $ci = $('#consent_integration');
+        if(!hasWpConsent){ $ci.find('option[value="wp_consent_api"]').prop('disabled', true); }
+        if(!hasRCBPro){ $ci.find('option[value="real_cookie_banner_pro"]').prop('disabled', true); }
+        if(!hasBorlabs){ $ci.find('option[value="borlabs_cookie"]').prop('disabled', true); }
+        $('#consent_integration').on('change', toggleConsentRows);
+        toggleConsentRows();
+    });
+})(jQuery);
 </script>

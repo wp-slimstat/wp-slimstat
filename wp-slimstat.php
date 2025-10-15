@@ -73,8 +73,6 @@ class wp_slimstat
         // Allow third party tools to edit the options
         self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
-        // GDPR internal consent system removed; no migration needed.
-
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
@@ -630,11 +628,13 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'anonymize_ip'         => 'no',
-            'hash_ip'              => 'no',
-            'set_tracker_cookie'   => 'on',
-            // Consent is managed by external CMPs via hooks. Fallback controls default behavior.
-            'consent_fallback'     => 'allow',
+            'anonymize_ip'             => 'no',
+            'hash_ip'                  => 'no',
+            'set_tracker_cookie'       => 'on',
+            'consent_integration'      => '', // '', 'wp_consent_api'
+            'consent_level_integration'=> 'functional',
+            'anonymous_tracking'       => 'off',
+            'do_not_track'             => 'off',
 
 
             // Tracker - Link Tracking
@@ -814,6 +814,14 @@ class wp_slimstat
         }
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
+        // Expose consent/DNT info to client
+        $params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'functional' : 'disabled';
+        $params['consent_integration'] = self::$settings['consent_integration'] ?? '';
+        $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'functional');
+        $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
+        $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
+        $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
+        $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
 
         $params = apply_filters('slimstat_js_params', $params);
 
