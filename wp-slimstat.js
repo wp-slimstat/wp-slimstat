@@ -503,7 +503,7 @@ var SlimStat = (function () {
 
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         var useBeacon = !waitForId; // need sync response when creating id
 
         // Avoid parallel initial pageview duplication
@@ -731,7 +731,7 @@ if (!window.requestIdleCallback) {
     var observer = new MutationObserver(function () {
         var params = window.SlimStatParams || {};
         // Only extract params if we don't have an ID yet (initial page load)
-        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
+        if (isEmpty(params.id) || parseInt(params.id, 10) <= 0) {
             SlimStat._extract_params();
             var serialized = JSON.stringify(window.SlimStatParams || {});
             if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
