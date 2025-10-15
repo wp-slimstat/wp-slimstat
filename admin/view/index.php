@@ -27,7 +27,9 @@ foreach (wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_nam
 }
 $filter_operator_html .= '</select></div>';
 
-$filter_value_html = '<div class="form-field"><input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20"></div>';
+$filter_value_html = '<div class="form-field">
+    <input type="text" class="text" name="v" id="slimstat-filter-value" value="" size="20">
+</div>';
 
 if ('on' == wp_slimstat::$settings['enable_sov']) {
     echo $filter_value_html . $filter_operator_html . $filter_name_html;
