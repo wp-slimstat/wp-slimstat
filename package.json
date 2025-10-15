@@ -15,6 +15,6 @@
     "watch": "^0.13.0"
   },
   "dependencies": {
-    "fingerprintjs2": "^2.1.4"
+    "@fingerprintjs/fingerprintjs": "^4.6.2"
   }
 }

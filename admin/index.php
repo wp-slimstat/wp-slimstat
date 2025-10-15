@@ -296,6 +296,15 @@ class wp_slimstat_admin
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
+
+        // Initialize notification system
+        if (class_exists('SlimStat\Service\Admin\Notification\NotificationManager')) {
+            new \SlimStat\Service\Admin\Notification\NotificationManager();
+        }
+        // Initialize cron manager for notifications
+        if (class_exists('SlimStat\Service\CronEventManager')) {
+            new \SlimStat\Service\CronEventManager();
+        }
     }
 
     // END: init
@@ -709,6 +718,19 @@ class wp_slimstat_admin
         }
 
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
+
+        // Enqueue notification assets if notifications are enabled
+        if (wp_slimstat::$settings['display_notifications'] == 'on') {
+            wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
+
+            // Pass notification data to Javascript
+            $notification_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('wp_rest'),
+            ];
+            wp_localize_script('slimstat_notifications', 'slimstat_admin', $notification_params);
+        }
 
         // Pass some information to Javascript
         $params = [
