@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxMind\Exception;
+namespace SlimStat\Dependencies\MaxMind\WebService;
 
 /**
  * This class represents an error authenticating.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxMind\Exception;
+namespace SlimStat\Dependencies\MaxMind\WebService;
 
 /**
  * Thrown when a MaxMind web service returns an error relating to the request.

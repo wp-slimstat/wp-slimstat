@@ -5,14 +5,6 @@ declare(strict_types=1);
 namespace SlimStat\Dependencies\MaxMind\WebService;
 
 use SlimStat\Dependencies\Composer\CaBundle\CaBundle;
-use MaxMind\Exception\AuthenticationException;
-use MaxMind\Exception\HttpException;
-use MaxMind\Exception\InsufficientFundsException;
-use MaxMind\Exception\InvalidInputException;
-use MaxMind\Exception\InvalidRequestException;
-use MaxMind\Exception\IpAddressNotFoundException;
-use MaxMind\Exception\PermissionRequiredException;
-use MaxMind\Exception\WebServiceException;
 use SlimStat\Dependencies\MaxMind\WebService\Http\RequestFactory;
 
 /**

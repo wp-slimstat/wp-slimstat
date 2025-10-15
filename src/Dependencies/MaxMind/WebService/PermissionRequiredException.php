@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace MaxMind\Exception;
+namespace SlimStat\Dependencies\MaxMind\WebService;
 
 /**
  * This exception is thrown when the service requires permission to access.
