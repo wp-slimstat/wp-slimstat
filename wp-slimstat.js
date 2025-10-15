@@ -1,4 +1,4 @@
-import Fingerprint2 from "fingerprintjs2";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -132,7 +132,10 @@ var SlimStat = (function () {
     }
 
     function getComponentValue(components, key, def) {
-        for (var i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
+        // FingerprintJS v4 API - components is now an object with component names as keys
+        if (components && components[key] && components[key].value !== undefined) {
+            return components[key].value;
+        }
         return def;
     }
 
@@ -168,12 +171,14 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Fingerprint -------------------------- //
-    function initFingerprintHash(components) {
+    function initFingerprintHash(result) {
         try {
-            var values = components.map(function (c) {
-                return c.value;
-            });
-            fingerprintHash = Fingerprint2.x64hash128(values.join(""), 31);
+            // New FingerprintJS v4 API - result contains visitorId and components
+            if (result && result.visitorId) {
+                fingerprintHash = result.visitorId;
+            } else {
+                fingerprintHash = ""; // graceful fallback
+            }
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
         }
@@ -514,20 +519,35 @@ var SlimStat = (function () {
         // Reset finalization state when starting new pageview
         // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
 
-        var run = function () {
-            Fingerprint2.get(FP_EXCLUDES, function (components) {
-                initFingerprintHash(components);
-                // Initial pageview (no id yet) should be immediate for faster id assignment
-                sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
-                showOptoutMessage();
-                inflightPageview = false;
-                pageviewInProgress = false;
-
-                // Reset pageview state after successful completion
-                setTimeout(function () {
+        const run = function () {
+            FingerprintJS.load()
+                .then(function (agent) {
+                    return agent.get(FP_EXCLUDES);
+                })
+                .then(function (result) {
+                    const components = result.components;
+                    initFingerprintHash(result);
+                    // Initial pageview (no id yet) should be immediate for faster id assignment
+                    sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
+                    showOptoutMessage();
+                    inflightPageview = false;
                     pageviewInProgress = false;
-                }, 100);
-            });
+
+                    // Reset pageview state after successful completion
+                    setTimeout(function () {
+                        pageviewInProgress = false;
+                    }, 100);
+                })
+                .catch(function (error) {
+                    // Fallback if fingerprinting fails
+                    console.warn("FingerprintJS failed:", error);
+                    const fallbackResult = { components: {}, visitorId: "" };
+                    initFingerprintHash(fallbackResult);
+                    sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
+                    showOptoutMessage();
+                    inflightPageview = false;
+                    pageviewInProgress = false;
+                });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
         else setTimeout(run, 250);
@@ -731,7 +751,7 @@ if (!window.requestIdleCallback) {
     var observer = new MutationObserver(function () {
         var params = window.SlimStatParams || {};
         // Only extract params if we don't have an ID yet (initial page load)
-        if (isEmpty(params.id) || parseInt(params.id, 10) <= 0) {
+        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
             SlimStat._extract_params();
             var serialized = JSON.stringify(window.SlimStatParams || {});
             if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
