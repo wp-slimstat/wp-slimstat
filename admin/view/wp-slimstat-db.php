@@ -1014,7 +1014,15 @@ class wp_slimstat_db
             $query->where('dt', 'BETWEEN', [intval(self::$filters_normalized['utime']['start']), intval(self::$filters_normalized['utime']['end'])]);
         }
 
-        // Only add non-parameterized conditions to whereRaw
+        // Apply active column filters (e.g., browser equals Chrome) using the existing normalization logic
+        if (!empty(self::$filters_normalized['columns'])) {
+            $normalized_where = self::_get_sql_where(self::$filters_normalized['columns']);
+            if (!empty($normalized_where)) {
+                $query->whereRaw($normalized_where);
+            }
+        }
+
+        // Only add additional non-parameterized conditions passed via $_where
         if (!empty($_where)) {
             $query->whereRaw($_where);
         }
