@@ -33,7 +33,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';
 
-use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
+
 
 class wp_slimstat
 {
@@ -73,8 +73,7 @@ class wp_slimstat
         // Allow third party tools to edit the options
         self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
-        // Migrate old opt_out_message format if needed
-        \SlimStat\Services\GDPRService::migrateOptOutMessage();
+        // GDPR internal consent system removed; no migration needed.
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -131,18 +130,7 @@ class wp_slimstat
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
-		// GDPR Services Registration
-		$gdprProvider = GDPRFactory::create(self::$settings);
-		$gdprProvider->registerHooks();
-
-		// GDPR: Opt-out Ajax Handler
-		if (defined('DOING_AJAX') && DOING_AJAX) {
-			add_action('wp_ajax_slimstat_optout_html', [self::class, 'get_optout_html']);
-			add_action('wp_ajax_nopriv_slimstat_optout_html', [self::class, 'get_optout_html']);
-		}
-
-		// Enqueue GDPR CSS
-		add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_styles']);
+        // Internal GDPR banner/consent handling removed. Use external CMP plugins.
 
         // If this request was a redirect, we should update the content type accordingly
         add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
@@ -645,13 +633,8 @@ class wp_slimstat
             'anonymize_ip'         => 'no',
             'hash_ip'              => 'no',
             'set_tracker_cookie'   => 'on',
-            'display_opt_out'      => 'no',
-            'opt_out_cookie_names' => '',
-            'opt_in_cookie_names'  => '',
-            'opt_out_message'      => 'This website uses cookies and similar technologies to collect information about your browsing activities and to understand how you use our website. This helps us to provide you with a good experience when you browse our website and also allows us to improve our site.<br>By clicking Accept, you consent to our use of cookies and similar technologies for analytics purposes. You can change your mind at any time.',
-            'gdpr_theme_mode'      => 'auto',
-            'gdpr_accept_button_text' => 'Accept',
-            'gdpr_decline_button_text' => 'Deny',
+            // Consent is managed by external CMPs via hooks. Fallback controls default behavior.
+            'consent_fallback'     => 'allow',
 
 
             // Tracker - Link Tracking
@@ -819,17 +802,7 @@ class wp_slimstat
             $params['dnt'] = str_replace(' ', '', self::$settings['do_not_track_outbound_classes_rel_href']);
         }
 
-        if ('on' == self::$settings['display_opt_out']) {
-            $params['gdpr_enabled'] = '1';
-            $params['gdpr_theme_mode'] = self::$settings['gdpr_theme_mode'] ?? 'auto';
-            $params['oc'] = ['slimstat_optout_tracking'];
-            if (!empty(self::$settings['opt_out_cookie_names'])) {
-                foreach (self::string_to_array(self::$settings['opt_out_cookie_names']) as $a_cookie_pair) {
-                    $params['oc'][] = substr($a_cookie_pair, 0, strpos($a_cookie_pair, '='));
-                }
-            }
-            $params['oc'] = implode(',', $params['oc']);
-        }
+        // No internal GDPR UI; CMP integrations handle consent.
 
         if ('on' != self::$settings['javascript_mode']) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
@@ -847,18 +820,7 @@ class wp_slimstat
         // Register the correct script for adblock bypass, CDN, or default
         if ('adblock_bypass' === $method) {
             $hash_js  = md5(site_url() . 'slimstat');
-            $hash_css = md5(site_url() . 'slimstat_gdpr_banner_css');
             wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), [], SLIMSTAT_ANALYTICS_VERSION, true);
-
-            // Enqueue GDPR CSS via unique hashed URL so adblockers won't match default paths
-            if ('on' == self::$settings['display_opt_out']) {
-                wp_enqueue_style(
-                    'slimstat-gdpr-consent',
-                    home_url(sprintf('/%s.css/', $hash_css)),
-                    [],
-                    SLIMSTAT_ANALYTICS_VERSION
-                );
-            }
         } elseif ('on' == self::$settings['enable_cdn']) {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', [], null, true);
         } else {

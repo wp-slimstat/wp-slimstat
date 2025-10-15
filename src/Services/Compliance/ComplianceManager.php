@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace SlimStat\Services\Compliance;
 
-use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
 use SlimStat\Services\Compliance\Regulations\CCPA\CCPAServiceProvider;
 use SlimStat\Services\Compliance\Regulations\LGPD\LGPDServiceProvider;
 
@@ -26,11 +25,6 @@ class ComplianceManager
      */
     private function initializeRegulations(): void
     {
-        // Initialize GDPR
-        if ($this->isGDPREnabled()) {
-            $this->regulations['gdpr'] = GDPRFactory::create($this->settings);
-        }
-
         // Initialize CCPA
         if ($this->isCCPAEnabled()) {
             $this->regulations['ccpa'] = new CCPAServiceProvider($this->settings);
@@ -45,10 +39,7 @@ class ComplianceManager
     /**
      * Check if GDPR is enabled
      */
-    private function isGDPREnabled(): bool
-    {
-        return 'on' === ($this->settings['display_opt_out'] ?? '');
-    }
+    // GDPR internal management removed; consent handled via external CMP hooks.
 
     /**
      * Check if CCPA is enabled

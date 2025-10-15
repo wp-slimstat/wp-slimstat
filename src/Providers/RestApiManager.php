@@ -3,9 +3,7 @@ declare(strict_types=1);
 
 namespace SlimStat\Providers;
 
-use SlimStat\Services\Compliance\Regulations\GDPR\Factories\GDPRFactory;
 use SlimStat\Tracker\Tracker;
-use SlimStat\Controllers\Rest\GDPRRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
@@ -44,7 +42,6 @@ class RestApiManager
     {
         // Default core controllers
         $controllers = [
-            new GDPRRestController(),
             new TrackingRestController(),
         ];
 
@@ -120,20 +117,7 @@ class RestApiManager
         $post_data = \wp_slimstat::$raw_post_array;
         $action = $post_data['action'] ?? '';
 
-        // Route GDPR actions to the central GDPR controller
-        if (in_array($action, ['slimstat_gdpr_banner', 'slimstat_gdpr_consent'], true)) {
-            $gdpr_provider = GDPRFactory::create(\wp_slimstat::$settings);
-            $controller = $gdpr_provider->getController();
-
-            if ('slimstat_gdpr_banner' === $action) {
-                $controller->handleBannerRequest();
-            }
-            elseif ('slimstat_gdpr_consent' === $action) {
-                $controller->handleConsentRequest();
-            }
-
-            exit;
-        }
+        // Internal GDPR actions removed. Use CMP integrations and hooks instead.
 
         // Handle tracking hits if it's not a GDPR action
         $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);

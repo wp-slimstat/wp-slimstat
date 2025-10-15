@@ -7,26 +7,15 @@ use SlimStat\Services\Privacy;
 use SlimStat\Services\GeoService;
 use SlimStat\Services\GeoIP;
 use SlimStat\Providers\IPHashProvider;
+use SlimStat\Utils\Consent;
 
 class Processor
 {
 	public static function process()
 	{
-		// Check GDPR consent FIRST before any data processing
-		if ('on' == \wp_slimstat::$settings['display_opt_out']) {
-			// Check GDPR consent cookie first (new system)
-			if (isset($_COOKIE['slimstat_gdpr_consent'])) {
-				if ($_COOKIE['slimstat_gdpr_consent'] === 'denied') {
-					unset($_COOKIE['slimstat_tracking_code']);
-					@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
-					return false;
-				}
-
-				// If consent is 'accepted', continue with tracking
-			} else {
-				// No consent decision made yet - don't track until consent is given
-				return false;
-			}
+		// Consent gate: delegate to external CMPs via filter; SlimStat does not manage consent.
+		if (!Consent::canTrack()) {
+			return false;
 		}
 
 		\wp_slimstat::$stat['dt'] = \wp_slimstat::date_i18n('U');
@@ -41,51 +30,7 @@ class Processor
 
 		unset(\wp_slimstat::$stat['id']);
 
-		// Check old opt-out system for backward compatibility (only if GDPR is not enabled)
-		if ('on' != \wp_slimstat::$settings['display_opt_out']) {
-			$cookie_names = ['slimstat_optout_tracking' => 'true'];
-			if (!empty(\wp_slimstat::$settings['opt_out_cookie_names'])) {
-				$cookie_names = [];
-				foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_out_cookie_names']) as $pair) {
-					[$name, $value] = explode('=', $pair);
-					if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
-						$cookie_names[$name] = $value;
-					}
-				}
-			}
-
-			foreach ($cookie_names as $n => $v) {
-				if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
-					unset($_COOKIE['slimstat_tracking_code']);
-					@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
-					return false;
-				}
-			}
-		}
-
-		if (!empty(\wp_slimstat::$settings['opt_in_cookie_names'])) {
-			$cookie_names        = [];
-			$opt_in_cookie_names = \wp_slimstat::string_to_array(\wp_slimstat::$settings['opt_in_cookie_names']);
-			foreach ($opt_in_cookie_names as $pair) {
-				[$name, $value] = explode('=', $pair);
-				if ('' !== $name && '0' !== $name && ('' !== $value && '0' !== $value)) {
-					$cookie_names[$name] = $value;
-				}
-			}
-
-			$cookie_found = false;
-			foreach ($cookie_names as $n => $v) {
-				if (isset($_COOKIE[$n]) && false !== strpos($_COOKIE[$n], $v)) {
-					$cookie_found = true;
-				}
-			}
-
-			if (!$cookie_found) {
-				unset($_COOKIE['slimstat_tracking_code']);
-				@setcookie('slimstat_tracking_code', '', ['expires' => time() - (15 * 60), 'path' => COOKIEPATH]);
-				return false;
-			}
-		}
+		// Remove legacy cookie-based opt-in/opt-out handling. CMPs should control tracking via hooks.
 
 		[\wp_slimstat::$stat['ip'], \wp_slimstat::$stat['other_ip']] = Utils::getRemoteIp();
 		if (empty(\wp_slimstat::$stat['ip']) || '0.0.0.0' == \wp_slimstat::$stat['ip']) {

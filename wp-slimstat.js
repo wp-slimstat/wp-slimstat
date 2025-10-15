@@ -172,18 +172,41 @@ var SlimStat = (function () {
     // -------------------------- Fingerprint -------------------------- //
     function initFingerprintHash(result) {
         try {
-            var values = components.map(function (c) {
-                return c.value;
-            });
-            fingerprintHash = Fingerprint2.x64hash128(values.join(""), 31);
+            // FingerprintJS v4 returns an object with visitorId; prefer that directly
+            if (result && result.visitorId) {
+                fingerprintHash = result.visitorId;
+                return;
+            }
+            // Graceful fallback
+            fingerprintHash = "";
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
         }
     }
 
     function buildSlimStatData(components) {
-        var screenres = getComponentValue(components, "screenResolution", [0, 0]);
-        return "&sw=" + screenres[0] + "&sh=" + screenres[1] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + getServerLatency() + "&pp=" + getPagePerformance() + "&fh=" + fingerprintHash + "&tz=" + getComponentValue(components, "timezoneOffset", 0);
+        // Components are optional; compute directly if not provided
+        var screenres = [0, 0];
+        try {
+            if (components && components.length) {
+                screenres = getComponentValue(components, "screenResolution", [0, 0]);
+            } else if (window.screen) {
+                screenres = [window.screen.width || 0, window.screen.height || 0];
+            }
+        } catch (e) {
+            screenres = [0, 0];
+        }
+        var tzOffset = 0;
+        try {
+            if (components && components.length) {
+                tzOffset = getComponentValue(components, "timezoneOffset", 0);
+            } else {
+                tzOffset = new Date().getTimezoneOffset();
+            }
+        } catch (e) {
+            tzOffset = 0;
+        }
+        return "&sw=" + screenres[0] + "&sh=" + screenres[1] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + getServerLatency() + "&pp=" + getPagePerformance() + "&fh=" + fingerprintHash + "&tz=" + tzOffset;
     }
 
     // -------------------------- Transport -------------------------- //
@@ -461,7 +484,8 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Pageview Logic -------------------------- //
-    var FP_EXCLUDES = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+    // FP_EXCLUDES retained for backward compatibility, not used by FingerprintJS v4
+    var FP_EXCLUDES = {};
 
     function buildPageviewBase(params) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
@@ -478,11 +502,26 @@ var SlimStat = (function () {
         if (!window.SlimStatParams) window.SlimStatParams = {};
         var params = window.SlimStatParams;
 
-        // Check GDPR consent before tracking
-        if (params.gdpr_enabled === "1" && SlimStat.get_cookie("slimstat_gdpr_consent") !== "accepted") {
-            SlimStat.show_gdpr_consent_banner();
-            return;
+        // CMP gating: only send if CMP grants consent or custom hook allows.
+        // Check common CMP globals; site owners can extend via slimstat_can_track filter on PHP.
+        var cmpAllows = true;
+        try {
+            // Complianz
+            if (window.cmplzConsentStatus) {
+                cmpAllows = window.cmplzConsentStatus === "allow" || window.cmplzConsentStatus === "consented";
+            } else if (window.CMP && typeof window.CMP.hasConsent === "function") {
+                cmpAllows = !!window.CMP.hasConsent("statistics");
+            } else if (window.CookieYes && typeof window.CookieYes.consent === "function") {
+                cmpAllows = !!window.CookieYes.consent("analytics");
+            } else if (window.Cookiebot && window.Cookiebot.consent) {
+                cmpAllows = !!(window.Cookiebot.consent.statistics || window.Cookiebot.consent.analytics);
+            } else if (window.OneTrust && typeof window.OnetrustActiveGroups === "string") {
+                cmpAllows = window.OnetrustActiveGroups.indexOf(",C0002") !== -1; // performance/analytics
+            }
+        } catch (e) {
+            cmpAllows = true;
         }
+        if (!cmpAllows) return;
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
@@ -529,241 +568,65 @@ var SlimStat = (function () {
         // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
 
         var run = function () {
-            Fingerprint2.get(FP_EXCLUDES, function (components) {
-                initFingerprintHash(components);
-                // Initial pageview (no id yet) should be immediate for faster id assignment
-                sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
-                showOptoutMessage();
+            // FingerprintJS v4 async init; if it fails, proceed without fingerprint
+            try {
+                var fpPromise = FingerprintJS.load ? FingerprintJS.load() : null;
+                if (fpPromise && typeof fpPromise.then === "function") {
+                    fpPromise
+                        .then(function (fp) {
+                            return fp.get();
+                        })
+                        .then(function (result) {
+                            initFingerprintHash(result);
+                            sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                        })
+                        .catch(function () {
+                            initFingerprintHash(null);
+                            sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                        })
+                        .finally(function () {
+                            inflightPageview = false;
+                            pageviewInProgress = false;
+                            setTimeout(function () {
+                                pageviewInProgress = false;
+                            }, 100);
+                        });
+                } else {
+                    // Library not available; proceed without fingerprint
+                    initFingerprintHash(null);
+                    sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                    inflightPageview = false;
+                    pageviewInProgress = false;
+                    setTimeout(function () {
+                        pageviewInProgress = false;
+                    }, 100);
+                }
+            } catch (e) {
+                initFingerprintHash(null);
+                sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
                 inflightPageview = false;
                 pageviewInProgress = false;
-
-                // Reset pageview state after successful completion
                 setTimeout(function () {
                     pageviewInProgress = false;
                 }, 100);
-            });
+            }
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
         else setTimeout(run, 250);
     }
 
-    // -------------------------- GDPR Consent & Opt-out UI -------------------------- //
+    // -------------------------- GDPR Consent & Opt-out UI (removed) -------------------------- //
     function showGdprConsentBanner() {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-        if (params.gdpr_enabled !== "1") {
-            return false;
-        }
-
-        // CSS is enqueued by the plugin; no inline injection
-
-        // Apply theme mode before showing banner
-        SlimStat.init_gdpr_theme_mode();
-
-        // Check if consent decision has already been made
-        var consentCookie = getCookie("slimstat_gdpr_consent");
-        if (consentCookie === "accepted" || consentCookie === "denied") {
-            return false;
-        }
-
-        var xhr;
-        try {
-            xhr = new XMLHttpRequest();
-        } catch (e) {
-            return false;
-        }
-
-        // Use the appropriate endpoint based on tracking method
-        var endpoint = params.ajaxurl;
-        var action = "action=slimstat_gdpr_banner";
-
-        if (params.transport === "rest") {
-            endpoint = params.ajaxurl_rest.replace("/hit", "/gdpr/banner");
-            action = ""; // REST API doesn't use action parameter
-        } else if (params.transport === "adblock_bypass") {
-            endpoint = params.ajaxurl_adblock;
-            // The ad-blocker bypass endpoint now correctly routes based on action
-            action = "action=slimstat_gdpr_banner";
-        }
-
-        xhr.open("POST", endpoint, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        xhr.withCredentials = true;
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.success && response.data && response.data.html) {
-                        var div = document.createElement("div");
-                        div.innerHTML = response.data.html;
-                        document.body.appendChild(div);
-
-                        // Add event listeners to the buttons
-                        // Event listeners are handled by event delegation in setupClickDelegation()
-                        // No need to add individual listeners here
-                    }
-                } catch (e) {
-                    // Handle non-JSON response or error
-                    console.error("GDPR banner error:", e);
-                }
-            }
-        };
-        xhr.send(action);
-        return true;
+        return false;
     }
-
-    function handleGdprConsent(consent, targetElement) {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-
-        var banner = document.getElementById("slimstat-gdpr-banner");
-        var managementContainer = targetElement ? targetElement.closest(".slimstat-gdpr-management") : null;
-        var isManagementShortcode = managementContainer !== null;
-
-        // Add loading state to the clicked button if it's inside a shortcode.
-        if (isManagementShortcode && targetElement) {
-            targetElement.classList.add("loading");
-            targetElement.disabled = true;
-
-            // Also disable the other button in the container to prevent race conditions.
-            var otherButton = consent === "accepted" ? managementContainer.querySelector(".slimstat-gdpr-deny") : managementContainer.querySelector(".slimstat-gdpr-accept");
-            if (otherButton) {
-                otherButton.disabled = true;
-            }
-        }
-
-        // Immediately start the hiding animation for the main banner.
-        // The management shortcode will be updated by a page reload.
-        if (!isManagementShortcode && banner) {
-            banner.classList.add("hiding");
-            setTimeout(function () {
-                banner.style.display = "none";
-            }, 300); // Match animation duration
-        }
-
-        var xhr;
-        try {
-            xhr = new XMLHttpRequest();
-        } catch (e) {
-            return false;
-        }
-
-        // Use the appropriate endpoint based on tracking method
-        var endpoint = params.ajaxurl;
-        var action = "action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent);
-
-        if (params.transport === "rest") {
-            endpoint = params.ajaxurl_rest.replace("/hit", "/gdpr/consent");
-            action = "consent=" + encodeURIComponent(consent);
-        } else if (params.transport === "adblock_bypass") {
-            endpoint = params.ajaxurl_adblock;
-            action = "action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent);
-        }
-
-        xhr.open("POST", endpoint, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        xhr.withCredentials = true;
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState !== 4 || xhr.status !== 200) {
-                return;
-            }
-
-            try {
-                var response = JSON.parse(xhr.responseText);
-                if (!response.success) {
-                    return;
-                }
-
-                // Update status text on the page, if it exists
-                var statusElements = document.querySelectorAll(".slimstat-consent-status");
-                for (var i = 0; i < statusElements.length; i++) {
-                    if (consent === "accepted") {
-                        statusElements[i].textContent = "Analytics tracking is enabled.";
-                    } else if (consent === "denied") {
-                        statusElements[i].textContent = "Analytics tracking is disabled.";
-                    }
-                }
-
-                var event = new CustomEvent("slimstat_consent_updated", {
-                    detail: { consent: consent },
-                });
-                document.dispatchEvent(event);
-
-                if (isManagementShortcode) {
-                    // For management shortcodes, reload the page to show the updated state.
-                    setTimeout(function () {
-                        window.location.reload();
-                    }, 150);
-                } else if (response.data.consent === "accepted") {
-                    // For the main banner, start tracking if consent was accepted.
-                    setTimeout(function () {
-                        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
-                            sendPageview();
-                        }
-                    }, 100);
-                }
-            } catch (e) {
-                console.error("Error handling GDPR consent response:", e);
-            }
-        };
-        xhr.send(action);
-        return true;
+    function handleGdprConsent() {
+        return false;
     }
-
     function showOptoutMessage() {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-
-        // Don't show opt-out message if GDPR is enabled (GDPR banner handles this)
-        if (params.gdpr_enabled === "1") {
-            return false;
-        }
-
-        var optCookies = params.oc ? params.oc.split(",") : [];
-        var show = optCookies.length > 0;
-        for (var i = 0; i < optCookies.length; i++)
-            if (SlimStat.get_cookie(optCookies[i])) {
-                show = false;
-                break;
-            }
-        if (!show) return false;
-        var xhr;
-        try {
-            xhr = new XMLHttpRequest();
-        } catch (e) {
-            return false;
-        }
-        xhr.open("POST", params.ajaxurl_ajax, true);
-        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-        xhr.withCredentials = true;
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                var div = document.createElement("div");
-                div.innerHTML = xhr.responseText;
-                document.body.appendChild(div);
-            }
-        };
-        xhr.send("action=slimstat_optout_html");
-        return true;
+        return false;
     }
-
-    function optOut(event, cookieValue) {
-        event = event || window.event;
-        if (event && event.preventDefault) event.preventDefault();
-        else if (event) event.returnValue = false;
-
-        // Use GDPR consent system instead of old opt-out
-        var consent = cookieValue ? "denied" : "accepted";
-        handleGdprConsent(consent);
-
-        var target = event.target || event.srcElement;
-        if (target && target.parentNode && target.parentNode.parentNode) target.parentNode.parentNode.removeChild(target.parentNode);
+    function optOut() {
+        return false;
     }
 
     // GDPR Theme Mode Helper
@@ -888,10 +751,7 @@ var SlimStat = (function () {
         get_page_performance: getPagePerformance,
         get_server_latency: getServerLatency,
         optout: optOut,
-        show_optout_message: showOptoutMessage,
-        handle_gdpr_consent: handleGdprConsent,
-        show_gdpr_consent_banner: showGdprConsentBanner,
-        init_gdpr_theme_mode: initGdprThemeMode,
+        // Deprecated GDPR UI removed
         add_event: addEvent,
         in_array: anySubstring,
         empty: isEmpty,
@@ -1045,20 +905,8 @@ if (!window.requestIdleCallback) {
     SlimStat.add_event(window, "load", function () {
         SlimStat._extract_params();
 
-        // Check GDPR consent before initial pageview
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-
-        // Initialize theme mode BEFORE showing banner
-        SlimStat.init_gdpr_theme_mode();
-
-        if (params.gdpr_enabled === "1" && SlimStat.get_cookie("slimstat_gdpr_consent") !== "accepted") {
-            // Show GDPR banner instead of tracking
-            SlimStat.show_gdpr_consent_banner();
-        } else {
-            // Proceed with normal tracking
-            SlimStat._send_pageview();
-        }
+        // Proceed with normal tracking; consent is gated by CMP checks in sendPageview()
+        SlimStat._send_pageview();
 
         // Flush any offline stored payloads after initial pageview queued
         setTimeout(function () {
@@ -1147,14 +995,7 @@ if (!window.requestIdleCallback) {
             }
         });
 
-        // Add event delegation for GDPR consent update buttons
-        SlimStat.add_event(document.body, "click", function (e) {
-            var target = e.target.closest("[data-consent]");
-            if (target) {
-                var consent = target.getAttribute("data-consent");
-                SlimStat.handle_gdpr_consent(consent, target);
-            }
-        });
+        // No GDPR consent buttons; managed by CMPs
     }
 
     function setupNavigationHooks() {

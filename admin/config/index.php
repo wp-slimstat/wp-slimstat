@@ -125,48 +125,14 @@ $settings = [
                 'type'        => 'toggle',
                 'description' => __('Disable this option if, for legal or security reasons, you do not want Slimstat to assign a <a href="https://en.wikipedia.org/wiki/HTTP_cookie" target="_blank">cookie</a> to your visitors. Please note that by deactivating this feature, Slimstat will not be able to identify returning visitors as such.', 'wp-slimstat'),
             ],
-            'display_opt_out' => [
-                'title'       => __('GDPR Consent Banner', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("Enable a GDPR-compliant consent banner that appears before any tracking occurs. Users must explicitly consent to data collection. The banner will be displayed to all users who haven't made a consent decision yet.", 'wp-slimstat'),
-            ],
-            'opt_out_cookie_names' => [
-                'title'       => __('Opt-out Cookies', 'wp-slimstat'),
-                'type'        => 'textarea',
-                'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
-            ],
-            'opt_in_cookie_names' => [
-                'title'       => __('Opt-in Cookies', 'wp-slimstat'),
-                'type'        => 'textarea',
-                'description' => __('Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie whose value <strong>CONTAINS</strong> the string you specified. Separate multiple pairs with commas.', 'wp-slimstat'),
-            ],
-            'opt_out_message' => [
-                'title'           => __('Consent Banner Message', 'wp-slimstat'),
-                'type'            => 'textarea',
-                'rows'            => 4,
-                'use_tag_list'    => false,
-                'use_code_editor' => 'htmlmixed',
-                'description'     => __('Customize the GDPR consent banner message. Use modern HTML with proper styling. The banner will appear at the bottom of the page.', 'wp-slimstat'),
-            ],
-            'gdpr_theme_mode' => [
-                'title'         => __('Banner Theme Mode', 'wp-slimstat'),
+            'consent_fallback' => [
+                'title'         => __('Consent Fallback (when no CMP)', 'wp-slimstat'),
                 'type'          => 'select',
-                'description'   => __("Choose the theme mode for the GDPR consent banner. <strong>Light</strong> uses light colors, <strong>Dark</strong> uses dark colors, and <strong>Auto</strong> follows the user's system preference.", 'wp-slimstat'),
+                'description'   => __('Choose what SlimStat should do if no Consent Management Platform (CMP) is present or no integration provides a signal. Recommended: Allow only when your CMP explicitly approves via hooks/filters.', 'wp-slimstat'),
                 'select_values' => [
-                    'light' => __('Light Mode', 'wp-slimstat'),
-                    'dark'  => __('Dark Mode', 'wp-slimstat'),
-                    'auto'  => __('Auto (Follow System)', 'wp-slimstat'),
+                    'allow' => __('Allow tracking by default', 'wp-slimstat'),
+                    'deny'  => __('Deny tracking by default', 'wp-slimstat'),
                 ],
-            ],
-            'gdpr_accept_button_text' => [
-                'title'       => __('Accept Button Text', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('Customize the text displayed on the Accept button in the GDPR consent banner.', 'wp-slimstat'),
-            ],
-            'gdpr_decline_button_text' => [
-                'title'       => __('Decline Button Text', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('Customize the text displayed on the Decline button in the GDPR consent banner.', 'wp-slimstat'),
             ],
 
 
@@ -974,37 +940,5 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 </div>
 
 <script>
-jQuery(document).ready(function($) {
-    // GDPR options to show/hide
-    var gdprOptions = [
-        'opt_out_cookie_names',
-        'opt_in_cookie_names',
-        'opt_out_message',
-        'gdpr_accept_button_text',
-        'gdpr_theme_mode',
-        'gdpr_decline_button_text'
-    ];
-
-    // Function to toggle GDPR options visibility
-    function toggleGdprOptions() {
-        var isEnabled = $('#display_opt_out').is(':checked');
-        console.log(isEnabled);
-
-        gdprOptions.forEach(function(optionName) {
-            var $row = $('tr:has(*[name="options[' + optionName + ']"])');
-            if (isEnabled) {
-                $row.show();
-            } else {
-                $row.hide();
-            }
-        });
-    }
-
-    // Initial state
-    toggleGdprOptions();
-
-    // Toggle on change - listen to both change and bootstrap switch events
-    $('#display_opt_out').on('change', toggleGdprOptions);
-    $('#display_opt_out').on('switchChange.bootstrapSwitch', toggleGdprOptions);
-});
+// No GDPR banner settings; SlimStat integrates with CMPs via hooks/filters.
 </script>
