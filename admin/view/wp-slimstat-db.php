@@ -546,11 +546,11 @@ class wp_slimstat_db
                     case 'strtotime':
                         $custom_date = strtotime($a_filter[3], wp_slimstat::date_i18n('U'));
 
-                        $filters_parsed['date']['minute'] = intval(wp_date('i', $custom_date));
-                        $filters_parsed['date']['hour']   = intval(wp_date('H', $custom_date));
-                        $filters_parsed['date']['day']    = intval(wp_date('j', $custom_date));
-                        $filters_parsed['date']['month']  = intval(wp_date('n', $custom_date));
-                        $filters_parsed['date']['year']   = intval(wp_date('Y', $custom_date));
+                        $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
+                        $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
+                        $filters_parsed['date']['day']    = intval(date('j', $custom_date));
+                        $filters_parsed['date']['month']  = intval(date('n', $custom_date));
+                        $filters_parsed['date']['year']   = intval(date('Y', $custom_date));
                         break;
 
                     case 'minute':
