@@ -438,7 +438,7 @@ class wp_slimstat_db
         // Use the end date from normalized filters (if available)
         if (!empty(self::$filters_normalized['utime']['end'])) {
             // Convert to Y-m-d for comparison (Query expects string date)
-            $to = wp_date('Y-m-d', self::$filters_normalized['utime']['end']);
+            $to = date('Y-m-d', self::$filters_normalized['utime']['end']);
             if (method_exists($query, 'canUseCacheForDateRange')) {
                 $query->canUseCacheForDateRange($to);
             }
