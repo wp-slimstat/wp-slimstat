@@ -760,6 +760,7 @@ class wp_slimstat_admin
         // Enqueue notification assets if notifications are enabled
         if (wp_slimstat::$settings['display_notifications'] == 'on') {
             wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
 
             // Pass notification data to Javascript
