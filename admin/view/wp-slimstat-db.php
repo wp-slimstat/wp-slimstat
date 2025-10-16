@@ -565,23 +565,23 @@ class wp_slimstat_db
                             self::toggle_date_i18n_filters(false);
                             switch ($a_filter[1]) {
                                 case 'minute':
-                                    $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['minute'] = intval(date('i', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'hour':
-                                    $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['hour'] = intval(date('H', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'day':
-                                    $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['day'] = intval(date('j', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'month':
-                                    $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['month'] = intval(date('n', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'year':
-                                    $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['year'] = intval(date('Y', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 default:
@@ -710,7 +710,6 @@ class wp_slimstat_db
                 $fn['utime']['end'] = intval(date_i18n('U'));
             }
 
-            // Add 1 second to account for the time difference between midnight and 23:59:59
             $fn['utime']['range'] += 1;
             $fn['utime']['start'] = $fn['utime']['end'] + $fn['utime']['range'];
 
@@ -1012,7 +1011,7 @@ class wp_slimstat_db
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
         $query->limit(sprintf('%d OFFSET %d', $limit, $start));
 
-        $query->allowCaching(false);
+        $query->allowCaching(true);
 
 
         return $query->getAll();
