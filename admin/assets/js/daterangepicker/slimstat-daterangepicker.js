@@ -7,6 +7,30 @@
 jQuery(document).ready(function($) {
     'use strict';
 
+    // Clear sessionStorage on actual page refresh (not on navigation)
+    // This ensures date selection doesn't persist after user manually refreshes the page
+    (function() {
+        var isReload = false;
+        
+        // Check using Performance API (modern browsers)
+        if (window.performance) {
+            if (performance.navigation && performance.navigation.type === 1) {
+                // Legacy API: Type 1 = reload
+                isReload = true;
+            } else if (performance.getEntriesByType) {
+                // Modern API
+                var perfEntries = performance.getEntriesByType('navigation');
+                if (perfEntries && perfEntries.length > 0 && perfEntries[0].type === 'reload') {
+                    isReload = true;
+                }
+            }
+        }
+        
+        if (isReload) {
+            sessionStorage.removeItem('slimstat_date_range');
+        }
+    })();
+
     // Configuration
     const CONFIG = {
         SELECTORS: {
@@ -152,8 +176,10 @@ jQuery(document).ready(function($) {
     function getCurrentDateRange() {
         const urlParams = new URLSearchParams(window.location.search);
         const type = urlParams.get('type');
+        const fromParam = urlParams.get('from');
+        const toParam = urlParams.get('to');
         
-        // If type parameter exists, get the preset range
+        // If URL has date parameters, use them (takes precedence, e.g., shared URLs)
         if (type && type !== 'custom') {
             const presetLabel = getPresetLabel(type);
             if (presetLabel) {
@@ -169,34 +195,54 @@ jQuery(document).ready(function($) {
             }
         }
         
-        // If neither preset type nor from/to are provided, default to Last 28 Days preset
-        const fromParam = urlParams.get('from');
-        const toParam = urlParams.get('to');
-        if (!fromParam && !toParam) {
-            const presetLabel = getPresetLabel('last_28_days');
-            const presetRanges = getPresetRanges();
-            const range = presetRanges[presetLabel];
-            if (range && Array.isArray(range) && range.length === 2) {
-                return {
-                    startDate: range[0],
-                    endDate: range[1],
-                    preset: 'last_28_days'
-                };
+        if (fromParam && toParam) {
+            const localTime = getLocalTime();
+            const fromDate = normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone);
+            const toDate = normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone);
+            return {
+                startDate: fromDate,
+                endDate: toDate,
+                preset: 'custom'
+            };
+        }
+        
+        // Check sessionStorage for persisted date range (navigation between pages)
+        const savedRange = sessionStorage.getItem('slimstat_date_range');
+        if (savedRange) {
+            try {
+                const parsed = JSON.parse(savedRange);
+                // Validate saved data
+                if (parsed.startDate && parsed.endDate && parsed.preset) {
+                    return {
+                        startDate: moment(parsed.startDate),
+                        endDate: moment(parsed.endDate),
+                        preset: parsed.preset
+                    };
+                }
+            } catch (e) {
+                // If parsing fails, use default
+                console.warn('SlimStat: Could not parse saved date range', e);
             }
         }
+        
+        // Default to Last 28 Days preset
+        const presetLabel = getPresetLabel('last_28_days');
+        const presetRanges = getPresetRanges();
+        const range = presetRanges[presetLabel];
+        if (range && Array.isArray(range) && range.length === 2) {
+            return {
+                startDate: range[0],
+                endDate: range[1],
+                preset: 'last_28_days'
+            };
+        }
 
-		// Fallback to from/to parameters with site timezone normalization
+		// Final fallback
 		const localTime = getLocalTime();
-		const fromDate = fromParam
-			? normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone)
-			: normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone);
-		const toDate = toParam
-			? normalizeDate(moment(toParam, CONFIG.SERVER_FORMAT), validTimezone)
-			: normalizeDate(localTime.clone(), validTimezone);
 		return {
-			startDate: fromDate,
-			endDate: toDate,
-			preset: 'custom'
+			startDate: normalizeDate(localTime.clone().subtract(27, 'days'), validTimezone),
+			endDate: normalizeDate(localTime.clone(), validTimezone),
+			preset: 'last_28_days'
 		};
     }
 
@@ -480,6 +526,14 @@ jQuery(document).ready(function($) {
 
             // Determine preset type from chosen label
             const presetType = detectPresetType(chosenLabel);
+
+            // Save date range to sessionStorage for persistence across page navigation
+            const dateRangeData = {
+                startDate: startDate.format(CONFIG.SERVER_FORMAT),
+                endDate: endDate.format(CONFIG.SERVER_FORMAT),
+                preset: presetType
+            };
+            sessionStorage.setItem('slimstat_date_range', JSON.stringify(dateRangeData));
 
             // Generate the proper SlimStat URL with date filters
             const targetUrl = generateSlimStatUrl(startDate, endDate, presetType);
