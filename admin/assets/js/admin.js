@@ -561,6 +561,53 @@ jQuery(function () {
     // Initialize searchable select instance
     let searchableSelectInstance = null;
 
+    /**
+     * Helper function to get current time range for AJAX requests
+     * Returns object with type, from, and to parameters
+     */
+    function getTimeRangeForAjax() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var timeRange = {
+            type: 'last_28_days', // default
+            from: '',
+            to: ''
+        };
+
+        // First, check URL parameters
+        if (urlParams.has('type')) {
+            var typeParam = urlParams.get('type');
+            if (typeParam === 'custom' && urlParams.has('from') && urlParams.has('to')) {
+                timeRange.type = 'custom';
+                timeRange.from = urlParams.get('from');
+                timeRange.to = urlParams.get('to');
+            } else if (typeParam !== 'custom') {
+                timeRange.type = typeParam;
+            }
+        } 
+        // If no URL params, check sessionStorage
+        else {
+            var savedRange = sessionStorage.getItem('slimstat_date_range');
+            if (savedRange) {
+                try {
+                    var parsed = JSON.parse(savedRange);
+                    if (parsed.preset) {
+                        timeRange.type = parsed.preset;
+                    }
+                    // For custom ranges from sessionStorage
+                    if (parsed.preset === 'custom' && parsed.startDate && parsed.endDate) {
+                        timeRange.from = moment(parsed.startDate).format('YYYY-MM-DD');
+                        timeRange.to = moment(parsed.endDate).format('YYYY-MM-DD');
+                    }
+                } catch (e) {
+                    // If parsing fails, use default
+                    console.warn('SlimStat: Could not parse saved date range for filter options', e);
+                }
+            }
+        }
+
+        return timeRange;
+    }
+
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {
         var dimension = jQuery(this).val();
@@ -581,6 +628,9 @@ jQuery(function () {
         // Show loading state
         $textInput.attr("placeholder", __('Loading options...', 'wp-slimstat')).attr("name", "v");
 
+        // Get the current time range from URL parameters or sessionStorage
+        var timeRangeData = getTimeRangeForAjax();
+
         // Fetch options via AJAX
         jQuery.ajax({
             method: "POST",
@@ -589,36 +639,48 @@ jQuery(function () {
                 action: "slimstat_get_filter_options",
                 dimension: dimension,
                 security: jQuery("#meta-box-order-nonce").val(),
+                time_range_type: timeRangeData.type,
+                time_range_from: timeRangeData.from,
+                time_range_to: timeRangeData.to,
             },
             dataType: "json",
             timeout: 30000, // 30 second timeout to prevent hanging requests
         })
             .done(function (response) {
-                if (response.success && response.data && response.data.length > 0) {
+                if (response.success) {
                     // Verify the element still exists
                     if (!$textInput.length || !$textInput[0]) {
                         return;
                     }
                     
                     try {
-                        // Initialize searchable select
+                        // Determine the appropriate "no results" message
+                        var noResultsText = __('No matching options found', 'wp-slimstat');
+                        
+                        // Check if we have no data due to time range filter
+                        if (response.data && response.data.length === 0) {
+                            noResultsText = __('No data in this time range', 'wp-slimstat');
+                        }
+                        
+                        // Initialize searchable select (even if no options)
                         searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
                             placeholder: __('Select value...', 'wp-slimstat'),
                             searchPlaceholder: __('Search options...', 'wp-slimstat'),
-                            noResultsText: __('No matching options found', 'wp-slimstat'),
+                            noResultsText: noResultsText,
                             loadingText: __('Loading options...', 'wp-slimstat')
                         });
                         
-                        // Set the options from the AJAX response
-                        searchableSelectInstance.setOptions(response.data);
+                        // Set the options from the AJAX response (empty array if no data)
+                        searchableSelectInstance.setOptions(response.data || []);
                         
                         $textInput.attr("name", "v");
                     } catch (error) {
                         // Fall back to regular text input if searchable select fails
+                        console.error('SlimStat: Failed to initialize searchable select', error);
                         $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                     }
                 } else {
-                    // No options found, show text input instead
+                    // On error response, fall back to text input
                     $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                 }
             })

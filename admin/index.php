@@ -1356,6 +1356,37 @@ class wp_slimstat_admin
             return;
         }
 
+        // Get time range parameters from AJAX request
+        $time_range_type = sanitize_text_field($_POST['time_range_type'] ?? 'last_28_days');
+        $time_range_from = sanitize_text_field($_POST['time_range_from'] ?? '');
+        $time_range_to = sanitize_text_field($_POST['time_range_to'] ?? '');
+
+        // Calculate time range timestamps
+        $time_start = null;
+        $time_end = null;
+
+        if ($time_range_type === 'custom' && !empty($time_range_from) && !empty($time_range_to)) {
+            // Custom date range
+            $time_start = strtotime($time_range_from);
+            $time_end = strtotime($time_range_to . ' 23:59:59');
+        } else {
+            // Preset date range
+            $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset($time_range_type);
+            if ($preset_range) {
+                $time_start = $preset_range['start'];
+                $time_end = $preset_range['end'];
+            }
+        }
+
+        // Fallback to last 28 days if no valid time range
+        if (empty($time_start) || empty($time_end)) {
+            $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset('last_28_days');
+            if ($preset_range) {
+                $time_start = $preset_range['start'];
+                $time_end = $preset_range['end'];
+            }
+        }
+
         // Get distinct values for this dimension via SlimStat\Utils\Query abstraction
         $table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
@@ -1385,6 +1416,11 @@ class wp_slimstat_admin
         $query = \SlimStat\Utils\Query::select('DISTINCT ' . $safe_dimension . ' as value')
             ->from($table_name);
 
+        // Apply time range filter
+        if (!empty($time_start) && !empty($time_end)) {
+            $query->where('dt', 'BETWEEN', [intval($time_start), intval($time_end)]);
+        }
+
         if ($column_type === 'varchar') {
             // Exclude NULLs and empty strings for varchar columns
             $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . " <> ''");
@@ -1410,6 +1446,7 @@ class wp_slimstat_admin
         }
 
         $options = [];
+        $seen_values = []; // Track values to prevent duplicates (case-insensitive)
         $dimensions_with_icons = ['country', 'browser', 'language', 'platform', 'username'];
         $has_icons = in_array($dimension, $dimensions_with_icons, true);
         
@@ -1417,6 +1454,23 @@ class wp_slimstat_admin
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
                 $sanitized_value = sanitize_text_field($row['value']);
+                
+                // Trim whitespace
+                $sanitized_value = trim($sanitized_value);
+                
+                // Skip empty values after trimming
+                if (empty($sanitized_value)) {
+                    continue;
+                }
+                
+                // Check for duplicates using case-insensitive comparison
+                $value_key = strtolower($sanitized_value);
+                if (isset($seen_values[$value_key])) {
+                    continue; // Skip duplicate
+                }
+                
+                // Mark this value as seen
+                $seen_values[$value_key] = true;
                 
                 // Limit individual option length to prevent DOM issues
                 if (strlen($sanitized_value) > 255) {
