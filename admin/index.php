@@ -1538,6 +1538,24 @@ class wp_slimstat_admin
                 $seen_values[$value_key] = true;
                 
 
+
+                // Trim whitespace
+                $sanitized_value = trim($sanitized_value);
+
+                // Skip empty values after trimming
+                if (empty($sanitized_value)) {
+                    continue;
+                }
+
+                // Check for duplicates using case-insensitive comparison
+                $value_key = strtolower($sanitized_value);
+                if (isset($seen_values[$value_key])) {
+                    continue; // Skip duplicate
+                }
+
+                // Mark this value as seen
+                $seen_values[$value_key] = true;
+
                 // Limit individual option length to prevent DOM issues
                 if (strlen($sanitized_value) > 255) {
                     $sanitized_value = substr($sanitized_value, 0, 255) . '...';
