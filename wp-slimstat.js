@@ -945,20 +945,15 @@ if (!window.requestIdleCallback) {
 
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
     if (window.wp_listen_for_consent_change) {
-        console.log("SlimStat: Attaching consent change listener.");
         var consentRetried = false;
         window.wp_listen_for_consent_change(function (category) {
-            console.log("SlimStat: Consent change event fired for category:", category);
             var params = currentSlimStatParams();
             var selectedCategory = params.consent_level_integration || "functional";
-            console.log("SlimStat: Checking against selected category:", selectedCategory);
 
             var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
-            console.log("SlimStat: Should track on consent?", shouldTrack);
 
             // If consent was granted for our category and we haven't tracked yet, send pageview now
             if (shouldTrack) {
-                console.log("SlimStat: Consent granted, attempting to send pageview now.");
                 consentRetried = true;
                 SlimStat._send_pageview();
             }
@@ -968,23 +963,17 @@ if (!window.requestIdleCallback) {
     // Standard WP Consent API event listener
     document.addEventListener("wp_consent_change", function (event) {
         if (consentPollInterval) {
-            console.log("SlimStat: Consent event received, clearing polling fallback.");
             clearInterval(consentPollInterval);
         }
-        console.log("SlimStat: Standard 'wp_consent_change' event fired.", event.detail);
         if (event.detail && event.detail.category) {
             var category = event.detail.category;
             var params = currentSlimStatParams();
             var selectedCategory = params.consent_level_integration || "functional";
             var consentRetried = window.slimstatConsentRetried || false;
 
-            console.log("SlimStat: Event category:", category, "Selected category:", selectedCategory);
-
             var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
-            console.log("SlimStat: Should track on consent?", shouldTrack);
 
             if (shouldTrack) {
-                console.log("SlimStat: Consent granted, attempting to send pageview now.");
                 window.slimstatConsentRetried = true;
                 SlimStat._send_pageview();
             }
@@ -1000,16 +989,14 @@ if (!window.requestIdleCallback) {
             return;
         }
 
-        console.log("SlimStat: Fallback polling for consent started.");
         var attempts = 0;
         consentPollInterval = setInterval(function () {
             attempts++;
             var currentParams = currentSlimStatParams();
             var hasId = currentParams.id && parseInt(currentParams.id, 10) > 0;
 
-            if (hasId || attempts > 12) {
-                // Poll for ~60 seconds
-                console.log("SlimStat: Stopping polling (ID received or max attempts).");
+            if (hasId || attempts > 6) {
+                // Poll for ~60 seconds (6 * 10s)
                 clearInterval(consentPollInterval);
                 return;
             }
@@ -1017,7 +1004,6 @@ if (!window.requestIdleCallback) {
             if (typeof window.wp_has_consent === "function") {
                 var selectedCategory = currentParams.consent_level_integration || "functional";
                 if (window.wp_has_consent(selectedCategory)) {
-                    console.log("SlimStat: Consent detected via polling. Attempting pageview.");
                     clearInterval(consentPollInterval);
 
                     var consentRetried = window.slimstatConsentRetried || false;
@@ -1027,7 +1013,7 @@ if (!window.requestIdleCallback) {
                     }
                 }
             }
-        }, 5000); // Check every 5 seconds
+        }, 10000); // Check every 10 seconds
     }
     SlimStat.add_event(window, "load", startConsentPollingFallback);
 
