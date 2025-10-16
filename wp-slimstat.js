@@ -967,6 +967,10 @@ if (!window.requestIdleCallback) {
 
     // Standard WP Consent API event listener
     document.addEventListener("wp_consent_change", function (event) {
+        if (consentPollInterval) {
+            console.log("SlimStat: Consent event received, clearing polling fallback.");
+            clearInterval(consentPollInterval);
+        }
         console.log("SlimStat: Standard 'wp_consent_change' event fired.", event.detail);
         if (event.detail && event.detail.category) {
             var category = event.detail.category;
@@ -986,6 +990,46 @@ if (!window.requestIdleCallback) {
             }
         }
     });
+
+    // Consent Polling Fallback
+    var consentPollInterval = null;
+    function startConsentPollingFallback() {
+        var params = currentSlimStatParams();
+        // Only poll if consent is the reason we might not have an ID.
+        if (params.consent_integration !== "wp_consent_api" || (params.id && parseInt(params.id, 10) > 0)) {
+            return;
+        }
+
+        console.log("SlimStat: Fallback polling for consent started.");
+        var attempts = 0;
+        consentPollInterval = setInterval(function () {
+            attempts++;
+            var currentParams = currentSlimStatParams();
+            var hasId = currentParams.id && parseInt(currentParams.id, 10) > 0;
+
+            if (hasId || attempts > 12) {
+                // Poll for ~60 seconds
+                console.log("SlimStat: Stopping polling (ID received or max attempts).");
+                clearInterval(consentPollInterval);
+                return;
+            }
+
+            if (typeof window.wp_has_consent === "function") {
+                var selectedCategory = currentParams.consent_level_integration || "functional";
+                if (window.wp_has_consent(selectedCategory)) {
+                    console.log("SlimStat: Consent detected via polling. Attempting pageview.");
+                    clearInterval(consentPollInterval);
+
+                    var consentRetried = window.slimstatConsentRetried || false;
+                    if (!consentRetried) {
+                        window.slimstatConsentRetried = true;
+                        SlimStat._send_pageview();
+                    }
+                }
+            }
+        }, 5000); // Check every 5 seconds
+    }
+    SlimStat.add_event(window, "load", startConsentPollingFallback);
 
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
