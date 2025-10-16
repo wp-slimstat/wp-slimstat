@@ -965,6 +965,28 @@ if (!window.requestIdleCallback) {
         });
     }
 
+    // Standard WP Consent API event listener
+    document.addEventListener("wp_consent_change", function (event) {
+        console.log("SlimStat: Standard 'wp_consent_change' event fired.", event.detail);
+        if (event.detail && event.detail.category) {
+            var category = event.detail.category;
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+            var consentRetried = window.slimstatConsentRetried || false;
+
+            console.log("SlimStat: Event category:", category, "Selected category:", selectedCategory);
+
+            var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
+            console.log("SlimStat: Should track on consent?", shouldTrack);
+
+            if (shouldTrack) {
+                console.log("SlimStat: Consent granted, attempting to send pageview now.");
+                window.slimstatConsentRetried = true;
+                SlimStat._send_pageview();
+            }
+        }
+    });
+
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
