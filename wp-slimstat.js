@@ -945,13 +945,20 @@ if (!window.requestIdleCallback) {
 
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
     if (window.wp_listen_for_consent_change) {
+        console.log("SlimStat: Attaching consent change listener.");
         var consentRetried = false;
         window.wp_listen_for_consent_change(function (category) {
+            console.log("SlimStat: Consent change event fired for category:", category);
             var params = currentSlimStatParams();
             var selectedCategory = params.consent_level_integration || "functional";
+            console.log("SlimStat: Checking against selected category:", selectedCategory);
+
+            var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
+            console.log("SlimStat: Should track on consent?", shouldTrack);
 
             // If consent was granted for our category and we haven't tracked yet, send pageview now
-            if (!consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0)) {
+            if (shouldTrack) {
+                console.log("SlimStat: Consent granted, attempting to send pageview now.");
                 consentRetried = true;
                 SlimStat._send_pageview();
             }
