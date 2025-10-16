@@ -943,6 +943,21 @@ if (!window.requestIdleCallback) {
         }, 500);
     });
 
+    // Listen for WP Consent API consent changes and retry pageview if previously blocked
+    if (window.wp_listen_for_consent_change) {
+        var consentRetried = false;
+        window.wp_listen_for_consent_change(function (category) {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+
+            // If consent was granted for our category and we haven't tracked yet, send pageview now
+            if (!consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0)) {
+                consentRetried = true;
+                SlimStat._send_pageview();
+            }
+        });
+    }
+
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
