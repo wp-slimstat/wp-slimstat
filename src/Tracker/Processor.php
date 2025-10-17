@@ -246,7 +246,9 @@ class Processor
 			}
 		}
 
-		$set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
+		$isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
+		$piiAllowed = Consent::piiAllowed();
+		$set_cookie = apply_filters('slimstat_set_visit_cookie', ($piiAllowed && !$isAnonymousTracking && !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
 		if ($set_cookie) {
 			if (empty(\wp_slimstat::$stat['visit_id']) && !empty(\wp_slimstat::$stat['id'])) {
 				@setcookie('slimstat_tracking_code', Utils::getValueWithChecksum(\wp_slimstat::$stat['id'] . 'id'), ['expires' => time() + 2678400, 'path' => COOKIEPATH]);

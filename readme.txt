@@ -18,7 +18,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
+* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner, Borlabs Cookie).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
@@ -73,6 +73,17 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.0 - 2025-01-15 =
+- **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
+- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API, Real Cookie Banner Pro, and Borlabs Cookie.
+- **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
+- **New**: Do Not Track (DNT) header respect with configurable option in settings.
+- **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
+- **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
+- **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
+- **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
+[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0)
+
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.

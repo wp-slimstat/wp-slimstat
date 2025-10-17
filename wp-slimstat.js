@@ -541,7 +541,7 @@ var SlimStat = (function () {
         try {
             var s = window.SlimStatParams || {};
             var anonMode = s.anonymous_tracking === "on";
-            var setCookie = true; // assume cookies unless disabled server-side
+            var setCookie = s.set_tracker_cookie === "on";
             var anonymize = s.anonymize_ip === "on" || anonMode;
             var hash = s.hash_ip === "on" || anonMode;
             likelyPII = !anonMode && (setCookie || (!anonymize && !hash));
@@ -962,9 +962,6 @@ if (!window.requestIdleCallback) {
 
     // Standard WP Consent API event listener
     document.addEventListener("wp_consent_change", function (event) {
-        if (consentPollInterval) {
-            clearInterval(consentPollInterval);
-        }
         if (event.detail && event.detail.category) {
             var category = event.detail.category;
             var params = currentSlimStatParams();
@@ -974,48 +971,75 @@ if (!window.requestIdleCallback) {
             var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
 
             if (shouldTrack) {
+                // Double-check with WP Consent API if available
+                if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
                 window.slimstatConsentRetried = true;
                 SlimStat._send_pageview();
             }
         }
     });
 
-    // Consent Polling Fallback
-    var consentPollInterval = null;
-    function startConsentPollingFallback() {
-        var params = currentSlimStatParams();
-        // Only poll if consent is the reason we might not have an ID.
-        if (params.consent_integration !== "wp_consent_api" || (params.id && parseInt(params.id, 10) > 0)) {
-            return;
+    // CMP-specific listeners
+    (function registerCmpListeners() {
+        function tryTrackIfAllowed() {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+            if (params.id && parseInt(params.id, 10) > 0) return;
+            if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
+            if (!window.slimstatConsentRetried) {
+                window.slimstatConsentRetried = true;
+                SlimStat._send_pageview();
+            }
         }
 
-        var attempts = 0;
-        consentPollInterval = setInterval(function () {
-            attempts++;
-            var currentParams = currentSlimStatParams();
-            var hasId = currentParams.id && parseInt(currentParams.id, 10) > 0;
+        // Complianz: enable specific category
+        document.addEventListener("cmplz_enable_category", function (e) {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+            var cat = (e && e.detail && (e.detail.category || e.detail)) || "";
+            if (cat === selectedCategory) tryTrackIfAllowed();
+        });
 
-            if (hasId || attempts > 6) {
-                // Poll for ~60 seconds (6 * 10s)
-                clearInterval(consentPollInterval);
-                return;
+        // Complianz: status event (allow/deny)
+        document.addEventListener("cmplz_event_status", function (e) {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+            var d = (e && e.detail) || {};
+            var cat = d.category || d.type || "";
+            var allowed = d.status === "allow" || d.enabled === true;
+            if (cat === selectedCategory && allowed) tryTrackIfAllowed();
+        });
+
+        // Real Cookie Banner
+        window.addEventListener("RealCookieBannerConsentChanged", function (e) {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "functional";
+            var ok = false;
+            if (e && e.detail && e.detail.consent && selectedCategory in e.detail.consent) {
+                ok = !!e.detail.consent[selectedCategory];
             }
+            if (typeof window.wp_has_consent === "function") ok = !!window.wp_has_consent(selectedCategory);
+            if (ok) tryTrackIfAllowed();
+        });
 
-            if (typeof window.wp_has_consent === "function") {
-                var selectedCategory = currentParams.consent_level_integration || "functional";
-                if (window.wp_has_consent(selectedCategory)) {
-                    clearInterval(consentPollInterval);
+        // Borlabs Cookie (generic consent saved event)
+        window.addEventListener("borlabs-cookie-consent-saved", function () {
+            tryTrackIfAllowed();
+        });
 
-                    var consentRetried = window.slimstatConsentRetried || false;
-                    if (!consentRetried) {
-                        window.slimstatConsentRetried = true;
-                        SlimStat._send_pageview();
-                    }
-                }
-            }
-        }, 10000); // Check every 10 seconds
-    }
-    SlimStat.add_event(window, "load", startConsentPollingFallback);
+        // CookieYes (cookie-law-info) events
+        // Fire after a short delay to allow WP Consent API state to update
+        document.addEventListener("cookieyes_consent_update", function () {
+            setTimeout(tryTrackIfAllowed, 50);
+        });
+        document.addEventListener("cookieyes_preferences_update", function () {
+            setTimeout(tryTrackIfAllowed, 50);
+        });
+        // Older CookieYes/CLI plugins
+        document.addEventListener("cli_consent_update", function () {
+            setTimeout(tryTrackIfAllowed, 50);
+        });
+    })();
 
     // Before unload finalize if we have an active id
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers

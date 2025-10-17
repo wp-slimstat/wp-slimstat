@@ -10,6 +10,7 @@ if (! defined('ABSPATH')) {
 }
 
 use SlimStat\Services\Privacy;
+use SlimStat\Utils\Consent;
 
 /**
  * IP Hash Provider
@@ -40,17 +41,19 @@ class IPHashProvider
         }
 
         $originalIp = $stat['ip'];
+        $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
+        $piiAllowed = Consent::piiAllowed();
 
-        // Step 1: Anonymize IP if enabled
-        if ('on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
+        // Step 1: Anonymize IP if enabled OR if anonymous tracking is on OR PII not allowed
+        if ($isAnonymousTracking || !$piiAllowed || 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
             $stat['ip'] = self::anonymizeIP($stat['ip']);
             if (!empty($stat['other_ip'])) {
                 $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
             }
         }
 
-        // Step 2: Hash IP if enabled
-        if ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+        // Step 2: Hash IP if enabled OR if anonymous tracking is on OR PII not allowed
+        if ($isAnonymousTracking || !$piiAllowed || 'on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
             $stat = self::hashIP($stat, $originalIp);
         }
 

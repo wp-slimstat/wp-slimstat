@@ -1,12 +1,19 @@
 = 5.4.0 - 2025-01-15 =
-- **New**: GDPR Consent Management System integrated with existing "Allow Opt-out" setting for seamless compatibility.
-- **New**: Enhanced GDPR consent banner with improved styling and user experience and support (light/dark) mode.
-- **New**: Consent management shortcode `[slimstat_consent]` for user consent control.
-- **Enhancement**: Improved tracking compliance with privacy regulations.
-- **Enhancement**: Better user privacy control with explicit consent options.
-- **Enhancement**: Backward compatibility maintained with existing opt-out system.
-- **Enhancement**: Refactored GDPR services architecture with proper dependency injection.
-- **Enhancement**: Enhanced JavaScript consent handling with better event delegation.
+- **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
+- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance:
+  - WP Consent API support with configurable consent categories
+  - Real Cookie Banner Pro integration
+  - Borlabs Cookie integration
+- **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
+- **New**: Do Not Track (DNT) header respect with configurable option in settings.
+- **New**: Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
+- **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
+- **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
+- **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
+- **Enhancement**: Enhanced code quality with proper namespace imports instead of fully qualified class names.
+- **Enhancement**: Conditional fingerprint storage - only collected when PII is allowed.
+- **Enhancement**: Better privacy controls - anonymous tracking option prevents all PII collection.
+- **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 
 = 5.3.1 - 2025-09-09 =
 - **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.

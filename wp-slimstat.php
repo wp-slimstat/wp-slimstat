@@ -119,6 +119,12 @@ class wp_slimstat
             add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
         }
 
+        // Registers Slimstat with WP Consent API if enabled in plugin settings
+        if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
+            $plugin = plugin_basename(SLIMSTAT_FILE);
+            add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
+        }
+
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
 
@@ -822,17 +828,24 @@ class wp_slimstat
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
         $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
+        $params['set_tracker_cookie'] = self::$settings['set_tracker_cookie'] ?? 'on';
 
         $params = apply_filters('slimstat_js_params', $params);
+
+        // Add dependencies for consent integrations (e.g., WP Consent API)
+        $dependencies = [];
+        if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
+            $dependencies[] = 'wp-consent-api';
+        }
 
         // Register the correct script for adblock bypass, CDN, or default
         if ('adblock_bypass' === $method) {
             $hash_js  = md5(site_url() . 'slimstat');
-            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), [], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
         } elseif ('on' == self::$settings['enable_cdn']) {
-            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', [], null, true);
+            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
         } else {
-            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), [], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
         }
 
         wp_enqueue_script('wp_slimstat');
@@ -850,6 +863,30 @@ class wp_slimstat
         }
 
         wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
+
+        // Hook CookieYes/CookieLawInfo consent events to trigger immediate pageview without refresh
+        $inline_cookieyes = ';
+(function(){
+    function tryTrackIfAllowed(){
+        try{
+            if(typeof window.SlimStat === "undefined" || typeof window.SlimStat._send_pageview !== "function"){ return; }
+            var params = window.SlimStatParams || {};
+            if(params.id && parseInt(params.id,10) > 0){ return; }
+            var cat = params.consent_level_integration || "functional";
+            if(typeof window.wp_has_consent === "function" && !window.wp_has_consent(cat)){ return; }
+            if(!window.slimstatConsentRetried){
+                window.slimstatConsentRetried = true;
+                window.SlimStat._send_pageview();
+            }
+        }catch(e){}
+    }
+    function deferTrack(){ setTimeout(tryTrackIfAllowed, 50); }
+    document.addEventListener("cookieyes_consent_update", deferTrack);
+    document.addEventListener("cookieyes_preferences_update", deferTrack);
+    document.addEventListener("cli_consent_update", deferTrack);
+})();
+';
+        wp_add_inline_script('wp_slimstat', $inline_cookieyes, 'after');
         return null;
     }
 

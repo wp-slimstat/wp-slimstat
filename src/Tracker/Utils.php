@@ -2,6 +2,7 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Utils\Consent;
 use SlimStat\Utils\Query;
 
 class Utils
@@ -24,7 +25,7 @@ class Utils
 		if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
 			return $value;
 		}
-        
+
 		return false;
 	}
 
@@ -35,14 +36,14 @@ class Utils
 			if (!is_array($needles)) {
 				$needles = [$needles];
 			}
-            
+
 			foreach ($needles as $needle) {
 				if (preg_match(sprintf('@^%s$@i', $pattern), $needle)) {
 					return true;
 				}
 			}
 		}
-        
+
 		return false;
 	}
 
@@ -51,18 +52,18 @@ class Utils
 		if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
 			return false;
 		}
-        
+
 		if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
 			return false;
 		}
-        
+
 		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
 		$today = date('Y-m-d');
 		if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
 			$query->allowCaching(true);
 		}
-        
+
 		$countFingerprint = $query->getVar();
 		return 0 == $countFingerprint;
 	}
@@ -93,7 +94,7 @@ class Utils
 		} elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
 			return 128;
 		}
-        
+
 		return false;
 	}
 
@@ -136,7 +137,7 @@ class Utils
 			preg_match('/([^,;]*)/', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $arrayLanguages);
 			return str_replace('_', '-', strtolower($arrayLanguages[0]));
 		}
-        
+
 		return '';
 	}
 
@@ -161,7 +162,7 @@ class Utils
 			if (empty($search_engines[$sek]['params'])) {
 				$search_engines[$sek]['params'] = ['q'];
 			}
-            
+
 			foreach ($search_engines[$sek]['params'] as $param) {
 				if (!empty($parsed_url['query'])) {
 					$searchterms = self::getParamFromQueryString($parsed_url['query'], $param);
@@ -170,7 +171,7 @@ class Utils
 					}
 				}
 			}
-            
+
 			if (!empty($searchterms) && (!empty($search_engines['charsets']) && function_exists('iconv'))) {
 				$charset = $search_engines['charsets'][0];
 				if (count($search_engines['charsets']) > 1 && function_exists('mb_detect_encoding')) {
@@ -179,7 +180,7 @@ class Utils
 						$charset = $search_engines['charsets'][0];
 					}
 				}
-                
+
 				$new_searchterms = @iconv($charset, 'UTF-8//IGNORE', $searchterms);
 				if (!('' === $new_searchterms || '0' === $new_searchterms || false === $new_searchterms)) {
 					$searchterms = $new_searchterms;
@@ -202,7 +203,7 @@ class Utils
 		if (empty($query)) {
 			return '';
 		}
-        
+
 		@parse_str($query, $values);
 		return empty($values[$parameter]) ? '' : $values[$parameter];
 	}
@@ -216,7 +217,7 @@ class Utils
 			if (($post_type = get_post_type()) != 'post') {
 				$post_type = 'cpt:' . $post_type;
 			}
-            
+
 			$content_info['content_type'] = $post_type;
 			$category_ids                 = [];
 			foreach (get_object_taxonomies($GLOBALS['post']) as $taxonomy) {
@@ -225,11 +226,11 @@ class Utils
 					foreach ($terms as $term) {
 						$category_ids[] = $term->term_id;
 					}
-                    
+
 					$content_info['category'] = implode(',', $category_ids);
 				}
 			}
-            
+
 			$content_info['content_id'] = $GLOBALS['post']->ID;
 		} elseif (is_page()) {
 			$content_info['content_type'] = 'page';
@@ -299,31 +300,36 @@ class Utils
 		if (!empty($dataJs['bw'])) {
 			$stat['resolution'] = strip_tags(trim($dataJs['bw'] . 'x' . $dataJs['bh']));
 		}
-        
+
 		if (!empty($dataJs['sw'])) {
 			$stat['screen_width'] = intval($dataJs['sw']);
 		}
-        
+
 		if (!empty($dataJs['sh'])) {
 			$stat['screen_height'] = intval($dataJs['sh']);
 		}
-        
+
 		if (!empty($dataJs['sl']) && $dataJs['sl'] > 0 && $dataJs['sl'] < 60000) {
 			$stat['server_latency'] = intval($dataJs['sl']);
 		}
-        
+
 		if (!empty($dataJs['pp']) && $dataJs['pp'] > 0 && $dataJs['pp'] < 60000) {
 			$stat['page_performance'] = intval($dataJs['pp']);
 		}
-        
+
 		if (!empty($dataJs['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
-			$stat['fingerprint'] = sanitize_text_field($dataJs['fh']);
+			// Only store fingerprint when PII is allowed; otherwise skip to reduce identifiability pre-consent
+			try {
+				if (Consent::piiAllowed()) {
+					$stat['fingerprint'] = sanitize_text_field($dataJs['fh']);
+				}
+			} catch (\Throwable $e) {}
 		}
-        
+
 		if (!empty($dataJs['tz'])) {
 			$stat['tz_offset'] = intval($dataJs['tz']);
 		}
-        
+
 		return $stat;
 	}
 }

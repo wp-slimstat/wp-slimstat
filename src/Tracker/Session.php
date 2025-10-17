@@ -2,6 +2,7 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Utils\Consent;
 use SlimStat\Utils\Query;
 
 class Session
@@ -59,9 +60,9 @@ class Session
 				} while ($existing_visit_id !== null);
 			}
 
-			\wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
-			$set_cookie                     = apply_filters('slimstat_set_visit_cookie', (!empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
-			if ($set_cookie) {
+		\wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
+		$set_cookie                     = apply_filters('slimstat_set_visit_cookie', (Consent::piiAllowed() && !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
+		if ($set_cookie) {
 				@setcookie('slimstat_tracking_code', Utils::getValueWithChecksum(\wp_slimstat::$stat['visit_id']), ['expires' => time() + \wp_slimstat::$settings['session_duration'], 'path' => COOKIEPATH]);
 			}
 		} elseif ($identifier > 0) {
