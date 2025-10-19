@@ -36,4 +36,11 @@ interface ChartableInterface {
 	 * @return string Chart type (line, bar, pie, etc.)
 	 */
 	public function get_chart_type(): string;
+
+	/**
+	 * Get chart-specific options.
+	 *
+	 * @return array<string, mixed> Chart options
+	 */
+	public function get_chart_options(): array;
 }

@@ -184,6 +184,13 @@ class ReportRegistry {
 			}
 		}
 
+		// Sort reports by priority (lower number = higher priority)
+		uasort( $reports, function( $a, $b ) {
+			$priority_a = method_exists( $a, 'get_priority' ) ? $a->get_priority() : 10;
+			$priority_b = method_exists( $b, 'get_priority' ) ? $b->get_priority() : 10;
+			return $priority_a <=> $priority_b;
+		} );
+
 		return $reports;
 	}
 
@@ -219,7 +226,7 @@ class ReportRegistry {
 			$legacy[ $id ] = $report->to_array();
 		}
 
-		return apply_filters( 'slimstat_reports_info', $legacy );
+		return $legacy;
 	}
 
 	/**
@@ -247,12 +254,12 @@ class ReportRegistry {
 	 * @return void
 	 */
 	private function load_user_reports(): void {
-		if ( ! class_exists( 'wp_slimstat_admin' ) ) {
+		if ( ! class_exists( '\wp_slimstat_admin' ) ) {
 			return;
 		}
 
-		if ( ! empty( wp_slimstat_admin::$meta_user_reports ) && is_array( wp_slimstat_admin::$meta_user_reports ) ) {
-			foreach ( wp_slimstat_admin::$meta_user_reports as $location => $report_list ) {
+		if ( ! empty( \wp_slimstat_admin::$meta_user_reports ) && is_array( \wp_slimstat_admin::$meta_user_reports ) ) {
+			foreach ( \wp_slimstat_admin::$meta_user_reports as $location => $report_list ) {
 				if ( ! array_key_exists( $location, $this->locations_map ) ) {
 					continue;
 				}

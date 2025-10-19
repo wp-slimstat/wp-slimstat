@@ -70,6 +70,20 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	protected string $capability = 'read';
 
 	/**
+	 * Postbox configuration options
+	 *
+	 * @var array<string, mixed>
+	 */
+	protected array $postbox_config = [
+		'hide_header'    => false,  // Hide postbox header (title + buttons)
+		'hide_padding'   => false,  // Remove postbox padding
+		'custom_height'  => null,   // Custom height for postbox
+		'full_width'     => false,  // Make postbox full width
+		'no_border'      => false,  // Remove postbox border
+		'no_background'  => false,  // Remove postbox background
+	];
+
+	/**
 	 * Constructor - initializes the report
 	 */
 	public function __construct() {
@@ -138,16 +152,45 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	}
 
 	/**
+	 * Get the report priority for ordering (lower number = higher priority)
+	 *
+	 * @return int Default priority is 10
+	 */
+	public function get_priority(): int {
+		return 10;
+	}
+
+	/**
+	 * Get postbox configuration
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function get_postbox_config(): array {
+		return $this->postbox_config;
+	}
+
+	/**
+	 * Get specific postbox configuration option
+	 *
+	 * @param string $key Configuration key
+	 * @param mixed $default Default value if key doesn't exist
+	 * @return mixed
+	 */
+	public function get_postbox_option( string $key, $default = null ) {
+		return $this->postbox_config[ $key ] ?? $default;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function can_view(): bool {
 		// Check if user is whitelisted
-		if ( false !== strpos( ( wp_slimstat::$settings['can_view'] ?? '' ), (string) $GLOBALS['current_user']->user_login ) ) {
+		if ( false !== strpos( ( \wp_slimstat::$settings['can_view'] ?? '' ), (string) $GLOBALS['current_user']->user_login ) ) {
 			return current_user_can( 'read' );
 		}
 
 		// Check capability
-		$minimum_capability = wp_slimstat::$settings['capability_can_view'] ?? $this->capability;
+		$minimum_capability = \wp_slimstat::$settings['capability_can_view'] ?? $this->capability;
 		return current_user_can( $minimum_capability );
 	}
 
@@ -157,8 +200,8 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	 * @return void
 	 */
 	protected function setup_capability(): void {
-		if ( ! empty( wp_slimstat::$settings['capability_can_view'] ) ) {
-			$this->capability = wp_slimstat::$settings['capability_can_view'];
+		if ( ! empty( \wp_slimstat::$settings['capability_can_view'] ) ) {
+			$this->capability = \wp_slimstat::$settings['capability_can_view'];
 		}
 	}
 
@@ -265,11 +308,11 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	 * @return string
 	 */
 	protected function get_refresh_url(): string {
-		if ( ! class_exists( 'wp_slimstat_reports' ) ) {
+		if ( ! class_exists( '\wp_slimstat_reports' ) ) {
 			return '#';
 		}
 
-		return wp_slimstat_reports::fs_url();
+		return \wp_slimstat_reports::fs_url();
 	}
 
 	/**
@@ -277,14 +320,39 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 	 */
 	public function to_array(): array {
 		return [
-			'title'         => $this->get_title(),
-			'callback'      => [ $this, 'render_content' ],
-			'callback_args' => $this->get_callback_args(),
-			'classes'       => $this->get_classes(),
-			'locations'     => $this->get_locations(),
-			'tooltip'       => $this->get_tooltip(),
-			'color'         => $this->get_color(),
+			'title'          => $this->get_title(),
+			'callback'       => [ $this, 'render_content' ],
+			'callback_args'  => $this->get_callback_args(),
+			'classes'        => $this->get_classes(),
+			'locations'      => $this->get_locations(),
+			'tooltip'        => $this->get_tooltip(),
+			'color'          => $this->get_color(),
+			'postbox_config' => $this->get_postbox_config(),
+			'priority'       => $this->get_priority(),
 		];
+	}
+
+	/**
+	 * Render content for backward compatibility
+	 *
+	 * @return void
+	 */
+	public function render_content(): void {
+		// If report implements RenderableInterface and has a renderer, use it
+		if ( $this instanceof RenderableInterface && method_exists( $this, 'get_renderer' ) ) {
+			$renderer = $this->get_renderer();
+
+			if ( ! empty( $renderer ) && file_exists( SLIMSTAT_DIR . '/views/reports/' . $renderer . '.php' ) ) {
+				\SlimStat\Components\View::load( 'reports/' . $renderer, [
+					'args' => $this->get_callback_args(),
+					'data' => $this->get_data(),
+				] );
+				return;
+			}
+		}
+
+		// Default: Show "No content" message
+		echo '<p>' . esc_html__( 'No content available for this report.', 'wp-slimstat' ) . '</p>';
 	}
 
 	/**

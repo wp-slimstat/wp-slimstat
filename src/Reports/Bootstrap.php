@@ -14,6 +14,7 @@ use SlimStat\Reports\Registry\ReportRegistry;
 use SlimStat\Reports\Registry\ReportFactory;
 use SlimStat\Reports\Registry\ReportLoader;
 use SlimStat\Reports\Registry\LegacyReportAdapter;
+use SlimStat\Reports\Types\Analytics\LiveAnalyticsReport;
 
 /**
  * Class Bootstrap
@@ -104,9 +105,56 @@ class Bootstrap {
 		// Register hooks
 		$this->register_hooks();
 
+		// Register built-in reports
+		$this->register_builtin_reports();
+
 		$this->initialized = true;
 
 		do_action( 'slimstat_reports_system_initialized' );
+	}
+
+	/**
+	 * Register built-in reports
+	 *
+	 * Each report is self-contained and handles its own:
+	 * - AJAX endpoints
+	 * - Asset enqueuing (CSS/JS)
+	 * - WordPress hooks
+	 *
+	 * To add a new report:
+	 * 1. Create a new class extending AbstractReport
+	 * 2. Add a static init_hooks() method to handle report-specific setup
+	 * 3. Add the class to the $builtin_reports array below
+	 *
+	 * Example:
+	 * ```php
+	 * class MyNewReport extends AbstractReport {
+	 *     public static function init_hooks(): void {
+	 *         add_action( 'wp_ajax_my_report_data', [ __CLASS__, 'ajax_handler' ] );
+	 *         add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
+	 *     }
+	 * }
+	 * ```
+	 *
+	 * @return void
+	 */
+	private function register_builtin_reports(): void {
+		// List of built-in report classes
+		$builtin_reports = [
+			LiveAnalyticsReport::class,
+			// Add new reports here - each report is fully self-contained
+		];
+
+		foreach ( $builtin_reports as $report_class ) {
+			// Create and register the report
+			$report = $this->factory->create( $report_class );
+			$this->registry->register( $report );
+
+			// Initialize report-specific hooks and assets
+			if ( method_exists( $report_class, 'init_hooks' ) ) {
+				call_user_func( [ $report_class, 'init_hooks' ] );
+			}
+		}
 	}
 
 	/**
@@ -139,6 +187,20 @@ class Bootstrap {
 
 		// Allow third-party code to register custom reports
 		add_action( 'slimstat_register_custom_reports', [ $this, 'register_custom_reports' ] );
+
+		// Register AJAX handlers
+		$this->register_ajax_handlers();
+	}
+
+	/**
+	 * Register AJAX handlers for reports
+	 *
+	 * @return void
+	 */
+	private function register_ajax_handlers(): void {
+		// AJAX handlers are registered by each report via init_hooks()
+		// This action is for third-party extensions
+		do_action( 'slimstat_register_ajax_handlers' );
 	}
 
 	/**
@@ -147,7 +209,7 @@ class Bootstrap {
 	 * @return void
 	 */
 	public function maybe_load_legacy_adapter(): void {
-		if ( class_exists( 'wp_slimstat_reports' ) ) {
+		if ( class_exists( '\wp_slimstat_reports' ) ) {
 			// Sync user reports
 			$this->adapter->sync_user_reports();
 		}

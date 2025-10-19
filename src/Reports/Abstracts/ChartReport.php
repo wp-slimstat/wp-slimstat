@@ -44,6 +44,32 @@ abstract class ChartReport extends AbstractReport implements ChartableInterface 
 	/**
 	 * {@inheritDoc}
 	 */
+	public function get_chart_options(): array {
+		return [
+			'responsive' => true,
+			'maintainAspectRatio' => false,
+			'layout' => [
+				'padding' => 20,
+			],
+			'plugins' => [
+				'legend' => [
+					'display' => false,
+				],
+			],
+			'scales' => [
+				'y' => [
+					'beginAtZero' => true,
+					'grid' => [
+						'display' => false,
+					],
+				],
+			],
+		];
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public function get_renderer(): string {
 		return 'SlimStat\Reports\Renderer\ChartRenderer';
 	}
@@ -52,7 +78,7 @@ abstract class ChartReport extends AbstractReport implements ChartableInterface 
 	 * {@inheritDoc}
 	 */
 	public function render_content(): void {
-		if ( 'on' === ( wp_slimstat::$settings['async_load'] ?? 'off' ) && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
+		if ( 'on' === ( \wp_slimstat::$settings['async_load'] ?? 'off' ) && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 			return;
 		}
 
@@ -81,6 +107,8 @@ abstract class ChartReport extends AbstractReport implements ChartableInterface 
 			'id'           => $this->get_id(),
 			'chart_data'   => $this->get_chart_data(),
 			'chart_labels' => $this->get_chart_labels(),
+			'chart_type'   => $this->get_chart_type(),
+			'chart_options' => $this->get_chart_options(),
 		];
 	}
 
@@ -92,6 +120,8 @@ abstract class ChartReport extends AbstractReport implements ChartableInterface 
 			'id'           => $this->get_id(),
 			'chart_data'   => $this->get_chart_data(),
 			'chart_labels' => $this->get_chart_labels(),
+			'chart_type'   => $this->get_chart_type(),
+			'chart_options' => $this->get_chart_options(),
 		];
 	}
 }
