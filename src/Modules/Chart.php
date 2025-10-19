@@ -21,6 +21,8 @@ class Chart
 
     private const GRANULARITIES = ['yearly', 'monthly', 'weekly', 'daily', 'hourly'];
 
+    private const CHART_TYPES = ['line', 'bar'];
+
     private array $args = [];
 
     private array $data = [];
@@ -111,10 +113,16 @@ class Chart
     private function normalizeArgs(array $args): array
     {
         $defaults = [
-            'start' => \wp_slimstat_db::$filters_normalized['utime']['start'],
-            'end'   => \wp_slimstat_db::$filters_normalized['utime']['end'],
+            'start'      => \wp_slimstat_db::$filters_normalized['utime']['start'],
+            'end'        => \wp_slimstat_db::$filters_normalized['utime']['end'],
+            'chart_type' => 'line',
         ];
         $args = array_merge($defaults, $args);
+
+        // Validate chart type
+        if (!in_array($args['chart_type'], self::CHART_TYPES, true)) {
+            $args['chart_type'] = 'line';
+        }
 
         $args['granularity'] = $this->detectGranularity($args);
         $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
@@ -383,5 +391,15 @@ class Chart
             'chartLabels'  => $this->chartLabels,
             'translations' => $this->translations,
         ]);
+    }
+
+    /**
+     * Get supported chart types
+     *
+     * @return array<string>
+     */
+    public static function get_supported_chart_types(): array
+    {
+        return self::CHART_TYPES;
     }
 }

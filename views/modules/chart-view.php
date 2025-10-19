@@ -34,7 +34,7 @@ $totals         = [
     ],
 ];
 ?>
-<div class="slimstat-chart-wrap">
+<div class="slimstat-chart-wrap <?php echo esc_attr(isset($args['chart_type']) && $args['chart_type'] === 'bar' ? 'chart-bar' : 'chart-line'); ?>">
     <div class="slimstat-chart-controls">
         <select
             id="slimstat_granularity_<?php echo esc_attr($args['id']); ?>"
@@ -62,6 +62,7 @@ $totals         = [
         data-data="<?php echo esc_attr(json_encode($data)); ?>"
         data-prev-data="<?php echo esc_attr(json_encode($prevData)); ?>"
         data-granularity="<?php echo esc_attr($args['granularity']); ?>"
+        data-chart-type="<?php echo esc_attr($args['chart_type'] ?? 'line'); ?>"
         data-chart-labels="<?php echo esc_attr(json_encode($chartLabels)); ?>"
         data-translations="<?php echo esc_attr(json_encode($translations)); ?>"
         data-totals="<?php echo esc_attr(json_encode($totals ?? [])); ?>">

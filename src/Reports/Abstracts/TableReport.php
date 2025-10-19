@@ -116,7 +116,7 @@ abstract class TableReport extends AbstractReport implements FilterableInterface
 	 */
 	public function get_results_per_page(): int {
 		if ( -1 === $this->results_per_page ) {
-			return (int) ( wp_slimstat::$settings['rows_to_show'] ?? 10 );
+			return (int) ( \wp_slimstat::$settings['rows_to_show'] ?? 10 );
 		}
 		return $this->results_per_page;
 	}
@@ -141,11 +141,11 @@ abstract class TableReport extends AbstractReport implements FilterableInterface
 	 * {@inheritDoc}
 	 */
 	public function render_pagination(): string {
-		if ( ! class_exists( 'wp_slimstat_reports' ) ) {
+		if ( ! class_exists( '\wp_slimstat_reports' ) ) {
 			return '';
 		}
 
-		return wp_slimstat_reports::report_pagination(
+		return \wp_slimstat_reports::report_pagination(
 			count( $this->get_data() ),
 			$this->get_total_results(),
 			false,
@@ -164,15 +164,15 @@ abstract class TableReport extends AbstractReport implements FilterableInterface
 	 * {@inheritDoc}
 	 */
 	public function render_content(): void {
-		if ( 'on' === ( wp_slimstat::$settings['async_load'] ?? 'off' ) && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
+		if ( 'on' === ( \wp_slimstat::$settings['async_load'] ?? 'off' ) && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 			return;
 		}
 
-		if ( ! class_exists( 'wp_slimstat_reports' ) ) {
+		if ( ! class_exists( '\wp_slimstat_reports' ) ) {
 			return;
 		}
 
-		wp_slimstat_reports::raw_results_to_html( $this->get_callback_args() );
+		\wp_slimstat_reports::raw_results_to_html( $this->get_callback_args() );
 	}
 
 	/**

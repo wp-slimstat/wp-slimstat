@@ -77,7 +77,7 @@ trait HasPagination {
 	 */
 	public function get_results_per_page(): int {
 		if ( -1 === $this->results_per_page ) {
-			return (int) ( wp_slimstat::$settings['rows_to_show'] ?? 10 );
+			return (int) ( \wp_slimstat::$settings['rows_to_show'] ?? 10 );
 		}
 		return $this->results_per_page;
 	}
@@ -111,11 +111,11 @@ trait HasPagination {
 	 * @return string Pagination HTML
 	 */
 	public function render_pagination(): string {
-		if ( ! class_exists( 'wp_slimstat_reports' ) ) {
+		if ( ! class_exists( '\wp_slimstat_reports' ) ) {
 			return '';
 		}
 
-		return wp_slimstat_reports::report_pagination(
+		return \wp_slimstat_reports::report_pagination(
 			$this->page_results,
 			$this->total_results,
 			false,
