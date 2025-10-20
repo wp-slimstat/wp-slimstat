@@ -14,6 +14,7 @@ class wp_slimstat_admin
     public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
+    protected static $admin_notice    = '';
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -803,6 +804,7 @@ class wp_slimstat_admin
         if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
+            wp_enqueue_script('jquery-ui-sortable');
         }
 
         // Enqueue the built-in code editor to use on the Settings
