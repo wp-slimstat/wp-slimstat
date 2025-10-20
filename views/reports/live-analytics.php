@@ -112,7 +112,7 @@ $chart_id = 'live_chart_' . uniqid();
 						<span class="live-dot"></span>
 						<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
 					</span>
-					<h4><?php esc_html_e( 'Active users per minutes', 'wp-slimstat' ); ?></h4>
+					<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
 				</div>
 			</div>
 			<div class="chart-container">
