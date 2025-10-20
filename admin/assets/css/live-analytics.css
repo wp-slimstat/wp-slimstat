@@ -317,6 +317,48 @@
     }
 }
 
+/* Fast pulse animation during updates */
+@keyframes livePulseFast {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+    }
+}
+
+@keyframes liveRippleFast {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.8);
+    }
+}
+
+/* Updating state for live indicator */
+.live-indicator.updating {
+    background: rgba(239, 68, 68, 0.12);
+    transition: background 0.3s ease;
+}
+
+.live-indicator.updating .live-dot {
+    animation: livePulseFast 0.8s ease-in-out infinite;
+}
+
+.live-indicator.updating .live-dot::before {
+    animation: liveRippleFast 0.8s ease-in-out infinite;
+}
+
+.live-indicator.updating .live-text {
+    color: #dc2626;
+}
+
 /* Clickable Metric Items */
 .clickable-metric {
     cursor: pointer;

@@ -679,6 +679,12 @@
         var chartContainer = container.querySelector(".chart-container");
         if (!chartContainer) return;
 
+        // Add updating state to live indicator
+        var liveIndicator = container.querySelector(".live-indicator");
+        if (liveIndicator) {
+            liveIndicator.classList.add("updating");
+        }
+
         // Blink the last bar during updates
         this.startBlinkingAnimation();
     };
@@ -699,6 +705,12 @@
         var overlay = chartContainer.querySelector(".chart-loading-overlay");
         if (overlay) {
             overlay.style.display = "none";
+        }
+
+        // Remove updating state from live indicator
+        var liveIndicator = container.querySelector(".live-indicator");
+        if (liveIndicator) {
+            liveIndicator.classList.remove("updating");
         }
 
         // Stop blinking animation
