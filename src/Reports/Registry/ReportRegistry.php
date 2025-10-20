@@ -279,7 +279,15 @@ class ReportRegistry {
 			return;
 		}
 
-		$flat_user_reports = array_filter( explode( ',', implode( ',', $this->user_reports ) ) );
+		// Flatten the multi-dimensional user_reports array
+		$flat_user_reports = [];
+		foreach ( $this->user_reports as $location_reports ) {
+			if ( is_array( $location_reports ) ) {
+				$flat_user_reports = array_merge( $flat_user_reports, $location_reports );
+			}
+		}
+		$flat_user_reports = array_unique( array_filter( $flat_user_reports ) );
+
 		$all_report_ids    = array_keys( $this->reports );
 		$new_reports       = array_diff( $all_report_ids, $flat_user_reports );
 
