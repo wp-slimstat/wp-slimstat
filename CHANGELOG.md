@@ -1,4 +1,5 @@
 = 5.4.0 - 2025-09-05 =
+- **New**: Real-time data visualization with live analytics dashboard for instant insights.
 - **New**: GDPR-compliant salted hash IP address functionality for enhanced privacy protection.
 - **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 
