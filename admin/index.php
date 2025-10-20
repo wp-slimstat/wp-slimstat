@@ -718,6 +718,7 @@ class wp_slimstat_admin
         if (self::$current_screen && str_contains(self::$current_screen->id ?? '', 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
+            wp_enqueue_script('jquery-ui-sortable');
         }
 
         // Enqueue the built-in code editor to use on the Settings
@@ -725,7 +726,7 @@ class wp_slimstat_admin
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'jquery-ui-sortable'], SLIMSTAT_ANALYTICS_VERSION, true);
 
         // Pass some information to Javascript
         $params = [
