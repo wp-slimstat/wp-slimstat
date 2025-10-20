@@ -18,6 +18,9 @@
 - **Enhancement**: Enhanced responsive design for the "Access Log" report.
 - **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
 - **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
+- **New**: Real-time data visualization with live analytics dashboard for instant insights.
+- **New**: GDPR-compliant salted hash IP address functionality for enhanced privacy protection.
+- **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
