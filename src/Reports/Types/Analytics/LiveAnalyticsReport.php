@@ -129,64 +129,53 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array{users: int, pages: int, countries: int}
 	 */
 	private function get_all_live_counts(): array {
-        // Test mode passthrough
-        if ( $this->is_test_mode() ) {
-            return $this->get_test_data();
-        }
+		// Test mode passthrough
+		if ( $this->is_test_mode() ) {
+			return $this->get_test_data();
+		}
 
-        global $wpdb;
+		global $wpdb;
 
-        if ( ! $this->is_tracking_enabled() ) {
-            return [ 'users' => 0, 'pages' => 0, 'countries' => 0 ];
-        }
+		if ( ! $this->is_tracking_enabled() ) {
+			return [ 'users' => 0, 'pages' => 0, 'countries' => 0 ];
+		}
 
-        $cache_key = 'slimstat_live_counts_' . get_current_blog_id();
-        $cached = get_transient( $cache_key );
-        if ( false !== $cached && is_array( $cached ) ) {
-            return $cached;
-        }
+		// Use Query class cache instead of manual transient - eliminates double caching
+		// session duration (seconds). Default to 30 minutes if not set.
+		$session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
+		$now              = current_time( 'timestamp' );
+		$online_threshold = $now - $session_duration;
 
-        // session duration (seconds). Default to 30 minutes if not set.
-        $session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
-        $now = current_time( 'timestamp' );
-        $online_threshold = $now - $session_duration;
+		// 1) users online right now: count distinct visit_id where last_activity >= online_threshold
+		// Note: This uses a subquery which is complex, so we use wpdb->prepare for the inner query
+		$subquery_sql = $wpdb->prepare(
+			"SELECT visit_id, MAX(dt) as last_activity
+			FROM {$wpdb->prefix}slim_stats
+			WHERE visit_id > 0
+			GROUP BY visit_id
+			HAVING last_activity >= %d",
+			$online_threshold
+		);
 
-        // 1) users online right now: count distinct visit_id where last_activity >= online_threshold
-        $users_sql = $wpdb->prepare("
-            SELECT COUNT(*) as users_count FROM (
-                SELECT visit_id, MAX(dt) as last_activity
-                FROM {$wpdb->prefix}slim_stats
-                WHERE visit_id > 0
-                GROUP BY visit_id
-                HAVING last_activity >= %d
-            ) t
-        ", $online_threshold);
+		$users_count = (int) Query::select( 'COUNT(*) as users_count' )
+			->from( "({$subquery_sql}) t" )
+			->allowCaching( true, 5 )
+			->getVar();
 
-        $users_count = (int) $wpdb->get_var( $users_sql );
+		// 2) pages and countries in last 30 minutes (unique)
+		$threshold_30 = $now - ( 30 * 60 );
+		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
+			->from( "{$wpdb->prefix}slim_stats" )
+			->where( 'dt', '>=', $threshold_30 )
+			->allowCaching( true, 5 )
+			->getRow();
 
-        // 2) pages and countries in last 30 minutes (unique)
-        $threshold_30 = $now - (30 * 60);
-        $pages_sql = $wpdb->prepare("
-            SELECT
-                COUNT(DISTINCT NULLIF(resource,'') ) AS pages_count,
-                COUNT(DISTINCT NULLIF(country,'') ) AS countries_count
-            FROM {$wpdb->prefix}slim_stats
-            WHERE dt >= %d
-        ", $threshold_30);
-
-        $row = $wpdb->get_row( $pages_sql, ARRAY_A );
-
-        $counts = [
-            'users'     => $users_count,
-            'pages'     => (int) ( $row['pages_count'] ?? 0 ),
-            'countries' => (int) ( $row['countries_count'] ?? 0 ),
-        ];
-
-        // ACCURACY IMPROVEMENT: Reduced cache to 5 seconds for more real-time updates
-        set_transient( $cache_key, $counts, 5 );
-
-        return $counts;
-    }
+		return [
+			'users'     => $users_count,
+			'pages'     => (int) ( $row->pages_count ?? 0 ),
+			'countries' => (int) ( $row->countries_count ?? 0 ),
+		];
+	}
 
 	/**
 	 * Generate chart labels for 30-minute window
@@ -221,14 +210,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return $this->get_empty_chart_data();
 		}
 
-		// Check transient cache first (cache for 10 seconds)
-		$cache_key = 'slimstat_chart_data_' . $metric . '_' . get_current_blog_id();
-		$cached    = get_transient( $cache_key );
-
-		if ( false !== $cached && is_array( $cached ) ) {
-			return $cached;
-		}
-
+		// Use Query class cache - no need for separate transient cache
 		if ( 'users' === $metric ) {
 			$chart_data = $this->get_users_chart_data();
 		} else {
@@ -236,22 +218,18 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$field     = 'pages' === $metric ? 'resource' : 'country';
 			$condition = 'pages' === $metric ? "resource IS NOT NULL AND resource != ''" : "country IS NOT NULL AND country != ''";
 
-			// Use prepared statement for security and performance
-			$sql = $wpdb->prepare(
-				"SELECT FLOOR(dt / 60) * 60 as minute_timestamp, COUNT(DISTINCT {$field}) as count
-				FROM {$wpdb->prefix}slim_stats
-				WHERE dt > %d AND {$condition}
-				GROUP BY minute_timestamp
-				ORDER BY minute_timestamp ASC",
-				$threshold
-			);
+			// Use Query class for secure and cached queries
+			$results = Query::select( "FLOOR(dt / 60) * 60 as minute_timestamp, COUNT(DISTINCT {$field}) as count" )
+				->from( "{$wpdb->prefix}slim_stats" )
+				->where( 'dt', '>', $threshold )
+				->whereRaw( $condition )
+				->groupBy( 'minute_timestamp' )
+				->orderBy( 'minute_timestamp', 'ASC' )
+				->allowCaching( true, 5 )
+				->getAll();
 
-			$results    = $wpdb->get_results( $sql, ARRAY_A );
 			$chart_data = $this->format_chart_data( $results );
 		}
-
-		// ACCURACY IMPROVEMENT: Reduced cache to 5 seconds for more real-time updates
-		set_transient( $cache_key, $chart_data, 5 );
 
 		return $chart_data;
 	}
@@ -264,99 +242,108 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * 1. The session has started (first_activity <= minute)
 	 * 2. The session has not expired (last_activity + session_duration >= minute)
 	 *
+	 * Note: This method uses wpdb directly for complex JOINs that Query class doesn't support yet.
+	 * Manual caching via transient is appropriate here since we can't use Query class cache.
+	 *
 	 * @return array Chart data
 	 */
 	private function get_users_chart_data(): array {
-        global $wpdb;
+		global $wpdb;
 
-        if ( $this->is_test_mode() ) {
-            return $this->get_test_chart_data( 'users' );
-        }
+		if ( $this->is_test_mode() ) {
+			return $this->get_test_chart_data( 'users' );
+		}
 
-        if ( ! $this->is_tracking_enabled() ) {
-            return $this->get_empty_chart_data();
-        }
+		if ( ! $this->is_tracking_enabled() ) {
+			return $this->get_empty_chart_data();
+		}
 
-        $cache_key = 'slimstat_chart_data_users_' . get_current_blog_id();
-        $cached = get_transient( $cache_key );
-        if ( false !== $cached && is_array( $cached ) ) {
-            return $cached;
-        }
+		// Manual cache is needed here since we use wpdb directly (Query class doesn't support complex JOINs yet)
+		$cache_key = 'slimstat_chart_data_users_' . get_current_blog_id();
+		$cached    = get_transient( $cache_key );
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
 
-        $session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
-        $now = current_time( 'timestamp' );
+		$session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
+		$now              = current_time( 'timestamp' );
 
-        // ACCURACY IMPROVEMENT: Use exact seconds instead of rounding to minute start
-        // This ensures we count sessions that are active in the last N seconds precisely
-        $start_time = $now - ( 30 * 60 ); // Exact 30 minutes ago (includes seconds)
-        $start_minute = (int) floor( $start_time / 60 ) * 60; // Still align buckets to minute boundaries for grouping
+		// ACCURACY IMPROVEMENT: Use exact seconds instead of rounding to minute start
+		// This ensures we count sessions that are active in the last N seconds precisely
+		$start_time   = $now - ( 30 * 60 ); // Exact 30 minutes ago (includes seconds)
+		$start_minute = (int) floor( $start_time / 60 ) * 60; // Still align buckets to minute boundaries for grouping
 
-        // We first aggregate sessions: first_activity and last_activity per visit_id.
-        // Then we generate 30 minute rows using a derived numbers table (0..29).
-        // ACCURACY IMPROVEMENT: Check if session is online during ANY point in that minute
-        // by checking against both the start (minute_ts) and end (minute_ts + 59) of each minute bucket
-        $sql = $wpdb->prepare(
-            "
-            SELECT m.minute_ts AS minute_timestamp, COUNT(DISTINCT s.visit_id) AS cnt FROM (
-                /* numbers table: 0..29 minutes */
-                SELECT %d + (n.n * 60) AS minute_ts
-                FROM (
-                    SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
-                    UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
-                    UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14
-                    UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19
-                    UNION ALL SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24
-                    UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29
-                ) n
-            ) m
-            LEFT JOIN (
-                SELECT visit_id, MIN(dt) AS first_activity, MAX(dt) AS last_activity
-                FROM {$wpdb->prefix}slim_stats
-                WHERE visit_id > 0
-                  AND dt >= %d /* Only consider sessions from last 30 mins + session_duration for efficiency */
-                GROUP BY visit_id
-                HAVING last_activity + %d >= %d /* session may still cover earliest minute */
-            ) s ON s.first_activity <= (m.minute_ts + 59) AND (s.last_activity + %d) >= m.minute_ts
-            GROUP BY m.minute_ts
-            ORDER BY m.minute_ts ASC
-            ",
-            $start_minute, // Base minute for numbers table
-            $start_time - $session_duration, // Filter: only recent sessions
-            $session_duration, // Session duration for HAVING clause
-            $start_time, // Only sessions that haven't expired yet
-            $session_duration // Session duration for JOIN condition
-        );
+		// We first aggregate sessions: first_activity and last_activity per visit_id.
+		// Then we generate 30 minute rows using a derived numbers table (0..29).
+		// ACCURACY IMPROVEMENT: Check if session is online during ANY point in that minute
+		// by checking against both the start (minute_ts) and end (minute_ts + 59) of each minute bucket
 
-        $results = $wpdb->get_results( $sql, ARRAY_A );
+		// For complex queries with numbers table and custom JOINs, we use wpdb->prepare
+		// This query is too complex for the Query builder's current capabilities
+		$sql = $wpdb->prepare(
+			"
+			SELECT m.minute_ts AS minute_timestamp, COUNT(DISTINCT s.visit_id) AS cnt FROM (
+				SELECT %d + (n.n * 60) AS minute_ts
+				FROM (
+					SELECT 0 n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4
+					UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7 UNION ALL SELECT 8 UNION ALL SELECT 9
+					UNION ALL SELECT 10 UNION ALL SELECT 11 UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14
+					UNION ALL SELECT 15 UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19
+					UNION ALL SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23 UNION ALL SELECT 24
+					UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27 UNION ALL SELECT 28 UNION ALL SELECT 29
+				) n
+			) m
+			LEFT JOIN (
+				SELECT visit_id, MIN(dt) AS first_activity, MAX(dt) AS last_activity
+				FROM {$wpdb->prefix}slim_stats
+				WHERE visit_id > 0
+				  AND dt >= %d
+				GROUP BY visit_id
+				HAVING last_activity + %d >= %d
+			) s ON s.first_activity <= (m.minute_ts + 59) AND (s.last_activity + %d) >= m.minute_ts
+			GROUP BY m.minute_ts
+			ORDER BY m.minute_ts ASC
+			",
+			$start_minute,
+			$start_time - $session_duration,
+			$session_duration,
+			$start_time,
+			$session_duration
+		);
 
-        // Build a lookup from minute_timestamp -> count
-        $lookup = [];
-        foreach ( (array) $results as $r ) {
-            $lookup[ (int)$r['minute_timestamp'] ] = (int)$r['cnt'];
-        }
+		// Execute query - note: this complex query will be refactored to use Query class when JOIN support improves
+		$results = $wpdb->get_results( $sql, ARRAY_A );
 
-        // Ensure ordering: index 0 -> -30min, index 29 -> -1min (most recent complete minute)
-        $data = [];
-        $max = 0;
-        for ( $i = 0; $i < 30; $i++ ) {
-            $ts = $start_minute + ( $i * 60 );
-            $cnt = $lookup[ $ts ] ?? 0;
-            $data[] = $cnt;
-            if ( $cnt > $max ) $max = $cnt;
-        }
+		// Build a lookup from minute_timestamp -> count
+		$lookup = [];
+		foreach ( (array) $results as $r ) {
+			$lookup[ (int) $r['minute_timestamp'] ] = (int) $r['cnt'];
+		}
 
-        $formatted = [
-            'labels'     => $this->generate_chart_labels(), // will align with this ordering
-            'data'       => $data,
-            'max_value'  => max(1, $max),
-            'peak_index' => $this->find_peak_index( $data ),
-        ];
+		// Ensure ordering: index 0 -> -30min, index 29 -> -1min (most recent complete minute)
+		$data = [];
+		$max  = 0;
+		for ( $i = 0; $i < 30; $i++ ) {
+			$ts  = $start_minute + ( $i * 60 );
+			$cnt = $lookup[ $ts ] ?? 0;
+			$data[] = $cnt;
+			if ( $cnt > $max ) {
+				$max = $cnt;
+			}
+		}
 
-        // ACCURACY IMPROVEMENT: Reduced cache to 5 seconds for more real-time updates
-        set_transient( $cache_key, $formatted, 5 );
+		$formatted = [
+			'labels'     => $this->generate_chart_labels(), // will align with this ordering
+			'data'       => $data,
+			'max_value'  => max( 1, $max ),
+			'peak_index' => $this->find_peak_index( $data ),
+		];
 
-        return $formatted;
-    }
+		// Cache for 5 seconds for real-time updates
+		set_transient( $cache_key, $formatted, 5 );
+
+		return $formatted;
+	}
 
 
 	/**
@@ -610,18 +597,19 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * Clear all cached data for Live Analytics
 	 * Called when needed to invalidate cache
 	 *
+	 * Note: Most caching is now handled by Query class automatically.
+	 * We only need to clear manual transients for complex queries.
+	 *
 	 * @return void
 	 */
 	public static function clear_cache(): void {
 		$blog_id = get_current_blog_id();
 
-		// Clear live counts cache
-		delete_transient( 'slimstat_live_counts_' . $blog_id );
-
-		// Clear chart data caches for all metrics
+		// Clear manual transient cache (only used for users chart with complex JOIN)
 		delete_transient( 'slimstat_chart_data_users_' . $blog_id );
-		delete_transient( 'slimstat_chart_data_pages_' . $blog_id );
-		delete_transient( 'slimstat_chart_data_countries_' . $blog_id );
+
+		// Note: Query class cache is cleared automatically based on query signature
+		// No need to manually clear cache for pages/countries metrics
 	}
 
 	/**
