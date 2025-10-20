@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
         var args = JSON.parse(element.getAttribute("data-args"));
         var data = JSON.parse(element.getAttribute("data-data"));
         var prevData = JSON.parse(element.getAttribute("data-prev-data"));
-        var daysBetween = parseInt(element.getAttribute("data-days-between"));
+        var daysBetween = parseInt(element.getAttribute("data-days-between"), 10);
         var chartLabels = JSON.parse(element.getAttribute("data-chart-labels"));
         var translations = JSON.parse(element.getAttribute("data-translations"));
         var totals = JSON.parse(element.getAttribute("data-totals") || "{}");
@@ -118,6 +118,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     var translations2 = result.data.translations;
 
                     var labels = data2.labels;
+                    var chartType2 = element.dataset.chartType || "line";
                     var datasets = prepareDatasets(data2.datasets, chart_labels2, labels, data2.today, false, chartType2);
                     var prevDatasets = prepareDatasets(prev_data2.datasets, chart_labels2, prev_data2.labels, null, true, chartType2);
 
@@ -126,7 +127,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     var prevChart = charts[chartId];
                     if (prevChart) prevChart.destroy();
                     var ctx = chartCanvas.getContext("2d");
-                    var chartType2 = element.dataset.chartType || "line";
                     var chart = createChart(ctx, labels, data2.prev_labels, datasets, prevDatasets, totals2, granularity, data2.today, translations2, days_between2, chartId, chartType2);
                     charts[chartId] = chart;
 
@@ -201,7 +201,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     key: keyCopy,
                     data: valuesCopy,
                     borderColor: color,
-                    backgroundColor: chartType === "bar" ? color + "40" : "transparent", // Semi-transparent for bars
+                    backgroundColor: chartType === "bar" ? color + "40" : "transparent",
                     borderWidth: isPrevious ? 1 : 2,
                     fill: chartType === "bar" ? true : false,
                     tension: chartType === "line" ? 0.3 : 0,
@@ -239,11 +239,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     // Add peak highlighting for bar charts
                     dataset.backgroundColor = function (context) {
                         var value = context.parsed.y;
-                        var maxValue = Math.max(...context.dataset.data);
+                        var maxValue = Math.max.apply(Math, context.dataset.data);
                         if (value === maxValue && value > 0) {
-                            return color + "CC"; // More opaque for peak
+                            return color + "CC";
                         }
-                        return color + "40"; // Semi-transparent for regular bars
+                        return color + "40";
                     };
                 }
 
@@ -369,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     return slimstatGetLabel(label, false, unitTime, translations);
                 } catch (e) {
                     console.warn("SlimStat: Error processing label:", label, e);
-                    return label; // Return original label if processing fails
+                    return label;
                 }
             }
             return "";
@@ -670,7 +670,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 } catch (e) {
                     console.warn("SlimStat: Error processing monthly label:", label, e);
-                    return label; // Return original label if processing fails
+                    return label;
                 }
             }
             // Debug: Log labels that don't match the expected format
@@ -805,20 +805,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 innerHtml += "</td></tr>";
             }
             innerHtml += "</tbody>";
-            innerHtml +=
-                '<div class="align-indicator" style="\
-                width: 15px;\
-                height: 15px;\
-                background-color: #fff;\
-                border-bottom-left-radius: 5px;\
-                display: inline-block;\
-                position: absolute;\
-                bottom: -8px;\
-                border-bottom: solid 1px #e0e0e0;\
-                border-left: solid 1px #e0e0e0;\
-                transform: rotate(-45deg);\
-                transition: left 0.1s ease;\
-            "></div>';
+            innerHtml += '<div class="align-indicator" style="' + "width: 15px;" + "height: 15px;" + "background-color: #fff;" + "border-bottom-left-radius: 5px;" + "display: inline-block;" + "position: absolute;" + "bottom: -8px;" + "border-bottom: solid 1px #e0e0e0;" + "border-left: solid 1px #e0e0e0;" + "transform: rotate(-45deg);" + "transition: left 0.1s ease;" + '"></div>';
 
             tooltipEl.querySelector("table").innerHTML = innerHtml;
 

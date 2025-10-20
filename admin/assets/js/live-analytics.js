@@ -5,8 +5,14 @@
  * @since 5.4.0
  */
 
-class LiveAnalytics {
-    constructor(config) {
+(function (window, document) {
+    "use strict";
+
+    /**
+     * LiveAnalytics Constructor
+     * @param {Object} config Configuration object
+     */
+    function LiveAnalytics(config) {
         this.config = config;
         this.chart = null;
         this.refreshInterval = null;
@@ -19,6 +25,7 @@ class LiveAnalytics {
         this.isDestroyed = false;
         this.abortController = null;
 
+        // Bind methods to this instance
         this.init = this.init.bind(this);
         this.updateData = this.updateData.bind(this);
         this.showLoading = this.showLoading.bind(this);
@@ -34,7 +41,7 @@ class LiveAnalytics {
     /**
      * Initialize the Live Analytics component
      */
-    init() {
+    LiveAnalytics.prototype.init = function () {
         this.createChart();
         this.addEventListeners();
         this.initMetricSwitching();
@@ -44,22 +51,26 @@ class LiveAnalytics {
         if (this.config.auto_refresh) {
             this.scheduleNextUpdate();
         }
-    }
+    };
 
     /**
      * Initialize empty state based on initial data
      */
-    initializeEmptyState() {
-        const container = document.getElementById(this.config.report_id);
+    LiveAnalytics.prototype.initializeEmptyState = function () {
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const emptyState = container.querySelector(".empty-state");
+        var emptyState = container.querySelector(".empty-state");
         if (!emptyState) return;
 
         // Check if we have initial data for the current metric
-        let hasData = false;
+        var hasData = false;
         if (this.currentMetric === "users") {
-            hasData = this.config.chart_data && this.config.chart_data.some((value) => value > 0);
+            hasData =
+                this.config.chart_data &&
+                this.config.chart_data.some(function (value) {
+                    return value > 0;
+                });
         }
 
         if (!hasData) {
@@ -67,31 +78,31 @@ class LiveAnalytics {
         } else {
             emptyState.style.display = "none";
         }
-    }
+    };
 
     /**
      * Create the bar chart
      */
-    createChart() {
+    LiveAnalytics.prototype.createChart = function () {
         if (typeof Chart === "undefined") {
             return;
         }
 
-        const canvas = document.getElementById(this.config.chart_id);
+        var canvas = document.getElementById(this.config.chart_id);
         if (!canvas) {
             return;
         }
 
-        const ctx = canvas.getContext("2d");
+        var ctx = canvas.getContext("2d");
         if (!ctx) {
             return;
         }
 
-        const chartData = this.config.chart_data || [];
-        const chartLabels = this.config.chart_labels || [];
+        var chartData = this.config.chart_data || [];
+        var chartLabels = this.config.chart_labels || [];
 
         if (chartData.length === 0) {
-            for (let i = 29; i >= 0; i--) {
+            for (var i = 29; i >= 0; i--) {
                 chartData.push(0);
                 if (i === 29) {
                     chartLabels.push("-30 Min");
@@ -113,12 +124,17 @@ class LiveAnalytics {
             }
         }
 
-        const datasets = [
+        var self = this;
+        var datasets = [
             {
                 label: this.getMetricLabel(this.currentMetric),
                 data: chartData,
-                backgroundColor: chartData.map(() => "#E6E6E6"),
-                hoverBackgroundColor: chartData.map(() => "#E7294B"),
+                backgroundColor: chartData.map(function () {
+                    return "#E6E6E6";
+                }),
+                hoverBackgroundColor: chartData.map(function () {
+                    return "#E7294B";
+                }),
                 borderColor: "transparent",
                 borderWidth: 0,
                 borderRadius: {
@@ -135,32 +151,32 @@ class LiveAnalytics {
         ];
 
         // Register the custom dashed grid plugin
-        const customDashedGridPlugin = {
+        var customDashedGridPlugin = {
             id: "customDashedGrid",
-            afterDraw: (chart) => {
-                const ctx = chart.ctx;
-                const yAxis = chart.scales.y;
-                const xAxis = chart.scales.x;
+            afterDraw: function (chart) {
+                var ctx2 = chart.ctx;
+                var yAxis = chart.scales.y;
+                var xAxis = chart.scales.x;
 
                 if (!yAxis || !xAxis) return;
 
-                ctx.save();
-                ctx.strokeStyle = "#E5E5E5";
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]);
+                ctx2.save();
+                ctx2.strokeStyle = "#E5E5E5";
+                ctx2.lineWidth = 1;
+                ctx2.setLineDash([5, 5]);
 
                 // Draw horizontal dashed grid lines
-                yAxis.ticks.forEach((tick, index) => {
-                    const y = yAxis.getPixelForTick(index);
+                yAxis.ticks.forEach(function (tick, index) {
+                    var y = yAxis.getPixelForTick(index);
                     if (y >= yAxis.top && y <= yAxis.bottom) {
-                        ctx.beginPath();
-                        ctx.moveTo(xAxis.left, y);
-                        ctx.lineTo(xAxis.right, y);
-                        ctx.stroke();
+                        ctx2.beginPath();
+                        ctx2.moveTo(xAxis.left, y);
+                        ctx2.lineTo(xAxis.right, y);
+                        ctx2.stroke();
                     }
                 });
 
-                ctx.restore();
+                ctx2.restore();
             },
         };
 
@@ -257,7 +273,7 @@ class LiveAnalytics {
                                 return Math.floor(value);
                             },
                         },
-                        afterFit: (axis) => {
+                        afterFit: function (axis) {
                             axis.bottom += 6;
                         },
                     },
@@ -282,27 +298,31 @@ class LiveAnalytics {
             },
             plugins: [customDashedGridPlugin],
         });
-    }
+    };
 
     /**
      * Update chart with new data
      */
-    updateChart(newData) {
+    LiveAnalytics.prototype.updateChart = function (newData) {
         if (!this.chart) {
             return;
         }
 
-        const chartData = newData.data || newData.chart_data || [];
-        const chartLabels = newData.labels || newData.chart_labels || [];
-        const maxValue = newData.max_value || Math.max(...chartData) || 0;
+        var chartData = newData.data || newData.chart_data || [];
+        var chartLabels = newData.labels || newData.chart_labels || [];
+        var maxValue = newData.max_value || Math.max.apply(Math, chartData) || 0;
 
         this.chart.data.labels = chartLabels;
         this.chart.data.datasets[0].data = chartData;
         this.chart.data.datasets[0].label = this.getMetricLabel(this.currentMetric);
 
         // Always set all bars to gray
-        this.chart.data.datasets[0].backgroundColor = chartData.map(() => "#E6E6E6");
-        this.chart.data.datasets[0].hoverBackgroundColor = chartData.map(() => "#E7294B");
+        this.chart.data.datasets[0].backgroundColor = chartData.map(function () {
+            return "#E6E6E6";
+        });
+        this.chart.data.datasets[0].hoverBackgroundColor = chartData.map(function () {
+            return "#E7294B";
+        });
 
         // Update Y axis range to match new data
         this.chart.options.scales.y.min = 0;
@@ -315,12 +335,14 @@ class LiveAnalytics {
             duration: 800,
             easing: "easeInOutQuart",
         });
-    }
+    };
 
     /**
      * Schedule the next auto-update
      */
-    scheduleNextUpdate() {
+    LiveAnalytics.prototype.scheduleNextUpdate = function () {
+        var self = this;
+
         // Clear any existing interval
         this.stopAutoRefresh();
 
@@ -332,33 +354,35 @@ class LiveAnalytics {
         this.lastUpdateTime = Date.now();
 
         // Schedule next update
-        this.refreshInterval = setTimeout(() => {
-            if (!this.isDestroyed) {
-                this.performAutoUpdate();
+        this.refreshInterval = setTimeout(function () {
+            if (!self.isDestroyed) {
+                self.performAutoUpdate();
             }
         }, this.config.refresh_interval);
-    }
+    };
 
     /**
      * Perform auto-update
      */
-    async performAutoUpdate() {
+    LiveAnalytics.prototype.performAutoUpdate = function () {
+        var self = this;
+
         if (this.isUpdating || this.isDestroyed) {
             return;
         }
 
-        await this.updateData();
-
-        // Schedule next update after this one completes
-        if (this.config.auto_refresh && !this.isDestroyed) {
-            this.scheduleNextUpdate();
-        }
-    }
+        this.updateData().then(function () {
+            // Schedule next update after this one completes
+            if (self.config.auto_refresh && !self.isDestroyed) {
+                self.scheduleNextUpdate();
+            }
+        });
+    };
 
     /**
      * Stop auto-refresh
      */
-    stopAutoRefresh() {
+    LiveAnalytics.prototype.stopAutoRefresh = function () {
         if (this.refreshInterval) {
             clearTimeout(this.refreshInterval);
             clearInterval(this.refreshInterval);
@@ -367,33 +391,30 @@ class LiveAnalytics {
 
         // Record when we paused
         this.pausedAt = Date.now();
-    }
+    };
 
     /**
      * Resume auto-refresh after pause
      */
-    resumeAutoRefresh() {
+    LiveAnalytics.prototype.resumeAutoRefresh = function () {
+        var self = this;
+
         if (this.isDestroyed || !this.config.auto_refresh) {
             return;
         }
 
-        const now = Date.now();
+        var now = Date.now();
 
         // If we have a last update time and paused time, check how long we've been paused
         if (this.lastUpdateTime && this.pausedAt) {
-            const timeSinceLastUpdate = now - this.lastUpdateTime;
+            var timeSinceLastUpdate = now - this.lastUpdateTime;
 
             // If enough time has passed since the last scheduled update, update immediately
             if (timeSinceLastUpdate >= this.config.refresh_interval) {
-                this.performAutoUpdate().then(() => {
-                    // After immediate update, schedule the next one
-                    if (this.config.auto_refresh && !this.isDestroyed) {
-                        this.scheduleNextUpdate();
-                    }
-                });
+                this.performAutoUpdate();
             } else {
                 // Otherwise, schedule based on remaining time
-                const remainingTime = this.config.refresh_interval - timeSinceLastUpdate;
+                var remainingTime = this.config.refresh_interval - timeSinceLastUpdate;
 
                 // Stop any existing interval
                 if (this.refreshInterval) {
@@ -401,12 +422,10 @@ class LiveAnalytics {
                     this.refreshInterval = null;
                 }
 
-                // Continue with remaining time
-
                 // Schedule next update with remaining time
-                this.refreshInterval = setTimeout(() => {
-                    if (!this.isDestroyed) {
-                        this.performAutoUpdate();
+                this.refreshInterval = setTimeout(function () {
+                    if (!self.isDestroyed) {
+                        self.performAutoUpdate();
                     }
                 }, remainingTime);
             }
@@ -417,12 +436,12 @@ class LiveAnalytics {
 
         // Clear pause time
         this.pausedAt = null;
-    }
+    };
 
     /**
      * Cancel current update in progress
      */
-    cancelCurrentUpdate() {
+    LiveAnalytics.prototype.cancelCurrentUpdate = function () {
         if (this.abortController) {
             this.abortController.abort();
             this.abortController = null;
@@ -432,85 +451,87 @@ class LiveAnalytics {
         this.hideLoading();
 
         // Re-enable metric items if they were disabled
-        const container = document.getElementById(this.config.report_id);
+        var container = document.getElementById(this.config.report_id);
         if (container) {
-            const metricItems = container.querySelectorAll(".clickable-metric");
-            metricItems.forEach((item) => {
+            var metricItems = container.querySelectorAll(".clickable-metric");
+            metricItems.forEach(function (item) {
                 item.classList.remove("disabled");
             });
         }
-    }
+    };
 
     /**
      * Update data from server
      */
-    async updateData() {
+    LiveAnalytics.prototype.updateData = function () {
+        var self = this;
+
         if (this.isUpdating || this.isDestroyed) {
-            return;
+            return Promise.resolve();
         }
 
         this.isUpdating = true;
         this.showLoading();
 
-        // Update in progress
-
         // Create new AbortController for this request
         this.abortController = new AbortController();
 
-        try {
-            const response = await fetch(this.config.ajax_url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({
-                    action: "slimstat_get_live_analytics_data",
-                    nonce: this.config.nonce,
-                    report_id: this.config.report_id,
-                    metric: this.currentMetric,
-                }),
-                signal: this.abortController.signal,
+        var formData = new URLSearchParams();
+        formData.append("action", "slimstat_get_live_analytics_data");
+        formData.append("nonce", this.config.nonce);
+        formData.append("report_id", this.config.report_id);
+        formData.append("metric", this.currentMetric);
+
+        return fetch(this.config.ajax_url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: formData.toString(),
+            signal: this.abortController.signal,
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("Server error: " + response.status);
+                }
+                return response.json();
+            })
+            .then(function (result) {
+                if (!result.success) {
+                    throw new Error(result.data && result.data.message ? result.data.message : "Unknown error");
+                }
+
+                self.updateUI(result.data);
+            })
+            .catch(function (error) {
+                // Don't handle abort errors - they're intentional
+                if (error.name === "AbortError") {
+                    return;
+                }
+
+                // Re-enable metric items on error
+                var container = document.getElementById(self.config.report_id);
+                if (container) {
+                    var metricItems = container.querySelectorAll(".clickable-metric");
+                    metricItems.forEach(function (item) {
+                        item.classList.remove("disabled");
+                    });
+                }
+            })
+            .finally(function () {
+                self.abortController = null;
+                self.hideLoading();
+                self.isUpdating = false;
             });
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const result = await response.json();
-
-            if (!result.success) {
-                throw new Error(result.data?.message || "Unknown error");
-            }
-
-            this.updateUI(result.data);
-        } catch (error) {
-            // Don't handle abort errors - they're intentional
-            if (error.name === "AbortError") {
-                return;
-            }
-
-            // Re-enable metric items on error
-            const container = document.getElementById(this.config.report_id);
-            if (container) {
-                const metricItems = container.querySelectorAll(".clickable-metric");
-                metricItems.forEach((item) => {
-                    item.classList.remove("disabled");
-                });
-            }
-        } finally {
-            this.abortController = null;
-            this.hideLoading();
-            this.isUpdating = false;
-        }
-    }
+    };
 
     /**
      * Update UI with new data
      */
-    updateUI(data) {
-        const usersElement = document.querySelector(`#${this.config.report_id} .users-value`);
-        const pagesElement = document.querySelector(`#${this.config.report_id} .pages-value`);
-        const countriesElement = document.querySelector(`#${this.config.report_id} .countries-value`);
+    LiveAnalytics.prototype.updateUI = function (data) {
+        var usersElement = document.querySelector("#" + this.config.report_id + " .users-value");
+        var pagesElement = document.querySelector("#" + this.config.report_id + " .pages-value");
+        var countriesElement = document.querySelector("#" + this.config.report_id + " .countries-value");
 
         // Update metric values - animate only if value changed
         if (usersElement && typeof data.users_live !== "undefined") {
@@ -530,10 +551,10 @@ class LiveAnalytics {
                 this.updateChartTitle(data.selected_metric);
 
                 // Update active metric visual state
-                const container = document.getElementById(this.config.report_id);
+                var container = document.getElementById(this.config.report_id);
                 if (container) {
-                    const metricItems = container.querySelectorAll(".clickable-metric");
-                    metricItems.forEach((item) => {
+                    var metricItems = container.querySelectorAll(".clickable-metric");
+                    metricItems.forEach(function (item) {
                         item.classList.remove("active");
                         if (item.dataset.metric === data.selected_metric) {
                             item.classList.add("active");
@@ -548,22 +569,22 @@ class LiveAnalytics {
         }
 
         this.handleEmptyState(data);
-    }
+    };
 
     /**
      * Handle empty state display
      */
-    handleEmptyState(data) {
-        const container = document.getElementById(this.config.report_id);
+    LiveAnalytics.prototype.handleEmptyState = function (data) {
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const emptyState = container.querySelector(".empty-state");
-        const chartContainer = container.querySelector(".chart-container");
+        var emptyState = container.querySelector(".empty-state");
+        var chartContainer = container.querySelector(".chart-container");
 
         if (!emptyState || !chartContainer) return;
 
         // Check if current metric has data
-        let hasData = false;
+        var hasData = false;
         if (this.currentMetric === "users") {
             hasData = data.users_live > 0;
         } else if (this.currentMetric === "pages") {
@@ -577,24 +598,26 @@ class LiveAnalytics {
         } else {
             emptyState.style.display = "none";
         }
-    }
+    };
 
     /**
      * Format number with commas
      */
-    formatNumber(num) {
+    LiveAnalytics.prototype.formatNumber = function (num) {
         return new Intl.NumberFormat().format(num);
-    }
+    };
 
     /**
      * Animate value change for metric numbers
      * @param {HTMLElement} element - The element to animate
      * @param {number} newValue - The new value to animate to
      */
-    animateValue(element, newValue) {
+    LiveAnalytics.prototype.animateValue = function (element, newValue) {
+        var self = this;
+
         // Get current value from element (remove commas first)
-        const currentText = element.textContent.replace(/,/g, "");
-        const currentValue = parseInt(currentText) || 0;
+        var currentText = element.textContent.replace(/,/g, "");
+        var currentValue = parseInt(currentText, 10) || 0;
 
         // If values are the same, no need to animate
         if (currentValue === newValue) {
@@ -602,7 +625,7 @@ class LiveAnalytics {
         }
 
         // Store original color
-        const originalColor = window.getComputedStyle(element).color;
+        var originalColor = window.getComputedStyle(element).color;
 
         // Add subtle highlight during animation
         element.style.transition = "transform 0.3s ease-out, color 0.3s ease-out";
@@ -610,29 +633,31 @@ class LiveAnalytics {
         element.style.color = "#E7294B"; // Highlight color
 
         // Animation duration in milliseconds
-        const duration = 600;
-        const startTime = performance.now();
-        const difference = newValue - currentValue;
+        var duration = 600;
+        var startTime = performance.now();
+        var difference = newValue - currentValue;
 
         // Easing function (easeOutQuart)
-        const easeOutQuart = (t) => 1 - Math.pow(1 - t, 4);
+        var easeOutQuart = function (t) {
+            return 1 - Math.pow(1 - t, 4);
+        };
 
-        const animate = (currentTime) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const easedProgress = easeOutQuart(progress);
+        var animate = function (currentTime) {
+            var elapsed = currentTime - startTime;
+            var progress = Math.min(elapsed / duration, 1);
+            var easedProgress = easeOutQuart(progress);
 
-            const currentAnimatedValue = Math.round(currentValue + difference * easedProgress);
-            element.textContent = this.formatNumber(currentAnimatedValue);
+            var currentAnimatedValue = Math.round(currentValue + difference * easedProgress);
+            element.textContent = self.formatNumber(currentAnimatedValue);
 
             if (progress < 1) {
                 requestAnimationFrame(animate);
             } else {
                 // Ensure final value is exactly right
-                element.textContent = this.formatNumber(newValue);
+                element.textContent = self.formatNumber(newValue);
 
                 // Remove highlight after animation completes
-                setTimeout(() => {
+                setTimeout(function () {
                     element.style.transform = "scale(1)";
                     element.style.color = originalColor;
                 }, 50);
@@ -640,86 +665,88 @@ class LiveAnalytics {
         };
 
         requestAnimationFrame(animate);
-    }
+    };
 
     /**
      * Show loading state
      */
-    showLoading() {
+    LiveAnalytics.prototype.showLoading = function () {
         if (!this.chart) return;
 
-        const container = document.getElementById(this.config.report_id);
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const chartContainer = container.querySelector(".chart-container");
+        var chartContainer = container.querySelector(".chart-container");
         if (!chartContainer) return;
 
         // Blink the last bar during updates
         this.startBlinkingAnimation();
-    }
+    };
 
     /**
      * Hide loading state
      */
-    hideLoading() {
+    LiveAnalytics.prototype.hideLoading = function () {
         if (!this.chart) return;
 
-        const container = document.getElementById(this.config.report_id);
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const chartContainer = container.querySelector(".chart-container");
+        var chartContainer = container.querySelector(".chart-container");
         if (!chartContainer) return;
 
         // Hide overlay
-        const overlay = chartContainer.querySelector(".chart-loading-overlay");
+        var overlay = chartContainer.querySelector(".chart-loading-overlay");
         if (overlay) {
             overlay.style.display = "none";
         }
 
         // Stop blinking animation
         this.stopBlinkingAnimation();
-    }
+    };
 
     /**
      * Start blinking animation for the last bar
      */
-    startBlinkingAnimation() {
+    LiveAnalytics.prototype.startBlinkingAnimation = function () {
+        var self = this;
+
         if (!this.chart) return;
 
-        const datasets = this.chart.data.datasets[0];
+        var datasets = this.chart.data.datasets[0];
         if (datasets.data.length > 0) {
-            const lastIndex = datasets.data.length - 1;
+            var lastIndex = datasets.data.length - 1;
 
             if (!this.originalLastBarColor) {
                 this.originalLastBarColor = datasets.backgroundColor[lastIndex];
             }
 
-            this.blinkingInterval = setInterval(() => {
-                const currentColor = datasets.backgroundColor[lastIndex];
-                const newColor = currentColor === this.originalLastBarColor ? "#E7294B" : this.originalLastBarColor;
+            this.blinkingInterval = setInterval(function () {
+                var currentColor = datasets.backgroundColor[lastIndex];
+                var newColor = currentColor === self.originalLastBarColor ? "#E7294B" : self.originalLastBarColor;
                 datasets.backgroundColor[lastIndex] = newColor;
                 // Use smooth animation for color transition
-                this.chart.update({
+                self.chart.update({
                     duration: 300,
                     easing: "easeInOutQuad",
                 });
             }, 600);
         }
-    }
+    };
 
     /**
      * Stop blinking animation for the last bar
      */
-    stopBlinkingAnimation() {
+    LiveAnalytics.prototype.stopBlinkingAnimation = function () {
         if (this.blinkingInterval) {
             clearInterval(this.blinkingInterval);
             this.blinkingInterval = null;
         }
 
         if (this.chart && this.originalLastBarColor) {
-            const datasets = this.chart.data.datasets[0];
+            var datasets = this.chart.data.datasets[0];
             if (datasets.data.length > 0) {
-                const lastIndex = datasets.data.length - 1;
+                var lastIndex = datasets.data.length - 1;
                 datasets.backgroundColor[lastIndex] = this.originalLastBarColor;
                 // Smooth transition when stopping blink
                 this.chart.update({
@@ -729,55 +756,60 @@ class LiveAnalytics {
                 this.originalLastBarColor = null;
             }
         }
-    }
+    };
 
     /**
      * Add event listeners
      */
-    addEventListeners() {
+    LiveAnalytics.prototype.addEventListeners = function () {
+        var self = this;
+
         // Pause auto-refresh when tab is not visible
-        document.addEventListener("visibilitychange", () => {
+        document.addEventListener("visibilitychange", function () {
             if (document.hidden) {
-                this.stopAutoRefresh();
-            } else if (this.config.auto_refresh && !this.isDestroyed) {
-                this.resumeAutoRefresh();
+                self.stopAutoRefresh();
+            } else if (self.config.auto_refresh && !self.isDestroyed) {
+                self.resumeAutoRefresh();
             }
         });
 
         // Resume auto-refresh when window regains focus
-        window.addEventListener("focus", () => {
-            if (this.config.auto_refresh && !this.refreshInterval && !this.isDestroyed) {
-                this.resumeAutoRefresh();
+        window.addEventListener("focus", function () {
+            if (self.config.auto_refresh && !self.refreshInterval && !self.isDestroyed) {
+                self.resumeAutoRefresh();
             }
         });
 
         // Pause auto-refresh when window loses focus
-        window.addEventListener("blur", () => {
-            this.stopAutoRefresh();
+        window.addEventListener("blur", function () {
+            self.stopAutoRefresh();
         });
-    }
+    };
 
     /**
      * Initialize metric switching
      */
-    initMetricSwitching() {
-        const container = document.getElementById(this.config.report_id);
+    LiveAnalytics.prototype.initMetricSwitching = function () {
+        var self = this;
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const metricItems = container.querySelectorAll(".clickable-metric");
-        metricItems.forEach((item) => {
-            item.addEventListener("click", (e) => {
+        var metricItems = container.querySelectorAll(".clickable-metric");
+        metricItems.forEach(function (item) {
+            item.addEventListener("click", function (e) {
                 e.preventDefault();
-                const metric = item.dataset.metric;
-                this.switchMetric(metric);
+                var metric = item.dataset.metric;
+                self.switchMetric(metric);
             });
         });
-    }
+    };
 
     /**
      * Switch to a different metric
      */
-    async switchMetric(metric) {
+    LiveAnalytics.prototype.switchMetric = function (metric) {
+        var self = this;
+
         if (this.currentMetric === metric) {
             return;
         }
@@ -786,16 +818,26 @@ class LiveAnalytics {
         if (this.isUpdating) {
             this.cancelCurrentUpdate();
             // Wait a tick for cleanup
-            await new Promise((resolve) => setTimeout(resolve, 0));
+            setTimeout(function () {
+                self.switchMetricContinue(metric);
+            }, 0);
+        } else {
+            this.switchMetricContinue(metric);
         }
+    };
 
-        const container = document.getElementById(this.config.report_id);
+    /**
+     * Continue metric switching after cancellation
+     */
+    LiveAnalytics.prototype.switchMetricContinue = function (metric) {
+        var self = this;
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const metricItems = container.querySelectorAll(".clickable-metric");
+        var metricItems = container.querySelectorAll(".clickable-metric");
 
         // Disable all metric items during update except the clicked one
-        metricItems.forEach((item) => {
+        metricItems.forEach(function (item) {
             if (item.dataset.metric !== metric) {
                 item.classList.add("disabled");
             }
@@ -812,79 +854,79 @@ class LiveAnalytics {
         this.updateChartTitle(metric);
 
         // Update data and then re-enable metric items
-        await this.updateData();
+        this.updateData().then(function () {
+            // Re-enable all metric items
+            metricItems.forEach(function (item) {
+                item.classList.remove("disabled");
+            });
 
-        // Re-enable all metric items
-        metricItems.forEach((item) => {
-            item.classList.remove("disabled");
+            // Restart auto-refresh
+            if (self.config.auto_refresh) {
+                self.scheduleNextUpdate();
+            }
         });
-
-        // Restart auto-refresh
-        if (this.config.auto_refresh) {
-            this.scheduleNextUpdate();
-        }
-    }
+    };
 
     /**
      * Update chart title based on selected metric
      */
-    updateChartTitle(metric) {
-        const container = document.getElementById(this.config.report_id);
+    LiveAnalytics.prototype.updateChartTitle = function (metric) {
+        var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        const titleElement = container.querySelector(".chart-header h4");
+        var titleElement = container.querySelector(".chart-header h4");
         if (!titleElement) return;
 
-        const titles = {
+        var titles = {
             users: "Active users per minutes",
             pages: "Active pages per minutes",
             countries: "Active countries per minutes",
         };
 
         titleElement.textContent = titles[metric] || titles.users;
-    }
+    };
 
     /**
      * Get metric label for chart
      */
-    getMetricLabel(metric) {
-        const labels = {
+    LiveAnalytics.prototype.getMetricLabel = function (metric) {
+        var labels = {
             users: "Active Users",
             pages: "Active Pages",
             countries: "Active Countries",
         };
 
         return labels[metric] || labels.users;
-    }
+    };
 
     /**
      * Generate time range label for tooltip based on bar index
      * Creates labels like "A min ago - 2 minutes ago"
      */
-    getTimeRangeLabel(index) {
+    LiveAnalytics.prototype.getTimeRangeLabel = function (index) {
         // Index 0 is 30 minutes ago, index 29 is 1 minute ago
-        const minutesAgo = 30 - index;
+        var minutesAgo = 30 - index;
 
         if (minutesAgo === 1) {
             return "A Min Ago";
         } else {
-            const current = minutesAgo + " Minutes Ago";
+            var current = minutesAgo + " Minutes Ago";
             return current;
         }
-    }
+    };
 
     /**
      * Create custom tooltip similar to slimstat-chart.js
      */
-    createCustomTooltip() {
-        const chartId = this.config.chart_id;
-        const self = this;
+    LiveAnalytics.prototype.createCustomTooltip = function () {
+        var chartId = this.config.chart_id;
+        var self = this;
 
         return function (context) {
-            const chart = context.chart;
-            const tooltip = context.tooltip;
+            var chart = context.chart;
+            var tooltip = context.tooltip;
 
-            let tooltipEl = document.getElementById("chartjs-tooltip");
+            var tooltipEl = document.getElementById("chartjs-tooltip");
             if (!tooltipEl) {
                 tooltipEl = document.createElement("div");
                 tooltipEl.id = "chartjs-tooltip";
@@ -905,47 +947,38 @@ class LiveAnalytics {
             }
 
             // Get the data point index
-            const dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
+            var dataIndex = tooltip.dataPoints && tooltip.dataPoints.length > 0 ? tooltip.dataPoints[0].dataIndex : 0;
 
             // Generate custom time range label
-            const timeRangeLabel = self.getTimeRangeLabel(dataIndex);
+            var timeRangeLabel = self.getTimeRangeLabel(dataIndex);
 
-            const bodyLines = tooltip.body ? tooltip.body.map((b) => b.lines) : [];
+            var bodyLines = tooltip.body
+                ? tooltip.body.map(function (b) {
+                      return b.lines;
+                  })
+                : [];
 
-            let innerHtml = "<thead>";
+            var innerHtml = "<thead>";
             innerHtml += '<tr><th style="font-weight: bold; font-size: 14px; padding-bottom: 6px; text-align: left;">' + timeRangeLabel + "</th></tr>";
             innerHtml += "</thead><tbody>";
 
-            for (let i = 0; i < bodyLines.length; i++) {
-                const colors = tooltip.labelColors[i];
+            for (var i = 0; i < bodyLines.length; i++) {
+                var colors = tooltip.labelColors[i];
                 innerHtml += '<tr><td><div class="slimstat-postbox-chart--item--color" style="background-color: ' + colors.backgroundColor + '; margin-bottom: 3px; margin-right: 10px; width: 18px; height: 18px; border-radius: 3px; display: inline-block; vertical-align: middle;"></div><span style="vertical-align: middle;">' + bodyLines[i] + "</span></td></tr>";
             }
             innerHtml += "</tbody>";
-            innerHtml +=
-                '<div class="align-indicator" style="\
-                width: 15px;\
-                height: 15px;\
-                background-color: #fff;\
-                border-bottom-left-radius: 5px;\
-                display: inline-block;\
-                position: absolute;\
-                bottom: -8px;\
-                border-bottom: solid 1px #e0e0e0;\
-                border-left: solid 1px #e0e0e0;\
-                transform: rotate(-45deg);\
-                transition: left 0.1s ease;\
-            "></div>';
+            innerHtml += '<div class="align-indicator" style="' + "width: 15px;" + "height: 15px;" + "background-color: #fff;" + "border-bottom-left-radius: 5px;" + "display: inline-block;" + "position: absolute;" + "bottom: -8px;" + "border-bottom: solid 1px #e0e0e0;" + "border-left: solid 1px #e0e0e0;" + "transform: rotate(-45deg);" + "transition: left 0.1s ease;" + '"></div>';
 
             tooltipEl.querySelector("table").innerHTML = innerHtml;
 
-            const chartRect = chart.canvas.getBoundingClientRect();
-            const tooltipWidth = tooltipEl.offsetWidth;
-            const tooltipHeight = tooltipEl.offsetHeight;
-            let left = chartRect.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
-            const top = chartRect.top + window.pageYOffset + tooltip.caretY - tooltipHeight - 24;
+            var chartRect = chart.canvas.getBoundingClientRect();
+            var tooltipWidth = tooltipEl.offsetWidth;
+            var tooltipHeight = tooltipEl.offsetHeight;
+            var left = chartRect.left + window.pageXOffset + tooltip.caretX - tooltipWidth / 2;
+            var top = chartRect.top + window.pageYOffset + tooltip.caretY - tooltipHeight - 24;
 
-            const chartLeft = chartRect.left + window.pageXOffset;
-            const chartRight = chartRect.right + window.pageXOffset;
+            var chartLeft = chartRect.left + window.pageXOffset;
+            var chartRight = chartRect.right + window.pageXOffset;
             if (left < chartLeft + 4) {
                 left = chartLeft + 4;
             }
@@ -969,24 +1002,24 @@ class LiveAnalytics {
             tooltipEl.style.color = "#222";
             tooltipEl.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
 
-            const alignIndicator = tooltipEl.querySelector(".align-indicator");
+            var alignIndicator = tooltipEl.querySelector(".align-indicator");
             if (alignIndicator) {
-                const indicatorWidth = alignIndicator.offsetWidth;
-                const tooltipLeft = left;
-                const mouseX = chartRect.left + window.pageXOffset + tooltip.caretX;
-                let indicatorLeft = mouseX - tooltipLeft - indicatorWidth / 2;
-                const minLeft = 4;
-                const maxLeft = tooltipWidth - indicatorWidth - 4;
+                var indicatorWidth = alignIndicator.offsetWidth;
+                var tooltipLeft = left;
+                var mouseX = chartRect.left + window.pageXOffset + tooltip.caretX;
+                var indicatorLeft = mouseX - tooltipLeft - indicatorWidth / 2;
+                var minLeft = 4;
+                var maxLeft = tooltipWidth - indicatorWidth - 4;
                 indicatorLeft = Math.max(minLeft, Math.min(indicatorLeft, maxLeft));
                 alignIndicator.style.left = indicatorLeft + "px";
             }
         };
-    }
+    };
 
     /**
      * Destroy the component
      */
-    destroy() {
+    LiveAnalytics.prototype.destroy = function () {
         this.isDestroyed = true;
         this.stopAutoRefresh();
         this.stopBlinkingAnimation();
@@ -995,9 +1028,11 @@ class LiveAnalytics {
             this.chart.destroy();
             this.chart = null;
         }
-    }
-}
+    };
 
-window.LiveAnalytics = LiveAnalytics;
+    // Expose LiveAnalytics to window
+    window.LiveAnalytics = LiveAnalytics;
 
-document.addEventListener("DOMContentLoaded", function () {});
+    // Initialize on DOM ready
+    document.addEventListener("DOMContentLoaded", function () {});
+})(window, document);
