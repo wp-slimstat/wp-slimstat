@@ -729,17 +729,17 @@ class wp_slimstat_admin
         if ($should_load_datepicker) {
             
             // Enqueue moment.js
-            wp_enqueue_script('slimstat_moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
+            wp_enqueue_script('slimstat-moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
             
             // Enqueue daterangepicker
-            wp_enqueue_script('slimstat_daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat_moment'], '3.1.0', true);
+            wp_enqueue_script('slimstat-daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat-moment'], '3.1.0', true);
             
             // Enqueue our custom date picker
-            wp_enqueue_script('slimstat_custom_datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat_daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_enqueue_script('slimstat-custom-datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat-daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
             
             // Enqueue date picker styles
-            wp_enqueue_style('slimstat_daterangepicker_base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
-            wp_enqueue_style('slimstat_daterangepicker_custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat_daterangepicker_base'], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_style('slimstat-daterangepicker-base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
+            wp_enqueue_style('slimstat-daterangepicker-custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat-daterangepicker-base'], SLIMSTAT_ANALYTICS_VERSION);
             
             // Localize date picker script
             $datepicker_params = [
@@ -752,7 +752,7 @@ class wp_slimstat_admin
                 ],
                 'strings' => DateRangeHelper::get_localized_strings()
             ];
-            wp_localize_script('slimstat_custom_datepicker', 'SlimStatDatePicker', $datepicker_params);
+            wp_localize_script('slimstat-custom-datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
 
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
@@ -1371,7 +1371,7 @@ class wp_slimstat_admin
             $time_end = strtotime($time_range_to . ' 23:59:59');
         } else {
             // Preset date range
-            $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset($time_range_type);
+            $preset_range = DateRangeHelper::get_range_by_preset($time_range_type);
             if ($preset_range) {
                 $time_start = $preset_range['start'];
                 $time_end = $preset_range['end'];
@@ -1380,7 +1380,7 @@ class wp_slimstat_admin
 
         // Fallback to last 28 days if no valid time range
         if (empty($time_start) || empty($time_end)) {
-            $preset_range = \SlimStat\Components\DateRangeHelper::get_range_by_preset('last_28_days');
+            $preset_range = DateRangeHelper::get_range_by_preset('last_28_days');
             if ($preset_range) {
                 $time_start = $preset_range['start'];
                 $time_end = $preset_range['end'];
