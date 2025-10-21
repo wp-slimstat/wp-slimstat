@@ -76,12 +76,13 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		// Get all live counts in a single optimized query
 		$live_counts = $this->get_all_live_counts();
+		$chart_data = $this->get_chart_data_for_metric( $selected_metric );
 
 		return [
 			'users_live'              => $live_counts['users'] ?? 0,
 			'pages_live'              => $live_counts['pages'] ?? 0,
 			'countries_live'          => $live_counts['countries'] ?? 0,
-			'active_users_per_minute' => $this->get_chart_data_for_metric( $selected_metric ),
+			'active_users_per_minute' => $chart_data,
 			'selected_metric'         => $selected_metric,
 			'last_updated'            => current_time( 'timestamp' ),
 		];
@@ -102,7 +103,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'id'               => $this->get_id(),
 			'data'             => $this->get_data(),
 			'auto_refresh'     => true,
-			'refresh_interval' => 10000,
+			'refresh_interval' => 10000, // 10 seconds
 		];
 	}
 
@@ -123,6 +124,20 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	}
 
 	/**
+	 * Get consistent session duration across all methods
+	 *
+	 * @return int
+	 */
+	private function get_session_duration(): int {
+		// Use the same logic as Session.php for consistency
+		if ( ! empty( \wp_slimstat::$settings['session_duration'] ) ) {
+			return (int) \wp_slimstat::$settings['session_duration'];
+		}
+		// Use the same default as Session.php
+		return 1800; // Default 30 minutes (matches Session.php)
+	}
+
+	/**
 	 * Get all live counts in a single optimized query
 	 * Combines users, pages, and countries counts into one query for better performance
 	 *
@@ -140,26 +155,24 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return [ 'users' => 0, 'pages' => 0, 'countries' => 0 ];
 		}
 
-		// Use Query class cache instead of manual transient - eliminates double caching
-		// session duration (seconds). Default to 30 minutes if not set.
-		$session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
+		// Consistent session duration across all methods
+		$session_duration = $this->get_session_duration();
 		$now              = current_time( 'timestamp' );
 		$online_threshold = $now - $session_duration;
 
-		// 1) users online right now: count distinct visit_id where last_activity >= online_threshold
-		// Note: This uses a subquery which is complex, so we use wpdb->prepare for the inner query
-		$subquery_sql = $wpdb->prepare(
-			"SELECT visit_id, MAX(dt) as last_activity
-			FROM {$wpdb->prefix}slim_stats
-			WHERE visit_id > 0
-			GROUP BY visit_id
-			HAVING last_activity >= %d",
-			$online_threshold
-		);
-
-		$users_count = (int) Query::select( 'COUNT(*) as users_count' )
-			->from( "({$subquery_sql}) t" )
-			->allowCaching( true, 5 )
+		// 1) users online right now: count distinct visit_id where there's at least one
+		// activity (dt) >= online_threshold. This avoids a costly GROUP BY+HAVING over
+		// the entire table by leveraging any index on `dt` (recommended). Using
+		// COUNT(DISTINCT visit_id) is much faster than materializing a subquery and
+		// then counting rows.
+		//
+		// NOTE: For very large datasets consider adding an index on (dt, visit_id)
+		// or a composite covering index to further improve performance.
+		$users_count = (int) Query::select( 'COUNT(DISTINCT visit_id) as users_count' )
+			->from( "{$wpdb->prefix}slim_stats" )
+			->where( 'dt', '>=', $online_threshold )
+			->where( 'visit_id', '>', 0 )
+			->allowCaching( true, 1 )
 			->getVar();
 
 		// 2) pages and countries in last 30 minutes (unique)
@@ -167,7 +180,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
 			->from( "{$wpdb->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
-			->allowCaching( true, 5 )
+			->allowCaching( true, 1 )
 			->getRow();
 
 		return [
@@ -184,7 +197,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	private function generate_chart_labels(): array {
 		$labels = [];
-		$marked_minutes = [ 29 => '-30 Min', 25 => '-25 Min', 20 => '-20 Min', 15 => '-15 Min', 10 => '-10 Min', 5 => '-5 Min', 0 => '-1 Min' ];
+		// Labels for the last 30 minutes including the current minute. Index 29 -> -29 Min, index 0 -> Now
+		$marked_minutes = [ 29 => '-29 Min', 25 => '-25 Min', 20 => '-20 Min', 15 => '-15 Min', 10 => '-10 Min', 5 => '-5 Min', 0 => 'Now' ];
 
 		for ( $i = 29; $i >= 0; $i-- ) {
 			$labels[] = $marked_minutes[ $i ] ?? '';
@@ -214,18 +228,24 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		if ( 'users' === $metric ) {
 			$chart_data = $this->get_users_chart_data();
 		} else {
-			$threshold = $this->get_30min_threshold();
+			// Align pages/countries metric to the same window as users: last 30 minutes including current minute
+			$now = current_time( 'timestamp' );
+			$end_minute = (int) floor( $now / 60 ) * 60; // start of current minute
+			$start_minute = $end_minute - ( 29 * 60 );
+
 			$field     = 'pages' === $metric ? 'resource' : 'country';
 			$condition = 'pages' === $metric ? "resource IS NOT NULL AND resource != ''" : "country IS NOT NULL AND country != ''";
 
 			// Use Query class for secure and cached queries
-			$results = Query::select( "FLOOR(dt / 60) * 60 as minute_timestamp, COUNT(DISTINCT {$field}) as count" )
+			$minuteExpr = 'FLOOR(dt / 60) * 60';
+			$results = Query::select( "{$minuteExpr} as minute_timestamp, COUNT(DISTINCT {$field}) as count" )
 				->from( "{$wpdb->prefix}slim_stats" )
-				->where( 'dt', '>', $threshold )
-				->whereRaw( $condition )
-				->groupBy( 'minute_timestamp' )
-				->orderBy( 'minute_timestamp', 'ASC' )
-				->allowCaching( true, 5 )
+				->where( 'dt', '>=', $start_minute )
+					->whereRaw( $condition )
+					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility
+					->groupBy( 'minute_timestamp' )
+					->orderBy( 'minute_timestamp ASC' )
+					->allowCaching( true, 1 )
 				->getAll();
 
 			$chart_data = $this->format_chart_data( $results );
@@ -258,24 +278,31 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return $this->get_empty_chart_data();
 		}
 
-		// Manual cache is needed here since we use wpdb directly (Query class doesn't support complex JOINs yet)
 		$cache_key = 'slimstat_chart_data_users_' . get_current_blog_id();
 		$cached    = get_transient( $cache_key );
 		if ( false !== $cached && is_array( $cached ) ) {
-			return $cached;
+			// Check if cache is still fresh (less than 3 seconds old).
+			// Use WP-aware current_time() to avoid server/WP time desync.
+			$cache_time = $cached['cache_time'] ?? 0;
+			if ( current_time( 'timestamp' ) - $cache_time < 3 ) {
+				return $cached;
+			}
 		}
 
-		$session_duration = ! empty( \wp_slimstat::$settings['session_duration'] ) ? (int) \wp_slimstat::$settings['session_duration'] : 1800;
+		$session_duration = $this->get_session_duration();
 		$now              = current_time( 'timestamp' );
 
 		// ACCURACY IMPROVEMENT: Use exact seconds instead of rounding to minute start
 		// This ensures we count sessions that are active in the last N seconds precisely
-		$start_time   = $now - ( 30 * 60 ); // Exact 30 minutes ago (includes seconds)
-		$start_minute = (int) floor( $start_time / 60 ) * 60; // Still align buckets to minute boundaries for grouping
+	// Include the current minute as the most recent bucket. We want 30 buckets
+	// covering [start_minute .. end_minute] where end_minute is the start of the current minute.
+	$end_minute   = (int) floor( $now / 60 ) * 60; // start of current minute
+	$start_minute = $end_minute - ( 29 * 60 ); // 29 minutes before current minute (30 buckets total)
+	$start_time   = $start_minute; // use minute-aligned start_time for filtering
 
 		// We first aggregate sessions: first_activity and last_activity per visit_id.
 		// Then we generate 30 minute rows using a derived numbers table (0..29).
-		// ACCURACY IMPROVEMENT: Check if session is online during ANY point in that minute
+		// Check if session is online during ANY point in that minute
 		// by checking against both the start (minute_ts) and end (minute_ts + 59) of each minute bucket
 
 		// For complex queries with numbers table and custom JOINs, we use wpdb->prepare
@@ -296,8 +323,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			LEFT JOIN (
 				SELECT visit_id, MIN(dt) AS first_activity, MAX(dt) AS last_activity
 				FROM {$wpdb->prefix}slim_stats
-				WHERE visit_id > 0
-				  AND dt >= %d
+								WHERE visit_id > 0
+									AND dt >= %d
 				GROUP BY visit_id
 				HAVING last_activity + %d >= %d
 			) s ON s.first_activity <= (m.minute_ts + 59) AND (s.last_activity + %d) >= m.minute_ts
@@ -305,9 +332,11 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			ORDER BY m.minute_ts ASC
 			",
 			$start_minute,
-			$start_time - $session_duration,
+			// Only consider sessions with first activity at or after (start_minute - session_duration)
+			// because sessions that started earlier but still active during our window should be included
+			($start_minute - $session_duration),
 			$session_duration,
-			$start_time,
+			$start_minute,
 			$session_duration
 		);
 
@@ -337,10 +366,14 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'data'       => $data,
 			'max_value'  => max( 1, $max ),
 			'peak_index' => $this->find_peak_index( $data ),
+			'cache_time' => current_time( 'timestamp' ), // Add timestamp for cache freshness check (WP-aware)
 		];
 
-		// Cache for 5 seconds for real-time updates
-		set_transient( $cache_key, $formatted, 5 );
+        // Cache TTL: default 3 seconds for near-realtime UX. Exposed filter allows tuning.
+        // If you need absolute realtime for the latest bucket, you can set this to 0
+        // or implement a bypass for the last bucket.
+        $ttl = (int) apply_filters( 'slimstat_live_users_cache_ttl', 3 );
+        set_transient( $cache_key, $formatted, $ttl );
 
 		return $formatted;
 	}
@@ -493,7 +526,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'slimstat-live-analytics',
 			plugins_url( '/admin/assets/js/live-analytics.js', SLIMSTAT_FILE ),
 			[ 'slimstat_chartjs', 'jquery' ],
-			'5.4.0',
+			'5.4.1',
 			true
 		);
 
@@ -512,6 +545,14 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * AJAX handler for getting live analytics data
 	 */
 	public static function ajax_get_live_analytics_data(): void {
+		// Rate limiting check
+		if ( ! self::check_rate_limit() ) {
+			wp_send_json_error( [
+				'message' => __( 'Too many requests. Please try again later.', 'wp-slimstat' ),
+			] );
+			return;
+		}
+
 		// Verify nonce
 		$nonce = sanitize_text_field( $_POST['nonce'] ?? '' );
 		if ( ! wp_verify_nonce( $nonce, 'slimstat_ajax_nonce' ) ) {
@@ -522,7 +563,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return;
 		}
 
-		// Check permissions
+		// Check permissions first
 		$report = new self();
 		if ( ! $report->can_view() ) {
 			wp_send_json_error( [
@@ -532,32 +573,78 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return;
 		}
 
+		// Validate and sanitize all input parameters
+		$requested_metric = sanitize_text_field( $_POST['metric'] ?? 'users' );
+		$report_id = sanitize_text_field( $_POST['report_id'] ?? '' );
+
+		// Validate metric
+		if ( ! in_array( $requested_metric, [ 'users', 'pages', 'countries' ], true ) ) {
+			$requested_metric = 'users';
+		}
+
+		// Validate report_id format (should be alphanumeric with underscores)
+		if ( ! empty( $report_id ) && ! preg_match( '/^[a-zA-Z0-9_]+$/', $report_id ) ) {
+			wp_send_json_error( [
+				'message' => __( 'Invalid report ID format', 'wp-slimstat' ),
+			] );
+			return;
+		}
+
 		try {
-			// Get and validate metric from POST data
-			$requested_metric = sanitize_text_field( $_POST['metric'] ?? 'users' );
-
-			// Validate metric
-			if ( ! in_array( $requested_metric, [ 'users', 'pages', 'countries' ], true ) ) {
-				$requested_metric = 'users';
-			}
-
-			// Store in $_POST to ensure get_data() uses correct metric
+			// Store validated parameters
 			$_POST['metric'] = $requested_metric;
+			$_POST['report_id'] = $report_id;
 
 			$data = $report->get_data();
 
 			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {
+			// Log error for debugging
+			error_log( 'Live Analytics AJAX Error: ' . $e->getMessage() );
+
 			wp_send_json_error( [
-				'message' => $e->getMessage(),
+				'message' => __( 'An error occurred while fetching data', 'wp-slimstat' ),
 				'trace' => WP_DEBUG ? $e->getTraceAsString() : null,
 			] );
 		} catch ( \Error $e ) {
+			// Log error for debugging
+			error_log( 'Live Analytics AJAX Fatal Error: ' . $e->getMessage() );
+
 			wp_send_json_error( [
-				'message' => $e->getMessage(),
+				'message' => __( 'A fatal error occurred while fetching data', 'wp-slimstat' ),
 				'trace' => WP_DEBUG ? $e->getTraceAsString() : null,
 			] );
 		}
+	}
+
+	/**
+	 * Check rate limiting for AJAX requests
+	 *
+	 * @return bool
+	 */
+	private static function check_rate_limit(): bool {
+		$user_id = get_current_user_id();
+		$ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+		$cache_key = 'slimstat_rate_limit_' . md5( $user_id . $ip_address );
+
+		// Get current request count
+		$request_count = get_transient( $cache_key );
+		if ( false === $request_count ) {
+			$request_count = 0;
+		}
+
+		// Allow 60 requests per minute per user/IP combination
+		$max_requests = 60;
+		$time_window = 60; // seconds
+
+		if ( $request_count >= $max_requests ) {
+			return false;
+		}
+
+		// Increment counter
+		set_transient( $cache_key, $request_count + 1, $time_window );
+
+		return true;
 	}
 
 	/**

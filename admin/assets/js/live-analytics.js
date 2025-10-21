@@ -279,14 +279,14 @@
                     },
                 },
                 animation: {
-                    duration: 800,
-                    easing: "easeInOutQuart",
+                    duration: 200,
+                    easing: "easeOutQuart",
                     delay: 0,
                 },
                 transitions: {
                     active: {
                         animation: {
-                            duration: 400,
+                            duration: 100,
                             easing: "easeOutQuart",
                         },
                     },
@@ -330,10 +330,10 @@
         this.chart.options.scales.y.ticks.count = 3;
         this.chart.options.scales.y.ticks.autoSkip = false;
 
-        // Use smooth animation for live updates
+        // Use minimal animation for live updates
         this.chart.update({
-            duration: 800,
-            easing: "easeInOutQuart",
+            duration: 100,
+            easing: "easeOutQuart",
         });
     };
 
@@ -353,9 +353,9 @@
         // Record when we scheduled this update
         this.lastUpdateTime = Date.now();
 
-        // Schedule next update
-        this.refreshInterval = setTimeout(function () {
-            if (!self.isDestroyed) {
+        // Use setInterval for consistent 10-second updates instead of setTimeout
+        this.refreshInterval = setInterval(function () {
+            if (!self.isDestroyed && !self.isUpdating) {
                 self.performAutoUpdate();
             }
         }, this.config.refresh_interval);
@@ -371,12 +371,8 @@
             return;
         }
 
-        this.updateData().then(function () {
-            // Schedule next update after this one completes
-            if (self.config.auto_refresh && !self.isDestroyed) {
-                self.scheduleNextUpdate();
-            }
-        });
+        // Don't schedule next update here since we're using setInterval
+        this.updateData();
     };
 
     /**
@@ -384,7 +380,6 @@
      */
     LiveAnalytics.prototype.stopAutoRefresh = function () {
         if (this.refreshInterval) {
-            clearTimeout(this.refreshInterval);
             clearInterval(this.refreshInterval);
             this.refreshInterval = null;
         }
@@ -412,27 +407,11 @@
             // If enough time has passed since the last scheduled update, update immediately
             if (timeSinceLastUpdate >= this.config.refresh_interval) {
                 this.performAutoUpdate();
-            } else {
-                // Otherwise, schedule based on remaining time
-                var remainingTime = this.config.refresh_interval - timeSinceLastUpdate;
-
-                // Stop any existing interval
-                if (this.refreshInterval) {
-                    clearTimeout(this.refreshInterval);
-                    this.refreshInterval = null;
-                }
-
-                // Schedule next update with remaining time
-                this.refreshInterval = setTimeout(function () {
-                    if (!self.isDestroyed) {
-                        self.performAutoUpdate();
-                    }
-                }, remainingTime);
             }
-        } else {
-            // No previous timing info, just schedule normally
-            this.scheduleNextUpdate();
         }
+
+        // Always restart the interval for consistent updates
+        this.scheduleNextUpdate();
 
         // Clear pause time
         this.pausedAt = null;
@@ -509,6 +488,12 @@
                     return;
                 }
 
+                // Enhanced error handling with user feedback
+                console.error("Live Analytics Update Error:", error);
+
+                // Show user-friendly error message
+                self.showErrorMessage(error.message || "Failed to update data");
+
                 // Re-enable metric items on error
                 var container = document.getElementById(self.config.report_id);
                 if (container) {
@@ -533,7 +518,7 @@
         var pagesElement = document.querySelector("#" + this.config.report_id + " .pages-value");
         var countriesElement = document.querySelector("#" + this.config.report_id + " .countries-value");
 
-        // Update metric values - animate only if value changed
+        // Always update metric values - animate only if value changed
         if (usersElement && typeof data.users_live !== "undefined") {
             this.animateValue(usersElement, data.users_live);
         }
@@ -564,6 +549,7 @@
             }
         }
 
+        // Always update chart if we have chart data
         if (data.active_users_per_minute) {
             this.updateChart(data.active_users_per_minute);
         }
@@ -583,20 +569,49 @@
 
         if (!emptyState || !chartContainer) return;
 
-        // Check if current metric has data
+        // Check if current metric has data with more robust logic
         var hasData = false;
+        var chartData = data.active_users_per_minute;
+
+        // Check metric-specific data
         if (this.currentMetric === "users") {
-            hasData = data.users_live > 0;
+            hasData =
+                data.users_live > 0 ||
+                (chartData &&
+                    chartData.data &&
+                    chartData.data.some(function (value) {
+                        return value > 0;
+                    }));
         } else if (this.currentMetric === "pages") {
-            hasData = data.pages_live > 0;
+            hasData =
+                data.pages_live > 0 ||
+                (chartData &&
+                    chartData.data &&
+                    chartData.data.some(function (value) {
+                        return value > 0;
+                    }));
         } else if (this.currentMetric === "countries") {
-            hasData = data.countries_live > 0;
+            hasData =
+                data.countries_live > 0 ||
+                (chartData &&
+                    chartData.data &&
+                    chartData.data.some(function (value) {
+                        return value > 0;
+                    }));
         }
 
+        // Show/hide empty state with smooth transition
         if (!hasData) {
             emptyState.style.display = "block";
+            emptyState.style.opacity = "1";
         } else {
-            emptyState.style.display = "none";
+            emptyState.style.opacity = "0";
+            // Hide after transition
+            setTimeout(function () {
+                if (emptyState.style.opacity === "0") {
+                    emptyState.style.display = "none";
+                }
+            }, 300);
         }
     };
 
@@ -624,16 +639,23 @@
             return;
         }
 
+        // Check if element is already animating
+        if (element._isAnimating) {
+            return;
+        }
+
+        element._isAnimating = true;
+
         // Store original color
         var originalColor = window.getComputedStyle(element).color;
 
         // Add subtle highlight during animation
-        element.style.transition = "transform 0.3s ease-out, color 0.3s ease-out";
-        element.style.transform = "scale(1.05)";
+        element.style.transition = "transform 0.1s ease-out, color 0.1s ease-out";
+        element.style.transform = "scale(1.01)";
         element.style.color = "#E7294B"; // Highlight color
 
         // Animation duration in milliseconds
-        var duration = 600;
+        var duration = 100;
         var startTime = performance.now();
         var difference = newValue - currentValue;
 
@@ -655,6 +677,7 @@
             } else {
                 // Ensure final value is exactly right
                 element.textContent = self.formatNumber(newValue);
+                element._isAnimating = false;
 
                 // Remove highlight after animation completes
                 setTimeout(function () {
@@ -676,16 +699,13 @@
         var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        var chartContainer = container.querySelector(".chart-container");
-        if (!chartContainer) return;
-
         // Add updating state to live indicator
         var liveIndicator = container.querySelector(".live-indicator");
         if (liveIndicator) {
             liveIndicator.classList.add("updating");
         }
 
-        // Blink the last bar during updates
+        // Start blinking animation for the last bar during updates
         this.startBlinkingAnimation();
     };
 
@@ -698,15 +718,6 @@
         var container = document.getElementById(this.config.report_id);
         if (!container) return;
 
-        var chartContainer = container.querySelector(".chart-container");
-        if (!chartContainer) return;
-
-        // Hide overlay
-        var overlay = chartContainer.querySelector(".chart-loading-overlay");
-        if (overlay) {
-            overlay.style.display = "none";
-        }
-
         // Remove updating state from live indicator
         var liveIndicator = container.querySelector(".live-indicator");
         if (liveIndicator) {
@@ -715,6 +726,37 @@
 
         // Stop blinking animation
         this.stopBlinkingAnimation();
+    };
+
+    /**
+     * Show error message to user
+     */
+    LiveAnalytics.prototype.showErrorMessage = function (message) {
+        var container = document.getElementById(this.config.report_id);
+        if (!container) return;
+
+        // Remove existing error messages
+        var existingError = container.querySelector(".live-analytics-error");
+        if (existingError) {
+            existingError.remove();
+        }
+
+        // Create error message element
+        var errorDiv = document.createElement("div");
+        errorDiv.className = "live-analytics-error";
+        errorDiv.style.cssText = "position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px; z-index: 1000; max-width: 300px;";
+        errorDiv.textContent = message;
+
+        // Add to container
+        container.style.position = "relative";
+        container.appendChild(errorDiv);
+
+        // Auto-remove after 5 seconds
+        setTimeout(function () {
+            if (errorDiv.parentNode) {
+                errorDiv.remove();
+            }
+        }, 5000);
     };
 
     /**
@@ -739,7 +781,7 @@
                 datasets.backgroundColor[lastIndex] = newColor;
                 // Use smooth animation for color transition
                 self.chart.update({
-                    duration: 300,
+                    duration: 200,
                     easing: "easeInOutQuad",
                 });
             }, 600);
@@ -776,26 +818,51 @@
     LiveAnalytics.prototype.addEventListeners = function () {
         var self = this;
 
-        // Pause auto-refresh when tab is not visible
-        document.addEventListener("visibilitychange", function () {
+        // Store bound functions for cleanup
+        this.boundVisibilityChange = function () {
             if (document.hidden) {
                 self.stopAutoRefresh();
             } else if (self.config.auto_refresh && !self.isDestroyed) {
                 self.resumeAutoRefresh();
             }
-        });
+        };
 
-        // Resume auto-refresh when window regains focus
-        window.addEventListener("focus", function () {
+        this.boundFocus = function () {
             if (self.config.auto_refresh && !self.refreshInterval && !self.isDestroyed) {
                 self.resumeAutoRefresh();
             }
-        });
+        };
+
+        this.boundBlur = function () {
+            self.stopAutoRefresh();
+        };
+
+        // Pause auto-refresh when tab is not visible
+        document.addEventListener("visibilitychange", this.boundVisibilityChange);
+
+        // Resume auto-refresh when window regains focus
+        window.addEventListener("focus", this.boundFocus);
 
         // Pause auto-refresh when window loses focus
-        window.addEventListener("blur", function () {
-            self.stopAutoRefresh();
-        });
+        window.addEventListener("blur", this.boundBlur);
+    };
+
+    /**
+     * Remove event listeners
+     */
+    LiveAnalytics.prototype.removeEventListeners = function () {
+        if (this.boundVisibilityChange) {
+            document.removeEventListener("visibilitychange", this.boundVisibilityChange);
+            this.boundVisibilityChange = null;
+        }
+        if (this.boundFocus) {
+            window.removeEventListener("focus", this.boundFocus);
+            this.boundFocus = null;
+        }
+        if (this.boundBlur) {
+            window.removeEventListener("blur", this.boundBlur);
+            this.boundBlur = null;
+        }
     };
 
     /**
@@ -826,13 +893,20 @@
             return;
         }
 
+        // Prevent multiple simultaneous metric switches
+        if (this.isSwitchingMetric) {
+            return;
+        }
+
+        this.isSwitchingMetric = true;
+
         // If already updating (even auto-update), cancel it - user action takes priority
         if (this.isUpdating) {
             this.cancelCurrentUpdate();
-            // Wait a tick for cleanup
-            setTimeout(function () {
+            // Use requestAnimationFrame for better performance than setTimeout
+            requestAnimationFrame(function () {
                 self.switchMetricContinue(metric);
-            }, 0);
+            });
         } else {
             this.switchMetricContinue(metric);
         }
@@ -844,7 +918,10 @@
     LiveAnalytics.prototype.switchMetricContinue = function (metric) {
         var self = this;
         var container = document.getElementById(this.config.report_id);
-        if (!container) return;
+        if (!container) {
+            this.isSwitchingMetric = false;
+            return;
+        }
 
         var metricItems = container.querySelectorAll(".clickable-metric");
 
@@ -866,17 +943,31 @@
         this.updateChartTitle(metric);
 
         // Update data and then re-enable metric items
-        this.updateData().then(function () {
-            // Re-enable all metric items
-            metricItems.forEach(function (item) {
-                item.classList.remove("disabled");
-            });
+        this.updateData()
+            .finally(function () {
+                // Re-enable all metric items
+                metricItems.forEach(function (item) {
+                    item.classList.remove("disabled");
+                });
 
-            // Restart auto-refresh
-            if (self.config.auto_refresh) {
-                self.scheduleNextUpdate();
-            }
-        });
+                // Clear switching flag
+                self.isSwitchingMetric = false;
+
+                // Restart auto-refresh
+                if (self.config.auto_refresh && !self.isDestroyed) {
+                    self.scheduleNextUpdate();
+                }
+            })
+            .catch(function (error) {
+                // Handle errors gracefully
+                console.error("Error switching metric:", error);
+                self.isSwitchingMetric = false;
+
+                // Re-enable all metric items on error
+                metricItems.forEach(function (item) {
+                    item.classList.remove("disabled");
+                });
+            });
     };
 
     /**
@@ -1033,13 +1124,32 @@
      */
     LiveAnalytics.prototype.destroy = function () {
         this.isDestroyed = true;
+
+        // Cancel any pending requests
+        this.cancelCurrentUpdate();
+
+        // Stop all intervals and timeouts
         this.stopAutoRefresh();
         this.stopBlinkingAnimation();
 
+        // Clear any pending timeouts
+        if (this.pendingTimeout) {
+            clearTimeout(this.pendingTimeout);
+            this.pendingTimeout = null;
+        }
+
+        // Remove event listeners
+        this.removeEventListeners();
+
+        // Destroy chart
         if (this.chart) {
             this.chart.destroy();
             this.chart = null;
         }
+
+        // Clear references
+        this.abortController = null;
+        this.originalLastBarColor = null;
     };
 
     // Expose LiveAnalytics to window
