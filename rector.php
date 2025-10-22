@@ -6,8 +6,8 @@ use Rector\Config\RectorConfig;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
 
-// Project-specific Rector configuration for the Salon Pro theme.
-// Adjust PhpVersion::PHP_74 to match your actual PHP target if needed.
+// Project-specific Rector configuration for WP-SlimStat plugin.
+// Configured for PHP 7.4+ compatibility as per project requirements.
 
 return static function (RectorConfig $rectorConfig): void {
     // Paths Rector should analyze and refactor
@@ -48,7 +48,5 @@ return static function (RectorConfig $rectorConfig): void {
         __DIR__ . '/src/Dependencies',
         __DIR__ . '/src/symfony',
         __DIR__ . '/rector.php',
-        __DIR__ . '/src/Dependencies',
-        __DIR__ . '/src/symfony',
     ]);
 };

@@ -2,6 +2,8 @@
 
 namespace SlimStat\Providers;
 
+use SlimStat\Tracker\Tracker;
+
 // don't load directly.
 if (! defined('ABSPATH')) {
     header('Status: 403 Forbidden');
@@ -52,7 +54,7 @@ class RESTService
      */
     public static function handleTracking(\WP_REST_Request $request)
     {
-        \SlimStat\Tracker\Tracker::slimtrack_ajax();
+        Tracker::slimtrack_ajax();
     }
 
     /**
@@ -88,7 +90,7 @@ class RESTService
         // Always handle adblock bypass endpoint for fallback
         $request_hash = get_query_var('slimstat_request');
         if ($request_hash && $request_hash === md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION)) {
-            \SlimStat\Tracker\Tracker::slimtrack_ajax();
+            Tracker::slimtrack_ajax();
         }
     }
 }
