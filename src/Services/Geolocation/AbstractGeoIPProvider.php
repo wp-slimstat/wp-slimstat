@@ -99,7 +99,11 @@ abstract class AbstractGeoIPProvider implements GeoServiceProviderInterface
 
     protected function getPrecision(): string
     {
-        return $this->getOption('precision', 'country');
+        $precision = $this->getOption('precision', '');
+        if (empty($precision) && class_exists('\wp_slimstat')) {
+            $precision = (\wp_slimstat::$settings['geolocation_country'] ?? 'on') === 'on' ? 'country' : 'city';
+        }
+        return $precision ?: 'country';
     }
 
     protected function getLicense(): string
@@ -108,12 +112,23 @@ abstract class AbstractGeoIPProvider implements GeoServiceProviderInterface
 		if ('' === $license || $license === null) {
 			$license = $this->getOption('license_key', '');
 		}
+		// Fallback to global settings if not provided in options
+		if (('' === $license || $license === null) && class_exists('\wp_slimstat')) {
+			$license = \wp_slimstat::$settings['maxmind_license_key'] ?? '';
+		}
 		return (string) ($license ?? '');
     }
 
     protected function getDbDir(): string
     {
-        return rtrim((string) ($this->getOption('dbPath', WP_CONTENT_DIR . '/uploads/wp-slimstat') ?? (WP_CONTENT_DIR . '/uploads/wp-slimstat')), '/\\');
+        $dbPath = $this->getOption('dbPath', '');
+        if (empty($dbPath) && class_exists('\wp_slimstat')) {
+            $dbPath = \wp_slimstat::$upload_dir ?? (WP_CONTENT_DIR . '/uploads/wp-slimstat');
+        }
+        if (empty($dbPath)) {
+            $dbPath = WP_CONTENT_DIR . '/uploads/wp-slimstat';
+        }
+        return rtrim((string) $dbPath, '/\\');
     }
 
     protected function ensureDirExists(string $dir): void

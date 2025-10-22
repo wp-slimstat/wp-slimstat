@@ -7,8 +7,8 @@ $hasUpdatedNotifications = false;
 $displayNotifications    = (wp_slimstat::$settings['display_notifications'] == 'on') ? true : false;
 
 // Check if notification classes are available
-if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\NotificationFactory')) {
-    $hasUpdatedNotifications = \SlimStat\Service\Admin\Notification\NotificationFactory::hasUpdatedNotifications();
+if ($displayNotifications && class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationFactory')) {
+    $hasUpdatedNotifications = \SlimStat\Services\Admin\Notification\NotificationFactory::hasUpdatedNotifications();
 }
 ?>
 
@@ -44,8 +44,8 @@ if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\N
 </div>
 
 <?php
-if ($displayNotifications && class_exists('SlimStat\Service\Admin\Notification\NotificationFactory')) {
-    $notifications = \SlimStat\Service\Admin\Notification\NotificationFactory::getAllNotifications();
+if ($displayNotifications && class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationFactory')) {
+    $notifications = \SlimStat\Services\Admin\Notification\NotificationFactory::getAllNotifications();
     View::load('components/notification/side-bar', ['notifications' => $notifications]);
 }
 ?>

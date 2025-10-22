@@ -1704,7 +1704,16 @@ class wp_slimstat_reports
                     // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
                     $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
                     $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
-                    if ($uses_db && !\SlimStat\Services\GeoIP::database_exists()) {
+                    $db_missing = false;
+                    if ($uses_db) {
+                        try {
+                            $service    = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+                            $db_missing = !file_exists($service->getProvider()->getDbPath());
+                        } catch (\Throwable $e) {
+                            $db_missing = true;
+                        }
+                    }
+                    if ($uses_db && $db_missing) {
                         echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
                         echo '<br>';
                     }

@@ -34,7 +34,10 @@ class GeoService
 
     public function getPack()
     {
-        return empty($this->pack) ? GeoIP::get_pack() : $this->pack;
+        if (!empty($this->pack)) {
+            return $this->pack;
+        }
+        return ('on' == \wp_slimstat::$settings['geolocation_country']) ? 'country' : 'city';
     }
 
     public function setEnableMaxmind($enableMaxmind = false)
@@ -97,34 +100,21 @@ class GeoService
     public function download()
     {
         try {
-            if ($this->isGeoIPEnabled()) {
-
-                $args = [
-                    'update' => $this->update,
-                ];
-
-                if ($this->isMaxMindEnabled() && !empty($this->getMaxMindLicenseKey())) {
-                    $args['enable_maxmind']      = 'on';
-                    $args['maxmind_license_key'] = $this->getMaxMindLicenseKey();
-                }
-
-                $response = GeoIP::download($this->getPack(), $args);
-            } else {
-                $response = [
-                    'status' => false,
-                    'error'  => __('GeoIP is disabled. Please first choose GeoIP Database Source and save settings!', 'wp-slimstat'),
+            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+            if (in_array($provider, ['dbip', 'maxmind'], true)) {
+                // GeolocationService reads settings automatically
+                $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+                $ok      = $service->updateDatabase();
+                return [
+                    'status' => (bool) $ok,
+                    'notice' => $ok ? __('GeoIP Database Successfully Updated!', 'wp-slimstat') : __('Failed to update GeoIP Database.', 'wp-slimstat'),
                 ];
             }
+            return [ 'status' => false, 'error' => __('GeoIP is disabled. Please choose a DB-based provider and save settings.', 'wp-slimstat') ];
         } catch (\Exception $exception) {
             $this->logError($exception->getMessage());
-
-            $response = [
-                'status' => false,
-                'error'  => $exception->getMessage(),
-            ];
+            return [ 'status' => false, 'error' => $exception->getMessage() ];
         }
-
-        return $response;
     }
 
     /**
@@ -133,15 +123,19 @@ class GeoService
     public function checkDatabase()
     {
         try {
-            if (!GeoIP::database_exists()) {
+            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+            // GeolocationService reads settings automatically
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            $dbPath  = $service->getProvider()->getDbPath();
+            if (!file_exists($dbPath)) {
                 throw new \Exception(__('GeoIP database not found!', 'wp-slimstat'));
             }
 
-            $reader = new Reader(GeoIP::get_database_file());
+            $reader = new Reader($dbPath);
             $ip = $this->getUserIP();
 
             // Determine which method to use based on database type
-            $precision = GeoIP::get_pack();
+            $precision = $this->getPack();
             if ('city' === $precision) {
                 $reader->city($ip);
             } else {
@@ -171,9 +165,12 @@ class GeoService
 
     public function deleteDatabaseFile()
     {
-        if (GeoIP::database_exists()) {
-            $databaseFilePath = GeoIP::get_database_file();
-            @unlink($databaseFilePath);
+        $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+        // GeolocationService reads settings automatically
+        $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+        $dbPath  = $service->getProvider()->getDbPath();
+        if (is_file($dbPath)) {
+            @unlink($dbPath);
         }
     }
 
