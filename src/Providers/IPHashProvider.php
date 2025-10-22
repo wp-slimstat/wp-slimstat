@@ -97,11 +97,12 @@ class IPHashProvider
             $hash = self::hashWithPrivacyService($originalIp, $userAgent, $secret);
         }
 
-        if (!empty($hash)) {
+        if ($hash !== '' && $hash !== '0') {
             // Clear other_ip if anonymization is not enabled
             if ('on' !== (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
                 $stat['other_ip'] = '';
             }
+            
             $stat['ip'] = $hash;
         }
 

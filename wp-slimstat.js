@@ -508,7 +508,7 @@ var SlimStat = (function () {
 
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        var waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         var useBeacon = !waitForId; // need sync response when creating id
 
         // Avoid parallel initial pageview duplication
@@ -531,12 +531,6 @@ var SlimStat = (function () {
                     sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
                     showOptoutMessage();
                     inflightPageview = false;
-                    pageviewInProgress = false;
-
-                    // Reset pageview state after successful completion
-                    setTimeout(function () {
-                        pageviewInProgress = false;
-                    }, 100);
                 })
                 .catch(function (error) {
                     // Fallback if fingerprinting fails
@@ -546,7 +540,6 @@ var SlimStat = (function () {
                     sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
                     showOptoutMessage();
                     inflightPageview = false;
-                    pageviewInProgress = false;
                 });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);

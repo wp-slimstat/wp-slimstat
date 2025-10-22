@@ -38,21 +38,14 @@ class Tracker
             return -1;
         }
 
-        $data_keys = [];
-        foreach (array_keys($_data) as $a_key) {
-            $data_keys[] = sanitize_key($a_key);
-        }
-
         foreach ($_data as $key => $value) {
             $_data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
         }
 
-        \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
-            "INSERT IGNORE INTO {$_table} (" . implode(', ', $data_keys) . ') VALUES (' . substr(str_repeat('%s,', count($_data)), 0, -1) . ')',
-            $_data
-        ));
-
-        return intval(\wp_slimstat::$wpdb->insert_id);
+        return Query::insert($_table)
+            ->ignore()
+            ->values($_data)
+            ->execute();
     }
 
     public static function _update_row($_data = [])
@@ -66,22 +59,20 @@ class Tracker
 
         $_data = array_filter($_data);
 
-        $notes = '';
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $query = Query::update($table)->ignore()->where('id', '=', $id);
+
         if (!empty($_data['notes']) && is_array($_data['notes'])) {
-            $notes = (count($_data) > 1 ? ',' : '') . "notes=CONCAT( IFNULL( notes, '' ), '[" . esc_sql(implode('][', $_data['notes'])) . "]' )";
+            $notes_to_append = '[' . implode('][', $_data['notes']) . ']';
+            $query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
             unset($_data['notes']);
         }
 
-        $prepared_query = \wp_slimstat::$wpdb->prepare(
-            "UPDATE IGNORE {$GLOBALS[ 'wpdb' ]->prefix}slim_stats SET " . implode('=%s,', array_keys($_data)) . "=%s WHERE id = {$id}",
-            $_data
-        );
-
-        if ('' !== $notes && '0' !== $notes) {
-            $prepared_query = str_replace('WHERE id =', $notes . ' WHERE id =', $prepared_query);
+        if ($_data !== []) {
+            $query->set($_data);
         }
 
-        \wp_slimstat::$wpdb->query($prepared_query);
+        $query->execute();
 
         return $id;
     }
@@ -108,14 +99,14 @@ class Tracker
 
             $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-            $next_visit_id = \wp_slimstat::$wpdb->get_var(
-                "SELECT AUTO_INCREMENT FROM information_schema.TABLES
-                 WHERE TABLE_SCHEMA = DATABASE()
-                 AND TABLE_NAME = '{$table}'"
-            );
+            $next_visit_id = Query::select('AUTO_INCREMENT')
+                ->from('information_schema.TABLES')
+                ->whereRaw("TABLE_SCHEMA = DATABASE()")
+                ->where('TABLE_NAME', '=', $table)
+                ->getVar();
 
             if ($next_visit_id === null || $next_visit_id <= 0) {
-                $max_visit_id  = \wp_slimstat::$wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+                $max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
                 $next_visit_id = intval($max_visit_id) + 1;
             }
 
@@ -123,16 +114,12 @@ class Tracker
                 $next_visit_id = time();
             }
 
-            $existing_visit_id = \wp_slimstat::$wpdb->get_var(
-                \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
-            );
+            $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
 
             if ($existing_visit_id !== null) {
                 do {
                     $next_visit_id++;
-                    $existing_visit_id = \wp_slimstat::$wpdb->get_var(
-                        \wp_slimstat::$wpdb->prepare("SELECT visit_id FROM {$table} WHERE visit_id = %d", $next_visit_id)
-                    );
+                    $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
                 } while ($existing_visit_id !== null);
             }
 
@@ -148,11 +135,11 @@ class Tracker
         }
 
         if ($is_new_session && $identifier > 0) {
-            \wp_slimstat::$wpdb->query(\wp_slimstat::$wpdb->prepare(
-                "UPDATE {$GLOBALS['wpdb' ]->prefix}slim_stats SET visit_id = %d WHERE id = %d AND visit_id = 0",
-                \wp_slimstat::$stat['visit_id'],
-                $identifier
-            ));
+            Query::update($GLOBALS['wpdb']->prefix . 'slim_stats')
+                ->set(['visit_id' => \wp_slimstat::$stat['visit_id']])
+                ->where('id', '=', $identifier)
+                ->where('visit_id', '=', 0)
+                ->execute();
         }
 
         return ($is_new_session && ($_force_assign || 'on' == \wp_slimstat::$settings['javascript_mode']));
@@ -400,6 +387,7 @@ class Tracker
         if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
             return $value;
         }
+        
         return false;
     }
 
@@ -410,12 +398,14 @@ class Tracker
             if (!is_array($_needles)) {
                 $_needles = [$_needles];
             }
+            
             foreach ($_needles as $a_needle) {
                 if (preg_match(sprintf('@^%s$@i', $pattern), $a_needle)) {
                     return true;
                 }
             }
         }
+        
         return false;
     }
 
@@ -424,15 +414,13 @@ class Tracker
         if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
             return false;
         }
+        
         if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
             return false;
         }
+        
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
-        $today = date('Y-m-d');
-        if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
-            $query->allowCaching(true);
-        }
         $count_fingerprint = $query->getVar();
         return 0 == $count_fingerprint;
     }
@@ -463,6 +451,7 @@ class Tracker
         } elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
             return 128;
         }
+        
         return false;
     }
 
