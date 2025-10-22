@@ -161,7 +161,7 @@ class Processor
 			$not_spam                        = true;
 		} elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
 			$spam_comment = \wp_slimstat::$wpdb->get_row(\wp_slimstat::$wpdb->prepare('\n                SELECT comment_author, comment_author_email, COUNT(*) comment_count\n                FROM `' . DB_NAME . "`.{$GLOBALS['wpdb']->comments}\n                WHERE comment_author_IP = %s AND comment_approved = 'spam'\n                GROUP BY comment_author\n                LIMIT 0,1", \wp_slimstat::$stat['ip']), ARRAY_A);
-			if (!empty($spam_comment['comment_count'])) {
+			if (!empty($spam_comment) && !empty($spam_comment['comment_count'])) {
 				if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
 					return false;
 				} else {
