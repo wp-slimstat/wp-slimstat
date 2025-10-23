@@ -137,18 +137,7 @@ class ConsentHandler
 			$update_data['email'] = $stat['email'];
 		}
 
-		if (!empty($stat['notes'])) {
-			// Append to existing notes for all records in the visit
-			$GLOBALS['wpdb']->query(
-				$GLOBALS['wpdb']->prepare(
-					"UPDATE {$table} SET notes = CONCAT(notes, %s) WHERE visit_id = %d",
-					$stat['notes'],
-					$visit_id
-				)
-			);
-			unset($update_data['notes']); // Notes are handled separately
-		}
-
+		// Update main PII fields if we have any
 		if (!empty($update_data)) {
 			$updated = $GLOBALS['wpdb']->update(
 				$table,
@@ -163,6 +152,36 @@ class ConsentHandler
 					'message' => __('Failed to update pageview record.', 'wp-slimstat'),
 				]);
 				return;
+			}
+		}
+
+		// Handle notes separately - check if notes already contain this user marker to prevent duplicates
+		if (!empty($stat['notes'])) {
+			// Check if any record in this visit already has this user note
+			$existing_note = $GLOBALS['wpdb']->get_var(
+				$GLOBALS['wpdb']->prepare(
+					"SELECT notes FROM {$table} WHERE visit_id = %d AND notes LIKE %s LIMIT 1",
+					$visit_id,
+					'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
+				)
+			);
+
+			// Only append if this note doesn't already exist
+			if (empty($existing_note)) {
+				$notes_updated = $GLOBALS['wpdb']->query(
+					$GLOBALS['wpdb']->prepare(
+						"UPDATE {$table} SET notes = CONCAT(notes, %s) WHERE visit_id = %d",
+						$stat['notes'],
+						$visit_id
+					)
+				);
+
+				if (false === $notes_updated) {
+					wp_send_json_error([
+						'message' => __('Failed to update pageview notes.', 'wp-slimstat'),
+					]);
+					return;
+				}
 			}
 		}
 
