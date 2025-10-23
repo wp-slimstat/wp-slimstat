@@ -874,7 +874,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                     case 'toggle':
                         echo '<th scope="row"><label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . '</label></th>
 					<td>
-						<input type="hidden" value="no" name="options[' . $a_setting_slug . ']" id="' . $a_setting_slug . '_hidden">
+						<input type="hidden" value="no" name="options[' . $a_setting_slug . ']">
 						<span class="block-element">
 							<input class="slimstat-checkbox-toggle" type="checkbox"' . $is_readonly . '
 								name="options[' . $a_setting_slug . ']"
