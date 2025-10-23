@@ -1239,11 +1239,13 @@ if (!window.requestIdleCallback) {
 
             try {
                 var params = currentSlimStatParams();
-                var pageviewId = params.id ? parseInt(params.id, 10) : 0;
+                // Keep the full ID with checksum for security validation
+                var pageviewIdWithChecksum = params.id || "";
+                var pageviewIdNumeric = pageviewIdWithChecksum ? parseInt(pageviewIdWithChecksum.toString().split(".")[0], 10) : 0;
 
                 // If no pageview tracked yet, do nothing
                 // The next pageview will automatically use full tracking with consent
-                if (pageviewId <= 0) {
+                if (pageviewIdNumeric <= 0 || !pageviewIdWithChecksum) {
                     return;
                 }
 
@@ -1290,7 +1292,7 @@ if (!window.requestIdleCallback) {
                     consentUpgradeSent = false;
                 };
 
-                xhr.send("action=slimstat_consent_granted" + "&pageview_id=" + pageviewId + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || ""));
+                xhr.send("action=slimstat_consent_granted" + "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || ""));
             } catch (e) {
                 if (console && console.error) {
                     console.error("[SlimStat] Consent upgrade error:", e);
