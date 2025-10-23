@@ -157,8 +157,16 @@ class ConsentHandler
 				)
 			);
 
-			// Only append if this note doesn't already exist
-			if (empty($existing_note)) {
+			// Check for database error in the SELECT query
+			if (!empty($GLOBALS['wpdb']->last_error)) {
+				wp_send_json_error([
+					'message' => __('Failed to check existing notes.', 'wp-slimstat'),
+				]);
+				return;
+			}
+
+			// Only append if this note doesn't already exist (null means no match)
+			if (null === $existing_note) {
 				$notes_updated = $GLOBALS['wpdb']->query(
 					$GLOBALS['wpdb']->prepare(
 						"UPDATE {$table} SET notes = CONCAT(notes, %s) WHERE id = %d",
