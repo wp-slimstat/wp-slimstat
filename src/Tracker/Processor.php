@@ -271,15 +271,15 @@ class Processor
 			}
 		}
 
-		$isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-		$piiAllowed = Consent::piiAllowed();
-		$set_cookie = apply_filters('slimstat_set_visit_cookie', ($piiAllowed && !$isAnonymousTracking && !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
-		if ($set_cookie) {
-			if (empty(\wp_slimstat::$stat['visit_id']) && !empty(\wp_slimstat::$stat['id'])) {
-				@setcookie('slimstat_tracking_code', Utils::getValueWithChecksum(\wp_slimstat::$stat['id'] . 'id'), ['expires' => time() + 2678400, 'path' => COOKIEPATH]);
-			} elseif (!$cookie_has_been_set && 'on' == \wp_slimstat::$settings['extend_session'] && \wp_slimstat::$stat['visit_id'] > 0) {
-				@setcookie('slimstat_tracking_code', Utils::getValueWithChecksum(\wp_slimstat::$stat['visit_id']), ['expires' => time() + \wp_slimstat::$settings['session_duration'], 'path' => COOKIEPATH]);
-			}
+		// Handle cookie setting using centralized Session class
+		// Cookies are ONLY set when consent allows (handled internally by Session::setTrackingCookie)
+		if (empty(\wp_slimstat::$stat['visit_id']) && !empty(\wp_slimstat::$stat['id'])) {
+			// No visit ID assigned yet - set cookie with pageview ID
+			// Cookie expires in 31 days (2678400 seconds)
+			Session::setTrackingCookie(\wp_slimstat::$stat['id'], 'id', 2678400);
+		} elseif (!$cookie_has_been_set && 'on' == \wp_slimstat::$settings['extend_session'] && \wp_slimstat::$stat['visit_id'] > 0) {
+			// Extend existing session cookie
+			Session::setTrackingCookie(\wp_slimstat::$stat['visit_id'], 'visit');
 		}
 
 		return \wp_slimstat::$stat['id'];

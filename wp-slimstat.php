@@ -136,8 +136,18 @@ class wp_slimstat
             add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
         }
 
+        // Register WordPress Privacy API exporters and erasers (GDPR Article 15 & 17)
+        add_filter('wp_privacy_personal_data_exporters', [\SlimStat\Services\Privacy\DataExporter::class, 'registerExporters']);
+        add_filter('wp_privacy_personal_data_erasers', [\SlimStat\Services\Privacy\DataEraser::class, 'registerErasers']);
+
+        // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
+        \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
+
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
+
+        // Hook IP hashing daily salt generation (for GDPR compliance)
+        add_action('wp_slimstat_generate_daily_salt', [\SlimStat\Providers\IPHashProvider::class, 'generateDailySalt']);
 
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
@@ -172,8 +182,6 @@ class wp_slimstat
     // end init
 
     /**
-<<<<<<< HEAD
-=======
      * Reads and processes the data received by the XHR tracker
      */
     public static function slimtrack_ajax()
@@ -380,7 +388,6 @@ class wp_slimstat
     // end slimtrack_ajax
 
     /**
->>>>>>> 91b71a553cb00d591a63f83bcadde99d8c28068e
      * The main logging function
      *
      * @param string $message The message to be logged.
@@ -403,8 +410,6 @@ class wp_slimstat
     }
 
     /**
-<<<<<<< HEAD
-=======
      * Rewrite rule for static tracker
      */
     public static function rewrite_rule_tracker()
@@ -839,7 +844,6 @@ class wp_slimstat
     // end slimtrack
 
     /**
->>>>>>> 91b71a553cb00d591a63f83bcadde99d8c28068e
      * Decodes the permalink
      */
     public static function get_request_uri()
@@ -1066,6 +1070,10 @@ class wp_slimstat
 
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
+
+        // Ensure daily salt exists for IP hashing (GDPR compliance)
+        // This runs on every page load but only generates if missing
+        \SlimStat\Providers\IPHashProvider::generateDailySalt();
     }
 
     /**
@@ -1519,29 +1527,6 @@ class wp_slimstat
 
         wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
 
-        // Hook CookieYes/CookieLawInfo consent events to trigger immediate pageview without refresh
-        $inline_cookieyes = ';
-(function(){
-    function tryTrackIfAllowed(){
-        try{
-            if(typeof window.SlimStat === "undefined" || typeof window.SlimStat._send_pageview !== "function"){ return; }
-            var params = window.SlimStatParams || {};
-            if(params.id && parseInt(params.id,10) > 0){ return; }
-            var cat = params.consent_level_integration || "functional";
-            if(typeof window.wp_has_consent === "function" && !window.wp_has_consent(cat)){ return; }
-            if(!window.slimstatConsentRetried){
-                window.slimstatConsentRetried = true;
-                window.SlimStat._send_pageview();
-            }
-        }catch(e){}
-    }
-    function deferTrack(){ setTimeout(tryTrackIfAllowed, 50); }
-    document.addEventListener("cookieyes_consent_update", deferTrack);
-    document.addEventListener("cookieyes_preferences_update", deferTrack);
-    document.addEventListener("cli_consent_update", deferTrack);
-})();
-';
-        wp_add_inline_script('wp_slimstat', $inline_cookieyes, 'after');
         return null;
     }
 
@@ -1722,8 +1707,6 @@ class wp_slimstat
     // end get_lossy_url
 
     /**
-<<<<<<< HEAD
-=======
      * Update content type as needed
      */
     public static function update_content_type($_status = 301, $_location = '')
@@ -2259,7 +2242,6 @@ class wp_slimstat
     // end _base64_url_encode/decode
 
     /**
->>>>>>> 91b71a553cb00d591a63f83bcadde99d8c28068e
      * Check if slimstat pro plugin is installed
      */
     public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')

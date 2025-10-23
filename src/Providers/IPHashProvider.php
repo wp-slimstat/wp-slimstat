@@ -16,66 +16,113 @@ use SlimStat\Utils\Consent;
  * IP Hash Provider
  *
  * Handles IP hashing and anonymization functionality for GDPR compliance.
- * Provides salted hash operations for visitor identification.
+ *
+ * IP Processing Pipeline:
+ * =======================
+ * This class processes IP addresses according to privacy settings and consent status.
+ * The order of operations is critical for GDPR compliance:
+ *
+ * 1. Store original IP (needed for GeoIP lookup before hashing)
+ * 2. Determine privacy requirements based on:
+ *    - Anonymous tracking mode
+ *    - Consent status (via Consent::piiAllowed())
+ *    - Individual anonymize_ip and hash_ip settings
+ * 3. Apply IP processing in correct order:
+ *    a. If hashing required: hash using ORIGINAL IP (for consistency)
+ *    b. If anonymization required: anonymize the IP after hashing
+ *
+ * Why hash uses original IP:
+ * - Hashing anonymized IPs reduces uniqueness (many users share same anonymized IP)
+ * - Original IP provides better visitor counting while maintaining privacy
+ * - Hash is one-way, so original IP cannot be recovered
  *
  * Features:
- * - IP anonymization using WordPress privacy functions
+ * - IP anonymization using WordPress core functions
  * - Salted hash generation with daily salt rotation
  * - Fallback to Privacy service for hash computation
- * - GDPR-compliant visitor identification
+ * - Automatic privacy enforcement in anonymous mode
+ * - PII upgrade capability when consent granted
  *
  * @since 5.4.0
  */
 class IPHashProvider
 {
-    /**
-     * Process IP address according to privacy settings
-     *
-     * @param array $stat The slimstat array containing IP data
-     * @return array Modified slimstat array with processed IP
-     */
-    public static function processIp(array $stat): array
-    {
-        if (empty($stat['ip'])) {
-            return $stat;
-        }
+	/**
+	 * Process IP address according to privacy settings and consent status.
+	 *
+	 * This is the main entry point for IP processing in the tracking pipeline.
+	 *
+	 * Processing modes:
+	 * 1. Anonymous tracking WITHOUT consent: Hash only (strictest)
+	 * 2. Anonymous tracking WITH consent: Store full IP (after consent upgrade)
+	 * 3. Standard mode WITHOUT PII consent: Anonymize + Hash
+	 * 4. Standard mode WITH settings: Respect anonymize_ip and hash_ip settings
+	 * 5. Standard mode WITH PII consent: Store full IP (no processing needed)
+	 *
+	 * @param array $stat The slimstat array containing IP data
+	 * @return array Modified slimstat array with processed IP
+	 */
+	public static function processIp(array $stat): array
+	{
+		if (empty($stat['ip'])) {
+			return $stat;
+		}
 
-        $originalIp = $stat['ip'];
-        $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-        $piiAllowed = Consent::piiAllowed();
+		// Store original IP for processing (never modify this variable)
+		$originalIp = $stat['ip'];
+		$originalOtherIp = $stat['other_ip'] ?? '';
 
-        // HIGHEST PRIORITY: Anonymous tracking before consent.
-        // If anonymous tracking is on AND consent for PII has NOT been given,
-        // we MUST hash the IP, regardless of other settings.
-        if ($isAnonymousTracking && !$piiAllowed) {
-            return self::hashIP($stat, $originalIp);
-        }
+		// Determine mode and consent status
+		$isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
+		$piiAllowed = Consent::piiAllowed();
 
-        // STANDARD MODE: Not in anonymous mode, or consent has been given.
-        // We now respect the individual anonymization and hashing settings.
-        $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
-        $shouldHash = 'on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off');
+		// MODE 1: Anonymous tracking mode WITHOUT consent
+		// STRICTEST mode: MUST protect PII - hash IP only (no anonymization needed after hash)
+		if ($isAnonymousTracking && !$piiAllowed) {
+			// Hash using original IP for consistency, result replaces IP field
+			return self::hashIP($stat, $originalIp, $originalOtherIp);
+		}
 
-        // If any other privacy mechanism (like DNT) has blocked PII, force anonymization and hashing.
-        if (!$piiAllowed) {
-            $shouldAnonymize = true;
-            $shouldHash = true;
-        }
+		// MODE 2: Anonymous tracking mode WITH consent
+		// Consent was granted - allow full IP storage
+		if ($isAnonymousTracking && $piiAllowed) {
+			// Keep original IPs, no processing needed
+			return $stat;
+		}
 
-        if ($shouldAnonymize) {
-            $stat['ip'] = self::anonymizeIP($stat['ip']);
-            if (!empty($stat['other_ip'])) {
-                $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
-            }
-        }
+		// MODE 3+: Standard tracking mode (not anonymous)
+		// Respect individual privacy settings and consent status
 
-        if ($shouldHash) {
-            // Note: hashIP uses the original IP for hashing consistency, even if the IP has been anonymized above.
-            $stat = self::hashIP($stat, $originalIp);
-        }
+		// Get individual privacy settings
+		$shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
+		$shouldHash = 'on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off');
 
-        return $stat;
-    }
+		// If PII is NOT allowed (DNT, consent denied, etc), force maximum privacy
+		if (!$piiAllowed) {
+			$shouldAnonymize = true;
+			$shouldHash = true;
+		}
+
+		// Apply processing in correct order:
+		// 1. Hash first (if needed) - uses original IP
+		// 2. Anonymize after (if needed) - modifies stored IP
+
+		if ($shouldHash) {
+			// Hash using original IP (before any anonymization)
+			// This replaces the IP with a hash value
+			$stat = self::hashIP($stat, $originalIp, $originalOtherIp);
+		} elseif ($shouldAnonymize) {
+			// Only anonymize if NOT hashing (hashing already provides privacy)
+			$stat['ip'] = self::anonymizeIP($stat['ip']);
+			if (!empty($stat['other_ip'])) {
+				$stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
+			}
+		}
+
+		// Note: If neither hash nor anonymize, full IP is stored (requires PII consent)
+
+		return $stat;
+	}
 
     /**
      * Upgrades the stored IP to the real IP if consent is granted.
@@ -86,14 +133,20 @@ class IPHashProvider
     public static function upgradeToPii(array $stat): array
     {
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-        $piiAllowed = Consent::piiAllowed(true);
+        $piiAllowed          = Consent::piiAllowed(true);
 
         if (!$isAnonymousTracking || !$piiAllowed) {
             return $stat;
         }
 
-        // Restore the original IP
+        // Restore the original IP before updating records
         [$stat['ip'], $stat['other_ip']] = \SlimStat\Tracker\Utils::getRemoteIp();
+
+        // Ensure the anonymous visit ID is carried over to the new cookie-based session
+        $anonymousVisitId = \SlimStat\Tracker\Session::getVisitId();
+        if ($anonymousVisitId > 0) {
+            \SlimStat\Tracker\Session::setTrackingCookie($anonymousVisitId, 'visit');
+        }
 
         return $stat;
     }
@@ -117,50 +170,67 @@ class IPHashProvider
         return Privacy::maskIp($ip);
     }
 
-    /**
-     * Hash IP address with salt for GDPR compliance
-     *
-     * @param array $stat The slimstat array
-     * @param string $originalIp The original IP address
-     * @return array Modified slimstat array with hashed IP
-     */
-    public static function hashIP(array $stat, string $originalIp): array
-    {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-        $secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
+	/**
+	 * Hash IP address with daily salt for GDPR-compliant visitor identification.
+	 *
+	 * Creates a one-way hash from the original IP address + user agent + daily salt.
+	 * The hash changes daily, preventing long-term visitor tracking while allowing
+	 * same-day uniqueness counting.
+	 *
+	 * Hash formula:
+	 * HMAC-SHA256(daily_salt + "|" + original_ip + "|" + user_agent, secret)
+	 *
+	 * Fallback behavior:
+	 * - If daily salt fails: use Privacy service (date-based hash)
+	 * - If all hashing fails: anonymize IP as minimum protection
+	 *
+	 * @param array  $stat          The slimstat array
+	 * @param string $originalIp    The original IP address (BEFORE any processing)
+	 * @param string $originalOtherIp The original other_ip address (if proxy detected)
+	 * @return array Modified slimstat array with hashed IP
+	 */
+	public static function hashIP(array $stat, string $originalIp, string $originalOtherIp = ''): array
+	{
+		$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+		$secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
 
-        // Ensure daily salt is generated
-        $dailySalt = get_option('slimstat_daily_salt');
-        if (empty($dailySalt)) {
-            $dailySalt = self::generateDailySalt();
-        }
+		// Ensure daily salt exists (generate if missing)
+		$dailySalt = self::getDailySalt();
+		if (empty($dailySalt)) {
+			$dailySalt = self::generateDailySalt();
+		}
 
-        // Try to use daily salt first
-        if (!empty($dailySalt)) {
-            $hash = self::hashWithDailySalt($originalIp, $userAgent, $dailySalt, $secret);
-        } else {
-            // Fallback to Privacy service
-            $hash = self::hashWithPrivacyService($originalIp, $userAgent, $secret);
-        }
+		// Try to generate hash using daily salt
+		if (!empty($dailySalt)) {
+			$hash = self::hashWithDailySalt($originalIp, $userAgent, $dailySalt, $secret);
+		} else {
+			// Fallback to Privacy service (date-based hash)
+			$hash = self::hashWithPrivacyService($originalIp, $userAgent, $secret);
+		}
 
-        if ($hash !== '' && $hash !== '0') {
-            // Hash succeeded - use it
-            $stat['ip'] = $hash;
-            $stat['other_ip'] = '';
-        } else {
-            // Hash generation failed - MUST anonymize as minimum protection for GDPR
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('SlimStat: IP hash generation failed - falling back to anonymization');
-            }
-            // Always anonymize the original IP if hashing fails
-            $stat['ip'] = self::anonymizeIP($originalIp);
-            if (!empty($stat['other_ip'])) {
-                $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
-            }
-        }
+		// Validate hash result
+		if ($hash !== '' && $hash !== '0') {
+			// Hash succeeded - replace IP with hash
+			$stat['ip'] = $hash;
+			// Clear other_ip when hashing (hash represents the unique visitor)
+			$stat['other_ip'] = '';
+		} else {
+			// Hash generation failed - MUST provide minimum privacy protection
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log('SlimStat: IP hash generation failed for IP ' . $originalIp . ' - falling back to anonymization');
+			}
 
-        return $stat;
-    }
+			// Anonymize as fallback (better than storing full IP)
+			$stat['ip'] = self::anonymizeIP($originalIp);
+			if (!empty($originalOtherIp)) {
+				$stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+			} else {
+				$stat['other_ip'] = '';
+			}
+		}
+
+		return $stat;
+	}
 
     /**
      * Hash IP using daily salt
@@ -187,15 +257,7 @@ class IPHashProvider
      */
     private static function hashWithPrivacyService(string $ip, string $userAgent, string $secret): string
     {
-        if (!class_exists(Privacy::class)) {
-            @include_once SLIMSTAT_ANALYTICS_DIR . 'src/Services/Privacy.php';
-        }
-
-        if (class_exists(Privacy::class)) {
-            return Privacy::computeVisitorId($ip, $userAgent, time(), $secret);
-        }
-
-        return '';
+        return Privacy::computeVisitorId($ip, $userAgent, time(), $secret);
     }
 
     /**
@@ -218,6 +280,25 @@ class IPHashProvider
         }
 
         return $existingSalt;
+    }
+
+    /**
+     * Get current daily salt (without generating if missing).
+     *
+     * @return string Daily salt or empty string if not set
+     */
+    public static function getDailySalt(): string
+    {
+        $today = gmdate('Y-m-d');
+        $existingSalt = get_option('slimstat_daily_salt');
+        $saltDate = get_option('slimstat_daily_salt_date');
+
+        // Return salt only if it's for today
+        if ($saltDate === $today && !empty($existingSalt)) {
+            return $existingSalt;
+        }
+
+        return '';
     }
 
     /**

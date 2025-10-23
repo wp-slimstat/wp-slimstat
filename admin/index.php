@@ -256,6 +256,11 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
+        // Schedule a daily cron job to regenerate IP hashing salt (for GDPR compliance)
+        if (!wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
+            wp_schedule_event(time(), 'daily', 'wp_slimstat_generate_daily_salt');
+        }
+
         // Schedule a weekly cron job to update geoip database automatically
         if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
             $nextRunInterval = wp_slimstat::get_schedule_interval('weekly');
@@ -1213,7 +1218,7 @@ class wp_slimstat_admin
     private static function get_filter_icon_url($dimension, $value)
     {
         $icon_url = '';
-        
+
         switch ($dimension) {
             case 'country':
                 // Country flags are SVG files named by country code (lowercase)
@@ -1224,7 +1229,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $flag_rel;
                 }
                 break;
-                
+
             case 'browser':
                 // Browser icons are PNG files named by browser name (lowercase)
                 $browser_name = strtolower($value);
@@ -1234,7 +1239,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $browser_rel;
                 }
                 break;
-                
+
             case 'language':
                 // Language flags use the last part of the language code (e.g., en-US -> us)
                 $language_parts = explode('-', $value);
@@ -1245,7 +1250,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $flag_rel;
                 }
                 break;
-                
+
             case 'platform':
                 // Platform/OS icons are WEBP files with abbreviated names
                 $os_map = [
@@ -1260,10 +1265,10 @@ class wp_slimstat_admin
                     'chrome os' => 'chr',
                     'chromeos' => 'chr',
                 ];
-                
+
                 $os_lower = strtolower($value);
                 $os_icon = null;
-                
+
                 // Check if exact match exists in map
                 if (isset($os_map[$os_lower])) {
                     $os_icon = $os_map[$os_lower];
@@ -1276,7 +1281,7 @@ class wp_slimstat_admin
                         }
                     }
                 }
-                
+
                 if ($os_icon) {
                     $os_rel = '/admin/assets/images/os/' . $os_icon . '.webp';
                     $os_path = SLIMSTAT_ANALYTICS_DIR . $os_rel;
@@ -1285,13 +1290,13 @@ class wp_slimstat_admin
                     }
                 }
                 break;
-                
+
             case 'username':
                 // For users, we'll use WordPress gravatar
                 // This will be handled separately in the JavaScript
                 break;
         }
-        
+
         return $icon_url;
     }
 
@@ -1330,7 +1335,7 @@ class wp_slimstat_admin
         // Limit results to prevent overwhelming the dropdown (filterable for customization)
         $limit = apply_filters('slimstat_filter_options_limit', 500, $dimension);
         $limit = absint($limit); // Ensure it's a positive integer
-        
+
         // Enforce reasonable bounds to prevent abuse
         if ($limit < 1 || $limit > 5000) {
             $limit = 500; // Reset to default if out of reasonable range
@@ -1364,14 +1369,14 @@ class wp_slimstat_admin
         $query->orderBy($safe_dimension, 'ASC')->limit($limit);
 
         $results = $query->getAll();
-        
+
         // Check for database errors
         if ($GLOBALS['wpdb']->last_error) {
             error_log('SlimStat: Filter options query failed - ' . $GLOBALS['wpdb']->last_error);
             wp_send_json_error('Database query failed');
             return;
         }
-        
+
         // Ensure results is an array
         if (!is_array($results)) {
             $results = [];
@@ -1380,21 +1385,21 @@ class wp_slimstat_admin
         $options = [];
         $dimensions_with_icons = ['country', 'browser', 'language', 'platform', 'username'];
         $has_icons = in_array($dimension, $dimensions_with_icons, true);
-        
+
         foreach ($results as $row) {
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
                 $sanitized_value = sanitize_text_field($row['value']);
-                
+
                 // Limit individual option length to prevent DOM issues
                 if (strlen($sanitized_value) > 255) {
                     $sanitized_value = substr($sanitized_value, 0, 255) . '...';
                 }
-                
+
                 if ($has_icons) {
                     // Return object with value and icon
                     $icon_url = self::get_filter_icon_url($dimension, $sanitized_value);
-                    
+
                     // For username, get user gravatar
                     if ($dimension === 'username' && empty($icon_url)) {
                         $user = get_user_by('login', $sanitized_value);
@@ -1404,7 +1409,7 @@ class wp_slimstat_admin
                             $icon_url = get_avatar_url($sanitized_value, ['size' => 32]);
                         }
                     }
-                    
+
                     $options[] = [
                         'value' => $sanitized_value,
                         'label' => $sanitized_value,

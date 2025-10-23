@@ -95,15 +95,15 @@ $settings = [
                 'type'  => 'section_header',
             ],
             'auto_purge' => [
-                'title'             => __('Data Retention', 'wp-slimstat'),
+                'title'             => __('Data Retention Period', 'wp-slimstat'),
                 'type'              => 'integer',
                 'after_input_field' => __('days', 'wp-slimstat'),
-                'description'       => __('Enable a daily cron job to erase or archive (see option here below) pageviews older than the number of days specified here. You can enter <strong>0</strong> (the number zero) if you want to disable this feature.', 'wp-slimstat'),
+                'description'       => __('<strong>GDPR Compliance:</strong> Automatically delete or archive pageviews older than specified days.<br/><br/><strong>✅ Recommended:</strong> <strong>420 days (14 months)</strong> - Complies with ePrivacy Directive and most GDPR interpretations.<br/><strong>⚠️ Warning:</strong> Retaining data longer than 14 months may require additional legal justification and a clear Data Processing Agreement (DPA) under GDPR Article 5(1)(e) (Storage Limitation Principle). Failing to comply can result in significant fines.<br/><br/>Set to <strong>0</strong> to disable automatic purging (<strong>strongly discouraged</strong> for GDPR compliance, as unlimited retention requires a very strong and documented legal justification).', 'wp-slimstat'),
             ],
             'auto_purge_delete' => [
-                'title'       => __('Archive Records', 'wp-slimstat'),
+                'title'       => __('Archive Instead of Delete', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('If server space is not an issue for you, use this option to archive pageviews to a separate table, instead of deleting them. This will increase performance by reducing the amount of data to process in the main table, while allowing you to access your data at a later time, if needed. Please note that the archive table (<strong>wp_slim_stats_archive</strong>) will be <strong>DELETED</strong> along with all the other tables, when you uninstall Slimstat. Make sure to backup your data before you proceed.', 'wp-slimstat'),
+                'description' => __('<strong>⚠️ GDPR Important:</strong> Archived data is still subject to the same retention limits as active data. Archiving does not exempt you from GDPR retention requirements.<br/><br/>When enabled, old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves performance but still counts as data retention under GDPR.<br/><br/><strong>Note:</strong> Archive tables are <strong>permanently deleted</strong> when you uninstall SlimStat. <strong>Backup your data</strong> before uninstalling if you need to retain it.', 'wp-slimstat'),
             ],
         ],
     ],
@@ -119,10 +119,10 @@ $settings = [
             'consent_integration' => [
                 'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
                 'type'          => 'select',
-                'description'   => __('Choose how SlimStat integrates with your Consent Management Platform (CMP). This determines whether SlimStat can track visitors based on their consent choices.<br/><br/><strong>None:</strong> SlimStat will not actively check for consent signals from a CMP. Tracking will still be gated by SlimStat\'s internal privacy rules (e.g., tracking is blocked if PII is collected without any consent).<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with any CMP that supports the WordPress Consent API standard (e.g., Complianz). SlimStat will listen for consent signals for the category you select below.<br/><strong>Real Cookie Banner PRO / Borlabs Cookie:</strong> Provides compatibility with these specific CMPs. SlimStat will respect their consent mechanisms, which often involve blocking the tracking script before it can even run.', 'wp-slimstat'),
+                'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available.<br/><strong>Real Cookie Banner PRO / Borlabs Cookie:</strong> Specific integrations for these popular CMPs. Consent is enforced client-side by the CMP.', 'wp-slimstat'),
                 'select_values' => [
-                    ''               => __('None', 'wp-slimstat'),
-                    'wp_consent_api' => __('Via WP Consent API', 'wp-slimstat'),
+                    ''               => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
+                    'wp_consent_api' => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
                     'real_cookie_banner_pro' => __('Real Cookie Banner PRO', 'wp-slimstat'),
                     'borlabs_cookie' => __('Borlabs Cookie', 'wp-slimstat'),
                 ],
@@ -139,29 +139,29 @@ $settings = [
                 ],
             ],
             'anonymous_tracking' => [
-                'title'       => __('Anonymous Tracking', 'wp-slimstat'),
+                'title'       => __('Anonymous Tracking Mode', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('When enabled, all visitors are tracked anonymously by default (no cookies, no PII), regardless of consent. This anonymous tracking is treated as "Functional". PII is collected only after explicit consent is provided by the visitor.', 'wp-slimstat'),
+                'description' => __('<strong>GDPR-Safe Mode:</strong> When enabled, SlimStat operates in strict GDPR-compliant mode.<br/><br/><strong>Before Consent:</strong> Tracks anonymously (hashed IPs, no cookies, no username/email)<br/><strong>After Consent:</strong> Upgrades to full tracking (real IPs, cookies, user identification)<br/><br/>This mode is recommended if you want to track all visitors while staying GDPR-compliant. Anonymous data is collected without consent, then upgraded when consent is granted.', 'wp-slimstat'),
             ],
             'do_not_track' => [
-                'title'       => __('Do Not Track (DNT)', 'wp-slimstat'),
+                'title'       => __('Respect Do Not Track (DNT)', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Respects the visitor\'s browser setting to not track their web activity. Privacy laws like GDPR do not mandate this feature, but enabling it demonstrates a commitment to privacy. With DNT respected, visitors who prefer not to be tracked will not be collected.', 'wp-slimstat'),
+                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking).<br/><br/>GDPR does not require this, but it demonstrates respect for user privacy preferences. Recommended for privacy-focused websites.', 'wp-slimstat'),
             ],
             'anonymize_ip' => [
-                'title'       => __('Anonymize IP addresses', 'wp-slimstat'),
+                'title'       => __('Anonymize IP Addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __("Mask visitors' IP addresses (IPv4 last octet / IPv6 last 80 bits) before storage to reduce identifiability.", 'wp-slimstat'),
+                'description' => __('<strong>GDPR Privacy Protection:</strong> Masks IP addresses before storage (IPv4: 192.168.1.x → 192.168.1.0 / IPv6: last 80 bits removed).<br/><br/>Anonymized IPs cannot identify individual users but still provide useful geographic and network data. <strong>Recommended</strong> for GDPR compliance when not using IP hashing.', 'wp-slimstat'),
             ],
             'hash_ip' => [
-                'title'       => __('Hash IP addresses', 'wp-slimstat'),
+                'title'       => __('Hash IP Addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Generate a daily visitor ID (HMAC-SHA256 of masked IP + User Agent + date) to count unique visitors without storing full IP or using cookies.', 'wp-slimstat'),
+                'description' => __('<strong>GDPR-Compliant Visitor Counting:</strong> Creates one-way hash from IP + User Agent + daily salt. Hash changes daily, preventing long-term tracking.<br/><br/><strong>Benefits:</strong> Count unique visitors without storing real IPs or using cookies. Original IP cannot be recovered from hash. <strong>Recommended</strong> for GDPR compliance.', 'wp-slimstat'),
             ],
             'set_tracker_cookie' => [
-                'title'       => __('Set Cookie', 'wp-slimstat'),
+                'title'       => __('Set Tracking Cookie', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Disable this option to keep SlimStat cookie-less. When disabled, SlimStat will not assign a tracking cookie; recognition of returning visitors may be limited. If enabled, SlimStat may set a cookie to improve visit identification.', 'wp-slimstat'),
+                'description' => __('<strong>PII Warning:</strong> Cookies are Personally Identifiable Information under GDPR. Enabling this option requires user consent.<br/><br/><strong>When Disabled:</strong> Cookie-less tracking (more privacy, less accurate return visitor detection)<br/><strong>When Enabled:</strong> Sets a cookie to track returning visitors (better accuracy, requires consent)<br/><br/>Cookies automatically respect consent settings and use Secure, HttpOnly, and SameSite flags for security.', 'wp-slimstat'),
             ],
 
             // Tracker - Link Tracking

@@ -37,11 +37,6 @@ class ComplianceManager
     }
 
     /**
-     * Check if GDPR is enabled
-     */
-    // GDPR internal management removed; consent handled via external CMP hooks.
-
-    /**
      * Check if CCPA is enabled
      */
     private function isCCPAEnabled(): bool
@@ -55,14 +50,6 @@ class ComplianceManager
     private function isLGPDEnabled(): bool
     {
         return 'on' === ($this->settings['lgpd_enabled'] ?? '');
-    }
-
-    /**
-     * Get GDPR service provider
-     */
-    public function getGDPR()
-    {
-        return $this->regulations['gdpr'] ?? null;
     }
 
     /**

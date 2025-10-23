@@ -505,53 +505,84 @@ var SlimStat = (function () {
         if (!window.SlimStatParams) window.SlimStatParams = {};
         var params = window.SlimStatParams;
 
-        // CMP gating: only send if CMP grants consent or custom hook allows (when PII-like features are active).
-        var cmpAllows = true;
+        // ============================================================================
+        // CONSENT LOGIC - Must exactly mirror PHP Consent::piiAllowed() logic
+        // ============================================================================
+
+        var s = window.SlimStatParams || {};
+        var anonMode = s.anonymous_tracking === "on";
+        var setCookie = s.set_tracker_cookie === "on";
+        var anonymizeIP = s.anonymize_ip === "on";
+        var hashIP = s.hash_ip === "on";
+        var integrationKey = s.consent_integration || "";
+        var consentLevel = s.consent_level_integration || "statistics";
+
+        // PRIORITY 1: Respect Do Not Track header (if enabled in settings)
         try {
-            var integrationKey = (window.SlimStatParams && window.SlimStatParams.consent_integration) || "";
-            var consentLevel = (window.SlimStatParams && window.SlimStatParams.consent_level_integration) || "functional";
-            if (integrationKey === "wp_consent_api" && typeof window.wp_has_consent === "function") {
-                cmpAllows = !!window.wp_has_consent(consentLevel);
-            } else if (integrationKey === "real_cookie_banner_pro") {
-                // Real Cookie Banner: use consentApi to check service consent (service keys are site-configured)
-                var p = window.consentApi && typeof window.consentApi.consent === "function" ? window.consentApi.consent("analytics") : null;
-                if (p && typeof p.then === "function") {
-                    // Async; pessimistically block now, init will run when promise resolves externally
-                    cmpAllows = false;
-                } else {
-                    try {
-                        var dp = window.consentApi && typeof window.consentApi.consentSync === "function" ? window.consentApi.consentSync("analytics-with-data-processing") : null;
-                        cmpAllows = !!(dp && dp.cookie != null && dp.cookieOptIn);
-                    } catch (ee) {
-                        cmpAllows = false;
-                    }
-                }
-            } else if (integrationKey === "borlabs_cookie") {
-                // Borlabs Cookie: analytics typically allowed when integration active; we allow and rely on server/CMP to block if needed
-                cmpAllows = true;
+            var dntEnabled = s.respect_dnt === "on";
+            if (dntEnabled && navigator && navigator.doNotTrack == "1") {
+                // DNT header present - BLOCK ALL tracking
+                return;
             }
-        } catch (e) {
-            cmpAllows = true;
-        }
-        // Respect DNT if enabled and header present
-        try {
-            var dntEnabled = window.SlimStatParams && window.SlimStatParams.respect_dnt === "on";
-            if (dntEnabled && navigator && navigator.doNotTrack == "1") return;
         } catch (e) {}
 
-        // Mirror server policy: if PII-like features likely active (tracker cookie on OR IP not anonymized & not hashed), require explicit consent
-        var likelyPII = true;
-        try {
-            var s = window.SlimStatParams || {};
-            var anonMode = s.anonymous_tracking === "on";
-            var setCookie = s.set_tracker_cookie === "on";
-            var anonymize = s.anonymize_ip === "on" || anonMode;
-            var hash = s.hash_ip === "on" || anonMode;
-            likelyPII = !anonMode && (setCookie || (!anonymize && !hash));
-        } catch (e) {
-            likelyPII = true;
+        // PRIORITY 2: Check if configuration collects PII
+        // PII is collected if: cookies enabled OR full IPs stored (not anonymized AND not hashed)
+        var collectsPII = setCookie || (!anonymizeIP && !hashIP);
+
+        // If configuration doesn't collect PII, tracking is allowed (nothing sensitive to protect)
+        if (!collectsPII) {
+            // Cookie-less + anonymized/hashed IPs = no PII = no consent needed
+            // Continue with tracking
+        } else {
+            // PRIORITY 3: Configuration DOES collect PII - check consent status
+
+            // SPECIAL CASE: Anonymous tracking mode
+            // In anonymous mode, tracking is ALWAYS allowed (server handles anonymization)
+            // We just block PII features client-side (cookies won't be set)
+            if (anonMode) {
+                // Allow tracking - server will hash IPs and not store PII
+                // Continue with tracking
+            } else {
+                // PRIORITY 4: Standard mode with PII collection - check CMP consent
+                var cmpAllows = false;
+
+                // Check consent via CMP integration
+                if (integrationKey === "wp_consent_api" && typeof window.wp_has_consent === "function") {
+                    // WP Consent API integration - can read consent client-side
+                    try {
+                        cmpAllows = !!window.wp_has_consent(consentLevel);
+                    } catch (e) {
+                        cmpAllows = false;
+                    }
+                } else if (integrationKey === "real_cookie_banner_pro") {
+                    // Real Cookie Banner PRO integration
+                    try {
+                        var consentApi = window.consentApi;
+                        if (consentApi && typeof consentApi.consentSync === "function") {
+                            var consent = consentApi.consentSync("analytics-with-data-processing");
+                            cmpAllows = !!(consent && consent.cookie != null && consent.cookieOptIn);
+                        } else {
+                            cmpAllows = false;
+                        }
+                    } catch (e) {
+                        cmpAllows = false;
+                    }
+                } else if (integrationKey === "borlabs_cookie") {
+                    // Borlabs Cookie - assume consent is enforced by blocking script
+                    cmpAllows = true;
+                } else if (integrationKey === "") {
+                    // No CMP integration configured + not in anonymous mode
+                    // Legacy behavior: allow (WARNING: Not GDPR-safe if collecting PII!)
+                    cmpAllows = true;
+                }
+
+                // If PII would be collected and consent not granted, BLOCK tracking
+                if (!cmpAllows) {
+                    return;
+                }
+            }
         }
-        if (likelyPII && !cmpAllows) return;
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
@@ -645,72 +676,16 @@ var SlimStat = (function () {
         else setTimeout(run, 250);
     }
 
-    // -------------------------- GDPR Consent & Opt-out UI (removed) -------------------------- //
-    function showGdprConsentBanner() {
-        return false;
-    }
-    function handleGdprConsent() {
-        return false;
-    }
-    function showOptoutMessage() {
-        return false;
-    }
+    // -------------------------- Consent Management -------------------------- //
+    // GDPR consent is now handled by external CMP plugins (Complianz, Cookie Notice, etc.)
+    // SlimStat integrates via WP Consent API or custom integrations
+    // No internal banner or consent UI is provided
+
+    // Legacy stub functions for backward compatibility
     function optOut() {
+        console.warn("SlimStat: optOut() is deprecated. GDPR consent is now handled by external CMP plugins.");
         return false;
     }
-
-    // GDPR Theme Mode Helper
-    function initGdprThemeMode() {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
-
-        // Get theme mode setting
-        var themeMode = params.gdpr_theme_mode || "auto";
-
-        // Remove any existing theme classes
-        document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
-
-        switch (themeMode) {
-            case "light":
-                document.body.classList.add("gdpr-light-mode");
-                document.body.classList.remove("gdpr-dark-mode", "gdpr-auto-mode");
-                break;
-            case "dark":
-                document.body.classList.add("gdpr-dark-mode");
-                document.body.classList.remove("gdpr-light-mode", "gdpr-auto-mode");
-                break;
-            case "auto":
-            default:
-                document.body.classList.add("gdpr-auto-mode");
-                document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
-
-                // Follow system preference
-                if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-                    document.body.classList.add("gdpr-dark-mode");
-                } else {
-                    document.body.classList.add("gdpr-light-mode");
-                }
-
-                // Listen for system theme changes
-                if (window.matchMedia) {
-                    var mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-                    mediaQuery.addListener(function (e) {
-                        if (themeMode === "auto") {
-                            document.body.classList.remove("gdpr-light-mode", "gdpr-dark-mode");
-                            if (e.matches) {
-                                document.body.classList.add("gdpr-dark-mode");
-                            } else {
-                                document.body.classList.add("gdpr-light-mode");
-                            }
-                        }
-                    });
-                }
-                break;
-        }
-    }
-
-    // Inline GDPR CSS injection removed; stylesheet is loaded server-side
 
     // -------------------------- Offline Data Handling -------------------------- //
     function storeOffline(payload) {
@@ -1216,4 +1191,106 @@ if (!window.requestIdleCallback) {
     // Setup interaction tracking
     setupClickDelegation();
     setupNavigationHooks();
+
+    /**
+     * Setup Consent Upgrade Handler
+     *
+     * Listens for consent events from various CMPs (Consent Management Platforms)
+     * and upgrades anonymous tracking to full PII tracking when consent is granted.
+     *
+     * Flow:
+     * 1. User visits site → Anonymous tracking (hashed IP, no cookies)
+     * 2. User grants consent → Consent event fired
+     * 3. AJAX request sent to upgrade existing pageview record
+     * 4. IP hash replaced with real IP, tracking cookie set
+     */
+    function setupConsentUpgradeHandler() {
+        var consentUpgradeSent = false;
+
+        /**
+         * Handle consent granted event
+         *
+         * When consent is granted:
+         * - If pageview already tracked → Upgrade it from hash to real IP
+         * - If no pageview yet → Do nothing, let normal tracking handle it with consent
+         */
+        function handleConsentGranted() {
+            // Prevent duplicate upgrade requests
+            if (consentUpgradeSent) {
+                return;
+            }
+
+            try {
+                var params = currentSlimStatParams();
+                var pageviewId = params.id ? parseInt(params.id, 10) : 0;
+
+                // If no pageview tracked yet, do nothing
+                // The next pageview will automatically use full tracking with consent
+                if (pageviewId <= 0) {
+                    return;
+                }
+
+                // Verify consent is actually granted (for WP Consent API only)
+                var integrationKey = params.consent_integration || "";
+                if (integrationKey === "wp_consent_api") {
+                    var cat = params.consent_level_integration || "statistics";
+                    if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(cat)) {
+                        return; // Consent not granted, skip upgrade
+                    }
+                }
+
+                // Mark as sent before making request to prevent duplicates
+                consentUpgradeSent = true;
+
+                // Send AJAX request to upgrade the existing pageview
+                var xhr = new XMLHttpRequest();
+                var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";
+                xhr.open("POST", ajaxUrl, true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (!response.success && console && console.warn) {
+                                console.warn("[SlimStat] Consent upgrade failed:", response.data ? response.data.message : "Unknown");
+                            }
+                        } catch (e) {
+                            if (console && console.error) {
+                                console.error("[SlimStat] Invalid upgrade response");
+                            }
+                        }
+                    } else if (console && console.error) {
+                        console.error("[SlimStat] Upgrade request failed:", xhr.status);
+                    }
+                };
+
+                xhr.onerror = function () {
+                    if (console && console.error) {
+                        console.error("[SlimStat] Upgrade network error");
+                    }
+                    // Reset flag on network error to allow retry
+                    consentUpgradeSent = false;
+                };
+
+                xhr.send("action=slimstat_consent_granted" + "&pageview_id=" + pageviewId + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || ""));
+            } catch (e) {
+                if (console && console.error) {
+                    console.error("[SlimStat] Consent upgrade error:", e);
+                }
+                consentUpgradeSent = false;
+            }
+        }
+
+        // Listen to various CMP consent events
+        document.addEventListener("cookieyes_consent_update", handleConsentGranted);
+        document.addEventListener("cookieyes_preferences_update", handleConsentGranted);
+        document.addEventListener("cli_consent_update", handleConsentGranted); // CookieLawInfo
+        document.addEventListener("wp_listen_load", handleConsentGranted); // WP Consent API
+        document.addEventListener("wp_consent_type_functional", handleConsentGranted); // WP Consent API - functional
+        document.addEventListener("wp_consent_type_statistics", handleConsentGranted); // WP Consent API - statistics
+    }
+
+    // Initialize consent upgrade handler
+    setupConsentUpgradeHandler();
 })();
