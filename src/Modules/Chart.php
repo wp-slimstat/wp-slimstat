@@ -54,6 +54,11 @@ class Chart
             \wp_slimstat_db::init();
         }
 
+        // Restore filters from args if provided
+        if (!empty($args['filters']) && is_array($args['filters'])) {
+            \wp_slimstat_db::$filters_normalized['columns'] = $args['filters'];
+        }
+
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
         \wp_slimstat_db::$filters_normalized['utime']['end']   = $args['end'];
         \wp_slimstat_db::$filters_normalized['utime']['range'] = $args['end'] - $args['start'];
@@ -118,6 +123,11 @@ class Chart
 
         $args['granularity'] = $this->detectGranularity($args);
         $args['rangeDays']   = $this->countDays($args['start'], $args['end']);
+
+        // Preserve active filters for AJAX requests
+        if (!isset($args['filters'])) {
+            $args['filters'] = \wp_slimstat_db::$filters_normalized['columns'] ?? [];
+        }
 
         return $args;
     }
@@ -236,6 +246,9 @@ class Chart
         $start = $args['start'];
         $end   = $args['end'];
 
+        // Build WHERE clause from active filters (excluding time filters)
+        $filterWhere = $this->buildFilterWhere();
+
         // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
         $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
@@ -285,8 +298,14 @@ class Chart
 
         $rowsQuery = Query::select($fields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', [$prevArgs['start'], $prevArgs['end'], $start, $end])
-            ->groupBy($dtExpr . ', period')
+            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
+
+        // Apply additional filters if any
+        if (!empty($filterWhere)) {
+            $rowsQuery->whereRaw($filterWhere);
+        }
+
+        $rowsQuery->groupBy($dtExpr . ', period')
             ->orderBy('sort_dt ASC, period ASC');
 
         // Build totals query via Query builder using index-friendly ranges (no CONVERT_TZ on column)
@@ -300,8 +319,14 @@ class Chart
         $totalsWhere  = '(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)';
         $totalsQuery  = Query::select($totalsFields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevStartAdj, $prevEndAdj, $startAdj, $endAdj])
-            ->groupBy('period')
+            ->whereRaw($totalsWhere, [$prevStartAdj, $prevEndAdj, $startAdj, $endAdj]);
+
+        // Apply additional filters if any
+        if (!empty($filterWhere)) {
+            $totalsQuery->whereRaw($filterWhere);
+        }
+
+        $totalsQuery->groupBy('period')
             ->orderBy('period ASC');
 
         return [
@@ -309,6 +334,47 @@ class Chart
             'totalsQuery' => $totalsQuery,
             'params'      => ['label' => $periods[$gran]['label'], 'gran' => $gran],
         ];
+    }
+
+    /**
+     * Build WHERE clause from active filters (excluding time filters)
+     *
+     * @return string SQL WHERE clause conditions or empty string
+     */
+    private function buildFilterWhere(): string
+    {
+        if (!class_exists('\wp_slimstat_db')) {
+            return '';
+        }
+
+        // Get active filters (excluding time filters)
+        if (empty(\wp_slimstat_db::$filters_normalized['columns'])) {
+            return '';
+        }
+
+        $whereClauses = [];
+
+        foreach (\wp_slimstat_db::$filters_normalized['columns'] as $column => $filterData) {
+            // Skip addon filters
+            if (false !== strpos($column, 'addon_')) {
+                continue;
+            }
+
+            $operator = $filterData[0] ?? 'equals';
+            $value    = $filterData[1] ?? '';
+
+            $clause = \wp_slimstat_db::get_single_where_clause($column, $operator, $value);
+
+            if (!empty($clause)) {
+                $whereClauses[] = $clause;
+            }
+        }
+
+        if (empty($whereClauses)) {
+            return '';
+        }
+
+        return implode(' AND ', $whereClauses);
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array

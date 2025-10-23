@@ -713,9 +713,9 @@ class Query
 
         if (!empty($this->rawWhereClause)) {
             if (!empty($this->whereClauses)) {
-                $query .= ' AND ' . implode(' ', $this->rawWhereClause);
+                $query .= ' AND ' . implode(' AND ', $this->rawWhereClause);
             } else {
-                $query .= ' WHERE ' . implode(' ', $this->rawWhereClause);
+                $query .= ' WHERE ' . implode(' AND ', $this->rawWhereClause);
             }
         }
 
