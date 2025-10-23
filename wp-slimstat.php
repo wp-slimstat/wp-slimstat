@@ -1714,33 +1714,6 @@ class wp_slimstat
         }
     }
 
-	/**
-	 * Displays the opt-out box via Ajax request
-	 */
-	public static function get_optout_html()
-	{
-		// Use new GDPR structure
-		$gdprProvider = GDPRFactory::create(self::$settings);
-		$controller = $gdprProvider->getController();
-		$controller->handleOptOutRequest();
-	}
-
-
-	/**
-	 * Enqueue GDPR consent styles
-	 */
-	public static function enqueue_gdpr_styles()
-	{
-		if ('on' == self::$settings['display_opt_out']) {
-			wp_enqueue_style(
-				'slimstat-gdpr-consent',
-				plugins_url('assets/css/gdpr-consent.css', __FILE__),
-				[],
-				SLIMSTAT_ANALYTICS_VERSION
-			);
-		}
-	}
-
     public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
     {
         $a_clean_slug = str_replace(['wp-slimstat-', '/index.php'], ['', ''], $_plugin_file);
