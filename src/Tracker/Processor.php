@@ -12,299 +12,301 @@ use SlimStat\Utils\Consent;
 
 class Processor
 {
-	public static function process()
-	{
-		// Consent gate: delegate to external CMPs via filter; SlimStat does not manage consent.
-		if (!Consent::canTrack()) {
-			return false;
-		}
+    public static function process()
+    {
+        // Consent gate: delegate to external CMPs via filter; SlimStat does not manage consent.
+        if (!Consent::canTrack()) {
+            return false;
+        }
 
-		// Get current stat with validation
-		$stat = \wp_slimstat::get_stat();
+        // Get current stat with validation
+        $stat = \wp_slimstat::get_stat();
 
-		$stat['dt'] = \wp_slimstat::date_i18n('U');
-		if (empty($stat['notes'])) {
-			$stat['notes'] = [];
-		}
+        $stat['dt'] = \wp_slimstat::date_i18n('U');
+        if (empty($stat['notes'])) {
+            $stat['notes'] = [];
+        }
 
-		$stat = apply_filters('slimstat_filter_pageview_stat_init', $stat);
-		if ($stat === [] || empty($stat['dt'])) {
-			return false;
-		}
+        $stat = apply_filters('slimstat_filter_pageview_stat_init', $stat);
+        if ($stat === [] || empty($stat['dt'])) {
+            return false;
+        }
 
-		unset($stat['id']);
+        unset($stat['id']);
 
-		// Remove legacy cookie-based opt-in/opt-out handling. CMPs should control tracking via hooks.
+        // Remove legacy cookie-based opt-in/opt-out handling. CMPs should control tracking via hooks.
 
-		[$stat['ip'], $stat['other_ip']] = Utils::getRemoteIp();
-		if (empty($stat['ip']) || '0.0.0.0' == $stat['ip']) {
-			Utils::logError(202);
-			return false;
-		}
+        [$stat['ip'], $stat['other_ip']] = Utils::getRemoteIp();
+        if (empty($stat['ip']) || '0.0.0.0' == $stat['ip']) {
+            Utils::logError(202);
+            return false;
+        }
 
-		// Store original IP for GeoIP lookup (before hashing)
-		$originalIpForGeo = $stat['ip'];
+        foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
+            $ipToIgnore = $ipRange;
+            if (false !== strpos($ipToIgnore, '/')) {
+                [$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
+            } else {
+                $cidr_mask = Utils::getMaskLength($ipToIgnore);
+            }
 
-		foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
-			$ipToIgnore = $ipRange;
-			if (false !== strpos($ipToIgnore, '/')) {
-				[$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
-			} else {
-				$cidr_mask = Utils::getMaskLength($ipToIgnore);
-			}
+            $longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
+            $longMaskedUserIp    = substr(Utils::dtrPton($stat['ip']), 0, $cidr_mask);
+            $longMaskedUserOther = substr(Utils::dtrPton($stat['other_ip']), 0, $cidr_mask);
+            if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+                return false;
+            }
+        }
 
-			$longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
-			$longMaskedUserIp    = substr(Utils::dtrPton($stat['ip']), 0, $cidr_mask);
-			$longMaskedUserOther = substr(Utils::dtrPton($stat['other_ip']), 0, $cidr_mask);
-			if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
-				return false;
-			}
-		}
+        // Store original IP for GeoIP lookup (before hashing)
+        $originalIpForGeo = $stat['ip'];
 
-		// Process IP address with anonymization and hashing (for GDPR compliance)
-		$stat = IPHashProvider::processIp($stat);
+        // Process IP address with anonymization and hashing (for GDPR compliance)
+        $stat = IPHashProvider::processIp($stat);
 
-		if (!isset($stat['resource'])) {
-			$stat['resource'] = \wp_slimstat::get_request_uri();
-		}
+        if (!isset($stat['resource'])) {
+            $stat['resource'] = \wp_slimstat::get_request_uri();
+        }
 
-		$stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
-		$stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function($m) { return '%' . bin2hex($m[0]); }, $stat['resource']);
-		$parsed_url = parse_url($stat['resource']);
-		if (!$parsed_url) {
-			Utils::logError(203);
-			return false;
-		}
-
-
-		$stat['resource'] = $parsed_url['path'] . (empty($parsed_url['query']) ? '' : '?' . $parsed_url['query']) . (empty($parsed_url['fragment']) ? '' : '#' . $parsed_url['fragment']);
-		if (!empty(\wp_slimstat::$settings['ignore_resources']) && Utils::isBlacklisted($stat['resource'], \wp_slimstat::$settings['ignore_resources'])) {
-			return false;
-		}
-
-		if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
-			$stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
-		}
+        $stat['resource'] = sanitize_text_field(urldecode($stat['resource']));
+        $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
+            return '%' . bin2hex($m[0]);
+        }, $stat['resource']);
+        $parsed_url = parse_url($stat['resource']);
+        if (!$parsed_url) {
+            Utils::logError(203);
+            return false;
+        }
 
 
-		if (!empty($stat['referer'])) {
-			$parsed_url = parse_url($stat['referer']);
-			if (!$parsed_url) {
-				Utils::logError(201);
-				return false;
-			}
+        $stat['resource'] = $parsed_url['path'] . (empty($parsed_url['query']) ? '' : '?' . $parsed_url['query']) . (empty($parsed_url['fragment']) ? '' : '#' . $parsed_url['fragment']);
+        if (!empty(\wp_slimstat::$settings['ignore_resources']) && Utils::isBlacklisted($stat['resource'], \wp_slimstat::$settings['ignore_resources'])) {
+            return false;
+        }
 
-			if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), ['http', 'https', 'android-app'])) {
-				$stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
-				unset($stat['referer']);
-			}
-
-			if (!empty(\wp_slimstat::$settings['ignore_referers']) && Utils::isBlacklisted($stat['referer'], \wp_slimstat::$settings['ignore_referers'])) {
-				return false;
-			}
+        if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
+            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
+        }
 
 
-			$stat['searchterms'] = Utils::getSearchTerms($stat['referer']);
-			$parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
-			if (isset($parsed_url['host']) && ('' !== $parsed_url['host'] && '0' !== $parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != \wp_slimstat::$settings['track_same_domain_referers']) {
-				unset($stat['referer']);
-			}
-		}
+        if (!empty($stat['referer'])) {
+            $parsed_url = parse_url($stat['referer']);
+            if (!$parsed_url) {
+                Utils::logError(201);
+                return false;
+            }
 
-		if (empty($stat['searchterms']) && !empty($_POST['s'])) {
-			$stat['searchterms'] = sanitize_text_field(str_replace('\\', '', $_REQUEST['s']));
-		}
+            if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), ['http', 'https', 'android-app'])) {
+                $stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
+                unset($stat['referer']);
+            }
 
-		if (!isset($stat['content_type'])) {
-			$content_info = Utils::getContentInfo();
-			if (!empty(\wp_slimstat::$settings['ignore_content_types']) && Utils::isBlacklisted($content_info['content_type'], \wp_slimstat::$settings['ignore_content_types'])) {
-				return false;
-			}
-
-			if (is_array($content_info)) {
-				$stat += $content_info;
-			}
-		}
-
-		if ((is_archive() || is_search()) && !empty($GLOBALS['wp_query']->found_posts)) {
-			$stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
-		}
-
-		if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
-			return false;
-		}
-
-		// Only collect PII (username, email) if consent allows it
-		$piiAllowed = Consent::piiAllowed();
-
-		if (!empty($GLOBALS['current_user']->ID)) {
-			if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
-				return false;
-			}
-
-			foreach ($GLOBALS['current_user']->roles as $capability) {
-				if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
-					return false;
-				}
-			}
-
-			if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
-				return false;
-			}
-
-			// Only store username/email if PII is allowed (consent granted in anonymous mode)
-			if ($piiAllowed) {
-				$stat['username'] = $GLOBALS['current_user']->data->user_login;
-				$stat['email']    = $GLOBALS['current_user']->data->user_email;
-				$stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
-			}
-			$not_spam = true;
-		} elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-			// Only check comment cookies if PII is allowed
-			// Use original IP (before hashing) for spam check with Query builder
-			$spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
-				->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
-				->where('comment_author_IP', '=', $originalIpForGeo)
-				->where('comment_approved', '=', 'spam')
-				->groupBy('comment_author')
-				->limit(1)
-				->getRow();
-
-			if (!empty($spam_comment)) {
-				if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
-					return false;
-				}
-
-				$stat['notes'][]  = 'spam:yes';
-				$stat['username'] = $spam_comment->comment_author;
-				$stat['email']    = $spam_comment->comment_author_email;
-			} else {
-				if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
-					$stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
-				}
-
-				if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
-					$stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
-				}
-			}
-		}
-
-		$stat['language'] = Utils::getLanguage();
-		if (!empty($stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) $stat['language'])) {
-			return false;
-		}
-
-		$geographicProvider = new GeoService();
-		if ($geographicProvider->isGeoIPEnabled()) {
-			try {
-				// Use original IP (before hashing) for GeoIP lookup
-				$geolocation_data = GeoIP::loader($originalIpForGeo);
-			} catch (\Exception $e) {
-				Utils::logError(205);
-				return false;
-			}
+            if (!empty(\wp_slimstat::$settings['ignore_referers']) && Utils::isBlacklisted($stat['referer'], \wp_slimstat::$settings['ignore_referers'])) {
+                return false;
+            }
 
 
-			if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
-				$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
-				if (!empty($geolocation_data['city']['names']['en'])) {
-					$stat['city'] = $geolocation_data['city']['names']['en'];
-				}
+            $stat['searchterms'] = Utils::getSearchTerms($stat['referer']);
+            $parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
+            if (isset($parsed_url['host']) && ('' !== $parsed_url['host'] && '0' !== $parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != \wp_slimstat::$settings['track_same_domain_referers']) {
+                unset($stat['referer']);
+            }
+        }
 
-				if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty($stat['city'])) {
-					$stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
-				}
+        if (empty($stat['searchterms']) && !empty($_POST['s'])) {
+            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', $_REQUEST['s']));
+        }
 
-				if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
-					$stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
-				}
-			}
+        if (!isset($stat['content_type'])) {
+            $content_info = Utils::getContentInfo();
+            if (!empty(\wp_slimstat::$settings['ignore_content_types']) && Utils::isBlacklisted($content_info['content_type'], \wp_slimstat::$settings['ignore_content_types'])) {
+                return false;
+            }
 
-			if (isset($stat['country']) && ($stat['country'] !== '' && $stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], (string) $stat['country'])) {
-				return false;
-			}
-		}
+            if (is_array($content_info)) {
+                $stat += $content_info;
+            }
+        }
 
-		if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
-			if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
-				return false;
-			} else {
-				$stat['notes'][] = 'pre:yes';
-			}
-		}
+        if ((is_archive() || is_search()) && !empty($GLOBALS['wp_query']->found_posts)) {
+            $stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
+        }
 
-		$browser = Browscap::get_browser();
-		if ('on' == \wp_slimstat::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
-			return false;
-		}
+        if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
+            return false;
+        }
 
-		if (!empty(\wp_slimstat::$settings['ignore_browsers']) && Utils::isBlacklisted([$browser['browser'], $browser['user_agent']], \wp_slimstat::$settings['ignore_browsers'])) {
-			return false;
-		}
+        // Only collect PII (username, email) if consent allows it
+        $piiAllowed = Consent::piiAllowed();
 
-		if (!empty(\wp_slimstat::$settings['ignore_platforms']) && Utils::isBlacklisted($browser['platform'], \wp_slimstat::$settings['ignore_platforms'])) {
-			return false;
-		}
+        if (!empty($GLOBALS['current_user']->ID)) {
+            if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
+                return false;
+            }
 
-		$stat += $browser;
+            foreach ($GLOBALS['current_user']->roles as $capability) {
+                if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
+                    return false;
+                }
+            }
 
-		// Update stat before ensureVisitId (which may need to read it)
-		\wp_slimstat::set_stat($stat);
-		$cookie_has_been_set = Session::ensureVisitId(false);
-		$stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
+            if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
+                return false;
+            }
 
-		$stat = apply_filters('slimstat_filter_pageview_stat', $stat);
-		do_action('slimstat_track_pageview', $stat);
-		if ($stat === [] || empty($stat['dt'])) {
-			return false;
-		}
+            // Only store username/email if PII is allowed (consent granted in anonymous mode)
+            if ($piiAllowed) {
+                $stat['username'] = $GLOBALS['current_user']->data->user_login;
+                $stat['email']    = $GLOBALS['current_user']->data->user_email;
+                $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
+            }
+            $not_spam = true;
+        } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
+            // Only check comment cookies if PII is allowed
+            // Use original IP (before hashing) for spam check with Query builder
+            $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+                ->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
+                ->where('comment_author_IP', '=', $originalIpForGeo)
+                ->where('comment_approved', '=', 'spam')
+                ->groupBy('comment_author')
+                ->limit(1)
+                ->getRow();
 
-		if (isset($stat['notes']) && $stat['notes'] !== []) {
-			$stat['notes'] = '[' . implode('][', $stat['notes']) . ']';
-		}
+            if (!empty($spam_comment)) {
+                if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
+                    return false;
+                }
 
-		$stat = array_filter($stat);
+                $stat['notes'][]  = 'spam:yes';
+                $stat['username'] = $spam_comment->comment_author;
+                $stat['email']    = $spam_comment->comment_author_email;
+            } else {
+                if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
+                    $stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+                }
 
-		// Update before insert
-		\wp_slimstat::set_stat($stat);
-		$stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+                if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
+                    $stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+                }
+            }
+        }
 
-		if (empty($stat['id'])) {
-			include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
-			\wp_slimstat_admin::init_environment();
-			$stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
-			if (empty($stat['id'])) {
-				Utils::logError(200);
-				return false;
-			}
-		}
+        $stat['language'] = Utils::getLanguage();
+        if (!empty($stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) $stat['language'])) {
+            return false;
+        }
 
-		// Update stat after getting ID
-		\wp_slimstat::set_stat($stat);
+        $geographicProvider = new GeoService();
+        if ($geographicProvider->isGeoIPEnabled()) {
+            try {
+                // Use original IP (before hashing) for GeoIP lookup
+                $geolocation_data = GeoIP::loader($originalIpForGeo);
+            } catch (\Exception $e) {
+                Utils::logError(205);
+                return false;
+            }
 
-		// Handle cookie setting using centralized Session class
-		// Cookies are ONLY set when consent allows (handled internally by Session::setTrackingCookie)
-		if (empty($stat['visit_id']) && !empty($stat['id'])) {
-			// No visit ID assigned yet - set cookie with pageview ID
-			// Cookie expires in 31 days (2678400 seconds)
-			Session::setTrackingCookie($stat['id'], 'id', 2678400);
-		} elseif (!$cookie_has_been_set && 'on' == \wp_slimstat::$settings['extend_session'] && $stat['visit_id'] > 0) {
-			// Extend existing session cookie
-			Session::setTrackingCookie($stat['visit_id'], 'visit');
-		}
 
-		return $stat['id'];
-	}
+            if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
+                $stat['country'] = strtolower($geolocation_data['country']['iso_code']);
+                if (!empty($geolocation_data['city']['names']['en'])) {
+                    $stat['city'] = $geolocation_data['city']['names']['en'];
+                }
 
-	public static function updateContentType($status = 301, $location = '')
-	{
-		if ($status >= 300 && $status < 400) {
-			$stat = \wp_slimstat::get_stat();
-			$stat['content_type'] = 'redirect:' . intval($status);
-			\wp_slimstat::set_stat($stat);
-			Storage::updateRow($stat);
-		}
+                if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty($stat['city'])) {
+                    $stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+                }
 
-		return $status;
-	}
+                if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
+                    $stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+                }
+            }
+
+            if (isset($stat['country']) && ($stat['country'] !== '' && $stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], (string) $stat['country'])) {
+                return false;
+            }
+        }
+
+        if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
+            if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
+                return false;
+            } else {
+                $stat['notes'][] = 'pre:yes';
+            }
+        }
+
+        $browser = Browscap::get_browser();
+        if ('on' == \wp_slimstat::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
+            return false;
+        }
+
+        if (!empty(\wp_slimstat::$settings['ignore_browsers']) && Utils::isBlacklisted([$browser['browser'], $browser['user_agent']], \wp_slimstat::$settings['ignore_browsers'])) {
+            return false;
+        }
+
+        if (!empty(\wp_slimstat::$settings['ignore_platforms']) && Utils::isBlacklisted($browser['platform'], \wp_slimstat::$settings['ignore_platforms'])) {
+            return false;
+        }
+
+        $stat += $browser;
+
+        // Update stat before ensureVisitId (which may need to read it)
+        \wp_slimstat::set_stat($stat);
+        $cookie_has_been_set = Session::ensureVisitId(false);
+        $stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
+
+        $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
+        do_action('slimstat_track_pageview', $stat);
+        if ($stat === [] || empty($stat['dt'])) {
+            return false;
+        }
+
+        if (isset($stat['notes']) && $stat['notes'] !== []) {
+            $stat['notes'] = '[' . implode('][', $stat['notes']) . ']';
+        }
+
+        $stat = array_filter($stat);
+
+        // Update before insert
+        \wp_slimstat::set_stat($stat);
+        $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+
+        if (empty($stat['id'])) {
+            include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
+            \wp_slimstat_admin::init_environment();
+            $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+            if (empty($stat['id'])) {
+                Utils::logError(200);
+                return false;
+            }
+        }
+
+        // Update stat after getting ID
+        \wp_slimstat::set_stat($stat);
+
+        // Handle cookie setting using centralized Session class
+        // Cookies are ONLY set when consent allows (handled internally by Session::setTrackingCookie)
+        if (empty($stat['visit_id']) && !empty($stat['id'])) {
+            // No visit ID assigned yet - set cookie with pageview ID
+            // Cookie expires in 31 days (2678400 seconds)
+            Session::setTrackingCookie($stat['id'], 'id', 2678400);
+        } elseif (!$cookie_has_been_set && 'on' == \wp_slimstat::$settings['extend_session'] && $stat['visit_id'] > 0) {
+            // Extend existing session cookie
+            Session::setTrackingCookie($stat['visit_id'], 'visit');
+        }
+
+        return $stat['id'];
+    }
+
+    public static function updateContentType($status = 301, $location = '')
+    {
+        if ($status >= 300 && $status < 400) {
+            $stat = \wp_slimstat::get_stat();
+            $stat['content_type'] = 'redirect:' . intval($status);
+            \wp_slimstat::set_stat($stat);
+            Storage::updateRow($stat);
+        }
+
+        return $status;
+    }
 }
