@@ -94,29 +94,10 @@ class ConsentHandler
 		// Cast to int after validation
 		$pageview_id = intval($pageview_id);
 
-		// Retrieve the visit_id associated with the current pageview
-		$table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
-		$visit_id = $GLOBALS['wpdb']->get_var(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT visit_id FROM {$table} WHERE id = %d",
-				$pageview_id
-			)
-		);
-
-		if (empty($visit_id)) {
-			wp_send_json_error([
-				'message' => __('Could not find the associated visit.', 'wp-slimstat'),
-			]);
-			return;
-		}
-
-		// Build stat array for upgrade
-		$stat = [
-			'visit_id' => $visit_id,
-		];
-
 		// Upgrade IP from hash to real IP
-		$stat = IPHashProvider::upgradeToPii($stat);
+		// Note: upgradeToPii() only retrieves current real IP and sets cookie,
+		// it doesn't need visit_id or any other pageview data
+		$stat = IPHashProvider::upgradeToPii([]);
 
 		// Add username and email if logged in
 		if (!empty($GLOBALS['current_user']->ID)) {
@@ -146,8 +127,8 @@ class ConsentHandler
 		}
 
 		// Update main PII fields if we have any
-		// GDPR-compliant: Only update the CURRENT pageview, not all pageviews in the visit
-		// Previous pageviews should remain anonymous as they were collected without consent
+		// GDPR-compliant: Only update the CURRENT pageview by ID
+		// Previous pageviews remain anonymous as they were collected without consent
 		if (!empty($update_data)) {
 			$updated = $GLOBALS['wpdb']->update(
 				$table,
