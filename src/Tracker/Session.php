@@ -234,6 +234,11 @@ class Session
 	 * Creates a deterministic visit ID from hashed IP + User Agent + daily salt.
 	 * This allows visit tracking in anonymous mode without cookies.
 	 *
+	 * IP Selection Strategy:
+	 * - Prefers other_ip (actual client IP from proxy headers like X-Forwarded-For)
+	 * - Falls back to primary IP (REMOTE_ADDR) when other_ip is not available
+	 * - This ensures unique visit IDs for users behind shared proxies/CDNs
+	 *
 	 * Properties:
 	 * - Same visitor = same visit ID (within same day)
 	 * - Changes daily (due to daily salt rotation)
@@ -256,13 +261,17 @@ class Session
 			$daily_salt = gmdate('Y-m-d') . AUTH_KEY;
 		}
 
-		// Get visitor's IP (use only primary IP for consistency, ignore other_ip which may vary)
+		// Get visitor's IP addresses
 		[$ip, $other_ip] = Utils::getRemoteIp();
 		$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
-		// Create deterministic hash using ONLY primary IP (not other_ip)
-		// This ensures consistency across requests, as other_ip may vary based on proxy headers
-		$hash_input = $daily_salt . '|' . $ip . '|' . $user_agent;
+		// Use other_ip (actual client IP from proxy headers) when available for better uniqueness
+		// Fallback to primary IP (REMOTE_ADDR) when not behind a proxy
+		// This prevents multiple users behind the same proxy from getting identical visit IDs
+		$client_ip = !empty($other_ip) ? $other_ip : $ip;
+
+		// Create deterministic hash using client IP + User Agent + daily salt
+		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent;
 		$hash       = hash_hmac('sha256', $hash_input, AUTH_KEY);
 
 		// Convert first 8 characters of hash to integer (32-bit)
