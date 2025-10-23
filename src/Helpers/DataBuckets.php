@@ -233,7 +233,7 @@ class DataBuckets
     {
         foreach (['v1', 'v2'] as $k) {
             if (isset($this->datasets[$k][-1])) {
-                $newKeys            = array_map(function($key) { return $key + 1; }, array_keys($this->datasets[$k]));
+                $newKeys            = array_map(fn($key) => $key + 1, array_keys($this->datasets[$k]));
                 $this->datasets[$k] = array_combine($newKeys, array_values($this->datasets[$k]));
                 ksort($this->datasets[$k]);
                 if (empty(end($this->datasets[$k]))) {
@@ -242,7 +242,7 @@ class DataBuckets
             }
 
             if (isset($this->datasetsPrev[$k][-1])) {
-                $newKeys                = array_map(function($key) { return $key + 1; }, array_keys($this->datasetsPrev[$k]));
+                $newKeys                = array_map(fn($key) => $key + 1, array_keys($this->datasetsPrev[$k]));
                 $this->datasetsPrev[$k] = array_combine($newKeys, array_values($this->datasetsPrev[$k]));
                 ksort($this->datasetsPrev[$k]);
                 if (empty(end($this->datasetsPrev[$k]))) {
