@@ -59,7 +59,9 @@ class Processor
         }
 
         // Store original IP for GeoIP lookup (before hashing)
-        $originalIpForGeo = $stat['ip'];
+        // Prioritize other_ip (actual client IP from proxy headers) for better accuracy
+        // This matches the IP selection logic in Session::generateAnonymousVisitId()
+        $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
         // Process IP address with anonymization and hashing (for GDPR compliance)
         $stat = IPHashProvider::processIp($stat);
