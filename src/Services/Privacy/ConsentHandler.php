@@ -78,14 +78,21 @@ class ConsentHandler
 			return;
 		}
 
-		// Get current pageview ID from request
-		$pageview_id = isset($_POST['pageview_id']) ? intval($_POST['pageview_id']) : 0;
-		if ($pageview_id <= 0) {
+		// Get current pageview ID from request and validate checksum
+		$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
+
+		// Validate checksum to prevent tampering
+		$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+
+		if (false === $pageview_id || $pageview_id <= 0) {
 			wp_send_json_error([
-				'message' => __('Invalid pageview ID.', 'wp-slimstat'),
+				'message' => __('Invalid or tampered pageview ID.', 'wp-slimstat'),
 			]);
 			return;
 		}
+
+		// Cast to int after validation
+		$pageview_id = intval($pageview_id);
 
 		// Retrieve the visit_id associated with the current pageview
 		$table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
