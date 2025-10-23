@@ -636,7 +636,13 @@ var SlimStat = (function () {
         var run = function () {
             // FingerprintJS v4 async init; if it fails, proceed without fingerprint
             try {
-                var fpPromise = FingerprintJS.load ? FingerprintJS.load() : null;
+                // Safely check if FingerprintJS library is available
+                var fpPromise = null;
+                if (typeof FingerprintJS !== "undefined" && FingerprintJS.load) {
+                    fpPromise = FingerprintJS.load();
+                }
+
+                // Only proceed with promise chain if we have a valid promise
                 if (fpPromise && typeof fpPromise.then === "function") {
                     fpPromise
                         .then(function (fp) {
