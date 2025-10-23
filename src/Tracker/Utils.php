@@ -57,12 +57,12 @@ class Utils
 			return false;
 		}
 
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-		$query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
-		$today = date('Y-m-d');
-		if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
-			$query->allowCaching(true);
-		}
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
+        $today = date('Y-m-d');
+        if (!empty(\wp_slimstat::$stat['dt']) && is_numeric(\wp_slimstat::$stat['dt']) && \wp_slimstat::$stat['dt'] > 0 && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
+            $query->allowCaching(true);
+        }
 
 		$countFingerprint = $query->getVar();
 		return 0 == $countFingerprint;
