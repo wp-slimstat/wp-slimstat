@@ -325,7 +325,13 @@ class Utils
 				if (Consent::piiAllowed()) {
 					$stat['fingerprint'] = sanitize_text_field($dataJs['fh']);
 				}
-			} catch (\Throwable $e) {}
+			} catch (\Throwable $e) {
+				// Log the error without exposing personal data; fail-safe to GDPR by not storing fingerprint
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('SlimStat: Failed to check PII consent status - ' . $e->getMessage());
+				}
+				// Fingerprint not stored when consent check fails (GDPR-safe default)
+			}
 		}
 
 		if (!empty($dataJs['tz'])) {
