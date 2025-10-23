@@ -46,7 +46,9 @@ class Session
 		if ($isAnonymousTracking && !Consent::piiAllowed()) {
 			// Generate deterministic visit ID from hashed IP + User Agent + daily salt
 			$identifier = self::generateAnonymousVisitId();
-			\wp_slimstat::$stat['visit_id'] = $identifier;
+			$stat = \wp_slimstat::get_stat();
+			$stat['visit_id'] = $identifier;
+			\wp_slimstat::set_stat($stat);
 			// Return true because we assigned a visit ID (even though no cookie was set)
 			return true;
 		}
@@ -101,22 +103,27 @@ class Session
 			}
 
 			// Assign visit ID
-			\wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
+			$stat = \wp_slimstat::get_stat();
+			$stat['visit_id'] = intval($next_visit_id);
+			\wp_slimstat::set_stat($stat);
 
 			// Set cookie ONLY if consent allows - this is the CENTRAL cookie setting point
-			self::setTrackingCookie(\wp_slimstat::$stat['visit_id'], 'visit');
+			self::setTrackingCookie($stat['visit_id'], 'visit');
 
 			// Return true because we assigned a new visit ID (regardless of cookie success)
 			return true;
 		} elseif ($identifier > 0) {
 			// Existing visit - use identifier from cookie
-			\wp_slimstat::$stat['visit_id'] = $identifier;
+			$stat = \wp_slimstat::get_stat();
+			$stat['visit_id'] = $identifier;
+			\wp_slimstat::set_stat($stat);
 		}
 
 		// Update old pageview records with visit ID (for JS mode upgrade path)
 		if ($is_new_session && $identifier > 0) {
+			$stat = \wp_slimstat::get_stat();
 			Query::update($GLOBALS['wpdb']->prefix . 'slim_stats')
-				->set(['visit_id' => \wp_slimstat::$stat['visit_id']])
+				->set(['visit_id' => $stat['visit_id']])
 				->where('id', '=', $identifier)
 				->where('visit_id', '=', 0)
 				->execute();
@@ -288,6 +295,7 @@ class Session
 	 */
 	public static function getVisitId(): int
 	{
-		return (int) (\wp_slimstat::$stat['visit_id'] ?? 0);
+		$stat = \wp_slimstat::get_stat();
+		return (int) ($stat['visit_id'] ?? 0);
 	}
 }

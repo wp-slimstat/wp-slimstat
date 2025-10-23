@@ -125,20 +125,25 @@ class Tracker
                 } while ($existing_visit_id !== null);
             }
 
-            \wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
+            $stat = \wp_slimstat::get_stat();
+            $stat['visit_id'] = intval($next_visit_id);
+            \wp_slimstat::set_stat($stat);
 
             $set_cookie = apply_filters('slimstat_set_visit_cookie', (!empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie']));
             if ($set_cookie) {
-                @setcookie('slimstat_tracking_code', self::_get_value_with_checksum(\wp_slimstat::$stat['visit_id']), ['expires' => time() + \wp_slimstat::$settings['session_duration'], 'path' => COOKIEPATH]);
+                @setcookie('slimstat_tracking_code', self::_get_value_with_checksum($stat['visit_id']), ['expires' => time() + \wp_slimstat::$settings['session_duration'], 'path' => COOKIEPATH]);
             }
 
         } elseif ($identifier > 0) {
-            \wp_slimstat::$stat['visit_id'] = $identifier;
+            $stat = \wp_slimstat::get_stat();
+            $stat['visit_id'] = $identifier;
+            \wp_slimstat::set_stat($stat);
         }
 
         if ($is_new_session && $identifier > 0) {
+            $stat = \wp_slimstat::get_stat();
             Query::update($GLOBALS['wpdb']->prefix . 'slim_stats')
-                ->set(['visit_id' => \wp_slimstat::$stat['visit_id']])
+                ->set(['visit_id' => $stat['visit_id']])
                 ->where('id', '=', $identifier)
                 ->where('visit_id', '=', 0)
                 ->execute();
@@ -374,7 +379,8 @@ class Tracker
     public static function _log_error($_error_code = 0)
     {
         \wp_slimstat::update_option('slimstat_tracker_error', [$_error_code, \wp_slimstat::date_i18n('U')]);
-        do_action('slimstat_track_exit_' . abs($_error_code), \wp_slimstat::$stat);
+        $stat = \wp_slimstat::get_stat();
+        do_action('slimstat_track_exit_' . abs($_error_code), $stat);
         return -$_error_code;
     }
 
@@ -424,7 +430,8 @@ class Tracker
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
         $today = date('Y-m-d');
-        if (!empty(\wp_slimstat::$stat['dt']) && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
+        $stat = \wp_slimstat::get_stat();
+        if (!empty($stat['dt']) && date('Y-m-d', $stat['dt']) < $today) {
             $query->allowCaching(true);
         }
 

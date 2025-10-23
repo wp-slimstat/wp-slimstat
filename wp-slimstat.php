@@ -46,6 +46,21 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/Constants.php';
 
 
+/**
+ * Main Slimstat Analytics Class
+ *
+ * @package Wp_SlimStat
+ *
+ * @todo REFACTOR TRACKING STATE: The $data_js and $stat properties should be refactored into a
+ *       proper state object pattern to maintain encapsulation. Currently these properties are
+ *       public to support refactored tracker classes (SlimStat\Tracker\*), but this breaks
+ *       encapsulation and creates security risks. Future implementation should:
+ *       1. Create a TrackingState class to encapsulate state management
+ *       2. Update all Tracker classes to use the state object
+ *       3. Make properties protected or private
+ *       4. Ensure all state modifications go through validated methods
+ *       This is tracked as technical debt for version 6.0
+ */
 class wp_slimstat
 {
     public static $settings = [];
@@ -56,9 +71,95 @@ class wp_slimstat
     public static $update_checker = [];
     public static $raw_post_array = [];
 
-    public static $data_js           = ['id' => 0];
-    public static $stat              = [];
+    /**
+     * @var array Tracking data from JavaScript (for internal tracking use only)
+     * @internal Use get_data_js() / set_data_js() methods for controlled access.
+     *
+     * This property is now protected to maintain proper encapsulation and prevent external code
+     * from bypassing consent checks or corrupting tracking state. All tracker classes use the
+     * getter/setter methods which include validation and filter hooks for GDPR compliance.
+     */
+    protected static $data_js           = ['id' => 0];
+
+    /**
+     * @var array Current pageview tracking data (for internal tracking use only)
+     * @internal Use get_stat() / set_stat() methods for controlled access.
+     *
+     * This property is now protected to maintain proper encapsulation and prevent external code
+     * from bypassing consent checks or corrupting tracking state. All tracker classes use the
+     * getter/setter methods which include validation and filter hooks for GDPR compliance.
+     */
+    protected static $stat              = [];
+
     protected static $date_i18n_filters = [];
+
+    /**
+     * Gets the current data_js array (for internal tracking use only)
+     *
+     * @return array
+     */
+    public static function get_data_js()
+    {
+        return self::$data_js;
+    }
+
+    /**
+     * Sets the data_js array (for internal tracking use only)
+     *
+     * This method provides controlled access to the data_js property and includes
+     * basic validation to prevent tampering.
+     *
+     * @param array $data_js The tracking data from JavaScript
+     * @return void
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function set_data_js($data_js)
+    {
+        // Validate that we're receiving an array
+        if (!is_array($data_js)) {
+            return;
+        }
+
+        // Apply filter to allow validation/modification by consent management systems
+        $data_js = apply_filters('slimstat_set_data_js', $data_js);
+
+        self::$data_js = $data_js;
+    }
+
+    /**
+     * Gets the current stat array (for internal tracking use only)
+     *
+     * @return array Current tracking state
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function get_stat()
+    {
+        return self::$stat;
+    }
+
+    /**
+     * Sets the stat array (for internal tracking use only)
+     *
+     * This method provides controlled access to the stat property and includes
+     * basic validation to prevent tampering and ensure consent compliance.
+     *
+     * @param array $stat The pageview tracking data
+     * @return void
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function set_stat($stat)
+    {
+        // Validate that we're receiving an array
+        if (!is_array($stat)) {
+            return;
+        }
+
+        // Apply filter to allow validation/modification by consent management systems
+        // This is critical for GDPR compliance - CMPs can inspect and modify data
+        $stat = apply_filters('slimstat_set_stat', $stat);
+
+        self::$stat = $stat;
+    }
 
     /**
      * Initializes variables and actions

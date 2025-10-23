@@ -10,7 +10,8 @@ class Utils
 	public static function logError($errorCode = 0)
 	{
 		\wp_slimstat::update_option('slimstat_tracker_error', [$errorCode, \wp_slimstat::date_i18n('U')]);
-		do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::$stat);
+		$stat = \wp_slimstat::get_stat();
+		do_action('slimstat_track_exit_' . abs($errorCode), $stat);
 		return -$errorCode;
 	}
 
@@ -60,7 +61,8 @@ class Utils
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
         $today = date('Y-m-d');
-        if (!empty(\wp_slimstat::$stat['dt']) && is_numeric(\wp_slimstat::$stat['dt']) && \wp_slimstat::$stat['dt'] > 0 && date('Y-m-d', \wp_slimstat::$stat['dt']) < $today) {
+        $stat = \wp_slimstat::get_stat();
+        if (!empty($stat['dt']) && is_numeric($stat['dt']) && $stat['dt'] > 0 && date('Y-m-d', $stat['dt']) < $today) {
             $query->allowCaching(true);
         }
 
