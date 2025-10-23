@@ -39,9 +39,7 @@ var SlimStat = (function () {
 
     function flushPendingInteractions() {
         if (!pendingInteractions.length) return;
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
+        var params = currentSlimStatParams();
         if (!params.id || parseInt(params.id, 10) <= 0) return; // still can't flush
         while (pendingInteractions.length) {
             var raw = pendingInteractions.shift();
@@ -283,9 +281,7 @@ var SlimStat = (function () {
     }
 
     function processQueueItem(item, callback) {
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
+        var params = currentSlimStatParams();
         var payload = item.payload;
         var useBeacon = item.useBeacon;
         var transports = ["rest", "ajax", "adblock_bypass"];
@@ -501,15 +497,13 @@ var SlimStat = (function () {
         options = options || {};
         extractSlimStatParams();
 
-        // Ensure global object exists and get params directly
-        if (!window.SlimStatParams) window.SlimStatParams = {};
-        var params = window.SlimStatParams;
+        var params = currentSlimStatParams();
 
         // ============================================================================
         // CONSENT LOGIC - Must exactly mirror PHP Consent::piiAllowed() logic
         // ============================================================================
 
-        var s = window.SlimStatParams || {};
+        var s = params;
         var anonMode = s.anonymous_tracking === "on";
         var setCookie = s.set_tracker_cookie === "on";
         var anonymizeIP = s.anonymize_ip === "on";
@@ -872,7 +866,7 @@ if (!window.requestIdleCallback) {
     }
 
     function finalizeCurrent(reason) {
-        var p = window.SlimStatParams || {};
+        var p = currentSlimStatParams();
         if (!p.id || parseInt(p.id, 10) <= 0 || finalizedPageviews[p.id]) return; // no pageview id yet or already finalized
 
         var now = Date.now();
@@ -893,13 +887,13 @@ if (!window.requestIdleCallback) {
 
     // Observe for parameter mutations (meta tag or script changes)
     // Only observe if we don't have an ID yet (to avoid unnecessary tracking requests)
-    var lastParams = JSON.stringify(window.SlimStatParams || {});
+    var lastParams = JSON.stringify(currentSlimStatParams());
     var observer = new MutationObserver(function () {
-        var params = window.SlimStatParams || {};
+        var params = currentSlimStatParams();
         // Only extract params if we don't have an ID yet (initial page load)
         if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
             SlimStat._extract_params();
-            var serialized = JSON.stringify(window.SlimStatParams || {});
+            var serialized = JSON.stringify(currentSlimStatParams());
             if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
         }
     });
@@ -1023,21 +1017,21 @@ if (!window.requestIdleCallback) {
     // Use multiple lifecycle signals to improve reliability across SPA / tab discard / mobile browsers
     SlimStat.add_event(document, "visibilitychange", function () {
         // Only finalize if we have an active ID and the page is actually hidden
-        var params = window.SlimStatParams || {};
+        var params = currentSlimStatParams();
         if (document.visibilityState === "hidden" && params.id && parseInt(params.id, 10) > 0) {
             debouncedFinalize("visibility");
         }
     });
     SlimStat.add_event(window, "pagehide", function () {
         // Only finalize if we have an active ID
-        var params = window.SlimStatParams || {};
+        var params = currentSlimStatParams();
         if (params.id && parseInt(params.id, 10) > 0) {
             debouncedFinalize("pagehide");
         }
     });
     SlimStat.add_event(window, "beforeunload", function () {
         // Only finalize if we have an active ID
-        var params = window.SlimStatParams || {};
+        var params = currentSlimStatParams();
         if (params.id && parseInt(params.id, 10) > 0) {
             debouncedFinalize("beforeunload");
         }
@@ -1047,7 +1041,7 @@ if (!window.requestIdleCallback) {
     var finalizationTimeout = null;
     function debouncedFinalize(reason) {
         // Don't finalize if already finalized for this pageview ID
-        var p = window.SlimStatParams || {};
+        var p = currentSlimStatParams();
         if (!p.id || finalizedPageviews[p.id]) return;
 
         if (finalizationTimeout) {
