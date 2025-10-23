@@ -19,10 +19,11 @@ use SlimStat\Utils\Query;
  * =============
  * 1. User visits site → Anonymous tracking (hashed IP, no cookies, no username)
  * 2. User grants consent → JavaScript sends AJAX request to this handler
- * 3. Handler updates the current pageview record with full PII:
+ * 3. Handler updates ONLY the current pageview record with full PII:
  *    - Replaces hashed IP with real IP
  *    - Sets tracking cookie
  *    - Stores username/email if logged in
+ *    - Previous pageviews in the same session remain anonymous (GDPR-compliant)
  * 4. Future pageviews use full tracking with PII
  *
  * Revocation Flow:
@@ -138,11 +139,13 @@ class ConsentHandler
 		}
 
 		// Update main PII fields if we have any
+		// GDPR-compliant: Only update the CURRENT pageview, not all pageviews in the visit
+		// Previous pageviews should remain anonymous as they were collected without consent
 		if (!empty($update_data)) {
 			$updated = $GLOBALS['wpdb']->update(
 				$table,
 				$update_data,
-				['visit_id' => $visit_id], // Update all records for this visit
+				['id' => $pageview_id], // Update only this specific pageview
 				array_fill(0, count($update_data), '%s'), // Data types
 				['%d'] // Where format
 			);
@@ -155,13 +158,13 @@ class ConsentHandler
 			}
 		}
 
-		// Handle notes separately - check if notes already contain this user marker to prevent duplicates
+		// Handle notes separately - only for this pageview
 		if (!empty($stat['notes'])) {
-			// Check if any record in this visit already has this user note
+			// Check if this specific pageview already has this user note
 			$existing_note = $GLOBALS['wpdb']->get_var(
 				$GLOBALS['wpdb']->prepare(
-					"SELECT notes FROM {$table} WHERE visit_id = %d AND notes LIKE %s LIMIT 1",
-					$visit_id,
+					"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
+					$pageview_id,
 					'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
 				)
 			);
@@ -170,9 +173,9 @@ class ConsentHandler
 			if (empty($existing_note)) {
 				$notes_updated = $GLOBALS['wpdb']->query(
 					$GLOBALS['wpdb']->prepare(
-						"UPDATE {$table} SET notes = CONCAT(notes, %s) WHERE visit_id = %d",
+						"UPDATE {$table} SET notes = CONCAT(notes, %s) WHERE id = %d",
 						$stat['notes'],
-						$visit_id
+						$pageview_id
 					)
 				);
 
