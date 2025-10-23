@@ -565,7 +565,7 @@ var SlimStat = (function () {
                     try {
                         var consentApi = window.consentApi;
                         if (consentApi && typeof consentApi.consentSync === "function") {
-                            var consent = consentApi.consentSync("analytics-with-data-processing");
+                            var consent = consentApi.consentSync(consentLevel);
                             cmpAllows = !!(consent && consent.cookie != null && consent.cookieOptIn);
                         } else {
                             cmpAllows = false;
