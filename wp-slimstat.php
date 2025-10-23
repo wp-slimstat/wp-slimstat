@@ -1590,7 +1590,7 @@ class wp_slimstat
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
         // Expose consent/DNT info to client
-        $params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'functional' : 'disabled';
+        $params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
         $params['consent_integration'] = self::$settings['consent_integration'] ?? '';
         $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'functional');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
