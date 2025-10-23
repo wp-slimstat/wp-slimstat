@@ -7,12 +7,15 @@
 - **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
 - **New**: Do Not Track (DNT) header respect with configurable option in settings.
 - **New**: Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
+- **New**: GDPR-compliant salted hash IP address functionality with daily salt rotation for enhanced privacy protection.
+- **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 - **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
 - **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
 - **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
-- **Enhancement**: Enhanced code quality with proper namespace imports instead of fully qualified class names.
+- **Enhancement**: Enhanced code quality with proper namespace imports and Query builder pattern throughout.
 - **Enhancement**: Conditional fingerprint storage - only collected when PII is allowed.
 - **Enhancement**: Better privacy controls - anonymous tracking option prevents all PII collection.
+- **Enhancement**: Code modernization with arrow functions and improved caching in Query class.
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 
 = 5.3.1 - 2025-09-09 =

@@ -2,6 +2,7 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Utils\Query;
 use SlimStat\Services\Browscap;
 use SlimStat\Services\Privacy;
 use SlimStat\Services\GeoService;
@@ -32,33 +33,33 @@ class Processor
 
 		// Remove legacy cookie-based opt-in/opt-out handling. CMPs should control tracking via hooks.
 
-	[\wp_slimstat::$stat['ip'], \wp_slimstat::$stat['other_ip']] = Utils::getRemoteIp();
-	if (empty(\wp_slimstat::$stat['ip']) || '0.0.0.0' == \wp_slimstat::$stat['ip']) {
-		Utils::logError(202);
-		return false;
-	}
-
-	// Store original IP for GeoIP lookup (before hashing)
-	$originalIpForGeo = \wp_slimstat::$stat['ip'];
-
-	foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
-		$ipToIgnore = $ipRange;
-		if (false !== strpos($ipToIgnore, '/')) {
-			[$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
-		} else {
-			$cidr_mask = Utils::getMaskLength($ipToIgnore);
-		}
-
-		$longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
-		$longMaskedUserIp    = substr(Utils::dtrPton(\wp_slimstat::$stat['ip']), 0, $cidr_mask);
-		$longMaskedUserOther = substr(Utils::dtrPton(\wp_slimstat::$stat['other_ip']), 0, $cidr_mask);
-		if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+		[\wp_slimstat::$stat['ip'], \wp_slimstat::$stat['other_ip']] = Utils::getRemoteIp();
+		if (empty(\wp_slimstat::$stat['ip']) || '0.0.0.0' == \wp_slimstat::$stat['ip']) {
+			Utils::logError(202);
 			return false;
 		}
-	}
 
-	// Process IP address with anonymization and hashing (for GDPR compliance)
-	\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
+		// Store original IP for GeoIP lookup (before hashing)
+		$originalIpForGeo = \wp_slimstat::$stat['ip'];
+
+		foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
+			$ipToIgnore = $ipRange;
+			if (false !== strpos($ipToIgnore, '/')) {
+				[$ipToIgnore, $cidr_mask] = explode('/', trim($ipToIgnore));
+			} else {
+				$cidr_mask = Utils::getMaskLength($ipToIgnore);
+			}
+
+			$longMaskedToIgnore  = substr(Utils::dtrPton($ipToIgnore), 0, $cidr_mask);
+			$longMaskedUserIp    = substr(Utils::dtrPton(\wp_slimstat::$stat['ip']), 0, $cidr_mask);
+			$longMaskedUserOther = substr(Utils::dtrPton(\wp_slimstat::$stat['other_ip']), 0, $cidr_mask);
+			if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+				return false;
+			}
+		}
+
+		// Process IP address with anonymization and hashing (for GDPR compliance)
+		\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
 
 		if (!isset(\wp_slimstat::$stat['resource'])) {
 			\wp_slimstat::$stat['resource'] = \wp_slimstat::get_request_uri();
@@ -72,6 +73,7 @@ class Processor
 			return false;
 		}
 
+
 		\wp_slimstat::$stat['resource'] = $parsed_url['path'] . (empty($parsed_url['query']) ? '' : '?' . $parsed_url['query']) . (empty($parsed_url['fragment']) ? '' : '#' . $parsed_url['fragment']);
 		if (!empty(\wp_slimstat::$settings['ignore_resources']) && Utils::isBlacklisted(\wp_slimstat::$stat['resource'], \wp_slimstat::$settings['ignore_resources'])) {
 			return false;
@@ -80,6 +82,7 @@ class Processor
 		if (empty(\wp_slimstat::$stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
 			\wp_slimstat::$stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
 		}
+
 
 		if (!empty(\wp_slimstat::$stat['referer'])) {
 			$parsed_url = parse_url(\wp_slimstat::$stat['referer']);
@@ -96,6 +99,7 @@ class Processor
 			if (!empty(\wp_slimstat::$settings['ignore_referers']) && Utils::isBlacklisted(\wp_slimstat::$stat['referer'], \wp_slimstat::$settings['ignore_referers'])) {
 				return false;
 			}
+
 
 			\wp_slimstat::$stat['searchterms'] = Utils::getSearchTerms(\wp_slimstat::$stat['referer']);
 			$parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
@@ -127,72 +131,76 @@ class Processor
 			return false;
 		}
 
-	// Only collect PII (username, email) if consent allows it
-	$piiAllowed = Consent::piiAllowed();
+		// Only collect PII (username, email) if consent allows it
+		$piiAllowed = Consent::piiAllowed();
 
-	if (!empty($GLOBALS['current_user']->ID)) {
-		if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
-			return false;
-		}
-
-		foreach ($GLOBALS['current_user']->roles as $capability) {
-			if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
-				return false;
-			}
-		}
-
-		if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
-			return false;
-		}
-
-		// Only store username/email if PII is allowed (consent granted in anonymous mode)
-		if ($piiAllowed) {
-			\wp_slimstat::$stat['username'] = $GLOBALS['current_user']->data->user_login;
-			\wp_slimstat::$stat['email']    = $GLOBALS['current_user']->data->user_email;
-			\wp_slimstat::$stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
-		}
-		$not_spam = true;
-	} elseif ($piiAllowed && isset($_COOKIE['comment_author_'.COOKIEHASH])) {
-		// Only check comment cookies if PII is allowed
-		// Use original IP (before hashing) for spam check
-		$spam_comment = \wp_slimstat::$wpdb->get_row(\wp_slimstat::$wpdb->prepare('
-                SELECT comment_author, comment_author_email, COUNT(*) comment_count
-                FROM `'.DB_NAME."`.{$GLOBALS['wpdb']->comments}
-                WHERE comment_author_IP = %s AND comment_approved = 'spam'
-                GROUP BY comment_author
-                LIMIT 0,1", $originalIpForGeo), ARRAY_A);
-		if (!empty($spam_comment['comment_count'])) {
-			if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
+		if (!empty($GLOBALS['current_user']->ID)) {
+			if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
 				return false;
 			}
 
-			\wp_slimstat::$stat['notes'][]  = 'spam:yes';
-			\wp_slimstat::$stat['username'] = $spam_comment['comment_author'];
-			\wp_slimstat::$stat['email']    = $spam_comment['comment_author_email'];
-		}
-		elseif (!empty($_COOKIE['comment_author_'.COOKIEHASH])) {
-			\wp_slimstat::$stat['username'] = sanitize_user($_COOKIE['comment_author_'.COOKIEHASH]);
+			foreach ($GLOBALS['current_user']->roles as $capability) {
+				if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
+					return false;
+				}
+			}
 
-			if (!empty($_COOKIE['comment_author_email_'.COOKIEHASH])) {
-				\wp_slimstat::$stat['email'] = sanitize_email($_COOKIE['comment_author_email_'.COOKIEHASH]);
+			if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
+				return false;
+			}
+
+			// Only store username/email if PII is allowed (consent granted in anonymous mode)
+			if ($piiAllowed) {
+				\wp_slimstat::$stat['username'] = $GLOBALS['current_user']->data->user_login;
+				\wp_slimstat::$stat['email']    = $GLOBALS['current_user']->data->user_email;
+				\wp_slimstat::$stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
+			}
+			$not_spam = true;
+		} elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
+			// Only check comment cookies if PII is allowed
+			// Use original IP (before hashing) for spam check with Query builder
+			$spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+				->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
+				->where('comment_author_IP', '=', $originalIpForGeo)
+				->where('comment_approved', '=', 'spam')
+				->groupBy('comment_author')
+				->limit(1)
+				->getRow();
+
+			if (!empty($spam_comment)) {
+				if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
+					return false;
+				}
+
+				\wp_slimstat::$stat['notes'][]  = 'spam:yes';
+				\wp_slimstat::$stat['username'] = $spam_comment->comment_author;
+				\wp_slimstat::$stat['email']    = $spam_comment->comment_author_email;
+			} else {
+				if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
+					\wp_slimstat::$stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+				}
+
+				if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
+					\wp_slimstat::$stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+				}
 			}
 		}
-	}
 
 		\wp_slimstat::$stat['language'] = Utils::getLanguage();
 		if (!empty(\wp_slimstat::$stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) \wp_slimstat::$stat['language'])) {
 			return false;
 		}
 
-	$geographicProvider = new GeoService();
-	if ($geographicProvider->isGeoIPEnabled()) {
-		try {
-			// Use original IP (before hashing) for GeoIP lookup
-			$geolocation_data = GeoIP::loader($originalIpForGeo);
-		} catch (\Exception $e) {
-			Utils::logError(205);
-			return false;
-		}
+		$geographicProvider = new GeoService();
+		if ($geographicProvider->isGeoIPEnabled()) {
+			try {
+				// Use original IP (before hashing) for GeoIP lookup
+				$geolocation_data = GeoIP::loader($originalIpForGeo);
+			} catch (\Exception $e) {
+				Utils::logError(205);
+				return false;
+			}
+
 
 			if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
 				\wp_slimstat::$stat['country'] = strtolower($geolocation_data['country']['iso_code']);
@@ -234,6 +242,7 @@ class Processor
 		if (!empty(\wp_slimstat::$settings['ignore_platforms']) && Utils::isBlacklisted($browser['platform'], \wp_slimstat::$settings['ignore_platforms'])) {
 			return false;
 		}
+
 
 		\wp_slimstat::$stat += $browser;
 

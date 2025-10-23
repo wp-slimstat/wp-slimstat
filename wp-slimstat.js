@@ -134,7 +134,10 @@ var SlimStat = (function () {
     }
 
     function getComponentValue(components, key, def) {
-        for (var i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
+        // FingerprintJS v4 API - components is now an object with component names as keys
+        if (components && components[key] && components[key].value !== undefined) {
+            return components[key].value;
+        }
         return def;
     }
 
@@ -172,7 +175,7 @@ var SlimStat = (function () {
     // -------------------------- Fingerprint -------------------------- //
     function initFingerprintHash(result) {
         try {
-            // FingerprintJS v4 returns an object with visitorId; prefer that directly
+            // FingerprintJS v4 API - result contains visitorId and components
             if (result && result.visitorId) {
                 fingerprintHash = result.visitorId;
                 return;
@@ -605,11 +608,11 @@ var SlimStat = (function () {
                         })
                         .then(function (result) {
                             initFingerprintHash(result);
-                            sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                            sendToServer(payloadBase + buildSlimStatData(result.components || {}), useBeacon, { immediate: isEmpty(params.id) });
                         })
                         .catch(function () {
                             initFingerprintHash(null);
-                            sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                            sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
                         })
                         .finally(function () {
                             inflightPageview = false;
@@ -621,7 +624,7 @@ var SlimStat = (function () {
                 } else {
                     // Library not available; proceed without fingerprint
                     initFingerprintHash(null);
-                    sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                    sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
                     inflightPageview = false;
                     pageviewInProgress = false;
                     setTimeout(function () {
@@ -630,7 +633,7 @@ var SlimStat = (function () {
                 }
             } catch (e) {
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData([]), useBeacon, { immediate: isEmpty(params.id) });
+                sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
                 inflightPageview = false;
                 pageviewInProgress = false;
                 setTimeout(function () {

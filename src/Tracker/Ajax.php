@@ -71,15 +71,15 @@ class Ajax
 					}
 				}
 
-				if (empty(\wp_slimstat::$stat['resolution'])) {
-					\wp_slimstat::$stat['dt_out'] = \wp_slimstat::date_i18n('U');
-				}
+			if (empty(\wp_slimstat::$stat['resolution'])) {
+				\wp_slimstat::$stat['dt_out'] = \wp_slimstat::date_i18n('U');
+			}
 
-				if (!empty(\wp_slimstat::$stat['fingerprint']) && Utils::isNewVisitor(\wp_slimstat::$stat['fingerprint'])) {
-					\wp_slimstat::$stat['notes'] = ['new:yes'];
-				}
+			if (!empty(\wp_slimstat::$stat['fingerprint']) && Utils::isNewVisitor(\wp_slimstat::$stat['fingerprint'])) {
+				\wp_slimstat::$stat['notes'] = ['new:yes'];
+			}
 
-				$id = Storage::updateRow(\wp_slimstat::$stat);
+			$id = Storage::updateRow(\wp_slimstat::$stat);
 			}
 			else {
 				$event_info = [
@@ -87,84 +87,85 @@ class Ajax
 					'id'       => \wp_slimstat::$stat['id'],
 					'dt'       => \wp_slimstat::date_i18n('U'),
 				];
-				if (!empty(\wp_slimstat::$data_js['no'])) {
-					$event_info['notes'] = Utils::base64UrlDecode(\wp_slimstat::$data_js['no']);
+			if (!empty(\wp_slimstat::$data_js['no'])) {
+				$event_info['notes'] = Utils::base64UrlDecode(\wp_slimstat::$data_js['no']);
+			}
+
+			$shouldEventBeTracked = apply_filters('slimstat_track_event_enabled', true, $event_info);
+			if ($shouldEventBeTracked) {
+				Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+			}
+
+			if (!empty(\wp_slimstat::$data_js['res'])) {
+				$resource        = Utils::base64UrlDecode(\wp_slimstat::$data_js['res']);
+				$parsed_resource = parse_url($resource);
+				if (false === $parsed_resource || empty($parsed_resource['host'])) {
+					exit(Utils::logError(203));
 				}
 
-				$shouldEventBeTracked = apply_filters('slimstat_track_event_enabled', true, $event_info);
-				if ($shouldEventBeTracked) {
-					Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+				if (!empty($parsed_resource['path']) && in_array(pathinfo($parsed_resource['path'], PATHINFO_EXTENSION), \wp_slimstat::string_to_array(\wp_slimstat::$settings['extensions_to_track']))) {
+					\wp_slimstat::$stat['resource']     = $parsed_resource['path'] . (empty($parsed_resource['query']) ? '' : '?' . $parsed_resource['query']);
+					\wp_slimstat::$stat['content_type'] = 'download';
+					if (!empty(\wp_slimstat::$data_js['fh'])) {
+						\wp_slimstat::$stat['fingerprint'] = sanitize_text_field(\wp_slimstat::$data_js['fh']);
+					}
+
+					$id = Processor::process();
+				} elseif ($parsed_resource['host'] != $site_host) {
+					\wp_slimstat::$stat['outbound_resource'] = $resource;
+					\wp_slimstat::$stat['dt_out']             = \wp_slimstat::date_i18n('U');
+					$id                                       = Storage::updateRow(\wp_slimstat::$stat);
 				}
+			} else {
+				\wp_slimstat::$stat['dt_out'] = \wp_slimstat::date_i18n('U');
+				$id                           = Storage::updateRow(\wp_slimstat::$stat);
+			}
+		}
+	}
+	else {
+		\wp_slimstat::$stat['resource'] = '';
+		if (!empty(\wp_slimstat::$data_js['res'])) {
+			\wp_slimstat::$stat['resource'] = Utils::base64UrlDecode(\wp_slimstat::$data_js['res']);
+			if (false === parse_url(\wp_slimstat::$stat['resource'])) {
+				exit(Utils::logError(203));
+			}
+		}
 
-				if (!empty(\wp_slimstat::$data_js['res'])) {
-					$resource        = Utils::base64UrlDecode(\wp_slimstat::$data_js['res']);
-					$parsed_resource = parse_url($resource);
-					if (false === $parsed_resource || empty($parsed_resource['host'])) {
-						exit(Utils::logError(203));
-					}
+		\wp_slimstat::$stat = Utils::getClientInfo(\wp_slimstat::$data_js, \wp_slimstat::$stat);
+		if (!empty(\wp_slimstat::$data_js['ci'])) {
+			\wp_slimstat::$data_js['ci'] = Utils::getValueWithoutChecksum(\wp_slimstat::$data_js['ci']);
+			if (false === \wp_slimstat::$data_js['ci']) {
+				exit(Utils::logError(102));
+			}
 
-					if (!empty($parsed_resource['path']) && in_array(pathinfo($parsed_resource['path'], PATHINFO_EXTENSION), \wp_slimstat::string_to_array(\wp_slimstat::$settings['extensions_to_track']))) {
-						\wp_slimstat::$stat['resource']     = $parsed_resource['path'] . (empty($parsed_resource['query']) ? '' : '?' . $parsed_resource['query']);
-						\wp_slimstat::$stat['content_type'] = 'download';
-						if (!empty(\wp_slimstat::$data_js['fh'])) {
-							\wp_slimstat::$stat['fingerprint'] = sanitize_text_field(\wp_slimstat::$data_js['fh']);
-						}
+			$content_info = @unserialize(Utils::base64UrlDecode(\wp_slimstat::$data_js['ci']));
+			if (empty($content_info) || !is_array($content_info)) {
+				exit(Utils::logError(103));
+			}
 
-						$id = Processor::process();
-					} elseif ($parsed_resource['host'] != $site_host) {
-						\wp_slimstat::$stat['outbound_resource'] = $resource;
-						\wp_slimstat::$stat['dt_out']             = \wp_slimstat::date_i18n('U');
-						$id                                       = Storage::updateRow(\wp_slimstat::$stat);
-					}
-				} else {
-					\wp_slimstat::$stat['dt_out'] = \wp_slimstat::date_i18n('U');
-					$id                           = Storage::updateRow(\wp_slimstat::$stat);
+			foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
+				if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
+					\wp_slimstat::$stat[$a_key] = sanitize_text_field($content_info[$a_key]);
+				} elseif (!empty($content_info[$a_key])) {
+					\wp_slimstat::$stat[$a_key] = absint($content_info[$a_key]);
 				}
 			}
 		} else {
-			\wp_slimstat::$stat['resource'] = '';
-			if (!empty(\wp_slimstat::$data_js['res'])) {
-				\wp_slimstat::$stat['resource'] = Utils::base64UrlDecode(\wp_slimstat::$data_js['res']);
-				if (false === parse_url(\wp_slimstat::$stat['resource'])) {
-					exit(Utils::logError(203));
-				}
-			}
-
-			\wp_slimstat::$stat = Utils::getClientInfo(\wp_slimstat::$data_js, \wp_slimstat::$stat);
-			if (!empty(\wp_slimstat::$data_js['ci'])) {
-				\wp_slimstat::$data_js['ci'] = Utils::getValueWithoutChecksum(\wp_slimstat::$data_js['ci']);
-				if (false === \wp_slimstat::$data_js['ci']) {
-					exit(Utils::logError(102));
-				}
-
-				$content_info = @unserialize(Utils::base64UrlDecode(\wp_slimstat::$data_js['ci']));
-				if (empty($content_info) || !is_array($content_info)) {
-					exit(Utils::logError(103));
-				}
-
-				foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
-					if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
-						\wp_slimstat::$stat[$a_key] = sanitize_text_field($content_info[$a_key]);
-					} elseif (!empty($content_info[$a_key])) {
-						\wp_slimstat::$stat[$a_key] = absint($content_info[$a_key]);
-					}
-				}
-			} else {
-				\wp_slimstat::$stat['content_type'] = 'external';
-			}
-
-			if (!empty(\wp_slimstat::$stat['fingerprint']) && Utils::isNewVisitor(\wp_slimstat::$stat['fingerprint'])) {
-				\wp_slimstat::$stat['notes'] = ['new:yes'];
-			}
-
-			$id = Processor::process();
+			\wp_slimstat::$stat['content_type'] = 'external';
 		}
 
-		if (empty($id)) {
-			exit(0);
+		if (!empty(\wp_slimstat::$stat['fingerprint']) && Utils::isNewVisitor(\wp_slimstat::$stat['fingerprint'])) {
+			\wp_slimstat::$stat['notes'] = ['new:yes'];
 		}
 
-		do_action('slimstat_track_success');
-		exit(Utils::getValueWithChecksum($id));
+		$id = Processor::process();
+		}
+
+	if (empty($id)) {
+		exit(0);
+	}
+
+	do_action('slimstat_track_success');
+	exit(Utils::getValueWithChecksum($id));
 	}
 }

@@ -11,7 +11,7 @@
     "breakpoint-sass": "^2.7.1",
     "concurrently": "^8.2.0",
     "esbuild": "^0.25.8",
-    "node-sass": "^8.0.0",
+    "node-sass": "^9.0.0",
     "terser": "^5.27.0",
     "watch": "^0.13.0"
   },

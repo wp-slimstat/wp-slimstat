@@ -26,7 +26,8 @@ body {
   &.slimstat_page_slimview5,
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout {
+  &.slimstat_page_slimlayout,
+  &.slimstat_page_migration {
     background: #f5f6fa !important;
   }
 }
@@ -420,7 +421,8 @@ body {
   &.slimstat_page_slimview5,
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout {
+  &.slimstat_page_slimlayout,
+  &.slimstat_page_migration {
     .jqvmap-label {
       z-index: 999999;
       position: absolute !important;
@@ -901,14 +903,15 @@ body {
   &.slimstat_page_slimview4,
   &.slimstat_page_slimview5,
   &.slimstat_page_slimconfig,
+  &.slimstat_page_migration,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout {
     /* Hide all non-Slimstat notices in the admin */
-    div[class*="-notice"]:not(.slimstat-notice),
-    div[class*="admin-notice"]:not(.slimstat-notice),
-    .notice:not(.slimstat-notice),
-    .update-nag:not(.slimstat-notice),
-    .error:not(.slimstat-notice) {
+    div[class*="-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
+    div[class*="admin-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
+    .notice:not(.slimstat-notice):not(.slimstat-migration-notice),
+    .update-nag:not(.slimstat-notice):not(.slimstat-migration-notice),
+    .error:not(.slimstat-notice):not(.slimstat-migration-notice) {
       display: none !important;
     }
   }
