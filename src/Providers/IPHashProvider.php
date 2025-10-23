@@ -76,12 +76,25 @@ class IPHashProvider
 		$isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
 		$piiAllowed = Consent::piiAllowed();
 
-		// MODE 1: Anonymous tracking mode WITHOUT consent
-		// STRICTEST mode: MUST protect PII - hash IP only (no anonymization needed after hash)
-		if ($isAnonymousTracking && !$piiAllowed) {
-			// Hash using original IP for consistency, result replaces IP field
-			return self::hashIP($stat, $originalIp, $originalOtherIp);
+	// MODE 1: Anonymous tracking mode WITHOUT consent
+	// STRICTEST mode: MUST protect PII - hash IP only (no anonymization needed after hash)
+	if ($isAnonymousTracking && !$piiAllowed) {
+		// Hash using original IP for consistency, result replaces IP field
+		$stat = self::hashIP($stat, $originalIp, $originalOtherIp);
+
+		// Ensure hash succeeded - if not, anonymize as minimum protection (GDPR requirement)
+		$hashSucceeded = !empty($stat['ip']) && strlen($stat['ip']) === 64;
+		if (!$hashSucceeded) {
+			$stat['ip'] = self::anonymizeIP($originalIp);
+			if (!empty($originalOtherIp)) {
+				$stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+			} else {
+				$stat['other_ip'] = '';
+			}
 		}
+
+		return $stat;
+	}
 
 		// MODE 2: Anonymous tracking mode WITH consent
 		// Consent was granted - allow full IP storage
@@ -103,25 +116,38 @@ class IPHashProvider
 			$shouldHash = true;
 		}
 
-		// Apply processing in correct order:
-		// 1. Hash first (if needed) - uses original IP
-		// 2. Anonymize after (if needed) - modifies stored IP
+	// Apply processing in correct order:
+	// 1. Hash first (if needed) - uses original IP
+	// 2. Anonymize after (if needed) - modifies stored IP or provides fallback if hash failed
 
-		if ($shouldHash) {
-			// Hash using original IP (before any anonymization)
-			// This replaces the IP with a hash value
-			$stat = self::hashIP($stat, $originalIp, $originalOtherIp);
-		} elseif ($shouldAnonymize) {
-			// Only anonymize if NOT hashing (hashing already provides privacy)
-			$stat['ip'] = self::anonymizeIP($stat['ip']);
-			if (!empty($stat['other_ip'])) {
-				$stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
+	if ($shouldHash) {
+		// Hash using original IP (before any anonymization)
+		// This replaces the IP with a hash value
+		$stat = self::hashIP($stat, $originalIp, $originalOtherIp);
+
+		// Check if hashing succeeded (hash should be 64 chars for sha256)
+		$hashSucceeded = !empty($stat['ip']) && strlen($stat['ip']) === 64;
+
+		// If hashing failed AND anonymization is enabled, apply anonymization as fallback
+		if (!$hashSucceeded && $shouldAnonymize) {
+			$stat['ip'] = self::anonymizeIP($originalIp);
+			if (!empty($originalOtherIp)) {
+				$stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+			} else {
+				$stat['other_ip'] = '';
 			}
 		}
+	} elseif ($shouldAnonymize) {
+		// Only anonymize if NOT hashing (hashing already provides privacy)
+		$stat['ip'] = self::anonymizeIP($stat['ip']);
+		if (!empty($stat['other_ip'])) {
+			$stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
+		}
+	}
 
-		// Note: If neither hash nor anonymize, full IP is stored (requires PII consent)
+	// Note: If neither hash nor anonymize, full IP is stored (requires PII consent)
 
-		return $stat;
+	return $stat;
 	}
 
     /**
@@ -182,12 +208,12 @@ class IPHashProvider
 	 *
 	 * Fallback behavior:
 	 * - If daily salt fails: use Privacy service (date-based hash)
-	 * - If all hashing fails: anonymize IP as minimum protection
+	 * - If all hashing fails: returns original IPs (caller handles privacy fallback)
 	 *
 	 * @param array  $stat          The slimstat array
 	 * @param string $originalIp    The original IP address (BEFORE any processing)
 	 * @param string $originalOtherIp The original other_ip address (if proxy detected)
-	 * @return array Modified slimstat array with hashed IP
+	 * @return array Modified slimstat array with hashed IP (or original if hash failed)
 	 */
 	public static function hashIP(array $stat, string $originalIp, string $originalOtherIp = ''): array
 	{
@@ -208,28 +234,25 @@ class IPHashProvider
 			$hash = self::hashWithPrivacyService($originalIp, $userAgent, $secret);
 		}
 
-		// Validate hash result
-		if ($hash !== '' && $hash !== '0') {
-			// Hash succeeded - replace IP with hash
-			$stat['ip'] = $hash;
-			// Clear other_ip when hashing (hash represents the unique visitor)
-			$stat['other_ip'] = '';
-		} else {
-			// Hash generation failed - MUST provide minimum privacy protection
-			if (defined('WP_DEBUG') && WP_DEBUG) {
-				error_log('SlimStat: IP hash generation failed for IP ' . $originalIp . ' - falling back to anonymization');
-			}
-
-			// Anonymize as fallback (better than storing full IP)
-			$stat['ip'] = self::anonymizeIP($originalIp);
-			if (!empty($originalOtherIp)) {
-				$stat['other_ip'] = self::anonymizeIP($originalOtherIp);
-			} else {
-				$stat['other_ip'] = '';
-			}
+	// Validate hash result
+	if ($hash !== '' && $hash !== '0') {
+		// Hash succeeded - replace IP with hash
+		$stat['ip'] = $hash;
+		// Clear other_ip when hashing (hash represents the unique visitor)
+		$stat['other_ip'] = '';
+	} else {
+		// Hash generation failed - log error and return original stat
+		// Caller (processIp) will handle fallback to anonymization if configured
+		if (defined('WP_DEBUG') && WP_DEBUG) {
+			error_log('SlimStat: IP hash generation failed for IP ' . $originalIp);
 		}
 
-		return $stat;
+		// Keep original IPs in stat - caller will handle privacy fallback
+		$stat['ip'] = $originalIp;
+		$stat['other_ip'] = $originalOtherIp;
+	}
+
+	return $stat;
 	}
 
     /**
