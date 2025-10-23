@@ -49,33 +49,34 @@ class Ajax
 				exit(Utils::logError(101));
 			}
 
-			$stat['id'] = intval($data_js['id']);
-			if ($stat['id'] < 0) {
-				do_action('slimstat_track_exit_' . abs($stat['id']));
-				exit(Utils::getValueWithChecksum($stat['id']));
+		$stat['id'] = intval($data_js['id']);
+		if ($stat['id'] < 0) {
+			do_action('slimstat_track_exit_' . abs($stat['id']));
+			exit(Utils::getValueWithChecksum($stat['id']));
+		}
+
+		// Apply consent upgrade for both initial pageviews and events
+		$stat = \SlimStat\Providers\IPHashProvider::upgradeToPii($stat);
+		if (Consent::piiAllowed(true)) {
+			if (!empty($GLOBALS['current_user']->ID)) {
+				$stat['username'] = $GLOBALS['current_user']->data->user_login;
+				$stat['email']    = $GLOBALS['current_user']->data->user_email;
+				$stat['notes'][]  = 'user:'.$GLOBALS['current_user']->data->ID;
 			}
-
-			if (empty($data_js['pos'])) {
-				Session::ensureVisitId(true);
-				$stat = Utils::getClientInfo($data_js, $stat);
-
-				$stat = \SlimStat\Providers\IPHashProvider::upgradeToPii($stat);
-				if (Consent::piiAllowed(true)) {
-					if (!empty($GLOBALS['current_user']->ID)) {
-						$stat['username'] = $GLOBALS['current_user']->data->user_login;
-						$stat['email']    = $GLOBALS['current_user']->data->user_email;
-						$stat['notes'][]  = 'user:'.$GLOBALS['current_user']->data->ID;
-					}
-					elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])) {
-						if (!empty($_COOKIE['comment_author_'.COOKIEHASH])) {
-							$stat['username'] = sanitize_user($_COOKIE['comment_author_'.COOKIEHASH]);
-						}
-
-						if (!empty($_COOKIE['comment_author_email_'.COOKIEHASH])) {
-							$stat['email'] = sanitize_email($_COOKIE['comment_author_email_'.COOKIEHASH]);
-						}
-					}
+			elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])) {
+				if (!empty($_COOKIE['comment_author_'.COOKIEHASH])) {
+					$stat['username'] = sanitize_user($_COOKIE['comment_author_'.COOKIEHASH]);
 				}
+
+				if (!empty($_COOKIE['comment_author_email_'.COOKIEHASH])) {
+					$stat['email'] = sanitize_email($_COOKIE['comment_author_email_'.COOKIEHASH]);
+				}
+			}
+		}
+
+		if (empty($data_js['pos'])) {
+			Session::ensureVisitId(true);
+			$stat = Utils::getClientInfo($data_js, $stat);
 
 			if (empty($stat['resolution'])) {
 				$stat['dt_out'] = \wp_slimstat::date_i18n('U');
