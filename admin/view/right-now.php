@@ -161,7 +161,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             $ip_address .= sprintf(' %s</a>', $display_user_name);
             $display_ip_value = $results[$i]['ip'];
             if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
-                $display_ip_value = substr($results[$i]['ip'], 0, 12) . (strlen( $results[$i]['ip'] ) > 12 ? '…' : '');
+                $display_ip_value = strlen($results[$i]['ip']) > 12 ? substr($results[$i]['ip'], 0, 12) . '…' : $results[$i]['ip'];
             } elseif ('on' == wp_slimstat::$settings['anonymize_ip']) {
                 // already masked in storage; still truncate for UI clarity
                 $display_ip_value = $results[$i]['ip'];
