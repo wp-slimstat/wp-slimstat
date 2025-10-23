@@ -27,8 +27,15 @@ class Processor
             $stat['notes'] = [];
         }
 
+        // Set processing timestamp context for Query builder caching decisions.
+        // This ensures caching is based on the event timestamp, not current server time.
+        // Critical for avoiding race conditions at midnight.
+        Query::setProcessingTimestamp($stat['dt']);
+
         $stat = apply_filters('slimstat_filter_pageview_stat_init', $stat);
         if ($stat === [] || empty($stat['dt'])) {
+            // Clear processing timestamp context if processing is aborted
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -38,6 +45,7 @@ class Processor
 
         [$stat['ip'], $stat['other_ip']] = Utils::getRemoteIp();
         if (empty($stat['ip']) || '0.0.0.0' == $stat['ip']) {
+            Query::setProcessingTimestamp(null);
             Utils::logError(202);
             return false;
         }
@@ -54,6 +62,7 @@ class Processor
             $longMaskedUserIp    = substr(Utils::dtrPton($stat['ip']), 0, $cidr_mask);
             $longMaskedUserOther = substr(Utils::dtrPton($stat['other_ip']), 0, $cidr_mask);
             if ($longMaskedUserIp === $longMaskedToIgnore || $longMaskedUserOther === $longMaskedToIgnore) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
         }
@@ -76,6 +85,7 @@ class Processor
         }, $stat['resource']);
         $parsed_url = parse_url($stat['resource']);
         if (!$parsed_url) {
+            Query::setProcessingTimestamp(null);
             Utils::logError(203);
             return false;
         }
@@ -83,6 +93,7 @@ class Processor
 
         $stat['resource'] = $parsed_url['path'] . (empty($parsed_url['query']) ? '' : '?' . $parsed_url['query']) . (empty($parsed_url['fragment']) ? '' : '#' . $parsed_url['fragment']);
         if (!empty(\wp_slimstat::$settings['ignore_resources']) && Utils::isBlacklisted($stat['resource'], \wp_slimstat::$settings['ignore_resources'])) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -94,6 +105,7 @@ class Processor
         if (!empty($stat['referer'])) {
             $parsed_url = parse_url($stat['referer']);
             if (!$parsed_url) {
+                Query::setProcessingTimestamp(null);
                 Utils::logError(201);
                 return false;
             }
@@ -104,6 +116,7 @@ class Processor
             }
 
             if (!empty(\wp_slimstat::$settings['ignore_referers']) && Utils::isBlacklisted($stat['referer'], \wp_slimstat::$settings['ignore_referers'])) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
 
@@ -122,6 +135,7 @@ class Processor
         if (!isset($stat['content_type'])) {
             $content_info = Utils::getContentInfo();
             if (!empty(\wp_slimstat::$settings['ignore_content_types']) && Utils::isBlacklisted($content_info['content_type'], \wp_slimstat::$settings['ignore_content_types'])) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
 
@@ -135,6 +149,7 @@ class Processor
         }
 
         if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -143,16 +158,19 @@ class Processor
 
         if (!empty($GLOBALS['current_user']->ID)) {
             if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
 
             foreach ($GLOBALS['current_user']->roles as $capability) {
                 if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
+                    Query::setProcessingTimestamp(null);
                     return false;
                 }
             }
 
             if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
 
@@ -176,6 +194,7 @@ class Processor
 
             if (!empty($spam_comment)) {
                 if ('on' == \wp_slimstat::$settings['ignore_spammers']) {
+                    Query::setProcessingTimestamp(null);
                     return false;
                 }
 
@@ -195,6 +214,7 @@ class Processor
 
         $stat['language'] = Utils::getLanguage();
         if (!empty($stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) $stat['language'])) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -204,6 +224,7 @@ class Processor
                 // Use original IP (before hashing) for GeoIP lookup
                 $geolocation_data = GeoIP::loader($originalIpForGeo);
             } catch (\Exception $e) {
+                Query::setProcessingTimestamp(null);
                 Utils::logError(205);
                 return false;
             }
@@ -225,12 +246,14 @@ class Processor
             }
 
             if (isset($stat['country']) && ($stat['country'] !== '' && $stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], (string) $stat['country'])) {
+                Query::setProcessingTimestamp(null);
                 return false;
             }
         }
 
         if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
             if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
+                Query::setProcessingTimestamp(null);
                 return false;
             } else {
                 $stat['notes'][] = 'pre:yes';
@@ -239,14 +262,17 @@ class Processor
 
         $browser = Browscap::get_browser();
         if ('on' == \wp_slimstat::$settings['ignore_bots'] && 1 == $browser['browser_type']) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
         if (!empty(\wp_slimstat::$settings['ignore_browsers']) && Utils::isBlacklisted([$browser['browser'], $browser['user_agent']], \wp_slimstat::$settings['ignore_browsers'])) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
         if (!empty(\wp_slimstat::$settings['ignore_platforms']) && Utils::isBlacklisted($browser['platform'], \wp_slimstat::$settings['ignore_platforms'])) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -260,6 +286,7 @@ class Processor
         $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
         do_action('slimstat_track_pageview', $stat);
         if ($stat === [] || empty($stat['dt'])) {
+            Query::setProcessingTimestamp(null);
             return false;
         }
 
@@ -278,6 +305,7 @@ class Processor
             \wp_slimstat_admin::init_environment();
             $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
             if (empty($stat['id'])) {
+                Query::setProcessingTimestamp(null);
                 Utils::logError(200);
                 return false;
             }
@@ -296,6 +324,9 @@ class Processor
             // Extend existing session cookie
             Session::setTrackingCookie($stat['visit_id'], 'visit');
         }
+
+        // Clear processing timestamp context after successful processing
+        Query::setProcessingTimestamp(null);
 
         return $stat['id'];
     }
