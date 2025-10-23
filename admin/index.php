@@ -628,6 +628,14 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
         }
 
+        // --- Updates for version 5.4.0 ---
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.0', '<')) {
+            // Migrate legacy 'adblock' tracking method to 'adblock_bypass' (renamed in v5.3.0)
+            if (!empty(wp_slimstat::$settings['tracking_request_method']) && 'adblock' === wp_slimstat::$settings['tracking_request_method']) {
+                wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
+            }
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';

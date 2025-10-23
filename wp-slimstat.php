@@ -1436,6 +1436,11 @@ class wp_slimstat
         // Use the new unified tracking method setting
         $method = self::$settings['tracking_request_method'] ?? 'rest';
 
+        // Handle legacy 'adblock' value (renamed to 'adblock_bypass' in v5.3.0)
+        if ( 'adblock' === $method ) {
+            $method = 'adblock_bypass';
+        }
+
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
         $ajax_url          = admin_url('admin-ajax.php');
