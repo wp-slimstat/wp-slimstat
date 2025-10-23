@@ -633,6 +633,16 @@ var SlimStat = (function () {
         // Reset finalization state when starting new pageview
         // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
 
+        // Consolidated flag reset helper to prevent race conditions
+        var resetPageviewFlags = function () {
+            // Single source of truth for flag resets
+            // Delay allows sendToServer queue to process before allowing next pageview
+            setTimeout(function () {
+                inflightPageview = false;
+                pageviewInProgress = false;
+            }, 200);
+        };
+
         var run = function () {
             // FingerprintJS v4 async init; if it fails, proceed without fingerprint
             try {
@@ -657,30 +667,20 @@ var SlimStat = (function () {
                             sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
                         })
                         .finally(function () {
-                            inflightPageview = false;
-                            pageviewInProgress = false;
-                            setTimeout(function () {
-                                pageviewInProgress = false;
-                            }, 100);
+                            // Reset flags after FingerprintJS completes (success or failure)
+                            resetPageviewFlags();
                         });
                 } else {
                     // Library not available; proceed without fingerprint
                     initFingerprintHash(null);
                     sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
-                    inflightPageview = false;
-                    pageviewInProgress = false;
-                    setTimeout(function () {
-                        pageviewInProgress = false;
-                    }, 100);
+                    resetPageviewFlags();
                 }
             } catch (e) {
+                // Catch synchronous errors (shouldn't happen, but defensive)
                 initFingerprintHash(null);
                 sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
-                inflightPageview = false;
-                pageviewInProgress = false;
-                setTimeout(function () {
-                    pageviewInProgress = false;
-                }, 100);
+                resetPageviewFlags();
             }
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
