@@ -187,26 +187,37 @@ var SlimStat = (function () {
 
     function buildSlimStatData(components) {
         // Components are optional; compute directly if not provided
+        // FingerprintJS v4 returns components as an object, not an array
+        var hasComponents = components && typeof components === "object" && !Array.isArray(components);
+
         var screenres = [0, 0];
         try {
-            if (components && components.length) {
+            if (hasComponents) {
                 screenres = getComponentValue(components, "screenResolution", [0, 0]);
-            } else if (window.screen) {
-                screenres = [window.screen.width || 0, window.screen.height || 0];
+            }
+            // Fallback to window.screen if components not available or screenResolution not found
+            if (!screenres || screenres[0] === 0) {
+                if (window.screen) {
+                    screenres = [window.screen.width || 0, window.screen.height || 0];
+                }
             }
         } catch (e) {
             screenres = [0, 0];
         }
+
         var tzOffset = 0;
         try {
-            if (components && components.length) {
+            if (hasComponents) {
                 tzOffset = getComponentValue(components, "timezoneOffset", 0);
-            } else {
+            }
+            // Fallback to Date API if components not available or timezoneOffset not found
+            if (tzOffset === 0 && !hasComponents) {
                 tzOffset = new Date().getTimezoneOffset();
             }
         } catch (e) {
             tzOffset = 0;
         }
+
         return "&sw=" + screenres[0] + "&sh=" + screenres[1] + "&bw=" + window.innerWidth + "&bh=" + window.innerHeight + "&sl=" + getServerLatency() + "&pp=" + getPagePerformance() + "&fh=" + fingerprintHash + "&tz=" + tzOffset;
     }
 
