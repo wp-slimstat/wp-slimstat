@@ -265,7 +265,7 @@ class Session
 
 		// Fallback to date-based salt if generation fails
 		if (empty($daily_salt)) {
-			$daily_salt = gmdate('Y-m-d') . AUTH_KEY;
+			$daily_salt = gmdate('Y-m-d') . self::getSecureKey();
 		}
 
 		// Get visitor's IP addresses
@@ -279,13 +279,101 @@ class Session
 
 		// Create deterministic hash using client IP + User Agent + daily salt
 		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent;
-		$hash       = hash_hmac('sha256', $hash_input, AUTH_KEY);
+		$hash       = hash_hmac('sha256', $hash_input, self::getSecureKey());
 
 		// Convert first 8 characters of hash to integer (32-bit)
 		// This gives us a consistent visit ID for the same visitor on the same day
 		$visit_id = abs((int) hexdec(substr($hash, 0, 8)));
 
 		return $visit_id;
+	}
+
+	/**
+	 * Get a secure key for hashing operations.
+	 *
+	 * Validates that AUTH_KEY exists and has sufficient entropy before using it.
+	 * Falls back to WordPress salts or generates a secure random key if needed.
+	 *
+	 * Security considerations:
+	 * - AUTH_KEY must be defined and non-empty
+	 * - Must be longer than 32 characters for sufficient entropy
+	 * - Must not be a known default/placeholder value
+	 * - Logs warnings when weak keys are detected
+	 *
+	 * @return string Secure key for HMAC operations
+	 */
+	private static function getSecureKey(): string
+	{
+		$key = '';
+
+		// Try AUTH_KEY first (WordPress security constant)
+		if (defined('AUTH_KEY') && is_string(AUTH_KEY) && '' !== AUTH_KEY) {
+			$key = AUTH_KEY;
+
+			// Validate key has sufficient entropy (at least 32 characters)
+			if (strlen($key) < 32) {
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('SlimStat Security Warning: AUTH_KEY is too short (< 32 chars). Using fallback.');
+				}
+				$key = '';
+			}
+
+			// Check for known weak/default values
+			$weak_keys = ['put your unique phrase here', 'your-unique-auth-key', 'change-this'];
+			foreach ($weak_keys as $weak_key) {
+				if (false !== stripos($key, $weak_key)) {
+					if (defined('WP_DEBUG') && WP_DEBUG) {
+						error_log('SlimStat Security Warning: AUTH_KEY contains default placeholder. Using fallback.');
+					}
+					$key = '';
+					break;
+				}
+			}
+		}
+
+		// Fallback 1: Try WordPress wp_salt() function (uses multiple salt constants)
+		if (empty($key) && function_exists('wp_salt')) {
+			$key = wp_salt('auth');
+
+			// Validate wp_salt result
+			if (empty($key) || strlen($key) < 32) {
+				$key = '';
+			}
+		}
+
+		// Fallback 2: Combine multiple WordPress constants
+		if (empty($key)) {
+			$constants = ['SECURE_AUTH_KEY', 'LOGGED_IN_KEY', 'NONCE_KEY', 'AUTH_SALT'];
+			$combined  = '';
+
+			foreach ($constants as $constant) {
+				if (defined($constant) && is_string(constant($constant)) && '' !== constant($constant)) {
+					$combined .= constant($constant);
+				}
+			}
+
+			if (!empty($combined) && strlen($combined) >= 32) {
+				$key = $combined;
+			}
+		}
+
+		// Fallback 3: Generate a random key (last resort)
+		// Note: This will change on each request, reducing determinism but maintaining security
+		if (empty($key)) {
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log('SlimStat Security Warning: No WordPress security keys found. Generating random key. Visit IDs will not be consistent across requests.');
+			}
+
+			// Use WordPress random bytes function if available
+			if (function_exists('wp_generate_password')) {
+				$key = wp_generate_password(64, true, true);
+			} else {
+				// PHP 7.0+ fallback
+				$key = bin2hex(random_bytes(32));
+			}
+		}
+
+		return $key;
 	}
 
 	/**
