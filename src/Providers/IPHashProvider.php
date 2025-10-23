@@ -85,11 +85,30 @@ class IPHashProvider
 		// Ensure hash succeeded - if not, anonymize as minimum protection (GDPR requirement)
 		$hashSucceeded = !empty($stat['ip']) && strlen($stat['ip']) === 64;
 		if (!$hashSucceeded) {
-			$stat['ip'] = self::anonymizeIP($originalIp);
-			if (!empty($originalOtherIp)) {
-				$stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+			// Hash failed - must anonymize to protect PII
+			$anonymizedIp = self::anonymizeIP($originalIp);
+
+			// Validate anonymization succeeded (result not empty and different from original)
+			if (!empty($anonymizedIp) && $anonymizedIp !== $originalIp) {
+				$stat['ip'] = $anonymizedIp;
 			} else {
-				$stat['other_ip'] = '';
+				// Critical failure: both hash and anonymization failed
+				// In strictest mode, we MUST NOT store original IP - use empty string as ultimate fallback
+				$stat['ip'] = '';
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					error_log('SlimStat: CRITICAL - Both hash and anonymization failed for IP in anonymous mode');
+				}
+			}
+
+			// Handle other_ip only if present
+			if (!empty($originalOtherIp)) {
+				$anonymizedOtherIp = self::anonymizeIP($originalOtherIp);
+				// Validate anonymization succeeded
+				if (!empty($anonymizedOtherIp) && $anonymizedOtherIp !== $originalOtherIp) {
+					$stat['other_ip'] = $anonymizedOtherIp;
+				} else {
+					$stat['other_ip'] = '';
+				}
 			}
 		}
 
