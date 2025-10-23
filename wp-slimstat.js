@@ -1222,7 +1222,7 @@ if (!window.requestIdleCallback) {
      * 4. IP hash replaced with real IP, tracking cookie set
      */
     function setupConsentUpgradeHandler() {
-        var consentUpgradeSent = false;
+        var consentUpgradeSent = {};
 
         /**
          * Handle consent granted event
@@ -1232,11 +1232,6 @@ if (!window.requestIdleCallback) {
          * - If no pageview yet → Do nothing, let normal tracking handle it with consent
          */
         function handleConsentGranted() {
-            // Prevent duplicate upgrade requests
-            if (consentUpgradeSent) {
-                return;
-            }
-
             try {
                 var params = currentSlimStatParams();
                 // Keep the full ID with checksum for security validation
@@ -1246,6 +1241,11 @@ if (!window.requestIdleCallback) {
                 // If no pageview tracked yet, do nothing
                 // The next pageview will automatically use full tracking with consent
                 if (pageviewIdNumeric <= 0 || !pageviewIdWithChecksum) {
+                    return;
+                }
+
+                // Prevent duplicate upgrade requests for this specific pageview
+                if (consentUpgradeSent[pageviewIdWithChecksum]) {
                     return;
                 }
 
@@ -1259,7 +1259,7 @@ if (!window.requestIdleCallback) {
                 }
 
                 // Mark as sent before making request to prevent duplicates
-                consentUpgradeSent = true;
+                consentUpgradeSent[pageviewIdWithChecksum] = true;
 
                 // Send AJAX request to upgrade the existing pageview
                 var xhr = new XMLHttpRequest();
@@ -1289,7 +1289,7 @@ if (!window.requestIdleCallback) {
                         console.error("[SlimStat] Upgrade network error");
                     }
                     // Reset flag on network error to allow retry
-                    consentUpgradeSent = false;
+                    consentUpgradeSent[pageviewIdWithChecksum] = false;
                 };
 
                 xhr.send("action=slimstat_consent_granted" + "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || ""));
@@ -1297,7 +1297,12 @@ if (!window.requestIdleCallback) {
                 if (console && console.error) {
                     console.error("[SlimStat] Consent upgrade error:", e);
                 }
-                consentUpgradeSent = false;
+                // Reset flag on exception to allow retry
+                var params = currentSlimStatParams();
+                var pageviewIdWithChecksum = params.id || "";
+                if (pageviewIdWithChecksum) {
+                    consentUpgradeSent[pageviewIdWithChecksum] = false;
+                }
             }
         }
 
