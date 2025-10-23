@@ -44,18 +44,56 @@ class IPHashProvider
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
         $piiAllowed = Consent::piiAllowed();
 
-        // Step 1: Anonymize IP if enabled OR if anonymous tracking is on OR PII not allowed
-        if ($isAnonymousTracking || !$piiAllowed || 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
+        // HIGHEST PRIORITY: Anonymous tracking before consent.
+        // If anonymous tracking is on AND consent for PII has NOT been given,
+        // we MUST hash the IP, regardless of other settings.
+        if ($isAnonymousTracking && !$piiAllowed) {
+            return self::hashIP($stat, $originalIp);
+        }
+
+        // STANDARD MODE: Not in anonymous mode, or consent has been given.
+        // We now respect the individual anonymization and hashing settings.
+        $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
+        $shouldHash = 'on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off');
+
+        // If any other privacy mechanism (like DNT) has blocked PII, force anonymization and hashing.
+        if (!$piiAllowed) {
+            $shouldAnonymize = true;
+            $shouldHash = true;
+        }
+
+        if ($shouldAnonymize) {
             $stat['ip'] = self::anonymizeIP($stat['ip']);
             if (!empty($stat['other_ip'])) {
                 $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
             }
         }
 
-        // Step 2: Hash IP if enabled OR if anonymous tracking is on OR PII not allowed
-        if ($isAnonymousTracking || !$piiAllowed || 'on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+        if ($shouldHash) {
+            // Note: hashIP uses the original IP for hashing consistency, even if the IP has been anonymized above.
             $stat = self::hashIP($stat, $originalIp);
         }
+
+        return $stat;
+    }
+
+    /**
+     * Upgrades the stored IP to the real IP if consent is granted.
+     *
+     * @param array $stat The slimstat array containing IP data
+     * @return array Modified slimstat array with the real IP
+     */
+    public static function upgradeToPii(array $stat): array
+    {
+        $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
+        $piiAllowed = Consent::piiAllowed(true);
+
+        if (!$isAnonymousTracking || !$piiAllowed) {
+            return $stat;
+        }
+
+        // Restore the original IP
+        [$stat['ip'], $stat['other_ip']] = \SlimStat\Tracker\Utils::getRemoteIp();
 
         return $stat;
     }
@@ -91,8 +129,13 @@ class IPHashProvider
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
 
-        // Try to use daily salt first
+        // Ensure daily salt is generated
         $dailySalt = get_option('slimstat_daily_salt');
+        if (empty($dailySalt)) {
+            $dailySalt = self::generateDailySalt();
+        }
+
+        // Try to use daily salt first
         if (!empty($dailySalt)) {
             $hash = self::hashWithDailySalt($originalIp, $userAgent, $dailySalt, $secret);
         } else {
@@ -101,12 +144,19 @@ class IPHashProvider
         }
 
         if ($hash !== '' && $hash !== '0') {
-            // Clear other_ip if anonymization is not enabled
-            if ('on' !== (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
-                $stat['other_ip'] = '';
-            }
-
+            // Hash succeeded - use it
             $stat['ip'] = $hash;
+            $stat['other_ip'] = '';
+        } else {
+            // Hash generation failed - MUST anonymize as minimum protection for GDPR
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('SlimStat: IP hash generation failed - falling back to anonymization');
+            }
+            // Always anonymize the original IP if hashing fails
+            $stat['ip'] = self::anonymizeIP($originalIp);
+            if (!empty($stat['other_ip'])) {
+                $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
+            }
         }
 
         return $stat;

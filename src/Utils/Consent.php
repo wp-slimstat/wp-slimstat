@@ -26,9 +26,17 @@ class Consent
      * Returns true when either we don't collect PII by configuration, or
      * a consent integration explicitly grants consent for the selected category.
      */
-    public static function piiAllowed(): bool
+    public static function piiAllowed(bool $explicitConsentGiven = false): bool
     {
         $settings = \wp_slimstat::$settings;
+
+        // If anonymous tracking is enabled, PII is NEVER allowed until explicit consent is granted
+        $isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
+        if ($isAnonymousTracking) {
+            // In anonymous tracking mode, we only allow PII if we have received a specific,
+            // explicit signal from our tracker that consent was just given.
+            return $explicitConsentGiven;
+        }
 
         $setTrackerCookie = ('on' === ($settings['set_tracker_cookie'] ?? 'on'));
         $anonymizeIp      = ('on' === ($settings['anonymize_ip'] ?? 'no'));

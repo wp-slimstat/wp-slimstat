@@ -53,17 +53,24 @@ class Ajax
 				Session::ensureVisitId(true);
 				\wp_slimstat::$stat = Utils::getClientInfo(\wp_slimstat::$data_js, \wp_slimstat::$stat);
 
-			// If consent now allows PII, and settings do not require anonymize/hash, upgrade stored IP to real
-			try {
-				$piiAllowed   = Consent::piiAllowed();
-				$anonymizeIp  = ('on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'no'));
-				$hashIp       = ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'no'));
-				if ($piiAllowed && !$anonymizeIp && !$hashIp) {
-					[\wp_slimstat::$stat['ip'], \wp_slimstat::$stat['other_ip']] = Utils::getRemoteIp();
+				\wp_slimstat::$stat = \SlimStat\Providers\IPHashProvider::upgradeToPii(\wp_slimstat::$stat);
+				if (Consent::piiAllowed(true)) {
+					if (!empty($GLOBALS['current_user']->ID)) {
+						\wp_slimstat::$stat['username'] = $GLOBALS['current_user']->data->user_login;
+						\wp_slimstat::$stat['email']    = $GLOBALS['current_user']->data->user_email;
+						\wp_slimstat::$stat['notes'][]  = 'user:'.$GLOBALS['current_user']->data->ID;
+					}
+					elseif (isset($_COOKIE['comment_author_'.COOKIEHASH])) {
+						if (!empty($_COOKIE['comment_author_'.COOKIEHASH])) {
+							\wp_slimstat::$stat['username'] = sanitize_user($_COOKIE['comment_author_'.COOKIEHASH]);
+						}
+
+						if (!empty($_COOKIE['comment_author_email_'.COOKIEHASH])) {
+							\wp_slimstat::$stat['email'] = sanitize_email($_COOKIE['comment_author_email_'.COOKIEHASH]);
+						}
+					}
 				}
-			} catch (\Throwable $e) {
-				// Be conservative: keep existing IP value if any error
-			}
+
 				if (empty(\wp_slimstat::$stat['resolution'])) {
 					\wp_slimstat::$stat['dt_out'] = \wp_slimstat::date_i18n('U');
 				}
@@ -73,7 +80,8 @@ class Ajax
 				}
 
 				$id = Storage::updateRow(\wp_slimstat::$stat);
-			} else {
+			}
+			else {
 				$event_info = [
 					'position' => strip_tags(trim(\wp_slimstat::$data_js['pos'])),
 					'id'       => \wp_slimstat::$stat['id'],
