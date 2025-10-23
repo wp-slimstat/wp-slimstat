@@ -33,7 +33,7 @@ class Session
 	 * - Updating pageview records with visit ID
 	 *
 	 * @param bool $forceAssign Force assignment of new visit ID even if not in JS mode
-	 * @return bool True if a new session cookie was set, false otherwise
+	 * @return bool True if a new visit ID was assigned, false if using existing visit ID
 	 */
 	public static function ensureVisitId($forceAssign = false)
 	{
@@ -46,9 +46,9 @@ class Session
 		if ($isAnonymousTracking && !Consent::piiAllowed()) {
 			// Generate deterministic visit ID from hashed IP + User Agent + daily salt
 			$identifier = self::generateAnonymousVisitId();
-			$is_new_session = false; // Treat as existing session (no cookie to set)
 			\wp_slimstat::$stat['visit_id'] = $identifier;
-			return false;
+			// Return true because we assigned a visit ID (even though no cookie was set)
+			return true;
 		}
 
 		// Try to read existing visit ID from cookie
@@ -104,9 +104,10 @@ class Session
 			\wp_slimstat::$stat['visit_id'] = intval($next_visit_id);
 
 			// Set cookie ONLY if consent allows - this is the CENTRAL cookie setting point
-			$cookie_was_set = self::setTrackingCookie(\wp_slimstat::$stat['visit_id'], 'visit');
+			self::setTrackingCookie(\wp_slimstat::$stat['visit_id'], 'visit');
 
-			return $cookie_was_set;
+			// Return true because we assigned a new visit ID (regardless of cookie success)
+			return true;
 		} elseif ($identifier > 0) {
 			// Existing visit - use identifier from cookie
 			\wp_slimstat::$stat['visit_id'] = $identifier;
