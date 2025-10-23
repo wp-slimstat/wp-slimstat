@@ -280,7 +280,9 @@ class IPHashProvider
      */
     private static function hashWithPrivacyService(string $ip, string $userAgent, string $secret): string
     {
-        return Privacy::computeVisitorId($ip, $userAgent, time(), $secret);
+        // Use start of day timestamp to ensure hash consistency throughout the day
+        $todayTimestamp = strtotime(gmdate('Y-m-d 00:00:00'));
+        return Privacy::computeVisitorId($ip, $userAgent, $todayTimestamp, $secret);
     }
 
     /**
