@@ -83,7 +83,11 @@ class IPHashProvider
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
             // Ensure hash succeeded - if not, anonymize as minimum protection (GDPR requirement)
-            $hashSucceeded = !empty($stat['ip']) && strlen($stat['ip']) === 64;
+            // Valid hash must be: 64 chars, hexadecimal, and different from original IP
+            $hashSucceeded = !empty($stat['ip'])
+                && strlen($stat['ip']) === 64
+                && ctype_xdigit($stat['ip'])
+                && $stat['ip'] !== $originalIp;
             if (!$hashSucceeded) {
                 // Hash failed - must anonymize to protect PII
                 $anonymizedIp = self::anonymizeIP($originalIp);
@@ -144,8 +148,12 @@ class IPHashProvider
             // This replaces the IP with a hash value
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
-            // Check if hashing succeeded (hash should be 64 chars for sha256)
-            $hashSucceeded = !empty($stat['ip']) && strlen($stat['ip']) === 64;
+            // Check if hashing succeeded
+            // Valid hash must be: 64 chars (SHA-256), hexadecimal, and different from original IP
+            $hashSucceeded = !empty($stat['ip'])
+                && strlen($stat['ip']) === 64
+                && ctype_xdigit($stat['ip'])
+                && $stat['ip'] !== $originalIp;
 
             // If hashing failed AND anonymization is enabled, apply anonymization as fallback
             if (!$hashSucceeded && $shouldAnonymize) {
