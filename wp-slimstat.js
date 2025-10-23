@@ -955,14 +955,17 @@ if (!window.requestIdleCallback) {
             var category = event.detail.category;
             var params = currentSlimStatParams();
             var selectedCategory = params.consent_level_integration || "functional";
-            var consentRetried = window.slimstatConsentRetried || false;
+
+            // Use category-specific retry flag to prevent race conditions between CMPs
+            var retryKey = "slimstatConsentRetried_" + selectedCategory;
+            var consentRetried = window[retryKey] || false;
 
             var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
 
             if (shouldTrack) {
                 // Double-check with WP Consent API if available
                 if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
-                window.slimstatConsentRetried = true;
+                window[retryKey] = true;
                 SlimStat._send_pageview();
             }
         }
@@ -975,8 +978,11 @@ if (!window.requestIdleCallback) {
             var selectedCategory = params.consent_level_integration || "functional";
             if (params.id && parseInt(params.id, 10) > 0) return;
             if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
-            if (!window.slimstatConsentRetried) {
-                window.slimstatConsentRetried = true;
+
+            // Use category-specific retry flag to prevent race conditions between CMPs
+            var retryKey = "slimstatConsentRetried_" + selectedCategory;
+            if (!window[retryKey]) {
+                window[retryKey] = true;
                 SlimStat._send_pageview();
             }
         }
