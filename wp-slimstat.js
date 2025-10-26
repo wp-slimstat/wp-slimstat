@@ -560,8 +560,8 @@ var SlimStat = (function () {
                     } catch (e) {
                         cmpAllows = false;
                     }
-                } else if (integrationKey === "real_cookie_banner" || integrationKey === "real_cookie_banner_pro") {
-                    // Real Cookie Banner (Free/PRO) integration
+                } else if (integrationKey === "real_cookie_banner") {
+                    // Real Cookie Banner integration
                     try {
                         var consentApi = window.consentApi;
                         if (consentApi && typeof consentApi.consentSync === "function") {

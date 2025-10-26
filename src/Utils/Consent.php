@@ -171,9 +171,9 @@ class Consent
 			}
 		}
 
-		// Real Cookie Banner (Free/PRO) / Borlabs Cookie - cannot read consent server-side
+		// Real Cookie Banner / Borlabs Cookie - cannot read consent server-side
 		// These CMPs block scripts client-side, so server should be conservative
-		if (in_array($integrationKey, ['real_cookie_banner', 'real_cookie_banner_pro', 'borlabs_cookie'], true)) {
+		if (in_array($integrationKey, ['real_cookie_banner', 'borlabs_cookie'], true)) {
 			// Conservative: assume no consent on server-side
 			// Client-side JS will handle consent gating
 			return false;
