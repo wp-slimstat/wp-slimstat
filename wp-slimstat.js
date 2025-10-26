@@ -1,4 +1,5 @@
-import FingerprintJS from "@fingerprintjs/fingerprintjs";
+// NOTE: Fingerprint2 (fingerprintjs2) library is required as a global dependency
+// and should be loaded before this script
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -20,17 +21,7 @@ var SlimStat = (function () {
     var lastInteractionPayload = "";
     var lastInteractionTime = 0;
     var PENDING_INTERACTIONS_LIMIT = 20;
-
-    // Initialize these variables with default values to prevent runtime errors
     var pendingInteractions = [];
-    var loadOfflineQueue = function () {
-        return [];
-    };
-    var saveOfflineQueue = function () {};
-    var currentSlimStatParams = function () {
-        return {};
-    };
-    var pageviewInProgress = false;
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
@@ -48,8 +39,38 @@ var SlimStat = (function () {
         }
     }
 
-    // Offline persistence helpers will be defined in the outer scope and assigned here
+    // Offline persistence helpers
     var OFFLINE_KEY = "slimstat_offline_queue";
+    function loadOfflineQueue() {
+        try {
+            var raw = localStorage.getItem(OFFLINE_KEY);
+            if (!raw) return [];
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function saveOfflineQueue(arr) {
+        try {
+            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
+        } catch (e) {
+            /* ignore */
+        }
+    }
+    function storeOffline(payload) {
+        var arr = loadOfflineQueue();
+        arr.push({ p: payload, t: Date.now() });
+        saveOfflineQueue(arr);
+    }
+    function flushOfflineQueue() {
+        var arr = loadOfflineQueue();
+        if (!arr.length) return;
+        saveOfflineQueue([]); // clear first to avoid loops
+        arr.forEach(function(item) {
+            sendToServer(item.p, true, { priority: "normal" });
+        });
+    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -132,10 +153,7 @@ var SlimStat = (function () {
     }
 
     function getComponentValue(components, key, def) {
-        // FingerprintJS v4 API - components is now an object with component names as keys
-        if (components && components[key] && components[key].value !== undefined) {
-            return components[key].value;
-        }
+        for (var i = 0; i < components.length; i++) if (components[i].key === key) return components[i].value;
         return def;
     }
 
@@ -173,12 +191,8 @@ var SlimStat = (function () {
     // -------------------------- Fingerprint -------------------------- //
     function initFingerprintHash(result) {
         try {
-            // New FingerprintJS v4 API - result contains visitorId and components
-            if (result && result.visitorId) {
-                fingerprintHash = result.visitorId;
-            } else {
-                fingerprintHash = ""; // graceful fallback
-            }
+            var values = components.map((c) => c.value);
+            fingerprintHash = Fingerprint2.x64hash128(values.join(""), 31);
         } catch (e) {
             fingerprintHash = ""; // graceful fallback
         }
@@ -193,86 +207,31 @@ var SlimStat = (function () {
     function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
         opts = opts || {};
-
-        // All requests now go through the queue to ensure consistent handling.
-        // Immediate sends are pushed to the front.
-        var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0 };
-
-        // Check for duplicate payloads in queue to prevent duplicates
-        var isDuplicate = requestQueue.some(function (qItem) {
-            return qItem.payload === payload;
-        });
-        if (isDuplicate) {
-            return false;
-        }
-
-        // Queue pressure control: drop oldest non-high if above high watermark
-        if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
-            for (var i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
-                if (requestQueue[i].opts.priority !== "high") requestQueue.splice(i, 1);
-            }
-        }
-
-        if (opts.immediate || opts.priority === "high") {
-            // Avoid duplicates of same payload at head
-            if (!requestQueue.length || requestQueue[0].payload !== payload) {
-                requestQueue.unshift(item);
-            }
-        } else {
-            requestQueue.push(item);
-        }
-
-        // Start processing if not already running
-        if (!queueInFlight) {
-            processQueue();
-        }
-
-        return true;
-    }
-
-    function processQueue() {
-        if (queueInFlight || !requestQueue.length) return;
-        var item = requestQueue.shift();
-        if (!item) return;
-
-        queueInFlight = true;
-
-        var done = function (success) {
-            if (!success && item) {
-                item.attempts = (item.attempts || 0) + 1;
-                if (item.attempts < MAX_QUEUE_ATTEMPTS) {
-                    // Re-queue with a delay and exponential backoff
-                    var delay = 500 * Math.pow(2, item.attempts);
-                    setTimeout(function () {
-                        requestQueue.unshift(item);
-                    }, delay);
-                } else {
-                    // Max attempts reached, move to offline storage
-                    storeOffline(item.payload);
-                }
-            }
-            queueInFlight = false;
-            // Process next after a micro delay to allow ID assignment, etc.
-            setTimeout(processQueue, 50); // increased delay to prevent tight loops on failure
-        };
-
-        processQueueItem(item, done);
-    }
-
-    function processQueueItem(item, callback) {
         var params = currentSlimStatParams();
-        var payload = item.payload;
-        var useBeacon = item.useBeacon;
         var transports = ["rest", "ajax", "adblock"];
         var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
         var selected = params.transport;
-        var order = [selected].concat(
-            transports.filter(function (t) {
-                return t !== selected;
-            })
-        );
-        function sendXHR(url, onFail, xhrOpts) {
-            xhrOpts = xhrOpts || { useNonce: true };
+        var order = [selected].concat(transports.filter((t) => t !== selected));
+
+        // Enqueue logic (default: queued). Pass opts.immediate=true to bypass queue.
+        if (!opts.immediate) {
+            // Queue pressure control: drop oldest non-high if above high watermark
+            if (requestQueue.length > QUEUE_HIGH_WATERMARK) {
+                for (var i = requestQueue.length - 1; i >= 0 && requestQueue.length > QUEUE_HIGH_WATERMARK; i--) {
+                    if (requestQueue[i].opts.priority !== "high") requestQueue.splice(i, 1);
+                }
+            }
+            if (opts.priority === "high") {
+                // Avoid duplicates of same payload at head
+                if (!requestQueue.length || requestQueue[0].payload !== payload) requestQueue.unshift({ payload, useBeacon, opts });
+            } else {
+                requestQueue.push({ payload, useBeacon, opts });
+            }
+            processQueue();
+            return true;
+        }
+
+        function sendXHR(url, onFail) {
             var xhr;
             try {
                 xhr = new XMLHttpRequest();
@@ -296,39 +255,92 @@ var SlimStat = (function () {
                     }
                     if (xhr.status === 200) {
                         var parsed = parseInt(xhr.responseText, 10);
-                        if (!isNaN(parsed) && parsed > 0) {
-                            params.id = xhr.responseText; // store new id
-                            flushPendingInteractions(); // Flush buffered interactions now that we have an ID
-                        }
-                        callback(true);
-                    } else {
-                        // Non-200 status is a failure, trigger retry/failover
-                        if (onFail) onFail();
-                    }
+                        if (!isNaN(parsed) && parsed > 0) params.id = xhr.responseText; // store new id
+                    } else if (onFail) onFail();
                 }
             };
-            try {
-                xhr.send(payload);
-            } catch (e) {
-                // This catches network errors before send, also a failure
-                if (onFail) onFail();
-            }
+            xhr.send(payload);
             return true;
         }
+
         function trySend(i) {
-            if (i >= order.length) {
-                // All transport methods have been tried and failed
-                callback(false);
-                return false;
-            }
+            if (i >= order.length) return false;
             var method = order[i];
             var url = endpoints[method];
             if (!url) return trySend(i + 1);
             if (useBeacon && navigator.sendBeacon && i === 0) {
-                // Beacon is fire-and-forget; we assume success for queue processing
                 var ok = navigator.sendBeacon(url, payload);
-                if (ok) {
-                    callback(true);
+                return ok || trySend(i + 1);
+            }
+            return sendXHR(url, function () {
+                trySend(i + 1);
+            });
+        }
+        return trySend(0);
+    }
+
+    function processQueue() {
+        if (queueInFlight) return;
+        var item = requestQueue.shift();
+        if (!item) return;
+        queueInFlight = true;
+        // Force immediate send (not enqueuing again)
+        var done = function () {
+            queueInFlight = false;
+            // Process next after a micro delay to allow ID assignment, etc.
+            setTimeout(processQueue, 0);
+        };
+        // Wrap original send with callback hooking via XHR readyState (monkey patch)
+        var params = currentSlimStatParams();
+        var originalId = params.id;
+        // We can't directly get callback from sendToServer; instead we replicate logic here for queue items
+        (function queuedSend(payload, useBeacon, opts) {
+            opts = opts || {};
+            var transports = ["rest", "ajax", "adblock"];
+            var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock: params.ajaxurl_adblock };
+            var selected = params.transport;
+            var order = [selected].concat(transports.filter((t) => t !== selected));
+            function sendXHR(url, onFail) {
+                var xhr;
+                try {
+                    xhr = new XMLHttpRequest();
+                } catch (e) {
+                    if (onFail) onFail();
+                    return false;
+                }
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+                if (params.wp_rest_nonce) xhr.setRequestHeader("X-WP-Nonce", params.wp_rest_nonce);
+                xhr.withCredentials = true;
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            var parsed = parseInt(xhr.responseText, 10);
+                            if (!isNaN(parsed) && parsed > 0) params.id = xhr.responseText; // store new id
+                        }
+                        done();
+                    }
+                };
+                try {
+                    xhr.send(payload);
+                } catch (e) {
+                    done();
+                }
+                return true;
+            }
+            function trySend(i) {
+                if (i >= order.length) {
+                    done();
+                    return false;
+                }
+                var method = order[i];
+                var url = endpoints[method];
+                if (!url) return trySend(i + 1);
+                if (useBeacon && navigator.sendBeacon && i === 0) {
+                    navigator.sendBeacon(url, payload);
+                    // Beacon is fire-and-forget; we mark done immediately
+                    done();
                     return true;
                 }
                 // If beacon fails, immediately try next method
@@ -410,12 +422,7 @@ var SlimStat = (function () {
         // class-based do not track
         if (doNotTrack.length && target.className && typeof target.className === "string") {
             var classes = target.className.split(" ");
-            if (
-                classes.some(function (c) {
-                    return doNotTrack.indexOf(c) !== -1;
-                })
-            )
-                return false;
+            if (classes.some((c) => doNotTrack.indexOf(c) !== -1)) return false;
         }
         if (doNotTrack.length && target.attributes && target.attributes.rel && target.attributes.rel.value) {
             if (anySubstring(target.attributes.rel.value, doNotTrack)) return false;
@@ -462,7 +469,7 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Pageview Logic -------------------------- //
-    var FP_EXCLUDES = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
+            var  FP_EXCLUDES = { excludes: { adBlock: true, addBehavior: true, userAgent: true, canvas: true, webgl: true, colorDepth: true, deviceMemory: true, hardwareConcurrency: true, sessionStorage: true, localStorage: true, indexedDb: true, openDatabase: true, cpuClass: true, plugins: true, webglVendorAndRenderer: true, hasLiedLanguages: true, hasLiedResolution: true, hasLiedOs: true, hasLiedBrowser: true, fonts: true, audio: true } };
 
     function buildPageviewBase(params) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
@@ -475,23 +482,6 @@ var SlimStat = (function () {
         options = options || {};
         extractSlimStatParams();
         var params = currentSlimStatParams();
-
-        // Check if this is a navigation event (not initial page load)
-        var isNavigationEvent = options.isNavigation || false;
-
-        // For navigation events, always track regardless of javascript_mode
-        // For initial page load, skip if server-side tracking is active
-        if (!isNavigationEvent && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
-            // Server-side tracking is active for initial page load, skip pageview but allow interactions
-            return;
-        }
-
-        // For navigation events, we need to track the new page, not the current one
-        if (isNavigationEvent) {
-            // Force a new pageview for the navigation event
-            params.id = null;
-        }
-
         var payloadBase = buildPageviewBase(params);
         if (!payloadBase) return;
 
@@ -502,15 +492,11 @@ var SlimStat = (function () {
 
         // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
         var now = Date.now();
-        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) {
-            return;
-        }
-
+        if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) return; // skip
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         var useBeacon = !waitForId; // need sync response when creating id
-
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) return;
         inflightPageview = waitForId;
@@ -519,28 +505,14 @@ var SlimStat = (function () {
         // Reset finalization state when starting new pageview
         // Note: finalizationInProgress is now managed in initSlimStatRuntime scope
 
-        const run = function () {
-            FingerprintJS.load()
-                .then(function (agent) {
-                    return agent.get(FP_EXCLUDES);
-                })
-                .then(function (result) {
-                    const components = result.components;
-                    initFingerprintHash(result);
-                    // Initial pageview (no id yet) should be immediate for faster id assignment
-                    sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
-                    showOptoutMessage();
-                    inflightPageview = false;
-                })
-                .catch(function (error) {
-                    // Fallback if fingerprinting fails
-                    console.warn("FingerprintJS failed:", error);
-                    const fallbackResult = { components: {}, visitorId: "" };
-                    initFingerprintHash(fallbackResult);
-                    sendToServer(payloadBase + buildSlimStatData(fallbackResult.components), useBeacon, { immediate: isEmpty(params.id) });
-                    showOptoutMessage();
-                    inflightPageview = false;
-                });
+        var run = function () {
+            Fingerprint2.get(FP_EXCLUDES, function (components) {
+                initFingerprintHash(components);
+                // Initial pageview (no id yet) should be immediate for faster id assignment
+                sendToServer(payloadBase + buildSlimStatData(components), useBeacon, { immediate: isEmpty(params.id) });
+                showOptoutMessage();
+                inflightPageview = false;
+            });
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
         else setTimeout(run, 250);
@@ -587,6 +559,57 @@ var SlimStat = (function () {
         document.cookie = "slimstat_optout_tracking=" + cookieValue + ";path=" + (params.baseurl || "/") + ";expires=" + expiration.toGMTString();
         var target = event.target || event.srcElement;
         if (target && target.parentNode && target.parentNode.parentNode) target.parentNode.parentNode.removeChild(target.parentNode);
+    }
+
+    // -------------------------- Navigation / Interactivity Integration -------------------------- //
+    function setupNavigationHooks() {
+        // WordPress Interactivity API Event
+        addEvent(document, "wp-interactivity:navigate", function () {
+            // Finalize current pageview (if any) before starting a new one
+            var params = currentSlimStatParams();
+            if (params.id && parseInt(params.id, 10) > 0) {
+                sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
+            }
+            params.id = null; // force new id on next pageview
+            sendPageview();
+        });
+
+        // History API overrides (fallback for SPAs / Interactivity polyfills)
+        if (window.history && history.pushState) {
+            var originalPush = history.pushState;
+            var originalReplace = history.replaceState;
+            history.pushState = function () {
+                var params = currentSlimStatParams();
+                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
+                params.id = null; // force new id
+                var res = originalPush.apply(this, arguments);
+                sendPageview();
+                return res;
+            };
+            history.replaceState = function () {
+                var res = originalReplace.apply(this, arguments);
+                sendPageview();
+                return res;
+            };
+            addEvent(window, "popstate", function () {
+                currentSlimStatParams().id = null;
+                sendPageview();
+            });
+        }
+    }
+
+    // -------------------------- Event Delegation for Clicks -------------------------- //
+    function setupClickDelegation() {
+        addEvent(document.body, "click", function (e) {
+            var target = e.target;
+            while (target && target !== document.body) {
+                if (target.matches && target.matches("a,button,input,area")) {
+                    trackInteraction(e, null, null);
+                    break;
+                }
+                target = target.parentNode;
+            }
+        });
     }
 
     // -------------------------- Public API (legacy names preserved) -------------------------- //
@@ -664,20 +687,17 @@ if (!window.requestIdleCallback) {
 
 // Main initialization (refactored)
 (function initSlimStatRuntime() {
-    // These functions and variables are now defined in this scope
-    // and will be shared with the SlimStat object.
-    var pendingInteractions = [];
-    var OFFLINE_KEY = "slimstat_offline_queue";
-    var pageviewInProgress = false;
+    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
+    var finalized = false;
 
-    function loadOfflineQueue() {
-        try {
-            var raw = localStorage.getItem(OFFLINE_KEY);
-            if (!raw) return [];
-            var arr = JSON.parse(raw);
-            return Array.isArray(arr) ? arr : [];
-        } catch (e) {
-            return [];
+    function finalizeCurrent(reason) {
+        if (finalized) return;
+        var p = window.SlimStatParams || {};
+        if (p.id && parseInt(p.id, 10) > 0) {
+            // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
+            var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+            SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
+            finalized = true;
         }
     }
 
@@ -739,16 +759,11 @@ if (!window.requestIdleCallback) {
     }
 
     // Observe for parameter mutations (meta tag or script changes)
-    // Only observe if we don't have an ID yet (to avoid unnecessary tracking requests)
     var lastParams = JSON.stringify(window.SlimStatParams || {});
-    var observer = new MutationObserver(function () {
-        var params = window.SlimStatParams || {};
-        // Only extract params if we don't have an ID yet (initial page load)
-        if (SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0) {
-            SlimStat._extract_params();
-            var serialized = JSON.stringify(window.SlimStatParams || {});
-            if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
-        }
+            var  observer = new MutationObserver(function () {
+        SlimStat._extract_params();
+        var serialized = JSON.stringify(window.SlimStatParams || {});
+        if (serialized !== lastParams) lastParams = serialized; // reserved for future diff-based logic
     });
     observer.observe(document.head, { childList: true, subtree: true });
     observer.observe(document.body, { childList: true, subtree: true });
