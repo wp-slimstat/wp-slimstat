@@ -825,6 +825,38 @@ jQuery(function () {
     // ----- BEGIN: CUSTOMIZER -------------------------------------------------------
     //
 
+    // Initialize sortable for customizer layout
+    if (jQuery(".meta-box-sortables").length) {
+        jQuery(".meta-box-sortables").sortable({
+            connectWith: ".meta-box-sortables",
+            items: ".postbox",
+            placeholder: "sortable-placeholder",
+            handle: ".hndle",
+            cursor: "move",
+            delay: 150,
+            distance: 5,
+            tolerance: "pointer",
+            forcePlaceholderSize: true,
+            helper: "clone",
+            opacity: 0.65,
+            stop: function (event, ui) {
+                // Save the new order
+                var data = {
+                    action: "meta-box-order",
+                    _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
+                    page: SlimStatAdminParams.page_location + "_page_slimlayout",
+                    page_columns: 0,
+                };
+
+                jQuery(".meta-box-sortables").each(function () {
+                    data["order[" + this.id.split("-")[0] + "]"] = jQuery(this).sortable("toArray").join(",");
+                });
+
+                jQuery.post(ajaxurl, data);
+            },
+        });
+    }
+
     // Clone and delete report placeholders
     jQuery(".slimstat-layout .slimstat-header-buttons a").on("click", function (e) {
         e.preventDefault();
