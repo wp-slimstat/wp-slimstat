@@ -75,6 +75,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
             ],
+            'slimemail' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => wp_slimstat::pro_is_installed() ? __('Email Report', 'wp-slimstat') : __('Email Report (pro)', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_email_report'],
+            ],
             'slimlayout' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
@@ -944,7 +951,17 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/layout.php');
     }
 
-    // END: wp_slimstat_include_addons
+    // END: wp_slimstat_include_layout
+
+    /**
+     * Includes the email report screen
+     */
+    public static function wp_slimstat_include_email_report()
+    {
+        include(__DIR__ . '/view/email-report.php');
+    }
+
+    // END: wp_slimstat_include_email_report
 
     /**
      * Handles the upgrade to pro from the free version
