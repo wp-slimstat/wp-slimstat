@@ -268,10 +268,10 @@ class wp_slimstat_admin
             $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
             $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
 
-            $db_missing = false;
-            try {
-                $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
-                $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+		$db_missing = false;
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$uses_db  = in_array($provider, ['maxmind', 'dbip'], true);
                 if ($uses_db) {
                     $service    = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                     $db_missing = !file_exists($service->getProvider()->getDbPath());
@@ -1469,12 +1469,12 @@ class wp_slimstat_admin
 
     // END: get_filter_options
 
-    public static function update_geoip_database()
-    {
-        check_ajax_referer('wp_rest', 'security');
+	public static function update_geoip_database()
+	{
+		check_ajax_referer('wp_rest', 'security');
 
-        try {
-            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
             if ('cloudflare' === $provider) {
                 wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
             }
@@ -1503,12 +1503,12 @@ class wp_slimstat_admin
         }
     }
 
-    public static function check_geoip_database()
-    {
-        check_ajax_referer('wp_rest', 'security');
+	public static function check_geoip_database()
+	{
+		check_ajax_referer('wp_rest', 'security');
 
-        try {
-            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
             if ('cloudflare' === $provider) {
                 wp_send_json_success(__('Cloudflare geolocation is active. No database to check.', 'wp-slimstat'));
             }

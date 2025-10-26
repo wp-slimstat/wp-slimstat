@@ -97,11 +97,11 @@ class GeoService
         return false;
     }
 
-    public function download()
-    {
-        try {
-            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
-            if (in_array($provider, ['dbip', 'maxmind'], true)) {
+	public function download()
+	{
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			if (in_array($provider, ['maxmind', 'dbip'], true)) {
                 // GeolocationService reads settings automatically
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                 $ok      = $service->updateDatabase();
@@ -117,13 +117,13 @@ class GeoService
         }
     }
 
-    /**
-     * @throws \Exception
-     */
-    public function checkDatabase()
-    {
-        try {
-            $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+	/**
+	 * @throws \Exception
+	 */
+	public function checkDatabase()
+	{
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
             // GeolocationService reads settings automatically
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $dbPath  = $service->getProvider()->getDbPath();
@@ -163,9 +163,9 @@ class GeoService
         wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
     }
 
-    public function deleteDatabaseFile()
-    {
-        $provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+	public function deleteDatabaseFile()
+	{
+		$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
         // GeolocationService reads settings automatically
         $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
         $dbPath  = $service->getProvider()->getDbPath();

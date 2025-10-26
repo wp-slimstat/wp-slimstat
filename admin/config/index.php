@@ -176,14 +176,14 @@ $settings = [
                 'title' => __('Third-party Libraries', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'geolocation_provider' => [
-                'title'         => __('Geolocation Provider', 'wp-slimstat'),
-                'type'          => 'select',
-                'select_values' => [
-                    'dbip'       => __('DB-IP City Lite (recommended, free)', 'wp-slimstat'),
-                    'maxmind'    => __('MaxMind GeoLite2', 'wp-slimstat'),
-                    'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
-                ],
+			'geolocation_provider' => [
+				'title'         => __('Geolocation Provider', 'wp-slimstat'),
+				'type'          => 'select',
+				'select_values' => [
+					'maxmind'    => __('MaxMind GeoLite2 (recommended)', 'wp-slimstat'),
+					'dbip'       => __('DB-IP City Lite (free)', 'wp-slimstat'),
+					'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
+				],
                 'description' => __('<strong>Choose how Slimstat resolves visitor locations:</strong><br />
 <strong>DB-IP City Lite</strong> – Free, no license required. Slimstat downloads a local database and updates it automatically in the background after you save settings. You can also run the update manually using the button below. Works for arbitrary IPs in reports.<br />
 <strong>MaxMind GeoLite2</strong> – Requires a free MaxMind license key. City vs Country precision affects database size and download time. Updates run in the background after saving; you can also update manually. If PHP Phar is disabled on your server, please upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.<br />
@@ -685,10 +685,10 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
-        // Geolocation settings save (provider-based)
-        if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
-            $prevProvider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
-            $provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
+		// Geolocation settings save (provider-based)
+		if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
+			$prevProvider = wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
             $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
             $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
 

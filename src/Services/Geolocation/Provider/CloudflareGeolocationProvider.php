@@ -16,30 +16,40 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
         return $this->options['precision'] ?? 'country';
     }
 
-    public function locate($ip)
-    {
-        // Build a lowercased map of server headers for case-insensitive access
-        $server = [];
-        foreach (($_SERVER ?? []) as $k => $v) {
-            $server[strtolower($k)] = $v;
-        }
+	public function locate($ip)
+	{
+		// Build a lowercased map of server headers for case-insensitive access
+		$server = [];
+		foreach (($_SERVER ?? []) as $k => $v) {
+			$server[strtolower($k)] = $v;
+		}
 
-        $get = function ($key, $filter = null) use ($server) {
-            $k = strtolower($key);
-            if (!isset($server[$k])) {
-                return null;
-            }
+		// Validate that the request is actually from Cloudflare by checking for CF-Ray header
+		// CF-Ray is a unique identifier that Cloudflare adds to every request
+		if (!isset($server['http_cf_ray']) || empty($server['http_cf_ray'])) {
+			// Not a Cloudflare request - return null to indicate geolocation is not available
+			return null;
+		}
 
-            $val = $server[$k];
-            // Basic sanitization similar to WordPress' sanitize_text_field for strings
-            if ('float' === $filter) {
-                $val = filter_var($val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
-            } else {
-                $val = is_string($val) ? wp_kses_data(wp_unslash($val)) : $val;
-            }
+		$get = function ($key, $filter = null) use ($server) {
+			$k = strtolower($key);
+			if (!isset($server[$k])) {
+				return null;
+			}
 
-            return $val;
-        };
+			$val = $server[$k];
+			// Use appropriate sanitization based on the filter type
+			if ('float' === $filter) {
+				$val = filter_var($val, FILTER_VALIDATE_FLOAT, FILTER_NULL_ON_FAILURE);
+			} else {
+				// Use sanitize_text_field instead of wp_kses_data for header values
+				// wp_kses_data is designed for HTML content and may strip valid header characters
+				// sanitize_text_field is more appropriate for simple text values like country codes
+				$val = is_string($val) ? sanitize_text_field(wp_unslash($val)) : $val;
+			}
+
+			return $val;
+		};
 
         $country   = $get('HTTP_CF_IPCOUNTRY');
         $continent = $get('HTTP_CF_IPCONTINENT');

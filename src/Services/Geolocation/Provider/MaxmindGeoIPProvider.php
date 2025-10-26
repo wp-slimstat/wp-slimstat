@@ -162,81 +162,86 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			return false;
 		}
 
-		try {
-			$this->logDebug('Starting MaxMind database extraction...');
-			$tgz     = new \PharData($tgzPath);
-			$tarPath = $tmp . '.tar';
-			$tgz->decompress();
-			$tar = new \PharData($tarPath);
+	$extractDir = null;
+	$tarPath = null;
 
-			$baseDir = dirname($this->dbPath);
-			$this->ensureDirExists($baseDir);
-			$extractDir = $baseDir . '/.mmdb_extract_' . wp_generate_password(8, false, false);
-			@wp_mkdir_p($extractDir);
+	try {
+		$this->logDebug('Starting MaxMind database extraction...');
+		$tgz     = new \PharData($tgzPath);
+		$tarPath = $tmp . '.tar';
+		$tgz->decompress();
+		$tar = new \PharData($tarPath);
 
-			$this->logDebug(sprintf('Extracting archive to (uploads): %s', $extractDir));
-			$tar->extractTo($extractDir, null, true);
+		$baseDir = dirname($this->dbPath);
+		$this->ensureDirExists($baseDir);
+		$extractDir = $baseDir . '/.mmdb_extract_' . wp_generate_password(8, false, false);
+		@wp_mkdir_p($extractDir);
 
-			$mmdb_found = false;
-			$files_in_archive = [];
+		$this->logDebug(sprintf('Extracting archive to (uploads): %s', $extractDir));
+		$tar->extractTo($extractDir, null, true);
 
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
-			);
+		$mmdb_found = false;
+		$files_in_archive = [];
 
-			foreach ($iterator as $file) {
-				if (!$file->isFile()) {
-					continue;
+		$iterator = new \RecursiveIteratorIterator(
+			new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
+		);
+
+		foreach ($iterator as $file) {
+			if (!$file->isFile()) {
+				continue;
+			}
+			$name = $file->getFilename();
+			$files_in_archive[] = $name;
+			if ('.mmdb' === substr($name, -5)) {
+				$source = $file->getPathname();
+				$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
+				$this->ensureDirExists(dirname($this->dbPath));
+				if ($wp_filesystem->move($source, $this->dbPath, true) || @copy($source, $this->dbPath)) {
+					$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
+					$mmdb_found = true;
+					break;
 				}
-				$name = $file->getFilename();
-				$files_in_archive[] = $name;
-				if ('.mmdb' === substr($name, -5)) {
-					$source = $file->getPathname();
-					$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
-					$this->ensureDirExists(dirname($this->dbPath));
-					if ($wp_filesystem->move($source, $this->dbPath, true) || @copy($source, $this->dbPath)) {
-						$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
-						$mmdb_found = true;
-						break;
-					}
-				}
 			}
+		}
 
-			if (is_dir($extractDir)) {
-				$wp_filesystem->delete($extractDir, true);
-			}
-
-			$wp_filesystem->delete($tarPath);
-			$wp_filesystem->delete($tgzPath);
-
-			if (!$mmdb_found) {
-				$file_list = implode(', ', array_unique($files_in_archive));
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list),
-				]);
-				return false;
-			}
-
-			$final_exists = file_exists($this->dbPath);
-			$this->logDebug(sprintf('Final database file exists: %s (path: %s)', $final_exists ? 'yes' : 'no', $this->dbPath));
-
-			if ($final_exists) {
-				$file_size = filesize($this->dbPath);
-				$this->logDebug(sprintf('Database file size: %d bytes', $file_size));
-				\wp_slimstat::update_option('slimstat_geoip_error', []);
-			}
-
-			return $final_exists;
-		} catch (\Exception $exception) {
-			@unlink($tarPath ?? '');
-			@unlink($tgzPath);
+		if (!$mmdb_found) {
+			$file_list = implode(', ', array_unique($files_in_archive));
 			\wp_slimstat::update_option('slimstat_geoip_error', [
 				'time'  => time(),
-				'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
+				'error' => sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list),
 			]);
 			return false;
 		}
+
+		$final_exists = file_exists($this->dbPath);
+		$this->logDebug(sprintf('Final database file exists: %s (path: %s)', $final_exists ? 'yes' : 'no', $this->dbPath));
+
+		if ($final_exists) {
+			$file_size = filesize($this->dbPath);
+			$this->logDebug(sprintf('Database file size: %d bytes', $file_size));
+			\wp_slimstat::update_option('slimstat_geoip_error', []);
+		}
+
+		return $final_exists;
+	} catch (\Exception $exception) {
+		\wp_slimstat::update_option('slimstat_geoip_error', [
+			'time'  => time(),
+			'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
+		]);
+		return false;
+	} finally {
+		// Ensure cleanup happens in all code paths (success or failure)
+		if ($extractDir && is_dir($extractDir)) {
+			$wp_filesystem->delete($extractDir, true);
+		}
+		if ($tarPath && file_exists($tarPath)) {
+			$wp_filesystem->delete($tarPath);
+		}
+		if (file_exists($tgzPath)) {
+			$wp_filesystem->delete($tgzPath);
+		}
+	}
 		} catch (\Exception $e) {
 			// Catch any fatal errors in the entire updateDatabase method
 			\wp_slimstat::update_option('slimstat_geoip_error', [
