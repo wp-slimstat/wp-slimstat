@@ -704,7 +704,8 @@ class wp_slimstat_reports
                 'callback_args' => [
                     'type'    => 'top',
                     'columns' => 'searchterms',
-                    'where'   => 'content_type LIKE "%%search%%" AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'where'   => 'content_type LIKE %s AND searchterms <> "" AND searchterms IS NOT NULL',
+                    'where_params' => ['%search%'],
                     'raw'     => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
