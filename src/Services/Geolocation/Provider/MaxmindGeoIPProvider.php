@@ -106,142 +106,160 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			return false;
 		}
 
-		// Always target a .tgz path so PharData can detect archive type
+		// Initialize cleanup variables before any operations to ensure they're always cleaned up
 		$tgzPath = $tmp . '.tgz';
+		$extractDir = null;
+		$tarPath = null;
+		$cleanup = function() use (&$extractDir, &$tarPath, &$tgzPath, $wp_filesystem) {
+			if ($extractDir && is_dir($extractDir)) {
+				$wp_filesystem->delete($extractDir, true);
+				$this->logDebug(sprintf('Cleaned up temporary extraction directory: %s', $extractDir));
+			}
+			if ($tarPath && file_exists($tarPath)) {
+				$wp_filesystem->delete($tarPath);
+				$this->logDebug('Cleaned up temporary tar file.');
+			}
+			if (file_exists($tgzPath)) {
+				$wp_filesystem->delete($tgzPath);
+				$this->logDebug('Cleaned up temporary tgz file.');
+			}
+		};
 
-		// Attempt 1: Stream download via WP HTTP API (mitigates cURL 56 by avoiding large in-memory buffers)
-		$http_args = [
-			'timeout'      => 90,
-			'redirection'  => 5,
-			'httpversion'  => '1.0',
-			'headers'      => [
-				'User-Agent' => 'WP-Slimstat MaxMind Updater',
-				'Connection' => 'close',
-			],
-			'sslverify'    => true,
-			'stream'       => true,
-			'filename'     => $tgzPath,
-		];
-		$response = wp_remote_get($this->dbUrl, $http_args);
-		if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
-			// Attempt 2: Fallback to download_url helper
-			$downloaded_file = download_url($this->dbUrl, 300);
-			if (is_wp_error($downloaded_file)) {
+		try {
+			// Attempt 1: Stream download via WP HTTP API (mitigates cURL 56 by avoiding large in-memory buffers)
+			$http_args = [
+				'timeout'      => 90,
+				'redirection'  => 5,
+				'httpversion'  => '1.0',
+				'headers'      => [
+					'User-Agent' => 'WP-Slimstat MaxMind Updater',
+					'Connection' => 'close',
+				],
+				'sslverify'    => true,
+				'stream'       => true,
+				'filename'     => $tgzPath,
+			];
+			$response = wp_remote_get($this->dbUrl, $http_args);
+			if (is_wp_error($response) || (int) wp_remote_retrieve_response_code($response) !== 200) {
+				// Attempt 2: Fallback to download_url helper
+				$downloaded_file = download_url($this->dbUrl, 300);
+				if (is_wp_error($downloaded_file)) {
+					\wp_slimstat::update_option('slimstat_geoip_error', [
+						'time'  => time(),
+						'error' => sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $downloaded_file->get_error_message()),
+					]);
+					$cleanup();
+					return false;
+				}
+
+				// Stage the downloaded file to $tgzPath
+				if (!$wp_filesystem->move($downloaded_file, $tgzPath, true)) {
+					$contents = $wp_filesystem->get_contents($downloaded_file);
+					if ($contents === false || !$wp_filesystem->put_contents($tgzPath, $contents, FS_CHMOD_FILE)) {
+						\wp_slimstat::update_option('slimstat_geoip_error', [
+							'time'  => time(),
+							'error' => __('Failed to stage downloaded MaxMind archive.', 'wp-slimstat'),
+						]);
+						$wp_filesystem->delete($downloaded_file);
+						$cleanup();
+						return false;
+					}
+					$wp_filesystem->delete($downloaded_file);
+				}
+				$this->logDebug('Successfully downloaded MaxMind database (fallback helper).');
+			} else {
+				$this->logDebug('Successfully downloaded MaxMind database (streamed).');
+			}
+
+			// Try to extract mmdb from tar.gz using PharData if available
+			if (!class_exists('PharData')) {
 				\wp_slimstat::update_option('slimstat_geoip_error', [
 					'time'  => time(),
-					'error' => sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $downloaded_file->get_error_message()),
+					'error' => __('MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar extension or upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
 				]);
+				$cleanup();
 				return false;
 			}
 
-			// Stage the downloaded file to $tgzPath
-			if (!$wp_filesystem->move($downloaded_file, $tgzPath, true)) {
-				$contents = $wp_filesystem->get_contents($downloaded_file);
-				if ($contents === false || !$wp_filesystem->put_contents($tgzPath, $contents, FS_CHMOD_FILE)) {
-					\wp_slimstat::update_option('slimstat_geoip_error', [
-						'time'  => time(),
-						'error' => __('Failed to stage downloaded MaxMind archive.', 'wp-slimstat'),
-					]);
-					$wp_filesystem->delete($downloaded_file);
-					return false;
+			$this->logDebug('Starting MaxMind database extraction...');
+			$tgz     = new \PharData($tgzPath);
+			$tarPath = $tmp . '.tar';
+			$tgz->decompress();
+			$tar = new \PharData($tarPath);
+
+			$baseDir = dirname($this->dbPath);
+			$this->ensureDirExists($baseDir);
+			$extractDir = $baseDir . '/.mmdb_extract_' . wp_generate_password(8, false, false);
+
+			// Create extraction directory and ensure it's tracked for cleanup
+			if (!wp_mkdir_p($extractDir)) {
+				\wp_slimstat::update_option('slimstat_geoip_error', [
+					'time'  => time(),
+					'error' => __('Failed to create temporary extraction directory.', 'wp-slimstat'),
+				]);
+				$cleanup();
+				return false;
+			}
+
+			$this->logDebug(sprintf('Extracting archive to (uploads): %s', $extractDir));
+			$tar->extractTo($extractDir, null, true);
+
+			$mmdb_found = false;
+			$files_in_archive = [];
+
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
+			);
+
+			foreach ($iterator as $file) {
+				if (!$file->isFile()) {
+					continue;
 				}
-				$wp_filesystem->delete($downloaded_file);
-			}
-			$this->logDebug('Successfully downloaded MaxMind database (fallback helper).');
-		} else {
-			$this->logDebug('Successfully downloaded MaxMind database (streamed).');
-		}
-
-		// Try to extract mmdb from tar.gz using PharData if available
-		if (!class_exists('PharData')) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => __('MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar extension or upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
-			]);
-			@unlink($tgzPath);
-			return false;
-		}
-
-	$extractDir = null;
-	$tarPath = null;
-
-	try {
-		$this->logDebug('Starting MaxMind database extraction...');
-		$tgz     = new \PharData($tgzPath);
-		$tarPath = $tmp . '.tar';
-		$tgz->decompress();
-		$tar = new \PharData($tarPath);
-
-		$baseDir = dirname($this->dbPath);
-		$this->ensureDirExists($baseDir);
-		$extractDir = $baseDir . '/.mmdb_extract_' . wp_generate_password(8, false, false);
-		@wp_mkdir_p($extractDir);
-
-		$this->logDebug(sprintf('Extracting archive to (uploads): %s', $extractDir));
-		$tar->extractTo($extractDir, null, true);
-
-		$mmdb_found = false;
-		$files_in_archive = [];
-
-		$iterator = new \RecursiveIteratorIterator(
-			new \RecursiveDirectoryIterator($extractDir, \FilesystemIterator::SKIP_DOTS)
-		);
-
-		foreach ($iterator as $file) {
-			if (!$file->isFile()) {
-				continue;
-			}
-			$name = $file->getFilename();
-			$files_in_archive[] = $name;
-			if ('.mmdb' === substr($name, -5)) {
-				$source = $file->getPathname();
-				$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
-				$this->ensureDirExists(dirname($this->dbPath));
-				if ($wp_filesystem->move($source, $this->dbPath, true) || @copy($source, $this->dbPath)) {
-					$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
-					$mmdb_found = true;
-					break;
+				$name = $file->getFilename();
+				$files_in_archive[] = $name;
+				if ('.mmdb' === substr($name, -5)) {
+					$source = $file->getPathname();
+					$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
+					$this->ensureDirExists(dirname($this->dbPath));
+					if ($wp_filesystem->move($source, $this->dbPath, true) || @copy($source, $this->dbPath)) {
+						$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
+						$mmdb_found = true;
+						break;
+					}
 				}
 			}
-		}
 
-		if (!$mmdb_found) {
-			$file_list = implode(', ', array_unique($files_in_archive));
+			if (!$mmdb_found) {
+				$file_list = implode(', ', array_unique($files_in_archive));
+				\wp_slimstat::update_option('slimstat_geoip_error', [
+					'time'  => time(),
+					'error' => sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list),
+				]);
+				$cleanup();
+				return false;
+			}
+
+			$final_exists = file_exists($this->dbPath);
+			$this->logDebug(sprintf('Final database file exists: %s (path: %s)', $final_exists ? 'yes' : 'no', $this->dbPath));
+
+			if ($final_exists) {
+				$file_size = filesize($this->dbPath);
+				$this->logDebug(sprintf('Database file size: %d bytes', $file_size));
+				\wp_slimstat::update_option('slimstat_geoip_error', []);
+			}
+
+			// Always cleanup temporary files, even on success
+			$cleanup();
+			return $final_exists;
+		} catch (\Exception $exception) {
 			\wp_slimstat::update_option('slimstat_geoip_error', [
 				'time'  => time(),
-				'error' => sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list),
+				'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
 			]);
+			// Ensure cleanup happens even when exception is thrown
+			$cleanup();
 			return false;
 		}
-
-		$final_exists = file_exists($this->dbPath);
-		$this->logDebug(sprintf('Final database file exists: %s (path: %s)', $final_exists ? 'yes' : 'no', $this->dbPath));
-
-		if ($final_exists) {
-			$file_size = filesize($this->dbPath);
-			$this->logDebug(sprintf('Database file size: %d bytes', $file_size));
-			\wp_slimstat::update_option('slimstat_geoip_error', []);
-		}
-
-		return $final_exists;
-	} catch (\Exception $exception) {
-		\wp_slimstat::update_option('slimstat_geoip_error', [
-			'time'  => time(),
-			'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
-		]);
-		return false;
-	} finally {
-		// Ensure cleanup happens in all code paths (success or failure)
-		if ($extractDir && is_dir($extractDir)) {
-			$wp_filesystem->delete($extractDir, true);
-		}
-		if ($tarPath && file_exists($tarPath)) {
-			$wp_filesystem->delete($tarPath);
-		}
-		if (file_exists($tgzPath)) {
-			$wp_filesystem->delete($tgzPath);
-		}
-	}
 		} catch (\Exception $e) {
 			// Catch any fatal errors in the entire updateDatabase method
 			\wp_slimstat::update_option('slimstat_geoip_error', [
