@@ -380,7 +380,10 @@ document.addEventListener("DOMContentLoaded", function () {
         for (var d = 0; d < preparedDatasets.length; d++) {
             var ds = preparedDatasets[d];
             if (chartType === "bar") {
-                ds.backgroundColor = ds.backgroundColor || ds.borderColor + "40";
+                // Only set backgroundColor if it's not already a function (for peak highlighting)
+                if (typeof ds.backgroundColor !== "function") {
+                    ds.backgroundColor = ds.backgroundColor || ds.borderColor + "40";
+                }
                 ds.borderRadius = 6;
                 ds.borderSkipped = false;
                 ds.categoryPercentage = 0.8;
