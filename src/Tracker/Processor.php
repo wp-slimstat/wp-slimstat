@@ -179,53 +179,71 @@ class Processor
 			}
 		}
 
-		\wp_slimstat::$stat['language'] = Utils::getLanguage();
-		if (!empty(\wp_slimstat::$stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) \wp_slimstat::$stat['language'])) {
-			return false;
-		}
+	\wp_slimstat::$stat['language'] = Utils::getLanguage();
+	if (!empty(\wp_slimstat::$stat['language']) && !empty(\wp_slimstat::$settings['ignore_languages']) && false !== stripos(\wp_slimstat::$settings['ignore_languages'], (string) \wp_slimstat::$stat['language'])) {
+		return false;
+	}
 
-		// Determine which geolocation provider to use
-		$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+	// Privacy Processing Order (GDPR Compliance):
+	// 1. Store original IP for hashing (if needed)
+	// 2. Anonymize IP FIRST (if enabled) - masks IP before geolocation
+	// 3. Geolocate using anonymized IP (or original if anonymization disabled)
+	// 4. Hash IP LAST (if enabled) - uses original IP for consistent hash
+	// This ensures geolocation data matches the stored IP address
+	$original_ip_for_hash = \wp_slimstat::$stat['ip'];
+
+	// Step 1: Anonymize IP if enabled (before geolocation)
+	if ('on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off')) {
+		\wp_slimstat::$stat['ip'] = IPHashProvider::anonymizeIP(\wp_slimstat::$stat['ip']);
+		if (!empty(\wp_slimstat::$stat['other_ip'])) {
+			\wp_slimstat::$stat['other_ip'] = IPHashProvider::anonymizeIP(\wp_slimstat::$stat['other_ip']);
+		}
+	}
+
+	// Step 2: Perform geolocation using the processed IP (anonymized or original)
+	$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
         		$geographicProvider = new GeolocationService($provider, []);
 
+	try {
+		$geolocation_data = $geographicProvider->locate(\wp_slimstat::$stat['ip']);
+	} catch (\Exception $e) {
+		$geolocation_data = null;
+	}
+
+	// Fallback to DB-IP if primary provider failed or returned empty
+	if (empty($geolocation_data) || empty($geolocation_data['country_code'])) {
 		try {
-			$geolocation_data = $geographicProvider->locate(\wp_slimstat::$stat['ip']);
+			$fallbackProvider = new GeolocationService('dbip', []);
+			$fallbackData     = $fallbackProvider->locate(\wp_slimstat::$stat['ip']);
+			if (!empty($fallbackData) && !empty($fallbackData['country_code'])) {
+				$geolocation_data = $fallbackData;
+			}
 		} catch (\Exception $e) {
-			$geolocation_data = null;
+			// ignore
 		}
+	}
 
-		// Fallback to DB-IP if primary provider failed or returned empty
-		if (empty($geolocation_data) || empty($geolocation_data['country_code'])) {
-			try {
-				$fallbackProvider = new GeolocationService('dbip', []);
-				$fallbackData     = $fallbackProvider->locate(\wp_slimstat::$stat['ip']);
-				if (!empty($fallbackData) && !empty($fallbackData['country_code'])) {
-					$geolocation_data = $fallbackData;
-				}
-			} catch (\Exception $e) {
-				// ignore
-			}
+	if (!empty($geolocation_data['country_code']) && 'xx' !== strtolower($geolocation_data['country_code'])) {
+		\wp_slimstat::$stat['country'] = strtolower($geolocation_data['country_code']);
+		if (!empty($geolocation_data['city'])) {
+			\wp_slimstat::$stat['city'] = $geolocation_data['city'];
 		}
-
-		if (!empty($geolocation_data['country_code']) && 'xx' !== strtolower($geolocation_data['country_code'])) {
-			\wp_slimstat::$stat['country'] = strtolower($geolocation_data['country_code']);
-			if (!empty($geolocation_data['city'])) {
-				\wp_slimstat::$stat['city'] = $geolocation_data['city'];
-			}
-			if (!empty($geolocation_data['subdivision']) && !empty(\wp_slimstat::$stat['city'])) {
-				\wp_slimstat::$stat['city'] .= ' (' . $geolocation_data['subdivision'] . ')';
-			}
-			if (!empty($geolocation_data['latitude']) && !empty($geolocation_data['longitude'])) {
-				\wp_slimstat::$stat['location'] = $geolocation_data['latitude'] . ',' . $geolocation_data['longitude'];
-			}
+		if (!empty($geolocation_data['subdivision']) && !empty(\wp_slimstat::$stat['city'])) {
+			\wp_slimstat::$stat['city'] .= ' (' . $geolocation_data['subdivision'] . ')';
 		}
-
-		if (isset(\wp_slimstat::$stat['country']) && (\wp_slimstat::$stat['country'] !== '' && \wp_slimstat::$stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], \wp_slimstat::$stat['country'])) {
-			return false;
+		if (!empty($geolocation_data['latitude']) && !empty($geolocation_data['longitude'])) {
+			\wp_slimstat::$stat['location'] = $geolocation_data['latitude'] . ',' . $geolocation_data['longitude'];
 		}
+	}
 
-		// Process IP address with anonymization and hashing
-		\wp_slimstat::$stat = IPHashProvider::processIp(\wp_slimstat::$stat);
+	if (isset(\wp_slimstat::$stat['country']) && (\wp_slimstat::$stat['country'] !== '' && \wp_slimstat::$stat['country'] !== '0') && !empty(\wp_slimstat::$settings['ignore_countries']) && false !== stripos(\wp_slimstat::$settings['ignore_countries'], \wp_slimstat::$stat['country'])) {
+		return false;
+	}
+
+	// Step 3: Hash IP if enabled (after geolocation, using original IP for hash)
+	if ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+		\wp_slimstat::$stat = IPHashProvider::hashIP(\wp_slimstat::$stat, $original_ip_for_hash);
+	}
 
 		if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
 			if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
