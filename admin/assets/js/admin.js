@@ -63,27 +63,32 @@ jQuery(function () {
     jQuery(document).on("change", toggleSelector, toggleTrackingRequestMethod);
     jQuery(document).on("switchChange.bootstrapSwitch", toggleSelector, toggleTrackingRequestMethod);
 
-    var licenseType = jQuery("#enable_maxmind");
-    if (licenseType.val() !== "on") {
-        jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        jQuery("#maxmind_user_id").closest("tr").css("display", "none");
+    // Geolocation provider-based UI toggles
+    function toggleGeoUi() {
+        var provider = jQuery("#geolocation_provider").val();
+        var $licenseRow = jQuery("#maxmind_license_key").closest("tr");
+        var $dbActionsRow = jQuery("#slimstat-update-geoip-database").length ? jQuery("#slimstat-update-geoip-database").closest("tr") : jQuery();
+
+        if (provider === "maxmind") {
+            $licenseRow.css("display", "table-row");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "dbip") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "cloudflare") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "none");
+        }
     }
+    // Initialize and bind change
+    toggleGeoUi();
+    jQuery(document).on("change", "#geolocation_provider", toggleGeoUi);
 
     // ----- BEGIN: ACCESS LOG -------------------------------------------------------
     //
     SlimStatAdmin.access_log_count_down();
 
-    jQuery("#enable_maxmind").on("change", function (e) {
-        var value = e.target.value;
-        if (value == "on") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "table-row");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "table-row");
-        }
-        if (value == "no") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "none");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        }
-    });
+    // remove legacy enable_maxmind toggle handler (migrated to provider-based)
 
     // GeoIP Database Manually Update
     jQuery("#slimstat-update-geoip-database").on("click", function (e) {
@@ -1066,6 +1071,23 @@ var SlimStatAdmin = {
             filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
             for (i in filters_input) {
                 data[filters_input[i]["name"]] = filters_input[i]["value"];
+            }
+
+            // If this is the real-time report, remove date filters to get fresh data
+            if (id == "slim_p7_02") {
+                // Remove both prefixed (fs[]) and non-prefixed date filters
+                delete data.hour;
+                delete data.day;
+                delete data.month;
+                delete data.year;
+                delete data.interval;
+                delete data.interval_hours;
+                delete data["fs[hour]"];
+                delete data["fs[day]"];
+                delete data["fs[month]"];
+                delete data["fs[year]"];
+                delete data["fs[interval]"];
+                delete data["fs[interval_hours]"];
             }
 
             jQuery

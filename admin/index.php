@@ -9,8 +9,11 @@ class wp_slimstat_admin
     public static $current_screen    = 'slimview1';
     public static $page_location     = 'slimstat';
     public static $meta_user_reports = [];
+    public static $settings = [];
+    public static $user_reports = [];
+    public static $admin_notice    = '';
+    public static $main_menu_slug = 'slimview1';
 
-    protected static $admin_notice    = '';
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -160,10 +163,8 @@ class wp_slimstat_admin
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
 
         // Display a notice that hightlights this version's features
-        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview')) {
-            if (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin()) {
-                add_action('admin_notices', [self::class, 'show_latest_news']);
-            }
+        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
+            add_action('admin_notices', [self::class, 'show_latest_news']);
 
         }
 
@@ -261,6 +262,64 @@ class wp_slimstat_admin
             wp_schedule_event(time() + $nextRunInterval, 'weekly', 'wp_slimstat_update_geoip_database');
         }
 
+        // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
+        // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
+        $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
+        if ($cron_disabled) {
+            // Update if DB is missing or last update is older than the most recent past scheduled window
+            $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
+
+            // Calculate the most recent "first Tuesday + 2 days" that has already passed
+            $this_month_update = strtotime('first Tuesday of this month') + (86400 * 2);
+            $current_time = time();
+
+            // If this month's update window hasn't arrived yet, use last month's window
+            if ($current_time < $this_month_update) {
+                $this_update = strtotime('first Tuesday of last month') + (86400 * 2);
+            } else {
+                $this_update = $this_month_update;
+            }
+
+		$db_missing = false;
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$uses_db  = in_array($provider, ['maxmind', 'dbip'], true);
+                if ($uses_db) {
+                    $service    = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+                    $db_missing = !file_exists($service->getProvider()->getDbPath());
+                }
+            } catch (\Throwable $e) {
+                // If any error occurs while checking, consider DB missing to be safe
+                $db_missing = true;
+            }
+
+            if ($db_missing || $last_update < $this_update) {
+                // Fire admin-ajax in a non-blocking way to run the existing update handler
+                $ajax_url = admin_url('admin-ajax.php');
+                // Forward current cookies to keep the request authenticated
+                $cookie_header = '';
+                if (!headers_sent() && $_COOKIE !== [] && is_array($_COOKIE)) {
+                    $pairs = [];
+                    foreach ($_COOKIE as $k => $v) {
+                        // Basic sanitization for header context
+                        $pairs[] = rawurlencode($k) . '=' . rawurlencode($v);
+                    }
+                    $cookie_header = implode('; ', $pairs);
+                }
+                $args = [
+                    'timeout'  => 0.01,
+                    'blocking' => false,
+                    'body'     => [
+                        'action'   => 'slimstat_update_geoip_database',
+                        'security' => wp_create_nonce('wp_rest'),
+                    ],
+                    'headers' => $cookie_header !== '' && $cookie_header !== '0' ? ['Cookie' => $cookie_header] : [],
+                ];
+                // Best-effort call; ignore response
+                wp_safe_remote_post($ajax_url, $args);
+            }
+        }
+
         // Add style to the admin menu
         add_action('admin_head', [self::class, 'styling_admin_menu']);
 
@@ -298,12 +357,12 @@ class wp_slimstat_admin
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
 
         // Initialize notification system
-        if (class_exists('SlimStat\Service\Admin\Notification\NotificationManager')) {
-            new \SlimStat\Service\Admin\Notification\NotificationManager();
+        if (class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationManager')) {
+            new \SlimStat\Services\Admin\Notification\NotificationManager();
         }
         // Initialize cron manager for notifications
-        if (class_exists('SlimStat\Service\CronEventManager')) {
-            new \SlimStat\Service\CronEventManager();
+        if (class_exists('SlimStat\\Services\\CronEventManager')) {
+            new \SlimStat\Services\CronEventManager();
         }
     }
 
@@ -707,13 +766,14 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
-        if (self::$current_screen && str_contains(self::$current_screen->id ?? '', 'slim')) {
+        $current_screen = get_current_screen();
+        if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
         }
 
         // Enqueue the built-in code editor to use on the Settings
-        if (self::$current_screen) {
+        if ($current_screen) {
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
@@ -800,28 +860,37 @@ class wp_slimstat_admin
         }
 
         // Find the first available location (screens with no reports assigned to them are hidden from the nav)
-        $parent = 'slimview1';
-        if (is_array(self::$meta_user_reports)) {
-            $parent = '';
-            foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
-                if (!empty(self::$meta_user_reports[$a_screen_id]) && $a_screen_info['show_in_sidebar']) {
-                    $parent = $a_screen_id;
-                    break;
-                }
-            }
+		$parent = '';
+		if (is_array(self::$meta_user_reports)) {
+			foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
+				if (!empty(self::$meta_user_reports[$a_screen_id]) && $a_screen_info['show_in_sidebar']) {
+					$parent = $a_screen_id;
+					break;
+				}
+			}
+		}
 
-            if (empty($parent)) {
-                $parent = 'slimlayout';
-            }
-        }
+		// If no parent was found in the user meta, use the first available screen as the parent
+		if (empty($parent) && !empty(self::$screens_info)) {
+			$parent = array_key_first(self::$screens_info);
+		}
 
-        // Get the current menu position
-        $new_entry = [];
-        if ('no' == wp_slimstat::$settings['use_separate_menu'] || is_network_admin()) {
-            $new_entry[] = add_menu_page(__('Slimstat', 'wp-slimstat'), __('Slimstat', 'wp-slimstat'), $minimum_capability, $parent, [self::class, 'wp_slimstat_include_view'], 'dashicons-chart-area');
-        } else {
-            $parent = 'admin.php';
-        }
+		// Don't show the menu if no screens are available at all
+		if (empty($parent) || !isset(self::$screens_info[$parent])) {
+			return null;
+		}
+
+		self::$main_menu_slug = $parent;
+
+        // Add the main menu
+        add_menu_page(
+            __('SlimStat', 'wp-slimstat'),
+            __('SlimStat', 'wp-slimstat'),
+            $minimum_capability,
+            $parent,
+            [self::class, 'wp_slimstat_include_view'],
+            'dashicons-chart-area'
+        );
 
         foreach (self::$screens_info as $a_screen_id => $a_screen_info) {
             if (isset(self::$meta_user_reports[$a_screen_id]) && empty(self::$meta_user_reports[$a_screen_id])) {
@@ -887,10 +956,6 @@ class wp_slimstat_admin
                     $parent = $a_screen_id;
                     break;
                 }
-            }
-
-            if (empty($parent)) {
-                $parent = 'slimlayout';
             }
         }
 
@@ -1245,7 +1310,7 @@ class wp_slimstat_admin
     private static function get_filter_icon_url($dimension, $value)
     {
         $icon_url = '';
-        
+
         switch ($dimension) {
             case 'country':
                 // Country flags are SVG files named by country code (lowercase)
@@ -1256,7 +1321,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $flag_rel;
                 }
                 break;
-                
+
             case 'browser':
                 // Browser icons are PNG files named by browser name (lowercase)
                 $browser_name = strtolower($value);
@@ -1266,7 +1331,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $browser_rel;
                 }
                 break;
-                
+
             case 'language':
                 // Language flags use the last part of the language code (e.g., en-US -> us)
                 $language_parts = explode('-', $value);
@@ -1277,7 +1342,7 @@ class wp_slimstat_admin
                     $icon_url = SLIMSTAT_ANALYTICS_URL . $flag_rel;
                 }
                 break;
-                
+
             case 'platform':
                 // Platform/OS icons are WEBP files with abbreviated names
                 $os_map = [
@@ -1292,10 +1357,10 @@ class wp_slimstat_admin
                     'chrome os' => 'chr',
                     'chromeos' => 'chr',
                 ];
-                
+
                 $os_lower = strtolower($value);
                 $os_icon = null;
-                
+
                 // Check if exact match exists in map
                 if (isset($os_map[$os_lower])) {
                     $os_icon = $os_map[$os_lower];
@@ -1308,7 +1373,7 @@ class wp_slimstat_admin
                         }
                     }
                 }
-                
+
                 if ($os_icon) {
                     $os_rel = '/admin/assets/images/os/' . $os_icon . '.webp';
                     $os_path = SLIMSTAT_ANALYTICS_DIR . $os_rel;
@@ -1317,13 +1382,13 @@ class wp_slimstat_admin
                     }
                 }
                 break;
-                
+
             case 'username':
                 // For users, we'll use WordPress gravatar
                 // This will be handled separately in the JavaScript
                 break;
         }
-        
+
         return $icon_url;
     }
 
@@ -1393,7 +1458,7 @@ class wp_slimstat_admin
         // Limit results to prevent overwhelming the dropdown (filterable for customization)
         $limit = apply_filters('slimstat_filter_options_limit', 500, $dimension);
         $limit = absint($limit); // Ensure it's a positive integer
-        
+
         // Enforce reasonable bounds to prevent abuse
         if ($limit < 1 || $limit > 5000) {
             $limit = 500; // Reset to default if out of reasonable range
@@ -1432,14 +1497,14 @@ class wp_slimstat_admin
         $query->orderBy($safe_dimension, 'ASC')->limit($limit);
 
         $results = $query->getAll();
-        
+
         // Check for database errors
         if ($GLOBALS['wpdb']->last_error) {
             error_log('SlimStat: Filter options query failed - ' . $GLOBALS['wpdb']->last_error);
             wp_send_json_error('Database query failed');
             return;
         }
-        
+
         // Ensure results is an array
         if (!is_array($results)) {
             $results = [];
@@ -1449,7 +1514,7 @@ class wp_slimstat_admin
         $seen_values = []; // Track values to prevent duplicates (case-insensitive)
         $dimensions_with_icons = ['country', 'browser', 'language', 'platform', 'username'];
         $has_icons = in_array($dimension, $dimensions_with_icons, true);
-        
+
         foreach ($results as $row) {
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
@@ -1472,15 +1537,16 @@ class wp_slimstat_admin
                 // Mark this value as seen
                 $seen_values[$value_key] = true;
                 
+
                 // Limit individual option length to prevent DOM issues
                 if (strlen($sanitized_value) > 255) {
                     $sanitized_value = substr($sanitized_value, 0, 255) . '...';
                 }
-                
+
                 if ($has_icons) {
                     // Return object with value and icon
                     $icon_url = self::get_filter_icon_url($dimension, $sanitized_value);
-                    
+
                     // For username, get user gravatar
                     if ($dimension === 'username' && empty($icon_url)) {
                         $user = get_user_by('login', $sanitized_value);
@@ -1490,7 +1556,7 @@ class wp_slimstat_admin
                             $icon_url = get_avatar_url($sanitized_value, ['size' => 32]);
                         }
                     }
-                    
+
                     $options[] = [
                         'value' => $sanitized_value,
                         'label' => $sanitized_value,
@@ -1509,34 +1575,52 @@ class wp_slimstat_admin
 
     // END: get_filter_options
 
-    public static function update_geoip_database()
-    {
-        check_ajax_referer('wp_rest', 'security');
+	public static function update_geoip_database()
+	{
+		check_ajax_referer('wp_rest', 'security');
 
-        try {
-            $geographicProvider = new GeoService();
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+            if ('cloudflare' === $provider) {
+                wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
+            }
 
-            $result = $geographicProvider
-                ->setUpdate(true)
-                ->setEnableMaxmind(\wp_slimstat::$settings['enable_maxmind'])
-                ->setMaxmindLicense(\wp_slimstat::$settings['maxmind_license_key'])
-                ->download();
+            // License validation is handled by the MaxMind provider; do not pre-check here
 
-            wp_send_json_success($result['notice']);
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            $ok      = $service->updateDatabase();
+
+			if ($ok) {
+                wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
+            } else {
+                // Log the error for debugging
+				$error_message = __('Failed to update GeoIP Database.', 'wp-slimstat');
+				if ('maxmind' === $provider) {
+					$error_message .= ' ' . __('Please check your MaxMind license key and try again.', 'wp-slimstat');
+				}
+				$geoip_error = get_option('slimstat_geoip_error', []);
+				if (!empty($geoip_error) && !empty($geoip_error['error'])) {
+					$error_message .= ' ' . sprintf(__('Details: %s', 'wp-slimstat'), $geoip_error['error']);
+				}
+				wp_send_json_error($error_message);
+            }
         } catch (\Exception $exception) {
-
             wp_send_json_error($exception->getMessage());
         }
     }
 
-    public static function check_geoip_database()
-    {
-        check_ajax_referer('wp_rest', 'security');
+	public static function check_geoip_database()
+	{
+		check_ajax_referer('wp_rest', 'security');
 
-        try {
-            $geographicProvider = new GeoService();
-
-            $result = $geographicProvider->checkDatabase();
+		try {
+			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+            if ('cloudflare' === $provider) {
+                wp_send_json_success(__('Cloudflare geolocation is active. No database to check.', 'wp-slimstat'));
+            }
+            $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            $exists  = file_exists($service->getProvider()->getDbPath());
+            $result  = [ 'notice' => $exists ? __('GeoIP Database is present and ready.', 'wp-slimstat') : __('GeoIP Database not found.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
         } catch (\Exception $exception) {
@@ -1871,6 +1955,10 @@ class wp_slimstat_admin
 
     public static function show_indexes_notice()
     {
+		// If new migration system is active, suppress legacy performance notice
+		if (class_exists(\SlimStat\Migration\Admin\MigrationAdmin::class)) {
+			return;
+		}
 
         if (!current_user_can('manage_options')) {
             return;
@@ -2015,5 +2103,6 @@ class wp_slimstat_admin
         </script>
         <?php
     }
+
 }
 // END: class declaration

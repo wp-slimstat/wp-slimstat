@@ -909,24 +909,33 @@ class wp_slimstat
 
     public static function wp_slimstat_update_geoip_database()
     {
-        $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
+        // Calculate the most recent "first Tuesday + 2 days" that has already passed
+        $this_month_update = strtotime('first Tuesday of this month') + (86400 * 2);
+        $current_time = time();
+
+        // If this month's update window hasn't arrived yet, use last month's window
+        if ($current_time < $this_month_update) {
+            $this_update = strtotime('first Tuesday of last month') + (86400 * 2);
+        } else {
+            $this_update = $this_month_update;
+        }
+
         $last_update = get_option('slimstat_last_geoip_dl', 0);
         if ($last_update < $this_update) {
 
-            $geographicProvider = new \SlimStat\Services\GeoService();
+            // Determine which geolocation provider to use
+            $provider = self::$settings['geolocation_provider'] ?? 'dbip';
+
+            $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
 
             try {
-                $geographicProvider
-                    ->setEnableMaxmind(wp_slimstat::$settings['enable_maxmind'])
-                    ->setUpdate(true)
-                    ->setMaxmindLicense(wp_slimstat::$settings['maxmind_license_key'])
-                    ->download();
+                $geographicProvider->updateDatabase();
 
                 // Set the last update time
-                $geographicProvider->updateLastUpdateTime(time());
+                update_option('slimstat_last_geoip_dl', time());
 
             } catch (\Exception $e) {
-                $geographicProvider->logError($e->getMessage());
+                wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
             }
         }
     }

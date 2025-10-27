@@ -1,13 +1,30 @@
 = 5.4.0 - 2025-09-05 =
-- **New**: GDPR-compliant salted hash IP address functionality for enhanced privacy protection.
-- **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
+- **New**: Enhanced caching mechanism for Matomo search engine mappings to improve performance.
+- **Enhancement**: Optimized script enqueuing to load scripts in the footer for better page load times.
+- **Enhancement**: Improved flag icon rendering in reports with better readability checks.
+- **Enhancement**: Optimized transient caching for remote API responses in the i18n module.
+- **Enhancement**: Refactored code structure with new Query manager and improved caching system.
+- **Enhancement**: Added 'Clear Cache' button functionality for better cache management.
+- **Enhancement**: Moved Query class to src directory following PSR-4 autoloading standards.
+- **Enhancement**: The geolocation functionality has been completely refactored and improved. It now correctly handles different providers, including DB-IP (the default), MaxMind (which requires a free license key), and Cloudflare. The underlying logic for downloading, updating, and using the geolocation database has been fixed to ensure that location data is accurately tracked and stored.
+- **Fix**: Enhanced query security and cleanup for better data integrity.
+- **Fix**: Optimized database indexing, caching, and AJAX handling.
+
+= 5.3.1 - 2025-09-09 =
+- **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
+- **Fix**: Real-time report date filters not properly cleared during auto-refresh.
+- **Fix**: Real-time report not updating at midnight with filters.
+- **Fix**: Undefined variable $unpacked in PHP tracking logic;
+- **Enhancement**: Enhanced responsive design for the "Access Log" report.
+- **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
+- **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
 
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
 - **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
 - **Enhancement**: Redesigned line charts for better readability.
-- **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
+- **Enhancement**: Compatibility with WordPress's Interactivity API for seamless integration.
 - **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
 
 = 5.2.13 - 2025-04-29 =

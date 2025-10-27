@@ -96,8 +96,18 @@ if (!empty($saved_filters)) {
         </form>
 
         <?php
-        if (('disable' == wp_slimstat::$settings['enable_maxmind'] || !\SlimStat\Services\GeoIP::database_exists()) && 'on' == wp_slimstat::$settings['notice_geolite']) {
-            wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+        // Provider-aware GeoIP notice: show only if a DB-based provider is selected and the database file is missing
+        $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+        $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+        if ($uses_db && 'on' == wp_slimstat::$settings['notice_geolite']) {
+            try {
+                $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+                if (!file_exists($service->getProvider()->getDbPath())) {
+                    wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+                }
+            } catch (\Throwable $e) {
+                wp_slimstat_admin::show_message(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'geolite');
+            }
         }
 
 if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt') && 'on' == wp_slimstat::$settings['notice_browscap']) {

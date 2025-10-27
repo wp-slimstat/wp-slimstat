@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 5.3.0
+Stable tag: 5.3.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,15 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.3.1 - 2025-09-09 =
+- **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
+- **Fix**: Real-time report date filters not properly cleared during auto-refresh.
+- **Fix**: Real-time report not updating at midnight with filters.
+- **Fix**: Undefined variable $unpacked in PHP tracking logic;
+- **Enhancement**: Enhanced responsive design for the "Access Log" report.
+- **Enhancement**: Improved tracking logic to prevent duplicate pageviews and events.
+- **Enhancement**: Enhanced interaction tracking and heartbeat finalization.
+
 = 5.3.0 - 2025-08-25 =
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
@@ -81,28 +90,3 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
 - **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
 [See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
-
-= 5.2.13 - 2025-04-29 =
-- **Fix**: Resolved issues with pagination in reports.
-
-= 5.2.12 - 2025-04-26 =
-- **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
-
-= 5.2.11 - 2025-04-25 =
-- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) – SlimStat 5.2.11 Release Notes
-- **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
-- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
-- **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
-- **Enhancement**: Added support for the WordPress date format setting for the charts.
-- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
-- **Fix**: Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
-- **Fix**: Fix a database error related to the notes column.
-- **Fix**: Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
-- **Fix**: Addressed several user-reported issues to enhance overall stability and user experience.
-- **Fix**: Investigate and resolve the "Division by zero" fatal error in `wp-slimstat-db.php` caused by PHP version 8.2.22. Further investigation needed to determine the root cause and provide a fix.
-
-= 5.2.9 - 2024-11-12 =
-- **Enhancement**: Ensured compatibility with WordPress version 6.7.
-- **Fix**: Resolved the Top Referring Domain Issue.
-
-[See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).
