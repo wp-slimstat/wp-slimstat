@@ -264,9 +264,19 @@ class wp_slimstat_admin
         // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
         $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
         if ($cron_disabled) {
-            // Update if DB is missing or last update is older than this month's scheduled window
+            // Update if DB is missing or last update is older than the most recent past scheduled window
             $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
-            $this_update = strtotime('first Tuesday of this month') + (86400 * 2);
+
+            // Calculate the most recent "first Tuesday + 2 days" that has already passed
+            $this_month_update = strtotime('first Tuesday of this month') + (86400 * 2);
+            $current_time = time();
+
+            // If this month's update window hasn't arrived yet, use last month's window
+            if ($current_time < $this_month_update) {
+                $this_update = strtotime('first Tuesday of last month') + (86400 * 2);
+            } else {
+                $this_update = $this_month_update;
+            }
 
 		$db_missing = false;
 		try {
