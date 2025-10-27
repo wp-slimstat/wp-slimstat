@@ -221,11 +221,54 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 					$source = $file->getPathname();
 					$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
 					$this->ensureDirExists(dirname($this->dbPath));
-					if ($wp_filesystem->move($source, $this->dbPath, true) || @copy($source, $this->dbPath)) {
-						$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
-						$mmdb_found = true;
-						break;
+
+					// Attempt to move the file first, then fall back to copy
+					$move_success = $wp_filesystem->move($source, $this->dbPath, true);
+
+					if (!$move_success) {
+						$this->logDebug(sprintf('Move operation failed, attempting copy from %s to %s', $source, $this->dbPath));
+						$copy_success = $wp_filesystem->copy($source, $this->dbPath, true);
+
+						if (!$copy_success) {
+							$error_details = [];
+
+							// Gather diagnostic information
+							if (!$wp_filesystem->is_readable($source)) {
+								$error_details[] = __('Source file is not readable', 'wp-slimstat');
+							}
+							if (!$wp_filesystem->is_writable(dirname($this->dbPath))) {
+								$error_details[] = sprintf(__('Destination directory is not writable: %s', 'wp-slimstat'), dirname($this->dbPath));
+							}
+							if ($wp_filesystem->exists($this->dbPath) && !$wp_filesystem->is_writable($this->dbPath)) {
+								$error_details[] = __('Destination file exists but is not writable', 'wp-slimstat');
+							}
+
+							$error_message = sprintf(
+								__('.mmdb file was found but could not be moved or copied to destination. Source: %s, Destination: %s', 'wp-slimstat'),
+								$source,
+								$this->dbPath
+							);
+
+							if (!empty($error_details)) {
+								$error_message .= ' ' . sprintf(__('Diagnostic info: %s', 'wp-slimstat'), implode('; ', $error_details));
+							}
+
+							$this->logDebug('File operation failed: ' . $error_message);
+
+							\wp_slimstat::update_option('slimstat_geoip_error', [
+								'time'  => time(),
+								'error' => $error_message,
+							]);
+							$cleanup();
+							return false;
+						}
+
+						$this->logDebug('Copy operation succeeded');
 					}
+
+					$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
+					$mmdb_found = true;
+					break;
 				}
 			}
 
