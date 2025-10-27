@@ -30,8 +30,8 @@ class IPHashProvider
     /**
      * Process IP address according to privacy settings
      *
-     * @param array $stat The statistics array containing IP data
-     * @return array Modified statistics array with processed IP
+     * @param array $stat The slimstat array containing IP data
+     * @return array Modified slimstat array with processed IP
      */
     public static function processIp(array $stat): array
     {
@@ -79,9 +79,9 @@ class IPHashProvider
     /**
      * Hash IP address with salt for GDPR compliance
      *
-     * @param array $stat The statistics array
+     * @param array $stat The slimstat array
      * @param string $originalIp The original IP address
-     * @return array Modified statistics array with hashed IP
+     * @return array Modified slimstat array with hashed IP
      */
     public static function hashIP(array $stat, string $originalIp): array
     {
