@@ -67,7 +67,7 @@ class Chart
             $chart               = new self();
             $args['granularity'] = $granularity;
             $chart->init($args);
-            
+
             // Extract totals by checking the period field instead of assuming array positions
             $currentTotal = null;
             $previousTotal = null;
@@ -80,7 +80,7 @@ class Chart
                     }
                 }
             }
-            
+
             $totals = [
                 'current' => [
                     'v1' => (int) ($currentTotal->v1 ?? 0),
@@ -141,6 +141,14 @@ class Chart
         // Preserve active filters for AJAX requests
         if (!isset($args['filters'])) {
             $args['filters'] = \wp_slimstat_db::$filters_normalized['columns'] ?? [];
+        }
+
+        // Ensure chart_data is present with defaults
+        if (!isset($args['chart_data'])) {
+            $args['chart_data'] = [
+                'data1' => 'COUNT( ip )',
+                'data2' => 'COUNT( DISTINCT ip )',
+            ];
         }
 
         return $args;
@@ -263,6 +271,12 @@ class Chart
         // Build WHERE clause from active filters (excluding time filters)
         $filterWhere = $this->buildFilterWhere();
 
+        // Add chart-specific WHERE clause if provided
+        if (!empty($args['chart_data']['where'])) {
+            $chartWhere = $args['chart_data']['where'];
+            $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $chartWhere : $chartWhere;
+        }
+
         // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
         $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
@@ -322,18 +336,13 @@ class Chart
         $rowsQuery->groupBy($dtExpr . ', period')
             ->orderBy('sort_dt ASC, period ASC');
 
-        // Build totals query via Query builder using index-friendly ranges (no CONVERT_TZ on column)
-        // Adjust local-time windows to UTC timestamps so MySQL can use the dt index: dt BETWEEN (start - offset) AND (end - offset)
-        $prevStartAdj = $prevArgs['start'] - $totalOffsetSeconds;
-        $prevEndAdj   = $prevArgs['end'] - $totalOffsetSeconds;
-        $startAdj     = $start - $totalOffsetSeconds;
-        $endAdj       = $end - $totalOffsetSeconds;
-
+        // Build totals query via Query builder
+        // No CONVERT_TZ needed for totals - dt is already stored as UTC timestamp and filters use UTC
         $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
         $totalsWhere  = '(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)';
         $totalsQuery  = Query::select($totalsFields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevStartAdj, $prevEndAdj, $startAdj, $endAdj]);
+            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {

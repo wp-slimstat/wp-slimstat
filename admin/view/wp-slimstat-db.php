@@ -391,16 +391,17 @@ class wp_slimstat_db
                 break;
 
             case 'is_greater_than':
-                $where[0] = '%s > ' . $column_with_alias;
+                $where[0] = sprintf('%s > %%s', $column_with_alias);
                 break;
 
             case 'is_less_than':
-                $where[0] = '%s < ' . $column_with_alias;
+                $where[0] = sprintf('%s < %%s', $column_with_alias);
                 break;
 
             case 'between':
                 $range = explode(',', $_value);
-                $where = ['%s BETWEEN %d AND ' . $column_with_alias, [$range[0], $range[1]]];
+                $where[0] = sprintf('%s BETWEEN %%d AND %%d', $column_with_alias);
+                $where[1] = [intval($range[0]), intval($range[1])];
                 break;
 
             case 'matches':
@@ -417,6 +418,10 @@ class wp_slimstat_db
         }
 
         if (isset($where[1]) && '' != $where[1]) {
+            // Handle array of values for operators like 'between'
+            if (is_array($where[1])) {
+                return $GLOBALS['wpdb']->prepare($where[0], ...$where[1]);
+            }
             return $GLOBALS['wpdb']->prepare($where[0], $where[1]);
         } else {
             return $where[0];
