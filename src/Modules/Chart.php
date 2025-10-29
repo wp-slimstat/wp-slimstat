@@ -324,9 +324,12 @@ class Chart
             sprintf("CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $start, $end),
         ]);
 
+        // Wrap the OR time ranges in an extra pair of parentheses so subsequent
+        // AND filters are applied to the whole time expression instead of
+        // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
             ->from($wpdb->prefix . 'slim_stats')
-            ->whereRaw('(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
+            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {
@@ -338,8 +341,9 @@ class Chart
 
         // Build totals query via Query builder
         // No CONVERT_TZ needed for totals - dt is already stored as UTC timestamp and filters use UTC
-        $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-        $totalsWhere  = '(dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d)';
+    $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
+    // Ensure totals WHERE uses grouped OR so filters are applied correctly.
+    $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
         $totalsQuery  = Query::select($totalsFields)
             ->from($wpdb->prefix . 'slim_stats')
             ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);

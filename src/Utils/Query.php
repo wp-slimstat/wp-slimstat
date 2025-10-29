@@ -1261,6 +1261,12 @@ class Query
         return $result;
     }
 
+    public function getSqlQuery()
+    {
+        $query = $this->buildQuery();
+        return $this->prepareQuery($query, $this->valuesToPrepare);
+    }
+
     /**
      * Get all results from a query.
      * If this is a live query (i.e. the query has a live date range), this function will

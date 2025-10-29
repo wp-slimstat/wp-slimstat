@@ -23,28 +23,14 @@ $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
 $disableWeekly  = $availableRange < (7 * 86400); // Less than 1 week of data
 $disableDaily   = ($availableRange < (2 * 86400)); // Disable daily if less than 2 days
 $disableHourly  = $availableRange > (7 * 86400); // More than 7 days of data
-
-// Extract totals by checking the period field instead of assuming array positions
-$currentTotal = null;
-$previousTotal = null;
-foreach ($data['totals'] as $total) {
-    if (isset($total->period)) {
-        if ($total->period === 'current') {
-            $currentTotal = $total;
-        } elseif ($total->period === 'previous') {
-            $previousTotal = $total;
-        }
-    }
-}
-
-$totals = [
+$totals         = [
     'current' => [
-        'v1' => (int) ($currentTotal->v1 ?? 0),
-        'v2' => (int) ($currentTotal->v2 ?? 0),
+        'v1' => (int) ($data['totals'][0]->v1 ?? 0),
+        'v2' => (int) ($data['totals'][0]->v2 ?? 0),
     ],
     'previous' => [
-        'v1' => (int) ($previousTotal->v1 ?? 0),
-        'v2' => (int) ($previousTotal->v2 ?? 0),
+        'v1' => (int) ($data['totals'][1]->v1 ?? 0),
+        'v2' => (int) ($data['totals'][1]->v2 ?? 0),
     ],
 ];
 ?>
