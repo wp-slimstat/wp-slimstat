@@ -1414,7 +1414,45 @@ class wp_slimstat_admin
 
         // Validate dimension exists in columns_names
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
-        wp_slimstat_db::init();
+
+        // We only need the columns_names array, not the full init with filters
+        if (empty(wp_slimstat_db::$columns_names)) {
+            wp_slimstat_db::$columns_names = [
+                'id' => ['ID', 'number'],
+                'ip' => ['IP', 'varchar'],
+                'other_ip' => ['Other IP', 'varchar'],
+                'username' => ['Username', 'varchar'],
+                'email' => ['Email', 'varchar'],
+                'country' => ['Country', 'varchar'],
+                'location' => ['Location', 'varchar'],
+                'city' => ['City', 'varchar'],
+                'referer' => ['Referer', 'varchar'],
+                'resource' => ['Resource', 'varchar'],
+                'searchterms' => ['Search Terms', 'varchar'],
+                'notes' => ['Notes', 'varchar'],
+                'visit_id' => ['Visit ID', 'number'],
+                'server_latency' => ['Server Latency', 'number'],
+                'page_performance' => ['Page Performance', 'number'],
+                'browser' => ['Browser', 'varchar'],
+                'browser_version' => ['Browser Version', 'varchar'],
+                'browser_type' => ['Browser Type', 'number'],
+                'platform' => ['Platform', 'varchar'],
+                'language' => ['Language', 'varchar'],
+                'fingerprint' => ['Fingerprint', 'varchar'],
+                'user_agent' => ['User Agent', 'varchar'],
+                'resolution' => ['Resolution', 'varchar'],
+                'screen_width' => ['Screen Width', 'number'],
+                'screen_height' => ['Screen Height', 'number'],
+                'content_type' => ['Content Type', 'varchar'],
+                'category' => ['Category', 'varchar'],
+                'author' => ['Author', 'varchar'],
+                'content_id' => ['Content ID', 'number'],
+                'outbound_resource' => ['Outbound Resource', 'varchar'],
+                'tz_offset' => ['Timezone Offset', 'number'],
+                'dt_out' => ['Date Time Out', 'number'],
+                'dt' => ['Date Time', 'number'],
+            ];
+        }
 
         if (empty($dimension) || !isset(wp_slimstat_db::$columns_names[$dimension])) {
             wp_send_json_error('Invalid dimension');
@@ -1477,30 +1515,40 @@ class wp_slimstat_admin
         // Get distinct non-empty values
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
 
-        // Build the query using Query (avoid direct $wpdb SQL)
-        $query = \SlimStat\Utils\Query::select('DISTINCT ' . $safe_dimension . ' as value')
-            ->from($table_name);
+        // Build SQL query directly to avoid Query class interference with global filters
+        $where_clauses = [];
 
         // Apply time range filter
         if (!empty($time_start) && !empty($time_end)) {
-            $query->where('dt', 'BETWEEN', [intval($time_start), intval($time_end)]);
+            $where_clauses[] = $GLOBALS['wpdb']->prepare('dt BETWEEN %d AND %d', intval($time_start), intval($time_end));
         }
 
         if ($column_type === 'varchar') {
             // Exclude NULLs and empty strings for varchar columns
-            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . " <> ''");
+            $where_clauses[] = $safe_dimension . ' IS NOT NULL';
+            $where_clauses[] = $safe_dimension . " <> ''";
         } else {
             // Exclude NULLs and zeros for numeric columns
-            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . ' <> 0');
+            $where_clauses[] = $safe_dimension . ' IS NOT NULL';
+            $where_clauses[] = $safe_dimension . ' <> 0';
         }
 
-        $query->orderBy($safe_dimension, 'ASC')->limit($limit);
+        $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
-        $results = $query->getAll();
+        $sql = sprintf(
+            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
+            $safe_dimension,
+            $table_name,
+            $where_sql,
+            $safe_dimension,
+            $limit
+        );
+
+        // Execute query
+        $results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
 
         // Check for database errors
         if ($GLOBALS['wpdb']->last_error) {
-            error_log('SlimStat: Filter options query failed - ' . $GLOBALS['wpdb']->last_error);
             wp_send_json_error('Database query failed');
             return;
         }
@@ -1519,25 +1567,6 @@ class wp_slimstat_admin
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
                 $sanitized_value = sanitize_text_field($row['value']);
-
-                // Trim whitespace
-                $sanitized_value = trim($sanitized_value);
-
-                // Skip empty values after trimming
-                if (empty($sanitized_value)) {
-                    continue;
-                }
-
-                // Check for duplicates using case-insensitive comparison
-                $value_key = strtolower($sanitized_value);
-                if (isset($seen_values[$value_key])) {
-                    continue; // Skip duplicate
-                }
-
-                // Mark this value as seen
-                $seen_values[$value_key] = true;
-
-
 
                 // Trim whitespace
                 $sanitized_value = trim($sanitized_value);
