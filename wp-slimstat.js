@@ -562,11 +562,21 @@ var SlimStat = (function () {
                     }
                 } else if (integrationKey === "real_cookie_banner") {
                     // Real Cookie Banner integration
+                    // Updated to use the correct API (window.RealCookieBanner.consent)
                     try {
-                        var consentApi = window.consentApi;
-                        if (consentApi && typeof consentApi.consentSync === "function") {
-                            var consent = consentApi.consentSync(consentLevel);
+                        // Modern API: window.RealCookieBanner (available in recent versions)
+                        if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
+                            var consent = window.RealCookieBanner.consent.get(consentLevel);
+                            cmpAllows = !!(consent && consent.cookie !== null);
+                        }
+                        // Fallback to legacy API: window.consentApi
+                        else if (window.consentApi && typeof window.consentApi.consentSync === "function") {
+                            var consent = window.consentApi.consentSync(consentLevel);
                             cmpAllows = !!(consent && consent.cookie != null && consent.cookieOptIn);
+                        }
+                        // Fallback: check if consent object exists globally
+                        else if (window.RealCookieBanner && window.RealCookieBanner.consent && window.RealCookieBanner.consent[consentLevel]) {
+                            cmpAllows = !!window.RealCookieBanner.consent[consentLevel];
                         } else {
                             cmpAllows = false;
                         }
@@ -1005,12 +1015,37 @@ if (!window.requestIdleCallback) {
         // Real Cookie Banner
         window.addEventListener("RealCookieBannerConsentChanged", function (e) {
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
             var ok = false;
-            if (e && e.detail && e.detail.consent && selectedCategory in e.detail.consent) {
-                ok = !!e.detail.consent[selectedCategory];
+
+            // Check consent from event detail
+            if (e && e.detail) {
+                // Modern API: e.detail.consent contains category-specific consent
+                if (e.detail.consent && selectedCategory in e.detail.consent) {
+                    var categoryConsent = e.detail.consent[selectedCategory];
+                    // Check if consent is granted for this category
+                    // categoryConsent can be a boolean or object with cookie property
+                    if (typeof categoryConsent === "boolean") {
+                        ok = categoryConsent;
+                    } else if (categoryConsent && categoryConsent.cookie !== null) {
+                        ok = true;
+                    }
+                }
+                // Legacy API: check if button was accept all
+                else if (e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "accept_essentials")) {
+                    // Verify with consent API
+                    if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
+                        var consent = window.RealCookieBanner.consent.get(selectedCategory);
+                        ok = !!(consent && consent.cookie !== null);
+                    }
+                }
             }
-            if (typeof window.wp_has_consent === "function") ok = !!window.wp_has_consent(selectedCategory);
+
+            // Fallback: check WP Consent API (Real Cookie Banner supports it)
+            if (!ok && typeof window.wp_has_consent === "function") {
+                ok = !!window.wp_has_consent(selectedCategory);
+            }
+
             if (ok) tryTrackIfAllowed();
         });
 
@@ -1305,6 +1340,47 @@ if (!window.requestIdleCallback) {
         document.addEventListener("wp_listen_load", handleConsentGranted); // WP Consent API
         document.addEventListener("wp_consent_type_functional", handleConsentGranted); // WP Consent API - functional
         document.addEventListener("wp_consent_type_statistics", handleConsentGranted); // WP Consent API - statistics
+
+        // Real Cookie Banner - consent granted event
+        window.addEventListener("RealCookieBannerConsentChanged", function (e) {
+            try {
+                var params = currentSlimStatParams();
+                var selectedCategory = params.consent_level_integration || "statistics";
+                var shouldUpgrade = false;
+
+                // Check if consent was granted for our category
+                if (e && e.detail && e.detail.consent && selectedCategory in e.detail.consent) {
+                    var categoryConsent = e.detail.consent[selectedCategory];
+                    // Check if consent is granted for this category
+                    if (typeof categoryConsent === "boolean") {
+                        shouldUpgrade = categoryConsent;
+                    } else if (categoryConsent && categoryConsent.cookie !== null) {
+                        shouldUpgrade = true;
+                    }
+                }
+                // Legacy: check button type
+                else if (e && e.detail && e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "save")) {
+                    // Verify consent with API
+                    if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
+                        var consent = window.RealCookieBanner.consent.get(selectedCategory);
+                        shouldUpgrade = !!(consent && consent.cookie !== null);
+                    }
+                }
+
+                // Fallback: check WP Consent API
+                if (!shouldUpgrade && typeof window.wp_has_consent === "function") {
+                    shouldUpgrade = !!window.wp_has_consent(selectedCategory);
+                }
+
+                if (shouldUpgrade) {
+                    handleConsentGranted();
+                }
+            } catch (err) {
+                if (console && console.error) {
+                    console.error("[SlimStat] Real Cookie Banner consent upgrade error:", err);
+                }
+            }
+        });
     }
 
     // Initialize consent upgrade handler

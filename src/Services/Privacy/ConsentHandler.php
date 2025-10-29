@@ -62,9 +62,13 @@ class ConsentHandler
 				]);
 				return;
 			}
-		} elseif ('real_cookie_banner_pro' === $integrationKey) {
-			// This CMP cannot be verified server-side
-			// Accept the client's claim (nonce-protected)
+		} elseif ('real_cookie_banner' === $integrationKey) {
+			// Real Cookie Banner: Cannot be reliably verified server-side
+			// The CMP blocks scripts client-side, so if this AJAX request reached us,
+			// it means JavaScript was allowed to run and send the request.
+			// We still verify nonce (done above) to prevent CSRF.
+			// Accept the client's claim as Real Cookie Banner's client-side
+			// consent verification is the source of truth for this CMP.
 			$consentGranted = true;
 		} elseif ('' === $integrationKey) {
 			// No CMP configured - accept upgrade (but this shouldn't happen in anonymous mode)

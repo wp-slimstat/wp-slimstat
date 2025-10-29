@@ -26,7 +26,7 @@ namespace SlimStat\Utils;
  *
  * 4. CMP Integration:
  *    - WP Consent API: reads server-side consent status
- *    - Real Cookie Banner: conservative (assume no consent server-side)
+ *    - Real Cookie Banner: conservative (blocks server-side tracking; client-side only)
  *    - None: allows tracking unless anonymous mode requires consent
  *
  * Filter Hook Integration:
@@ -45,8 +45,11 @@ class Consent
 	 *
 	 * Decision tree:
 	 * 1. Check DNT header (if enabled in settings)
-	 * 2. Apply 'slimstat_can_track' filter for external override
-	 * 3. Return final decision
+	 * 2. Check Anonymous Tracking mode (allows tracking without consent)
+	 * 3. Determine if configuration collects PII (cookies OR full IPs)
+	 * 4. If collects PII: Check CMP consent (for server-side verifiable CMPs or conservative blocking)
+	 * 5. Apply 'slimstat_can_track' filter for external override
+	 * 6. Return final decision
 	 *
 	 * @return bool True if tracking is allowed, false otherwise
 	 */
@@ -64,13 +67,67 @@ class Consent
 			}
 		}
 
+		// Anonymous Tracking mode - ALWAYS allow tracking (no PII collected by default)
+		// This mode is GDPR-safe because it hashes IPs, doesn't set cookies, and doesn't store usernames
+		$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
+		if ($isAnonymousTracking) {
+			// Allow tracking - server will hash IPs and not store PII
+			// Users can still opt-in later for enhanced features (via consent upgrade)
+			// Continue to filter below
+		} else {
+			// Standard tracking mode - check if configuration collects PII
+			$setTrackerCookie = ('on' === ($settings['set_tracker_cookie'] ?? 'on'));
+			$anonymizeIp      = ('on' === ($settings['anonymize_ip'] ?? 'off'));
+			$hashIp           = ('on' === ($settings['hash_ip'] ?? 'off'));
+
+			// We collect PII if:
+			// - Cookies are enabled (identifies returning visitors) OR
+			// - Full IPs are stored (not anonymized AND not hashed)
+			$collectsPii = ($setTrackerCookie || (!$anonymizeIp && !$hashIp));
+
+			// Only check CMP consent if configuration actually collects PII
+			if ($collectsPii) {
+				// Check CMP integration for consent
+				$integrationKey = $settings['consent_integration'] ?? '';
+
+				// Real Cookie Banner - cannot reliably read consent server-side
+				// MUST block server-side tracking to prevent consent bypass
+				// Client-side JS will handle tracking after consent is verified
+				// This ensures GDPR compliance by respecting user's consent choices
+				if ('real_cookie_banner' === $integrationKey) {
+					// Conservative: block all server-side tracking
+					// Only allow client-side (JavaScript) tracking after consent is verified
+					// This is the recommended approach for Real Cookie Banner integration
+					$default = false;
+				}
+
+				// WP Consent API integration - can read consent server-side
+				if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+					$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
+					try {
+						// Check consent status - if not granted, block tracking
+						if (!\wp_has_consent($wpConsentCategory)) {
+							$default = false;
+						}
+					} catch (\Throwable $e) {
+						// Consent API error - be conservative, deny tracking
+						if (defined('WP_DEBUG') && WP_DEBUG) {
+							error_log('SlimStat: WP Consent API error in canTrack() - ' . $e->getMessage());
+						}
+						$default = false;
+					}
+				}
+			}
+			// If configuration doesn't collect PII: $default remains true (tracking allowed)
+		}
+
 		/**
 		 * Filter: slimstat_can_track
 		 *
 		 * Allows third parties (e.g., CMP plugins) to declare if analytics tracking is allowed.
 		 * Return true to allow tracking, false to disable it.
 		 *
-		 * @param bool $default Default decision (DNT-aware)
+		 * @param bool $default Default decision (DNT-aware + CMP-aware)
 		 */
 		$canTrack = (bool) apply_filters('slimstat_can_track', $default);
 
@@ -171,11 +228,13 @@ class Consent
 			}
 		}
 
-		// Real Cookie Banner - cannot read consent server-side
-		// This CMP blocks scripts client-side, so server should be conservative
+		// Real Cookie Banner - cannot reliably read consent server-side
+		// This CMP blocks scripts client-side, so server must be conservative
+		// to avoid collecting PII before consent is verified
 		if ('real_cookie_banner' === $integrationKey) {
 			// Conservative: assume no consent on server-side
-			// Client-side JS will handle consent gating
+			// Client-side JavaScript will handle consent gating and tracking
+			// Only after explicit user consent will tracking upgrade occur
 			return false;
 		}
 
