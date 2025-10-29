@@ -26,7 +26,7 @@ namespace SlimStat\Utils;
  *
  * 4. CMP Integration:
  *    - WP Consent API: reads server-side consent status
- *    - Real Cookie Banner / Borlabs: conservative (assume no consent server-side)
+ *    - Real Cookie Banner: conservative (assume no consent server-side)
  *    - None: allows tracking unless anonymous mode requires consent
  *
  * Filter Hook Integration:
@@ -171,9 +171,9 @@ class Consent
 			}
 		}
 
-		// Real Cookie Banner / Borlabs Cookie - cannot read consent server-side
-		// These CMPs block scripts client-side, so server should be conservative
-		if (in_array($integrationKey, ['real_cookie_banner', 'borlabs_cookie'], true)) {
+		// Real Cookie Banner - cannot read consent server-side
+		// This CMP blocks scripts client-side, so server should be conservative
+		if ('real_cookie_banner' === $integrationKey) {
 			// Conservative: assume no consent on server-side
 			// Client-side JS will handle consent gating
 			return false;

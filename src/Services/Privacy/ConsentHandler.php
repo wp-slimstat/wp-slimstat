@@ -62,8 +62,8 @@ class ConsentHandler
 				]);
 				return;
 			}
-		} elseif (in_array($integrationKey, ['real_cookie_banner_pro', 'borlabs_cookie'], true)) {
-			// These CMPs cannot be verified server-side
+		} elseif ('real_cookie_banner_pro' === $integrationKey) {
+			// This CMP cannot be verified server-side
 			// Accept the client's claim (nonce-protected)
 			$consentGranted = true;
 		} elseif ('' === $integrationKey) {

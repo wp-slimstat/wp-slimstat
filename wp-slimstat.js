@@ -573,9 +573,6 @@ var SlimStat = (function () {
                     } catch (e) {
                         cmpAllows = false;
                     }
-                } else if (integrationKey === "borlabs_cookie") {
-                    // Borlabs Cookie - assume consent is enforced by blocking script
-                    cmpAllows = true;
                 } else if (integrationKey === "") {
                     // No CMP integration configured + not in anonymous mode
                     // Legacy behavior: allow (WARNING: Not GDPR-safe if collecting PII!)
@@ -1015,11 +1012,6 @@ if (!window.requestIdleCallback) {
             }
             if (typeof window.wp_has_consent === "function") ok = !!window.wp_has_consent(selectedCategory);
             if (ok) tryTrackIfAllowed();
-        });
-
-        // Borlabs Cookie (generic consent saved event)
-        window.addEventListener("borlabs-cookie-consent-saved", function () {
-            tryTrackIfAllowed();
         });
 
         // CookieYes (cookie-law-info) events

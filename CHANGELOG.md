@@ -3,7 +3,6 @@
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance:
   - WP Consent API support with configurable consent categories
   - Real Cookie Banner Pro integration
-  - Borlabs Cookie integration
 - **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
 - **New**: Do Not Track (DNT) header respect with configurable option in settings.
 - **New**: Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.

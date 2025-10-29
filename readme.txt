@@ -18,7 +18,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner, Borlabs Cookie).
+* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
@@ -75,7 +75,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.4.0 - 2025-01-15 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
-- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API, Real Cookie Banner Pro, and Borlabs Cookie.
+- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.
 - **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
 - **New**: Do Not Track (DNT) header respect with configurable option in settings.
 - **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.

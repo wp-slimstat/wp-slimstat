@@ -119,12 +119,11 @@ $settings = [
             'consent_integration' => [
                 'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
                 'type'          => 'select',
-                'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available.<br/><strong>Real Cookie Banner / Borlabs Cookie:</strong> Specific integrations for these popular CMPs. Consent is enforced client-side by the CMP.', 'wp-slimstat'),
+                'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available.<br/><strong>Real Cookie Banner:</strong> Specific integration for this popular CMP. Consent is enforced client-side by the CMP.', 'wp-slimstat'),
                 'select_values' => [
                     ''               => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
                     'wp_consent_api' => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
                     'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
-                    'borlabs_cookie' => __('Borlabs Cookie', 'wp-slimstat'),
                 ],
             ],
             'consent_level_integration' => [
@@ -974,7 +973,6 @@ if (!function_exists('is_plugin_active')) {
 }
 $has_wp_consent_api     = function_exists('is_plugin_active') && is_plugin_active('wp-consent-api/wp-consent-api.php');
 $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php');
-$has_borlabs_cookie     = function_exists('is_plugin_active') && is_plugin_active('borlabs-cookie/borlabs-cookie.php');
 ?>
 <script>
 (function($){
@@ -985,7 +983,7 @@ $has_borlabs_cookie     = function_exists('is_plugin_active') && is_plugin_activ
         if(v === 'wp_consent_api'){
             $level.removeClass('hidden').show();
             $anon.removeClass('hidden').show();
-        } else if(v === 'borlabs_cookie' || v === 'real_cookie_banner'){
+        } else if(v === 'real_cookie_banner'){
             $level.hide();
             $anon.removeClass('hidden').show();
         } else {
@@ -997,11 +995,9 @@ $has_borlabs_cookie     = function_exists('is_plugin_active') && is_plugin_activ
         // Disable integrations that are not installed
         var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
         var hasRCB       = <?php echo $has_real_cookie_banner ? 'true' : 'false'; ?>;
-        var hasBorlabs   = <?php echo $has_borlabs_cookie ? 'true' : 'false'; ?>;
         var $ci = $('#consent_integration');
         if(!hasWpConsent){ $ci.find('option[value="wp_consent_api"]').prop('disabled', true); }
         if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
-        if(!hasBorlabs){ $ci.find('option[value="borlabs_cookie"]').prop('disabled', true); }
         $('#consent_integration').on('change', toggleConsentRows);
         toggleConsentRows();
     });
