@@ -1,6 +1,7 @@
 <?php
 
 use SlimStat\Utils\Query;
+use SlimStat\Components\DateRangeHelper;
 
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
@@ -130,6 +131,52 @@ class wp_slimstat_db
 
         // Filters use the following format: browser equals Firefox&&&country contains gb
         $filters_array = [];
+
+        // Handle type parameter for date presets and custom ranges
+        if (isset($_GET['type'])) {
+            // Sanitize the type parameter to prevent XSS
+            $type = sanitize_key($_GET['type']);
+            
+            if ($type !== 'custom') {
+                // Handle preset types
+                // Validate that the type is a valid preset before using it
+                $valid_presets = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month', 
+                                  'last_7_days', 'last_28_days', 'last_30_days', 'last_90_days', 
+                                  'last_6_months', 'this_year'];
+                
+                if (in_array($type, $valid_presets, true)) {
+                    $preset_range = DateRangeHelper::get_range_by_preset($type);
+                    if ($preset_range) {
+                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(wp_date('Y-m-d', $preset_range['end']));
+                        // Calculate days by normalizing to midnight to avoid DST issues
+                        $start_day = strtotime(wp_date('Y-m-d', $preset_range['start']));
+                        $end_day = strtotime(wp_date('Y-m-d', $preset_range['end']));
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
+                        $filters_array['interval'] = 'interval equals -' . absint($interval_days);
+                    }
+                }
+            } elseif (isset($_GET['from']) && isset($_GET['to'])) {
+                // Sanitize date inputs to prevent XSS
+                $from_date = sanitize_text_field($_GET['from']);
+                $to_date = sanitize_text_field($_GET['to']);
+                
+                // Validate date format (YYYY-MM-DD)
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
+                    // Calculate interval days directly from the date strings
+                    $start_day = strtotime($from_date);
+                    $end_day = strtotime($to_date);
+                    
+                    // Basic validation
+                    if ($start_day && $end_day && $start_day <= $end_day) {
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
+                        
+                        // Use the date strings directly without converting back and forth
+                        $filters_array['strtotime'] = 'strtotime equals ' . $to_date;
+                        $filters_array['interval'] = 'interval equals -' . absint($interval_days);
+                    }
+                }
+            }
+        }
 
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
@@ -1038,6 +1085,7 @@ class wp_slimstat_db
         $query->limit(sprintf('%d OFFSET %d', $limit, $start));
 
         $query->allowCaching(true);
+
 
         return $query->getAll();
     }
