@@ -67,14 +67,28 @@ class Chart
             $chart               = new self();
             $args['granularity'] = $granularity;
             $chart->init($args);
+            
+            // Extract totals by checking the period field instead of assuming array positions
+            $currentTotal = null;
+            $previousTotal = null;
+            foreach ($chart->data['totals'] as $total) {
+                if (isset($total->period)) {
+                    if ($total->period === 'current') {
+                        $currentTotal = $total;
+                    } elseif ($total->period === 'previous') {
+                        $previousTotal = $total;
+                    }
+                }
+            }
+            
             $totals = [
                 'current' => [
-                    'v1' => (int) ($chart->data['totals'][0]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][0]->v2 ?? 0),
+                    'v1' => (int) ($currentTotal->v1 ?? 0),
+                    'v2' => (int) ($currentTotal->v2 ?? 0),
                 ],
                 'previous' => [
-                    'v1' => (int) ($chart->data['totals'][1]->v1 ?? 0),
-                    'v2' => (int) ($chart->data['totals'][1]->v2 ?? 0),
+                    'v1' => (int) ($previousTotal->v1 ?? 0),
+                    'v2' => (int) ($previousTotal->v2 ?? 0),
                 ],
             ];
             wp_send_json_success([

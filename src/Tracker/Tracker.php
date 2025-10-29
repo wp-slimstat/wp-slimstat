@@ -3,8 +3,6 @@
 namespace SlimStat\Tracker;
 
 use SlimStat\Services\Privacy;
-use SlimStat\Services\GeoService;
-use SlimStat\Services\GeoIP;
 use SlimStat\Utils\Query;
 
 class Tracker

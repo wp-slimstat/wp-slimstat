@@ -63,27 +63,32 @@ jQuery(function () {
     jQuery(document).on("change", toggleSelector, toggleTrackingRequestMethod);
     jQuery(document).on("switchChange.bootstrapSwitch", toggleSelector, toggleTrackingRequestMethod);
 
-    var licenseType = jQuery("#enable_maxmind");
-    if (licenseType.val() !== "on") {
-        jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        jQuery("#maxmind_user_id").closest("tr").css("display", "none");
+    // Geolocation provider-based UI toggles
+    function toggleGeoUi() {
+        var provider = jQuery("#geolocation_provider").val();
+        var $licenseRow = jQuery("#maxmind_license_key").closest("tr");
+        var $dbActionsRow = jQuery("#slimstat-update-geoip-database").length ? jQuery("#slimstat-update-geoip-database").closest("tr") : jQuery();
+
+        if (provider === "maxmind") {
+            $licenseRow.css("display", "table-row");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "dbip") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "cloudflare") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "none");
+        }
     }
+    // Initialize and bind change
+    toggleGeoUi();
+    jQuery(document).on("change", "#geolocation_provider", toggleGeoUi);
 
     // ----- BEGIN: ACCESS LOG -------------------------------------------------------
     //
     SlimStatAdmin.access_log_count_down();
 
-    jQuery("#enable_maxmind").on("change", function (e) {
-        var value = e.target.value;
-        if (value == "on") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "table-row");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "table-row");
-        }
-        if (value == "no") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "none");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        }
-    });
+    // remove legacy enable_maxmind toggle handler (migrated to provider-based)
 
     // GeoIP Database Manually Update
     jQuery("#slimstat-update-geoip-database").on("click", function (e) {
@@ -561,6 +566,53 @@ jQuery(function () {
     // Initialize searchable select instance
     let searchableSelectInstance = null;
 
+    /**
+     * Helper function to get current time range for AJAX requests
+     * Returns object with type, from, and to parameters
+     */
+    function getTimeRangeForAjax() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var timeRange = {
+            type: 'last_28_days', // default
+            from: '',
+            to: ''
+        };
+
+        // First, check URL parameters
+        if (urlParams.has('type')) {
+            var typeParam = urlParams.get('type');
+            if (typeParam === 'custom' && urlParams.has('from') && urlParams.has('to')) {
+                timeRange.type = 'custom';
+                timeRange.from = urlParams.get('from');
+                timeRange.to = urlParams.get('to');
+            } else if (typeParam !== 'custom') {
+                timeRange.type = typeParam;
+            }
+        } 
+        // If no URL params, check sessionStorage
+        else {
+            var savedRange = sessionStorage.getItem('slimstat_date_range');
+            if (savedRange) {
+                try {
+                    var parsed = JSON.parse(savedRange);
+                    if (parsed.preset) {
+                        timeRange.type = parsed.preset;
+                    }
+                    // For custom ranges from sessionStorage
+                    if (parsed.preset === 'custom' && parsed.startDate && parsed.endDate) {
+                        timeRange.from = moment(parsed.startDate).format('YYYY-MM-DD');
+                        timeRange.to = moment(parsed.endDate).format('YYYY-MM-DD');
+                    }
+                } catch (e) {
+                    // If parsing fails, use default
+                    console.warn('SlimStat: Could not parse saved date range for filter options', e);
+                }
+            }
+        }
+
+        return timeRange;
+    }
+
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {
         var dimension = jQuery(this).val();
@@ -581,6 +633,9 @@ jQuery(function () {
         // Show loading state
         $textInput.attr("placeholder", __('Loading options...', 'wp-slimstat')).attr("name", "v");
 
+        // Get the current time range from URL parameters or sessionStorage
+        var timeRangeData = getTimeRangeForAjax();
+
         // Fetch options via AJAX
         jQuery.ajax({
             method: "POST",
@@ -589,36 +644,48 @@ jQuery(function () {
                 action: "slimstat_get_filter_options",
                 dimension: dimension,
                 security: jQuery("#meta-box-order-nonce").val(),
+                time_range_type: timeRangeData.type,
+                time_range_from: timeRangeData.from,
+                time_range_to: timeRangeData.to,
             },
             dataType: "json",
             timeout: 30000, // 30 second timeout to prevent hanging requests
         })
             .done(function (response) {
-                if (response.success && response.data && response.data.length > 0) {
+                if (response.success) {
                     // Verify the element still exists
                     if (!$textInput.length || !$textInput[0]) {
                         return;
                     }
                     
                     try {
-                        // Initialize searchable select
+                        // Determine the appropriate "no results" message
+                        var noResultsText = __('No matching options found', 'wp-slimstat');
+                        
+                        // Check if we have no data due to time range filter
+                        if (response.data && response.data.length === 0) {
+                            noResultsText = __('No data in this time range', 'wp-slimstat');
+                        }
+                        
+                        // Initialize searchable select (even if no options)
                         searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
                             placeholder: __('Select value...', 'wp-slimstat'),
                             searchPlaceholder: __('Search options...', 'wp-slimstat'),
-                            noResultsText: __('No matching options found', 'wp-slimstat'),
+                            noResultsText: noResultsText,
                             loadingText: __('Loading options...', 'wp-slimstat')
                         });
                         
-                        // Set the options from the AJAX response
-                        searchableSelectInstance.setOptions(response.data);
+                        // Set the options from the AJAX response (empty array if no data)
+                        searchableSelectInstance.setOptions(response.data || []);
                         
                         $textInput.attr("name", "v");
                     } catch (error) {
                         // Fall back to regular text input if searchable select fails
+                        console.error('SlimStat: Failed to initialize searchable select', error);
                         $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                     }
                 } else {
-                    // No options found, show text input instead
+                    // On error response, fall back to text input
                     $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
                 }
             })

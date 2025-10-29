@@ -3,11 +3,6 @@
 use SlimStat\Utils\Query;
 use SlimStat\Components\DateRangeHelper;
 
-// Ensure SlimStat autoloader is loaded for Query class
-if (!class_exists('SlimStat\\Includes\\Utils\\Query')) {
-
-}
-
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
 {
@@ -1091,6 +1086,7 @@ class wp_slimstat_db
         $query->limit(sprintf('%d OFFSET %d', $limit, $start));
 
         $query->allowCaching(false);
+
 
 
         return $query->getAll();
