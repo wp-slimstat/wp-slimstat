@@ -269,6 +269,7 @@ jQuery(function () {
             
             const arrowSpan = document.createElement('span');
             arrowSpan.className = 'slimstat-select-arrow';
+            arrowSpan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><polyline points="4 6 8 10 12 6"></polyline></svg>';
             
             this.display.appendChild(textSpan);
             this.display.appendChild(arrowSpan);
