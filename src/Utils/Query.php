@@ -712,10 +712,11 @@ class Query
         }
 
         if (!empty($this->rawWhereClause)) {
+            $wrappedClauses = array_map(fn($clause) => "($clause)", $this->rawWhereClause);
             if (!empty($this->whereClauses)) {
-                $query .= ' AND ' . implode(' AND ', $this->rawWhereClause);
+                $query .= ' AND ' . implode(' AND ', $wrappedClauses);
             } else {
-                $query .= ' WHERE ' . implode(' AND ', $this->rawWhereClause);
+                $query .= ' WHERE ' . implode(' AND ', $wrappedClauses);
             }
         }
 
