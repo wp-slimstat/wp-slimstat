@@ -22,7 +22,7 @@ if (!$is_pro) {
         wp_slimstat_admin::get_template('slimstat-pro-modal');
         ?>
         <div class="wrap slimstat upgrade-pro email-report-locked">
-            <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/pro-blur.jpg'); ?>">
+            <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/email report.PNG'); ?>">
         </div>
     </div>
     <?php
