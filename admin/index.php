@@ -1,5 +1,7 @@
 <?php
 
+use SlimStat\Services\GeoService;
+use SlimStat\Components\DateRangeHelper;
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -75,6 +77,13 @@ class wp_slimstat_admin
                 'title'           => __('Traffic Sources', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+            ],
+            'slimemail' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => wp_slimstat::pro_is_installed() ? __('Email Report', 'wp-slimstat') : __('Email Report (pro)', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_email_report'],
             ],
             'slimlayout' => [
                 'is_report_group' => false,
@@ -775,6 +784,44 @@ class wp_slimstat_admin
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
+        // Enqueue date range picker assets for report pages
+        $should_load_datepicker = false;
+        if (isset($_GET['page'])) {
+            $page = sanitize_text_field($_GET['page']);
+            if (str_contains($page, 'slim') && !str_contains($page, 'setting')) {
+                $should_load_datepicker = true;
+            }
+        }
+        
+        if ($should_load_datepicker) {
+            
+            // Enqueue moment.js
+            wp_enqueue_script('slimstat_moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
+            
+            // Enqueue daterangepicker
+            wp_enqueue_script('slimstat_daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat_moment'], '3.1.0', true);
+            
+            // Enqueue our custom date picker
+            wp_enqueue_script('slimstat_custom_datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat_daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
+            
+            // Enqueue date picker styles
+            wp_enqueue_style('slimstat_daterangepicker_base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
+            wp_enqueue_style('slimstat_daterangepicker_custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat_daterangepicker_base'], SLIMSTAT_ANALYTICS_VERSION);
+            
+            // Localize date picker script
+            $datepicker_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+                'options' => [
+                    'wp_timezone' => DateRangeHelper::get_wp_timezone(),
+                    'start_of_week' => DateRangeHelper::get_week_start(),
+                    'date_format' => DateRangeHelper::get_date_format()
+                ],
+                'strings' => DateRangeHelper::get_localized_strings()
+            ];
+            wp_localize_script('slimstat_custom_datepicker', 'SlimStatDatePicker', $datepicker_params);
+        }
+
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
 
         // Enqueue notification assets if notifications are enabled
@@ -969,7 +1016,17 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/layout.php');
     }
 
-    // END: wp_slimstat_include_addons
+    // END: wp_slimstat_include_layout
+
+    /**
+     * Includes the email report screen
+     */
+    public static function wp_slimstat_include_email_report()
+    {
+        include(__DIR__ . '/view/email-report.php');
+    }
+
+    // END: wp_slimstat_include_email_report
 
     /**
      * Handles the upgrade to pro from the free version
@@ -1049,7 +1106,7 @@ class wp_slimstat_admin
     public static function add_column_header($_columns = [])
     {
         if (0 == wp_slimstat::$settings['posts_column_day_interval']) {
-            wp_slimstat::$settings['posts_column_day_interval'] = 30;
+            wp_slimstat::$settings['posts_column_day_interval'] = 28;
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
