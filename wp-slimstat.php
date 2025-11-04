@@ -253,8 +253,11 @@ class wp_slimstat
 
         // Registers Slimstat with WP Consent API if enabled in plugin settings
         if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
-            $plugin = plugin_basename(SLIMSTAT_FILE);
-            add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
+            // Check if WP Consent API plugin is actually active
+            if (function_exists('wp_has_consent')) {
+                $plugin = plugin_basename(SLIMSTAT_FILE);
+                add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
+            }
         }
 
         // Register WordPress Privacy API exporters and erasers (GDPR Article 15 & 17)
@@ -1422,7 +1425,7 @@ class wp_slimstat
 			'set_tracker_cookie'       => 'on',
 			'use_slimstat_banner'      => 'on',
 			'consent_integration'      => 'slimstat_banner', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
-            'consent_level_integration'=> 'functional',
+            'consent_level_integration'=> 'statistics',
 			'opt_out_message'         => '',
 			'gdpr_accept_button_text' => '',
 			'gdpr_decline_button_text'=> '',
@@ -1616,7 +1619,7 @@ class wp_slimstat
         // Expose consent/DNT info to client
 		$params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
-        $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'functional');
+        $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'statistics');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';

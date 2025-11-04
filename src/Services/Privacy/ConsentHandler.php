@@ -71,10 +71,23 @@ class ConsentHandler
 			// Real Cookie Banner: Cannot be reliably verified server-side
 			// The CMP blocks scripts client-side, so if this AJAX request reached us,
 			// it means JavaScript was allowed to run and send the request.
-			// We still verify nonce (done above) to prevent CSRF.
-			// Accept the client's claim as Real Cookie Banner's client-side
-			// consent verification is the source of truth for this CMP.
-			$consentGranted = true;
+			// However, we should verify that Real Cookie Banner plugin is actually active
+			// to prevent abuse if plugin is not installed.
+
+			// Include plugin.php if needed for AJAX context
+			if (!function_exists('is_plugin_active')) {
+				require_once ABSPATH . 'wp-admin/includes/plugin.php';
+			}
+
+			if (function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php')) {
+				// Real Cookie Banner is active - accept client's claim
+				// Client-side JavaScript will have verified consent before sending this request
+				// Nonce verification (above) prevents CSRF attacks
+				$consentGranted = true;
+			} else {
+				// Real Cookie Banner plugin not active - deny upgrade for security
+				$consentGranted = false;
+			}
 		} elseif ('' === $integrationKey) {
 			// No CMP configured - accept upgrade (but this shouldn't happen in anonymous mode)
 			$consentGranted = true;

@@ -90,6 +90,14 @@ class Consent
 				// Check CMP integration for consent
 				$integrationKey = $settings['consent_integration'] ?? '';
 
+				// SlimStat Banner integration - check consent cookie
+				if ('slimstat_banner' === $integrationKey) {
+					$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+					if (!$gdpr_service->hasConsent()) {
+						$default = false;
+					}
+				}
+
 				// Real Cookie Banner - cannot reliably read consent server-side
 				// MUST block server-side tracking to prevent consent bypass
 				// Client-side JS will handle tracking after consent is verified
@@ -111,7 +119,8 @@ class Consent
 						}
 					} catch (\Throwable $e) {
 						// Consent API error - be conservative, deny tracking
-						if (defined('WP_DEBUG') && WP_DEBUG) {
+						// Only override $default if it was true (tracking was allowed)
+						if ($default && defined('WP_DEBUG') && WP_DEBUG) {
 							error_log('SlimStat: WP Consent API error in canTrack() - ' . $e->getMessage());
 						}
 						$default = false;
@@ -186,8 +195,16 @@ class Consent
 
 			// Check if consent was granted previously (via cookie or CMP)
 			// After consent is granted, a tracking cookie is set, so presence of cookie indicates consent
-			// Also check WP Consent API for server-side consent verification
+			// Also check CMP for server-side consent verification
 			$integrationKey = $settings['consent_integration'] ?? '';
+
+			// SlimStat Banner integration - check consent cookie
+			if ('slimstat_banner' === $integrationKey) {
+				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+				if ($gdpr_service->hasConsent()) {
+					return true;
+				}
+			}
 
 			// WP Consent API integration - can read consent server-side
 			if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
@@ -251,6 +268,12 @@ class Consent
 
 		// PRIORITY 4: Configuration DOES collect PII - check consent status
 		$integrationKey = $settings['consent_integration'] ?? '';
+
+		// SlimStat Banner integration - check consent cookie
+		if ('slimstat_banner' === $integrationKey) {
+			$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+			return $gdpr_service->hasConsent();
+		}
 
 		// WP Consent API integration - can read consent server-side
 		if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {

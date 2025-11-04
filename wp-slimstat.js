@@ -948,7 +948,7 @@ if (!window.requestIdleCallback) {
         var consentRetried = false;
         window.wp_listen_for_consent_change(function (category) {
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
 
             var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
 
@@ -965,7 +965,7 @@ if (!window.requestIdleCallback) {
         if (event.detail && event.detail.category) {
             var category = event.detail.category;
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
 
             // Use category-specific retry flag to prevent race conditions between CMPs
             var retryKey = "slimstatConsentRetried_" + selectedCategory;
@@ -986,7 +986,7 @@ if (!window.requestIdleCallback) {
     (function registerCmpListeners() {
         function tryTrackIfAllowed() {
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
             if (params.id && parseInt(params.id, 10) > 0) return;
             if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
 
@@ -1001,7 +1001,7 @@ if (!window.requestIdleCallback) {
         // Complianz: enable specific category
         document.addEventListener("cmplz_enable_category", function (e) {
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
             var cat = (e && e.detail && (e.detail.category || e.detail)) || "";
             if (cat === selectedCategory) tryTrackIfAllowed();
         });
@@ -1009,7 +1009,7 @@ if (!window.requestIdleCallback) {
         // Complianz: status event (allow/deny)
         document.addEventListener("cmplz_event_status", function (e) {
             var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "functional";
+            var selectedCategory = params.consent_level_integration || "statistics";
             var d = (e && e.detail) || {};
             var cat = d.category || d.type || "";
             var allowed = d.status === "allow" || d.enabled === true;
