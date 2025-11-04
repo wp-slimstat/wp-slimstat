@@ -179,9 +179,47 @@ class Consent
 		// In this mode, PII is BLOCKED by default until explicit consent is granted
 		$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
 		if ($isAnonymousTracking) {
-			// Only allow PII if we have received an explicit consent signal
-			// (e.g., from consent upgrade AJAX handler)
-			return $explicitConsentGiven;
+			// If explicit consent signal is provided (e.g., from consent upgrade AJAX handler), allow PII
+			if ($explicitConsentGiven) {
+				return true;
+			}
+
+			// Check if consent was granted previously (via cookie or CMP)
+			// After consent is granted, a tracking cookie is set, so presence of cookie indicates consent
+			// Also check WP Consent API for server-side consent verification
+			$integrationKey = $settings['consent_integration'] ?? '';
+
+			// WP Consent API integration - can read consent server-side
+			if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
+				try {
+					$hasConsent = (bool) \wp_has_consent($wpConsentCategory);
+					if ($hasConsent) {
+						return true;
+					}
+				} catch (\Throwable $e) {
+					// Consent API error - be conservative, deny PII
+					if (defined('WP_DEBUG') && WP_DEBUG) {
+						error_log('SlimStat: WP Consent API error - ' . $e->getMessage());
+					}
+				}
+			}
+
+			// Check if tracking cookie exists - if it does, consent was granted previously
+			// Cookie is only set after consent is granted in anonymous mode
+			if (isset($_COOKIE['slimstat_tracking_code'])) {
+				// Cookie exists - verify it's valid (not just a random cookie)
+				// Use Utils::getValueWithoutChecksum to validate the cookie format
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+				// If cookie is valid (checksum verified), it means consent was granted and cookie was set
+				// This allows PII collection for subsequent pageviews
+				if (false !== $cookieValue) {
+					return true;
+				}
+			}
+
+			// No consent found - deny PII
+			return false;
 		}
 
 		// PRIORITY 2: Do Not Track header - user explicitly requests no tracking

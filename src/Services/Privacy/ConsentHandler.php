@@ -62,6 +62,11 @@ class ConsentHandler
 				]);
 				return;
 			}
+		} elseif ('slimstat_banner' === $integrationKey) {
+			// SlimStat Banner: Check consent cookie
+			// Cookie is set by handleBannerConsent() when user accepts/denies
+			$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+			$consentGranted = $gdpr_service->hasConsent();
 		} elseif ('real_cookie_banner' === $integrationKey) {
 			// Real Cookie Banner: Cannot be reliably verified server-side
 			// The CMP blocks scripts client-side, so if this AJAX request reached us,
