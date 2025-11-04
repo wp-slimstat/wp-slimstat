@@ -298,6 +298,54 @@ class Processor
 
         // Update before insert
         \wp_slimstat::set_stat($stat);
+
+        // In Anonymous Tracking Mode without PII, simulate normal session behavior
+        // GDPR Compliance:
+        // - When PII is NOT allowed: No cookies are set (GDPR-compliant)
+        //   → We need to check for duplicates manually since cookies aren't available
+        // - When PII IS allowed: Cookies are set (after explicit consent)
+        //   → No need to check duplicates - cookies handle this automatically
+        // This matches the behavior of normal tracking mode where cookies prevent duplicate records
+        $isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
+        $piiAllowed = Consent::piiAllowed();
+
+        // Only perform duplicate check if:
+        // 1. Anonymous tracking mode is enabled
+        // 2. PII is NOT allowed (no cookies available)
+        // 3. Visit ID and resource are available
+        // This ensures we only check duplicates when cookies aren't available (GDPR-compliant mode)
+        if ($isAnonymousTracking && !$piiAllowed && !empty($stat['visit_id']) && !empty($stat['resource'])) {
+            // Use session_duration (default 30 minutes) to match normal tracking behavior
+            // In normal mode, cookies persist for session_duration, so we replicate that here
+            $session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
+            $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+            $min_timestamp = $stat['dt'] - $session_duration;
+
+            // Check if a record with the same visit_id and resource exists within the session duration
+            // This prevents duplicate records from page refreshes while still allowing:
+            // - New visits to different pages (different resource)
+            // - New sessions after session_duration expires
+            $existing_record = Query::select('id, dt')
+                ->from($table)
+                ->where('visit_id', '=', $stat['visit_id'])
+                ->where('resource', '=', $stat['resource'])
+                ->where('dt', '>=', $min_timestamp)
+                ->where('dt', '<=', $stat['dt'])
+                ->orderBy('dt', 'DESC')
+                ->limit(1)
+                ->getRow();
+
+            if (!empty($existing_record)) {
+                // Duplicate found within session - return existing record ID
+                // This matches normal behavior where cookies prevent duplicate pageviews
+                // Note: This only runs when cookies aren't available (GDPR-compliant mode)
+                $stat['id'] = intval($existing_record->id);
+                \wp_slimstat::set_stat($stat);
+                Query::setProcessingTimestamp(null);
+                return $stat['id'];
+            }
+        }
+
         $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
         if (empty($stat['id'])) {

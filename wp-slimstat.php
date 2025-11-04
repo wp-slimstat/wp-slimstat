@@ -183,7 +183,19 @@ class wp_slimstat
         self::$settings = array_merge(self::init_options(), self::$settings);
 
         // Allow third party tools to edit the options
-        self::$settings = apply_filters('slimstat_init_options', self::$settings);
+		self::$settings = apply_filters('slimstat_init_options', self::$settings);
+
+		$consent_integration = self::$settings['consent_integration'] ?? '';
+		if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
+			$consent_integration = 'slimstat_banner';
+			self::$settings['consent_integration'] = $consent_integration;
+		}
+
+		if ('slimstat_banner' === $consent_integration) {
+			self::$settings['use_slimstat_banner'] = 'on';
+		} else {
+			self::$settings['use_slimstat_banner'] = 'off';
+		}
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -228,8 +240,16 @@ class wp_slimstat
                 add_action('login_enqueue_scripts', [self::class, 'enqueue_tracker'], 10);
             }
 
-            add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
-        }
+			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
+		}
+
+		$banner_enabled = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+		if ($banner_enabled) {
+			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
+			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
+			add_action('wp_footer', [self::class, 'render_gdpr_banner'], 5);
+			add_action('login_footer', [self::class, 'render_gdpr_banner'], 5);
+		}
 
         // Registers Slimstat with WP Consent API if enabled in plugin settings
         if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
@@ -1399,9 +1419,13 @@ class wp_slimstat
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
             'anonymize_ip'             => 'no',
             'hash_ip'                  => 'no',
-            'set_tracker_cookie'       => 'on',
-            'consent_integration'      => '', // '', 'wp_consent_api'
+			'set_tracker_cookie'       => 'on',
+			'use_slimstat_banner'      => 'on',
+			'consent_integration'      => 'slimstat_banner', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
             'consent_level_integration'=> 'functional',
+			'opt_out_message'         => '',
+			'gdpr_accept_button_text' => '',
+			'gdpr_decline_button_text'=> '',
             'anonymous_tracking'       => 'off',
             'do_not_track'             => 'off',
 
@@ -1577,7 +1601,7 @@ class wp_slimstat
             $params['dnt'] = str_replace(' ', '', self::$settings['do_not_track_outbound_classes_rel_href']);
         }
 
-        // No internal GDPR UI; CMP integrations handle consent.
+		// Internal GDPR banner is optionally available alongside CMP integrations.
 
         if ('on' != self::$settings['javascript_mode']) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
@@ -1590,14 +1614,30 @@ class wp_slimstat
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
         // Expose consent/DNT info to client
-        $params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
-        $params['consent_integration'] = self::$settings['consent_integration'] ?? '';
+		$params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
+		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
         $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'functional');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
         $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
         $params['set_tracker_cookie'] = self::$settings['set_tracker_cookie'] ?? 'on';
+		$params['use_slimstat_banner'] = self::$settings['use_slimstat_banner'] ?? 'off';
+
+		if ('on' === $params['use_slimstat_banner']) {
+			// Set GDPR consent endpoint based on tracking method
+			if ('rest' === $method) {
+				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			} elseif ('ajax' === $method) {
+				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+			} elseif ('adblock_bypass' === $method) {
+				$params['gdpr_consent_endpoint'] = $adblock_url;
+			} else {
+				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			}
+			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+			$params['gdpr_consent_method'] = $method;
+		}
 
         $params = apply_filters('slimstat_js_params', $params);
 
@@ -1637,6 +1677,50 @@ class wp_slimstat
     }
 
     // end enqueue_tracker
+
+	/**
+	 * Enqueue assets for the internal SlimStat GDPR banner.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_gdpr_assets()
+	{
+		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'wp_slimstat_gdpr_banner',
+			plugins_url('/assets/css/gdpr-banner.css', __FILE__),
+			[],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+	}
+
+	/**
+	 * Render the SlimStat GDPR banner markup.
+	 *
+	 * @return void
+	 */
+	public static function render_gdpr_banner()
+	{
+		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
+			return;
+		}
+
+		if (is_admin() && !wp_doing_ajax()) {
+			return;
+		}
+
+		$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
+		$banner_html  = $gdpr_service->getBannerHtml();
+
+		if ('' === $banner_html) {
+			return;
+		}
+
+		echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
+	}
 
     public static function add_defer_to_script_tag($_tag, $_handle)
     {

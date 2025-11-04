@@ -231,5 +231,67 @@ class ConsentHandler
 
 		add_action('wp_ajax_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 		add_action('wp_ajax_nopriv_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
+
+		// GDPR banner consent handler (AJAX)
+		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
+		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
+	}
+
+	/**
+	 * Handle GDPR banner consent via AJAX
+	 *
+	 * @return void Outputs JSON response
+	 */
+	public static function handleBannerConsent()
+	{
+		// Verify nonce (for AJAX requests)
+		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+		if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
+			wp_send_json_error([
+				'message' => __('Invalid security token.', 'wp-slimstat'),
+			]);
+			return;
+		}
+
+		// Check if SlimStat banner is enabled
+		if (empty(\wp_slimstat::$settings['use_slimstat_banner']) ||
+			'on' !== \wp_slimstat::$settings['use_slimstat_banner']) {
+			wp_send_json_error([
+				'message' => __('SlimStat banner is not enabled.', 'wp-slimstat'),
+			]);
+			return;
+		}
+
+		$consent = isset($_POST['consent']) ? sanitize_text_field(wp_unslash($_POST['consent'])) : '';
+
+		if (!in_array($consent, ['accepted', 'denied'], true)) {
+			wp_send_json_error([
+				'message' => __('Invalid consent value.', 'wp-slimstat'),
+			]);
+			return;
+		}
+
+		$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+
+		// Set consent cookie
+		$result = $gdpr_service->setConsent($consent);
+
+		if (!$result) {
+			wp_send_json_error([
+				'message' => __('Failed to set consent cookie.', 'wp-slimstat'),
+			]);
+			return;
+		}
+
+		// Fire action hook for consent change
+		do_action('slimstat_gdpr_consent_changed', $consent);
+
+		wp_send_json_success([
+			'success' => true,
+			'message' => ('accepted' === $consent)
+				? __('Consent granted.', 'wp-slimstat')
+				: __('Consent denied.', 'wp-slimstat'),
+			'consent' => $consent,
+		]);
 	}
 }

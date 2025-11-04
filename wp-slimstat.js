@@ -583,6 +583,10 @@ var SlimStat = (function () {
                     } catch (e) {
                         cmpAllows = false;
                     }
+                } else if (integrationKey === "slimstat_banner") {
+                    var cookieName = s.gdpr_cookie_name || params.gdpr_cookie_name || "slimstat_gdpr_consent";
+                    var bannerConsent = getCookie(cookieName);
+                    cmpAllows = bannerConsent === "accepted";
                 } else if (integrationKey === "") {
                     // No CMP integration configured + not in anonymous mode
                     // Legacy behavior: allow (WARNING: Not GDPR-safe if collecting PII!)
@@ -1340,6 +1344,7 @@ if (!window.requestIdleCallback) {
         document.addEventListener("wp_listen_load", handleConsentGranted); // WP Consent API
         document.addEventListener("wp_consent_type_functional", handleConsentGranted); // WP Consent API - functional
         document.addEventListener("wp_consent_type_statistics", handleConsentGranted); // WP Consent API - statistics
+        document.addEventListener("slimstat_banner_consent", handleConsentGranted);
 
         // Real Cookie Banner - consent granted event
         window.addEventListener("RealCookieBannerConsentChanged", function (e) {
@@ -1383,6 +1388,194 @@ if (!window.requestIdleCallback) {
         });
     }
 
-    // Initialize consent upgrade handler
+    function initSlimStatBanner() {
+        var bannerInitialized = false;
+
+        function attachBannerHandlers() {
+            if (bannerInitialized) {
+                return;
+            }
+
+            var params = currentSlimStatParams();
+            if (!params || params.use_slimstat_banner !== "on") {
+                return;
+            }
+
+            var banner = document.getElementById("slimstat-gdpr-banner");
+            if (!banner) {
+                return;
+            }
+
+            bannerInitialized = true;
+
+            setTimeout(function () {
+                if (banner && banner.classList) {
+                    banner.classList.add("show");
+                } else if (banner) {
+                    banner.style.display = "block";
+                }
+            }, 50);
+
+            var buttons = banner.querySelectorAll("[data-consent]");
+            for (var i = 0; i < buttons.length; i++) {
+                (function (button) {
+                    if (button.addEventListener) {
+                        button.addEventListener(
+                            "click",
+                            function (event) {
+                                if (event && typeof event.preventDefault === "function") {
+                                    event.preventDefault();
+                                }
+                                if (event && typeof event.stopPropagation === "function") {
+                                    event.stopPropagation();
+                                }
+                                var consent = button.getAttribute("data-consent") || "";
+                                submitBannerDecision(consent, banner);
+                            },
+                            false
+                        );
+                    } else if (button.attachEvent) {
+                        button.attachEvent("onclick", function (event) {
+                            if (event && typeof event.preventDefault === "function") {
+                                event.preventDefault();
+                            }
+                            if (event && typeof event.stopPropagation === "function") {
+                                event.stopPropagation();
+                            }
+                            var consent = button.getAttribute("data-consent") || "";
+                            submitBannerDecision(consent, banner);
+                        });
+                    } else {
+                        button.onclick = function (event) {
+                            if (event && typeof event.preventDefault === "function") {
+                                event.preventDefault();
+                            }
+                            if (event && typeof event.stopPropagation === "function") {
+                                event.stopPropagation();
+                            }
+                            var consent = button.getAttribute("data-consent") || "";
+                            submitBannerDecision(consent, banner);
+                        };
+                    }
+                })(buttons[i]);
+            }
+        }
+
+        function submitBannerDecision(consent, bannerEl) {
+            if (!consent || (consent !== "accepted" && consent !== "denied")) {
+                return;
+            }
+
+            var params = currentSlimStatParams();
+            var endpoint = params.gdpr_consent_endpoint || "";
+            var method = params.gdpr_consent_method || params.transport || "rest";
+            var nonce = params.wp_rest_nonce || "";
+            var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
+            var cookiePath = params.baseurl || "/";
+
+            // Set cookie immediately
+            try {
+                var expiry = new Date();
+                expiry.setTime(expiry.getTime() + 365 * 24 * 60 * 60 * 1000);
+                var cookie = cookieName + "=" + consent + "; path=" + cookiePath + "; expires=" + expiry.toUTCString() + "; SameSite=Lax";
+                if (window && window.location && window.location.protocol === "https:") {
+                    cookie += "; Secure";
+                }
+                document.cookie = cookie;
+            } catch (cookieError) {
+                /* ignore cookie errors */
+            }
+
+            // Close banner with animation (before request)
+            if (bannerEl && bannerEl.classList) {
+                bannerEl.classList.remove("show");
+                bannerEl.classList.add("hiding");
+            } else if (bannerEl) {
+                // Fallback for browsers without classList
+                bannerEl.style.transition = "transform 0.3s ease-out, opacity 0.3s ease-out";
+                bannerEl.style.transform = "translateY(100%)";
+                bannerEl.style.opacity = "0";
+            }
+
+            // Remove banner from DOM after animation completes
+            setTimeout(function () {
+                if (bannerEl && bannerEl.parentNode) {
+                    bannerEl.parentNode.removeChild(bannerEl);
+                }
+            }, 350);
+
+            // Dispatch consent event immediately
+            if (consent === "accepted") {
+                try {
+                    if (typeof CustomEvent === "function") {
+                        document.dispatchEvent(new CustomEvent("slimstat_banner_consent", { detail: { consent: consent } }));
+                    } else {
+                        var evt = document.createEvent("Event");
+                        evt.initEvent("slimstat_banner_consent", true, true);
+                        document.dispatchEvent(evt);
+                    }
+                } catch (dispatchError) {
+                    /* ignore */
+                }
+
+                try {
+                    SlimStat._send_pageview({ consentGranted: true });
+                } catch (sendError) {
+                    /* ignore */
+                }
+            }
+
+            // Send request in background (for server-side logging)
+            if (!endpoint) {
+                return;
+            }
+
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", endpoint, true);
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+                // Send nonce in header for REST, in body for AJAX
+                if (method === "rest" && nonce) {
+                    xhr.setRequestHeader("X-WP-Nonce", nonce);
+                    xhr.send("consent=" + encodeURIComponent(consent));
+                } else {
+                    // AJAX or adblock_bypass: send nonce in body
+                    xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent) + "&nonce=" + encodeURIComponent(nonce));
+                }
+
+                // Ignore response - banner already closed
+                xhr.onload = function () {};
+                xhr.onerror = function () {};
+            } catch (xhrError) {
+                /* ignore - banner already closed */
+            }
+        }
+
+        if (document.readyState && document.readyState !== "loading") {
+            attachBannerHandlers();
+        }
+
+        if (document.addEventListener) {
+            document.addEventListener("DOMContentLoaded", attachBannerHandlers, false);
+            window.addEventListener("load", attachBannerHandlers, false);
+        } else if (document.attachEvent) {
+            document.attachEvent("onreadystatechange", function () {
+                if (document.readyState === "complete") {
+                    attachBannerHandlers();
+                }
+            });
+            window.attachEvent("onload", attachBannerHandlers);
+        } else {
+            if (document.readyState === "complete") {
+                attachBannerHandlers();
+            }
+            window.onload = attachBannerHandlers;
+        }
+    }
+
+    // Initialize consent helpers
+    initSlimStatBanner();
     setupConsentUpgradeHandler();
 })();

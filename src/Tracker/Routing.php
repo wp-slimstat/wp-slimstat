@@ -43,7 +43,7 @@ class Routing
 				header('Cache-Control: public, max-age=31536000');
 				header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 31536000) . ' GMT');
 
-				$css_path = SLIMSTAT_ANALYTICS_DIR . 'assets/css/gdpr-consent.css';
+				$css_path = SLIMSTAT_ANALYTICS_DIR . 'assets/css/gdpr-banner.css';
 				if (file_exists($css_path)) {
 					readfile($css_path);
 					exit;

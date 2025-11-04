@@ -5,6 +5,7 @@ namespace SlimStat\Providers;
 
 use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\TrackingRestController;
+use SlimStat\Controllers\Rest\GDPRBannerRestController;
 
 // don't load directly.
 if (! defined('ABSPATH')) {
@@ -41,9 +42,10 @@ class RestApiManager
     private static function load_controllers(): void
     {
         // Default core controllers
-        $controllers = [
-            new TrackingRestController(),
-        ];
+		$controllers = [
+			new TrackingRestController(),
+			new GDPRBannerRestController(),
+		];
 
         /**
          * Filter: slimstat_rest_controllers
@@ -117,7 +119,14 @@ class RestApiManager
         $post_data = \wp_slimstat::$raw_post_array;
         $action = $post_data['action'] ?? '';
 
-        // Internal GDPR actions removed. Use CMP integrations and hooks instead.
+        // Handle GDPR banner consent via adblock bypass
+        if ('slimstat_gdpr_consent' === $action) {
+            $expected_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
+            if ($request_param === $expected_hash) {
+                \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent();
+                exit;
+            }
+        }
 
         // Handle tracking hits if it's not a GDPR action
         $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);

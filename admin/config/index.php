@@ -88,44 +88,52 @@ $settings = [
                 'type'        => 'toggle',
                 'description' => __('Display important notifications inside the plugin, such as new version releases, feature updates, news, and special offers.', 'wp-slimstat'),
             ],
-
-            // General - Database
-            'general_database_header' => [
-                'title' => __('Database', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'auto_purge' => [
-                'title'             => __('Data Retention Period', 'wp-slimstat'),
-                'type'              => 'integer',
-                'after_input_field' => __('days', 'wp-slimstat'),
-                'description'       => __('<strong>GDPR Compliance:</strong> Automatically delete or archive pageviews older than specified days.<br/><br/><strong>✅ Recommended:</strong> <strong>420 days (14 months)</strong> - Complies with ePrivacy Directive and most GDPR interpretations.<br/><strong>⚠️ Warning:</strong> Retaining data longer than 14 months may require additional legal justification and a clear Data Processing Agreement (DPA) under GDPR Article 5(1)(e) (Storage Limitation Principle). Failing to comply can result in significant fines.<br/><br/>Set to <strong>0</strong> to disable automatic purging (<strong>strongly discouraged</strong> for GDPR compliance, as unlimited retention requires a very strong and documented legal justification).', 'wp-slimstat'),
-            ],
-            'auto_purge_delete' => [
-                'title'       => __('Archive Instead of Delete', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('<strong>⚠️ GDPR Important:</strong> Archived data is still subject to the same retention limits as active data. Archiving does not exempt you from GDPR retention requirements.<br/><br/>When enabled, old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves performance but still counts as data retention under GDPR.<br/><br/><strong>Note:</strong> Archive tables are <strong>permanently deleted</strong> when you uninstall SlimStat. <strong>Backup your data</strong> before uninstalling if you need to retain it.', 'wp-slimstat'),
-            ],
         ],
     ],
 
     2 => [
         'title' => __('Tracker', 'wp-slimstat'),
         'rows'  => [
-            // Tracker - Data Protection
-            'privacy_header' => [
-                'title' => __('Data Protection', 'wp-slimstat'),
+            // Tracker - Consent Management
+            'consent_management_header' => [
+                'title' => __('Consent Management', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'consent_integration' => [
-                'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
-                'type'          => 'select',
-                'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.<br/><strong>Real Cookie Banner:</strong> Specific integration for Real Cookie Banner CMP. <strong>Important:</strong> Server-side tracking is automatically disabled for GDPR compliance. Only client-side (JavaScript) tracking occurs after consent is verified. Works seamlessly with both standard and anonymous tracking modes. The integration supports category-specific consent (functional, statistics, marketing) and automatic consent upgrade in anonymous mode.', 'wp-slimstat'),
-                'select_values' => [
-                    ''               => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
-                    'wp_consent_api' => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
-                    'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
-                ],
-            ],
+			'consent_integration' => [
+				'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
+				'type'          => 'select',
+				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.<br/><strong>Real Cookie Banner:</strong> Specific integration for Real Cookie Banner CMP. <strong>Important:</strong> Server-side tracking is automatically disabled for GDPR compliance. Only client-side (JavaScript) tracking occurs after consent is verified. Works seamlessly with both standard and anonymous tracking modes. The integration supports category-specific consent (functional, statistics, marketing) and automatic consent upgrade in anonymous mode.', 'wp-slimstat'),
+				'select_values' => [
+					'slimstat_banner'    => __('SlimStat Consent Banner (Built-in)', 'wp-slimstat'),
+					''                   => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
+					'wp_consent_api'     => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
+					'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
+				],
+			],
+			'slimstat_banner_header' => [
+				'title' => __('SlimStat Consent Banner', 'wp-slimstat'),
+				'type'  => 'section_header',
+			],
+			'opt_out_message' => [
+				'title'             => __('Banner Message', 'wp-slimstat'),
+				'type'              => 'rich_text',
+				'after_input_field' => '',
+				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Use the editor above to format your message.', 'wp-slimstat'),
+			],
+			'gdpr_accept_button_text' => [
+				'title'              => __('Accept Button Label', 'wp-slimstat'),
+				'type'               => 'text',
+				'before_input_field' => '',
+				'after_input_field'  => '',
+				'description'        => __('Leave empty to use the default "Accept" text.', 'wp-slimstat'),
+			],
+			'gdpr_decline_button_text' => [
+				'title'              => __('Decline Button Label', 'wp-slimstat'),
+				'type'               => 'text',
+				'before_input_field' => '',
+				'after_input_field'  => '',
+				'description'        => __('Leave empty to use the default "Deny" text.', 'wp-slimstat'),
+			],
             'consent_level_integration' => [
                 'title'         => __('Consent Category', 'wp-slimstat'),
                 'type'          => 'select',
@@ -136,6 +144,12 @@ $settings = [
                     'statistics'            => __('Statistics', 'wp-slimstat'),
                     'marketing'             => __('Marketing', 'wp-slimstat'),
                 ],
+            ],
+
+            // Tracker - Data Protection
+            'privacy_header' => [
+                'title' => __('Data Protection', 'wp-slimstat'),
+                'type'  => 'section_header',
             ],
             'anonymous_tracking' => [
                 'title'       => __('Anonymous Tracking Mode', 'wp-slimstat'),
@@ -179,36 +193,9 @@ $settings = [
                 'description' => __('List all the file extensions that you want to be identified as Downloads. Please note that links pointing to external resources (i.e. PDFs on an external website) will be tracked as Downloads and not Outbound Links, if they match one of the extensions listed here below.', 'wp-slimstat'),
             ],
 
-            // Maintenance - Third-party Libraries
-            'maintenance_third_party_header' => [
-                'title' => __('Third-party Libraries', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'enable_maxmind' => [
-                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'after_input_field' => ((!empty($_POST['options']['enable_maxmind']) && 'disable' != sanitize_text_field($_POST['options']['enable_maxmind'])) || (empty($_POST['options']['enable_maxmind']) && 'disable' != wp_slimstat::$settings['enable_maxmind'])) ? '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>' : '',
-                'type'              => 'select',
-                'select_values'     => [
-                    'disable' => __('Disable', 'wp-slimstat'),
-                    'no'      => __('Use the JsDelivr', 'wp-slimstat'),
-                    'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat'),
-                ],
-                'description' => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat'),
-            ],
-            'maxmind_license_key' => [
-                'title'       => __('MaxMind License Key', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat'),
-            ],
-            'enable_browscap' => [
-                'title'       => __('Browscap Library', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (empty(\SlimStat\Services\Browscap::$browscap_local_version) ? '' : ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>')),
-            ],
-
-            // Tracker - Advanced Options
-            'advanced_tracker_header' => [
-                'title' => __('Advanced Options', 'wp-slimstat'),
+            // Tracker - Tracking Configuration
+            'tracking_configuration_header' => [
+                'title' => __('Tracking Configuration', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
             'geolocation_country' => [
@@ -228,6 +215,12 @@ $settings = [
                 'title'       => __('Extend Duration', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __("Reset your visitors' visit duration every time they access a new page within the current visit.", 'wp-slimstat'),
+            ],
+
+            // Tracker - Performance
+            'performance_header' => [
+                'title' => __('Performance', 'wp-slimstat'),
+                'type'  => 'section_header',
             ],
             'enable_cdn' => [
                 'title'       => __('Enable CDN', 'wp-slimstat'),
@@ -254,6 +247,33 @@ $settings = [
                 'type'   => 'custom',
                 'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat'),
                 'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = { ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '" };\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
+            ],
+
+            // Tracker - Third-party Libraries
+            'third_party_libraries_header' => [
+                'title' => __('Third-party Libraries', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'enable_maxmind' => [
+                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
+                'after_input_field' => ((!empty($_POST['options']['enable_maxmind']) && 'disable' != sanitize_text_field($_POST['options']['enable_maxmind'])) || (empty($_POST['options']['enable_maxmind']) && 'disable' != wp_slimstat::$settings['enable_maxmind'])) ? '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>' : '',
+                'type'              => 'select',
+                'select_values'     => [
+                    'disable' => __('Disable', 'wp-slimstat'),
+                    'no'      => __('Use the JsDelivr', 'wp-slimstat'),
+                    'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat'),
+                ],
+                'description' => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat'),
+            ],
+            'maxmind_license_key' => [
+                'title'       => __('MaxMind License Key', 'wp-slimstat'),
+                'type'        => 'text',
+                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat'),
+            ],
+            'enable_browscap' => [
+                'title'       => __('Browscap Library', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (empty(\SlimStat\Services\Browscap::$browscap_local_version) ? '' : ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>')),
             ],
         ],
     ],
@@ -557,6 +577,23 @@ $settings = [
     6 => [
         'title' => __('Maintenance', 'wp-slimstat'),
         'rows'  => [
+            // Maintenance - Data Retention
+            'maintenance_data_retention_header' => [
+                'title' => __('Data Retention & Auto-Purge', 'wp-slimstat'),
+                'type'  => 'section_header',
+            ],
+            'auto_purge' => [
+                'title'             => __('Retention Period', 'wp-slimstat'),
+                'type'              => 'integer',
+                'after_input_field' => __('days', 'wp-slimstat'),
+                'description'       => __('<strong>GDPR Compliance:</strong> Automatically purge data older than the specified number of days. This process runs twice daily via WordPress cron to keep your database clean and maintain GDPR compliance.<br/><br/><strong>Recommended:</strong> <strong>420 days (14 months)</strong> - Complies with ePrivacy Directive and most GDPR interpretations. This ensures data is automatically removed after a reasonable retention period.<br/><strong>Warning:</strong> Retaining data longer than 14 months may require additional legal justification and a clear Data Processing Agreement (DPA) under GDPR Article 5(1)(e) (Storage Limitation Principle). Failing to comply can result in significant fines.<br/><br/>Set to <strong>0</strong> to disable automatic purging (<strong>strongly discouraged</strong> for GDPR compliance, as unlimited retention requires a very strong and documented legal justification).', 'wp-slimstat'),
+            ],
+            'auto_purge_delete' => [
+                'title'       => __('Archive Mode', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('<strong>How to handle old data:</strong><br/><br/><strong>Enabled (Archive):</strong> Old records are moved to separate archive tables (<code>wp_slim_stats_archive</code>, <code>wp_slim_events_archive</code>) instead of being permanently deleted. This improves query performance by keeping the main tables smaller, while still allowing you to access historical data if needed. <strong>Note:</strong> Archived data still counts as data retention under GDPR requirements.<br/><br/><strong>Disabled (Delete):</strong> Old records are permanently deleted from the database. This is the most GDPR-compliant approach and frees up database space immediately. <strong>Warning:</strong> Deleted data cannot be recovered.<br/><br/><strong>Important:</strong> Archive tables are <strong>permanently deleted</strong> when you uninstall SlimStat. Always <strong>backup your data</strong> before uninstalling if you need to retain it.', 'wp-slimstat'),
+            ],
+
             // Maintenance - Troubleshooting
             'maintenance_troubleshooting_header' => [
                 'title' => __('Troubleshooting', 'wp-slimstat'),
@@ -752,7 +789,14 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
 
             if (isset($a_post_value)) {
-                wp_slimstat::$settings[$a_post_slug] = empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor']) ? htmlspecialchars(sanitize_text_field($a_post_value)) : $a_post_value;
+                if ('rich_text' === $settings[$current_tab]['rows'][$a_post_slug]['type']) {
+                    // Rich text editor: use wp_kses_post to sanitize HTML
+                    wp_slimstat::$settings[$a_post_slug] = wp_kses_post($a_post_value);
+                } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
+                    wp_slimstat::$settings[$a_post_slug] = htmlspecialchars(sanitize_text_field($a_post_value));
+                } else {
+                    wp_slimstat::$settings[$a_post_slug] = $a_post_value;
+                }
             }
 
             // If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
@@ -923,6 +967,33 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 					</td>';
                         break;
 
+                    case 'rich_text':
+                        $editor_content = empty(wp_slimstat::$settings[$a_setting_slug]) ? '' : wp_kses_post(wp_slimstat::$settings[$a_setting_slug]);
+                        $editor_settings = [
+                            'textarea_name' => 'options[' . $a_setting_slug . ']',
+                            'textarea_rows' => 8,
+                            'media_buttons' => false,
+                            'teeny' => true,
+                            'tinymce' => [
+                                'toolbar1' => 'bold,italic,underline,link,unlink,removeformat',
+                                'toolbar2' => '',
+                            ],
+                        ];
+                        if (!empty($is_readonly)) {
+                            $editor_settings['readonly'] = true;
+                        }
+                        echo '
+					<td colspan="2">
+						<label for="' . $a_setting_slug . '">' . $a_setting_info['title'] . $network_override_checkbox . '</label>
+						<p class="description">' . $a_setting_info['description'] . '</p>
+						<p>';
+                        wp_editor($editor_content, $a_setting_slug, $editor_settings);
+                        echo '
+							<span class="description">' . $a_setting_info['after_input_field'] . '</span>
+						</p>
+					</td>';
+                        break;
+
                     case 'textarea':
                         echo '
 					<td colspan="2">
@@ -931,7 +1002,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 						<p>
 							<textarea class="large-text code' . $use_tag_list . '"' . $is_readonly . $use_code_editor . '
 								id="' . $a_setting_slug . '"
-								rows="' . $a_setting_info['rows'] . '"
+								rows="' . ($a_setting_info['rows'] ?? 4) . '"
 								name="options[' . $a_setting_slug . ']">' . (empty(wp_slimstat::$settings[$a_setting_slug]) ? '' : stripslashes(wp_slimstat::$settings[$a_setting_slug])) . '</textarea>
 							<span class="description">' . $a_setting_info['after_input_field'] . '</span>
 						</p>
@@ -980,16 +1051,29 @@ $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_activ
         var v = $('#consent_integration').val();
         var $level = $('#consent_level_integration').closest('tr');
         var $anon = $('#anonymous_tracking').closest('tr');
-        if(v === 'wp_consent_api'){
-            $level.removeClass('hidden').show();
-            $anon.removeClass('hidden').show();
-        } else if(v === 'real_cookie_banner'){
-            $level.hide();
-            $anon.removeClass('hidden').show();
-        } else {
-            $level.hide();
-            $anon.hide();
-        }
+		var $bannerMessage = $('#opt_out_message').closest('tr');
+		var $bannerHeader = $bannerMessage.prev('tr');
+		var $bannerAccept = $('#gdpr_accept_button_text').closest('tr');
+		var $bannerDecline = $('#gdpr_decline_button_text').closest('tr');
+		var $bannerRows = $bannerHeader.add($bannerMessage).add($bannerAccept).add($bannerDecline);
+
+		if(v === 'wp_consent_api'){
+			$level.removeClass('hidden').show();
+			$anon.removeClass('hidden').show();
+			$bannerRows.hide();
+		} else if(v === 'real_cookie_banner'){
+			$level.hide();
+			$anon.removeClass('hidden').show();
+			$bannerRows.hide();
+		} else if(v === 'slimstat_banner'){
+			$level.hide();
+			$anon.removeClass('hidden').show();
+			$bannerRows.show();
+		} else {
+			$level.hide();
+			$anon.hide();
+			$bannerRows.hide();
+		}
     }
     $(function(){
         // Disable integrations that are not installed
