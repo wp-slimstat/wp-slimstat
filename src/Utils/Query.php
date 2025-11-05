@@ -712,10 +712,11 @@ class Query
         }
 
         if (!empty($this->rawWhereClause)) {
+            $wrappedClauses = array_map(fn($clause) => "($clause)", $this->rawWhereClause);
             if (!empty($this->whereClauses)) {
-                $query .= ' AND ' . implode(' ', $this->rawWhereClause);
+                $query .= ' AND ' . implode(' AND ', $wrappedClauses);
             } else {
-                $query .= ' WHERE ' . implode(' ', $this->rawWhereClause);
+                $query .= ' WHERE ' . implode(' AND ', $wrappedClauses);
             }
         }
 
@@ -1259,6 +1260,12 @@ class Query
         }
 
         return $result;
+    }
+
+    public function getSqlQuery()
+    {
+        $query = $this->buildQuery();
+        return $this->prepareQuery($query, $this->valuesToPrepare);
     }
 
     /**

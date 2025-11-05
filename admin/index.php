@@ -1,5 +1,7 @@
 <?php
 
+use SlimStat\Services\GeoService;
+use SlimStat\Components\DateRangeHelper;
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -775,11 +777,50 @@ class wp_slimstat_admin
             wp_enqueue_code_editor(['type' => 'text/html']);
         }
 
+        // Enqueue date range picker assets for report pages
+        $should_load_datepicker = false;
+        if (isset($_GET['page'])) {
+            $page = sanitize_text_field($_GET['page']);
+            if (str_contains($page, 'slim') && !str_contains($page, 'setting')) {
+                $should_load_datepicker = true;
+            }
+        }
+
+        if ($should_load_datepicker) {
+
+            // Enqueue moment.js
+            wp_enqueue_script('slimstat-moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
+
+            // Enqueue daterangepicker
+            wp_enqueue_script('slimstat-daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat-moment'], '3.1.0', true);
+
+            // Enqueue our custom date picker
+            wp_enqueue_script('slimstat-custom-datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat-daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
+
+            // Enqueue date picker styles
+            wp_enqueue_style('slimstat-daterangepicker-base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
+            wp_enqueue_style('slimstat-daterangepicker-custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat-daterangepicker-base'], SLIMSTAT_ANALYTICS_VERSION);
+
+            // Localize date picker script
+            $datepicker_params = [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+                'options' => [
+                    'wp_timezone' => DateRangeHelper::get_wp_timezone(),
+                    'start_of_week' => DateRangeHelper::get_week_start(),
+                    'date_format' => DateRangeHelper::get_date_format()
+                ],
+                'strings' => DateRangeHelper::get_localized_strings()
+            ];
+            wp_localize_script('slimstat-custom-datepicker', 'SlimStatDatePicker', $datepicker_params);
+        }
+
         wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
 
         // Enqueue notification assets if notifications are enabled
         if (wp_slimstat::$settings['display_notifications'] == 'on') {
             wp_enqueue_style('slimstat_notifications', plugins_url('/admin/assets/css/notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
+            wp_enqueue_style('slimstat_header_notifications', plugins_url('/admin/assets/css/header-notifications.css', __DIR__), [], SLIMSTAT_ANALYTICS_VERSION);
             wp_enqueue_script('slimstat_notifications', plugins_url('/admin/assets/js/notifications.js', __DIR__), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, false);
 
             // Pass notification data to Javascript
@@ -1049,7 +1090,7 @@ class wp_slimstat_admin
     public static function add_column_header($_columns = [])
     {
         if (0 == wp_slimstat::$settings['posts_column_day_interval']) {
-            wp_slimstat::$settings['posts_column_day_interval'] = 30;
+            wp_slimstat::$settings['posts_column_day_interval'] = 28;
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
@@ -1373,11 +1414,80 @@ class wp_slimstat_admin
 
         // Validate dimension exists in columns_names
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
-        wp_slimstat_db::init();
+
+        // We only need the columns_names array, not the full init with filters
+        if (empty(wp_slimstat_db::$columns_names)) {
+            wp_slimstat_db::$columns_names = [
+                'id' => ['ID', 'number'],
+                'ip' => ['IP', 'varchar'],
+                'other_ip' => ['Other IP', 'varchar'],
+                'username' => ['Username', 'varchar'],
+                'email' => ['Email', 'varchar'],
+                'country' => ['Country', 'varchar'],
+                'location' => ['Location', 'varchar'],
+                'city' => ['City', 'varchar'],
+                'referer' => ['Referer', 'varchar'],
+                'resource' => ['Resource', 'varchar'],
+                'searchterms' => ['Search Terms', 'varchar'],
+                'notes' => ['Notes', 'varchar'],
+                'visit_id' => ['Visit ID', 'number'],
+                'server_latency' => ['Server Latency', 'number'],
+                'page_performance' => ['Page Performance', 'number'],
+                'browser' => ['Browser', 'varchar'],
+                'browser_version' => ['Browser Version', 'varchar'],
+                'browser_type' => ['Browser Type', 'number'],
+                'platform' => ['Platform', 'varchar'],
+                'language' => ['Language', 'varchar'],
+                'fingerprint' => ['Fingerprint', 'varchar'],
+                'user_agent' => ['User Agent', 'varchar'],
+                'resolution' => ['Resolution', 'varchar'],
+                'screen_width' => ['Screen Width', 'number'],
+                'screen_height' => ['Screen Height', 'number'],
+                'content_type' => ['Content Type', 'varchar'],
+                'category' => ['Category', 'varchar'],
+                'author' => ['Author', 'varchar'],
+                'content_id' => ['Content ID', 'number'],
+                'outbound_resource' => ['Outbound Resource', 'varchar'],
+                'tz_offset' => ['Timezone Offset', 'number'],
+                'dt_out' => ['Date Time Out', 'number'],
+                'dt' => ['Date Time', 'number'],
+            ];
+        }
 
         if (empty($dimension) || !isset(wp_slimstat_db::$columns_names[$dimension])) {
             wp_send_json_error('Invalid dimension');
             return;
+        }
+
+        // Get time range parameters from AJAX request
+        $time_range_type = sanitize_text_field($_POST['time_range_type'] ?? 'last_28_days');
+        $time_range_from = sanitize_text_field($_POST['time_range_from'] ?? '');
+        $time_range_to = sanitize_text_field($_POST['time_range_to'] ?? '');
+
+        // Calculate time range timestamps
+        $time_start = null;
+        $time_end = null;
+
+        if ($time_range_type === 'custom' && !empty($time_range_from) && !empty($time_range_to)) {
+            // Custom date range
+            $time_start = strtotime($time_range_from);
+            $time_end = strtotime($time_range_to . ' 23:59:59');
+        } else {
+            // Preset date range
+            $preset_range = DateRangeHelper::get_range_by_preset($time_range_type);
+            if ($preset_range) {
+                $time_start = $preset_range['start'];
+                $time_end = $preset_range['end'];
+            }
+        }
+
+        // Fallback to last 28 days if no valid time range
+        if (empty($time_start) || empty($time_end)) {
+            $preset_range = DateRangeHelper::get_range_by_preset('last_28_days');
+            if ($preset_range) {
+                $time_start = $preset_range['start'];
+                $time_end = $preset_range['end'];
+            }
         }
 
         // Get distinct values for this dimension via SlimStat\Utils\Query abstraction
@@ -1405,25 +1515,40 @@ class wp_slimstat_admin
         // Get distinct non-empty values
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
 
-        // Build the query using Query (avoid direct $wpdb SQL)
-        $query = \SlimStat\Utils\Query::select('DISTINCT ' . $safe_dimension . ' as value')
-            ->from($table_name);
+        // Build SQL query directly to avoid Query class interference with global filters
+        $where_clauses = [];
+
+        // Apply time range filter
+        if (!empty($time_start) && !empty($time_end)) {
+            $where_clauses[] = $GLOBALS['wpdb']->prepare('dt BETWEEN %d AND %d', intval($time_start), intval($time_end));
+        }
 
         if ($column_type === 'varchar') {
             // Exclude NULLs and empty strings for varchar columns
-            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . " <> ''");
+            $where_clauses[] = $safe_dimension . ' IS NOT NULL';
+            $where_clauses[] = $safe_dimension . " <> ''";
         } else {
             // Exclude NULLs and zeros for numeric columns
-            $query->whereRaw($safe_dimension . ' IS NOT NULL AND ' . $safe_dimension . ' <> 0');
+            $where_clauses[] = $safe_dimension . ' IS NOT NULL';
+            $where_clauses[] = $safe_dimension . ' <> 0';
         }
 
-        $query->orderBy($safe_dimension, 'ASC')->limit($limit);
+        $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
-        $results = $query->getAll();
+        $sql = sprintf(
+            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
+            $safe_dimension,
+            $table_name,
+            $where_sql,
+            $safe_dimension,
+            $limit
+        );
+
+        // Execute query
+        $results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
 
         // Check for database errors
         if ($GLOBALS['wpdb']->last_error) {
-            error_log('SlimStat: Filter options query failed - ' . $GLOBALS['wpdb']->last_error);
             wp_send_json_error('Database query failed');
             return;
         }
@@ -1434,6 +1559,7 @@ class wp_slimstat_admin
         }
 
         $options = [];
+        $seen_values = []; // Track values to prevent duplicates (case-insensitive)
         $dimensions_with_icons = ['country', 'browser', 'language', 'platform', 'username'];
         $has_icons = in_array($dimension, $dimensions_with_icons, true);
 
@@ -1441,6 +1567,23 @@ class wp_slimstat_admin
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
                 $sanitized_value = sanitize_text_field($row['value']);
+
+                // Trim whitespace
+                $sanitized_value = trim($sanitized_value);
+
+                // Skip empty values after trimming
+                if (empty($sanitized_value)) {
+                    continue;
+                }
+
+                // Check for duplicates using case-insensitive comparison
+                $value_key = strtolower($sanitized_value);
+                if (isset($seen_values[$value_key])) {
+                    continue; // Skip duplicate
+                }
+
+                // Mark this value as seen
+                $seen_values[$value_key] = true;
 
                 // Limit individual option length to prevent DOM issues
                 if (strlen($sanitized_value) > 255) {
