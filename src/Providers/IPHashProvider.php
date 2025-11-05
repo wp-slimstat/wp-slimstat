@@ -76,9 +76,42 @@ class IPHashProvider
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
         $piiAllowed = Consent::piiAllowed();
 
+        // Special case: Anonymous tracking mode with CMP consent but no tracking cookie yet
+        // This happens when consent was just granted but cookie hasn't been set yet (same request)
+        // In this case, we should NOT hash the IP because consent was granted
+        $hasCmpConsentButNoCookie = false;
+        if ($isAnonymousTracking && !$piiAllowed) {
+            $integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
+            $hasTrackingCookie = isset($_COOKIE['slimstat_tracking_code']);
+
+            if (!$hasTrackingCookie) {
+                // Check if CMP consent exists (but tracking cookie doesn't yet)
+                // IMPORTANT: Only check if integration is actually configured
+                // If no integration is configured, we should NOT check consent (would be false positive)
+                if (!empty($integrationKey)) {
+                    if ('slimstat_banner' === $integrationKey) {
+                        $gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+                        if ($gdpr_service->hasConsent()) {
+                            $hasCmpConsentButNoCookie = true;
+                        }
+                    } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+                        $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
+                        try {
+                            if ((bool) \wp_has_consent($wpConsentCategory)) {
+                                $hasCmpConsentButNoCookie = true;
+                            }
+                        } catch (\Throwable $e) {
+                            // Ignore errors
+                        }
+                    }
+                }
+            }
+        }
+
         // MODE 1: Anonymous tracking mode WITHOUT consent
         // STRICTEST mode: MUST protect PII - hash IP only (no anonymization needed after hash)
-        if ($isAnonymousTracking && !$piiAllowed) {
+        // BUT: Skip hashing if CMP consent exists (cookie will be set by ensureVisitId())
+        if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsentButNoCookie) {
             // Hash using original IP for consistency, result replaces IP field
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
@@ -121,13 +154,44 @@ class IPHashProvider
 
         // MODE 2: Anonymous tracking mode WITH consent
         // Consent was granted - allow full IP storage
-        if ($isAnonymousTracking && $piiAllowed) {
+        // Also handle case where CMP consent exists but tracking cookie hasn't been set yet
+        if ($isAnonymousTracking && ($piiAllowed || $hasCmpConsentButNoCookie)) {
             // Keep original IPs, no processing needed
+            // Cookie will be set by ensureVisitId() in the same request
             return $stat;
         }
 
         // MODE 3+: Standard tracking mode (not anonymous)
         // Respect individual privacy settings and consent status
+
+        // IMPORTANT: In Anonymous Tracking Mode, we should NEVER reach here
+        // If we do, it means MODE 1 and MODE 2 didn't match, which is a bug
+        // In Anonymous Tracking Mode without consent, IP MUST be hashed (handled in MODE 1)
+        // In Anonymous Tracking Mode with consent, IP is kept (handled in MODE 2)
+        // So if isAnonymousTracking is true, we should have already returned above
+        if ($isAnonymousTracking) {
+            // This should never happen, but as a safety fallback, hash the IP
+            // This ensures GDPR compliance even if there's a logic error
+            $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
+
+            // Validate hash succeeded
+            $hashSucceeded = !empty($stat['ip'])
+                && strlen($stat['ip']) === 64
+                && ctype_xdigit($stat['ip'])
+                && $stat['ip'] !== $originalIp;
+
+            if (!$hashSucceeded) {
+                // Hash failed - anonymize as fallback
+                $stat['ip'] = self::anonymizeIP($originalIp);
+                if (!empty($originalOtherIp)) {
+                    $stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+                } else {
+                    $stat['other_ip'] = '';
+                }
+            }
+
+            return $stat;
+        }
 
         // Get individual privacy settings
         $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
@@ -198,7 +262,8 @@ class IPHashProvider
         // Ensure the anonymous visit ID is carried over to the new cookie-based session
         $anonymousVisitId = \SlimStat\Tracker\Session::getVisitId();
         if ($anonymousVisitId > 0) {
-            \SlimStat\Tracker\Session::setTrackingCookie($anonymousVisitId, 'visit');
+            // Force set the cookie, as we are in the consent upgrade flow
+            \SlimStat\Tracker\Session::setTrackingCookie($anonymousVisitId, 'visit', null, true);
         }
 
         return $stat;

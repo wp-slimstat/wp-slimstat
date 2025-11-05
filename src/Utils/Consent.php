@@ -193,50 +193,43 @@ class Consent
 				return true;
 			}
 
-			// Check if consent was granted previously (via cookie or CMP)
-			// After consent is granted, a tracking cookie is set, so presence of cookie indicates consent
-			// Also check CMP for server-side consent verification
+			// In anonymous mode, consent is determined by two factors:
+			// 1. A tracking cookie MUST exist, proving the consent upgrade happened in this browser.
+			// 2. The CMP must report that consent is active.
+
+			// Check for tracking cookie (proof of upgrade in this browser)
+			$hasTrackingCookie = false;
+			if (isset($_COOKIE['slimstat_tracking_code'])) {
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+				if (false !== $cookieValue) {
+					$hasTrackingCookie = true;
+				}
+			}
+
+			// Check for consent signal from the configured CMP
+			$hasCmpConsent = false;
 			$integrationKey = $settings['consent_integration'] ?? '';
 
-			// SlimStat Banner integration - check consent cookie
 			if ('slimstat_banner' === $integrationKey) {
 				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
 				if ($gdpr_service->hasConsent()) {
-					return true;
+					$hasCmpConsent = true;
 				}
-			}
-
-			// WP Consent API integration - can read consent server-side
-			if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 				try {
-					$hasConsent = (bool) \wp_has_consent($wpConsentCategory);
-					if ($hasConsent) {
-						return true;
+					if ((bool) \wp_has_consent($wpConsentCategory)) {
+						$hasCmpConsent = true;
 					}
 				} catch (\Throwable $e) {
-					// Consent API error - be conservative, deny PII
 					if (defined('WP_DEBUG') && WP_DEBUG) {
-						error_log('SlimStat: WP Consent API error - ' . $e->getMessage());
+						error_log('SlimStat: WP Consent API error in piiAllowed() - ' . $e->getMessage());
 					}
 				}
 			}
 
-			// Check if tracking cookie exists - if it does, consent was granted previously
-			// Cookie is only set after consent is granted in anonymous mode
-			if (isset($_COOKIE['slimstat_tracking_code'])) {
-				// Cookie exists - verify it's valid (not just a random cookie)
-				// Use Utils::getValueWithoutChecksum to validate the cookie format
-				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
-				// If cookie is valid (checksum verified), it means consent was granted and cookie was set
-				// This allows PII collection for subsequent pageviews
-				if (false !== $cookieValue) {
-					return true;
-				}
-			}
-
-			// No consent found - deny PII
-			return false;
+			// PII is allowed only if both the tracking cookie and the CMP consent are present.
+			return $hasTrackingCookie && $hasCmpConsent;
 		}
 
 		// PRIORITY 2: Do Not Track header - user explicitly requests no tracking

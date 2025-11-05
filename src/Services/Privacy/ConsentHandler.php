@@ -46,6 +46,12 @@ class ConsentHandler
 		// Verify nonce for security
 		check_ajax_referer('wp_rest', 'nonce');
 
+		// Security: Invalidate consent cache to ensure fresh state
+		// This prevents race conditions where consent changes but cache still shows old state
+		if (function_exists('wp_cache_delete')) {
+			wp_cache_delete('slimstat_consent_state', 'slimstat');
+		}
+
 		// Verify consent is actually granted via CMP (not just client saying so)
 		$integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
 		$consentGranted = false;
@@ -224,6 +230,12 @@ class ConsentHandler
 	{
 		// Verify nonce for security
 		check_ajax_referer('wp_rest', 'nonce');
+
+		// Security: Invalidate consent cache to ensure fresh state
+		// This prevents race conditions where consent changes but cache still shows old state
+		if (function_exists('wp_cache_delete')) {
+			wp_cache_delete('slimstat_consent_state', 'slimstat');
+		}
 
 		// Delete tracking cookie
 		Session::deleteTrackingCookie();

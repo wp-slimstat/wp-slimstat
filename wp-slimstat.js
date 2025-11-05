@@ -602,10 +602,11 @@ var SlimStat = (function () {
 
         // Check if this is a navigation event (not initial page load)
         var isNavigationEvent = options.isNavigation || false;
+        var isConsentRetry = options.isConsentRetry || false;
 
         // For navigation events, always track regardless of javascript_mode
         // For initial page load, skip if server-side tracking is active
-        if (!isNavigationEvent && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
+        if (!isNavigationEvent && !isConsentRetry && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
             // Server-side tracking is active for initial page load, skip pageview but allow interactions
             return;
         }
@@ -1264,12 +1265,18 @@ if (!window.requestIdleCallback) {
          */
         function handleConsentGranted() {
             try {
+                // First, re-send the pageview if it was previously blocked.
+                // The consent check inside _send_pageview will now pass.
                 var params = currentSlimStatParams();
+                if (!params.id || parseInt(params.id, 10) <= 0) {
+                    SlimStat._send_pageview({ isConsentRetry: true });
+                }
+
                 // Keep the full ID with checksum for security validation
                 var pageviewIdWithChecksum = params.id || "";
                 var pageviewIdNumeric = pageviewIdWithChecksum ? parseInt(pageviewIdWithChecksum.toString().split(".")[0], 10) : 0;
 
-                // If no pageview tracked yet, do nothing
+                // If no pageview tracked yet, do nothing further for upgrade
                 // The next pageview will automatically use full tracking with consent
                 if (pageviewIdNumeric <= 0 || !pageviewIdWithChecksum) {
                     return;

@@ -218,10 +218,13 @@ class Processor
             return false;
         }
 
+        // GDPR Compliance: GeoIP lookup requires PII consent in anonymous mode
+        // GeoIP data (country, city, location) is considered PII and should only be collected with consent
         $geographicProvider = new GeoService();
-        if ($geographicProvider->isGeoIPEnabled()) {
+        if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
             try {
                 // Use original IP (before hashing) for GeoIP lookup
+                // Only perform lookup if PII is allowed (consent granted in anonymous mode)
                 $geolocation_data = GeoIP::loader($originalIpForGeo);
             } catch (\Exception $e) {
                 Query::setProcessingTimestamp(null);
@@ -322,16 +325,24 @@ class Processor
             $min_timestamp = $stat['dt'] - $session_duration;
 
             // Check if a record with the same visit_id and resource exists within the session duration
+            // Also check fingerprint if available for more accurate duplicate detection
             // This prevents duplicate records from page refreshes while still allowing:
             // - New visits to different pages (different resource)
             // - New sessions after session_duration expires
-            $existing_record = Query::select('id, dt')
+            $query = Query::select('id, dt')
                 ->from($table)
                 ->where('visit_id', '=', $stat['visit_id'])
                 ->where('resource', '=', $stat['resource'])
                 ->where('dt', '>=', $min_timestamp)
-                ->where('dt', '<=', $stat['dt'])
-                ->orderBy('dt', 'DESC')
+                ->where('dt', '<=', $stat['dt']);
+
+            // If fingerprint is available, also check it for more accurate duplicate detection
+            // This ensures the same user doesn't get duplicate records when navigating between pages
+            if (!empty($stat['fingerprint'])) {
+                $query->where('fingerprint', '=', $stat['fingerprint']);
+            }
+
+            $existing_record = $query->orderBy('dt', 'DESC')
                 ->limit(1)
                 ->getRow();
 

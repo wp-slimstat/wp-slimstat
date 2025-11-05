@@ -320,9 +320,15 @@ class Utils
 		}
 
 		if (!empty($dataJs['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
-			// Only store fingerprint when PII is allowed; otherwise skip to reduce identifiability pre-consent
+			// Store fingerprint in two cases:
+			// 1. When PII is allowed (normal tracking with consent)
+			// 2. When Anonymous Tracking Mode is enabled (for session detection without cookies)
+			//    This allows tracking the same user across pages without cookies
 			try {
-				if (Consent::piiAllowed()) {
+				$isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
+				$piiAllowed = Consent::piiAllowed();
+
+				if ($piiAllowed || $isAnonymousTracking) {
 					$stat['fingerprint'] = sanitize_text_field($dataJs['fh']);
 				}
 			} catch (\Throwable $e) {

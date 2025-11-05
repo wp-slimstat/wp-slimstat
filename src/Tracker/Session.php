@@ -41,9 +41,42 @@ class Session
 		$identifier     = 0;
 		$isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
 
+		// Check if we need to upgrade from anonymous to PII tracking
+		// This happens when consent was just granted in anonymous mode
+		$hasCmpConsent = false;
+		$hasTrackingCookie = isset($_COOKIE['slimstat_tracking_code']);
+
+		if ($isAnonymousTracking && !$hasTrackingCookie) {
+			// Check if CMP consent exists (but tracking cookie doesn't yet)
+			$integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
+
+			if ('slimstat_banner' === $integrationKey) {
+				$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+				$hasCmpConsent = $gdpr_service->hasConsent();
+			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+				$wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
+				try {
+					$hasCmpConsent = (bool) \wp_has_consent($wpConsentCategory);
+				} catch (\Throwable $e) {
+					// Ignore errors
+				}
+			}
+
+			// If CMP consent exists but tracking cookie doesn't, upgrade to PII tracking
+			// This handles the case where consent was just granted but cookie hasn't been set yet
+			if ($hasCmpConsent) {
+				// Force assign a new visit ID and set tracking cookie
+				// This upgrades from anonymous to PII tracking mode
+				$forceAssign = true;
+				$is_new_session = true; // Force new session to generate visit ID
+				// Skip anonymous visit ID generation - we'll generate a real visit ID below
+			}
+		}
+
 		// In anonymous tracking mode WITHOUT consent, use server-side visit ID
 		// This allows visit tracking without cookies (GDPR-compliant)
-		if ($isAnonymousTracking && !Consent::piiAllowed()) {
+		// BUT: Skip this if CMP consent exists (we'll upgrade to PII tracking instead)
+		if ($isAnonymousTracking && !Consent::piiAllowed() && !$hasCmpConsent) {
 			// Generate deterministic visit ID from hashed IP + User Agent + daily salt
 			$identifier = self::generateAnonymousVisitId();
 			$stat = \wp_slimstat::get_stat();
@@ -149,9 +182,11 @@ class Session
 	 * @param int    $value      The value to store in cookie (visit_id or pageview id)
 	 * @param string $value_type Type of value: 'visit' or 'id' (affects checksum)
 	 * @param int    $expires    Optional. Expiration time in seconds. If not provided, uses session_duration.
+	 * @param bool   $force      Optional. Force setting the cookie even if consent checks fail.
+	 *                           Used internally during the consent upgrade flow.
 	 * @return bool True if cookie was set, false if not allowed
 	 */
-	public static function setTrackingCookie($value, $value_type = 'visit', $expires = null)
+	public static function setTrackingCookie($value, $value_type = 'visit', $expires = null, bool $force = false)
 	{
 		// Check if PII collection is allowed (handles consent, DNT, anonymous mode)
 		$piiAllowed = Consent::piiAllowed();
@@ -160,7 +195,7 @@ class Session
 		$cookieEnabled = !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie'];
 
 		// Determine if we should set cookie (allow filter override)
-		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', ($piiAllowed && $cookieEnabled));
+		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', ($force || ($piiAllowed && $cookieEnabled)));
 
 		if (!$shouldSetCookie) {
 			return false;
@@ -238,10 +273,14 @@ class Session
 	/**
 	 * Generate anonymous visit ID for cookie-less tracking.
 	 *
-	 * Creates a deterministic visit ID from hashed IP + User Agent + daily salt.
+	 * Creates a deterministic visit ID from fingerprint (if available) or hashed IP + User Agent + daily salt.
 	 * This allows visit tracking in anonymous mode without cookies.
 	 *
-	 * IP Selection Strategy:
+	 * Priority Strategy:
+	 * 1. If fingerprint is available (from JavaScript): Use fingerprint + daily salt for consistent visit ID
+	 * 2. If fingerprint not available: Use IP + User Agent + daily salt + timestamp entropy
+	 *
+	 * IP Selection Strategy (fallback):
 	 * - Prefers other_ip (actual client IP from proxy headers like X-Forwarded-For)
 	 * - Falls back to primary IP (REMOTE_ADDR) when other_ip is not available
 	 * - This ensures unique visit IDs for users behind shared proxies/CDNs
@@ -249,7 +288,7 @@ class Session
 	 * Properties:
 	 * - Same visitor = same visit ID (within same day)
 	 * - Changes daily (due to daily salt rotation)
-	 * - No PII stored or transmitted
+	 * - No PII stored or transmitted (fingerprint is pseudonymous identifier)
 	 * - GDPR-compliant (no tracking across days)
 	 *
 	 * @return int Visit ID (32-bit integer from hash)
@@ -268,6 +307,25 @@ class Session
 			$daily_salt = gmdate('Y-m-d') . self::getSecureKey();
 		}
 
+		// Try to get fingerprint from current stat (sent from JavaScript)
+		$stat = \wp_slimstat::get_stat();
+		$fingerprint = $stat['fingerprint'] ?? '';
+
+		// If fingerprint is available, use it for more accurate session tracking
+		// This allows tracking the same user across pages without cookies
+		if (!empty($fingerprint)) {
+			// Create deterministic hash using fingerprint + daily salt
+			// This gives us a consistent visit ID for the same visitor on the same day
+			$hash_input = $daily_salt . '|' . $fingerprint;
+			$hash       = hash_hmac('sha256', $hash_input, self::getSecureKey());
+
+			// Convert first 8 characters of hash to integer (32-bit)
+			$visit_id = abs((int) hexdec(substr($hash, 0, 8)));
+
+			return $visit_id;
+		}
+
+		// Fallback: Use IP + User Agent if fingerprint not available
 		// Get visitor's IP addresses
 		[$ip, $other_ip] = Utils::getRemoteIp();
 		$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
@@ -277,8 +335,18 @@ class Session
 		// This prevents multiple users behind the same proxy from getting identical visit IDs
 		$client_ip = !empty($other_ip) ? $other_ip : $ip;
 
-		// Create deterministic hash using client IP + User Agent + daily salt
-		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent;
+		// Security & Privacy: Add entropy for better private browser detection
+		// Use first request timestamp (rounded to 5-minute intervals) to distinguish
+		// different private browser sessions even with same IP + UA
+		// This helps detect new private browser sessions while maintaining GDPR compliance
+		$current_timestamp = \wp_slimstat::date_i18n('U');
+		// Round to 5-minute intervals to balance uniqueness and privacy
+		$timestamp_entropy = floor($current_timestamp / 300) * 300;
+
+		// Create deterministic hash using client IP + User Agent + daily salt + timestamp entropy
+		// The timestamp entropy helps distinguish private browser sessions
+		// while maintaining reasonable uniqueness (same visitor within 5 minutes gets same visit ID)
+		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent . '|' . $timestamp_entropy;
 		$hash       = hash_hmac('sha256', $hash_input, self::getSecureKey());
 
 		// Convert first 8 characters of hash to integer (32-bit)
