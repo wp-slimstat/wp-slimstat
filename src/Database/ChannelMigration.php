@@ -39,6 +39,29 @@ class ChannelMigration
     public const ACTIVATION_TIMESTAMP_OPTION = 'slimstat_channel_activation_timestamp';
 
     /**
+     * Check if channel schema is up-to-date (T007.2).
+     *
+     * Used by automatic migration hook to quickly check if migration is needed.
+     * Performance: Single get_option() call, <0.1ms when up-to-date.
+     *
+     * @return bool True if schema version matches or exceeds current version
+     */
+    public static function is_up_to_date(): bool
+    {
+        return self::get_current_version() >= self::SCHEMA_VERSION;
+    }
+
+    /**
+     * Get currently installed schema version (T007.2).
+     *
+     * @return int Schema version (0 if never installed)
+     */
+    public static function get_current_version(): int
+    {
+        return (int) get_option(self::SCHEMA_VERSION_OPTION, 0);
+    }
+
+    /**
      * Run activation migrations.
      *
      * This method is called when the plugin is activated. It creates the
@@ -50,7 +73,7 @@ class ChannelMigration
      */
     public static function activate(): bool
     {
-        $current_version = (int) get_option(self::SCHEMA_VERSION_OPTION, 0);
+        $current_version = self::get_current_version();
 
         // Skip migration if schema is already up-to-date
         if ($current_version >= self::SCHEMA_VERSION) {

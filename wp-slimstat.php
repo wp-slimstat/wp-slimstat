@@ -1200,6 +1200,17 @@ if (function_exists('add_action')) {
         register_activation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'activate']);
         register_deactivation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'deactivate']);
 
+        // Traffic Channel Report automatic database updates (Feature 004, BUG-003 fix)
+        // Ensures users who update via WordPress Admin → Updates get the new table without manual deactivation
+        // Mirrors SlimStat's existing update pattern (admin/index.php lines 210-211)
+        add_action('admin_init', function () {
+            // Quick version check (1 get_option call, exits immediately if up-to-date)
+            if (!\SlimStat\Database\ChannelMigration::is_up_to_date()) {
+                // Run migration (idempotent, safe to call multiple times)
+                \SlimStat\Database\ChannelMigration::activate();
+            }
+        }, 5); // Priority 5 to run early in admin initialization
+
         // Traffic Channel Report initialization (Feature 004)
         // Wrapped in 'init' hook to ensure translations are loaded (BUG-002 fix)
         add_action('init', function () {
