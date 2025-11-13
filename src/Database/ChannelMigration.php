@@ -155,26 +155,6 @@ class ChannelMigration
     }
 
     /**
-     * Get the current schema version.
-     *
-     * @return int Current schema version from wp_options
-     */
-    public static function get_current_version(): int
-    {
-        return (int) get_option(self::SCHEMA_VERSION_OPTION, 0);
-    }
-
-    /**
-     * Check if migrations are up-to-date.
-     *
-     * @return bool True if current version matches target version
-     */
-    public static function is_up_to_date(): bool
-    {
-        return self::get_current_version() >= self::SCHEMA_VERSION;
-    }
-
-    /**
      * Handle plugin deactivation cleanup.
      *
      * Note: This does NOT drop the table or delete options to preserve data.
