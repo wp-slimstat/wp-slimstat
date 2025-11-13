@@ -1,0 +1,369 @@
+/**
+ * Traffic Channel Report Widget Styles
+ *
+ * Styles for channel widgets following SlimStat's existing patterns.
+ *
+ * @package SlimStat
+ * @since 5.1.0
+ */
+
+// Top Channel Widget Styles
+.top-channel-widget {
+  padding: 20px;
+
+  .channel-name {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+
+    .dashicons {
+      font-size: 32px;
+      width: 32px;
+      height: 32px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+  }
+
+  .channel-stats {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 25px;
+    padding: 15px 0;
+    border-top: 1px solid $grayThree;
+    border-bottom: 1px solid $grayThree;
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      .stat-label {
+        font-size: 12px;
+        color: $grayTwo;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: $grayOne;
+        line-height: 1;
+      }
+    }
+  }
+
+  .mini-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .chart-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .bar-label {
+        min-width: 100px;
+        font-size: 13px;
+        color: $grayTwo;
+        font-weight: 500;
+      }
+
+      .bar-fill {
+        flex: 1;
+        height: 8px;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+        min-width: 20px;
+      }
+
+      .bar-value {
+        min-width: 45px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 600;
+        color: $grayOne;
+      }
+
+      &:hover .bar-fill {
+        opacity: 0.8;
+        transform: scaleY(1.1);
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    padding: 15px;
+
+    .channel-name h2 {
+      font-size: 20px;
+    }
+
+    .channel-stats {
+      gap: 20px;
+
+      .stat-item .stat-value {
+        font-size: 22px;
+      }
+    }
+
+    .mini-chart .chart-bar .bar-label {
+      min-width: 80px;
+      font-size: 12px;
+    }
+  }
+}
+
+// Channel Distribution Widget Styles
+.channel-distribution-widget {
+  padding: 20px;
+
+  .channel-distribution-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+
+    thead {
+      background-color: $grayFive;
+
+      th {
+        padding: 12px 15px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: $grayTwo;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid $grayThree;
+
+        &.text-right {
+          text-align: right;
+        }
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid $graySix;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: $grayFive;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+
+      td {
+        padding: 12px 15px;
+        font-size: 14px;
+
+        &.text-right {
+          text-align: right;
+        }
+
+        &.channel-name {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 500;
+
+          .dashicons {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+          }
+        }
+
+        &.channel-bar {
+          .bar-container {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            background-color: $graySix;
+            border-radius: 4px;
+            overflow: hidden;
+
+            .bar-fill {
+              position: absolute;
+              left: 0;
+              top: 0;
+              height: 100%;
+              border-radius: 4px;
+              transition: width 0.5s ease;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .channel-donut-chart {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin: 0 auto;
+
+    svg {
+      display: block;
+      margin: 0 auto;
+    }
+
+    .chart-center-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+
+      .total-visits {
+        display: block;
+        font-size: 28px;
+        font-weight: 700;
+        color: $grayOne;
+        line-height: 1;
+        margin-bottom: 5px;
+      }
+
+      .label {
+        display: block;
+        font-size: 12px;
+        color: $grayTwo;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    padding: 15px;
+
+    .channel-distribution-table {
+      thead th {
+        padding: 10px 8px;
+        font-size: 11px;
+      }
+
+      tbody td {
+        padding: 10px 8px;
+        font-size: 13px;
+
+        &.channel-name {
+          gap: 8px;
+
+          .dashicons {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+
+    .channel-donut-chart {
+      width: 180px;
+      height: 180px;
+
+      .chart-center-label .total-visits {
+        font-size: 22px;
+      }
+    }
+  }
+}
+
+// Common widget loading state
+.top-channel-widget,
+.channel-distribution-widget {
+  &.loading {
+    position: relative;
+    min-height: 200px;
+    opacity: 0.6;
+    pointer-events: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 4px solid $grayThree;
+      border-top-color: $wpBlue;
+      border-radius: 50%;
+      animation: spinner 0.8s linear infinite;
+    }
+  }
+
+  .slimstat-no-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: $grayTwo;
+    font-size: 14px;
+    font-style: italic;
+  }
+}
+
+@keyframes spinner {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+// RTL support for channel widgets
+[dir="rtl"],
+.rtl {
+  .top-channel-widget {
+    .channel-name {
+      direction: rtl;
+    }
+
+    .mini-chart .chart-bar {
+      .bar-label {
+        text-align: right;
+      }
+
+      .bar-value {
+        text-align: left;
+      }
+    }
+  }
+
+  .channel-distribution-widget {
+    .channel-distribution-table {
+      thead th {
+        text-align: right;
+
+        &.text-right {
+          text-align: left;
+        }
+      }
+
+      tbody td {
+        text-align: right;
+
+        &.text-right {
+          text-align: left;
+        }
+
+        &.channel-name {
+          flex-direction: row-reverse;
+        }
+
+        &.channel-bar .bar-container .bar-fill {
+          left: auto;
+          right: 0;
+        }
+      }
+    }
+  }
+}

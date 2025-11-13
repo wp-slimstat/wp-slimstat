@@ -1217,6 +1217,12 @@ if (function_exists('add_action')) {
 
         // Traffic Channel Report filter integration (Feature 004)
         \SlimStat\Filters\ChannelFilterRegistrar::init();
+
+        // Traffic Channel Report asset loading (Feature 004)
+        \SlimStat\Admin\AssetLoader::init();
+
+        // Traffic Channel Report AJAX handlers (Feature 004)
+        \SlimStat\Admin\AjaxHandler::init();
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
