@@ -1199,6 +1199,12 @@ if (function_exists('add_action')) {
         // Traffic Channel Report feature activation (Feature 004)
         register_activation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'activate']);
         register_deactivation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'deactivate']);
+
+        // Traffic Channel Report cron scheduler (Feature 004)
+        \SlimStat\Channel\CronScheduler::register();
+
+        // Traffic Channel Report health monitoring (Feature 004)
+        \SlimStat\Channel\HealthMonitor::init();
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
