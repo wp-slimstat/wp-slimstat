@@ -1205,6 +1205,9 @@ if (function_exists('add_action')) {
 
         // Traffic Channel Report health monitoring (Feature 004)
         \SlimStat\Channel\HealthMonitor::init();
+
+        // Traffic Channel Report Marketing page (Feature 004)
+        \SlimStat\Admin\MarketingPage::init();
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
