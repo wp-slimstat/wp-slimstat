@@ -25,7 +25,7 @@ class SettingsTab
     public static function init(): void
     {
         add_action('admin_init', [self::class, 'register_settings']);
-        add_filter('slimstat_options_on_page', [self::class, 'add_settings_tab'], 10, 2);
+        add_filter('slimstat_options_on_page', [self::class, 'add_settings_tab'], 10, 1);
     }
 
     /**
@@ -54,16 +54,10 @@ class SettingsTab
      * Adds cron interval dropdown and health status display.
      *
      * @param array $options Current options array
-     * @param string $current_tab Current settings tab
      * @return array Modified options array
      */
-    public static function add_settings_tab(array $options, string $current_tab): array
+    public static function add_settings_tab(array $options): array
     {
-        // Only add to a specific tab (e.g., 'tracker' or create new 'marketing' tab)
-        // For simplicity, adding to 'tracker' tab
-        if ($current_tab !== 'tracker') {
-            return $options;
-        }
 
         // Add section header
         $options['channel_settings_header'] = [

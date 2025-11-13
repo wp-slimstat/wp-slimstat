@@ -1200,29 +1200,33 @@ if (function_exists('add_action')) {
         register_activation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'activate']);
         register_deactivation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'deactivate']);
 
-        // Traffic Channel Report cron scheduler (Feature 004)
-        \SlimStat\Channel\CronScheduler::register();
+        // Traffic Channel Report initialization (Feature 004)
+        // Wrapped in 'init' hook to ensure translations are loaded (BUG-002 fix)
+        add_action('init', function () {
+            // Traffic Channel Report cron scheduler (Feature 004)
+            \SlimStat\Channel\CronScheduler::register();
 
-        // Traffic Channel Report health monitoring (Feature 004)
-        \SlimStat\Channel\HealthMonitor::init();
+            // Traffic Channel Report health monitoring (Feature 004)
+            \SlimStat\Channel\HealthMonitor::init();
 
-        // Traffic Channel Report Marketing page (Feature 004)
-        \SlimStat\Admin\MarketingPage::init();
+            // Traffic Channel Report Marketing page (Feature 004)
+            \SlimStat\Admin\MarketingPage::init();
 
-        // Traffic Channel Report settings (Feature 004)
-        \SlimStat\Admin\SettingsTab::init();
+            // Traffic Channel Report settings (Feature 004)
+            \SlimStat\Admin\SettingsTab::init();
 
-        // Traffic Channel Report widget registration (Feature 004)
-        \SlimStat\Widgets\ChannelWidgetRegistrar::init();
+            // Traffic Channel Report widget registration (Feature 004)
+            \SlimStat\Widgets\ChannelWidgetRegistrar::init();
 
-        // Traffic Channel Report filter integration (Feature 004)
-        \SlimStat\Filters\ChannelFilterRegistrar::init();
+            // Traffic Channel Report filter integration (Feature 004)
+            \SlimStat\Filters\ChannelFilterRegistrar::init();
 
-        // Traffic Channel Report asset loading (Feature 004)
-        \SlimStat\Admin\AssetLoader::init();
+            // Traffic Channel Report asset loading (Feature 004)
+            \SlimStat\Admin\AssetLoader::init();
 
-        // Traffic Channel Report AJAX handlers (Feature 004)
-        \SlimStat\Admin\AjaxHandler::init();
+            // Traffic Channel Report AJAX handlers (Feature 004)
+            \SlimStat\Admin\AjaxHandler::init();
+        });
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
