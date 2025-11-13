@@ -1195,6 +1195,10 @@ if (function_exists('add_action')) {
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
         register_activation_hook(__FILE__, ['wp_slimstat_admin', 'init_environment']);
         register_deactivation_hook(__FILE__, ['wp_slimstat_admin', 'deactivate']);
+
+        // Traffic Channel Report feature activation (Feature 004)
+        register_activation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'activate']);
+        register_deactivation_hook(__FILE__, ['\SlimStat\Database\ChannelMigration', 'deactivate']);
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
