@@ -1209,8 +1209,14 @@ if (function_exists('add_action')) {
         // Traffic Channel Report Marketing page (Feature 004)
         \SlimStat\Admin\MarketingPage::init();
 
+        // Traffic Channel Report settings (Feature 004)
+        \SlimStat\Admin\SettingsTab::init();
+
         // Traffic Channel Report widget registration (Feature 004)
         \SlimStat\Widgets\ChannelWidgetRegistrar::init();
+
+        // Traffic Channel Report filter integration (Feature 004)
+        \SlimStat\Filters\ChannelFilterRegistrar::init();
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
