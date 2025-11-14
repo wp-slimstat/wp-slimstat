@@ -59,17 +59,20 @@ class MarketingPage
     /**
      * Register "Marketing" menu item (T036).
      *
-     * Adds submenu under SlimStat admin menu with view_slimstat capability check.
+     * Adds submenu under SlimStat admin menu following SlimStat's capability pattern.
+     * Uses 'read' as minimum capability - actual access control is in render_page().
      *
      * @return void
      */
     public static function register_menu(): void
     {
+        // BUG-009 fix: Use 'read' capability for menu, actual access control in render_page()
+        // This follows SlimStat's pattern (see admin/index.php lines 862-877)
         add_submenu_page(
             'slimview1', // Parent slug (SlimStat main menu)
             __('Marketing', 'wp-slimstat'), // Page title
             __('Marketing', 'wp-slimstat'), // Menu title
-            'view_slimstat', // Capability
+            'read', // Minimum capability (actual check in render_page())
             self::PAGE_SLUG, // Menu slug
             [self::class, 'render_page'] // Callback
         );
@@ -84,8 +87,19 @@ class MarketingPage
      */
     public static function render_page(): void
     {
-        // Check capability
-        if (!current_user_can('view_slimstat')) {
+        // BUG-009 fix: Follow SlimStat's two-tier capability pattern (admin/index.php:862-910)
+        // Check if user is whitelisted, otherwise check configured minimum capability
+        $minimum_capability = 'read';
+
+        if (class_exists('wp_slimstat') && isset(\wp_slimstat::$settings['can_view'])) {
+            // User not in whitelist - check configured minimum capability
+            if (false === strpos(\wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) &&
+                !empty(\wp_slimstat::$settings['capability_can_view'])) {
+                $minimum_capability = \wp_slimstat::$settings['capability_can_view'];
+            }
+        }
+
+        if (!current_user_can($minimum_capability)) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'wp-slimstat'));
         }
 
