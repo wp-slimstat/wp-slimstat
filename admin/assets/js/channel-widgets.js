@@ -188,3 +188,152 @@
     });
 
 })(jQuery);
+
+// =============================================================================
+// Pro Upgrade Modal Handler (T051, T052, T053)
+// =============================================================================
+(function($) {
+    'use strict';
+
+    window.SlimStatProModal = {
+        /**
+         * Initialize modal handlers
+         */
+        init: function() {
+            this.bindModalTriggers();
+            this.bindModalClose();
+        },
+
+        /**
+         * Bind click handlers to upgrade trigger buttons
+         */
+        bindModalTriggers: function() {
+            var self = this;
+
+            $(document).on('click', '.slimstat-upgrade-trigger', function(e) {
+                e.preventDefault();
+
+                var modalId = $(this).data('modal-id');
+                if (modalId) {
+                    self.showModal(modalId);
+                }
+            });
+
+            // Also support click on Pro feature placeholder
+            $(document).on('click', '.slimstat-pro-feature-placeholder', function(e) {
+                // Only if not clicking the button directly
+                if (!$(e.target).closest('.slimstat-upgrade-trigger').length) {
+                    var modalId = $(this).data('modal-id');
+                    if (modalId) {
+                        self.showModal(modalId);
+                    }
+                }
+            });
+        },
+
+        /**
+         * Bind modal close handlers
+         */
+        bindModalClose: function() {
+            var self = this;
+
+            // Close button
+            $(document).on('click', '.slimstat-modal-close', function(e) {
+                e.preventDefault();
+                var $modal = $(this).closest('.slimstat-pro-modal');
+                self.hideModal($modal);
+            });
+
+            // Overlay click
+            $(document).on('click', '.slimstat-modal-overlay', function(e) {
+                e.preventDefault();
+                var $modal = $(this).closest('.slimstat-pro-modal');
+                self.hideModal($modal);
+            });
+
+            // ESC key
+            $(document).on('keydown', function(e) {
+                if (e.key === 'Escape' || e.keyCode === 27) {
+                    $('.slimstat-pro-modal:visible').each(function() {
+                        self.hideModal($(this));
+                    });
+                }
+            });
+        },
+
+        /**
+         * Show modal by ID
+         * @param {string} modalId - The modal element ID
+         */
+        showModal: function(modalId) {
+            var $modal = $('#' + modalId);
+
+            if ($modal.length) {
+                $modal.fadeIn(300);
+                $('body').addClass('slimstat-modal-open');
+
+                // Trap focus within modal
+                this.trapFocus($modal);
+
+                // Track modal view (optional analytics)
+                if (typeof gtag !== 'undefined') {
+                    gtag('event', 'view_upgrade_modal', {
+                        'event_category': 'Pro Upgrade',
+                        'event_label': modalId
+                    });
+                }
+            }
+        },
+
+        /**
+         * Hide modal
+         * @param {jQuery} $modal - The modal jQuery object
+         */
+        hideModal: function($modal) {
+            $modal.fadeOut(300);
+            $('body').removeClass('slimstat-modal-open');
+
+            // Return focus to trigger button
+            var modalId = $modal.attr('id');
+            $('.slimstat-upgrade-trigger[data-modal-id="' + modalId + '"]').focus();
+        },
+
+        /**
+         * Trap keyboard focus within modal for accessibility
+         * @param {jQuery} $modal - The modal jQuery object
+         */
+        trapFocus: function($modal) {
+            var focusableElements = $modal.find('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+            var firstFocusable = focusableElements.first();
+            var lastFocusable = focusableElements.last();
+
+            // Focus first element
+            firstFocusable.focus();
+
+            // Trap TAB key
+            $modal.off('keydown.focustrap').on('keydown.focustrap', function(e) {
+                if (e.key === 'Tab' || e.keyCode === 9) {
+                    if (e.shiftKey) {
+                        // Shift + Tab
+                        if ($(document.activeElement).is(firstFocusable)) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        // Tab
+                        if ($(document.activeElement).is(lastFocusable)) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    // Initialize on document ready
+    $(function() {
+        SlimStatProModal.init();
+    });
+
+})(jQuery);

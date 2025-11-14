@@ -367,3 +367,272 @@
     }
   }
 }
+
+// =============================================================================
+// Pro Feature Upgrade Modal (T053)
+// =============================================================================
+
+// Pro Feature Placeholder
+.slimstat-pro-feature-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  background-color: $graySix;
+  border: 2px dashed $grayFour;
+  border-radius: 8px;
+  min-height: 250px;
+
+  .pro-feature-icon {
+    position: relative;
+    margin-bottom: 20px;
+
+    .dashicons {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: $grayThree;
+    }
+
+    .pro-badge {
+      position: absolute;
+      top: -5px;
+      right: -10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: $grayOne;
+    margin: 0 0 10px 0;
+  }
+
+  p {
+    font-size: 14px;
+    color: $grayTwo;
+    margin: 0 0 20px 0;
+    max-width: 400px;
+  }
+
+  .slimstat-upgrade-trigger {
+    .dashicons {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      margin-right: 5px;
+      color: #fcb900;
+    }
+  }
+}
+
+// Modal Styles (T053)
+.slimstat-pro-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100000;
+
+  .slimstat-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+  }
+
+  .slimstat-modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 600px;
+    margin: 50px auto;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+  }
+
+  .slimstat-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    z-index: 10;
+    transition: transform 0.2s ease;
+
+    .dashicons {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+      color: $grayTwo;
+    }
+
+    &:hover {
+      transform: scale(1.1);
+
+      .dashicons {
+        color: $grayOne;
+      }
+    }
+  }
+
+  .slimstat-modal-header {
+    padding: 30px 30px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    text-align: center;
+
+    .dashicons {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      margin-bottom: 10px;
+      color: #fcb900;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 600;
+      color: #fff;
+    }
+  }
+
+  .slimstat-modal-body {
+    padding: 30px;
+
+    .feature-description {
+      font-size: 16px;
+      color: $grayTwo;
+      margin: 0 0 25px 0;
+      line-height: 1.6;
+    }
+
+    .pro-benefits {
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: $grayOne;
+        margin: 0 0 15px 0;
+      }
+
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        li {
+          display: flex;
+          align-items: center;
+          padding: 10px 0;
+          font-size: 15px;
+          color: $grayOne;
+          border-bottom: 1px solid $graySix;
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .dashicons {
+            font-size: 20px;
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            color: #46b450;
+            flex-shrink: 0;
+          }
+        }
+      }
+    }
+  }
+
+  .slimstat-modal-footer {
+    padding: 20px 30px 30px;
+    text-align: center;
+
+    .button-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        transform: translateY(-2px);
+      }
+
+      .dashicons {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .upgrade-note {
+      margin: 15px 0 0 0;
+      font-size: 13px;
+      color: $grayThree;
+      font-style: italic;
+    }
+  }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 600px) {
+  .slimstat-pro-modal {
+    .slimstat-modal-content {
+      width: 95%;
+      margin: 20px auto;
+    }
+
+    .slimstat-modal-header {
+      padding: 20px 20px 15px;
+
+      h2 {
+        font-size: 20px;
+      }
+    }
+
+    .slimstat-modal-body {
+      padding: 20px;
+    }
+
+    .slimstat-modal-footer {
+      padding: 15px 20px 20px;
+    }
+  }
+}

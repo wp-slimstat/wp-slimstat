@@ -263,4 +263,126 @@ abstract class BaseChannelWidget
 
         return $this->render_content($data, $args);
     }
+
+    /**
+     * Generate upgrade modal for Pro features (T051, T052, T053).
+     *
+     * Creates modal HTML for free users clicking Pro widget titles or features.
+     * Integrates with SlimStat's existing modal styling (.slimstat-pro-modal).
+     *
+     * @param string $feature_name Feature being accessed (e.g., "Social Traffic Breakdown")
+     * @param string $feature_description Description of the Pro feature
+     * @return string Modal HTML
+     */
+    protected function render_upgrade_modal(string $feature_name, string $feature_description): string
+    {
+        $modal_id = 'upgrade-modal-' . sanitize_title($feature_name);
+        $pricing_url = 'https://www.wp-slimstat.com/pricing/';
+
+        return sprintf(
+            '<div id="%s" class="slimstat-pro-modal" style="display:none;">
+                <div class="slimstat-modal-overlay"></div>
+                <div class="slimstat-modal-content">
+                    <button class="slimstat-modal-close" aria-label="%s">
+                        <span class="dashicons dashicons-no"></span>
+                    </button>
+                    <div class="slimstat-modal-header">
+                        <span class="dashicons dashicons-star-filled"></span>
+                        <h2>%s</h2>
+                    </div>
+                    <div class="slimstat-modal-body">
+                        <p class="feature-description">%s</p>
+                        <div class="pro-benefits">
+                            <h3>%s</h3>
+                            <ul>
+                                <li><span class="dashicons dashicons-yes"></span> %s</li>
+                                <li><span class="dashicons dashicons-yes"></span> %s</li>
+                                <li><span class="dashicons dashicons-yes"></span> %s</li>
+                                <li><span class="dashicons dashicons-yes"></span> %s</li>
+                                <li><span class="dashicons dashicons-yes"></span> %s</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="slimstat-modal-footer">
+                        <a href="%s" class="button button-primary button-hero" target="_blank" rel="noopener">
+                            %s
+                            <span class="dashicons dashicons-external"></span>
+                        </a>
+                        <p class="upgrade-note">%s</p>
+                    </div>
+                </div>
+            </div>',
+            esc_attr($modal_id),
+            esc_attr__('Close modal', 'wp-slimstat'),
+            esc_html(sprintf(__('Upgrade to unlock %s', 'wp-slimstat'), $feature_name)),
+            esc_html($feature_description),
+            esc_html__('Included in SlimStat Pro:', 'wp-slimstat'),
+            esc_html__('Detailed channel breakdowns (Social, Search, AI platforms)', 'wp-slimstat'),
+            esc_html__('CSV export for all widgets', 'wp-slimstat'),
+            esc_html__('Email reports with channel data', 'wp-slimstat'),
+            esc_html__('Advanced filtering and segmentation', 'wp-slimstat'),
+            esc_html__('Priority support and updates', 'wp-slimstat'),
+            esc_url($pricing_url),
+            esc_html__('View Pricing & Upgrade', 'wp-slimstat'),
+            esc_html__('30-day money-back guarantee. Cancel anytime.', 'wp-slimstat')
+        );
+    }
+
+    /**
+     * Render Pro feature placeholder with upgrade trigger (T051).
+     *
+     * Displays a locked Pro feature with click trigger to show upgrade modal.
+     * Use this for Pro-only widgets or features in free plugin.
+     *
+     * @param string $widget_title Pro widget title
+     * @param string $widget_description Brief description of Pro widget
+     * @param string $icon_class Dashicons class (default: dashicons-lock)
+     * @return string Placeholder HTML with modal trigger
+     */
+    protected function render_pro_placeholder(
+        string $widget_title,
+        string $widget_description,
+        string $icon_class = 'dashicons-lock'
+    ): string {
+        $modal_id = 'upgrade-modal-' . sanitize_title($widget_title);
+
+        $placeholder_html = sprintf(
+            '<div class="slimstat-pro-feature-placeholder" data-modal-id="%s">
+                <div class="pro-feature-icon">
+                    <span class="dashicons %s"></span>
+                    <span class="pro-badge">%s</span>
+                </div>
+                <h4>%s</h4>
+                <p>%s</p>
+                <button type="button" class="button button-secondary slimstat-upgrade-trigger" data-modal-id="%s">
+                    <span class="dashicons dashicons-star-filled"></span>
+                    %s
+                </button>
+            </div>',
+            esc_attr($modal_id),
+            esc_attr($icon_class),
+            esc_html__('PRO', 'wp-slimstat'),
+            esc_html($widget_title),
+            esc_html($widget_description),
+            esc_attr($modal_id),
+            esc_html__('Upgrade to Pro', 'wp-slimstat')
+        );
+
+        // Append modal HTML
+        $modal_html = $this->render_upgrade_modal($widget_title, $widget_description);
+
+        return $placeholder_html . $modal_html;
+    }
+
+    /**
+     * Check if Pro plugin is active.
+     *
+     * Utility method to detect if wp-slimstat-pro is installed and active.
+     *
+     * @return bool True if Pro plugin active, false otherwise
+     */
+    protected function is_pro_active(): bool
+    {
+        return defined('SLIMSTAT_PRO_ANALYTICS_VERSION') || class_exists('wp_slimstat_pro');
+    }
 }
