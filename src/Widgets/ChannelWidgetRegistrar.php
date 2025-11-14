@@ -22,8 +22,9 @@ class ChannelWidgetRegistrar
      */
     public static function init(): void
     {
-        // Hook into SlimStat reports initialization
-        add_action('init', [self::class, 'register_channel_widgets'], 15);
+        // Hook after SlimStat admin and reports are fully initialized (BUG-006 fix)
+        // Priority 100 ensures wp_slimstat_reports class is loaded and $reports array initialized
+        add_action('admin_init', [self::class, 'register_channel_widgets'], 100);
     }
 
     /**
@@ -56,7 +57,7 @@ class ChannelWidgetRegistrar
                 'widget' => $top_channel_widget,
             ],
             'classes' => ['normal'], // Widget size class
-            'locations' => ['slimview_marketing'], // Display on Marketing page
+            'locations' => ['slimstat-marketing'], // Display on Marketing page (BUG-007 fix: match screen ID)
             'tooltip' => __('Shows the traffic channel with the most visits for the selected time period.', 'wp-slimstat'),
         ];
 
@@ -68,7 +69,7 @@ class ChannelWidgetRegistrar
                 'widget' => $distribution_widget,
             ],
             'classes' => ['large'], // Larger widget for table + chart
-            'locations' => ['slimview_marketing'], // Display on Marketing page
+            'locations' => ['slimstat-marketing'], // Display on Marketing page (BUG-007 fix: match screen ID)
             'tooltip' => __('Shows the breakdown of all 8 traffic channel categories with visit counts and percentages.', 'wp-slimstat'),
         ];
 

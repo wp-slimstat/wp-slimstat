@@ -29,7 +29,31 @@ class MarketingPage
      */
     public static function init(): void
     {
+        // Register Marketing screen in SlimStat's screen info array (BUG-005 fix)
+        add_filter('slimstat_screens_info', [self::class, 'register_screen_info'], 5);
         add_action('admin_menu', [self::class, 'register_menu'], 20);
+    }
+
+    /**
+     * Register Marketing screen in SlimStat's screens_info array (BUG-005 fix).
+     *
+     * SlimStat's architecture requires all admin pages to be registered in the
+     * $screens_info array for proper integration with navigation, styling, and widgets.
+     *
+     * @param array $screens_info Existing screens
+     * @return array Modified screens with Marketing added
+     */
+    public static function register_screen_info(array $screens_info): array
+    {
+        $screens_info[self::PAGE_SLUG] = [
+            'is_report_group' => true,
+            'show_in_sidebar' => true,
+            'title'           => __('Marketing', 'wp-slimstat'),
+            'capability'      => 'can_view',
+            'callback'        => [self::class, 'render_page'],
+        ];
+
+        return $screens_info;
     }
 
     /**
