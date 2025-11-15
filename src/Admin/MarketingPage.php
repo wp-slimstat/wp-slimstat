@@ -68,7 +68,7 @@ class MarketingPage
     {
         // BUG-009 fix: Use 'read' capability for menu, actual access control in render_page()
         // This follows SlimStat's pattern (see admin/index.php lines 862-877)
-        add_submenu_page(
+        $page_hook = add_submenu_page(
             'slimview1', // Parent slug (SlimStat main menu)
             __('Marketing', 'wp-slimstat'), // Page title
             __('Marketing', 'wp-slimstat'), // Menu title
@@ -76,6 +76,28 @@ class MarketingPage
             self::PAGE_SLUG, // Menu slug
             [self::class, 'render_page'] // Callback
         );
+
+        // BUG-012 fix: Enqueue SlimStat admin styles and scripts on Marketing page
+        // Follow SlimStat's pattern (admin/index.php lines 933-936)
+        if ($page_hook) {
+            add_action('load-' . $page_hook, [self::class, 'enqueue_assets']);
+        }
+    }
+
+    /**
+     * Enqueue SlimStat admin styles and scripts for Marketing page (BUG-012 fix).
+     *
+     * Uses SlimStat's existing stylesheet and script enqueue methods.
+     *
+     * @return void
+     */
+    public static function enqueue_assets(): void
+    {
+        // Enqueue SlimStat's main admin CSS (admin.css with postbox, hndle, etc.)
+        if (class_exists('wp_slimstat_admin')) {
+            \wp_slimstat_admin::wp_slimstat_stylesheet();
+            \wp_slimstat_admin::wp_slimstat_enqueue_scripts();
+        }
     }
 
     /**
