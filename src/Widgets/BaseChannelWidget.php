@@ -109,7 +109,7 @@ abstract class BaseChannelWidget
     public function render_content_only(array $args): string
     {
         // Extract date range
-        $date_range = $this->get_date_range($args);
+        $date_range = $this->get_date_range_filters($args);
 
         // Fetch widget data
         $data = $this->fetch_data($date_range, $args);
