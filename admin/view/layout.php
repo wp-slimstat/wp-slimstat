@@ -5,6 +5,7 @@ $already_seen = [];
 
 <div class="backdrop-container ">
     <div class="wrap slimstat slimstat-layout">
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
         <h2><?php _e('Customize and organize your reports', 'wp-slimstat') ?></h2>
         <p><?php
             _e('You can drag and drop the placeholders here below from one widget area to another, to customize the layout of each report screen. You can place multiple charts on the same view, clone reports or move them to the Inactive Reports if you are not interested in that specific metric.', 'wp-slimstat');

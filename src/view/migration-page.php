@@ -3,12 +3,11 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-// Load SlimStat header
-wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
 ?>
 
 <div class="backdrop-container">
     <div class="wrap slimstat slimstat-migration">
+        <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
         <h2><?php echo esc_html__('SlimStat Database Migration', 'wp-slimstat'); ?></h2>
 
         <div class="meta-box-sortables">
