@@ -30,12 +30,15 @@ defined('ABSPATH') || exit;
                 $classes = isset($report_info['classes']) ? implode(' ', $report_info['classes']) : 'normal';
                 ?>
                 <div class="postbox <?php echo esc_attr($classes); ?>" id="<?php echo esc_attr($report_id); ?>">
-                    <h2 class="hndle">
+                    <div class="slimstat-header-buttons">
+                        <a class="slimstat-font-refresh refresh" href="#" title="<?php echo esc_attr__('Refresh', 'wp-slimstat'); ?>"></a>
+                    </div>
+                    <h3 class="hndle">
                         <span><?php echo esc_html($report_info['title']); ?></span>
                         <?php if (!empty($report_info['tooltip'])): ?>
-                            <span class="dashicons dashicons-info-outline" title="<?php echo esc_attr($report_info['tooltip']); ?>"></span>
+                            <span class="slimstat-tooltip-trigger" title="<?php echo esc_attr($report_info['tooltip']); ?>"><i class="dashicons dashicons-info-outline"></i></span>
                         <?php endif; ?>
-                    </h2>
+                    </h3>
                     <div class="inside">
                         <?php
                         if (isset($report_info['callback']) && is_callable($report_info['callback'])) {

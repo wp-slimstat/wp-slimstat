@@ -98,6 +98,27 @@ abstract class BaseChannelWidget
     }
 
     /**
+     * Render widget content only without wrapper (for SlimStat postbox integration).
+     *
+     * Used by marketing-page.php which provides its own postbox container.
+     * Returns only the inner content without the slimstat-widget wrapper.
+     *
+     * @param array $args Widget arguments
+     * @return string Widget content HTML (no wrapper)
+     */
+    public function render_content_only(array $args): string
+    {
+        // Extract date range
+        $date_range = $this->get_date_range($args);
+
+        // Fetch widget data
+        $data = $this->fetch_data($date_range, $args);
+
+        // Render content only (no wrapper)
+        return $this->render_content($data, $args);
+    }
+
+    /**
      * Generate cache key for transient storage (T031).
      *
      * Matches SlimStat's pattern: slimstat_widget_{id}_{filters_hash}
@@ -162,9 +183,9 @@ abstract class BaseChannelWidget
             '<div class="slimstat-widget channel-widget %s" id="%s" data-widget-id="%s">
                 <div class="slimstat-widget-header">
                     <h3>%s %s</h3>
-                    <button class="refresh" data-widget-id="%s" title="%s">
+                    <a class="refresh" href="#" data-widget-id="%s" title="%s">
                         <span class="dashicons dashicons-update"></span>
-                    </button>
+                    </a>
                 </div>
                 <div class="slimstat-widget-content">
                     %s

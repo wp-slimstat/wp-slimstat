@@ -81,9 +81,10 @@ class ChannelWidgetRegistrar
      * Render callback for Top Channel Widget.
      *
      * Called by SlimStat's report rendering system.
+     * Returns content only (no wrapper) since marketing-page.php provides the postbox container.
      *
      * @param array $args Callback arguments including widget instance
-     * @return string Widget HTML output
+     * @return string Widget HTML output (content only)
      */
     public static function render_top_channel_widget(array $args): string
     {
@@ -99,16 +100,18 @@ class ChannelWidgetRegistrar
             'date_to' => time(),
         ];
 
-        return $widget->render($widget_args);
+        // Render content only (no wrapper) - postbox container provided by marketing-page.php
+        return $widget->render_content_only($widget_args);
     }
 
     /**
      * Render callback for Channel Distribution Widget.
      *
      * Called by SlimStat's report rendering system.
+     * Returns content only (no wrapper) since marketing-page.php provides the postbox container.
      *
      * @param array $args Callback arguments including widget instance
-     * @return string Widget HTML output
+     * @return string Widget HTML output (content only)
      */
     public static function render_distribution_widget(array $args): string
     {
@@ -124,6 +127,7 @@ class ChannelWidgetRegistrar
             'date_to' => time(),
         ];
 
-        return $widget->render($widget_args);
+        // Render content only (no wrapper) - postbox container provided by marketing-page.php
+        return $widget->render_content_only($widget_args);
     }
 }
