@@ -194,13 +194,16 @@ class GDPRService
 			esc_html($denyText)
 		);
 
+        $classes = in_array( $this->settings['gdpr_theme_mode'], ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $this->settings['gdpr_theme_mode'] ) . '-mode' : '';
+
 		return sprintf(
-			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner">
+			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner%s">
 				<div class="slimstat-gdpr-content">
 					<div class="slimstat-gdpr-message">%s</div>
 					<div class="slimstat-gdpr-buttons">%s%s</div>
 				</div>
 			</div>',
+            $classes,
 			wp_kses_post($message),
 			$denyButton,
 			$acceptButton

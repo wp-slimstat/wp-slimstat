@@ -1426,9 +1426,10 @@ class wp_slimstat
 			'use_slimstat_banner'      => 'on',
 			'consent_integration'      => 'slimstat_banner', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
             'consent_level_integration'=> 'statistics',
-			'opt_out_message'         => '',
-			'gdpr_accept_button_text' => '',
-			'gdpr_decline_button_text'=> '',
+			'opt_out_message'          => '',
+			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
+			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
+			'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
             'anonymous_tracking'       => 'off',
             'do_not_track'             => 'off',
 

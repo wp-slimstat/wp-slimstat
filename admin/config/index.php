@@ -114,8 +114,18 @@ $settings = [
 				'title' => __('SlimStat Consent Banner', 'wp-slimstat'),
 				'type'  => 'section_header',
 			],
+            'opt_out_cookie_names' => [
+                'title'       => __('Opt-out Cookies', 'wp-slimstat'),
+                'type'        => 'textarea',
+                'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
+            ],
+            'opt_in_cookie_names' => [
+                'title'       => __('Opt-in Cookies', 'wp-slimstat'),
+                'type'        => 'textarea',
+                'description' => __('Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie whose value <strong>CONTAINS</strong> the string you specified. Separate multiple pairs with commas.', 'wp-slimstat'),
+            ],
 			'opt_out_message' => [
-				'title'             => __('Banner Message', 'wp-slimstat'),
+				'title'             => __('Consent Banner Message', 'wp-slimstat'),
 				'type'              => 'rich_text',
 				'after_input_field' => '',
 				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Use the editor above to format your message.', 'wp-slimstat'),
@@ -134,6 +144,16 @@ $settings = [
 				'after_input_field'  => '',
 				'description'        => __('Leave empty to use the default "Deny" text.', 'wp-slimstat'),
 			],
+            'gdpr_theme_mode' => [
+                'title'         => __('Banner Theme Mode', 'wp-slimstat'),
+                'type'          => 'select',
+                'description'   => __("Choose the theme mode for the GDPR consent banner. <strong>Light</strong> uses light colors, <strong>Dark</strong> uses dark colors, and <strong>Auto</strong> follows the user's system preference.", 'wp-slimstat'),
+                'select_values' => [
+                    'light' => __('Light Mode', 'wp-slimstat'),
+                    'dark'  => __('Dark Mode', 'wp-slimstat'),
+                    'auto'  => __('Auto (Follow System)', 'wp-slimstat'),
+                ],
+            ],
             'consent_level_integration' => [
                 'title'         => __('Consent Category', 'wp-slimstat'),
                 'type'          => 'select',
@@ -1051,11 +1071,14 @@ $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_activ
         var v = $('#consent_integration').val();
         var $level = $('#consent_level_integration').closest('tr');
         var $anon = $('#anonymous_tracking').closest('tr');
+		var $optInCookieNames = $('#opt_out_cookie_names').closest('tr');
+		var $optOutCookieNames = $('#opt_in_cookie_names').closest('tr');
 		var $bannerMessage = $('#opt_out_message').closest('tr');
 		var $bannerHeader = $bannerMessage.prev('tr');
 		var $bannerAccept = $('#gdpr_accept_button_text').closest('tr');
 		var $bannerDecline = $('#gdpr_decline_button_text').closest('tr');
-		var $bannerRows = $bannerHeader.add($bannerMessage).add($bannerAccept).add($bannerDecline);
+		var $bannerMode = $('#gdpr_theme_mode').closest('tr');
+		var $bannerRows = $bannerHeader.add($optInCookieNames).add($optOutCookieNames).add($bannerMessage).add($bannerAccept).add($bannerDecline).add($bannerMode);
 
 		if(v === 'wp_consent_api'){
 			$level.removeClass('hidden').show();
