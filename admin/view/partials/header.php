@@ -13,16 +13,7 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
     $newNotificationCount    = NotificationFactory::getNewNotificationCount();
 }
 
-$current_screen      = wp_slimstat_admin::$current_screen ?? '';
-$current_screen_label = '';
 
-if (!empty($current_screen) && isset(wp_slimstat_admin::$screens_info[$current_screen]['title'])) {
-    $current_screen_label = wp_slimstat_admin::$screens_info[$current_screen]['title'];
-}
-
-if (empty($current_screen_label)) {
-    $current_screen_label = esc_html__('Overview', 'wp-slimstat');
-}
 
 $online_visitors = 0;
 
@@ -82,7 +73,6 @@ $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-
     </div>
 
     <div class="slimstat-header__meta" role="presentation">
-        <span class="slimstat-header__current-screen"><?php echo esc_html($current_screen_label); ?></span>
         <div class="slimstat-header__online" aria-live="polite">
             <span class="slimstat-header__online-icon" aria-hidden="true">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
