@@ -353,7 +353,7 @@ var SlimStat = (function () {
                 },
                 { useNonce: true }
             );
-        }
+        });
         trySend(0);
     }
 
