@@ -653,6 +653,8 @@ var SlimStat = (function () {
     };
 })();
 
+window.SlimStat = SlimStat;
+
 // Polyfills for ES5 and older browsers
 if (!Element.prototype.matches) {
     Element.prototype.matches =
