@@ -32,7 +32,7 @@ $formatted_online_visitors = number_format_i18n($online_visitors);
 $support_url   = 'https://wp-slimstat.com/contact/?utm_source=plugin&utm_medium=header&utm_campaign=support';
 $docs_url      = 'https://wp-slimstat.com/resources/?utm_source=plugin&utm_medium=header&utm_campaign=docs';
 $settings_url  = admin_url('admin.php?page=slimconfig');
-$upgrade_url   = admin_url('admin.php?page=slimpro');
+$upgrade_url   = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=header';
 $logo_url      = plugin_dir_url(__FILE__) . '../../assets/images/white-slimstat-logo.png';
 ?>
 
