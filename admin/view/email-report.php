@@ -7,8 +7,6 @@ $is_pro = wp_slimstat::pro_is_installed();
 
 if (!$is_pro) {
     // For free users: show blurred content with modal
-    // Load header
-    wp_slimstat_admin::get_template('header', ['is_pro' => false]);
     ?>
     <style>
         .slimstat-pro-modal,
@@ -22,17 +20,17 @@ if (!$is_pro) {
         wp_slimstat_admin::get_template('slimstat-pro-modal');
         ?>
         <div class="wrap slimstat upgrade-pro email-report-locked">
+            <?php wp_slimstat_admin::get_template('header', ['is_pro' => false]); ?>
             <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/email report.PNG'); ?>">
         </div>
     </div>
     <?php
 } else {
     // For premium users: show the actual email report content
-    // Load header
-    wp_slimstat_admin::get_template('header', ['is_pro' => true]);
     ?>
     <div class="backdrop-container">
         <div class="wrap slimstat slimstat-email-report">
+            <?php wp_slimstat_admin::get_template('header', ['is_pro' => true]); ?>
             <h2><?php _e('Email Report', 'wp-slimstat'); ?></h2>
             
             <div class="slimstat-email-report-content">

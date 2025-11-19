@@ -749,7 +749,15 @@ class wp_slimstat_admin
     public static function wp_slimstat_stylesheet($_hook = '')
     {
         wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', __DIR__), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat', [], [], SLIMSTAT_ANALYTICS_VERSION, 'all');
+		wp_enqueue_style('wp-slimstat');
+
+		wp_register_style(
+			'wp-slimstat-header-modern',
+			plugins_url('/admin/assets/css/header-modern.css', __DIR__),
+			['wp-slimstat'],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+		wp_enqueue_style('wp-slimstat-header-modern');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
@@ -1883,10 +1891,6 @@ class wp_slimstat_admin
 
     public static function add_header()
     {
-        if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
-            return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
-        }
-
         return null;
     }
 

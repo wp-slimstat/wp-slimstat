@@ -926,6 +926,53 @@ jQuery(function () {
     // ----- BEGIN: MISCELLANEOUS ----------------------------------------------------
     //
 
+
+
+    function slimstatOpenHelp(fallbackUrl) {
+        var helpToggle = document.getElementById("contextual-help-link");
+        if (helpToggle) {
+            var wasExpanded = helpToggle.getAttribute("aria-expanded") === "true";
+            helpToggle.click();
+
+            if (!wasExpanded) {
+                window.setTimeout(function () {
+                    var helpPanel = document.getElementById("contextual-help-wrap");
+                    if (helpPanel) {
+                        if (!helpPanel.hasAttribute("tabindex")) {
+                            helpPanel.setAttribute("tabindex", "-1");
+                        }
+                        try {
+                            helpPanel.focus({ preventScroll: true });
+                        } catch (err) {
+                            helpPanel.focus();
+                        }
+                    }
+                }, 50);
+            }
+
+            return true;
+        }
+
+        if (fallbackUrl) {
+            window.open(fallbackUrl, "_blank", "noopener");
+        }
+
+        return false;
+    }
+
+    jQuery(document).on("click", "[data-slimstat-help-trigger]", function (e) {
+        e.preventDefault();
+        slimstatOpenHelp(jQuery(this).data("slimstatHelpFallback"));
+    });
+
+    jQuery(document).on("keydown", "[data-slimstat-help-trigger]", function (e) {
+        var element = this;
+        slimstatHandleA11yActivation(e, function () {
+            slimstatOpenHelp(jQuery(element).data("slimstatHelpFallback"));
+        });
+    });
+
+
     // Hide a notice and send the corresponding ajax request to the server
     jQuery(document).on("click", "[id^=slimstat-notice-] button", function (e) {
         data = {
