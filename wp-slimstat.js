@@ -353,7 +353,7 @@ var SlimStat = (function () {
                 },
                 { useNonce: true }
             );
-        }
+        });
         trySend(0);
     }
 
@@ -652,6 +652,8 @@ var SlimStat = (function () {
         },
     };
 })();
+
+window.SlimStat = SlimStat;
 
 // Polyfills for ES5 and older browsers
 if (!Element.prototype.matches) {
