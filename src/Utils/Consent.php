@@ -6,38 +6,31 @@ namespace SlimStat\Utils;
 /**
  * Centralized consent utility for tracking eligibility and PII handling.
  *
- * GDPR Compliance Strategy:
- * ========================
- * This class implements a multi-layered consent approach:
- *
- * 1. Anonymous Tracking Mode (anonymous_tracking=on):
- *    - Default: NO PII collection (no cookies, hashed IPs, no username/email)
- *    - After explicit consent: upgrade to full PII tracking
- *    - Use case: GDPR-compliant by default, opt-in for enhanced features
- *
- * 2. Standard Tracking Mode (anonymous_tracking=off):
- *    - Checks if configuration collects PII (cookies OR full IPs)
- *    - If PII collected: requires CMP consent OR falls back to conservative default
- *    - If no PII: tracking allowed (cookie-less + anonymized/hashed IPs)
- *
- * 3. Do Not Track (DNT) Header:
- *    - When enabled (do_not_track=on): blocks ALL tracking when DNT=1 header present
- *    - Supersedes all other consent mechanisms
- *
- * 4. CMP Integration:
- *    - WP Consent API: reads server-side consent status
- *    - Real Cookie Banner: conservative (blocks server-side tracking; client-side only)
- *    - None: allows tracking unless anonymous mode requires consent
- *
- * Filter Hook Integration:
- * =======================
- * External plugins can override consent decisions:
- * - apply_filters('slimstat_can_track', bool) - global tracking permission
+ * Implements multi-layered consent: Anonymous mode (no PII by default), Standard mode (CMP-based),
+ * DNT header support, and CMP integrations (WP Consent API, Real Cookie Banner).
+ * External plugins can override via 'slimstat_can_track' filter.
  *
  * @since 5.4.0
  */
 class Consent
 {
+	/**
+	 * Retrieve the configured consent integration, falling back to SlimStat's banner when enabled.
+	 *
+	 * @return string
+	 */
+	public static function getIntegrationKey(): string
+	{
+		$settings = \wp_slimstat::$settings;
+		$integrationKey = $settings['consent_integration'] ?? '';
+
+		if ('' === $integrationKey && 'on' === ($settings['use_slimstat_banner'] ?? 'off')) {
+			$integrationKey = 'slimstat_banner';
+		}
+
+		return $integrationKey;
+	}
+
 	/**
 	 * Determine whether SlimStat is allowed to track the current request.
 	 *
@@ -88,7 +81,7 @@ class Consent
 			// Only check CMP consent if configuration actually collects PII
 			if ($collectsPii) {
 				// Check CMP integration for consent
-				$integrationKey = $settings['consent_integration'] ?? '';
+				$integrationKey = self::getIntegrationKey();
 
 				// SlimStat Banner integration - check consent cookie
 				if ('slimstat_banner' === $integrationKey) {
@@ -99,14 +92,13 @@ class Consent
 				}
 
 				// Real Cookie Banner - cannot reliably read consent server-side
-				// MUST block server-side tracking to prevent consent bypass
-				// Client-side JS will handle tracking after consent is verified
-				// This ensures GDPR compliance by respecting user's consent choices
+				// Allow anonymous tracking (no PII) but block PII collection
+				// Client-side JS will upgrade to full tracking after consent is verified
+				// This provides better user experience while maintaining GDPR compliance
 				if ('real_cookie_banner' === $integrationKey) {
-					// Conservative: block all server-side tracking
-					// Only allow client-side (JavaScript) tracking after consent is verified
-					// This is the recommended approach for Real Cookie Banner integration
-					$default = false;
+					// Allow anonymous tracking, PII will be blocked separately in piiAllowed()
+					// This ensures basic analytics work while respecting consent for enhanced features
+					$default = true;
 				}
 
 				// WP Consent API integration - can read consent server-side
@@ -119,10 +111,6 @@ class Consent
 						}
 					} catch (\Throwable $e) {
 						// Consent API error - be conservative, deny tracking
-						// Only override $default if it was true (tracking was allowed)
-						if ($default && defined('WP_DEBUG') && WP_DEBUG) {
-							error_log('SlimStat: WP Consent API error in canTrack() - ' . $e->getMessage());
-						}
 						$default = false;
 					}
 				}
@@ -208,7 +196,7 @@ class Consent
 
 			// Check for consent signal from the configured CMP
 			$hasCmpConsent = false;
-			$integrationKey = $settings['consent_integration'] ?? '';
+			$integrationKey = self::getIntegrationKey();
 
 			if ('slimstat_banner' === $integrationKey) {
 				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
@@ -225,6 +213,13 @@ class Consent
 					if (defined('WP_DEBUG') && WP_DEBUG) {
 						error_log('SlimStat: WP Consent API error in piiAllowed() - ' . $e->getMessage());
 					}
+				}
+			} elseif ('real_cookie_banner' === $integrationKey) {
+				// Real Cookie Banner: consent is managed client-side and verified via AJAX upgrade.
+				// If a SlimStat tracking cookie exists in anonymous mode, it means the browser
+				// already completed a consent upgrade flow. Treat this as active consent for PII.
+				if ($hasTrackingCookie) {
+					$hasCmpConsent = true;
 				}
 			}
 
@@ -260,7 +255,7 @@ class Consent
 		}
 
 		// PRIORITY 4: Configuration DOES collect PII - check consent status
-		$integrationKey = $settings['consent_integration'] ?? '';
+		$integrationKey = self::getIntegrationKey();
 
 		// SlimStat Banner integration - check consent cookie
 		if ('slimstat_banner' === $integrationKey) {
@@ -286,9 +281,9 @@ class Consent
 		// This CMP blocks scripts client-side, so server must be conservative
 		// to avoid collecting PII before consent is verified
 		if ('real_cookie_banner' === $integrationKey) {
-			// Conservative: assume no consent on server-side
-			// Client-side JavaScript will handle consent gating and tracking
-			// Only after explicit user consent will tracking upgrade occur
+			// Conservative: assume no consent on server-side for PII collection
+			// Client-side JavaScript will handle consent verification and upgrade
+			// Anonymous tracking is allowed, but PII requires explicit consent
 			return false;
 		}
 

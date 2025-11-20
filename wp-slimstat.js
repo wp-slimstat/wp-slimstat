@@ -281,6 +281,13 @@ var SlimStat = (function () {
                 } else {
                     // Max attempts reached, move to offline storage
                     SlimStat.store_offline(item.payload);
+                    if (item.opts && typeof item.opts.onComplete === "function") {
+                        item.opts.onComplete(false);
+                    }
+                }
+            } else {
+                if (item.opts && typeof item.opts.onComplete === "function") {
+                    item.opts.onComplete(!!success);
                 }
             }
             queueInFlight = false;
@@ -330,6 +337,12 @@ var SlimStat = (function () {
                         var parsed = parseInt(xhr.responseText, 10);
                         if (!isNaN(parsed) && parsed > 0) {
                             params.id = xhr.responseText; // store new id
+                            // Mark that we've successfully tracked the initial pageview for this load
+                            try {
+                                window.slimstatPageviewTracked = true;
+                            } catch (trackErr) {
+                                /* ignore */
+                            }
                             flushPendingInteractions(); // Flush buffered interactions now that we have an ID
                         }
                         callback(true);
@@ -497,6 +510,291 @@ var SlimStat = (function () {
     // FP_EXCLUDES retained for backward compatibility, not used by FingerprintJS v4
     var FP_EXCLUDES = {};
 
+    // -------------------------- Consent Helpers -------------------------- //
+    var lastConsentSnapshot = null;
+
+    function isFunction(value) {
+        return typeof value === "function";
+    }
+
+    function isObject(value) {
+        return value !== null && typeof value === "object";
+    }
+
+    function getCookieStrict(name) {
+        if (!name) return null;
+        try {
+            var safeName = name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
+            var pattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
+            var match = document.cookie.match(pattern);
+            return match ? decodeURIComponent(match[1]) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function detectRealCookieBannerConsent(category) {
+        try {
+            // Latest API (RCB 4.x+): window.rcb() function
+            if (isFunction(window.rcb)) {
+                try {
+                    var rcbConsent = window.rcb("consent", category);
+                    if (rcbConsent === true || rcbConsent === false) return !!rcbConsent;
+                    if (isObject(rcbConsent) && "cookie" in rcbConsent) return !!rcbConsent.cookie;
+                    if (isObject(rcbConsent) && "consent" in rcbConsent) return !!rcbConsent.consent;
+                } catch (e) {
+                    /* ignore */
+                }
+            }
+
+            // New API: window.RCB.consent.get()
+            if (isObject(window.RCB) && isObject(window.RCB.consent) && isFunction(window.RCB.consent.get)) {
+                var rcbNew = window.RCB.consent.get(category);
+                if (rcbNew === true || rcbNew === false) return !!rcbNew;
+                if (isObject(rcbNew) && "cookie" in rcbNew) return !!rcbNew.cookie;
+                if (isObject(rcbNew) && "consent" in rcbNew) return !!rcbNew.consent;
+            }
+
+            // Current API: window.rcbConsentManager.getUserDecision()
+            if (isObject(window.rcbConsentManager) && isFunction(window.rcbConsentManager.getUserDecision)) {
+                var decision = window.rcbConsentManager.getUserDecision();
+                if (decision && decision.decision) {
+                    if (decision.decision === "all") return true;
+                    if (typeof decision.decision === "object") {
+                        var value = decision.decision[category];
+                        if (typeof value === "boolean") return value;
+                        if (Array.isArray(value)) return value.length > 0;
+                    }
+                }
+            }
+
+            // Legacy API: window.realCookieBanner.consent.get()
+            var rcb = window.realCookieBanner || window.RealCookieBanner || null;
+            if (isObject(rcb) && isObject(rcb.consent) && isFunction(rcb.consent.get)) {
+                var consent = rcb.consent.get(category);
+                if (consent === true || consent === false) return !!consent;
+                if (isObject(consent) && "cookie" in consent) return !!consent.cookie;
+                if (consent) return true;
+            }
+
+            // Very old API: window.__rcb
+            var legacy = window.__rcb || window.__RCB || null;
+            if (isObject(legacy) && legacy.consent) {
+                var legacyVal = legacy.consent[category];
+                if (typeof legacyVal === "boolean") return legacyVal;
+                if (Array.isArray(legacyVal)) return legacyVal.length > 0;
+            }
+
+            // Cookie fallback
+            var possibleNames = ["real_cookie_banner", "rcb_consent", "rcb_acceptance", "real_cookie_consent", "rcb-consent"];
+            for (var i = 0; i < possibleNames.length; i++) {
+                var raw = getCookieStrict(possibleNames[i]);
+                if (!raw) {
+                    continue;
+                }
+                try {
+                    var parsed = JSON.parse(raw);
+                    if (parsed) {
+                        if (typeof parsed[category] === "boolean") return parsed[category];
+                        if (typeof parsed.consent === "boolean") return parsed.consent;
+                        if (typeof parsed[category] === "object" && parsed[category].cookie !== undefined) return !!parsed[category].cookie;
+                    }
+                } catch (err) {
+                    var normalized = raw.toLowerCase();
+                    if (raw.indexOf(category) !== -1 || raw === "1" || normalized === "true" || normalized === "all" || normalized === "accepted") {
+                        return true;
+                    }
+                }
+            }
+        } catch (error) {
+            /* ignore */
+        }
+        return null;
+    }
+
+    function detectWPConsentAPI(category) {
+        try {
+            if (isFunction(window.wp_has_service_consent)) {
+                try {
+                    if (window.wp_has_service_consent(category)) return true;
+                    if (isFunction(window.wp_is_service_denied) && window.wp_is_service_denied(category)) return false;
+                } catch (err) {
+                    /* ignore */
+                }
+            }
+
+            if (isFunction(window.wp_has_consent)) {
+                try {
+                    if (window.wp_has_consent(category)) return true;
+                } catch (err2) {
+                    /* ignore */
+                }
+            }
+
+            var consentObj = window.wpConsent || window.WPConsent || null;
+            if (isObject(consentObj) && isFunction(consentObj.get)) {
+                var value = consentObj.get(category);
+                if (value === true || value === false) {
+                    return !!value;
+                }
+            }
+        } catch (err3) {
+            /* ignore */
+        }
+        return null;
+    }
+
+    function detectSlimStatBanner(consentCookieName, category) {
+        try {
+            var value = getCookieStrict(consentCookieName || "slimstat_gdpr_consent");
+            if (!value) return null;
+            if (value === "accepted") return true;
+            if (value === "denied") return false;
+            try {
+                var parsed = JSON.parse(value);
+                if (parsed && parsed[category] !== undefined) {
+                    return !!parsed[category];
+                }
+            } catch (err) {
+                /* ignore */
+            }
+            return value.length > 0;
+        } catch (err4) {
+            return null;
+        }
+    }
+
+    function emitConsentEvent(detail) {
+        if (!detail) {
+            return;
+        }
+        try {
+            var event = new CustomEvent("slimstat:consent:updated", { detail: detail });
+            document.dispatchEvent(event);
+        } catch (err) {
+            try {
+                var fallback = document.createEvent("CustomEvent");
+                fallback.initCustomEvent("slimstat:consent:updated", true, true, detail);
+                document.dispatchEvent(fallback);
+            } catch (compatError) {
+                /* ignore */
+            }
+        }
+    }
+
+    function maybeEmitConsentChange(detail) {
+        if (!detail) {
+            return;
+        }
+        var snapshot = detail.allowed + "|" + detail.mode + "|" + detail.reason;
+        if (snapshot !== lastConsentSnapshot) {
+            lastConsentSnapshot = snapshot;
+            // Only emit consent event if it's a meaningful change (not just initial check)
+            // This prevents duplicate pageview requests during initial load
+            var params = currentSlimStatParams();
+            var hasPageviewId = params.id && parseInt(params.id, 10) > 0;
+
+            // If we have a pageview ID, emit the event (consent changed after tracking)
+            // If we don't have an ID yet, the initial pageview will handle consent, so skip event
+            if (hasPageviewId) {
+                emitConsentEvent(detail);
+            }
+        }
+    }
+
+    function slimstatConsentAllowed(params, options) {
+        options = options || {};
+        var s = params || {};
+        var anonMode = s.anonymous_tracking === "on";
+        var setCookie = s.set_tracker_cookie === "on";
+        var anonymizeIP = s.anonymize_ip === "on";
+        var hashIP = s.hash_ip === "on";
+        var integrationKey = s.consent_integration || "";
+        var consentLevel = s.consent_level_integration || "statistics";
+
+        try {
+            var dntEnabled = s.respect_dnt === "on";
+            if (dntEnabled && typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.doNotTrack === "yes")) {
+                var blocked = { allowed: false, mode: "blocked", reason: "dnt" };
+                maybeEmitConsentChange(blocked);
+                return blocked;
+            }
+        } catch (err) {
+            /* ignore */
+        }
+
+        var collectsPII = !!(setCookie || (!anonymizeIP && !hashIP));
+        var requiresCmpCheck = collectsPII || anonMode;
+        var cmpAllows = null;
+
+        if (requiresCmpCheck) {
+            if (integrationKey === "wp_consent_api" || integrationKey === "wpconsent" || integrationKey === "wp_consent" || integrationKey === "") {
+                var jsConsent = detectWPConsentAPI(consentLevel);
+                if (jsConsent !== null) {
+                    cmpAllows = jsConsent;
+                }
+                if (cmpAllows === null && s.server_side_consent !== undefined) {
+                    cmpAllows = !!s.server_side_consent;
+                }
+                if (integrationKey === "" && cmpAllows === null) {
+                    cmpAllows = true;
+                }
+            }
+
+            if (cmpAllows === null && (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie")) {
+                var rcbConsent = detectRealCookieBannerConsent(consentLevel);
+                if (rcbConsent !== null) {
+                    cmpAllows = rcbConsent;
+                }
+                if (cmpAllows === null) {
+                    var fallback = detectWPConsentAPI(consentLevel);
+                    if (fallback !== null) {
+                        cmpAllows = fallback;
+                    }
+                }
+            }
+
+            if (cmpAllows === null && (integrationKey === "slimstat_banner" || integrationKey === "slimstat")) {
+                var cookieName = s.gdpr_cookie_name || "slimstat_gdpr_consent";
+                var bannerConsent = detectSlimStatBanner(cookieName, consentLevel);
+                if (bannerConsent !== null) {
+                    cmpAllows = bannerConsent;
+                }
+            }
+
+            if (cmpAllows === null) {
+                cmpAllows = true;
+            }
+        }
+
+        if (anonMode) {
+            var cmpGranted = cmpAllows === true;
+            var anonDecision = {
+                allowed: true,
+                mode: cmpGranted ? "full" : "anonymous",
+                reason: cmpGranted ? "anonymous_mode_consented" : "anonymous_mode",
+            };
+            maybeEmitConsentChange(anonDecision);
+            return anonDecision;
+        }
+
+        if (!collectsPII) {
+            var noPii = { allowed: true, mode: "full", reason: "no_pii" };
+            maybeEmitConsentChange(noPii);
+            return noPii;
+        }
+
+        if (cmpAllows === false) {
+            var denied = { allowed: false, mode: "blocked", reason: "cmp_denied" };
+            maybeEmitConsentChange(denied);
+            return denied;
+        }
+
+        var allowedResult = { allowed: true, mode: "full", reason: "cmp_allowed" };
+        maybeEmitConsentChange(allowedResult);
+        return allowedResult;
+    }
+
     function buildPageviewBase(params) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
         var base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
@@ -508,96 +806,36 @@ var SlimStat = (function () {
         options = options || {};
         extractSlimStatParams();
 
-        var params = currentSlimStatParams();
-
-        // ============================================================================
-        // CONSENT LOGIC - Must exactly mirror PHP Consent::piiAllowed() logic
-        // ============================================================================
-
-        var s = params;
-        var anonMode = s.anonymous_tracking === "on";
-        var setCookie = s.set_tracker_cookie === "on";
-        var anonymizeIP = s.anonymize_ip === "on";
-        var hashIP = s.hash_ip === "on";
-        var integrationKey = s.consent_integration || "";
-        var consentLevel = s.consent_level_integration || "statistics";
-
-        // PRIORITY 1: Respect Do Not Track header (if enabled in settings)
+        // Avoid duplicate non-navigation pageviews within the same page load.
+        // Navigation events (SPA transitions) are always allowed to create additional pageviews.
+        // Consent retries are also allowed to override the "already tracked" check.
         try {
-            var dntEnabled = s.respect_dnt === "on";
-            if (dntEnabled && navigator && navigator.doNotTrack == "1") {
-                // DNT header present - BLOCK ALL tracking
+            if (!options.isNavigation && !options.isConsentRetry && window.slimstatPageviewTracked === true) {
                 return;
             }
-        } catch (e) {}
+        } catch (guardErr) {
+            /* ignore */
+        }
 
-        // PRIORITY 2: Check if configuration collects PII
-        // PII is collected if: cookies enabled OR full IPs stored (not anonymized AND not hashed)
-        var collectsPII = setCookie || (!anonymizeIP && !hashIP);
+        // Prevent duplicate requests with stronger locking mechanism
+        var requestKey = "slimstat_pageview_" + (options.isNavigation ? "nav" : "init") + "_" + (options.isConsentRetry ? "retry" : "normal");
+        if (window.sendingSlimStatPageview || window[requestKey]) {
+            return;
+        }
+        window.sendingSlimStatPageview = true;
+        window[requestKey] = true;
 
-        // If configuration doesn't collect PII, tracking is allowed (nothing sensitive to protect)
-        if (!collectsPII) {
-            // Cookie-less + anonymized/hashed IPs = no PII = no consent needed
-            // Continue with tracking
-        } else {
-            // PRIORITY 3: Configuration DOES collect PII - check consent status
+        var params = currentSlimStatParams();
 
-            // SPECIAL CASE: Anonymous tracking mode
-            // In anonymous mode, tracking is ALWAYS allowed (server handles anonymization)
-            // We just block PII features client-side (cookies won't be set)
-            if (anonMode) {
-                // Allow tracking - server will hash IPs and not store PII
-                // Continue with tracking
-            } else {
-                // PRIORITY 4: Standard mode with PII collection - check CMP consent
-                var cmpAllows = false;
+        var consentDecision = slimstatConsentAllowed(params, {
+            isNavigation: !!options.isNavigation,
+            isConsentRetry: !!options.isConsentRetry,
+        });
 
-                // Check consent via CMP integration
-                if (integrationKey === "wp_consent_api" && typeof window.wp_has_consent === "function") {
-                    // WP Consent API integration - can read consent client-side
-                    try {
-                        cmpAllows = !!window.wp_has_consent(consentLevel);
-                    } catch (e) {
-                        cmpAllows = false;
-                    }
-                } else if (integrationKey === "real_cookie_banner") {
-                    // Real Cookie Banner integration
-                    // Updated to use the correct API (window.RealCookieBanner.consent)
-                    try {
-                        // Modern API: window.RealCookieBanner (available in recent versions)
-                        if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
-                            var consent = window.RealCookieBanner.consent.get(consentLevel);
-                            cmpAllows = !!(consent && consent.cookie !== null);
-                        }
-                        // Fallback to legacy API: window.consentApi
-                        else if (window.consentApi && typeof window.consentApi.consentSync === "function") {
-                            var consent = window.consentApi.consentSync(consentLevel);
-                            cmpAllows = !!(consent && consent.cookie != null && consent.cookieOptIn);
-                        }
-                        // Fallback: check if consent object exists globally
-                        else if (window.RealCookieBanner && window.RealCookieBanner.consent && window.RealCookieBanner.consent[consentLevel]) {
-                            cmpAllows = !!window.RealCookieBanner.consent[consentLevel];
-                        } else {
-                            cmpAllows = false;
-                        }
-                    } catch (e) {
-                        cmpAllows = false;
-                    }
-                } else if (integrationKey === "slimstat_banner") {
-                    var cookieName = s.gdpr_cookie_name || params.gdpr_cookie_name || "slimstat_gdpr_consent";
-                    var bannerConsent = getCookie(cookieName);
-                    cmpAllows = bannerConsent === "accepted";
-                } else if (integrationKey === "") {
-                    // No CMP integration configured + not in anonymous mode
-                    // Legacy behavior: allow (WARNING: Not GDPR-safe if collecting PII!)
-                    cmpAllows = true;
-                }
-
-                // If PII would be collected and consent not granted, BLOCK tracking
-                if (!cmpAllows) {
-                    return;
-                }
-            }
+        if (!consentDecision.allowed) {
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
+            return;
         }
 
         // Check if this is a navigation event (not initial page load)
@@ -608,6 +846,8 @@ var SlimStat = (function () {
         // For initial page load, skip if server-side tracking is active
         if (!isNavigationEvent && !isConsentRetry && !isEmpty(params.id) && parseInt(params.id, 10) > 0) {
             // Server-side tracking is active for initial page load, skip pageview but allow interactions
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
             return;
         }
 
@@ -619,16 +859,24 @@ var SlimStat = (function () {
 
         var payloadBase = buildPageviewBase(params);
 
-        if (!payloadBase) return;
+        if (!payloadBase) {
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
+            return;
+        }
 
         // Prevent duplicate pageview requests
         if (pageviewInProgress) {
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
             return;
         }
 
         // De-duplicate rapid navigations (e.g., WP Interactivity quick transitions)
         var now = Date.now();
         if (payloadBase === lastPageviewPayload && now - lastPageviewSentAt < 150) {
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
             return;
         }
 
@@ -638,7 +886,11 @@ var SlimStat = (function () {
         var useBeacon = !waitForId; // need sync response when creating id
 
         // Avoid parallel initial pageview duplication
-        if (inflightPageview && waitForId) return;
+        if (inflightPageview && waitForId) {
+            window.sendingSlimStatPageview = false;
+            delete window[requestKey];
+            return;
+        }
         inflightPageview = waitForId;
         pageviewInProgress = true;
 
@@ -652,10 +904,32 @@ var SlimStat = (function () {
             setTimeout(function () {
                 inflightPageview = false;
                 pageviewInProgress = false;
+                window.sendingSlimStatPageview = false;
+                delete window[requestKey];
             }, 200);
         };
 
+        // Build consent upgrade parameters if this is a consent retry
+        // These are appended to the tracking payload so the backend can
+        // upgrade the existing anonymous pageview to full PII.
+        var consentUpgradeParam = "";
+        if (options.consentUpgrade) {
+            consentUpgradeParam = "&consent_upgrade=1";
+            if (params.id) {
+                // Send the current pageview ID (with checksum) so the server can
+                // update this specific record, same as in the explicit upgrade AJAX.
+                consentUpgradeParam += "&pageview_id=" + encodeURIComponent(params.id);
+            }
+        }
+
         var run = function () {
+            // If anonymous mode is active, skip fingerprinting entirely to ensure no PII is collected/sent
+            if (consentDecision.mode === "anonymous") {
+                initFingerprintHash(null);
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                return;
+            }
+
             // FingerprintJS v4 async init; if it fails, proceed without fingerprint
             try {
                 // Safely check if FingerprintJS library is available
@@ -667,32 +941,23 @@ var SlimStat = (function () {
                 // Only proceed with promise chain if we have a valid promise
                 if (fpPromise && typeof fpPromise.then === "function") {
                     fpPromise
-                        .then(function (fp) {
-                            return fp.get();
-                        })
                         .then(function (result) {
                             initFingerprintHash(result);
-                            sendToServer(payloadBase + buildSlimStatData(result.components || {}), useBeacon, { immediate: isEmpty(params.id) });
+                            sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
                         })
                         .catch(function () {
                             initFingerprintHash(null);
-                            sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
-                        })
-                        .finally(function () {
-                            // Reset flags after FingerprintJS completes (success or failure)
-                            resetPageviewFlags();
+                            sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
                         });
                 } else {
                     // Library not available; proceed without fingerprint
                     initFingerprintHash(null);
-                    sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
-                    resetPageviewFlags();
+                    sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
                 }
             } catch (e) {
                 // Catch synchronous errors (shouldn't happen, but defensive)
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData({}), useBeacon, { immediate: isEmpty(params.id) });
-                resetPageviewFlags();
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
             }
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
@@ -703,12 +968,6 @@ var SlimStat = (function () {
     // GDPR consent is now handled by external CMP plugins (Complianz, Cookie Notice, etc.)
     // SlimStat integrates via WP Consent API or custom integrations
     // No internal banner or consent UI is provided
-
-    // Legacy stub functions for backward compatibility
-    function optOut() {
-        console.warn("SlimStat: optOut() is deprecated. GDPR consent is now handled by external CMP plugins.");
-        return false;
-    }
 
     // -------------------------- Offline Data Handling -------------------------- //
     function storeOffline(payload) {
@@ -778,7 +1037,6 @@ var SlimStat = (function () {
         base64_encode: base64Encode,
         get_page_performance: getPagePerformance,
         get_server_latency: getServerLatency,
-        optout: optOut,
         // Deprecated GDPR UI removed
         add_event: addEvent,
         in_array: anySubstring,
@@ -792,6 +1050,10 @@ var SlimStat = (function () {
         // Offline data handling
         store_offline: storeOffline,
         flush_offline_queue: flushOfflineQueue,
+        consent: {
+            checkAllowed: slimstatConsentAllowed,
+            emit: emitConsentEvent,
+        },
         // New internal helpers (not documented previously)
         _extract_params: extractSlimStatParams,
         _send_pageview: sendPageview,
@@ -846,6 +1108,27 @@ if (!window.requestIdleCallback) {
     var OFFLINE_KEY = "slimstat_offline_queue";
     var pageviewInProgress = false;
 
+    // Helper functions for consent detection (local copies for scope access)
+    function isFunction(value) {
+        return typeof value === "function";
+    }
+
+    function isObject(value) {
+        return value !== null && typeof value === "object";
+    }
+
+    function getCookieStrict(name) {
+        if (!name) return null;
+        try {
+            var safeName = name.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
+            var pattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
+            var match = document.cookie.match(pattern);
+            return match ? decodeURIComponent(match[1]) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
     function loadOfflineQueue() {
         try {
             var raw = localStorage.getItem(OFFLINE_KEY);
@@ -882,6 +1165,8 @@ if (!window.requestIdleCallback) {
 
     // Track whether we've already finalized the current pageview (avoid duplicate beacons)
     var finalizedPageviews = {};
+    // Track currently in-flight finalization requests to avoid races
+    var inFlightFinalizations = {};
     // Finalization state management (moved from SlimStat closure to avoid scope issues)
     var finalizationInProgress = false;
     var lastFinalizationReason = "";
@@ -893,10 +1178,17 @@ if (!window.requestIdleCallback) {
     } catch (e) {
         /* ignore */
     }
+    // Global flag to prevent concurrent pageview sends
+    try {
+        if (typeof window.sendingSlimStatPageview === "undefined") window.sendingSlimStatPageview = false;
+        if (typeof window.slimstatPageviewTracked === "undefined") window.slimstatPageviewTracked = false;
+    } catch (e) {
+        /* ignore */
+    }
 
     function finalizeCurrent(reason) {
         var p = currentSlimStatParams();
-        if (!p.id || parseInt(p.id, 10) <= 0 || finalizedPageviews[p.id]) return; // no pageview id yet or already finalized
+        if (!p.id || parseInt(p.id, 10) <= 0 || finalizedPageviews[p.id] || inFlightFinalizations[p.id]) return; // no pageview id yet or already finalized/in-flight
 
         var now = Date.now();
         if (finalizationInProgress || (reason === lastFinalizationReason && now - lastFinalizationTime < FINALIZATION_COOLDOWN)) return;
@@ -905,11 +1197,17 @@ if (!window.requestIdleCallback) {
         lastFinalizationReason = reason;
         lastFinalizationTime = now;
 
+        // Mark in-flight to prevent concurrent senders (race protection)
+        inFlightFinalizations[p.id] = true;
+
         // Old behavior: send a simple finalize to let the server compute dt_out
         var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
         SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
+
+        // Mark finalized and clear in-flight after a short window
         finalizedPageviews[p.id] = true;
         setTimeout(function () {
+            delete inFlightFinalizations[p.id];
             finalizationInProgress = false;
         }, 120);
     }
@@ -945,21 +1243,62 @@ if (!window.requestIdleCallback) {
     });
 
     // Listen for WP Consent API consent changes and retry pageview if previously blocked
-    if (window.wp_listen_for_consent_change) {
-        var consentRetried = false;
-        window.wp_listen_for_consent_change(function (category) {
+    document.addEventListener("wp_listen_for_consent_change", function (event) {
+        try {
+            var detail = (event && event.detail) || {};
             var params = currentSlimStatParams();
             var selectedCategory = params.consent_level_integration || "statistics";
+            var retryKey = "slimstatConsentRetried_" + selectedCategory;
 
-            var shouldTrack = !consentRetried && category === selectedCategory && (!params.id || parseInt(params.id, 10) <= 0);
-
-            // If consent was granted for our category and we haven't tracked yet, send pageview now
-            if (shouldTrack) {
-                consentRetried = true;
+            if (detail[selectedCategory] && detail[selectedCategory] === "allow" && (!window[retryKey] || window[retryKey] === false)) {
+                window[retryKey] = true;
                 SlimStat._send_pageview();
             }
-        });
+        } catch (e) {
+            /* ignore */
+        }
+    });
+
+    // Backwards compatibility: some integrations expose a helper on window
+    if (typeof window.wp_listen_for_consent_change === "function") {
+        try {
+            window.wp_listen_for_consent_change(function (category) {
+                var params = currentSlimStatParams();
+                var selectedCategory = params.consent_level_integration || "statistics";
+                var retryKey = "slimstatConsentRetried_" + selectedCategory;
+
+                if (category === selectedCategory && (!window[retryKey] || window[retryKey] === false)) {
+                    window[retryKey] = true;
+                    SlimStat._send_pageview();
+                }
+            });
+        } catch (e) {
+            /* ignore */
+        }
     }
+
+    // Listen for consent type definitions to catch late initializations
+    document.addEventListener("wp_consent_type_defined", function () {
+        try {
+            var params = currentSlimStatParams();
+            var selectedCategory = params.consent_level_integration || "statistics";
+            var retryKey = "slimstatConsentRetried_" + selectedCategory;
+
+            if (!window[retryKey]) {
+                if (typeof window.wp_has_consent === "function") {
+                    if (window.wp_has_consent(selectedCategory)) {
+                        window[retryKey] = true;
+                        SlimStat._send_pageview();
+                    }
+                } else {
+                    window[retryKey] = true;
+                    SlimStat._send_pageview();
+                }
+            }
+        } catch (e) {
+            /* ignore */
+        }
+    });
 
     // Standard WP Consent API event listener
     document.addEventListener("wp_consent_change", function (event) {
@@ -984,21 +1323,65 @@ if (!window.requestIdleCallback) {
     });
 
     // CMP-specific listeners
-    (function registerCmpListeners() {
-        function tryTrackIfAllowed() {
-            var params = currentSlimStatParams();
-            var selectedCategory = params.consent_level_integration || "statistics";
-            if (params.id && parseInt(params.id, 10) > 0) return;
-            if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
-
-            // Use category-specific retry flag to prevent race conditions between CMPs
-            var retryKey = "slimstatConsentRetried_" + selectedCategory;
-            if (!window[retryKey]) {
-                window[retryKey] = true;
-                SlimStat._send_pageview();
-            }
+    // Define tryTrackIfAllowed in outer scope so handleConsentGranted can access it
+    function tryTrackIfAllowed() {
+        var params = currentSlimStatParams();
+        var selectedCategory = params.consent_level_integration || "statistics";
+        if (params.id && parseInt(params.id, 10) > 0) {
+            return;
+        }
+        if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) {
+            return;
         }
 
+        // Use category-specific retry flag to prevent race conditions between CMPs
+        var retryKey = "slimstatConsentRetried_" + selectedCategory;
+        // Check if we've already successfully sent a request (not just attempted)
+        var retryTimestampKey = retryKey + "_timestamp";
+        var lastRetryTime = window[retryTimestampKey] || 0;
+        var timeSinceLastRetry = Date.now() - lastRetryTime;
+
+        // Check if a pageview is already being sent (prevent duplicate from multiple event sources)
+        if (window.sendingSlimStatPageview) {
+            return;
+        }
+
+        // Allow retry if:
+        // 1. Never tried before, OR
+        // 2. Last attempt was more than 2 seconds ago (enough time for request to complete)
+        if (!window[retryKey] || (window[retryKey] && timeSinceLastRetry > 2000)) {
+            // Check if lock is active - if so, delay and retry
+            var requestKey = "slimstat_pageview_init_retry";
+            if (window.sendingSlimStatPageview || window[requestKey]) {
+                setTimeout(function () {
+                    tryTrackIfAllowed();
+                }, 500);
+                return;
+            }
+            // Mark that we're attempting to send (but don't set permanent flag yet)
+            window[retryKey] = true;
+            window[retryTimestampKey] = Date.now();
+            // Use isConsentRetry flag to prevent duplicate detection
+            // Add consent_upgrade parameter to signal backend to upgrade existing anonymous pageview
+            SlimStat._send_pageview({ isConsentRetry: true, consentUpgrade: true });
+
+            // After a delay, check if request was actually sent
+            // If lock is still active after 1 second, it means request was blocked
+            setTimeout(function () {
+                var requestKeyCheck = "slimstat_pageview_init_retry";
+                // If lock is still active, it means request was blocked, so reset flag
+                // But only if enough time has passed (request should complete in < 1 second)
+                if (window.sendingSlimStatPageview || window[requestKeyCheck]) {
+                    // Lock still active after 1 second - request was likely blocked
+                    // Reset flag to allow retry
+                    window[retryKey] = false;
+                }
+            }, 1000);
+        }
+    }
+
+    // CMP-specific listeners
+    (function registerCmpListeners() {
         // Complianz: enable specific category
         document.addEventListener("cmplz_enable_category", function (e) {
             var params = currentSlimStatParams();
@@ -1017,42 +1400,65 @@ if (!window.requestIdleCallback) {
             if (cat === selectedCategory && allowed) tryTrackIfAllowed();
         });
 
-        // Real Cookie Banner
-        window.addEventListener("RealCookieBannerConsentChanged", function (e) {
+        // Real Cookie Banner - multiple event names for compatibility
+        var rcbHandlerDebounceTimer = null;
+        var rcbHandlerLastCall = 0;
+        function handleRCBConsentChange(e) {
+            var now = Date.now();
             var params = currentSlimStatParams();
+            var integrationKey = params.consent_integration || "";
+
+            if (integrationKey !== "real_cookie_banner" && integrationKey !== "rcb" && integrationKey !== "realcookie") {
+                return;
+            }
+
             var selectedCategory = params.consent_level_integration || "statistics";
             var ok = false;
 
-            // Check consent from event detail
             if (e && e.detail) {
-                // Modern API: e.detail.consent contains category-specific consent
                 if (e.detail.consent && selectedCategory in e.detail.consent) {
                     var categoryConsent = e.detail.consent[selectedCategory];
-                    // Check if consent is granted for this category
-                    // categoryConsent can be a boolean or object with cookie property
                     if (typeof categoryConsent === "boolean") {
                         ok = categoryConsent;
                     } else if (categoryConsent && categoryConsent.cookie !== null) {
                         ok = true;
                     }
-                }
-                // Legacy API: check if button was accept all
-                else if (e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "accept_essentials")) {
-                    // Verify with consent API
-                    if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
-                        var consent = window.RealCookieBanner.consent.get(selectedCategory);
-                        ok = !!(consent && consent.cookie !== null);
-                    }
+                } else if (e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "accept_essentials" || e.detail.button === "save")) {
+                    var consentCheck = SlimStat.consent.checkAllowed(params, {});
+                    ok = consentCheck && consentCheck.allowed && consentCheck.mode === "full";
                 }
             }
 
-            // Fallback: check WP Consent API (Real Cookie Banner supports it)
             if (!ok && typeof window.wp_has_consent === "function") {
                 ok = !!window.wp_has_consent(selectedCategory);
             }
 
-            if (ok) tryTrackIfAllowed();
-        });
+            if (!ok) {
+                var consentCheck = SlimStat.consent.checkAllowed(params, {});
+                ok = consentCheck && consentCheck.allowed && consentCheck.mode === "full";
+            }
+
+            if (ok) {
+                clearTimeout(rcbHandlerDebounceTimer);
+                var timeSinceLastCall = now - rcbHandlerLastCall;
+                var debounceDelay = timeSinceLastCall < 100 ? 100 - timeSinceLastCall : 0;
+                rcbHandlerDebounceTimer = setTimeout(function () {
+                    // Don't call handleConsentGranted here - RCB events will trigger it directly
+                    // Just call tryTrackIfAllowed if no pageview ID exists yet
+                    var params = currentSlimStatParams();
+                    if (!params.id || parseInt(params.id, 10) <= 0) {
+                        tryTrackIfAllowed();
+                    }
+                }, debounceDelay);
+                rcbHandlerLastCall = now;
+            }
+        }
+
+        // Listen for all RCB event variations
+        document.addEventListener("RealCookieBannerConsentChanged", handleRCBConsentChange);
+        document.addEventListener("rcb-consent-changed", handleRCBConsentChange);
+        document.addEventListener("rcb-consent-update", handleRCBConsentChange);
+        document.addEventListener("rcb-consent-saved", handleRCBConsentChange);
 
         // CookieYes (cookie-law-info) events
         // Fire after a short delay to allow WP Consent API state to update
@@ -1255,144 +1661,264 @@ if (!window.requestIdleCallback) {
      */
     function setupConsentUpgradeHandler() {
         var consentUpgradeSent = {};
+        var consentUpgradeRetryCount = 0;
+        var initialConsentState = false;
+        var consentStateInitialized = false;
+        var rcbUpgradePollingDone = false;
 
-        /**
-         * Handle consent granted event
-         *
-         * When consent is granted:
-         * - If pageview already tracked → Upgrade it from hash to real IP
-         * - If no pageview yet → Do nothing, let normal tracking handle it with consent
-         */
-        function handleConsentGranted() {
+        // Helper function to detect Real Cookie Banner consent (local copy for scope access)
+        function detectRCBConsentLocal(category) {
             try {
-                // First, re-send the pageview if it was previously blocked.
-                // The consent check inside _send_pageview will now pass.
-                var params = currentSlimStatParams();
-                if (!params.id || parseInt(params.id, 10) <= 0) {
-                    SlimStat._send_pageview({ isConsentRetry: true });
+                if (isFunction(window.rcb)) {
+                    try {
+                        var rcbConsent = window.rcb("consent", category);
+                        if (rcbConsent === true || rcbConsent === false) return !!rcbConsent;
+                        if (isObject(rcbConsent) && "cookie" in rcbConsent) return !!rcbConsent.cookie;
+                        if (isObject(rcbConsent) && "consent" in rcbConsent) return !!rcbConsent.consent;
+                    } catch (e) {
+                        /* ignore */
+                    }
                 }
 
-                // Keep the full ID with checksum for security validation
+                if (isObject(window.RCB) && isObject(window.RCB.consent) && isFunction(window.RCB.consent.get)) {
+                    var rcbNew = window.RCB.consent.get(category);
+                    if (rcbNew === true || rcbNew === false) return !!rcbNew;
+                    if (isObject(rcbNew) && "cookie" in rcbNew) return !!rcbNew.cookie;
+                    if (isObject(rcbNew) && "consent" in rcbNew) return !!rcbNew.consent;
+                }
+
+                if (isObject(window.rcbConsentManager) && isFunction(window.rcbConsentManager.getUserDecision)) {
+                    var decision = window.rcbConsentManager.getUserDecision();
+                    if (decision && decision.decision) {
+                        if (decision.decision === "all") return true;
+                        if (typeof decision.decision === "object") {
+                            var value = decision.decision[category];
+                            if (typeof value === "boolean") return value;
+                            if (Array.isArray(value)) return value.length > 0;
+                        }
+                    }
+                }
+
+                var rcb = window.realCookieBanner || window.RealCookieBanner || null;
+                if (isObject(rcb) && isObject(rcb.consent) && isFunction(rcb.consent.get)) {
+                    var consent = rcb.consent.get(category);
+                    if (consent === true || consent === false) return !!consent;
+                    if (isObject(consent) && "cookie" in consent) return !!consent.cookie;
+                    if (consent) return true;
+                }
+
+                var legacy = window.__rcb || window.__RCB || null;
+                if (isObject(legacy) && legacy.consent) {
+                    var legacyVal = legacy.consent[category];
+                    if (typeof legacyVal === "boolean") return legacyVal;
+                    if (Array.isArray(legacyVal)) return legacyVal.length > 0;
+                }
+
+                var possibleNames = ["real_cookie_banner", "rcb_consent", "rcb_acceptance", "real_cookie_consent", "rcb-consent"];
+                for (var i = 0; i < possibleNames.length; i++) {
+                    var raw = getCookieStrict(possibleNames[i]);
+                    if (!raw) {
+                        continue;
+                    }
+                    try {
+                        var parsed = JSON.parse(raw);
+                        if (parsed) {
+                            if (typeof parsed[category] === "boolean") return parsed[category];
+                            if (typeof parsed.consent === "boolean") return parsed.consent;
+                            if (typeof parsed[category] === "object" && parsed[category].cookie !== undefined) return !!parsed[category].cookie;
+                        }
+                    } catch (err) {
+                        var normalized = raw.toLowerCase();
+                        if (raw.indexOf(category) !== -1 || raw === "1" || normalized === "true" || normalized === "all" || normalized === "accepted") {
+                            return true;
+                        }
+                    }
+                }
+            } catch (error) {
+                /* ignore */
+            }
+            return null;
+        }
+
+        function initConsentBaseline() {
+            if (consentStateInitialized) {
+                return;
+            }
+            consentStateInitialized = true;
+            try {
+                var params = currentSlimStatParams();
+                var selectedCategory = params.consent_level_integration || "statistics";
+                var integrationKey = params.consent_integration || "";
+                if ("real_cookie_banner" === integrationKey || integrationKey === "rcb" || integrationKey === "realcookie") {
+                    var rcbConsent = detectRCBConsentLocal(selectedCategory);
+                    if (rcbConsent === null || rcbConsent === false) {
+                        if (typeof window.wp_has_consent === "function") {
+                            initialConsentState = !!window.wp_has_consent(selectedCategory);
+                        } else {
+                            initialConsentState = false;
+                        }
+                    } else {
+                        initialConsentState = !!rcbConsent;
+                    }
+                }
+            } catch (e) {
+                /* ignore */
+            }
+        }
+
+        // Consent upgrade AJAX handler and event listeners
+
+        // Prevent simultaneous consent upgrade requests
+        var consentUpgradeInProgress = false;
+
+        function handleConsentGranted(event = false) {
+            // Avoid duplicate/in-progress runs
+            if (consentUpgradeInProgress) return;
+            consentUpgradeInProgress = true;
+
+            try {
+                var params = currentSlimStatParams();
                 var pageviewIdWithChecksum = params.id || "";
                 var pageviewIdNumeric = pageviewIdWithChecksum ? parseInt(pageviewIdWithChecksum.toString().split(".")[0], 10) : 0;
 
-                // If no pageview tracked yet, do nothing further for upgrade
-                // The next pageview will automatically use full tracking with consent
+                // If no pageview tracked, retry a few times, else trigger tracking with consent
                 if (pageviewIdNumeric <= 0 || !pageviewIdWithChecksum) {
+                    if (consentUpgradeRetryCount >= 5) {
+                        consentUpgradeRetryCount = 0;
+                        consentUpgradeInProgress = false;
+                        setTimeout(function () {
+                            tryTrackIfAllowed();
+                        }, 600);
+                        return;
+                    }
+                    consentUpgradeRetryCount++;
+                    setTimeout(function () {
+                        try { handleConsentGranted(); } catch (err) {}
+                    }, 250);
+                    consentUpgradeInProgress = false;
                     return;
                 }
 
-                // Prevent duplicate upgrade requests for this specific pageview
+                // Prevent double-upgrade for the same pageview
                 if (consentUpgradeSent[pageviewIdWithChecksum]) {
+                    consentUpgradeInProgress = false;
                     return;
                 }
 
-                // Verify consent is actually granted (for WP Consent API only)
+                // Check actual consent before request
                 var integrationKey = params.consent_integration || "";
                 if (integrationKey === "wp_consent_api") {
                     var cat = params.consent_level_integration || "statistics";
                     if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(cat)) {
-                        return; // Consent not granted, skip upgrade
+                        consentUpgradeInProgress = false;
+                        return;
+                    }
+                } else if (
+                    integrationKey === "real_cookie_banner" ||
+                    integrationKey === "rcb" ||
+                    integrationKey === "realcookie"
+                ) {
+                    if (!consentStateInitialized) initConsentBaseline();
+                    var cat = params.consent_level_integration || "statistics";
+                    var rcbConsent = detectRCBConsentLocal(cat);
+                    if (!rcbConsent && typeof window.wp_has_consent === "function") {
+                        rcbConsent = window.wp_has_consent(cat);
+                    }
+                    if (!rcbConsent) {
+                        consentUpgradeInProgress = false;
+                        return;
                     }
                 }
 
-                // Mark as sent before making request to prevent duplicates
                 consentUpgradeSent[pageviewIdWithChecksum] = true;
 
-                // Send AJAX request to upgrade the existing pageview
+                // Do upgrade request
                 var xhr = new XMLHttpRequest();
                 var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";
                 xhr.open("POST", ajaxUrl, true);
                 xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 
                 xhr.onload = function () {
+                    consentUpgradeInProgress = false;
                     if (xhr.status === 200) {
-                        try {
-                            var response = JSON.parse(xhr.responseText);
-                            if (!response.success && console && console.warn) {
-                                console.warn("[SlimStat] Consent upgrade failed:", response.data ? response.data.message : "Unknown");
-                            }
-                        } catch (e) {
-                            if (console && console.error) {
-                                console.error("[SlimStat] Invalid upgrade response");
-                            }
-                        }
-                    } else if (console && console.error) {
-                        console.error("[SlimStat] Upgrade request failed:", xhr.status);
+                        try { JSON.parse(xhr.responseText); } catch (e) {}
                     }
                 };
-
                 xhr.onerror = function () {
-                    if (console && console.error) {
-                        console.error("[SlimStat] Upgrade network error");
-                    }
-                    // Reset flag on network error to allow retry
-                    consentUpgradeSent[pageviewIdWithChecksum] = false;
+                    consentUpgradeInProgress = false;
+                    consentUpgradeSent[pageviewIdWithChecksum] = false; // allow retry
                 };
 
-                xhr.send("action=slimstat_consent_granted" + "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || ""));
-            } catch (e) {
-                if (console && console.error) {
-                    console.error("[SlimStat] Consent upgrade error:", e);
+                // Optionally include fingerprint hash
+                var fingerprintParam = "";
+                if (fingerprintHash) {
+                    fingerprintParam = "&fingerprint=" + encodeURIComponent(fingerprintHash);
                 }
-                // Reset flag on exception to allow retry
+
+                var requestData =
+                    "action=slimstat_consent_granted" +
+                    "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) +
+                    "&nonce=" + encodeURIComponent(params.wp_rest_nonce || "") +
+                    fingerprintParam;
+                xhr.send(requestData);
+            } catch (e) {
+                consentUpgradeInProgress = false;
+                // Allow re-send if exception
                 var params = currentSlimStatParams();
                 var pageviewIdWithChecksum = params.id || "";
-                if (pageviewIdWithChecksum) {
-                    consentUpgradeSent[pageviewIdWithChecksum] = false;
-                }
+                if (pageviewIdWithChecksum) consentUpgradeSent[pageviewIdWithChecksum] = false;
             }
         }
 
-        // Listen to various CMP consent events
+        SlimStat.handleConsentGranted = handleConsentGranted;
+
+        // Add handlers for main consent provider events
+        document.addEventListener("RCB/OptIn", handleConsentGranted);
+        document.addEventListener("RCB/OptIn/All", handleConsentGranted);
         document.addEventListener("cookieyes_consent_update", handleConsentGranted);
         document.addEventListener("cookieyes_preferences_update", handleConsentGranted);
-        document.addEventListener("cli_consent_update", handleConsentGranted); // CookieLawInfo
-        document.addEventListener("wp_listen_load", handleConsentGranted); // WP Consent API
-        document.addEventListener("wp_consent_type_functional", handleConsentGranted); // WP Consent API - functional
-        document.addEventListener("wp_consent_type_statistics", handleConsentGranted); // WP Consent API - statistics
+        document.addEventListener("cli_consent_update", handleConsentGranted);
+        document.addEventListener("wp_listen_load", handleConsentGranted);
+        document.addEventListener("wp_consent_type_functional", handleConsentGranted);
+        document.addEventListener("wp_consent_type_statistics", handleConsentGranted);
         document.addEventListener("slimstat_banner_consent", handleConsentGranted);
 
-        // Real Cookie Banner - consent granted event
-        window.addEventListener("RealCookieBannerConsentChanged", function (e) {
-            try {
+        // Debounced handler for slimstat's own events
+        var consentEventHandled = false;
+        var lastConsentEventTime = 0;
+        document.addEventListener("slimstat:consent:updated", function (event) {
+            if (consentEventHandled) return;
+            if (event && event.detail && event.detail.allowed && event.detail.mode === "full") {
+                var now = Date.now();
+                if (now - lastConsentEventTime < 500) return;
+                lastConsentEventTime = now;
+
+                // Only if pageview ID already exists
                 var params = currentSlimStatParams();
-                var selectedCategory = params.consent_level_integration || "statistics";
-                var shouldUpgrade = false;
+                if (!params.id || parseInt(params.id, 10) <= 0) return;
 
-                // Check if consent was granted for our category
-                if (e && e.detail && e.detail.consent && selectedCategory in e.detail.consent) {
-                    var categoryConsent = e.detail.consent[selectedCategory];
-                    // Check if consent is granted for this category
-                    if (typeof categoryConsent === "boolean") {
-                        shouldUpgrade = categoryConsent;
-                    } else if (categoryConsent && categoryConsent.cookie !== null) {
-                        shouldUpgrade = true;
-                    }
-                }
-                // Legacy: check button type
-                else if (e && e.detail && e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "save")) {
-                    // Verify consent with API
-                    if (window.RealCookieBanner && window.RealCookieBanner.consent && typeof window.RealCookieBanner.consent.get === "function") {
-                        var consent = window.RealCookieBanner.consent.get(selectedCategory);
-                        shouldUpgrade = !!(consent && consent.cookie !== null);
-                    }
-                }
-
-                // Fallback: check WP Consent API
-                if (!shouldUpgrade && typeof window.wp_has_consent === "function") {
-                    shouldUpgrade = !!window.wp_has_consent(selectedCategory);
-                }
-
-                if (shouldUpgrade) {
+                consentEventHandled = true;
+                setTimeout(function () {
                     handleConsentGranted();
-                }
-            } catch (err) {
-                if (console && console.error) {
-                    console.error("[SlimStat] Real Cookie Banner consent upgrade error:", err);
-                }
+                    consentEventHandled = false;
+                }, 100);
             }
         });
+
+        function hasRCBConsent(category) {
+            var consent = detectRealCookieBannerConsent(category);
+            return consent === true || consent === null ? false : !!consent;
+        }
+
+        initConsentBaseline();
+
+        if (typeof window.addEventListener !== "undefined") {
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", initConsentBaseline);
+            } else {
+                setTimeout(initConsentBaseline, 0);
+            }
+        }
     }
 
     function initSlimStatBanner() {
@@ -1526,7 +2052,7 @@ if (!window.requestIdleCallback) {
                 }
 
                 try {
-                    SlimStat._send_pageview({ consentGranted: true });
+                    SlimStat._send_pageview({ isConsentRetry: true });
                 } catch (sendError) {
                     /* ignore */
                 }

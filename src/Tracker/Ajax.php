@@ -81,61 +81,9 @@ class Ajax
                 exit(Utils::getValueWithChecksum($stat['id']));
             }
 
-            // GDPR Compliance: Process IP according to consent status
-            // For navigation requests, we need to ensure IP is processed correctly based on current consent
-            //
-            // IMPORTANT: In anonymous mode, we NEVER set tracking cookie here in navigation requests.
-            // The tracking cookie should ONLY be set by the consent upgrade AJAX handler (ConsentHandler::handleConsentGranted())
-            // when the user explicitly grants consent. This ensures GDPR compliance.
-            //
-            // If consent was granted, the cookie will already exist from the consent upgrade handler.
-            // If consent was NOT granted, we should NOT set the cookie here, as that would bypass consent.
-
-            // Process IP according to consent status
-            // In anonymous mode, processIp() will:
-            // - Hash IP if consent not granted (piiAllowed() returns false)
-            // - Keep real IP if consent granted (piiAllowed() returns true)
-            // This ensures IP is always processed correctly based on current consent status
-            //
-            // DEBUG: Log consent status for troubleshooting (only in debug mode)
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-                $integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
-                $piiAllowedBefore = Consent::piiAllowed();
-                $hasCookie = isset($_COOKIE['slimstat_tracking_code']);
-                if ($isAnonymousTracking && 'wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
-                    $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
-                    $hasCmpConsent = false;
-                    try {
-                        $hasCmpConsent = (bool) \wp_has_consent($wpConsentCategory);
-                    } catch (\Throwable $e) {
-                        // Ignore
-                    }
-                    error_log(sprintf(
-                        'SlimStat Ajax: anonymous=%s, piiAllowed=%s, hasCookie=%s, hasCmpConsent=%s, IP=%s',
-                        $isAnonymousTracking ? 'yes' : 'no',
-                        $piiAllowedBefore ? 'yes' : 'no',
-                        $hasCookie ? 'yes' : 'no',
-                        $hasCmpConsent ? 'yes' : 'no',
-                        $stat['ip'] ?? 'N/A'
-                    ));
-                }
-            }
-
+            // Process IP according to consent status (cookie set only by consent upgrade handler)
             $stat = \SlimStat\Providers\IPHashProvider::processIp($stat);
 
-            // DEBUG: Log IP after processing (only in debug mode)
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-                if ($isAnonymousTracking) {
-                    $isHashed = !empty($stat['ip']) && strlen($stat['ip']) === 64 && ctype_xdigit($stat['ip']);
-                    error_log(sprintf(
-                        'SlimStat Ajax: IP after processIp=%s, isHashed=%s',
-                        $stat['ip'] ?? 'N/A',
-                        $isHashed ? 'yes' : 'no'
-                    ));
-                }
-            }
             if (Consent::piiAllowed(true)) {
                 if (!empty($GLOBALS['current_user']->ID)) {
                     $stat['username'] = $GLOBALS['current_user']->data->user_login;
@@ -231,32 +179,20 @@ class Ajax
                 $isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
                 $piiAllowed = Consent::piiAllowed();
 
-                // Only perform duplicate check if:
-                // 1. Anonymous tracking mode is enabled
-                // 2. PII is NOT allowed (no cookies available)
-                // 3. Visit ID and resource are available
-                // This ensures we only check duplicates when cookies aren't available (GDPR-compliant mode)
                 if ($isAnonymousTracking && !$piiAllowed && !empty($stat['visit_id']) && !empty($stat['resource'])) {
                     $session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
                     $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
                     $min_timestamp = $stat['dt'] - $session_duration;
 
-                    // Security: Race Condition Prevention - Use transaction with row-level locking
-                    // This prevents duplicate records when two requests arrive simultaneously
                     $GLOBALS['wpdb']->query('START TRANSACTION');
 
                     try {
-                        // Build query with fingerprint check if available
-                        // This ensures the same user doesn't get duplicate records when navigating between pages
                         $fingerprint_check = '';
                         $fingerprint_value = null;
                         if (!empty($stat['fingerprint'])) {
                             $fingerprint_check = ' AND fingerprint = %s';
                             $fingerprint_value = $stat['fingerprint'];
                         }
-
-                        // Use SELECT ... FOR UPDATE to lock the row and prevent race conditions
-                        // This ensures only one request can check/insert at a time
                         $sql = "SELECT id, dt FROM {$table}
                                 WHERE visit_id = %d
                                 AND resource = %s
@@ -284,25 +220,16 @@ class Ajax
                         );
 
                         if (!empty($existing_record)) {
-                            // Duplicate found within session - use existing record ID
-                            // This matches normal behavior where cookies prevent duplicate pageviews
-                            // Note: This only runs when cookies aren't available (GDPR-compliant mode)
                             $stat['id'] = intval($existing_record->id);
                             \wp_slimstat::set_stat($stat);
                             $GLOBALS['wpdb']->query('COMMIT');
-                            // Return existing record ID (don't create new record)
                             exit(Utils::getValueWithChecksum($stat['id']));
                         }
 
-                        // No duplicate found - commit transaction and continue
                         $GLOBALS['wpdb']->query('COMMIT');
                     } catch (\Exception $e) {
                         // Rollback on error
                         $GLOBALS['wpdb']->query('ROLLBACK');
-                        if (defined('WP_DEBUG') && WP_DEBUG) {
-                            error_log('SlimStat Ajax: Duplicate check transaction error - ' . $e->getMessage());
-                        }
-                        // Continue without duplicate check (fail open for availability)
                     }
                 }
 
@@ -413,6 +340,13 @@ class Ajax
 
             if (!empty($stat['fingerprint']) && Utils::isNewVisitor($stat['fingerprint'])) {
                 $stat['notes'] = ['new:yes'];
+            }
+
+            // Check if this is a consent upgrade request
+            $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+            if ($isConsentUpgrade) {
+                // Pass consent_upgrade flag to Processor via data_js
+                // Processor will handle the upgrade logic
             }
 
             // Update stat before processing

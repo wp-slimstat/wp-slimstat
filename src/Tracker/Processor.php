@@ -27,9 +27,7 @@ class Processor
             $stat['notes'] = [];
         }
 
-        // Set processing timestamp context for Query builder caching decisions.
-        // This ensures caching is based on the event timestamp, not current server time.
-        // Critical for avoiding race conditions at midnight.
+        // Set processing timestamp for Query builder caching (avoids race conditions at midnight)
         Query::setProcessingTimestamp($stat['dt']);
 
         $stat = apply_filters('slimstat_filter_pageview_stat_init', $stat);
@@ -68,8 +66,6 @@ class Processor
         }
 
         // Store original IP for GeoIP lookup (before hashing)
-        // Prioritize other_ip (actual client IP from proxy headers) for better accuracy
-        // This matches the IP selection logic in Session::generateAnonymousVisitId()
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
         // Process IP address with anonymization and hashing (for GDPR compliance)
@@ -218,13 +214,10 @@ class Processor
             return false;
         }
 
-        // GDPR Compliance: GeoIP lookup requires PII consent in anonymous mode
-        // GeoIP data (country, city, location) is considered PII and should only be collected with consent
+        // GeoIP lookup requires PII consent (GeoIP data is PII)
         $geographicProvider = new GeoService();
         if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
             try {
-                // Use original IP (before hashing) for GeoIP lookup
-                // Only perform lookup if PII is allowed (consent granted in anonymous mode)
                 $geolocation_data = GeoIP::loader($originalIpForGeo);
             } catch (\Exception $e) {
                 Query::setProcessingTimestamp(null);
@@ -302,21 +295,226 @@ class Processor
         // Update before insert
         \wp_slimstat::set_stat($stat);
 
-        // In Anonymous Tracking Mode without PII, simulate normal session behavior
-        // GDPR Compliance:
-        // - When PII is NOT allowed: No cookies are set (GDPR-compliant)
-        //   → We need to check for duplicates manually since cookies aren't available
-        // - When PII IS allowed: Cookies are set (after explicit consent)
-        //   → No need to check duplicates - cookies handle this automatically
-        // This matches the behavior of normal tracking mode where cookies prevent duplicate records
+        // Check if this is a consent upgrade request (after banner accept)
+        $data_js = \wp_slimstat::get_data_js();
+        $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+
+		// If this is a consent upgrade request, try to find and upgrade existing anonymous pageview
+		try {
+			if ($isConsentUpgrade) {
+				$isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
+
+				$piiAllowed = Consent::piiAllowed(true);
+
+				// Allow explicit visit_id from client to target original anonymous record
+				$requestedVisitId = 0;
+				if (!empty($_REQUEST['visit_id'])) {
+					$visitIdRaw = sanitize_text_field(wp_unslash($_REQUEST['visit_id']));
+					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
+					if (false !== $visitIdValue) {
+						$requestedVisitId = intval($visitIdValue);
+					} elseif (is_numeric($visitIdRaw)) {
+						$requestedVisitId = intval($visitIdRaw);
+					}
+				} elseif (!empty($data_js['visit_id'])) {
+					$visitIdValue = Utils::getValueWithoutChecksum($data_js['visit_id']);
+					if (false !== $visitIdValue) {
+						$requestedVisitId = intval($visitIdValue);
+					} elseif (is_numeric($data_js['visit_id'])) {
+						$requestedVisitId = intval($data_js['visit_id']);
+					}
+				}
+
+				if ($requestedVisitId > 0) {
+					$stat['visit_id'] = $requestedVisitId;
+					\wp_slimstat::set_stat($stat);
+				}
+
+				// Only upgrade if we're in anonymous mode and consent is now granted
+				if ($isAnonymousTracking && $piiAllowed) {
+					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+
+					// Use ID from request if available (most reliable for upgrade), otherwise fallback to visit_id
+					$requestId = 0;
+					if (!empty($data_js['id'])) {
+						// ID in data_js usually has checksum, verify and strip it
+						$requestId = Utils::getValueWithoutChecksum($data_js['id']);
+					}
+
+					$query = Query::select('id, ip, visit_id, fingerprint, username, email, notes')
+						->from($table);
+					if ($requestId > 0) {
+						// Lookup by specific Pageview ID
+						$query->where('id', '=', $requestId);
+					} else {
+						// Fallback: Lookup by session attributes (less reliable if VisitID changed)
+						$session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
+						$min_timestamp    = $stat['dt'] - $session_duration;
+
+						$shouldFilterByVisitId = !empty($stat['visit_id']) && !$isConsentUpgrade;
+
+						if ($requestedVisitId > 0) {
+							$query->where('visit_id', '=', $requestedVisitId);
+						} elseif ($shouldFilterByVisitId) {
+							$query->where('visit_id', '=', $stat['visit_id']);
+						}
+
+						// Filter by IP to ensure we find the correct record
+						// We need to reconstruct the IP as it was stored (hashed or anonymized)
+						$searchIp = $stat['ip'];
+
+						if (!empty($searchIp)) {
+							$query->where('ip', '=', $searchIp);
+						}
+
+						if (!empty($stat['resource'])) {
+							$query->where('resource', '=', $stat['resource']);
+						}
+
+						$query->where('dt', '>=', $min_timestamp)
+							->where('dt', '<=', $stat['dt']);
+
+						// If fingerprint is available, also check it
+						if (!empty($stat['fingerprint'])) {
+							$query->where('fingerprint', '=', $stat['fingerprint']);
+						}
+					}
+
+                    $existing_record = $query->orderBy('dt', 'DESC')
+                        ->limit(1)
+                        ->getRow();
+
+                    if (!empty($existing_record)) {
+                        // Found existing anonymous pageview - upgrade it
+                        $existing_id = intval($existing_record->id);
+
+                        // Get real IP (before hashing) for upgrade
+                        [$realIp, $realOtherIp] = Utils::getRemoteIp();
+
+                        // Prepare update data
+                        $update_data = [];
+
+                        // Check hash_ip setting to determine if we should upgrade IP
+                        $hashIpEnabled = ('on' === (\wp_slimstat::$settings['hash_ip'] ?? 'off'));
+                        $anonymizeIpEnabled = ('on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off'));
+
+                        // In anonymous mode, IP was hashed. After consent, we upgrade to real IP
+                        // UNLESS hash_ip setting is explicitly enabled (user wants to keep hashing even with consent)
+                        if (!$hashIpEnabled) {
+                            // Upgrade from hash to real IP (or anonymized if anonymize_ip is enabled)
+                            if ($anonymizeIpEnabled) {
+                                // Anonymize IP if setting is enabled
+                                $update_data['ip'] = IPHashProvider::anonymizeIP($realIp);
+                                if (!empty($realOtherIp)) {
+                                    $update_data['other_ip'] = IPHashProvider::anonymizeIP($realOtherIp);
+                                } else {
+                                    $update_data['other_ip'] = '';
+                                }
+                            } else {
+                                // Store full real IP (consent granted, no anonymization needed)
+                                $update_data['ip'] = $realIp;
+                                if (!empty($realOtherIp)) {
+                                    $update_data['other_ip'] = $realOtherIp;
+                                } else {
+                                    $update_data['other_ip'] = '';
+                                }
+                            }
+                        }
+
+                        // Add username and email if logged in and PII allowed
+                        if (!empty($GLOBALS['current_user']->ID)) {
+                            $update_data['username'] = $GLOBALS['current_user']->data->user_login;
+                            $update_data['email']    = $GLOBALS['current_user']->data->user_email;
+                            $user_note = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+                            if (empty($existing_record->notes) || false === strpos($existing_record->notes, $user_note)) {
+                                $update_data['notes'] = $user_note;
+                            }
+                        }
+
+                        // Update fingerprint if available (may not have been sent in anonymous mode)
+                        if (!empty($stat['fingerprint'])) {
+                            $update_data['fingerprint'] = $stat['fingerprint'];
+                        }
+
+                        // Perform GeoIP lookup if enabled and PII allowed
+                        // Only do GeoIP lookup if we're updating IP (not keeping hash)
+                        if (!$hashIpEnabled && !empty($update_data['ip'])) {
+                            $geographicProvider = new GeoService();
+                            if ($geographicProvider->isGeoIPEnabled()) {
+                                try {
+                                    $geolocation_data = GeoIP::loader($realIp);
+                                    if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
+                                        $update_data['country'] = strtolower($geolocation_data['country']['iso_code']);
+                                        if (!empty($geolocation_data['city']['names']['en'])) {
+                                            $update_data['city'] = $geolocation_data['city']['names']['en'];
+                                        }
+                                        if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty($update_data['city'])) {
+                                            $update_data['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+                                        }
+                                        if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
+                                            $update_data['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    // Ignore GeoIP errors
+                                }
+                            }
+                        }
+
+                        // Sync visit_id to ensure session continuity
+                        if (!empty($stat['visit_id']) && isset($existing_record->visit_id) && $stat['visit_id'] != $existing_record->visit_id) {
+                            $update_data['visit_id'] = $stat['visit_id'];
+                        }
+
+                        // Update the existing record
+                        if (!empty($update_data)) {
+                            $update_query = Query::update($table);
+
+                            // Handle notes separately (append if needed)
+                            if (!empty($update_data['notes'])) {
+                                $notes_to_append = $update_data['notes'];
+                                unset($update_data['notes']);
+                                $update_query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
+                            }
+
+                            if (!empty($update_data)) {
+                                $update_query->set($update_data);
+                            }
+
+                            $update_query->where('id', '=', $existing_id);
+                            $update_query->execute();
+
+                            // Return existing ID (upgraded record)
+                            $stat['id'] = $existing_id;
+                            \wp_slimstat::set_stat($stat);
+                            Query::setProcessingTimestamp(null);
+
+                            // Ensure tracking cookie is set after upgrade
+                            if (empty($stat['visit_id']) && !empty($stat['id'])) {
+                                Session::setTrackingCookie($stat['id'], 'id', 2678400);
+                            }
+
+                            return $stat['id'];
+                        } else {
+                            // No update data but record found - just return existing ID
+                            $stat['id'] = $existing_id;
+                            \wp_slimstat::set_stat($stat);
+                            Query::setProcessingTimestamp(null);
+                            return $stat['id'];
+                        }
+                    }
+                    // If no existing record found, continue with normal insert flow below
+                }
+            }
+		} catch (\Exception $e) {
+			if (defined('WP_DEBUG') && WP_DEBUG) {
+				error_log(sprintf('SlimStat Upgrade: consent upgrade error: %s', $e->getMessage()));
+			}
+        }
+
+        // Duplicate check for anonymous mode without PII (no cookies available)
         $isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
         $piiAllowed = Consent::piiAllowed();
-
-        // Only perform duplicate check if:
-        // 1. Anonymous tracking mode is enabled
-        // 2. PII is NOT allowed (no cookies available)
-        // 3. Visit ID and resource are available
-        // This ensures we only check duplicates when cookies aren't available (GDPR-compliant mode)
         if ($isAnonymousTracking && !$piiAllowed && !empty($stat['visit_id']) && !empty($stat['resource'])) {
             // Use session_duration (default 30 minutes) to match normal tracking behavior
             // In normal mode, cookies persist for session_duration, so we replicate that here
@@ -324,11 +522,7 @@ class Processor
             $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
             $min_timestamp = $stat['dt'] - $session_duration;
 
-            // Check if a record with the same visit_id and resource exists within the session duration
-            // Also check fingerprint if available for more accurate duplicate detection
-            // This prevents duplicate records from page refreshes while still allowing:
-            // - New visits to different pages (different resource)
-            // - New sessions after session_duration expires
+            // Check for duplicate within session duration
             $query = Query::select('id, dt')
                 ->from($table)
                 ->where('visit_id', '=', $stat['visit_id'])
@@ -336,8 +530,6 @@ class Processor
                 ->where('dt', '>=', $min_timestamp)
                 ->where('dt', '<=', $stat['dt']);
 
-            // If fingerprint is available, also check it for more accurate duplicate detection
-            // This ensures the same user doesn't get duplicate records when navigating between pages
             if (!empty($stat['fingerprint'])) {
                 $query->where('fingerprint', '=', $stat['fingerprint']);
             }
@@ -347,9 +539,6 @@ class Processor
                 ->getRow();
 
             if (!empty($existing_record)) {
-                // Duplicate found within session - return existing record ID
-                // This matches normal behavior where cookies prevent duplicate pageviews
-                // Note: This only runs when cookies aren't available (GDPR-compliant mode)
                 $stat['id'] = intval($existing_record->id);
                 \wp_slimstat::set_stat($stat);
                 Query::setProcessingTimestamp(null);

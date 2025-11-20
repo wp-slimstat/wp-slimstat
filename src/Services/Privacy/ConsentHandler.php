@@ -6,31 +6,24 @@ namespace SlimStat\Services\Privacy;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Tracker\Session;
 use SlimStat\Utils\Consent;
-use SlimStat\Utils\Query;
 
 /**
- * Consent Change Handler for SlimStat
+ * Consent Status Handler for SlimStat
  *
- * Handles consent status changes from the client (JavaScript).
- * Particularly important for anonymous tracking mode, where initial tracking
- * uses hashed IPs and no cookies, then upgrades to full PII when consent is granted.
+ * Monitors and processes consent status changes received from the client (via JavaScript).
  *
- * Upgrade Flow:
- * =============
- * 1. User visits site → Anonymous tracking (hashed IP, no cookies, no username)
- * 2. User grants consent → JavaScript sends AJAX request to this handler
- * 3. Handler updates ONLY the current pageview record with full PII:
- *    - Replaces hashed IP with real IP
- *    - Sets tracking cookie
- *    - Stores username/email if logged in
- *    - Previous pageviews in the same session remain anonymous (GDPR-compliant)
- * 4. Future pageviews use full tracking with PII
+ * In anonymous tracking mode, SlimStat initially logs pageviews with hashed (or anonymized) IPs,
+ * without cookies or personally identifiable information (PII). When a user grants consent,
+ * this handler upgrades only the current pageview record to include PII:
+ *   - The hashed IP is replaced with the user's real or anonymized IP (according to privacy settings)
+ *   - A tracking cookie is set to maintain session continuity
+ *   - If the user is logged in, username and email are saved
+ *   - Previous anonymous pageviews remain non-identifiable (ensuring ongoing GDPR compliance)
+ * All subsequent pageviews, once consent is present, are tracked using full PII.
  *
- * Revocation Flow:
- * ===============
- * 1. User revokes consent → JavaScript sends AJAX request
- * 2. Handler deletes tracking cookie
- * 3. Future pageviews use anonymous tracking
+ * If the user revokes consent:
+ *   - A request from JavaScript triggers this handler to remove the tracking cookie
+ *   - Any future pageview will revert to anonymous tracking (no PII stored)
  *
  * @since 5.4.0
  */
@@ -43,59 +36,52 @@ class ConsentHandler
 	 */
 	public static function handleConsentGranted()
 	{
-		// Verify nonce for security
 		check_ajax_referer('wp_rest', 'nonce');
 
-		// Security: Invalidate consent cache to ensure fresh state
-		// This prevents race conditions where consent changes but cache still shows old state
 		if (function_exists('wp_cache_delete')) {
 			wp_cache_delete('slimstat_consent_state', 'slimstat');
 		}
 
-		// Verify consent is actually granted via CMP (not just client saying so)
-		$integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
+		$integrationKey = Consent::getIntegrationKey();
 		$consentGranted = false;
 
-		// Check consent via configured CMP
+		// Verify consent via configured CMP to prevent client-side tampering
 		if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 			$wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
 			try {
 				$consentGranted = (bool) \wp_has_consent($wpConsentCategory);
 			} catch (\Throwable $e) {
-				// Consent API error - deny upgrade
 				wp_send_json_error([
 					'message' => __('Consent verification failed.', 'wp-slimstat'),
 				]);
 				return;
 			}
 		} elseif ('slimstat_banner' === $integrationKey) {
-			// SlimStat Banner: Check consent cookie
-			// Cookie is set by handleBannerConsent() when user accepts/denies
 			$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
 			$consentGranted = $gdpr_service->hasConsent();
 		} elseif ('real_cookie_banner' === $integrationKey) {
-			// Real Cookie Banner: Cannot be reliably verified server-side
-			// The CMP blocks scripts client-side, so if this AJAX request reached us,
-			// it means JavaScript was allowed to run and send the request.
-			// However, we should verify that Real Cookie Banner plugin is actually active
-			// to prevent abuse if plugin is not installed.
+			$wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
 
-			// Include plugin.php if needed for AJAX context
-			if (!function_exists('is_plugin_active')) {
-				require_once ABSPATH . 'wp-admin/includes/plugin.php';
-			}
-
-			if (function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php')) {
-				// Real Cookie Banner is active - accept client's claim
-				// Client-side JavaScript will have verified consent before sending this request
-				// Nonce verification (above) prevents CSRF attacks
-				$consentGranted = true;
+			// Real Cookie Banner supports WP Consent API, prefer that if available
+			if (function_exists('wp_has_consent')) {
+				try {
+					$consentGranted = (bool) \wp_has_consent($wpConsentCategory);
+				} catch (\Throwable $e) {
+					$consentGranted = false;
+				}
 			} else {
-				// Real Cookie Banner plugin not active - deny upgrade for security
-				$consentGranted = false;
+				// Fallback: verify plugin is active (client-side JS already verified consent)
+				if (!function_exists('is_plugin_active')) {
+					require_once ABSPATH . 'wp-admin/includes/plugin.php';
+				}
+
+				if (function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php')) {
+					$consentGranted = true;
+				} else {
+					$consentGranted = false;
+				}
 			}
 		} elseif ('' === $integrationKey) {
-			// No CMP configured - accept upgrade (but this shouldn't happen in anonymous mode)
 			$consentGranted = true;
 		}
 
@@ -106,10 +92,7 @@ class ConsentHandler
 			return;
 		}
 
-		// Get current pageview ID from request and validate checksum
 		$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
-
-		// Validate checksum to prevent tampering
 		$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
 
 		if (false === $pageview_id || $pageview_id <= 0) {
@@ -119,23 +102,46 @@ class ConsentHandler
 			return;
 		}
 
-		// Cast to int after validation
 		$pageview_id = intval($pageview_id);
 
-		// Upgrade IP from hash to real IP
-		// Note: upgradeToPii() only retrieves current real IP and sets cookie,
-		// it doesn't need visit_id or any other pageview data
+		// Load existing record to preserve non-PII data (fingerprint, etc.)
+		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		$existing_record = $GLOBALS['wpdb']->get_row(
+			$GLOBALS['wpdb']->prepare(
+				"SELECT * FROM {$table} WHERE id = %d LIMIT 1",
+				$pageview_id
+			),
+			ARRAY_A
+		);
+
+		// Upgrade from hashed IP to real IP and set tracking cookie
 		$stat = IPHashProvider::upgradeToPii([]);
 
-		// Add username and email if logged in
+		if (!empty($existing_record)) {
+			if (!empty($existing_record['fingerprint'])) {
+				$stat['fingerprint'] = $existing_record['fingerprint'];
+			}
+		}
+
+		// Use fingerprint from request if available (FingerprintJS may load after initial pageview)
+		$fingerprint_from_request = isset($_POST['fingerprint']) ? sanitize_text_field(wp_unslash($_POST['fingerprint'])) : '';
+		if (!empty($fingerprint_from_request)) {
+			$fingerprint_from_request = preg_replace('/[^a-zA-Z0-9\-_]/', '', $fingerprint_from_request);
+			if (strlen($fingerprint_from_request) > 256) {
+				$fingerprint_from_request = substr($fingerprint_from_request, 0, 256);
+			}
+			if (!empty($fingerprint_from_request)) {
+				$stat['fingerprint'] = $fingerprint_from_request;
+			}
+		}
+
 		if (!empty($GLOBALS['current_user']->ID)) {
 			$stat['username'] = $GLOBALS['current_user']->data->user_login;
 			$stat['email']    = $GLOBALS['current_user']->data->user_email;
 			$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
 		}
 
-		// Update the pageview record in database
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+		// Update only current pageview with PII (GDPR: previous pageviews remain anonymous)
 		$update_data = [];
 
 		if (!empty($stat['ip'])) {
@@ -154,16 +160,17 @@ class ConsentHandler
 			$update_data['email'] = $stat['email'];
 		}
 
-		// Update main PII fields if we have any
-		// GDPR-compliant: Only update the CURRENT pageview by ID
-		// Previous pageviews remain anonymous as they were collected without consent
+		if (!empty($stat['fingerprint'])) {
+			$update_data['fingerprint'] = $stat['fingerprint'];
+		}
+
 		if (!empty($update_data)) {
 			$updated = $GLOBALS['wpdb']->update(
 				$table,
 				$update_data,
-				['id' => $pageview_id], // Update only this specific pageview
-				array_fill(0, count($update_data), '%s'), // Data types
-				['%d'] // Where format
+				['id' => $pageview_id],
+				array_fill(0, count($update_data), '%s'),
+				['%d']
 			);
 
 			if (false === $updated) {
@@ -174,9 +181,8 @@ class ConsentHandler
 			}
 		}
 
-		// Handle notes separately - only for this pageview
+		// Append user note if not already present
 		if (!empty($stat['notes'])) {
-			// Check if this specific pageview already has this user note
 			$existing_note = $GLOBALS['wpdb']->get_var(
 				$GLOBALS['wpdb']->prepare(
 					"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
@@ -185,7 +191,6 @@ class ConsentHandler
 				)
 			);
 
-			// Check for database error in the SELECT query
 			if (!empty($GLOBALS['wpdb']->last_error)) {
 				wp_send_json_error([
 					'message' => __('Failed to check existing notes.', 'wp-slimstat'),
@@ -193,7 +198,6 @@ class ConsentHandler
 				return;
 			}
 
-			// Only append if this note doesn't already exist (null means no match)
 			if (null === $existing_note) {
 				$notes_updated = $GLOBALS['wpdb']->query(
 					$GLOBALS['wpdb']->prepare(
@@ -212,7 +216,6 @@ class ConsentHandler
 			}
 		}
 
-		// Log the consent upgrade
 		do_action('slimstat_consent_granted', $pageview_id, $stat);
 
 		wp_send_json_success([
@@ -228,19 +231,14 @@ class ConsentHandler
 	 */
 	public static function handleConsentRevoked()
 	{
-		// Verify nonce for security
 		check_ajax_referer('wp_rest', 'nonce');
 
-		// Security: Invalidate consent cache to ensure fresh state
-		// This prevents race conditions where consent changes but cache still shows old state
 		if (function_exists('wp_cache_delete')) {
 			wp_cache_delete('slimstat_consent_state', 'slimstat');
 		}
 
-		// Delete tracking cookie
 		Session::deleteTrackingCookie();
 
-		// Log the consent revocation
 		do_action('slimstat_consent_revoked');
 
 		wp_send_json_success([
@@ -253,16 +251,16 @@ class ConsentHandler
 	 *
 	 * @return void
 	 */
+
 	public static function registerAjaxHandlers()
 	{
-		// Public actions (both logged in and logged out users)
+		// Both logged-in and logged-out users can grant/revoke consent
 		add_action('wp_ajax_slimstat_consent_granted', [self::class, 'handleConsentGranted']);
 		add_action('wp_ajax_nopriv_slimstat_consent_granted', [self::class, 'handleConsentGranted']);
 
 		add_action('wp_ajax_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 		add_action('wp_ajax_nopriv_slimstat_consent_revoked', [self::class, 'handleConsentRevoked']);
 
-		// GDPR banner consent handler (AJAX)
 		add_action('wp_ajax_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
 		add_action('wp_ajax_nopriv_slimstat_gdpr_consent', [self::class, 'handleBannerConsent']);
 	}
@@ -274,7 +272,6 @@ class ConsentHandler
 	 */
 	public static function handleBannerConsent()
 	{
-		// Verify nonce (for AJAX requests)
 		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
 		if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
 			wp_send_json_error([
@@ -283,7 +280,6 @@ class ConsentHandler
 			return;
 		}
 
-		// Check if SlimStat banner is enabled
 		if (empty(\wp_slimstat::$settings['use_slimstat_banner']) ||
 			'on' !== \wp_slimstat::$settings['use_slimstat_banner']) {
 			wp_send_json_error([
@@ -302,8 +298,6 @@ class ConsentHandler
 		}
 
 		$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
-
-		// Set consent cookie
 		$result = $gdpr_service->setConsent($consent);
 
 		if (!$result) {
@@ -313,8 +307,79 @@ class ConsentHandler
 			return;
 		}
 
-		// Fire action hook for consent change
 		do_action('slimstat_gdpr_consent_changed', $consent);
+
+		// If consent granted via banner, upgrade current pageview from anonymous to PII
+		if ('accepted' === $consent) {
+			$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
+
+			if (!empty($pageview_id_raw)) {
+				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
+				if (false !== $pageview_id && $pageview_id > 0) {
+					$pageview_id = intval($pageview_id);
+
+					$stat = IPHashProvider::upgradeToPii([]);
+
+					if (!empty($GLOBALS['current_user']->ID)) {
+						$stat['username'] = $GLOBALS['current_user']->data->user_login;
+						$stat['email']    = $GLOBALS['current_user']->data->user_email;
+						$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+					}
+
+					$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+					$update_data = [];
+
+					if (!empty($stat['ip'])) {
+						$update_data['ip'] = $stat['ip'];
+					}
+
+					if (!empty($stat['other_ip'])) {
+						$update_data['other_ip'] = $stat['other_ip'];
+					}
+
+					if (!empty($stat['username'])) {
+						$update_data['username'] = $stat['username'];
+					}
+
+					if (!empty($stat['email'])) {
+						$update_data['email'] = $stat['email'];
+					}
+
+					if (!empty($update_data)) {
+						$GLOBALS['wpdb']->update(
+							$table,
+							$update_data,
+							['id' => $pageview_id],
+							array_fill(0, count($update_data), '%s'),
+							['%d']
+						);
+					}
+
+					// Append user note if not already present
+					if (!empty($stat['notes'])) {
+						$existing_note = $GLOBALS['wpdb']->get_var(
+							$GLOBALS['wpdb']->prepare(
+								"SELECT notes FROM {$table} WHERE id = %d AND notes LIKE %s LIMIT 1",
+								$pageview_id,
+								'%' . $GLOBALS['wpdb']->esc_like($stat['notes']) . '%'
+							)
+						);
+
+						if (empty($GLOBALS['wpdb']->last_error) && null === $existing_note) {
+							$GLOBALS['wpdb']->query(
+								$GLOBALS['wpdb']->prepare(
+									"UPDATE {$table} SET notes = CONCAT(IFNULL(notes, ''), %s) WHERE id = %d",
+									$stat['notes'],
+									$pageview_id
+								)
+							);
+						}
+					}
+
+					do_action('slimstat_consent_granted', $pageview_id, $stat);
+				}
+			}
+		}
 
 		wp_send_json_success([
 			'success' => true,

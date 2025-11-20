@@ -104,8 +104,8 @@ $settings = [
 				'type'          => 'select',
 				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.<br/><strong>Real Cookie Banner:</strong> Specific integration for Real Cookie Banner CMP. <strong>Important:</strong> Server-side tracking is automatically disabled for GDPR compliance. Only client-side (JavaScript) tracking occurs after consent is verified. Works seamlessly with both standard and anonymous tracking modes. The integration supports category-specific consent (functional, statistics, marketing) and automatic consent upgrade in anonymous mode.', 'wp-slimstat'),
 				'select_values' => [
+                    ''                   => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
 					'slimstat_banner'    => __('SlimStat Consent Banner (Built-in)', 'wp-slimstat'),
-					''                   => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
 					'wp_consent_api'     => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
 					'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
 				],

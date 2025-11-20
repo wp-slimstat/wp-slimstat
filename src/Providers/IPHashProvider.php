@@ -15,38 +15,18 @@ use SlimStat\Utils\Consent;
 /**
  * IP Hash Provider
  *
- * Handles IP hashing and anonymization functionality for GDPR compliance.
- *
- * IP Processing Pipeline:
- * =======================
- * This class processes IP addresses according to privacy settings and consent status.
- * The order of operations is critical for GDPR compliance:
- *
- * 1. Store original IP (needed for GeoIP lookup before hashing)
- * 2. Determine privacy requirements based on:
- *    - Anonymous tracking mode
- *    - Consent status (via Consent::piiAllowed())
- *    - Individual anonymize_ip and hash_ip settings
- * 3. Apply IP processing in correct order:
- *    a. If hashing required: hash using ORIGINAL IP (for consistency)
- *    b. If anonymization required: anonymize the IP after hashing
- *
- * Why hash uses original IP:
- * - Hashing anonymized IPs reduces uniqueness (many users share same anonymized IP)
- * - Original IP provides better visitor counting while maintaining privacy
- * - Hash is one-way, so original IP cannot be recovered
- *
- * Features:
- * - IP anonymization using WordPress core functions
- * - Salted hash generation with daily salt rotation
- * - Fallback to Privacy service for hash computation
- * - Automatic privacy enforcement in anonymous mode
- * - PII upgrade capability when consent granted
+ * Handles IP hashing and anonymization for GDPR compliance.
+ * Processes IPs based on privacy settings and consent status.
+ * Hash uses original IP for better uniqueness; anonymization applied after hashing if needed.
  *
  * @since 5.4.0
  */
 class IPHashProvider
 {
+    /**
+     * Length of the stored IP hash (must fit DB column, 39 chars matches IPv6 max length).
+     */
+    public const HASH_LENGTH = 39;
     /**
      * Process IP address according to privacy settings and consent status.
      *
@@ -76,18 +56,14 @@ class IPHashProvider
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
         $piiAllowed = Consent::piiAllowed();
 
-        // Special case: Anonymous tracking mode with CMP consent but no tracking cookie yet
-        // This happens when consent was just granted but cookie hasn't been set yet (same request)
-        // In this case, we should NOT hash the IP because consent was granted
+        // Handle consent granted in same request (cookie not set yet)
         $hasCmpConsentButNoCookie = false;
         if ($isAnonymousTracking && !$piiAllowed) {
-            $integrationKey = \wp_slimstat::$settings['consent_integration'] ?? '';
+            $integrationKey = Consent::getIntegrationKey();
             $hasTrackingCookie = isset($_COOKIE['slimstat_tracking_code']);
 
             if (!$hasTrackingCookie) {
-                // Check if CMP consent exists (but tracking cookie doesn't yet)
-                // IMPORTANT: Only check if integration is actually configured
-                // If no integration is configured, we should NOT check consent (would be false positive)
+                // Check CMP consent only if integration is configured
                 if (!empty($integrationKey)) {
                     if ('slimstat_banner' === $integrationKey) {
                         $gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
@@ -108,33 +84,21 @@ class IPHashProvider
             }
         }
 
-        // MODE 1: Anonymous tracking mode WITHOUT consent
-        // STRICTEST mode: MUST protect PII - hash IP only (no anonymization needed after hash)
-        // BUT: Skip hashing if CMP consent exists (cookie will be set by ensureVisitId())
+        // Anonymous mode without consent: hash IP (strictest privacy)
         if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsentButNoCookie) {
-            // Hash using original IP for consistency, result replaces IP field
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
-            // Ensure hash succeeded - if not, anonymize as minimum protection (GDPR requirement)
-            // Valid hash must be: 64 chars, hexadecimal, and different from original IP
+            // Validate hash (39 chars, hex, different from original)
             $hashSucceeded = !empty($stat['ip'])
-                && strlen($stat['ip']) === 64
+                && strlen($stat['ip']) === self::HASH_LENGTH
                 && ctype_xdigit($stat['ip'])
                 && $stat['ip'] !== $originalIp;
             if (!$hashSucceeded) {
-                // Hash failed - must anonymize to protect PII
                 $anonymizedIp = self::anonymizeIP($originalIp);
-
-                // Validate anonymization succeeded (result not empty and different from original)
                 if (!empty($anonymizedIp) && $anonymizedIp !== $originalIp) {
                     $stat['ip'] = $anonymizedIp;
                 } else {
-                    // Critical failure: both hash and anonymization failed
-                    // In strictest mode, we MUST NOT store original IP - use empty string as ultimate fallback
                     $stat['ip'] = '';
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log('SlimStat: CRITICAL - Both hash and anonymization failed for IP in anonymous mode');
-                    }
                 }
 
                 // Handle other_ip only if present
@@ -176,7 +140,7 @@ class IPHashProvider
 
             // Validate hash succeeded
             $hashSucceeded = !empty($stat['ip'])
-                && strlen($stat['ip']) === 64
+                && strlen($stat['ip']) === self::HASH_LENGTH
                 && ctype_xdigit($stat['ip'])
                 && $stat['ip'] !== $originalIp;
 
@@ -213,9 +177,9 @@ class IPHashProvider
             $stat = self::hashIP($stat, $originalIp, $originalOtherIp);
 
             // Check if hashing succeeded
-            // Valid hash must be: 64 chars (SHA-256), hexadecimal, and different from original IP
+            // Valid hash must be: 39 chars (truncated SHA-256), hexadecimal, and different from original IP
             $hashSucceeded = !empty($stat['ip'])
-                && strlen($stat['ip']) === 64
+                && strlen($stat['ip']) === self::HASH_LENGTH
                 && ctype_xdigit($stat['ip'])
                 && $stat['ip'] !== $originalIp;
 
@@ -331,17 +295,11 @@ class IPHashProvider
             $hash = self::hashWithPrivacyService($originalIp, $userAgent, $secret);
         }
 
-        // Validate hash result
+            // Validate hash result
         if ($hash !== '' && $hash !== '0') {
             // Hash succeeded - replace IP with hash
             $stat['ip'] = $hash;
         } else {
-            // Hash generation failed - log error and keep original IP for caller to handle
-            // Caller (processIp) will handle fallback to anonymization if configured
-            if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log('SlimStat: IP hash generation failed for IP ' . $originalIp);
-            }
-
             // Keep original IP in stat - caller will handle privacy fallback
             $stat['ip'] = $originalIp;
         }
@@ -365,7 +323,8 @@ class IPHashProvider
     private static function hashWithDailySalt(string $ip, string $userAgent, string $dailySalt, string $secret): string
     {
         $data = $dailySalt . '|' . $ip . '|' . $userAgent;
-        return hash_hmac('sha256', $data, $secret);
+        $hash = hash_hmac('sha256', $data, $secret);
+        return self::normalizeHashLength($hash);
     }
 
     /**
@@ -380,7 +339,23 @@ class IPHashProvider
     {
         // Use start of day timestamp to ensure hash consistency throughout the day
         $todayTimestamp = strtotime(gmdate('Y-m-d 00:00:00'));
-        return Privacy::computeVisitorId($ip, $userAgent, $todayTimestamp, $secret);
+        $hash = Privacy::computeVisitorId($ip, $userAgent, $todayTimestamp, $secret);
+        return self::normalizeHashLength($hash);
+    }
+
+    /**
+     * Normalize hash output to the configured length, keeping hexadecimal characters.
+     *
+     * @param string $hash Raw hexadecimal hash string
+     * @return string Hash trimmed to HASH_LENGTH characters
+     */
+    private static function normalizeHashLength(string $hash): string
+    {
+        if ('' === $hash) {
+            return '';
+        }
+
+        return substr($hash, 0, self::HASH_LENGTH);
     }
 
     /**

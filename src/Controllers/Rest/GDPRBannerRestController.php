@@ -89,10 +89,6 @@ class GDPRBannerRestController implements RestControllerInterface
 			);
 		}
 
-		// If consent was accepted and anonymous tracking is enabled, trigger upgrade
-		// Note: The upgrade will be handled by JavaScript calling the consent upgrade endpoint
-		// This endpoint only sets the consent cookie
-
 		// Fire action hook for consent change
 		do_action('slimstat_gdpr_consent_changed', $consent);
 

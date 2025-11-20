@@ -564,7 +564,6 @@ class Query
     {
         $dtField    = 'dt';
         $todayStart = $this->getTodayDate();
-        time();
         foreach ($this->whereClauses as $idx => $clause) {
             if (preg_match('/' . $dtField . ' BETWEEN %s AND %s/', $clause)) {
                 $from  = null;
@@ -1277,6 +1276,13 @@ class Query
         }
 
         return $result;
+    }
+
+    public function getSql()
+    {
+        $query = $this->buildQuery();
+        $query = $this->prepareQuery($query, $this->valuesToPrepare);
+        return $query;
     }
 
     /**
