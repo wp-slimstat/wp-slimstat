@@ -43,8 +43,270 @@ jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
 // 5. Miscellaneous
 // 6. Init Third-party Libraries
 // 7. Init SlimStat Pro Modal
+// 8. Conditional Fields System
 //
 // -----------------------------------------------------------------------------------
+
+/**
+ * Conditional Fields System
+ *
+ * A dynamic system for showing/hiding form fields based on other field values.
+ *
+ * Usage:
+ * Add data attributes to fields that should be conditionally shown/hidden:
+ * - data-conditional-field="field_id" - The field ID that controls visibility
+ * - data-conditional-value="value" - The value(s) that should show this field (comma-separated for multiple)
+ * - data-conditional-type="equals|not_equals|checked|not_checked|in|not_in" - Comparison type
+ *
+ * Example:
+ * <tr data-conditional-field="gdpr_enabled" data-conditional-type="checked">
+ *   <td>This row shows when gdpr_enabled is checked</td>
+ * </tr>
+ *
+ * <tr data-conditional-field="consent_integration" data-conditional-value="slimstat_banner,wp_consent_api" data-conditional-type="in">
+ *   <td>This row shows when consent_integration is either 'slimstat_banner' or 'wp_consent_api'</td>
+ * </tr>
+ */
+(function ($) {
+    "use strict";
+
+    var ConditionalFields = {
+        /**
+         * Get the current value of a field
+         * @param {string} fieldId - The field ID
+         * @returns {string|boolean} The current value
+         */
+        getFieldValue: function (fieldId) {
+            var $field = $("#" + fieldId);
+
+            if ($field.length === 0) {
+                return null;
+            }
+
+            // Checkbox/toggle
+            if ($field.is(":checkbox") || $field.hasClass("slimstat-checkbox-toggle")) {
+                return $field.is(":checked");
+            }
+
+            // Select
+            if ($field.is("select")) {
+                return $field.val() || "";
+            }
+
+            // Radio buttons
+            if ($field.is(":radio")) {
+                return $('input[name="' + $field.attr("name") + '"]:checked').val() || "";
+            }
+
+            // Text/Number inputs
+            return $field.val() || "";
+        },
+
+        /**
+         * Check a single condition
+         * @param {string} fieldId - The field ID
+         * @param {string} conditionType - The condition type
+         * @param {string} expectedValue - The expected value
+         * @returns {boolean} True if condition is met
+         */
+        checkSingleCondition: function (fieldId, conditionType, expectedValue) {
+            var currentValue = this.getFieldValue(fieldId);
+
+            if (currentValue === null) {
+                return false;
+            }
+
+            switch (conditionType) {
+                case "checked":
+                    return currentValue === true;
+
+                case "not_checked":
+                    return currentValue === false;
+
+                case "equals":
+                    return String(currentValue) === String(expectedValue);
+
+                case "not_equals":
+                    return String(currentValue) !== String(expectedValue);
+
+                case "in":
+                    if (!expectedValue) {
+                        return false;
+                    }
+                    var values = String(expectedValue)
+                        .split(",")
+                        .map(function (v) {
+                            return String(v).trim();
+                        });
+                    return values.indexOf(String(currentValue)) !== -1;
+
+                case "not_in":
+                    if (!expectedValue) {
+                        return true;
+                    }
+                    var notInValues = String(expectedValue)
+                        .split(",")
+                        .map(function (v) {
+                            return String(v).trim();
+                        });
+                    return notInValues.indexOf(String(currentValue)) === -1;
+
+                case "empty":
+                    return !currentValue || String(currentValue).trim() === "";
+
+                case "not_empty":
+                    return currentValue && String(currentValue).trim() !== "";
+
+                default:
+                    return false;
+            }
+        },
+
+        /**
+         * Check if a condition is met (supports multiple conditions with AND logic)
+         * @param {jQuery} $element - The element with conditional attributes
+         * @returns {boolean} True if condition is met
+         */
+        checkCondition: function ($element) {
+            // Support multiple conditions (AND logic)
+            var fields = $element.data("conditional-field");
+            var types = $element.data("conditional-type") || "equals";
+            var values = $element.data("conditional-value");
+
+            // If multiple fields are specified (comma-separated), check all of them
+            if (fields && fields.indexOf(",") !== -1) {
+                var fieldArray = fields.split(",").map(function (f) {
+                    return f.trim();
+                });
+                var typeArray = types.split(",").map(function (t) {
+                    return t.trim();
+                });
+                var valueArray = values
+                    ? values.split("|||").map(function (v) {
+                          return v.trim();
+                      })
+                    : [];
+
+                // Check all conditions (AND logic)
+                for (var i = 0; i < fieldArray.length; i++) {
+                    var fieldId = fieldArray[i];
+                    var conditionType = typeArray[i] || "equals";
+                    var expectedValue = valueArray[i] || "";
+
+                    if (!this.checkSingleCondition(fieldId, conditionType, expectedValue)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Single condition (backward compatibility)
+            var fieldId = fields;
+            var conditionType = types;
+            var expectedValue = values;
+
+            return this.checkSingleCondition(fieldId, conditionType, expectedValue);
+        },
+
+        /**
+         * Update visibility of a conditional element
+         * @param {jQuery} $element - The element to show/hide
+         */
+        updateVisibility: function ($element) {
+            var conditionMet = this.checkCondition($element);
+            var $row = $element.closest("tr");
+
+            if (conditionMet) {
+                $row.removeClass("hidden").show();
+            } else {
+                $row.hide();
+            }
+        },
+
+        /**
+         * Update all conditional fields based on a trigger field
+         * @param {string} triggerFieldId - The field ID that triggered the update
+         */
+        updateAllConditionals: function (triggerFieldId) {
+            var self = this;
+            // Update fields that directly depend on this trigger
+            $('[data-conditional-field="' + triggerFieldId + '"]').each(function () {
+                self.updateVisibility($(this));
+            });
+            // Update fields that have multiple conditions (including this trigger)
+            $('[data-conditional-field*="' + triggerFieldId + '"]').each(function () {
+                var $element = $(this);
+                var fields = $element.data("conditional-field");
+                // Only update if this field is part of a multi-condition
+                if (fields && fields.indexOf(",") !== -1 && fields.indexOf(triggerFieldId) !== -1) {
+                    self.updateVisibility($element);
+                }
+            });
+        },
+
+        /**
+         * Initialize all conditional fields
+         */
+        init: function () {
+            var self = this;
+            var processedFields = {}; // Track which fields already have listeners
+
+            // Find all elements with conditional attributes
+            $("[data-conditional-field]").each(function () {
+                var $element = $(this);
+                var fields = $element.data("conditional-field");
+
+                // Update initial visibility
+                self.updateVisibility($element);
+
+                // Handle multi-condition (comma-separated fields)
+                var fieldArray = [];
+                if (fields && fields.indexOf(",") !== -1) {
+                    fieldArray = fields.split(",").map(function (f) {
+                        return f.trim();
+                    });
+                } else {
+                    fieldArray = [fields];
+                }
+
+                // Set up event listeners for each trigger field
+                fieldArray.forEach(function (fieldId) {
+                    if (!fieldId || processedFields[fieldId]) {
+                        return; // Skip if already processed
+                    }
+                    processedFields[fieldId] = true;
+
+                    var $triggerField = $("#" + fieldId);
+                    if ($triggerField.length > 0) {
+                        // Remove existing listeners to avoid duplicates
+                        $triggerField.off("change.conditionalFields");
+
+                        // Add change listener
+                        $triggerField.on("change.conditionalFields", function () {
+                            self.updateAllConditionals(fieldId);
+                        });
+
+                        // For checkbox toggles, also listen to switchChange event
+                        if ($triggerField.hasClass("slimstat-checkbox-toggle")) {
+                            $triggerField.off("switchChange.bootstrapSwitch.conditionalFields");
+                            $triggerField.on("switchChange.bootstrapSwitch.conditionalFields", function () {
+                                self.updateAllConditionals(fieldId);
+                            });
+                        }
+                    }
+                });
+            });
+        },
+    };
+
+    // Initialize on document ready
+    jQuery(function () {
+        ConditionalFields.init();
+    });
+
+    // Expose to global scope for manual initialization if needed
+    window.SlimStatConditionalFields = ConditionalFields;
+})(jQuery);
 
 jQuery(function () {
     // Show Tracking Request Method only when Tracking Mode = Client
@@ -212,33 +474,31 @@ jQuery(function () {
 
     // Custom Searchable Select Component
     // Make all texts translatable using wp.i18n if available, with fallbacks
-    const __ = (typeof window.wp !== 'undefined' && wp.i18n && typeof wp.i18n.__ === 'function')
-        ? wp.i18n.__
-        : (s) => s;
+    const __ = typeof window.wp !== "undefined" && wp.i18n && typeof wp.i18n.__ === "function" ? wp.i18n.__ : (s) => s;
     class SlimStatSearchableSelect {
         constructor(element, options = {}) {
             // Validate element exists
             if (!element) {
-                throw new Error('SlimStatSearchableSelect: element is required');
+                throw new Error("SlimStatSearchableSelect: element is required");
             }
-            
+
             this.element = element;
             this.options = {
-                placeholder: __('Select value...', 'wp-slimstat'),
-                searchPlaceholder: __('Search...', 'wp-slimstat'),
-                noResultsText: __('No results found', 'wp-slimstat'),
-                loadingText: __('Loading...', 'wp-slimstat'),
+                placeholder: __("Select value...", "wp-slimstat"),
+                searchPlaceholder: __("Search...", "wp-slimstat"),
+                noResultsText: __("No results found", "wp-slimstat"),
+                loadingText: __("Loading...", "wp-slimstat"),
                 allowClear: true,
-                ...options
+                ...options,
             };
-            
-            this.selectedValue = '';
-            this.selectedText = '';
+
+            this.selectedValue = "";
+            this.selectedText = "";
             this.selectedOption = null;
             this.isOpen = false;
             this.filteredOptions = [];
             this.allOptions = [];
-            
+
             this.init();
         }
 
@@ -249,103 +509,103 @@ jQuery(function () {
 
         createWrapper() {
             // Create wrapper structure
-            this.wrapper = document.createElement('div');
-            this.wrapper.className = 'slimstat-searchable-select';
-            
-            this.selectWrapper = document.createElement('div');
-            this.selectWrapper.className = 'slimstat-select-wrapper';
-            
-            this.display = document.createElement('div');
-            this.display.className = 'slimstat-select-display slimstat-placeholder';
+            this.wrapper = document.createElement("div");
+            this.wrapper.className = "slimstat-searchable-select";
+
+            this.selectWrapper = document.createElement("div");
+            this.selectWrapper.className = "slimstat-select-wrapper";
+
+            this.display = document.createElement("div");
+            this.display.className = "slimstat-select-display slimstat-placeholder";
             // Create elements safely to prevent XSS
-            const textSpan = document.createElement('span');
-            textSpan.className = 'slimstat-select-text';
+            const textSpan = document.createElement("span");
+            textSpan.className = "slimstat-select-text";
             textSpan.textContent = this.options.placeholder;
-            
-            const arrowSpan = document.createElement('span');
-            arrowSpan.className = 'slimstat-select-arrow';
-            
+
+            const arrowSpan = document.createElement("span");
+            arrowSpan.className = "slimstat-select-arrow";
+
             this.display.appendChild(textSpan);
             this.display.appendChild(arrowSpan);
-            
-            this.dropdown = document.createElement('div');
-            this.dropdown.className = 'slimstat-select-dropdown';
-            this.dropdown.style.display = 'none';
-            
-            this.searchContainer = document.createElement('div');
-            this.searchContainer.className = 'slimstat-select-search';
+
+            this.dropdown = document.createElement("div");
+            this.dropdown.className = "slimstat-select-dropdown";
+            this.dropdown.style.display = "none";
+
+            this.searchContainer = document.createElement("div");
+            this.searchContainer.className = "slimstat-select-search";
             // Create search input safely to prevent XSS
-            const searchInput = document.createElement('input');
-            searchInput.type = 'text';
+            const searchInput = document.createElement("input");
+            searchInput.type = "text";
             searchInput.placeholder = this.options.searchPlaceholder;
             this.searchContainer.appendChild(searchInput);
-            
-            this.optionsContainer = document.createElement('div');
-            this.optionsContainer.className = 'slimstat-select-options';
-            
+
+            this.optionsContainer = document.createElement("div");
+            this.optionsContainer.className = "slimstat-select-options";
+
             this.dropdown.appendChild(this.searchContainer);
             this.dropdown.appendChild(this.optionsContainer);
-            
+
             this.selectWrapper.appendChild(this.display);
             this.selectWrapper.appendChild(this.dropdown);
             this.wrapper.appendChild(this.selectWrapper);
-            
+
             // Ensure the original input has the name attribute before hiding
-            if (!this.element.hasAttribute('name')) {
-                this.element.setAttribute('name', 'v');
+            if (!this.element.hasAttribute("name")) {
+                this.element.setAttribute("name", "v");
             }
-            
+
             // Insert wrapper before original element
             this.element.parentNode.insertBefore(this.wrapper, this.element);
-            
+
             // Move the original element inside the wrapper to keep it in the form
             // but keep it hidden and maintain it as part of the form submission
             this.wrapper.appendChild(this.element);
-            this.element.style.display = 'none';
+            this.element.style.display = "none";
         }
 
         bindEvents() {
             // Display click to toggle dropdown
-            this.display.addEventListener('click', (e) => {
+            this.display.addEventListener("click", (e) => {
                 e.stopPropagation();
                 this.toggle();
             });
 
             // Search input
-            const searchInput = this.searchContainer.querySelector('input');
-            searchInput.addEventListener('input', (e) => {
+            const searchInput = this.searchContainer.querySelector("input");
+            searchInput.addEventListener("input", (e) => {
                 this.filterOptions(e.target.value);
             });
 
-            searchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
+            searchInput.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
                     this.close();
                 }
             });
 
             // Click outside to close
-            document.addEventListener('click', (e) => {
+            document.addEventListener("click", (e) => {
                 if (!this.wrapper.contains(e.target)) {
                     this.close();
                 }
             });
 
             // Prevent dropdown from closing when clicking inside
-            this.dropdown.addEventListener('click', (e) => {
+            this.dropdown.addEventListener("click", (e) => {
                 e.stopPropagation();
             });
         }
 
         setOptions(options) {
             // Normalize options to always be objects with value, label, and icon
-            this.allOptions = options.map(opt => {
-                if (typeof opt === 'string') {
+            this.allOptions = options.map((opt) => {
+                if (typeof opt === "string") {
                     return { value: opt, label: opt, icon: null };
                 }
                 return {
                     value: opt.value || opt,
                     label: opt.label || opt.value || opt,
-                    icon: opt.icon || null
+                    icon: opt.icon || null,
                 };
             });
             this.filteredOptions = [...this.allOptions];
@@ -355,9 +615,9 @@ jQuery(function () {
         setLoading(loading = true) {
             if (loading) {
                 // Create loading element safely to prevent XSS
-                this.optionsContainer.innerHTML = '';
-                const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'slimstat-select-loading';
+                this.optionsContainer.innerHTML = "";
+                const loadingDiv = document.createElement("div");
+                loadingDiv.className = "slimstat-select-loading";
                 loadingDiv.textContent = this.options.loadingText;
                 this.optionsContainer.appendChild(loadingDiv);
             }
@@ -365,57 +625,54 @@ jQuery(function () {
 
         filterOptions(searchTerm) {
             const term = searchTerm.toLowerCase().trim();
-            
+
             if (!term) {
                 this.filteredOptions = [...this.allOptions];
             } else {
-                this.filteredOptions = this.allOptions.filter(option => 
-                    option.label.toLowerCase().includes(term) || 
-                    option.value.toLowerCase().includes(term)
-                );
+                this.filteredOptions = this.allOptions.filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term));
             }
-            
+
             this.renderOptions();
         }
 
         renderOptions() {
-            this.optionsContainer.innerHTML = '';
-            
+            this.optionsContainer.innerHTML = "";
+
             if (this.filteredOptions.length === 0) {
                 // Create no results element safely to prevent XSS
-                const noResultsDiv = document.createElement('div');
-                noResultsDiv.className = 'slimstat-select-no-results';
+                const noResultsDiv = document.createElement("div");
+                noResultsDiv.className = "slimstat-select-no-results";
                 noResultsDiv.textContent = this.options.noResultsText;
                 this.optionsContainer.appendChild(noResultsDiv);
                 return;
             }
-            
-            this.filteredOptions.forEach(option => {
-                const optionElement = document.createElement('button');
-                optionElement.type = 'button';
-                optionElement.className = 'slimstat-select-option';
+
+            this.filteredOptions.forEach((option) => {
+                const optionElement = document.createElement("button");
+                optionElement.type = "button";
+                optionElement.className = "slimstat-select-option";
                 if (option.value === this.selectedValue) {
-                    optionElement.classList.add('slimstat-selected');
+                    optionElement.classList.add("slimstat-selected");
                 }
-                
+
                 // Add icon if available
                 if (option.icon) {
-                    const iconElement = document.createElement('img');
-                    iconElement.className = 'slimstat-option-icon';
+                    const iconElement = document.createElement("img");
+                    iconElement.className = "slimstat-option-icon";
                     iconElement.src = option.icon;
-                    iconElement.alt = '';
+                    iconElement.alt = "";
                     iconElement.width = 20;
                     iconElement.height = 20;
                     optionElement.appendChild(iconElement);
                 }
-                
+
                 // Add label text
-                const labelElement = document.createElement('span');
-                labelElement.className = 'slimstat-option-label';
+                const labelElement = document.createElement("span");
+                labelElement.className = "slimstat-option-label";
                 labelElement.textContent = option.label;
                 optionElement.appendChild(labelElement);
-                
-                optionElement.addEventListener('click', () => {
+
+                optionElement.addEventListener("click", () => {
                     this.selectOption(option);
                 });
                 this.optionsContainer.appendChild(optionElement);
@@ -426,61 +683,61 @@ jQuery(function () {
             this.selectedValue = option.value;
             this.selectedText = option.label;
             this.selectedOption = option;
-            
+
             // Update display
-            const textElement = this.display.querySelector('.slimstat-select-text');
-            textElement.innerHTML = ''; // Clear existing content
-            
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = ""; // Clear existing content
+
             // Add icon if available
             if (option.icon) {
-                const iconElement = document.createElement('img');
-                iconElement.className = 'slimstat-option-icon';
+                const iconElement = document.createElement("img");
+                iconElement.className = "slimstat-option-icon";
                 iconElement.src = option.icon;
-                iconElement.alt = '';
+                iconElement.alt = "";
                 iconElement.width = 16;
                 iconElement.height = 16;
-                iconElement.style.marginRight = '6px';
+                iconElement.style.marginRight = "6px";
                 textElement.appendChild(iconElement);
             }
-            
+
             // Add label text
-            const labelSpan = document.createElement('span');
+            const labelSpan = document.createElement("span");
             labelSpan.textContent = option.label;
             textElement.appendChild(labelSpan);
-            
-            this.display.classList.remove('slimstat-placeholder');
-            
+
+            this.display.classList.remove("slimstat-placeholder");
+
             // Update hidden input with the value
             this.element.value = option.value;
-            
+
             // Ensure the name attribute is set
-            if (!this.element.hasAttribute('name')) {
-                this.element.setAttribute('name', 'v');
+            if (!this.element.hasAttribute("name")) {
+                this.element.setAttribute("name", "v");
             }
-            
+
             // Trigger change event on original element
-            const changeEvent = new Event('change', { bubbles: true });
+            const changeEvent = new Event("change", { bubbles: true });
             this.element.dispatchEvent(changeEvent);
-            
+
             this.close();
         }
 
         clear() {
-            this.selectedValue = '';
-            this.selectedText = '';
+            this.selectedValue = "";
+            this.selectedText = "";
             this.selectedOption = null;
-            
+
             // Reset display
-            const textElement = this.display.querySelector('.slimstat-select-text');
-            textElement.innerHTML = ''; // Clear any icons
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = ""; // Clear any icons
             textElement.textContent = this.options.placeholder;
-            this.display.classList.add('slimstat-placeholder');
-            
+            this.display.classList.add("slimstat-placeholder");
+
             // Clear hidden input
-            this.element.value = '';
-            
+            this.element.value = "";
+
             // Trigger change event
-            const changeEvent = new Event('change', { bubbles: true });
+            const changeEvent = new Event("change", { bubbles: true });
             this.element.dispatchEvent(changeEvent);
         }
 
@@ -489,7 +746,7 @@ jQuery(function () {
         }
 
         setValue(value) {
-            const option = this.allOptions.find(opt => opt.value === value);
+            const option = this.allOptions.find((opt) => opt.value === value);
             if (option) {
                 this.selectOption(option);
             }
@@ -505,30 +762,30 @@ jQuery(function () {
 
         open() {
             if (this.isOpen) return;
-            
+
             this.isOpen = true;
-            this.selectWrapper.classList.add('slimstat-select-open');
-            this.dropdown.style.display = 'block';
-            
+            this.selectWrapper.classList.add("slimstat-select-open");
+            this.dropdown.style.display = "block";
+
             // Focus search input
-            const searchInput = this.searchContainer.querySelector('input');
+            const searchInput = this.searchContainer.querySelector("input");
             searchInput.focus();
             searchInput.select();
-            
+
             // Reset filter
-            this.filterOptions('');
+            this.filterOptions("");
         }
 
         close() {
             if (!this.isOpen) return;
-            
+
             this.isOpen = false;
-            this.selectWrapper.classList.remove('slimstat-select-open');
-            this.dropdown.style.display = 'none';
-            
+            this.selectWrapper.classList.remove("slimstat-select-open");
+            this.dropdown.style.display = "none";
+
             // Clear search
-            const searchInput = this.searchContainer.querySelector('input');
-            searchInput.value = '';
+            const searchInput = this.searchContainer.querySelector("input");
+            searchInput.value = "";
         }
 
         destroy() {
@@ -536,20 +793,20 @@ jQuery(function () {
             if (this.isOpen) {
                 this.close();
             }
-            
+
             // Safely remove wrapper and restore original element
             if (this.wrapper && this.element) {
                 // Move element back to its original position before wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
                 }
-                
+
                 // Show original element
-                this.element.style.display = '';
-                
+                this.element.style.display = "";
+
                 // Clear value
-                this.element.value = '';
-                
+                this.element.value = "";
+
                 // Remove wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.removeChild(this.wrapper);
@@ -579,52 +836,53 @@ jQuery(function () {
         }
 
         // Show loading state
-        $textInput.attr("placeholder", __('Loading options...', 'wp-slimstat')).attr("name", "v");
+        $textInput.attr("placeholder", __("Loading options...", "wp-slimstat")).attr("name", "v");
 
         // Fetch options via AJAX
-        jQuery.ajax({
-            method: "POST",
-            url: ajaxurl,
-            data: {
-                action: "slimstat_get_filter_options",
-                dimension: dimension,
-                security: jQuery("#meta-box-order-nonce").val(),
-            },
-            dataType: "json",
-            timeout: 30000, // 30 second timeout to prevent hanging requests
-        })
+        jQuery
+            .ajax({
+                method: "POST",
+                url: ajaxurl,
+                data: {
+                    action: "slimstat_get_filter_options",
+                    dimension: dimension,
+                    security: jQuery("#meta-box-order-nonce").val(),
+                },
+                dataType: "json",
+                timeout: 30000, // 30 second timeout to prevent hanging requests
+            })
             .done(function (response) {
                 if (response.success && response.data && response.data.length > 0) {
                     // Verify the element still exists
                     if (!$textInput.length || !$textInput[0]) {
                         return;
                     }
-                    
+
                     try {
                         // Initialize searchable select
                         searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
-                            placeholder: __('Select value...', 'wp-slimstat'),
-                            searchPlaceholder: __('Search options...', 'wp-slimstat'),
-                            noResultsText: __('No matching options found', 'wp-slimstat'),
-                            loadingText: __('Loading options...', 'wp-slimstat')
+                            placeholder: __("Select value...", "wp-slimstat"),
+                            searchPlaceholder: __("Search options...", "wp-slimstat"),
+                            noResultsText: __("No matching options found", "wp-slimstat"),
+                            loadingText: __("Loading options...", "wp-slimstat"),
                         });
-                        
+
                         // Set the options from the AJAX response
                         searchableSelectInstance.setOptions(response.data);
-                        
+
                         $textInput.attr("name", "v");
                     } catch (error) {
                         // Fall back to regular text input if searchable select fails
-                        $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                        $textInput.attr("placeholder", __("Enter value...", "wp-slimstat")).attr("name", "v");
                     }
                 } else {
                     // No options found, show text input instead
-                    $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                    $textInput.attr("placeholder", __("Enter value...", "wp-slimstat")).attr("name", "v");
                 }
             })
             .fail(function (jqXHR, textStatus, errorThrown) {
                 // On error, fall back to text input
-                $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                $textInput.attr("placeholder", __("Enter value...", "wp-slimstat")).attr("name", "v");
             });
     });
 
@@ -635,19 +893,19 @@ jQuery(function () {
 
         if (operator == "is_empty" || operator == "is_not_empty") {
             $textInput.attr("readonly", "readonly");
-            
+
             // Disable searchable select if it exists
             if (searchableSelectInstance) {
-                searchableSelectInstance.selectWrapper.style.pointerEvents = 'none';
-                searchableSelectInstance.selectWrapper.style.opacity = '0.5';
+                searchableSelectInstance.selectWrapper.style.pointerEvents = "none";
+                searchableSelectInstance.selectWrapper.style.opacity = "0.5";
             }
         } else {
             $textInput.removeAttr("readonly");
-            
+
             // Enable searchable select if it exists
             if (searchableSelectInstance) {
-                searchableSelectInstance.selectWrapper.style.pointerEvents = 'auto';
-                searchableSelectInstance.selectWrapper.style.opacity = '1';
+                searchableSelectInstance.selectWrapper.style.pointerEvents = "auto";
+                searchableSelectInstance.selectWrapper.style.opacity = "1";
             }
         }
     });

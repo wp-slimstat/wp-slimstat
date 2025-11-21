@@ -56,28 +56,80 @@ class IPHashProvider
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
         $piiAllowed = Consent::piiAllowed();
 
-        // Handle consent granted in same request (cookie not set yet)
+        // Handle consent granted in same request (cookie not set yet or invalid)
         $hasCmpConsentButNoCookie = false;
         if ($isAnonymousTracking && !$piiAllowed) {
             $integrationKey = Consent::getIntegrationKey();
-            $hasTrackingCookie = isset($_COOKIE['slimstat_tracking_code']);
 
-            if (!$hasTrackingCookie) {
-                // Check CMP consent only if integration is configured
-                if (!empty($integrationKey)) {
-                    if ('slimstat_banner' === $integrationKey) {
-                        $gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
-                        if ($gdpr_service->hasConsent()) {
+            // Check CMP consent only if integration is configured
+            if (!empty($integrationKey)) {
+                if ('slimstat_banner' === $integrationKey) {
+                    $gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+                    if ($gdpr_service->hasConsent()) {
+                        $hasCmpConsentButNoCookie = true;
+                    }
+                    } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
+                    $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
+                    try {
+                        if ((bool) \wp_has_consent($wpConsentCategory)) {
                             $hasCmpConsentButNoCookie = true;
                         }
-                    } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
-                        $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
-                        try {
-                            if ((bool) \wp_has_consent($wpConsentCategory)) {
-                                $hasCmpConsentButNoCookie = true;
+                    } catch (\Throwable $e) {
+                        // Ignore errors
+                    }
+                } elseif ('real_cookie_banner' === $integrationKey) {
+                    // Real Cookie Banner fallback: try to read consent from cookie
+                    // This handles race conditions where tracking cookie isn't set yet but RCB cookie is present
+                    $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
+                    $rcbCookies = ['real_cookie_banner', 'rcb_consent', 'rcb_acceptance', 'real_cookie_consent', 'rcb-consent'];
+
+                    foreach ($_COOKIE as $name => $value) {
+                        $isMatch = false;
+                        foreach ($rcbCookies as $rcbName) {
+                            if (strpos($name, $rcbName) === 0) {
+                                $isMatch = true;
+                                break;
                             }
-                        } catch (\Throwable $e) {
-                            // Ignore errors
+                        }
+
+                        if ($isMatch) {
+                            // Try to decode value: handle both URL encoded and raw JSON
+                            // WP cookies are often slashed, so strip slashes first
+                            $rawJson = stripslashes($value);
+                            $data = json_decode($rawJson, true);
+
+                            if (json_last_error() !== JSON_ERROR_NONE) {
+                                // If failed, try urldecode first
+                                $data = json_decode(stripslashes(urldecode($value)), true);
+                            }
+
+                            if (is_array($data)) {
+                                // Check various structures based on RCB versions
+
+                                // Structure 1: { "groups": { "statistics": true } }
+                                if (isset($data['groups'][$wpConsentCategory]) && true === $data['groups'][$wpConsentCategory]) {
+                                    $hasCmpConsentButNoCookie = true;
+                                    break;
+                                }
+
+                                // Structure 2: { "decision": { "statistics": true } } OR { "decision": "all" }
+                                if (isset($data['decision'])) {
+                                    if ('all' === $data['decision']) {
+                                        $hasCmpConsentButNoCookie = true;
+                                        break;
+                                    }
+                                    if (is_array($data['decision']) && isset($data['decision'][$wpConsentCategory]) && true === $data['decision'][$wpConsentCategory]) {
+                                        $hasCmpConsentButNoCookie = true;
+                                        break;
+                                    }
+                                }
+
+                                // Structure 3: { "statistics": true } (Legacy/Simplified)
+                                if (isset($data[$wpConsentCategory]) && true === $data[$wpConsentCategory]) {
+                                    $hasCmpConsentButNoCookie = true;
+                                    break;
+                                }
+                            }
                         }
                     }
                 }

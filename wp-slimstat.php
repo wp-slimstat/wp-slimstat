@@ -264,6 +264,9 @@ class wp_slimstat
         add_filter('wp_privacy_personal_data_exporters', [\SlimStat\Services\Privacy\DataExporter::class, 'registerExporters']);
         add_filter('wp_privacy_personal_data_erasers', [\SlimStat\Services\Privacy\DataEraser::class, 'registerErasers']);
 
+        // Register privacy policy content
+        add_action('admin_init', [self::class, 'registerPrivacyPolicyContent']);
+
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
         \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
 
@@ -1412,7 +1415,7 @@ class wp_slimstat
             'display_notifications' => 'on',
 
             // General - Database
-            'auto_purge'        => 0,
+            'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
 
             // Tracker
@@ -1420,6 +1423,7 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
+            'gdpr_enabled'             => 'on',
             'anonymize_ip'             => 'no',
             'hash_ip'                  => 'no',
 			'set_tracker_cookie'       => 'on',
@@ -1800,6 +1804,67 @@ class wp_slimstat
                 $geographicProvider->logError($e->getMessage());
             }
         }
+    }
+
+    /**
+     * Register privacy policy content for WordPress Privacy Tools
+     *
+     * @since 5.4.0
+     */
+    public static function registerPrivacyPolicyContent()
+    {
+        if (!function_exists('wp_add_privacy_policy_content')) {
+            return;
+        }
+
+        $content = '<h2>' . __('SlimStat Analytics', 'wp-slimstat') . '</h2>';
+        $content .= '<p><strong>' . __('What personal data we collect and why', 'wp-slimstat') . '</strong></p>';
+        $content .= '<p>' . __('SlimStat Analytics collects the following data about website visitors:', 'wp-slimstat') . '</p>';
+        $content .= '<ul>';
+        $content .= '<li>' . __('IP Address: Collected for analytics and security purposes. May be anonymized or hashed based on your privacy settings.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Page URLs: Tracks which pages are visited to analyze website usage.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Referrer Information: Tracks where visitors came from (search engines, other websites, etc.).', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Browser and Device Information: User agent, screen resolution, and device type for analytics.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Timestamp: Date and time of each page visit.', 'wp-slimstat') . '</li>';
+
+        if ('on' === (self::$settings['set_tracker_cookie'] ?? 'off')) {
+            $content .= '<li>' . __('Cookies: A tracking cookie is used to identify returning visitors and maintain session continuity.', 'wp-slimstat') . '</li>';
+        }
+
+        if ('on' !== (self::$settings['ignore_wp_users'] ?? 'off')) {
+            $content .= '<li>' . __('User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled).', 'wp-slimstat') . '</li>';
+        }
+
+        $content .= '</ul>';
+
+        $content .= '<p><strong>' . __('How long we retain your data', 'wp-slimstat') . '</strong></p>';
+        $retention_days = intval(self::$settings['auto_purge'] ?? 420);
+        if ($retention_days > 0) {
+            $content .= '<p>' . sprintf(__('Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements.', 'wp-slimstat'), $retention_days) . '</p>';
+        } else {
+            $content .= '<p>' . __('Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies.', 'wp-slimstat') . '</p>';
+        }
+
+        $content .= '<p><strong>' . __('Your rights', 'wp-slimstat') . '</strong></p>';
+        $content .= '<p>' . __('Under GDPR, you have the right to:', 'wp-slimstat') . '</p>';
+        $content .= '<ul>';
+        $content .= '<li>' . __('Access your personal data collected by SlimStat', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Request deletion of your personal data (Right to be Forgotten)', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Opt-out of tracking by revoking consent (if GDPR mode is enabled)', 'wp-slimstat') . '</li>';
+        $content .= '</ul>';
+
+        if ('on' === (self::$settings['gdpr_enabled'] ?? 'on')) {
+            $content .= '<p>' . __('You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator.', 'wp-slimstat') . '</p>';
+        }
+
+        $content .= '<p><strong>' . __('Consent Management', 'wp-slimstat') . '</strong></p>';
+        if ('on' === (self::$settings['anonymous_tracking'] ?? 'off')) {
+            $content .= '<p>' . __('This website uses Anonymous Tracking Mode. Initial tracking occurs without collecting personally identifiable information (PII). Full tracking with PII collection only occurs after you grant explicit consent.', 'wp-slimstat') . '</p>';
+        } else {
+            $content .= '<p>' . __('Tracking requires your consent when GDPR mode is enabled. You can grant or revoke consent at any time through the consent management interface.', 'wp-slimstat') . '</p>';
+        }
+
+        wp_add_privacy_policy_content('SlimStat Analytics', $content);
     }
 
     public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')

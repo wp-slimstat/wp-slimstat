@@ -76,11 +76,16 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 = 5.4.0 - 2025-01-15 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.
+- **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled).
 - **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
 - **New**: Do Not Track (DNT) header respect with configurable option in settings.
+- **New**: WordPress Privacy Policy content registration for GDPR Article 13/14 compliance.
 - **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
 - **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
 - **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
+- **Enhancement**: Default data retention period set to 420 days (14 months) for GDPR compliance.
+- **Fix**: Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
+- **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 [See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0)
 

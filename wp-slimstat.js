@@ -1793,7 +1793,9 @@ if (!window.requestIdleCallback) {
                     }
                     consentUpgradeRetryCount++;
                     setTimeout(function () {
-                        try { handleConsentGranted(); } catch (err) {}
+                        try {
+                            handleConsentGranted();
+                        } catch (err) {}
                     }, 250);
                     consentUpgradeInProgress = false;
                     return;
@@ -1813,11 +1815,7 @@ if (!window.requestIdleCallback) {
                         consentUpgradeInProgress = false;
                         return;
                     }
-                } else if (
-                    integrationKey === "real_cookie_banner" ||
-                    integrationKey === "rcb" ||
-                    integrationKey === "realcookie"
-                ) {
+                } else if (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie") {
                     if (!consentStateInitialized) initConsentBaseline();
                     var cat = params.consent_level_integration || "statistics";
                     var rcbConsent = detectRCBConsentLocal(cat);
@@ -1841,7 +1839,9 @@ if (!window.requestIdleCallback) {
                 xhr.onload = function () {
                     consentUpgradeInProgress = false;
                     if (xhr.status === 200) {
-                        try { JSON.parse(xhr.responseText); } catch (e) {}
+                        try {
+                            JSON.parse(xhr.responseText);
+                        } catch (e) {}
                     }
                 };
                 xhr.onerror = function () {
@@ -1855,11 +1855,7 @@ if (!window.requestIdleCallback) {
                     fingerprintParam = "&fingerprint=" + encodeURIComponent(fingerprintHash);
                 }
 
-                var requestData =
-                    "action=slimstat_consent_granted" +
-                    "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) +
-                    "&nonce=" + encodeURIComponent(params.wp_rest_nonce || "") +
-                    fingerprintParam;
+                var requestData = "action=slimstat_consent_granted" + "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || "") + fingerprintParam;
                 xhr.send(requestData);
             } catch (e) {
                 consentUpgradeInProgress = false;
@@ -2054,6 +2050,19 @@ if (!window.requestIdleCallback) {
                 try {
                     SlimStat._send_pageview({ isConsentRetry: true });
                 } catch (sendError) {
+                    /* ignore */
+                }
+            } else if (consent === "denied") {
+                // Call revocation handler to delete tracking cookie
+                try {
+                    var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";
+                    var revokeXhr = new XMLHttpRequest();
+                    revokeXhr.open("POST", ajaxUrl, true);
+                    revokeXhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+                    revokeXhr.send("action=slimstat_consent_revoked&nonce=" + encodeURIComponent(nonce));
+                    revokeXhr.onload = function () {};
+                    revokeXhr.onerror = function () {};
+                } catch (revokeError) {
                     /* ignore */
                 }
             }

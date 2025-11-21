@@ -51,6 +51,23 @@ class Consent
 		$settings = \wp_slimstat::$settings;
 		$default  = true;
 
+		// Check if GDPR compliance mode is enabled
+		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+
+		// If GDPR is disabled, allow normal tracking without consent checks
+		if (!$gdprEnabled) {
+			/**
+			 * Filter: slimstat_can_track
+			 *
+			 * Allows third parties to override tracking decision when GDPR is disabled.
+			 *
+			 * @param bool $default Default decision (true when GDPR disabled)
+			 */
+			return (bool) apply_filters('slimstat_can_track', $default);
+		}
+
+		// GDPR is enabled - proceed with consent checks
+
 		// Respect Do Not Track if enabled in settings
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
 		if ($respectDnt) {
@@ -172,6 +189,16 @@ class Consent
 	{
 		$settings = \wp_slimstat::$settings;
 
+		// Check if GDPR compliance mode is enabled
+		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+
+		// If GDPR is disabled, allow PII collection without consent checks
+		if (!$gdprEnabled) {
+			return true;
+		}
+
+		// GDPR is enabled - proceed with consent checks
+
 		// PRIORITY 1: Anonymous tracking mode - strictest setting
 		// In this mode, PII is BLOCKED by default until explicit consent is granted
 		$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
@@ -215,10 +242,63 @@ class Consent
 					}
 				}
 			} elseif ('real_cookie_banner' === $integrationKey) {
-				// Real Cookie Banner: consent is managed client-side and verified via AJAX upgrade.
-				// If a SlimStat tracking cookie exists in anonymous mode, it means the browser
-				// already completed a consent upgrade flow. Treat this as active consent for PII.
-				if ($hasTrackingCookie) {
+				// Real Cookie Banner: check consent cookie directly to handle race conditions
+				// where tracking cookie isn't set yet but consent has been granted.
+				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
+				$rcbCookies = ['real_cookie_banner', 'rcb_consent', 'rcb_acceptance', 'real_cookie_consent', 'rcb-consent'];
+
+				foreach ($_COOKIE as $name => $value) {
+					$isMatch = false;
+					foreach ($rcbCookies as $rcbName) {
+						if (strpos($name, $rcbName) === 0) {
+							$isMatch = true;
+							break;
+						}
+					}
+
+					if ($isMatch) {
+						$rawJson = stripslashes($value);
+						$data = json_decode($rawJson, true);
+
+						if (json_last_error() !== JSON_ERROR_NONE) {
+							$data = json_decode(stripslashes(urldecode($value)), true);
+						}
+
+						if (is_array($data)) {
+							// Check various structures based on RCB versions
+							$consentGiven = false;
+
+							// Structure 1: { "groups": { "statistics": true } }
+							if (isset($data['groups'][$wpConsentCategory]) && true === $data['groups'][$wpConsentCategory]) {
+								$consentGiven = true;
+							}
+							// Structure 2: { "decision": { "statistics": true } } OR { "decision": "all" }
+							elseif (isset($data['decision'])) {
+								if ('all' === $data['decision']) {
+									$consentGiven = true;
+								} elseif (is_array($data['decision']) && isset($data['decision'][$wpConsentCategory]) && true === $data['decision'][$wpConsentCategory]) {
+									$consentGiven = true;
+								}
+							}
+							// Structure 3: { "statistics": true } (Legacy/Simplified)
+							elseif (isset($data[$wpConsentCategory]) && true === $data[$wpConsentCategory]) {
+								$consentGiven = true;
+							}
+
+							if ($consentGiven) {
+								$hasCmpConsent = true;
+								// If we have explicit consent from RCB, allow PII even if tracking cookie is missing
+								// This breaks the deadlock for the first request after consent
+								$hasTrackingCookie = true;
+								break;
+							}
+						}
+					}
+				}
+
+				// Legacy fallback: If a SlimStat tracking cookie exists in anonymous mode,
+				// it implies the browser completed a consent upgrade flow previously.
+				if (!$hasCmpConsent && $hasTrackingCookie) {
 					$hasCmpConsent = true;
 				}
 			}
@@ -288,12 +368,20 @@ class Consent
 		}
 
 		// PRIORITY 5: No CMP integration configured
-		// Default to ALLOW for backward compatibility
-		// WARNING: This is NOT GDPR-compliant if you collect PII!
+		// When GDPR is enabled and no CMP is configured, be conservative and deny PII
+		// unless the configuration doesn't collect PII
 		// Site admins should either:
 		// - Enable a CMP integration, OR
 		// - Use anonymous tracking mode, OR
 		// - Configure cookie-less + anonymized/hashed IP tracking
-		return true;
+		// - Disable GDPR mode if not subject to GDPR regulations
+
+		// If configuration doesn't collect PII, allow (no PII to protect)
+		if (!$collectsPii) {
+			return true;
+		}
+
+		// Configuration collects PII but no CMP configured - deny for GDPR compliance
+		return false;
 	}
 }
