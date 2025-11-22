@@ -922,6 +922,14 @@ var SlimStat = (function () {
             }
         }
 
+        // Add consent parameters if provided (from banner accept)
+        if (options.consent && (options.consent === "accepted" || options.consent === "denied")) {
+            consentUpgradeParam += "&banner_consent=" + encodeURIComponent(options.consent);
+            if (options.consentNonce) {
+                consentUpgradeParam += "&banner_consent_nonce=" + encodeURIComponent(options.consentNonce);
+            }
+        }
+
         var run = function () {
             // If anonymous mode is active, skip fingerprinting entirely to ensure no PII is collected/sent
             if (consentDecision.mode === "anonymous") {
@@ -1996,8 +2004,6 @@ if (!window.requestIdleCallback) {
             }
 
             var params = currentSlimStatParams();
-            var endpoint = params.gdpr_consent_endpoint || "";
-            var method = params.gdpr_consent_method || params.transport || "rest";
             var nonce = params.wp_rest_nonce || "";
             var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
             var cookiePath = params.baseurl || "/";
@@ -2048,7 +2054,7 @@ if (!window.requestIdleCallback) {
                 }
 
                 try {
-                    SlimStat._send_pageview({ isConsentRetry: true });
+                    SlimStat._send_pageview({ isConsentRetry: true, consentUpgrade: true, consent: consent, consentNonce: nonce });
                 } catch (sendError) {
                     /* ignore */
                 }
@@ -2065,33 +2071,6 @@ if (!window.requestIdleCallback) {
                 } catch (revokeError) {
                     /* ignore */
                 }
-            }
-
-            // Send request in background (for server-side logging)
-            if (!endpoint) {
-                return;
-            }
-
-            try {
-                var xhr = new XMLHttpRequest();
-                xhr.open("POST", endpoint, true);
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
-                xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-
-                // Send nonce in header for REST, in body for AJAX
-                if (method === "rest" && nonce) {
-                    xhr.setRequestHeader("X-WP-Nonce", nonce);
-                    xhr.send("consent=" + encodeURIComponent(consent));
-                } else {
-                    // AJAX or adblock_bypass: send nonce in body
-                    xhr.send("action=slimstat_gdpr_consent&consent=" + encodeURIComponent(consent) + "&nonce=" + encodeURIComponent(nonce));
-                }
-
-                // Ignore response - banner already closed
-                xhr.onload = function () {};
-                xhr.onerror = function () {};
-            } catch (xhrError) {
-                /* ignore - banner already closed */
             }
         }
 

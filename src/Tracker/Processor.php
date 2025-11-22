@@ -68,6 +68,10 @@ class Processor
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
+        // Store original IP before processing (needed for consent upgrade lookup)
+        $originalIpBeforeProcessing = $stat['ip'];
+        $originalOtherIpBeforeProcessing = $stat['other_ip'] ?? '';
+
         // Process IP address with anonymization and hashing (for GDPR compliance)
         $stat = IPHashProvider::processIp($stat);
 
@@ -360,11 +364,45 @@ class Processor
 						}
 
 						// Filter by IP to ensure we find the correct record
-						// We need to reconstruct the IP as it was stored (hashed or anonymized)
+						// We need to reconstruct the IP as it was stored (hashed in anonymous mode)
 						$searchIp = $stat['ip'];
+						$hashedIp = '';
+
+						// If IP is not hashed (looks like real IP), hash it to match anonymous records
+						if (!empty($searchIp) && strlen($searchIp) < 30) {
+							$hashedStat = ['ip' => $originalIpBeforeProcessing, 'other_ip' => $originalOtherIpBeforeProcessing];
+							$hashedStat = IPHashProvider::hashIP($hashedStat, $originalIpBeforeProcessing, $originalOtherIpBeforeProcessing);
+							$hashedIp = $hashedStat['ip'] ?? '';
+							$searchIp = $hashedIp;
+						}
+
+						// Calculate the expected Anonymous Visit ID based on current IP/UA
+						// This helps find the session even if IP hashing doesn't match perfectly or if lookup needs to be more robust
+						$anonymousVisitId = Session::generateAnonymousVisitId();
+
+						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
+						// Note: We effectively group conditions here
+
+						$whereClause = [];
+
+						if ($requestedVisitId > 0) {
+							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $requestedVisitId);
+						} elseif ($shouldFilterByVisitId) {
+							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
+						}
+
+						if ($anonymousVisitId > 0) {
+							// Use %s to handle large integers correctly on all platforms
+							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %s", (string)$anonymousVisitId);
+						}
 
 						if (!empty($searchIp)) {
-							$query->where('ip', '=', $searchIp);
+							$whereClause[] = $GLOBALS['wpdb']->prepare("ip = %s", $searchIp);
+						}
+
+						// Apply the OR conditions for Identity
+						if (!empty($whereClause)) {
+							$query->whereRaw('(' . implode(' OR ', $whereClause) . ')');
 						}
 
 						if (!empty($stat['resource'])) {
@@ -387,6 +425,12 @@ class Processor
                     if (!empty($existing_record)) {
                         // Found existing anonymous pageview - upgrade it
                         $existing_id = intval($existing_record->id);
+
+                       	// Use visit_id from existing record if not provided in request
+                       	if (empty($requestedVisitId) && !empty($existing_record->visit_id)) {
+                       		$stat['visit_id'] = intval($existing_record->visit_id);
+                       		\wp_slimstat::set_stat($stat);
+                       	}
 
                         // Get real IP (before hashing) for upgrade
                         [$realIp, $realOtherIp] = Utils::getRemoteIp();
@@ -481,7 +525,19 @@ class Processor
                                 $update_query->set($update_data);
                             }
 
-                            $update_query->where('id', '=', $existing_id);
+                            $session_duration = !empty(\wp_slimstat::$settings['session_duration']) ? intval(\wp_slimstat::$settings['session_duration']) : 1800;
+                            $update_min_ts = $stat['dt'] - $session_duration;
+
+                            if (!empty($existing_record->visit_id) && $existing_record->visit_id > 0) {
+                                // Upgrade ALL records for this session (same visit_id + same anonymous IP)
+                                $update_query->where('visit_id', '=', intval($existing_record->visit_id));
+                                $update_query->where('ip', '=', $existing_record->ip);
+                                $update_query->where('dt', '>=', $update_min_ts);
+                            } else {
+                                // Fallback: Upgrade only this specific record
+                                $update_query->where('id', '=', $existing_id);
+                            }
+
                             $update_query->execute();
 
                             // Return existing ID (upgraded record)

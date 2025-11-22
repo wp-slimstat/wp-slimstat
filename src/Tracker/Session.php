@@ -54,8 +54,18 @@ class Session
 
 		// In anonymous mode without consent, use server-side visit ID
 		if ($isAnonymousTracking && !Consent::piiAllowed() && !$hasCmpConsent) {
-			$identifier = self::generateAnonymousVisitId();
+			// Try to reuse existing visit_id from recent records to prevent duplicates
 			$stat = \wp_slimstat::get_stat();
+			$existing_visit_id = self::findExistingAnonymousVisitId($stat);
+
+			if ($existing_visit_id > 0) {
+				$stat['visit_id'] = $existing_visit_id;
+				\wp_slimstat::set_stat($stat);
+				return false; // Not a new session, using existing visit_id
+			}
+
+			// No existing record found, generate new visit_id
+			$identifier = self::generateAnonymousVisitId();
 			$stat['visit_id'] = $identifier;
 			\wp_slimstat::set_stat($stat);
 			return true;
@@ -198,13 +208,77 @@ class Session
 	}
 
 	/**
+	 * Find existing visit_id from recent records in anonymous mode.
+	 *
+	 * Checks if a record exists with the same IP (hashed), User Agent, and resource
+	 * within the session duration to prevent duplicate records on page refresh.
+	 *
+	 * @param array $stat Current stat array
+	 * @return int Visit ID if found, 0 otherwise
+	 */
+	private static function findExistingAnonymousVisitId(array $stat): int
+	{
+		if (empty($stat['resource'])) {
+			return 0;
+		}
+
+		// Get original IP before hashing
+		[$originalIp, $originalOtherIp] = Utils::getRemoteIp();
+		if (empty($originalIp)) {
+			return 0;
+		}
+
+		// Hash IP the same way IPHashProvider does in anonymous mode
+		$hashedStat = ['ip' => $originalIp, 'other_ip' => $originalOtherIp];
+		$hashedStat = \SlimStat\Providers\IPHashProvider::hashIP($hashedStat, $originalIp, $originalOtherIp);
+		$hashedIp = $hashedStat['ip'] ?? '';
+
+		if (empty($hashedIp)) {
+			return 0;
+		}
+
+		$session_duration = !empty(\wp_slimstat::$settings['session_duration'])
+			? intval(\wp_slimstat::$settings['session_duration'])
+			: 1800;
+
+		$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : \wp_slimstat::date_i18n('U');
+		$min_timestamp = $current_timestamp - $session_duration;
+
+		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+
+		// Build query to find existing record with same hashed IP, resource, and within session duration
+		$query = Query::select('visit_id')
+			->from($table)
+			->where('ip', '=', $hashedIp)
+			->where('resource', '=', $stat['resource'])
+			->where('dt', '>=', $min_timestamp)
+			->where('dt', '<=', $current_timestamp);
+
+		// If fingerprint is available, also match by fingerprint for better accuracy
+		if (!empty($stat['fingerprint'])) {
+			$query->where('fingerprint', '=', $stat['fingerprint']);
+		}
+
+		// Also match by user agent if available
+		if (!empty($stat['browser'])) {
+			$query->where('browser', '=', $stat['browser']);
+		}
+
+		$existing_visit_id = $query->orderBy('dt', 'DESC')
+			->limit(1)
+			->getVar();
+
+		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
+	}
+
+	/**
 	 * Generate anonymous visit ID for cookie-less tracking.
 	 *
 	 * Uses fingerprint if available, otherwise falls back to IP + User Agent + daily salt.
 	 *
 	 * @return int Visit ID (32-bit integer from hash)
 	 */
-	private static function generateAnonymousVisitId(): int
+	public static function generateAnonymousVisitId(): int
 	{
 		$daily_salt = \SlimStat\Providers\IPHashProvider::getDailySalt();
 		if (empty($daily_salt)) {

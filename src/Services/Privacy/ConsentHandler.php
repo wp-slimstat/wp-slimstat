@@ -268,43 +268,56 @@ class ConsentHandler
 	/**
 	 * Handle GDPR banner consent via AJAX
 	 *
-	 * @return void Outputs JSON response
+	 * @param bool $return_json Whether to return JSON response (default: true)
+	 * @return bool|void Returns true on success, false on error, or outputs JSON if $return_json is true
 	 */
-	public static function handleBannerConsent()
+	public static function handleBannerConsent(bool $return_json = true)
 	{
 		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
 		if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
-			wp_send_json_error([
-				'message' => __('Invalid security token.', 'wp-slimstat'),
-			]);
-			return;
+			if ($return_json) {
+				wp_send_json_error([
+					'message' => __('Invalid security token.', 'wp-slimstat'),
+				]);
+				return;
+			}
+			return false;
 		}
 
 		if (empty(\wp_slimstat::$settings['use_slimstat_banner']) ||
 			'on' !== \wp_slimstat::$settings['use_slimstat_banner']) {
-			wp_send_json_error([
-				'message' => __('SlimStat banner is not enabled.', 'wp-slimstat'),
-			]);
-			return;
+			if ($return_json) {
+				wp_send_json_error([
+					'message' => __('SlimStat banner is not enabled.', 'wp-slimstat'),
+				]);
+				return;
+			}
+			return false;
 		}
 
 		$consent = isset($_POST['consent']) ? sanitize_text_field(wp_unslash($_POST['consent'])) : '';
 
 		if (!in_array($consent, ['accepted', 'denied'], true)) {
-			wp_send_json_error([
-				'message' => __('Invalid consent value.', 'wp-slimstat'),
-			]);
-			return;
+			if ($return_json) {
+				wp_send_json_error([
+					'message' => __('Invalid consent value.', 'wp-slimstat'),
+				]);
+				return;
+			}
+			return false;
 		}
 
 		$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
 		$result = $gdpr_service->setConsent($consent);
 
 		if (!$result) {
-			wp_send_json_error([
-				'message' => __('Failed to set consent cookie.', 'wp-slimstat'),
-			]);
-			return;
+			if ($return_json) {
+				wp_send_json_error([
+					'message' => __('Failed to set consent cookie.', 'wp-slimstat'),
+				]);
+				return;
+			}
+			return false;
 		}
 
 		do_action('slimstat_gdpr_consent_changed', $consent);
@@ -381,12 +394,16 @@ class ConsentHandler
 			}
 		}
 
-		wp_send_json_success([
-			'success' => true,
-			'message' => ('accepted' === $consent)
-				? __('Consent granted.', 'wp-slimstat')
-				: __('Consent denied.', 'wp-slimstat'),
-			'consent' => $consent,
-		]);
+		if ($return_json) {
+			wp_send_json_success([
+				'success' => true,
+				'message' => ('accepted' === $consent)
+					? __('Consent granted.', 'wp-slimstat')
+					: __('Consent denied.', 'wp-slimstat'),
+				'consent' => $consent,
+			]);
+		}
+
+		return true;
 	}
 }

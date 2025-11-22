@@ -119,7 +119,7 @@ class RestApiManager
         $post_data = \wp_slimstat::$raw_post_array;
         $action = $post_data['action'] ?? '';
 
-        // Handle GDPR banner consent via adblock bypass
+        // Handle GDPR banner consent via adblock bypass (legacy separate request)
         if ('slimstat_gdpr_consent' === $action) {
             $expected_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
             if ($request_param === $expected_hash) {
@@ -128,9 +128,28 @@ class RestApiManager
             }
         }
 
-        // Handle tracking hits if it's not a GDPR action
+        // Handle tracking hits
         $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
         if ($request_param === $expected_tracking_hash) {
+            // Check if consent parameters are present (from banner accept in tracking request)
+            $banner_consent = $post_data['banner_consent'] ?? '';
+            $banner_consent_nonce = $post_data['banner_consent_nonce'] ?? '';
+
+            if (!empty($banner_consent) && in_array($banner_consent, ['accepted', 'denied'], true)) {
+                // Temporarily add consent parameters to $_POST for handleBannerConsent
+                $original_post = $_POST;
+                $_POST['consent'] = sanitize_text_field($banner_consent);
+                if (!empty($banner_consent_nonce)) {
+                    $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
+                }
+
+                // Handle banner consent (without JSON response - continue to tracking)
+                \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
+
+                // Restore original $_POST
+                $_POST = $original_post;
+            }
+
             Tracker::slimtrack_ajax();
         }
     }
