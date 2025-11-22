@@ -3,11 +3,13 @@
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance:
   - WP Consent API support with configurable consent categories
   - Real Cookie Banner Pro integration
+- **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled)
 - **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
 - **New**: Do Not Track (DNT) header respect with configurable option in settings.
 - **New**: Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
 - **New**: GDPR-compliant salted hash IP address functionality with daily salt rotation for enhanced privacy protection.
 - **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
+- **New**: WordPress Privacy Policy content registration for GDPR Article 13/14 compliance.
 - **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
 - **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
 - **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
@@ -15,6 +17,9 @@
 - **Enhancement**: Conditional fingerprint storage - only collected when PII is allowed.
 - **Enhancement**: Better privacy controls - anonymous tracking option prevents all PII collection.
 - **Enhancement**: Code modernization with arrow functions and improved caching in Query class.
+- **Enhancement**: Default data retention period set to 420 days (14 months) for GDPR compliance.
+- **Fix**: Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
+- **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 
 = 5.3.1 - 2025-09-09 =

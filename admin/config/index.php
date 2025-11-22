@@ -99,6 +99,11 @@ $settings = [
                 'title' => __('Consent Management', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
+			'gdpr_enabled' => [
+				'title'       => __('GDPR Compliance Mode', 'wp-slimstat'),
+				'type'        => 'toggle',
+				'description' => __('<strong>GDPR Compliance:</strong> When enabled, SlimStat requires user consent before tracking (except in Anonymous Tracking mode). When disabled, tracking operates normally without consent checks.<br/><br/><strong>Enabled:</strong> (Recommended for EU/EEA) Tracking requires consent unless Anonymous Tracking mode is active. This ensures GDPR compliance.<br/><strong>Disabled:</strong> Normal tracking without consent checks. Use this only if you are not subject to GDPR regulations (e.g., non-EU websites with no EU visitors).', 'wp-slimstat'),
+			],
 			'consent_integration' => [
 				'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
 				'type'          => 'select',
@@ -109,26 +114,50 @@ $settings = [
 					'wp_consent_api'     => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
 					'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
 				],
+				'conditional' => [
+					'field' => 'gdpr_enabled',
+					'type' => 'checked',
+				],
 			],
 			'slimstat_banner_header' => [
 				'title' => __('SlimStat Consent Banner', 'wp-slimstat'),
 				'type'  => 'section_header',
+				'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,equals',
+					'value' => '|||slimstat_banner',
+				],
 			],
             'opt_out_cookie_names' => [
                 'title'       => __('Opt-out Cookies', 'wp-slimstat'),
                 'type'        => 'textarea',
                 'description' => __("If you are already using another tool to monitor which users opt-out of tracking, and assuming that this tool sets its own cookie to remember their selection, you can enter the cookie names and values in this field to let Slimstat comply with their choice. Please use the following format: <code>cookie_name=value</code>. Slimstat will track any visitors who either don't send a cookie with that name, or send a cookie whose value <strong>does not CONTAIN</strong> the string you specified. If your tool uses structured values like JSON or similar encodings, find the substring related to tracking and enter that as the value here below. For example, <a href='https://wordpress.org/plugins/smart-cookie-kit/' target='_blank'>Smart Cookie Kit</a> uses something like <code>{\"settings\":{\"technical\":true,\"slimstat\":false,\"profiling\":false},\"ver\":\"2.0.0\"}</code>, so your pair should look like: <code>CookiePreferences-your.website.here=\"slimstat\":false</code>. Separate multiple pairs with commas.", 'wp-slimstat'),
+                'conditional' => [
+                    'field' => 'gdpr_enabled,consent_integration',
+                    'type' => 'checked,equals',
+                    'value' => '|||',
+                ],
             ],
             'opt_in_cookie_names' => [
                 'title'       => __('Opt-in Cookies', 'wp-slimstat'),
                 'type'        => 'textarea',
                 'description' => __('Similarly to the option here above, you can configure Slimstat to work with an opt-in mechanism. Please use the following format: <code>cookie_name=value</code>. Slimstat will only track visitors who send a cookie whose value <strong>CONTAINS</strong> the string you specified. Separate multiple pairs with commas.', 'wp-slimstat'),
+                'conditional' => [
+                    'field' => 'gdpr_enabled,consent_integration',
+                    'type' => 'checked,equals',
+                    'value' => '|||',
+                ],
             ],
 			'opt_out_message' => [
 				'title'             => __('Consent Banner Message', 'wp-slimstat'),
 				'type'              => 'rich_text',
 				'after_input_field' => '',
 				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Use the editor above to format your message.', 'wp-slimstat'),
+				'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,equals',
+					'value' => '|||slimstat_banner',
+				],
 			],
 			'gdpr_accept_button_text' => [
 				'title'              => __('Accept Button Label', 'wp-slimstat'),
@@ -136,6 +165,11 @@ $settings = [
 				'before_input_field' => '',
 				'after_input_field'  => '',
 				'description'        => __('Leave empty to use the default "Accept" text.', 'wp-slimstat'),
+				'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,equals',
+					'value' => '|||slimstat_banner',
+				],
 			],
 			'gdpr_decline_button_text' => [
 				'title'              => __('Decline Button Label', 'wp-slimstat'),
@@ -143,6 +177,11 @@ $settings = [
 				'before_input_field' => '',
 				'after_input_field'  => '',
 				'description'        => __('Leave empty to use the default "Deny" text.', 'wp-slimstat'),
+				'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,equals',
+					'value' => '|||slimstat_banner',
+				],
 			],
             'gdpr_theme_mode' => [
                 'title'         => __('Banner Theme Mode', 'wp-slimstat'),
@@ -153,6 +192,11 @@ $settings = [
                     'dark'  => __('Dark Mode', 'wp-slimstat'),
                     'auto'  => __('Auto (Follow System)', 'wp-slimstat'),
                 ],
+                'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,equals',
+					'value' => '|||slimstat_banner',
+				],
             ],
             'consent_level_integration' => [
                 'title'         => __('Consent Category', 'wp-slimstat'),
@@ -164,6 +208,11 @@ $settings = [
                     'statistics'            => __('Statistics', 'wp-slimstat'),
                     'marketing'             => __('Marketing', 'wp-slimstat'),
                 ],
+                'conditional' => [
+					'field' => 'gdpr_enabled,consent_integration',
+					'type' => 'checked,in',
+					'value' => '|||wp_consent_api,real_cookie_banner',
+				],
             ],
 
             // Tracker - Data Protection
@@ -175,11 +224,19 @@ $settings = [
                 'title'       => __('Anonymous Tracking Mode', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('<strong>GDPR-Safe Mode:</strong> When enabled, SlimStat operates in strict GDPR-compliant mode.<br/><br/><strong>Before Consent:</strong> Tracks anonymously (hashed IPs, no cookies, no username/email)<br/><strong>After Consent:</strong> Upgrades to full tracking (real IPs, cookies, user identification)<br/><br/>This mode is recommended if you want to track all visitors while staying GDPR-compliant. Anonymous data is collected without consent, then upgraded when consent is granted.', 'wp-slimstat'),
+                'conditional' => [
+					'field' => 'gdpr_enabled',
+					'type' => 'checked',
+				],
             ],
             'do_not_track' => [
                 'title'       => __('Respect Do Not Track (DNT)', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking).<br/><br/>GDPR does not require this, but it demonstrates respect for user privacy preferences. Recommended for privacy-focused websites.', 'wp-slimstat'),
+                'conditional' => [
+					'field' => 'gdpr_enabled',
+					'type' => 'checked',
+				],
             ],
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP Addresses', 'wp-slimstat'),
@@ -928,10 +985,23 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 					id="addon_network_settings_' . $a_setting_slug . '"
 					data-size="mini" data-handle-width="50" data-on-color="warning" data-on-text="Network" data-off-text="Site">' : '';
 
-                echo '<tr' . (0 == $i % 2 ? ' class="alternate"' : '') . '>';
+                // Build conditional data attributes
+                $conditional_attrs = '';
+                if (!empty($a_setting_info['conditional'])) {
+                    $cond = $a_setting_info['conditional'];
+                    $conditional_attrs = ' data-conditional-field="' . esc_attr($cond['field']) . '"';
+                    if (!empty($cond['type'])) {
+                        $conditional_attrs .= ' data-conditional-type="' . esc_attr($cond['type']) . '"';
+                    }
+                    if (isset($cond['value'])) {
+                        $conditional_attrs .= ' data-conditional-value="' . esc_attr($cond['value']) . '"';
+                    }
+                }
+
+                echo '<tr' . (0 == $i % 2 ? ' class="alternate"' : '') . $conditional_attrs . '>';
                 switch ($a_setting_info['type']) {
                     case 'section_header':
-                        echo '<td colspan="2" class="slimstat-options-section-header" id="wp-slimstat-' . sanitize_title($a_setting_info['title']) . '">' . $a_setting_info['title'] . '</td>';
+                        echo '<td colspan="2" class="slimstat-options-section-header"' . $conditional_attrs . ' id="wp-slimstat-' . sanitize_title($a_setting_info['title']) . '">' . $a_setting_info['title'] . '</td>';
                         break;
 
                     case 'toggle':
@@ -1067,37 +1137,6 @@ $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_activ
 ?>
 <script>
 (function($){
-    function toggleConsentRows(){
-        var v = $('#consent_integration').val();
-        var $level = $('#consent_level_integration').closest('tr');
-        var $anon = $('#anonymous_tracking').closest('tr');
-		var $optInCookieNames = $('#opt_out_cookie_names').closest('tr');
-		var $optOutCookieNames = $('#opt_in_cookie_names').closest('tr');
-		var $bannerMessage = $('#opt_out_message').closest('tr');
-		var $bannerHeader = $bannerMessage.prev('tr');
-		var $bannerAccept = $('#gdpr_accept_button_text').closest('tr');
-		var $bannerDecline = $('#gdpr_decline_button_text').closest('tr');
-		var $bannerMode = $('#gdpr_theme_mode').closest('tr');
-		var $bannerRows = $bannerHeader.add($optInCookieNames).add($optOutCookieNames).add($bannerMessage).add($bannerAccept).add($bannerDecline).add($bannerMode);
-
-		if(v === 'wp_consent_api'){
-			$level.removeClass('hidden').show();
-			$anon.removeClass('hidden').show();
-			$bannerRows.hide();
-		} else if(v === 'real_cookie_banner'){
-			$level.hide();
-			$anon.removeClass('hidden').show();
-			$bannerRows.hide();
-		} else if(v === 'slimstat_banner'){
-			$level.hide();
-			$anon.removeClass('hidden').show();
-			$bannerRows.show();
-		} else {
-			$level.hide();
-			$anon.hide();
-			$bannerRows.hide();
-		}
-    }
     $(function(){
         // Disable integrations that are not installed
         var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
@@ -1105,8 +1144,11 @@ $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_activ
         var $ci = $('#consent_integration');
         if(!hasWpConsent){ $ci.find('option[value="wp_consent_api"]').prop('disabled', true); }
         if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
-        $('#consent_integration').on('change', toggleConsentRows);
-        toggleConsentRows();
+
+        // Initialize conditional fields system (from admin.js)
+        if (typeof window.SlimStatConditionalFields !== 'undefined') {
+            window.SlimStatConditionalFields.init();
+        }
     });
 })(jQuery);
 </script>
