@@ -775,12 +775,12 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'gdpr_enabled'             => 'on',
+            'gdpr_enabled'             => 'off',
             'anonymize_ip'             => 'no',
             'hash_ip'                  => 'no',
 			'set_tracker_cookie'       => 'on',
-			'use_slimstat_banner'      => 'on',
-			'consent_integration'      => 'slimstat_banner', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
+			'use_slimstat_banner'      => 'off',
+			'consent_integration'      => '', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
 			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
