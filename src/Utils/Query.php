@@ -209,7 +209,7 @@ class Query
                 $this->setClauses[]      = sprintf('%s = %%s', $column);
                 $this->valuesToPrepare[] = $value;
             } elseif (is_numeric($value)) {
-                $this->setClauses[]      = $column . ' = %s';
+                $this->setClauses[]      = sprintf('%s = %%s', $column);
                 $this->valuesToPrepare[] = $value;
             } elseif (is_null($value)) {
                 $this->setClauses[] = $column . ' = NULL';
@@ -729,10 +729,11 @@ class Query
         }
 
         if (!empty($this->rawWhereClause)) {
+            $wrappedClauses = array_map(fn($clause) => "($clause)", $this->rawWhereClause);
             if (!empty($this->whereClauses)) {
-                $query .= ' AND ' . implode(' ', $this->rawWhereClause);
+                $query .= ' AND ' . implode(' AND ', $wrappedClauses);
             } else {
-                $query .= ' WHERE ' . implode(' ', $this->rawWhereClause);
+                $query .= ' WHERE ' . implode(' AND ', $wrappedClauses);
             }
         }
 
@@ -1278,11 +1279,10 @@ class Query
         return $result;
     }
 
-    public function getSql()
+    public function getSqlQuery()
     {
         $query = $this->buildQuery();
-        $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        return $query;
+        return $this->prepareQuery($query, $this->valuesToPrepare);
     }
 
     /**

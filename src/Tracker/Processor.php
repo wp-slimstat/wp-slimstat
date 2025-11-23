@@ -6,7 +6,7 @@ use SlimStat\Utils\Query;
 use SlimStat\Services\Browscap;
 use SlimStat\Services\Privacy;
 use SlimStat\Services\GeoService;
-use SlimStat\Services\GeoIP;
+use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
 
@@ -222,26 +222,28 @@ class Processor
         $geographicProvider = new GeoService();
         if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
             try {
-                $geolocation_data = GeoIP::loader($originalIpForGeo);
+                $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
+                $precision = $geographicProvider->getPack();
+                $geoService = new GeolocationService($provider, ['precision' => $precision]);
+                $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
                 Query::setProcessingTimestamp(null);
                 Utils::logError(205);
                 return false;
             }
 
-
-            if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
-                $stat['country'] = strtolower($geolocation_data['country']['iso_code']);
-                if (!empty($geolocation_data['city']['names']['en'])) {
-                    $stat['city'] = $geolocation_data['city']['names']['en'];
+            if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
+                $stat['country'] = strtolower($geolocation_data['country_code']);
+                if (!empty($geolocation_data['city'])) {
+                    $stat['city'] = $geolocation_data['city'];
                 }
 
-                if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty($stat['city'])) {
-                    $stat['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+                if (!empty($geolocation_data['subdivision']) && !empty($stat['city'])) {
+                    $stat['city'] .= ' (' . $geolocation_data['subdivision'] . ')';
                 }
 
-                if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
-                    $stat['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+                if (!empty($geolocation_data['latitude']) && !empty($geolocation_data['longitude'])) {
+                    $stat['location'] = $geolocation_data['latitude'] . ',' . $geolocation_data['longitude'];
                 }
             }
 
@@ -486,17 +488,20 @@ class Processor
                             $geographicProvider = new GeoService();
                             if ($geographicProvider->isGeoIPEnabled()) {
                                 try {
-                                    $geolocation_data = GeoIP::loader($realIp);
-                                    if (!empty($geolocation_data['country']['iso_code']) && 'xx' != $geolocation_data['country']['iso_code']) {
-                                        $update_data['country'] = strtolower($geolocation_data['country']['iso_code']);
-                                        if (!empty($geolocation_data['city']['names']['en'])) {
-                                            $update_data['city'] = $geolocation_data['city']['names']['en'];
+                                    $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
+                                    $precision = $geographicProvider->getPack();
+                                    $geoService = new GeolocationService($provider, ['precision' => $precision]);
+                                    $geolocation_data = $geoService->locate($realIp);
+                                    if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
+                                        $update_data['country'] = strtolower($geolocation_data['country_code']);
+                                        if (!empty($geolocation_data['city'])) {
+                                            $update_data['city'] = $geolocation_data['city'];
                                         }
-                                        if (!empty($geolocation_data['subdivisions'][0]['iso_code']) && !empty($update_data['city'])) {
-                                            $update_data['city'] .= ' (' . $geolocation_data['subdivisions'][0]['iso_code'] . ')';
+                                        if (!empty($geolocation_data['subdivision']) && !empty($update_data['city'])) {
+                                            $update_data['city'] .= ' (' . $geolocation_data['subdivision'] . ')';
                                         }
-                                        if (!empty($geolocation_data['location']['latitude']) && !empty($geolocation_data['location']['longitude'])) {
-                                            $update_data['location'] = $geolocation_data['location']['latitude'] . ',' . $geolocation_data['location']['longitude'];
+                                        if (!empty($geolocation_data['latitude']) && !empty($geolocation_data['longitude'])) {
+                                            $update_data['location'] = $geolocation_data['latitude'] . ',' . $geolocation_data['longitude'];
                                         }
                                     }
                                 } catch (\Exception $e) {

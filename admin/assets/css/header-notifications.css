@@ -1,0 +1,155 @@
+/* Header Notifications Styles - SlimStat Plugin */
+
+.slimstat-header .slimstat-header-notifications {
+    position: absolute;
+    right: 25px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications {
+    width: 24px;
+    height: 24px;
+    display: inline-block;
+    position: relative;
+    transition: 0.3s all ease-out;
+    cursor: pointer;
+    text-decoration: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications:hover,
+.slimstat-header .slimstat-header-notifications .slimstat-notifications:focus,
+.slimstat-header .slimstat-header-notifications .slimstat-notifications:active {
+    text-decoration: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell {
+    opacity: 0.7;
+    color: #fff;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    transition: 0.3s all ease-out;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell::before {
+    width: 24px;
+    height: 24px;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background-color: #FF3A3A;
+    border-radius: 50%;
+    border: 2px solid #2b2b2b;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications:hover .dashicons-bell {
+    opacity: 1;
+}
+
+.slimstat-header .slimstat-header-notifications .slimstat-notifications.slimstat-notifications--has-items .dashicons-bell {
+    opacity: 1;
+}
+
+/* RTL Support */
+.rtl .slimstat-header .slimstat-header-notifications {
+    right: auto;
+    left: 25px;
+}
+
+.rtl .slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+    right: auto;
+    left: -2px;
+}
+
+/* Mobile View */
+@media (max-width: 782px) {
+    .slimstat-header .slimstat-header-notifications {
+        right: 20px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell {
+        font-size: 26px;
+        width: 26px;
+        height: 26px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell::before {
+        width: 26px;
+        height: 26px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+        width: 11px;
+        height: 11px;
+        top: -1px;
+        right: -1px;
+    }
+    
+    .rtl .slimstat-header .slimstat-header-notifications {
+        right: auto;
+        left: 20px;
+    }
+    
+    .rtl .slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+        right: auto;
+        left: -1px;
+    }
+}
+
+@media (max-width: 500px) {
+    .slimstat-header .slimstat-header-notifications {
+        position: absolute;
+        top: 120px;
+        right: 15px;
+        transform: none;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell {
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .dashicons-bell::before {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+        width: 12px;
+        height: 12px;
+        top: 0;
+        right: 0;
+    }
+    
+    .rtl .slimstat-header .slimstat-header-notifications {
+        right: auto;
+        left: 15px;
+    }
+    
+    .rtl .slimstat-header .slimstat-header-notifications .slimstat-notifications .notification-badge {
+        right: auto;
+        left: 0;
+    }
+}
+

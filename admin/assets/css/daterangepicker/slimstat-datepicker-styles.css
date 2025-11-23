@@ -1,0 +1,274 @@
+/* SlimStat Date Range Picker Styles */
+:root {
+    --slimstat-primary: #dc3232; /* SlimStat Red */
+    --slimstat-primary-hover: #b32d2e;
+    --slimstat-border: #ddd;
+    --slimstat-background: #fff;
+    --slimstat-text: #333;
+    --slimstat-light-bg: #f8f8f8;
+}
+
+/* Date Range Picker Button */
+.slimstat-date-range-picker {
+    position: relative;
+    display: inline-block;
+}
+
+.slimstat-date-range-btn {
+    background: transparent;
+    border: none;
+    padding: 4px 8px;
+    color: var(--slimstat-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    min-width: 200px;
+    justify-content: space-between;
+    text-decoration: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.slimstat-date-range-btn:hover,
+.slimstat-date-range-btn:focus,
+.slimstat-date-range-btn:active {
+    background: transparent;
+    border: none;
+    color: var(--slimstat-text);
+    text-decoration: none;
+    outline: none;
+    box-shadow: none;
+}
+
+.slimstat-date-range-btn .caret {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid;
+    transition: transform 0.2s ease;
+    margin-right: 5px;
+    flex-shrink: 0;
+
+}
+
+.slimstat-date-range-btn.active .caret {
+    transform: rotate(180deg);
+}
+
+.slimstat-date-range-btn .calendar-icon {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: var(--slimstat-text);
+    flex-shrink: 0;
+}
+
+/* SVG clip path definition for calendar icon */
+.slimstat-date-range-btn .calendar-icon defs {
+    display: block;
+}
+
+/* Override daterangepicker styles for SlimStat */
+.slimstat-daterangepicker.daterangepicker {
+    --color-drp-fg-primary: var(--slimstat-primary);
+    --color-drp-fg-accent: var(--slimstat-primary);
+    --color-drp-bg: var(--slimstat-background);
+    --color-drp-border: var(--slimstat-border);
+    --color-drp-fg-default: var(--slimstat-text);
+    --color-drp-bg-inrange: var(--slimstat-light-bg);
+    
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border-radius: 6px;
+    width: auto !important;
+    min-width: auto;
+    z-index: 9999;
+}
+
+/* Hide calendars by default - only show when custom range is selected */
+.slimstat-daterangepicker .calendar,
+.slimstat-daterangepicker .drp-calendar {
+    display: none !important;
+}
+
+/* Show calendars only when custom range is active */
+.slimstat-daterangepicker.custom-range-active .calendar,
+.slimstat-daterangepicker.custom-range-active .drp-calendar {
+    display: block !important;
+}
+
+/* Remove extra whitespace and make dropdown fit content */
+.slimstat-daterangepicker .drp-calendar {
+    width: auto !important;
+}
+
+.slimstat-daterangepicker .ranges {
+    width: auto !important;
+    min-width: 180px;
+}
+
+.slimstat-daterangepicker .ranges ul {
+    width: 100%;
+    margin: 0;
+    padding: 8px 0;
+}
+
+.slimstat-daterangepicker .ranges ul li {
+    padding: 6px 12px;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Position dropdown below the button */
+.slimstat-daterangepicker.daterangepicker.drops-down {
+    margin-top: 4px;
+}
+
+.slimstat-daterangepicker.daterangepicker.opens-right {
+    left: auto !important;
+}
+
+/* Ensure proper positioning relative to button */
+.slimstat-date-range-picker {
+    position: relative;
+    z-index: 1;
+}
+
+@media screen and (max-width: 1024px) {
+    .slimstat-date-range-picker {
+        width: 100%;
+    }
+    .slimstat-date-range-picker button{
+        width: 100%;
+    }
+}
+.slimstat-daterangepicker .ranges ul li:hover {
+    background-color: var(--slimstat-primary);
+    color: white;
+}
+
+.slimstat-daterangepicker .ranges ul li.active {
+    background-color: var(--slimstat-primary);
+    color: white;
+}
+
+/* Style buttons to match WordPress admin buttons */
+.slimstat-daterangepicker .drp-buttons {
+    padding: 8px;
+    border-top: 1px solid var(--slimstat-border);
+}
+
+.slimstat-daterangepicker .drp-buttons .btn {
+    display: inline-block;
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 2.15384615;
+    min-height: 30px;
+    margin: 0;
+    padding: 0 10px;
+    cursor: pointer;
+    border-width: 1px;
+    border-style: solid;
+    -webkit-appearance: none;
+    border-radius: 3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.slimstat-daterangepicker .drp-buttons .btn-primary {
+    background: #e8294c;
+    border-color: #e8294c;
+    color: #fff;
+    text-shadow: none;
+}
+
+.slimstat-daterangepicker .drp-buttons .btn-primary:hover,
+.slimstat-daterangepicker .drp-buttons .btn-primary:focus {
+    background: #b32d2e;
+    border-color: #b32d2e;
+    color: #fff;
+}
+
+
+.slimstat-daterangepicker .drp-buttons .cancelBtn {
+    background: #f6f7f7;
+    border-color: #dcdcde;
+    color: #2c3338;
+}
+
+.slimstat-daterangepicker .drp-buttons .cancelBtn:hover,
+.slimstat-daterangepicker .drp-buttons .cancelBtn:focus {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+    color: #2c3338;
+}
+
+/* Custom Range Selection Display */
+.slimstat-custom-range-display {
+    padding: 8px 12px;
+    background: var(--slimstat-light-bg);
+    border: 1px solid var(--slimstat-border);
+    border-radius: 4px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: var(--slimstat-text);
+}
+
+
+
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .slimstat-daterangepicker {
+        max-width: 90vw;
+    }
+    
+    .slimstat-date-range-btn {
+        min-width: 150px;
+        font-size: 13px;
+        padding: 6px 10px;
+    }
+    
+    .slimstat-daterangepicker .ranges {
+        min-width: 160px;
+    }
+}
+.slimstat-daterangepicker{
+    top: 256px !important;
+    left: unset !important;
+    right: 20px !important;
+}
+@media screen and (max-width: 1024px) {
+    .slimstat-daterangepicker{
+        top: 308px !important;
+
+    }
+}
+
+@media screen and (max-width: 717px) {
+    .slimstat-daterangepicker{
+        top: 350px !important;
+    }
+}
+
+@media screen and (max-width: 401px) {
+    .slimstat-daterangepicker{
+        top: 380px !important;
+    }
+}
+
+.datepicker-badge-elements{
+    display: flex;
+    align-content: center;
+    flex-wrap: wrap-reverse;
+    color: white;
+}
+#slimstat-date-filters{
+    display: flex;
+    align-items: center;
+}

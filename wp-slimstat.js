@@ -1,4 +1,5 @@
-import FingerprintJS from "@fingerprintjs/fingerprintjs";
+// NOTE: Fingerprint2 (fingerprintjs2) library is required as a global dependency
+// and should be loaded before this script
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -20,17 +21,7 @@ var SlimStat = (function () {
     var lastInteractionPayload = "";
     var lastInteractionTime = 0;
     var PENDING_INTERACTIONS_LIMIT = 20;
-
-    // Initialize these variables with default values to prevent runtime errors
     var pendingInteractions = [];
-    var loadOfflineQueue = function () {
-        return [];
-    };
-    var saveOfflineQueue = function () {};
-    var currentSlimStatParams = function () {
-        return {};
-    };
-    var pageviewInProgress = false;
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
@@ -48,8 +39,38 @@ var SlimStat = (function () {
         }
     }
 
-    // Offline persistence helpers will be defined in the outer scope and assigned here
+    // Offline persistence helpers
     var OFFLINE_KEY = "slimstat_offline_queue";
+    function loadOfflineQueue() {
+        try {
+            var raw = localStorage.getItem(OFFLINE_KEY);
+            if (!raw) return [];
+            var arr = JSON.parse(raw);
+            return Array.isArray(arr) ? arr : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function saveOfflineQueue(arr) {
+        try {
+            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
+        } catch (e) {
+            /* ignore */
+        }
+    }
+    function storeOffline(payload) {
+        var arr = loadOfflineQueue();
+        arr.push({ p: payload, t: Date.now() });
+        saveOfflineQueue(arr);
+    }
+    function flushOfflineQueue() {
+        var arr = loadOfflineQueue();
+        if (!arr.length) return;
+        saveOfflineQueue([]); // clear first to avoid loops
+        arr.forEach(function (item) {
+            sendToServer(item.p, true, { priority: "normal" });
+        });
+    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -455,12 +476,7 @@ var SlimStat = (function () {
         // class-based do not track
         if (doNotTrack.length && target.className && typeof target.className === "string") {
             var classes = target.className.split(" ");
-            if (
-                classes.some(function (c) {
-                    return doNotTrack.indexOf(c) !== -1;
-                })
-            )
-                return false;
+            if (classes.some((c) => doNotTrack.indexOf(c) !== -1)) return false;
         }
         if (doNotTrack.length && target.attributes && target.attributes.rel && target.attributes.rel.value) {
             if (anySubstring(target.attributes.rel.value, doNotTrack)) return false;
@@ -879,12 +895,10 @@ var SlimStat = (function () {
             delete window[requestKey];
             return;
         }
-
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         var useBeacon = !waitForId; // need sync response when creating id
-
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) {
             window.sendingSlimStatPageview = false;
@@ -1029,6 +1043,57 @@ var SlimStat = (function () {
         }
     }
 
+    // -------------------------- Navigation / Interactivity Integration -------------------------- //
+    function setupNavigationHooks() {
+        // WordPress Interactivity API Event
+        addEvent(document, "wp-interactivity:navigate", function () {
+            // Finalize current pageview (if any) before starting a new one
+            var params = currentSlimStatParams();
+            if (params.id && parseInt(params.id, 10) > 0) {
+                sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
+            }
+            params.id = null; // force new id on next pageview
+            sendPageview();
+        });
+
+        // History API overrides (fallback for SPAs / Interactivity polyfills)
+        if (window.history && history.pushState) {
+            var originalPush = history.pushState;
+            var originalReplace = history.replaceState;
+            history.pushState = function () {
+                var params = currentSlimStatParams();
+                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
+                params.id = null; // force new id
+                var res = originalPush.apply(this, arguments);
+                sendPageview();
+                return res;
+            };
+            history.replaceState = function () {
+                var res = originalReplace.apply(this, arguments);
+                sendPageview();
+                return res;
+            };
+            addEvent(window, "popstate", function () {
+                currentSlimStatParams().id = null;
+                sendPageview();
+            });
+        }
+    }
+
+    // -------------------------- Event Delegation for Clicks -------------------------- //
+    function setupClickDelegation() {
+        addEvent(document.body, "click", function (e) {
+            var target = e.target;
+            while (target && target !== document.body) {
+                if (target.matches && target.matches("a,button,input,area")) {
+                    trackInteraction(e, null, null);
+                    break;
+                }
+                target = target.parentNode;
+            }
+        });
+    }
+
     // -------------------------- Public API (legacy names preserved) -------------------------- //
     return {
         // legacy constant (used by base64 algorithm)
@@ -1058,6 +1123,7 @@ var SlimStat = (function () {
         // Offline data handling
         store_offline: storeOffline,
         flush_offline_queue: flushOfflineQueue,
+        flush_pending_interactions: flushPendingInteractions,
         consent: {
             checkAllowed: slimstatConsentAllowed,
             emit: emitConsentEvent,
@@ -1110,11 +1176,13 @@ if (!window.requestIdleCallback) {
 
 // Main initialization (refactored)
 (function initSlimStatRuntime() {
-    // These functions and variables are now defined in this scope
-    // and will be shared with the SlimStat object.
+    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
+    var finalized = false;
+
+    // Variables to share with SlimStat IIFE
     var pendingInteractions = [];
-    var OFFLINE_KEY = "slimstat_offline_queue";
     var pageviewInProgress = false;
+    var OFFLINE_KEY = "slimstat_offline_queue";
 
     // Helper functions for consent detection (local copies for scope access)
     function isFunction(value) {
@@ -1145,6 +1213,17 @@ if (!window.requestIdleCallback) {
             return Array.isArray(arr) ? arr : [];
         } catch (e) {
             return [];
+        }
+    }
+
+    function finalizeCurrent(reason) {
+        if (finalized) return;
+        var p = window.SlimStatParams || {};
+        if (p.id && parseInt(p.id, 10) > 0) {
+            // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
+            var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
+            SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
+            finalized = true;
         }
     }
 
@@ -1524,7 +1603,7 @@ if (!window.requestIdleCallback) {
     // Online event to resend offline queue
     SlimStat.add_event(window, "online", function () {
         SlimStat.flush_offline_queue();
-        flushPendingInteractions();
+        SlimStat.flush_pending_interactions();
     });
 
     // Before unload, persist any pending interactions that don't have an ID yet

@@ -1,11 +1,7 @@
 <?php
 
 use SlimStat\Utils\Query;
-
-// Ensure SlimStat autoloader is loaded for Query class
-if (!class_exists('SlimStat\\Includes\\Utils\\Query')) {
-
-}
+use SlimStat\Components\DateRangeHelper;
 
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
@@ -135,6 +131,52 @@ class wp_slimstat_db
 
         // Filters use the following format: browser equals Firefox&&&country contains gb
         $filters_array = [];
+
+        // Handle type parameter for date presets and custom ranges
+        if (isset($_GET['type'])) {
+            // Sanitize the type parameter to prevent XSS
+            $type = sanitize_key($_GET['type']);
+
+            if ($type !== 'custom') {
+                // Handle preset types
+                // Validate that the type is a valid preset before using it
+                $valid_presets = ['today', 'yesterday', 'this_week', 'last_week', 'this_month', 'last_month',
+                                  'last_7_days', 'last_28_days', 'last_30_days', 'last_90_days',
+                                  'last_6_months', 'this_year'];
+
+                if (in_array($type, $valid_presets, true)) {
+                    $preset_range = DateRangeHelper::get_range_by_preset($type);
+                    if ($preset_range) {
+                        $filters_array['strtotime'] = 'strtotime equals ' . sanitize_text_field(wp_date('Y-m-d', $preset_range['end']));
+                        // Calculate days by normalizing to midnight to avoid DST issues
+                        $start_day = strtotime(wp_date('Y-m-d', $preset_range['start']));
+                        $end_day = strtotime(wp_date('Y-m-d', $preset_range['end']));
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
+                        $filters_array['interval'] = 'interval equals -' . absint($interval_days);
+                    }
+                }
+            } elseif (isset($_GET['from']) && isset($_GET['to'])) {
+                // Sanitize date inputs to prevent XSS
+                $from_date = sanitize_text_field($_GET['from']);
+                $to_date = sanitize_text_field($_GET['to']);
+
+                // Validate date format (YYYY-MM-DD)
+                if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
+                    // Calculate interval days directly from the date strings
+                    $start_day = strtotime($from_date);
+                    $end_day = strtotime($to_date);
+
+                    // Basic validation
+                    if ($start_day && $end_day && $start_day <= $end_day) {
+                        $interval_days = (($end_day - $start_day) / 86400) + 1;
+
+                        // Use the date strings directly without converting back and forth
+                        $filters_array['strtotime'] = 'strtotime equals ' . $to_date;
+                        $filters_array['interval'] = 'interval equals -' . absint($interval_days);
+                    }
+                }
+            }
+        }
 
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
@@ -349,16 +391,17 @@ class wp_slimstat_db
                 break;
 
             case 'is_greater_than':
-                $where[0] = '%s > ' . $column_with_alias;
+                $where[0] = sprintf('%s > %%s', $column_with_alias);
                 break;
 
             case 'is_less_than':
-                $where[0] = '%s < ' . $column_with_alias;
+                $where[0] = sprintf('%s < %%s', $column_with_alias);
                 break;
 
             case 'between':
                 $range = explode(',', $_value);
-                $where = ['%s BETWEEN %d AND ' . $column_with_alias, [$range[0], $range[1]]];
+                $where[0] = sprintf('%s BETWEEN %%d AND %%d', $column_with_alias);
+                $where[1] = [intval($range[0]), intval($range[1])];
                 break;
 
             case 'matches':
@@ -375,6 +418,10 @@ class wp_slimstat_db
         }
 
         if (isset($where[1]) && '' != $where[1]) {
+            // Handle array of values for operators like 'between'
+            if (is_array($where[1])) {
+                return $GLOBALS['wpdb']->prepare($where[0], ...$where[1]);
+            }
             return $GLOBALS['wpdb']->prepare($where[0], $where[1]);
         } else {
             return $where[0];
@@ -391,7 +438,7 @@ class wp_slimstat_db
         // Use the end date from normalized filters (if available)
         if (!empty(self::$filters_normalized['utime']['end'])) {
             // Convert to Y-m-d for comparison (Query expects string date)
-            $to = date('Y-m-d', self::$filters_normalized['utime']['end']);
+            $to = wp_date('Y-m-d', self::$filters_normalized['utime']['end']);
             if (method_exists($query, 'canUseCacheForDateRange')) {
                 $query->canUseCacheForDateRange($to);
             }
@@ -561,23 +608,23 @@ class wp_slimstat_db
                             self::toggle_date_i18n_filters(false);
                             switch ($a_filter[1]) {
                                 case 'minute':
-                                    $filters_parsed['date']['minute'] = intval(date('i', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'hour':
-                                    $filters_parsed['date']['hour'] = intval(date('H', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'day':
-                                    $filters_parsed['date']['day'] = intval(date('j', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'month':
-                                    $filters_parsed['date']['month'] = intval(date('n', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 case 'year':
-                                    $filters_parsed['date']['year'] = intval(date('Y', strtotime($a_filter[3], date_i18n('U'))));
+                                    $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
                                     break;
 
                                 default:
@@ -706,6 +753,7 @@ class wp_slimstat_db
                 $fn['utime']['end'] = intval(date_i18n('U'));
             }
 
+            // Add 1 second to account for the time difference between midnight and 23:59:59
             $fn['utime']['range'] += 1;
             $fn['utime']['start'] = $fn['utime']['end'] + $fn['utime']['range'];
 
@@ -1042,7 +1090,9 @@ class wp_slimstat_db
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
         $query->limit(sprintf('%d OFFSET %d', $limit, $start));
 
-        $query->allowCaching(true);
+        $query->allowCaching(false);
+
+
 
         return $query->getAll();
     }

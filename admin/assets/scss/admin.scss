@@ -1022,7 +1022,7 @@ body {
   margin-top: 0;
   overflow: hidden;
 
-  *:not(.bootstrap-switch-container) {
+  *:not(.bootstrap-switch-container):not(input):not(button):not(label):not(select):not(textarea):not(a):not(code):not(pre):not(.description) {
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3124,6 +3124,12 @@ x:-o-prefocus {
     border: none;
     margin-top: 25px;
     border-radius: 10px;
+    /* Ensure table never exceeds container width */
+    width: 100%;
+    max-width: 100%;
+    /* Prefer content wrapping over horizontal scroll */
+    border-collapse: separate;
+    table-layout: auto;
 
     tr {
       &:first-of-type {
@@ -3141,25 +3147,39 @@ x:-o-prefocus {
       th {
         padding: 25px 20px;
         color: $grayOne;
+        /* Allow header text to wrap and not force width */
+        min-width: 0;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
       }
 
       td {
         padding: 25px 20px;
         color: $grayOne;
+        /* Let cell content wrap and avoid overflow */
+        min-width: 0;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
 
         input {
           border: 2px solid $grayFour;
           border-radius: 50px;
+          /* Avoid input overflow in narrow viewports */
+          max-width: 100%;
         }
 
         textarea {
           border: 2px solid $grayFour;
           border-radius: 10px;
+          max-width: 100%;
         }
 
         select {
           border: 2px solid $grayFour;
           border-radius: 50px;
+          max-width: 100%;
         }
 
         .button-primary {
@@ -3167,6 +3187,18 @@ x:-o-prefocus {
           color: $brand;
           background-color: white;
           border-radius: 50px;
+          max-width: 100%;
+        }
+
+        /* Make long links and code wrap instead of pushing layout */
+        a,
+        code,
+        pre,
+        .description {
+          white-space: normal;
+          word-break: break-word;
+          overflow-wrap: anywhere;
+          max-width: 100%;
         }
 
         .tag-editor {
@@ -3212,6 +3244,8 @@ x:-o-prefocus {
         color: $grayTwo;
         margin-top: 7px;
         display: block;
+        word-wrap: break-word;
+        max-width: 100%;
       }
     }
   }
@@ -3241,6 +3275,13 @@ x:-o-prefocus {
       display: block;
       width: 100%;
       margin: 0;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpolyline points='4 6 8 10 12 6' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 32px;
     }
 
     input {
@@ -4014,4 +4055,199 @@ x:-o-prefocus {
       }
     }
   }
+}
+
+/* Custom Searchable Select Styles */
+.slimstat-searchable-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+
+  .slimstat-select-wrapper {
+    width: 180px;
+    margin-right: 5px;
+    position: relative;
+    border: 1px solid $graySix;
+    border-radius: 5px;
+    background: #fff;
+    cursor: pointer;
+    min-height: 32px;
+
+    &:hover {
+      border-color: $brand;
+    }
+
+    &.slimstat-select-open {
+      border-color: $brand;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+  }
+
+  .slimstat-select-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    min-height: 20px;
+    font-size: 14px;
+    color: #555;
+
+    &.slimstat-placeholder {
+      color: #999;
+    }
+
+    .slimstat-select-text {
+      flex: 1;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slimstat-select-arrow {
+      flex-shrink: 0;
+      margin-left: 8px;
+      transition: transform 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      color: #666;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    }
+  }
+
+  .slimstat-select-wrapper.slimstat-select-open .slimstat-select-arrow {
+    transform: rotate(180deg);
+  }
+
+  .slimstat-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid $brand;
+    border-top: none;
+    border-radius: 0 0 5px 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow: hidden;
+  }
+
+  .slimstat-select-search {
+    position: relative;
+    padding: 8px;
+
+    input {
+      width: 100%;
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 14px;
+      outline: none;
+
+      &:focus {
+        border-color: $brand;
+        box-shadow: 0 0 0 1px $brand;
+      }
+    }
+  }
+
+  .slimstat-select-options {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .slimstat-select-option {
+    display: flex;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f5f5f5;
+    }
+
+    &.slimstat-selected {
+      background-color: $brand;
+      color: #fff;
+    }
+
+    &.slimstat-hidden {
+      display: none;
+    }
+  }
+
+  .slimstat-select-no-results {
+    padding: 12px;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    font-size: 14px;
+  }
+
+  .slimstat-select-loading {
+    padding: 12px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+
+    &:before {
+      content: "\\f463";
+      font-family: dashicons;
+      display: inline-block;
+      animation: spin 1s linear infinite;
+      margin-right: 5px;
+    }
+  }
+}
+.slimstat-option-icon {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 5px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  object-fit: cover;
+}
+.slimstat-select-option {
+  align-items: center;
+
+  .slimstat-option-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+.slimstat-select-text .slimstat-option-icon {
+  margin-right: 5px;
+  vertical-align: middle;
+  display: inline-block;
+}
+.rtl .slimstat-option-icon {
+  margin-right: 0;
+  margin-left: 5px;
+}
+.rtl .slimstat-select-text .slimstat-option-icon {
+  margin-right: 0;
+  margin-left: 5px;
 }
