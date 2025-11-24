@@ -779,7 +779,7 @@ var SlimStat = (function () {
             }
 
             if (cmpAllows === null) {
-                cmpAllows = true;
+                cmpAllows = false;
             }
         }
 
