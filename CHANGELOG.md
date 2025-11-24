@@ -1,3 +1,6 @@
+= 5.3.2 - 2025-11-24 =
+- Fix: Minor improvements & Hardened plugin security.
+
 = 5.3.1 - 2025-09-09 =
 - **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
 - **Fix**: Real-time report date filters not properly cleared during auto-refresh.
