@@ -36,9 +36,6 @@ class wp_slimstat_admin
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
 
-        // Load language files
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
-
         // Define the default screens
         $has_network_reports = get_user_option('meta-box-order_slimstat_page_slimlayout-network', 1);
 

@@ -1,5 +1,4 @@
-// NOTE: Fingerprint2 (fingerprintjs2) library is required as a global dependency
-// and should be loaded before this script
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 
 /**
  * SlimStat: Browser tracking helper (refactored for maintainability)
@@ -21,7 +20,17 @@ var SlimStat = (function () {
     var lastInteractionPayload = "";
     var lastInteractionTime = 0;
     var PENDING_INTERACTIONS_LIMIT = 20;
+
+    // Initialize these variables with default values to prevent runtime errors
     var pendingInteractions = [];
+    var loadOfflineQueue = function () {
+        return [];
+    };
+    var saveOfflineQueue = function () {};
+    var currentSlimStatParams = function () {
+        return {};
+    };
+    var pageviewInProgress = false;
 
     function bufferInteraction(raw) {
         if (pendingInteractions.length >= PENDING_INTERACTIONS_LIMIT) pendingInteractions.shift();
@@ -39,38 +48,8 @@ var SlimStat = (function () {
         }
     }
 
-    // Offline persistence helpers
+    // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
-    function loadOfflineQueue() {
-        try {
-            var raw = localStorage.getItem(OFFLINE_KEY);
-            if (!raw) return [];
-            var arr = JSON.parse(raw);
-            return Array.isArray(arr) ? arr : [];
-        } catch (e) {
-            return [];
-        }
-    }
-    function saveOfflineQueue(arr) {
-        try {
-            localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
-        } catch (e) {
-            /* ignore */
-        }
-    }
-    function storeOffline(payload) {
-        var arr = loadOfflineQueue();
-        arr.push({ p: payload, t: Date.now() });
-        saveOfflineQueue(arr);
-    }
-    function flushOfflineQueue() {
-        var arr = loadOfflineQueue();
-        if (!arr.length) return;
-        saveOfflineQueue([]); // clear first to avoid loops
-        arr.forEach(function (item) {
-            sendToServer(item.p, true, { priority: "normal" });
-        });
-    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -476,7 +455,12 @@ var SlimStat = (function () {
         // class-based do not track
         if (doNotTrack.length && target.className && typeof target.className === "string") {
             var classes = target.className.split(" ");
-            if (classes.some((c) => doNotTrack.indexOf(c) !== -1)) return false;
+            if (
+                classes.some(function (c) {
+                    return doNotTrack.indexOf(c) !== -1;
+                })
+            )
+                return false;
         }
         if (doNotTrack.length && target.attributes && target.attributes.rel && target.attributes.rel.value) {
             if (anySubstring(target.attributes.rel.value, doNotTrack)) return false;
@@ -528,6 +512,97 @@ var SlimStat = (function () {
 
     // -------------------------- Consent Helpers -------------------------- //
     var lastConsentSnapshot = null;
+    var CONSENT_UPGRADE_STATE_KEY = "slimstat_consent_upgrade_state";
+    var CONSENT_UPGRADE_TS_KEY = "slimstat_consent_upgrade_ts";
+
+    function getConsentUpgradeStore(key) {
+        try {
+            return sessionStorage.getItem(key) || "";
+        } catch (e) {
+            return window[key] || "";
+        }
+    }
+
+    function setConsentUpgradeStore(key, value) {
+        try {
+            if (value === "" || value === null || typeof value === "undefined") {
+                sessionStorage.removeItem(key);
+            } else {
+                sessionStorage.setItem(key, value);
+            }
+        } catch (e) {
+            if (value === "" || value === null || typeof value === "undefined") {
+                delete window[key];
+            } else {
+                window[key] = value;
+            }
+        }
+    }
+
+    function markConsentUpgradePending() {
+        setConsentUpgradeStore(CONSENT_UPGRADE_STATE_KEY, "pending");
+        setConsentUpgradeStore(CONSENT_UPGRADE_TS_KEY, Date.now().toString());
+    }
+
+    function markConsentUpgradeDone(success) {
+        if (success) {
+            setConsentUpgradeStore(CONSENT_UPGRADE_STATE_KEY, "done");
+            setConsentUpgradeStore(CONSENT_UPGRADE_TS_KEY, Date.now().toString());
+        } else {
+            setConsentUpgradeStore(CONSENT_UPGRADE_STATE_KEY, "");
+            setConsentUpgradeStore(CONSENT_UPGRADE_TS_KEY, "");
+        }
+    }
+
+    function hasConsentUpgradeSucceeded() {
+        return getConsentUpgradeStore(CONSENT_UPGRADE_STATE_KEY) === "done";
+    }
+
+    function claimConsentUpgradeSlot(force) {
+        if (force === true) {
+            markConsentUpgradePending();
+            return true;
+        }
+
+        var state = getConsentUpgradeStore(CONSENT_UPGRADE_STATE_KEY);
+        if ("done" === state) {
+            return false;
+        }
+
+        if ("pending" === state) {
+            var ts = parseInt(getConsentUpgradeStore(CONSENT_UPGRADE_TS_KEY) || "0", 10);
+            if (Date.now() - ts < 5000) {
+                return false;
+            }
+        }
+
+        markConsentUpgradePending();
+        return true;
+    }
+
+    function requestConsentUpgrade(extraOptions) {
+        extraOptions = extraOptions || {};
+        var force = extraOptions.force === true;
+
+        if (!claimConsentUpgradeSlot(force)) {
+            return false;
+        }
+
+        var requestOptions = {
+            isConsentRetry: true,
+            consentUpgrade: true,
+        };
+
+        if (extraOptions.consent) {
+            requestOptions.consent = extraOptions.consent;
+        }
+        if (extraOptions.consentNonce) {
+            requestOptions.consentNonce = extraOptions.consentNonce;
+        }
+
+        SlimStat._send_pageview(requestOptions);
+        return true;
+    }
 
     function isFunction(value) {
         return typeof value === "function";
@@ -558,9 +633,7 @@ var SlimStat = (function () {
                     if (rcbConsent === true || rcbConsent === false) return !!rcbConsent;
                     if (isObject(rcbConsent) && "cookie" in rcbConsent) return !!rcbConsent.cookie;
                     if (isObject(rcbConsent) && "consent" in rcbConsent) return !!rcbConsent.consent;
-                } catch (e) {
-                    /* ignore */
-                }
+                } catch (e) {}
             }
 
             // New API: window.RCB.consent.get()
@@ -622,9 +695,7 @@ var SlimStat = (function () {
                     }
                 }
             }
-        } catch (error) {
-            /* ignore */
-        }
+        } catch (error) {}
         return null;
     }
 
@@ -632,19 +703,20 @@ var SlimStat = (function () {
         try {
             if (isFunction(window.wp_has_service_consent)) {
                 try {
-                    if (window.wp_has_service_consent(category)) return true;
-                    if (isFunction(window.wp_is_service_denied) && window.wp_is_service_denied(category)) return false;
-                } catch (err) {
-                    /* ignore */
-                }
+                    var serviceConsent = window.wp_has_service_consent(category);
+                    if (serviceConsent) return true;
+                    if (isFunction(window.wp_is_service_denied) && window.wp_is_service_denied(category)) {
+                        return false;
+                    }
+                } catch (err) {}
             }
 
             if (isFunction(window.wp_has_consent)) {
                 try {
-                    if (window.wp_has_consent(category)) return true;
-                } catch (err2) {
-                    /* ignore */
-                }
+                    var hasConsent = window.wp_has_consent(category);
+                    if (hasConsent) return true;
+                    return false;
+                } catch (err2) {}
             }
 
             var consentObj = window.wpConsent || window.WPConsent || null;
@@ -654,18 +726,23 @@ var SlimStat = (function () {
                     return !!value;
                 }
             }
-        } catch (err3) {
-            /* ignore */
-        }
+        } catch (err3) {}
         return null;
     }
 
     function detectSlimStatBanner(consentCookieName, category) {
         try {
-            var value = getCookieStrict(consentCookieName || "slimstat_gdpr_consent");
-            if (!value) return null;
-            if (value === "accepted") return true;
-            if (value === "denied") return false;
+            var cookieName = consentCookieName || "slimstat_gdpr_consent";
+            var value = getCookieStrict(cookieName);
+            if (!value) {
+                return null;
+            }
+            if (value === "accepted") {
+                return true;
+            }
+            if (value === "denied") {
+                return false;
+            }
             try {
                 var parsed = JSON.parse(value);
                 if (parsed && parsed[category] !== undefined) {
@@ -678,6 +755,169 @@ var SlimStat = (function () {
         } catch (err4) {
             return null;
         }
+    }
+
+    function normalizeConsent(raw) {
+        var normalized = {
+            functional: "deny",
+            statistics: "deny",
+            statistics_anonymous: "deny",
+            marketing: "deny",
+        };
+
+        if (typeof raw === "boolean") {
+            normalized.statistics = raw ? "allow" : "deny";
+            return normalized;
+        }
+
+        if (typeof raw === "string") {
+            if (raw === "accepted" || raw === "allow" || raw === "grant") {
+                normalized.statistics = "allow";
+            } else if (raw === "denied" || raw === "deny" || raw === "revoke") {
+                normalized.statistics = "deny";
+            }
+            return normalized;
+        }
+
+        if (!isObject(raw) && !Array.isArray(raw)) {
+            return normalized;
+        }
+
+        var data = raw;
+        if (Array.isArray(raw)) {
+            data = { allowed: raw };
+        }
+
+        if (Array.isArray(data.allowed)) {
+            for (var i = 0; i < data.allowed.length; i++) {
+                var category = data.allowed[i];
+                if (normalized.hasOwnProperty(category)) {
+                    normalized[category] = "allow";
+                }
+            }
+            return normalized;
+        }
+
+        if (Array.isArray(data.denied)) {
+            for (var j = 0; j < data.denied.length; j++) {
+                var deniedCategory = data.denied[j];
+                if (normalized.hasOwnProperty(deniedCategory)) {
+                    normalized[deniedCategory] = "deny";
+                }
+            }
+        }
+
+        var categories = ["functional", "statistics", "statistics_anonymous", "marketing"];
+        for (var k = 0; k < categories.length; k++) {
+            var cat = categories[k];
+            if (data[cat] !== undefined) {
+                if (typeof data[cat] === "boolean") {
+                    normalized[cat] = data[cat] ? "allow" : "deny";
+                } else if (typeof data[cat] === "string") {
+                    normalized[cat] = ["allow", "accepted", "grant", "true"].indexOf(data[cat]) !== -1 ? "allow" : "deny";
+                }
+            } else if (data.groups && data.groups[cat] !== undefined) {
+                var groupValue = data.groups[cat];
+                if (typeof groupValue === "boolean") {
+                    normalized[cat] = groupValue ? "allow" : "deny";
+                } else if (typeof groupValue === "string") {
+                    normalized[cat] = ["allow", "accepted", "grant", "true"].indexOf(groupValue) !== -1 ? "allow" : "deny";
+                }
+            } else if (data.decision !== undefined) {
+                if (data.decision === "all") {
+                    normalized[cat] = "allow";
+                } else if (isObject(data.decision) && data.decision[cat] !== undefined) {
+                    var decisionValue = data.decision[cat];
+                    if (typeof decisionValue === "boolean") {
+                        normalized[cat] = decisionValue ? "allow" : "deny";
+                    } else if (typeof decisionValue === "string") {
+                        normalized[cat] = ["allow", "accepted", "grant", "true"].indexOf(decisionValue) !== -1 ? "allow" : "deny";
+                    }
+                }
+            }
+        }
+
+        return normalized;
+    }
+
+    function sendConsentChangeToServer(source, parsedConsent, pageviewId) {
+        try {
+            var params = currentSlimStatParams();
+            var nonce = params.wp_rest_nonce || "";
+            var restUrl = "";
+
+            // Try to get REST URL from params first
+            if (params.resturl) {
+                restUrl = params.resturl;
+            } else if (typeof window.wpApiSettings !== "undefined" && window.wpApiSettings.root) {
+                restUrl = window.wpApiSettings.root;
+            } else {
+                // Fallback: construct REST URL from current site URL
+                var siteUrl = window.location.origin;
+                if (params.baseurl && params.baseurl !== "/") {
+                    var basePath = params.baseurl.replace(/\/$/, "");
+                    restUrl = siteUrl + basePath + "/wp-json/";
+                } else {
+                    restUrl = siteUrl + "/wp-json/";
+                }
+            }
+
+            // Ensure restUrl ends with /
+            if (restUrl && restUrl.charAt(restUrl.length - 1) !== "/") {
+                restUrl += "/";
+            }
+
+            var endpoint = restUrl + "slimstat/v1/consent-change";
+            var payload = {
+                source: source,
+                parsed: parsedConsent,
+                ts: Date.now(),
+                mode: {
+                    gdprEnabled: params.gdpr_enabled !== "off",
+                    anonymousTrackingEnabled: params.anonymous_tracking === "on",
+                },
+                nonce: nonce,
+            };
+
+            if (pageviewId) {
+                payload.pageview_id = String(pageviewId);
+            }
+
+            if (typeof window.fetch === "function") {
+                fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-WP-Nonce": nonce,
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify(payload),
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .catch(function () {});
+            } else {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", endpoint, true);
+                xhr.setRequestHeader("Content-Type", "application/json");
+                xhr.setRequestHeader("X-WP-Nonce", nonce);
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            var responseData = JSON.parse(xhr.responseText);
+                        } catch (parseError) {
+                            /* ignore */
+                        }
+                    }
+                };
+                xhr.onerror = function () {};
+                xhr.send(JSON.stringify(payload));
+            }
+        } catch (error) {}
     }
 
     function emitConsentEvent(detail) {
@@ -728,6 +968,8 @@ var SlimStat = (function () {
         var integrationKey = s.consent_integration || "";
         var consentLevel = s.consent_level_integration || "statistics";
 
+        /* debug logging removed */
+
         try {
             var dntEnabled = s.respect_dnt === "on";
             if (dntEnabled && typeof navigator !== "undefined" && (navigator.doNotTrack === "1" || navigator.doNotTrack === "yes")) {
@@ -761,11 +1003,12 @@ var SlimStat = (function () {
                 var rcbConsent = detectRealCookieBannerConsent(consentLevel);
                 if (rcbConsent !== null) {
                     cmpAllows = rcbConsent;
-                }
-                if (cmpAllows === null) {
-                    var fallback = detectWPConsentAPI(consentLevel);
-                    if (fallback !== null) {
-                        cmpAllows = fallback;
+                } else {
+                    if (options.isConsentRetry) {
+                        var fallback = detectWPConsentAPI(consentLevel);
+                        if (fallback !== null) {
+                            cmpAllows = fallback;
+                        }
                     }
                 }
             }
@@ -779,7 +1022,18 @@ var SlimStat = (function () {
             }
 
             if (cmpAllows === null) {
-                cmpAllows = false;
+                if (anonMode) {
+                    cmpAllows = true;
+                } else if (collectsPII && integrationKey && integrationKey !== "") {
+                    cmpAllows = false;
+                } else {
+                    cmpAllows = true;
+                }
+            } else {
+            }
+
+            if (cmpAllows !== true && hasConsentUpgradeSucceeded()) {
+                cmpAllows = true;
             }
         }
 
@@ -822,17 +1076,6 @@ var SlimStat = (function () {
         options = options || {};
         extractSlimStatParams();
 
-        // Avoid duplicate non-navigation pageviews within the same page load.
-        // Navigation events (SPA transitions) are always allowed to create additional pageviews.
-        // Consent retries are also allowed to override the "already tracked" check.
-        try {
-            if (!options.isNavigation && !options.isConsentRetry && window.slimstatPageviewTracked === true) {
-                return;
-            }
-        } catch (guardErr) {
-            /* ignore */
-        }
-
         // Prevent duplicate requests with stronger locking mechanism
         var requestKey = "slimstat_pageview_" + (options.isNavigation ? "nav" : "init") + "_" + (options.isConsentRetry ? "retry" : "normal");
         if (window.sendingSlimStatPageview || window[requestKey]) {
@@ -843,6 +1086,16 @@ var SlimStat = (function () {
 
         var params = currentSlimStatParams();
 
+        var consentUpgradeParam = "";
+        if (options.consentUpgrade) {
+            consentUpgradeParam = "&consent_upgrade=1";
+            if (params.id) {
+                // Send the current pageview ID (with checksum) so the server can
+                // update this specific record, same as in the explicit upgrade AJAX.
+                consentUpgradeParam += "&pageview_id=" + encodeURIComponent(params.id);
+            }
+        }
+
         var consentDecision = slimstatConsentAllowed(params, {
             isNavigation: !!options.isNavigation,
             isConsentRetry: !!options.isConsentRetry,
@@ -852,6 +1105,15 @@ var SlimStat = (function () {
             window.sendingSlimStatPageview = false;
             delete window[requestKey];
             return;
+        }
+
+        if (options.consentUpgrade && consentDecision.mode === "full") {
+            consentUpgradeParam = "&consent_upgrade=1";
+            if (params.id) {
+                // Send the current pageview ID (with checksum) so the server can
+                // update this specific record, same as in the explicit upgrade AJAX.
+                consentUpgradeParam += "&pageview_id=" + encodeURIComponent(params.id);
+            }
         }
 
         // Check if this is a navigation event (not initial page load)
@@ -895,10 +1157,12 @@ var SlimStat = (function () {
             delete window[requestKey];
             return;
         }
+
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
-        var waitForId = isEmpty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
+        var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
         var useBeacon = !waitForId; // need sync response when creating id
+
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) {
             window.sendingSlimStatPageview = false;
@@ -923,18 +1187,12 @@ var SlimStat = (function () {
             }, 200);
         };
 
-        // Build consent upgrade parameters if this is a consent retry
-        // These are appended to the tracking payload so the backend can
-        // upgrade the existing anonymous pageview to full PII.
-        var consentUpgradeParam = "";
-        if (options.consentUpgrade) {
-            consentUpgradeParam = "&consent_upgrade=1";
-            if (params.id) {
-                // Send the current pageview ID (with checksum) so the server can
-                // update this specific record, same as in the explicit upgrade AJAX.
-                consentUpgradeParam += "&pageview_id=" + encodeURIComponent(params.id);
+        var onComplete = function (success) {
+            if (options.consentUpgrade) {
+                handleConsentUpgradeResult(!!success);
             }
-        }
+            resetPageviewFlags();
+        };
 
         // Add consent parameters if provided (from banner accept)
         if (options.consent && (options.consent === "accepted" || options.consent === "denied")) {
@@ -948,7 +1206,7 @@ var SlimStat = (function () {
             // If anonymous mode is active, skip fingerprinting entirely to ensure no PII is collected/sent
             if (consentDecision.mode === "anonymous") {
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
                 return;
             }
 
@@ -965,21 +1223,21 @@ var SlimStat = (function () {
                     fpPromise
                         .then(function (result) {
                             initFingerprintHash(result);
-                            sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                            sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
                         })
                         .catch(function () {
                             initFingerprintHash(null);
-                            sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                            sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
                         });
                 } else {
                     // Library not available; proceed without fingerprint
                     initFingerprintHash(null);
-                    sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                    sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
                 }
             } catch (e) {
                 // Catch synchronous errors (shouldn't happen, but defensive)
                 initFingerprintHash(null);
-                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: resetPageviewFlags });
+                sendToServer(payloadBase + buildSlimStatData({}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
             }
         };
         if (window.requestIdleCallback) window.requestIdleCallback(run);
@@ -1043,57 +1301,6 @@ var SlimStat = (function () {
         }
     }
 
-    // -------------------------- Navigation / Interactivity Integration -------------------------- //
-    function setupNavigationHooks() {
-        // WordPress Interactivity API Event
-        addEvent(document, "wp-interactivity:navigate", function () {
-            // Finalize current pageview (if any) before starting a new one
-            var params = currentSlimStatParams();
-            if (params.id && parseInt(params.id, 10) > 0) {
-                sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" });
-            }
-            params.id = null; // force new id on next pageview
-            sendPageview();
-        });
-
-        // History API overrides (fallback for SPAs / Interactivity polyfills)
-        if (window.history && history.pushState) {
-            var originalPush = history.pushState;
-            var originalReplace = history.replaceState;
-            history.pushState = function () {
-                var params = currentSlimStatParams();
-                if (params.id) sendToServer("action=slimtrack&id=" + params.id, true, { priority: "high" }); // finalize existing
-                params.id = null; // force new id
-                var res = originalPush.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            history.replaceState = function () {
-                var res = originalReplace.apply(this, arguments);
-                sendPageview();
-                return res;
-            };
-            addEvent(window, "popstate", function () {
-                currentSlimStatParams().id = null;
-                sendPageview();
-            });
-        }
-    }
-
-    // -------------------------- Event Delegation for Clicks -------------------------- //
-    function setupClickDelegation() {
-        addEvent(document.body, "click", function (e) {
-            var target = e.target;
-            while (target && target !== document.body) {
-                if (target.matches && target.matches("a,button,input,area")) {
-                    trackInteraction(e, null, null);
-                    break;
-                }
-                target = target.parentNode;
-            }
-        });
-    }
-
     // -------------------------- Public API (legacy names preserved) -------------------------- //
     return {
         // legacy constant (used by base64 algorithm)
@@ -1123,11 +1330,13 @@ var SlimStat = (function () {
         // Offline data handling
         store_offline: storeOffline,
         flush_offline_queue: flushOfflineQueue,
-        flush_pending_interactions: flushPendingInteractions,
         consent: {
             checkAllowed: slimstatConsentAllowed,
             emit: emitConsentEvent,
+            normalize: normalizeConsent,
+            sendChange: sendConsentChangeToServer,
         },
+        requestConsentUpgrade: requestConsentUpgrade,
         // New internal helpers (not documented previously)
         _extract_params: extractSlimStatParams,
         _send_pageview: sendPageview,
@@ -1176,13 +1385,11 @@ if (!window.requestIdleCallback) {
 
 // Main initialization (refactored)
 (function initSlimStatRuntime() {
-    // Track whether we've already finalized the current pageview (avoid duplicate beacons)
-    var finalized = false;
-
-    // Variables to share with SlimStat IIFE
+    // These functions and variables are now defined in this scope
+    // and will be shared with the SlimStat object.
     var pendingInteractions = [];
-    var pageviewInProgress = false;
     var OFFLINE_KEY = "slimstat_offline_queue";
+    var pageviewInProgress = false;
 
     // Helper functions for consent detection (local copies for scope access)
     function isFunction(value) {
@@ -1216,17 +1423,6 @@ if (!window.requestIdleCallback) {
         }
     }
 
-    function finalizeCurrent(reason) {
-        if (finalized) return;
-        var p = window.SlimStatParams || {};
-        if (p.id && parseInt(p.id, 10) > 0) {
-            // Attach a tiny hint (reason) so backend could differentiate (ignored if unsupported)
-            var payload = "action=slimtrack&id=" + p.id + (reason ? "&fv=" + encodeURIComponent(reason) : "");
-            SlimStat.send_to_server(payload, true, { priority: "high", immediate: false });
-            finalized = true;
-        }
-    }
-
     function saveOfflineQueue(arr) {
         try {
             localStorage.setItem(OFFLINE_KEY, JSON.stringify(arr.slice(-200))); // cap
@@ -1249,6 +1445,12 @@ if (!window.requestIdleCallback) {
         currentSlimStatParams: currentSlimStatParams,
         pageviewInProgress: pageviewInProgress,
     });
+
+    var requestConsentUpgrade =
+        SlimStat.requestConsentUpgrade ||
+        function () {
+            return false;
+        };
 
     // Track whether we've already finalized the current pageview (avoid duplicate beacons)
     var finalizedPageviews = {};
@@ -1339,7 +1541,9 @@ if (!window.requestIdleCallback) {
 
             if (detail[selectedCategory] && detail[selectedCategory] === "allow" && (!window[retryKey] || window[retryKey] === false)) {
                 window[retryKey] = true;
-                SlimStat._send_pageview();
+                SlimStat._send_pageview({
+                    consentUpgrade: true,
+                });
             }
         } catch (e) {
             /* ignore */
@@ -1356,7 +1560,9 @@ if (!window.requestIdleCallback) {
 
                 if (category === selectedCategory && (!window[retryKey] || window[retryKey] === false)) {
                     window[retryKey] = true;
-                    SlimStat._send_pageview();
+                    SlimStat._send_pageview({
+                        consentUpgrade: true,
+                    });
                 }
             });
         } catch (e) {
@@ -1375,11 +1581,15 @@ if (!window.requestIdleCallback) {
                 if (typeof window.wp_has_consent === "function") {
                     if (window.wp_has_consent(selectedCategory)) {
                         window[retryKey] = true;
-                        SlimStat._send_pageview();
+                        SlimStat._send_pageview({
+                            consentUpgrade: true,
+                        });
                     }
                 } else {
                     window[retryKey] = true;
-                    SlimStat._send_pageview();
+                    SlimStat._send_pageview({
+                        consentUpgrade: true,
+                    });
                 }
             }
         } catch (e) {
@@ -1404,67 +1614,62 @@ if (!window.requestIdleCallback) {
                 // Double-check with WP Consent API if available
                 if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) return;
                 window[retryKey] = true;
-                SlimStat._send_pageview();
+                SlimStat._send_pageview({
+                    consentUpgrade: true,
+                });
+            }
+
+            // Send consent change to server via REST API
+            if (category === selectedCategory) {
+                try {
+                    var hasConsent = false;
+                    if (typeof window.wp_has_consent === "function") {
+                        hasConsent = window.wp_has_consent(selectedCategory);
+                    } else if (event.detail.consent !== undefined) {
+                        hasConsent = event.detail.consent === true || event.detail.consent === "allow";
+                    }
+
+                    var parsedConsent = normalizeConsent({
+                        statistics: hasConsent ? "allow" : "deny",
+                    });
+
+                    var pageviewId = null;
+                    if (params.id && parseInt(params.id, 10) > 0) {
+                        pageviewId = parseInt(params.id, 10);
+                    }
+
+                    sendConsentChangeToServer("wp_consent_api", parsedConsent, pageviewId);
+                } catch (consentError) {}
             }
         }
     });
 
     // CMP-specific listeners
-    // Define tryTrackIfAllowed in outer scope so handleConsentGranted can access it
-    function tryTrackIfAllowed() {
+    // Define tryTrackIfAllowed in outer scope so consent helpers can access it
+    function tryTrackIfAllowed(extraOptions) {
         var params = currentSlimStatParams();
         var selectedCategory = params.consent_level_integration || "statistics";
-        if (params.id && parseInt(params.id, 10) > 0) {
-            return;
-        }
-        if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(selectedCategory)) {
-            return;
-        }
+        var integrationKey = params.consent_integration || "";
 
-        // Use category-specific retry flag to prevent race conditions between CMPs
-        var retryKey = "slimstatConsentRetried_" + selectedCategory;
-        // Check if we've already successfully sent a request (not just attempted)
-        var retryTimestampKey = retryKey + "_timestamp";
-        var lastRetryTime = window[retryTimestampKey] || 0;
-        var timeSinceLastRetry = Date.now() - lastRetryTime;
-
-        // Check if a pageview is already being sent (prevent duplicate from multiple event sources)
-        if (window.sendingSlimStatPageview) {
-            return;
-        }
-
-        // Allow retry if:
-        // 1. Never tried before, OR
-        // 2. Last attempt was more than 2 seconds ago (enough time for request to complete)
-        if (!window[retryKey] || (window[retryKey] && timeSinceLastRetry > 2000)) {
-            // Check if lock is active - if so, delay and retry
-            var requestKey = "slimstat_pageview_init_retry";
-            if (window.sendingSlimStatPageview || window[requestKey]) {
-                setTimeout(function () {
-                    tryTrackIfAllowed();
-                }, 500);
+        if (typeof window.wp_has_consent === "function") {
+            try {
+                var hasConsent = window.wp_has_consent(selectedCategory);
+                if (!hasConsent) {
+                    return;
+                }
+            } catch (err) {
                 return;
             }
-            // Mark that we're attempting to send (but don't set permanent flag yet)
-            window[retryKey] = true;
-            window[retryTimestampKey] = Date.now();
-            // Use isConsentRetry flag to prevent duplicate detection
-            // Add consent_upgrade parameter to signal backend to upgrade existing anonymous pageview
-            SlimStat._send_pageview({ isConsentRetry: true, consentUpgrade: true });
-
-            // After a delay, check if request was actually sent
-            // If lock is still active after 1 second, it means request was blocked
-            setTimeout(function () {
-                var requestKeyCheck = "slimstat_pageview_init_retry";
-                // If lock is still active, it means request was blocked, so reset flag
-                // But only if enough time has passed (request should complete in < 1 second)
-                if (window.sendingSlimStatPageview || window[requestKeyCheck]) {
-                    // Lock still active after 1 second - request was likely blocked
-                    // Reset flag to allow retry
-                    window[retryKey] = false;
-                }
-            }, 1000);
         }
+
+        if (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie") {
+            var rcbConsent = detectRealCookieBannerConsent(selectedCategory);
+            if (rcbConsent === false) {
+                return;
+            }
+        }
+
+        requestConsentUpgrade(extraOptions || {});
     }
 
     // CMP-specific listeners
@@ -1501,24 +1706,40 @@ if (!window.requestIdleCallback) {
 
             var selectedCategory = params.consent_level_integration || "statistics";
             var ok = false;
+            var consentData = null;
 
             if (e && e.detail) {
                 if (e.detail.consent && selectedCategory in e.detail.consent) {
                     var categoryConsent = e.detail.consent[selectedCategory];
                     if (typeof categoryConsent === "boolean") {
                         ok = categoryConsent;
+                        consentData = e.detail.consent;
                     } else if (categoryConsent && categoryConsent.cookie !== null) {
                         ok = true;
+                        consentData = e.detail.consent;
                     }
                 } else if (e.detail.button && (e.detail.button === "accept_all" || e.detail.button === "accept_essentials" || e.detail.button === "save")) {
                     var consentCheck = SlimStat.consent.checkAllowed(params, {});
                     ok = consentCheck && consentCheck.allowed && consentCheck.mode === "full";
+                    if (e.detail.consent) {
+                        consentData = e.detail.consent;
+                    }
                 }
             }
 
             if (!ok && typeof window.wp_has_consent === "function") {
                 ok = !!window.wp_has_consent(selectedCategory);
             }
+
+            // Send consent change to server via REST API
+            try {
+                var parsedConsent = normalizeConsent(consentData || { statistics: ok });
+                var pageviewId = null;
+                if (params.id && parseInt(params.id, 10) > 0) {
+                    pageviewId = parseInt(params.id, 10);
+                }
+                sendConsentChangeToServer("real_cookie_banner", parsedConsent, pageviewId);
+            } catch (rcbError) {}
 
             if (!ok) {
                 var consentCheck = SlimStat.consent.checkAllowed(params, {});
@@ -1530,11 +1751,12 @@ if (!window.requestIdleCallback) {
                 var timeSinceLastCall = now - rcbHandlerLastCall;
                 var debounceDelay = timeSinceLastCall < 100 ? 100 - timeSinceLastCall : 0;
                 rcbHandlerDebounceTimer = setTimeout(function () {
-                    // Don't call handleConsentGranted here - RCB events will trigger it directly
-                    // Just call tryTrackIfAllowed if no pageview ID exists yet
+                    // Rely on tryTrackIfAllowed so the new consent upgrade flow runs uniformly
                     var params = currentSlimStatParams();
                     if (!params.id || parseInt(params.id, 10) <= 0) {
                         tryTrackIfAllowed();
+                    } else {
+                        SlimStat.requestConsentUpgrade();
                     }
                 }, debounceDelay);
                 rcbHandlerLastCall = now;
@@ -1603,7 +1825,7 @@ if (!window.requestIdleCallback) {
     // Online event to resend offline queue
     SlimStat.add_event(window, "online", function () {
         SlimStat.flush_offline_queue();
-        SlimStat.flush_pending_interactions();
+        flushPendingInteractions();
     });
 
     // Before unload, persist any pending interactions that don't have an ID yet
@@ -1747,261 +1969,21 @@ if (!window.requestIdleCallback) {
      * 4. IP hash replaced with real IP, tracking cookie set
      */
     function setupConsentUpgradeHandler() {
-        var consentUpgradeSent = {};
-        var consentUpgradeRetryCount = 0;
-        var initialConsentState = false;
-        var consentStateInitialized = false;
-        var rcbUpgradePollingDone = false;
+        var legacyEvents = ["RCB/OptIn", "RCB/OptIn/All", "cookieyes_consent_update", "cookieyes_preferences_update", "cli_consent_update", "wp_listen_load", "wp_consent_type_functional", "wp_consent_type_statistics", "slimstat_banner_consent"];
 
-        // Helper function to detect Real Cookie Banner consent (local copy for scope access)
-        function detectRCBConsentLocal(category) {
-            try {
-                if (isFunction(window.rcb)) {
-                    try {
-                        var rcbConsent = window.rcb("consent", category);
-                        if (rcbConsent === true || rcbConsent === false) return !!rcbConsent;
-                        if (isObject(rcbConsent) && "cookie" in rcbConsent) return !!rcbConsent.cookie;
-                        if (isObject(rcbConsent) && "consent" in rcbConsent) return !!rcbConsent.consent;
-                    } catch (e) {
-                        /* ignore */
-                    }
-                }
+        legacyEvents.forEach(function (eventName) {
+            document.addEventListener(eventName, function (e) {
+                requestConsentUpgrade(e);
+            });
+        });
 
-                if (isObject(window.RCB) && isObject(window.RCB.consent) && isFunction(window.RCB.consent.get)) {
-                    var rcbNew = window.RCB.consent.get(category);
-                    if (rcbNew === true || rcbNew === false) return !!rcbNew;
-                    if (isObject(rcbNew) && "cookie" in rcbNew) return !!rcbNew.cookie;
-                    if (isObject(rcbNew) && "consent" in rcbNew) return !!rcbNew.consent;
-                }
-
-                if (isObject(window.rcbConsentManager) && isFunction(window.rcbConsentManager.getUserDecision)) {
-                    var decision = window.rcbConsentManager.getUserDecision();
-                    if (decision && decision.decision) {
-                        if (decision.decision === "all") return true;
-                        if (typeof decision.decision === "object") {
-                            var value = decision.decision[category];
-                            if (typeof value === "boolean") return value;
-                            if (Array.isArray(value)) return value.length > 0;
-                        }
-                    }
-                }
-
-                var rcb = window.realCookieBanner || window.RealCookieBanner || null;
-                if (isObject(rcb) && isObject(rcb.consent) && isFunction(rcb.consent.get)) {
-                    var consent = rcb.consent.get(category);
-                    if (consent === true || consent === false) return !!consent;
-                    if (isObject(consent) && "cookie" in consent) return !!consent.cookie;
-                    if (consent) return true;
-                }
-
-                var legacy = window.__rcb || window.__RCB || null;
-                if (isObject(legacy) && legacy.consent) {
-                    var legacyVal = legacy.consent[category];
-                    if (typeof legacyVal === "boolean") return legacyVal;
-                    if (Array.isArray(legacyVal)) return legacyVal.length > 0;
-                }
-
-                var possibleNames = ["real_cookie_banner", "rcb_consent", "rcb_acceptance", "real_cookie_consent", "rcb-consent"];
-                for (var i = 0; i < possibleNames.length; i++) {
-                    var raw = getCookieStrict(possibleNames[i]);
-                    if (!raw) {
-                        continue;
-                    }
-                    try {
-                        var parsed = JSON.parse(raw);
-                        if (parsed) {
-                            if (typeof parsed[category] === "boolean") return parsed[category];
-                            if (typeof parsed.consent === "boolean") return parsed.consent;
-                            if (typeof parsed[category] === "object" && parsed[category].cookie !== undefined) return !!parsed[category].cookie;
-                        }
-                    } catch (err) {
-                        var normalized = raw.toLowerCase();
-                        if (raw.indexOf(category) !== -1 || raw === "1" || normalized === "true" || normalized === "all" || normalized === "accepted") {
-                            return true;
-                        }
-                    }
-                }
-            } catch (error) {
-                /* ignore */
-            }
-            return null;
-        }
-
-        function initConsentBaseline() {
-            if (consentStateInitialized) {
-                return;
-            }
-            consentStateInitialized = true;
-            try {
-                var params = currentSlimStatParams();
-                var selectedCategory = params.consent_level_integration || "statistics";
-                var integrationKey = params.consent_integration || "";
-                if ("real_cookie_banner" === integrationKey || integrationKey === "rcb" || integrationKey === "realcookie") {
-                    var rcbConsent = detectRCBConsentLocal(selectedCategory);
-                    if (rcbConsent === null || rcbConsent === false) {
-                        if (typeof window.wp_has_consent === "function") {
-                            initialConsentState = !!window.wp_has_consent(selectedCategory);
-                        } else {
-                            initialConsentState = false;
-                        }
-                    } else {
-                        initialConsentState = !!rcbConsent;
-                    }
-                }
-            } catch (e) {
-                /* ignore */
-            }
-        }
-
-        // Consent upgrade AJAX handler and event listeners
-
-        // Prevent simultaneous consent upgrade requests
-        var consentUpgradeInProgress = false;
-
-        function handleConsentGranted(event = false) {
-            // Avoid duplicate/in-progress runs
-            if (consentUpgradeInProgress) return;
-            consentUpgradeInProgress = true;
-
-            try {
-                var params = currentSlimStatParams();
-                var pageviewIdWithChecksum = params.id || "";
-                var pageviewIdNumeric = pageviewIdWithChecksum ? parseInt(pageviewIdWithChecksum.toString().split(".")[0], 10) : 0;
-
-                // If no pageview tracked, retry a few times, else trigger tracking with consent
-                if (pageviewIdNumeric <= 0 || !pageviewIdWithChecksum) {
-                    if (consentUpgradeRetryCount >= 5) {
-                        consentUpgradeRetryCount = 0;
-                        consentUpgradeInProgress = false;
-                        setTimeout(function () {
-                            tryTrackIfAllowed();
-                        }, 600);
-                        return;
-                    }
-                    consentUpgradeRetryCount++;
-                    setTimeout(function () {
-                        try {
-                            handleConsentGranted();
-                        } catch (err) {}
-                    }, 250);
-                    consentUpgradeInProgress = false;
-                    return;
-                }
-
-                // Prevent double-upgrade for the same pageview
-                if (consentUpgradeSent[pageviewIdWithChecksum]) {
-                    consentUpgradeInProgress = false;
-                    return;
-                }
-
-                // Check actual consent before request
-                var integrationKey = params.consent_integration || "";
-                if (integrationKey === "wp_consent_api") {
-                    var cat = params.consent_level_integration || "statistics";
-                    if (typeof window.wp_has_consent === "function" && !window.wp_has_consent(cat)) {
-                        consentUpgradeInProgress = false;
-                        return;
-                    }
-                } else if (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie") {
-                    if (!consentStateInitialized) initConsentBaseline();
-                    var cat = params.consent_level_integration || "statistics";
-                    var rcbConsent = detectRCBConsentLocal(cat);
-                    if (!rcbConsent && typeof window.wp_has_consent === "function") {
-                        rcbConsent = window.wp_has_consent(cat);
-                    }
-                    if (!rcbConsent) {
-                        consentUpgradeInProgress = false;
-                        return;
-                    }
-                }
-
-                consentUpgradeSent[pageviewIdWithChecksum] = true;
-
-                // Do upgrade request
-                var xhr = new XMLHttpRequest();
-                var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";
-                xhr.open("POST", ajaxUrl, true);
-                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-
-                xhr.onload = function () {
-                    consentUpgradeInProgress = false;
-                    if (xhr.status === 200) {
-                        try {
-                            JSON.parse(xhr.responseText);
-                        } catch (e) {}
-                    }
-                };
-                xhr.onerror = function () {
-                    consentUpgradeInProgress = false;
-                    consentUpgradeSent[pageviewIdWithChecksum] = false; // allow retry
-                };
-
-                // Optionally include fingerprint hash
-                var fingerprintParam = "";
-                if (fingerprintHash) {
-                    fingerprintParam = "&fingerprint=" + encodeURIComponent(fingerprintHash);
-                }
-
-                var requestData = "action=slimstat_consent_granted" + "&pageview_id=" + encodeURIComponent(pageviewIdWithChecksum) + "&nonce=" + encodeURIComponent(params.wp_rest_nonce || "") + fingerprintParam;
-                xhr.send(requestData);
-            } catch (e) {
-                consentUpgradeInProgress = false;
-                // Allow re-send if exception
-                var params = currentSlimStatParams();
-                var pageviewIdWithChecksum = params.id || "";
-                if (pageviewIdWithChecksum) consentUpgradeSent[pageviewIdWithChecksum] = false;
-            }
-        }
-
-        SlimStat.handleConsentGranted = handleConsentGranted;
-
-        // Add handlers for main consent provider events
-        document.addEventListener("RCB/OptIn", handleConsentGranted);
-        document.addEventListener("RCB/OptIn/All", handleConsentGranted);
-        document.addEventListener("cookieyes_consent_update", handleConsentGranted);
-        document.addEventListener("cookieyes_preferences_update", handleConsentGranted);
-        document.addEventListener("cli_consent_update", handleConsentGranted);
-        document.addEventListener("wp_listen_load", handleConsentGranted);
-        document.addEventListener("wp_consent_type_functional", handleConsentGranted);
-        document.addEventListener("wp_consent_type_statistics", handleConsentGranted);
-        document.addEventListener("slimstat_banner_consent", handleConsentGranted);
-
-        // Debounced handler for slimstat's own events
-        var consentEventHandled = false;
-        var lastConsentEventTime = 0;
         document.addEventListener("slimstat:consent:updated", function (event) {
-            if (consentEventHandled) return;
             if (event && event.detail && event.detail.allowed && event.detail.mode === "full") {
-                var now = Date.now();
-                if (now - lastConsentEventTime < 500) return;
-                lastConsentEventTime = now;
-
-                // Only if pageview ID already exists
-                var params = currentSlimStatParams();
-                if (!params.id || parseInt(params.id, 10) <= 0) return;
-
-                consentEventHandled = true;
-                setTimeout(function () {
-                    handleConsentGranted();
-                    consentEventHandled = false;
-                }, 100);
+                requestConsentUpgrade();
             }
         });
 
-        function hasRCBConsent(category) {
-            var consent = detectRealCookieBannerConsent(category);
-            return consent === true || consent === null ? false : !!consent;
-        }
-
-        initConsentBaseline();
-
-        if (typeof window.addEventListener !== "undefined") {
-            if (document.readyState === "loading") {
-                document.addEventListener("DOMContentLoaded", initConsentBaseline);
-            } else {
-                setTimeout(initConsentBaseline, 0);
-            }
-        }
+        SlimStat.requestConsentUpgrade = requestConsentUpgrade;
     }
 
     function initSlimStatBanner() {
@@ -2085,7 +2067,7 @@ if (!window.requestIdleCallback) {
             var params = currentSlimStatParams();
             var nonce = params.wp_rest_nonce || "";
             var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
-            var cookiePath = params.baseurl || "/";
+            var cookiePath = params.gdpr_cookie_path || params.baseurl || "/";
 
             // Set cookie immediately
             try {
@@ -2132,12 +2114,26 @@ if (!window.requestIdleCallback) {
                     /* ignore */
                 }
 
+                // Send consent change to server via REST API
                 try {
-                    SlimStat._send_pageview({ isConsentRetry: true, consentUpgrade: true, consent: consent, consentNonce: nonce });
-                } catch (sendError) {
-                    /* ignore */
-                }
+                    var parsedConsent = normalizeConsent(consent);
+                    var pageviewId = null;
+                    if (params.id && parseInt(params.id, 10) > 0) {
+                        pageviewId = parseInt(params.id, 10);
+                    }
+                    sendConsentChangeToServer("slimstat_banner", parsedConsent, pageviewId);
+                } catch (apiError) {}
+
+                try {
+                    requestConsentUpgrade({ consent: consent, consentNonce: nonce });
+                } catch (sendError) {}
             } else if (consent === "denied") {
+                // Send consent change to server via REST API
+                try {
+                    var parsedConsentDenied = normalizeConsent(consent);
+                    sendConsentChangeToServer("slimstat_banner", parsedConsentDenied, null);
+                } catch (apiError) {}
+
                 // Call revocation handler to delete tracking cookie
                 try {
                     var ajaxUrl = params.ajaxurl || "/wp-admin/admin-ajax.php";

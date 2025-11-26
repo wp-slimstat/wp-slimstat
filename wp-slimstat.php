@@ -281,6 +281,9 @@ class wp_slimstat
         // Shortcodes
         add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
 
+        // Load textdomain early on init
+        add_action('init', [self::class, 'load_textdomain'], 5);
+
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
 
@@ -294,6 +297,16 @@ class wp_slimstat
         }
     }
     // end init
+
+    /**
+     * Load plugin textdomain
+     *
+     * @return void
+     */
+    public static function load_textdomain()
+    {
+        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+    }
 
     /**
      * The main logging function
@@ -366,9 +379,6 @@ class wp_slimstat
         $where     = '';
         $as_column = '';
         $s         = sprintf("<span class='slimstat-item-separator'>%s</span>", $s);
-
-        // Load the localization files (for languages, operating systems, etc)
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
 
         // Look for required fields
         if (empty($f) || empty($w)) {
@@ -929,6 +939,7 @@ class wp_slimstat
 
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
+		$rest_base_url     = rest_url();
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
         $adblock_hash      = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
@@ -938,6 +949,7 @@ class wp_slimstat
         $params = [
             'transport'       => $method,
             'ajaxurl_rest'    => $rest_url,
+			'resturl'         => $rest_base_url,
             'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
             'ajaxurl_adblock' => $adblock_url,
         ];
@@ -997,6 +1009,7 @@ class wp_slimstat
 				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
 			}
 			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
 			$params['gdpr_consent_method'] = $method;
 		}
 

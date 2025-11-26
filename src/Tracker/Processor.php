@@ -72,8 +72,22 @@ class Processor
         $originalIpBeforeProcessing = $stat['ip'];
         $originalOtherIpBeforeProcessing = $stat['other_ip'] ?? '';
 
+        // Check if this is a consent upgrade request (needed for session management)
+        $data_js = \wp_slimstat::get_data_js();
+        $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+
+        // Determine if PII is allowed based on cookie and CMP consent
+        // This ensures that after consent is granted, subsequent requests (without consent_upgrade=1)
+        // still use full IP instead of hashing
+        // Pass $isConsentUpgrade to piiAllowed so it knows this is an explicit consent signal
+        // But also check if PII is already allowed via cookie/CMP (for subsequent requests)
+        $piiAllowedForIp = Consent::piiAllowed($isConsentUpgrade);
+
         // Process IP address with anonymization and hashing (for GDPR compliance)
-        $stat = IPHashProvider::processIp($stat);
+        // Pass explicit consent flag: true if this is a consent upgrade request OR if PII is already allowed via cookie/CMP
+        // This ensures IP is not hashed in subsequent requests after consent is granted
+        $explicitConsentForIp = $isConsentUpgrade || $piiAllowedForIp;
+        $stat = IPHashProvider::processIp($stat, $explicitConsentForIp);
 
         if (!isset($stat['resource'])) {
             $stat['resource'] = \wp_slimstat::get_request_uri();
@@ -154,7 +168,8 @@ class Processor
         }
 
         // Only collect PII (username, email) if consent allows it
-        $piiAllowed = Consent::piiAllowed();
+        // If this is a consent upgrade request, pass explicit consent flag
+        $piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 
         if (!empty($GLOBALS['current_user']->ID)) {
             if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
@@ -179,6 +194,7 @@ class Processor
                 $stat['username'] = $GLOBALS['current_user']->data->user_login;
                 $stat['email']    = $GLOBALS['current_user']->data->user_email;
                 $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
+            } else {
             }
             $not_spam = true;
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
@@ -282,7 +298,14 @@ class Processor
 
         // Update stat before ensureVisitId (which may need to read it)
         \wp_slimstat::set_stat($stat);
-        $cookie_has_been_set = Session::ensureVisitId(false);
+        // If this is a consent upgrade request, only force assignment if no cookie exists
+        // If cookie exists, use it to maintain session continuity
+        $forceVisitIdAssign = false;
+        if ($isConsentUpgrade && !isset($_COOKIE['slimstat_tracking_code'])) {
+            // No cookie exists, force assignment to create new visit_id and set cookie
+            $forceVisitIdAssign = true;
+        }
+        $cookie_has_been_set = Session::ensureVisitId($forceVisitIdAssign);
         $stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
 
         $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
@@ -301,9 +324,7 @@ class Processor
         // Update before insert
         \wp_slimstat::set_stat($stat);
 
-        // Check if this is a consent upgrade request (after banner accept)
-        $data_js = \wp_slimstat::get_data_js();
-        $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+        // consent_upgrade already checked above, reuse the variable
 
 		// If this is a consent upgrade request, try to find and upgrade existing anonymous pageview
 		try {
@@ -510,6 +531,32 @@ class Processor
                             }
                         }
 
+                        // generate visit_id from attributes
+                        $next_visit_id = Query::select('AUTO_INCREMENT')
+                            ->from('information_schema.TABLES')
+                            ->whereRaw("TABLE_SCHEMA = DATABASE()")
+                            ->where('TABLE_NAME', '=', $table)
+                            ->getVar();
+
+                        if ($next_visit_id === null || $next_visit_id <= 0) {
+                            $max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
+                            $next_visit_id = intval($max_visit_id) + 1;
+                        }
+
+                        if ($next_visit_id <= 0) {
+                            $next_visit_id = time();
+                        }
+
+                        $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
+                        if ($existing_visit_id !== null) {
+                            do {
+                                $next_visit_id++;
+                                $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
+                            } while ($existing_visit_id !== null);
+                        }
+
+                        $stat['visit_id'] = intval($next_visit_id);
+
                         // Sync visit_id to ensure session continuity
                         if (!empty($stat['visit_id']) && isset($existing_record->visit_id) && $stat['visit_id'] != $existing_record->visit_id) {
                             $update_data['visit_id'] = $stat['visit_id'];
@@ -555,12 +602,25 @@ class Processor
                                 Session::setTrackingCookie($stat['id'], 'id', 2678400);
                             }
 
+                            if ($isConsentUpgrade) {
+                                /**
+                                 * Fires when a consent upgrade request is processed.
+                                 *
+                                 * @param int   $pageview_id Upgraded pageview ID.
+                                 * @param array $stat        Current tracking stat array.
+                                 */
+                                do_action('slimstat_consent_granted', $stat['id'], $stat);
+                            }
+
                             return $stat['id'];
                         } else {
                             // No update data but record found - just return existing ID
                             $stat['id'] = $existing_id;
                             \wp_slimstat::set_stat($stat);
                             Query::setProcessingTimestamp(null);
+                            if ($isConsentUpgrade) {
+                                do_action('slimstat_consent_granted', $stat['id'], $stat);
+                            }
                             return $stat['id'];
                         }
                     }
@@ -568,9 +628,7 @@ class Processor
                 }
             }
 		} catch (\Exception $e) {
-			if (defined('WP_DEBUG') && WP_DEBUG) {
-				error_log(sprintf('SlimStat Upgrade: consent upgrade error: %s', $e->getMessage()));
-			}
+			// Ignore consent upgrade errors to avoid breaking tracking.
         }
 
         // Duplicate check for anonymous mode without PII (no cookies available)
@@ -636,6 +694,10 @@ class Processor
 
         // Clear processing timestamp context after successful processing
         Query::setProcessingTimestamp(null);
+
+        if ($isConsentUpgrade) {
+            do_action('slimstat_consent_granted', $stat['id'], $stat);
+        }
 
         return $stat['id'];
     }

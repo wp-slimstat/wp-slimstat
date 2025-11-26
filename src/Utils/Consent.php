@@ -32,6 +32,95 @@ class Consent
 	}
 
 	/**
+	 * Normalize consent data from various CMP formats to a standard structure.
+	 *
+	 * Converts different CMP consent formats (WP Consent API, Real Cookie Banner, etc.)
+	 * into a standardized format for storage and processing.
+	 *
+	 * @param mixed $raw Raw consent data from CMP (array, object, boolean, etc.)
+	 * @return array Normalized consent structure with categories as keys
+	 */
+	public static function normalizeConsent($raw): array
+	{
+		$normalized = [
+			'functional'            => 'deny',
+			'statistics'            => 'deny',
+			'statistics_anonymous' => 'deny',
+			'marketing'             => 'deny',
+		];
+
+		if (is_bool($raw)) {
+			$value = $raw ? 'allow' : 'deny';
+			$normalized['statistics'] = $value;
+			return $normalized;
+		}
+
+		if (is_string($raw)) {
+			if ('accepted' === $raw || 'allow' === $raw || 'grant' === $raw) {
+				$normalized['statistics'] = 'allow';
+			} elseif ('denied' === $raw || 'deny' === $raw || 'revoke' === $raw) {
+				$normalized['statistics'] = 'deny';
+			}
+			return $normalized;
+		}
+
+		if (!is_array($raw) && !is_object($raw)) {
+			return $normalized;
+		}
+
+		$data = (array) $raw;
+
+		if (isset($data['allowed']) && is_array($data['allowed'])) {
+			foreach ($data['allowed'] as $category) {
+				if (isset($normalized[$category])) {
+					$normalized[$category] = 'allow';
+				}
+			}
+			return $normalized;
+		}
+
+		if (isset($data['denied']) && is_array($data['denied'])) {
+			foreach ($data['denied'] as $category) {
+				if (isset($normalized[$category])) {
+					$normalized[$category] = 'deny';
+				}
+			}
+		}
+
+		$categories = ['functional', 'statistics', 'statistics_anonymous', 'marketing'];
+		foreach ($categories as $category) {
+			if (isset($data[$category])) {
+				$value = $data[$category];
+				if (is_bool($value)) {
+					$normalized[$category] = $value ? 'allow' : 'deny';
+				} elseif (is_string($value)) {
+					$normalized[$category] = in_array($value, ['allow', 'accepted', 'grant', 'true'], true) ? 'allow' : 'deny';
+				}
+			} elseif (isset($data['groups'][$category])) {
+				$value = $data['groups'][$category];
+				if (is_bool($value)) {
+					$normalized[$category] = $value ? 'allow' : 'deny';
+				} elseif (is_string($value)) {
+					$normalized[$category] = in_array($value, ['allow', 'accepted', 'grant', 'true'], true) ? 'allow' : 'deny';
+				}
+			} elseif (isset($data['decision'])) {
+				if ('all' === $data['decision']) {
+					$normalized[$category] = 'allow';
+				} elseif (is_array($data['decision']) && isset($data['decision'][$category])) {
+					$value = $data['decision'][$category];
+					if (is_bool($value)) {
+						$normalized[$category] = $value ? 'allow' : 'deny';
+					} elseif (is_string($value)) {
+						$normalized[$category] = in_array($value, ['allow', 'accepted', 'grant', 'true'], true) ? 'allow' : 'deny';
+					}
+				}
+			}
+		}
+
+		return $normalized;
+	}
+
+	/**
 	 * Determine whether SlimStat is allowed to track the current request.
 	 *
 	 * This is the PRIMARY consent gate. If this returns false, no tracking occurs at all.
@@ -53,9 +142,12 @@ class Consent
 
 		// Check if GDPR compliance mode is enabled
 		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+		$integrationKey = self::getIntegrationKey();
+		$hasConsentIntegration = '' !== $integrationKey;
 
 		// If GDPR is disabled, allow normal tracking without consent checks
-		if (!$gdprEnabled) {
+		// If no consent integration is selected, treat GDPR checks as disabled as well.
+		if (!$gdprEnabled || !$hasConsentIntegration) {
 			/**
 			 * Filter: slimstat_can_track
 			 *
@@ -191,9 +283,12 @@ class Consent
 
 		// Check if GDPR compliance mode is enabled
 		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+		$integrationKey = self::getIntegrationKey();
+		$hasConsentIntegration = '' !== $integrationKey;
 
 		// If GDPR is disabled, allow PII collection without consent checks
-		if (!$gdprEnabled) {
+		// If no consent integration is selected, treat GDPR checks as disabled as well.
+		if (!$gdprEnabled || !$hasConsentIntegration) {
 			return true;
 		}
 
@@ -202,6 +297,7 @@ class Consent
 		// PRIORITY 1: Anonymous tracking mode - strictest setting
 		// In this mode, PII is BLOCKED by default until explicit consent is granted
 		$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
+
 		if ($isAnonymousTracking) {
 			// If explicit consent signal is provided (e.g., from consent upgrade AJAX handler), allow PII
 			if ($explicitConsentGiven) {
@@ -220,26 +316,30 @@ class Consent
 					$hasTrackingCookie = true;
 				}
 			}
-
 			// Check for consent signal from the configured CMP
 			$hasCmpConsent = false;
-			$integrationKey = self::getIntegrationKey();
 
 			if ('slimstat_banner' === $integrationKey) {
 				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+				$cookieName = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+				$cookieValue = $_COOKIE[$cookieName] ?? 'not_set';
 				if ($gdpr_service->hasConsent()) {
 					$hasCmpConsent = true;
 				}
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 				try {
-					if ((bool) \wp_has_consent($wpConsentCategory)) {
+
+                    if( ! wp_get_consent_type() ) {
+                        add_filter('wp_get_consent_type', function($type) use ($wpConsentCategory) {
+                            return 'wp_consent_' . $wpConsentCategory;
+                        }, 10, 1);
+                    }
+
+                    if ((bool) \wp_has_consent($wpConsentCategory)) {
 						$hasCmpConsent = true;
 					}
 				} catch (\Throwable $e) {
-					if (defined('WP_DEBUG') && WP_DEBUG) {
-						error_log('SlimStat: WP Consent API error in piiAllowed() - ' . $e->getMessage());
-					}
 				}
 			} elseif ('real_cookie_banner' === $integrationKey) {
 				// Real Cookie Banner: check consent cookie directly to handle race conditions
@@ -303,8 +403,10 @@ class Consent
 				}
 			}
 
-			// PII is allowed only if both the tracking cookie and the CMP consent are present.
-			return $hasTrackingCookie && $hasCmpConsent;
+			// PII is allowed if CMP consent is present (or implied via legacy tracking cookie).
+			// We do NOT require a tracking cookie to be present if we have explicit CMP consent.
+			$result = $hasCmpConsent;
+			return $result;
 		}
 
 		// PRIORITY 2: Do Not Track header - user explicitly requests no tracking
@@ -327,7 +429,6 @@ class Consent
 		// - Cookies are enabled (identifies returning visitors) OR
 		// - Full IPs are stored (not anonymized AND not hashed)
 		$collectsPii = ($setTrackerCookie || (!$anonymizeIp && !$hashIp));
-
 		// If configuration doesn't collect PII, then PII operations are allowed
 		// (because there's no PII to protect in the first place)
 		if (!$collectsPii) {
@@ -350,20 +451,77 @@ class Consent
 				return (bool) \wp_has_consent($wpConsentCategory);
 			} catch (\Throwable $e) {
 				// Consent API error - be conservative, deny PII
-				if (defined('WP_DEBUG') && WP_DEBUG) {
-					error_log('SlimStat: WP Consent API error - ' . $e->getMessage());
-				}
 				return false;
 			}
 		}
 
-		// Real Cookie Banner - cannot reliably read consent server-side
-		// This CMP blocks scripts client-side, so server must be conservative
-		// to avoid collecting PII before consent is verified
+		// Real Cookie Banner - check consent cookie directly to handle race conditions
+		// where tracking cookie isn't set yet but consent has been granted.
 		if ('real_cookie_banner' === $integrationKey) {
+			// If explicit consent signal is provided (e.g., from consent upgrade request), allow PII
+			if ($explicitConsentGiven) {
+				return true;
+			}
+
+			// Check RCB consent cookies directly
+			$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
+			$rcbCookies = ['real_cookie_banner', 'rcb_consent', 'rcb_acceptance', 'real_cookie_consent', 'rcb-consent'];
+
+			foreach ($_COOKIE as $name => $value) {
+				$isMatch = false;
+				foreach ($rcbCookies as $rcbName) {
+					if (strpos($name, $rcbName) === 0) {
+						$isMatch = true;
+						break;
+					}
+				}
+
+				if ($isMatch) {
+					$rawJson = stripslashes($value);
+					$data = json_decode($rawJson, true);
+
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						$data = json_decode(stripslashes(urldecode($value)), true);
+					}
+
+					if (is_array($data)) {
+						// Check various structures based on RCB versions
+						$consentGiven = false;
+
+						// Structure 1: { "groups": { "statistics": true } }
+						if (isset($data['groups'][$wpConsentCategory]) && true === $data['groups'][$wpConsentCategory]) {
+							$consentGiven = true;
+						}
+						// Structure 2: { "decision": { "statistics": true } } OR { "decision": "all" }
+						elseif (isset($data['decision'])) {
+							if ('all' === $data['decision']) {
+								$consentGiven = true;
+							} elseif (is_array($data['decision']) && isset($data['decision'][$wpConsentCategory]) && true === $data['decision'][$wpConsentCategory]) {
+								$consentGiven = true;
+							}
+						}
+						// Structure 3: { "statistics": true } (Legacy/Simplified)
+						elseif (isset($data[$wpConsentCategory]) && true === $data[$wpConsentCategory]) {
+							$consentGiven = true;
+						}
+
+						if ($consentGiven) {
+							return true;
+						}
+					}
+				}
+			}
+
+			// Legacy fallback: If a SlimStat tracking cookie exists, it implies consent was granted previously
+			if (isset($_COOKIE['slimstat_tracking_code'])) {
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+				if (false !== $cookieValue) {
+					return true;
+				}
+			}
+
 			// Conservative: assume no consent on server-side for PII collection
 			// Client-side JavaScript will handle consent verification and upgrade
-			// Anonymous tracking is allowed, but PII requires explicit consent
 			return false;
 		}
 

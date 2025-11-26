@@ -921,6 +921,14 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
         }
 
+        // Keep legacy banner toggle in sync with the selected consent integration.
+        $current_consent_integration = wp_slimstat::$settings['consent_integration'] ?? '';
+        if ('slimstat_banner' === $current_consent_integration) {
+            wp_slimstat::$settings['use_slimstat_banner'] = 'on';
+        } else {
+            wp_slimstat::$settings['use_slimstat_banner'] = 'off';
+        }
+
         // Allow third-party functions to manipulate the options right before they are saved
         wp_slimstat::$settings = apply_filters('slimstat_save_options', wp_slimstat::$settings);
 

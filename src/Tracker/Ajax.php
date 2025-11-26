@@ -31,6 +31,9 @@ class Ajax
         $stat      = \wp_slimstat::get_stat();
         $site_host = parse_url(get_site_url(), PHP_URL_HOST);
 
+        // Check if this is a consent upgrade request (needed for IP processing and later checks)
+        $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+
         // GDPR Compliance: Ensure IP is always fresh from $_SERVER for navigation requests
         // In anonymous mode, get_stat() may contain a hashed IP from previous requests
         // We need to get the real IP from $_SERVER and then process it according to consent
@@ -82,9 +85,11 @@ class Ajax
             }
 
             // Process IP according to consent status (cookie set only by consent upgrade handler)
-            $stat = \SlimStat\Providers\IPHashProvider::processIp($stat);
+            // $isConsentUpgrade already defined above
+            // Pass explicit consent flag if this is a consent upgrade request
+            $stat = \SlimStat\Providers\IPHashProvider::processIp($stat, $isConsentUpgrade);
 
-            if (Consent::piiAllowed(true)) {
+            if (Consent::piiAllowed($isConsentUpgrade)) {
                 if (!empty($GLOBALS['current_user']->ID)) {
                     $stat['username'] = $GLOBALS['current_user']->data->user_login;
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
@@ -151,9 +156,6 @@ class Ajax
 
                 // Security: Validate visit_id exists - exit if generation failed
                 if (empty($stat['visit_id']) || $stat['visit_id'] <= 0) {
-                    if (defined('WP_DEBUG') && WP_DEBUG) {
-                        error_log('SlimStat Ajax: Failed to generate visit_id');
-                    }
                     exit(Utils::logError(500));
                 }
 
@@ -342,8 +344,7 @@ class Ajax
                 $stat['notes'] = ['new:yes'];
             }
 
-            // Check if this is a consent upgrade request
-            $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+            // consent_upgrade already checked above, reuse the variable
             if ($isConsentUpgrade) {
                 // Pass consent_upgrade flag to Processor via data_js
                 // Processor will handle the upgrade logic

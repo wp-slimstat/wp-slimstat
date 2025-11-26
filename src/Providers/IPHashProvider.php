@@ -40,9 +40,11 @@ class IPHashProvider
      * 5. Standard mode WITH PII consent: Store full IP (no processing needed)
      *
      * @param array $stat The slimstat array containing IP data
+     * @param bool $explicitConsentGiven Optional. Set to true when consent was explicitly granted
+     *                                   in the current request (e.g., consent upgrade flow).
      * @return array Modified slimstat array with processed IP
      */
-    public static function processIp(array $stat): array
+    public static function processIp(array $stat, bool $explicitConsentGiven = false): array
     {
         if (empty($stat['ip'])) {
             return $stat;
@@ -54,7 +56,7 @@ class IPHashProvider
 
         // Determine mode and consent status
         $isAnonymousTracking = 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off');
-        $piiAllowed = Consent::piiAllowed();
+        $piiAllowed = Consent::piiAllowed($explicitConsentGiven);
 
         // Handle consent granted in same request (cookie not set yet or invalid)
         $hasCmpConsentButNoCookie = false;
@@ -169,22 +171,27 @@ class IPHashProvider
         }
 
         // MODE 2: Anonymous tracking mode WITH consent
-        // Consent was granted - allow full IP storage
+        // Consent was granted - but still respect anonymize_ip setting
         // Also handle case where CMP consent exists but tracking cookie hasn't been set yet
         if ($isAnonymousTracking && ($piiAllowed || $hasCmpConsentButNoCookie)) {
-            // Keep original IPs, no processing needed
+            // Check if anonymize_ip setting is enabled
+            $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
+
+            if ($shouldAnonymize) {
+                // Anonymize IP even with consent if setting is enabled
+                $stat['ip'] = self::anonymizeIP($originalIp);
+                if (!empty($originalOtherIp)) {
+                    $stat['other_ip'] = self::anonymizeIP($originalOtherIp);
+                } else {
+                    $stat['other_ip'] = '';
+                }
+            } else {
+                // Keep original IPs if anonymize_ip is not enabled
+            }
             // Cookie will be set by ensureVisitId() in the same request
             return $stat;
         }
 
-        // MODE 3+: Standard tracking mode (not anonymous)
-        // Respect individual privacy settings and consent status
-
-        // IMPORTANT: In Anonymous Tracking Mode, we should NEVER reach here
-        // If we do, it means MODE 1 and MODE 2 didn't match, which is a bug
-        // In Anonymous Tracking Mode without consent, IP MUST be hashed (handled in MODE 1)
-        // In Anonymous Tracking Mode with consent, IP is kept (handled in MODE 2)
-        // So if isAnonymousTracking is true, we should have already returned above
         if ($isAnonymousTracking) {
             // This should never happen, but as a safety fallback, hash the IP
             // This ensures GDPR compliance even if there's a logic error
@@ -253,15 +260,15 @@ class IPHashProvider
         }
 
         // Note: If neither hash nor anonymize, full IP is stored (requires PII consent)
-
         return $stat;
     }
 
     /**
      * Upgrades the stored IP to the real IP if consent is granted.
+     * Respects anonymize_ip setting even after consent is granted.
      *
      * @param array $stat The slimstat array containing IP data
-     * @return array Modified slimstat array with the real IP
+     * @return array Modified slimstat array with the real IP (or anonymized if setting enabled)
      */
     public static function upgradeToPii(array $stat): array
     {
@@ -274,6 +281,16 @@ class IPHashProvider
 
         // Restore the original IP before updating records
         [$stat['ip'], $stat['other_ip']] = \SlimStat\Tracker\Utils::getRemoteIp();
+
+        // Check if anonymize_ip setting is enabled - it should always be respected
+        $shouldAnonymize = 'on' === (\wp_slimstat::$settings['anonymize_ip'] ?? 'off');
+        if ($shouldAnonymize) {
+            // Anonymize IP even after consent upgrade if setting is enabled
+            $stat['ip'] = self::anonymizeIP($stat['ip']);
+            if (!empty($stat['other_ip'])) {
+                $stat['other_ip'] = self::anonymizeIP($stat['other_ip']);
+            }
+        }
 
         // Ensure the anonymous visit ID is carried over to the new cookie-based session
         $anonymousVisitId = \SlimStat\Tracker\Session::getVisitId();

@@ -27,6 +27,10 @@ class Session
 		$identifier     = 0;
 		$isAnonymousTracking = ('on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off'));
 
+		// Check if this is a consent upgrade request
+		$data_js = \wp_slimstat::get_data_js();
+		$isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+
 		// Check if we need to upgrade from anonymous to PII tracking
 		$hasCmpConsent = false;
 		$hasTrackingCookie = isset($_COOKIE['slimstat_tracking_code']);
@@ -53,7 +57,8 @@ class Session
 		}
 
 		// In anonymous mode without consent, use server-side visit ID
-		if ($isAnonymousTracking && !Consent::piiAllowed() && !$hasCmpConsent) {
+		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
+		if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsent) {
 			// Try to reuse existing visit_id from recent records to prevent duplicates
 			$stat = \wp_slimstat::get_stat();
 			$existing_visit_id = self::findExistingAnonymousVisitId($stat);
@@ -79,6 +84,11 @@ class Session
 
 			$is_new_session = (false !== strpos($identifier, 'id'));
 			$identifier     = intval($identifier);
+		} else {
+			// If no cookie and forceAssign is true (e.g., consent upgrade), create new session
+			if ($forceAssign) {
+				$is_new_session = true;
+			}
 		}
 
 		if ($is_new_session && ($forceAssign || 'on' == \wp_slimstat::$settings['javascript_mode'])) {
@@ -149,7 +159,11 @@ class Session
 	 */
 	public static function setTrackingCookie($value, $value_type = 'visit', $expires = null, bool $force = false)
 	{
-		$piiAllowed = Consent::piiAllowed();
+		// Check if this is a consent upgrade request
+		$data_js = \wp_slimstat::get_data_js();
+		$isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
+
+		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 		$cookieEnabled = !empty(\wp_slimstat::$settings['set_tracker_cookie']) && 'on' == \wp_slimstat::$settings['set_tracker_cookie'];
 		$shouldSetCookie = apply_filters('slimstat_set_visit_cookie', ($force || ($piiAllowed && $cookieEnabled)));
 

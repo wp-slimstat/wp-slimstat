@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace SlimStat\Providers;
 
 use SlimStat\Tracker\Tracker;
-use SlimStat\Controllers\Rest\TrackingRestController;
+use SlimStat\Controllers\Rest\ConsentChangeRestController;
+use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
+use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
 if (! defined('ABSPATH')) {
@@ -45,6 +47,8 @@ class RestApiManager
 		$controllers = [
 			new TrackingRestController(),
 			new GDPRBannerRestController(),
+			new ConsentChangeRestController(),
+			new ConsentHealthRestController(),
 		];
 
         /**
