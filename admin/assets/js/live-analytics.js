@@ -16,6 +16,7 @@
         this.config = config;
         this.chart = null;
         this.refreshInterval = null;
+        this.refreshTimeout = null;
         this.progressInterval = null;
         this.progressStartTime = null;
         this.lastUpdateTime = null;
@@ -24,6 +25,7 @@
         this.currentMetric = config.current_metric || "users";
         this.isDestroyed = false;
         this.abortController = null;
+        this.manualRefreshes = [];
 
         // Bind methods to this instance
         this.init = this.init.bind(this);
@@ -46,6 +48,7 @@
         this.addEventListeners();
         this.initMetricSwitching();
         this.initializeEmptyState();
+        this.initLiveIndicatorRefresh();
 
         // Start auto-refresh after initialization
         if (this.config.auto_refresh) {
@@ -339,26 +342,41 @@
 
     /**
      * Schedule the next auto-update
+     * Updates only at :00 and :30 of each minute
      */
     LiveAnalytics.prototype.scheduleNextUpdate = function () {
         var self = this;
 
-        // Clear any existing interval
+        // Clear any existing interval/timeout
         this.stopAutoRefresh();
 
         if (!this.config.auto_refresh || this.isDestroyed) {
             return;
         }
 
+        // Calculate next update time: either at :30 of current minute or :00 of next minute
+        var now = new Date();
+        var currentSeconds = now.getSeconds();
+        var currentMilliseconds = now.getMilliseconds();
+        var delay;
+
+        if (currentSeconds < 30) {
+            // Wait until :30 of current minute
+            delay = (30 - currentSeconds) * 1000 - currentMilliseconds;
+        } else {
+            // Wait until :00 of next minute
+            delay = (60 - currentSeconds) * 1000 - currentMilliseconds;
+        }
+
         // Record when we scheduled this update
         this.lastUpdateTime = Date.now();
 
-        // Use setInterval for consistent 10-second updates instead of setTimeout
-        this.refreshInterval = setInterval(function () {
+        // Schedule update at exact time
+        this.refreshTimeout = setTimeout(function () {
             if (!self.isDestroyed && !self.isUpdating) {
                 self.performAutoUpdate();
             }
-        }, this.config.refresh_interval);
+        }, delay);
     };
 
     /**
@@ -371,8 +389,13 @@
             return;
         }
 
-        // Don't schedule next update here since we're using setInterval
-        this.updateData();
+        // Update data and schedule next update
+        this.updateData().finally(function () {
+            // Schedule next update after current one completes
+            if (!self.isDestroyed && self.config.auto_refresh) {
+                self.scheduleNextUpdate();
+            }
+        });
     };
 
     /**
@@ -384,6 +407,11 @@
             this.refreshInterval = null;
         }
 
+        if (this.refreshTimeout) {
+            clearTimeout(this.refreshTimeout);
+            this.refreshTimeout = null;
+        }
+
         // Record when we paused
         this.pausedAt = Date.now();
     };
@@ -392,25 +420,11 @@
      * Resume auto-refresh after pause
      */
     LiveAnalytics.prototype.resumeAutoRefresh = function () {
-        var self = this;
-
         if (this.isDestroyed || !this.config.auto_refresh) {
             return;
         }
 
-        var now = Date.now();
-
-        // If we have a last update time and paused time, check how long we've been paused
-        if (this.lastUpdateTime && this.pausedAt) {
-            var timeSinceLastUpdate = now - this.lastUpdateTime;
-
-            // If enough time has passed since the last scheduled update, update immediately
-            if (timeSinceLastUpdate >= this.config.refresh_interval) {
-                this.performAutoUpdate();
-            }
-        }
-
-        // Always restart the interval for consistent updates
+        // Simply reschedule next update based on current time
         this.scheduleNextUpdate();
 
         // Clear pause time
@@ -437,6 +451,49 @@
                 item.classList.remove("disabled");
             });
         }
+    };
+
+    /**
+     * Initialize manual refresh via live indicator click with rate limiting
+     */
+    LiveAnalytics.prototype.initLiveIndicatorRefresh = function () {
+        var self = this;
+        var container = document.getElementById(this.config.report_id);
+        if (!container) return;
+
+        var indicator = container.querySelector(".live-indicator");
+        if (!indicator) return;
+
+        indicator.addEventListener("click", function (event) {
+            event.preventDefault();
+            if (self.isDestroyed) {
+                return;
+            }
+
+            var now = Date.now();
+            self.manualRefreshes = self.manualRefreshes.filter(function (ts) {
+                return now - ts < 60000;
+            });
+
+            if (self.manualRefreshes.length >= 5) {
+                self.showErrorMessage("Too many manual refreshes. Please wait a minute.");
+                return;
+            }
+
+            self.manualRefreshes.push(now);
+
+            self.stopAutoRefresh();
+
+            var resumeAuto = function () {
+                if (self.config.auto_refresh && !self.isDestroyed) {
+                    self.scheduleNextUpdate();
+                }
+            };
+
+            self.updateData().finally(function () {
+                resumeAuto();
+            });
+        });
     };
 
     /**

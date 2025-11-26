@@ -257,6 +257,7 @@
     background: rgba(239, 68, 68, 0.08);
     border-radius: 4px;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 .live-dot {

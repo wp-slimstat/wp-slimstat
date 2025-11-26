@@ -277,6 +277,8 @@ class wp_slimstat
                     self::_insert_row($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
                 }
 
+                $should_update_dt_out = true;
+
                 if (!empty(self::$data_js['res'])) {
                     $resource        = self::_base64_url_decode(self::$data_js['res']);
                     $parsed_resource = parse_url($resource);
@@ -295,6 +297,9 @@ class wp_slimstat
                         }
 
                         $id = self::slimtrack();
+
+                        // slimtrack() already records a brand-new pageview, so no need to update dt_out for the previous one.
+                        $should_update_dt_out = false;
                     } // .. or outbound link? If so, update the pageview with the new info
                     elseif ($parsed_resource['host'] != $site_host) {
                         self::$stat['outbound_resource'] = $resource;
@@ -303,12 +308,14 @@ class wp_slimstat
                         self::$stat['dt_out'] = self::date_i18n('U');
 
                         $id = self::_update_row(self::$stat);
+                        $should_update_dt_out = false;
                     }
-                } else {
+                }
+
+                if ( $should_update_dt_out ) {
                     // Visitor is still on this page, record the timestamp in the corresponding field
                     self::$stat['dt_out'] = self::date_i18n('U');
-
-                    $id = self::_update_row(self::$stat);
+                    $id = self::_update_row( self::$stat );
                 }
             }
         } // If self::$data_js[ 'id' ] is empty, we are tracking a new pageview
