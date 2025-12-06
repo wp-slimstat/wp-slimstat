@@ -18,36 +18,24 @@ if (!class_exists('wp_slimstat')) {
 }
 ?>
 <style>
-[id^="slim_"] p.header .slimstat-icons-wrapper {
-    float: none !important;
-    display: inline-block;
-}
-@media screen and (max-width: 600px) {
-    [id^="slim_"] p.header .slimstat-icons-wrapper {
-        display: block;
-        margin-bottom: 5px;
+    /* Fix for Access Log layout */
+    [id*="slim_p"].postbox p span.slimstat-icons-wrapper {
+        float: none !important;
+        display: inline-block;
+        margin-left: 0;
     }
-    [id^="slim_"] p .details {
-        float: none;
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        width: 100%;
-        margin-top: 10px;
+    
+    @media screen and (max-width: 600px) {
+        [id*="slim_p"].postbox p.header .slimstat-icons-wrapper {
+            display: block;
+            margin-bottom: 5px;
+        }
+        /* Ensure details flow correctly on mobile if needed */
+        [id^="slim_"] p .details {
+            display: block;
+            margin-top: 5px;
+        }
     }
-    [id^="slim_"] p .details .dt-item {
-        float: none;
-        display: inline-flex;
-        align-items: center;
-        margin: 0;
-        width: auto;
-    }
-    [id^="slim_"] p .details .dt-item:empty {
-        display: none;
-    }
-}
 </style>
 <?php
 
@@ -363,7 +351,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $results[$i]['referer'] = $results[$i]['outbound_resource'] = $results[$i]['content_type'] = '';
     }
 
-    $row_output = sprintf("<p>%s <span class='details'><span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span></span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
+    $row_output = sprintf("<p>%s <span class='details'>%s %s %s %s %s %s %s %s %s %s</span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
 
     // Strip all the filter links, if this information is shown on the frontend
     if (!is_admin()) {
