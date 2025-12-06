@@ -16,6 +16,40 @@ $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 if (!class_exists('wp_slimstat')) {
     include_once dirname(__FILE__, 3) . '/wp-slimstat.php';
 }
+?>
+<style>
+[id^="slim_"] p.header .slimstat-icons-wrapper {
+    float: none !important;
+    display: inline-block;
+}
+@media screen and (max-width: 600px) {
+    [id^="slim_"] p.header .slimstat-icons-wrapper {
+        display: block;
+        margin-bottom: 5px;
+    }
+    [id^="slim_"] p .details {
+        float: none;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        width: 100%;
+        margin-top: 10px;
+    }
+    [id^="slim_"] p .details .dt-item {
+        float: none;
+        display: inline-flex;
+        align-items: center;
+        margin: 0;
+        width: auto;
+    }
+    [id^="slim_"] p .details .dt-item:empty {
+        display: none;
+    }
+}
+</style>
+<?php
 
 $search_engines = \wp_slimstat::get_search_engines();
 // COMPLETE THIS FEATURE!!
@@ -196,7 +230,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             $fingerprint = "<span class='pageview-screenres'><code><a class='slimstat-filter-link slimstat-tooltip-trigger' href='" . wp_slimstat_reports::fs_url('fingerprint equals ' . $results[$i]['fingerprint']) . "' title='" . $results[$i]['fingerprint'] . "'>" . substr($results[$i]['fingerprint'], 0, 8) . '</a></code></span>';
         }
 
-        $row_output = sprintf("<p class='header%s'>%s %s %s %s %s %s %s %s %s %s %s</p>", $highlight_row, $browser_filter, $platform_filter, $browser_type_filter, $country_filter, $whois_pin, $city_filter, $ip_address, $other_ip_address, $fingerprint, $screen_resolution, $language_filter);
+        $row_output = sprintf("<p class='header%s'><span class='slimstat-icons-wrapper'>%s %s %s %s %s</span> %s %s %s %s %s %s</p>", $highlight_row, $browser_filter, $platform_filter, $browser_type_filter, $country_filter, $whois_pin, $city_filter, $ip_address, $other_ip_address, $fingerprint, $screen_resolution, $language_filter);
 
         // Strip all the filter links, if this information is shown on the frontend
         if (!is_admin()) {
@@ -329,7 +363,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $results[$i]['referer'] = $results[$i]['outbound_resource'] = $results[$i]['content_type'] = '';
     }
 
-    $row_output = sprintf("<p>%s <span class='details'>%s %s %s %s %s %s %s %s %s %s</span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
+    $row_output = sprintf("<p>%s <span class='details'><span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span> <span class='dt-item'>%s</span></span></p>", $results[$i]['resource'], $time_on_page, $login_logout, $results[$i]['searchterms'], $results[$i]['referer'], $results[$i]['outbound_resource'], $results[$i]['content_type'], $performance, $date_time, $notes, $delete_row);
 
     // Strip all the filter links, if this information is shown on the frontend
     if (!is_admin()) {
