@@ -334,12 +334,12 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			LEFT JOIN (
 				SELECT visit_id,
 					FLOOR( MIN(dt) / 60 ) * 60 AS first_minute,
-					FLOOR( ( MAX(
+					FLOOR( MAX(
 						CASE
 							WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
 							ELSE dt
 						END
-					) + 59 ) / 60 ) * 60 AS last_minute
+					) / 60 ) * 60 AS last_minute
 				FROM {$table}
 				WHERE visit_id > 0
 					AND dt <= %d
