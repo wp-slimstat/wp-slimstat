@@ -251,7 +251,8 @@ for ($i = 0; $i < $count_page_results; $i++) {
     // Pageview Notes
     $notes = '';
     if (is_admin() && !empty($results[$i]['notes'])) {
-        $notes = str_replace(['][', ':', '[', ']'], ['<br/>', ': ', '', ''], $results[$i]['notes']);
+        $notes = esc_html($results[$i]['notes']);
+        $notes = str_replace(['][', ':', '[', ']'], ['<br/>', ': ', '', ''], $notes);
         $notes = sprintf("<i class='slimstat-font-edit slimstat-tooltip-trigger'><b class='slimstat-tooltip-content'>%s</b></i>", $notes);
     }
 
@@ -264,15 +265,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
     if (!$is_dashboard) {
         $domain                      = parse_url($results[$i]['referer'] ?: '');
         $domain                      = empty($domain['host']) ? __('Invalid Referrer', 'wp-slimstat') : $domain['host'];
-        $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", $results[$i]['referer'], $domain) : '';
-        $results[$i]['content_type'] = empty($results[$i]['content_type']) ? '' : "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . sprintf("'>%s</a> ", $results[$i]['content_type']);
+        $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", esc_url($results[$i]['referer']), esc_html($domain)) : '';
+        $results[$i]['content_type'] = empty($results[$i]['content_type']) ? '' : "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . sprintf("'>%s</a> ", esc_html($results[$i]['content_type']));
 
         // The Outbound Links field might contain more than one link
         if (!empty($results[$i]['outbound_resource'])) {
             if ('#' !== substr($results[$i]['outbound_resource'], 0, 1)) {
-                $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this outbound link in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", $results[ $i ][ 'outbound_resource' ], $results[ $i ][ 'outbound_resource' ]);
+                $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this outbound link in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", esc_url($results[ $i ][ 'outbound_resource' ]), esc_html($results[ $i ][ 'outbound_resource' ]));
             } else {
-                $results[$i]['outbound_resource'] = "<i class='inline-icon spaced slimstat-font-logout'></i> " . $results[ $i ][ 'outbound_resource' ];
+                $results[$i]['outbound_resource'] = "<i class='inline-icon spaced slimstat-font-logout'></i> " . esc_html($results[ $i ][ 'outbound_resource' ]);
             }
         } else {
             $results[$i]['outbound_resource'] = '';
@@ -291,7 +292,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
                     continue;
                 }
 
-                $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . str_replace('loggedin:', '', $a_note);
+                $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedin:', '', $a_note));
             }
         }
 
@@ -302,7 +303,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
                     continue;
                 }
 
-                $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . str_replace('loggedout:', '', $a_note);
+                $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedout:', '', $a_note));
             }
         }
     } else {
