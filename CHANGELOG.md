@@ -1,3 +1,6 @@
+= 5.3.3 - 2025-12-17 =
+* Maintenance: Stability and compatibility improvements.
+
 = 5.3.2 - 2025-11-24 =
 - Fix: Minor improvements & Hardened plugin security.
 

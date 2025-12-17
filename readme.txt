@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 5.3.2
+Stable tag: 5.3.3
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.3.3 - 2025-12-17 =
+* Maintenance: Stability and compatibility improvements.
+
 = 5.3.2 - 2025-11-24 =
 - Fix: Minor improvements & Hardened plugin security.
 
