@@ -145,7 +145,7 @@ class wp_slimstat_db
 
         // Fields and drop downs
         if (!empty($_POST['f']) && !empty($_POST['o'])) {
-            $filters_array[htmlspecialchars($_POST['f'])] = sprintf('%s %s ', $_POST[ 'f' ], $_POST[ 'o' ]) . ($_POST['v'] ?? '');
+            $filters_array[sanitize_text_field($_POST['f'])] = sprintf('%s %s ', sanitize_text_field($_POST[ 'f' ]), sanitize_text_field($_POST[ 'o' ])) . (isset($_POST['v']) ? sanitize_text_field($_POST['v']) : '');
         }
 
         // Filters set via the plugin options

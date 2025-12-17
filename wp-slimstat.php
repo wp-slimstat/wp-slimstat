@@ -276,7 +276,7 @@ class wp_slimstat
                         $id = self::slimtrack();
                     } // .. or outbound link? If so, update the pageview with the new info
                     elseif ($parsed_resource['host'] != $site_host) {
-                        self::$stat['outbound_resource'] = $resource;
+                        self::$stat['outbound_resource'] = sanitize_url($resource);
 
                         // Visitor is still on this page, record the timestamp in the corresponding field
                         self::$stat['dt_out'] = self::date_i18n('U');

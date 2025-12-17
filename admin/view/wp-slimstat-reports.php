@@ -1237,6 +1237,10 @@ class wp_slimstat_reports
                         $element_value = str_replace(['<', '>'], ['&lt;', '&gt;'], urldecode($results[$i][$_args['columns']]));
                         break;
 
+                    case 'outbound_resource':
+                        $element_value = esc_html($results[$i][$_args['columns']]);
+                        break;
+
                     case 'resource':
                         $resource_title = self::get_resource_title($results[$i][$_args['columns']]);
                         if ($resource_title != $results[$i][$_args['columns']]) {
@@ -1793,11 +1797,11 @@ class wp_slimstat_reports
         parse_str($_referer, $query_parse_str);
 
         if (isset($query_parse_str['source']) && ([] !== $query_parse_str['source'] && ('' !== $query_parse_str['source'] && '0' !== $query_parse_str['source'])) && !$_serp_only) {
-            $query_details = __('src', 'wp-slimstat') . (': ' . $query_parse_str[ 'source' ]);
+            $query_details = __('src', 'wp-slimstat') . (': ' . esc_html($query_parse_str[ 'source' ]));
         }
 
         if (isset($query_parse_str['cd']) && ('' !== $query_parse_str['cd'] && '0' !== $query_parse_str['cd'] && [] !== $query_parse_str['cd'])) {
-            $query_details = __('serp', 'wp-slimstat') . (': ' . $query_parse_str[ 'cd' ]);
+            $query_details = __('serp', 'wp-slimstat') . (': ' . esc_html($query_parse_str[ 'cd' ]));
         }
 
         if ('' !== $query_details && '0' !== $query_details) {

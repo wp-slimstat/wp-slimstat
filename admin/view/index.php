@@ -9,7 +9,7 @@ wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_insta
 
 <div class="backdrop-container">
     <div class="wrap slimstat">
-        <h2><?php echo wp_slimstat_admin::$screens_info[$_GET['page']]['title'] ?></h2>
+        <h2><?php echo isset($_GET['page']) && isset(wp_slimstat_admin::$screens_info[sanitize_key($_GET['page'])]) ? esc_html(wp_slimstat_admin::$screens_info[sanitize_key($_GET['page'])]['title']) : '' ?></h2>
 
         <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
 
