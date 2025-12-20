@@ -102,7 +102,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'id'               => $this->get_id(),
 			'data'             => $this->get_data(),
 			'auto_refresh'     => true,
-			'refresh_interval' => 30000, // 30 seconds
+			'refresh_interval' => 60000, // 60 seconds
 		];
 	}
 
@@ -295,9 +295,9 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$now        = current_time( 'timestamp' );
 			$seconds    = (int) date( 's', $now );
 
-			// Cache is valid only if we're NOT at :00 or :30 of the minute
+			// Cache is valid only if we're NOT at :00 of the minute
 			// This aligns with the JS update schedule
-			if ( 0 !== $seconds && 30 !== $seconds ) {
+			if ( 0 !== $seconds ) {
 				// Also check if cache is from the same minute (to avoid stale data)
 				$cache_minute = (int) floor( $cache_time / 60 );
 				$current_minute = (int) floor( $now / 60 );
@@ -386,7 +386,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'cache_time' => $now,
 		];
 
-		// Cache TTL: 60 seconds to align with update schedule (:00 and :30 of each minute)
+		// Cache TTL: 60 seconds to align with update schedule (:00 of each minute)
 		$ttl = (int) apply_filters( 'slimstat_live_users_cache_ttl', 60 );
 		set_transient( $cache_key, $formatted, $ttl );
 
@@ -540,7 +540,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		wp_enqueue_script(
 			'slimstat-live-analytics',
 			plugins_url( '/admin/assets/js/live-analytics.js', SLIMSTAT_FILE ),
-			[ 'slimstat_chartjs', 'jquery' ],
+			[ 'slimstat_chartjs', 'jquery', 'slimstat_admin' ],
 			'5.4.1',
 			true
 		);

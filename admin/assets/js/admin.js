@@ -1087,31 +1087,44 @@ var SlimStatAdmin = {
     },
 
     access_log_count_down: function () {
-        var slimstat_refresh_timer = 0;
+        var lastTriggerMinute = -1;
 
-        function slimstat_refresh_countdown() {
-            slimstat_refresh_timer--;
-            minutes = parseInt(slimstat_refresh_timer / 60);
-            seconds = parseInt(slimstat_refresh_timer % 60);
+        function slimstat_sync_and_countdown() {
+            var now = new Date();
+            var currentSeconds = now.getSeconds();
+            var currentMinute = now.getMinutes();
+
+            // Trigger pulse at exactly :00 of a new minute
+            if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
+                lastTriggerMinute = currentMinute;
+                window.dispatchEvent(new CustomEvent("slimstat:minute_pulse"));
+            }
+
+            var remaining = (60 - currentSeconds) % 60;
+            var minutes = Math.floor(remaining / 60);
+            var seconds = remaining % 60;
 
             jQuery(".refresh-timer").html(minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
-
-            if (slimstat_refresh_timer == 0) {
-                // Request the data from the server
-                refresh = SlimStatAdmin.refresh_report("slim_p7_02");
-                refresh();
-
-                // Reset the countdown timer
-                slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-            }
         }
+
+        // Sync refresh with the global pulse
+        window.addEventListener("slimstat:minute_pulse", function () {
+            if (jQuery(".pagination .refresh-timer").length > 0) {
+                var refresh = SlimStatAdmin.refresh_report("slim_p7_02");
+                refresh();
+            }
+        });
 
         var observer = new MutationObserver(function (mutationsList) {
             mutationsList.forEach(function (mutation) {
                 mutation.addedNodes.forEach(function (node) {
                     if (node.nodeType === 1 && node.classList.contains("refresh-timer")) {
-                        slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-                        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
+                        if (SlimStatAdmin.refresh_handle != null) {
+                            window.clearInterval(SlimStatAdmin.refresh_handle);
+                        }
+                        // Check every 200ms to ensure we catch the :00 second exactly
+                        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
+                        slimstat_sync_and_countdown();
                     }
                 });
             });
@@ -1124,8 +1137,11 @@ var SlimStatAdmin = {
         });
 
         if (jQuery(".pagination .refresh-timer").length > 0 && typeof SlimStatAdminParams.refresh_interval != "undefined") {
-            slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
+            if (SlimStatAdmin.refresh_handle != null) {
+                window.clearInterval(SlimStatAdmin.refresh_handle);
+            }
+            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
+            slimstat_sync_and_countdown();
         }
     },
     get_query_string_filters: function (url) {

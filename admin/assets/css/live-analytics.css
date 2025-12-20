@@ -695,35 +695,35 @@
 @media (max-width: 1280px) {
     .live-analytics-container {
         max-width: 100%;
-        height: auto;
-        min-height: 400px;
+        height: 321px; /* Match desktop height */
     }
 
     .live-analytics-grid {
-        flex-direction: column;
-        height: auto;
-        min-height: 400px;
-        gap: 20px;
+        flex-direction: row; /* Keep horizontal */
+        height: 100%;
+        gap: 16px; /* Reduce gap */
     }
 
     .live-analytics-metrics {
-        width: 100%;
-        min-width: auto;
-        height: auto;
-        border-right: none;
-        border-bottom: 1px dashed #ebebeb;
-        padding-bottom: 16px;
-        order: 2;
-        flex-shrink: 1;
+        width: 180px; /* Smaller metrics panel */
+        min-width: 180px;
+        height: 100%;
+        border-right: 1px dashed #ebebeb;
+        border-bottom: none;
+        padding-bottom: 0;
+        order: 0;
+        flex-shrink: 0;
     }
 
     .live-metric-item {
         width: 100%;
+        height: 96px;
+        padding: 12px 0px 12px 8px;
     }
 
     .live-analytics-chart {
         width: 100%;
-        height: 300px;
+        height: 100%;
         order: 1;
         flex-grow: 1;
         min-width: 0;
@@ -735,76 +735,152 @@
 
     .chart-container {
         width: 100%;
-        height: 280px;
+        height: calc(100% - 30px);
     }
 }
 
 @media (max-width: 768px) {
     .live-analytics-container {
-        padding: 12px;
-        height: auto;
+        padding: 10px;
+        height: 260px; /* Adjusted height */
+    }
+
+    .live-analytics-grid {
+        gap: 12px;
+    }
+
+    .live-analytics-metrics {
+        width: 130px; /* Narrower metrics */
+        min-width: 130px;
     }
 
     .live-metric-item {
-        padding: 16px 0px 16px 12px;
-        height: auto;
-    }
-
-    .live-metric-item:last-child {
-        height: auto;
+        padding: 8px 0px 8px 8px;
+        height: 80px;
+        gap: 8px;
     }
 
     .metric-icon {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
 
     .metric-icon svg {
-        width: 16px;
-        height: 16px;
+        width: 14px;
+        height: 14px;
     }
 
     .metric-value {
-        font-size: 20px;
-        padding-left: 16px;
+        font-size: 18px;
+        padding-left: 14px;
+        line-height: 22px;
+    }
+
+    .metric-label {
+        font-size: 11px;
+        gap: 4px;
     }
 
     .live-analytics-chart {
-        height: 250px;
-        flex-grow: 1;
-        min-width: 0;
+        height: 100%;
     }
 
     .chart-container {
-        height: 230px;
+        width: 100%;
+        height: calc(100% - 25px);
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-container canvas {
+        min-width: 400px; /* Prevent bars from sticking together */
+        width: 100%;
+        /* Removed height: 100% !important to prevent stretching */
+    }
+
+    /* Style the scrollbar for mobile */
+    .chart-container::-webkit-scrollbar {
+        height: 3px;
+    }
+    .chart-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .chart-container::-webkit-scrollbar-thumb {
+        background: #ebebeb;
+        border-radius: 10px;
+    }
+
+    .empty-state {
+        position: sticky;
+        left: 0;
+        width: 100%;
+        transform: translateY(-50%);
+        top: 50%;
+    }
+
+    .live-indicator {
+        padding: 1px 6px;
+    }
+
+    .live-text {
+        font-size: 9px;
     }
 }
 
 @media (max-width: 480px) {
     .live-analytics-container {
-        padding: 8px;
+        padding: 6px;
+        height: 200px; /* Scaled down */
     }
 
     .live-analytics-grid {
-        gap: 16px;
+        gap: 8px;
+    }
+
+    .live-analytics-metrics {
+        width: 100px;
+        min-width: 100px;
     }
 
     .live-metric-item {
-        padding: 12px 0px 12px 8px;
-        gap: 8px;
+        padding: 6px 0px 6px 4px;
+        height: 62px;
+        gap: 4px;
     }
 
     .metric-content {
-        gap: 8px;
+        gap: 4px;
     }
 
     .metric-value {
-        font-size: 18px;
-        padding-left: 12px;
+        font-size: 14px;
+        padding-left: 10px;
+        line-height: 18px;
+        letter-spacing: 0.5px;
     }
 
     .metric-label {
-        font-size: 12px;
+        font-size: 10px;
+        height: 14px;
+    }
+
+    .metric-icon {
+        width: 12px;
+        height: 12px;
+    }
+
+    .metric-icon svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .live-text {
+        font-size: 8px;
+    }
+
+    .chart-container canvas {
+        min-width: 350px; /* Compact width for small screens */
     }
 }
 
