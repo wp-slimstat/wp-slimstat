@@ -147,8 +147,12 @@
                     bottomRight: 0,
                 },
                 borderSkipped: false,
-                barPercentage: 0.7,
-                categoryPercentage: 0.8,
+                barPercentage: function(context) {
+                    return context.chart.width < 480 ? 0.8 : 0.7;
+                },
+                categoryPercentage: function(context) {
+                    return context.chart.width < 480 ? 0.9 : 0.8;
+                },
                 minBarLength: 3,
             },
         ];
@@ -193,12 +197,16 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: {
-                    padding: {
-                        top: 0,
-                        bottom: 0,
-                        left: 20,
-                        right: 20,
-                    },
+                    padding: function(context) {
+                        var width = context.chart.width;
+                        var padding = width < 480 ? 5 : (width < 768 ? 10 : 20);
+                        return {
+                            top: 0,
+                            bottom: 0,
+                            left: padding,
+                            right: padding,
+                        };
+                    }
                 },
                 plugins: {
                     legend: {
@@ -224,10 +232,14 @@
                         },
                         ticks: {
                             color: "#9BA1A6",
-                            font: {
-                                size: 12,
-                                weight: "600",
-                                family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                            font: function(context) {
+                                var width = context.chart.width;
+                                var size = width < 480 ? 8 : (width < 768 ? 10 : 12);
+                                return {
+                                    size: size,
+                                    weight: "600",
+                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                                };
                             },
                             maxRotation: 0,
                             minRotation: 0,
@@ -255,10 +267,14 @@
                         },
                         ticks: {
                             color: "#9BA1A6",
-                            font: {
-                                size: 12,
-                                weight: "600",
-                                family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                            font: function(context) {
+                                var width = context.chart.width;
+                                var size = width < 480 ? 8 : (width < 768 ? 10 : 12);
+                                return {
+                                    size: size,
+                                    weight: "600",
+                                    family: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                                };
                             },
                             padding: 5,
                             count: 3,
@@ -342,7 +358,7 @@
 
     /**
      * Schedule the next auto-update
-     * Updates only at :00 and :30 of each minute
+     * Note: Most updates are now handled by the global sync pulse (slimstat:minute_pulse)
      */
     LiveAnalytics.prototype.scheduleNextUpdate = function () {
         var self = this;
@@ -354,27 +370,29 @@
             return;
         }
 
-        // Calculate next update time: either at :30 of current minute or :00 of next minute
+        // We use the global pulse for primary syncing.
+        // This setTimeout acts as a fallback/safety mechanism
+        // scheduled slightly after the pulse to avoid duplicate requests.
         var now = new Date();
         var currentSeconds = now.getSeconds();
         var currentMilliseconds = now.getMilliseconds();
-        var delay;
 
-        if (currentSeconds < 30) {
-            // Wait until :30 of current minute
-            delay = (30 - currentSeconds) * 1000 - currentMilliseconds;
-        } else {
-            // Wait until :00 of next minute
-            delay = (60 - currentSeconds) * 1000 - currentMilliseconds;
-        }
+        // Wait until :00.500 of next minute (500ms after the pulse)
+        var delay = (60 - currentSeconds) * 1000 - currentMilliseconds + 500;
 
         // Record when we scheduled this update
         this.lastUpdateTime = Date.now();
 
-        // Schedule update at exact time
         this.refreshTimeout = setTimeout(function () {
             if (!self.isDestroyed && !self.isUpdating) {
-                self.performAutoUpdate();
+                // Only run if the pulse didn't already trigger an update in the last 10 seconds
+                var lastUpdateAge = Date.now() - (self.lastSuccessfulUpdate || 0);
+                if (lastUpdateAge > 10000) {
+                    self.performAutoUpdate();
+                } else {
+                    // Pulse already handled it, just schedule the next fallback
+                    self.scheduleNextUpdate();
+                }
             }
         }, delay);
     };
@@ -571,6 +589,7 @@
      * Update UI with new data
      */
     LiveAnalytics.prototype.updateUI = function (data) {
+        this.lastSuccessfulUpdate = Date.now();
         var usersElement = document.querySelector("#" + this.config.report_id + " .users-value");
         var pagesElement = document.querySelector("#" + this.config.report_id + " .pages-value");
         var countriesElement = document.querySelector("#" + this.config.report_id + " .countries-value");
@@ -876,6 +895,12 @@
         var self = this;
 
         // Store bound functions for cleanup
+        this.boundPulse = function () {
+            if (!self.isUpdating && !self.isDestroyed) {
+                self.performAutoUpdate();
+            }
+        };
+
         this.boundVisibilityChange = function () {
             if (document.hidden) {
                 self.stopAutoRefresh();
@@ -894,6 +919,9 @@
             self.stopAutoRefresh();
         };
 
+        // Listen for the global sync pulse from admin.js
+        window.addEventListener("slimstat:minute_pulse", this.boundPulse);
+
         // Pause auto-refresh when tab is not visible
         document.addEventListener("visibilitychange", this.boundVisibilityChange);
 
@@ -908,6 +936,10 @@
      * Remove event listeners
      */
     LiveAnalytics.prototype.removeEventListeners = function () {
+        if (this.boundPulse) {
+            window.removeEventListener("slimstat:minute_pulse", this.boundPulse);
+            this.boundPulse = null;
+        }
         if (this.boundVisibilityChange) {
             document.removeEventListener("visibilitychange", this.boundVisibilityChange);
             this.boundVisibilityChange = null;
