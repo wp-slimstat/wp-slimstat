@@ -107,12 +107,11 @@ $settings = [
 			'consent_integration' => [
 				'title'         => __('Consent Plugin Integration', 'wp-slimstat'),
 				'type'          => 'select',
-				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>None:</strong> No automatic consent checking. Use this ONLY if you have configured SlimStat to be fully privacy-safe (Anonymous Tracking ON + IP Anonymization ON + Cookies OFF). <strong>Not recommended</strong> for most sites.<br/><strong>Via WP Consent API:</strong> (Recommended) Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.<br/><strong>Real Cookie Banner:</strong> Specific integration for Real Cookie Banner CMP. <strong>Important:</strong> Server-side tracking is automatically disabled for GDPR compliance. Only client-side (JavaScript) tracking occurs after consent is verified. Works seamlessly with both standard and anonymous tracking modes. The integration supports category-specific consent (functional, statistics, marketing) and automatic consent upgrade in anonymous mode.', 'wp-slimstat'),
+				'description'   => __('<strong>GDPR Compliance:</strong> Integrate with a Consent Management Platform (CMP) to ensure tracking only occurs with user consent.<br/><br/><strong>SlimStat Consent Banner:</strong> (Recommended) Use SlimStat\'s built-in banner with customizable messaging and server-side consent tracking.<br/><strong>Via WP Consent API:</strong> Integrates with CMPs supporting WordPress Consent API (Complianz, CookieYes, etc.). Server-side consent checking available for both modes.', 'wp-slimstat'),
 				'select_values' => [
-                    ''                   => __('None (Not GDPR-safe unless fully anonymized)', 'wp-slimstat'),
-					'slimstat_banner'    => __('SlimStat Consent Banner (Built-in)', 'wp-slimstat'),
-					'wp_consent_api'     => __('Via WP Consent API (Recommended)', 'wp-slimstat'),
-					'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
+					'slimstat_banner'    => __('SlimStat Consent Banner (Recommended)', 'wp-slimstat'),
+					'wp_consent_api'     => __('Via WP Consent API', 'wp-slimstat'),
+					// 'real_cookie_banner' => __('Real Cookie Banner', 'wp-slimstat'),
 				],
 				'conditional' => [
 					'field' => 'gdpr_enabled',
@@ -1174,17 +1173,17 @@ if (!function_exists('is_plugin_active')) {
     include_once ABSPATH . 'wp-admin/includes/plugin.php';
 }
 $has_wp_consent_api     = function_exists('is_plugin_active') && is_plugin_active('wp-consent-api/wp-consent-api.php');
-$has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php');
+// $has_real_cookie_banner = function_exists('is_plugin_active') && is_plugin_active('real-cookie-banner/index.php');
 ?>
 <script>
 (function($){
     $(function(){
         // Disable integrations that are not installed
         var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
-        var hasRCB       = <?php echo $has_real_cookie_banner ? 'true' : 'false'; ?>;
+        // var hasRCB       = <?php echo isset($has_real_cookie_banner) && $has_real_cookie_banner ? 'true' : 'false'; ?>;
         var $ci = $('#consent_integration');
         if(!hasWpConsent){ $ci.find('option[value="wp_consent_api"]').prop('disabled', true); }
-        if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
+        // if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
 
         // Initialize conditional fields system (from admin.js)
         if (typeof window.SlimStatConditionalFields !== 'undefined') {
