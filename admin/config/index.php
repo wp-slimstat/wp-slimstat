@@ -197,6 +197,7 @@ $settings = [
 					'value' => '|||slimstat_banner',
 				],
             ],
+/*
             'consent_level_integration' => [
                 'title'         => __('Consent Category', 'wp-slimstat'),
                 'type'          => 'select',
@@ -213,12 +214,14 @@ $settings = [
 					'value' => '|||wp_consent_api,real_cookie_banner',
 				],
             ],
+*/
 
             // Tracker - Data Protection
             'privacy_header' => [
                 'title' => __('Data Protection', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
+/*
             'anonymous_tracking' => [
                 'title'       => __('Anonymous Tracking Mode', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -237,6 +240,7 @@ $settings = [
 					'type' => 'checked',
 				],
             ],
+*/
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP Addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
