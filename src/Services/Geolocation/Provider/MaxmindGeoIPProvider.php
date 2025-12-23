@@ -113,15 +113,12 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 		$cleanup = function() use (&$extractDir, &$tarPath, &$tgzPath, $wp_filesystem) {
 			if ($extractDir && is_dir($extractDir)) {
 				$wp_filesystem->delete($extractDir, true);
-				$this->logDebug(sprintf('Cleaned up temporary extraction directory: %s', $extractDir));
 			}
 			if ($tarPath && file_exists($tarPath)) {
 				$wp_filesystem->delete($tarPath);
-				$this->logDebug('Cleaned up temporary tar file.');
 			}
 			if (file_exists($tgzPath)) {
 				$wp_filesystem->delete($tgzPath);
-				$this->logDebug('Cleaned up temporary tgz file.');
 			}
 		};
 
@@ -166,9 +163,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 					}
 					$wp_filesystem->delete($downloaded_file);
 				}
-				$this->logDebug('Successfully downloaded MaxMind database (fallback helper).');
-			} else {
-				$this->logDebug('Successfully downloaded MaxMind database (streamed).');
 			}
 
 			// Try to extract mmdb from tar.gz using PharData if available
@@ -181,7 +175,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				return false;
 			}
 
-			$this->logDebug('Starting MaxMind database extraction...');
 			$tgz     = new \PharData($tgzPath);
 			$tarPath = $tmp . '.tar';
 			$tgz->decompress();
@@ -201,7 +194,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				return false;
 			}
 
-			$this->logDebug(sprintf('Extracting archive to (uploads): %s', $extractDir));
 			$tar->extractTo($extractDir, null, true);
 
 			$mmdb_found = false;
@@ -219,14 +211,12 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				$files_in_archive[] = $name;
 				if ('.mmdb' === substr($name, -5)) {
 					$source = $file->getPathname();
-					$this->logDebug(sprintf('Found extracted .mmdb: %s', $source));
 					$this->ensureDirExists(dirname($this->dbPath));
 
 					// Attempt to move the file first, then fall back to copy
 					$move_success = $wp_filesystem->move($source, $this->dbPath, true);
 
 					if (!$move_success) {
-						$this->logDebug(sprintf('Move operation failed, attempting copy from %s to %s', $source, $this->dbPath));
 						$copy_success = $wp_filesystem->copy($source, $this->dbPath, true);
 
 						if (!$copy_success) {
@@ -253,8 +243,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 								$error_message .= ' ' . sprintf(__('Diagnostic info: %s', 'wp-slimstat'), implode('; ', $error_details));
 							}
 
-							$this->logDebug('File operation failed: ' . $error_message);
-
 							\wp_slimstat::update_option('slimstat_geoip_error', [
 								'time'  => time(),
 								'error' => $error_message,
@@ -262,11 +250,8 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 							$cleanup();
 							return false;
 						}
-
-						$this->logDebug('Copy operation succeeded');
 					}
 
-					$this->logDebug(sprintf('Placed database at: %s', $this->dbPath));
 					$mmdb_found = true;
 					break;
 				}
@@ -283,11 +268,9 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			}
 
 			$final_exists = file_exists($this->dbPath);
-			$this->logDebug(sprintf('Final database file exists: %s (path: %s)', $final_exists ? 'yes' : 'no', $this->dbPath));
 
 			if ($final_exists) {
 				$file_size = filesize($this->dbPath);
-				$this->logDebug(sprintf('Database file size: %d bytes', $file_size));
 				\wp_slimstat::update_option('slimstat_geoip_error', []);
 			}
 
@@ -379,13 +362,6 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 					}
 				}
 				return $error_msg;
-		}
-	}
-
-	protected function logDebug($message)
-	{
-		if (defined('WP_DEBUG') && WP_DEBUG && defined('WP_DEBUG_LOG') && WP_DEBUG_LOG) {
-			error_log(sprintf('[WP-Slimstat MaxMind] %s', $message));
 		}
 	}
 }

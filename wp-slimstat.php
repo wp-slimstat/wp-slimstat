@@ -21,6 +21,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 // Set the plugin version and directory
 define('SLIMSTAT_ANALYTICS_VERSION', '5.4.0');
+
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -28,6 +29,25 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
+require_once __DIR__ . '/src/Constants.php';
+
+
+/**
+ * Main Slimstat Analytics Class
+ *
+ * @package Wp_SlimStat
+ *
+ * @todo REFACTOR TRACKING STATE: The $data_js and $stat properties should be refactored into a
+ *       proper state object pattern to maintain encapsulation. Currently these properties are
+ *       public to support refactored tracker classes (SlimStat\Tracker\*), but this breaks
+ *       encapsulation and creates security risks. Future implementation should:
+ *       1. Create a TrackingState class to encapsulate state management
+ *       2. Update all Tracker classes to use the state object
+ *       3. Make properties protected or private
+ *       4. Ensure all state modifications go through validated methods
+ *       This is tracked as technical debt for version 6.0
+ */
 
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';
@@ -42,16 +62,102 @@ class wp_slimstat
     public static $update_checker = [];
     public static $raw_post_array = [];
 
-    public static $data_js           = ['id' => 0];
-    public static $stat              = [];
+    /**
+     * @var array Tracking data from JavaScript (for internal tracking use only)
+     * @internal Use get_data_js() / set_data_js() methods for controlled access.
+     *
+     * This property is now protected to maintain proper encapsulation and prevent external code
+     * from bypassing consent checks or corrupting tracking state. All tracker classes use the
+     * getter/setter methods which include validation and filter hooks for GDPR compliance.
+     */
+    protected static $data_js           = ['id' => 0];
+
+    /**
+     * @var array Current pageview tracking data (for internal tracking use only)
+     * @internal Use get_stat() / set_stat() methods for controlled access.
+     *
+     * This property is now protected to maintain proper encapsulation and prevent external code
+     * from bypassing consent checks or corrupting tracking state. All tracker classes use the
+     * getter/setter methods which include validation and filter hooks for GDPR compliance.
+     */
+    protected static $stat              = [];
+
     protected static $date_i18n_filters = [];
+
+    /**
+     * Gets the current data_js array (for internal tracking use only)
+     *
+     * @return array
+     */
+    public static function get_data_js()
+    {
+        return self::$data_js;
+    }
+
+    /**
+     * Sets the data_js array (for internal tracking use only)
+     *
+     * This method provides controlled access to the data_js property and includes
+     * basic validation to prevent tampering.
+     *
+     * @param array $data_js The tracking data from JavaScript
+     * @return void
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function set_data_js($data_js)
+    {
+        // Validate that we're receiving an array
+        if (!is_array($data_js)) {
+            return;
+        }
+
+        // Apply filter to allow validation/modification by consent management systems
+        $data_js = apply_filters('slimstat_set_data_js', $data_js);
+
+        self::$data_js = $data_js;
+    }
+
+    /**
+     * Gets the current stat array (for internal tracking use only)
+     *
+     * @return array Current tracking state
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function get_stat()
+    {
+        return self::$stat;
+    }
+
+    /**
+     * Sets the stat array (for internal tracking use only)
+     *
+     * This method provides controlled access to the stat property and includes
+     * basic validation to prevent tampering and ensure consent compliance.
+     *
+     * @param array $stat The pageview tracking data
+     * @return void
+     * @internal For use by SlimStat tracking classes only
+     */
+    public static function set_stat($stat)
+    {
+        // Validate that we're receiving an array
+        if (!is_array($stat)) {
+            return;
+        }
+
+        // Apply filter to allow validation/modification by consent management systems
+        // This is critical for GDPR compliance - CMPs can inspect and modify data
+        $stat = apply_filters('slimstat_set_stat', $stat);
+
+        self::$stat = $stat;
+    }
 
     /**
      * Initializes variables and actions
      */
     public static function init()
     {
-        \SlimStat\Providers\RESTService::run();
+        \SlimStat\Providers\RestApiManager::run();
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
@@ -68,7 +174,19 @@ class wp_slimstat
         self::$settings = array_merge(self::init_options(), self::$settings);
 
         // Allow third party tools to edit the options
-        self::$settings = apply_filters('slimstat_init_options', self::$settings);
+		self::$settings = apply_filters('slimstat_init_options', self::$settings);
+
+		$consent_integration = self::$settings['consent_integration'] ?? '';
+		if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
+			$consent_integration = 'slimstat_banner';
+			self::$settings['consent_integration'] = $consent_integration;
+		}
+
+		if ('slimstat_banner' === $consent_integration) {
+			self::$settings['use_slimstat_banner'] = 'on';
+		} else {
+			self::$settings['use_slimstat_banner'] = 'off';
+		}
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -113,11 +231,41 @@ class wp_slimstat
                 add_action('login_enqueue_scripts', [self::class, 'enqueue_tracker'], 10);
             }
 
-            add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
+			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
+		}
+
+		$banner_enabled = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+		if ($banner_enabled) {
+			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
+			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
+			add_action('wp_footer', [self::class, 'render_gdpr_banner'], 5);
+			add_action('login_footer', [self::class, 'render_gdpr_banner'], 5);
+		}
+
+        // Registers Slimstat with WP Consent API if enabled in plugin settings
+        if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
+            // Check if WP Consent API plugin is actually active
+            if (function_exists('wp_has_consent')) {
+                $plugin = plugin_basename(SLIMSTAT_FILE);
+                add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
+            }
         }
+
+        // Register WordPress Privacy API exporters and erasers (GDPR Article 15 & 17)
+        add_filter('wp_privacy_personal_data_exporters', [\SlimStat\Services\Privacy\DataExporter::class, 'registerExporters']);
+        add_filter('wp_privacy_personal_data_erasers', [\SlimStat\Services\Privacy\DataEraser::class, 'registerErasers']);
+
+        // Register privacy policy content
+        add_action('admin_init', [self::class, 'registerPrivacyPolicyContent']);
+
+        // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
+        \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
 
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
+
+        // Hook IP hashing daily salt generation (for GDPR compliance)
+        add_action('wp_slimstat_generate_daily_salt', [\SlimStat\Providers\IPHashProvider::class, 'generateDailySalt']);
 
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
@@ -125,17 +273,16 @@ class wp_slimstat
         // Allow external domains on CORS requests
         add_filter('allowed_http_origins', [self::class, 'open_cors_admin_ajax']);
 
-        // GDPR: Opt-out Ajax Handler
-        if (defined('DOING_AJAX') && DOING_AJAX) {
-            add_action('wp_ajax_slimstat_optout_html', [self::class, 'get_optout_html']);
-            add_action('wp_ajax_nopriv_slimstat_optout_html', [self::class, 'get_optout_html']);
-        }
+        // Internal GDPR banner/consent handling removed. Use external CMP plugins.
 
         // If this request was a redirect, we should update the content type accordingly
         add_filter('wp_redirect_status', [\SlimStat\Tracker\Tracker::class, 'update_content_type'], 10, 2);
 
         // Shortcodes
         add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
+
+        // Load textdomain early on init
+        add_action('init', [self::class, 'load_textdomain'], 5);
 
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
@@ -150,6 +297,16 @@ class wp_slimstat
         }
     }
     // end init
+
+    /**
+     * Load plugin textdomain
+     *
+     * @return void
+     */
+    public static function load_textdomain()
+    {
+        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+    }
 
     /**
      * The main logging function
@@ -222,9 +379,6 @@ class wp_slimstat
         $where     = '';
         $as_column = '';
         $s         = sprintf("<span class='slimstat-item-separator'>%s</span>", $s);
-
-        // Load the localization files (for languages, operating systems, etc)
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
 
         // Look for required fields
         if (empty($f) || empty($w)) {
@@ -392,6 +546,7 @@ class wp_slimstat
 
     // end slimstat_shortcode
 
+
     public static function init_plugin()
     {
         // Include our browser detector library
@@ -400,7 +555,8 @@ class wp_slimstat
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
 
-        // Initialize IP hash provider daily salt
+        // Ensure daily salt exists for IP hashing (GDPR compliance)
+        // This runs on every page load but only generates if missing
         \SlimStat\Providers\IPHashProvider::generateDailySalt();
 
         // Initialize adblock bypass functionality
@@ -621,7 +777,7 @@ class wp_slimstat
             'display_notifications' => 'on',
 
             // General - Database
-            'auto_purge'        => 0,
+            'auto_purge'        => 420,
             'auto_purge_delete' => 'on',
 
             // Tracker
@@ -629,13 +785,22 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'anonymize_ip'         => 'no',
-            'hash_ip'              => 'no',
-            'set_tracker_cookie'   => 'on',
-            'display_opt_out'      => 'no',
-            'opt_out_cookie_names' => '',
-            'opt_in_cookie_names'  => '',
-            'opt_out_message'      => '<p style="display:block;position:fixed;left:0;bottom:0;margin:0;padding:1em 2em;background-color:#eee;width:100%;z-index:99999;">This website stores cookies on your computer. These cookies are used to provide a more personalized experience and to track your whereabouts around our website in compliance with the European General Data Protection Regulation. If you decide to to opt-out of any future tracking, a cookie will be setup in your browser to remember this choice for one year.<br><br><a href="#" onclick="javascript:SlimStat.optout(event, false);">Accept</a> or <a href="#" onclick="javascript:SlimStat.optout(event, true);">Deny</a></p>',
+            'gdpr_enabled'             => 'off',
+            'anonymize_ip'             => 'no',
+            'hash_ip'                  => 'no',
+			'set_tracker_cookie'       => 'on',
+			'use_slimstat_banner'      => 'off',
+			'consent_integration'      => '', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
+            'consent_level_integration'=> 'statistics',
+			'opt_out_message'          => '',
+			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
+			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
+            'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
+            'anonymous_tracking'       => 'off',
+            'do_not_track'             => 'off',
+            'display_opt_out'          => 'no',
+            'opt_out_cookie_names'     => '',
+            'opt_in_cookie_names'      => '',
 
             // Tracker - Link Tracking
             'track_same_domain_referers'             => 'no',
@@ -767,8 +932,14 @@ class wp_slimstat
         // Use the new unified tracking method setting
         $method = self::$settings['tracking_request_method'] ?? 'rest';
 
+        // Handle legacy 'adblock' value (renamed to 'adblock_bypass' in v5.3.0)
+        if ( 'adblock' === $method ) {
+            $method = 'adblock_bypass';
+        }
+
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
+		$rest_base_url     = rest_url();
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
         $adblock_hash      = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
@@ -778,6 +949,7 @@ class wp_slimstat
         $params = [
             'transport'       => $method,
             'ajaxurl_rest'    => $rest_url,
+			'resturl'         => $rest_base_url,
             'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
             'ajaxurl_adblock' => $adblock_url,
         ];
@@ -789,8 +961,8 @@ class wp_slimstat
             $params['ajaxurl'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
         } elseif ('adblock_bypass' === $method) {
             $params['ajaxurl'] = $adblock_url;
-            // Also set transport to 'adblock' for JS clarity
-            $params['transport'] = 'adblock';
+            // Also set transport to 'adblock_bypass' for JS clarity
+            $params['transport'] = 'adblock_bypass';
         } else {
             $params['ajaxurl'] = $rest_url;
         }
@@ -802,15 +974,7 @@ class wp_slimstat
             $params['dnt'] = str_replace(' ', '', self::$settings['do_not_track_outbound_classes_rel_href']);
         }
 
-        if ('on' == self::$settings['display_opt_out']) {
-            $params['oc'] = ['slimstat_optout_tracking'];
-            if (!empty(self::$settings['opt_out_cookie_names'])) {
-                foreach (self::string_to_array(self::$settings['opt_out_cookie_names']) as $a_cookie_pair) {
-                    $params['oc'][] = substr($a_cookie_pair, 0, strpos($a_cookie_pair, '='));
-                }
-            }
-            $params['oc'] = implode(',', $params['oc']);
-        }
+		// Internal GDPR banner is optionally available alongside CMP integrations.
 
         if ('on' != self::$settings['javascript_mode']) {
             if (empty(self::$stat['id']) || intval(self::$stat['id']) < 0) {
@@ -822,17 +986,49 @@ class wp_slimstat
         }
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
+        // Expose consent/DNT info to client
+		$params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
+		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
+        $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'statistics');
+        $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
+        $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
+        $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
+        $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
+        $params['set_tracker_cookie'] = self::$settings['set_tracker_cookie'] ?? 'on';
+		$params['use_slimstat_banner'] = self::$settings['use_slimstat_banner'] ?? 'off';
+
+		if ('on' === $params['use_slimstat_banner']) {
+			// Set GDPR consent endpoint based on tracking method
+			if ('rest' === $method) {
+				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			} elseif ('ajax' === $method) {
+				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+			} elseif ('adblock_bypass' === $method) {
+				$params['gdpr_consent_endpoint'] = $adblock_url;
+			} else {
+				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			}
+			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
+			$params['gdpr_consent_method'] = $method;
+		}
 
         $params = apply_filters('slimstat_js_params', $params);
 
+        // Add dependencies for consent integrations (e.g., WP Consent API)
+        $dependencies = [];
+        if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
+            $dependencies[] = 'wp-consent-api';
+        }
+
         // Register the correct script for adblock bypass, CDN, or default
         if ('adblock_bypass' === $method) {
-            $hash = md5(site_url() . 'slimstat');
-            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash)), [], SLIMSTAT_ANALYTICS_VERSION, true);
+            $hash_js  = md5(site_url() . 'slimstat');
+            wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
         } elseif ('on' == self::$settings['enable_cdn']) {
-            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', [], null, true);
+            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
         } else {
-            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), [], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
         }
 
         wp_enqueue_script('wp_slimstat');
@@ -850,10 +1046,55 @@ class wp_slimstat
         }
 
         wp_localize_script('wp_slimstat', 'SlimStatParams', $params);
+
         return null;
     }
 
     // end enqueue_tracker
+
+	/**
+	 * Enqueue assets for the internal SlimStat GDPR banner.
+	 *
+	 * @return void
+	 */
+	public static function enqueue_gdpr_assets()
+	{
+		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'wp_slimstat_gdpr_banner',
+			plugins_url('/assets/css/gdpr-banner.css', __FILE__),
+			[],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+	}
+
+	/**
+	 * Render the SlimStat GDPR banner markup.
+	 *
+	 * @return void
+	 */
+	public static function render_gdpr_banner()
+	{
+		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
+			return;
+		}
+
+		if (is_admin() && !wp_doing_ajax()) {
+			return;
+		}
+
+		$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
+		$banner_html  = $gdpr_service->getBannerHtml();
+
+		if ('' === $banner_html) {
+			return;
+		}
+
+		echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
+	}
 
     public static function add_defer_to_script_tag($_tag, $_handle)
     {
@@ -941,14 +1182,65 @@ class wp_slimstat
     }
 
     /**
-     * Displays the opt-out box via Ajax request
+     * Register privacy policy content for WordPress Privacy Tools
+     *
+     * @since 5.4.0
      */
-    public static function get_optout_html()
+    public static function registerPrivacyPolicyContent()
     {
-        die(stripslashes(self::$settings['opt_out_message']));
-    }
+        if (!function_exists('wp_add_privacy_policy_content')) {
+            return;
+        }
 
-    // end get_optout_html
+        $content = '<h2>' . __('SlimStat Analytics', 'wp-slimstat') . '</h2>';
+        $content .= '<p><strong>' . __('What personal data we collect and why', 'wp-slimstat') . '</strong></p>';
+        $content .= '<p>' . __('SlimStat Analytics collects the following data about website visitors:', 'wp-slimstat') . '</p>';
+        $content .= '<ul>';
+        $content .= '<li>' . __('IP Address: Collected for analytics and security purposes. May be anonymized or hashed based on your privacy settings.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Page URLs: Tracks which pages are visited to analyze website usage.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Referrer Information: Tracks where visitors came from (search engines, other websites, etc.).', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Browser and Device Information: User agent, screen resolution, and device type for analytics.', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Timestamp: Date and time of each page visit.', 'wp-slimstat') . '</li>';
+
+        if ('on' === (self::$settings['set_tracker_cookie'] ?? 'off')) {
+            $content .= '<li>' . __('Cookies: A tracking cookie is used to identify returning visitors and maintain session continuity.', 'wp-slimstat') . '</li>';
+        }
+
+        if ('on' !== (self::$settings['ignore_wp_users'] ?? 'off')) {
+            $content .= '<li>' . __('User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled).', 'wp-slimstat') . '</li>';
+        }
+
+        $content .= '</ul>';
+
+        $content .= '<p><strong>' . __('How long we retain your data', 'wp-slimstat') . '</strong></p>';
+        $retention_days = intval(self::$settings['auto_purge'] ?? 420);
+        if ($retention_days > 0) {
+            $content .= '<p>' . sprintf(__('Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements.', 'wp-slimstat'), $retention_days) . '</p>';
+        } else {
+            $content .= '<p>' . __('Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies.', 'wp-slimstat') . '</p>';
+        }
+
+        $content .= '<p><strong>' . __('Your rights', 'wp-slimstat') . '</strong></p>';
+        $content .= '<p>' . __('Under GDPR, you have the right to:', 'wp-slimstat') . '</p>';
+        $content .= '<ul>';
+        $content .= '<li>' . __('Access your personal data collected by SlimStat', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Request deletion of your personal data (Right to be Forgotten)', 'wp-slimstat') . '</li>';
+        $content .= '<li>' . __('Opt-out of tracking by revoking consent (if GDPR mode is enabled)', 'wp-slimstat') . '</li>';
+        $content .= '</ul>';
+
+        if ('on' === (self::$settings['gdpr_enabled'] ?? 'on')) {
+            $content .= '<p>' . __('You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator.', 'wp-slimstat') . '</p>';
+        }
+
+        $content .= '<p><strong>' . __('Consent Management', 'wp-slimstat') . '</strong></p>';
+        if ('on' === (self::$settings['anonymous_tracking'] ?? 'off')) {
+            $content .= '<p>' . __('This website uses Anonymous Tracking Mode. Initial tracking occurs without collecting personally identifiable information (PII). Full tracking with PII collection only occurs after you grant explicit consent.', 'wp-slimstat') . '</p>';
+        } else {
+            $content .= '<p>' . __('Tracking requires your consent when GDPR mode is enabled. You can grant or revoke consent at any time through the consent management interface.', 'wp-slimstat') . '</p>';
+        }
+
+        wp_add_privacy_policy_content('SlimStat Analytics', $content);
+    }
 
     public static function add_plugin_manual_download_link($_links = [], $_plugin_file = '')
     {
@@ -1185,8 +1477,8 @@ if (function_exists('add_action')) {
             $_POST['action'] = wp_slimstat::$raw_post_array['action'];
         }
 
-        add_action('wp_ajax_nopriv_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
-        add_action('wp_ajax_slimtrack', ['SlimStat\Tracker\Tracker', 'slimtrack_ajax']);
+        add_action('wp_ajax_nopriv_slimtrack', [\SlimStat\Tracker\Ajax::class, 'handle']);
+        add_action('wp_ajax_slimtrack', [\SlimStat\Tracker\Ajax::class, 'handle']);
     }
 
 

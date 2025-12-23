@@ -143,10 +143,19 @@ body.index-php {
     justify-content: center;
     // align-items: center;
 
+    [dir="rtl"] & {
+      margin-left: 0;
+      margin-right: 0px;
+    }
+
     @media (max-width: 768px) {
       margin-left: 0;
       min-width: 100%;
       max-width: 100%;
+
+      [dir="rtl"] & {
+        margin-right: 0;
+      }
     }
   }
 
@@ -228,6 +237,11 @@ body.index-php {
   .top-countries {
     margin-left: 0;
     margin-top: 20px;
+
+    [dir="rtl"] & {
+      margin-left: 0;
+      margin-right: 0;
+    }
   }
 }
 
@@ -294,10 +308,19 @@ body.index-php {
     justify-content: center;
     // align-items: center;
 
+    [dir="rtl"] & {
+      margin-left: 0;
+      margin-right: 30px;
+    }
+
     @media (max-width: 768px) {
       margin-left: 0;
       min-width: 100%;
       max-width: 100%;
+
+      [dir="rtl"] & {
+        margin-right: 0;
+      }
     }
   }
 
@@ -380,6 +403,11 @@ body.index-php {
     .top-countries {
       margin-left: 0;
       margin-top: 20px;
+
+      [dir="rtl"] & {
+        margin-left: 0;
+        margin-right: 0;
+      }
     }
   }
 }
@@ -457,6 +485,11 @@ body {
 .export-pro-badge {
   margin-left: 3px;
   margin-bottom: -5px;
+
+  [dir="rtl"] & {
+    margin-left: 0;
+    margin-right: 3px;
+  }
 }
 
 // Old Styles
@@ -498,7 +531,7 @@ body {
   right: 0;
   z-index: 1;
 
-  .rtl & {
+  [dir="rtl"] & {
     left: 0;
     right: auto;
   }
@@ -541,7 +574,7 @@ body {
   z-index: 120;
   border-radius: 8px;
 
-  .rtl & {
+  [dir="rtl"] & {
     right: auto;
     left: -4px;
   }
@@ -571,7 +604,7 @@ body {
   float: right;
   margin: 2px 5px 0 0;
 
-  .rtl & {
+  [dir="rtl"] & {
     margin: 2px 0 0 5px;
   }
 }
@@ -628,7 +661,7 @@ body {
     margin-right: -0.5%;
   }
 
-  .rtl & {
+  [dir="rtl"] & {
     margin-right: 0;
     margin-left: -1.3%;
 
@@ -987,6 +1020,15 @@ body {
 .form-table {
   border: 1px solid #ccc;
   margin-top: 0;
+  overflow: hidden;
+
+  *:not(.bootstrap-switch-container):not(input):not(button):not(label):not(select):not(textarea):not(a):not(code):not(pre):not(.description) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-wrap: auto;
+  }
 }
 
 .form-table th {
@@ -1043,6 +1085,11 @@ body {
 
 .wp-list-table.slimstat-addons tbody th {
   border-left: 5px solid #ccc;
+
+  [dir="rtl"] & {
+    border-left: 0;
+    border-right: 5px solid #ccc;
+  }
 }
 
 .wp-list-table.slimstat-addons th,
@@ -1054,6 +1101,10 @@ body {
   border-color: #10a062;
   border-style: solid;
   border-radius: 0 0 0 5px;
+
+  [dir="rtl"] & {
+    border-radius: 0 0 5px 0;
+  }
 }
 
 .wp-list-table.slimstat-addons .active td {
@@ -1119,6 +1170,260 @@ body {
 
 .rtl .form-table td span.block-element {
   padding: 0 0 0 30px;
+}
+
+/* Additional RTL Support for Dashboard Elements */
+.rtl .slimstat-browser-icon,
+.rtl span.slimstat-flag-container {
+  float: right !important;
+  margin: 0px 0px 0px 10px !important;
+}
+
+.rtl .slimstat-author-link img {
+  float: right !important;
+  margin: 0px 0px 0px 10px !important;
+}
+
+.rtl .slimstat-float-right {
+  float: left;
+}
+
+.rtl #slimstat-date-filters .dropdown .ui-datepicker-trigger {
+  float: left;
+  margin: 2px 0 0 5px;
+}
+
+.rtl #slimstat-current-filters .slimstat-filter-list {
+  float: right;
+  padding: 4px 5px 5px 0;
+}
+
+.rtl .slimstat-filter-action-button {
+  float: left;
+  margin-right: 10px !important;
+  margin-left: 0 !important;
+}
+
+.rtl .wrap.slimstat .sortable-placeholder {
+  float: right;
+}
+
+.rtl [id^="slim_"] p.pagination a {
+  float: left;
+  margin-right: 5px;
+  margin-left: 0;
+}
+
+.rtl [id^="slim_"] p span {
+  float: left;
+}
+
+.rtl [id^="slim_"] p span.pageview-screenres {
+  margin-right: 10px;
+  margin-left: 0;
+}
+
+.rtl [id^="slim_"] .inline-icon {
+  margin-left: 5px;
+  margin-right: 0;
+}
+
+.rtl [id^="slim_"] .spaced {
+  margin-right: 15px;
+  margin-left: 0;
+}
+
+.rtl .little-color-box {
+  float: right;
+  margin-left: 10px;
+  margin-right: 0;
+}
+
+.rtl .ui-dialog.slimstat .ui-dialog-titlebar-close {
+  float: left;
+}
+
+.rtl [class*="bootstrap-switch-id-addon_network_settings"] {
+  float: left;
+}
+
+.rtl .slimstat-layout .postbox,
+.rtl .slimstat-layout .sortable-placeholder {
+  float: right;
+  margin: 0 0 10px 10px;
+}
+
+.rtl .ui-datepicker .ui-datepicker-buttonpane button {
+  float: left;
+}
+
+.rtl .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
+  float: right;
+}
+
+.rtl .ui-datepicker-multi .ui-datepicker-group {
+  float: right;
+}
+
+.rtl .tag-editor li {
+  float: right;
+}
+
+.rtl .tag-editor div {
+  float: right;
+}
+
+.rtl .tag-editor .tag-editor-tag {
+  padding-right: 5px;
+  padding-left: 0;
+  border-radius: 2px 0 0 2px;
+}
+
+.rtl .tag-editor .tag-editor-delete {
+  padding-right: 4px;
+  padding-left: 3px;
+  border-radius: 0 2px 2px 0;
+}
+
+.rtl .ui-autocomplete {
+  right: 0;
+  left: auto;
+}
+
+.rtl .backdrop-container {
+  @media (min-width: 780px) {
+    margin-right: -20px;
+    margin-left: 0;
+    padding-right: 20px;
+    padding-left: 0;
+  }
+}
+
+.rtl .slimstat-filter-link .avatar {
+  margin-left: 2px;
+  margin-right: 0;
+}
+
+.rtl #slimstat-date-filters a.slimstat-filter-link {
+  float: right;
+  margin: 0 0 5px 5px;
+}
+
+.rtl .slimstat-header-buttons {
+  float: left;
+}
+
+.rtl .slimstat-header-buttons a.slimstat-font-download span.dashicons::before {
+  margin-left: 2px;
+  margin-right: 0;
+}
+
+.rtl .slimstat-browser-icon,
+.rtl span.slimstat-flag-container {
+  float: right !important;
+  margin: 0px 0px 0px 10px !important;
+}
+
+.rtl .slimstat-author-link img {
+  float: right !important;
+  margin: 0px 0px 0px 10px !important;
+}
+
+.rtl .slimstat-tooltip-trigger .slimstat-tooltip-bar-wrap {
+  right: 0;
+  left: auto;
+  margin: 0px 15px 0px 0px;
+}
+
+.rtl .pagination {
+  right: 0;
+  left: auto;
+}
+
+.rtl .slimstat-header {
+  margin-right: -20px;
+  margin-left: 0;
+}
+
+.rtl .slimstat-header .go-pro {
+  text-align: right;
+}
+
+.rtl .slimstat-header .go-pro p {
+  text-align: right;
+}
+
+.rtl .slimstat-header .pro-badge {
+  right: auto;
+  left: 20px;
+}
+
+.rtl .slimstat-header .pro-badge .icon {
+  margin-left: 7px;
+  margin-right: 0;
+}
+
+.rtl .slimstat-header .go-pro a .icon {
+  margin-left: 0;
+  margin-right: 5px;
+  transform: scaleX(-1);
+}
+
+.rtl .slimstat-pro-modal #slimstat-pro-modal-close {
+  left: 10%;
+  right: auto;
+}
+
+.rtl .slimstat-pro-modal .features-flex-box .feature-item h6 .icon {
+  margin-left: 7px;
+  margin-right: 0;
+}
+
+.rtl .slimstat-pro-modal .features-flex-box .feature-item .more-info-icon {
+  margin-right: 3px;
+  margin-left: 0;
+}
+
+/* RTL Support for responsive elements */
+@media screen and (max-width: 800px) {
+  .rtl #slimstat-date-filters {
+    left: inherit;
+    right: inherit;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .rtl [id^="slim_"] .spaced {
+    margin-right: 5px;
+    margin-left: 5px;
+  }
+
+  .rtl [id^="slim_"] .inline-icon {
+    margin-left: 2px;
+    margin-right: 0;
+  }
+
+  .rtl [id^="slim_"] p span.pageview-screenres {
+    margin-right: 3px;
+    margin-left: 0;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .rtl [id^="slim_"] .spaced {
+    margin-right: 8px;
+    margin-left: 8px;
+  }
+
+  .rtl [id^="slim_"] .inline-icon {
+    margin-left: 3px;
+    margin-right: 0;
+  }
+
+  .rtl [id^="slim_"] p span.pageview-screenres {
+    margin-right: 5px;
+    margin-left: 0;
+  }
 }
 
 /* Customizer */
@@ -1734,12 +2039,20 @@ body {
   padding: 5px 9px;
   text-align: left;
   word-wrap: break-word;
+
+  [dir="rtl"] & {
+    text-align: right;
+  }
 }
 
 .qtip-titlebar {
   padding: 5px 35px 5px 10px;
   border-radius: 0 0 1px;
   font-weight: 700;
+
+  [dir="rtl"] & {
+    padding: 5px 10px 5px 35px;
+  }
 }
 
 .qtip-titlebar + .qtip-content {
@@ -1754,12 +2067,22 @@ body {
   cursor: pointer;
   outline: 0;
   border: 1px solid transparent;
+
+  [dir="rtl"] & {
+    right: auto;
+    left: -9px;
+  }
 }
 
 .qtip-titlebar .qtip-close {
   right: 4px;
   top: 50%;
   margin-top: -9px;
+
+  [dir="rtl"] & {
+    right: auto;
+    left: 4px;
+  }
 }
 
 * html .qtip-titlebar .qtip-close {
@@ -1808,6 +2131,10 @@ body {
   font-style: normal;
   text-decoration: none !important;
   transform: translateX(9px) translateY(-1px);
+
+  [dir="rtl"] & {
+    transform: translateX(-9px) translateY(-1px);
+  }
 
   strong {
     color: #fff;
@@ -1860,12 +2187,22 @@ x:-o-prefocus {
   line-height: unset !important;
   border-top-right-radius: 4px;
   display: inline-block;
+
+  [dir="rtl"] & {
+    border-top-right-radius: 0;
+    border-top-left-radius: 4px;
+  }
 }
 
 .qtip .qtip-tip canvas {
   top: 0;
   left: 0;
   display: none !important;
+
+  [dir="rtl"] & {
+    left: auto;
+    right: 0;
+  }
 }
 
 .qtip .qtip-tip .qtip-vml {
@@ -1925,10 +2262,20 @@ x:-o-prefocus {
 
 .ui-datepicker .ui-datepicker-prev {
   left: 2px;
+
+  [dir="rtl"] & {
+    left: auto;
+    right: 2px;
+  }
 }
 
 .ui-datepicker .ui-datepicker-next {
   right: 2px;
+
+  [dir="rtl"] & {
+    right: auto;
+    left: 2px;
+  }
 }
 
 .ui-datepicker .ui-datepicker-title {
@@ -1976,6 +2323,10 @@ x:-o-prefocus {
   padding: 0.2em;
   text-align: right;
   text-decoration: none;
+
+  [dir="rtl"] & {
+    text-align: left;
+  }
 }
 
 .ui-datepicker .ui-datepicker-buttonpane {
@@ -1985,6 +2336,11 @@ x:-o-prefocus {
   border-left: 0;
   border-right: 0;
   border-bottom: 0;
+
+  [dir="rtl"] & {
+    border-left: 0;
+    border-right: 0;
+  }
 }
 
 .ui-datepicker .ui-datepicker-buttonpane button {
@@ -1994,10 +2350,18 @@ x:-o-prefocus {
   padding: 0.2em 0.6em 0.3em;
   width: auto;
   overflow: visible;
+
+  [dir="rtl"] & {
+    float: left;
+  }
 }
 
 .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
   float: left;
+
+  [dir="rtl"] & {
+    float: right;
+  }
 }
 
 .ui-datepicker.ui-datepicker-multi {
@@ -2006,6 +2370,10 @@ x:-o-prefocus {
 
 .ui-datepicker-multi .ui-datepicker-group {
   float: left;
+
+  [dir="rtl"] & {
+    float: right;
+  }
 }
 
 .ui-datepicker-multi .ui-datepicker-group table {
@@ -2028,10 +2396,19 @@ x:-o-prefocus {
 .ui-datepicker-multi .ui-datepicker-group-last .ui-datepicker-header,
 .ui-datepicker-multi .ui-datepicker-group-middle .ui-datepicker-header {
   border-left-width: 0;
+
+  [dir="rtl"] & {
+    border-left-width: 1px;
+    border-right-width: 0;
+  }
 }
 
 .ui-datepicker-multi .ui-datepicker-buttonpane {
   clear: left;
+
+  [dir="rtl"] & {
+    clear: right;
+  }
 }
 
 .ui-datepicker-row-break {
@@ -2066,21 +2443,38 @@ x:-o-prefocus {
 
 .ui-datepicker-rtl .ui-datepicker-buttonpane {
   clear: right;
+
+  [dir="rtl"] & {
+    clear: left;
+  }
 }
 
 .ui-datepicker-rtl .ui-datepicker-buttonpane button {
   float: left;
+
+  [dir="rtl"] & {
+    float: right;
+  }
 }
 
 .ui-datepicker-rtl .ui-datepicker-buttonpane button.ui-datepicker-current,
 .ui-datepicker-rtl .ui-datepicker-group {
   float: right;
+
+  [dir="rtl"] & {
+    float: left;
+  }
 }
 
 .ui-datepicker-rtl .ui-datepicker-group-last .ui-datepicker-header,
 .ui-datepicker-rtl .ui-datepicker-group-middle .ui-datepicker-header {
   border-right-width: 0;
   border-left-width: 1px;
+
+  [dir="rtl"] & {
+    border-right-width: 1px;
+    border-left-width: 0;
+  }
 }
 
 /*! bootstrap-switch - v3.3.4 | https://www.bootstrap-switch.org */
@@ -2103,6 +2497,11 @@ x:-o-prefocus {
   -webkit-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
   -o-transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
   transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+
+  [dir="rtl"] & {
+    direction: rtl;
+    text-align: right;
+  }
 }
 
 .bootstrap-switch .bootstrap-switch-container {
@@ -2181,11 +2580,25 @@ x:-o-prefocus {
 .bootstrap-switch .bootstrap-switch-handle-on {
   border-bottom-left-radius: 3px;
   border-top-left-radius: 3px;
+
+  [dir="rtl"] & {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+  }
 }
 
 .bootstrap-switch .bootstrap-switch-handle-off {
   border-bottom-right-radius: 3px;
   border-top-right-radius: 3px;
+
+  [dir="rtl"] & {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+  }
 }
 
 .bootstrap-switch input[type="radio"],
@@ -2197,6 +2610,11 @@ x:-o-prefocus {
   z-index: -1;
   opacity: 0 !important;
   filter: alpha(opacity=0);
+
+  [dir="rtl"] & {
+    left: auto;
+    right: 0;
+  }
 }
 
 .bootstrap-switch.bootstrap-switch-mini .bootstrap-switch-handle-off,
@@ -2247,26 +2665,54 @@ x:-o-prefocus {
   -webkit-transition: margin-left 0.5s;
   -o-transition: margin-left 0.5s;
   transition: margin-left 0.5s;
+
+  [dir="rtl"] & {
+    -webkit-transition: margin-right 0.5s;
+    -o-transition: margin-right 0.5s;
+    transition: margin-right 0.5s;
+  }
 }
 
 .bootstrap-switch.bootstrap-switch-inverse .bootstrap-switch-handle-on {
   border-radius: 0 3px 3px 0;
+
+  [dir="rtl"] & {
+    border-radius: 3px 0 0 3px;
+  }
 }
 
 .bootstrap-switch.bootstrap-switch-inverse .bootstrap-switch-handle-off {
   border-radius: 3px 0 0 3px;
+
+  [dir="rtl"] & {
+    border-radius: 0 3px 3px 0;
+  }
 }
 
 .bootstrap-switch.bootstrap-switch-inverse.bootstrap-switch-off .bootstrap-switch-label,
 .bootstrap-switch.bootstrap-switch-on .bootstrap-switch-label {
   border-bottom-right-radius: 3px;
   border-top-right-radius: 3px;
+
+  [dir="rtl"] & {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+  }
 }
 
 .bootstrap-switch.bootstrap-switch-inverse.bootstrap-switch-on .bootstrap-switch-label,
 .bootstrap-switch.bootstrap-switch-off .bootstrap-switch-label {
   border-bottom-left-radius: 3px;
   border-top-left-radius: 3px;
+
+  [dir="rtl"] & {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+    border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+  }
 }
 
 /* jQuery tagEditor v1.0.21 | https://github.com/Pixabay/jQuery-tagEditor */
@@ -2281,6 +2727,10 @@ x:-o-prefocus {
   color: #555;
   background: #fff;
   line-height: 20px;
+
+  [dir="rtl"] & {
+    padding: 0 0 0 5px;
+  }
 }
 
 .tag-editor li {
@@ -2288,11 +2738,19 @@ x:-o-prefocus {
   float: left;
   overflow: hidden;
   margin: 3px 0;
+
+  [dir="rtl"] & {
+    float: right;
+  }
 }
 
 .tag-editor div {
   float: left;
   padding: 0 4px;
+
+  [dir="rtl"] & {
+    float: right;
+  }
 }
 
 .tag-editor .placeholder {
@@ -2306,6 +2764,10 @@ x:-o-prefocus {
   overflow: hidden;
   color: transparent;
   background: none;
+
+  [dir="rtl"] & {
+    width: 8px;
+  }
 }
 
 .tag-editor input {
@@ -2326,7 +2788,21 @@ x:-o-prefocus {
 
 .tag-editor-hidden-src {
   position: absolute !important;
-  left: -99999px;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  padding: 0;
+  margin: 0;
+  border: 0;
+
+  [dir="rtl"] & {
+    left: auto;
+    right: 0;
+  }
 }
 
 .tag-editor ::-ms-clear {
@@ -2341,6 +2817,12 @@ x:-o-prefocus {
   overflow: hidden;
   cursor: pointer;
   border-radius: 2px 0 0 2px;
+
+  [dir="rtl"] & {
+    padding-left: 0;
+    padding-right: 5px;
+    border-radius: 0 2px 2px 0;
+  }
 }
 
 .tag-editor .tag-editor-delete {
@@ -2349,6 +2831,12 @@ x:-o-prefocus {
   border-radius: 0 2px 2px 0;
   padding-left: 3px;
   padding-right: 4px;
+
+  [dir="rtl"] & {
+    padding-left: 4px;
+    padding-right: 3px;
+    border-radius: 2px 0 0 2px;
+  }
 }
 
 .tag-editor .tag-editor-delete i {
@@ -2383,6 +2871,11 @@ x:-o-prefocus {
   left: 0;
   cursor: default;
   font-size: 14px;
+
+  [dir="rtl"] & {
+    left: auto;
+    right: 0;
+  }
 }
 
 .ui-front {
@@ -2436,6 +2929,13 @@ x:-o-prefocus {
     margin-top: -20px;
     padding-left: 20px;
     padding-top: 20px;
+
+    [dir="rtl"] & {
+      margin-left: 0;
+      margin-right: -20px;
+      padding-left: 0;
+      padding-right: 20px;
+    }
   }
 }
 
@@ -2446,6 +2946,11 @@ x:-o-prefocus {
   transform: translateY(3px);
   margin-right: 2px;
   border: solid 1px #fff;
+
+  [dir="rtl"] & {
+    margin-right: 0;
+    margin-left: 2px;
+  }
 }
 
 // New Styles
@@ -2499,6 +3004,11 @@ x:-o-prefocus {
     position: fixed;
     z-index: 2;
     display: none;
+
+    [dir="rtl"] & {
+      left: auto;
+      right: 0;
+    }
   }
 
   #slimstat-date-filters {
@@ -2513,6 +3023,11 @@ x:-o-prefocus {
       text-align: center;
       color: $grayOne;
       transition: 0.3s all ease-out;
+
+      [dir="rtl"] & {
+        float: right;
+        margin: 0 0 5px 5px;
+      }
 
       &:hover {
         background-color: $grayFour;
@@ -2546,6 +3061,11 @@ x:-o-prefocus {
       transition: 0.3s all ease-out;
       padding-left: 12px;
       padding-right: 12px;
+
+      [dir="rtl"] & {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
 
       &:hover {
         background-color: black;
@@ -2778,8 +3298,9 @@ x:-o-prefocus {
         color: $brand;
         width: auto;
 
-        .rtl & {
+        [dir="rtl"] & {
           margin-left: 0;
+          margin-right: 0;
         }
       }
     }
@@ -2807,7 +3328,7 @@ x:-o-prefocus {
       // box-shadow: 3px 0px 15px 0px rgba(0, 0, 0, 0.02);
       margin-right: 0.5%;
 
-      .rtl & {
+      [dir="rtl"] & {
         margin-right: 0;
         margin-left: 0.5%;
       }
@@ -2893,7 +3414,7 @@ x:-o-prefocus {
           }
         }
 
-        .rtl & {
+        [dir="rtl"] & {
           float: left;
 
           a.slimstat-font-download span.dashicons::before {
@@ -3088,6 +3609,12 @@ x:-o-prefocus {
   margin-left: -20px;
   box-sizing: border-box;
 
+  [dir="rtl"] & {
+    margin-left: 0;
+    margin-right: -20px;
+    justify-content: flex-end;
+  }
+
   .logo {
     width: 180px;
     height: auto;
@@ -3104,6 +3631,10 @@ x:-o-prefocus {
   .go-pro {
     text-align: left;
 
+    [dir="rtl"] & {
+      text-align: right;
+    }
+
     a {
       display: flex;
       align-items: center;
@@ -3115,12 +3646,22 @@ x:-o-prefocus {
       font-weight: 400;
       cursor: pointer;
 
+      [dir="rtl"] & {
+        justify-content: flex-end;
+      }
+
       .icon {
         background: url("../images/white-right-chevron.png") no-repeat center center/contain;
         width: 10px;
         height: 10px;
         margin-left: 5px;
         display: block;
+
+        [dir="rtl"] & {
+          margin-left: 0;
+          margin-right: 5px;
+          transform: scaleX(-1);
+        }
       }
     }
 
@@ -3129,6 +3670,10 @@ x:-o-prefocus {
       font-weight: 300;
       color: white;
       margin: 0;
+
+      [dir="rtl"] & {
+        text-align: right;
+      }
     }
   }
 
@@ -3141,6 +3686,12 @@ x:-o-prefocus {
     bottom: 20px;
     color: white;
 
+    [dir="rtl"] & {
+      right: auto;
+      left: 20px;
+      justify-content: flex-end;
+    }
+
     p {
       margin: 0;
     }
@@ -3151,10 +3702,15 @@ x:-o-prefocus {
       height: 16px;
       margin-right: 7px;
       display: block;
+
+      [dir="rtl"] & {
+        margin-right: 0;
+        margin-left: 7px;
+      }
     }
   }
 
-  .rtl & {
+  [dir="rtl"] & {
     margin-right: -20px;
     margin-left: 0;
 
@@ -3198,7 +3754,7 @@ x:-o-prefocus {
     .pro-badge {
       right: 10px;
 
-      .rtl & {
+      [dir="rtl"] & {
         left: 10px;
         right: auto;
       }
@@ -3286,6 +3842,10 @@ x:-o-prefocus {
   top: 45%;
   transform: translateX(-50%) translateY(-50%);
 
+  [dir="rtl"] & {
+    transform: translateX(50%) translateY(-50%);
+  }
+
   * {
     margin: 0;
     padding: 0;
@@ -3302,6 +3862,11 @@ x:-o-prefocus {
     opacity: 0.3;
     transition: 0.3s all ease-out;
     background: url("data:image/svg+xml,%3Csvg width='33' height='32' viewBox='0 0 33 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16.6172 31.1641C24.9015 31.1641 31.6172 24.4483 31.6172 16.1641C31.6172 7.87979 24.9015 1.16406 16.6172 1.16406C8.33292 1.16406 1.61719 7.87979 1.61719 16.1641C1.61719 24.4483 8.33292 31.1641 16.6172 31.1641Z' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M21.1172 11.6641L12.1172 20.6641' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.1172 11.6641L21.1172 20.6641' stroke='%23222222' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+
+    [dir="rtl"] & {
+      right: auto;
+      left: 10%;
+    }
 
     &:hover {
       opacity: 1;
@@ -3390,6 +3955,11 @@ x:-o-prefocus {
           margin-right: 7px;
           display: inline-block;
           background: url("data:image/svg+xml,%3Csvg width='18' height='17' viewBox='0 0 18 17' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M16.4463 7.90039V8.57696C16.4454 10.1628 15.9319 11.7058 14.9823 12.976C14.0328 14.2461 12.6982 15.1753 11.1774 15.625C9.65665 16.0746 8.03129 16.0206 6.54373 15.471C5.05617 14.9215 3.78612 13.9057 2.92298 12.5754C2.05985 11.245 1.64988 9.67128 1.75422 8.08889C1.85857 6.50649 2.47163 5.00021 3.50198 3.79471C4.53233 2.5892 5.92476 1.74905 7.4716 1.39956C9.01844 1.05007 10.6368 1.20997 12.0854 1.8554' stroke='%23E8294C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M16.445 2.69531L9.09097 10.0567L6.88477 7.85047' stroke='%23E8294C' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+
+          [dir="rtl"] & {
+            margin-right: 0;
+            margin-left: 7px;
+          }
         }
       }
 
@@ -3399,6 +3969,11 @@ x:-o-prefocus {
         height: 20px;
         margin-left: 3px;
         background: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8.20996 15.4014C12.1434 15.4014 15.332 12.2127 15.332 8.2793C15.332 4.34589 12.1434 1.15723 8.20996 1.15723C4.27655 1.15723 1.08789 4.34589 1.08789 8.2793C1.08789 12.2127 4.27655 15.4014 8.20996 15.4014Z' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M6.13672 6.14245C6.30416 5.66645 6.63466 5.26508 7.06968 5.00942C7.5047 4.75376 8.01616 4.6603 8.51348 4.7456C9.0108 4.83091 9.46188 5.08946 9.78683 5.47548C10.1118 5.8615 10.2896 6.35007 10.2889 6.85465C10.2889 8.27907 8.15226 8.99127 8.15226 8.99127' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M8.21094 11.8398H8.21769' stroke='%23C3C4C7' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E%0A") no-repeat center center / contain;
+
+        [dir="rtl"] & {
+          margin-left: 0;
+          margin-right: 3px;
+        }
       }
     }
   }
@@ -3422,7 +3997,7 @@ x:-o-prefocus {
     }
   }
 
-  .rtl & {
+  [dir="rtl"] & {
     .features-flex-box {
       .feature-item {
         h6 .icon {
@@ -3446,6 +4021,11 @@ x:-o-prefocus {
     #slimstat-pro-modal-close {
       top: 20px;
       right: 20px;
+
+      [dir="rtl"] & {
+        right: auto;
+        left: 20px;
+      }
     }
 
     h2 {
@@ -3465,6 +4045,11 @@ x:-o-prefocus {
         h6 {
           .icon {
             transform: translateY(4px);
+
+            [dir="rtl"] & {
+              margin-right: 0;
+              margin-left: 7px;
+            }
           }
         }
       }

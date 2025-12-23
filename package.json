@@ -1,8 +1,9 @@
 {
+  "type": "module",
   "scripts": {
     "watch": "watch \"npm run sass-compile\" ./admin/assets/scss",
     "sass-compile": "concurrently \"node-sass admin/assets/scss/admin.scss admin/assets/css/admin.css --output-style compressed\"",
-    "build": "esbuild wp-slimstat.js --bundle --minify --outfile=wp-slimstat.min.js"
+    "build": "esbuild wp-slimstat.js --bundle --minify --sourcemap --outfile=wp-slimstat.min.js"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

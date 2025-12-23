@@ -6,8 +6,6 @@ use InvalidArgumentException;
 
 class Query
 {
-    // Caching helpers inlined to avoid traits
-
     private $queries = [];
 
     private $operation;
@@ -47,6 +45,8 @@ class Query
     protected $db;
 
     private $_isLiveQuery = false;
+
+    private static $processingTimestamp = null;
 
     /**
      * Constructor.
@@ -492,12 +492,30 @@ class Query
     }
 
     /**
+     * Set the processing timestamp context for caching decisions.
+     * This should be set to the timestamp of the event being processed (e.g., $stat['dt'])
+     * to ensure caching decisions are based on the event time, not the current server time.
+     *
+     * @param int|null $timestamp Unix timestamp of the event being processed, or null to use current time.
+     * @return void
+     */
+    public static function setProcessingTimestamp($timestamp)
+    {
+        self::$processingTimestamp = $timestamp;
+    }
+
+    /**
      * Get the timestamp for the start of today.
+     * If a processing timestamp has been set, calculates "today" based on that timestamp.
+     * Otherwise, uses the current server time.
      *
      * @return int The timestamp for the start of today (midnight).
      */
     protected function getTodayDate()
     {
+        if (null !== self::$processingTimestamp) {
+            return strtotime(date('Y-m-d 00:00:00', self::$processingTimestamp));
+        }
         return strtotime(date('Y-m-d 00:00:00'));
     }
 
@@ -546,7 +564,6 @@ class Query
     {
         $dtField    = 'dt';
         $todayStart = $this->getTodayDate();
-        time();
         foreach ($this->whereClauses as $idx => $clause) {
             if (preg_match('/' . $dtField . ' BETWEEN %s AND %s/', $clause)) {
                 $from  = null;
