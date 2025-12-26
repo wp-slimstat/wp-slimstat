@@ -999,9 +999,9 @@ class wp_slimstat
                             case 'post_link_no_qs':
                                 $post_id = url_to_postid($a_result['resource']);
                                 if ($post_id > 0) {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>", esc_url( $a_result[ 'resource' ] )) . esc_html( get_the_title($post_id) ) . '</a>';
+                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>", $a_result[ 'resource' ]) . get_the_title($post_id) . '</a>';
                                 } else {
-                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>%s</a>", esc_url( $a_result[ 'resource' ] ), esc_html( $a_result[ 'resource' ] ));
+                                    $output[$result_idx][$a_column] .= sprintf("<a href='%s'>%s</a>", $a_result[ 'resource' ], $a_result[ 'resource' ]);
                                 }
                                 break;
 
