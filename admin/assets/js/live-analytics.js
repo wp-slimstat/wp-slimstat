@@ -26,6 +26,8 @@
         this.isDestroyed = false;
         this.abortController = null;
         this.manualRefreshes = [];
+        this.freshStart = false; // Flag for when user was away > 15 minutes
+        this.IDLE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes in milliseconds
 
         // Bind methods to this instance
         this.init = this.init.bind(this);
@@ -44,7 +46,16 @@
      * Initialize the Live Analytics component
      */
     LiveAnalytics.prototype.init = function () {
+        // Check if user was away for too long (handles page refresh scenario)
+        this.checkIdleOnLoad();
+
         this.createChart();
+
+        // If user was away for too long, reset the chart to show only current minute
+        if (this.freshStart) {
+            this.applyFreshStart();
+        }
+
         this.addEventListeners();
         this.initMetricSwitching();
         this.initializeEmptyState();
@@ -54,6 +65,76 @@
         if (this.config.auto_refresh) {
             this.scheduleNextUpdate();
         }
+
+        // Track page activity in localStorage
+        this.trackPageActivity();
+    };
+
+    /**
+     * Check if user was idle for too long on page load (handles browser refresh)
+     */
+    LiveAnalytics.prototype.checkIdleOnLoad = function () {
+        var storageKey = "slimstat_live_analytics_last_active";
+        var lastActive = localStorage.getItem(storageKey);
+
+        if (lastActive) {
+            var lastActiveTime = parseInt(lastActive, 10);
+            var idleTime = Date.now() - lastActiveTime;
+
+            if (idleTime > this.IDLE_THRESHOLD_MS) {
+                // User was away for more than 15 minutes before refreshing
+                this.freshStart = true;
+            }
+        }
+    };
+
+    /**
+     * Track page activity in localStorage
+     * Updates every minute to track when user was last active
+     */
+    LiveAnalytics.prototype.trackPageActivity = function () {
+        var self = this;
+        var storageKey = "slimstat_live_analytics_last_active";
+
+        // Update immediately on load
+        localStorage.setItem(storageKey, Date.now().toString());
+
+        // Update every minute while page is active
+        this.activityInterval = setInterval(function () {
+            if (!document.hidden && !self.isDestroyed) {
+                localStorage.setItem(storageKey, Date.now().toString());
+            }
+        }, 60000); // Update every minute
+    };
+
+    /**
+     * Apply fresh start - zero out all bars except the current minute
+     * Called on initial load when user was away for > 15 minutes
+     */
+    LiveAnalytics.prototype.applyFreshStart = function () {
+        if (!this.chart) {
+            return;
+        }
+
+        var chartData = this.chart.data.datasets[0].data;
+        if (!chartData || chartData.length === 0) {
+            return;
+        }
+
+        // Keep only the last value (current minute), zero out the rest
+        var lastValue = chartData[chartData.length - 1];
+        for (var i = 0; i < chartData.length - 1; i++) {
+            chartData[i] = 0;
+        }
+
+        // Update Y axis to reflect new max
+        this.chart.options.scales.y.max = Math.max(10, Math.ceil(lastValue * 1.02));
+
+        // Update chart without animation for initial load
+        this.chart.update({ duration: 0 });
+
+        // Reset the flag
+        this.freshStart = false;
     };
 
     /**
@@ -321,6 +402,7 @@
 
     /**
      * Update chart with new data
+     * If freshStart flag is set (user was away > 15 min), only keep the current minute bar
      */
     LiveAnalytics.prototype.updateChart = function (newData) {
         if (!this.chart) {
@@ -330,6 +412,19 @@
         var chartData = newData.data || newData.chart_data || [];
         var chartLabels = newData.labels || newData.chart_labels || [];
         var maxValue = newData.max_value || Math.max.apply(Math, chartData) || 0;
+
+        // If user was away for more than 15 minutes, only show current minute bar
+        if (this.freshStart && chartData.length > 0) {
+            var lastValue = chartData[chartData.length - 1];
+            // Zero out all bars except the last one (current minute)
+            chartData = chartData.map(function (val, index) {
+                return index === chartData.length - 1 ? lastValue : 0;
+            });
+            // Recalculate max value
+            maxValue = lastValue || 0;
+            // Reset the flag
+            this.freshStart = false;
+        }
 
         this.chart.data.labels = chartLabels;
         this.chart.data.datasets[0].data = chartData;
@@ -436,10 +531,21 @@
 
     /**
      * Resume auto-refresh after pause
+     * If user was away for more than 15 minutes, only update the current minute bar
      */
     LiveAnalytics.prototype.resumeAutoRefresh = function () {
         if (this.isDestroyed || !this.config.auto_refresh) {
             return;
+        }
+
+        // Check how long user was away
+        if (this.pausedAt) {
+            var idleTime = Date.now() - this.pausedAt;
+            if (idleTime > this.IDLE_THRESHOLD_MS) {
+                // User was away for more than 15 minutes
+                // Set flag to only update current minute bar on next data fetch
+                this.freshStart = true;
+            }
         }
 
         // Simply reschedule next update based on current time
@@ -1220,6 +1326,12 @@
         // Stop all intervals and timeouts
         this.stopAutoRefresh();
         this.stopBlinkingAnimation();
+
+        // Clear activity tracking interval
+        if (this.activityInterval) {
+            clearInterval(this.activityInterval);
+            this.activityInterval = null;
+        }
 
         // Clear any pending timeouts
         if (this.pendingTimeout) {
