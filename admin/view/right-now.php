@@ -205,7 +205,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         }
 
         $results[$i]['resource'] = rawurldecode($results[$i]['resource']);
-        $results[$i]['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($results[$i]['resource']) . "'></a> <a class='slimstat-filter-link' href='" . esc_url( wp_slimstat_reports::fs_url('resource equals ' . $results[$i]['resource']) ) . "'>" . esc_html($resource_title) . '</a>';
+        $results[$i]['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($results[$i]['resource']) . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $results[$i]['resource']) . "'>" . esc_html($resource_title) . '</a>';
     } else {
         if (!empty($results[$i]['notes'])) {
             $exploded_notes = explode('][', substr($results[$i]['notes'], 1, -1));
