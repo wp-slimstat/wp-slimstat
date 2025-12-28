@@ -271,7 +271,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         // The Outbound Links field might contain more than one link
         if (!empty($results[$i]['outbound_resource'])) {
             if ('#' !== substr($results[$i]['outbound_resource'], 0, 1)) {
-                $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this outbound link in a new window', 'wp-slimstat')) . sprintf("' href='%s'></a> %s", esc_url($results[ $i ][ 'outbound_resource' ]), esc_html($results[ $i ][ 'outbound_resource' ]));
+                $results[$i]['outbound_resource'] = "<a class='inline-icon spaced slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this outbound link in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", esc_url($results[ $i ][ 'outbound_resource' ]), esc_html($results[ $i ][ 'outbound_resource' ]));
             } else {
                 $results[$i]['outbound_resource'] = "<i class='inline-icon spaced slimstat-font-logout'></i> " . esc_html($results[ $i ][ 'outbound_resource' ]);
             }
