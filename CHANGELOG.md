@@ -1,3 +1,6 @@
+= 5.3.4 - 2024-12-28 =
+* Security: Hardened plugin security
+
 = 5.3.3 - 2025-12-17 =
 * Maintenance: Stability and compatibility improvements.
 
