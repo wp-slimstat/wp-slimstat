@@ -1,3 +1,6 @@
+= 5.3.5 - 2025-12-31 =
+* Security: Hardened plugin security
+
 = 5.3.4 - 2024-12-28 =
 * Security: Hardened plugin security
 
