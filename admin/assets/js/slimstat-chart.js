@@ -459,7 +459,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 html += '<span class="slimstat-postbox-chart--item-label">' + dataset.label + "</span>";
                 html += '<span class="slimstat-postbox-chart--item--color" style="background-color: ' + dataset.borderColor + '"></span>';
                 html += '<span class="slimstat-postbox-chart--item-value">' + currentValue.toLocaleString() + "</span>";
-                if (previousValue > 0) {
+                if (previousValue && previousValue !== currentValue) {
                     html += '<span class="slimstat-postbox-chart--item--color" style="background-image: repeating-linear-gradient(to right, ' + dataset.borderColor + ", " + dataset.borderColor + ' 4px, transparent 0px, transparent 6px); background-size: auto 6px; height: 2px; margin-bottom: 0px; margin-left: 10px;"></span>';
                     html += '<span class="slimstat-postbox-chart--item-value">' + previousValue.toLocaleString() + "</span>";
                 }
