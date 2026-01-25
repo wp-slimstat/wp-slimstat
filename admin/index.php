@@ -1035,6 +1035,8 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/layout.php');
     }
 
+    // END: wp_slimstat_include_layout
+
     /**
      * Includes the email report screen
      */
@@ -1043,7 +1045,7 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/email-report.php');
     }
 
-    // END: wp_slimstat_include_addons
+    // END: wp_slimstat_include_email_report
 
     /**
      * Handles the upgrade to pro from the free version
@@ -1901,6 +1903,10 @@ class wp_slimstat_admin
 
     public static function add_header()
     {
+        if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
+            return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
+        }
+
         return null;
     }
 
