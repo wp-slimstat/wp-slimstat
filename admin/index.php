@@ -36,9 +36,6 @@ class wp_slimstat_admin
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
 
-        // Load language files
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
-
         // Define the default screens
         $has_network_reports = get_user_option('meta-box-order_slimstat_page_slimlayout-network', 1);
 
@@ -77,6 +74,13 @@ class wp_slimstat_admin
                 'title'           => __('Traffic Sources', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
+            ],
+            'slimemail' => [
+                'is_report_group' => false,
+                'show_in_sidebar' => true,
+                'title'           => wp_slimstat::pro_is_installed() ? __('Email Report', 'wp-slimstat') : __('Email Report (pro)', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_email_report'],
             ],
             'slimlayout' => [
                 'is_report_group' => false,
@@ -254,6 +258,11 @@ class wp_slimstat_admin
         // Schedule a daily cron job to purge the data
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
+        }
+
+        // Schedule a daily cron job to regenerate IP hashing salt (for GDPR compliance)
+        if (!wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
+            wp_schedule_event(time(), 'daily', 'wp_slimstat_generate_daily_salt');
         }
 
         // Schedule a weekly cron job to update geoip database automatically
@@ -681,6 +690,14 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
         }
 
+        // --- Updates for version 5.4.0 ---
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.0', '<')) {
+            // Migrate legacy 'adblock' tracking method to 'adblock_bypass' (renamed in v5.3.0)
+            if (!empty(wp_slimstat::$settings['tracking_request_method']) && 'adblock' === wp_slimstat::$settings['tracking_request_method']) {
+                wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
+            }
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
@@ -742,7 +759,15 @@ class wp_slimstat_admin
     public static function wp_slimstat_stylesheet($_hook = '')
     {
         wp_register_style('wp-slimstat', plugins_url('/admin/assets/css/admin.css', __DIR__), false, SLIMSTAT_ANALYTICS_VERSION);
-        wp_enqueue_style('wp-slimstat', [], [], SLIMSTAT_ANALYTICS_VERSION, 'all');
+		wp_enqueue_style('wp-slimstat');
+
+		wp_register_style(
+			'wp-slimstat-header-modern',
+			plugins_url('/admin/assets/css/header-modern.css', __DIR__),
+			['wp-slimstat'],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+		wp_enqueue_style('wp-slimstat-header-modern');
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
@@ -785,22 +810,22 @@ class wp_slimstat_admin
                 $should_load_datepicker = true;
             }
         }
-        
+
         if ($should_load_datepicker) {
-            
+
             // Enqueue moment.js
             wp_enqueue_script('slimstat-moment', plugins_url('/admin/assets/js/daterangepicker/moment.min.js', __DIR__), [], '2.30.2', true);
-            
+
             // Enqueue daterangepicker
             wp_enqueue_script('slimstat-daterangepicker', plugins_url('/admin/assets/js/daterangepicker/daterangepicker.min.js', __DIR__), ['jquery', 'slimstat-moment'], '3.1.0', true);
-            
+
             // Enqueue our custom date picker
             wp_enqueue_script('slimstat-custom-datepicker', plugins_url('/admin/assets/js/daterangepicker/slimstat-daterangepicker.js', __DIR__), ['jquery', 'slimstat-daterangepicker'], SLIMSTAT_ANALYTICS_VERSION, true);
-            
+
             // Enqueue date picker styles
             wp_enqueue_style('slimstat-daterangepicker-base', plugins_url('/admin/assets/css/daterangepicker/daterangepicker.css', __DIR__), [], '3.1.0');
             wp_enqueue_style('slimstat-daterangepicker-custom', plugins_url('/admin/assets/css/daterangepicker/slimstat-datepicker-styles.css', __DIR__), ['slimstat-daterangepicker-base'], SLIMSTAT_ANALYTICS_VERSION);
-            
+
             // Localize date picker script
             $datepicker_params = [
                 'ajax_url' => admin_url('admin-ajax.php'),
@@ -1008,6 +1033,14 @@ class wp_slimstat_admin
     public static function wp_slimstat_include_layout()
     {
         include(__DIR__ . '/view/layout.php');
+    }
+
+    /**
+     * Includes the email report screen
+     */
+    public static function wp_slimstat_include_email_report()
+    {
+        include(__DIR__ . '/view/email-report.php');
     }
 
     // END: wp_slimstat_include_addons
@@ -1414,7 +1447,7 @@ class wp_slimstat_admin
 
         // Validate dimension exists in columns_names
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
-        
+
         // We only need the columns_names array, not the full init with filters
         if (empty(wp_slimstat_db::$columns_names)) {
             wp_slimstat_db::$columns_names = [
@@ -1517,7 +1550,7 @@ class wp_slimstat_admin
 
         // Build SQL query directly to avoid Query class interference with global filters
         $where_clauses = [];
-        
+
         // Apply time range filter
         if (!empty($time_start) && !empty($time_end)) {
             $where_clauses[] = $GLOBALS['wpdb']->prepare('dt BETWEEN %d AND %d', intval($time_start), intval($time_end));
@@ -1534,7 +1567,7 @@ class wp_slimstat_admin
         }
 
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
-        
+
         $sql = sprintf(
             'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
             $safe_dimension,
@@ -1567,21 +1600,21 @@ class wp_slimstat_admin
             if (!empty($row['value'])) {
                 // Sanitize output to prevent XSS
                 $sanitized_value = sanitize_text_field($row['value']);
-                
+
                 // Trim whitespace
                 $sanitized_value = trim($sanitized_value);
-                
+
                 // Skip empty values after trimming
                 if (empty($sanitized_value)) {
                     continue;
                 }
-                
+
                 // Check for duplicates using case-insensitive comparison
                 $value_key = strtolower($sanitized_value);
                 if (isset($seen_values[$value_key])) {
                     continue; // Skip duplicate
                 }
-                
+
                 // Mark this value as seen
                 $seen_values[$value_key] = true;
 
@@ -1868,10 +1901,6 @@ class wp_slimstat_admin
 
     public static function add_header()
     {
-        if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
-            return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
-        }
-
         return null;
     }
 

@@ -11,7 +11,7 @@ jQuery(document).ready(function($) {
     // This ensures date selection doesn't persist after user manually refreshes the page
     (function() {
         var isReload = false;
-        
+
         // Check using Performance API (modern browsers)
         if (window.performance) {
             if (performance.navigation && performance.navigation.type === 1) {
@@ -25,7 +25,7 @@ jQuery(document).ready(function($) {
                 }
             }
         }
-        
+
         if (isReload) {
             sessionStorage.removeItem('slimstat_date_range');
         }
@@ -67,7 +67,7 @@ jQuery(document).ready(function($) {
      */
     function normalizeDate(date, timezone) {
         if (!date) return null;
-        
+
         let normalizedDate;
         if (timezone && (timezone.startsWith('UTC') || timezone.startsWith('+') || timezone.startsWith('-'))) {
             const offset = timezone.startsWith('UTC') ? timezone.replace('UTC', '') : timezone;
@@ -77,7 +77,7 @@ jQuery(document).ready(function($) {
         } else {
             normalizedDate = moment(date).utc();
         }
-        
+
         return normalizedDate.clone().startOf('day');
     }
 
@@ -101,7 +101,7 @@ jQuery(document).ready(function($) {
      */
     function getPresetRanges() {
         const localTime = getLocalTime();
-        
+
         return {
             [SlimStatDatePicker.strings.today]: [
                 normalizeDate(localTime.clone(), validTimezone),
@@ -159,14 +159,14 @@ jQuery(document).ready(function($) {
      */
     function formatDateRange(startDate, endDate, label) {
         if (!startDate || !endDate) return label || '';
-        
+
         const start = moment(startDate).format(CONFIG.DATE_FORMAT);
         const end = moment(endDate).format(CONFIG.DATE_FORMAT);
-        
+
         if (start === end) {
             return `${label} ${start}`;
         }
-        
+
         return `${label} ${start} – ${end}`;
     }
 
@@ -178,7 +178,7 @@ jQuery(document).ready(function($) {
         const type = urlParams.get('type');
         const fromParam = urlParams.get('from');
         const toParam = urlParams.get('to');
-        
+
         // If URL has date parameters, use them (takes precedence, e.g., shared URLs)
         if (type && type !== 'custom') {
             const presetLabel = getPresetLabel(type);
@@ -194,7 +194,7 @@ jQuery(document).ready(function($) {
                 }
             }
         }
-        
+
         if (fromParam && toParam) {
             const localTime = getLocalTime();
             const fromDate = normalizeDate(moment(fromParam, CONFIG.SERVER_FORMAT), validTimezone);
@@ -205,7 +205,7 @@ jQuery(document).ready(function($) {
                 preset: 'custom'
             };
         }
-        
+
         // Check sessionStorage for persisted date range (navigation between pages)
         const savedRange = sessionStorage.getItem('slimstat_date_range');
         if (savedRange) {
@@ -224,7 +224,7 @@ jQuery(document).ready(function($) {
                 console.warn('SlimStat: Could not parse saved date range', e);
             }
         }
-        
+
         // Default to Last 28 Days preset
         const presetLabel = getPresetLabel('last_28_days');
         const presetRanges = getPresetRanges();
@@ -264,7 +264,7 @@ jQuery(document).ready(function($) {
             [SlimStatDatePicker.strings.last_6_months]: 'last_6_months',
             [SlimStatDatePicker.strings.this_year]: 'this_year'
         };
-        
+
         return labelMap[chosenLabel] || 'custom';
     }
 
@@ -286,7 +286,7 @@ jQuery(document).ready(function($) {
             'last_6_months': SlimStatDatePicker.strings.last_6_months,
             'this_year': SlimStatDatePicker.strings.this_year
         };
-        
+
         return typeMap[presetType] || null;
     }
 
@@ -295,12 +295,12 @@ jQuery(document).ready(function($) {
      */
     function generateSlimStatUrl(startDate, endDate, presetType = null) {
         const url = new URL(window.location);
-        
+
         // Clear existing date-related parameters
         url.searchParams.delete('from');
         url.searchParams.delete('to');
         url.searchParams.delete('type');
-        
+
         // Remove existing SlimStat date filters
         const paramsToDelete = [];
         for (const [key, value] of url.searchParams.entries()) {
@@ -309,7 +309,7 @@ jQuery(document).ready(function($) {
             }
         }
         paramsToDelete.forEach(param => url.searchParams.delete(param));
-        
+
         // Add type parameter
         if (presetType && presetType !== 'custom') {
             url.searchParams.set('type', presetType);
@@ -319,7 +319,7 @@ jQuery(document).ready(function($) {
             url.searchParams.set('to', moment(endDate).format(CONFIG.SERVER_FORMAT));
             url.searchParams.set('type', 'custom');
         }
-        
+
         return url.toString();
     }
 
@@ -328,12 +328,12 @@ jQuery(document).ready(function($) {
      */
     function updateURL(startDate, endDate, presetType = null) {
         const url = new URL(window.location);
-        
+
         // Clear existing date-related parameters
         url.searchParams.delete('from');
         url.searchParams.delete('to');
         url.searchParams.delete('type');
-        
+
         // Add type parameter
         if (presetType && presetType !== 'custom') {
             url.searchParams.set('type', presetType);
@@ -343,10 +343,10 @@ jQuery(document).ready(function($) {
             url.searchParams.set('to', moment(endDate).format(CONFIG.SERVER_FORMAT));
             url.searchParams.set('type', 'custom');
         }
-        
+
         // Update browser history without reload
         window.history.pushState({}, '', url.toString());
-        
+
         // Emit custom event for other components
         $(document).trigger('slimstat:dateRangeChanged', {
             startDate: moment(startDate).format(CONFIG.SERVER_FORMAT),
@@ -441,8 +441,8 @@ jQuery(document).ready(function($) {
         $input.daterangepicker(datePickerOptions);
 
         // Set initial button label based on current range
-        const initialLabel = currentRange.preset && currentRange.preset !== 'custom' 
-            ? getPresetLabel(currentRange.preset) 
+        const initialLabel = currentRange.preset && currentRange.preset !== 'custom'
+            ? getPresetLabel(currentRange.preset)
             : SlimStatDatePicker.strings.custom_range;
         const displayLabel = formatDateRange(currentRange.startDate, currentRange.endDate, initialLabel);
         $button.find('.date-label').text(displayLabel);
@@ -457,7 +457,7 @@ jQuery(document).ready(function($) {
             const buttonOffset = $button.offset();
             const buttonHeight = $button.outerHeight();
             const buttonWidth = $button.outerWidth();
-            
+
             picker.container.css({
                 'top': buttonOffset.top + buttonHeight + 4,
                 'z-index': 9999
@@ -465,7 +465,7 @@ jQuery(document).ready(function($) {
 
             // Check if current selection is a custom range
             const isCustomRange = currentRange.preset === 'custom';
-            
+
             if (isCustomRange) {
                 // Show calendars and buttons for custom range
                 picker.container.addClass('custom-range-active');
@@ -475,12 +475,12 @@ jQuery(document).ready(function($) {
                 picker.container.removeClass('custom-range-active');
                 picker.container.find('.drp-buttons').hide();
             }
-            
+
             // Add click handlers to range options to show/hide calendars
             picker.container.find('.ranges li').on('click', function() {
                 const rangeText = $(this).attr('data-range-key') || $(this).text().trim();
                 const customRangeLabel = SlimStatDatePicker.strings.custom_range;
-                
+
                 if (rangeText === customRangeLabel) {
                     // Show calendars for custom range
                     picker.container.addClass('custom-range-active');
@@ -491,7 +491,7 @@ jQuery(document).ready(function($) {
                     picker.container.removeClass('custom-range-active');
                     // Hide Apply/Cancel buttons for preset ranges
                     picker.container.find('.drp-buttons').hide();
-                    
+
                     // Apply the preset range immediately
                     setTimeout(() => {
                         picker.clickApply();
@@ -537,7 +537,7 @@ jQuery(document).ready(function($) {
 
             // Generate the proper SlimStat URL with date filters
             const targetUrl = generateSlimStatUrl(startDate, endDate, presetType);
-            
+
             // Navigate to the new URL
             window.location.href = targetUrl;
         });
@@ -559,12 +559,12 @@ jQuery(document).ready(function($) {
         $input.on('show.daterangepicker', function(ev, picker) {
             // Focus management
             picker.container.find('.ranges li:first').attr('tabindex', '0').focus();
-            
+
             // Arrow key navigation for ranges
             picker.container.find('.ranges li').on('keydown', function(e) {
                 const $items = picker.container.find('.ranges li');
                 const currentIndex = $items.index(this);
-                
+
                 switch(e.key) {
                     case 'ArrowDown':
                         e.preventDefault();
@@ -598,7 +598,7 @@ jQuery(document).ready(function($) {
         $(document).on('slimstat:dateRangeChanged', function(event, data) {
             // Update hidden form fields if they exist
             const $form = $(CONFIG.SELECTORS.dateForm);
-            
+
             // Remove existing date filter inputs
             $form.find('input[name*="fs["]').filter(function() {
                 return this.name.includes('day') || this.name.includes('month') || this.name.includes('year') || this.name.includes('interval');
@@ -618,7 +618,7 @@ jQuery(document).ready(function($) {
     // Initialize everything when DOM is ready
     function init() {
         console.log('SlimStat DatePicker: Initializing...');
-        
+
         if (typeof moment === 'undefined') {
             console.error('SlimStat DatePicker: Moment.js is required');
             return;
