@@ -1301,6 +1301,10 @@ class wp_slimstat_reports
                         $element_value = str_replace(['<', '>'], ['&lt;', '&gt;'], urldecode($results[$i][$_args['columns']]));
                         break;
 
+                    case 'outbound_resource':
+                        $element_value = esc_html($results[$i][$_args['columns']]);
+                        break;
+
                     case 'resource':
                         $resource_title = self::get_resource_title($results[$i][$_args['columns']]);
                         if ($resource_title != $results[$i][$_args['columns']]) {
@@ -1520,15 +1524,15 @@ class wp_slimstat_reports
         }
 
         foreach ($results as $a_result) {
-            echo "<p class='slimstat-tooltip-trigger'>" . $a_result[ 'notes' ];
+            echo "<p class='slimstat-tooltip-trigger'>" . esc_html( $a_result[ 'notes' ] );
 
             if (!empty($a_result['counthits'])) {
-                echo sprintf('<span>%s</span>', $a_result[ 'counthits' ]);
+                echo sprintf('<span>%s</span>', esc_html( $a_result[ 'counthits' ] ));
             }
 
             if (!empty($a_result['dt'])) {
                 $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt'], true);
-                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . $a_result['ip'] . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s%s'>%s%s</a><br>", $blog_url, $a_result[ 'resource' ], $blog_url, $a_result[ 'resource' ]) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', $a_result[ 'position' ]) . __('Date', 'wp-slimstat') . (': ' . $date_time);
+                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . esc_html( $a_result['ip'] ) . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url( $blog_url . $a_result[ 'resource' ] ), esc_html( $blog_url . $a_result[ 'resource' ] )) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html( $a_result[ 'position' ] )) . __('Date', 'wp-slimstat') . (': ' . $date_time);
             }
 
             echo '</b></p>';
@@ -1575,7 +1579,11 @@ class wp_slimstat_reports
         echo wp_kses_post(wp_slimstat_db::$debug_message);
 
         foreach ($results as $a_result) {
-            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this URL in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . "' href='" . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8') . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . htmlentities($a_result['resource'], ENT_QUOTES, 'UTF-8')) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
+            if (empty($a_result['counthits'])) {
+                $a_result['counthits'] = 0;
+            }
+
+            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($a_result['resource']) . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
             $group_markup = [];
             if (!empty($a_result['column_group'])) {
@@ -1584,14 +1592,14 @@ class wp_slimstat_reports
                 foreach ($exploded_group as $a_item) {
                     $user = get_user_by('login', $a_item);
                     if ($user) {
-                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . get_avatar($user->ID, 16) . $user->display_name . '</a>';
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . esc_attr(__('Filter by element in a group', 'wp-slimstat')) . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . get_avatar($user->ID, 16) . esc_html( $user->display_name ) . '</a>';
                     } else {
-                        $group_markup[] = '<a class="slimstat-filter-link" title="' . __('Filter by element in a group', 'wp-slimstat') . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . $a_item . '</a>';
+                        $group_markup[] = '<a class="slimstat-filter-link" title="' . esc_attr(__('Filter by element in a group', 'wp-slimstat')) . '" href="' . self::fs_url($_args['column_group'] . ' equals ' . $a_item) . '">' . esc_html( $a_item ) . '</a>';
                     }
                 }
             }
 
-            echo sprintf('<p>%s <span>%s</span><br/>', $a_result[ 'resource' ], $a_result[ 'counthits' ]) . implode(', ', $group_markup) . '</p>';
+            echo sprintf('<p>%s <span>%s</span><br/>', $a_result[ 'resource' ], esc_html( $a_result[ 'counthits' ] )) . implode(', ', $group_markup) . '</p>';
         }
 
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
@@ -1822,11 +1830,11 @@ class wp_slimstat_reports
         parse_str($_referer, $query_parse_str);
 
         if (isset($query_parse_str['source']) && ([] !== $query_parse_str['source'] && ('' !== $query_parse_str['source'] && '0' !== $query_parse_str['source'])) && !$_serp_only) {
-            $query_details = __('src', 'wp-slimstat') . (': ' . $query_parse_str[ 'source' ]);
+            $query_details = __('src', 'wp-slimstat') . (': ' . esc_html($query_parse_str[ 'source' ]));
         }
 
         if (isset($query_parse_str['cd']) && ('' !== $query_parse_str['cd'] && '0' !== $query_parse_str['cd'] && [] !== $query_parse_str['cd'])) {
-            $query_details = __('serp', 'wp-slimstat') . (': ' . $query_parse_str[ 'cd' ]);
+            $query_details = __('serp', 'wp-slimstat') . (': ' . esc_html($query_parse_str[ 'cd' ]));
         }
 
         if ('' !== $query_details && '0' !== $query_details) {
@@ -1973,7 +1981,7 @@ class wp_slimstat_reports
             }
 
             if ([] !== $term_names) {
-                self::$resource_titles[$cache_index] = implode(',', $term_names);
+                self::$resource_titles[$cache_index] = esc_html( implode(',', $term_names) );
             } else {
                 self::$resource_titles[$cache_index] = htmlspecialchars(self::$resource_titles[$cache_index], ENT_QUOTES, 'UTF-8');
             }

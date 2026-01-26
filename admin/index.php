@@ -37,9 +37,6 @@ class wp_slimstat_admin
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
 
-        // Load language files
-        load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
-
         // Define the default screens
         $has_network_reports = get_user_option('meta-box-order_slimstat_page_slimlayout-network', 1);
 
@@ -277,6 +274,11 @@ class wp_slimstat_admin
         // Schedule a daily cron job to purge the data
         if (!wp_next_scheduled('wp_slimstat_purge')) {
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
+        }
+
+        // Schedule a daily cron job to regenerate IP hashing salt (for GDPR compliance)
+        if (!wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
+            wp_schedule_event(time(), 'daily', 'wp_slimstat_generate_daily_salt');
         }
 
         // Schedule a weekly cron job to update geoip database automatically
@@ -704,6 +706,14 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
         }
 
+        // --- Updates for version 5.4.0 ---
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.0', '<')) {
+            // Migrate legacy 'adblock' tracking method to 'adblock_bypass' (renamed in v5.3.0)
+            if (!empty(wp_slimstat::$settings['tracking_request_method']) && 'adblock' === wp_slimstat::$settings['tracking_request_method']) {
+                wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
+            }
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
@@ -1045,6 +1055,8 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/layout.php');
     }
 
+    // END: wp_slimstat_include_layout
+
     /**
      * Includes the email report screen
      */
@@ -1053,7 +1065,7 @@ class wp_slimstat_admin
         include(__DIR__ . '/view/email-report.php');
     }
 
-    // END: wp_slimstat_include_addons
+    // END: wp_slimstat_include_email_report
 
     /**
      * Handles the upgrade to pro from the free version
@@ -1914,6 +1926,10 @@ class wp_slimstat_admin
 
     public static function add_header()
     {
+        if (isset($_GET['page']) && ('slimlayout' === $_GET['page'] || 'slimconfig' === $_GET['page'])) {
+            return self::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]);
+        }
+
         return null;
     }
 
