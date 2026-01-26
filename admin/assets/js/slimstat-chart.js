@@ -29,17 +29,18 @@ document.addEventListener("DOMContentLoaded", function () {
         var args = JSON.parse(element.getAttribute("data-args"));
         var data = JSON.parse(element.getAttribute("data-data"));
         var prevData = JSON.parse(element.getAttribute("data-prev-data"));
-        var daysBetween = parseInt(element.getAttribute("data-days-between"));
+        var daysBetween = parseInt(element.getAttribute("data-days-between"), 10);
         var chartLabels = JSON.parse(element.getAttribute("data-chart-labels"));
         var translations = JSON.parse(element.getAttribute("data-translations"));
         var totals = JSON.parse(element.getAttribute("data-totals") || "{}");
+        var chartType = element.getAttribute("data-chart-type") || "line";
 
         var labels = data.labels;
         var prevLabels = data.prev_labels;
 
         // Fix: Check for null/undefined datasets before using them
-        var datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today);
-        var prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true);
+        var datasets = prepareDatasets(data.datasets, chartLabels, labels, data.today, false, chartType);
+        var prevDatasets = prepareDatasets(prevData.datasets, chartLabels, prevData.labels, null, true, chartType);
         prevDatasets = prevDatasets.filter(function (ds) {
             return (
                 Array.isArray(ds.data) &&
@@ -57,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
             chartCanvas.style.minHeight = "180px";
         }
         var ctx = chartCanvas.getContext("2d");
-        var chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, totals, args.granularity, data.today, translations, daysBetween, chartId);
+        var chart = createChart(ctx, labels, prevLabels, datasets, prevDatasets, totals, args.granularity, data.today, translations, daysBetween, chartId, chartType);
         charts[chartId] = chart;
         renderCustomLegend(chart, chartId, datasets, prevDatasets, totals, translations);
     }
@@ -117,15 +118,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     var translations2 = result.data.translations;
 
                     var labels = data2.labels;
-                    var datasets = prepareDatasets(data2.datasets, chart_labels2, labels, data2.today);
-                    var prevDatasets = prepareDatasets(prev_data2.datasets, chart_labels2, prev_data2.labels, null, true);
+                    var chartType2 = element.dataset.chartType || "line";
+                    var datasets = prepareDatasets(data2.datasets, chart_labels2, labels, data2.today, false, chartType2);
+                    var prevDatasets = prepareDatasets(prev_data2.datasets, chart_labels2, prev_data2.labels, null, true, chartType2);
 
                     // Destroy previous chart and create a new one to ensure correct tick callback
                     var chartCanvas = document.getElementById("slimstat_chart_" + chartId);
                     var prevChart = charts[chartId];
                     if (prevChart) prevChart.destroy();
                     var ctx = chartCanvas.getContext("2d");
-                    var chart = createChart(ctx, labels, data2.prev_labels, datasets, prevDatasets, totals2, granularity, data2.today, translations2, days_between2, chartId);
+                    var chart = createChart(ctx, labels, data2.prev_labels, datasets, prevDatasets, totals2, granularity, data2.today, translations2, days_between2, chartId, chartType2);
                     charts[chartId] = chart;
 
                     renderCustomLegend(chart, chartId, datasets, prevDatasets, totals2, translations2);
@@ -148,9 +150,12 @@ document.addEventListener("DOMContentLoaded", function () {
         xhr.send(params);
     }
 
-    function prepareDatasets(rawDatasets, chartLabels, labels, today, isPrevious) {
+    function prepareDatasets(rawDatasets, chartLabels, labels, today, isPrevious, chartType) {
         if (typeof isPrevious === "undefined") {
             isPrevious = false;
+        }
+        if (typeof chartType === "undefined") {
+            chartType = "line";
         }
         if (rawDatasets === undefined || rawDatasets === null) {
             return [];
@@ -191,23 +196,28 @@ document.addEventListener("DOMContentLoaded", function () {
 
             (function (iCopy, labelTextCopy, valuesCopy, keyCopy) {
                 var color = colors[iCopy % colors.length];
-                result.push({
+                var dataset = {
                     label: isPrevious ? "Previous " + labelTextCopy : labelTextCopy,
                     key: keyCopy,
                     data: valuesCopy,
                     borderColor: color,
+                    backgroundColor: chartType === "bar" ? color + "40" : "transparent",
                     borderWidth: isPrevious ? 1 : 2,
-                    fill: false,
-                    tension: 0.3,
+                    fill: chartType === "bar" ? true : false,
+                    tension: chartType === "line" ? 0.3 : 0,
                     pointBorderColor: "transparent",
                     pointBackgroundColor: color,
                     pointBorderWidth: 2,
-                    pointRadius: 0,
+                    pointRadius: chartType === "bar" ? 0 : 0,
                     pointHoverRadius: 4,
                     pointHoverBorderWidth: 2,
                     hitRadius: 10,
                     pointHitRadius: 10,
-                    segment: {
+                };
+
+                // Add segment configuration only for line charts
+                if (chartType === "line") {
+                    dataset.segment = {
                         borderDash: (function (isPrev) {
                             return function (ctx) {
                                 if (isPrev) {
@@ -216,15 +226,35 @@ document.addEventListener("DOMContentLoaded", function () {
                                 return labels[ctx.p1DataIndex] === "'" + today + "'" ? [5, 3] : [];
                             };
                         })(isPrevious),
-                    },
-                });
+                    };
+                }
+
+                // Add bar-specific properties
+                if (chartType === "bar") {
+                    dataset.borderRadius = 6;
+                    dataset.borderSkipped = false;
+                    dataset.categoryPercentage = 0.8;
+                    dataset.barPercentage = 0.9;
+
+                    // Add peak highlighting for bar charts
+                    dataset.backgroundColor = function (context) {
+                        var value = context.parsed.y;
+                        var maxValue = Math.max.apply(Math, context.dataset.data);
+                        if (value === maxValue && value > 0) {
+                            return color + "CC";
+                        }
+                        return color + "40";
+                    };
+                }
+
+                result.push(dataset);
             })(i, labelText, values, key);
             i++;
         }
         return result;
     }
 
-    function createChart(ctx, labels, prevLabels, datasets, prevDatasets, total, unitTime, today, translations, daysBetween, chartId) {
+    function createChart(ctx, labels, prevLabels, datasets, prevDatasets, total, unitTime, today, translations, daysBetween, chartId, chartType) {
         var isRTL = document.documentElement.dir === "rtl" || document.body.classList.contains("rtl");
 
         var customCrosshair = {
@@ -339,17 +369,33 @@ document.addEventListener("DOMContentLoaded", function () {
                     return slimstatGetLabel(label, false, unitTime, translations);
                 } catch (e) {
                     console.warn("SlimStat: Error processing label:", label, e);
-                    return label; // Return original label if processing fails
+                    return label;
                 }
             }
             return "";
         }
 
+        // Prepare datasets with chart type
+        var preparedDatasets = datasets.concat(prevDatasets);
+        for (var d = 0; d < preparedDatasets.length; d++) {
+            var ds = preparedDatasets[d];
+            if (chartType === "bar") {
+                // Only set backgroundColor if it's not already a function (for peak highlighting)
+                if (typeof ds.backgroundColor !== "function") {
+                    ds.backgroundColor = ds.backgroundColor || ds.borderColor + "40";
+                }
+                ds.borderRadius = 6;
+                ds.borderSkipped = false;
+                ds.categoryPercentage = 0.8;
+                ds.barPercentage = 0.9;
+            }
+        }
+
         return new Chart(ctx, {
-            type: "line",
+            type: chartType || "line",
             data: {
                 labels: labels,
-                datasets: datasets.concat(prevDatasets),
+                datasets: preparedDatasets,
             },
             options: {
                 layout: { padding: 20 },
@@ -627,7 +673,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 } catch (e) {
                     console.warn("SlimStat: Error processing monthly label:", label, e);
-                    return label; // Return original label if processing fails
+                    return label;
                 }
             }
             // Debug: Log labels that don't match the expected format
@@ -762,20 +808,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 innerHtml += "</td></tr>";
             }
             innerHtml += "</tbody>";
-            innerHtml +=
-                '<div class="align-indicator" style="\
-                width: 15px;\
-                height: 15px;\
-                background-color: #fff;\
-                border-bottom-left-radius: 5px;\
-                display: inline-block;\
-                position: absolute;\
-                bottom: -8px;\
-                border-bottom: solid 1px #e0e0e0;\
-                border-left: solid 1px #e0e0e0;\
-                transform: rotate(-45deg);\
-                transition: left 0.1s ease;\
-            "></div>';
+            innerHtml += '<div class="align-indicator" style="' + "width: 15px;" + "height: 15px;" + "background-color: #fff;" + "border-bottom-left-radius: 5px;" + "display: inline-block;" + "position: absolute;" + "bottom: -8px;" + "border-bottom: solid 1px #e0e0e0;" + "border-left: solid 1px #e0e0e0;" + "transform: rotate(-45deg);" + "transition: left 0.1s ease;" + '"></div>';
 
             tooltipEl.querySelector("table").innerHTML = innerHtml;
 

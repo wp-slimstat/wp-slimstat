@@ -14,6 +14,7 @@ class wp_slimstat_admin
     public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
+    protected static $admin_notice    = '';
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -209,8 +210,20 @@ class wp_slimstat_admin
             }
         }
 
+        // Initialize Reports system for SlimStat pages and AJAX requests
+        $is_slimstat_page = (!empty($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
+        $is_slimstat_ajax = (!empty($_POST['action']) && (
+            'slimstat_load_report' === $_POST['action'] ||
+            'slimstat_get_live_analytics_data' === $_POST['action']
+        ));
+
+        if ($is_slimstat_page || $is_slimstat_ajax) {
+            // Initialize the new Reports system FIRST before legacy system loads
+            \SlimStat\Reports\Bootstrap::get_instance()->init();
+        }
+
         // Load the library of functions to generate the reports
-        if ((!empty($_GET['page']) && 0 === strpos($_GET['page'], 'slim')) || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
+        if ($is_slimstat_page || (!empty($_POST['action']) && 'slimstat_load_report' == $_POST['action'])) {
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
 
@@ -253,6 +266,9 @@ class wp_slimstat_admin
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
             }
+
+            // Live Analytics AJAX handler is registered via init_hooks() in Bootstrap
+            // No need to call it separately here - it's already registered
         }
 
         // Schedule a daily cron job to purge the data
@@ -720,6 +736,9 @@ class wp_slimstat_admin
             return;
         }
 
+        // Initialize the new Reports system FIRST before legacy system loads
+        \SlimStat\Reports\Bootstrap::get_instance()->init();
+
         // The Reports library is only loaded on the plugin's screens
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
@@ -795,6 +814,7 @@ class wp_slimstat_admin
         if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
+            wp_enqueue_script('jquery-ui-sortable');
         }
 
         // Enqueue the built-in code editor to use on the Settings
@@ -1272,6 +1292,9 @@ class wp_slimstat_admin
         if (!current_user_can($minimum_capability)) {
             return;
         }
+
+        // Initialize the new Reports system FIRST before legacy system loads
+        \SlimStat\Reports\Bootstrap::get_instance()->init();
 
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
         wp_slimstat_reports::init();
