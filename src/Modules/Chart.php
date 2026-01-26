@@ -42,11 +42,25 @@ class Chart
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
+        // Additional capability check - users must be able to view stats
+        $minimum_capability = 'read';
+        if (!current_user_can($minimum_capability)) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
         $args        = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
         $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
 
         if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'], true)) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
+        }
+        
+        // Validate and sanitize start/end timestamps
+        if (isset($args['start'])) {
+            $args['start'] = absint($args['start']);
+        }
+        if (isset($args['end'])) {
+            $args['end'] = absint($args['end']);
         }
 
         if (!class_exists('\wp_slimstat_db')) {
@@ -85,7 +99,7 @@ class Chart
                 'chart_labels' => $chart->chartLabels,
                 'translations' => $chart->translations,
             ]);
-        } catch (Exception $exception) {
+        } catch (\Exception $exception) {
             wp_send_json_error(['message' => $exception->getMessage()]);
         }
     }
@@ -251,8 +265,16 @@ class Chart
         global $wpdb;
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
-        $start = $args['start'];
-        $end   = $args['end'];
+        
+        // Validate SQL expressions to prevent SQL injection
+        $data1 = $this->validateSqlExpression($data1);
+        $data2 = $this->validateSqlExpression($data2);
+        
+        // Ensure timestamps are integers (defense in depth)
+        $start = absint($args['start']);
+        $end   = absint($args['end']);
+        $prevStart = absint($prevArgs['start']);
+        $prevEnd = absint($prevArgs['end']);
 
         // Build WHERE clause from active filters (excluding time filters)
         $filterWhere = $this->buildFilterWhere();
@@ -388,6 +410,88 @@ class Chart
         }
 
         return implode(' AND ', $whereClauses);
+    }
+
+    /**
+     * Validates SQL expressions to prevent SQL injection attacks.
+     * Uses a predefined metrics system for maximum security.
+     *
+     * @param string $expression The SQL expression to validate
+     * @return string The safe SQL expression
+     * @throws \Exception If the expression is invalid or potentially malicious
+     */
+    private function validateSqlExpression(string $expression): string
+    {
+        global $wpdb;
+
+        // Remove extra whitespace and normalize
+        $expression = preg_replace('/\s+/', ' ', trim($expression));
+
+        // Empty expressions default to COUNT(*)
+        if (empty($expression)) {
+            return 'COUNT(*)';
+        }
+
+        // Define allowed columns from wp_slim_stats table
+        $allowedColumns = [
+            'id', 'ip', 'other_ip', 'username', 'email',
+            'country', 'location', 'city',
+            'referer', 'resource', 'searchterms', 'notes', 'visit_id',
+            'server_latency', 'page_performance',
+            'browser', 'browser_version', 'browser_type', 'platform',
+            'language', 'fingerprint', 'user_agent',
+            'resolution', 'screen_width', 'screen_height',
+            'content_type', 'category', 'author', 'content_id',
+            'outbound_resource',
+            'tz_offset', 'dt_out', 'dt'
+        ];
+
+        // Define allowed aggregate functions
+        $allowedFunctions = ['COUNT', 'SUM', 'AVG', 'MAX', 'MIN'];
+
+        // Strict pattern matching with anchors to prevent bypass attempts
+        // Pattern 1: COUNT(*) or SUM(*) etc (no spaces allowed in function name)
+        if (preg_match('/^(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*\*\s*\)$/i', $expression, $matches)) {
+            $function = strtoupper($matches[1]);
+            return $function . '(*)';
+        }
+
+        // Pattern 2: COUNT(column) or COUNT( column )
+        if (preg_match('/^(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*([a-z_][a-z0-9_]*)\s*\)$/i', $expression, $matches)) {
+            $function = strtoupper($matches[1]);
+            $column = strtolower($matches[2]);
+
+            if (!in_array($function, $allowedFunctions, true)) {
+                throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+            }
+
+            if (!in_array($column, $allowedColumns, true)) {
+                throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+            }
+
+            // Use esc_sql as additional protection (though column is whitelisted)
+            return $function . '( ' . esc_sql($column) . ' )';
+        }
+
+        // Pattern 3: COUNT(DISTINCT column) or COUNT( DISTINCT column )
+        if (preg_match('/^(COUNT|SUM|AVG|MAX|MIN)\s*\(\s*DISTINCT\s+([a-z_][a-z0-9_]*)\s*\)$/i', $expression, $matches)) {
+            $function = strtoupper($matches[1]);
+            $column = strtolower($matches[2]);
+
+            if (!in_array($function, $allowedFunctions, true)) {
+                throw new \Exception(__('Invalid SQL function in chart data expression', 'wp-slimstat'));
+            }
+
+            if (!in_array($column, $allowedColumns, true)) {
+                throw new \Exception(__('Invalid column name in chart data expression', 'wp-slimstat'));
+            }
+
+            // Use esc_sql as additional protection (though column is whitelisted)
+            return $function . '( DISTINCT ' . esc_sql($column) . ' )';
+        }
+
+        // If none of the patterns match, reject the expression
+        throw new \Exception(__('Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed.', 'wp-slimstat'));
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array

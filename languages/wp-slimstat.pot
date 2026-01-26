@@ -2,16 +2,16 @@
 # This file is distributed under the GPL-2.0+.
 msgid ""
 msgstr ""
-"Project-Id-Version: SlimStat Analytics 5.3.1\n"
+"Project-Id-Version: SlimStat Analytics 5.3.5\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-slimstat\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-09T12:28:59+00:00\n"
+"POT-Creation-Date: 2025-12-31T08:38:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
 
 #. Plugin Name of the plugin
@@ -137,8 +137,8 @@ msgstr ""
 #: admin/view/wp-slimstat-db.php:1139
 #: admin/view/wp-slimstat-db.php:1145
 #: admin/view/wp-slimstat-db.php:1151
-#: admin/view/wp-slimstat-reports.php:1341
-#: admin/view/wp-slimstat-reports.php:1344
+#: admin/view/wp-slimstat-reports.php:1345
+#: admin/view/wp-slimstat-reports.php:1348
 msgid "Hits"
 msgstr ""
 
@@ -305,6 +305,7 @@ msgid "We are contributing to the <a href='https://browscap.org/' target='_blank
 msgstr ""
 
 #: admin/config/index.php:187
+#, php-format
 msgid "You are currently using version %s."
 msgstr ""
 
@@ -970,10 +971,12 @@ msgid "Slimstat"
 msgstr ""
 
 #: admin/index.php:901
+#, php-format
 msgid "Pageviews in the last %s days"
 msgstr ""
 
 #: admin/index.php:903
+#, php-format
 msgid "Unique IPs in the last %s days"
 msgstr ""
 
@@ -1116,7 +1119,7 @@ msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
 #: admin/index.php:1206
-#: admin/view/wp-slimstat-reports.php:1462
+#: admin/view/wp-slimstat-reports.php:1466
 msgid "IP"
 msgstr ""
 
@@ -1262,6 +1265,7 @@ msgid "set the filter to Referer contains cd=N&, where N is the position you are
 msgstr ""
 
 #: admin/view/addons.php:23
+#, php-format
 msgid "There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s"
 msgstr ""
 
@@ -1278,6 +1282,7 @@ msgid "Add-ons extend the functionality of Slimstat in many interesting ways. We
 msgstr ""
 
 #: admin/view/addons.php:42
+#, php-format
 msgid "This list is refreshed once daily: <a href=\"%s&amp;force_refresh=true\" class=\"noslimstat\">click here</a> to clear the cache."
 msgstr ""
 
@@ -1320,7 +1325,7 @@ msgstr ""
 
 #: admin/view/index.php:66
 #: admin/view/wp-slimstat-db.php:812
-#: src/Modules/Chart.php:101
+#: src/Modules/Chart.php:115
 msgid "Today"
 msgstr ""
 
@@ -1409,15 +1414,18 @@ msgid "Reset Filters"
 msgstr ""
 
 #: admin/view/index.php:138
-#: admin/view/wp-slimstat-reports.php:1724
+#: admin/view/wp-slimstat-reports.php:1728
+#, php-format
 msgid "GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor."
 msgstr ""
 
 #: admin/view/index.php:142
+#, php-format
 msgid "Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system."
 msgstr ""
 
 #: admin/view/index.php:147
+#, php-format
 msgid "A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information."
 msgstr ""
 
@@ -1564,8 +1572,8 @@ msgstr ""
 
 #: admin/view/right-now.php:49
 #: admin/view/wp-slimstat-reports.php:1087
-#: admin/view/wp-slimstat-reports.php:1439
-#: admin/view/wp-slimstat-reports.php:1497
+#: admin/view/wp-slimstat-reports.php:1443
+#: admin/view/wp-slimstat-reports.php:1501
 msgid "No data to display"
 msgstr ""
 
@@ -1574,9 +1582,9 @@ msgid "Date and Time"
 msgstr ""
 
 #: admin/view/right-now.php:208
-#: admin/view/wp-slimstat-reports.php:1355
-#: admin/view/wp-slimstat-reports.php:1363
-#: admin/view/wp-slimstat-reports.php:1513
+#: admin/view/wp-slimstat-reports.php:1359
+#: admin/view/wp-slimstat-reports.php:1367
+#: admin/view/wp-slimstat-reports.php:1517
 msgid "Open this URL in a new window"
 msgstr ""
 
@@ -1600,31 +1608,31 @@ msgstr ""
 msgid "Time spent on this page"
 msgstr ""
 
-#: admin/view/right-now.php:266
+#: admin/view/right-now.php:267
 msgid "Invalid Referrer"
 msgstr ""
 
-#: admin/view/right-now.php:267
+#: admin/view/right-now.php:268
 msgid "Open this referrer in a new window"
 msgstr ""
 
-#: admin/view/right-now.php:268
+#: admin/view/right-now.php:269
 msgid "Content Type"
 msgstr ""
 
-#: admin/view/right-now.php:273
+#: admin/view/right-now.php:274
 msgid "Open this outbound link in a new window"
 msgstr ""
 
-#: admin/view/right-now.php:282
+#: admin/view/right-now.php:283
 msgid "Delete this entry from the database"
 msgstr ""
 
-#: admin/view/right-now.php:294
+#: admin/view/right-now.php:295
 msgid "User Logged In"
 msgstr ""
 
-#: admin/view/right-now.php:305
+#: admin/view/right-now.php:306
 msgid "User Logged Out"
 msgstr ""
 
@@ -1661,7 +1669,7 @@ msgid "-- Advanced filters --"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:52
-#: admin/view/wp-slimstat-reports.php:1462
+#: admin/view/wp-slimstat-reports.php:1466
 msgid "Coordinates"
 msgstr ""
 
@@ -2208,7 +2216,7 @@ msgid "Top Search Terms"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:218
-#: admin/view/wp-slimstat-reports.php:1714
+#: admin/view/wp-slimstat-reports.php:1718
 msgid "Top Countries"
 msgstr ""
 
@@ -2483,6 +2491,7 @@ msgid "Refresh"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:1015
+#, php-format
 msgid "Showing %s - %s of %s"
 msgstr ""
 
@@ -2509,20 +2518,20 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1243
+#: admin/view/wp-slimstat-reports.php:1247
 msgid "URL"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1263
+#: admin/view/wp-slimstat-reports.php:1267
 msgid "No referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1266
+#: admin/view/wp-slimstat-reports.php:1270
 msgid "Referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1283
-#: admin/view/wp-slimstat-reports.php:1309
+#: admin/view/wp-slimstat-reports.php:1287
+#: admin/view/wp-slimstat-reports.php:1313
 #: languages/index.php:11
 #: languages/index.php:14
 #: languages/index.php:15
@@ -2535,85 +2544,85 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1287
-#: admin/view/wp-slimstat-reports.php:1313
+#: admin/view/wp-slimstat-reports.php:1291
+#: admin/view/wp-slimstat-reports.php:1317
 msgid "Guest"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1462
+#: admin/view/wp-slimstat-reports.php:1466
 msgid "Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1462
+#: admin/view/wp-slimstat-reports.php:1466
 msgid "Date"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1522
-#: admin/view/wp-slimstat-reports.php:1524
+#: admin/view/wp-slimstat-reports.php:1526
+#: admin/view/wp-slimstat-reports.php:1528
 msgid "Filter by element in a group"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1560
+#: admin/view/wp-slimstat-reports.php:1564
 msgid "Moz Domain Authority"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1561
+#: admin/view/wp-slimstat-reports.php:1565
 msgid "A normalized 100-point score representing the likelihood of a domain to rank well in search engine results."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1565
+#: admin/view/wp-slimstat-reports.php:1569
 msgid "Moz Backlinks"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1566
+#: admin/view/wp-slimstat-reports.php:1570
 msgid "Number of external equity links to your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1570
+#: admin/view/wp-slimstat-reports.php:1574
 msgid "Moz Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1571
+#: admin/view/wp-slimstat-reports.php:1575
 msgid "The number of links (external, equity or nonequity or not) to your homepage."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1575
+#: admin/view/wp-slimstat-reports.php:1579
 msgid "Alexa World Rank"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1576
+#: admin/view/wp-slimstat-reports.php:1580
 msgid "Alexa is a subsidiary company of Amazon.com which provides commercial web traffic data."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1580
+#: admin/view/wp-slimstat-reports.php:1584
 msgid "Alexa Country Rank"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1585
+#: admin/view/wp-slimstat-reports.php:1589
 msgid "Alexa Popularity"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1644
+#: admin/view/wp-slimstat-reports.php:1648
 msgid "Alexa Delta"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1796
+#: admin/view/wp-slimstat-reports.php:1800
 msgid "src"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1800
+#: admin/view/wp-slimstat-reports.php:1804
 msgid "serp"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1827
+#: admin/view/wp-slimstat-reports.php:1831
 msgid "Remove filter for"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1832
+#: admin/view/wp-slimstat-reports.php:1836
 msgid "Save"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1836
+#: admin/view/wp-slimstat-reports.php:1840
 msgid "Reset All"
 msgstr ""
 
@@ -4782,35 +4791,54 @@ msgid "View file not found: "
 msgstr ""
 
 #: src/Exception/LogException.php:20
+#, php-format
 msgid "Exception occurred: [Code %d] %s at %s:%d"
 msgstr ""
 
-#: src/Modules/Chart.php:48
+#: src/Modules/Chart.php:47
+msgid "Insufficient permissions"
+msgstr ""
+
+#: src/Modules/Chart.php:54
 msgid "Invalid granularity"
 msgstr ""
 
-#: src/Modules/Chart.php:99
+#: src/Modules/Chart.php:113
 msgid "-- Previous Period"
 msgstr ""
 
-#: src/Modules/Chart.php:100
+#: src/Modules/Chart.php:114
 msgid "Click Tap “Previous Period” to hide or show the previous period line."
 msgstr ""
 
-#: src/Modules/Chart.php:102
+#: src/Modules/Chart.php:116
 msgid "30 Days ago"
 msgstr ""
 
-#: src/Modules/Chart.php:103
+#: src/Modules/Chart.php:117
 msgid "Day ago"
 msgstr ""
 
-#: src/Modules/Chart.php:104
+#: src/Modules/Chart.php:118
 msgid "Year ago"
 msgstr ""
 
-#: src/Modules/Chart.php:105
+#: src/Modules/Chart.php:119
 msgid "Now"
+msgstr ""
+
+#: src/Modules/Chart.php:383
+#: src/Modules/Chart.php:400
+msgid "Invalid SQL function in chart data expression"
+msgstr ""
+
+#: src/Modules/Chart.php:387
+#: src/Modules/Chart.php:404
+msgid "Invalid column name in chart data expression"
+msgstr ""
+
+#: src/Modules/Chart.php:412
+msgid "Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed."
 msgstr ""
 
 #: src/Services/Browscap.php:26
@@ -4858,14 +4886,17 @@ msgid "Error: <code>gzopen()</code> Function Not Found!"
 msgstr ""
 
 #: src/Services/GeoIP.php:178
+#, php-format
 msgid "Error Creating GeoIP Database Directory. Ensure Web Server Has Directory Creation Permissions in: %s"
 msgstr ""
 
 #: src/Services/GeoIP.php:182
+#, php-format
 msgid "Error Setting Permissions for GeoIP Database Directory. Check Write Permissions for Directories in: %s"
 msgstr ""
 
 #: src/Services/GeoIP.php:190
+#, php-format
 msgid "Error Downloading GeoIP Database from: %1$s - %2$s"
 msgstr ""
 
@@ -4874,10 +4905,12 @@ msgid "There was an error creating the GeoIP database file."
 msgstr ""
 
 #: src/Services/GeoIP.php:223
+#, php-format
 msgid "Error Opening Downloaded GeoIP Database for Reading: %s"
 msgstr ""
 
 #: src/Services/GeoIP.php:227
+#, php-format
 msgid "Error Opening Destination GeoIP Database for Writing: %s"
 msgstr ""
 
@@ -4886,6 +4919,7 @@ msgid "GeoIP Database Successfully Updated!"
 msgstr ""
 
 #: src/Services/GeoIP.php:248
+#, php-format
 msgid "Error: %1$s"
 msgstr ""
 
@@ -4934,6 +4968,7 @@ msgid "Hourly"
 msgstr ""
 
 #: wp-slimstat.php:581
+#, php-format
 msgid "Attempted XSS Injection: %s"
 msgstr ""
 
@@ -4970,6 +5005,7 @@ msgid "This parameter indicates what dimension to return: * (all data), ip, reso
 msgstr ""
 
 #: wp-slimstat.php:1144
+#, php-format
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 

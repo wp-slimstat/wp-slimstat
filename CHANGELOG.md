@@ -32,6 +32,18 @@
 - **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 
+= 5.3.5 - 2025-12-31 =
+* Security: Hardened plugin security
+
+= 5.3.4 - 2024-12-28 =
+* Security: Hardened plugin security
+
+= 5.3.3 - 2025-12-17 =
+* Maintenance: Stability and compatibility improvements.
+
+= 5.3.2 - 2025-11-24 =
+- Fix: Minor improvements & Hardened plugin security.
+
 = 5.3.1 - 2025-09-09 =
 - **Fix**: Resolved "Invalid Date, NaN" error in monthly charts for 12-month ranges.
 - **Fix**: Real-time report date filters not properly cleared during auto-refresh.
