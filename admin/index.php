@@ -14,7 +14,6 @@ class wp_slimstat_admin
     public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
-    protected static $admin_notice    = '';
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
