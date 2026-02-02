@@ -660,7 +660,11 @@ class wp_slimstat_db
                         // no break here: if value IS numeric, go to the default parser here below
 
                     default:
-                        $filters_parsed['columns'][$a_filter[1]] = [$a_filter[2], isset($a_filter[3]) ? str_replace('\\', '', htmlspecialchars_decode($a_filter[3])) : ''];
+                        $filter_value = isset($a_filter[3]) ? str_replace('\\', '', htmlspecialchars_decode($a_filter[3])) : '';
+                        // Only add filter if value is not empty (ignore filters without values)
+                        if (trim($filter_value) !== '') {
+                            $filters_parsed['columns'][$a_filter[1]] = [$a_filter[2], $filter_value];
+                        }
                         break;
                 }
             }

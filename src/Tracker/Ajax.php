@@ -43,7 +43,7 @@ class Ajax
         $stat['referer'] = '';
         if (!empty($data_js['ref'])) {
             $referer = Utils::base64UrlDecode($data_js['ref']);
-            $parsed_ref = parse_url($referer);
+            $parsed_ref = parse_url($referer ?: '');
 
             // Security: Validate referer format
             if (false === $parsed_ref) {
@@ -110,7 +110,7 @@ class Ajax
                 // This ensures we track the correct page for navigation requests while preventing injection attacks
                 if (!empty($data_js['res'])) {
                     $resource = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource);
+                    $parsed_resource = parse_url($resource ?: '');
 
                     // Security: Validate host is from current site domain
                     $site_host = parse_url(get_site_url(), PHP_URL_HOST);
@@ -269,7 +269,7 @@ class Ajax
 
                 if (!empty($data_js['res'])) {
                     $resource        = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource);
+                    $parsed_resource = parse_url($resource ?: '');
                     if (false === $parsed_resource || empty($parsed_resource['host'])) {
                         exit(Utils::logError(203));
                     }
@@ -312,7 +312,7 @@ class Ajax
             $stat['resource'] = '';
             if (!empty($data_js['res'])) {
                 $stat['resource'] = Utils::base64UrlDecode($data_js['res']);
-                if (false === parse_url($stat['resource'])) {
+                if (false === parse_url($stat['resource'] ?: '')) {
                     exit(Utils::logError(203));
                 }
             }

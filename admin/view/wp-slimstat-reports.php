@@ -1281,8 +1281,8 @@ class wp_slimstat_reports
                             'macosx'   => 'mac',
                         ];
 
-                        $platform_parts     = explode('-', $results[$i][$_args['columns']]);
-                        $last_platform_part = strtolower(end($platform_parts));
+                        $platform_parts     = explode('-', $results[$i][$_args['columns']] ?? '');
+                        $last_platform_part = strtolower((string)end($platform_parts));
 
                         if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/os/' . $last_platform_part . '.webp'))) {
                             $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/os/' . $last_platform_part . '.webp');
@@ -1311,7 +1311,7 @@ class wp_slimstat_reports
                             $row_details = __('URL', 'wp-slimstat') . ': ' . htmlentities($results[$i][$_args['columns']], ENT_QUOTES, 'UTF-8');
                         }
                         if (!empty($_args['where']) && false !== strpos($_args['where'], 'download')) {
-                            $clean_extension = pathinfo(strtolower(parse_url($results[$i][$_args['columns']], PHP_URL_PATH)), PATHINFO_EXTENSION);
+                            $clean_extension = pathinfo(strtolower(parse_url($results[$i][$_args['columns']] ?? '', PHP_URL_PATH)), PATHINFO_EXTENSION);
                             if (in_array($clean_extension, ['jpg', 'gif', 'png', 'jpeg', 'bmp'])) {
                                 $row_details = '<br><img src="' . $results[$i][$_args['columns']] . '" style="width:100px">';
                             }
@@ -1705,10 +1705,10 @@ class wp_slimstat_reports
         $max           = 0;
 
         foreach ($countries as $a_country) {
-            $code         = strtolower($a_country['country']);
+            $code         = strtolower((string)($a_country['country'] ?? ''));
             $visits       = (int) $a_country['counthits'];
             $percent      = (wp_slimstat_db::$pageviews > 0) ? round((100 * $visits / wp_slimstat_db::$pageviews), 2) : 0;
-            $country_name = wp_slimstat_i18n::get_string('c-' . $a_country['country'], 'wp-slimstat');
+            $country_name = wp_slimstat_i18n::get_string('c-' . ($a_country['country'] ?? ''), 'wp-slimstat');
 
             $data_areas[$code] = $visits;
             $country_stats[]   = [
@@ -1766,8 +1766,8 @@ class wp_slimstat_reports
                         <div class="country-bar">
                             <div class="country-flag-container">
                                 <?php
-                    if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg'))) {
-                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower($country['code']) . '.svg');
+                    if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg'))) {
+                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg');
                         echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
                     } else {
                         $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1888,7 +1888,7 @@ class wp_slimstat_reports
 
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
         if (!empty($_SERVER['HTTP_REFERER'])) {
-            $parsed_referer = parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])));
+            $parsed_referer = parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
             if (!$parsed_referer || (isset($parsed_referer['scheme']) && ('' !== $parsed_referer['scheme'] && '0' !== $parsed_referer['scheme']) && !in_array(strtolower($parsed_referer['scheme']), ['http', 'https']))) {
                 return '';
             }
@@ -1932,7 +1932,7 @@ class wp_slimstat_reports
         }
 
         // Do we already have this value in our transient cache?
-        $cache_index = md5($_resource);
+        $cache_index = md5((string)$_resource);
         if (!isset(self::$resource_titles) || !is_array(self::$resource_titles)) {
             $transient             = get_transient('slimstat_resource_titles');
             self::$resource_titles = is_array($transient) ? $transient : [];

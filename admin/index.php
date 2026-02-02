@@ -261,6 +261,7 @@ class wp_slimstat_admin
                 'slimstat_update_geoip_database' => 'update_geoip_database',
                 'slimstat_check_geoip_database'  => 'check_geoip_database',
                 'slimstat_get_filter_options'    => 'get_filter_options',
+                'slimstat_get_online_visitors'   => 'get_online_visitors',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -352,11 +353,6 @@ class wp_slimstat_admin
 
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
-
-        // Add header to settings and customize and settings page
-        add_action('admin_notices', function () {
-            self::add_header();
-        });
 
         $index_checks = [
             ['option' => 'slimstat_country_dt_indexed', 'key' => 'idx_country_dt'],
@@ -1360,6 +1356,65 @@ class wp_slimstat_admin
     }
 
     // END: manage_filters
+
+    /**
+     * AJAX handler to get current online visitors count
+     */
+    public static function get_online_visitors()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+
+        // If this user is whitelisted, we use the minimum capability
+        $minimum_capability = 'read';
+        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
+        }
+
+        if (!current_user_can($minimum_capability)) {
+            wp_send_json_error(['message' => 'Insufficient permissions']);
+            return;
+        }
+
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
+        $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
+        $window_minutes = 5; // 5 minutes = 300 seconds
+        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
+
+        $sql = $wpdb->prepare(
+            "
+            SELECT COUNT(*) FROM (
+                SELECT visit_id, MAX(
+                    CASE
+                        WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
+                        ELSE dt
+                    END
+                ) AS last_activity
+                FROM {$table}
+                WHERE visit_id > 0
+                    AND (
+                        dt >= %d
+                        OR ( dt_out IS NOT NULL AND dt_out >= %d )
+                    )
+                GROUP BY visit_id
+                HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
+            ) live_sessions
+            ",
+            $window_start,
+            $window_start,
+            $window_start
+        );
+
+        $online_visitors = (int) $wpdb->get_var($sql);
+        $online_visitors = max(0, (int) $online_visitors);
+
+        wp_send_json_success([
+            'count' => $online_visitors,
+            'formatted' => number_format_i18n($online_visitors)
+        ]);
+    }
+
+    // END: get_online_visitors
 
     /**
      * Helper function to get icon URL for filter options

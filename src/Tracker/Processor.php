@@ -97,7 +97,7 @@ class Processor
         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
             return '%' . bin2hex($m[0]);
         }, $stat['resource']);
-        $parsed_url = parse_url($stat['resource']);
+        $parsed_url = parse_url($stat['resource'] ?? '');
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
             Utils::logError(203);
@@ -117,7 +117,7 @@ class Processor
 
 
         if (!empty($stat['referer'])) {
-            $parsed_url = parse_url($stat['referer']);
+            $parsed_url = parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
                 Query::setProcessingTimestamp(null);
                 Utils::logError(201);

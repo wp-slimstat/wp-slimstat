@@ -1487,6 +1487,41 @@ var SlimStatAdmin = {
             }
         });
 
+        // Update online visitors count on pulse
+        window.addEventListener("slimstat:minute_pulse", function () {
+            var onlineVisitorsElement = document.getElementById("slimstat-online-visitors-count");
+            if (onlineVisitorsElement && typeof SlimStatParams !== "undefined") {
+                jQuery.ajax({
+                    url: SlimStatParams.ajax_url,
+                    type: "POST",
+                    data: {
+                        action: "slimstat_get_online_visitors",
+                        security: SlimStatParams.security
+                    },
+                    success: function (response) {
+                        if (response.success && response.data && response.data.formatted) {
+                            // Animate the value change
+                            var currentValue = onlineVisitorsElement.textContent.replace(/,/g, "");
+                            var newValue = response.data.count;
+
+                            if (parseInt(currentValue, 10) !== newValue) {
+                                onlineVisitorsElement.style.transition = "transform 0.1s ease-out";
+                                onlineVisitorsElement.style.transform = "scale(1.05)";
+
+                                setTimeout(function () {
+                                    onlineVisitorsElement.textContent = response.data.formatted;
+                                    onlineVisitorsElement.style.transform = "scale(1)";
+                                }, 100);
+                            }
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to update online visitors:", error);
+                    }
+                });
+            }
+        });
+
         var observer = new MutationObserver(function (mutationsList) {
             mutationsList.forEach(function (mutation) {
                 mutation.addedNodes.forEach(function (node) {
