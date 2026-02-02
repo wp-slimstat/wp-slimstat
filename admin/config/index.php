@@ -1185,7 +1185,13 @@ $has_wp_consent_api     = function_exists('is_plugin_active') && is_plugin_activ
         var hasWpConsent = <?php echo $has_wp_consent_api ? 'true' : 'false'; ?>;
         // var hasRCB       = <?php echo isset($has_real_cookie_banner) && $has_real_cookie_banner ? 'true' : 'false'; ?>;
         var $ci = $('#consent_integration');
-        if(!hasWpConsent){ $ci.find('option[value="wp_consent_api"]').prop('disabled', true); }
+        if(!hasWpConsent){
+            $ci.find('option[value="wp_consent_api"]').prop('disabled', true);
+            // If currently selected value is wp_consent_api but plugin is not installed, reset to default
+            if($ci.val() === 'wp_consent_api') {
+                $ci.val('slimstat_banner').trigger('change');
+            }
+        }
         // if(!hasRCB){ $ci.find('option[value="real_cookie_banner"]').prop('disabled', true); }
 
         // Initialize conditional fields system (from admin.js)

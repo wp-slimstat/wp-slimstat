@@ -42,7 +42,12 @@ class ConsentHandler
 			wp_cache_delete('slimstat_consent_state', 'slimstat');
 		}
 
+		// Delete tracking cookie
 		Session::deleteTrackingCookie();
+
+		// Set consent cookie to denied to prevent further tracking
+		$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
+		$gdpr_service->setConsent('denied');
 
 		do_action('slimstat_consent_revoked');
 
