@@ -154,7 +154,7 @@ class Utils
 		$search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
 		$search_engines = json_decode($search_engines, true);
 
-		$parsed_url = @parse_url($url);
+		$parsed_url = @parse_url($url ?: '');
 		if (empty($search_engines) || empty($parsed_url) || empty($parsed_url['host'])) {
 			return '';
 		}

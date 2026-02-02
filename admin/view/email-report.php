@@ -33,22 +33,13 @@ if (!$is_pro) {
     ?>
     <div class="backdrop-container">
         <div class="wrap slimstat slimstat-email-report">
-            <h2><?php _e('Email Report', 'wp-slimstat'); ?></h2>
-            
+            <h2><?php _e('Email Report Configuration', 'wp-slimstat'); ?></h2>
+
             <div class="slimstat-email-report-content">
                 <?php
                 // Allow pro plugin to inject its email report settings here
                 // The pro plugin should hook into this action to display its email report settings
                 do_action('slimstat_email_report_content');
-                
-                // If no content was added by the pro plugin, show a default message
-                if (!did_action('slimstat_email_report_content') || !has_action('slimstat_email_report_content')) {
-                    ?>
-                    <div class="notice notice-info">
-                        <p><?php _e('Email report settings will be displayed here. This content is provided by SlimStat Pro.', 'wp-slimstat'); ?></p>
-                    </div>
-                    <?php
-                }
                 ?>
             </div>
         </div>
