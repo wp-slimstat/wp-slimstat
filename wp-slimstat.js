@@ -1032,6 +1032,8 @@ var SlimStat = (function () {
             } else {
             }
 
+            // Only use previous consent upgrade if current consent is unknown (null)
+            // Do NOT override an explicit rejection (false) with a previous consent
             if (cmpAllows !== true && hasConsentUpgradeSucceeded()) {
                 cmpAllows = true;
             }
@@ -1627,6 +1629,11 @@ if (!window.requestIdleCallback) {
                         hasConsent = window.wp_has_consent(selectedCategory);
                     } else if (event.detail.consent !== undefined) {
                         hasConsent = event.detail.consent === true || event.detail.consent === "allow";
+                    }
+
+                    // Clear consent upgrade state when consent is denied
+                    if (!hasConsent) {
+                        markConsentUpgradeDone(false);
                     }
 
                     var parsedConsent = normalizeConsent({

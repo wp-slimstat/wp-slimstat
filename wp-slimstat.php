@@ -177,6 +177,13 @@ class wp_slimstat
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
 		$consent_integration = self::$settings['consent_integration'] ?? '';
+
+		// If WP Consent API is selected but the function doesn't exist, reset to default
+		if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
+			$consent_integration = '';
+			self::$settings['consent_integration'] = '';
+		}
+
 		if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
 			$consent_integration = 'slimstat_banner';
 			self::$settings['consent_integration'] = $consent_integration;
