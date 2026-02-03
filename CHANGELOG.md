@@ -1,3 +1,6 @@
+= 5.3.6 =
+* Security: Hardened output escaping in reports
+
 = 5.3.5 - 2025-12-31 =
 * Security: Hardened plugin security
 
