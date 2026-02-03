@@ -1927,6 +1927,9 @@ class wp_slimstat_reports
      */
     public static function get_resource_title($_resource = '')
     {
+        // Ensure $_resource is never null to avoid PHP 8.1+ deprecation warnings
+        $_resource = $_resource ?? '';
+
         if ('on' != wp_slimstat::$settings['convert_resource_urls_to_titles']) {
             return htmlentities(urldecode($_resource), ENT_QUOTES, 'UTF-8');
         }
