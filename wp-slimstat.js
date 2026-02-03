@@ -1034,7 +1034,7 @@ var SlimStat = (function () {
 
             // Only use previous consent upgrade if current consent is unknown (null)
             // Do NOT override an explicit rejection (false) with a previous consent
-            if (cmpAllows !== true && cmpAllows !== false && hasConsentUpgradeSucceeded()) {
+            if (cmpAllows !== true && hasConsentUpgradeSucceeded()) {
                 cmpAllows = true;
             }
         }
