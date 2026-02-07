@@ -711,6 +711,12 @@
             this.animateValue(countriesElement, data.countries_live);
         }
 
+        // Sync header online visitors count with users_live to ensure they always match
+        var headerOnlineElement = document.getElementById("slimstat-online-visitors-count");
+        if (headerOnlineElement && typeof data.users_live !== "undefined") {
+            this.animateValue(headerOnlineElement, data.users_live);
+        }
+
         // Update current metric from server response to ensure sync
         if (data.selected_metric) {
             if (data.selected_metric !== this.currentMetric) {

@@ -1378,7 +1378,7 @@ class wp_slimstat_admin
         global $wpdb;
         $table = "{$wpdb->prefix}slim_stats";
         $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
-        $window_minutes = 5; // 5 minutes = 300 seconds
+        $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
         $window_start = $current_minute_start - (($window_minutes - 1) * 60);
 
         $sql = $wpdb->prepare(
