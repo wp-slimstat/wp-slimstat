@@ -181,7 +181,7 @@ class wp_slimstat_db
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
-                $filters_array[htmlspecialchars($a_request_filter_name)] = sprintf('%s %s', $a_request_filter_name, $a_request_filter_value);
+                $filters_array[sanitize_text_field(wp_unslash($a_request_filter_name))] = sprintf('%s %s', sanitize_text_field(wp_unslash($a_request_filter_name)), sanitize_text_field(wp_unslash($a_request_filter_value)));
             }
         }
 
@@ -259,6 +259,8 @@ class wp_slimstat_db
 
     public static function get_combined_where($_where = '', $_column = '*', $_use_date_filters = true, $_slim_stats_table_alias = '', $where_params = null)
     {
+        global $wpdb;
+
         $dt_with_alias = 'dt';
         if (!empty($_slim_stats_table_alias)) {
             $dt_with_alias = $_slim_stats_table_alias . '.' . $dt_with_alias;
@@ -270,10 +272,20 @@ class wp_slimstat_db
                 $_where = self::_get_sql_where(self::$filters_normalized['columns'], $_slim_stats_table_alias);
 
                 if ($_use_date_filters) {
-                    $time_range_condition = $dt_with_alias . ' BETWEEN ' . self::$filters_normalized['utime']['start'] . ' AND ' . self::$filters_normalized['utime']['end'];
+                    // Use $wpdb->prepare() for all dynamic SQL values
+                    $time_range_condition = $wpdb->prepare(
+                        $dt_with_alias . ' BETWEEN %d AND %d',
+                        intval(self::$filters_normalized['utime']['start']),
+                        intval(self::$filters_normalized['utime']['end'])
+                    );
                 }
             } elseif ($_use_date_filters) {
-                $time_range_condition = $dt_with_alias . ' BETWEEN ' . self::$filters_normalized['utime']['start'] . ' AND ' . self::$filters_normalized['utime']['end'];
+                // Use $wpdb->prepare() for all dynamic SQL values
+                $time_range_condition = $wpdb->prepare(
+                    $dt_with_alias . ' BETWEEN %d AND %d',
+                    intval(self::$filters_normalized['utime']['start']),
+                    intval(self::$filters_normalized['utime']['end'])
+                );
             }
 
             // This could happen if we have custom filters (add-ons, third party tools)
@@ -291,7 +303,12 @@ class wp_slimstat_db
             }
 
             if ($_use_date_filters) {
-                $time_range_condition = $dt_with_alias . ' BETWEEN ' . self::$filters_normalized['utime']['start'] . ' AND ' . self::$filters_normalized['utime']['end'];
+                // Use $wpdb->prepare() for all dynamic SQL values
+                $time_range_condition = $wpdb->prepare(
+                    $dt_with_alias . ' BETWEEN %d AND %d',
+                    intval(self::$filters_normalized['utime']['start']),
+                    intval(self::$filters_normalized['utime']['end'])
+                );
             }
         }
 

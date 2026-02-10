@@ -836,7 +836,8 @@ class Query
 
             $data = implode('', $chunks);
         } elseif (is_array($data)) {
-            $data = serialize($data);
+            // Data is already an array (from transient), return directly
+            return $data;
         }
 
         if (function_exists('gzuncompress') && is_string($data)) {
@@ -846,7 +847,14 @@ class Query
             }
         }
 
-        return @unserialize($data);
+        // Use JSON decode instead of unserialize for security
+        $decoded = json_decode($data, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return $decoded;
+        }
+
+        // Return false if JSON decode failed (corrupted or legacy data)
+        return false;
     }
 
     /**
@@ -862,7 +870,11 @@ class Query
     protected function setCachedResultForQuery($query, $args, $result, $expiration = 300)
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
-        $data     = serialize($result);
+        // Use JSON encode instead of serialize for security
+        $data     = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if (false === $data) {
+            return false;
+        }
 
         $max_chunk_size = 900 * 1024; // 900KB
         $old_meta       = get_transient($cacheKey);
@@ -878,7 +890,7 @@ class Query
                 'chunks' => count($chunks),
                 'size'   => strlen($data),
             ];
-            if (strlen(serialize($meta)) > $max_chunk_size) {
+            if (strlen(json_encode($meta)) > $max_chunk_size) {
                 return false;
             }
 

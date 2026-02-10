@@ -6,6 +6,13 @@ namespace SlimStat\Controllers\Rest;
 use SlimStat\Interfaces\RestControllerInterface;
 use SlimStat\Services\GDPRService;
 
+// don't load directly.
+if (!defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
+
 /**
  * REST API Controller for SlimStat GDPR Banner
  *

@@ -324,7 +324,8 @@ class Ajax
                     exit(Utils::logError(102));
                 }
 
-                $content_info = @unserialize(Utils::base64UrlDecode($data_js['ci']));
+                $decoded_ci = Utils::base64UrlDecode($data_js['ci']);
+                $content_info = json_decode($decoded_ci, true);
                 if (empty($content_info) || !is_array($content_info)) {
                     exit(Utils::logError(103));
                 }

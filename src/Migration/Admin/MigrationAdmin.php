@@ -184,16 +184,7 @@ class MigrationAdmin
 			return;
 		}
 
-		// Debug: Check if migrations are needed
-		$needs_migration = $this->manager->needsMigration();
-		$required_migrations = $this->manager->getRequiredMigrations();
-
-		// Add debug info as HTML comment (only visible in source)
-		if (defined('WP_DEBUG') && WP_DEBUG) {
-			echo "<!-- SlimStat Migration Debug: needsMigration=" . ($needs_migration ? 'true' : 'false') . ", required_count=" . count($required_migrations) . " -->";
-		}
-
-		if (!$needs_migration) {
+		if (!$this->manager->needsMigration()) {
 			return;
 		}
 

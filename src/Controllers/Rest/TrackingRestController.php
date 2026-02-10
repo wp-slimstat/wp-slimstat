@@ -40,25 +40,30 @@ class TrackingRestController implements RestControllerInterface
 
         if (!empty($banner_consent) && in_array($banner_consent, ['accepted', 'denied'], true)) {
             // Temporarily add consent parameters to $_POST for handleBannerConsent
+            // Use try/finally to ensure $_POST is restored even on exceptions
             $original_post = $_POST;
-            $_POST['consent'] = sanitize_text_field($banner_consent);
-            if (!empty($banner_consent_nonce)) {
-                $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
-            }
-
-            // Update raw_post_array as well
-            if (isset(\wp_slimstat::$raw_post_array)) {
-                \wp_slimstat::$raw_post_array['consent'] = sanitize_text_field($banner_consent);
+            $original_raw_post = \wp_slimstat::$raw_post_array ?? [];
+            try {
+                $_POST['consent'] = sanitize_text_field($banner_consent);
                 if (!empty($banner_consent_nonce)) {
-                    \wp_slimstat::$raw_post_array['nonce'] = sanitize_text_field($banner_consent_nonce);
+                    $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
                 }
+
+                // Update raw_post_array as well
+                if (isset(\wp_slimstat::$raw_post_array)) {
+                    \wp_slimstat::$raw_post_array['consent'] = sanitize_text_field($banner_consent);
+                    if (!empty($banner_consent_nonce)) {
+                        \wp_slimstat::$raw_post_array['nonce'] = sanitize_text_field($banner_consent_nonce);
+                    }
+                }
+
+                // Handle banner consent (without JSON response - continue to tracking)
+                \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
+            } finally {
+                // Restore original $_POST and raw_post_array
+                $_POST = $original_post;
+                \wp_slimstat::$raw_post_array = $original_raw_post;
             }
-
-            // Handle banner consent (without JSON response - continue to tracking)
-            \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
-
-            // Restore original $_POST
-            $_POST = $original_post;
         }
 
         // Handle tracking hits

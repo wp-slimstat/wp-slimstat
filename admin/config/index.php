@@ -905,7 +905,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                     // Rich text editor: use wp_kses_post to sanitize HTML
                     wp_slimstat::$settings[$a_post_slug] = wp_kses_post($a_post_value);
                 } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
-                    wp_slimstat::$settings[$a_post_slug] = htmlspecialchars(sanitize_text_field($a_post_value));
+                    wp_slimstat::$settings[$a_post_slug] = sanitize_text_field($a_post_value);
                 } else {
                     wp_slimstat::$settings[$a_post_slug] = $a_post_value;
                 }
