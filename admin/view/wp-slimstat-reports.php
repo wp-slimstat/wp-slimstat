@@ -1313,7 +1313,7 @@ class wp_slimstat_reports
                         if (!empty($_args['where']) && false !== strpos($_args['where'], 'download')) {
                             $clean_extension = pathinfo(strtolower(parse_url($results[$i][$_args['columns']] ?? '', PHP_URL_PATH)), PATHINFO_EXTENSION);
                             if (in_array($clean_extension, ['jpg', 'gif', 'png', 'jpeg', 'bmp'])) {
-                                $row_details = '<br><img src="' . $results[$i][$_args['columns']] . '" style="width:100px">';
+                                $row_details = '<br><img src="' . esc_url($results[$i][$_args['columns']]) . '" style="width:100px">';
                             }
                         }
                         $element_value = $resource_title;
@@ -1342,23 +1342,23 @@ class wp_slimstat_reports
                         if (!empty($results[$i]['username'])) {
                             $element_custom_value = get_user_by('login', $results[$i]['username']);
                             if ($element_custom_value) {
-                                $element_value = "<a href='" . get_author_posts_url($element_custom_value->ID) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
+                                $element_value = "<a href='" . esc_url(get_author_posts_url($element_custom_value->ID)) . "' class=\"slimstat-author-link\" title='" . esc_attr($element_custom_value->user_login) . "'>";
                                 $element_value .= get_avatar($element_custom_value->ID, 18);
-                                $element_value .= $results[$i]['username'];
+                                $element_value .= esc_html($results[$i]['username']);
                                 $element_value .= '</a>';
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . $image_url . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", $results[$i]['username']) . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('Unknown', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . $image_url . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
+                            $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . __('Guest', 'wp-slimstat') . '</a>';
                         }
 
                         if ('on' == wp_slimstat::$settings['show_display_name']) {
                             $element_custom_value = get_user_by('login', $results[$i]['username']);
                             if (is_object($element_custom_value)) {
-                                $element_value = $element_custom_value->display_name;
+                                $element_value = esc_html($element_custom_value->display_name);
                             }
                         }
                         break;
@@ -1599,7 +1599,7 @@ class wp_slimstat_reports
                 }
             }
 
-            echo sprintf('<p>%s <span>%s</span><br/>', $a_result[ 'resource' ], esc_html( $a_result[ 'counthits' ] )) . implode(', ', $group_markup) . '</p>';
+            echo sprintf('<p>%s <span>%s</span><br/>', esc_html( $a_result[ 'resource' ] ), esc_html( $a_result[ 'counthits' ] )) . implode(', ', $group_markup) . '</p>';
         }
 
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
