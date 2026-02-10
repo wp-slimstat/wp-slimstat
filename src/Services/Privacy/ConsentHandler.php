@@ -75,11 +75,26 @@ class ConsentHandler
 	 * Handle GDPR banner consent via AJAX
 	 *
 	 * @param bool $return_json Whether to return JSON response (default: true)
+	 * @param array $data Optional data array with 'nonce', 'consent', 'pageview_id' keys. If empty, reads from $_POST.
 	 * @return bool|void Returns true on success, false on error, or outputs JSON if $return_json is true
 	 */
-	public static function handleBannerConsent(bool $return_json = true)
+	public static function handleBannerConsent(bool $return_json = true, array $data = [])
 	{
-		$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+		// Use provided data or fall back to $_POST
+		$nonce = '';
+		$consent = '';
+		$pageview_id_raw = '';
+
+		if (!empty($data)) {
+			$nonce = isset($data['nonce']) ? sanitize_text_field($data['nonce']) : '';
+			$consent = isset($data['consent']) ? sanitize_text_field($data['consent']) : '';
+			$pageview_id_raw = isset($data['pageview_id']) ? sanitize_text_field($data['pageview_id']) : '';
+		} else {
+			$nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+			$consent = isset($_POST['consent']) ? sanitize_text_field(wp_unslash($_POST['consent'])) : '';
+			$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
+		}
+
 		if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
 			if ($return_json) {
 				wp_send_json_error([
@@ -100,8 +115,6 @@ class ConsentHandler
 			}
 			return false;
 		}
-
-		$consent = isset($_POST['consent']) ? sanitize_text_field(wp_unslash($_POST['consent'])) : '';
 
 		if (!in_array($consent, ['accepted', 'denied'], true)) {
 			if ($return_json) {
@@ -133,8 +146,6 @@ class ConsentHandler
 
 		// If consent granted via banner, upgrade current pageview from anonymous to PII
 		if ('accepted' === $consent) {
-			$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
-
 			if (!empty($pageview_id_raw)) {
 				$pageview_id = \SlimStat\Tracker\Utils::getValueWithoutChecksum($pageview_id_raw);
 				if (false !== $pageview_id && $pageview_id > 0) {

@@ -648,7 +648,13 @@ class wp_slimstat
         if (empty($_request['token'])) {
             return new WP_Error('rest_invalid', esc_html__('[REST API] Please use a valid token in order to access the REST API endpoint at this URL.', 'wp-slimstat'), ['status' => 400]);
         }
-        return in_array($_request['token'], self::string_to_array(self::$settings['rest_api_tokens']));
+        $valid_tokens = self::string_to_array(self::$settings['rest_api_tokens']);
+        foreach ($valid_tokens as $valid_token) {
+            if (is_string($valid_token) && is_string($_request['token']) && hash_equals($valid_token, $_request['token'])) {
+                return true;
+            }
+        }
+        return false;
     }
     // end rest_api_authorization
 
