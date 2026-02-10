@@ -907,7 +907,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
                     wp_slimstat::$settings[$a_post_slug] = sanitize_text_field($a_post_value);
                 } else {
-                    wp_slimstat::$settings[$a_post_slug] = $a_post_value;
+                    // Code editor content: strip all tags to prevent XSS
+                    wp_slimstat::$settings[$a_post_slug] = wp_strip_all_tags($a_post_value);
                 }
             }
 

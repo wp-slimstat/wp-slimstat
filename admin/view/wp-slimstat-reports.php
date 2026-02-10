@@ -1368,13 +1368,13 @@ class wp_slimstat_reports
                             $author = get_user_by('login', $author_username);
                             if ($author) {
                                 $author_id     = $author ? $author->ID : 0;
-                                $element_value = "<a href='" . get_author_posts_url($author_id) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
+                                $element_value = "<a href='" . esc_url(get_author_posts_url($author_id)) . "' class=\"slimstat-author-link\" title='" . esc_attr($author->user_login) . "'>";
                                 $element_value .= get_avatar($author_id, 18);
-                                $element_value .= $author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username;
+                                $element_value .= esc_html($author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username);
                                 $element_value .= '</a>';
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . $image_url . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . $author_username . ' (' . __('Unknown', 'wp-slimstat') . ')</a>';
+                                $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('Unknown', 'wp-slimstat') . ')</a>';
                             }
                         } else {
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
@@ -1425,19 +1425,19 @@ class wp_slimstat_reports
                         $base_url = parse_url(get_site_url($results[$i]['blog_id']));
                         $base_url = $base_url['scheme'] . '://' . $base_url['host'];
                     }
-                    $element_value = '<a target="_blank" class="slimstat-font-logout" title="' . __('Open this URL in a new window', 'wp-slimstat') . '" href="' . $base_url . htmlentities($results[$i]['resource'], ENT_QUOTES, 'UTF-8') . '"></a> ' . $base_url . $element_value;
+                    $element_value = '<a target="_blank" class="slimstat-font-logout" title="' . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . '" href="' . esc_url($base_url . $results[$i]['resource']) . '"></a> ' . esc_html($base_url) . $element_value;
                 }
 
                 if ('referer' == $_args['columns'] && !empty($_args['type']) && 'top' == $_args['type']) {
-                    $element_url = htmlentities($results[$i]['referer'], ENT_QUOTES, 'UTF-8');
+                    $element_url = $results[$i]['referer'];
                     if (false === strpos($element_url, 'http')) {
                         $element_url = 'https://' . $element_url;
                     }
-                    $element_value = '<a target="_blank" class="slimstat-font-logout" title="' . __('Open this URL in a new window', 'wp-slimstat') . '" href="' . $element_url . '"></a> ' . $element_value;
+                    $element_value = '<a target="_blank" class="slimstat-font-logout" title="' . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . '" href="' . esc_url($element_url) . '"></a> ' . $element_value;
                 }
 
                 if (is_admin() && !empty($results[$i]['ip']) && 'ip' != $_args['columns'] && 'on' != wp_slimstat::$settings['convert_ip_addresses']) {
-                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . self::fs_url('ip equals ' . $results[$i]['ip']) . '">' . $results[$i]['ip'] . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . $results[$i]['other_ip']) . '<a title="WHOIS: ' . $results[$i]['ip'] . '" class="slimstat-font-location-1 whois" href="' . wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip'] . '"></a>';
+                    $row_details .= '<br> IP: <a class="slimstat-filter-link" href="' . esc_url(self::fs_url('ip equals ' . $results[$i]['ip'])) . '">' . esc_html($results[$i]['ip']) . '</a>' . (empty($results[$i]['other_ip']) ? '' : ' / ' . esc_html($results[$i]['other_ip'])) . '<a title="WHOIS: ' . esc_attr($results[$i]['ip']) . '" class="slimstat-font-location-1 whois" href="' . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . '"></a>';
                 }
                 if ('' !== $row_details && '0' !== $row_details) {
                     $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);

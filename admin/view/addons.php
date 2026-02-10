@@ -27,18 +27,11 @@ if (!empty($_GET['force_refresh']) || false === $response) {
 }
 
 $at_least_one_add_on_active = false;
-// Security: Use JSON decode instead of unserialize to prevent PHP Object Injection
+// Security: Use JSON decode only to prevent PHP Object Injection
 $list_addons                = json_decode($response['body'], true);
 
 if (!is_array($list_addons)) {
-    // Fallback: Try to decode if server still sends serialized data (legacy support)
-    // Only allow specific classes to prevent object injection
-    if (is_string($response['body']) && strpos($response['body'], 'a:') === 0) {
-        $list_addons = @unserialize($response['body'], ['allowed_classes' => false]);
-    }
-    if (!is_array($list_addons)) {
-        $error_message = __('There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat');
-    }
+    $error_message = __('There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat');
 }
 ?>
 
