@@ -108,6 +108,21 @@ class RestApiManager
     }
 
     /**
+     * Generates a secure hash for adblock bypass requests.
+     * Uses hash_hmac with WordPress salt for security.
+     *
+     * @since 5.4.0
+     * @return string The secure hash (32 hex characters)
+     */
+    public static function getSecureAdblockHash(): string
+    {
+        $data = site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION;
+        // Use hash_hmac with WordPress auth salt for unpredictable hash
+        // Truncate to 32 chars to match the rewrite rule pattern
+        return substr(hash_hmac('sha256', $data, wp_salt('auth')), 0, 32);
+    }
+
+    /**
      * Handles the tracking request, for the adblocker bypass.
      *
      * @since 5.2.14
@@ -123,35 +138,39 @@ class RestApiManager
         $post_data = \wp_slimstat::$raw_post_array;
         $action = $post_data['action'] ?? '';
 
+        // Get secure hash using HMAC with WordPress salt
+        $expected_hash = self::getSecureAdblockHash();
+
         // Handle GDPR banner consent via adblock bypass (legacy separate request)
         if ('slimstat_gdpr_consent' === $action) {
-            $expected_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
-            if ($request_param === $expected_hash) {
+            if (hash_equals($expected_hash, $request_param)) {
                 \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent();
                 exit;
             }
         }
 
         // Handle tracking hits
-        $expected_tracking_hash = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
-        if ($request_param === $expected_tracking_hash) {
+        if (hash_equals($expected_hash, $request_param)) {
             // Check if consent parameters are present (from banner accept in tracking request)
             $banner_consent = $post_data['banner_consent'] ?? '';
             $banner_consent_nonce = $post_data['banner_consent_nonce'] ?? '';
 
             if (!empty($banner_consent) && in_array($banner_consent, ['accepted', 'denied'], true)) {
                 // Temporarily add consent parameters to $_POST for handleBannerConsent
+                // Use try/finally to ensure $_POST is restored even on exceptions
                 $original_post = $_POST;
-                $_POST['consent'] = sanitize_text_field($banner_consent);
-                if (!empty($banner_consent_nonce)) {
-                    $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
+                try {
+                    $_POST['consent'] = sanitize_text_field($banner_consent);
+                    if (!empty($banner_consent_nonce)) {
+                        $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
+                    }
+
+                    // Handle banner consent (without JSON response - continue to tracking)
+                    \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
+                } finally {
+                    // Restore original $_POST
+                    $_POST = $original_post;
                 }
-
-                // Handle banner consent (without JSON response - continue to tracking)
-                \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
-
-                // Restore original $_POST
-                $_POST = $original_post;
             }
 
             Tracker::slimtrack_ajax();
