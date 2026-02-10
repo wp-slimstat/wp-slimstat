@@ -32,6 +32,9 @@
 - **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 
+= 5.3.6 =
+* Security: Hardened output escaping in reports
+
 = 5.3.5 - 2025-12-31 =
 * Security: Hardened plugin security
 

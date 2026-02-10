@@ -89,6 +89,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
 [See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0)
 
+= 5.3.6 =
+* Security: Hardened output escaping in reports
+
 = 5.3.5 - 2025-12-31 =
 * Security: Hardened plugin security
 
