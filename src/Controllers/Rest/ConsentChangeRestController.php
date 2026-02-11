@@ -9,6 +9,13 @@ use SlimStat\Services\Privacy\ConsentHandler;
 use SlimStat\Tracker\Session;
 use SlimStat\Utils\Consent;
 
+// Don't load directly.
+if (!defined('ABSPATH')) {
+    header('Status: 403 Forbidden');
+    header('HTTP/1.1 403 Forbidden');
+    exit;
+}
+
 /**
  * REST API Controller for Consent Change Management
  *

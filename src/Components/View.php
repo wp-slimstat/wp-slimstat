@@ -38,7 +38,7 @@ class View
                 }
 
                 if (!empty($args)) {
-                    extract($args);
+                    extract($args, EXTR_SKIP);
                 }
 
                 // Return the template if requested

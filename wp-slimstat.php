@@ -1136,13 +1136,19 @@ class wp_slimstat
 
         // Copy entries to the archive table, if needed
         if ('no' != self::$settings['auto_purge_delete']) {
-            // Use Query builder for INSERT INTO ... SELECT ...
-            $insert_sql   = sprintf('INSERT INTO %s (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM %s WHERE dt < %s', $table_stats_archive, $table_stats, $days_ago);
+            // Use Query builder for INSERT INTO ... SELECT ... with prepared statements
+            $insert_sql   = self::$wpdb->prepare(
+                "INSERT INTO {$table_stats_archive} (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM {$table_stats} WHERE dt < %d",
+                $days_ago
+            );
             $is_copy_done = self::$wpdb->query($insert_sql);
             if (false !== $is_copy_done) {
                 \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
             }
-            $insert_sql_events = sprintf('INSERT INTO %s (type, event_description, notes, position, id, dt) SELECT type, event_description, notes, position, id, dt FROM %s WHERE dt < %s', $table_events_archive, $table_events, $days_ago);
+            $insert_sql_events = self::$wpdb->prepare(
+                "INSERT INTO {$table_events_archive} (type, event_description, notes, position, id, dt) SELECT type, event_description, notes, position, id, dt FROM {$table_events} WHERE dt < %d",
+                $days_ago
+            );
             $is_copy_done      = self::$wpdb->query($insert_sql_events);
             if (false !== $is_copy_done) {
                 \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();

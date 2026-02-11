@@ -619,7 +619,6 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 			wp_send_json_error( [
 				'message' => __( 'An error occurred while fetching data', 'wp-slimstat' ),
-				'trace' => WP_DEBUG ? $e->getTraceAsString() : null,
 			] );
 		} catch ( \Error $e ) {
 			// Log error for debugging
@@ -627,7 +626,6 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 			wp_send_json_error( [
 				'message' => __( 'A fatal error occurred while fetching data', 'wp-slimstat' ),
-				'trace' => WP_DEBUG ? $e->getTraceAsString() : null,
 			] );
 		}
 	}
