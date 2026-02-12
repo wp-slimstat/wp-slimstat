@@ -25,6 +25,10 @@ $countries_live = $data['countries_live'] ?? 0;
 $active_users_data = $data['active_users_per_minute'] ?? [];
 $last_updated = $data['last_updated'] ?? time();
 
+// Pro status and promo assets
+$is_pro = class_exists( 'wp_slimstat' ) && method_exists( 'wp_slimstat', 'pro_is_installed' ) && wp_slimstat::pro_is_installed();
+$promo_image_url = plugins_url( '/admin/assets/img/live-analytics-pro-placeholder.png', SLIMSTAT_FILE );
+
 // Chart data
 $chart_labels = $active_users_data['labels'] ?? [];
 $chart_data = $active_users_data['data'] ?? [];
@@ -104,48 +108,76 @@ $chart_id = 'live_chart_' . uniqid();
 
 		</div>
 
-		<!-- Right Panel: Chart -->
-		<div class="live-analytics-chart">
-			<div class="chart-header">
-				<div class="chart-title-wrapper">
-					<span class="live-indicator">
-						<span class="live-dot"></span>
-						<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
-					</span>
-					<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
+		<!-- Right Panel: Chart / Pro Upsell -->
+		<?php if ( $is_pro ) : ?>
+			<div class="live-analytics-chart">
+				<div class="chart-header">
+					<div class="chart-title-wrapper">
+						<span class="live-indicator">
+							<span class="live-dot"></span>
+							<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
+						</span>
+						<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
+					</div>
+				</div>
+				<div class="chart-container">
+					<canvas id="<?php echo esc_attr( $chart_id ); ?>"></canvas>
+					<div class="empty-state">
+						<p><?php esc_html_e( "We're not seeing activity in the last 30 minutes yet.", 'wp-slimstat' ); ?></p>
+					</div>
 				</div>
 			</div>
-			<div class="chart-container">
-				<canvas id="<?php echo esc_attr( $chart_id ); ?>"></canvas>
-				<div class="empty-state">
-					<p><?php esc_html_e( "We're not seeing activity in the last 30 minutes yet.", 'wp-slimstat' ); ?></p>
+		<?php else : ?>
+			<div class="live-analytics-chart live-analytics-chart--locked">
+				<div class="live-analytics-promo">
+					<img
+						class="live-analytics-promo-image"
+						src="<?php echo esc_url( $promo_image_url ); ?>"
+						alt="<?php esc_attr_e( 'Upgrade to Slimstat Pro to see realtime charts', 'wp-slimstat' ); ?>"
+					/>
+					<div class="live-analytics-promo-overlay">
+						<h2 class="live-analytics-promo-heading">
+							<span class="live-analytics-promo-title">
+								<?php esc_html_e( 'SlimStat Analytics Experience', 'wp-slimstat' ); ?>
+							</span>
+						</h2>
+						<a
+							target="_blank"
+							href="<?php echo esc_url( defined( 'SLIMSTAT_ANALYTICS_SITE' ) ? SLIMSTAT_ANALYTICS_SITE : 'https://wp-slimstat.com/' ); ?>"
+							class="go-pro-button live-analytics-promo-button"
+						>
+							<?php esc_html_e( 'Unlock SlimStat Pro', 'wp-slimstat' ); ?>
+						</a>
+					</div>
 				</div>
 			</div>
-		</div>
+		<?php endif; ?>
 
 	</div>
 
 
 </div>
 
-<script type="text/javascript">
-document.addEventListener('DOMContentLoaded', function() {
-	// Initialize Live Analytics
-	var config = {
-		report_id: '<?php echo esc_js( $report_id ); ?>',
-		chart_id: '<?php echo esc_js( $chart_id ); ?>',
-		chart_labels: <?php echo json_encode( $chart_labels ); ?>,
-		chart_data: <?php echo json_encode( $chart_data ); ?>,
-		peak_index: <?php echo json_encode( $peak_index ); ?>,
-		max_value: <?php echo json_encode( $max_value ); ?>,
-		auto_refresh: <?php echo $auto_refresh ? 'true' : 'false'; ?>,
-		refresh_interval: <?php echo intval( $refresh_interval ); ?>,
-		ajax_url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-		nonce: '<?php echo wp_create_nonce( 'slimstat_ajax_nonce' ); ?>',
-		current_metric: '<?php echo esc_js( $selected_metric ); ?>'
-	};
+<?php if ( $is_pro ) : ?>
+	<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function() {
+		// Initialize Live Analytics
+		var config = {
+			report_id: '<?php echo esc_js( $report_id ); ?>',
+			chart_id: '<?php echo esc_js( $chart_id ); ?>',
+			chart_labels: <?php echo json_encode( $chart_labels ); ?>,
+			chart_data: <?php echo json_encode( $chart_data ); ?>,
+			peak_index: <?php echo json_encode( $peak_index ); ?>,
+			max_value: <?php echo json_encode( $max_value ); ?>,
+			auto_refresh: <?php echo $auto_refresh ? 'true' : 'false'; ?>,
+			refresh_interval: <?php echo intval( $refresh_interval ); ?>,
+			ajax_url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
+			nonce: '<?php echo wp_create_nonce( 'slimstat_ajax_nonce' ); ?>',
+			current_metric: '<?php echo esc_js( $selected_metric ); ?>'
+		};
 
-	var liveAnalytics = new LiveAnalytics(config);
-	liveAnalytics.init();
-});
-</script>
+		var liveAnalytics = new LiveAnalytics(config);
+		liveAnalytics.init();
+	});
+	</script>
+<?php endif; ?>
