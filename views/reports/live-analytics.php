@@ -128,13 +128,56 @@ $chart_id = 'live_chart_' . uniqid();
 				</div>
 			</div>
 		<?php else : ?>
+			<?php
+			// Mock data for non-premium users preview
+			$mock_chart_id = 'live_chart_mock_' . uniqid();
+			$mock_labels   = array();
+			$mock_data     = array();
+
+			// Generate realistic-looking mock data
+			for ( $i = 29; $i >= 0; $i-- ) {
+				// Create a wave-like pattern with some randomness
+				$base_value  = 15 + sin( $i * 0.3 ) * 8;
+				$mock_data[] = max( 2, round( $base_value + ( $i % 5 ) * 2 ) );
+
+				// Labels
+				if ( 29 === $i ) {
+					$mock_labels[] = '-30 Min';
+				} elseif ( 25 === $i ) {
+					$mock_labels[] = '-25 Min';
+				} elseif ( 20 === $i ) {
+					$mock_labels[] = '-20 Min';
+				} elseif ( 15 === $i ) {
+					$mock_labels[] = '-15 Min';
+				} elseif ( 10 === $i ) {
+					$mock_labels[] = '-10 Min';
+				} elseif ( 5 === $i ) {
+					$mock_labels[] = '-5 Min';
+				} elseif ( 0 === $i ) {
+					$mock_labels[] = '-1 Min';
+				} else {
+					$mock_labels[] = '';
+				}
+			}
+			?>
 			<div class="live-analytics-chart live-analytics-chart--locked">
 				<div class="live-analytics-promo">
-					<img
-						class="live-analytics-promo-image"
-						src="<?php echo esc_url( $promo_image_url ); ?>"
-						alt="<?php esc_attr_e( 'Upgrade to Slimstat Pro to see realtime charts', 'wp-slimstat' ); ?>"
-					/>
+					<!-- Blurred mock chart background -->
+					<div class="live-analytics-mock-chart-wrapper">
+						<div class="chart-header">
+							<div class="chart-title-wrapper">
+								<span class="live-indicator">
+									<span class="live-dot"></span>
+									<span class="live-text"><?php esc_html_e( 'LIVE', 'wp-slimstat' ); ?></span>
+								</span>
+								<h4><?php esc_html_e( 'Online users per minute', 'wp-slimstat' ); ?></h4>
+							</div>
+						</div>
+						<div class="chart-container">
+							<canvas id="<?php echo esc_attr( $mock_chart_id ); ?>"></canvas>
+						</div>
+					</div>
+					<!-- Promo overlay (not blurred) -->
 					<div class="live-analytics-promo-overlay">
 						<h2 class="live-analytics-promo-heading">
 							<span class="live-analytics-promo-title">
@@ -151,6 +194,91 @@ $chart_id = 'live_chart_' . uniqid();
 					</div>
 				</div>
 			</div>
+			<script type="text/javascript">
+			document.addEventListener('DOMContentLoaded', function() {
+				if (typeof Chart === 'undefined') {
+					return;
+				}
+
+				var canvas = document.getElementById('<?php echo esc_js( $mock_chart_id ); ?>');
+				if (!canvas) {
+					return;
+				}
+
+				var ctx = canvas.getContext('2d');
+				if (!ctx) {
+					return;
+				}
+
+				var mockLabels = <?php echo wp_json_encode( $mock_labels ); ?>;
+				var mockData = <?php echo wp_json_encode( $mock_data ); ?>;
+
+				new Chart(ctx, {
+					type: 'bar',
+					data: {
+						labels: mockLabels,
+						datasets: [{
+							label: 'Active Users',
+							data: mockData,
+							backgroundColor: mockData.map(function() { return '#E6E6E6'; }),
+							borderColor: 'transparent',
+							borderWidth: 0,
+							borderRadius: {
+								topLeft: 100,
+								topRight: 100,
+								bottomLeft: 0,
+								bottomRight: 0
+							},
+							borderSkipped: false,
+							barPercentage: 0.7,
+							categoryPercentage: 0.8,
+							minBarLength: 3
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: { display: false },
+							tooltip: { enabled: false }
+						},
+						scales: {
+							x: {
+								display: true,
+								grid: { display: false },
+								border: { display: true, color: '#EBEBEB', dash: [5, 5] },
+								ticks: {
+									color: '#9BA1A6',
+									font: { size: 12, weight: '600' },
+									maxRotation: 0,
+									autoSkip: false
+								},
+								offset: true
+							},
+							y: {
+								display: true,
+								position: 'right',
+								beginAtZero: true,
+								min: 0,
+								max: 30,
+								grid: { display: false },
+								border: { display: false },
+								ticks: {
+									color: '#9BA1A6',
+									font: { size: 12, weight: '600' },
+									count: 3,
+									callback: function(value) {
+										return value === 0 ? '' : Math.floor(value);
+									}
+								}
+							}
+						},
+						animation: { duration: 0 },
+						interaction: { intersect: false, mode: 'index' }
+					}
+				});
+			});
+			</script>
 		<?php endif; ?>
 
 	</div>
