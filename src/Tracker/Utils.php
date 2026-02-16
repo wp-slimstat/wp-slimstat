@@ -17,13 +17,25 @@ class Utils
 
 	public static function getValueWithChecksum($value = 0)
 	{
-		return $value . '.' . md5($value . (\wp_slimstat::$settings['secret'] ?? ''));
+		$secret = \wp_slimstat::$settings['secret'] ?? '';
+		if (empty($secret)) {
+			$secret = defined('AUTH_KEY') ? AUTH_KEY : 'slimstat_default_key';
+		}
+		return $value . '.' . hash_hmac('sha256', (string) $value, $secret);
 	}
 
 	public static function getValueWithoutChecksum($valueWithChecksum = '')
 	{
-		[$value, $checksum] = explode('.', $valueWithChecksum);
-		if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
+		$parts = explode('.', $valueWithChecksum);
+		if (count($parts) !== 2) {
+			return false;
+		}
+		[$value, $checksum] = $parts;
+		$secret = \wp_slimstat::$settings['secret'] ?? '';
+		if (empty($secret)) {
+			$secret = defined('AUTH_KEY') ? AUTH_KEY : 'slimstat_default_key';
+		}
+		if (hash_equals($checksum, hash_hmac('sha256', (string) $value, $secret))) {
 			return $value;
 		}
 
@@ -121,7 +133,9 @@ class Utils
 		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
 			if (!empty($_SERVER[$header])) {
-				foreach (explode(',', $_SERVER[$header]) as $ip) {
+				$headerValue = sanitize_text_field(wp_unslash($_SERVER[$header]));
+				foreach (explode(',', $headerValue) as $ip) {
+					$ip = trim($ip);
 					if (false !== filter_var($ip, FILTER_VALIDATE_IP) && $ip != $ipArray[0]) {
 						$ipArray[1] = $ip;
 						break;
@@ -136,7 +150,8 @@ class Utils
 	public static function getLanguage()
 	{
 		if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-			preg_match('/([^,;]*)/', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $arrayLanguages);
+			$acceptLanguage = sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT_LANGUAGE']));
+			preg_match('/([^,;]*)/', $acceptLanguage, $arrayLanguages);
 			return str_replace('_', '-', strtolower($arrayLanguages[0]));
 		}
 

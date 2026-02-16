@@ -143,7 +143,7 @@ class Processor
         }
 
         if (empty($stat['searchterms']) && !empty($_POST['s'])) {
-            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', $_REQUEST['s']));
+            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($_POST['s'])));
         }
 
         if (!isset($stat['content_type'])) {
@@ -334,21 +334,18 @@ class Processor
 				$piiAllowed = Consent::piiAllowed(true);
 
 				// Allow explicit visit_id from client to target original anonymous record
+				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
 				$requestedVisitId = 0;
 				if (!empty($_REQUEST['visit_id'])) {
 					$visitIdRaw = sanitize_text_field(wp_unslash($_REQUEST['visit_id']));
 					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
-					} elseif (is_numeric($visitIdRaw)) {
-						$requestedVisitId = intval($visitIdRaw);
 					}
 				} elseif (!empty($data_js['visit_id'])) {
 					$visitIdValue = Utils::getValueWithoutChecksum($data_js['visit_id']);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
-					} elseif (is_numeric($data_js['visit_id'])) {
-						$requestedVisitId = intval($data_js['visit_id']);
 					}
 				}
 

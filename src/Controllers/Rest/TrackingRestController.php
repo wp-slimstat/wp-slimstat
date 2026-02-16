@@ -40,12 +40,15 @@ class TrackingRestController implements RestControllerInterface
 
         if (!empty($banner_consent) && in_array($banner_consent, ['accepted', 'denied'], true)) {
             // Pass consent data directly to handleBannerConsent without manipulating $_POST
+            // Security: Nonce verification is performed inside handleBannerConsent via wp_verify_nonce()
+            // The nonce must be provided in banner_consent_nonce parameter and verified against 'wp_rest'
             $consent_data = [
-                'consent' => $banner_consent,
-                'nonce'   => $banner_consent_nonce ?? '',
+                'consent' => sanitize_text_field($banner_consent),
+                'nonce'   => !empty($banner_consent_nonce) ? sanitize_text_field($banner_consent_nonce) : '',
             ];
 
             // Handle banner consent (without JSON response - continue to tracking)
+            // If nonce verification fails, handleBannerConsent returns false and consent is not changed
             \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
         }
 

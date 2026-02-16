@@ -8,7 +8,7 @@ class Ajax
 {
     public static function handle()
     {
-        $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
         if (!empty($remote_ip)) {
             $key        = 'slimstat_rl_' . md5($remote_ip);
             $hits_in_5s = (int) get_transient($key);

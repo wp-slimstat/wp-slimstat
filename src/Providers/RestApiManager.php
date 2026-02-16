@@ -156,21 +156,14 @@ class RestApiManager
             $banner_consent_nonce = $post_data['banner_consent_nonce'] ?? '';
 
             if (!empty($banner_consent) && in_array($banner_consent, ['accepted', 'denied'], true)) {
-                // Temporarily add consent parameters to $_POST for handleBannerConsent
-                // Use try/finally to ensure $_POST is restored even on exceptions
-                $original_post = $_POST;
-                try {
-                    $_POST['consent'] = sanitize_text_field($banner_consent);
-                    if (!empty($banner_consent_nonce)) {
-                        $_POST['nonce'] = sanitize_text_field($banner_consent_nonce);
-                    }
+                // Pass consent data directly to handleBannerConsent instead of modifying $_POST
+                $consent_data = [
+                    'consent' => sanitize_text_field($banner_consent),
+                    'nonce'   => !empty($banner_consent_nonce) ? sanitize_text_field($banner_consent_nonce) : '',
+                ];
 
-                    // Handle banner consent (without JSON response - continue to tracking)
-                    \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false);
-                } finally {
-                    // Restore original $_POST
-                    $_POST = $original_post;
-                }
+                // Handle banner consent (without JSON response - continue to tracking)
+                \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
             }
 
             Tracker::slimtrack_ajax();

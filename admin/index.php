@@ -1898,8 +1898,8 @@ class wp_slimstat_admin
                     return $tag;
                 }, 10, 2);
                 wp_enqueue_script('feedbackbird-widget');
-                wp_add_inline_script('feedbackbird-widget', sprintf('var feedbackBirdObject = %s;', json_encode([
-                    'user_email' => function_exists('wp_get_current_user') ? wp_get_current_user()->user_email : '',
+                wp_add_inline_script('feedbackbird-widget', sprintf('var feedbackBirdObject = %s;', wp_json_encode([
+                    'user_email' => function_exists('wp_get_current_user') ? esc_attr(wp_get_current_user()->user_email) : '',
                     'platform'   => 'wordpress-admin',
                     'config'     => [
                         'color'         => '#e8294c',
@@ -1930,9 +1930,9 @@ class wp_slimstat_admin
 
     public static function get_template($template, $args = [], $return = false)
     {
-        // Push Args
+        // Push Args - use EXTR_SKIP to prevent variable overwriting for security
         if (is_array($args) && isset($args)) :
-            extract($args);
+            extract($args, EXTR_SKIP);
         endif;
 
         // Check Load single file or array list

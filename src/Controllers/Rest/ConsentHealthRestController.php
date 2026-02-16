@@ -82,9 +82,10 @@ class ConsentHealthRestController implements RestControllerInterface
 
 			foreach ($rcb_cookies as $cookie_name_check) {
 				foreach ($_COOKIE as $name => $value) {
-					if (strpos($name, $cookie_name_check) === 0) {
+					$sanitized_name = sanitize_text_field(wp_unslash($name));
+					if (strpos($sanitized_name, $cookie_name_check) === 0) {
 						$found_cookie = true;
-						$cookie_name = $name;
+						$cookie_name = $sanitized_name;
 						break 2;
 					}
 				}

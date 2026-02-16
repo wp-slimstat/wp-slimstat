@@ -77,7 +77,7 @@ class Session
 		}
 
 		if (isset($_COOKIE['slimstat_tracking_code'])) {
-			$identifier = Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+			$identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
 			if (false === $identifier) {
 				return false;
 			}
@@ -315,7 +315,7 @@ class Session
 		}
 
 		[$ip, $other_ip] = Utils::getRemoteIp();
-		$user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+		$user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
 		$client_ip = !empty($other_ip) ? $other_ip : $ip;
 
 		$current_timestamp = \wp_slimstat::date_i18n('U');

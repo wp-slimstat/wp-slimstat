@@ -13,7 +13,7 @@ class Request
      */
     public static function get($key, $default = null)
     {
-        return isset($_GET[$key]) ? \sanitize_text_field($_GET[$key]) : $default;
+        return isset($_GET[$key]) ? \sanitize_text_field(\wp_unslash($_GET[$key])) : $default;
     }
 
     /**
@@ -25,7 +25,7 @@ class Request
      */
     public static function post($key, $default = null)
     {
-        return isset($_POST[$key]) ? \sanitize_text_field($_POST[$key]) : $default;
+        return isset($_POST[$key]) ? \sanitize_text_field(\wp_unslash($_POST[$key])) : $default;
     }
 
     /**
@@ -37,6 +37,6 @@ class Request
      */
     public static function request($key, $default = null)
     {
-        return isset($_REQUEST[$key]) ? \sanitize_text_field($_REQUEST[$key]) : $default;
+        return isset($_REQUEST[$key]) ? \sanitize_text_field(\wp_unslash($_REQUEST[$key])) : $default;
     }
 }
