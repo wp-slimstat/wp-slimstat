@@ -39,6 +39,9 @@ class ConsentChangeRestController implements RestControllerInterface
 			[
 				'methods'             => 'POST',
 				'callback'            => [$this, 'handle_consent_change'],
+				// Security: Public endpoint with nonce verification in handle_consent_change().
+				// Nonce is required and verified via wp_verify_nonce() before any state changes.
+				// This endpoint only modifies the current user's own consent state (cookie-based).
 				'permission_callback' => '__return_true',
 				'args'                => [
 					'source' => [
@@ -50,24 +53,77 @@ class ConsentChangeRestController implements RestControllerInterface
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'parsed' => [
-						'required' => true,
-						'type'     => 'array',
+						'required'          => true,
+						'type'              => 'array',
+						'validate_callback' => function ($param) {
+							if (!is_array($param)) {
+								return false;
+							}
+							$allowed_keys = ['functional', 'statistics', 'statistics_anonymous', 'marketing', 'preferences'];
+							foreach (array_keys($param) as $key) {
+								if (!in_array($key, $allowed_keys, true)) {
+									return false;
+								}
+							}
+							return true;
+						},
+						'sanitize_callback' => function ($param) {
+							if (!is_array($param)) {
+								return [];
+							}
+							$sanitized = [];
+							$allowed_keys = ['functional', 'statistics', 'statistics_anonymous', 'marketing', 'preferences'];
+							foreach ($param as $key => $value) {
+								if (in_array($key, $allowed_keys, true)) {
+									$sanitized[sanitize_key($key)] = sanitize_text_field($value);
+								}
+							}
+							return $sanitized;
+						},
 					],
 					'ts'     => [
-						'required' => false,
-						'type'     => 'integer',
+						'required'          => false,
+						'type'              => 'integer',
+						'sanitize_callback' => 'absint',
 					],
 					'mode'   => [
-						'required' => false,
-						'type'     => 'array',
+						'required'          => false,
+						'type'              => 'array',
+						'validate_callback' => function ($param) {
+							if (!is_array($param)) {
+								return false;
+							}
+							$allowed_keys = ['anonymous_tracking', 'hash_ip', 'anonymize_ip'];
+							foreach (array_keys($param) as $key) {
+								if (!in_array($key, $allowed_keys, true)) {
+									return false;
+								}
+							}
+							return true;
+						},
+						'sanitize_callback' => function ($param) {
+							if (!is_array($param)) {
+								return [];
+							}
+							$sanitized = [];
+							$allowed_keys = ['anonymous_tracking', 'hash_ip', 'anonymize_ip'];
+							foreach ($param as $key => $value) {
+								if (in_array($key, $allowed_keys, true)) {
+									$sanitized[sanitize_key($key)] = sanitize_text_field($value);
+								}
+							}
+							return $sanitized;
+						},
 					],
 					'pageview_id' => [
-						'required' => false,
-						'type'     => 'string',
+						'required'          => false,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'nonce'  => [
-						'required' => true,
-						'type'     => 'string',
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
 					],
 				],
 			]

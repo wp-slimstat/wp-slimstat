@@ -35,7 +35,10 @@ class GDPRBannerRestController implements RestControllerInterface
 			[
 				'methods'             => 'POST',
 				'callback'            => [$this, 'handle_consent'],
-				'permission_callback' => '__return_true', // Public endpoint
+				// Security: Public endpoint with nonce verification in handle_consent().
+				// Nonce is required and verified via wp_verify_nonce() before any state changes.
+				// This endpoint only sets the current user's own consent cookie.
+				'permission_callback' => '__return_true',
 				'args'                => [
 					'consent' => [
 						'required'          => true,
@@ -46,8 +49,9 @@ class GDPRBannerRestController implements RestControllerInterface
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'nonce'   => [
-						'required' => true,
-						'type'     => 'string',
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
 					],
 				],
 			]

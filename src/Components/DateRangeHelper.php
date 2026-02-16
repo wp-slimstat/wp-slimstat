@@ -388,14 +388,14 @@ class DateRangeHelper
         
         // Fallback to date range display
         $date_format = get_option('date_format');
-        
-        $start_date = date($date_format, $start_timestamp);
-        $end_date = date($date_format, $end_timestamp);
-        
+
+        $start_date = wp_date($date_format, $start_timestamp);
+        $end_date = wp_date($date_format, $end_timestamp);
+
         if ($start_date === $end_date) {
             return $start_date;
         }
-        
+
         return $start_date . ' – ' . $end_date;
     }
 }

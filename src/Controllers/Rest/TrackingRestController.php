@@ -20,7 +20,92 @@ class TrackingRestController implements RestControllerInterface
         register_rest_route('slimstat/v1', '/hit', [
             'methods'             => 'POST',
             'callback'            => [$this, 'handle_tracking'],
-            'permission_callback' => '__return_true',
+            'permission_callback' => '__return_true', // Public analytics endpoint - nonce verified for consent operations
+            'args'                => [
+                'banner_consent' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'validate_callback' => function ($param) {
+                        return empty($param) || in_array($param, ['accepted', 'denied'], true);
+                    },
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'banner_consent_nonce' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'id' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'ref' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'res' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'sw' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'sh' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'bw' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'bh' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'sl' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'pp' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'absint',
+                ],
+                'fh' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'tz' => [
+                    'required'          => false,
+                    'type'              => 'integer',
+                    'sanitize_callback' => 'intval',
+                ],
+                'pos' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'no' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+                'ci' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
         ]);
     }
 
