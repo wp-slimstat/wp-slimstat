@@ -1,0 +1,375 @@
+/* =============================================
+   SlimStat Admin Bar Modal - Enhanced UI
+   ============================================= */
+
+/* Reset and base styles for all elements inside dropdown */
+#wpadminbar #wp-admin-bar-slimstat-header * {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+/* Dropdown container */
+#wpadminbar #wp-admin-bar-slimstat-header > .ab-sub-wrapper {
+    width: 360px !important;
+    min-width: 360px !important;
+    max-width: 360px !important;
+    background: linear-gradient(180deg, #1D2327 0%, #191D20 100%) !important;
+    border: 1px solid #3C4349 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.05) inset !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    margin-top: 6px !important;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Remove ALL default admin bar item styles */
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li {
+    float: none !important;
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > .ab-item,
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > .ab-empty-item,
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > a {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    line-height: normal !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    color: inherit !important;
+    text-decoration: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    white-space: normal !important;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > .ab-item:hover,
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > .ab-empty-item:hover,
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li > a:hover,
+#wpadminbar #wp-admin-bar-slimstat-header .ab-submenu > li:hover {
+    background: transparent !important;
+    color: inherit !important;
+}
+
+/* ---- Tabs ---- */
+#wpadminbar .slimstat-adminbar__tabs {
+    display: flex !important;
+    border-bottom: 1px solid #3C4349 !important;
+    background: #1D2327 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__tab {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 14px 12px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    color: #72777c !important;
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    margin: 0 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__tab--active {
+    background: rgba(255,255,255,0.03) !important;
+    color: #FFFFFF !important;
+    border-bottom: 2px solid #4B6EF5 !important;
+}
+
+#wpadminbar .slimstat-adminbar__tab--disabled {
+    color: #50575e !important;
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+/* ---- Stats Grid ---- */
+#wpadminbar .slimstat-adminbar__stats-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 14px !important;
+    background: transparent !important;
+    margin: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-card {
+    background: linear-gradient(145deg, #2C3338 0%, #262B2F 100%) !important;
+    border: 1px solid #3C4349 !important;
+    border-radius: 10px !important;
+    padding: 14px !important;
+    margin: 0 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-card:hover {
+    border-color: #4B6EF5 !important;
+    box-shadow: 0 4px 12px rgba(75,110,245,0.15) !important;
+    transform: translateY(-1px) !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-title {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #8C9196 !important;
+    margin: 0 0 6px 0 !important;
+    padding: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    line-height: 1.3 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-count {
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    color: #FFFFFF !important;
+    line-height: 1.1 !important;
+    margin: 0 0 4px 0 !important;
+    padding: 0 !important;
+    letter-spacing: -0.5px !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-comparison {
+    font-size: 11px !important;
+    font-weight: 400 !important;
+    color: #6B7075 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.4 !important;
+}
+
+/* ---- Realtime Badge ---- */
+#wpadminbar .slimstat-adminbar__realtime-dot {
+    display: inline-block !important;
+    width: 6px !important;
+    height: 6px !important;
+    background: #18A456 !important;
+    border-radius: 50% !important;
+    vertical-align: middle !important;
+    margin-left: 6px !important;
+    box-shadow: 0 0 8px rgba(24,164,86,0.6) !important;
+    animation: slimstat-glow 2s ease-in-out infinite !important;
+}
+
+#wpadminbar .slimstat-adminbar__realtime-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    background: linear-gradient(135deg, #18A456 0%, #14904A 100%) !important;
+    color: #FFFFFF !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    padding: 4px 10px !important;
+    border-radius: 12px !important;
+    margin-top: 6px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 2px 8px rgba(24,164,86,0.3) !important;
+}
+
+#wpadminbar .slimstat-adminbar__realtime-pulse {
+    display: inline-block !important;
+    width: 6px !important;
+    height: 6px !important;
+    background: #FFFFFF !important;
+    border-radius: 50% !important;
+    animation: slimstat-pulse 1.5s ease-in-out infinite !important;
+}
+
+@keyframes slimstat-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+@keyframes slimstat-glow {
+    0%, 100% { box-shadow: 0 0 8px rgba(24,164,86,0.6); }
+    50% { box-shadow: 0 0 16px rgba(24,164,86,0.9); }
+}
+
+/* ---- CSS Bar Chart ---- */
+#wpadminbar .slimstat-adminbar__chart-container {
+    padding: 6px 14px 14px 14px !important;
+    position: relative !important;
+    background: transparent !important;
+    margin: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bars {
+    display: flex !important;
+    align-items: flex-end !important;
+    gap: 3px !important;
+    height: 70px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: rgba(255,255,255,0.02) !important;
+    border-radius: 8px !important;
+    padding: 8px !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar {
+    flex: 1 !important;
+    background: linear-gradient(180deg, #4a5058 0%, #3a4048 100%) !important;
+    border-radius: 3px 3px 0 0 !important;
+    min-height: 4px !important;
+    transition: all 0.3s ease !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar:hover {
+    background: linear-gradient(180deg, #5a6068 0%, #4a5058 100%) !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar--peak {
+    background: linear-gradient(180deg, #F22F46 0%, #D91E36 100%) !important;
+    box-shadow: 0 0 12px rgba(242,47,70,0.4) !important;
+}
+
+/* Blur overlay for free users */
+#wpadminbar .slimstat-adminbar__chart-blur {
+    filter: blur(5px) !important;
+    pointer-events: none !important;
+    position: relative !important;
+    opacity: 0.7 !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-blur::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(29, 35, 39, 0.4) !important;
+    border-radius: 8px !important;
+}
+
+/* ---- CTA Banner ---- */
+#wpadminbar .slimstat-adminbar__cta {
+    padding: 18px 16px !important;
+    text-align: center !important;
+    border-top: 1px solid #3C4349 !important;
+    background: linear-gradient(180deg, rgba(75,110,245,0.08) 0%, rgba(75,110,245,0.03) 100%) !important;
+    margin: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__cta-text {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #E4E6E8 !important;
+    margin: 0 0 14px 0 !important;
+    padding: 0 !important;
+    line-height: 1.5 !important;
+}
+
+#wpadminbar .slimstat-adminbar__cta-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    background: linear-gradient(135deg, #4B6EF5 0%, #3B5ED5 100%) !important;
+    color: #FFFFFF !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    padding: 10px 24px !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
+    border: none !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(75,110,245,0.35) !important;
+}
+
+#wpadminbar .slimstat-adminbar__cta-button:hover {
+    background: linear-gradient(135deg, #5B7EFF 0%, #4B6EF5 100%) !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(75,110,245,0.45) !important;
+}
+
+/* ---- Footer ---- */
+#wpadminbar .slimstat-adminbar__footer {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 12px 14px !important;
+    border-top: 1px solid #3C4349 !important;
+    background: #16191C !important;
+    margin: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-logo {
+    display: flex !important;
+    align-items: center !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-logo svg {
+    display: block !important;
+    opacity: 0.6 !important;
+    height: 18px !important;
+    width: auto !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-link {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #8C9196 !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 6px 10px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-link:hover {
+    color: #FFFFFF !important;
+    background: rgba(255,255,255,0.08) !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-link .dashicons {
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
+}
+
+/* ---- Parent menu item styling ---- */
+#wpadminbar #wp-admin-bar-slimstat-header > .ab-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-header > .ab-item .ab-icon {
+    color: #A7AAAD !important;
+    margin-right: 2px !important;
+}
+
+#wpadminbar #wp-admin-bar-slimstat-header:hover > .ab-item .ab-icon {
+    color: #FFFFFF !important;
+}
