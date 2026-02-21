@@ -29,7 +29,26 @@ class Ajax
         \wp_slimstat::set_data_js(apply_filters('slimstat_filter_pageview_data_js', \wp_slimstat::$raw_post_array));
         $data_js   = \wp_slimstat::get_data_js();
         $stat      = \wp_slimstat::get_stat();
+
         $site_host = parse_url(get_site_url(), PHP_URL_HOST);
+        $home_host = parse_url(home_url(), PHP_URL_HOST);
+        $http_host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
+        $allowed_hosts = array_filter([$site_host, $home_host, $http_host]);
+        $normalize_host = static function ($host) {
+            $host = strtolower((string) $host);
+            $host = preg_replace('/:\\d+$/', '', $host);
+            if (0 === strpos($host, 'www.')) {
+                $host = substr($host, 4);
+            }
+            return $host;
+        };
+        $allowed_hosts = array_unique(array_map($normalize_host, $allowed_hosts));
+        $is_allowed_host = static function ($host) use ($allowed_hosts, $normalize_host) {
+            if (empty($host)) {
+                return false;
+            }
+            return in_array($normalize_host($host), $allowed_hosts, true);
+        };
 
         // Check if this is a consent upgrade request (needed for IP processing and later checks)
         $isConsentUpgrade = !empty($data_js['consent_upgrade']) && '1' === $data_js['consent_upgrade'];
@@ -116,7 +135,7 @@ class Ajax
                     $site_host = parse_url(get_site_url(), PHP_URL_HOST);
                     if (false !== $parsed_resource && !empty($parsed_resource['host'])) {
                         // Security: Whitelist validation - only allow current site domain
-                        if ($parsed_resource['host'] !== $site_host) {
+                        if (!$is_allowed_host($parsed_resource['host'])) {
                             // Invalid host - reject request
                             exit(Utils::logError(203));
                         }
@@ -292,7 +311,7 @@ class Ajax
                         // Update stat before processing
                         \wp_slimstat::set_stat($stat);
                         $id = Processor::process();
-                    } elseif ($parsed_resource['host'] != $site_host) {
+                    } elseif (!$is_allowed_host($parsed_resource['host'])) {
                         $stat['outbound_resource'] = $resource;
                         $stat['dt_out']             = \wp_slimstat::date_i18n('U');
 
