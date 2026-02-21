@@ -17,6 +17,21 @@ $translations = array_merge(
     ]
 );
 
+if (! is_array($args)) {
+    $args = [];
+}
+
+$args = wp_parse_args(
+    $args,
+    [
+        'start'       => 0,
+        'end'         => 0,
+        'granularity' => 'daily',
+        'chart_type'  => 'line',
+        'id'          => '',
+    ]
+);
+
 $availableRange = $args['end'] - $args['start'];
 $disableYearly  = $availableRange < (365 * 86400); // Less than 1 year of data
 $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
