@@ -1076,29 +1076,38 @@ class wp_slimstat_admin
         ));
         $online_count = max(0, $online_count);
 
-        // Query minute-by-minute data for the CSS bar chart (30-minute window)
-        // Using a single optimized query with grouping by minute bucket
-        $minute_data_raw = $wpdb->get_results($wpdb->prepare(
-            "SELECT
-                FLOOR(dt / 60) * 60 AS minute_bucket,
-                COUNT(DISTINCT visit_id) AS visitor_count
-             FROM {$table}
-             WHERE dt >= %d AND dt <= %d AND visit_id > 0
-             GROUP BY minute_bucket
-             ORDER BY minute_bucket ASC",
-            $window_start, $current_minute_start + 59
-        ), ARRAY_A);
+        // Determine premium status early (needed for chart data)
+        $is_pro = wp_slimstat::pro_is_installed();
 
-        // Build minute data array (30 slots)
-        $minute_data = array_fill(0, 30, 0);
-        foreach ($minute_data_raw as $row) {
-            $bucket = (int) $row['minute_bucket'];
-            $index = (int) (($bucket - $window_start) / 60);
-            if ($index >= 0 && $index < 30) {
-                $minute_data[$index] = (int) $row['visitor_count'];
+        // Query minute-by-minute data for the CSS bar chart (30-minute window)
+        // Only fetch real data for Pro users
+        if ($is_pro) {
+            $minute_data_raw = $wpdb->get_results($wpdb->prepare(
+                "SELECT
+                    FLOOR(dt / 60) * 60 AS minute_bucket,
+                    COUNT(DISTINCT visit_id) AS visitor_count
+                 FROM {$table}
+                 WHERE dt >= %d AND dt <= %d AND visit_id > 0
+                 GROUP BY minute_bucket
+                 ORDER BY minute_bucket ASC",
+                $window_start, $current_minute_start + 59
+            ), ARRAY_A);
+
+            // Build minute data array (30 slots)
+            $minute_data = array_fill(0, 30, 0);
+            foreach ($minute_data_raw as $row) {
+                $bucket = (int) $row['minute_bucket'];
+                $index = (int) (($bucket - $window_start) / 60);
+                if ($index >= 0 && $index < 30) {
+                    $minute_data[$index] = (int) $row['visitor_count'];
+                }
             }
+            $max_count = max(1, max($minute_data));
+        } else {
+            // Fake placeholder data for non-Pro users
+            $minute_data = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10, 7, 5, 6, 8, 9, 7, 6, 5, 8, 10, 9, 7, 6, 8, 5, 7, 6, 8];
+            $max_count = 10;
         }
-        $max_count = max(1, max($minute_data)); // avoid division by zero
 
         // Build chart HTML
         $chart_bars = '';
@@ -1112,9 +1121,6 @@ class wp_slimstat_admin
                 max($height_pct, 3) // minimum 3% for visibility
             );
         }
-
-        // Determine premium status and build URLs
-        $is_pro = wp_slimstat::pro_is_installed();
         $view_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=');
         $overview_url = $view_url . 'slimview2';
         $upgrade_url = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=adminbar';
@@ -1127,46 +1133,16 @@ class wp_slimstat_admin
             'href'  => $overview_url,
         ]);
 
-        // Add tabs node
-        $tabs_html = '<div class="slimstat-adminbar__tabs">'
-            . '<div class="slimstat-adminbar__tab slimstat-adminbar__tab--active">'
-            . esc_html__('Global Data', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__tab slimstat-adminbar__tab--disabled" title="'
-            . ($is_pro ? '' : esc_attr__('Available with SlimStat Pro', 'wp-slimstat')) . '">'
-            . esc_html__('Current Page Data', 'wp-slimstat') . '</div>'
-            . '</div>';
-
-        $GLOBALS['wp_admin_bar']->add_node([
-            'id'     => 'slimstat-adminbar-tabs',
-            'parent' => 'slimstat-header',
-            'title'  => $tabs_html,
-            'meta'   => ['class' => 'slimstat-adminbar__tabs-wrapper'],
-        ]);
-
         // Add stats grid node
+        // For non-Pro users, show fake data for Views and Referrals
+        $views_display = $is_pro ? number_format_i18n($views_today) : '248';
+        $views_yesterday_display = $is_pro ? number_format_i18n($views_yesterday) : '312';
+        $referrals_display = $is_pro ? number_format_i18n($referrals_today) : '18';
+        $referrals_yesterday_display = $is_pro ? number_format_i18n($referrals_yesterday) : '24';
+        $blur_class = $is_pro ? '' : ' slimstat-adminbar__stat-card--blur';
+
         $stats_html = '<div class="slimstat-adminbar__stats-grid">'
-            // Visitors Today
-            . '<div class="slimstat-adminbar__stat-card">'
-            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Visitors Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($visitors_today) . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($visitors_yesterday))
-            . '</div></div>'
-            // Views Today
-            . '<div class="slimstat-adminbar__stat-card">'
-            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($views_today) . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($views_yesterday))
-            . '</div></div>'
-            // Referrals Today
-            . '<div class="slimstat-adminbar__stat-card">'
-            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($referrals_today) . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($referrals_yesterday))
-            . '</div></div>'
-            // Online Users
+            // Online Users (top left)
             . '<div class="slimstat-adminbar__stat-card">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Online Users', 'wp-slimstat')
             . ' <span class="slimstat-adminbar__realtime-dot"></span></div>'
@@ -1175,6 +1151,27 @@ class wp_slimstat_admin
             . '<span class="slimstat-adminbar__realtime-pulse"></span> '
             . esc_html__('Realtime', 'wp-slimstat') . '</div>'
             . '</div>'
+            // Visitors Today (top right)
+            . '<div class="slimstat-adminbar__stat-card">'
+            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Visitors Today', 'wp-slimstat') . '</div>'
+            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($visitors_today) . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison">'
+            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($visitors_yesterday))
+            . '</div></div>'
+            // Views Today (bottom left) - blur for non-Pro
+            . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
+            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
+            . '<div class="slimstat-adminbar__stat-count">' . $views_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison">'
+            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $views_yesterday_display)
+            . '</div></div>'
+            // Referrals Today (bottom right) - blur for non-Pro
+            . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
+            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
+            . '<div class="slimstat-adminbar__stat-count">' . $referrals_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison">'
+            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $referrals_yesterday_display)
+            . '</div></div>'
             . '</div>';
 
         $GLOBALS['wp_admin_bar']->add_node([

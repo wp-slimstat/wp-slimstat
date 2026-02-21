@@ -783,7 +783,7 @@ class wp_slimstat
 
             // General - WordPress Integration
             'add_dashboard_widgets'  => 'on',
-            'use_separate_menu'      => 'no',
+            'use_separate_menu'      => 'on',
             'add_posts_column'       => 'no',
             'posts_column_pageviews' => 'on',
             'display_notifications' => 'on',

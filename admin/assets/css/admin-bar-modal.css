@@ -129,6 +129,16 @@
     transform: translateY(-1px) !important;
 }
 
+#wpadminbar .slimstat-adminbar__stat-card--blur {
+    position: relative !important;
+}
+
+#wpadminbar .slimstat-adminbar__stat-card--blur .slimstat-adminbar__stat-count,
+#wpadminbar .slimstat-adminbar__stat-card--blur .slimstat-adminbar__stat-comparison {
+    filter: blur(5px) !important;
+    user-select: none !important;
+}
+
 #wpadminbar .slimstat-adminbar__stat-title {
     font-size: 11px !important;
     font-weight: 600 !important;
@@ -290,7 +300,7 @@
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
-    background: linear-gradient(135deg, #4B6EF5 0%, #3B5ED5 100%) !important;
+    background: #F22F46 !important;
     color: #FFFFFF !important;
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -300,14 +310,14 @@
     transition: all 0.2s ease !important;
     border: none !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(75,110,245,0.35) !important;
+    box-shadow: 0 4px 14px rgba(242,47,70,0.35) !important;
 }
 
 #wpadminbar .slimstat-adminbar__cta-button:hover {
-    background: linear-gradient(135deg, #5B7EFF 0%, #4B6EF5 100%) !important;
+    background: #D9263C !important;
     color: #FFFFFF !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 6px 20px rgba(75,110,245,0.45) !important;
+    box-shadow: 0 6px 20px rgba(242,47,70,0.45) !important;
 }
 
 /* ---- Footer ---- */
@@ -356,6 +366,8 @@
     font-size: 14px !important;
     width: 14px !important;
     height: 14px !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
 }
 
 /* ---- Parent menu item styling ---- */
