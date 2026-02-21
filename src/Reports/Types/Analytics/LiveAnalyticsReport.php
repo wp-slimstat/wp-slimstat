@@ -667,7 +667,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	private function is_tracking_enabled(): bool {
 		// Check if SlimStat tracking is enabled
-		if ( 'on' !== ( \wp_slimstat::$settings['enable_tracking'] ?? 'on' ) ) {
+		if ( 'on' !== ( \wp_slimstat::$settings['is_tracking'] ?? 'on' ) ) {
 			return false;
 		}
 

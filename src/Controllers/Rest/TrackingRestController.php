@@ -111,6 +111,17 @@ class TrackingRestController implements RestControllerInterface
 
     public function handle_tracking(\WP_REST_Request $request)
     {
+        // Ensure tracking payload is available to the Ajax handler even for REST requests.
+        // The tracker reads wp_slimstat::$raw_post_array, which may be empty for REST JSON bodies.
+        if (class_exists('\wp_slimstat')) {
+            $payload = $request->get_params();
+            if (!is_array($payload)) {
+                $payload = [];
+            }
+            $payload['action'] = 'slimtrack';
+            \wp_slimstat::$raw_post_array = $payload;
+        }
+
         // Check if consent parameters are present (from banner accept)
         // Try get_param first (works for both query and body), then fallback to body_params
         $banner_consent = $request->get_param('banner_consent');
@@ -149,11 +160,15 @@ class TrackingRestController implements RestControllerInterface
         }
 
         // Normalize to string numeric id if possible
-        if (is_numeric($result)) {
+        if (is_numeric($result) && (int) $result > 0) {
             return rest_ensure_response((string) $result);
         }
 
-        // If no numeric id detected, still return 200 OK to satisfy queue
-        return rest_ensure_response('');
+        // If no numeric id detected, return a non-200 status to trigger fallback tracking methods
+        return new \WP_Error(
+            'slimstat_tracking_failed',
+            esc_html__('[REST API] Tracking failed, falling back to alternative methods.', 'wp-slimstat'),
+            ['status' => 400]
+        );
     }
 }

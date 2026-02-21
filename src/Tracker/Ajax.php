@@ -346,6 +346,10 @@ class Ajax
                 $decoded_ci = Utils::base64UrlDecode($data_js['ci']);
                 $content_info = json_decode($decoded_ci, true);
                 if (empty($content_info) || !is_array($content_info)) {
+                    // Backward compatibility: handle serialized content info
+                    $content_info = maybe_unserialize($decoded_ci);
+                }
+                if (empty($content_info) || !is_array($content_info)) {
                     exit(Utils::logError(103));
                 }
 
