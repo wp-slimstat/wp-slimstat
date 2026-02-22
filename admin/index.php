@@ -1128,14 +1128,30 @@ class wp_slimstat_admin
 
         // Build chart HTML
         $chart_bars = '';
+        $total_bars = count($minute_data);
         foreach ($minute_data as $i => $count) {
             $height_pct = round(($count / $max_count) * 100);
             $is_peak = ($count === $max_count && $count > 0);
             $bar_class = $is_peak ? ' slimstat-adminbar__chart-bar--peak' : '';
+            $minutes_ago = $total_bars - 1 - $i; // 29 for first bar, 0 for last bar
+            $time_text = $minutes_ago === 0
+                ? esc_html__('Now', 'wp-slimstat')
+                : sprintf('%d %s', $minutes_ago, esc_html__('min ago', 'wp-slimstat'));
             $chart_bars .= sprintf(
-                '<div class="slimstat-adminbar__chart-bar%s" style="height:%d%%"></div>',
+                '<div class="slimstat-adminbar__chart-bar%s" style="height:%d%%" data-count="%d" data-minutes-ago="%d">'
+                . '<span class="slimstat-adminbar__chart-tooltip">'
+                . '<strong>%s</strong>'
+                . '%s: %d<br>'
+                . '%s'
+                . '</span></div>',
                 $bar_class,
-                max($height_pct, 3) // minimum 3% for visibility
+                max($height_pct, 3), // minimum 3% for visibility
+                $count,
+                $minutes_ago,
+                esc_html__('Online Users', 'wp-slimstat'),
+                esc_html__('Count', 'wp-slimstat'),
+                $count,
+                $time_text
             );
         }
         $view_url = get_admin_url($GLOBALS['blog_id'], 'admin.php?page=');

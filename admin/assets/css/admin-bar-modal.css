@@ -247,10 +247,84 @@
     transition: all 0.3s ease !important;
     margin: 0 !important;
     padding: 0 !important;
+    position: relative !important;
+    cursor: pointer !important;
 }
 
 #wpadminbar .slimstat-adminbar__chart-bar:hover {
     background: linear-gradient(180deg, #5a6068 0%, #4a5058 100%) !important;
+}
+
+/* Tooltip for chart bars */
+#wpadminbar .slimstat-adminbar__chart-tooltip {
+    position: absolute !important;
+    bottom: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    background: linear-gradient(145deg, #2C3338 0%, #1D2327 100%) !important;
+    border: 1px solid #4B6EF5 !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: #E4E6E8 !important;
+    white-space: nowrap !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.2s ease !important;
+    z-index: 100000 !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+    margin-bottom: 8px !important;
+    text-align: center !important;
+    pointer-events: none !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-tooltip strong {
+    display: block !important;
+    color: #FFFFFF !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    margin-bottom: 6px !important;
+    padding-bottom: 6px !important;
+    border-bottom: 1px solid #3C4349 !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    border: 6px solid transparent !important;
+    border-top-color: #4B6EF5 !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar:hover .slimstat-adminbar__chart-tooltip {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Fix tooltip positioning for edge bars */
+#wpadminbar .slimstat-adminbar__chart-bar:first-child .slimstat-adminbar__chart-tooltip {
+    left: 0 !important;
+    transform: translateX(0) !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar:first-child .slimstat-adminbar__chart-tooltip::after {
+    left: 10px !important;
+    transform: translateX(0) !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar:last-child .slimstat-adminbar__chart-tooltip {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) !important;
+}
+
+#wpadminbar .slimstat-adminbar__chart-bar:last-child .slimstat-adminbar__chart-tooltip::after {
+    left: auto !important;
+    right: 10px !important;
+    transform: translateX(0) !important;
 }
 
 #wpadminbar .slimstat-adminbar__chart-bar--peak {
