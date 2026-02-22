@@ -988,6 +988,23 @@ class wp_slimstat_admin
                 [],
                 SLIMSTAT_ANALYTICS_VERSION
             );
+
+            // Enqueue admin bar realtime JS for online visitors update (frontend only)
+            // In admin, admin.js handles this via slimstat:minute_pulse
+            if (!is_admin()) {
+                wp_enqueue_script(
+                    'slimstat-adminbar-realtime',
+                    plugins_url('/admin/assets/js/adminbar-realtime.js', __DIR__),
+                    [],
+                    SLIMSTAT_ANALYTICS_VERSION,
+                    true
+                );
+
+                wp_localize_script('slimstat-adminbar-realtime', 'SlimStatAdminBar', [
+                    'ajax_url' => admin_url('admin-ajax.php'),
+                    'security' => wp_create_nonce('meta-box-order'),
+                ]);
+            }
         }
     }
 
@@ -1129,7 +1146,7 @@ class wp_slimstat_admin
         $GLOBALS['wp_admin_bar']->add_menu([
             'id'    => 'slimstat-header',
             'title' => '<span class="ab-icon dashicons dashicons-chart-area" style="font-size:1rem;margin-top:3px"></span>'
-                     . sprintf(__('Online: %s', 'wp-slimstat'), number_format_i18n($online_count)),
+                     . sprintf(__('Online: %s', 'wp-slimstat'), '<span id="slimstat-adminbar-online-header">' . number_format_i18n($online_count) . '</span>'),
             'href'  => $overview_url,
         ]);
 
@@ -1146,7 +1163,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-card">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Online Users', 'wp-slimstat')
             . ' <span class="slimstat-adminbar__realtime-dot"></span></div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($online_count) . '</div>'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-online-count">' . number_format_i18n($online_count) . '</div>'
             . '<div class="slimstat-adminbar__realtime-badge">'
             . '<span class="slimstat-adminbar__realtime-pulse"></span> '
             . esc_html__('Realtime', 'wp-slimstat') . '</div>'
@@ -1215,13 +1232,10 @@ class wp_slimstat_admin
         // Add footer node
         $footer_html = '<div class="slimstat-adminbar__footer">'
             . '<div class="slimstat-adminbar__footer-logo">'
-            . '<svg width="80" height="20" viewBox="0 0 118 30" fill="none" xmlns="http://www.w3.org/2000/svg">'
-            . '<g clip-path="url(#clip0_adminbar)">'
+            . '<svg width="20" height="20" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">'
             . '<path fill-rule="evenodd" clip-rule="evenodd" d="M0 15C0 6.71582 6.7069 0 14.9801 0C20.2546 0 24.8865 2.72788 27.5572 6.84316L19.371 15.1743H19.3643V15.1877C19.0765 15.4893 18.5946 15.496 18.2934 15.2011C18.2599 15.1743 18.2331 15.1408 18.2064 15.1005L15.9239 11.9638C13.9627 9.27614 10.047 9.03485 7.77787 11.4678L0.589029 19.1756C0.194112 17.8217 0 16.4142 0 15ZM2.69079 23.5858C5.40167 27.4665 9.89302 30.0067 14.9801 30.0067C23.2533 30.0067 29.9602 23.2909 29.9602 15.0067C29.9602 13.7399 29.8062 12.5134 29.5117 11.3405L22.604 18.3646C20.3148 20.7172 16.466 20.4424 14.5316 17.7949L12.2491 14.6582C12.0015 14.3231 11.5329 14.2426 11.1916 14.4906C11.1514 14.5174 11.1179 14.5509 11.0845 14.5845L2.69079 23.5858Z" fill="#F22F46"/>'
-            . '<path d="M43.3205 18.6394C42.2496 18.6394 41.2656 18.445 40.3754 18.0495C39.4851 17.6407 38.7288 17.0911 38.1063 16.394C37.4972 15.7171 37.042 14.9195 36.7676 14.0549L38.6953 13.264C39.1036 14.3565 39.706 15.1943 40.5093 15.7841C41.3259 16.3605 42.2763 16.6487 43.3674 16.6487C44.03 16.6487 44.6124 16.5415 45.1144 16.3337C45.6164 16.1259 45.9979 15.8243 46.2724 15.449C46.5602 15.0536 46.7008 14.6045 46.7008 14.0884C46.7008 13.378 46.4933 12.815 46.0916 12.4061C45.6967 11.9839 45.1144 11.6621 44.3446 11.4544L41.2388 10.5026C40.0139 10.1273 39.0768 9.52407 38.4276 8.70637C37.7783 7.88868 37.4503 6.95034 37.4503 5.89136C37.4503 4.96643 37.6712 4.15544 38.1063 3.46509C38.5614 2.75463 39.1772 2.19833 39.9671 1.80959C40.7703 1.40075 41.6739 1.19967 42.6846 1.19967C43.6954 1.19967 44.6124 1.38064 45.429 1.74257C46.259 2.1045 46.9618 2.60048 47.5374 3.2171C48.1064 3.81361 48.5415 4.52407 48.8092 5.30825L46.9016 6.09914C46.5401 5.14739 45.9912 4.43024 45.2683 3.94096C44.5454 3.44498 43.6887 3.19029 42.7047 3.19029C42.1023 3.19029 41.5601 3.29753 41.0983 3.5053C40.6632 3.68627 40.2884 3.99458 40.034 4.39002C39.793 4.77206 39.6726 5.22112 39.6726 5.75061C39.6726 6.37394 39.8667 6.92353 40.2616 7.40611C40.6565 7.88868 41.2522 8.26402 42.0555 8.51871L44.8868 9.35651C46.2188 9.76536 47.2228 10.3485 47.9056 11.1058C48.5883 11.8632 48.923 12.8015 48.923 13.9209C48.923 14.8458 48.682 15.6635 48.2001 16.3739C47.7316 17.0844 47.0756 17.6474 46.2255 18.0562C45.3955 18.4517 44.425 18.6461 43.3205 18.6461V18.6394Z" fill="#A7AAAD"/>'
-            . '</g>'
-            . '<defs><clipPath id="clip0_adminbar"><rect width="118" height="30" fill="white"/></clipPath></defs>'
             . '</svg>'
+            . '<span class="slimstat-adminbar__footer-brand">SlimStat</span>'
             . '</div>'
             . '<a href="' . esc_url($overview_url) . '" class="slimstat-adminbar__footer-link">'
             . esc_html__('Explore Details', 'wp-slimstat')

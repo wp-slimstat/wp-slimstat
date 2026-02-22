@@ -321,6 +321,11 @@
 }
 
 /* ---- Footer ---- */
+#wpadminbar #wp-admin-bar-slimstat-adminbar-footer > .ab-item,
+#wpadminbar #wp-admin-bar-slimstat-adminbar-footer > .ab-empty-item {
+    padding: 0 !important;
+}
+
 #wpadminbar .slimstat-adminbar__footer {
     display: flex !important;
     align-items: center !important;
@@ -334,13 +339,22 @@
 #wpadminbar .slimstat-adminbar__footer-logo {
     display: flex !important;
     align-items: center !important;
+    flex-shrink: 0 !important;
+    gap: 8px !important;
 }
 
 #wpadminbar .slimstat-adminbar__footer-logo svg {
     display: block !important;
-    opacity: 0.6 !important;
     height: 18px !important;
-    width: auto !important;
+    width: 18px !important;
+    flex-shrink: 0 !important;
+}
+
+#wpadminbar .slimstat-adminbar__footer-brand {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #9BA1A6 !important;
+    letter-spacing: 0.3px !important;
 }
 
 #wpadminbar .slimstat-adminbar__footer-link {

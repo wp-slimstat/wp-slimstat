@@ -1490,29 +1490,46 @@ var SlimStatAdmin = {
         // Update online visitors count on pulse
         window.addEventListener("slimstat:minute_pulse", function () {
             var onlineVisitorsElement = document.getElementById("slimstat-online-visitors-count");
-            if (onlineVisitorsElement && typeof SlimStatParams !== "undefined") {
+            var adminbarHeaderElement = document.getElementById("slimstat-adminbar-online-header");
+            var adminbarCountElement = document.getElementById("slimstat-adminbar-online-count");
+
+            // Check if any element exists that needs updating
+            var hasElements = onlineVisitorsElement || adminbarHeaderElement || adminbarCountElement;
+            var securityNonce = jQuery("#meta-box-order-nonce").val();
+
+            if (hasElements && securityNonce) {
                 jQuery.ajax({
-                    url: SlimStatParams.ajax_url,
+                    url: ajaxurl,
                     type: "POST",
                     data: {
                         action: "slimstat_get_online_visitors",
-                        security: SlimStatParams.security
+                        security: securityNonce
                     },
                     success: function (response) {
                         if (response.success && response.data && response.data.formatted) {
-                            // Animate the value change
-                            var currentValue = onlineVisitorsElement.textContent.replace(/,/g, "");
                             var newValue = response.data.count;
+                            var formattedValue = response.data.formatted;
 
-                            if (parseInt(currentValue, 10) !== newValue) {
-                                onlineVisitorsElement.style.transition = "transform 0.1s ease-out";
-                                onlineVisitorsElement.style.transform = "scale(1.05)";
+                            // Helper function to animate value change
+                            var animateElement = function(element) {
+                                if (!element) return;
 
-                                setTimeout(function () {
-                                    onlineVisitorsElement.textContent = response.data.formatted;
-                                    onlineVisitorsElement.style.transform = "scale(1)";
-                                }, 100);
-                            }
+                                var currentValue = element.textContent.replace(/,/g, "");
+                                if (parseInt(currentValue, 10) !== newValue) {
+                                    element.style.transition = "transform 0.1s ease-out";
+                                    element.style.transform = "scale(1.05)";
+
+                                    setTimeout(function () {
+                                        element.textContent = formattedValue;
+                                        element.style.transform = "scale(1)";
+                                    }, 100);
+                                }
+                            };
+
+                            // Update all elements
+                            animateElement(onlineVisitorsElement);
+                            animateElement(adminbarHeaderElement);
+                            animateElement(adminbarCountElement);
                         }
                     },
                     error: function (xhr, status, error) {

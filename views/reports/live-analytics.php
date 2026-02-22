@@ -308,4 +308,82 @@ $chart_id = 'live_chart_' . uniqid();
 		liveAnalytics.init();
 	});
 	</script>
+<?php else : ?>
+	<script type="text/javascript">
+	document.addEventListener('DOMContentLoaded', function() {
+		var reportId = '<?php echo esc_js( $report_id ); ?>';
+		var ajaxUrl = '<?php echo admin_url( 'admin-ajax.php' ); ?>';
+		var nonce = '<?php echo wp_create_nonce( 'slimstat_ajax_nonce' ); ?>';
+		var lastTriggerMinute = -1;
+
+		function formatNumber(num) {
+			return new Intl.NumberFormat().format(num);
+		}
+
+		function animateElement(element, newValue) {
+			if (!element) return;
+			var currentValue = parseInt(element.textContent.replace(/,/g, ''), 10) || 0;
+			if (currentValue !== newValue) {
+				element.style.transition = 'transform 0.1s ease-out';
+				element.style.transform = 'scale(1.05)';
+				setTimeout(function() {
+					element.textContent = formatNumber(newValue);
+					element.style.transform = 'scale(1)';
+				}, 100);
+			}
+		}
+
+		function updateMetrics() {
+			var container = document.getElementById(reportId);
+			if (!container) return;
+
+			var formData = new URLSearchParams();
+			formData.append('action', 'slimstat_get_live_analytics_data');
+			formData.append('nonce', nonce);
+			formData.append('report_id', reportId);
+			formData.append('metric', 'users');
+
+			fetch(ajaxUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: formData.toString()
+			})
+			.then(function(response) { return response.json(); })
+			.then(function(result) {
+				if (result.success && result.data) {
+					var usersEl = container.querySelector('.users-value');
+					var pagesEl = container.querySelector('.pages-value');
+					var countriesEl = container.querySelector('.countries-value');
+
+					if (usersEl && typeof result.data.users_live !== 'undefined') {
+						animateElement(usersEl, result.data.users_live);
+					}
+					if (pagesEl && typeof result.data.pages_live !== 'undefined') {
+						animateElement(pagesEl, result.data.pages_live);
+					}
+					if (countriesEl && typeof result.data.countries_live !== 'undefined') {
+						animateElement(countriesEl, result.data.countries_live);
+					}
+				}
+			})
+			.catch(function(error) {
+				console.error('SlimStat: Failed to update metrics', error);
+			});
+		}
+
+		function checkMinutePulse() {
+			var now = new Date();
+			var currentSeconds = now.getSeconds();
+			var currentMinute = now.getMinutes();
+
+			if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
+				lastTriggerMinute = currentMinute;
+				updateMetrics();
+			}
+		}
+
+		// Start checking every 200ms
+		setInterval(checkMinutePulse, 200);
+	});
+	</script>
 <?php endif; ?>
