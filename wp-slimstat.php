@@ -1523,7 +1523,7 @@ function wp_slimstat_clear_cache_handler()
         wp_send_json_error(__('Permission denied', 'wp-slimstat'));
     }
     // Optional: check nonce if you add it to JS
-    if (empty($_POST['security']) || !wp_verify_nonce($_POST['security'], 'slimstat_clear_cache')) {
+    if (empty($_POST['security']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['security'])), 'slimstat_clear_cache')) {
         wp_send_json_error(__('Invalid nonce', 'wp-slimstat'));
     }
 
