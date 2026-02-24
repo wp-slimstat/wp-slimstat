@@ -17,12 +17,13 @@ $translations = array_merge(
     ]
 );
 
-if (! is_array($args)) {
-    $args = [];
+$chart_args = is_array($args) ? $args : [];
+if (isset($chart_args['args']) && is_array($chart_args['args'])) {
+    $chart_args = $chart_args['args'];
 }
 
-$args = wp_parse_args(
-    $args,
+$chart_args = wp_parse_args(
+    $chart_args,
     [
         'start'       => 0,
         'end'         => 0,
@@ -32,7 +33,7 @@ $args = wp_parse_args(
     ]
 );
 
-$availableRange = $args['end'] - $args['start'];
+$availableRange = $chart_args['end'] - $chart_args['start'];
 $disableYearly  = $availableRange < (365 * 86400); // Less than 1 year of data
 $disableMonthly = $availableRange < (30 * 86400); // Less than 1 month of data
 $disableWeekly  = $availableRange < (7 * 86400); // Less than 1 week of data
@@ -48,49 +49,68 @@ $totals         = [
         'v2' => (int) ($data['totals'][1]->v2 ?? 0),
     ],
 ];
+$is_empty = (0 === ($totals['current']['v1'] ?? 0) && 0 === ($totals['current']['v2'] ?? 0));
 ?>
-<div class="slimstat-chart-wrap <?php echo esc_attr(isset($args['chart_type']) && $args['chart_type'] === 'bar' ? 'chart-bar' : 'chart-line'); ?>">
+<div
+    class="slimstat-chart-wrap <?php echo esc_attr(isset($chart_args['chart_type']) && $chart_args['chart_type'] === 'bar' ? 'chart-bar' : 'chart-line'); ?>">
     <div class="slimstat-chart-controls">
         <select
-            id="slimstat_granularity_<?php echo esc_attr($args['id']); ?>"
-            name="granularity_<?php echo esc_attr($args['id']); ?>"
+            id="slimstat_granularity_<?php echo esc_attr($chart_args['id']); ?>"
+            name="granularity_<?php echo esc_attr($chart_args['id']); ?>"
             class="slimstat-granularity-select">
             <option value="yearly" <?php echo $disableYearly ? 'disabled' : ''; ?>
-                <?php selected($args['granularity'], 'yearly'); ?>><?php echo esc_html($translations['yearly']); ?>
+                <?php selected($chart_args['granularity'], 'yearly'); ?>><?php echo esc_html($translations['yearly']); ?>
             </option>
             <option value="monthly" <?php echo $disableMonthly ? 'disabled' : ''; ?>
-                <?php selected($args['granularity'], 'monthly'); ?>><?php echo esc_html($translations['monthly']); ?>
+                <?php selected($chart_args['granularity'], 'monthly'); ?>><?php echo esc_html($translations['monthly']); ?>
             </option>
             <option value="weekly" <?php echo $disableWeekly ? 'disabled' : ''; ?>
-                <?php selected($args['granularity'], 'weekly'); ?>><?php echo esc_html($translations['weekly']); ?>
+                <?php selected($chart_args['granularity'], 'weekly'); ?>><?php echo esc_html($translations['weekly']); ?>
             </option>
             <option value="daily" <?php echo $disableDaily ? 'disabled' : ''; ?>
-                <?php selected($args['granularity'], 'daily'); ?>><?php echo esc_html($translations['daily']); ?>
+                <?php selected($chart_args['granularity'], 'daily'); ?>><?php echo esc_html($translations['daily']); ?>
             </option>
             <option value="hourly" <?php echo $disableHourly ? 'disabled' : ''; ?>
-                <?php selected($args['granularity'], 'hourly'); ?>><?php echo esc_html($translations['hourly']); ?>
+                <?php selected($chart_args['granularity'], 'hourly'); ?>><?php echo esc_html($translations['hourly']); ?>
             </option>
         </select>
     </div>
-    <div id="slimstat_chart_data_<?php echo esc_attr($args['id']); ?>"
-        data-args="<?php echo esc_attr(json_encode($args)); ?>"
+    <div id="slimstat_chart_data_<?php echo esc_attr($chart_args['id']); ?>"
+        data-args="<?php echo esc_attr(json_encode($chart_args)); ?>"
         data-data="<?php echo esc_attr(json_encode($data)); ?>"
         data-prev-data="<?php echo esc_attr(json_encode($prevData)); ?>"
-        data-granularity="<?php echo esc_attr($args['granularity']); ?>"
-        data-chart-type="<?php echo esc_attr($args['chart_type'] ?? 'line'); ?>"
+        data-granularity="<?php echo esc_attr($chart_args['granularity']); ?>"
+        data-chart-type="<?php echo esc_attr($chart_args['chart_type'] ?? 'line'); ?>"
         data-chart-labels="<?php echo esc_attr(json_encode($chartLabels)); ?>"
         data-translations="<?php echo esc_attr(json_encode($translations)); ?>"
         data-totals="<?php echo esc_attr(json_encode($totals ?? [])); ?>">
     </div>
-    <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($args['id']); ?>"
-        class="slimstat-postbox-chart--items"></div>
+    <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($chart_args['id']); ?>"
+        class="slimstat-postbox-chart--items">
+        <?php if ($is_empty): ?>
+            <?php
+            $label_one = $chartLabels[0] ?? __('Search Terms', 'wp-slimstat');
+            $label_two = $chartLabels[1] ?? __('Unique Terms', 'wp-slimstat');
+            ?>
+            <div class="slimstat-postbox-chart--item">
+                <span class="slimstat-postbox-chart--item-label"><?php echo esc_html($label_one); ?></span>
+                <span class="slimstat-postbox-chart--item--color" style="background-color: #e8294c"></span>
+                <span class="slimstat-postbox-chart--item-value">0</span>
+            </div>
+            <div class="slimstat-postbox-chart--item">
+                <span class="slimstat-postbox-chart--item-label"><?php echo esc_html($label_two); ?></span>
+                <span class="slimstat-postbox-chart--item--color" style="background-color: #2b76f6"></span>
+                <span class="slimstat-postbox-chart--item-value">0</span>
+            </div>
+        <?php endif; ?>
+    </div>
     <canvas
-        id="slimstat_chart_<?php echo esc_attr($args['id']); ?>"
+        id="slimstat_chart_<?php echo esc_attr($chart_args['id']); ?>"
         class="slimstat-postbox-chart--canvas" height="240px"></canvas>
     <?php if (defined('DOING_AJAX') && DOING_AJAX): ?>
     <script>
         reinitializeSlimStatCharts(
-            "<?php echo $args['id']; ?>")
+            "<?php echo $chart_args['id']; ?>")
     </script>
     <?php endif; ?>
 </div>

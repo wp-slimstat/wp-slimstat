@@ -1464,7 +1464,7 @@ class wp_slimstat_db
             $slim_stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
             $results[0]['metric']  = __('Content Items', 'wp-slimstat');
-            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '<>', 'revision')->where('post_status', '<>', 'auto-draft')->getVar());
+            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '!=', 'revision')->where('post_status', '!=', 'auto-draft')->getVar());
             $results[0]['tooltip'] = __('This value includes not only posts and pages, but any custom post type, regardless of their status.', 'wp-slimstat');
 
             $results[1]['metric'] = __('Posts', 'wp-slimstat');
@@ -1486,7 +1486,7 @@ class wp_slimstat_db
             $results[6]['value']  = empty($results[1]['value']) ? 0 : number_format_i18n($results[5]['value'] / $results[1]['value']);
 
             $results[7]['metric']  = __('Avg Server Latency', 'wp-slimstat');
-            $results[7]['value']   = number_format_i18n(Query::select('AVG(server_latency)')->from($slim_stats_table)->where('server_latency', '<>', 0)->getVar());
+            $results[7]['value']   = number_format_i18n(Query::select('AVG(server_latency)')->from($slim_stats_table)->where('server_latency', '!=', 0)->getVar());
             $results[7]['tooltip'] = __('Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server.', 'wp-slimstat');
 
             $results[1]['value'] = number_format_i18n($results[1]['value']);

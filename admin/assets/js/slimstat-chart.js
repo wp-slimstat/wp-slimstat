@@ -254,6 +254,25 @@ document.addEventListener("DOMContentLoaded", function () {
         return result;
     }
 
+    function isAllZeroDatasets(datasets) {
+        if (!Array.isArray(datasets) || datasets.length === 0) {
+            return true;
+        }
+        for (var i = 0; i < datasets.length; i++) {
+            var ds = datasets[i];
+            if (!ds || !Array.isArray(ds.data)) {
+                continue;
+            }
+            for (var j = 0; j < ds.data.length; j++) {
+                var v = ds.data[j];
+                if (typeof v === "number" && v > 0) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     function createChart(ctx, labels, prevLabels, datasets, prevDatasets, total, unitTime, today, translations, daysBetween, chartId, chartType) {
         var isRTL = document.documentElement.dir === "rtl" || document.body.classList.contains("rtl");
 
@@ -280,6 +299,25 @@ document.addEventListener("DOMContentLoaded", function () {
                 ctx2.beginPath();
                 ctx2.moveTo(pt.x, top);
                 ctx2.lineTo(pt.x, bottom);
+                ctx2.stroke();
+                ctx2.restore();
+            },
+        };
+        var emptyLine = {
+            id: "emptyLine",
+            afterDraw: function (chart) {
+                var opts = chart.options && chart.options.plugins && chart.options.plugins.emptyLine;
+                if (!opts || !opts.enabled) return;
+                var area = chart.chartArea;
+                if (!area) return;
+                var ctx2 = chart.ctx;
+                var y = (area.top + area.bottom) / 2;
+                ctx2.save();
+                ctx2.strokeStyle = opts.color || "#e8294c";
+                ctx2.lineWidth = 2;
+                ctx2.beginPath();
+                ctx2.moveTo(area.left, y);
+                ctx2.lineTo(area.right, y);
                 ctx2.stroke();
                 ctx2.restore();
             },
@@ -377,6 +415,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Prepare datasets with chart type
         var preparedDatasets = datasets.concat(prevDatasets);
+        var isEmptyCurrent = isAllZeroDatasets(datasets);
+
+        if (isEmptyCurrent && labels.length === 0) {
+            labels = [""];
+            for (var ed = 0; ed < preparedDatasets.length; ed++) {
+                if (!Array.isArray(preparedDatasets[ed].data)) {
+                    preparedDatasets[ed].data = [0];
+                } else if (preparedDatasets[ed].data.length === 0) {
+                    preparedDatasets[ed].data = [0];
+                }
+            }
+        }
+
+        if (isEmptyCurrent) {
+            preparedDatasets.unshift({
+                label: "",
+                key: "__empty__",
+                skipLegend: true,
+                type: "line",
+                data: labels.map(function () {
+                    return 0;
+                }),
+                borderColor: "#e8294c",
+                backgroundColor: "transparent",
+                borderWidth: 2,
+                fill: false,
+                tension: 0,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                pointHitRadius: 0,
+                hitRadius: 0,
+            });
+        }
+
         for (var d = 0; d < preparedDatasets.length; d++) {
             var ds = preparedDatasets[d];
             if (chartType === "bar") {
@@ -389,6 +461,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 ds.categoryPercentage = 0.8;
                 ds.barPercentage = 0.9;
             }
+        }
+
+        var yScale = {
+            ticks: {
+                font: {
+                    family: "Open Sans, sans-serif",
+                },
+                color: "#222",
+            },
+            grid: {
+                display: false,
+            },
+        };
+
+        if (isEmptyCurrent) {
+            yScale.min = -1;
+            yScale.max = 1;
+            yScale.ticks.stepSize = 1;
         }
 
         return new Chart(ctx, {
@@ -434,6 +524,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         titleColor: "#222",
                         bodyColor: "#222",
                     },
+                    emptyLine: {
+                        enabled: isEmptyCurrent,
+                        color: "#e8294c",
+                    },
                 },
                 scales: {
                     x: {
@@ -455,15 +549,10 @@ document.addEventListener("DOMContentLoaded", function () {
                         },
                     },
                     y: {
-                        ticks: {
-                            font: {
-                                family: "Open Sans, sans-serif",
-                            },
-                            color: "#222",
-                        },
-                        grid: {
-                            display: false,
-                        },
+                        ticks: yScale.ticks,
+                        grid: yScale.grid,
+                        min: yScale.min,
+                        max: yScale.max,
                     },
                 },
                 maintainAspectRatio: false,
@@ -479,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     mode: "index",
                 },
             },
-            plugins: [customCrosshair],
+            plugins: [customCrosshair, emptyLine],
         });
     }
 
@@ -489,6 +578,9 @@ document.addEventListener("DOMContentLoaded", function () {
         for (var di = 0; di < chart.data.datasets.length; di++) {
             (function (index) {
                 var dataset = chart.data.datasets[index];
+                if (dataset.skipLegend) {
+                    return;
+                }
                 var isPrevious = dataset.label.indexOf("Previous") !== -1;
                 if (isPrevious) {
                     return;

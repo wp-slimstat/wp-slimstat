@@ -1599,7 +1599,7 @@ class wp_slimstat_reports
                 }
             }
 
-            echo sprintf('<p>%s <span>%s</span><br/>', esc_html( $a_result[ 'resource' ] ), esc_html( $a_result[ 'counthits' ] )) . implode(', ', $group_markup) . '</p>';
+            echo sprintf('<p>%s <span>%s</span><br/>', wp_kses_post( $a_result[ 'resource' ] ), esc_html( $a_result[ 'counthits' ] )) . wp_kses_post( implode(', ', $group_markup) ) . '</p>';
         }
 
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {

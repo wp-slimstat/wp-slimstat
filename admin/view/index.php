@@ -40,7 +40,7 @@ echo '<input type="submit" value="' . __('Apply', 'wp-slimstat') . '" class="but
 
 $saved_filters = get_option('slimstat_filters', []);
 if (!empty($saved_filters)) {
-    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . __('Load', 'wp-slimstat') . '</a>';
+    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . __('Saved Filters', 'wp-slimstat') . '</a>';
 }
 ?></fieldset><!-- #slimstat-filters -->
 

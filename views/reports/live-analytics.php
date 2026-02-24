@@ -181,12 +181,12 @@ $chart_id = 'live_chart_' . uniqid();
 					<div class="live-analytics-promo-overlay">
 						<h2 class="live-analytics-promo-heading">
 							<span class="live-analytics-promo-title">
-								<?php esc_html_e( 'SlimStat Analytics Experience', 'wp-slimstat' ); ?>
+								<?php esc_html_e( 'Unlock the Full Power of SlimStat Analytics', 'wp-slimstat' ); ?>
 							</span>
 						</h2>
 						<a
 							target="_blank"
-							href="<?php echo esc_url( defined( 'SLIMSTAT_ANALYTICS_SITE' ) ? SLIMSTAT_ANALYTICS_SITE : 'https://wp-slimstat.com/' ); ?>"
+							href="<?php echo esc_url( 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=barchart' ); ?>"
 							class="go-pro-button live-analytics-promo-button"
 						>
 							<?php esc_html_e( 'Unlock SlimStat Pro', 'wp-slimstat' ); ?>

@@ -1234,7 +1234,7 @@ class wp_slimstat_admin
                 . esc_html__('Unlock the Full Power of SlimStat Analytics', 'wp-slimstat')
                 . '</div>'
                 . '<a href="' . esc_url($upgrade_url) . '" target="_blank" class="slimstat-adminbar__cta-button">'
-                . esc_html__('Learn More', 'wp-slimstat') . '</a>'
+                . esc_html__('Unlock SlimStat Pro', 'wp-slimstat') . '</a>'
                 . '</div>';
 
             $GLOBALS['wp_admin_bar']->add_node([
