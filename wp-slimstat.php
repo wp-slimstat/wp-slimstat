@@ -779,7 +779,7 @@ class wp_slimstat
             // General - Tracker
             'is_tracking'       => 'on',
             'track_admin_pages' => 'no',
-            'javascript_mode'   => 'on',
+            'javascript_mode'   => 'off',  // Changed: Enable server-side tracking by default
 
             // General - WordPress Integration
             'add_dashboard_widgets'  => 'on',
@@ -797,10 +797,10 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'gdpr_enabled'             => 'off',
-            'anonymize_ip'             => 'no',
-            'hash_ip'                  => 'no',
-			'set_tracker_cookie'       => 'on',
+            'gdpr_enabled'             => 'on',   // Changed: Enable GDPR by default for safety
+            'anonymize_ip'             => 'on',   // Changed: Anonymize IPs by default
+            'hash_ip'                  => 'on',   // Changed: Hash IPs by default
+			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
 			'use_slimstat_banner'      => 'off',
 			'consent_integration'      => '', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
             'consent_level_integration'=> 'statistics',
@@ -808,7 +808,7 @@ class wp_slimstat
 			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
 			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
             'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
-            'anonymous_tracking'       => 'off',
+            'anonymous_tracking'       => 'off',   // Changed: Enable anonymous tracking by default
             'do_not_track'             => 'off',
             'display_opt_out'          => 'no',
             'opt_out_cookie_names'     => '',
