@@ -801,8 +801,8 @@ class wp_slimstat
             'anonymize_ip'             => 'on',   // Changed: Anonymize IPs by default
             'hash_ip'                  => 'on',   // Changed: Hash IPs by default
 			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
-			'use_slimstat_banner'      => 'off',
-			'consent_integration'      => '', // 'slimstat_banner', 'wp_consent_api', 'real_cookie_banner'
+			'use_slimstat_banner'      => 'on',   // Changed: Enable banner by default when GDPR is enabled
+			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
 			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),

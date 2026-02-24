@@ -142,12 +142,9 @@ class Consent
 
 		// Check if GDPR compliance mode is enabled
 		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
-		$integrationKey = self::getIntegrationKey();
-		$hasConsentIntegration = '' !== $integrationKey;
 
 		// If GDPR is disabled, allow normal tracking without consent checks
-		// If no consent integration is selected, treat GDPR checks as disabled as well.
-		if (!$gdprEnabled || !$hasConsentIntegration) {
+		if (!$gdprEnabled) {
 			/**
 			 * Filter: slimstat_can_track
 			 *
@@ -158,7 +155,23 @@ class Consent
 			return (bool) apply_filters('slimstat_can_track', $default);
 		}
 
-		// GDPR is enabled - proceed with consent checks
+		// GDPR is enabled - consent integration is REQUIRED
+		$integrationKey = self::getIntegrationKey();
+		$hasConsentIntegration = '' !== $integrationKey;
+
+		// If GDPR is enabled but no consent integration is configured, block tracking
+		if (!$hasConsentIntegration) {
+			/**
+			 * Filter: slimstat_can_track
+			 *
+			 * Allows third parties to override tracking decision.
+			 *
+			 * @param bool $default Default decision (false when GDPR enabled but no consent integration)
+			 */
+			return (bool) apply_filters('slimstat_can_track', false);
+		}
+
+		// GDPR is enabled and consent integration is configured - proceed with consent checks
 
 		// Respect Do Not Track if enabled in settings
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
@@ -283,16 +296,22 @@ class Consent
 
 		// Check if GDPR compliance mode is enabled
 		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
-		$integrationKey = self::getIntegrationKey();
-		$hasConsentIntegration = '' !== $integrationKey;
 
 		// If GDPR is disabled, allow PII collection without consent checks
-		// If no consent integration is selected, treat GDPR checks as disabled as well.
-		if (!$gdprEnabled || !$hasConsentIntegration) {
+		if (!$gdprEnabled) {
 			return true;
 		}
 
-		// GDPR is enabled - proceed with consent checks
+		// GDPR is enabled - consent integration is REQUIRED
+		$integrationKey = self::getIntegrationKey();
+		$hasConsentIntegration = '' !== $integrationKey;
+
+		// If GDPR is enabled but no consent integration is configured, block PII collection
+		if (!$hasConsentIntegration) {
+			return false;
+		}
+
+		// GDPR is enabled and consent integration is configured - proceed with consent checks
 
 		// PRIORITY 1: Anonymous tracking mode - strictest setting
 		// In this mode, PII is BLOCKED by default until explicit consent is granted
