@@ -994,7 +994,7 @@ class wp_slimstat
             }
             $params['id'] = \SlimStat\Tracker\Utils::getValueWithChecksum(intval(self::$stat['id']));
         } else {
-            $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(serialize(\SlimStat\Tracker\Utils::getContentInfo())));
+            $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())));
         }
 
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
@@ -1003,6 +1003,8 @@ class wp_slimstat
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
         $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'statistics');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
+        $gdpr_enabled_setting = strtolower((string) (self::$settings['gdpr_enabled'] ?? 'on'));
+        $params['gdpr_enabled'] = in_array($gdpr_enabled_setting, ['off', 'no', 'false', '0'], true) ? 'off' : 'on';
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
         $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
@@ -1034,13 +1036,19 @@ class wp_slimstat
         }
 
         // Register the correct script for adblock bypass, CDN, or default
+        $local_script_version = SLIMSTAT_ANALYTICS_VERSION;
+        $local_script_path = plugin_dir_path(__FILE__) . 'wp-slimstat.min.js';
+        if (file_exists($local_script_path)) {
+            $local_script_version .= '.' . filemtime($local_script_path);
+        }
+
         if ('adblock_bypass' === $method) {
             $hash_js  = md5(site_url() . 'slimstat');
             wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
         } elseif ('on' == self::$settings['enable_cdn']) {
             wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
         } else {
-            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, $local_script_version, true);
         }
 
         wp_enqueue_script('wp_slimstat');

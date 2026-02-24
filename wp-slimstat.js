@@ -302,6 +302,7 @@ var SlimStat = (function () {
         var params = currentSlimStatParams();
         var payload = item.payload;
         var useBeacon = item.useBeacon;
+        var requiresIdResponse = isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0;
         var transports = ["rest", "ajax", "adblock_bypass"];
         var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock_bypass: params.ajaxurl_adblock };
         var selected = params.transport;
@@ -345,6 +346,14 @@ var SlimStat = (function () {
                             }
                             flushPendingInteractions(); // Flush buffered interactions now that we have an ID
                         }
+
+                        // Initial pageview creation must return a valid pageview ID.
+                        // Treat empty/non-numeric responses as failures so fallback/retry can run.
+                        if (requiresIdResponse && (isNaN(parsed) || parsed <= 0)) {
+                            if (onFail) onFail();
+                            return;
+                        }
+
                         callback(true);
                     } else {
                         // Non-200 status is a failure, trigger retry/failover
@@ -961,6 +970,7 @@ var SlimStat = (function () {
     function slimstatConsentAllowed(params, options) {
         options = options || {};
         var s = params || {};
+        var gdprEnabled = s.gdpr_enabled !== "off";
         var anonMode = s.anonymous_tracking === "on";
         var setCookie = s.set_tracker_cookie === "on";
         var anonymizeIP = s.anonymize_ip === "on";
@@ -979,6 +989,19 @@ var SlimStat = (function () {
             }
         } catch (err) {
             /* ignore */
+        }
+
+        // GDPR disabled: do not gate tracking behind CMP/consent checks.
+        // Keep anonymous mode behavior if explicitly enabled by admin settings.
+        if (!gdprEnabled) {
+            if (anonMode) {
+                var gdprOffAnon = { allowed: true, mode: "anonymous", reason: "gdpr_disabled_anonymous_mode" };
+                maybeEmitConsentChange(gdprOffAnon);
+                return gdprOffAnon;
+            }
+            var gdprOff = { allowed: true, mode: "full", reason: "gdpr_disabled" };
+            maybeEmitConsentChange(gdprOff);
+            return gdprOff;
         }
 
         var collectsPII = !!(setCookie || (!anonymizeIP && !hashIP));
