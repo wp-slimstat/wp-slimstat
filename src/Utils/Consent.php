@@ -24,6 +24,17 @@ class Consent
 		$settings = \wp_slimstat::$settings;
 		$integrationKey = $settings['consent_integration'] ?? '';
 
+		// Fallback: if GDPR is enabled but no integration is explicitly set, use slimstat_banner
+		// This ensures backward compatibility with existing installations
+		if ('' === $integrationKey) {
+			$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+			if ($gdprEnabled) {
+				// Auto-enable SlimStat banner if GDPR is on but no integration configured
+				$integrationKey = 'slimstat_banner';
+			}
+		}
+
+		// Also check use_slimstat_banner setting for backward compatibility
 		if ('' === $integrationKey && 'on' === ($settings['use_slimstat_banner'] ?? 'off')) {
 			$integrationKey = 'slimstat_banner';
 		}
@@ -159,7 +170,8 @@ class Consent
 		$integrationKey = self::getIntegrationKey();
 		$hasConsentIntegration = '' !== $integrationKey;
 
-		// If GDPR is enabled but no consent integration is configured, block tracking
+		// Note: getIntegrationKey() now auto-returns 'slimstat_banner' if GDPR is enabled
+		// So this block should rarely execute unless GDPR is explicitly disabled
 		if (!$hasConsentIntegration) {
 			/**
 			 * Filter: slimstat_can_track
@@ -306,7 +318,8 @@ class Consent
 		$integrationKey = self::getIntegrationKey();
 		$hasConsentIntegration = '' !== $integrationKey;
 
-		// If GDPR is enabled but no consent integration is configured, block PII collection
+		// Note: getIntegrationKey() now auto-returns 'slimstat_banner' if GDPR is enabled
+		// So this block should rarely execute unless GDPR is explicitly disabled
 		if (!$hasConsentIntegration) {
 			return false;
 		}
