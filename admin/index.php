@@ -709,6 +709,11 @@ class wp_slimstat_admin
             if (!empty(wp_slimstat::$settings['tracking_request_method']) && 'adblock' === wp_slimstat::$settings['tracking_request_method']) {
                 wp_slimstat::$settings['tracking_request_method'] = 'adblock_bypass';
             }
+
+            // Default use_separate_menu to 'on' if not already set
+            if (empty(wp_slimstat::$settings['use_separate_menu'])) {
+                wp_slimstat::$settings['use_separate_menu'] = 'on';
+            }
         }
 
         // Now we can update the version stored in the database
