@@ -287,18 +287,14 @@
 }
 
 .live-analytics-promo-button {
-    display: inline-block;
-    padding: 15px 10px;
-    width: 250px;
-    border-radius: 10px;
+    color: #e8294c;
+    background: transparent;
+    text-decoration: underline !important;
+    margin-top: 0;
+    padding: 0;
+    width: auto;
     font-size: 16px;
     font-weight: 500;
-    color: #ffffff;
-    text-align: center;
-    background-color: #e8294c;
-    text-decoration: none;
-    margin-top: 35px;
-    transition: 0.3s all ease-out;
 }
 
 .chart-header {
