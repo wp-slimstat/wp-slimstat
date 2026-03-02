@@ -9,7 +9,6 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-use SlimStat\Exception\SystemErrorException;
 
 class View
 {
@@ -35,11 +34,11 @@ class View
                 $viewPath = sprintf('%s/views/%s.php', $baseDir, $view);
 
                 if (!file_exists($viewPath)) {
-                    throw new SystemErrorException(esc_html__('View file not found: ' . $viewPath, 'wp-slimstat'));
+                    throw new \Exception(esc_html__('View file not found: ' . $viewPath, 'wp-slimstat'));
                 }
 
                 if (!empty($args)) {
-                    extract($args);
+                    extract($args, EXTR_SKIP);
                 }
 
                 // Return the template if requested
@@ -52,7 +51,7 @@ class View
                 include $viewPath;
             }
         } catch (\Exception $exception) {
-            \SlimStat::log($exception->getMessage(), 'error');
+            \wp_slimstat::log($exception->getMessage(), 'error');
         }
 
         return null;

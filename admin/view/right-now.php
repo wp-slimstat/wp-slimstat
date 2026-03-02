@@ -13,8 +13,11 @@ $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];
 // - backlink: format of the URL point to the search engine result page
 // - charsets: list of charset used to encode the keywords
 //
-$search_engines = file_get_contents(plugin_dir_path(dirname(__FILE__, 2)) . 'admin/assets/data/matomo-searchengine.json');
-$search_engines = json_decode($search_engines, true);
+if (!class_exists('wp_slimstat')) {
+    include_once dirname(__FILE__, 3) . '/wp-slimstat.php';
+}
+
+$search_engines = \wp_slimstat::get_search_engines();
 // COMPLETE THIS FEATURE!!
 
 // Available icons
@@ -93,7 +96,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         // City, if tracked
         $city_filter = '';
         if (!empty($results[$i]['city'])) {
-            $city_filter = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('city equals ' . $results[$i]['city']) . sprintf("'>%s</a>", $results[ $i ][ 'city' ]);
+            $city_filter = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('city equals ' . $results[$i]['city'])) . "'>" . esc_html($results[$i]['city']) . "</a>";
         }
 
         // Browser
@@ -107,7 +110,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             $browser_filter = sanitize_title($results[$i]['browser']);
         }
 
-        $browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('browser equals ' . $results[$i]['browser']) . sprintf("'><img class='slimstat-tooltip-trigger' src='%s/assets/images/browsers/%s.png' width='16' height='16' title='%s'></a>", $plugin_url, $browser_filter, $browser_title);
+        $browser_filter = "<a class='slimstat-filter-link inline-icon' href='" . esc_url(wp_slimstat_reports::fs_url('browser equals ' . $results[$i]['browser'])) . "'><img class='slimstat-tooltip-trigger' src='" . esc_url($plugin_url . '/assets/images/browsers/' . $browser_filter . '.png') . "' width='16' height='16' title='" . esc_attr($browser_title) . "'></a>";
 
         // Operating System
         $platform_filter = 'unknown';
@@ -137,7 +140,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         }
 
         if (empty($results[$i]['username'])) {
-            $ip_address = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip']) . sprintf("'>%s</a>", $host_by_ip);
+            $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])) . "'>" . esc_html($host_by_ip) . "</a>";
         } else {
             $display_user_name = $results[$i]['username'];
             if ('on' == wp_slimstat::$settings['show_display_name'] && false !== strpos($results[$i]['notes'], 'user:')) {
@@ -148,29 +151,37 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $user       = get_user_by('login', $results[$i]['username']);
-            $ip_address = "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username']) . "'>";
+            $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username'])) . "'>";
             if ($user) {
                 $ip_address .= get_avatar($user->ID, 16);
             } else {
                 $ip_address .= get_avatar($results[$i]['username'], 16);
             }
 
-            $ip_address .= sprintf(' %s</a>', $display_user_name);
+            $ip_address .= ' ' . esc_html($display_user_name) . '</a>';
+            $display_ip_value = $results[$i]['ip'];
+            if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
+                $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
+            } elseif ('on' == wp_slimstat::$settings['anonymize_ip']) {
+                // already masked in storage; still truncate for UI clarity
+                $display_ip_value = $results[$i]['ip'];
+            }
+
             $ip_address .= " <a class='slimstat-filter-link' href='"
                . wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])
-               . sprintf("'>(%s)</a>", $host_by_ip);
+               . sprintf("'>(%s)</a>", esc_html($display_ip_value));
             $highlight_row = (false !== strpos($results[$i]['notes'], 'user:')) ? ' is-known-user' : ' is-known-visitor';
         }
 
         $whois_pin = '';
         if (is_admin() && !empty(wp_slimstat::$settings['ip_lookup_service']) && !wp_slimstat::is_local_ip_address($results[$i]['ip'])) {
-            $whois_pin = "<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings['ip_lookup_service'] . sprintf("%s' target='_blank' title='WHOIS: %s'></a>", $results[ $i ][ 'ip' ], $results[ $i ][ 'ip' ]);
+            $whois_pin = "<a class='slimstat-font-location-1 whois' href='" . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['ip']) . "' target='_blank' title='WHOIS: " . esc_attr($results[$i]['ip']) . "'></a>";
         }
 
         // Originating IP Address
         $other_ip_address = '';
         if (!empty($results[$i]['other_ip'])) {
-            $other_ip_address = "(<a class='slimstat-font-location-1 whois' href='" . wp_slimstat::$settings['ip_lookup_service'] . sprintf("%s' target='_blank' title='WHOIS: %s'></a> <a class='slimstat-filter-link' href='", $results[ $i ][ 'other_ip' ], $results[ $i ][ 'other_ip' ]) . wp_slimstat_reports::fs_url('other_ip equals ' . $results[$i]['other_ip']) . "'>" . __('Originating IP', 'wp-slimstat') . sprintf(': %s)</a>', $results[$i]['other_ip']);
+            $other_ip_address = "(<a class='slimstat-font-location-1 whois' href='" . esc_url(wp_slimstat::$settings['ip_lookup_service'] . $results[$i]['other_ip']) . "' target='_blank' title='WHOIS: " . esc_attr($results[$i]['other_ip']) . "'></a> <a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('other_ip equals ' . $results[$i]['other_ip'])) . "'>" . __('Originating IP', 'wp-slimstat') . ': ' . esc_html($results[$i]['other_ip']) . ")</a>";
         }
 
         // Screen Resolution
@@ -219,6 +230,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
         }
 
         $results[$i]['resource'] = __('Local search results page', 'wp-slimstat');
+    }
+
+    // Defensive: ensure 'searchterms' and 'referer' keys exist to avoid undefined index
+    if (!isset($results[$i]['searchterms'])) {
+        $results[$i]['searchterms'] = '';
+    }
+
+    if (!isset($results[$i]['referer'])) {
+        $results[$i]['referer'] = '';
     }
 
     if (empty($search_terms_info)) {

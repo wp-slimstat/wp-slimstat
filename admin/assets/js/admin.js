@@ -6,6 +6,34 @@ if (typeof SlimStatAdminParams == "undefined") {
     };
 }
 
+// Clear Cache Button Handler
+jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
+    e.preventDefault();
+    var $btn = jQuery(this);
+    $btn.prop("disabled", true);
+    $btn.after('<span class="loading" style="vertical-align: middle; position: relative; top: 3px;"> &nbsp; <i class="slimstat-font-spin4 animate-spin"></i> &nbsp; </span>');
+    jQuery
+        .ajax({
+            method: "POST",
+            url: ajaxurl,
+            data: {
+                action: "slimstat_clear_cache",
+                security: typeof SlimStatAdminParams.clear_cache_nonce !== "undefined" ? SlimStatAdminParams.clear_cache_nonce : "",
+            },
+            dataType: "json",
+        })
+        .done(function (result) {
+            alert(result.data || "Cache cleared!");
+        })
+        .fail(function (xhr) {
+            alert("Cache clear failed!");
+        })
+        .always(function () {
+            $btn.prop("disabled", false);
+            $btn.next(".loading").remove();
+        });
+});
+
 // ----- TABLE OF CONTENTS -----------------------------------------------------------
 //
 // 1. Data Refresh
@@ -15,8 +43,270 @@ if (typeof SlimStatAdminParams == "undefined") {
 // 5. Miscellaneous
 // 6. Init Third-party Libraries
 // 7. Init SlimStat Pro Modal
+// 8. Conditional Fields System
 //
 // -----------------------------------------------------------------------------------
+
+/**
+ * Conditional Fields System
+ *
+ * A dynamic system for showing/hiding form fields based on other field values.
+ *
+ * Usage:
+ * Add data attributes to fields that should be conditionally shown/hidden:
+ * - data-conditional-field="field_id" - The field ID that controls visibility
+ * - data-conditional-value="value" - The value(s) that should show this field (comma-separated for multiple)
+ * - data-conditional-type="equals|not_equals|checked|not_checked|in|not_in" - Comparison type
+ *
+ * Example:
+ * <tr data-conditional-field="gdpr_enabled" data-conditional-type="checked">
+ *   <td>This row shows when gdpr_enabled is checked</td>
+ * </tr>
+ *
+ * <tr data-conditional-field="consent_integration" data-conditional-value="slimstat_banner,wp_consent_api" data-conditional-type="in">
+ *   <td>This row shows when consent_integration is either 'slimstat_banner' or 'wp_consent_api'</td>
+ * </tr>
+ */
+(function ($) {
+    "use strict";
+
+    var ConditionalFields = {
+        /**
+         * Get the current value of a field
+         * @param {string} fieldId - The field ID
+         * @returns {string|boolean} The current value
+         */
+        getFieldValue: function (fieldId) {
+            var $field = $("#" + fieldId);
+
+            if ($field.length === 0) {
+                return null;
+            }
+
+            // Checkbox/toggle
+            if ($field.is(":checkbox") || $field.hasClass("slimstat-checkbox-toggle")) {
+                return $field.is(":checked");
+            }
+
+            // Select
+            if ($field.is("select")) {
+                return $field.val() || "";
+            }
+
+            // Radio buttons
+            if ($field.is(":radio")) {
+                return $('input[name="' + $field.attr("name") + '"]:checked').val() || "";
+            }
+
+            // Text/Number inputs
+            return $field.val() || "";
+        },
+
+        /**
+         * Check a single condition
+         * @param {string} fieldId - The field ID
+         * @param {string} conditionType - The condition type
+         * @param {string} expectedValue - The expected value
+         * @returns {boolean} True if condition is met
+         */
+        checkSingleCondition: function (fieldId, conditionType, expectedValue) {
+            var currentValue = this.getFieldValue(fieldId);
+
+            if (currentValue === null) {
+                return false;
+            }
+
+            switch (conditionType) {
+                case "checked":
+                    return currentValue === true;
+
+                case "not_checked":
+                    return currentValue === false;
+
+                case "equals":
+                    return String(currentValue) === String(expectedValue);
+
+                case "not_equals":
+                    return String(currentValue) !== String(expectedValue);
+
+                case "in":
+                    if (!expectedValue) {
+                        return false;
+                    }
+                    var values = String(expectedValue)
+                        .split(",")
+                        .map(function (v) {
+                            return String(v).trim();
+                        });
+                    return values.indexOf(String(currentValue)) !== -1;
+
+                case "not_in":
+                    if (!expectedValue) {
+                        return true;
+                    }
+                    var notInValues = String(expectedValue)
+                        .split(",")
+                        .map(function (v) {
+                            return String(v).trim();
+                        });
+                    return notInValues.indexOf(String(currentValue)) === -1;
+
+                case "empty":
+                    return !currentValue || String(currentValue).trim() === "";
+
+                case "not_empty":
+                    return currentValue && String(currentValue).trim() !== "";
+
+                default:
+                    return false;
+            }
+        },
+
+        /**
+         * Check if a condition is met (supports multiple conditions with AND logic)
+         * @param {jQuery} $element - The element with conditional attributes
+         * @returns {boolean} True if condition is met
+         */
+        checkCondition: function ($element) {
+            // Support multiple conditions (AND logic)
+            var fields = $element.data("conditional-field");
+            var types = $element.data("conditional-type") || "equals";
+            var values = $element.data("conditional-value");
+
+            // If multiple fields are specified (comma-separated), check all of them
+            if (fields && fields.indexOf(",") !== -1) {
+                var fieldArray = fields.split(",").map(function (f) {
+                    return f.trim();
+                });
+                var typeArray = types.split(",").map(function (t) {
+                    return t.trim();
+                });
+                var valueArray = values
+                    ? values.split("|||").map(function (v) {
+                          return v.trim();
+                      })
+                    : [];
+
+                // Check all conditions (AND logic)
+                for (var i = 0; i < fieldArray.length; i++) {
+                    var fieldId = fieldArray[i];
+                    var conditionType = typeArray[i] || "equals";
+                    var expectedValue = valueArray[i] || "";
+
+                    if (!this.checkSingleCondition(fieldId, conditionType, expectedValue)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Single condition (backward compatibility)
+            var fieldId = fields;
+            var conditionType = types;
+            var expectedValue = values;
+
+            return this.checkSingleCondition(fieldId, conditionType, expectedValue);
+        },
+
+        /**
+         * Update visibility of a conditional element
+         * @param {jQuery} $element - The element to show/hide
+         */
+        updateVisibility: function ($element) {
+            var conditionMet = this.checkCondition($element);
+            var $row = $element.closest("tr");
+
+            if (conditionMet) {
+                $row.removeClass("hidden").show();
+            } else {
+                $row.hide();
+            }
+        },
+
+        /**
+         * Update all conditional fields based on a trigger field
+         * @param {string} triggerFieldId - The field ID that triggered the update
+         */
+        updateAllConditionals: function (triggerFieldId) {
+            var self = this;
+            // Update fields that directly depend on this trigger
+            $('[data-conditional-field="' + triggerFieldId + '"]').each(function () {
+                self.updateVisibility($(this));
+            });
+            // Update fields that have multiple conditions (including this trigger)
+            $('[data-conditional-field*="' + triggerFieldId + '"]').each(function () {
+                var $element = $(this);
+                var fields = $element.data("conditional-field");
+                // Only update if this field is part of a multi-condition
+                if (fields && fields.indexOf(",") !== -1 && fields.indexOf(triggerFieldId) !== -1) {
+                    self.updateVisibility($element);
+                }
+            });
+        },
+
+        /**
+         * Initialize all conditional fields
+         */
+        init: function () {
+            var self = this;
+            var processedFields = {}; // Track which fields already have listeners
+
+            // Find all elements with conditional attributes
+            $("[data-conditional-field]").each(function () {
+                var $element = $(this);
+                var fields = $element.data("conditional-field");
+
+                // Update initial visibility
+                self.updateVisibility($element);
+
+                // Handle multi-condition (comma-separated fields)
+                var fieldArray = [];
+                if (fields && fields.indexOf(",") !== -1) {
+                    fieldArray = fields.split(",").map(function (f) {
+                        return f.trim();
+                    });
+                } else {
+                    fieldArray = [fields];
+                }
+
+                // Set up event listeners for each trigger field
+                fieldArray.forEach(function (fieldId) {
+                    if (!fieldId || processedFields[fieldId]) {
+                        return; // Skip if already processed
+                    }
+                    processedFields[fieldId] = true;
+
+                    var $triggerField = $("#" + fieldId);
+                    if ($triggerField.length > 0) {
+                        // Remove existing listeners to avoid duplicates
+                        $triggerField.off("change.conditionalFields");
+
+                        // Add change listener
+                        $triggerField.on("change.conditionalFields", function () {
+                            self.updateAllConditionals(fieldId);
+                        });
+
+                        // For checkbox toggles, also listen to switchChange event
+                        if ($triggerField.hasClass("slimstat-checkbox-toggle")) {
+                            $triggerField.off("switchChange.bootstrapSwitch.conditionalFields");
+                            $triggerField.on("switchChange.bootstrapSwitch.conditionalFields", function () {
+                                self.updateAllConditionals(fieldId);
+                            });
+                        }
+                    }
+                });
+            });
+        },
+    };
+
+    // Initialize on document ready
+    jQuery(function () {
+        ConditionalFields.init();
+    });
+
+    // Expose to global scope for manual initialization if needed
+    window.SlimStatConditionalFields = ConditionalFields;
+})(jQuery);
 
 jQuery(function () {
     // Show Tracking Request Method only when Tracking Mode = Client
@@ -35,27 +325,32 @@ jQuery(function () {
     jQuery(document).on("change", toggleSelector, toggleTrackingRequestMethod);
     jQuery(document).on("switchChange.bootstrapSwitch", toggleSelector, toggleTrackingRequestMethod);
 
-    var licenseType = jQuery("#enable_maxmind");
-    if (licenseType.val() !== "on") {
-        jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        jQuery("#maxmind_user_id").closest("tr").css("display", "none");
+    // Geolocation provider-based UI toggles
+    function toggleGeoUi() {
+        var provider = jQuery("#geolocation_provider").val();
+        var $licenseRow = jQuery("#maxmind_license_key").closest("tr");
+        var $dbActionsRow = jQuery("#slimstat-update-geoip-database").length ? jQuery("#slimstat-update-geoip-database").closest("tr") : jQuery();
+
+        if (provider === "maxmind") {
+            $licenseRow.css("display", "table-row");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "dbip") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "table-row");
+        } else if (provider === "cloudflare") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "none");
+        }
     }
+    // Initialize and bind change
+    toggleGeoUi();
+    jQuery(document).on("change", "#geolocation_provider", toggleGeoUi);
 
     // ----- BEGIN: ACCESS LOG -------------------------------------------------------
     //
     SlimStatAdmin.access_log_count_down();
 
-    jQuery("#enable_maxmind").on("change", function (e) {
-        var value = e.target.value;
-        if (value == "on") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "table-row");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "table-row");
-        }
-        if (value == "no") {
-            jQuery("#maxmind_user_id").closest("tr").css("display", "none");
-            jQuery("#maxmind_license_key").closest("tr").css("display", "none");
-        }
-    });
+    // remove legacy enable_maxmind toggle handler (migrated to provider-based)
 
     // GeoIP Database Manually Update
     jQuery("#slimstat-update-geoip-database").on("click", function (e) {
@@ -182,12 +477,503 @@ jQuery(function () {
     // ----- BEGIN: FILTERS ----------------------------------------------------------
     //
 
+    // Custom Searchable Select Component
+    // Make all texts translatable using wp.i18n if available, with fallbacks
+    const __ = typeof window.wp !== "undefined" && wp.i18n && typeof wp.i18n.__ === "function" ? wp.i18n.__ : (s) => s;
+    class SlimStatSearchableSelect {
+        constructor(element, options = {}) {
+            // Validate element exists
+            if (!element) {
+                throw new Error("SlimStatSearchableSelect: element is required");
+            }
+
+            this.element = element;
+            this.options = {
+                placeholder: __("Select value...", "wp-slimstat"),
+                searchPlaceholder: __("Search...", "wp-slimstat"),
+                noResultsText: __("No results found", "wp-slimstat"),
+                loadingText: __("Loading...", "wp-slimstat"),
+                allowClear: true,
+                ...options,
+            };
+
+            this.selectedValue = "";
+            this.selectedText = "";
+            this.selectedOption = null;
+            this.isOpen = false;
+            this.filteredOptions = [];
+            this.allOptions = [];
+
+            this.init();
+        }
+
+        init() {
+            this.createWrapper();
+            this.bindEvents();
+        }
+
+        createWrapper() {
+            // Create wrapper structure
+            this.wrapper = document.createElement("div");
+            this.wrapper.className = "slimstat-searchable-select";
+
+            this.selectWrapper = document.createElement("div");
+            this.selectWrapper.className = "slimstat-select-wrapper";
+
+            this.display = document.createElement("div");
+            this.display.className = "slimstat-select-display slimstat-placeholder";
+            // Create elements safely to prevent XSS
+            const textSpan = document.createElement("span");
+            textSpan.className = "slimstat-select-text";
+            textSpan.textContent = this.options.placeholder;
+
+            const arrowSpan = document.createElement('span');
+            arrowSpan.className = 'slimstat-select-arrow';
+            arrowSpan.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><polyline points="4 6 8 10 12 6"></polyline></svg>';
+
+            this.display.appendChild(textSpan);
+            this.display.appendChild(arrowSpan);
+
+            this.dropdown = document.createElement("div");
+            this.dropdown.className = "slimstat-select-dropdown";
+            this.dropdown.style.display = "none";
+
+            this.searchContainer = document.createElement("div");
+            this.searchContainer.className = "slimstat-select-search";
+            // Create search input safely to prevent XSS
+            const searchInput = document.createElement("input");
+            searchInput.type = "text";
+            searchInput.placeholder = this.options.searchPlaceholder;
+            this.searchContainer.appendChild(searchInput);
+
+            this.optionsContainer = document.createElement("div");
+            this.optionsContainer.className = "slimstat-select-options";
+
+            this.dropdown.appendChild(this.searchContainer);
+            this.dropdown.appendChild(this.optionsContainer);
+
+            this.selectWrapper.appendChild(this.display);
+            this.selectWrapper.appendChild(this.dropdown);
+            this.wrapper.appendChild(this.selectWrapper);
+
+            // Ensure the original input has the name attribute before hiding
+            if (!this.element.hasAttribute("name")) {
+                this.element.setAttribute("name", "v");
+            }
+
+            // Insert wrapper before original element
+            this.element.parentNode.insertBefore(this.wrapper, this.element);
+
+            // Move the original element inside the wrapper to keep it in the form
+            // but keep it hidden and maintain it as part of the form submission
+            this.wrapper.appendChild(this.element);
+            this.element.style.display = "none";
+        }
+
+        bindEvents() {
+            // Display click to toggle dropdown
+            this.display.addEventListener("click", (e) => {
+                e.stopPropagation();
+                this.toggle();
+            });
+
+            // Search input
+            const searchInput = this.searchContainer.querySelector("input");
+            searchInput.addEventListener("input", (e) => {
+                this.filterOptions(e.target.value);
+            });
+
+            searchInput.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    this.close();
+                }
+            });
+
+            // Click outside to close
+            document.addEventListener("click", (e) => {
+                if (!this.wrapper.contains(e.target)) {
+                    this.close();
+                }
+            });
+
+            // Prevent dropdown from closing when clicking inside
+            this.dropdown.addEventListener("click", (e) => {
+                e.stopPropagation();
+            });
+        }
+
+        setOptions(options) {
+            // Normalize options to always be objects with value, label, and icon
+            this.allOptions = options.map((opt) => {
+                if (typeof opt === "string") {
+                    return { value: opt, label: opt, icon: null };
+                }
+                return {
+                    value: opt.value || opt,
+                    label: opt.label || opt.value || opt,
+                    icon: opt.icon || null,
+                };
+            });
+            this.filteredOptions = [...this.allOptions];
+            this.renderOptions();
+        }
+
+        setLoading(loading = true) {
+            if (loading) {
+                // Create loading element safely to prevent XSS
+                this.optionsContainer.innerHTML = "";
+                const loadingDiv = document.createElement("div");
+                loadingDiv.className = "slimstat-select-loading";
+                loadingDiv.textContent = this.options.loadingText;
+                this.optionsContainer.appendChild(loadingDiv);
+            }
+        }
+
+        filterOptions(searchTerm) {
+            const term = searchTerm.toLowerCase().trim();
+
+            if (!term) {
+                this.filteredOptions = [...this.allOptions];
+            } else {
+                this.filteredOptions = this.allOptions.filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term));
+            }
+
+            this.renderOptions();
+        }
+
+        renderOptions() {
+            this.optionsContainer.innerHTML = "";
+
+            if (this.filteredOptions.length === 0) {
+                // Create no results element safely to prevent XSS
+                const noResultsDiv = document.createElement("div");
+                noResultsDiv.className = "slimstat-select-no-results";
+                noResultsDiv.textContent = this.options.noResultsText;
+                this.optionsContainer.appendChild(noResultsDiv);
+                return;
+            }
+
+            this.filteredOptions.forEach((option) => {
+                const optionElement = document.createElement("button");
+                optionElement.type = "button";
+                optionElement.className = "slimstat-select-option";
+                if (option.value === this.selectedValue) {
+                    optionElement.classList.add("slimstat-selected");
+                }
+
+                // Add icon if available
+                if (option.icon) {
+                    const iconElement = document.createElement("img");
+                    iconElement.className = "slimstat-option-icon";
+                    iconElement.src = option.icon;
+                    iconElement.alt = "";
+                    iconElement.width = 20;
+                    iconElement.height = 20;
+                    optionElement.appendChild(iconElement);
+                }
+
+                // Add label text
+                const labelElement = document.createElement("span");
+                labelElement.className = "slimstat-option-label";
+                labelElement.textContent = option.label;
+                optionElement.appendChild(labelElement);
+
+                optionElement.addEventListener("click", () => {
+                    this.selectOption(option);
+                });
+                this.optionsContainer.appendChild(optionElement);
+            });
+        }
+
+        selectOption(option) {
+            this.selectedValue = option.value;
+            this.selectedText = option.label;
+            this.selectedOption = option;
+
+            // Update display
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = ""; // Clear existing content
+
+            // Add icon if available
+            if (option.icon) {
+                const iconElement = document.createElement("img");
+                iconElement.className = "slimstat-option-icon";
+                iconElement.src = option.icon;
+                iconElement.alt = "";
+                iconElement.width = 16;
+                iconElement.height = 16;
+                iconElement.style.marginRight = "6px";
+                textElement.appendChild(iconElement);
+            }
+
+            // Add label text
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = option.label;
+            textElement.appendChild(labelSpan);
+
+            this.display.classList.remove("slimstat-placeholder");
+
+            // Update hidden input with the value
+            this.element.value = option.value;
+
+            // Ensure the name attribute is set
+            if (!this.element.hasAttribute("name")) {
+                this.element.setAttribute("name", "v");
+            }
+
+            // Trigger change event on original element
+            const changeEvent = new Event("change", { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+
+            this.close();
+        }
+
+        clear() {
+            this.selectedValue = "";
+            this.selectedText = "";
+            this.selectedOption = null;
+
+            // Reset display
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = ""; // Clear any icons
+            textElement.textContent = this.options.placeholder;
+            this.display.classList.add("slimstat-placeholder");
+
+            // Clear hidden input
+            this.element.value = "";
+
+            // Trigger change event
+            const changeEvent = new Event("change", { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+        }
+
+        getValue() {
+            return this.selectedValue;
+        }
+
+        setValue(value) {
+            const option = this.allOptions.find((opt) => opt.value === value);
+            if (option) {
+                this.selectOption(option);
+            }
+        }
+
+        toggle() {
+            if (this.isOpen) {
+                this.close();
+            } else {
+                this.open();
+            }
+        }
+
+        open() {
+            if (this.isOpen) return;
+
+            this.isOpen = true;
+            this.selectWrapper.classList.add("slimstat-select-open");
+            this.dropdown.style.display = "block";
+
+            // Focus search input
+            const searchInput = this.searchContainer.querySelector("input");
+            searchInput.focus();
+            searchInput.select();
+
+            // Reset filter
+            this.filterOptions("");
+        }
+
+        close() {
+            if (!this.isOpen) return;
+
+            this.isOpen = false;
+            this.selectWrapper.classList.remove("slimstat-select-open");
+            this.dropdown.style.display = "none";
+
+            // Clear search
+            const searchInput = this.searchContainer.querySelector("input");
+            searchInput.value = "";
+        }
+
+        destroy() {
+            // Close dropdown if open
+            if (this.isOpen) {
+                this.close();
+            }
+
+            // Safely remove wrapper and restore original element
+            if (this.wrapper && this.element) {
+                // Move element back to its original position before wrapper
+                if (this.wrapper.parentNode) {
+                    this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
+                }
+
+                // Show original element
+                this.element.style.display = "";
+
+                // Clear value
+                this.element.value = "";
+
+                // Remove wrapper
+                if (this.wrapper.parentNode) {
+                    this.wrapper.parentNode.removeChild(this.wrapper);
+                }
+            }
+        }
+    }
+
+    // Initialize searchable select instance
+    let searchableSelectInstance = null;
+
+    /**
+     * Helper function to get current time range for AJAX requests
+     * Returns object with type, from, and to parameters
+     */
+    function getTimeRangeForAjax() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var timeRange = {
+            type: 'last_28_days', // default
+            from: '',
+            to: ''
+        };
+
+        // First, check URL parameters
+        if (urlParams.has('type')) {
+            var typeParam = urlParams.get('type');
+            if (typeParam === 'custom' && urlParams.has('from') && urlParams.has('to')) {
+                timeRange.type = 'custom';
+                timeRange.from = urlParams.get('from');
+                timeRange.to = urlParams.get('to');
+            } else if (typeParam !== 'custom') {
+                timeRange.type = typeParam;
+            }
+        }
+        // If no URL params, check sessionStorage
+        else {
+            var savedRange = sessionStorage.getItem('slimstat_date_range');
+            if (savedRange) {
+                try {
+                    var parsed = JSON.parse(savedRange);
+                    if (parsed.preset) {
+                        timeRange.type = parsed.preset;
+                    }
+                    // For custom ranges from sessionStorage
+                    if (parsed.preset === 'custom' && parsed.startDate && parsed.endDate) {
+                        timeRange.from = moment(parsed.startDate).format('YYYY-MM-DD');
+                        timeRange.to = moment(parsed.endDate).format('YYYY-MM-DD');
+                    }
+                } catch (e) {
+                    // If parsing fails, use default
+                    console.warn('SlimStat: Could not parse saved date range for filter options', e);
+                }
+            }
+        }
+
+        return timeRange;
+    }
+
+    // Handle dimension change to load filter options dynamically
+    jQuery("#slimstat-filter-name").on("change", function () {
+        var dimension = jQuery(this).val();
+
+        // Destroy existing searchable select FIRST before doing anything
+        if (searchableSelectInstance) {
+            searchableSelectInstance.destroy();
+            searchableSelectInstance = null;
+        }
+
+        // Get fresh reference to the input element after destroy
+        var $textInput = jQuery("#slimstat-filter-value");
+
+        if (!dimension) {
+            return;
+        }
+
+        // Show loading state
+        $textInput.attr("placeholder", __("Loading options...", "wp-slimstat")).attr("name", "v");
+
+        // Get the current time range from URL parameters or sessionStorage
+        var timeRangeData = getTimeRangeForAjax();
+
+        // Fetch options via AJAX
+        jQuery.ajax({
+            method: "POST",
+            url: ajaxurl,
+            data: {
+                action: "slimstat_get_filter_options",
+                dimension: dimension,
+                security: jQuery("#meta-box-order-nonce").val(),
+                time_range_type: timeRangeData.type,
+                time_range_from: timeRangeData.from,
+                time_range_to: timeRangeData.to,
+            },
+            dataType: "json",
+            timeout: 30000, // 30 second timeout to prevent hanging requests
+        })
+            .done(function (response) {
+                if (response.success) {
+                    // Verify the element still exists
+                    if (!$textInput.length || !$textInput[0]) {
+                        return;
+                    }
+
+                    try {
+                        // Determine the appropriate "no results" message
+                        var noResultsText = __('No matching options found', 'wp-slimstat');
+
+                        // Check if we have no data due to time range filter
+                        if (response.data && response.data.length === 0) {
+                            noResultsText = __('No data in this time range', 'wp-slimstat');
+                        }
+
+                        // Initialize searchable select (even if no options)
+                        searchableSelectInstance = new SlimStatSearchableSelect($textInput[0], {
+                            placeholder: __('Select value...', 'wp-slimstat'),
+                            searchPlaceholder: __('Search options...', 'wp-slimstat'),
+                            noResultsText: noResultsText,
+                            loadingText: __('Loading options...', 'wp-slimstat')
+                        });
+
+                        // Set the options from the AJAX response (empty array if no data)
+                        searchableSelectInstance.setOptions(response.data || []);
+
+                        $textInput.attr("name", "v");
+                    } catch (error) {
+                        // Fall back to regular text input if searchable select fails
+                        console.error('SlimStat: Failed to initialize searchable select', error);
+                        $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                    }
+                } else {
+                    // On error response, fall back to text input
+                    $textInput.attr("placeholder", __('Enter value...', 'wp-slimstat')).attr("name", "v");
+                }
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                // On error, fall back to text input
+                $textInput.attr("placeholder", __("Enter value...", "wp-slimstat")).attr("name", "v");
+            });
+    });
+
     // Make input field read-only if certain operators are selected
     jQuery("#slimstat-filter-operator").on("change", function () {
-        if (this.value == "is_empty" || this.value == "is_not_empty") {
-            jQuery("#slimstat-filter-value").attr("readonly", "readonly");
+        var operator = this.value;
+        var $textInput = jQuery("#slimstat-filter-value");
+
+        if (operator == "is_empty" || operator == "is_not_empty") {
+            $textInput.attr("readonly", "readonly");
+
+            // Disable searchable select if it exists
+            if (searchableSelectInstance) {
+                searchableSelectInstance.selectWrapper.style.pointerEvents = "none";
+                searchableSelectInstance.selectWrapper.style.opacity = "0.5";
+            }
         } else {
-            jQuery("#slimstat-filter-value").removeAttr("readonly");
+            $textInput.removeAttr("readonly");
+
+            // Enable searchable select if it exists
+            if (searchableSelectInstance) {
+                searchableSelectInstance.selectWrapper.style.pointerEvents = "auto";
+                searchableSelectInstance.selectWrapper.style.opacity = "1";
+            }
         }
     });
 
@@ -364,6 +1150,38 @@ jQuery(function () {
     // ----- BEGIN: CUSTOMIZER -------------------------------------------------------
     //
 
+    // Initialize sortable for customizer layout
+    if (jQuery(".meta-box-sortables").length) {
+        jQuery(".meta-box-sortables").sortable({
+            connectWith: ".meta-box-sortables",
+            items: ".postbox",
+            placeholder: "sortable-placeholder",
+            handle: ".hndle",
+            cursor: "move",
+            delay: 150,
+            distance: 5,
+            tolerance: "pointer",
+            forcePlaceholderSize: true,
+            helper: "clone",
+            opacity: 0.65,
+            stop: function (event, ui) {
+                // Save the new order
+                var data = {
+                    action: "meta-box-order",
+                    _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
+                    page: SlimStatAdminParams.page_location + "_page_slimlayout",
+                    page_columns: 0,
+                };
+
+                jQuery(".meta-box-sortables").each(function () {
+                    data["order[" + this.id.split("-")[0] + "]"] = jQuery(this).sortable("toArray").join(",");
+                });
+
+                jQuery.post(ajaxurl, data);
+            },
+        });
+    }
+
     // Clone and delete report placeholders
     jQuery(".slimstat-layout .slimstat-header-buttons a").on("click", function (e) {
         e.preventDefault();
@@ -396,6 +1214,53 @@ jQuery(function () {
 
     // ----- BEGIN: MISCELLANEOUS ----------------------------------------------------
     //
+
+
+
+    function slimstatOpenHelp(fallbackUrl) {
+        var helpToggle = document.getElementById("contextual-help-link");
+        if (helpToggle) {
+            var wasExpanded = helpToggle.getAttribute("aria-expanded") === "true";
+            helpToggle.click();
+
+            if (!wasExpanded) {
+                window.setTimeout(function () {
+                    var helpPanel = document.getElementById("contextual-help-wrap");
+                    if (helpPanel) {
+                        if (!helpPanel.hasAttribute("tabindex")) {
+                            helpPanel.setAttribute("tabindex", "-1");
+                        }
+                        try {
+                            helpPanel.focus({ preventScroll: true });
+                        } catch (err) {
+                            helpPanel.focus();
+                        }
+                    }
+                }, 50);
+            }
+
+            return true;
+        }
+
+        if (fallbackUrl) {
+            window.open(fallbackUrl, "_blank", "noopener");
+        }
+
+        return false;
+    }
+
+    jQuery(document).on("click", "[data-slimstat-help-trigger]", function (e) {
+        e.preventDefault();
+        slimstatOpenHelp(jQuery(this).data("slimstatHelpFallback"));
+    });
+
+    jQuery(document).on("keydown", "[data-slimstat-help-trigger]", function (e) {
+        var element = this;
+        slimstatHandleA11yActivation(e, function () {
+            slimstatOpenHelp(jQuery(element).data("slimstatHelpFallback"));
+        });
+    });
+
 
     // Hide a notice and send the corresponding ajax request to the server
     jQuery(document).on("click", "[id^=slimstat-notice-] button", function (e) {
@@ -594,31 +1459,96 @@ var SlimStatAdmin = {
     },
 
     access_log_count_down: function () {
-        var slimstat_refresh_timer = 0;
+        var lastTriggerMinute = -1;
 
-        function slimstat_refresh_countdown() {
-            slimstat_refresh_timer--;
-            minutes = parseInt(slimstat_refresh_timer / 60);
-            seconds = parseInt(slimstat_refresh_timer % 60);
+        function slimstat_sync_and_countdown() {
+            var now = new Date();
+            var currentSeconds = now.getSeconds();
+            var currentMinute = now.getMinutes();
+
+            // Trigger pulse at exactly :00 of a new minute
+            if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
+                lastTriggerMinute = currentMinute;
+                window.dispatchEvent(new CustomEvent("slimstat:minute_pulse"));
+            }
+
+            var remaining = (60 - currentSeconds) % 60;
+            var minutes = Math.floor(remaining / 60);
+            var seconds = remaining % 60;
 
             jQuery(".refresh-timer").html(minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
-
-            if (slimstat_refresh_timer == 0) {
-                // Request the data from the server
-                refresh = SlimStatAdmin.refresh_report("slim_p7_02");
-                refresh();
-
-                // Reset the countdown timer
-                slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-            }
         }
+
+        // Sync refresh with the global pulse
+        window.addEventListener("slimstat:minute_pulse", function () {
+            if (jQuery(".pagination .refresh-timer").length > 0) {
+                var refresh = SlimStatAdmin.refresh_report("slim_p7_02");
+                refresh();
+            }
+        });
+
+        // Update online visitors count on pulse
+        window.addEventListener("slimstat:minute_pulse", function () {
+            var onlineVisitorsElement = document.getElementById("slimstat-online-visitors-count");
+            var adminbarHeaderElement = document.getElementById("slimstat-adminbar-online-header");
+            var adminbarCountElement = document.getElementById("slimstat-adminbar-online-count");
+
+            // Check if any element exists that needs updating
+            var hasElements = onlineVisitorsElement || adminbarHeaderElement || adminbarCountElement;
+            var securityNonce = jQuery("#meta-box-order-nonce").val();
+
+            if (hasElements && securityNonce) {
+                jQuery.ajax({
+                    url: ajaxurl,
+                    type: "POST",
+                    data: {
+                        action: "slimstat_get_online_visitors",
+                        security: securityNonce
+                    },
+                    success: function (response) {
+                        if (response.success && response.data && response.data.formatted) {
+                            var newValue = response.data.count;
+                            var formattedValue = response.data.formatted;
+
+                            // Helper function to animate value change
+                            var animateElement = function(element) {
+                                if (!element) return;
+
+                                var currentValue = element.textContent.replace(/,/g, "");
+                                if (parseInt(currentValue, 10) !== newValue) {
+                                    element.style.transition = "transform 0.1s ease-out";
+                                    element.style.transform = "scale(1.05)";
+
+                                    setTimeout(function () {
+                                        element.textContent = formattedValue;
+                                        element.style.transform = "scale(1)";
+                                    }, 100);
+                                }
+                            };
+
+                            // Update all elements
+                            animateElement(onlineVisitorsElement);
+                            animateElement(adminbarHeaderElement);
+                            animateElement(adminbarCountElement);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Failed to update online visitors:", error);
+                    }
+                });
+            }
+        });
 
         var observer = new MutationObserver(function (mutationsList) {
             mutationsList.forEach(function (mutation) {
                 mutation.addedNodes.forEach(function (node) {
                     if (node.nodeType === 1 && node.classList.contains("refresh-timer")) {
-                        slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-                        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
+                        if (SlimStatAdmin.refresh_handle != null) {
+                            window.clearInterval(SlimStatAdmin.refresh_handle);
+                        }
+                        // Check every 200ms to ensure we catch the :00 second exactly
+                        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
+                        slimstat_sync_and_countdown();
                     }
                 });
             });
@@ -631,8 +1561,11 @@ var SlimStatAdmin = {
         });
 
         if (jQuery(".pagination .refresh-timer").length > 0 && typeof SlimStatAdminParams.refresh_interval != "undefined") {
-            slimstat_refresh_timer = parseInt(SlimStatAdminParams.refresh_interval);
-            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_refresh_countdown, 1000);
+            if (SlimStatAdmin.refresh_handle != null) {
+                window.clearInterval(SlimStatAdmin.refresh_handle);
+            }
+            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
+            slimstat_sync_and_countdown();
         }
     },
     get_query_string_filters: function (url) {

@@ -455,3 +455,85 @@ body.index-php {
     font-weight: normal;
     font-style: italic;
 }
+
+/* Bar Chart Styles */
+.slimstat-chart-wrap .slimstat-postbox-chart--canvas {
+    transition: all 0.3s ease;
+}
+
+/* Bar chart specific styling */
+.chart-bar .slimstat-postbox-chart--canvas {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Bar chart hover effects */
+.chart-bar .slimstat-postbox-chart--canvas:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Legend styling for bar charts */
+.chart-bar .slimstat-postbox-chart--item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.chart-bar .slimstat-postbox-chart--item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
+}
+
+.chart-bar .slimstat-postbox-chart--item--color {
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Animation for bar charts */
+@keyframes barChartLoad {
+    from {
+        opacity: 0;
+        transform: scaleY(0);
+        transform-origin: bottom;
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+.chart-bar .slimstat-postbox-chart--canvas {
+    animation: barChartLoad 0.6s ease-out;
+}
+
+/* Responsive bar chart adjustments */
+@media (max-width: 768px) {
+    .chart-bar .slimstat-postbox-chart--canvas {
+        height: 200px !important;
+    }
+
+    .chart-bar .slimstat-postbox-chart--items {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .chart-bar .slimstat-postbox-chart--item {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+/* Bar chart loading state */
+.chart-bar.loading .slimstat-postbox-chart--canvas {
+    opacity: 0.6;
+    filter: blur(1px);
+}
+
+/* Bar chart peak highlighting */
+.chart-bar .bar-peak {
+    background: linear-gradient(135deg, #e8294c 0%, #ff6b7d 100%) !important;
+    box-shadow: 0 4px 12px rgba(232, 41, 76, 0.3) !important;
+    transform: scaleY(1.1);
+    z-index: 10;
+}
