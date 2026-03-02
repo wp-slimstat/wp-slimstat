@@ -83,6 +83,7 @@
     font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,"Helvetica Neue",sans-serif;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     border-radius: 6px;
+    margin-top: 0;
     width: auto !important;
     min-width: auto;
     z-index: 9999;
@@ -126,7 +127,7 @@
 
 /* Position dropdown below the button */
 .slimstat-daterangepicker.daterangepicker.drops-down {
-    margin-top: 4px;
+    margin-top: 0;
 }
 
 .slimstat-daterangepicker.daterangepicker.opens-right {
@@ -239,27 +240,8 @@
     }
 }
 .slimstat-daterangepicker{
-    top: 256px !important;
     left: unset !important;
     right: 20px !important;
-}
-@media screen and (max-width: 1024px) {
-    .slimstat-daterangepicker{
-        top: 308px !important;
-
-    }
-}
-
-@media screen and (max-width: 717px) {
-    .slimstat-daterangepicker{
-        top: 350px !important;
-    }
-}
-
-@media screen and (max-width: 401px) {
-    .slimstat-daterangepicker{
-        top: 380px !important;
-    }
 }
 
 .datepicker-badge-elements{

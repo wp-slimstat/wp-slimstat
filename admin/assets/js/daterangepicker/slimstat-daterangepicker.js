@@ -459,7 +459,7 @@ jQuery(document).ready(function($) {
             const buttonWidth = $button.outerWidth();
 
             picker.container.css({
-                'top': buttonOffset.top + buttonHeight + 4,
+                'top': buttonOffset.top + buttonHeight + 10,
                 'z-index': 9999
             });
 
