@@ -224,8 +224,12 @@ class ConsentChangeRestController implements RestControllerInterface
 			}
 		} elseif ('wp_consent_api' === $integration_key && function_exists('wp_has_consent')) {
 			$category = \wp_slimstat::$settings['consent_level_integration'] ?? 'statistics';
-			if (wp_has_consent($category)) {
-				$default['statistics'] = 'allow';
+			try {
+				if (wp_has_consent($category)) {
+					$default['statistics'] = 'allow';
+				}
+			} catch (\Throwable $e) {
+				// Consent status unknown — leave as default deny
 			}
 		}
 

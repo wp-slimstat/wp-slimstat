@@ -363,8 +363,8 @@ class Consent
 				try {
 
                     if( ! wp_get_consent_type() ) {
-                        add_filter('wp_get_consent_type', function($type) use ($wpConsentCategory) {
-                            return 'wp_consent_' . $wpConsentCategory;
+                        add_filter('wp_get_consent_type', function($type) {
+                            return 'optin';
                         }, 10, 1);
                     }
 

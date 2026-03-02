@@ -254,6 +254,20 @@ class wp_slimstat
             if (function_exists('wp_has_consent')) {
                 $plugin = plugin_basename(SLIMSTAT_FILE);
                 add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
+
+                // Register cookie info with WP Consent API for CMP display
+                if (function_exists('wp_add_cookie_info')) {
+                    wp_add_cookie_info(
+                        'slimstat_tracking_code',
+                        'SlimStat Analytics',
+                        'statistics',
+                        intval(self::$settings['session_duration'] ?? 1800) . ' ' . __('seconds', 'wp-slimstat'),
+                        __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
+                        '',
+                        false,
+                        false
+                    );
+                }
             }
         }
 
