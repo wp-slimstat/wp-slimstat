@@ -61,6 +61,7 @@ body.index-php {
   }
 
   .slimstat-browser-icon,
+  .slimstat-flag-icon,
   span.slimstat-flag-container {
     position: relative !important;
     width: 18px;
@@ -1174,6 +1175,7 @@ body {
 
 /* Additional RTL Support for Dashboard Elements */
 .rtl .slimstat-browser-icon,
+.rtl .slimstat-flag-icon,
 .rtl span.slimstat-flag-container {
   float: right !important;
   margin: 0px 0px 0px 10px !important;
@@ -1319,6 +1321,7 @@ body {
 }
 
 .rtl .slimstat-browser-icon,
+.rtl .slimstat-flag-icon,
 .rtl span.slimstat-flag-container {
   float: right !important;
   margin: 0px 0px 0px 10px !important;
@@ -3458,6 +3461,7 @@ x:-o-prefocus {
       }
 
       .slimstat-browser-icon,
+      .slimstat-flag-icon,
       span.slimstat-flag-container {
         position: relative !important;
         width: 18px;
