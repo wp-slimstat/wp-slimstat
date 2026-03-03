@@ -70,9 +70,14 @@ class Chart
             \wp_slimstat_db::init();
         }
 
-        // Restore filters from args if provided
+        // Restore filters from args if provided; validate column keys against known schema
         if (!empty($args['filters']) && is_array($args['filters'])) {
-            \wp_slimstat_db::$filters_normalized['columns'] = $args['filters'];
+            $allowed_columns = array_keys(\wp_slimstat_db::$columns_names);
+            foreach ($args['filters'] as $col => $val) {
+                if (in_array($col, $allowed_columns, true)) {
+                    \wp_slimstat_db::$filters_normalized['columns'][$col] = $val;
+                }
+            }
         }
 
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];

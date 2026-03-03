@@ -83,7 +83,7 @@ class Tracker
         $identifier     = 0;
 
         if (isset($_COOKIE['slimstat_tracking_code'])) {
-            $identifier = self::_get_value_without_checksum($_COOKIE['slimstat_tracking_code']);
+            $identifier = self::_get_value_without_checksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
             if (false === $identifier) {
                 return false;
             }

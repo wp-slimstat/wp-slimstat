@@ -1537,7 +1537,7 @@ class wp_slimstat_admin
 
         $saved_filters = get_option('slimstat_filters', []);
 
-        switch ($_POST['type']) {
+        switch (sanitize_key(wp_unslash($_POST['type'] ?? ''))) {
             case 'save':
                 $new_filter = json_decode(stripslashes_deep(sanitize_text_field($_POST['filter_array'])), true);
 
@@ -1979,6 +1979,11 @@ class wp_slimstat_admin
 	{
 		check_ajax_referer('wp_rest', 'security');
 
+		if (!current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
+			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
+			return;
+		}
+
 		try {
 			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
             if ('cloudflare' === $provider) {
@@ -2012,6 +2017,11 @@ class wp_slimstat_admin
 	public static function check_geoip_database()
 	{
 		check_ajax_referer('wp_rest', 'security');
+
+		if (!current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
+			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
+			return;
+		}
 
 		try {
 			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';

@@ -312,7 +312,8 @@ class Ajax
                         \wp_slimstat::set_stat($stat);
                         $id = Processor::process();
                     } elseif (!$is_allowed_host($parsed_resource['host'])) {
-                        $stat['outbound_resource'] = $resource;
+                        $sanitized_url = sanitize_url($resource);
+                        $stat['outbound_resource'] = !empty($sanitized_url) ? $sanitized_url : '';
                         $stat['dt_out']             = \wp_slimstat::date_i18n('U');
 
                         // Update stat before storage

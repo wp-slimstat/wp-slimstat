@@ -1424,7 +1424,7 @@ class slimstat_widget extends WP_Widget
         ], $_instance));
 
         if (!empty($slimstat_widget_title)) {
-            echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . $slimstat_widget_title . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
+            echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . esc_html($slimstat_widget_title) . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
         }
         if (!empty($slimstat_widget_id)) {
             echo do_shortcode(sprintf("[slimstat f='widget' w='%s']%s[/slimstat]", $slimstat_widget_id, $slimstat_widget_filters));
@@ -1487,9 +1487,9 @@ class slimstat_widget extends WP_Widget
     {
         $instance = $_old_instance;
 
-        $instance['slimstat_widget_id']      = $_new_instance['slimstat_widget_id'];
-        $instance['slimstat_widget_title']   = $_new_instance['slimstat_widget_title'];
-        $instance['slimstat_widget_filters'] = $_new_instance['slimstat_widget_filters'];
+        $instance['slimstat_widget_id']      = sanitize_key($_new_instance['slimstat_widget_id'] ?? '');
+        $instance['slimstat_widget_title']   = sanitize_text_field(wp_unslash($_new_instance['slimstat_widget_title'] ?? ''));
+        $instance['slimstat_widget_filters'] = sanitize_textarea_field(wp_unslash($_new_instance['slimstat_widget_filters'] ?? ''));
         return $instance;
     }
 }
@@ -1505,6 +1505,13 @@ if (function_exists('add_action')) {
     if ((!empty($_SERVER['HTTP_CONTENT_TYPE']) || !empty($_SERVER['CONTENT_TYPE'])) && [] === $_POST) {
         $raw_post_string = file_get_contents('php://input');
         parse_str($raw_post_string, wp_slimstat::$raw_post_array);
+
+        // Sanitize the action key from the raw body before using it
+        if (!empty(wp_slimstat::$raw_post_array['action'])) {
+            wp_slimstat::$raw_post_array['action'] = sanitize_key(
+                wp_unslash(wp_slimstat::$raw_post_array['action'])
+            );
+        }
     } elseif ([] !== $_POST) {
         wp_slimstat::$raw_post_array = $_POST;
     }
@@ -1513,8 +1520,9 @@ if (function_exists('add_action')) {
     if (!empty(wp_slimstat::$raw_post_array['action']) && 'slimtrack' == wp_slimstat::$raw_post_array['action']) {
 
         // This is needed because admin-ajax.php is reading $_REQUEST to fire the corresponding action
+        // Use a hardcoded literal instead of passing the user-supplied value
         if (empty($_POST['action'])) {
-            $_POST['action'] = wp_slimstat::$raw_post_array['action'];
+            $_POST['action'] = 'slimtrack';
         }
 
         add_action('wp_ajax_nopriv_slimtrack', [\SlimStat\Tracker\Ajax::class, 'handle']);

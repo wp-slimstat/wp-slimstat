@@ -895,7 +895,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         }
 
         // All other options
-        foreach ($_POST['options'] as $a_post_slug => $a_post_value) {
+        foreach (wp_unslash($_POST['options']) as $a_post_slug => $a_post_value) {
             if (empty($settings[$current_tab]['rows'][$a_post_slug]) || !empty($settings[$current_tab]['rows'][$a_post_slug]['readonly']) || in_array($settings[$current_tab]['rows'][$a_post_slug]['type'], ['section_header', 'plain-text']) || in_array($a_post_slug, ['enable_maxmind', 'enable_browscap'])) {
                 continue;
             }
