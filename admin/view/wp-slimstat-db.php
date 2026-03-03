@@ -181,7 +181,9 @@ class wp_slimstat_db
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
-                $filters_array[sanitize_text_field(wp_unslash($a_request_filter_name))] = sprintf('%s %s', sanitize_text_field(wp_unslash($a_request_filter_name)), sanitize_text_field(wp_unslash($a_request_filter_value)));
+                $safe_name  = sanitize_text_field(wp_unslash($a_request_filter_name));
+                $safe_value = str_replace('&&&', '', sanitize_text_field(wp_unslash($a_request_filter_value)));
+                $filters_array[$safe_name] = sprintf('%s %s', $safe_name, $safe_value);
             }
         }
 
@@ -890,15 +892,21 @@ class wp_slimstat_db
 
     public static function count_records_having($_column = 'id', $_where = '', $_having = '')
     {
+        // Allowlist: only known schema columns are allowed as identifiers
+        $allowed_columns = array_keys(self::$columns_names);
+        if (!in_array($_column, $allowed_columns, true)) {
+            return 0;
+        }
+
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $distinct_column = ('id' != $_column) ? 'DISTINCT ' . $_column : $_column;
+        $distinct_column = ('id' !== $_column) ? 'DISTINCT ' . esc_sql($_column) : esc_sql($_column);
 
         $query = Query::select("COUNT(*) as counthits")
             ->from("(
                 SELECT {$distinct_column}
                 FROM {$table}
                 WHERE " . self::get_combined_where($_where, $_column) . "
-                GROUP BY {$_column}
+                GROUP BY " . esc_sql($_column) . "
                 HAVING {$_having}
             ) AS ts1");
 
