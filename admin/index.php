@@ -2463,8 +2463,8 @@ class wp_slimstat_admin
         ?>
         <script>
         jQuery(function($){
-            var indexes = <?php echo json_encode(array_values($pending)); ?>;
-            var nonces = <?php echo json_encode($nonces); ?>;
+            var indexes = <?php echo wp_json_encode(array_values($pending)); ?>;
+            var nonces = <?php echo wp_json_encode($nonces); ?>;
             var total = indexes.length, done = 0;
             function updateProgress() {
                 var percent = Math.round((done/total)*100);

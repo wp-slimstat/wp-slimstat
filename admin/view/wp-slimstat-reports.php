@@ -1794,10 +1794,10 @@ class wp_slimstat_reports
                     hoverOpacity: 0.7,
                     showTooltip: true,
                     normalizeFunction: 'polynomial',
-                    values: <?php echo json_encode($data_areas); ?>,
+                    values: <?php echo wp_json_encode($data_areas); ?>,
                     enableZoom: true,
                     onLabelShow: function (event, label, code) {
-                        const data = <?php echo json_encode($country_stats); ?>;
+                        const data = <?php echo wp_json_encode($country_stats); ?>;
                         const country = data.find(c => c.code === code);
                         if (country) {
                             label.html( '<canvas></canvas><h3>'  + country.name  + '</h3><p>' + country.visits.toLocaleString() + ' Visitors</p>');
