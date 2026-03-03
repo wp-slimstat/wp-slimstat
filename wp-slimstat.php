@@ -968,7 +968,7 @@ class wp_slimstat
 		$rest_base_url     = rest_url();
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
-        $adblock_hash      = md5(site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION);
+        $adblock_hash      = \SlimStat\Providers\RestApiManager::getSecureAdblockHash();
         $adblock_url       = home_url(sprintf('request/%s/', $adblock_hash));
 
         // Always provide all possible endpoints for fallback logic
