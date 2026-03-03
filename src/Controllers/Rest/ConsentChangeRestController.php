@@ -219,7 +219,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		}
 
 		// 1. Tracking cookie — most stable, persists across pageviews for the same visitor
-		$tracking_cookie = $_COOKIE['slimstat_tracking_code'] ?? '';
+		$tracking_cookie = sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'] ?? ''));
 		if (!empty($tracking_cookie)) {
 			$this->consentCacheKey = 'slimstat_consent_state_' . md5($tracking_cookie);
 			return $this->consentCacheKey;
