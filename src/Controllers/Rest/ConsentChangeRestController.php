@@ -26,6 +26,12 @@ if (!defined('ABSPATH')) {
  */
 class ConsentChangeRestController implements RestControllerInterface
 {
+	/** @var \WP_REST_Request|null */
+	private $currentRequest = null;
+
+	/** @var string|null Memoized cache key; empty string = no stable identifier (skip caching). */
+	private $consentCacheKey = null;
+
 	/**
 	 * Register REST API routes
 	 *
@@ -138,6 +144,8 @@ class ConsentChangeRestController implements RestControllerInterface
 	 */
 	public function handle_consent_change(\WP_REST_Request $request)
 	{
+		$this->currentRequest = $request;
+
 		$nonce = $request->get_param('nonce');
 		if (!wp_verify_nonce($nonce, 'wp_rest')) {
 			return new \WP_Error(
@@ -198,15 +206,52 @@ class ConsentChangeRestController implements RestControllerInterface
 	}
 
 	/**
+	 * Resolve a stable, per-visitor cache key for consent state.
+	 * Memoized: key is generated once per request and reused for all cache operations.
+	 * Returns empty string when no stable visitor identifier is available (caching skipped).
+	 *
+	 * @return string
+	 */
+	private function getConsentCacheKey(): string
+	{
+		if ($this->consentCacheKey !== null) {
+			return $this->consentCacheKey;
+		}
+
+		// 1. Tracking cookie — most stable, persists across pageviews for the same visitor
+		$tracking_cookie = $_COOKIE['slimstat_tracking_code'] ?? '';
+		if (!empty($tracking_cookie)) {
+			$this->consentCacheKey = 'slimstat_consent_state_' . md5($tracking_cookie);
+			return $this->consentCacheKey;
+		}
+
+		// 2. pageview_id from request — visitor-scoped for this page load
+		$pageview_id_raw = $this->currentRequest
+			? ($this->currentRequest->get_param('pageview_id') ?? '')
+			: '';
+		if (!empty($pageview_id_raw)) {
+			$this->consentCacheKey = 'slimstat_consent_state_' . md5($pageview_id_raw);
+			return $this->consentCacheKey;
+		}
+
+		// 3. No stable identifier — sentinel empty string (caching skipped)
+		$this->consentCacheKey = '';
+		return $this->consentCacheKey;
+	}
+
+	/**
 	 * Get previous consent state from cache or database
 	 *
 	 * @return array Previous consent state
 	 */
 	private function getPreviousConsentState(): array
 	{
-		$cached = wp_cache_get('slimstat_consent_state', 'slimstat');
-		if (false !== $cached && is_array($cached)) {
-			return $cached;
+		$key = $this->getConsentCacheKey();
+		if (!empty($key)) {
+			$cached = wp_cache_get($key, 'slimstat');
+			if (false !== $cached && is_array($cached)) {
+				return $cached;
+			}
 		}
 
 		$integration_key = Consent::getIntegrationKey();
@@ -350,7 +395,10 @@ class ConsentChangeRestController implements RestControllerInterface
 			Session::setTrackingCookie($visit_id, 'visit', null, true);
 		}
 
-		wp_cache_set('slimstat_consent_state', $parsed_consent, 'slimstat', HOUR_IN_SECONDS);
+		$key = $this->getConsentCacheKey();
+		if (!empty($key)) {
+			wp_cache_set($key, $parsed_consent, 'slimstat', HOUR_IN_SECONDS);
+		}
 
 		do_action('slimstat_consent_granted', $pageview_id, $parsed_consent);
 	}
@@ -366,11 +414,11 @@ class ConsentChangeRestController implements RestControllerInterface
 	{
 		Session::deleteTrackingCookie();
 
-		if (function_exists('wp_cache_delete')) {
-			wp_cache_delete('slimstat_consent_state', 'slimstat');
+		$key = $this->getConsentCacheKey();
+		if (!empty($key)) {
+			wp_cache_delete($key, 'slimstat');
+			wp_cache_set($key, $parsed_consent, 'slimstat', HOUR_IN_SECONDS);
 		}
-
-		wp_cache_set('slimstat_consent_state', $parsed_consent, 'slimstat', HOUR_IN_SECONDS);
 
 		do_action('slimstat_consent_revoked', $parsed_consent, $source);
 	}

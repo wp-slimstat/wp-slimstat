@@ -9,13 +9,19 @@ class NotificationActions
 {
 	public function register()
 	{
-		Ajax::register('dismiss_notification', [$this, 'dismissNotification']);
-		Ajax::register('update_notifications_status', [$this, 'updateNotificationsStatus']);
+		Ajax::registerAdmin('dismiss_notification', [$this, 'dismissNotification']);
+		Ajax::registerAdmin('update_notifications_status', [$this, 'updateNotificationsStatus']);
 	}
 
 	public function dismissNotification()
 	{
 		\check_ajax_referer('wp_rest', 'slimstat_nonce');
+
+		$required_cap = \wp_slimstat::$settings['capability_can_admin'] ?? 'manage_options';
+		if (!\current_user_can($required_cap)) {
+			\wp_send_json_error(['message' => \__('Permission denied.', 'wp-slimstat')], 403);
+			exit();
+		}
 
 		$notificationId = Request::get('notification_id');
 
@@ -34,6 +40,12 @@ class NotificationActions
 	public function updateNotificationsStatus()
 	{
 		\check_ajax_referer('wp_rest', 'slimstat_nonce');
+
+		$required_cap = \wp_slimstat::$settings['capability_can_admin'] ?? 'manage_options';
+		if (!\current_user_can($required_cap)) {
+			\wp_send_json_error(['message' => \__('Permission denied.', 'wp-slimstat')], 403);
+			exit();
+		}
 
 		$hasUpdatedNotifications = NotificationProcessor::updateNotificationsStatus();
 

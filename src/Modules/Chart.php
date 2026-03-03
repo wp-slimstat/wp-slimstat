@@ -183,12 +183,12 @@ class Chart
             return 'monthly';
         }
 
-        if ($diff > 2 * self::DAY) {
-            return 'daily';
-        }
-
         if ($diff > 7 * self::DAY) {
             return 'weekly';
+        }
+
+        if ($diff > 2 * self::DAY) {
+            return 'daily';
         }
 
         return 'hourly';
