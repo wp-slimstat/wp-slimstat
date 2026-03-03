@@ -2026,7 +2026,7 @@ class wp_slimstat_reports
         if (!empty($_POST['report_id'])) {
             check_ajax_referer('meta-box-order', 'security');
             // Let's make sure the request is coming from an authorized source
-            $report_id = $_POST['report_id'];
+            $report_id = sanitize_key(wp_unslash($_POST['report_id']));
         } elseif (!empty($_args['id'])) {
             $report_id = $_args['id'];
         }

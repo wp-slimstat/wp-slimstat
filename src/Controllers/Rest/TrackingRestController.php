@@ -118,6 +118,15 @@ class TrackingRestController implements RestControllerInterface
             if (!is_array($payload)) {
                 $payload = [];
             }
+
+            // Sanitize known scalar keys explicitly; preserve all other keys for extension compatibility
+            $scalar_keys = ['action', 'n', 'bw', 'bh', 'ref', 'res', 'lt', 'dc', 'ob', 'ss_nonce'];
+            foreach ($scalar_keys as $key) {
+                if (isset($payload[$key])) {
+                    $payload[$key] = sanitize_text_field(wp_unslash((string) $payload[$key]));
+                }
+            }
+
             $payload['action'] = 'slimtrack';
             \wp_slimstat::$raw_post_array = $payload;
         }
