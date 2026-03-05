@@ -147,7 +147,6 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
 			->from( "{$wpdb->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
-			->allowCaching( true, 1 )
 			->getRow();
 
 		return [
