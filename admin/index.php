@@ -2,6 +2,7 @@
 
 use SlimStat\Services\GeoService;
 use SlimStat\Components\DateRangeHelper;
+use SlimStat\Services\Admin\Notification\NotificationFactory;
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -929,10 +930,23 @@ class wp_slimstat_admin
 
 		self::$main_menu_slug = $parent;
 
+        // Build menu title with notification badge
+        $menu_title = __('SlimStat', 'wp-slimstat');
+        if (class_exists(NotificationFactory::class) && wp_slimstat::$settings['display_notifications'] === 'on') {
+            $notification_count = NotificationFactory::getNewNotificationCount();
+            if ($notification_count > 0) {
+                $menu_title .= sprintf(
+                    ' <span class="update-plugins count-%d"><span class="plugin-count">%s</span></span>',
+                    $notification_count,
+                    number_format_i18n($notification_count)
+                );
+            }
+        }
+
         // Add the main menu
         add_menu_page(
             __('SlimStat', 'wp-slimstat'),
-            __('SlimStat', 'wp-slimstat'),
+            $menu_title,
             $minimum_capability,
             $parent,
             [self::class, 'wp_slimstat_include_view'],
