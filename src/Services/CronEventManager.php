@@ -17,24 +17,32 @@ class CronEventManager
 	}
 
 	/**
-	 * Fetch notifications on first load if the option is empty
+	 * Fetch notifications on first load if the option is empty.
+	 * Uses a transient lock to prevent repeated fetch attempts if API is down
+	 * and to avoid race conditions on concurrent requests.
 	 */
 	private function maybeInitialFetch()
 	{
-		if (\wp_slimstat::$settings['display_notifications'] != 'on') {
+		if ('on' !== \wp_slimstat::$settings['display_notifications']) {
 			return;
 		}
 
 		$existingNotifications = NotificationFactory::getRawNotificationsData();
 
 		if (empty($existingNotifications) || empty($existingNotifications['data'])) {
+			// Prevent repeated fetch attempts if API is down and avoid race conditions
+			$lastAttempt = \get_transient('slimstat_notification_fetch_lock');
+			if ($lastAttempt) {
+				return;
+			}
+			\set_transient('slimstat_notification_fetch_lock', true, 5 * MINUTE_IN_SECONDS);
 			$this->fetchNotification();
 		}
 	}
 
 	public function handleDailyTasks()
 	{
-		if (\wp_slimstat::$settings['display_notifications'] == 'on') {
+		if ('on' === \wp_slimstat::$settings['display_notifications']) {
 			$this->fetchNotification();
 		}
 	}
