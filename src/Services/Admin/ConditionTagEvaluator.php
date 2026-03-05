@@ -191,6 +191,7 @@ class ConditionTagEvaluator
 			return self::$method();
 		}
 
-		return false;
+		// Unknown tags should not filter out notifications - return true (permissive)
+		return true;
 	}
 }
