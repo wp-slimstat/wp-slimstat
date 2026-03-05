@@ -166,6 +166,7 @@ class Utils
 
 		$searchterms = '';
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin file, WP_Filesystem not needed
 		$search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
 		$search_engines = json_decode($search_engines, true);
 

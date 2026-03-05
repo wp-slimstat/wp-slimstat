@@ -188,7 +188,7 @@ class Consent
 		// Respect Do Not Track if enabled in settings
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
 		if ($respectDnt) {
-			$dntHeader = $_SERVER['HTTP_DNT'] ?? '';
+			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
 			if ('1' === $dntHeader) {
 				$default = false;
 			}
@@ -343,7 +343,7 @@ class Consent
 			// Check for tracking cookie (proof of upgrade in this browser)
 			$hasTrackingCookie = false;
 			if (isset($_COOKIE['slimstat_tracking_code'])) {
-				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
 				if (false !== $cookieValue) {
 					$hasTrackingCookie = true;
 				}
@@ -354,7 +354,7 @@ class Consent
 			if ('slimstat_banner' === $integrationKey) {
 				$gdpr_service = new \SlimStat\Services\GDPRService($settings);
 				$cookieName = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
-				$cookieValue = $_COOKIE[$cookieName] ?? 'not_set';
+				$cookieValue = isset($_COOKIE[$cookieName]) ? sanitize_text_field(wp_unslash($_COOKIE[$cookieName])) : 'not_set';
 				if ($gdpr_service->hasConsent()) {
 					$hasCmpConsent = true;
 				}
@@ -389,11 +389,13 @@ class Consent
 					}
 
 					if ($isMatch) {
-						$rawJson = stripslashes($value);
+						// Sanitize cookie value before processing
+						$sanitized_value = wp_unslash($value);
+						$rawJson = stripslashes($sanitized_value);
 						$data = json_decode($rawJson, true);
 
 						if (json_last_error() !== JSON_ERROR_NONE) {
-							$data = json_decode(stripslashes(urldecode($value)), true);
+							$data = json_decode(stripslashes(urldecode($sanitized_value)), true);
 						}
 
 						if (is_array($data)) {
@@ -445,7 +447,7 @@ class Consent
 		// This supersedes all consent mechanisms when enabled
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
 		if ($respectDnt) {
-			$dntHeader = $_SERVER['HTTP_DNT'] ?? '';
+			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
 			if ('1' === $dntHeader) {
 				// DNT header present - NEVER allow PII
 				return false;
@@ -509,11 +511,13 @@ class Consent
 				}
 
 				if ($isMatch) {
-					$rawJson = stripslashes($value);
+					// Sanitize cookie value before processing
+					$sanitized_value = wp_unslash($value);
+					$rawJson = stripslashes($sanitized_value);
 					$data = json_decode($rawJson, true);
 
 					if (json_last_error() !== JSON_ERROR_NONE) {
-						$data = json_decode(stripslashes(urldecode($value)), true);
+						$data = json_decode(stripslashes(urldecode($sanitized_value)), true);
 					}
 
 					if (is_array($data)) {
@@ -546,7 +550,7 @@ class Consent
 
 			// Legacy fallback: If a SlimStat tracking cookie exists, it implies consent was granted previously
 			if (isset($_COOKIE['slimstat_tracking_code'])) {
-				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum($_COOKIE['slimstat_tracking_code']);
+				$cookieValue = \SlimStat\Tracker\Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
 				if (false !== $cookieValue) {
 					return true;
 				}

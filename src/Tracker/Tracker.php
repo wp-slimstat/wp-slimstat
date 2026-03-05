@@ -161,7 +161,9 @@ class Tracker
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
-                foreach (explode(',', $_SERVER[$a_header]) as $a_ip) {
+                $header_value = sanitize_text_field(wp_unslash($_SERVER[$a_header]));
+                foreach (explode(',', $header_value) as $a_ip) {
+                    $a_ip = trim($a_ip);
                     if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
                         $ip_array[1] = $a_ip;
                         break;
@@ -176,7 +178,8 @@ class Tracker
     public static function _get_language()
     {
         if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
-            preg_match('/([^,;]*)/', $_SERVER['HTTP_ACCEPT_LANGUAGE'], $array_languages);
+            $accept_language = sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT_LANGUAGE']));
+            preg_match('/([^,;]*)/', $accept_language, $array_languages);
             return str_replace('_', '-', strtolower($array_languages[0]));
         }
 
@@ -191,6 +194,7 @@ class Tracker
 
         $searchterms = '';
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin file, WP_Filesystem not needed
         $search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, true);
 

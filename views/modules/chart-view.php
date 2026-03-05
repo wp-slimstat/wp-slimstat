@@ -76,14 +76,14 @@ $is_empty = (0 === ($totals['current']['v1'] ?? 0) && 0 === ($totals['current'][
         </select>
     </div>
     <div id="slimstat_chart_data_<?php echo esc_attr($chart_args['id']); ?>"
-        data-args="<?php echo esc_attr(json_encode($chart_args)); ?>"
-        data-data="<?php echo esc_attr(json_encode($data)); ?>"
-        data-prev-data="<?php echo esc_attr(json_encode($prevData)); ?>"
+        data-args="<?php echo esc_attr(wp_json_encode($chart_args)); ?>"
+        data-data="<?php echo esc_attr(wp_json_encode($data)); ?>"
+        data-prev-data="<?php echo esc_attr(wp_json_encode($prevData)); ?>"
         data-granularity="<?php echo esc_attr($chart_args['granularity']); ?>"
         data-chart-type="<?php echo esc_attr($chart_args['chart_type'] ?? 'line'); ?>"
-        data-chart-labels="<?php echo esc_attr(json_encode($chartLabels)); ?>"
-        data-translations="<?php echo esc_attr(json_encode($translations)); ?>"
-        data-totals="<?php echo esc_attr(json_encode($totals ?? [])); ?>">
+        data-chart-labels="<?php echo esc_attr(wp_json_encode($chartLabels)); ?>"
+        data-translations="<?php echo esc_attr(wp_json_encode($translations)); ?>"
+        data-totals="<?php echo esc_attr(wp_json_encode($totals ?? [])); ?>">
     </div>
     <div id="slimstat-postbox-custom-legend_<?php echo esc_attr($chart_args['id']); ?>"
         class="slimstat-postbox-chart--items">
@@ -110,7 +110,7 @@ $is_empty = (0 === ($totals['current']['v1'] ?? 0) && 0 === ($totals['current'][
     <?php if (defined('DOING_AJAX') && DOING_AJAX): ?>
     <script>
         reinitializeSlimStatCharts(
-            "<?php echo $chart_args['id']; ?>")
+            "<?php echo esc_js($chart_args['id']); ?>")
     </script>
     <?php endif; ?>
 </div>
