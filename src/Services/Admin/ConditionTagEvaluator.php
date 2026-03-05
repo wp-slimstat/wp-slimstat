@@ -191,6 +191,18 @@ class ConditionTagEvaluator
 			return self::$method();
 		}
 
-		return false;
+		/**
+		 * Unknown tags return true (fail-open) to prevent filtering out notifications.
+		 * This is intentional: the tag system is used only for notification display filtering,
+		 * not for authorization or feature gating. Unknown tags from the remote API should
+		 * not suppress notifications. If this system is ever extended for access control,
+		 * this default should be reconsidered.
+		 *
+		 * @since 5.3
+		 */
+		if (\defined('WP_DEBUG') && WP_DEBUG) {
+			\error_log(\sprintf('SlimStat: Unknown condition tag "%s" — defaulting to true.', $tag));
+		}
+		return true;
 	}
 }
