@@ -52,7 +52,7 @@ class GDPRService
 	public function hasConsent(): bool
 	{
 		return isset($_COOKIE[self::CONSENT_COOKIE_NAME]) &&
-			   'accepted' === $_COOKIE[self::CONSENT_COOKIE_NAME];
+			   'accepted' === sanitize_text_field(wp_unslash($_COOKIE[self::CONSENT_COOKIE_NAME]));
 	}
 
 	/**
@@ -63,7 +63,7 @@ class GDPRService
 	public function hasDeniedConsent(): bool
 	{
 		return isset($_COOKIE[self::CONSENT_COOKIE_NAME]) &&
-			   'denied' === $_COOKIE[self::CONSENT_COOKIE_NAME];
+			   'denied' === sanitize_text_field(wp_unslash($_COOKIE[self::CONSENT_COOKIE_NAME]));
 	}
 
 	/**
@@ -83,7 +83,10 @@ class GDPRService
 	 */
 	public function getConsentStatus(): string
 	{
-		return $_COOKIE[self::CONSENT_COOKIE_NAME] ?? 'not_set';
+		if (!isset($_COOKIE[self::CONSENT_COOKIE_NAME])) {
+			return 'not_set';
+		}
+		return sanitize_text_field(wp_unslash($_COOKIE[self::CONSENT_COOKIE_NAME]));
 	}
 
 	/**

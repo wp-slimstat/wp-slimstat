@@ -97,12 +97,13 @@ class IPHashProvider
                         if ($isMatch) {
                             // Try to decode value: handle both URL encoded and raw JSON
                             // WP cookies are often slashed, so strip slashes first
-                            $rawJson = stripslashes($value);
+                            $sanitized_value = wp_unslash($value);
+                            $rawJson = stripslashes($sanitized_value);
                             $data = json_decode($rawJson, true);
 
                             if (json_last_error() !== JSON_ERROR_NONE) {
                                 // If failed, try urldecode first
-                                $data = json_decode(stripslashes(urldecode($value)), true);
+                                $data = json_decode(stripslashes(urldecode($sanitized_value)), true);
                             }
 
                             if (is_array($data)) {
@@ -347,7 +348,7 @@ class IPHashProvider
      */
     public static function hashIP(array $stat, string $originalIp, string $originalOtherIp = ''): array
     {
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
         $secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
 
         // Ensure daily salt exists (generate if missing)

@@ -731,6 +731,7 @@ class wp_slimstat
         $data = get_transient('slimstat_matomo_searchengine');
         if (false === $data) {
             $json_path = plugin_dir_path(__FILE__) . 'admin/assets/data/matomo-searchengine.json';
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local plugin file, WP_Filesystem not needed
             $json      = @file_get_contents($json_path);
             $data      = json_decode($json, true);
             if (!is_array($data)) {
@@ -1502,7 +1503,10 @@ if (empty(wp_slimstat::$wpdb) && isset($GLOBALS['wpdb'])) {
 // Ok, let's go, Sparky!
 if (function_exists('add_action')) {
     // Since we use sendBeacon, this function sends raw POST data, which does not populate the $_POST variable automatically
-    if ((!empty($_SERVER['HTTP_CONTENT_TYPE']) || !empty($_SERVER['CONTENT_TYPE'])) && [] === $_POST) {
+    $http_content_type = isset($_SERVER['HTTP_CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_CONTENT_TYPE'])) : '';
+    $content_type = isset($_SERVER['CONTENT_TYPE']) ? sanitize_text_field(wp_unslash($_SERVER['CONTENT_TYPE'])) : '';
+    if ((!empty($http_content_type) || !empty($content_type)) && [] === $_POST) {
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Required for reading php://input stream
         $raw_post_string = file_get_contents('php://input');
         parse_str($raw_post_string, wp_slimstat::$raw_post_array);
 

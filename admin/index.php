@@ -324,13 +324,28 @@ class wp_slimstat_admin
             if ($db_missing || $last_update < $this_update) {
                 // Fire admin-ajax in a non-blocking way to run the existing update handler
                 $ajax_url = admin_url('admin-ajax.php');
-                // Forward current cookies to keep the request authenticated
+                // Forward only WordPress authentication cookies for security
                 $cookie_header = '';
                 if (!headers_sent() && $_COOKIE !== [] && is_array($_COOKIE)) {
                     $pairs = [];
+                    // Only forward WordPress authentication cookies
+                    $allowed_cookie_prefixes = [
+                        'wordpress_logged_in_',
+                        'wordpress_sec_',
+                        'wp-settings-',
+                        'wp-settings-time-',
+                    ];
                     foreach ($_COOKIE as $k => $v) {
-                        // Basic sanitization for header context
-                        $pairs[] = rawurlencode($k) . '=' . rawurlencode($v);
+                        $is_allowed = false;
+                        foreach ($allowed_cookie_prefixes as $prefix) {
+                            if (strpos($k, $prefix) === 0) {
+                                $is_allowed = true;
+                                break;
+                            }
+                        }
+                        if ($is_allowed) {
+                            $pairs[] = rawurlencode($k) . '=' . rawurlencode(sanitize_text_field(wp_unslash($v)));
+                        }
                     }
                     $cookie_header = implode('; ', $pairs);
                 }
@@ -339,7 +354,7 @@ class wp_slimstat_admin
                     'blocking' => false,
                     'body'     => [
                         'action'   => 'slimstat_update_geoip_database',
-                        'security' => wp_create_nonce('wp_rest'),
+                        'security' => wp_create_nonce('slimstat_geoip_action'),
                     ],
                     'headers' => $cookie_header !== '' && $cookie_header !== '0' ? ['Cookie' => $cookie_header] : [],
                 ];
@@ -1991,7 +2006,7 @@ class wp_slimstat_admin
 
 	public static function update_geoip_database()
 	{
-		check_ajax_referer('wp_rest', 'security');
+		check_ajax_referer('slimstat_geoip_action', 'security');
 
 		if (!current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
@@ -2030,7 +2045,7 @@ class wp_slimstat_admin
 
 	public static function check_geoip_database()
 	{
-		check_ajax_referer('wp_rest', 'security');
+		check_ajax_referer('slimstat_geoip_action', 'security');
 
 		if (!current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
