@@ -784,7 +784,7 @@ class wp_slimstat
     {
         return [
             'version'                => SLIMSTAT_ANALYTICS_VERSION,
-            'secret'                 => wp_hash(uniqid(time(), true)),
+            'secret'                 => wp_hash(wp_generate_password(64, true, true)),
             'browscap_last_modified' => 0,
 
             // General
@@ -913,7 +913,7 @@ class wp_slimstat
             'can_admin'            => '',
 
             // Access Control - REST API
-            'rest_api_tokens' => wp_hash(uniqid(time() - 3600, true)),
+            'rest_api_tokens' => wp_hash(wp_generate_password(64, true, true)),
 
             // Maintenance
             // -----------------------------------------------------------------------
