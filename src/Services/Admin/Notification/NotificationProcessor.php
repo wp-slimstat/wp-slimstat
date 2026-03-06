@@ -12,6 +12,12 @@ class NotificationProcessor
 		if (!empty($notifications) && is_array($notifications)) {
 			foreach ($notifications as $key => $notification) {
 				if (!empty($notification['tags']) && is_array($notification['tags'])) {
+					// Enforce version gating for license-related tags
+					if (self::requiresVersionGate($notification['tags']) && !self::hasValidVersionGate($notification['tags'])) {
+						unset($notifications[$key]);
+						continue;
+					}
+
 					$condition = true;
 					foreach ($notification['tags'] as $tag) {
 						if (!ConditionTagEvaluator::checkConditions($tag)) {
@@ -32,6 +38,49 @@ class NotificationProcessor
 		}
 
 		return $notifications;
+	}
+
+	/**
+	 * Check if a notification's tags include any version-gated tag.
+	 *
+	 * @param array $tags
+	 * @return bool
+	 */
+	private static function requiresVersionGate(array $tags)
+	{
+		return !empty(\array_intersect($tags, ConditionTagEvaluator::getVersionGatedTags()));
+	}
+
+	/**
+	 * Check if a notification includes a valid is-version-* tag at or above the minimum floor.
+	 *
+	 * Validates:
+	 * 1. At least one is-version-* tag is present
+	 * 2. The version string is well-formed (digits and dots only)
+	 * 3. The version is >= LICENSE_TAGS_MIN_VERSION
+	 *
+	 * @param array $tags
+	 * @return bool
+	 */
+	private static function hasValidVersionGate(array $tags)
+	{
+		foreach ($tags as $tag) {
+			if (\strpos($tag, 'is-version-') !== 0) {
+				continue;
+			}
+
+			$version = \substr($tag, \strlen('is-version-'));
+
+			if (!\preg_match('/^\d+\.\d+(\.\d+)?$/', $version)) {
+				continue;
+			}
+
+			if (\version_compare($version, ConditionTagEvaluator::LICENSE_TAGS_MIN_VERSION, '>=')) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public static function decorateNotifications($notifications)
