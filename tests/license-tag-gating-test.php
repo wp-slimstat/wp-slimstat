@@ -63,7 +63,7 @@ namespace {
 		return 'en_US';
 	}
 
-	function get_option($key)
+	function get_option($_key)
 	{
 		return '';
 	}
@@ -156,6 +156,8 @@ namespace {
 	]);
 	assert_count_is($out, 1, 'is-license-inactive must be true for lapsed user with stale status');
 
+	// Bypass constructor to avoid Event::schedule and add_action side-effects
+	// that require WordPress globals not available in this isolated test.
 	$manager = (new \ReflectionClass(CronEventManager::class))->newInstanceWithoutConstructor();
 
 	$GLOBALS['slimstat_test_actions'] = [];

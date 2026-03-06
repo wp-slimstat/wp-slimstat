@@ -60,6 +60,10 @@ class CronEventManager
 		 * license-based notification tags (is-license-active, is-license-inactive)
 		 * evaluate against fresh data rather than stale cached status.
 		 *
+		 * Important: Handlers MUST update \wp_slimstat::$settings['slimstat_pro_license_status']
+		 * directly in addition to persisting to the database, because tag evaluation reads
+		 * from the in-memory static property during the same request.
+		 *
 		 * @since 5.4.0
 		 */
 		\do_action('slimstat_daily_license_check');
