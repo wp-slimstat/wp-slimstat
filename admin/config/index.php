@@ -368,7 +368,6 @@ $settings = [
             ],
             'enable_maxmind' => [
                 'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'after_input_field' => ((!empty($_POST['options']['enable_maxmind']) && 'disable' != sanitize_text_field($_POST['options']['enable_maxmind'])) || (empty($_POST['options']['enable_maxmind']) && 'disable' != wp_slimstat::$settings['enable_maxmind'])) ? '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('wp_rest') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>' : '',
                 'type'              => 'select',
                 'select_values'     => [
                     'disable' => __('Disable', 'wp-slimstat'),
