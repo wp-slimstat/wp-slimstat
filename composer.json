@@ -35,6 +35,7 @@
     "post-update-cmd": [
       "~/.composer/vendor/bin/mozart compose",
       "composer dump-autoload"
-    ]
+    ],
+    "test:license-tags": "php tests/license-tag-gating-test.php"
   }
 }

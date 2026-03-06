@@ -5,14 +5,36 @@ namespace SlimStat\Services\Admin;
 class ConditionTagEvaluator
 {
 	/**
+	 * Minimum plugin version that supports license-related tags.
+	 * Notifications using license tags must include is-version-{x} >= this value.
+	 */
+	public const LICENSE_TAGS_MIN_VERSION = '5.4.0';
+
+	/**
+	 * Tags that require version gating for backward compatibility.
+	 * Old plugin versions evaluate unknown tags as true (fail-open),
+	 * so these tags must be paired with is-version-* to prevent mis-targeting.
+	 *
+	 * @var array
+	 */
+	private static $versionGatedTags = [
+		'is-license-active',
+		'is-license-inactive',
+		'no-license',
+	];
+
+	/**
 	 * Array mapping condition tags to their respective methods.
 	 *
 	 * @var array
 	 */
 	private static $tags = [
-		'is-admin'   => 'isAdminUser',
-		'is-premium' => 'isPremiumUser',
-		'no-premium' => 'noPremiumUser',
+		'is-admin'            => 'isAdminUser',
+		'is-premium'          => 'isPremiumUser',
+		'no-premium'          => 'noPremiumUser',
+		'is-license-active'   => 'isLicenseActive',
+		'is-license-inactive' => 'isLicenseInactive',
+		'no-license'          => 'hasNoLicense',
 	];
 
 	/**
@@ -43,6 +65,77 @@ class ConditionTagEvaluator
 	public static function noPremiumUser()
 	{
 		return !\wp_slimstat::pro_is_installed();
+	}
+
+	/**
+	 * Check if the user has an active (validated) premium license.
+	 *
+	 * Requires: Pro plugin installed, a license key entered, and license status true.
+	 * Pro installation is checked because deactivating Pro does not clear stored status,
+	 * which would cause stale status=true to misclassify lapsed users as active.
+	 *
+	 * @return bool
+	 */
+	public static function isLicenseActive()
+	{
+		if (!\wp_slimstat::pro_is_installed()) {
+			return false;
+		}
+
+		$key    = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
+		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
+
+		return !empty($key) && $status;
+	}
+
+	/**
+	 * Check if the user has an inactive license.
+	 *
+	 * True when a license key exists but is not currently validated:
+	 * Pro not installed (lapsed customer), status is false/null, or never validated.
+	 *
+	 * @return bool
+	 */
+	public static function isLicenseInactive()
+	{
+		$key = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
+
+		if (empty($key)) {
+			return false;
+		}
+
+		if (!\wp_slimstat::pro_is_installed()) {
+			return true;
+		}
+
+		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
+
+		return !$status;
+	}
+
+	/**
+	 * Check if the user has no license at all.
+	 *
+	 * True when no license key has ever been entered.
+	 * Uses key presence as the durable signal for "ever purchased."
+	 *
+	 * @return bool
+	 */
+	public static function hasNoLicense()
+	{
+		$key = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
+
+		return empty($key);
+	}
+
+	/**
+	 * Get the list of tags that require version gating.
+	 *
+	 * @return array
+	 */
+	public static function getVersionGatedTags()
+	{
+		return self::$versionGatedTags;
 	}
 
 	/**
