@@ -52,19 +52,19 @@ class CronEventManager
 
 	public function handleDailyTasks()
 	{
-		if ('on' === \wp_slimstat::$settings['display_notifications']) {
-			/**
-			 * Fires daily to allow license status revalidation.
-			 *
-			 * The Pro plugin can hook into this action to periodically refresh
-			 * the license status stored in slimstat_options, ensuring that
-			 * license-based notification tags (is-license-active, is-license-inactive)
-			 * evaluate against fresh data rather than stale cached status.
-			 *
-			 * @since 5.4.0
-			 */
-			\do_action('slimstat_daily_license_check');
+		/**
+		 * Fires daily to allow license status revalidation.
+		 *
+		 * The Pro plugin can hook into this action to periodically refresh
+		 * the license status stored in slimstat_options, ensuring that
+		 * license-based notification tags (is-license-active, is-license-inactive)
+		 * evaluate against fresh data rather than stale cached status.
+		 *
+		 * @since 5.4.0
+		 */
+		\do_action('slimstat_daily_license_check');
 
+		if ('on' === \wp_slimstat::$settings['display_notifications']) {
 			$this->fetchNotification();
 		}
 	}

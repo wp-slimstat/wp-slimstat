@@ -142,6 +142,20 @@ namespace {
 	]);
 	assert_count_is($out, 0, 'no-license should not match if a license key exists');
 
+	// Stale status=true after Pro uninstall (key edge case from design)
+	\wp_slimstat::$proInstalled = false;
+	\wp_slimstat::$settings['slimstat_pro_license_key'] = 'abc123';
+	\wp_slimstat::$settings['slimstat_pro_license_status'] = true;
+	$out = NotificationProcessor::filterNotificationsByTags([
+		['id' => 9, 'tags' => ['is-license-active', 'is-version-5.4.0']],
+	]);
+	assert_count_is($out, 0, 'is-license-active must be false when Pro is uninstalled even with stale status=true');
+
+	$out = NotificationProcessor::filterNotificationsByTags([
+		['id' => 10, 'tags' => ['is-license-inactive', 'is-version-5.4.0']],
+	]);
+	assert_count_is($out, 1, 'is-license-inactive must be true for lapsed user with stale status');
+
 	$manager = (new \ReflectionClass(CronEventManager::class))->newInstanceWithoutConstructor();
 
 	$GLOBALS['slimstat_test_actions'] = [];
@@ -150,7 +164,7 @@ namespace {
 
 	$manager->handleDailyTasks();
 
-	assert_true(!in_array('slimstat_daily_license_check', $GLOBALS['slimstat_test_actions'], true), 'daily license hook must not fire when notifications are off');
+	assert_true(in_array('slimstat_daily_license_check', $GLOBALS['slimstat_test_actions'], true), 'daily license hook must fire even when notifications are off');
 	assert_true(NotificationFetcher::$fetchCalls === 0, 'daily notification fetch must not run when notifications are off');
 
 	$GLOBALS['slimstat_test_actions'] = [];

@@ -8,7 +8,7 @@ class ConditionTagEvaluator
 	 * Minimum plugin version that supports license-related tags.
 	 * Notifications using license tags must include is-version-{x} >= this value.
 	 */
-	const LICENSE_TAGS_MIN_VERSION = '5.4.0';
+	public const LICENSE_TAGS_MIN_VERSION = '5.4.0';
 
 	/**
 	 * Tags that require version gating for backward compatibility.
