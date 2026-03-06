@@ -83,9 +83,9 @@ class ConditionTagEvaluator
 		}
 
 		$key    = \wp_slimstat::$settings['slimstat_pro_license_key'] ?? '';
-		$status = \wp_slimstat::$settings['slimstat_pro_license_status'] ?? false;
+		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
 
-		return !empty($key) && $status === true;
+		return !empty($key) && $status;
 	}
 
 	/**
@@ -108,9 +108,9 @@ class ConditionTagEvaluator
 			return true;
 		}
 
-		$status = \wp_slimstat::$settings['slimstat_pro_license_status'] ?? false;
+		$status = (bool) (\wp_slimstat::$settings['slimstat_pro_license_status'] ?? false);
 
-		return $status !== true;
+		return !$status;
 	}
 
 	/**
