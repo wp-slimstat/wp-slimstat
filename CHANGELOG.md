@@ -1,5 +1,7 @@
 = 5.4.0 - 2025-09-05 =
 
+- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0) – Slimstat 5.4 – Real-Time, Real Privacy
+
 Breaking
 - Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - Legacy internal REST/tracker APIs changed; custom add-ons using old internals must update. See the Migration Guide for details.
@@ -83,6 +85,8 @@ Security
 - **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 
 = 5.3.0 - 2025-08-25 =
+- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0) – Slimstat 5.3 – Smarter Charts, Better Tracking
+
 - **New**: Tracker type options (REST API + Ad-blocker bypass) for improved tracking flexibility.
 - **New**: Support for WordPress date format setting in charts.
 - **New**: Hourly, daily, weekly, monthly, and yearly chart granularities for deeper insights.
