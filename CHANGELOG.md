@@ -1,36 +1,59 @@
 = 5.4.0 - 2025-09-05 =
-- **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
-- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance:
+
+Breaking
+- Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
+- Legacy internal REST/tracker APIs changed; custom add-ons using old internals must update. See the Migration Guide for details.
+
+New
+- View real-time site stats directly from the WordPress admin bar — see online visitors, pageviews, and top pages at a glance.
+- Hover over any bar in the real-time chart to see detailed analytics in an interactive tooltip.
+- Refreshed analytics experience with a redesigned header and richer real-time visuals.
+- Integration with Consent Management Platforms (CMPs) for GDPR compliance:
   - WP Consent API support with configurable consent categories
   - Real Cookie Banner Pro integration
-- **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled)
-- **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
-- **New**: Do Not Track (DNT) header respect with configurable option in settings.
-- **New**: Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
-- **New**: GDPR-compliant salted hash IP address functionality with daily salt rotation for enhanced privacy protection.
-- **New**: IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
-- **New**: WordPress Privacy Policy content registration for GDPR Article 13/14 compliance.
-- **New**: Enhanced caching mechanism for Matomo search engine mappings to improve performance.
-- **Enhancement**: Optimized script enqueuing to load scripts in the footer for better page load times.
-- **Enhancement**: Improved flag icon rendering in reports with better readability checks.
-- **Enhancement**: Optimized transient caching for remote API responses in the i18n module.
-- **Enhancement**: Refactored code structure with new Query manager and improved caching system.
-- **Enhancement**: Added 'Clear Cache' button functionality for better cache management.
-- **Enhancement**: Moved Query class to src directory following PSR-4 autoloading standards.
-- **Enhancement**: The geolocation functionality has been completely refactored and improved. It now correctly handles different providers, including DB-IP (the default), MaxMind (which requires a free license key), and Cloudflare. The underlying logic for downloading, updating, and using the geolocation database has been fixed to ensure that location data is accurately tracked and stored.
-- **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
-- **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
-- **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
-- **Enhancement**: Enhanced code quality with proper namespace imports and Query builder pattern throughout.
-- **Enhancement**: Conditional fingerprint storage - only collected when PII is allowed.
-- **Enhancement**: Better privacy controls - anonymous tracking option prevents all PII collection.
-- **Enhancement**: Code modernization with arrow functions and improved caching in Query class.
-- **Enhancement**: Default data retention period set to 420 days (14 months) for GDPR compliance.
-- **Fix**: Enhanced query security and cleanup for better data integrity.
-- **Fix**: Optimized database indexing, caching, and AJAX handling.
-- **Fix**: Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
-- **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
-- **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
+  - Consent management endpoints and secure adblock-bypass tracking flow for better reliability.
+- GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled)
+- Consent change listener that automatically resumes tracking when user grants consent via CMP.
+- Do Not Track (DNT) header respect with configurable option in settings.
+- Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
+- GDPR-compliant salted hash IP address functionality with daily salt rotation for enhanced privacy protection.
+- IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
+- WordPress Privacy Policy content registration for GDPR Article 13/14 compliance with built-in data export/erase support.
+- Admin migration tools to optimize key database indexes and improve report responsiveness.
+- Enhanced caching mechanism for Matomo search engine mappings to improve performance.
+
+Enhancement
+- Optimized script enqueuing to load scripts in the footer for better page load times.
+- Redesigned date picker with persistent date range for improved reporting UX.
+- Improved flag icon rendering in reports with better readability checks.
+- Optimized transient caching for remote API responses in the i18n module.
+- Refactored code structure with new Query manager and improved caching system.
+- Added 'Clear Cache' button functionality for better cache management.
+- Moved Query class to src directory following PSR-4 autoloading standards.
+- The geolocation functionality has been completely refactored and improved. It now correctly handles different providers, including DB-IP (the default), MaxMind (which requires a free license key), and Cloudflare. The underlying logic for downloading, updating, and using the geolocation database has been fixed to ensure that location data is accurately tracked and stored.
+- Refactored GDPR architecture - consent management fully delegated to external CMPs.
+- Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
+- Improved JavaScript consent handling with polling-based consent state monitoring.
+- Enhanced code quality with proper namespace imports and Query builder pattern throughout.
+- Conditional fingerprint storage - only collected when PII is allowed.
+- Better privacy controls - anonymous tracking option prevents all PII collection.
+- Code modernization with arrow functions and improved caching in Query class.
+- Default data retention period set to 420 days (14 months) for GDPR compliance.
+
+Fix
+- Fixed FingerprintJS v4 compatibility issues that could affect visitor fingerprint tracking.
+- Fixed date-range, timezone, and report-filter issues that caused incorrect analytics output.
+- Fixed IP processing and geolocation edge cases for more accurate visitor reporting.
+- Enhanced query security and cleanup for better data integrity.
+- Optimized database indexing, caching, and AJAX handling.
+- Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
+- Consent revocation properly deletes tracking cookie when user opts out via banner.
+- Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
+
+Security
+- Stronger SQL/XSS protections, stricter nonce validation, timing-safe HMAC checks, and improved IP hashing/anonymization.
+
+> **For add-on developers**: This release includes breaking API changes. Add-ons using `RESTService`, direct property access to `$data_js`/`$stat`, or calling `wp_slimstat::slimtrack()` directly must be updated.
 
 = 5.3.6 =
 * Security: Hardened output escaping in reports
