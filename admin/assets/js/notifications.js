@@ -84,13 +84,10 @@ jQuery(document).ready(function () {
                             updateDismissAllVisibility();
                             checkEmptyNotifications();
                             updateNotificationBadge();
-                        } else {
-                            console.log('Refresh failed:', response);
                         }
                     },
-                    error: function (xhr, status, error) {
+                    error: function () {
                         slimstatReloadNotifications.classList.remove('is-loading');
-                        console.log('AJAX error:', error, xhr.responseText);
                     }
                 });
             });
