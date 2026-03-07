@@ -301,9 +301,6 @@ class wp_slimstat
         // Shortcodes
         add_shortcode('slimstat', [self::class, 'slimstat_shortcode'], 15);
 
-        // Load textdomain early on init
-        add_action('init', [self::class, 'load_textdomain'], 5);
-
         // Init the plugin functionality
         add_action('init', [self::class, 'init_plugin']);
 
@@ -1542,6 +1539,9 @@ if (function_exists('add_action')) {
     }
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
+
+    // Load textdomain early (before init at priority 20)
+    add_action('plugins_loaded', ['wp_slimstat', 'load_textdomain'], 10);
 
     // Add the appropriate actions
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);

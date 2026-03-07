@@ -9,7 +9,14 @@ use SlimStat\Components\View;
         <div class="slimstat-notification-sidebar__header">
             <div>
                 <h2 class="slimstat-notification-sidebar__title"><?php esc_html_e('Notifications', 'wp-slimstat'); ?></h2>
-                <span class="slimstat-notification-sidebar__close"></span>
+                <div class="slimstat-notification-sidebar__actions">
+                    <button type="button" class="slimstat-notification-sidebar__reload" aria-label="<?php esc_attr_e('Refresh notifications', 'wp-slimstat'); ?>">
+                        <span class="screen-reader-text"><?php esc_html_e('Refresh notifications', 'wp-slimstat'); ?></span>
+                    </button>
+                    <button type="button" class="slimstat-notification-sidebar__close" aria-label="<?php esc_attr_e('Close notifications', 'wp-slimstat'); ?>">
+                        <span class="screen-reader-text"><?php esc_html_e('Close notifications', 'wp-slimstat'); ?></span>
+                    </button>
+                </div>
             </div>
             <div>
                 <ul class="slimstat-notification-sidebar__tabs">
