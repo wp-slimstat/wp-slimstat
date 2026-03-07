@@ -1,3 +1,6 @@
+<?php
+$tab = $tab ?? __('inbox', 'wp-slimstat');
+?>
 <div class="slimstat-notification-sidebar__card slimstat-notification-sidebar__no-card">
     <div class="slimstat-notification-sidebar__card-body">
         <svg width="37" height="37" viewBox="0 0 37 37" fill="none" xmlns="http://www.w3.org/2000/svg">
