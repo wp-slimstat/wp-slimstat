@@ -59,6 +59,9 @@ class View
         'message',
         'type',
         'class',
+        'notification',
+        'notifications',
+        'tab',
     ];
 
     /**

@@ -5,6 +5,7 @@ jQuery(document).ready(function () {
     const body = document.body;
     const tabs = document.querySelectorAll('.slimstat-notification-sidebar__tab');
     const slimstatCloseNotificationMenu = document.querySelector('.slimstat-notification-sidebar__close');
+    const slimstatReloadNotifications = document.querySelector('.slimstat-notification-sidebar__reload');
     const tabPanes = document.querySelectorAll('.slimstat-notification-sidebar__tab-pane');
     const dismissAllBtn = document.querySelector(".slimstat-notification-sidebar__dismiss-all");
 
@@ -53,6 +54,45 @@ jQuery(document).ready(function () {
                 slimstatSidebar.classList.remove('is-active');
                 slimstatOverlay.classList.remove('is-active');
                 body.classList.remove('slimstat-no-scroll');
+            });
+        }
+
+        if (slimstatReloadNotifications) {
+            slimstatReloadNotifications.addEventListener('click', function () {
+                if (slimstatReloadNotifications.classList.contains('is-loading')) {
+                    return;
+                }
+
+                slimstatReloadNotifications.classList.add('is-loading');
+
+                jQuery.ajax({
+                    url: slimstat_admin.ajax_url,
+                    type: 'GET',
+                    dataType: 'json',
+                    data: {
+                        'slimstat_nonce': slimstat_admin.nonce,
+                        'action': 'slimstat_refresh_notifications'
+                    },
+                    timeout: 60000,
+                    success: function (response) {
+                        slimstatReloadNotifications.classList.remove('is-loading');
+
+                        if (response.success) {
+                            jQuery('#tab-1 .slimstat-notification-sidebar__cards').html(response.data.inbox_html);
+                            jQuery('#tab-2 .slimstat-notification-sidebar__cards').html(response.data.dismissed_html);
+
+                            updateDismissAllVisibility();
+                            checkEmptyNotifications();
+                            updateNotificationBadge();
+                        } else {
+                            console.log('Refresh failed:', response);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        slimstatReloadNotifications.classList.remove('is-loading');
+                        console.log('AJAX error:', error, xhr.responseText);
+                    }
+                });
             });
         }
 
