@@ -1376,6 +1376,9 @@ var SlimStat = (function () {
     };
 })();
 
+// Expose SlimStat to the global scope so it remains accessible after esbuild bundling
+window.SlimStat = SlimStat;
+
 // Polyfills for ES5 and older browsers
 if (!Element.prototype.matches) {
     Element.prototype.matches =
