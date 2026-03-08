@@ -27,7 +27,8 @@ if (!empty($_GET['force_refresh']) || false === $response) {
 }
 
 $at_least_one_add_on_active = false;
-$list_addons                = @unserialize($response['body']);
+// Security: Use JSON decode only to prevent PHP Object Injection
+$list_addons                = json_decode($response['body'], true);
 
 if (!is_array($list_addons)) {
     $error_message = __('There was an error decoding the add-ons list from the server. Please try again later.', 'wp-slimstat');

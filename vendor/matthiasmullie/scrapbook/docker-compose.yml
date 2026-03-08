@@ -1,0 +1,118 @@
+version: '3.8'
+services:
+  php: &default-php
+    tty: true
+    build: &default-php-build
+      context: .
+      dockerfile: Dockerfile
+      args:
+        version: cli
+    volumes:
+      - ./src:/var/www/src
+      - ./tests:/var/www/tests
+      - ./build:/var/www/build
+      - ./phpunit.xml:/var/www/phpunit.xml
+    depends_on:
+      couchbase:
+        condition: service_healthy
+      memcached:
+        condition: service_started
+      mysql:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+  php-5.6:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 5.6-cli
+  php-7.0:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 7.0-cli
+  php-7.1:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 7.1-cli
+  php-7.2:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 7.2-cli
+  php-7.3:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 7.3-cli
+  php-7.4:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 7.4-cli
+  php-8.0:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 8.0-cli
+  php-8.1:
+    <<: *default-php
+    build:
+      <<: *default-php-build
+      args:
+        version: 8.1-cli
+  couchbase:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile-Couchbase
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://Administrator:password@localhost:8091/pools/default/buckets/default"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+  memcached:
+    image: memcached
+    # not sure how to properly healthcheck
+  mysql:
+    image: mysql
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci','--default-authentication-plugin=mysql_native_password']
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_ROOT_PASSWORD=
+      - MYSQL_DATABASE=cache
+    healthcheck:
+      test: ["CMD", "mysql" ,"-h", "mysql", "-P", "3306", "-u", "root", "-e", "SELECT 1", "cache"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  postgresql:
+    image: postgres
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=cache
+      # @see https://stackoverflow.com/questions/62807717/how-can-i-solve-postgresql-scram-authentication-problem
+      - POSTGRES_HOST_AUTH_METHOD=md5
+      - POSTGRES_INITDB_ARGS=--auth-host=md5
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "user"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30

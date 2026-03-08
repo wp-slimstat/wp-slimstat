@@ -4,8 +4,8 @@ Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
-Tested up to: 6.8
-Stable tag: 5.3.5
+Tested up to: 6.9.1
+Stable tag: 5.4.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ Track returning customers and registered users, monitor Javascript events, detec
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with the GDPR European law. You can test your website at [cookiebot.com](https://www.cookiebot.com/en/).
+* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner).
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
@@ -73,6 +73,25 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.0 - 2026-03-08 =
+- **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
+- **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.
+- **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled).
+- **New**: Consent change listener that automatically resumes tracking when user grants consent via CMP.
+- **New**: Do Not Track (DNT) header respect with configurable option in settings.
+- **New**: WordPress Privacy Policy content registration for GDPR Article 13/14 compliance.
+- **Enhancement**: Refactored GDPR architecture - consent management fully delegated to external CMPs.
+- **Enhancement**: Smart IP handling - automatically upgrades from anonymized/hashed IP to full IP when consent is granted.
+- **Enhancement**: Improved JavaScript consent handling with polling-based consent state monitoring.
+- **Enhancement**: Default data retention period set to 420 days (14 months) for GDPR compliance.
+- **Fix**: Legacy mode now conservatively denies PII collection when GDPR enabled and no CMP configured.
+- **Fix**: Consent revocation properly deletes tracking cookie when user opts out via banner.
+- **Fix**: Removed legacy cookie-based opt-in/opt-out handling for cleaner, CMP-based consent flow.
+[See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0)
+
+= 5.3.6 =
+* Security: Hardened output escaping in reports
+
 = 5.3.5 - 2025-12-31 =
 * Security: Hardened plugin security
 
@@ -102,3 +121,28 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Enhancement**: Compatibility with WordPress’s Interactivity API for seamless integration.
 - **Enhancement**: Added new 3 date ranges formats (Last 2 weeks, Previous month, This month).
 [See full release notes](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-3-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-3-0)
+
+= 5.2.13 - 2025-04-29 =
+- **Fix**: Resolved issues with pagination in reports.
+
+= 5.2.12 - 2025-04-26 =
+- **Enhancement**: Removed red color from report export boxes to reduce eye strain and improve user experience.
+
+= 5.2.11 - 2025-04-25 =
+- Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-2-11-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-2-11) – SlimStat 5.2.11 Release Notes
+- **Visual Enhancement**: Improved UI with eye-catching visual elements for better user experience.
+- **Enhancement**: Optimized SQL query to reduce the chances of errors and improve overall performance.
+- **Enhancement**: The "Export" button for non-Pro users now links to the Slimstat PRO version page, improving clarity around upgrade options.
+- **Enhancement**: Added support for the WordPress date format setting for the charts.
+- **Fix**: Fatal error in EmailReportsAddon.php for missing `get_plugins` method.
+- **Fix**: Prevented PHP warning by checking if 'referer' array key is set in searchterms reports view.
+- **Fix**: Fix a database error related to the notes column.
+- **Fix**: Prevented horizontal scrolling in the reports area and improved page loading animations by ensuring styles are applied correctly.
+- **Fix**: Addressed several user-reported issues to enhance overall stability and user experience.
+- **Fix**: Investigate and resolve the "Division by zero" fatal error in `wp-slimstat-db.php` caused by PHP version 8.2.22. Further investigation needed to determine the root cause and provide a fix.
+
+= 5.2.9 - 2024-11-12 =
+- **Enhancement**: Ensured compatibility with WordPress version 6.7.
+- **Fix**: Resolved the Top Referring Domain Issue.
+
+[See changelog for all versions](https://raw.githubusercontent.com/wp-slimstat/wp-slimstat/master/CHANGELOG.md).

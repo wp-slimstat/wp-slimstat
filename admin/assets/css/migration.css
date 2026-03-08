@@ -1,0 +1,248 @@
+/* Hide admin notices on migration page */
+body.slimstat_page_migration .notice:not(.slimstat-migration-notice),
+body.slimstat_page_migration .update-nag,
+body.slimstat_page_migration .error,
+body.slimstat_page_migration .updated {
+    display: none !important;
+}
+.slimstat-migration .slimstat-status-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.slimstat-migration .slimstat-status-header .dashicons {
+    color: #2271b1;
+    font-size: 18px;
+}
+.slimstat-migration .slimstat-status-text {
+    font-weight: 600;
+    font-size: 14px;
+}
+.slimstat-migration .slimstat-status-badge {
+    margin-left: auto;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 4px 8px;
+    border-radius: 3px;
+    background: #f0f0f1;
+    color: #50575e;
+}
+.slimstat-migration .slimstat-badge-idle {
+    background: #f0f0f1;
+    color: #50575e;
+}
+.slimstat-migration .slimstat-badge-running {
+    background: #e9f5ff;
+    color: #2271b1;
+}
+.slimstat-migration .slimstat-badge-success {
+    background: #effaf3;
+    color: #1f8f4e;
+}
+.slimstat-migration .slimstat-badge-error {
+    background: #faefef;
+    color: #b32d2e;
+}
+.slimstat-migration .slimstat-status-intro {
+    color: #646970;
+    margin: 8px 0 16px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.slimstat-migration .slimstat-status-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 0;
+    margin: 0 0 16px;
+    list-style: none;
+}
+.slimstat-migration .slimstat-status-metrics li {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 12px;
+}
+.slimstat-migration .slimstat-status-metrics .label {
+    display: block;
+    color: #646970;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.slimstat-migration .slimstat-status-metrics .value {
+    display: block;
+    font-weight: 600;
+    font-size: 16px;
+    color: #1d2327;
+}
+.slimstat-migration .progress {
+    background: #f1f1f1;
+    border-radius: 3px;
+    height: 20px;
+    overflow: hidden;
+    margin: 16px 0 12px;
+    position: relative;
+    border: 1px solid #dcdcde;
+}
+.slimstat-migration .bar {
+    height: 100%;
+    width: 0;
+    background: #0073aa;
+    transition: width 0.3s ease;
+}
+.slimstat-migration .progress-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #1d2327;
+    font-weight: 500;
+}
+.slimstat-migration .status {
+    color: #646970;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+.slimstat-migration .status-note {
+    margin: 12px 0 8px;
+    font-size: 14px;
+}
+.slimstat-migration #slimstat-migration-list {
+    list-style: none;
+    padding: 0;
+    margin: 16px 0 20px;
+    border-top: 1px solid #dcdcde;
+    padding-top: 12px;
+}
+.slimstat-migration #slimstat-migration-list li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+.slimstat-migration #slimstat-migration-list li .label {
+    flex: 1 1 0;
+    font-size: 14px;
+}
+
+.slimstat-migration #slimstat-migration-list li .label code {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+    color: #d63384;
+}
+.slimstat-migration #slimstat-start-migration {
+    background-color: #e8294c;
+    border: none;
+    border-radius: 50px;
+    color: white;
+    padding: 8px 16px;
+    height: auto;
+    transition: 0.3s all ease-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.slimstat-migration #slimstat-start-migration:hover {
+    background-color: black;
+}
+
+.slimstat-migration #slimstat-start-migration .spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+}
+
+.slimstat-migration #slimstat-start-migration .spinner.is-active {
+    display: inline-block;
+}
+
+.slimstat-migration #slimstat-start-migration .spinner:not(.is-active) {
+    visibility: hidden;
+}
+
+.slimstat-migration #slimstat-back-dashboard {
+    background-color: white;
+    border-radius: 50px;
+    border: 1px solid #e8294c;
+    color: #e8294c;
+    padding: 0px 12px;
+    height: auto;
+    transition: 0.3s all ease-out;
+    text-decoration: none;
+}
+
+.slimstat-migration #slimstat-back-dashboard:hover {
+    background-color: #e8294c;
+    color: white;
+}
+
+/* Migration notice (dashboard and SlimStat screens) - WordPress standard styles */
+.slimstat-migration-notice {
+    border-left-color: #0073aa !important;
+}
+
+.slimstat-migration-notice .dashicons-update {
+    color: #0073aa;
+}
+
+.slimstat-migration-notice-show {
+    display: block !important;
+}
+
+.slimstat-migration-notice h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.slimstat-migration-notice details {
+    margin: 12px 0;
+}
+
+.slimstat-migration-notice details summary {
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.slimstat-migration-notice details ul {
+    margin: 8px 0 0 0;
+    list-style: none;
+    padding: 0;
+}
+
+.slimstat-migration-notice details li {
+    margin: 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.slimstat-migration-notice details .dashicons-yes {
+    color: #00a32a;
+}
+
+.slimstat-migration-notice details .dashicons-warning {
+    color: #d63638;
+}
+
+.slimstat-migration-notice details .details-col-desc {
+    color: #646970;
+    font-size: 13px;
+}
+
+.slimstat-migration-notice .wp-core-ui {
+    margin: 12px 0 4px 0;
+}
