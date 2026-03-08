@@ -37,6 +37,7 @@ Enhancement
 - Default data retention period set to 420 days (14 months) for GDPR compliance.
 
 Fix
+- Fixed SlimStat JavaScript API not being accessible to external code (e.g., opt-out buttons, custom tracking) after bundling changes ([#121](https://github.com/wp-slimstat/wp-slimstat/issues/121), [#109](https://github.com/wp-slimstat/wp-slimstat/issues/109))
 - Fixed FingerprintJS v4 compatibility issues that could affect visitor fingerprint tracking.
 - Fixed date-range, timezone, and report-filter issues that caused incorrect analytics output.
 - Fixed IP processing and geolocation edge cases for more accurate visitor reporting.
