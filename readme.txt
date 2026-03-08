@@ -73,7 +73,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.0 - 2025-01-15 =
+= 5.4.0 - 2026-03-08 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.
 - **New**: GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled).

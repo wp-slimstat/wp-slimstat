@@ -1,4 +1,4 @@
-= 5.4.0 - 2025-09-05 =
+= 5.4.0 - 2026-03-08 =
 
 - Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0) – Slimstat 5.4 – Real-Time, Real Privacy
 
