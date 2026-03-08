@@ -3,26 +3,20 @@
 - Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0) – Slimstat 5.4 – Real-Time, Real Privacy
 
 Breaking
-- Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - Legacy internal REST/tracker APIs changed; custom add-ons using old internals must update. See the Migration Guide for details.
 
 New
 - View real-time site stats directly from the WordPress admin bar — see online visitors, pageviews, and top pages at a glance.
 - Hover over any bar in the real-time chart to see detailed analytics in an interactive tooltip.
 - Refreshed analytics experience with a redesigned header and richer real-time visuals.
-- Integration with Consent Management Platforms (CMPs) for GDPR compliance:
-  - WP Consent API support with configurable consent categories
-  - Real Cookie Banner Pro integration
-  - Consent management endpoints and secure adblock-bypass tracking flow for better reliability.
+- Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API support with configurable consent categories
 - GDPR Compliance Mode toggle - Enable/disable GDPR compliance requirements (default: enabled)
 - Consent change listener that automatically resumes tracking when user grants consent via CMP.
-- Do Not Track (DNT) header respect with configurable option in settings.
 - Centralized consent utility (`Consent` class) for tracking eligibility and PII operations.
 - GDPR-compliant salted hash IP address functionality with daily salt rotation for enhanced privacy protection.
 - IP-based rate limiting for AJAX tracking to prevent excessive requests and improve security.
 - WordPress Privacy Policy content registration for GDPR Article 13/14 compliance with built-in data export/erase support.
 - Admin migration tools to optimize key database indexes and improve report responsiveness.
-- Enhanced caching mechanism for Matomo search engine mappings to improve performance.
 
 Enhancement
 - Optimized script enqueuing to load scripts in the footer for better page load times.
