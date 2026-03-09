@@ -207,9 +207,20 @@ class GDPRService
 		];
 		$message = wp_kses($message, $allowed_tags);
 
-		// Strip anchor-only or empty-href links (legacy accept/deny controls)
-		// Preserves links with real URLs (e.g. privacy policy pages)
-		$message = preg_replace('/<a\s[^>]*href\s*=\s*["\']#?["\'][^>]*>(.*?)<\/a>/is', '$1', $message);
+		// Strip links that don't point to real URLs (legacy accept/deny controls)
+		// Keeps: https://..., http://..., /path, //protocol-relative
+		// Strips: #, #fragment, empty, whitespace-only — preserves inner text
+		$message = preg_replace_callback(
+			'/<a\s[^>]*href\s*=\s*["\']([^"\']*)["\'][^>]*>(.*?)<\/a>/is',
+			function ($matches) {
+				$href = trim($matches[1]);
+				if (preg_match('#^(https?://|/)#i', $href)) {
+					return $matches[0]; // Real URL — keep the link
+				}
+				return $matches[2]; // Not a real URL — keep text, strip tag
+			},
+			$message
+		);
 
 		// Get button text from settings
 		$acceptText = empty($this->settings['gdpr_accept_button_text'])
