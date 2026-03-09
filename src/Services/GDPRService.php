@@ -146,6 +146,29 @@ class GDPRService
 	}
 
 	/**
+	 * Translate a dynamic string via WPML or Polylang if available.
+	 *
+	 * @param string $value The string to translate
+	 * @param string $name  The string identifier
+	 * @return string Translated string, or original if no translation plugin active
+	 */
+	private function translateString(string $value, string $name): string
+	{
+		// WPML and WPML-compatible plugins (including Polylang with WPML API)
+		$translated = apply_filters('wpml_translate_single_string', $value, 'wp-slimstat', $name);
+		if ($translated !== $value) {
+			return $translated;
+		}
+
+		// Native Polylang fallback
+		if (function_exists('pll__')) {
+			return pll__($value);
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Get consent banner HTML
 	 *
 	 * @return string HTML markup for the banner
@@ -159,6 +182,11 @@ class GDPRService
 
 		// Get banner message from settings (with fallback)
 		$message = stripslashes($this->settings['opt_out_message'] ?? '');
+
+		// Apply WPML/Polylang translation if available
+		if (!empty($message)) {
+			$message = $this->translateString($message, 'opt_out_message');
+		}
 
 		// If message is empty, use default message
 		if (empty($message)) {
@@ -179,13 +207,17 @@ class GDPRService
 		];
 		$message = wp_kses($message, $allowed_tags);
 
+		// Strip anchor-only or empty-href links (legacy accept/deny controls)
+		// Preserves links with real URLs (e.g. privacy policy pages)
+		$message = preg_replace('/<a\s[^>]*href\s*=\s*["\']#?["\'][^>]*>(.*?)<\/a>/is', '$1', $message);
+
 		// Get button text from settings
 		$acceptText = empty($this->settings['gdpr_accept_button_text'])
 			? __('Accept', 'wp-slimstat')
-			: $this->settings['gdpr_accept_button_text'];
+			: $this->translateString($this->settings['gdpr_accept_button_text'], 'gdpr_accept_button_text');
 		$denyText = empty($this->settings['gdpr_decline_button_text'])
 			? __('Deny', 'wp-slimstat')
-			: $this->settings['gdpr_decline_button_text'];
+			: $this->translateString($this->settings['gdpr_decline_button_text'], 'gdpr_decline_button_text');
 
 		$acceptButton = sprintf(
 			'<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">%s</button>',

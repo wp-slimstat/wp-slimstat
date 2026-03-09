@@ -151,7 +151,7 @@ $settings = [
 				'title'             => __('Consent Banner Message', 'wp-slimstat'),
 				'type'              => 'rich_text',
 				'after_input_field' => '',
-				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Use the editor above to format your message.', 'wp-slimstat'),
+				'description'       => __('Content displayed inside the SlimStat consent banner. Basic HTML (p, a, strong, em) is allowed. Links must use full URLs (anchor-only links are stripped). Use the editor above to format your message.', 'wp-slimstat'),
 				'conditional' => [
 					'field' => 'gdpr_enabled,consent_integration',
 					'type' => 'checked,equals',
@@ -937,6 +937,27 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+
+        // Register GDPR banner strings for WPML/Polylang translation
+        $gdpr_translatable = [
+            'opt_out_message'          => wp_slimstat::$settings['opt_out_message'] ?? '',
+            'gdpr_accept_button_text'  => wp_slimstat::$settings['gdpr_accept_button_text'] ?? '',
+            'gdpr_decline_button_text' => wp_slimstat::$settings['gdpr_decline_button_text'] ?? '',
+        ];
+
+        foreach ($gdpr_translatable as $name => $value) {
+            if (empty($value)) {
+                continue;
+            }
+
+            // WPML registration
+            do_action('wpml_register_single_string', 'wp-slimstat', $name, $value);
+
+            // Native Polylang registration
+            if (function_exists('pll_register_string')) {
+                pll_register_string($name, $value, 'wp-slimstat', ($name === 'opt_out_message'));
+            }
+        }
 
         if ([] !== $save_messages) {
             wp_slimstat_admin::show_message(implode(' ', $save_messages), 'warning');
