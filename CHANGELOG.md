@@ -1,4 +1,4 @@
-= 5.4.1 =
+= 5.4.1 - 2026-03-09 =
 
 - The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
 - Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
