@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.1
-Stable tag: 5.4.0
+Stable tag: 5.4.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.1 =
+- **Fix**: Admin bar "Online: X" counter now properly appears after upgrading from older versions.
+
 = 5.4.0 - 2026-03-08 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.

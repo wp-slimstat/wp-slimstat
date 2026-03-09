@@ -732,6 +732,13 @@ class wp_slimstat_admin
             }
         }
 
+        // --- Updates for version 5.4.1 ---
+        // Fix admin bar migration: empty('no') returned false in 5.4.0, missing users with legacy 'no' value
+        // Safe because this runs once (version bumps to 5.4.1 after), users who disable later are already on 5.4.1+
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.1', '<')) {
+            wp_slimstat::$settings['use_separate_menu'] = 'on';
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
