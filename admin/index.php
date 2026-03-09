@@ -732,6 +732,11 @@ class wp_slimstat_admin
             }
         }
 
+        // --- Updates for version 5.4.1 ---
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.1', '<')) {
+            wp_slimstat::$settings['use_separate_menu'] = 'on';
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
