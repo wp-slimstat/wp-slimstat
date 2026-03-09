@@ -240,7 +240,8 @@ class wp_slimstat
 			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
 		}
 
-		$banner_enabled = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'on'))
+			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
