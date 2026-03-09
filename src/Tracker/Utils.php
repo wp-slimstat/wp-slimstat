@@ -130,7 +130,7 @@ class Utils
 			$ipArray[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
 		}
 
-		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
+		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
 			if (!empty($_SERVER[$header])) {
 				$headerValue = sanitize_text_field(wp_unslash($_SERVER[$header]));
@@ -138,7 +138,7 @@ class Utils
 					$ip = trim($ip);
 					if (false !== filter_var($ip, FILTER_VALIDATE_IP) && $ip != $ipArray[0]) {
 						$ipArray[1] = $ip;
-						break;
+						break 2;
 					}
 				}
 			}

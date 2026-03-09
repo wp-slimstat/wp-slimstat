@@ -68,6 +68,16 @@ class Processor
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
+        // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
+        // as coming through CF (CF-Ray header present). This handles the edge case where
+        // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
+        if (!empty($_SERVER['HTTP_CF_RAY']) && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+            $cfIp = filter_var(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])), FILTER_VALIDATE_IP);
+            if ($cfIp) {
+                $originalIpForGeo = $cfIp;
+            }
+        }
+
         // Store original IP before processing (needed for consent upgrade lookup)
         $originalIpBeforeProcessing = $stat['ip'];
         $originalOtherIpBeforeProcessing = $stat['other_ip'] ?? '';
@@ -235,12 +245,10 @@ class Processor
         }
 
         // GeoIP lookup requires PII consent (GeoIP data is PII)
-        $geographicProvider = new GeoService();
-        if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
+        $geo = self::resolveGeoProvider();
+        if ($geo['enabled'] && Consent::piiAllowed()) {
             try {
-                $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                $precision = $geographicProvider->getPack();
-                $geoService = new GeolocationService($provider, ['precision' => $precision]);
+                $geoService = new GeolocationService($geo['provider'], ['precision' => $geo['precision']]);
                 $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
                 Query::setProcessingTimestamp(null);
@@ -503,13 +511,23 @@ class Processor
                         // Perform GeoIP lookup if enabled and PII allowed
                         // Only do GeoIP lookup if we're updating IP (not keeping hash)
                         if (!$hashIpEnabled && !empty($update_data['ip'])) {
-                            $geographicProvider = new GeoService();
-                            if ($geographicProvider->isGeoIPEnabled()) {
+                            $geo = self::resolveGeoProvider();
+                            if ($geo['enabled']) {
                                 try {
-                                    $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                                    $precision = $geographicProvider->getPack();
-                                    $geoService = new GeolocationService($provider, ['precision' => $precision]);
-                                    $geolocation_data = $geoService->locate($realIp);
+                                    // Use same IP priority as main tracking branch:
+                                    // prefer real client IP from proxy headers over REMOTE_ADDR
+                                    $geoIp = !empty($realOtherIp) ? $realOtherIp : $realIp;
+
+                                    // Cloudflare: prefer CF-Connecting-IP when verified via CF-Ray
+                                    if (!empty($_SERVER['HTTP_CF_RAY']) && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+                                        $cfIp = filter_var(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])), FILTER_VALIDATE_IP);
+                                        if ($cfIp) {
+                                            $geoIp = $cfIp;
+                                        }
+                                    }
+
+                                    $geoService = new GeolocationService($geo['provider'], ['precision' => $geo['precision']]);
+                                    $geolocation_data = $geoService->locate($geoIp);
                                     if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
                                         $update_data['country'] = strtolower($geolocation_data['country_code']);
                                         if (!empty($geolocation_data['city'])) {
@@ -709,5 +727,27 @@ class Processor
         }
 
         return $status;
+    }
+
+    /**
+     * Resolve geolocation provider and check if geolocation is enabled.
+     *
+     * Uses the geolocation_provider setting when available, falling back to
+     * the legacy enable_maxmind setting for backwards compatibility.
+     *
+     * @return array{provider: string, enabled: bool, precision: string}
+     */
+    private static function resolveGeoProvider()
+    {
+        $geographicProvider = new GeoService();
+        $provider = \wp_slimstat::$settings['geolocation_provider']
+            ?? ($geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip');
+
+        // Cloudflare reads HTTP headers — no local DB needed
+        // DB-based providers need the isGeoIPEnabled() check (DB file exists)
+        $enabled = ('cloudflare' === $provider) || $geographicProvider->isGeoIPEnabled();
+        $precision = $geographicProvider->getPack();
+
+        return ['provider' => $provider, 'enabled' => $enabled, 'precision' => $precision];
     }
 }
