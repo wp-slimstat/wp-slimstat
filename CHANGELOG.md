@@ -1,7 +1,12 @@
 = 5.4.1 =
 
-Fix
-- Fixed admin bar migration bug where "Online: X" counter didn't appear after upgrading from older versions due to flawed `empty()` check on 'use_separate_menu' setting.
+- The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
+- Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
+- Fixed duplicate Accept/Deny buttons showing in the consent banner when the custom message contained links ([#144](https://github.com/wp-slimstat/wp-slimstat/issues/144))
+- Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
+- Fixed a potential error when chart data was missing from the page
+- Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+
 
 = 5.4.0 - 2026-03-08 =
 
