@@ -1,3 +1,8 @@
+= 5.4.1 =
+
+Fix
+- Fixed admin bar migration bug where "Online: X" counter didn't appear after upgrading from older versions due to flawed `empty()` check on 'use_separate_menu' setting.
+
 = 5.4.0 - 2026-03-08 =
 
 - Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0) – Slimstat 5.4 – Real-Time, Real Privacy
