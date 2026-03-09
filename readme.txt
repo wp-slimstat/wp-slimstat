@@ -80,6 +80,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Fix**: Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
 - **Fix**: Fixed a potential error when chart data was missing from the page
 - **Fix**: Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+- **Fix**: Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
 
 = 5.4.0 - 2026-03-08 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
