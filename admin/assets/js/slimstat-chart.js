@@ -80,15 +80,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchChartData(chartId, granularity) {
         var element = document.getElementById("slimstat_chart_data_" + chartId);
-        var args = JSON.parse(element.getAttribute("data-args"));
         var chartCanvas = document.getElementById("slimstat_chart_" + chartId);
         var inside = chartCanvas ? chartCanvas.closest(".inside") : null;
         var chartWrap = chartCanvas ? chartCanvas.closest(".slimstat-chart-wrap") : null;
 
-        if (!inside || !chartWrap) {
-            console.warn("SlimStat: Could not find chart container elements for chart " + chartId);
+        if (!element || !chartCanvas || !inside || !chartWrap) {
+            console.warn("SlimStat: Could not find chart elements for chart " + chartId);
             return;
         }
+
+        var args = JSON.parse(element.getAttribute("data-args"));
 
         var loadingIndicator = document.createElement("p");
         loadingIndicator.classList.add("loading");
