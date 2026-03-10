@@ -80,15 +80,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function fetchChartData(chartId, granularity) {
         var element = document.getElementById("slimstat_chart_data_" + chartId);
+        var chartCanvas = document.getElementById("slimstat_chart_" + chartId);
+        var inside = chartCanvas ? chartCanvas.closest(".inside") : null;
+        var chartWrap = chartCanvas ? chartCanvas.closest(".slimstat-chart-wrap") : null;
+
+        if (!element || !chartCanvas || !inside || !chartWrap) {
+            console.warn("SlimStat: Could not find chart elements for chart " + chartId);
+            return;
+        }
+
         var args = JSON.parse(element.getAttribute("data-args"));
-        var inside = document.querySelector(".inside:has(#slimstat_chart_" + chartId + ")");
+
         var loadingIndicator = document.createElement("p");
         loadingIndicator.classList.add("loading");
         var spinner = document.createElement("i");
         spinner.classList.add("slimstat-font-spin4", "animate-spin");
         loadingIndicator.appendChild(spinner);
         inside.appendChild(loadingIndicator);
-        document.querySelector(".slimstat-chart-wrap:has(#slimstat_chart_" + chartId + ")").style.display = "none";
+        chartWrap.style.display = "none";
 
         var xhr = new XMLHttpRequest();
         xhr.open("POST", slimstat_chart_vars.ajax_url, true);
@@ -140,7 +149,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     element.dataset.translations = JSON.stringify(translations2);
 
                     inside.removeChild(loadingIndicator);
-                    document.querySelector(".slimstat-chart-wrap:has(#slimstat_chart_" + chartId + ")").style.display = "block";
+                    chartWrap.style.display = "block";
                 } else {
                     console.error("XHR error:", xhr.statusText);
                 }

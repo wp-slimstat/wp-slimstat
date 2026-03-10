@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.1
-Stable tag: 5.4.0
+Stable tag: 5.4.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -73,6 +73,15 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.1 - 2026-03-09 =
+- **New**: The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
+- **Fix**: Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
+- **Fix**: Fixed duplicate Accept/Deny buttons showing in the consent banner when the custom message contained links ([#144](https://github.com/wp-slimstat/wp-slimstat/issues/144))
+- **Fix**: Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
+- **Fix**: Fixed a potential error when chart data was missing from the page
+- **Fix**: Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+- **Fix**: Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
+
 = 5.4.0 - 2026-03-08 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.
 - **New**: Integration with Consent Management Platforms (CMPs) for GDPR compliance: WP Consent API and Real Cookie Banner Pro.

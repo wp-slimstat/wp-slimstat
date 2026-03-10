@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.0
+ * Version: 5.4.1
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.1');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -240,7 +240,8 @@ class wp_slimstat
 			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
 		}
 
-		$banner_enabled = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'on'))
+			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
 			add_action('login_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);

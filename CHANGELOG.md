@@ -1,3 +1,14 @@
+= 5.4.1 - 2026-03-09 =
+
+- The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
+- Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
+- Fixed duplicate Accept/Deny buttons showing in the consent banner when the custom message contained links ([#144](https://github.com/wp-slimstat/wp-slimstat/issues/144))
+- Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
+- Fixed a potential error when chart data was missing from the page
+- Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+- Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
+
+
 = 5.4.0 - 2026-03-08 =
 
 - Full release notes → [WordPress Real-time Analytics Plugin](https://wp-slimstat.com/wordpress-analytics-plugin-slimstat-5-4-release-notes/?utm_source=wordpress&utm_medium=changelog&utm_campaign=changelog&utm_content=5-4-0) – Slimstat 5.4 – Real-Time, Real Privacy
