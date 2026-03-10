@@ -1,57 +1,60 @@
 <?php
+/**
+ * Atomic Visit ID Generator for SlimStat
+ *
+ * @package SlimStat
+ * @license GPL-2.0-or-later
+ */
+
+declare(strict_types=1);
 
 namespace SlimStat\Tracker;
 
 /**
  * Atomic Visit ID Generator for SlimStat
  *
- * Uses MySQL's LAST_INSERT_ID() for atomic increment operations,
- * providing thread-safe visit ID generation without race conditions.
- *
- * Performance: Always exactly 2 queries (O(1)) instead of O(n) collision loop.
+ * Uses MySQL's LAST_INSERT_ID() support to atomically increment the counter and expose
+ * the new value through the same query result, avoiding metadata lookups and collision loops.
  *
  * @since 5.4.1
  */
 class VisitIdGenerator
 {
-    const OPTION_NAME = 'slimstat_visit_id_counter';
+    public const OPTION_NAME = 'slimstat_visit_id_counter';
+
+    /**
+     * Avoid repeat existence checks during the same request.
+     *
+     * @var bool
+     */
+    private static $counter_verified = false;
 
     /**
      * Generate the next visit ID atomically.
      *
-     * Uses MySQL's LAST_INSERT_ID() trick for atomic increment:
-     * UPDATE wp_options SET option_value = LAST_INSERT_ID(option_value + 1) WHERE option_name = 'slimstat_visit_id_counter';
-     * SELECT LAST_INSERT_ID();
-     *
-     * This is thread-safe and always returns a unique ID with exactly 2 queries.
+     * The counter row is created once and then incremented with a single
+     * INSERT ... ON DUPLICATE KEY UPDATE statement. WordPress exposes the
+     * LAST_INSERT_ID() value through $wpdb->insert_id for INSERT statements.
      *
      * @return int The next unique visit ID
      */
     public static function generateNextVisitId(): int
     {
-        global $wpdb;
-
         self::ensureCounterExists();
 
-        // Atomic increment using LAST_INSERT_ID()
-        // This sets LAST_INSERT_ID to the new value and returns it atomically
-        $result = $wpdb->query($wpdb->prepare(
-            "UPDATE {$wpdb->options} SET option_value = LAST_INSERT_ID(option_value + 1) WHERE option_name = %s",
-            self::OPTION_NAME
-        ));
+        $visit_id = self::runAtomicIncrement();
 
-        if ($result === false) {
-            return self::fallbackGenerateVisitId();
+        if ($visit_id <= 0) {
+            self::$counter_verified = false;
+            self::ensureCounterExists();
+            $visit_id = self::runAtomicIncrement();
         }
 
-        // Get the value that was set by LAST_INSERT_ID()
-        $visit_id = $wpdb->get_var("SELECT LAST_INSERT_ID()");
-
-        if ($visit_id === null || $visit_id <= 0) {
-            return self::fallbackGenerateVisitId();
+        if ($visit_id <= 0) {
+            return self::fallbackGenerateVisitId('Unable to atomically increment the visit ID counter.');
         }
 
-        return (int) $visit_id;
+        return $visit_id;
     }
 
     /**
@@ -63,17 +66,22 @@ class VisitIdGenerator
      */
     public static function ensureCounterExists(): void
     {
+        if (self::$counter_verified) {
+            return;
+        }
+
         global $wpdb;
 
-        // Check if option exists
         $exists = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",
             self::OPTION_NAME
         ));
 
-        if ($exists == 0) {
+        if (0 === (int) $exists) {
             self::initializeCounter();
         }
+
+        self::$counter_verified = true;
     }
 
     /**
@@ -85,50 +93,56 @@ class VisitIdGenerator
      */
     public static function initializeCounter(): int
     {
-        global $wpdb;
+        $initial_value = self::getInitialCounterValue();
 
-        $table = $wpdb->prefix . 'slim_stats';
-
-        // Get current maximum visit_id
-        $max_visit_id = $wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
-        $initial_value = max((int) $max_visit_id, 0);
-
-        // Try to get AUTO_INCREMENT as a fallback reference
-        $auto_increment = $wpdb->get_var($wpdb->prepare(
-            "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
-            $table
-        ));
-
-        if ($auto_increment !== null && (int) $auto_increment > $initial_value) {
-            $initial_value = (int) $auto_increment;
-        }
-
-        // Use add_option to avoid overwriting if it was created by another process
         $added = add_option(self::OPTION_NAME, $initial_value, '', 'no');
 
-        if (!$added) {
-            // Option already exists, get its current value
+        if (! $added) {
             return (int) get_option(self::OPTION_NAME, $initial_value);
         }
+
+        self::$counter_verified = true;
 
         return $initial_value;
     }
 
     /**
-     * Fallback visit ID generation using timestamp.
+     * Fallback visit ID generation using timestamp and additional entropy.
      *
      * Used only if the atomic counter fails (e.g., database issues).
      *
+     * @param string $reason Optional reason for logging why the fallback was used.
      * @return int A fallback visit ID based on current timestamp
      */
-    private static function fallbackGenerateVisitId(): int
+    private static function fallbackGenerateVisitId(string $reason = ''): int
     {
-        // Use microtime for better uniqueness in fallback scenario
-        $microtime = microtime(true);
-        $visit_id = (int) ($microtime * 1000) % 2147483647; // Keep within 32-bit signed int range
+        self::logFallbackUsage($reason);
 
-        // Add some randomness to reduce collision chance
-        $visit_id += mt_rand(0, 999);
+        try {
+            $random_entropy = random_int(0, 99999);
+        } catch (\Exception $exception) {
+            $random_entropy = mt_rand(0, 99999);
+        }
+
+        $process_entropy = function_exists('getmypid') ? (int) getmypid() : 0;
+
+        try {
+            $nonce_bytes = random_bytes(4);
+            $nonce_data  = unpack('Nnonce', $nonce_bytes);
+            $nonce_entropy = isset($nonce_data['nonce']) ? (int) $nonce_data['nonce'] : mt_rand(0, 0xFFFF);
+        } catch (\Exception $exception) {
+            $nonce_entropy = mt_rand(0, 0xFFFF);
+        }
+
+        $entropy = sprintf(
+            '%.6F|%d|%d|%d',
+            microtime(true),
+            $random_entropy,
+            $process_entropy,
+            $nonce_entropy
+        );
+
+        $visit_id = abs((int) hexdec(substr(hash('sha256', $entropy), 0, 8)));
 
         return max($visit_id, (int) time());
     }
@@ -156,5 +170,85 @@ class VisitIdGenerator
     public static function resetCounter(int $value): bool
     {
         return update_option(self::OPTION_NAME, max($value, 0));
+    }
+
+    /**
+     * Run the atomic increment query and return the incremented value.
+     *
+     * @return int The incremented visit ID, or 0 on failure
+     */
+    private static function runAtomicIncrement(): int
+    {
+        global $wpdb;
+
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload)
+            VALUES (%s, LAST_INSERT_ID(%d), %s)
+            ON DUPLICATE KEY UPDATE option_value = LAST_INSERT_ID(option_value + 1)",
+            self::OPTION_NAME,
+            1,
+            'no'
+        ));
+
+        if (false === $result) {
+            return 0;
+        }
+
+        return (int) $wpdb->insert_id;
+    }
+
+    /**
+     * Calculate the counter base value from the existing stats table.
+     *
+     * The stored counter represents the most recently issued visit_id.
+     *
+     * @return int The current counter value
+     */
+    private static function getInitialCounterValue(): int
+    {
+        global $wpdb;
+
+        $table = $wpdb->prefix . 'slim_stats';
+
+        $max_visit_id = $wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+        $initial_value = max((int) $max_visit_id, 0);
+
+        $auto_increment = $wpdb->get_var($wpdb->prepare(
+            "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
+            $table
+        ));
+
+        if (null !== $auto_increment) {
+            $next_available_id = max(((int) $auto_increment) - 1, 0);
+            if ($next_available_id > $initial_value) {
+                $initial_value = $next_available_id;
+            }
+        }
+
+        return $initial_value;
+    }
+
+    /**
+     * Emit a log entry when the fallback generator is used.
+     *
+     * @param string $reason Optional reason for the fallback.
+     * @return void
+     */
+    private static function logFallbackUsage(string $reason): void
+    {
+        $message = 'Visit ID generator fallback path used.';
+
+        if ('' !== $reason) {
+            $message .= ' ' . $reason;
+        }
+
+        if (class_exists('\wp_slimstat')) {
+            \wp_slimstat::log($message, 'error');
+            return;
+        }
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
+        }
     }
 }
