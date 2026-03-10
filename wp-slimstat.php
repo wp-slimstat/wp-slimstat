@@ -359,8 +359,14 @@ class wp_slimstat
     public static function resolve_geolocation_provider()
     {
         if (isset(self::$settings['geolocation_provider'])) {
-            $p = self::$settings['geolocation_provider'];
-            return 'disable' === $p ? false : $p;
+            $p = sanitize_text_field(self::$settings['geolocation_provider']);
+            if ('disable' === $p) {
+                return false;
+            }
+            if (in_array($p, ['maxmind', 'dbip', 'cloudflare'], true)) {
+                return $p;
+            }
+            // Invalid/empty value — fall through to legacy flag
         }
         $em = self::$settings['enable_maxmind'] ?? 'disable';
         if ('on' === $em) {
