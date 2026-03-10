@@ -844,7 +844,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
 		// Geolocation settings save (provider-based)
 		if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
-			$prevProvider = wp_slimstat::resolve_geolocation_provider() ?: 'dbip';
+			$resolved_prev = wp_slimstat::resolve_geolocation_provider();
+			$prevProvider  = false !== $resolved_prev ? $resolved_prev : 'disable';
 			$provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
             $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
             $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
