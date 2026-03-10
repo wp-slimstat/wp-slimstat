@@ -1746,7 +1746,7 @@ class wp_slimstat_reports
                         $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
                     }
                     // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
-                    $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+                    $provider = wp_slimstat::resolve_geolocation_provider();
                     $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
                     $db_missing = false;
                     if ($uses_db) {

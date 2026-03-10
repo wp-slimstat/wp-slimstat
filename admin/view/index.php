@@ -95,7 +95,7 @@ if (!empty($saved_filters)) {
 
         <?php
         // Provider-aware GeoIP notice: show only if a DB-based provider is selected and the database file is missing
-        $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
+        $provider = wp_slimstat::resolve_geolocation_provider();
         $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
         if ($uses_db && 'on' == wp_slimstat::$settings['notice_geolite']) {
             try {
