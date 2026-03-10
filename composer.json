@@ -36,6 +36,17 @@
       "~/.composer/vendor/bin/mozart compose",
       "composer dump-autoload"
     ],
-    "test:license-tags": "php tests/license-tag-gating-test.php"
+    "test:license-tags": "php tests/license-tag-gating-test.php",
+    "test:geoip-resolver": "php tests/resolve-geolocation-provider-test.php",
+    "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
+    "test:legacy-sync": "php tests/legacy-sync-mapping-test.php",
+    "test:lazy-migration": "php tests/lazy-migration-test.php",
+    "test": [
+      "@test:license-tags",
+      "@test:geoip-resolver",
+      "@test:geoservice",
+      "@test:legacy-sync",
+      "@test:lazy-migration"
+    ]
   }
 }
