@@ -486,6 +486,9 @@ class wp_slimstat_admin
         // Create the tables
         self::init_tables($my_wpdb);
 
+        // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
+        \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
+
         // Ensure country/dt index exists for performance
         $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
         if (!$has_index || 0 === count($has_index)) {
