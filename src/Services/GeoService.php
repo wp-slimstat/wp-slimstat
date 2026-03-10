@@ -64,12 +64,13 @@ class GeoService
 
     public function isGeoIPEnabled()
     {
-        return 'disable' != $this->enableMaxmind;
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        return false !== $provider && 'cloudflare' !== $provider;
     }
 
     public function isMaxMindEnabled()
     {
-        return 'on' == $this->enableMaxmind;
+        return 'maxmind' === \wp_slimstat::resolve_geolocation_provider();
     }
 
     public function isJsDelivrEnabled()
@@ -100,7 +101,10 @@ class GeoService
 	public function download()
 	{
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				return ['status' => false, 'error' => __('Geolocation is disabled.', 'wp-slimstat')];
+			}
 			if (in_array($provider, ['maxmind', 'dbip'], true)) {
                 // GeolocationService reads settings automatically
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
@@ -123,7 +127,10 @@ class GeoService
 	public function checkDatabase()
 	{
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				return ['status' => false, 'notice' => __('Geolocation is disabled.', 'wp-slimstat')];
+			}
             // GeolocationService reads settings automatically
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $dbPath  = $service->getProvider()->getDbPath();
@@ -165,7 +172,10 @@ class GeoService
 
 	public function deleteDatabaseFile()
 	{
-		$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+		$provider = \wp_slimstat::resolve_geolocation_provider();
+		if (false === $provider) {
+			return;
+		}
         // GeolocationService reads settings automatically
         $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
         $dbPath  = $service->getProvider()->getDbPath();

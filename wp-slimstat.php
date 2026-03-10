@@ -349,6 +349,30 @@ class wp_slimstat
     }
 
     /**
+     * Resolve the active geolocation provider.
+     *
+     * New UI sets 'geolocation_provider' explicitly (incl. 'disable').
+     * Legacy installs only have 'enable_maxmind' (tri-state: 'on', 'no', 'disable').
+     *
+     * @return string|false  'maxmind', 'dbip', 'cloudflare', or false if disabled
+     */
+    public static function resolve_geolocation_provider()
+    {
+        if (isset(self::$settings['geolocation_provider'])) {
+            $p = self::$settings['geolocation_provider'];
+            return 'disable' === $p ? false : $p;
+        }
+        $em = self::$settings['enable_maxmind'] ?? 'disable';
+        if ('on' === $em) {
+            return 'maxmind';
+        }
+        if ('no' === $em) {
+            return 'dbip';
+        }
+        return false;
+    }
+
+    /**
      * Decodes the permalink
      */
     public static function get_request_uri()
@@ -1204,7 +1228,10 @@ class wp_slimstat
         if ($last_update < $this_update) {
 
             // Determine which geolocation provider to use
-            $provider = self::$settings['geolocation_provider'] ?? 'dbip';
+            $provider = self::resolve_geolocation_provider();
+            if (false === $provider) {
+                return;
+            }
 
             $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
 

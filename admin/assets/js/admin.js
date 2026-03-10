@@ -340,6 +340,9 @@ jQuery(function () {
         } else if (provider === "cloudflare") {
             $licenseRow.css("display", "none");
             $dbActionsRow.css("display", "none");
+        } else if (provider === "disable") {
+            $licenseRow.css("display", "none");
+            $dbActionsRow.css("display", "none");
         }
     }
     // Initialize and bind change
