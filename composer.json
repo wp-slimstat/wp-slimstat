@@ -41,7 +41,7 @@
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
     "test:legacy-sync": "php tests/legacy-sync-mapping-test.php",
     "test:lazy-migration": "php tests/lazy-migration-test.php",
-    "test": [
+    "test:all": [
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
