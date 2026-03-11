@@ -166,8 +166,9 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Save the default values in the database
-            self::update_option('slimstat_options', self::init_options());
+            // Fresh install: set defaults including geolocation_provider=dbip
+            self::$settings = self::get_fresh_defaults();
+            self::update_option('slimstat_options', self::$settings);
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
@@ -346,6 +347,36 @@ class wp_slimstat
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
         }
+    }
+
+    /**
+     * Resolve the active geolocation provider.
+     *
+     * New UI sets 'geolocation_provider' explicitly (incl. 'disable').
+     * Legacy installs only have 'enable_maxmind' (tri-state: 'on', 'no', 'disable').
+     *
+     * @return string|false  'maxmind', 'dbip', 'cloudflare', or false if disabled
+     */
+    public static function resolve_geolocation_provider()
+    {
+        if (isset(self::$settings['geolocation_provider'])) {
+            $p = sanitize_text_field(self::$settings['geolocation_provider']);
+            if ('disable' === $p) {
+                return false;
+            }
+            if (in_array($p, ['maxmind', 'dbip', 'cloudflare'], true)) {
+                return $p;
+            }
+            // Invalid/empty value — fall through to legacy flag
+        }
+        $em = self::$settings['enable_maxmind'] ?? 'disable';
+        if ('on' === $em) {
+            return 'maxmind';
+        }
+        if ('no' === $em) {
+            return 'dbip';
+        }
+        return false;
     }
 
     /**
@@ -777,6 +808,25 @@ class wp_slimstat
     // end date_i18n
 
     /**
+     * Returns default options with fresh-install additions (e.g. geolocation_provider).
+     * Used by init() for new installs and by admin reset-settings.
+     */
+    public static function get_fresh_defaults()
+    {
+        $defaults = self::init_options();
+        $defaults['geolocation_provider'] = 'dbip';
+        return $defaults;
+    }
+
+    /**
+     * Returns the current geolocation precision ('country' or 'city').
+     */
+    public static function get_geolocation_precision()
+    {
+        return ('on' == self::$settings['geolocation_country']) ? 'country' : 'city';
+    }
+
+    /**
      * Sets the default values for all the options
      */
     public static function init_options()
@@ -1204,7 +1254,10 @@ class wp_slimstat
         if ($last_update < $this_update) {
 
             // Determine which geolocation provider to use
-            $provider = self::$settings['geolocation_provider'] ?? 'dbip';
+            $provider = self::resolve_geolocation_provider();
+            if (false === $provider) {
+                return;
+            }
 
             $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
 

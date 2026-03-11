@@ -14,6 +14,13 @@ $last_tracker_error = get_option('slimstat_tracker_error', []);
 // Retrieve any geoip errors for display
 $last_geoip_error = get_option('slimstat_geoip_error', []);
 
+// Lazy-migrate: populate geolocation_provider from legacy flag for correct <select> rendering.
+// Persists on next save (line 939 saves entire $settings array).
+if (!isset(wp_slimstat::$settings['geolocation_provider'])) {
+    $resolved = wp_slimstat::resolve_geolocation_provider();
+    wp_slimstat::$settings['geolocation_provider'] = false !== $resolved ? $resolved : 'disable';
+}
+
 // Build General → Tracker rows, conditionally adding Tracking Request Method under Tracking Mode
 $general_rows = [
     // General - Tracker
@@ -282,6 +289,7 @@ $settings = [
 				'title'         => __('Geolocation Provider', 'wp-slimstat'),
 				'type'          => 'select',
 				'select_values' => [
+					'disable'    => __('Disabled', 'wp-slimstat'),
 					'maxmind'    => __('MaxMind GeoLite2 (recommended)', 'wp-slimstat'),
 					'dbip'       => __('DB-IP City Lite (free)', 'wp-slimstat'),
 					'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
@@ -787,7 +795,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 break;
 
             case 'reset-settings':
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::init_options());
+                wp_slimstat::update_option('slimstat_options', wp_slimstat::get_fresh_defaults());
                 wp_slimstat_admin::show_message(__('All settings were successfully reset to their default values.', 'wp-slimstat'));
                 break;
 
@@ -836,7 +844,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
 		// Geolocation settings save (provider-based)
 		if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
-			$prevProvider = wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$resolved_prev = wp_slimstat::resolve_geolocation_provider();
+			$prevProvider  = false !== $resolved_prev ? $resolved_prev : 'disable';
 			$provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
             $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
             $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
@@ -846,8 +855,17 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             wp_slimstat::$settings['geolocation_country']  = 'country' === $precision ? 'on' : 'no';
             wp_slimstat::$settings['maxmind_license_key']  = $license;
 
+            // Sync legacy flag for tracker (Processor.php) and PRO compatibility
+            if ('maxmind' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'on';
+            } elseif ('dbip' === $provider || 'cloudflare' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'no';
+            } elseif ('disable' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'disable';
+            }
+
             // If provider needs a DB, schedule a background update to avoid timeouts during save
-            if ('cloudflare' !== $provider) {
+            if (!in_array($provider, ['cloudflare', 'disable'], true)) {
                 try {
                     // Pass new settings explicitly since they haven't been saved to wp_slimstat::$settings yet
                     $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [

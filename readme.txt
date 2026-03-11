@@ -16,22 +16,24 @@ Track returning customers and registered users, monitor Javascript events, detec
 
 = Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
+* **Admin Bar Stats**: view real-time site stats directly from the WordPress admin bar — online visitors, pageviews, and top pages at a glance.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner).
+* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with WP Consent API. Consent banner translatable with WPML and Polylang.
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
 * **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [JQVMap](https://github.com/10bestdesign/jqvmap)).
 
 = Pro Pack Features =
 * **Network Analytics**: Enable a network-wide view of your reports and settings.
-* **Email Reports**: Receive your reports directly in your mailbox.
+* **Email Reports**: Receive your reports directly in your mailbox with customizable column mappings and HTML tables.
 * **Export to Excel**: Download your reports as CSV files.
 * **Heatmap**: Display a heatmap layer of the most clicked areas on your website.
 * **User Overview**: Monitor your registered users by tracking their activities and time on site.
+* **User Avatars**: Gravatar integration in the User Overview report for quick visitor identification.
 * **MaxMind Integration**: Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.
 * **Custom DB**: Use an external database to store all the information about your visitors.
 * **Extended Overview**: Add custom columns to the User Overview widget and export file.

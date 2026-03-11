@@ -337,7 +337,7 @@ jQuery(function () {
         } else if (provider === "dbip") {
             $licenseRow.css("display", "none");
             $dbActionsRow.css("display", "table-row");
-        } else if (provider === "cloudflare") {
+        } else if (provider === "cloudflare" || provider === "disable") {
             $licenseRow.css("display", "none");
             $dbActionsRow.css("display", "none");
         }
