@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.1
-Stable tag: 5.4.1
+Stable tag: 5.4.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,14 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.2 - 2026-03-11 =
+- **Fix**: Fixed infinite AJAX loop when WP-Cron is disabled causing excessive geolocation requests ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
+- **Fix**: Fixed `prefers-reduced-motion` CSS rule affecting elements outside SlimStat ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
+- **Fix**: Replaced O(n) visit ID collision loop with atomic counter for better performance ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
+- **Fix**: Fixed potential fatal error from `intval` in REST tracking endpoint
+- **Fix**: Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
+- **Fix**: Wired Cloudflare into tracking pipeline and fixed 5 geolocation bugs
+
 = 5.4.1 - 2026-03-09 =
 - **New**: The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
 - **Fix**: Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
