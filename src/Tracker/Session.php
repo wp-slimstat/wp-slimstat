@@ -96,29 +96,10 @@ class Session
 				\wp_slimstat::$settings['session_duration'] = 1800;
 			}
 
-			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-			$next_visit_id = Query::select('AUTO_INCREMENT')
-				->from('information_schema.TABLES')
-				->whereRaw("TABLE_SCHEMA = DATABASE()")
-				->where('TABLE_NAME', '=', $table)
-				->getVar();
-
-			if ($next_visit_id === null || $next_visit_id <= 0) {
-				$max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
-				$next_visit_id = intval($max_visit_id) + 1;
-			}
-
+			// Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
+			$next_visit_id = VisitIdGenerator::generateNextVisitId();
 			if ($next_visit_id <= 0) {
 				$next_visit_id = time();
-			}
-
-			$existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-			if ($existing_visit_id !== null) {
-				do {
-					$next_visit_id++;
-					$existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-				} while ($existing_visit_id !== null);
 			}
 
 			$stat = \wp_slimstat::get_stat();

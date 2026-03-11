@@ -955,6 +955,7 @@ class ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec
         'SlimStat\\Tracker\\Storage' => __DIR__ . '/../..' . '/src/Tracker/Storage.php',
         'SlimStat\\Tracker\\Tracker' => __DIR__ . '/../..' . '/src/Tracker/Tracker.php',
         'SlimStat\\Tracker\\Utils' => __DIR__ . '/../..' . '/src/Tracker/Utils.php',
+        'SlimStat\\Tracker\\VisitIdGenerator' => __DIR__ . '/../..' . '/src/Tracker/VisitIdGenerator.php',
         'SlimStat\\Utils\\Consent' => __DIR__ . '/../..' . '/src/Utils/Consent.php',
         'SlimStat\\Utils\\Query' => __DIR__ . '/../..' . '/src/Utils/Query.php',
         'SlimStat\\Utils\\Request' => __DIR__ . '/../..' . '/src/Utils/Request.php',

@@ -1,3 +1,12 @@
+= 5.4.2 - 2026-03-11 =
+
+- Fixed infinite AJAX loop when WP-Cron is disabled causing excessive geolocation requests ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
+- Fixed `prefers-reduced-motion` CSS rule affecting elements outside SlimStat ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
+- Replaced O(n) visit ID collision loop with atomic counter for better performance ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
+- Fixed potential fatal error from `intval` in REST tracking endpoint
+- Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
+- Wired Cloudflare into tracking pipeline and fixed 5 geolocation bugs
+
 = 5.4.1 - 2026-03-09 =
 
 - The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
@@ -6,6 +15,7 @@
 - Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
 - Fixed a potential error when chart data was missing from the page
 - Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+- Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
 
 
 = 5.4.0 - 2026-03-08 =

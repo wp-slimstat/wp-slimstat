@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.1
-Stable tag: 5.4.1
+Stable tag: 5.4.2
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,22 +16,24 @@ Track returning customers and registered users, monitor Javascript events, detec
 
 = Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
+* **Admin Bar Stats**: view real-time site stats directly from the WordPress admin bar — online visitors, pageviews, and top pages at a glance.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with popular Consent Management Platforms (WP Consent API, Real Cookie Banner).
+* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with WP Consent API. Consent banner translatable with WPML and Polylang.
 * **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
 * **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
 * **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
 * **Privacy**: hash IP addresses to protect your users' privacy.
 * **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [amMap](https://www.ammap.com/)).
+* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [JQVMap](https://github.com/10bestdesign/jqvmap)).
 
 = Pro Pack Features =
 * **Network Analytics**: Enable a network-wide view of your reports and settings.
-* **Email Reports**: Receive your reports directly in your mailbox.
+* **Email Reports**: Receive your reports directly in your mailbox with customizable column mappings and HTML tables.
 * **Export to Excel**: Download your reports as CSV files.
 * **Heatmap**: Display a heatmap layer of the most clicked areas on your website.
 * **User Overview**: Monitor your registered users by tracking their activities and time on site.
+* **User Avatars**: Gravatar integration in the User Overview report for quick visitor identification.
 * **MaxMind Integration**: Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.
 * **Custom DB**: Use an external database to store all the information about your visitors.
 * **Extended Overview**: Add custom columns to the User Overview widget and export file.
@@ -73,6 +75,14 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.2 - 2026-03-11 =
+- **Fix**: Fixed infinite AJAX loop when WP-Cron is disabled causing excessive geolocation requests ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
+- **Fix**: Fixed `prefers-reduced-motion` CSS rule affecting elements outside SlimStat ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
+- **Fix**: Replaced O(n) visit ID collision loop with atomic counter for better performance ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
+- **Fix**: Fixed potential fatal error from `intval` in REST tracking endpoint
+- **Fix**: Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
+- **Fix**: Wired Cloudflare into tracking pipeline and fixed 5 geolocation bugs
+
 = 5.4.1 - 2026-03-09 =
 - **New**: The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
 - **Fix**: Fixed the GDPR consent banner appearing even when GDPR Compliance Mode was turned off ([#140](https://github.com/wp-slimstat/wp-slimstat/issues/140))
@@ -80,6 +90,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Fix**: Fixed charts not loading in older browsers including Firefox before version 121 ([#139](https://github.com/wp-slimstat/wp-slimstat/issues/139))
 - **Fix**: Fixed a potential error when chart data was missing from the page
 - **Fix**: Fixed real URLs (e.g., privacy policy links) being incorrectly stripped from the consent banner message
+- **Fix**: Fixed refresh button not resetting countdown timer ([#153](https://github.com/wp-slimstat/wp-slimstat/issues/153))
 
 = 5.4.0 - 2026-03-08 =
 - **Breaking**: Removed internal GDPR consent management system (shortcode, banner, opt-in/opt-out cookies) in favor of external CMP integrations.

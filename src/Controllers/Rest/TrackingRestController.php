@@ -15,6 +15,20 @@ if (! defined('ABSPATH')) {
 
 class TrackingRestController implements RestControllerInterface
 {
+    /**
+     * Sanitize signed integer REST params without relying on internal PHP functions.
+     *
+     * WordPress REST passes sanitize callbacks three arguments. Internal functions like
+     * intval() fatally error on PHP 8 when called with that signature.
+     *
+     * @param mixed $value Raw REST parameter value.
+     * @return int
+     */
+    public static function sanitize_integer_param($value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
     public function register_routes(): void
     {
         register_rest_route('slimstat/v1', '/hit', [
@@ -88,7 +102,7 @@ class TrackingRestController implements RestControllerInterface
                 'tz' => [
                     'required'          => false,
                     'type'              => 'integer',
-                    'sanitize_callback' => 'intval',
+                    'sanitize_callback' => [self::class, 'sanitize_integer_param'],
                 ],
                 'pos' => [
                     'required'          => false,

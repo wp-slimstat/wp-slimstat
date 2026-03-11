@@ -5,7 +5,6 @@ namespace SlimStat\Tracker;
 use SlimStat\Utils\Query;
 use SlimStat\Services\Browscap;
 use SlimStat\Services\Privacy;
-use SlimStat\Services\GeoService;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
@@ -245,10 +244,11 @@ class Processor
         }
 
         // GeoIP lookup requires PII consent (GeoIP data is PII)
-        $geo = self::resolveGeoProvider();
-        if ($geo['enabled'] && Consent::piiAllowed()) {
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        if (false !== $provider && Consent::piiAllowed()) {
             try {
-                $geoService = new GeolocationService($geo['provider'], ['precision' => $geo['precision']]);
+                $precision = \wp_slimstat::get_geolocation_precision();
+                $geoService = new GeolocationService($provider, ['precision' => $precision]);
                 $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
                 Query::setProcessingTimestamp(null);
@@ -511,9 +511,10 @@ class Processor
                         // Perform GeoIP lookup if enabled and PII allowed
                         // Only do GeoIP lookup if we're updating IP (not keeping hash)
                         if (!$hashIpEnabled && !empty($update_data['ip'])) {
-                            $geo = self::resolveGeoProvider();
-                            if ($geo['enabled']) {
+                            $provider = \wp_slimstat::resolve_geolocation_provider();
+                            if (false !== $provider) {
                                 try {
+                                    $precision = \wp_slimstat::get_geolocation_precision();
                                     // Use same IP priority as main tracking branch:
                                     // prefer real client IP from proxy headers over REMOTE_ADDR
                                     $geoIp = !empty($realOtherIp) ? $realOtherIp : $realIp;
@@ -526,7 +527,7 @@ class Processor
                                         }
                                     }
 
-                                    $geoService = new GeolocationService($geo['provider'], ['precision' => $geo['precision']]);
+                                    $geoService = new GeolocationService($provider, ['precision' => $precision]);
                                     $geolocation_data = $geoService->locate($geoIp);
                                     if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
                                         $update_data['country'] = strtolower($geolocation_data['country_code']);
@@ -546,28 +547,10 @@ class Processor
                             }
                         }
 
-                        // generate visit_id from attributes
-                        $next_visit_id = Query::select('AUTO_INCREMENT')
-                            ->from('information_schema.TABLES')
-                            ->whereRaw("TABLE_SCHEMA = DATABASE()")
-                            ->where('TABLE_NAME', '=', $table)
-                            ->getVar();
-
-                        if ($next_visit_id === null || $next_visit_id <= 0) {
-                            $max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
-                            $next_visit_id = intval($max_visit_id) + 1;
-                        }
-
+                        // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
+                        $next_visit_id = VisitIdGenerator::generateNextVisitId();
                         if ($next_visit_id <= 0) {
                             $next_visit_id = time();
-                        }
-
-                        $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-                        if ($existing_visit_id !== null) {
-                            do {
-                                $next_visit_id++;
-                                $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-                            } while ($existing_visit_id !== null);
                         }
 
                         $stat['visit_id'] = intval($next_visit_id);
@@ -729,25 +712,4 @@ class Processor
         return $status;
     }
 
-    /**
-     * Resolve geolocation provider and check if geolocation is enabled.
-     *
-     * Uses the geolocation_provider setting when available, falling back to
-     * the legacy enable_maxmind setting for backwards compatibility.
-     *
-     * @return array{provider: string, enabled: bool, precision: string}
-     */
-    private static function resolveGeoProvider()
-    {
-        $geographicProvider = new GeoService();
-        $provider = \wp_slimstat::$settings['geolocation_provider']
-            ?? ($geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip');
-
-        // Cloudflare reads HTTP headers — no local DB needed
-        // DB-based providers need the isGeoIPEnabled() check (DB file exists)
-        $enabled = ('cloudflare' === $provider) || $geographicProvider->isGeoIPEnabled();
-        $precision = $geographicProvider->getPack();
-
-        return ['provider' => $provider, 'enabled' => $enabled, 'precision' => $precision];
-    }
 }

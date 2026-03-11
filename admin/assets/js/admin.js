@@ -337,7 +337,7 @@ jQuery(function () {
         } else if (provider === "dbip") {
             $licenseRow.css("display", "none");
             $dbActionsRow.css("display", "table-row");
-        } else if (provider === "cloudflare") {
+        } else if (provider === "cloudflare" || provider === "disable") {
             $licenseRow.css("display", "none");
             $dbActionsRow.css("display", "none");
         }
@@ -1383,6 +1383,7 @@ jQuery(function () {
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
 var SlimStatAdmin = {
     refresh_handle: null,
+    _lastManualRefreshTime: 0,
 
     refresh_report: function (id) {
         return function () {
@@ -1393,7 +1394,7 @@ var SlimStatAdmin = {
 
             // Clear the autorefresh timer, if set
             if (SlimStatAdmin.refresh_handle != null) {
-                clearTimeout(SlimStatAdmin.refresh_handle);
+                clearInterval(SlimStatAdmin.refresh_handle);
             }
 
             data = {
@@ -1446,7 +1447,7 @@ var SlimStatAdmin = {
                         });
 
                         if (id == "slim_p7_02") {
-                            SlimStatAdmin._refresh_timer = SlimStatAdminParams.refresh_interval;
+                            SlimStatAdmin._lastManualRefreshTime = Date.now();
                         }
                     }
                 })
@@ -1465,6 +1466,15 @@ var SlimStatAdmin = {
             var now = new Date();
             var currentSeconds = now.getSeconds();
             var currentMinute = now.getMinutes();
+
+            // Check if a manual refresh happened recently (within 2 seconds)
+            var timeSinceManualRefresh = Date.now() - SlimStatAdmin._lastManualRefreshTime;
+            if (timeSinceManualRefresh < 2000) {
+                jQuery(".refresh-timer").html("0:00");
+                // Reset the trigger minute to sync with the wall clock after manual refresh
+                lastTriggerMinute = -1;
+                return;
+            }
 
             // Trigger pulse at exactly :00 of a new minute
             if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {

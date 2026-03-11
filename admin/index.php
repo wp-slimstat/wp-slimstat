@@ -293,7 +293,9 @@ class wp_slimstat_admin
         // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
         // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
         $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
-        if ($cron_disabled) {
+        $geoip_provider = \wp_slimstat::resolve_geolocation_provider();
+        if ($cron_disabled && false !== $geoip_provider && is_admin() && !wp_doing_ajax()
+            && current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
             // Update if DB is missing or last update is older than the most recent past scheduled window
             $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
 
@@ -308,20 +310,22 @@ class wp_slimstat_admin
                 $this_update = $this_month_update;
             }
 
-		$db_missing = false;
-		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
-			$uses_db  = in_array($provider, ['maxmind', 'dbip'], true);
-                if ($uses_db) {
-                    $service    = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
-                    $db_missing = !file_exists($service->getProvider()->getDbPath());
+            $needs_update = $last_update < $this_update;
+            $db_missing = false;
+            if (!$needs_update) {
+                // Time check passed — only check DB existence if time says we're current
+                try {
+                    $uses_db = in_array($geoip_provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
+                    if ($uses_db) {
+                        $service    = new \SlimStat\Services\Geolocation\GeolocationService($geoip_provider, []);
+                        $db_missing = !file_exists($service->getProvider()->getDbPath());
+                    }
+                } catch (\Throwable $e) {
+                    $db_missing = true;
                 }
-            } catch (\Throwable $e) {
-                // If any error occurs while checking, consider DB missing to be safe
-                $db_missing = true;
             }
 
-            if ($db_missing || $last_update < $this_update) {
+            if ($needs_update || $db_missing) {
                 // Fire admin-ajax in a non-blocking way to run the existing update handler
                 $ajax_url = admin_url('admin-ajax.php');
                 // Forward only WordPress authentication cookies for security
@@ -485,6 +489,9 @@ class wp_slimstat_admin
 
         // Create the tables
         self::init_tables($my_wpdb);
+
+        // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
+        \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
 
         // Ensure country/dt index exists for performance
         $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
@@ -2021,9 +2028,15 @@ class wp_slimstat_admin
 		}
 
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				wp_send_json_error(__('Geolocation is disabled.', 'wp-slimstat'));
+				return;
+			}
             if ('cloudflare' === $provider) {
+                update_option('slimstat_last_geoip_dl', time());
                 wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
+                return;
             }
 
             // License validation is handled by the MaxMind provider; do not pre-check here
@@ -2032,6 +2045,7 @@ class wp_slimstat_admin
             $ok      = $service->updateDatabase();
 
 			if ($ok) {
+                update_option('slimstat_last_geoip_dl', time());
                 wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
             } else {
                 // Log the error for debugging
@@ -2060,9 +2074,14 @@ class wp_slimstat_admin
 		}
 
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				wp_send_json_error(__('Geolocation is disabled.', 'wp-slimstat'));
+				return;
+			}
             if ('cloudflare' === $provider) {
                 wp_send_json_success(__('Cloudflare geolocation is active. No database to check.', 'wp-slimstat'));
+                return;
             }
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $exists  = file_exists($service->getProvider()->getDbPath());

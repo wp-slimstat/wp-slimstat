@@ -46,6 +46,9 @@ composer.lock
 
 # Testing
 .env.testing
+test-results/
+tests/e2e/.auth/
+tests/e2e/playwright-report/
 # Bun
 bun.lock
 

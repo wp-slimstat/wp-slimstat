@@ -80,7 +80,7 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 
         // Only include city-level data when precision is set to 'city'
         if ('city' === $precision) {
-            $result['region']       = $region;
+            $result['subdivision']  = $region;
             $result['city']         = $city;
             $result['latitude']     = $latitude;
             $result['longitude']    = $longitude;
