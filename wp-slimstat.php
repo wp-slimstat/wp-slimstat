@@ -1095,7 +1095,10 @@ class wp_slimstat
         // Add dependencies for consent integrations (e.g., WP Consent API)
         $dependencies = [];
         if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
-            $dependencies[] = 'wp-consent-api';
+            // Only add dependency if the WP Consent API script is actually registered
+            if (wp_script_is('wp-consent-api', 'registered') || wp_script_is('wp-consent-api', 'enqueued')) {
+                $dependencies[] = 'wp-consent-api';
+            }
         }
 
         // Register the correct script for adblock bypass, CDN, or default
