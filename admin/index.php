@@ -293,7 +293,7 @@ class wp_slimstat_admin
         // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
         // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
         $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
-        if ($cron_disabled) {
+        if ($cron_disabled && !wp_doing_ajax()) {
             // Update if DB is missing or last update is older than the most recent past scheduled window
             $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
 
@@ -2035,6 +2035,7 @@ class wp_slimstat_admin
             $ok      = $service->updateDatabase();
 
 			if ($ok) {
+                update_option('slimstat_last_geoip_dl', time());
                 wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
             } else {
                 // Log the error for debugging
