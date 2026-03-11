@@ -190,3 +190,97 @@ export async function setProviderDisabled(): Promise<void> {
   }
   await setSlimstatSetting('geolocation_provider', 'disable');
 }
+
+// ─── Option mutator mu-plugin (safe WP-native serialization) ────
+
+const OPTION_MUTATOR_SRC = path.join(__dirname, 'option-mutator-mu-plugin.php');
+const OPTION_MUTATOR_DEST = path.join(MU_PLUGINS, 'option-mutator-mu-plugin.php');
+const BASE_URL = 'http://localhost:10003';
+
+export function installOptionMutator(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(OPTION_MUTATOR_SRC, OPTION_MUTATOR_DEST);
+}
+
+export function uninstallOptionMutator(): void {
+  if (fs.existsSync(OPTION_MUTATOR_DEST)) fs.unlinkSync(OPTION_MUTATOR_DEST);
+}
+
+/**
+ * Set a slimstat option using WordPress's native serialization.
+ * Requires the option-mutator mu-plugin to be installed and an authenticated page context.
+ */
+export async function setSlimstatOption(page: import('@playwright/test').Page, key: string, value: string): Promise<void> {
+  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'test_set_slimstat_option', key, value },
+  });
+  if (!res.ok()) {
+    throw new Error(`setSlimstatOption(${key}, ${value}) failed: ${res.status()}`);
+  }
+}
+
+/**
+ * Delete a slimstat option key using WordPress's native serialization.
+ */
+export async function deleteSlimstatOption(page: import('@playwright/test').Page, key: string): Promise<void> {
+  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'test_set_slimstat_option', key, delete: '1' },
+  });
+  if (!res.ok()) {
+    throw new Error(`deleteSlimstatOption(${key}) failed: ${res.status()}`);
+  }
+}
+
+// ─── Full settings snapshot/restore ──────────────────────────────
+
+let savedOptionsSnapshot: string | null = null;
+
+export async function snapshotSlimstatOptions(): Promise<void> {
+  const [rows] = await getPool().execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  savedOptionsSnapshot = rows.length > 0 ? rows[0].option_value : null;
+}
+
+export async function restoreSlimstatOptions(): Promise<void> {
+  if (savedOptionsSnapshot === null) return;
+  // Upsert: works whether the row exists, was deleted by simulateFreshInstall(),
+  // or the test failed before WordPress could recreate it
+  await getPool().execute(
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_options', ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+    [savedOptionsSnapshot]
+  );
+  savedOptionsSnapshot = null;
+}
+
+// ─── Stats table helpers ─────────────────────────────────────────
+
+export async function clearStatsTable(): Promise<void> {
+  await getPool().execute("TRUNCATE TABLE wp_slim_stats");
+}
+
+export async function getLatestStat(testMarker: string): Promise<{ country: string; city: string; location: string } | null> {
+  const [rows] = await getPool().execute(
+    "SELECT country, city, location FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
+    [`%${testMarker}%`]
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getLatestStatByIp(): Promise<{ country: string; city: string; location: string } | null> {
+  const [rows] = await getPool().execute(
+    "SELECT country, city, location FROM wp_slim_stats ORDER BY id DESC LIMIT 1"
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
+// ─── Scenario helpers ────────────────────────────────────────────
+
+export async function simulateFreshInstall(): Promise<void> {
+  await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_options'");
+}
+
+export async function simulateLegacyUpgrade(page: import('@playwright/test').Page, enableMaxmind: string): Promise<void> {
+  await setSlimstatOption(page, 'enable_maxmind', enableMaxmind);
+  await deleteSlimstatOption(page, 'geolocation_provider');
+}

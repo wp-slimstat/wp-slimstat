@@ -1747,7 +1747,7 @@ class wp_slimstat_reports
                     }
                     // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
                     $provider = wp_slimstat::resolve_geolocation_provider();
-                    $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+                    $uses_db  = in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
                     $db_missing = false;
                     if ($uses_db) {
                         try {

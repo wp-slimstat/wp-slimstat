@@ -166,8 +166,9 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Save the default values in the database
-            self::update_option('slimstat_options', self::init_options());
+            // Fresh install: set defaults including geolocation_provider=dbip
+            self::$settings = self::get_fresh_defaults();
+            self::update_option('slimstat_options', self::$settings);
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
@@ -805,6 +806,25 @@ class wp_slimstat
         return $date;
     }
     // end date_i18n
+
+    /**
+     * Returns default options with fresh-install additions (e.g. geolocation_provider).
+     * Used by init() for new installs and by admin reset-settings.
+     */
+    public static function get_fresh_defaults()
+    {
+        $defaults = self::init_options();
+        $defaults['geolocation_provider'] = 'dbip';
+        return $defaults;
+    }
+
+    /**
+     * Returns the current geolocation precision ('country' or 'city').
+     */
+    public static function get_geolocation_precision()
+    {
+        return ('on' == self::$settings['geolocation_country']) ? 'country' : 'city';
+    }
 
     /**
      * Sets the default values for all the options

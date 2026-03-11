@@ -315,7 +315,7 @@ class wp_slimstat_admin
             if (!$needs_update) {
                 // Time check passed — only check DB existence if time says we're current
                 try {
-                    $uses_db = in_array($geoip_provider, ['maxmind', 'dbip'], true);
+                    $uses_db = in_array($geoip_provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
                     if ($uses_db) {
                         $service    = new \SlimStat\Services\Geolocation\GeolocationService($geoip_provider, []);
                         $db_missing = !file_exists($service->getProvider()->getDbPath());

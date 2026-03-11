@@ -101,7 +101,7 @@ namespace {
     // ─── Cloudflare provider (no DB needed) ────────────────────────
 
     $svc = set_and_create(['geolocation_provider' => 'cloudflare', 'enable_maxmind' => 'no']);
-    assert_same(false, $svc->isGeoIPEnabled(), 'cloudflare: isGeoIPEnabled should be false (no DB to query)');
+    assert_same(true, $svc->isGeoIPEnabled(), 'cloudflare: isGeoIPEnabled should be true (Cloudflare is a valid geolocation provider)');
     assert_same(false, $svc->isMaxMindEnabled(), 'cloudflare: isMaxMindEnabled should be false');
 
     // ─── Disabled ──────────────────────────────────────────────────

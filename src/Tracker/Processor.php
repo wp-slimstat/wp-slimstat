@@ -5,7 +5,6 @@ namespace SlimStat\Tracker;
 use SlimStat\Utils\Query;
 use SlimStat\Services\Browscap;
 use SlimStat\Services\Privacy;
-use SlimStat\Services\GeoService;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
@@ -235,11 +234,10 @@ class Processor
         }
 
         // GeoIP lookup requires PII consent (GeoIP data is PII)
-        $geographicProvider = new GeoService();
-        if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        if (false !== $provider && Consent::piiAllowed()) {
             try {
-                $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                $precision = $geographicProvider->getPack();
+                $precision = \wp_slimstat::get_geolocation_precision();
                 $geoService = new GeolocationService($provider, ['precision' => $precision]);
                 $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
@@ -503,11 +501,10 @@ class Processor
                         // Perform GeoIP lookup if enabled and PII allowed
                         // Only do GeoIP lookup if we're updating IP (not keeping hash)
                         if (!$hashIpEnabled && !empty($update_data['ip'])) {
-                            $geographicProvider = new GeoService();
-                            if ($geographicProvider->isGeoIPEnabled()) {
+                            $provider = \wp_slimstat::resolve_geolocation_provider();
+                            if (false !== $provider) {
                                 try {
-                                    $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                                    $precision = $geographicProvider->getPack();
+                                    $precision = \wp_slimstat::get_geolocation_precision();
                                     $geoService = new GeolocationService($provider, ['precision' => $precision]);
                                     $geolocation_data = $geoService->locate($realIp);
                                     if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
