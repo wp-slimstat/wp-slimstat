@@ -75,7 +75,7 @@ class GeoService
 
     public function isJsDelivrEnabled()
     {
-        return 'no' == $this->enableMaxmind;
+        return 'dbip' === \wp_slimstat::resolve_geolocation_provider();
     }
 
     public function getUserIP()

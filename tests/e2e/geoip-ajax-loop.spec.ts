@@ -140,27 +140,6 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
     await page.waitForTimeout(1000);
     clearAjaxLog(); // Clear any AJAX from the page load itself
 
-    // Extract nonce from the page — SlimStat injects it
-    // We'll generate one by hitting a page that outputs wpnonce
-    const nonce = await page.evaluate(async () => {
-      // Fetch a fresh nonce via admin-ajax approach
-      const res = await fetch('/wp-admin/admin-ajax.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'action=slimstat_update_geoip_database&security=invalid_nonce',
-      });
-      return null; // We'll use a different approach
-    });
-
-    // Direct POST using Playwright's request context (carries auth cookies)
-    // The nonce check will fail with invalid nonce, but the handler IS invoked
-    // (check_ajax_referer dies on failure, so the mu-plugin at priority 1
-    // runs BEFORE the die). Actually, check_ajax_referer calls wp_die on failure.
-    // The mu-plugin runs at priority 1, before SlimStat's handler.
-    // But wp_ajax_ fires both — the action fires, then SlimStat's callback runs.
-
-    // Actually, for a valid test we need a real nonce.
-    // Let's get it by parsing a page that contains it.
     await clearGeoipTimestamp();
     clearAjaxLog();
 
