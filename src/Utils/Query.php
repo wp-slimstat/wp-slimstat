@@ -26,6 +26,8 @@ class Query
 
     private $setClauses = [];
 
+    private $setValuesToPrepare = [];
+
     private $joinClauses = [];
 
     private $whereClauses = [];
@@ -206,11 +208,11 @@ class Query
         foreach ($values as $field => $value) {
             $column = '`' . str_replace('`', '``', $field) . '`';
             if (is_string($value)) {
-                $this->setClauses[]      = sprintf('%s = %%s', $column);
-                $this->valuesToPrepare[] = $value;
+                $this->setClauses[]           = sprintf('%s = %%s', $column);
+                $this->setValuesToPrepare[]   = $value;
             } elseif (is_numeric($value)) {
-                $this->setClauses[]      = sprintf('%s = %%s', $column);
-                $this->valuesToPrepare[] = $value;
+                $this->setClauses[]           = sprintf('%s = %%s', $column);
+                $this->setValuesToPrepare[]   = $value;
             } elseif (is_null($value)) {
                 $this->setClauses[] = $column . ' = NULL';
             }
@@ -231,7 +233,7 @@ class Query
     {
         $this->setClauses[] = sprintf('`%s` = %s', str_replace('`', '``', $column), $expression);
         if (!empty($params)) {
-            $this->valuesToPrepare = array_merge($this->valuesToPrepare, $params);
+            $this->setValuesToPrepare = array_merge($this->setValuesToPrepare, $params);
         }
 
         return $this;
@@ -1280,7 +1282,9 @@ class Query
             return false;
         }
 
-        $prepared_query = $this->prepareQuery($query, $this->valuesToPrepare);
+        // SET values must come before WHERE values to match SQL clause order
+        $allValues = array_merge($this->setValuesToPrepare, $this->valuesToPrepare);
+        $prepared_query = $this->prepareQuery($query, $allValues);
 
         $result = $this->db->query($prepared_query);
 
@@ -1294,7 +1298,9 @@ class Query
     public function getSqlQuery()
     {
         $query = $this->buildQuery();
-        return $this->prepareQuery($query, $this->valuesToPrepare);
+        // SET values must come before WHERE values to match SQL clause order
+        $allValues = array_merge($this->setValuesToPrepare, $this->valuesToPrepare);
+        return $this->prepareQuery($query, $allValues);
     }
 
     /**

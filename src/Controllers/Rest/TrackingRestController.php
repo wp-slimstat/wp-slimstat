@@ -128,17 +128,31 @@ class TrackingRestController implements RestControllerInterface
         // Ensure tracking payload is available to the Ajax handler even for REST requests.
         // The tracker reads wp_slimstat::$raw_post_array, which may be empty for REST JSON bodies.
         if (class_exists('\wp_slimstat')) {
-            $payload = $request->get_params();
-            if (!is_array($payload)) {
-                $payload = [];
+            $rest_params = $request->get_params();
+            if (!is_array($rest_params)) {
+                $rest_params = [];
             }
 
-            // Sanitize known scalar keys explicitly; preserve all other keys for extension compatibility
-            $scalar_keys = ['action', 'n', 'bw', 'bh', 'ref', 'res', 'lt', 'dc', 'ob', 'ss_nonce'];
-            foreach ($scalar_keys as $key) {
-                if (isset($payload[$key])) {
-                    $payload[$key] = sanitize_text_field(wp_unslash((string) $payload[$key]));
+            // Sanitize known scalar keys from REST params (skip when empty — common for sendBeacon)
+            if (!empty($rest_params)) {
+                $scalar_keys = ['action', 'n', 'bw', 'bh', 'ref', 'res', 'lt', 'dc', 'ob', 'ss_nonce'];
+                foreach ($scalar_keys as $key) {
+                    if (isset($rest_params[$key])) {
+                        $rest_params[$key] = sanitize_text_field(wp_unslash((string) $rest_params[$key]));
+                    }
                 }
+            }
+
+            // For sendBeacon text/plain requests, php://input was already correctly
+            // parsed at plugin init (wp-slimstat.php:1559-1575). REST API cannot parse
+            // text/plain bodies, so get_params() returns incomplete data. Merge to
+            // preserve init-parsed data while letting REST-sanitized params override.
+            if (!empty(\wp_slimstat::$raw_post_array)) {
+                $payload = !empty($rest_params)
+                    ? array_merge(\wp_slimstat::$raw_post_array, $rest_params)
+                    : \wp_slimstat::$raw_post_array;
+            } else {
+                $payload = $rest_params;
             }
 
             $payload['action'] = 'slimtrack';

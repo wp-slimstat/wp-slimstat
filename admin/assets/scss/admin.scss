@@ -27,6 +27,7 @@ body {
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
+  &.slimstat_page_slimemail,
   &.slimstat_page_migration {
     background: #f5f6fa !important;
   }
@@ -423,6 +424,7 @@ body {
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
+  &.slimstat_page_slimemail,
   &.slimstat_page_migration {
     .jqvmap-label {
       z-index: 999999;
@@ -3266,6 +3268,38 @@ x:-o-prefocus {
     font-weight: 500;
     color: $grayOne;
     font-size: 16px;
+  }
+
+  // Email Report page — match Settings page visual style
+  &.slimstat-email-report {
+    h2 {
+      margin-bottom: 0;
+    }
+
+    .slimstat-email-report-content {
+      background-color: white;
+      border-radius: 10px;
+      padding: 0 20px 20px;
+      margin-top: 20px;
+
+      .form-table {
+        margin-top: 0;
+        border-radius: 0;
+
+        tr:first-of-type .slimstat-options-section-header {
+          border-radius: 0;
+        }
+      }
+
+      .submit {
+        .button-primary {
+          border: 1px solid $brand;
+          color: $brand;
+          background-color: white;
+          border-radius: 50px;
+        }
+      }
+    }
   }
 
   #slimstat-filters {
