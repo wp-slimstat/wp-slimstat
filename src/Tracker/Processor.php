@@ -70,11 +70,9 @@ class Processor
         // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
         // as coming through CF (CF-Ray header present). This handles the edge case where
         // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
-        if (!empty($_SERVER['HTTP_CF_RAY']) && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-            $cfIp = filter_var(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])), FILTER_VALIDATE_IP);
-            if ($cfIp) {
-                $originalIpForGeo = $cfIp;
-            }
+        $cfIp = Utils::getCfClientIp();
+        if ($cfIp) {
+            $originalIpForGeo = $cfIp;
         }
 
         // Store original IP before processing (needed for consent upgrade lookup)
@@ -515,17 +513,9 @@ class Processor
                             if (false !== $provider) {
                                 try {
                                     $precision = \wp_slimstat::get_geolocation_precision();
-                                    // Use same IP priority as main tracking branch:
-                                    // prefer real client IP from proxy headers over REMOTE_ADDR
-                                    $geoIp = !empty($realOtherIp) ? $realOtherIp : $realIp;
-
-                                    // Cloudflare: prefer CF-Connecting-IP when verified via CF-Ray
-                                    if (!empty($_SERVER['HTTP_CF_RAY']) && !empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
-                                        $cfIp = filter_var(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])), FILTER_VALIDATE_IP);
-                                        if ($cfIp) {
-                                            $geoIp = $cfIp;
-                                        }
-                                    }
+                                    // Prefer CF-Connecting-IP (verified by Cloudflare) when available,
+                                    // else fall back to the best proxy-header IP, then REMOTE_ADDR.
+                                    $geoIp = Utils::getCfClientIp() ?? (!empty($realOtherIp) ? $realOtherIp : $realIp);
 
                                     $geoService = new GeolocationService($provider, ['precision' => $precision]);
                                     $geolocation_data = $geoService->locate($geoIp);
