@@ -828,6 +828,14 @@ class wp_slimstat_admin
     // END: wp_slimstat_stylesheet
 
     /**
+     * Adds a shared body class to all Slimstat admin screens.
+     */
+    public static function add_admin_body_class($classes)
+    {
+        return $classes . ' slimstat-admin-page';
+    }
+
+    /**
      * Loads user-defined stylesheet code
      */
     public static function wp_slimstat_userdefined_stylesheet()
@@ -1017,6 +1025,9 @@ class wp_slimstat_admin
             add_action('load-' . $a_entry, [self::class, 'wp_slimstat_stylesheet']);
             add_action('load-' . $a_entry, [self::class, 'wp_slimstat_enqueue_scripts']);
             add_action('load-' . $a_entry, [self::class, 'contextual_help']);
+            add_action('load-' . $a_entry, function () {
+                add_filter('admin_body_class', [wp_slimstat_admin::class, 'add_admin_body_class']);
+            });
         }
 
         return $_s;
