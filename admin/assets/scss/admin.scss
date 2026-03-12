@@ -912,7 +912,9 @@ body {
     div[class*="admin-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
     .notice:not(.slimstat-notice):not(.slimstat-migration-notice),
     .update-nag:not(.slimstat-notice):not(.slimstat-migration-notice),
-    .error:not(.slimstat-notice):not(.slimstat-migration-notice) {
+    .error:not(.slimstat-notice):not(.slimstat-migration-notice),
+    .astra-notice-wrapper,
+    .cky-admin-notice {
       display: none !important;
     }
   }
