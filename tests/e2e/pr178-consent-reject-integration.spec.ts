@@ -23,8 +23,8 @@ import {
 } from './helpers/setup';
 import * as mysql from 'mysql2/promise';
 
-const BASE_URL = 'http://localhost:10003';
-const MYSQL_SOCKET = '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:10003';
+const MYSQL_SOCKET = process.env.MYSQL_SOCKET || '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
 
 let db: mysql.Pool;
 
