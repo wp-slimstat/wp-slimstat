@@ -1018,7 +1018,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 
 ?>
 <div class="backdrop-container">
-    <div class="wrap slimstat-config">
+    <div class="wrap-slimstat slimstat-config">
         <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
         <ul class="nav-tabs">
             <?php echo $tabs_html ?>

@@ -21,7 +21,7 @@ if (!$is_pro) {
         // Load SlimStat Pro Modal
         wp_slimstat_admin::get_template('slimstat-pro-modal');
         ?>
-        <div class="wrap slimstat upgrade-pro email-report-locked">
+        <div class="wrap-slimstat upgrade-pro email-report-locked">
             <img class="upgrade-pro-background" src="<?php echo esc_url(plugin_dir_url(__FILE__) . '../assets/images/email report.PNG'); ?>">
         </div>
     </div>
@@ -32,7 +32,7 @@ if (!$is_pro) {
     wp_slimstat_admin::get_template('header', ['is_pro' => true]);
     ?>
     <div class="backdrop-container">
-        <div class="wrap slimstat slimstat-email-report">
+        <div class="wrap-slimstat slimstat-email-report">
             <h2><?php _e('Email Report Configuration', 'wp-slimstat'); ?></h2>
 
             <div class="slimstat-email-report-content">
