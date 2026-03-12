@@ -130,8 +130,9 @@ class Utils
 			$ipArray[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
 		}
 
-		// HTTP_CF_CONNECTING_IP is Cloudflare-verified and not spoofable by clients — prioritize it over X-Forwarded-For.
-		$originatingIpHeaders = ['HTTP_CF_CONNECTING_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
+		// CF-Connecting-IP is handled separately via getCfClientIp() with CF-Ray validation.
+		// Including it here would bypass that check and allow IP spoofing on non-CF origins.
+		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
 			if (!empty($_SERVER[$header])) {
 				$headerValue = sanitize_text_field(wp_unslash($_SERVER[$header]));
