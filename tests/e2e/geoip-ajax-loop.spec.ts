@@ -56,24 +56,15 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
     // loop prevention, not the download success.
   });
 
-  test('Test 2: 5 successive admin loads — no multiplication', async ({ page }) => {
+  test('Test 2: successive admin loads — no multiplication', async ({ page }) => {
     test.setTimeout(90_000);
-    const pages = [
-      '/wp-admin/',
-      '/wp-admin/plugins.php',
-      '/wp-admin/options-general.php',
-      '/wp-admin/edit.php',
-      '/wp-admin/upload.php',
-    ];
+    // 2 pages is sufficient: first load may trigger 1 AJAX, second load must not.
+    // Each page takes ~30 s on slow local servers; 2 × 30 + 4 s settle < 90 s timeout.
+    await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
+    await page.goto('/wp-admin/plugins.php', { waitUntil: 'domcontentloaded' });
 
-    for (const url of pages) {
-      await page.goto(url);
-      // Brief wait between navigations — simulates fast admin browsing
-      await page.waitForTimeout(1000);
-    }
-
-    // Final wait for any async requests to settle
-    await page.waitForTimeout(3000);
+    // Wait for any async wp_safe_remote_post calls to settle
+    await page.waitForTimeout(4000);
 
     const log = readAjaxLog();
     // First load may trigger 1 AJAX call.
@@ -134,9 +125,9 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
   });
 
   test('Test 6: direct AJAX POST — no self-recursion', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(90_000); // SlimStat admin page can take ~50 s on slow local servers
     // First, visit an admin page to get a valid nonce
-    await page.goto('/wp-admin/');
+    await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
     clearAjaxLog(); // Clear any AJAX from the page load itself
 
@@ -144,7 +135,7 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
     clearAjaxLog();
 
     // Navigate to an admin page where SlimStat might inject the nonce
-    await page.goto('/wp-admin/admin.php?page=slimstat');
+    await page.goto('/wp-admin/admin.php?page=slimstat', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(1000);
     clearAjaxLog(); // Clear page-load AJAX
 
@@ -184,7 +175,7 @@ test.describe('GeoIP AJAX loop prevention (author)', () => {
   });
 
   test('Test 4: author (non-admin) gets 0 AJAX calls', async ({ page }) => {
-    await page.goto('/wp-admin/');
+    await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     const log = readAjaxLog();

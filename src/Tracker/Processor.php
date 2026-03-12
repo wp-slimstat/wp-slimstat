@@ -67,6 +67,14 @@ class Processor
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
 
+        // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
+        // as coming through CF (CF-Ray header present). This handles the edge case where
+        // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
+        $cfIp = Utils::getCfClientIp();
+        if ($cfIp) {
+            $originalIpForGeo = $cfIp;
+        }
+
         // Store original IP before processing (needed for consent upgrade lookup)
         $originalIpBeforeProcessing = $stat['ip'];
         $originalOtherIpBeforeProcessing = $stat['other_ip'] ?? '';
@@ -505,8 +513,12 @@ class Processor
                             if (false !== $provider) {
                                 try {
                                     $precision = \wp_slimstat::get_geolocation_precision();
+                                    // Prefer CF-Connecting-IP (verified by Cloudflare) when available,
+                                    // else fall back to the best proxy-header IP, then REMOTE_ADDR.
+                                    $geoIp = Utils::getCfClientIp() ?? (!empty($realOtherIp) ? $realOtherIp : $realIp);
+
                                     $geoService = new GeolocationService($provider, ['precision' => $precision]);
-                                    $geolocation_data = $geoService->locate($realIp);
+                                    $geolocation_data = $geoService->locate($geoIp);
                                     if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
                                         $update_data['country'] = strtolower($geolocation_data['country_code']);
                                         if (!empty($geolocation_data['city'])) {
@@ -689,4 +701,5 @@ class Processor
 
         return $status;
     }
+
 }
