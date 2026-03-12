@@ -898,15 +898,7 @@ body {
 }
 
 body {
-  &.toplevel_page_slimview1,
-  &.slimstat_page_slimview2,
-  &.slimstat_page_slimview3,
-  &.slimstat_page_slimview4,
-  &.slimstat_page_slimview5,
-  &.slimstat_page_slimconfig,
-  &.slimstat_page_migration,
-  &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout {
+  &.slimstat-admin-page {
     /* Hide all non-Slimstat notices in the admin */
     div[class*="-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
     div[class*="admin-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
