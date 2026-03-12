@@ -6,13 +6,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as mysql from 'mysql2/promise';
+import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL } from './env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ─── Path constants ────────────────────────────────────────────────
 
-const WP_ROOT = '/Users/parhumm/Local Sites/test/app/public';
 const WP_CONFIG = path.join(WP_ROOT, 'wp-config.php');
 const WP_CONTENT = path.join(WP_ROOT, 'wp-content');
 const MU_PLUGINS = path.join(WP_CONTENT, 'mu-plugins');
@@ -20,8 +20,6 @@ const AJAX_LOG = path.join(WP_CONTENT, 'geoip-ajax-calls.log');
 const LOGGER_SRC = path.join(__dirname, 'ajax-logger-mu-plugin.php');
 const LOGGER_DEST = path.join(MU_PLUGINS, 'geoip-ajax-logger.php');
 const CRON_LINE = "define('DISABLE_WP_CRON', true);";
-
-const MYSQL_SOCKET = '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
 
 // ─── wp-config.php toggler ─────────────────────────────────────────
 
@@ -82,14 +80,7 @@ let pool: mysql.Pool | null = null;
 
 function getPool(): mysql.Pool {
   if (!pool) {
-    pool = mysql.createPool({
-      socketPath: MYSQL_SOCKET,
-      user: 'root',
-      password: 'root',
-      database: 'local',
-      waitForConnections: true,
-      connectionLimit: 5,
-    });
+    pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
 }
@@ -195,7 +186,7 @@ export async function setProviderDisabled(): Promise<void> {
 
 const OPTION_MUTATOR_SRC = path.join(__dirname, 'option-mutator-mu-plugin.php');
 const OPTION_MUTATOR_DEST = path.join(MU_PLUGINS, 'option-mutator-mu-plugin.php');
-const BASE_URL = 'http://localhost:10003';
+const BASE_URL = ENV_BASE_URL;
 
 export function installOptionMutator(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });
@@ -262,6 +253,14 @@ export async function clearStatsTable(): Promise<void> {
 export async function getLatestStat(testMarker: string): Promise<{ country: string; city: string; location: string } | null> {
   const [rows] = await getPool().execute(
     "SELECT country, city, location FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
+    [`%${testMarker}%`]
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getLatestStatFull(testMarker: string): Promise<{ id: number; resource: string; outbound_resource: string | null; dt_out: number; country: string; city: string } | null> {
+  const [rows] = await getPool().execute(
+    "SELECT id, resource, outbound_resource, dt_out, country, city FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
     [`%${testMarker}%`]
   ) as any;
   return rows.length > 0 ? rows[0] : null;

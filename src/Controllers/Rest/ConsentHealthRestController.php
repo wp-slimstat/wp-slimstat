@@ -66,7 +66,7 @@ class ConsentHealthRestController implements RestControllerInterface
 			if (function_exists('wp_has_consent')) {
 				$category = $settings['consent_level_integration'] ?? 'statistics';
 				try {
-					$has_consent = wp_has_consent($category);
+					$has_consent = \SlimStat\Utils\Consent::wpHasConsentSafe($category);
 					$health['integrations']['wp_consent_api']['current_consent'] = $has_consent;
 				} catch (\Throwable $e) {
 					$health['integrations']['wp_consent_api']['error'] = $e->getMessage();

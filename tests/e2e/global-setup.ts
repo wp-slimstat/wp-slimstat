@@ -6,6 +6,7 @@ import { chromium, FullConfig } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { BASE_URL } from './helpers/env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -41,7 +42,7 @@ async function loginAndSave(
 }
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
-  const baseURL = 'http://localhost:10003';
+  const baseURL = BASE_URL;
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 

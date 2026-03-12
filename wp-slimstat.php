@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.2
+ * Version: 5.4.3
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.2');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.3');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -868,8 +868,8 @@ class wp_slimstat
 			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
-			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
-			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
+			'gdpr_accept_button_text'  => 'Accept',
+			'gdpr_decline_button_text' => 'Decline',
             'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
             'anonymous_tracking'       => 'off',   // Changed: Enable anonymous tracking by default
             'do_not_track'             => 'off',
@@ -1095,7 +1095,10 @@ class wp_slimstat
         // Add dependencies for consent integrations (e.g., WP Consent API)
         $dependencies = [];
         if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
-            $dependencies[] = 'wp-consent-api';
+            // Only add dependency if the WP Consent API script is actually registered
+            if (wp_script_is('wp-consent-api', 'registered') || wp_script_is('wp-consent-api', 'enqueued')) {
+                $dependencies[] = 'wp-consent-api';
+            }
         }
 
         // Register the correct script for adblock bypass, CDN, or default
@@ -1594,8 +1597,8 @@ if (function_exists('add_action')) {
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 
-    // Load textdomain early (before init at priority 20)
-    add_action('plugins_loaded', ['wp_slimstat', 'load_textdomain'], 10);
+    // Load textdomain at init (required by WordPress 6.7.0+)
+    add_action('init', ['wp_slimstat', 'load_textdomain'], 1);
 
     // Add the appropriate actions
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);
