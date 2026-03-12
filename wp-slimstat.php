@@ -1597,8 +1597,8 @@ if (function_exists('add_action')) {
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 
-    // Load textdomain early (before init at priority 20)
-    add_action('plugins_loaded', ['wp_slimstat', 'load_textdomain'], 10);
+    // Load textdomain at init (required by WordPress 6.7.0+)
+    add_action('init', ['wp_slimstat', 'load_textdomain'], 1);
 
     // Add the appropriate actions
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);
