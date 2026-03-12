@@ -41,12 +41,14 @@
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
     "test:legacy-sync": "php tests/legacy-sync-mapping-test.php",
     "test:lazy-migration": "php tests/lazy-migration-test.php",
+    "test:rest-controller": "php tests/tracking-rest-controller-test.php",
     "test:all": [
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
       "@test:legacy-sync",
-      "@test:lazy-migration"
+      "@test:lazy-migration",
+      "@test:rest-controller"
     ]
   }
 }
