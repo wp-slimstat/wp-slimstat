@@ -10,7 +10,6 @@
  */
 import { test, expect } from '@playwright/test';
 import {
-  getPool,
   closeDb,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
