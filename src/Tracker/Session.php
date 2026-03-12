@@ -44,7 +44,7 @@ class Session
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
 				try {
-					$hasCmpConsent = (bool) \wp_has_consent($wpConsentCategory);
+					$hasCmpConsent = Consent::wpHasConsentSafe($wpConsentCategory);
 				} catch (\Throwable $e) {
 					// Ignore errors
 				}

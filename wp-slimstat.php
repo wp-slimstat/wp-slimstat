@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.2');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.3');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -868,8 +868,8 @@ class wp_slimstat
 			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
-			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
-			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
+			'gdpr_accept_button_text'  => 'Accept',
+			'gdpr_decline_button_text' => 'Decline',
             'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
             'anonymous_tracking'       => 'off',   // Changed: Enable anonymous tracking by default
             'do_not_track'             => 'off',

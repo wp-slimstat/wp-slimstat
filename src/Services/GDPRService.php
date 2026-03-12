@@ -225,10 +225,10 @@ class GDPRService
 		// Get button text from settings
 		$acceptText = empty($this->settings['gdpr_accept_button_text'])
 			? __('Accept', 'wp-slimstat')
-			: $this->translateString($this->settings['gdpr_accept_button_text'], 'gdpr_accept_button_text');
+			: $this->translateString(__($this->settings['gdpr_accept_button_text'], 'wp-slimstat'), 'gdpr_accept_button_text');
 		$denyText = empty($this->settings['gdpr_decline_button_text'])
-			? __('Deny', 'wp-slimstat')
-			: $this->translateString($this->settings['gdpr_decline_button_text'], 'gdpr_decline_button_text');
+			? __('Decline', 'wp-slimstat')
+			: $this->translateString(__($this->settings['gdpr_decline_button_text'], 'wp-slimstat'), 'gdpr_decline_button_text');
 
 		$acceptButton = sprintf(
 			'<button type="button" class="slimstat-gdpr-accept" data-consent="accepted">%s</button>',

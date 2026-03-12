@@ -1044,6 +1044,12 @@ var SlimStat = (function () {
                 }
             }
 
+            // Use previous consent upgrade only if current consent is unknown (null)
+            // Do NOT override an explicit rejection (false) with a previous consent
+            if (cmpAllows === null && hasConsentUpgradeSucceeded()) {
+                cmpAllows = true;
+            }
+
             if (cmpAllows === null) {
                 if (anonMode) {
                     cmpAllows = true;
@@ -1052,13 +1058,6 @@ var SlimStat = (function () {
                 } else {
                     cmpAllows = true;
                 }
-            } else {
-            }
-
-            // Only use previous consent upgrade if current consent is unknown (null)
-            // Do NOT override an explicit rejection (false) with a previous consent
-            if (cmpAllows === null && hasConsentUpgradeSucceeded()) {
-                cmpAllows = true;
             }
         }
 

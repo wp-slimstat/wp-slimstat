@@ -43,6 +43,41 @@ class Consent
 	}
 
 	/**
+	 * Safe wrapper around wp_has_consent() that ensures wp_get_consent_type() is set.
+	 *
+	 * When no CMP has registered a consent type, wp_has_consent() defaults to true
+	 * regardless of the user's actual consent cookie. This helper temporarily sets
+	 * the consent type to 'optin' if unregistered, then cleans up the filter.
+	 *
+	 * @param string $category Consent category (e.g. 'statistics').
+	 * @return bool Whether the user has granted consent for the given category.
+	 */
+	public static function wpHasConsentSafe(string $category): bool
+	{
+		if (!function_exists('wp_has_consent')) {
+			return false;
+		}
+
+		$callback   = null;
+		$needsFilter = function_exists('wp_get_consent_type') && ! wp_get_consent_type();
+
+		if ($needsFilter) {
+			$callback = static function () {
+				return 'optin';
+			};
+			add_filter('wp_get_consent_type', $callback, 10, 1);
+		}
+
+		try {
+			return (bool) \wp_has_consent($category);
+		} finally {
+			if ($needsFilter && $callback !== null) {
+				remove_filter('wp_get_consent_type', $callback, 10);
+			}
+		}
+	}
+
+	/**
 	 * Normalize consent data from various CMP formats to a standard structure.
 	 *
 	 * Converts different CMP consent formats (WP Consent API, Real Cookie Banner, etc.)
@@ -239,8 +274,7 @@ class Consent
 				if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 					$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 					try {
-						// Check consent status - if not granted, block tracking
-						if (!\wp_has_consent($wpConsentCategory)) {
+						if (!self::wpHasConsentSafe($wpConsentCategory)) {
 							$default = false;
 						}
 					} catch (\Throwable $e) {
@@ -361,14 +395,7 @@ class Consent
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 				try {
-
-                    if( ! wp_get_consent_type() ) {
-                        add_filter('wp_get_consent_type', function($type) {
-                            return 'optin';
-                        }, 10, 1);
-                    }
-
-                    if ((bool) \wp_has_consent($wpConsentCategory)) {
+					if (self::wpHasConsentSafe($wpConsentCategory)) {
 						$hasCmpConsent = true;
 					}
 				} catch (\Throwable $e) {
@@ -482,7 +509,7 @@ class Consent
 		if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 			$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 			try {
-				return (bool) \wp_has_consent($wpConsentCategory);
+				return self::wpHasConsentSafe($wpConsentCategory);
 			} catch (\Throwable $e) {
 				// Consent API error - be conservative, deny PII
 				return false;
