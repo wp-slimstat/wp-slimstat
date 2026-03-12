@@ -51,7 +51,8 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
 
     // Precondition: wp_tempnam must NOT be pre-loaded — if it is, the test is
     // inconclusive because file.php was already loaded by another plugin/theme.
-    expect(body.had_wp_tempnam_before, 'wp_tempnam was already defined before test — non-admin precondition violated').toBe(false);
+    test.skip(body.had_wp_tempnam_before === true,
+      'wp_tempnam already defined by another plugin — non-admin precondition not met, test inconclusive');
 
     // The include guard should ensure wp_tempnam is available.
     // An error containing "wp_tempnam" or "undefined function" means the fix is missing.
