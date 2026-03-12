@@ -722,9 +722,24 @@ var SlimStat = (function () {
 
             if (isFunction(window.wp_has_consent)) {
                 try {
-                    var hasConsent = window.wp_has_consent(category);
-                    if (hasConsent) return true;
-                    return false;
+                    // Guard: if no consent_type is registered (CMP hasn't set it),
+                    // wp_has_consent() returns true regardless of deny cookies.
+                    // Temporarily set fallback to 'optin' so the cookie is actually checked.
+                    var savedFallback = window.wp_fallback_consent_type;
+                    var consentTypeSet = (typeof window.wp_consent_type !== "undefined" && window.wp_consent_type) ||
+                                         (window.wp_fallback_consent_type && window.wp_fallback_consent_type !== "");
+                    if (!consentTypeSet) {
+                        window.wp_fallback_consent_type = "optin";
+                    }
+                    try {
+                        var hasConsent = window.wp_has_consent(category);
+                        if (hasConsent) return true;
+                        return false;
+                    } finally {
+                        if (!consentTypeSet) {
+                            window.wp_fallback_consent_type = savedFallback;
+                        }
+                    }
                 } catch (err2) {}
             }
 
