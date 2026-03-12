@@ -18,23 +18,15 @@ import {
   uninstallOptionMutator,
   setSlimstatOption,
 } from './helpers/setup';
-
-const BASE_URL = 'http://localhost:10003';
-const MYSQL_SOCKET = '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
+import { BASE_URL, MYSQL_CONFIG, PLUGIN_DIR } from './helpers/env';
 
 // Direct DB pool for assertions
 import * as mysql from 'mysql2/promise';
+import * as path from 'path';
 let db: mysql.Pool;
 
 test.beforeAll(async () => {
-  db = mysql.createPool({
-    socketPath: MYSQL_SOCKET,
-    user: 'root',
-    password: 'root',
-    database: 'local',
-    waitForConnections: true,
-    connectionLimit: 3,
-  });
+  db = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
 });
 
 test.afterAll(async () => {
@@ -146,7 +138,7 @@ test.describe('WP Consent API Safe Guard', () => {
   test('Consent class has wpHasConsentSafe method', async () => {
     // Verify the PHP method exists by checking the source file
     const fs = await import('fs');
-    const consentPath = '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Utils/Consent.php';
+    const consentPath = path.join(PLUGIN_DIR, 'src/Utils/Consent.php');
     const content = fs.readFileSync(consentPath, 'utf8');
 
     // Verify the helper method exists
@@ -165,11 +157,11 @@ test.describe('WP Consent API Safe Guard', () => {
   test('all PHP callers use wpHasConsentSafe instead of raw wp_has_consent', async () => {
     const fs = await import('fs');
     const filesToCheck = [
-      '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Utils/Consent.php',
-      '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Tracker/Session.php',
-      '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Providers/IPHashProvider.php',
-      '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Controllers/Rest/ConsentChangeRestController.php',
-      '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/src/Controllers/Rest/ConsentHealthRestController.php',
+      path.join(PLUGIN_DIR, 'src/Utils/Consent.php'),
+      path.join(PLUGIN_DIR, 'src/Tracker/Session.php'),
+      path.join(PLUGIN_DIR, 'src/Providers/IPHashProvider.php'),
+      path.join(PLUGIN_DIR, 'src/Controllers/Rest/ConsentChangeRestController.php'),
+      path.join(PLUGIN_DIR, 'src/Controllers/Rest/ConsentHealthRestController.php'),
     ];
 
     for (const filePath of filesToCheck) {
@@ -202,7 +194,7 @@ test.describe('WP Consent API Safe Guard', () => {
 test.describe('Index Migration', () => {
   test('(dt, visit_id) covering index exists in schema definition', async () => {
     const fs = await import('fs');
-    const schemaPath = '/Users/parhumm/Local Sites/test/app/public/wp-content/plugins/wp-slimstat/admin/index.php';
+    const schemaPath = path.join(PLUGIN_DIR, 'admin/index.php');
     const content = fs.readFileSync(schemaPath, 'utf8');
 
     // Verify index in CREATE TABLE schema

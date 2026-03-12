@@ -21,22 +21,13 @@ import {
   uninstallOptionMutator,
   setSlimstatOption,
 } from './helpers/setup';
+import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 import * as mysql from 'mysql2/promise';
-
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:10003';
-const MYSQL_SOCKET = process.env.MYSQL_SOCKET || '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
 
 let db: mysql.Pool;
 
 test.beforeAll(async () => {
-  db = mysql.createPool({
-    socketPath: MYSQL_SOCKET,
-    user: 'root',
-    password: 'root',
-    database: 'local',
-    waitForConnections: true,
-    connectionLimit: 3,
-  });
+  db = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
 });
 
 test.afterAll(async () => {
