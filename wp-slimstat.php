@@ -1270,7 +1270,7 @@ class wp_slimstat
                 // Set the last update time
                 update_option('slimstat_last_geoip_dl', time());
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
             }
         }

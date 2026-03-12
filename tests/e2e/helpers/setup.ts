@@ -182,6 +182,41 @@ export async function setProviderDisabled(): Promise<void> {
   await setSlimstatSetting('geolocation_provider', 'disable');
 }
 
+// ─── Cron frontend shim mu-plugin ────────────────────────────────
+
+const CRON_SHIM_SRC = path.join(__dirname, 'cron-frontend-shim-mu-plugin.php');
+const CRON_SHIM_DEST = path.join(MU_PLUGINS, 'cron-frontend-shim-mu-plugin.php');
+
+export function installCronFrontendShim(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(CRON_SHIM_SRC, CRON_SHIM_DEST);
+}
+
+export function uninstallCronFrontendShim(): void {
+  if (fs.existsSync(CRON_SHIM_DEST)) fs.unlinkSync(CRON_SHIM_DEST);
+}
+
+// ─── GeoIP timestamp snapshot/restore ────────────────────────────
+
+let savedGeoipTimestamp: number | null | undefined = undefined;
+
+export async function snapshotGeoipTimestamp(): Promise<void> {
+  savedGeoipTimestamp = await getGeoipTimestamp();
+}
+
+export async function restoreGeoipTimestamp(): Promise<void> {
+  if (savedGeoipTimestamp === undefined) return;
+  if (savedGeoipTimestamp === null) {
+    await clearGeoipTimestamp();
+  } else {
+    await getPool().execute(
+      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_last_geoip_dl', ?, 'no') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+      [String(savedGeoipTimestamp)]
+    );
+  }
+  savedGeoipTimestamp = undefined;
+}
+
 // ─── Option mutator mu-plugin (safe WP-native serialization) ────
 
 const OPTION_MUTATOR_SRC = path.join(__dirname, 'option-mutator-mu-plugin.php');

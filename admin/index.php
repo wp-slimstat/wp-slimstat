@@ -2100,7 +2100,7 @@ class wp_slimstat_admin
 				}
 				wp_send_json_error($error_message);
             }
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             wp_send_json_error($exception->getMessage());
         }
     }
@@ -2129,7 +2129,7 @@ class wp_slimstat_admin
             $result  = [ 'notice' => $exists ? __('GeoIP Database is present and ready.', 'wp-slimstat') : __('GeoIP Database not found.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             wp_send_json_error($exception->getMessage());
         }
     }
