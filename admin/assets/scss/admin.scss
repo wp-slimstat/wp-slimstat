@@ -270,7 +270,7 @@ body.index-php {
   position: relative !important;
 }
 
-.wrap.slimstat {
+.wrap-slimstat {
   overflow-x: hidden !important;
 
   .postbox:has(p.loading) a.refresh svg {
@@ -495,7 +495,7 @@ body {
 
 // Old Styles
 /* Links */
-.wrap.slimstat a,
+.wrap-slimstat a,
 [id^="slim_"] a {
   outline: none;
   text-decoration: none;
@@ -651,7 +651,7 @@ body {
 }
 
 /* Reports: Container */
-.wrap.slimstat .meta-box-sortables {
+.wrap-slimstat .meta-box-sortables {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -673,8 +673,8 @@ body {
 }
 
 /* Single Report */
-.wrap.slimstat .postbox,
-.wrap.slimstat .sortable-placeholder {
+.wrap-slimstat .postbox,
+.wrap-slimstat .sortable-placeholder {
   box-sizing: border-box;
   float: left;
   margin-bottom: 15px;
@@ -683,15 +683,15 @@ body {
   width: 24.3%;
 }
 
-.wrap.slimstat .postbox.large {
+.wrap-slimstat .postbox.large {
   width: 49.1%;
 }
 
-.wrap.slimstat .postbox.extralarge {
+.wrap-slimstat .postbox.extralarge {
   width: 73.9%;
 }
 
-.wrap.slimstat .postbox.full-width {
+.wrap-slimstat .postbox.full-width {
   width: 98.7%;
 }
 
@@ -702,14 +702,14 @@ body {
 }
 
 /* Single Report: Header and Header Buttons */
-.wrap.slimstat .postbox h3 {
+.wrap-slimstat .postbox h3 {
   border-bottom: 1px solid #ddd;
   font-size: 1.2em;
   margin: 0;
   padding: 10px;
 }
 
-.wrap.slimstat .postbox.tall h3 {
+.wrap-slimstat .postbox.tall h3 {
   cursor: auto;
 }
 
@@ -743,7 +743,7 @@ body {
   margin-bottom: 45px !important;
 }
 
-.wrap.slimstat .postbox.tall .inside {
+.wrap-slimstat .postbox.tall .inside {
   height: 465px;
 }
 
@@ -898,21 +898,15 @@ body {
 }
 
 body {
-  &.toplevel_page_slimview1,
-  &.slimstat_page_slimview2,
-  &.slimstat_page_slimview3,
-  &.slimstat_page_slimview4,
-  &.slimstat_page_slimview5,
-  &.slimstat_page_slimconfig,
-  &.slimstat_page_migration,
-  &.slimstat_page_slimpro,
-  &.slimstat_page_slimlayout {
+  &.slimstat-admin-page {
     /* Hide all non-Slimstat notices in the admin */
     div[class*="-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
     div[class*="admin-notice"]:not(.slimstat-notice):not(.slimstat-migration-notice),
     .notice:not(.slimstat-notice):not(.slimstat-migration-notice),
     .update-nag:not(.slimstat-notice):not(.slimstat-migration-notice),
-    .error:not(.slimstat-notice):not(.slimstat-migration-notice) {
+    .error:not(.slimstat-notice):not(.slimstat-migration-notice),
+    .astra-notice-wrapper,
+    .cky-admin-notice {
       display: none !important;
     }
   }
@@ -1148,7 +1142,7 @@ body {
   right: inherit;
 }
 
-.rtl .wrap.slimstat .postbox {
+.rtl .wrap-slimstat .postbox {
   float: right;
 }
 
@@ -1206,7 +1200,7 @@ body {
   margin-left: 0 !important;
 }
 
-.rtl .wrap.slimstat .sortable-placeholder {
+.rtl .wrap-slimstat .sortable-placeholder {
   float: right;
 }
 
@@ -1481,25 +1475,25 @@ body {
 
 /* Responsive */
 @media screen and (max-width: 1560px) {
-  .wrap.slimstat .postbox {
+  .wrap-slimstat .postbox {
     width: 32.8%;
   }
-  .wrap.slimstat .postbox.large {
+  .wrap-slimstat .postbox.large {
     width: 66.1%;
   }
-  .wrap.slimstat .postbox.extralarge,
-  .wrap.slimstat .postbox.full-width {
+  .wrap-slimstat .postbox.extralarge,
+  .wrap-slimstat .postbox.full-width {
     width: 99.4%;
   }
-  .wrap.slimstat .postbox h3 {
+  .wrap-slimstat .postbox h3 {
     font-size: 1em;
     line-height: 1.2em;
   }
-  .wrap.slimstat .postbox p {
+  .wrap-slimstat .postbox p {
     font-size: 1em;
     line-height: 1.5em;
   }
-  .wrap.slimstat .postbox p span.details {
+  .wrap-slimstat .postbox p span.details {
     float: none !important;
     display: block;
     padding: 0px !important;
@@ -1544,12 +1538,12 @@ body {
 }
 
 @media screen and (max-width: 1080px) {
-  .wrap.slimstat .postbox {
+  .wrap-slimstat .postbox {
     width: 49.125%;
   }
-  .wrap.slimstat .postbox.large,
-  .wrap.slimstat .postbox.extralarge,
-  .wrap.slimstat .postbox.full-width {
+  .wrap-slimstat .postbox.large,
+  .wrap-slimstat .postbox.extralarge,
+  .wrap-slimstat .postbox.full-width {
     width: 99%;
   }
 }
@@ -1569,18 +1563,18 @@ body {
     right: inherit;
     top: inherit;
   }
-  .wrap.slimstat .postbox,
-  .wrap.slimstat .postbox.large,
-  .wrap.slimstat .postbox.extralarge,
-  .wrap.slimstat .postbox.full-width {
+  .wrap-slimstat .postbox,
+  .wrap-slimstat .postbox.large,
+  .wrap-slimstat .postbox.extralarge,
+  .wrap-slimstat .postbox.full-width {
     margin: 0 0 10px;
     width: 99.5%;
   }
-  .wrap.slimstat .postbox h3 {
+  .wrap-slimstat .postbox h3 {
     font-size: 1.4em;
     line-height: 1em;
   }
-  .wrap.slimstat .postbox p {
+  .wrap-slimstat .postbox p {
     // font-size: 1.1em;
     line-height: 1.4em;
   }
@@ -2970,8 +2964,8 @@ x:-o-prefocus {
 }
 
 // New Styles
-.wrap.slimstat-config,
-.wrap.slimstat {
+.wrap-slimstat {
+  clear: both;
   box-sizing: border-box;
   overflow: hidden;
 
@@ -3579,7 +3573,7 @@ x:-o-prefocus {
   }
 }
 
-.wrap.slimstat {
+.wrap-slimstat {
   table.widefat {
     border: none;
 
