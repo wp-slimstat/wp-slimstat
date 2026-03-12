@@ -3270,11 +3270,32 @@ x:-o-prefocus {
     font-size: 16px;
   }
 
-  .slimstat-email-report-content {
-    background-color: white;
-    border-radius: 10px;
-    padding: 25px 20px;
-    margin-top: 25px;
+  // Email Report page — match Settings page visual style
+  &.slimstat-email-report {
+    h2 {
+      margin-bottom: 0;
+    }
+
+    .slimstat-email-report-content {
+      background-color: white;
+      border-radius: 10px;
+      padding: 0 20px 20px;
+      margin-top: 20px;
+
+      .form-table {
+        margin-top: 0;
+        border-radius: 0;
+      }
+
+      .submit {
+        .button-primary {
+          border: 1px solid $brand;
+          color: $brand;
+          background-color: white;
+          border-radius: 50px;
+        }
+      }
+    }
   }
 
   #slimstat-filters {
