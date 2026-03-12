@@ -146,7 +146,7 @@ class Tracker
                     $a_ip = trim($a_ip);
                     if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
                         $ip_array[1] = $a_ip;
-                        break;
+                        break 2;
                     }
                 }
             }

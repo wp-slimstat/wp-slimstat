@@ -22,14 +22,31 @@ import {
   closeDb,
 } from './helpers/setup';
 
+/** Poll getLatestStat until a row appears or timeout (avoids fixed waitForTimeout). */
+async function waitForStat(marker: string, timeoutMs = 10_000, intervalMs = 250) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const stat = await getLatestStat(marker);
+    if (stat) return stat;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return null;
+}
+
 test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
+  test.setTimeout(60_000);
+
   test.beforeAll(async () => {
     installOptionMutator();
   });
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
+    // All tests use DB-IP (IP-based lookup) with GDPR off to isolate getCfClientIp()
+    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
+    await setSlimstatOption(page, 'geolocation_country', 'no');
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
   });
 
   test.afterEach(async () => {
@@ -44,14 +61,6 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   // ─── Test 1: CF-Connecting-IP used for geolocation with CF-Ray ──
 
   test('dbip provider resolves country from CF-Connecting-IP when CF-Ray present', async ({ page, context }) => {
-    test.setTimeout(60_000);
-
-    // Use DB-IP (IP-based lookup) — NOT Cloudflare provider (header-based)
-    // This isolates the getCfClientIp() → $originalIpForGeo path in Processor.php
-    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
-    await setSlimstatOption(page, 'geolocation_country', 'no'); // city precision
-    await setSlimstatOption(page, 'gdpr_enabled', 'off');       // allow PII
-
     // Inject CF headers: CF-Ray proves we're behind Cloudflare,
     // CF-Connecting-IP is the visitor's real IP (8.8.8.8 = US)
     await context.setExtraHTTPHeaders({
@@ -61,9 +70,8 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
     const marker = `cf-ip-fix-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
-    await page.waitForTimeout(4000);
 
-    const stat = await getLatestStat(marker);
+    const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
     // Without the fix: REMOTE_ADDR is 127.0.0.1 → country is empty/unknown
     // With the fix: getCfClientIp() returns 8.8.8.8 → DB-IP resolves to 'us'
@@ -73,12 +81,6 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   // ─── Test 2: CF-Connecting-IP ignored without CF-Ray (anti-spoof) ─
 
   test('CF-Connecting-IP ignored without CF-Ray header (anti-spoofing)', async ({ page, context }) => {
-    test.setTimeout(60_000);
-
-    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
-    await setSlimstatOption(page, 'geolocation_country', 'no');
-    await setSlimstatOption(page, 'gdpr_enabled', 'off');
-
     // Spoof attempt: CF-Connecting-IP set WITHOUT CF-Ray
     // getCfClientIp() should return null → falls back to REMOTE_ADDR (127.0.0.1)
     await context.setExtraHTTPHeaders({
@@ -87,7 +89,8 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
     const marker = `cf-spoof-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
-    await page.waitForTimeout(4000);
+    // Give tracking time to complete — stat may or may not exist for private IPs
+    await new Promise((r) => setTimeout(r, 3000));
 
     const stat = await getLatestStat(marker);
     // Without CF-Ray, the CF-Connecting-IP header is not trusted
@@ -100,12 +103,6 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
   // ─── Test 3: Different public IP resolves to expected country ─────
 
   test('CF-Connecting-IP with German IP resolves to DE', async ({ page, context }) => {
-    test.setTimeout(60_000);
-
-    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
-    await setSlimstatOption(page, 'geolocation_country', 'no');
-    await setSlimstatOption(page, 'gdpr_enabled', 'off');
-
     // 5.9.49.12 is a Hetzner IP in Germany
     await context.setExtraHTTPHeaders({
       'CF-Ray': 'test-e2e-issue-150-de',
@@ -114,9 +111,8 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
 
     const marker = `cf-ip-de-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
-    await page.waitForTimeout(4000);
 
-    const stat = await getLatestStat(marker);
+    const stat = await waitForStat(marker);
     expect(stat).toBeTruthy();
     expect(stat!.country).toBe('de');
   });
