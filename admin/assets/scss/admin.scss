@@ -27,6 +27,7 @@ body {
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
+  &.slimstat_page_slimemail,
   &.slimstat_page_migration {
     background: #f5f6fa !important;
   }
@@ -423,6 +424,7 @@ body {
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
+  &.slimstat_page_slimemail,
   &.slimstat_page_migration {
     .jqvmap-label {
       z-index: 999999;
@@ -3266,6 +3268,13 @@ x:-o-prefocus {
     font-weight: 500;
     color: $grayOne;
     font-size: 16px;
+  }
+
+  .slimstat-email-report-content {
+    background-color: white;
+    border-radius: 10px;
+    padding: 25px 20px;
+    margin-top: 25px;
   }
 
   #slimstat-filters {
