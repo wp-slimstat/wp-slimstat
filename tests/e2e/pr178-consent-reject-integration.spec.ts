@@ -139,6 +139,22 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
     }
   });
 
+  test('tracking fires when user accepts consent (allow cookie)', async ({ page }) => {
+    const testUrl = `${BASE_URL}/?e2e_test=consent-accept-${Date.now()}`;
+
+    // Anonymous context with allow cookie → optin guard activates
+    // → wp_has_consent checks the allow cookie → returns true → tracking fires.
+    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
+      { name: 'wp_consent_statistics', value: 'allow', domain: 'localhost', path: '/' },
+    ]);
+
+    try {
+      expect(trackingRequests.length).toBeGreaterThan(0);
+    } finally {
+      await cleanup();
+    }
+  });
+
   test('no tracking before any consent decision (no cookie)', async ({ page }) => {
     const testUrl = `${BASE_URL}/?e2e_test=consent-none-${Date.now()}`;
 
