@@ -1,11 +1,20 @@
 = 5.4.2 - 2026-03-11 =
 
+- Fixed Cloudflare IP geolocation using proxy IP instead of visitor's real IP ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))
+- Replaced O(n) visit ID collision loop with atomic counter for better performance ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
 - Fixed infinite AJAX loop when WP-Cron is disabled causing excessive geolocation requests ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
 - Fixed `prefers-reduced-motion` CSS rule affecting elements outside SlimStat ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
-- Replaced O(n) visit ID collision loop with atomic counter for better performance ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
+- Fixed sendBeacon + REST interaction tracking regression — outbound links, downloads, and exit-time updates were silently broken ([#174](https://github.com/wp-slimstat/wp-slimstat/issues/174))
+- Fixed WP Consent API not respecting explicit consent rejection
+- Fixed WP Consent API `wp_get_consent_type()` guard so `wp_has_consent()` doesn't return `true` when CMP hasn't registered its consent type
+- Fixed missing dependency error when WP Consent API plugin is not installed
+- Visitor count now uses `visit_id` instead of IP for accurate counts with anonymized/hashed IPs
 - Fixed potential fatal error from `intval` in REST tracking endpoint
+- Wired Cloudflare geolocation provider into tracking pipeline and fixed IP detection priority bug
 - Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
-- Wired Cloudflare into tracking pipeline and fixed 5 geolocation bugs
+- Fixed `.wrap.slimstat` CSS conflict with WordPress core styles
+- Fixed SlimEmail page structure and styling to match other admin pages
+- Load textdomain at `init` hook for WordPress 6.7.0+ compatibility
 
 = 5.4.1 - 2026-03-09 =
 
