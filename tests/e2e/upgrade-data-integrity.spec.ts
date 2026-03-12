@@ -21,21 +21,13 @@ import {
   closeDb,
 } from './helpers/setup';
 import * as mysql from 'mysql2/promise';
-
-const MYSQL_SOCKET = '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
+import { MYSQL_CONFIG } from './helpers/env';
 
 let pool: mysql.Pool;
 
 function getPool(): mysql.Pool {
   if (!pool) {
-    pool = mysql.createPool({
-      socketPath: MYSQL_SOCKET,
-      user: 'root',
-      password: 'root',
-      database: 'local',
-      waitForConnections: true,
-      connectionLimit: 5,
-    });
+    pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
 }

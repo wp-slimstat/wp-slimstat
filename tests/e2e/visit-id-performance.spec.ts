@@ -14,22 +14,13 @@ import {
   restoreSlimstatOptions,
   closeDb,
 } from './helpers/setup';
-
-const MYSQL_SOCKET = '/Users/parhumm/Library/Application Support/Local/run/X-JdmZXIa/mysql/mysqld.sock';
-const BASE_URL = 'http://localhost:10003';
+import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
 let pool: mysql.Pool;
 
 function getPool(): mysql.Pool {
   if (!pool) {
-    pool = mysql.createPool({
-      socketPath: MYSQL_SOCKET,
-      user: 'root',
-      password: 'root',
-      database: 'local',
-      waitForConnections: true,
-      connectionLimit: 5,
-    });
+    pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
 }

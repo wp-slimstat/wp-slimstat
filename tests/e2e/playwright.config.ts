@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { BASE_URL } from './helpers/env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +15,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list'], ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report') }]],
   use: {
-    baseURL: 'http://localhost:10003',
+    baseURL: BASE_URL,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
