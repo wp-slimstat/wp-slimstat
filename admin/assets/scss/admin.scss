@@ -3285,6 +3285,10 @@ x:-o-prefocus {
       .form-table {
         margin-top: 0;
         border-radius: 0;
+
+        tr:first-of-type .slimstat-options-section-header {
+          border-radius: 0;
+        }
       }
 
       .submit {
