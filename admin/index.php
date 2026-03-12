@@ -1092,9 +1092,9 @@ class wp_slimstat_admin
         $yesterday_start = $today_start - 86400;
         $yesterday_end = $today_start - 1;
 
-        // Visitors Today (unique IPs)
+        // Visitors Today (unique sessions - using visit_id for anonymous/hashed IP compatibility)
         $visitors_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT ip) FROM {$table} WHERE dt >= %d",
+            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
             $today_start
         ));
 
@@ -1104,9 +1104,9 @@ class wp_slimstat_admin
             $today_start
         ));
 
-        // Yesterday's visitors
+        // Yesterday's visitors (unique sessions - using visit_id for anonymous/hashed IP compatibility)
         $visitors_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT ip) FROM {$table} WHERE dt BETWEEN %d AND %d",
+            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
             $yesterday_start, $yesterday_end
         ));
 
