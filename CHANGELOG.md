@@ -8,6 +8,7 @@
 - Fixed WP Consent API not respecting explicit consent rejection
 - Fixed WP Consent API `wp_get_consent_type()` guard so `wp_has_consent()` doesn't return `true` when CMP hasn't registered its consent type
 - Fixed missing dependency error when WP Consent API plugin is not installed
+- Restored server-side tracking API — `wp_slimstat::slimtrack()` backward-compatible wrapper and new `slimtrack_server()` for programmatic contexts ([#171](https://github.com/wp-slimstat/wp-slimstat/issues/171))
 - Visitor count now uses `visit_id` instead of IP for accurate counts with anonymized/hashed IPs
 - Fixed potential fatal error from `intval` in REST tracking endpoint
 - Wired Cloudflare geolocation provider into tracking pipeline and fixed IP detection priority bug
