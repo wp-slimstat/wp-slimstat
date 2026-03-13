@@ -60,6 +60,20 @@ class Consent
 	}
 
 	/**
+	 * Apply the slimstat_can_track filter with tracking context.
+	 *
+	 * Centralizes the filter call so context is never accidentally omitted.
+	 *
+	 * @since 5.4.4
+	 * @param bool $default Default tracking decision before filter override.
+	 * @return bool Filtered tracking decision.
+	 */
+	private static function applyCanTrackFilter(bool $default): bool
+	{
+		return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
+	}
+
+	/**
 	 * Safe wrapper around wp_has_consent() that ensures wp_get_consent_type() is set.
 	 *
 	 * When no CMP has registered a consent type, wp_has_consent() defaults to true
@@ -209,17 +223,7 @@ class Consent
 
 		// If GDPR is disabled, allow normal tracking without consent checks
 		if (!$gdprEnabled) {
-			/**
-			 * Filter: slimstat_can_track
-			 *
-			 * Allows third parties to override tracking decision when GDPR is disabled.
-			 *
-			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
-			 *
-			 * @param bool  $default Default decision (true when GDPR disabled)
-			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
-			 */
-			return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
+			return self::applyCanTrackFilter($default);
 		}
 
 		// GDPR is enabled - consent integration is REQUIRED
@@ -229,17 +233,7 @@ class Consent
 		// Note: getIntegrationKey() now auto-returns 'slimstat_banner' if GDPR is enabled
 		// So this block should rarely execute unless GDPR is explicitly disabled
 		if (!$hasConsentIntegration) {
-			/**
-			 * Filter: slimstat_can_track
-			 *
-			 * Allows third parties to override tracking decision.
-			 *
-			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
-			 *
-			 * @param bool  $default Default decision (false when GDPR enabled but no consent integration)
-			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
-			 */
-			return (bool) apply_filters('slimstat_can_track', false, self::buildFilterContext());
+			return self::applyCanTrackFilter(false);
 		}
 
 		// GDPR is enabled and consent integration is configured - proceed with consent checks
@@ -258,21 +252,7 @@ class Consent
 		// where no browser session exists and CMP consent has no meaningful role.
 		// DNT headers are still respected above.
 		if (\wp_slimstat::$is_programmatic_tracking) {
-			/**
-			 * Filter: slimstat_can_track
-			 *
-			 * Allows third parties to override tracking decision in programmatic mode.
-			 *
-			 * Filter callbacks can inspect $context['programmatic'] to determine if this is
-			 * a server-side call (from slimtrack_server()) and choose to allow it even when
-			 * their default policy would deny browser-based tracking.
-			 *
-			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
-			 *
-			 * @param bool  $default Default decision (true in programmatic mode, respecting DNT)
-			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
-			 */
-			return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
+			return self::applyCanTrackFilter($default);
 		}
 
 		// Anonymous Tracking mode - ALWAYS allow tracking (no PII collected by default)
@@ -332,20 +312,7 @@ class Consent
 			// If configuration doesn't collect PII: $default remains true (tracking allowed)
 		}
 
-		/**
-		 * Filter: slimstat_can_track
-		 *
-		 * Allows third parties (e.g., CMP plugins) to declare if analytics tracking is allowed.
-		 * Return true to allow tracking, false to disable it.
-		 *
-		 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
-		 *
-		 * @param bool  $default Default decision (DNT-aware + CMP-aware)
-		 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
-		 */
-		$canTrack = (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
-
-		return $canTrack;
+		return self::applyCanTrackFilter($default);
 	}
 
 	/**
