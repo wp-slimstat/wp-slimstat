@@ -310,6 +310,14 @@ export async function getLatestStatFull(testMarker: string): Promise<{ id: numbe
   return rows.length > 0 ? rows[0] : null;
 }
 
+export async function getLatestStatWithIp(testMarker: string): Promise<{ ip: string; country: string; city: string; location: string } | null> {
+  const [rows] = await getPool().execute(
+    "SELECT ip, country, city, location FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
+    [`%${testMarker}%`]
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
 export async function getLatestStatByIp(): Promise<{ country: string; city: string; location: string } | null> {
   const [rows] = await getPool().execute(
     "SELECT country, city, location FROM wp_slim_stats ORDER BY id DESC LIMIT 1"

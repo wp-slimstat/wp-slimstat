@@ -17,6 +17,18 @@ if (!defined('SLIMSTAT_E2E_TESTING') || SLIMSTAT_E2E_TESTING !== true) {
     return;
 }
 
+// ── Deactivate cookie-law-info for provider test (Test 1) ──
+// cookie-law-info loads wp-admin/includes/file.php on frontend, which
+// defeats the include-guard test. MU-plugins load before regular plugins,
+// so filtering option_active_plugins prevents it from loading.
+if (!empty($_GET['test_dbip_cron']) && $_GET['test_dbip_cron'] === 'provider') {
+    add_filter('option_active_plugins', function ($plugins) {
+        return array_values(array_filter($plugins, function ($p) {
+            return strpos($p, 'cookie-law-info') === false;
+        }));
+    }, 1);
+}
+
 // ── Early throw injection for admin AJAX Test 3 ──
 // When _test_throw_error is posted, register a pre_http_request filter that
 // throws \Error. This fires inside the real handler's updateDatabase() call.
