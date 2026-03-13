@@ -25,9 +25,19 @@ import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 import * as mysql from 'mysql2/promise';
 
 let db: mysql.Pool;
+let wpConsentApiActive = false;
 
 test.beforeAll(async () => {
   db = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
+
+  // Check if WP Consent API plugin is active
+  const [rows] = await db.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'active_plugins'"
+  ) as any;
+  if (rows.length > 0) {
+    const raw: string = rows[0].option_value;
+    wpConsentApiActive = raw.includes('wp-consent-api');
+  }
 });
 
 test.afterAll(async () => {
@@ -131,6 +141,8 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
   });
 
   test('tracking fires when user accepts consent (allow cookie)', async ({ page }) => {
+    test.skip(!wpConsentApiActive, 'WP Consent API plugin is not installed — skipping accept consent test');
+
     const testUrl = `${BASE_URL}/?e2e_test=consent-accept-${Date.now()}`;
 
     // Anonymous context with allow cookie → optin guard activates
@@ -160,6 +172,8 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
   });
 
   test('WP Consent API JS function is available', async ({ page }) => {
+    test.skip(!wpConsentApiActive, 'WP Consent API plugin is not installed — skipping JS function test');
+
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(2000);
 

@@ -117,6 +117,8 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
   });
 
   test('accept flow: tracking fires after consent granted', async ({ page }) => {
+    test.skip(!wpConsentApiActive, 'WP Consent API plugin is not installed — skipping accept flow test');
+
     const marker = `e2e-consent-accept-${Date.now()}`;
     const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
 

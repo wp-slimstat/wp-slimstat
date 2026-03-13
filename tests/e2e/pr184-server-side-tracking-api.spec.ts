@@ -278,9 +278,8 @@ test.describe('PR #184: Server-Side Tracking API (Issue #171)', () => {
   });
 
   // ─── Test 10: Unauthenticated request is rejected ──────────────
-  test('unauthenticated request is rejected', async ({ page }) => {
+  test('unauthenticated request is rejected', async ({ page, browser }) => {
     // Create a fresh anonymous context without auth cookies
-    const browser = page.context().browser()!;
     const anonCtx = await browser.newContext();
     const anonPage = await anonCtx.newPage();
 
@@ -293,16 +292,20 @@ test.describe('PR #184: Server-Side Tracking API (Issue #171)', () => {
       // WordPress returns 400 with {"success":false} for unregistered nopriv actions,
       // or 0 for actions that require auth. Either way, it should not succeed.
       const body = await res.text();
+      const status = res.status();
 
       // The action is registered with wp_ajax_ (authenticated only), not wp_ajax_nopriv_
-      // so unauthenticated requests should get a '0' response or a failure JSON
+      // so unauthenticated requests should get a '0' response, a failure JSON,
+      // a 403, or a 400.
       const isRejected =
         body === '0' ||
         body === '-1' ||
         body.includes('"success":false') ||
-        res.status() === 403;
+        status === 403 ||
+        status === 400 ||
+        status === 401;
 
-      expect(isRejected, `Unauthenticated request should be rejected, got: ${body}`).toBe(true);
+      expect(isRejected, `Unauthenticated request should be rejected, got status ${status}: ${body.substring(0, 200)}`).toBe(true);
     } finally {
       await anonPage.close();
       await anonCtx.close();

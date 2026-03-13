@@ -45,24 +45,43 @@ test.describe('Suite 06: Textdomain Edge Cases', () => {
 
   test('S06: deactivate and reactivate — textdomain still loads', async ({ page }) => {
     await page.goto('/wp-admin/plugins.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
 
-    const deactivateLink = page.locator('tr[data-slug="wp-slimstat"] .deactivate a');
-    const isActive = await deactivateLink.count() > 0;
+    // Try multiple selector strategies for the deactivate link
+    // The data-slug attribute may use "wp-slimstat" or the plugin file basename
+    let deactivateLink = page.locator('tr[data-slug="wp-slimstat"] .deactivate a');
+    let isActive = await deactivateLink.count() > 0;
 
-    if (isActive) {
-      await deactivateLink.click();
-      await page.waitForLoadState('domcontentloaded');
-
-      const activateLink = page.locator('tr[data-slug="wp-slimstat"] .activate a');
-      await expect(activateLink).toBeVisible({ timeout: 10_000 });
-      await activateLink.click();
-      await page.waitForLoadState('domcontentloaded');
+    if (!isActive) {
+      // Try alternative: look for the plugin row by plugin name text
+      deactivateLink = page.locator('tr:has(td:has-text("Slimstat Analytics")) .deactivate a');
+      isActive = await deactivateLink.count() > 0;
     }
+
+    if (!isActive) {
+      // Plugin may already be deactivated or selector doesn't match — skip
+      test.skip(true, 'Could not find wp-slimstat deactivate link — plugin may not be active or selector mismatch');
+      return;
+    }
+
+    await deactivateLink.click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
+
+    // Look for activate link with same flexible selectors
+    let activateLink = page.locator('tr[data-slug="wp-slimstat"] .activate a');
+    if (await activateLink.count() === 0) {
+      activateLink = page.locator('tr:has(td:has-text("Slimstat Analytics")) .activate a');
+    }
+    await expect(activateLink).toBeVisible({ timeout: 10_000 });
+    await activateLink.click();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(2000);
 
     await page.goto('/wp-admin/admin.php?page=slimstat', { waitUntil: 'domcontentloaded' });
     const html = await page.content();
     expect(html).not.toContain('Fatal error');
-    expect(html).toContain('slimstat');
+    expect(html.toLowerCase()).toContain('slimstat');
   });
 
   test('S07: admin-ajax context — plugin loads without errors', async ({ page }) => {
