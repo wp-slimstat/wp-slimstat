@@ -17,6 +17,7 @@
 - Fixed `.wrap.slimstat` CSS conflict with WordPress core styles
 - Fixed SlimEmail page structure and styling to match other admin pages
 - Load textdomain at `init` hook for WordPress 6.7.0+ compatibility
+- Synced shipped .po/.mo translation files with current .pot template — 261+ missing strings now included ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
 
 = 5.4.1 - 2026-03-09 =
 
