@@ -420,24 +420,50 @@ class wp_slimstat
      */
     public static function resolve_geolocation_provider()
     {
-        if (isset(self::$settings['geolocation_provider'])) {
-            $p = sanitize_text_field(self::$settings['geolocation_provider']);
-            if ('disable' === $p) {
+        static $cache = [];
+
+        // Sanitize both settings that drive resolution
+        $provider_san = sanitize_text_field(self::$settings['geolocation_provider'] ?? '');
+
+        // Normalize legacy tri-state ('on'|'no'|'disable') to deterministic token
+        $legacy_san = sanitize_text_field(self::$settings['enable_maxmind'] ?? '');
+        if ('on' === $legacy_san) {
+            $legacy_norm = 'on';
+        } elseif ('no' === $legacy_san) {
+            $legacy_norm = 'no';
+        } else {
+            $legacy_norm = 'disable';
+        }
+
+        // Cache key invalidates when settings change mid-request (e.g. settings save)
+        $cache_key = $provider_san . '|' . $legacy_norm;
+
+        if (array_key_exists($cache_key, $cache)) {
+            return $cache[$cache_key];
+        }
+
+        $result = false;
+
+        if ('' !== $provider_san) {
+            if ('disable' === $provider_san) {
+                $cache[$cache_key] = false;
                 return false;
             }
-            if (in_array($p, ['maxmind', 'dbip', 'cloudflare'], true)) {
-                return $p;
+            if (in_array($provider_san, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
+                $cache[$cache_key] = $provider_san;
+                return $provider_san;
             }
-            // Invalid/empty value — fall through to legacy flag
+            // Invalid value — fall through to legacy flag
         }
-        $em = self::$settings['enable_maxmind'] ?? 'disable';
-        if ('on' === $em) {
-            return 'maxmind';
+
+        if ('on' === $legacy_norm) {
+            $result = 'maxmind';
+        } elseif ('no' === $legacy_norm) {
+            $result = 'dbip';
         }
-        if ('no' === $em) {
-            return 'dbip';
-        }
-        return false;
+
+        $cache[$cache_key] = $result;
+        return $result;
     }
 
     /**
@@ -869,8 +895,13 @@ class wp_slimstat
     // end date_i18n
 
     /**
-     * Returns default options with fresh-install additions (e.g. geolocation_provider).
-     * Used by init() for new installs and by admin reset-settings.
+     * Returns default options with geolocation_provider set for fresh installs and resets.
+     *
+     * geolocation_provider is excluded from init_options() because init() merges
+     * those defaults into stored settings — which would override the legacy
+     * enable_maxmind flag on upgraded installs before lazy migration runs.
+     *
+     * Fresh installs default to DB-IP (free, no license key required).
      */
     public static function get_fresh_defaults()
     {
@@ -944,6 +975,10 @@ class wp_slimstat
             'extensions_to_track'                    => 'pdf,doc,xls,zip',
 
             // Tracker - Advanced Options
+            // NOTE: geolocation_provider is intentionally NOT in init_options().
+            // init() merges these defaults into stored settings, which would override
+            // the legacy enable_maxmind flag on upgraded installs before lazy migration runs.
+            // Use get_fresh_defaults() for new installs and settings reset.
             'geolocation_country' => 'on',
             'session_duration'    => 1800,
             'extend_session'      => 'no',

@@ -865,7 +865,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
 
             // If provider needs a DB, schedule a background update to avoid timeouts during save
-            if (!in_array($provider, ['cloudflare', 'disable'], true)) {
+            if (in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true)) {
                 try {
                     // Pass new settings explicitly since they haven't been saved to wp_slimstat::$settings yet
                     $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [

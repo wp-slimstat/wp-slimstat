@@ -202,10 +202,7 @@ test.describe('Index Migration', () => {
     // Verify version-gated migration block
     expect(content).toContain("version_compare(wp_slimstat::$settings['version'], '5.4.3', '<')");
 
-    // Verify AJAX handler exists
-    expect(content).toContain('function ajax_add_dt_visit_index()');
-
-    // Verify it's registered
+    // Verify AJAX handler is registered via consolidated index definitions
     expect(content).toContain('slimstat_add_dt_visit_index');
 
     // Verify show_indexes_notice entry
