@@ -376,24 +376,18 @@ class wp_slimstat_admin
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
-        $index_checks = [
-            ['option' => 'slimstat_country_dt_indexed', 'key' => 'idx_country_dt'],
-            ['option' => 'slimstat_dt_screen_indexed', 'key' => 'idx_dt_screen_width_screen_height'],
-            ['option' => 'slimstat_dt_browser_indexed', 'key' => 'idx_dt_browser_browser_version'],
-            ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
-        ];
-        foreach ($index_checks as $idx) {
-            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
+        // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
+        foreach (self::get_index_definitions() as $def) {
+            if ('yes' === get_option($def['option'])) {
+                continue;
+            }
+            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $def['name']));
             if (!empty($exists)) {
-                update_option($idx['option'], 'yes');
+                update_option($def['option'], 'yes');
             }
         }
 
-        self::register_country_dt_index_hooks();
-        self::register_dt_screen_index_hooks();
-        self::register_dt_browser_index_hooks();
-        self::register_dt_platform_index_hooks();
-        self::register_dt_out_index_hooks();
+        self::register_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
@@ -2336,178 +2330,81 @@ class wp_slimstat_admin
         return null;
     }
 
-    public static function ajax_add_country_dt_index()
+    /**
+     * Index definitions for all AJAX-managed database indexes.
+     * Each entry maps an AJAX action (nonce) to its index metadata.
+     */
+    private static function get_index_definitions(): array
     {
-        check_ajax_referer('slimstat_add_country_dt_index');
+        $prefix = $GLOBALS['wpdb']->prefix;
+        return [
+            'slimstat_add_country_dt_index' => [
+                'name'    => 'idx_country_dt',
+                'columns' => 'country, dt',
+                'option'  => 'slimstat_country_dt_indexed',
+            ],
+            'slimstat_add_dt_screen_index' => [
+                'name'    => 'idx_dt_screen_width_screen_height',
+                'columns' => 'dt, screen_width, screen_height',
+                'option'  => 'slimstat_dt_screen_indexed',
+            ],
+            'slimstat_add_dt_browser_index' => [
+                'name'    => 'idx_dt_browser_browser_version',
+                'columns' => 'dt, browser, browser_version',
+                'option'  => 'slimstat_dt_browser_indexed',
+            ],
+            'slimstat_add_dt_platform_index' => [
+                'name'    => 'idx_dt_platform',
+                'columns' => 'dt, platform',
+                'option'  => 'slimstat_dt_platform_indexed',
+            ],
+            'slimstat_add_dt_out_index' => [
+                'name'    => 'idx_dt_out',
+                'columns' => 'dt_out',
+                'option'  => 'slimstat_dt_out_indexed',
+            ],
+            'slimstat_add_dt_visit_index' => [
+                'name'    => $prefix . 'stats_dt_visit_idx',
+                'columns' => 'dt, visit_id',
+                'option'  => 'slimstat_dt_visit_indexed',
+            ],
+        ];
+    }
 
+    /**
+     * Generic AJAX handler for ensuring a database index exists.
+     */
+    private static function ajax_ensure_index(string $nonce, string $index_name, string $columns, string $option_key): void
+    {
+        check_ajax_referer($nonce);
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
         }
-
-        global $wpdb;
-        $table     = $wpdb->prefix . 'slim_stats';
-        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = 'idx_country_dt'", $table));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_country_dt_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %s (country, dt)', $table));
-        if (false !== $result) {
-            update_option('slimstat_country_dt_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_country_dt_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_country_dt_index', [self::class, 'ajax_add_country_dt_index']);
-    }
-
-    public static function ajax_add_dt_screen_index()
-    {
-        check_ajax_referer('slimstat_add_dt_screen_index');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
-        }
-
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_screen_width_screen_height';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_screen_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, screen_width, screen_height)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_screen_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_screen_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_screen_index', [self::class, 'ajax_add_dt_screen_index']);
-    }
-
-    public static function ajax_add_dt_browser_index()
-    {
-        check_ajax_referer('slimstat_add_dt_browser_index');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
-        }
-
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_browser_browser_version';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_browser_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, browser, browser_version)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_browser_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_browser_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_browser_index', [self::class, 'ajax_add_dt_browser_index']);
-    }
-
-    public static function ajax_add_dt_platform_index()
-    {
-        check_ajax_referer('slimstat_add_dt_platform_index');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
-        }
-
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_platform';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_platform_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, platform)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_platform_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_platform_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_platform_index', [self::class, 'ajax_add_dt_platform_index']);
-    }
-
-    public static function ajax_add_dt_out_index()
-    {
-        global $wpdb;
-        check_ajax_referer('slimstat_add_dt_out_index');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
-        }
-
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_out';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_out_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt_out)', $index_name, $table));
-        if ($result) {
-            update_option('slimstat_dt_out_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        }
-        wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-    }
-
-    public static function ajax_add_dt_visit_index()
-    {
-        check_ajax_referer('slimstat_add_dt_visit_index');
-
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
-        }
-
         global $wpdb;
         $table = $wpdb->prefix . 'slim_stats';
-        $index_name = $wpdb->prefix . 'stats_dt_visit_idx';
         $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if (!empty($exists)) {
-            update_option('slimstat_dt_visit_indexed', 'yes');
+            update_option($option_key, 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, visit_id)', $index_name, $table));
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (%s)', $index_name, $table, $columns));
         if (false !== $result) {
-            update_option('slimstat_dt_visit_indexed', 'yes');
+            update_option($option_key, 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
         }
         wp_send_json_error(__('Unable to add index.', 'wp-slimstat'));
     }
 
-    public static function register_dt_out_index_hooks()
+    /**
+     * Register AJAX hooks for all index management actions.
+     */
+    public static function register_index_hooks(): void
     {
-        add_action('wp_ajax_slimstat_add_dt_out_index', [self::class, 'ajax_add_dt_out_index']);
-        add_action('wp_ajax_slimstat_add_dt_visit_index', [self::class, 'ajax_add_dt_visit_index']);
+        foreach (self::get_index_definitions() as $action => $def) {
+            add_action('wp_ajax_' . $action, function () use ($action, $def) {
+                self::ajax_ensure_index($action, $def['name'], $def['columns'], $def['option']);
+            });
+        }
     }
 
     public static function show_indexes_notice()

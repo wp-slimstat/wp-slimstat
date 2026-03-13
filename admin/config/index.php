@@ -795,7 +795,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 break;
 
             case 'reset-settings':
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::get_fresh_defaults());
+                wp_slimstat::update_option('slimstat_options', wp_slimstat::init_options());
                 wp_slimstat_admin::show_message(__('All settings were successfully reset to their default values.', 'wp-slimstat'));
                 break;
 
@@ -865,7 +865,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             }
 
             // If provider needs a DB, schedule a background update to avoid timeouts during save
-            if (!in_array($provider, ['cloudflare', 'disable'], true)) {
+            if (in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true)) {
                 try {
                     // Pass new settings explicitly since they haven't been saved to wp_slimstat::$settings yet
                     $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [

@@ -6,6 +6,9 @@ use SlimStat\Dependencies\GeoIp2\Database\Reader;
 
 class GeoService
 {
+    /** All supported geolocation providers */
+    const ALL_PROVIDERS = ['maxmind', 'dbip', 'cloudflare'];
+
     /** Providers that require a local GeoIP database file */
     const DB_PROVIDERS = ['maxmind', 'dbip'];
 

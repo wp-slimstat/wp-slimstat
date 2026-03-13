@@ -227,8 +227,8 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Fresh install: set defaults including geolocation_provider=dbip
-            self::$settings = self::get_fresh_defaults();
+            // Fresh install: set defaults (includes geolocation_provider=dbip)
+            self::$settings = self::init_options();
             self::update_option('slimstat_options', self::$settings);
         }
 
@@ -420,23 +420,33 @@ class wp_slimstat
      */
     public static function resolve_geolocation_provider()
     {
+        static $cached = null;
+        if (null !== $cached) {
+            return $cached;
+        }
+
         if (isset(self::$settings['geolocation_provider'])) {
             $p = sanitize_text_field(self::$settings['geolocation_provider']);
             if ('disable' === $p) {
+                $cached = false;
                 return false;
             }
-            if (in_array($p, ['maxmind', 'dbip', 'cloudflare'], true)) {
+            if (in_array($p, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
+                $cached = $p;
                 return $p;
             }
             // Invalid/empty value — fall through to legacy flag
         }
         $em = self::$settings['enable_maxmind'] ?? 'disable';
         if ('on' === $em) {
+            $cached = 'maxmind';
             return 'maxmind';
         }
         if ('no' === $em) {
+            $cached = 'dbip';
             return 'dbip';
         }
+        $cached = false;
         return false;
     }
 
@@ -869,17 +879,6 @@ class wp_slimstat
     // end date_i18n
 
     /**
-     * Returns default options with fresh-install additions (e.g. geolocation_provider).
-     * Used by init() for new installs and by admin reset-settings.
-     */
-    public static function get_fresh_defaults()
-    {
-        $defaults = self::init_options();
-        $defaults['geolocation_provider'] = 'dbip';
-        return $defaults;
-    }
-
-    /**
      * Returns the current geolocation precision ('country' or 'city').
      */
     public static function get_geolocation_precision()
@@ -944,6 +943,7 @@ class wp_slimstat
             'extensions_to_track'                    => 'pdf,doc,xls,zip',
 
             // Tracker - Advanced Options
+            'geolocation_provider' => 'dbip',
             'geolocation_country' => 'on',
             'session_duration'    => 1800,
             'extend_session'      => 'no',
