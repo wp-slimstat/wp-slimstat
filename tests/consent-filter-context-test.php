@@ -244,4 +244,56 @@ wp_slimstat::$is_programmatic_tracking = true;
 $canTrack = Consent::canTrack();
 assert_true($canTrack, 'Server-side tracking should always be allowed by sophisticated filter');
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 7: DNT blocks programmatic tracking even when filter would allow it
+// @see P1 code review finding — DNT is non-negotiable, filters cannot override
+// ═══════════════════════════════════════════════════════════════════════════
+
+reset_state();
+wp_slimstat::$settings = [
+    'gdpr_enabled'        => 'on',
+    'display_opt_out'     => 'on',
+    'do_not_track'        => 'on',
+    'consent_integration' => 'real_cookie_banner', // avoids GDPRService dependency
+];
+$_SERVER['HTTP_DNT'] = '1';
+
+// Register a permissive filter that tries to allow programmatic tracking
+add_filter('slimstat_can_track', function($default, $context = []) {
+    if (!empty($context['programmatic'])) {
+        return true; // Attempt to override DNT — must NOT succeed
+    }
+    return $default;
+}, 10, 2);
+
+wp_slimstat::$is_programmatic_tracking = true;
+$canTrack = Consent::canTrack();
+assert_false($canTrack, 'DNT=1 must block programmatic tracking even when filter returns true');
+
+unset($_SERVER['HTTP_DNT']);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 8: Programmatic tracking allowed when DNT is off (control case)
+// ═══════════════════════════════════════════════════════════════════════════
+
+reset_state();
+wp_slimstat::$settings = [
+    'gdpr_enabled'        => 'on',
+    'display_opt_out'     => 'on',
+    'do_not_track'        => 'on',
+    'consent_integration' => 'real_cookie_banner',
+];
+// No DNT header set
+
+add_filter('slimstat_can_track', function($default, $context = []) {
+    if (!empty($context['programmatic'])) {
+        return true;
+    }
+    return $default;
+}, 10, 2);
+
+wp_slimstat::$is_programmatic_tracking = true;
+$canTrack = Consent::canTrack();
+assert_true($canTrack, 'Programmatic tracking should be allowed when DNT header is absent');
+
 echo "All {$assertions} assertions passed in consent-filter-context-test.php\n";

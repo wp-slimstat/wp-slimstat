@@ -240,18 +240,23 @@ class Consent
 
 		// Respect Do Not Track if enabled in settings
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
+		$dntBlocked = false;
 		if ($respectDnt) {
 			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
 			if ('1' === $dntHeader) {
-				$default = false;
+				$default    = false;
+				$dntBlocked = true;
 			}
 		}
 
 		// Programmatic tracking mode - bypass CMP consent checks
 		// Used by slimtrack_server() for server-side contexts (cron, CLI, redirect handlers)
 		// where no browser session exists and CMP consent has no meaningful role.
-		// DNT headers are still respected above.
+		// DNT is non-negotiable: short-circuit before the filter so callbacks cannot override it.
 		if (\wp_slimstat::$is_programmatic_tracking) {
+			if ($dntBlocked) {
+				return false;
+			}
 			return self::applyCanTrackFilter($default);
 		}
 
