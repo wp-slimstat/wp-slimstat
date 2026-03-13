@@ -227,8 +227,8 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Fresh install: set defaults (includes geolocation_provider=dbip)
-            self::$settings = self::init_options();
+            // Fresh install: set defaults including geolocation_provider=dbip
+            self::$settings = self::get_fresh_defaults();
             self::update_option('slimstat_options', self::$settings);
         }
 
@@ -879,6 +879,20 @@ class wp_slimstat
     // end date_i18n
 
     /**
+     * Returns default options with geolocation_provider set for fresh installs and resets.
+     *
+     * geolocation_provider is excluded from init_options() because init() merges
+     * those defaults into stored settings — which would override the legacy
+     * enable_maxmind flag on upgraded installs before lazy migration runs.
+     */
+    public static function get_fresh_defaults()
+    {
+        $defaults = self::init_options();
+        $defaults['geolocation_provider'] = 'dbip';
+        return $defaults;
+    }
+
+    /**
      * Returns the current geolocation precision ('country' or 'city').
      */
     public static function get_geolocation_precision()
@@ -943,7 +957,10 @@ class wp_slimstat
             'extensions_to_track'                    => 'pdf,doc,xls,zip',
 
             // Tracker - Advanced Options
-            'geolocation_provider' => 'dbip',
+            // NOTE: geolocation_provider is intentionally NOT in init_options().
+            // init() merges these defaults into stored settings, which would override
+            // the legacy enable_maxmind flag on upgraded installs before lazy migration runs.
+            // Use get_fresh_defaults() for new installs and settings reset.
             'geolocation_country' => 'on',
             'session_duration'    => 1800,
             'extend_session'      => 'no',
