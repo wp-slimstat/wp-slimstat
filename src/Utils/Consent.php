@@ -43,6 +43,23 @@ class Consent
 	}
 
 	/**
+	 * Build the context array for the slimstat_can_track filter.
+	 *
+	 * This context allows filter callbacks to distinguish between normal browser requests
+	 * and programmatic/server-side tracking calls (e.g., from slimtrack_server()).
+	 *
+	 * @since 5.4.4
+	 * @return array Context array with 'programmatic' flag and 'source' identifier
+	 */
+	public static function buildFilterContext(): array
+	{
+		return [
+			'programmatic' => \wp_slimstat::$is_programmatic_tracking,
+			'source'       => \wp_slimstat::$is_programmatic_tracking ? 'server' : 'browser',
+		];
+	}
+
+	/**
 	 * Safe wrapper around wp_has_consent() that ensures wp_get_consent_type() is set.
 	 *
 	 * When no CMP has registered a consent type, wp_has_consent() defaults to true
@@ -197,9 +214,12 @@ class Consent
 			 *
 			 * Allows third parties to override tracking decision when GDPR is disabled.
 			 *
-			 * @param bool $default Default decision (true when GDPR disabled)
+			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
+			 *
+			 * @param bool  $default Default decision (true when GDPR disabled)
+			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
 			 */
-			return (bool) apply_filters('slimstat_can_track', $default);
+			return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
 		}
 
 		// GDPR is enabled - consent integration is REQUIRED
@@ -214,9 +234,12 @@ class Consent
 			 *
 			 * Allows third parties to override tracking decision.
 			 *
-			 * @param bool $default Default decision (false when GDPR enabled but no consent integration)
+			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
+			 *
+			 * @param bool  $default Default decision (false when GDPR enabled but no consent integration)
+			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
 			 */
-			return (bool) apply_filters('slimstat_can_track', false);
+			return (bool) apply_filters('slimstat_can_track', false, self::buildFilterContext());
 		}
 
 		// GDPR is enabled and consent integration is configured - proceed with consent checks
@@ -240,9 +263,16 @@ class Consent
 			 *
 			 * Allows third parties to override tracking decision in programmatic mode.
 			 *
-			 * @param bool $default Default decision (true in programmatic mode, respecting DNT)
+			 * Filter callbacks can inspect $context['programmatic'] to determine if this is
+			 * a server-side call (from slimtrack_server()) and choose to allow it even when
+			 * their default policy would deny browser-based tracking.
+			 *
+			 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
+			 *
+			 * @param bool  $default Default decision (true in programmatic mode, respecting DNT)
+			 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
 			 */
-			return (bool) apply_filters('slimstat_can_track', $default);
+			return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
 		}
 
 		// Anonymous Tracking mode - ALWAYS allow tracking (no PII collected by default)
@@ -308,9 +338,12 @@ class Consent
 		 * Allows third parties (e.g., CMP plugins) to declare if analytics tracking is allowed.
 		 * Return true to allow tracking, false to disable it.
 		 *
-		 * @param bool $default Default decision (DNT-aware + CMP-aware)
+		 * @since 5.4.4 Added $context parameter to distinguish programmatic from browser calls.
+		 *
+		 * @param bool  $default Default decision (DNT-aware + CMP-aware)
+		 * @param array $context Context array with 'programmatic' (bool) and 'source' ('server'|'browser')
 		 */
-		$canTrack = (bool) apply_filters('slimstat_can_track', $default);
+		$canTrack = (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
 
 		return $canTrack;
 	}
