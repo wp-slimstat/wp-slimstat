@@ -19,6 +19,8 @@ const MU_PLUGINS = path.join(WP_CONTENT, 'mu-plugins');
 const AJAX_LOG = path.join(WP_CONTENT, 'geoip-ajax-calls.log');
 const LOGGER_SRC = path.join(__dirname, 'ajax-logger-mu-plugin.php');
 const LOGGER_DEST = path.join(MU_PLUGINS, 'geoip-ajax-logger.php');
+const NONCE_HELPER_SRC = path.join(__dirname, 'nonce-helper-mu-plugin.php');
+const NONCE_HELPER_DEST = path.join(MU_PLUGINS, 'nonce-helper-mu-plugin.php');
 const CRON_LINE = "define('DISABLE_WP_CRON', true);";
 
 // ─── wp-config.php toggler ─────────────────────────────────────────
@@ -55,6 +57,17 @@ export function installMuPlugin(): void {
 
 export function uninstallMuPlugin(): void {
   if (fs.existsSync(LOGGER_DEST)) fs.unlinkSync(LOGGER_DEST);
+}
+
+// ─── Nonce helper MU-Plugin ──────────────────────────────────────
+
+export function installNonceHelper(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
+}
+
+export function uninstallNonceHelper(): void {
+  if (fs.existsSync(NONCE_HELPER_DEST)) fs.unlinkSync(NONCE_HELPER_DEST);
 }
 
 // ─── AJAX log reader ───────────────────────────────────────────────
