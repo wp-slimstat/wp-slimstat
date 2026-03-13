@@ -392,7 +392,12 @@ class Consent
 		// Used by slimtrack_server() for server-side contexts (cron, CLI, redirect handlers)
 		// where no browser session exists and CMP consent has no meaningful role.
 		// DNT headers are still respected above.
+		// Anonymous mode constraints remain intact; only CMP checks are bypassed.
 		if (\wp_slimstat::$is_programmatic_tracking) {
+			$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
+			if ($isAnonymousTracking && !$explicitConsentGiven) {
+				return false;
+			}
 			return true;
 		}
 

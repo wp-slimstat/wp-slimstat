@@ -200,12 +200,13 @@ class wp_slimstat
      */
     public static function slimtrack_server()
     {
+        $previous_programmatic_state = self::$is_programmatic_tracking;
         self::$is_programmatic_tracking = true;
 
         try {
             $result = \SlimStat\Tracker\Tracker::slimtrack();
         } finally {
-            self::$is_programmatic_tracking = false;
+            self::$is_programmatic_tracking = $previous_programmatic_state;
         }
 
         return $result;
