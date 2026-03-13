@@ -49,6 +49,7 @@ composer.lock
 test-results/
 tests/e2e/.auth/
 tests/e2e/playwright-report/
+tests/e2e/run-artifacts/
 # Bun
 bun.lock
 
