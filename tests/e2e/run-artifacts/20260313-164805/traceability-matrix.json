@@ -1,0 +1,2855 @@
+[
+  {
+    "bdd_id": "S02-DC-001-ex1",
+    "bdd_title": "Pageview recorded using rest data collection method",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-001-ex2",
+    "bdd_title": "Pageview recorded using ajax data collection method",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-ajax"
+  },
+  {
+    "bdd_id": "S02-DC-001-ex3",
+    "bdd_title": "Pageview recorded using adblock_bypass data collection method",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-002",
+    "bdd_title": "REST API tracking sends data to the correct endpoint",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-003",
+    "bdd_title": "Admin AJAX tracking sends data to admin-ajax.php",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-ajax"
+  },
+  {
+    "bdd_id": "S02-DC-004",
+    "bdd_title": "Ad-blocker bypass tracking sends data to the hashed endpoint",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-005",
+    "bdd_title": "Ad-blocker bypass records pageview with uBlock Origin active",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-006",
+    "bdd_title": "Ad-blocker bypass records pageview after navigating multiple pages with uBlock",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-007",
+    "bdd_title": "REST API tracking blocked by ad blocker (uBlock Origin)",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-008",
+    "bdd_title": "Admin AJAX tracking blocked by ad blocker (uBlock Origin)",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-009",
+    "bdd_title": "REST API tracking fails when REST API is disabled",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-010",
+    "bdd_title": "Admin AJAX fails with CORS error when relative path is off",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-ajax"
+  },
+  {
+    "bdd_id": "S02-DC-011",
+    "bdd_title": "Ad-blocker bypass hash changes after plugin update",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-012",
+    "bdd_title": "No tracking when JavaScript is disabled",
+    "suite": "02",
+    "automation_type": "manual-needed",
+    "status": "manual"
+  },
+  {
+    "bdd_id": "S02-DC-013",
+    "bdd_title": "No tracking when is_tracking is disabled",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-014",
+    "bdd_title": "Rate limiting blocks excessive hits from same IP",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-ajax"
+  },
+  {
+    "bdd_id": "S02-DC-015",
+    "bdd_title": "Transport fallback from REST to AJAX when REST fails",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-016",
+    "bdd_title": "Ad-blocker bypass hash is exactly 32 hex characters",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-DC-017",
+    "bdd_title": "Simultaneous pageviews from multiple visitors via REST API",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-018",
+    "bdd_title": "Switching data collection method from REST to AJAX mid-session",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-019",
+    "bdd_title": "First-ever pageview recorded via REST API (empty database)",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "data-collection-rest"
+  },
+  {
+    "bdd_id": "S02-DC-020",
+    "bdd_title": "Ad-blocker bypass with aggressive blocker (custom filter list targeting /request/)",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "data-collection-adblock"
+  },
+  {
+    "bdd_id": "S02-GEO-001-ex1",
+    "bdd_title": "Country recorded with dbip at country-level precision",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-001-ex2",
+    "bdd_title": "Country recorded with maxmind at country-level precision",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-001-ex3",
+    "bdd_title": "Country recorded with cloudflare at country-level precision",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S02-GEO-002-ex1",
+    "bdd_title": "City recorded with dbip after switching to city-level precision",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-002-ex2",
+    "bdd_title": "City recorded with maxmind after switching to city-level precision",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-002-ex3",
+    "bdd_title": "City recorded with cloudflare after switching to city-level precision",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S02-GEO-003",
+    "bdd_title": "DB-IP country-only record does not include city data",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-004",
+    "bdd_title": "MaxMind2 city-level precision records both country and city",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-005",
+    "bdd_title": "Cloudflare city data from HTTP headers is recorded accurately",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S02-GEO-006",
+    "bdd_title": "DB-IP shows xx when database file is missing",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-007",
+    "bdd_title": "MaxMind2 shows xx when no license key is configured",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-008",
+    "bdd_title": "DB-IP city field empty when precision is country-only despite city DB",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-009",
+    "bdd_title": "MaxMind2 city empty with Country-only database edition",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-010",
+    "bdd_title": "Cloudflare city empty when CF does not provide city header",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S02-GEO-011",
+    "bdd_title": "DB-IP geolocation for localhost/private IP returns xx",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-012",
+    "bdd_title": "MaxMind2 geolocation for IPv6 address records country correctly",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-013",
+    "bdd_title": "Multiple simultaneous visitors geolocated correctly with MaxMind2",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-014",
+    "bdd_title": "Corrupted DB-IP mmdb file degrades gracefully to xx",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-015",
+    "bdd_title": "DB-IP database download fails with network error",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S02-GEO-016",
+    "bdd_title": "MaxMind2 license key at minimum valid length (16 characters)",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-017",
+    "bdd_title": "MaxMind2 license key at maximum valid length (40 characters)",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-maxmind-precision"
+  },
+  {
+    "bdd_id": "S02-GEO-018",
+    "bdd_title": "First visit ever recorded with DB-IP (empty Access Log)",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-dbip-precision"
+  },
+  {
+    "bdd_id": "S02-CHART-001",
+    "bdd_title": "New pageview increments chart count by exactly 1",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-002",
+    "bdd_title": "Repeat visit from same IP increments pageviews but not unique visitors",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-003",
+    "bdd_title": "Chart totals match sum of daily data points over 6-month range",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-004",
+    "bdd_title": "Switching granularity preserves total counts",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-005",
+    "bdd_title": "Custom date range matches equivalent preset range",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-006",
+    "bdd_title": "Weekly grouping has correct number of weeks for 6-month range",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-007",
+    "bdd_title": "Chart does not increment when tracking is disabled",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-008",
+    "bdd_title": "Chart shows zero data for a time range with no visits",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-009",
+    "bdd_title": "Monthly grouping over 28-day range shows correct bucket count",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-010",
+    "bdd_title": "Admin user pageview does not appear in chart if admin tracking is off",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-011",
+    "bdd_title": "Comparison chart previous period shows correct offset",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-012",
+    "bdd_title": "Daily granularity for Last 28 days shows exactly 28 data points",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-013",
+    "bdd_title": "Hourly granularity for Today shows up to 24 data points",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-014",
+    "bdd_title": "Chart totals differ between Last 28 days and Last 30 days",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-015",
+    "bdd_title": "Custom range of exactly 1 day shows hourly granularity",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-016",
+    "bdd_title": "Custom range of exactly 91 days triggers monthly granularity",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-017",
+    "bdd_title": "Chart updates correctly after switching data collection method",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-018",
+    "bdd_title": "Multiple simultaneous pageviews all reflected in chart",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-019",
+    "bdd_title": "Overview chart with zero historical data renders without error",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-020",
+    "bdd_title": "Chart handles timezone offset correctly across DST transition",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-021",
+    "bdd_title": "Chart refresh while new data is being recorded shows consistent totals",
+    "suite": "02",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S02-CHART-022",
+    "bdd_title": "Chart renders correctly when comparison_chart is toggled on/off",
+    "suite": "02",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "overview-charts-accuracy"
+  },
+  {
+    "bdd_id": "S03-TRK-001",
+    "bdd_title": "Visit ID assigned via atomic counter on single pageview",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-002",
+    "bdd_title": "Visit IDs remain unique under concurrent pageviews",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-003",
+    "bdd_title": "Visit ID counter recovers after database restart",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-004",
+    "bdd_title": "Visit ID generation handles table lock timeout gracefully",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-005",
+    "bdd_title": "Visit ID counter handles deleted rows without collision",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-006",
+    "bdd_title": "Visit ID generation does not degrade with large table size",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-007",
+    "bdd_title": "First visit ID assigned on empty table",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-008",
+    "bdd_title": "Visit ID counter near INT maximum",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-009",
+    "bdd_title": "Rapid sequential visits produce unique IDs",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-010",
+    "bdd_title": "Visit ID counter consistent after plugin deactivation and reactivation",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "visit-id-performance.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-011",
+    "bdd_title": "Outbound link click tracked via sendBeacon",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-012",
+    "bdd_title": "File download tracked via sendBeacon",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-013",
+    "bdd_title": "Exit-time update sent via sendBeacon on page unload",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-014",
+    "bdd_title": "Interaction tracking gracefully handles REST endpoint failure",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-015",
+    "bdd_title": "sendBeacon fallback when Content-Type header is rejected",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-016",
+    "bdd_title": "Interaction tracking disabled when REST route is not registered",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-017",
+    "bdd_title": "Very long outbound URL tracked correctly",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-018",
+    "bdd_title": "Exit time of 0 seconds recorded for instant navigation",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-019",
+    "bdd_title": "sendBeacon fires with empty interaction payload",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-020",
+    "bdd_title": "Multiple interaction events fired simultaneously on page unload",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "sendbeacon-interaction.spec.ts"
+  },
+  {
+    "bdd_id": "S03-TRK-021",
+    "bdd_title": "Unique visitor count uses visit_id with anonymized IPs",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-022",
+    "bdd_title": "Visitor count accurate with hashed IP addresses",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-023",
+    "bdd_title": "Visitor count correct when IPs are fully stripped (0.0.0.0)",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-024",
+    "bdd_title": "Visitor count does not inflate with duplicate visit_ids",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-025",
+    "bdd_title": "Visitor count handles null visit_id records",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-026",
+    "bdd_title": "Visitor count unaffected by IP-based bot filtering",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-027",
+    "bdd_title": "Visitor count with single visit",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-028",
+    "bdd_title": "Visitor count with 100000 visits",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-029",
+    "bdd_title": "Visitor count on empty stats table",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-030",
+    "bdd_title": "Visitor count after switching from IP-based to visit_id-based counting",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "visitor-count-visit-id"
+  },
+  {
+    "bdd_id": "S03-TRK-031",
+    "bdd_title": "REST endpoint handles valid numeric pageview ID",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-032",
+    "bdd_title": "REST endpoint handles numeric string with leading zeros",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-033",
+    "bdd_title": "REST endpoint handles float-like string value",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-034",
+    "bdd_title": "REST endpoint does not fatal on null pageview_id",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-035",
+    "bdd_title": "REST endpoint handles non-numeric string safely",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-036",
+    "bdd_title": "REST endpoint handles empty string pageview_id",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-037",
+    "bdd_title": "REST endpoint handles pageview_id of 0",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-038",
+    "bdd_title": "REST endpoint handles very large pageview_id",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-039",
+    "bdd_title": "REST endpoint handles array passed as pageview_id",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-TRK-040",
+    "bdd_title": "REST endpoint handles boolean pageview_id",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "rest-endpoint-safety"
+  },
+  {
+    "bdd_id": "S03-GEO-001",
+    "bdd_title": "Visitor IP resolved from CF-Connecting-IP behind Cloudflare",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-002",
+    "bdd_title": "CF-Connecting-IP preferred over X-Forwarded-For when CF-Ray present",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-003",
+    "bdd_title": "IPv6 address resolved correctly from CF-Connecting-IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-004",
+    "bdd_title": "CF-Connecting-IP ignored when CF-Ray header is absent",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-005",
+    "bdd_title": "CF-Connecting-IP with invalid IP format rejected",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-006",
+    "bdd_title": "Empty CF-Connecting-IP header handled gracefully",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-007",
+    "bdd_title": "CF-Ray header with minimal valid format",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-008",
+    "bdd_title": "CF-Connecting-IP with port number",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-009",
+    "bdd_title": "Both CF-Ray and CF-Connecting-IP missing",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-010",
+    "bdd_title": "Multiple CF-Connecting-IP values in single header",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "cloudflare-ip-regression.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-011",
+    "bdd_title": "Geolocation AJAX request completes when WP-Cron is disabled",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-012",
+    "bdd_title": "Geolocation resolves normally with WP-Cron enabled",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-013",
+    "bdd_title": "Page load performance unaffected with WP-Cron disabled",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-014",
+    "bdd_title": "Geolocation failure does not trigger retry loop with WP-Cron disabled",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-015",
+    "bdd_title": "Network timeout on geolocation request does not cause loop",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-016",
+    "bdd_title": "Multiple visitors do not trigger cascading AJAX loops",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-017",
+    "bdd_title": "Geolocation request count with ALTERNATE_WP_CRON enabled",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-018",
+    "bdd_title": "Geolocation behavior when WP-Cron constant is undefined",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-019",
+    "bdd_title": "Concurrent geolocation requests with WP-Cron disabled",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-020",
+    "bdd_title": "WP-Cron disabled after geolocation request already in flight",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "geoip-ajax-loop.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-021",
+    "bdd_title": "DbIpProvider resolves geolocation during WP-Cron execution",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-022",
+    "bdd_title": "DbIpProvider temp file creation works in non-admin context",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-023",
+    "bdd_title": "DbIpProvider processes geolocation in CLI cron context",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-024",
+    "bdd_title": "DbIpProvider handles missing temp directory gracefully",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-025",
+    "bdd_title": "DbIpProvider handles corrupt GeoIP database file",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-026",
+    "bdd_title": "DbIpProvider handles expired database during cron",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-027",
+    "bdd_title": "DbIpProvider with very first cron execution after install",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-028",
+    "bdd_title": "DbIpProvider handles 0-byte database file",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-029",
+    "bdd_title": "DbIpProvider during cron when file functions are restricted",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-030",
+    "bdd_title": "Multiple cron jobs trigger DbIpProvider simultaneously",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "issue-180-dbip-cron-tempnam.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-031",
+    "bdd_title": "Failed GeoIP download does not update last-download timestamp",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-032",
+    "bdd_title": "Successful GeoIP download updates timestamp correctly",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-033",
+    "bdd_title": "Retry occurs on next cron after failed download",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-034",
+    "bdd_title": "Network timeout does not lock out retries for a month",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-035",
+    "bdd_title": "Partial download does not update timestamp",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-036",
+    "bdd_title": "HTTP 404 response does not update timestamp",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-037",
+    "bdd_title": "First-ever GeoIP download failure on fresh install",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-038",
+    "bdd_title": "Download failure exactly at monthly window boundary",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-039",
+    "bdd_title": "GeoIP download fails with SSL certificate error",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-040",
+    "bdd_title": "Download succeeds on retry after previous failure",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-download-retry"
+  },
+  {
+    "bdd_id": "S03-GEO-041",
+    "bdd_title": "Cloudflare geolocation provider used when selected in admin",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-042",
+    "bdd_title": "Cloudflare provider returns correct country code",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-043",
+    "bdd_title": "Cloudflare provider works alongside CF-Connecting-IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-044",
+    "bdd_title": "Cloudflare provider selected but CF-IPCountry header missing",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-045",
+    "bdd_title": "Cloudflare provider with invalid country code",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-046",
+    "bdd_title": "Cloudflare provider when site is not behind Cloudflare",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-047",
+    "bdd_title": "Cloudflare provider with T1 (Tor) country code",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-048",
+    "bdd_title": "Cloudflare provider with XX (unknown) country code",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-049",
+    "bdd_title": "Cloudflare provider with empty CF-IPCountry header",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-050",
+    "bdd_title": "Switching from DbIp to Cloudflare provider mid-traffic",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "geolocation-provider.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-051",
+    "bdd_title": "First trusted header used and not overwritten by later headers",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-052",
+    "bdd_title": "Most trusted header wins in multi-header request",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-053",
+    "bdd_title": "Break statement prevents later headers from overwriting",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-054",
+    "bdd_title": "Untrusted header does not overwrite trusted header",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-055",
+    "bdd_title": "Spoofed X-Forwarded-For does not override REMOTE_ADDR when no proxy configured",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-056",
+    "bdd_title": "Empty trusted header skipped in detection loop",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-057",
+    "bdd_title": "Only REMOTE_ADDR available (no proxy headers)",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-058",
+    "bdd_title": "All proxy headers present in a single request",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-059",
+    "bdd_title": "X-Forwarded-For with multiple IPs resolves first public IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-060",
+    "bdd_title": "All headers empty or missing",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-ip-detection"
+  },
+  {
+    "bdd_id": "S03-GEO-061",
+    "bdd_title": "Consent upgrade geolocates using visitor's real IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-062",
+    "bdd_title": "Consent upgrade behind reverse proxy uses correct IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-063",
+    "bdd_title": "Consent upgrade via Cloudflare uses CF-Connecting-IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-064",
+    "bdd_title": "Consent upgrade does not geolocate proxy server IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-065",
+    "bdd_title": "Consent upgrade with no geolocation provider configured",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-066",
+    "bdd_title": "Consent upgrade when visitor IP has changed",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-067",
+    "bdd_title": "Consent upgrade with IPv6 visitor IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-068",
+    "bdd_title": "Consent upgrade with anonymized IP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-069",
+    "bdd_title": "Consent granted then immediately revoked",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-070",
+    "bdd_title": "Multiple consent upgrades from same visitor in rapid succession",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-GEO-071",
+    "bdd_title": "Valid geolocation provider accepted from settings",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-072",
+    "bdd_title": "Each allowlisted provider accepted",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-073",
+    "bdd_title": "Provider setting persists across plugin updates",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-074",
+    "bdd_title": "Arbitrary provider value rejected",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-075",
+    "bdd_title": "SQL injection attempt in provider setting rejected",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-076",
+    "bdd_title": "Empty provider value handled safely",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-077",
+    "bdd_title": "Provider name with different casing",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-078",
+    "bdd_title": "Provider name with whitespace",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-079",
+    "bdd_title": "geolocation_provider option missing from database",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-GEO-080",
+    "bdd_title": "Provider setting modified via direct database manipulation",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "geolocation-provider-sanitization"
+  },
+  {
+    "bdd_id": "S03-CON-001",
+    "bdd_title": "Tracking disabled when visitor explicitly denies consent",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-002",
+    "bdd_title": "Tracking enabled when visitor explicitly grants consent",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-003",
+    "bdd_title": "Deny cookie not overridden by default consent state",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-004",
+    "bdd_title": "Deny consent not treated as undecided",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-005",
+    "bdd_title": "Modified deny cookie still recognized",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-006",
+    "bdd_title": "Consent denial persists across page navigations",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-007",
+    "bdd_title": "Consent state with expired cookie",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-008",
+    "bdd_title": "Consent cookie with malformed value",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-009",
+    "bdd_title": "Visitor changes consent from allow to deny mid-session",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-010",
+    "bdd_title": "Consent cookie set and page request arrive simultaneously",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-reject-integration.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-011",
+    "bdd_title": "wp_has_consent returns false when CMP has not registered consent type",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-012",
+    "bdd_title": "wp_has_consent returns true when CMP registered and user consented",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-013",
+    "bdd_title": "wp_get_consent_type guard prevents false positive",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-014",
+    "bdd_title": "Tracking does not proceed when wp_has_consent returns true without CMP",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-015",
+    "bdd_title": "CMP deactivated after initial setup",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-016",
+    "bdd_title": "Multiple CMPs active with conflicting consent types",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-017",
+    "bdd_title": "CMP registers consent type on late hook",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-018",
+    "bdd_title": "wp_get_consent_type returns empty string vs false",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-019",
+    "bdd_title": "WP Consent API active but completely unconfigured",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-020",
+    "bdd_title": "wp_get_consent_type function throws an error",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pr178-consent-fixes.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CON-021",
+    "bdd_title": "SlimStat loads without error when WP Consent API is not installed",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-022",
+    "bdd_title": "Tracking works normally without WP Consent API",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-023",
+    "bdd_title": "Admin pages load without WP Consent API dependency error",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-024",
+    "bdd_title": "Calling wp_has_consent when function does not exist",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-025",
+    "bdd_title": "wp_get_consent_type not available without plugin",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-026",
+    "bdd_title": "WP Consent API plugin installed but deactivated",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-027",
+    "bdd_title": "WP Consent API activated after SlimStat is already loaded",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-028",
+    "bdd_title": "WP Consent API installed via mu-plugins",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-029",
+    "bdd_title": "WP Consent API uninstalled while site is live",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-030",
+    "bdd_title": "Partial WP Consent API installation (corrupt files)",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-no-dependency"
+  },
+  {
+    "bdd_id": "S03-CON-031",
+    "bdd_title": "No tracking occurs before consent with SlimStat built-in banner",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-032",
+    "bdd_title": "Tracking begins after accepting SlimStat consent banner",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-033",
+    "bdd_title": "Returning visitor with accepted consent is tracked without banner",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-034",
+    "bdd_title": "Consent banner displays with custom message and button text",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-035",
+    "bdd_title": "Tracking begins after accepting CookieYes consent banner via WP Consent API",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-036",
+    "bdd_title": "Returning visitor with WP Consent API consent is tracked automatically",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-037",
+    "bdd_title": "Declining SlimStat consent banner prevents tracking",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-038",
+    "bdd_title": "No tracking when visitor ignores consent banner and navigates away",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-039",
+    "bdd_title": "Clearing cookies resets consent state (banner reappears)",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-040",
+    "bdd_title": "Consent banner does not appear for logged-in admin users",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-041",
+    "bdd_title": "WP Consent API with CookieYes installed but banner disabled",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-042",
+    "bdd_title": "Partial consent (only necessary accepted) does not enable SlimStat tracking",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-043",
+    "bdd_title": "CookieYes plugin deactivated while WP Consent API mode is set",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CON-044",
+    "bdd_title": "Consent cookie expires after 365 days (banner reappears)",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "consent-banner-e2e"
+  },
+  {
+    "bdd_id": "S03-CSS-001",
+    "bdd_title": "prefers-reduced-motion rule only affects SlimStat elements",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-002",
+    "bdd_title": "SlimStat CSS selector is scoped with SlimStat-specific class",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-003",
+    "bdd_title": "WordPress core animations unaffected by SlimStat CSS",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-004",
+    "bdd_title": "No global animation: none rule in SlimStat CSS",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-005",
+    "bdd_title": "Third-party plugin animations not suppressed",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-006",
+    "bdd_title": "prefers-reduced-motion rule does not affect frontend",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-007",
+    "bdd_title": "prefers-reduced-motion with no-preference setting",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-008",
+    "bdd_title": "SlimStat CSS loaded alongside 20+ other admin stylesheets",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-009",
+    "bdd_title": "SlimStat dashboard with no animated elements",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-010",
+    "bdd_title": "SlimStat CSS fails to load",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "css-reduced-motion"
+  },
+  {
+    "bdd_id": "S03-CSS-011",
+    "bdd_title": "SlimStat admin pages use .wrap-slimstat class",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-012",
+    "bdd_title": "No WordPress core .wrap style conflicts",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-013",
+    "bdd_title": "All SlimStat admin pages use consistent wrapper class",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-014",
+    "bdd_title": "No remaining .wrap.slimstat selectors in CSS",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-015",
+    "bdd_title": "No .wrap.slimstat in PHP template output",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-016",
+    "bdd_title": "WordPress core .wrap padding does not double-apply",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-017",
+    "bdd_title": "Custom admin CSS targeting .wrap does not affect SlimStat",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-018",
+    "bdd_title": "wrap-slimstat class with additional modifier classes",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-019",
+    "bdd_title": "Plugin update from old .wrap.slimstat to new .wrap-slimstat",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "upgrade-safety.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CSS-020",
+    "bdd_title": "SlimStat admin page with JavaScript-injected wrapper",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "css-wrap-slimstat"
+  },
+  {
+    "bdd_id": "S03-CSS-021",
+    "bdd_title": "SlimEmail page has consistent admin page structure",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-022",
+    "bdd_title": "SlimEmail page styling matches other SlimStat admin pages",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-023",
+    "bdd_title": "SlimEmail form elements properly styled",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-024",
+    "bdd_title": "SlimEmail page does not use deprecated page structure",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-025",
+    "bdd_title": "SlimEmail page does not break on narrow screen",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-026",
+    "bdd_title": "SlimEmail page without JavaScript",
+    "suite": "03",
+    "automation_type": "manual-needed",
+    "status": "manual"
+  },
+  {
+    "bdd_id": "S03-CSS-027",
+    "bdd_title": "SlimEmail page with very long email content",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-028",
+    "bdd_title": "SlimEmail page with RTL language",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-029",
+    "bdd_title": "SlimEmail page with no configured email templates",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CSS-030",
+    "bdd_title": "SlimEmail page when email sending is disabled on server",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "slimemail-page-structure"
+  },
+  {
+    "bdd_id": "S03-CMP-001",
+    "bdd_title": "Translations available on WordPress 6.7.0+",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-002",
+    "bdd_title": "Textdomain loaded at init hook priority",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-003",
+    "bdd_title": "Translations work on WordPress 6.6 (backward compat)",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-004",
+    "bdd_title": "No translation-related deprecation notices on WP 6.7+",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-005",
+    "bdd_title": "Textdomain not loaded before init",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-006",
+    "bdd_title": "Missing .mo file does not cause error",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-007",
+    "bdd_title": "Textdomain loading with WordPress minimum supported version",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-008",
+    "bdd_title": "Textdomain with custom languages directory",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-009",
+    "bdd_title": "Language switched via user profile setting",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-010",
+    "bdd_title": "No translation files exist for any language",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-011",
+    "bdd_title": "All .pot strings present in shipped .po files",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-012",
+    "bdd_title": ".mo files compiled from updated .po files",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-013",
+    "bdd_title": "New strings in v5.4.2 translatable in all shipped locales",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-014",
+    "bdd_title": "No orphaned strings in .po files",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-015",
+    "bdd_title": "No fuzzy-only translations for critical UI strings",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-016",
+    "bdd_title": ".pot file not empty or corrupt",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-017",
+    "bdd_title": ".po file with exactly 261 new strings added",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-018",
+    "bdd_title": "Very long translatable string preserved correctly",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-019",
+    "bdd_title": ".po file with all strings untranslated",
+    "suite": "03",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S03-CMP-020",
+    "bdd_title": "Corrupt .mo file alongside valid .po file",
+    "suite": "03",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "i18n-catalog-sync.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-001",
+    "bdd_title": "Advanced Whois loads without fatal error for tracked visitor IP",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-002",
+    "bdd_title": "Advanced Whois renders geolocation data after upgrading from pre-5.4.0",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-003",
+    "bdd_title": "Advanced Whois handles IP lookup with GeolocationService API",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-004",
+    "bdd_title": "Advanced Whois handles missing geolocation database gracefully",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-005",
+    "bdd_title": "Advanced Whois handles corrupt geolocation database",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-006",
+    "bdd_title": "Advanced Whois handles GeolocationService returning null",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-007",
+    "bdd_title": "Advanced Whois handles IPv4 loopback address",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-008",
+    "bdd_title": "Advanced Whois handles IPv6 address lookup",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-009",
+    "bdd_title": "Advanced Whois handles empty IP parameter",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC1-010",
+    "bdd_title": "Advanced Whois handles mid-lookup plugin deactivation",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-001",
+    "bdd_title": "MaxMind provider returns rich geolocation record with city data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-002",
+    "bdd_title": "MaxMind provider returns subdivision data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-003",
+    "bdd_title": "MaxMind provider falls back to locate API when Reader fails",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-004",
+    "bdd_title": "MaxMind Reader throws exception for invalid database",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-005",
+    "bdd_title": "MaxMind database has no record for private IP range",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-006",
+    "bdd_title": "MaxMind GeoLite2-Country database returns limited data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-007",
+    "bdd_title": "MaxMind handles IP at boundary of CIDR block",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-008",
+    "bdd_title": "MaxMind handles maximum IPv4 address",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-009",
+    "bdd_title": "MaxMind record has null values for optional fields",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC2-010",
+    "bdd_title": "Concurrent MaxMind lookups do not corrupt results",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-001",
+    "bdd_title": "DB-IP provider returns basic geolocation data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-002",
+    "bdd_title": "DB-IP data is remapped to MaxMind nested array structure",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-003",
+    "bdd_title": "DB-IP provider displays results in the whois iframe",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-004",
+    "bdd_title": "DB-IP locate API returns empty result",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-005",
+    "bdd_title": "DB-IP locate API throws an exception",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-006",
+    "bdd_title": "DB-IP returns partial data with missing fields",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-007",
+    "bdd_title": "DB-IP handles reserved IP address",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-008",
+    "bdd_title": "DB-IP handles IPv6 address",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC3-009",
+    "bdd_title": "DB-IP API timeout during lookup",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "pro-dbip-whois-data"
+  },
+  {
+    "bdd_id": "S04-AC3-010",
+    "bdd_title": "Switching from MaxMind to DB-IP provider mid-session",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-001",
+    "bdd_title": "Cloudflare provider shows blocking message with explanation",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-002",
+    "bdd_title": "Cloudflare blocking message suggests alternative providers",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-003",
+    "bdd_title": "Cloudflare blocking does not affect other Pro addons",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-004",
+    "bdd_title": "Cloudflare provider does not attempt IP lookup",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-005",
+    "bdd_title": "Cloudflare blocking cannot be bypassed via direct URL",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-006",
+    "bdd_title": "Switching from MaxMind to Cloudflare activates blocking",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-007",
+    "bdd_title": "Cloudflare blocking with geolocation_provider setting explicitly set",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-008",
+    "bdd_title": "Cloudflare blocking when provider resolved via legacy setting",
+    "suite": "04",
+    "automation_type": "automated-simulated",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-009",
+    "bdd_title": "No geolocation provider configured at all",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC4-010",
+    "bdd_title": "Provider setting contains unexpected value",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "covered",
+    "spec": "pro-maxmind-details-addon.spec.ts"
+  },
+  {
+    "bdd_id": "S04-AC5-001",
+    "bdd_title": "Version check passes with WP SlimStat 5.4.0",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-002",
+    "bdd_title": "Version check passes with WP SlimStat 5.5.0",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-003",
+    "bdd_title": "Version check displays actionable upgrade message for old version",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-004",
+    "bdd_title": "Version check fails for WP SlimStat 5.3.x",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-005",
+    "bdd_title": "Version check fails when WP SlimStat is not activated",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-006",
+    "bdd_title": "Version check fails for very old WP SlimStat version",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-007",
+    "bdd_title": "Version check at exact boundary — 5.3.9 (just below)",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-008",
+    "bdd_title": "Version check at exact boundary — 5.4.0 (minimum)",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-009",
+    "bdd_title": "SLIMSTAT_ANALYTICS_VERSION constant not defined",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC5-010",
+    "bdd_title": "Version string contains non-standard format",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-version-floor-check"
+  },
+  {
+    "bdd_id": "S04-AC6-001",
+    "bdd_title": "Google Maps displays correct coordinates from MaxMind data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-002",
+    "bdd_title": "Google Maps displays correct coordinates from DB-IP data",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-003",
+    "bdd_title": "Coordinates from data normalization match display",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-004",
+    "bdd_title": "Google Maps handles null coordinates gracefully",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-005",
+    "bdd_title": "Google Maps handles zero coordinates (null island)",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-006",
+    "bdd_title": "No object notation access causes fatal error",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-007",
+    "bdd_title": "Coordinates at maximum latitude boundary",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-008",
+    "bdd_title": "Coordinates at minimum latitude boundary",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-009",
+    "bdd_title": "Coordinates missing from location array",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S04-AC6-010",
+    "bdd_title": "Coordinates returned as string values instead of floats",
+    "suite": "04",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "pro-coordinates-display"
+  },
+  {
+    "bdd_id": "S05-K6-001",
+    "bdd_title": "tz=0 (zero value) no ArgumentCountError",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-002",
+    "bdd_title": "tz=-120 (negative, UTC+2) no fatal",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-003",
+    "bdd_title": "tz=300 (positive, UTC-5) no fatal",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-004",
+    "bdd_title": "tz=720 (edge, UTC-12) no fatal",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-005",
+    "bdd_title": "tz=abc (non-numeric) sanitized to 0, no fatal",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-006",
+    "bdd_title": "No tz param baseline no fatal",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-007",
+    "bdd_title": "Load test 50 VUs x 30s error rate < 1%",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S05-K6-008",
+    "bdd_title": "Stress test ramp to 200 VUs error rate < 1%",
+    "suite": "05",
+    "automation_type": "k6-only",
+    "status": "k6"
+  },
+  {
+    "bdd_id": "S06-TD-001",
+    "bdd_title": "S01 — Textdomain loads at init hook without notices",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  },
+  {
+    "bdd_id": "S06-TD-002",
+    "bdd_title": "S02 — Frontend page load produces no translation timing notice",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  },
+  {
+    "bdd_id": "S06-TD-003",
+    "bdd_title": "S03 — Admin dashboard produces no translation timing notice",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  },
+  {
+    "bdd_id": "S06-TD-004",
+    "bdd_title": "S04 — SlimStat admin settings page renders translated strings",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  },
+  {
+    "bdd_id": "S06-TD-005",
+    "bdd_title": "S05 — Translation function called before init triggers WordPress notice",
+    "suite": "06",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "textdomain-edge-cases"
+  },
+  {
+    "bdd_id": "S06-TD-006",
+    "bdd_title": "S06 — Deactivating and reactivating SlimStat produces no translation notice",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  },
+  {
+    "bdd_id": "S06-TD-007",
+    "bdd_title": "S07 — WP-CLI plugin activation produces no translation notice",
+    "suite": "06",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "textdomain-edge-cases"
+  },
+  {
+    "bdd_id": "S06-TD-008",
+    "bdd_title": "S08 — WP Consent API integration active — no early translation notice",
+    "suite": "06",
+    "automation_type": "automated-simulated",
+    "status": "to-generate",
+    "spec": "textdomain-edge-cases"
+  },
+  {
+    "bdd_id": "S06-TD-009",
+    "bdd_title": "S09 — Multisite network activation produces no translation notice",
+    "suite": "06",
+    "automation_type": "manual-needed",
+    "status": "manual"
+  },
+  {
+    "bdd_id": "S06-TD-010",
+    "bdd_title": "S10 — REST API tracking request produces no translation notice",
+    "suite": "06",
+    "automation_type": "automated-literal",
+    "status": "to-generate",
+    "spec": "textdomain-timing"
+  }
+]
