@@ -227,7 +227,7 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Fresh install: set defaults including geolocation_provider=dbip
+            // Fresh install: set defaults (geolocation disabled until user opts in)
             self::$settings = self::get_fresh_defaults();
             self::update_option('slimstat_options', self::$settings);
         }
@@ -420,34 +420,42 @@ class wp_slimstat
      */
     public static function resolve_geolocation_provider()
     {
-        static $cached = null;
-        if (null !== $cached) {
-            return $cached;
+        static $cache = [];
+
+        // Key by the two settings values that drive resolution so the cache
+        // invalidates automatically when settings change mid-request (e.g.
+        // after a settings save updates self::$settings).
+        $provider_raw = self::$settings['geolocation_provider'] ?? '';
+        $legacy_raw   = self::$settings['enable_maxmind'] ?? 'disable';
+        $cache_key    = sanitize_text_field($provider_raw) . '|' . $legacy_raw;
+
+        if (array_key_exists($cache_key, $cache)) {
+            return $cache[$cache_key];
         }
+
+        $result = false;
 
         if (isset(self::$settings['geolocation_provider'])) {
             $p = sanitize_text_field(self::$settings['geolocation_provider']);
             if ('disable' === $p) {
-                $cached = false;
+                $cache[$cache_key] = false;
                 return false;
             }
             if (in_array($p, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
-                $cached = $p;
+                $cache[$cache_key] = $p;
                 return $p;
             }
             // Invalid/empty value — fall through to legacy flag
         }
-        $em = self::$settings['enable_maxmind'] ?? 'disable';
-        if ('on' === $em) {
-            $cached = 'maxmind';
-            return 'maxmind';
+
+        if ('on' === $legacy_raw) {
+            $result = 'maxmind';
+        } elseif ('no' === $legacy_raw) {
+            $result = 'dbip';
         }
-        if ('no' === $em) {
-            $cached = 'dbip';
-            return 'dbip';
-        }
-        $cached = false;
-        return false;
+
+        $cache[$cache_key] = $result;
+        return $result;
     }
 
     /**
@@ -884,11 +892,15 @@ class wp_slimstat
      * geolocation_provider is excluded from init_options() because init() merges
      * those defaults into stored settings — which would override the legacy
      * enable_maxmind flag on upgraded installs before lazy migration runs.
+     *
+     * Geolocation is opt-in: fresh installs start with provider disabled so no
+     * external network calls (GeoIP DB downloads) happen until the user
+     * explicitly enables a provider through the settings UI.
      */
     public static function get_fresh_defaults()
     {
         $defaults = self::init_options();
-        $defaults['geolocation_provider'] = 'dbip';
+        $defaults['geolocation_provider'] = 'disable';
         return $defaults;
     }
 
