@@ -55,7 +55,7 @@ add_action('template_redirect', function () {
     // Record whether wp_tempnam was already defined (false-pass detection)
     $had_wp_tempnam_before = function_exists('wp_tempnam');
 
-    if ($mode === 'provider') {
+    if ('provider' === $mode) {
         // Test 1: Direct provider call — tests include guard
         // Stub HTTP to avoid network dependency (returns WP_Error)
         add_filter('pre_http_request', function () {
@@ -78,7 +78,7 @@ add_action('template_redirect', function () {
                                'class' => get_class($e),
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         }
-    } elseif ($mode === 'callback_download_fail') {
+    } elseif ('callback_download_fail' === $mode) {
         // Test 4: Cron callback with failed download — tests timestamp NOT updated
         // Stub HTTP to return WP_Error (download fails, updateDatabase returns false)
         add_filter('pre_http_request', function () {
@@ -87,22 +87,24 @@ add_action('template_redirect', function () {
 
         // Snapshot the timestamp before the callback
         $ts_before = get_option('slimstat_last_geoip_dl', null);
+        $caught_error = null;
 
         try {
             \wp_slimstat::wp_slimstat_update_geoip_database();
         } catch (\Throwable $e) {
-            // Should not happen for WP_Error stub, but catch just in case
+            $caught_error = $e->getMessage();
         }
 
         $ts_after = get_option('slimstat_last_geoip_dl', null);
 
         echo json_encode([
-            'success'    => true,
+            'success'    => null === $caught_error,
+            'error'      => $caught_error,
             'ts_before'  => $ts_before,
             'ts_after'   => $ts_after,
             'ts_changed' => $ts_after !== $ts_before,
         ]);
-    } elseif ($mode === 'callback_throwable') {
+    } elseif ('callback_throwable' === $mode) {
         // Test 2: Cron callback with forced \Error — tests \Throwable catch
         // Stub HTTP to throw \Error (not \Exception) — simulates engine-level failure
         add_filter('pre_http_request', function () {

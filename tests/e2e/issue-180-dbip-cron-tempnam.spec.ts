@@ -82,6 +82,9 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
 
     const body = await res.json();
 
+    // Verify the shim itself didn't hit an unexpected error
+    expect(body.success, 'Shim should complete without catching a \\Throwable').toBe(true);
+
     // The download failed (HTTP stubbed with WP_Error → updateDatabase returns false).
     // The timestamp must NOT be updated — otherwise retries are suppressed until next month.
     expect(body.ts_changed, 'Timestamp should not change on failed download').toBe(false);
