@@ -11,6 +11,8 @@
 - Visitor count now uses `visit_id` instead of IP for accurate counts with anonymized/hashed IPs
 - Fixed potential fatal error from `intval` in REST tracking endpoint
 - Wired Cloudflare geolocation provider into tracking pipeline and fixed IP detection priority bug
+- Fixed DbIpProvider fatal error during WP-Cron — `wp_tempnam()` undefined in non-admin context ([#180](https://github.com/wp-slimstat/wp-slimstat/issues/180))
+- Fixed failed GeoIP download incorrectly updating timestamp, suppressing retries until next monthly window
 - Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
 - Fixed `.wrap.slimstat` CSS conflict with WordPress core styles
 - Fixed SlimEmail page structure and styling to match other admin pages
