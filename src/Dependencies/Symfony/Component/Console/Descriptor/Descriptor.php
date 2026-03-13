@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Descriptor;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Application;
@@ -18,7 +17,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputArgument;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputDefinition;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
 /**
  * @author Jean-François Simon <jeanfrancois.simon@sensiolabs.com>
  *
@@ -30,14 +28,12 @@ abstract class Descriptor implements DescriptorInterface
      * @var OutputInterface
      */
     protected $output;
-
     /**
      * {@inheritdoc}
      */
     public function describe(OutputInterface $output, object $object, array $options = [])
     {
         $this->output = $output;
-
         switch (true) {
             case $object instanceof InputArgument:
                 $this->describeInputArgument($object, $options);
@@ -58,7 +54,6 @@ abstract class Descriptor implements DescriptorInterface
                 throw new InvalidArgumentException(sprintf('Object of type "%s" is not describable.', get_debug_type($object)));
         }
     }
-
     /**
      * Writes content to output.
      */
@@ -66,27 +61,22 @@ abstract class Descriptor implements DescriptorInterface
     {
         $this->output->write($content, false, $decorated ? OutputInterface::OUTPUT_NORMAL : OutputInterface::OUTPUT_RAW);
     }
-
     /**
      * Describes an InputArgument instance.
      */
     abstract protected function describeInputArgument(InputArgument $argument, array $options = []);
-
     /**
      * Describes an InputOption instance.
      */
     abstract protected function describeInputOption(InputOption $option, array $options = []);
-
     /**
      * Describes an InputDefinition instance.
      */
     abstract protected function describeInputDefinition(InputDefinition $definition, array $options = []);
-
     /**
      * Describes a Command instance.
      */
     abstract protected function describeCommand(Command $command, array $options = []);
-
     /**
      * Describes an Application instance.
      */

@@ -1,6 +1,6 @@
 <?php
 
-class SlimStat_Normalizer extends SlimStat\Dependencies\Symfony\Polyfill\Intl\SlimStat_Normalizer\Normalizer
+class Normalizer extends SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer\Normalizer
 {
     /**
      * @deprecated since ICU 56 and removed in PHP 8

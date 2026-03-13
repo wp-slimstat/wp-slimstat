@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Parser\Helper;
 
 use function md5;
@@ -9,7 +8,6 @@ use function preg_match;
 use function str_replace;
 use function strlen;
 use function substr;
-
 /**
  * includes general functions for the work with patterns
  */
@@ -21,7 +19,6 @@ final class Pattern
     private function __construct()
     {
     }
-
     /**
      * Gets a hash or an array of hashes from the first characters of a pattern/user agent, that can
      * be used for a fast comparison, by comparing only the hashes, without having to match the
@@ -47,38 +44,29 @@ final class Pattern
      */
     public static function getHashForPattern(string $pattern, bool $variants = false): array
     {
-        $regex   = '/^([^\.\*\?\s\r\n\\\\]+).*$/';
+        $regex = '/^([^\.\*\?\s\r\n\\\\]+).*$/';
         $pattern = substr($pattern, 0, 32);
         $matches = [];
-
-        if (! preg_match($regex, $pattern, $matches)) {
+        if (!preg_match($regex, $pattern, $matches)) {
             return [md5('')];
         }
-
-        if (! isset($matches[1])) {
+        if (!isset($matches[1])) {
             return [md5('')];
         }
-
         $string = $matches[1];
-
         if ($variants === true) {
             $patternStarts = [];
-
             for ($i = strlen($string); 1 <= $i; --$i) {
-                $string          = substr($string, 0, $i);
+                $string = substr($string, 0, $i);
                 $patternStarts[] = md5($string);
             }
-
             // Add empty pattern start to include patterns that start with "*",
             // e.g. "*FAST Enterprise Crawler*"
             $patternStarts[] = md5('');
-
             return $patternStarts;
         }
-
         return [md5($string)];
     }
-
     /**
      * returns a hash for one pattern
      *
@@ -88,7 +76,6 @@ final class Pattern
     {
         return md5($pattern);
     }
-
     /**
      * Gets the minimum length of the patern (used in the getPatterns() method to
      * check against the user agent length)

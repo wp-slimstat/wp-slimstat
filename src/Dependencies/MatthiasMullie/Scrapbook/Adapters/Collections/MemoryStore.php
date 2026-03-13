@@ -5,7 +5,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\MemoryStore as Adapter;
 use ReflectionObject;
-
 /**
  * MemoryStore adapter for a subset of data.
  *
@@ -20,9 +19,8 @@ class MemoryStore extends PrefixKeys
      */
     public function __construct(Adapter $cache, $name)
     {
-        parent::__construct($cache, $name.':');
+        parent::__construct($cache, $name . ':');
     }
-
     /**
      * {@inheritdoc}
      */
@@ -42,13 +40,11 @@ class MemoryStore extends PrefixKeys
         $property = $object->getProperty('items');
         $property->setAccessible(true);
         $items = $property->getValue($this->cache);
-
         foreach ($items as $key => $value) {
             if (0 === strpos($key, $this->prefix)) {
                 $this->cache->delete($key);
             }
         }
-
         return true;
     }
 }

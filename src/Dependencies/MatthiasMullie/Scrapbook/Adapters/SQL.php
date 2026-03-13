@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\SQL as Collection;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
-
 /**
  * SQL adapter. Basically just a wrapper over \PDO, but in an exchangeable
  * (KeyValueStore) interface.
@@ -22,17 +21,14 @@ abstract class SQL implements KeyValueStore
      * @var \PDO
      */
     protected $client;
-
     /**
      * @var string
      */
     protected $table;
-
     /**
      * Create the database/indices if it does not already exist.
      */
     abstract protected function init();
-
     /**
      * @param string $table
      */
@@ -40,46 +36,29 @@ abstract class SQL implements KeyValueStore
     {
         $this->client = $client;
         $this->table = $table;
-
         // don't throw exceptions - it's ok to fail, as long as the return value
         // reflects that!
         $this->client->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_SILENT);
-
         // make sure the database exists (or just "fail" silently)
         $this->init();
-
         // now's a great time to clean up all expired items
         $this->clearExpired();
     }
-
     /**
      * {@inheritdoc}
      */
     public function get($key, &$token = null)
     {
-        $statement = $this->client->prepare(
-            "SELECT v
-            FROM $this->table
-            WHERE k = :key AND (e IS NULL OR e > :expire)"
-        );
-        $statement->execute(array(
-            ':key' => $key,
-            ':expire' => date('Y-m-d H:i:s'), // right now!
-        ));
-
+        $statement = $this->client->prepare("SELECT v\n            FROM {$this->table}\n            WHERE k = :key AND (e IS NULL OR e > :expire)");
+        $statement->execute(array(':key' => $key, ':expire' => date('Y-m-d H:i:s')));
         $result = $statement->fetch(\PDO::FETCH_ASSOC);
-
         if (!isset($result['v'])) {
             $token = null;
-
             return false;
         }
-
         $token = $result['v'];
-
         return $this->unserialize($result['v']);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -89,33 +68,23 @@ abstract class SQL implements KeyValueStore
         if (empty($keys)) {
             return array();
         }
-
         // escape input, can't bind multiple params for IN()
         $quoted = array();
         foreach ($keys as $key) {
             $quoted[] = $this->client->quote($key);
         }
-
-        $statement = $this->client->prepare(
-            "SELECT k, v
-            FROM $this->table
-            WHERE
-                k IN (".implode(',', $quoted).') AND
-                (e IS NULL OR e > :expire)'
-        );
+        $statement = $this->client->prepare("SELECT k, v\n            FROM {$this->table}\n            WHERE\n                k IN (" . implode(',', $quoted) . ') AND
+                (e IS NULL OR e > :expire)');
         $statement->execute(array(':expire' => date('Y-m-d H:i:s')));
         $values = $statement->fetchAll(\PDO::FETCH_ASSOC);
-
         $result = array();
         $tokens = array();
         foreach ($values as $value) {
             $tokens[$value['k']] = $value['v'];
             $result[$value['k']] = $this->unserialize($value['v']);
         }
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -127,46 +96,34 @@ abstract class SQL implements KeyValueStore
         if ($success) {
             return true;
         }
-
         $success = $this->replace($key, $value, $expire);
         if ($success) {
             return true;
         }
-
         return false;
     }
-
     /**
      * {@inheritdoc}
      */
     public function setMulti(array $items, $expire = 0)
     {
         $success = array();
-
         // PostgreSQL's lack of a decent UPSERT is even worse for multiple
         // values - we can only do them one at a time...
         foreach ($items as $key => $value) {
             $success[$key] = $this->set($key, $value, $expire);
         }
-
         return $success;
     }
-
     /**
      * {@inheritdoc}
      */
     public function delete($key)
     {
-        $statement = $this->client->prepare(
-            "DELETE FROM $this->table
-            WHERE k = :key"
-        );
-
+        $statement = $this->client->prepare("DELETE FROM {$this->table}\n            WHERE k = :key");
         $statement->execute(array(':key' => $key));
-
         return 1 === $statement->rowCount();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -175,21 +132,14 @@ abstract class SQL implements KeyValueStore
         if (empty($keys)) {
             return array();
         }
-
         // we'll need these to figure out which could not be deleted...
         $items = $this->getMulti($keys);
-
         // escape input, can't bind multiple params for IN()
         $quoted = array();
         foreach ($keys as $key) {
             $quoted[] = $this->client->quote($key);
         }
-
-        $statement = $this->client->query(
-            "DELETE FROM $this->table
-            WHERE k IN (".implode(',', $quoted).')'
-        );
-
+        $statement = $this->client->query("DELETE FROM {$this->table}\n            WHERE k IN (" . implode(',', $quoted) . ')');
         /*
          * In case of connection problems, we may not have been able to delete
          * any. Otherwise, we'll use the getMulti() results to figure out which
@@ -202,10 +152,8 @@ abstract class SQL implements KeyValueStore
                 $success[$key] = false;
             }
         }
-
         return $success;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -213,23 +161,11 @@ abstract class SQL implements KeyValueStore
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
-
         $this->clearExpired();
-
-        $statement = $this->client->prepare(
-            "INSERT INTO $this->table (k, v, e)
-            VALUES (:key, :value, :expire)"
-        );
-
-        $statement->execute(array(
-            ':key' => $key,
-            ':value' => $value,
-            ':expire' => $expire,
-        ));
-
+        $statement = $this->client->prepare("INSERT INTO {$this->table} (k, v, e)\n            VALUES (:key, :value, :expire)");
+        $statement->execute(array(':key' => $key, ':value' => $value, ':expire' => $expire));
         return 1 === $statement->rowCount();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -237,41 +173,19 @@ abstract class SQL implements KeyValueStore
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
-
         $this->clearExpired();
-
-        $statement = $this->client->prepare(
-            "UPDATE $this->table
-            SET v = :value, e = :expire
-            WHERE k = :key"
-        );
-
-        $statement->execute(array(
-            ':key' => $key,
-            ':value' => $value,
-            ':expire' => $expire,
-        ));
-
+        $statement = $this->client->prepare("UPDATE {$this->table}\n            SET v = :value, e = :expire\n            WHERE k = :key");
+        $statement->execute(array(':key' => $key, ':value' => $value, ':expire' => $expire));
         if (1 === $statement->rowCount()) {
             return true;
         }
-
         // if the value we've just replaced was the same as the replacement, as
         // well as the same expiration time, rowCount will have been 0, but the
         // operation was still a success
-        $statement = $this->client->prepare(
-            "SELECT e
-            FROM $this->table
-            WHERE k = :key AND v = :value"
-        );
-        $statement->execute(array(
-            ':key' => $key,
-            ':value' => $value,
-        ));
-
+        $statement = $this->client->prepare("SELECT e\n            FROM {$this->table}\n            WHERE k = :key AND v = :value");
+        $statement->execute(array(':key' => $key, ':value' => $value));
         return $statement->fetchColumn(0) === $expire;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -279,43 +193,19 @@ abstract class SQL implements KeyValueStore
     {
         $value = $this->serialize($value);
         $expire = $this->expire($expire);
-
         $this->clearExpired();
-
-        $statement = $this->client->prepare(
-            "UPDATE $this->table
-            SET v = :value, e = :expire
-            WHERE k = :key AND v = :token"
-        );
-
-        $statement->execute(array(
-            ':key' => $key,
-            ':value' => $value,
-            ':expire' => $expire,
-            ':token' => $token,
-        ));
-
+        $statement = $this->client->prepare("UPDATE {$this->table}\n            SET v = :value, e = :expire\n            WHERE k = :key AND v = :token");
+        $statement->execute(array(':key' => $key, ':value' => $value, ':expire' => $expire, ':token' => $token));
         if (1 === $statement->rowCount()) {
             return true;
         }
-
         // if the value we've just cas'ed was the same as the replacement, as
         // well as the same expiration time, rowCount will have been 0, but the
         // operation was still a success
-        $statement = $this->client->prepare(
-            "SELECT e
-            FROM $this->table
-            WHERE k = :key AND v = :value AND v = :token"
-        );
-        $statement->execute(array(
-            ':key' => $key,
-            ':value' => $value,
-            ':token' => $token,
-        ));
-
+        $statement = $this->client->prepare("SELECT e\n            FROM {$this->table}\n            WHERE k = :key AND v = :value AND v = :token");
+        $statement->execute(array(':key' => $key, ':value' => $value, ':token' => $token));
         return $statement->fetchColumn(0) === $expire;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -324,10 +214,8 @@ abstract class SQL implements KeyValueStore
         if ($offset <= 0 || $initial < 0) {
             return false;
         }
-
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -336,42 +224,27 @@ abstract class SQL implements KeyValueStore
         if ($offset <= 0 || $initial < 0) {
             return false;
         }
-
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
     public function touch($key, $expire)
     {
         $expire = $this->expire($expire);
-
         $this->clearExpired();
-
-        $statement = $this->client->prepare(
-            "UPDATE $this->table
-            SET e = :expire
-            WHERE k = :key"
-        );
-
-        $statement->execute(array(
-            ':key' => $key,
-            ':expire' => $expire,
-        ));
-
+        $statement = $this->client->prepare("UPDATE {$this->table}\n            SET e = :expire\n            WHERE k = :key");
+        $statement->execute(array(':key' => $key, ':expire' => $expire));
         return 1 === $statement->rowCount();
     }
-
     /**
      * {@inheritdoc}
      */
     public function flush()
     {
         // TRUNCATE doesn't work on SQLite - DELETE works for all
-        return false !== $this->client->exec("DELETE FROM $this->table");
+        return false !== $this->client->exec("DELETE FROM {$this->table}");
     }
-
     /**
      * {@inheritdoc}
      */
@@ -379,7 +252,6 @@ abstract class SQL implements KeyValueStore
     {
         return new Collection($this, $this->client, $this->table, $name);
     }
-
     /**
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
@@ -402,14 +274,11 @@ abstract class SQL implements KeyValueStore
          */
         $this->client->beginTransaction();
         $this->clearExpired();
-
         $value = $this->get($key);
         if (false === $value) {
             $return = $this->add($key, $initial, $expire);
-
             if ($return) {
                 $this->client->commit();
-
                 return $initial;
             }
         } elseif (is_numeric($value)) {
@@ -417,19 +286,14 @@ abstract class SQL implements KeyValueStore
             // < 0 is never possible
             $value = max(0, $value);
             $return = $this->replace($key, $value, $expire);
-
             if ($return) {
                 $this->client->commit();
-
                 return (int) $value;
             }
         }
-
         $this->client->rollBack();
-
         return false;
     }
-
     /**
      * Expired entries shouldn't keep filling up the database. Additionally,
      * we will want to remove those in order to properly rely on INSERT (for
@@ -439,14 +303,9 @@ abstract class SQL implements KeyValueStore
      */
     protected function clearExpired()
     {
-        $statement = $this->client->prepare(
-            "DELETE FROM $this->table
-            WHERE e < :expire"
-        );
-
+        $statement = $this->client->prepare("DELETE FROM {$this->table}\n            WHERE e < :expire");
         $statement->execute(array(':expire' => date('Y-m-d H:i:s')));
     }
-
     /**
      * Transforms expiration times into TIMESTAMP (Y-m-d H:i:s) format, which DB
      * will understand and be able to compare with other dates.
@@ -460,15 +319,12 @@ abstract class SQL implements KeyValueStore
         if (0 === $expire) {
             return;
         }
-
         // relative time in seconds, <30 days
         if ($expire < 30 * 24 * 60 * 60) {
             $expire += time();
         }
-
         return date('Y-m-d H:i:s', $expire);
     }
-
     /**
      * I originally didn't want to serialize numeric values because I planned
      * on incrementing them in the DB, but revisited that idea.
@@ -483,7 +339,6 @@ abstract class SQL implements KeyValueStore
     {
         return is_int($value) || is_float($value) ? $value : serialize($value);
     }
-
     /**
      * Numbers aren't serialized for storage size purposes.
      *
@@ -498,15 +353,12 @@ abstract class SQL implements KeyValueStore
             if ((string) $int === $value) {
                 return $int;
             }
-
             $float = (float) $value;
             if ((string) $float === $value) {
                 return $float;
             }
-
             return $value;
         }
-
         return unserialize($value);
     }
 }

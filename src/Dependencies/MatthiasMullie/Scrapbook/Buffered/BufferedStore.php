@@ -5,7 +5,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Buffered;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Buffered\Utils\Buffer;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Buffered\Utils\Transaction;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
-
 /**
  * This class will serve as a local buffer to the real cache: anything read from
  * & written to the real cache will be stored in memory, so if any of those keys
@@ -29,7 +28,6 @@ class BufferedStore implements KeyValueStore
      * @var Transaction
      */
     protected $transaction;
-
     /**
      * Local in-memory storage, for the data we've already requested from
      * or written to the real cache.
@@ -37,12 +35,10 @@ class BufferedStore implements KeyValueStore
      * @var Buffer
      */
     protected $local;
-
     /**
      * @var BufferedStore[]
      */
     protected $collections = array();
-
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
      */
@@ -51,7 +47,6 @@ class BufferedStore implements KeyValueStore
         $this->local = new Buffer();
         $this->transaction = new Transaction($this->local, $cache);
     }
-
     /**
      * In addition to all writes being stored to $local, we'll also
      * keep get() values around ;).
@@ -61,16 +56,13 @@ class BufferedStore implements KeyValueStore
     public function get($key, &$token = null)
     {
         $value = $this->transaction->get($key, $token);
-
         // only store if we managed to retrieve a value (valid token) and it's
         // not already in cache (or we may mess up tokens)
         if (false !== $value && false === $this->local->get($key, $localToken) && null === $localToken) {
             $this->local->set($key, $value);
         }
-
         return $value;
     }
-
     /**
      * In addition to all writes being stored to $local, we'll also
      * keep get() values around ;).
@@ -80,15 +72,12 @@ class BufferedStore implements KeyValueStore
     public function getMulti(array $keys, array &$tokens = null)
     {
         $values = $this->transaction->getMulti($keys, $tokens);
-
         $missing = array_diff_key($values, $this->local->getMulti($keys));
         if (!empty($missing)) {
             $this->local->setMulti($missing);
         }
-
         return $values;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -96,10 +85,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->set($key, $value, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -107,10 +94,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->setMulti($items, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -118,10 +103,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->delete($key);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -129,10 +112,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->deleteMulti($keys);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -140,10 +121,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->add($key, $value, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -151,10 +130,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->replace($key, $value, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -162,10 +139,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->cas($token, $key, $value, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -173,10 +148,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->increment($key, $offset, $initial, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -184,10 +157,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->decrement($key, $offset, $initial, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -195,10 +166,8 @@ class BufferedStore implements KeyValueStore
     {
         $result = $this->transaction->touch($key, $expire);
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -207,13 +176,10 @@ class BufferedStore implements KeyValueStore
         foreach ($this->collections as $collection) {
             $collection->flush();
         }
-
         $result = $this->transaction->flush();
         $this->transaction->commit();
-
         return $result;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -223,7 +189,6 @@ class BufferedStore implements KeyValueStore
             $collection = $this->transaction->getCollection($name);
             $this->collections[$name] = new static($collection);
         }
-
         return $this->collections[$name];
     }
 }

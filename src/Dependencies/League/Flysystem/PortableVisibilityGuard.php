@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\League\Flysystem;
 
 final class PortableVisibilityGuard
@@ -10,10 +9,7 @@ final class PortableVisibilityGuard
     {
         if ($visibility !== Visibility::PUBLIC && $visibility !== Visibility::PRIVATE) {
             $className = Visibility::class;
-            throw InvalidVisibilityProvided::withVisibility(
-                $visibility,
-                "either {$className}::PUBLIC or {$className}::PRIVATE"
-            );
+            throw InvalidVisibilityProvided::withVisibility($visibility, "either {$className}::PUBLIC or {$className}::PRIVATE");
         }
     }
 }

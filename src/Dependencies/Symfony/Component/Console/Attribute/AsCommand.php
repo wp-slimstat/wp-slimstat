@@ -8,32 +8,24 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-namespace SlimStat\Dependencies\Symfony\Component\Console\SlimStat_SlimStat_Attribute;
+namespace SlimStat\Dependencies\Symfony\Component\Console\Attribute;
 
 /**
  * Service tag to autoconfigure commands.
  */
-#[\SlimStat_SlimStat_Attribute(\SlimStat_SlimStat_Attribute::TARGET_CLASS)]
+#[\Attribute(\Attribute::TARGET_CLASS)]
 class AsCommand
 {
-    public function __construct(
-        public string $name,
-        public ?string $description = null,
-        array $aliases = [],
-        bool $hidden = false,
-    ) {
+    public function __construct(public string $name, public ?string $description = null, array $aliases = [], bool $hidden = false)
+    {
         if (!$hidden && !$aliases) {
             return;
         }
-
         $name = explode('|', $name);
         $name = array_merge($name, $aliases);
-
         if ($hidden && '' !== $name[0]) {
             array_unshift($name, '');
         }
-
         $this->name = implode('|', $name);
     }
 }

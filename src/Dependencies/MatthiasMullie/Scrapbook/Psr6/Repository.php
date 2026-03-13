@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
-
 /**
  * Helper object to serve as glue between pool & item.
  *
@@ -25,26 +24,22 @@ class Repository
      * @var KeyValueStore
      */
     protected $store;
-
     /**
      * Array of resolved items.
      *
      * @var mixed[] [unique => value]
      */
     protected $resolved = array();
-
     /**
      * Array of unresolved items.
      *
      * @var string[] [unique => key]
      */
     protected $unresolved = array();
-
     public function __construct(KeyValueStore $store)
     {
         $this->store = $store;
     }
-
     /**
      * Add a to-be-resolved cache key.
      *
@@ -55,7 +50,6 @@ class Repository
     {
         $this->unresolved[$unique] = $key;
     }
-
     /**
      * This repository holds the real values for all Item objects. However, if
      * such an item gets garbage collected, there is no point in wasting any
@@ -68,7 +62,6 @@ class Repository
     {
         unset($this->unresolved[$unique], $this->resolved[$unique]);
     }
-
     /**
      * @param string $unique
      *
@@ -78,7 +71,6 @@ class Repository
     {
         return $this->exists($unique) ? $this->resolved[$unique] : null;
     }
-
     /**
      * @param string $unique
      *
@@ -89,10 +81,8 @@ class Repository
         if (array_key_exists($unique, $this->unresolved)) {
             $this->resolve();
         }
-
         return array_key_exists($unique, $this->resolved);
     }
-
     /**
      * Resolve all unresolved keys at once.
      */
@@ -100,13 +90,11 @@ class Repository
     {
         $keys = array_unique(array_values($this->unresolved));
         $values = $this->store->getMulti($keys);
-
         foreach ($this->unresolved as $unique => $key) {
             if (!array_key_exists($key, $values)) {
                 // key doesn't exist in cache
                 continue;
             }
-
             /*
              * In theory, there could've been multiple unresolved requests for
              * the same cache key. In the case of objects, we'll clone them
@@ -116,10 +104,8 @@ class Repository
              */
             $value = $values[$key];
             $value = is_object($value) ? clone $value : $value;
-
             $this->resolved[$unique] = $value;
         }
-
         $this->unresolved = array();
     }
 }

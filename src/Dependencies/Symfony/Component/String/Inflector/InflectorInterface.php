@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\String\Inflector;
 
 interface InflectorInterface
@@ -21,7 +20,6 @@ interface InflectorInterface
      * @return string[]
      */
     public function singularize(string $plural): array;
-
     /**
      * Returns the plural forms of a string.
      *

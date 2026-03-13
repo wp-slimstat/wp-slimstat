@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Scale;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Exception\InvalidKey;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
-
 /**
  * Cache is usually used to reduce performing a complex operation. In case of a
  * cache miss, that operation is executed & the result is stored.
@@ -49,21 +48,18 @@ class StampedeProtector implements KeyValueStore
      * @var KeyValueStore
      */
     protected $cache = array();
-
     /**
      * Amount of time, in milliseconds, this class guarantees protection.
      *
      * @var int
      */
     protected $sla;
-
     /**
      * Amount of times every process will poll within $sla time.
      *
      * @var int
      */
     protected $attempts = 10;
-
     /**
      * @param KeyValueStore $cache The real cache we'll buffer for
      * @param int           $sla   Stampede protection time, in milliseconds
@@ -73,7 +69,6 @@ class StampedeProtector implements KeyValueStore
         $this->cache = $cache;
         $this->sla = $sla;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -81,10 +76,8 @@ class StampedeProtector implements KeyValueStore
     {
         $values = $this->getMulti(array($key), $tokens);
         $token = isset($tokens[$key]) ? $tokens[$key] : null;
-
         return isset($values[$key]) ? $values[$key] : false;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -93,28 +86,23 @@ class StampedeProtector implements KeyValueStore
         // fetch both requested keys + stampede protection indicators at once
         $stampedeKeys = array_combine($keys, array_map(array($this, 'stampedeKey'), $keys));
         $values = $this->cache->getMulti(array_merge($keys, $stampedeKeys), $tokens);
-
         // figure out which of the requested keys are protected, and which need
         // protection (=currently empty & not yet protected)
         $protected = array_keys(array_intersect($stampedeKeys, array_keys($values)));
         $protect = array_diff($keys, array_keys($values), $protected);
-
         // protect keys that we couldn't find, and remove them from the list of
         // keys we want results from, because we'll keep fetching empty keys
         // (that are currently protected)
         $done = $this->protect($protect);
         $keys = array_diff($keys, $done);
-
         // we may have failed to protect some keys after all (race condition
         // with another process), in which case we also have to keep polling
         // those keys (which the other process is likely working on already)
         $protected += array_diff($protect, $done);
-
         // we over-fetched (to include stampede indicators), now limit the
         // results to only the keys we requested
         $results = array_intersect_key($values, array_flip($keys));
         $tokens = array_intersect_key($tokens, $results);
-
         // we may not have been able to retrieve all keys yet: some may have
         // been "protected" (and are being regenerated in another process) in
         // which case we'll retry a couple of times, hoping the other process
@@ -122,17 +110,13 @@ class StampedeProtector implements KeyValueStore
         $attempts = $this->attempts;
         while (--$attempts > 0 && !empty($protected) && $this->sleep()) {
             $values = $this->cache->getMulti($protected, $tokens2);
-
             $results += array_intersect_key($values, array_flip($keys));
             $tokens += array_intersect_key($tokens2, array_flip($keys));
-
             // don't keep polling for values we just fetched...
             $protected = array_diff($protected, array_keys($values));
         }
-
         return $results;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -140,7 +124,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->set($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -148,7 +131,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->setMulti($items, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -156,7 +138,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->delete($key);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -164,7 +145,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->deleteMulti($keys);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -172,7 +152,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->add($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -180,7 +159,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->replace($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -188,7 +166,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->cas($token, $key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -196,7 +173,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->increment($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -204,7 +180,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->decrement($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -212,7 +187,6 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->touch($key, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -220,17 +194,14 @@ class StampedeProtector implements KeyValueStore
     {
         return $this->cache->flush();
     }
-
     /**
      * {@inheritdoc}
      */
     public function getCollection($name)
     {
         $collection = $this->cache->getCollection($name);
-
         return new static($collection);
     }
-
     /**
      * As soon as a key turns up empty (doesn't yet exist in cache), we'll
      * "protect" it for some time. This will be done by writing to a key similar
@@ -244,7 +215,6 @@ class StampedeProtector implements KeyValueStore
         if (empty($keys)) {
             return array();
         }
-
         $success = array();
         foreach ($keys as $key) {
             /*
@@ -259,10 +229,8 @@ class StampedeProtector implements KeyValueStore
              */
             $success[$key] = $this->cache->add($this->stampedeKey($key), '', ceil($this->sla / 1000));
         }
-
         return array_keys(array_filter($success));
     }
-
     /**
      * When waiting for stampede-protected keys, we'll just sleep, not using
      * much resources.
@@ -273,10 +241,8 @@ class StampedeProtector implements KeyValueStore
     {
         $break = $this->sla / $this->attempts;
         usleep(1000 * $break);
-
         return true;
     }
-
     /**
      * To figure out if something has recently been requested already (and is
      * likely in the process of being recalculated), we'll temporarily write to
@@ -292,11 +258,9 @@ class StampedeProtector implements KeyValueStore
     protected function stampedeKey($key)
     {
         $suffix = '.stampede';
-
         if (substr($key, -strlen($suffix)) === $suffix) {
-            throw new InvalidKey("Invalid key: $key. Keys with suffix '$suffix' are reserved.");
+            throw new InvalidKey("Invalid key: {$key}. Keys with suffix '{$suffix}' are reserved.");
         }
-
-        return $key.$suffix;
+        return $key . $suffix;
     }
 }

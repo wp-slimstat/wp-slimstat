@@ -1,3 +1,0 @@
-FROM couchbase
-COPY docker/couchbase.sh /opt/couchbase/couchbase.sh
-CMD ["/opt/couchbase/couchbase.sh"]

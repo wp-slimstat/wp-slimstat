@@ -31,7 +31,6 @@ final class RequestOptions
      *   from the on_redirect function is ignored.
      */
     public const ALLOW_REDIRECTS = 'allow_redirects';
-
     /**
      * auth: (array) Pass an array of HTTP authentication parameters to use
      * with the request. The array must contain the username in index [0],
@@ -40,13 +39,11 @@ final class RequestOptions
      * for a request.
      */
     public const AUTH = 'auth';
-
     /**
      * body: (resource|string|null|int|float|StreamInterface|callable|\Iterator)
      * Body to send in the request.
      */
     public const BODY = 'body';
-
     /**
      * cert: (string|array) Set to a string to specify the path to a file
      * containing a PEM formatted SSL client side certificate. If a password
@@ -55,23 +52,20 @@ final class RequestOptions
      * in the second array element.
      */
     public const CERT = 'cert';
-
     /**
-     * cookies: (bool|SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJarInterface, default=false)
+     * cookies: (bool|GuzzleHttp\Cookie\CookieJarInterface, default=false)
      * Specifies whether or not cookies are used in a request or what cookie
      * jar to use or what cookies to send. This option only works if your
      * handler has the `cookie` middleware. Valid values are `false` and
-     * an instance of {@see \SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJarInterface}.
+     * an instance of {@see Cookie\CookieJarInterface}.
      */
     public const COOKIES = 'cookies';
-
     /**
      * connect_timeout: (float, default=0) Float describing the number of
      * seconds to wait while trying to connect to a server. Use 0 to wait
      * 300 seconds (the default behavior).
      */
     public const CONNECT_TIMEOUT = 'connect_timeout';
-
     /**
      * crypto_method: (int) A value describing the minimum TLS protocol
      * version to use.
@@ -83,26 +77,22 @@ final class RequestOptions
      * required to use TLS 1.3.
      */
     public const CRYPTO_METHOD = 'crypto_method';
-
     /**
      * debug: (bool|resource) Set to true or set to a PHP stream returned by
      * fopen()  enable debug output with the HTTP handler used to send a
      * request.
      */
     public const DEBUG = 'debug';
-
     /**
      * decode_content: (bool, default=true) Specify whether or not
      * Content-Encoding responses (gzip, deflate, etc.) are automatically
      * decoded.
      */
     public const DECODE_CONTENT = 'decode_content';
-
     /**
      * delay: (int) The amount of time to delay before sending in milliseconds.
      */
     public const DELAY = 'delay';
-
     /**
      * expect: (bool|integer) Controls the behavior of the
      * "Expect: 100-Continue" header.
@@ -120,7 +110,6 @@ final class RequestOptions
      * using HTTP/1.1.
      */
     public const EXPECT = 'expect';
-
     /**
      * form_params: (array) Associative array of form field names to values
      * where each value is a string or array of strings. Sets the Content-Type
@@ -128,13 +117,11 @@ final class RequestOptions
      * is already present.
      */
     public const FORM_PARAMS = 'form_params';
-
     /**
      * headers: (array) Associative array of HTTP headers. Each value MUST be
      * a string or array of strings.
      */
     public const HEADERS = 'headers';
-
     /**
      * http_errors: (bool, default=true) Set to false to disable exceptions
      * when a non- successful HTTP response is received. By default,
@@ -142,7 +129,6 @@ final class RequestOptions
      * works if your handler has the `httpErrors` middleware.
      */
     public const HTTP_ERRORS = 'http_errors';
-
     /**
      * idn: (bool|int, default=true) A combination of IDNA_* constants for
      * idn_to_ascii() PHP's function (see "options" parameter). Set to false to
@@ -150,14 +136,12 @@ final class RequestOptions
      * configuration (IDNA_DEFAULT constant).
      */
     public const IDN_CONVERSION = 'idn_conversion';
-
     /**
      * json: (mixed) Adds JSON data to a request. The provided value is JSON
      * encoded and a Content-Type header of application/json will be added to
      * the request if no Content-Type header is already present.
      */
     public const JSON = 'json';
-
     /**
      * multipart: (array) Array of associative arrays, each containing a
      * required "name" key mapping to the form field, name, a required
@@ -168,25 +152,22 @@ final class RequestOptions
      * will be added to the part.
      */
     public const MULTIPART = 'multipart';
-
     /**
      * on_headers: (callable) A callable that is invoked when the HTTP headers
      * of the response have been received but the body has not yet begun to
      * download.
      */
     public const ON_HEADERS = 'on_headers';
-
     /**
-     * on_stats: (callable) allows you to get access to transfer slimstat of
+     * on_stats: (callable) allows you to get access to transfer statistics of
      * a request and access the lower level transfer details of the handler
      * associated with your client. ``on_stats`` is a callable that is invoked
      * when a handler has finished sending a request. The callback is invoked
-     * with transfer slimstat about the request, the response received, or
+     * with transfer statistics about the request, the response received, or
      * the error encountered. Included in the data is the total amount of time
      * taken to send the request.
      */
     public const ON_STATS = 'on_stats';
-
     /**
      * progress: (callable) Defines a function to invoke when transfer
      * progress is made. The function accepts the following positional
@@ -195,14 +176,12 @@ final class RequestOptions
      * uploaded, the number of bytes uploaded so far.
      */
     public const PROGRESS = 'progress';
-
     /**
      * proxy: (string|array) Pass a string to specify an HTTP proxy, or an
      * array to specify different proxies for different protocols (where the
      * key is the protocol and the value is a proxy string).
      */
     public const PROXY = 'proxy';
-
     /**
      * query: (array|string) Associative array of query string values to add
      * to the request. This option uses PHP's http_build_query() to create
@@ -210,14 +189,12 @@ final class RequestOptions
      * control than what this method provides
      */
     public const QUERY = 'query';
-
     /**
      * sink: (resource|string|StreamInterface) Where the data of the
      * response is written to. Defaults to a PHP temp stream. Providing a
      * string will write data to a file by the given name.
      */
     public const SINK = 'sink';
-
     /**
      * synchronous: (bool) Set to true to inform HTTP handlers that you intend
      * on waiting on the response. This can be useful for optimizations. Note
@@ -225,7 +202,6 @@ final class RequestOptions
      * client methods.
      */
     public const SYNCHRONOUS = 'synchronous';
-
     /**
      * ssl_key: (array|string) Specify the path to a file containing a private
      * SSL key in PEM format. If a password is required, then set to an array
@@ -233,13 +209,11 @@ final class RequestOptions
      * by the password required for the certificate in the second element.
      */
     public const SSL_KEY = 'ssl_key';
-
     /**
      * stream: Set to true to attempt to stream a response rather than
      * download it all up-front.
      */
     public const STREAM = 'stream';
-
     /**
      * verify: (bool|string, default=true) Describes the SSL certificate
      * verification behavior of a request. Set to true to enable SSL
@@ -249,24 +223,20 @@ final class RequestOptions
      * disk to enable verification using a custom certificate.
      */
     public const VERIFY = 'verify';
-
     /**
      * timeout: (float, default=0) Float describing the timeout of the
      * request in seconds. Use 0 to wait indefinitely (the default behavior).
      */
     public const TIMEOUT = 'timeout';
-
     /**
      * read_timeout: (float, default=default_socket_timeout ini setting) Float describing
      * the body read timeout, for stream requests.
      */
     public const READ_TIMEOUT = 'read_timeout';
-
     /**
      * version: (float) Specifies the HTTP protocol version to attempt to use.
      */
     public const VERSION = 'version';
-
     /**
      * force_ip_resolve: (bool) Force client to use only ipv4 or ipv6 protocol
      */

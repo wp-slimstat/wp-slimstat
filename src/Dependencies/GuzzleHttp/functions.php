@@ -17,7 +17,6 @@ function describe_type($input): string
 {
     return Utils::describeType($input);
 }
-
 /**
  * Parses an array of header lines into an associative array of headers.
  *
@@ -30,7 +29,6 @@ function headers_from_lines(iterable $lines): array
 {
     return Utils::headersFromLines($lines);
 }
-
 /**
  * Returns a debug stream based on the provided variable.
  *
@@ -44,13 +42,12 @@ function debug_resource($value = null)
 {
     return Utils::debugResource($value);
 }
-
 /**
  * Chooses and creates a default handler to use based on the environment.
  *
  * The returned handler is not wrapped by any default middlewares.
  *
- * @return callable(\SlimStat\Dependencies\Psr\Http\Message\RequestInterface, array): \SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface Returns the best handler for the given system.
+ * @return callable(\Psr\Http\Message\RequestInterface, array): Promise\PromiseInterface Returns the best handler for the given system.
  *
  * @throws \RuntimeException if no viable Handler is available.
  *
@@ -60,7 +57,6 @@ function choose_handler(): callable
 {
     return Utils::chooseHandler();
 }
-
 /**
  * Get the default User-Agent string to use with Guzzle.
  *
@@ -70,7 +66,6 @@ function default_user_agent(): string
 {
     return Utils::defaultUserAgent();
 }
-
 /**
  * Returns the default cacert bundle for the current system.
  *
@@ -90,7 +85,6 @@ function default_ca_bundle(): string
 {
     return Utils::defaultCaBundle();
 }
-
 /**
  * Creates an associative array of lowercase header names to the actual
  * header casing.
@@ -101,7 +95,6 @@ function normalize_header_keys(array $headers): array
 {
     return Utils::normalizeHeaderKeys($headers);
 }
-
 /**
  * Returns true if the provided host matches any of the no proxy areas.
  *
@@ -127,7 +120,6 @@ function is_host_in_noproxy(string $host, array $noProxyArray): bool
 {
     return Utils::isHostInNoProxy($host, $noProxyArray);
 }
-
 /**
  * Wrapper for json_decode that throws when an error occurs.
  *
@@ -148,7 +140,6 @@ function json_decode(string $json, bool $assoc = false, int $depth = 512, int $o
 {
     return Utils::jsonDecode($json, $assoc, $depth, $options);
 }
-
 /**
  * Wrapper for JSON encoding that throws when an error occurs.
  *

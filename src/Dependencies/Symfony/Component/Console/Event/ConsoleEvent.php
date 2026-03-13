@@ -8,14 +8,12 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Event;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Command\Command;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\EventDispatcher\Event;
-
 /**
  * Allows to inspect input and output of a command.
  *
@@ -24,17 +22,14 @@ use Symfony\Contracts\EventDispatcher\Event;
 class ConsoleEvent extends Event
 {
     protected $command;
-
     private $input;
     private $output;
-
     public function __construct(?Command $command, InputInterface $input, OutputInterface $output)
     {
         $this->command = $command;
         $this->input = $input;
         $this->output = $output;
     }
-
     /**
      * Gets the command that is executed.
      *
@@ -44,7 +39,6 @@ class ConsoleEvent extends Event
     {
         return $this->command;
     }
-
     /**
      * Gets the input instance.
      *
@@ -54,7 +48,6 @@ class ConsoleEvent extends Event
     {
         return $this->input;
     }
-
     /**
      * Gets the output instance.
      *

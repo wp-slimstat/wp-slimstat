@@ -40,7 +40,6 @@ interface RequestInterface extends MessageInterface
      * @return string
      */
     public function getRequestTarget(): string;
-
     /**
      * Return an instance with the specific request-target.
      *
@@ -59,15 +58,12 @@ interface RequestInterface extends MessageInterface
      * @return static
      */
     public function withRequestTarget(string $requestTarget): RequestInterface;
-
-
     /**
      * Retrieves the HTTP method of the request.
      *
      * @return string Returns the request method.
      */
     public function getMethod(): string;
-
     /**
      * Return an instance with the provided HTTP method.
      *
@@ -84,7 +80,6 @@ interface RequestInterface extends MessageInterface
      * @throws \InvalidArgumentException for invalid HTTP methods.
      */
     public function withMethod(string $method): RequestInterface;
-
     /**
      * Retrieves the URI instance.
      *
@@ -95,7 +90,6 @@ interface RequestInterface extends MessageInterface
      *     representing the URI of the request.
      */
     public function getUri(): UriInterface;
-
     /**
      * Returns an instance with the provided URI.
      *

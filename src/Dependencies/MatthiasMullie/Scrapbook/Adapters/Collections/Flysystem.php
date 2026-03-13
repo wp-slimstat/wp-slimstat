@@ -6,7 +6,6 @@ use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
 use League\Flysystem\UnableToDeleteFile;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Flysystem as Adapter;
-
 /**
  * Flysystem 1.x and 2.x adapter for a subset of data, in a subfolder.
  *
@@ -20,7 +19,6 @@ class Flysystem extends Adapter
      * @var string
      */
     protected $collection;
-
     /**
      * @param string $collection
      */
@@ -29,7 +27,6 @@ class Flysystem extends Adapter
         parent::__construct($filesystem);
         $this->collection = $collection;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -57,10 +54,8 @@ class Flysystem extends Adapter
                 // been deleted by another process in the meantime...
             }
         }
-
         return true;
     }
-
     /**
      * @param string $key
      *
@@ -68,6 +63,6 @@ class Flysystem extends Adapter
      */
     protected function path($key)
     {
-        return $this->collection.'/'.parent::path($key);
+        return $this->collection . '/' . parent::path($key);
     }
 }

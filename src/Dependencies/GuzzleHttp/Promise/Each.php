@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 
 final class Each
@@ -21,17 +20,10 @@ final class Each
      *
      * @param mixed $iterable Iterator or array to iterate over.
      */
-    public static function of(
-        $iterable,
-        callable $onFulfilled = null,
-        callable $onRejected = null
-    ): PromiseInterface {
-        return (new EachPromise($iterable, [
-            'fulfilled' => $onFulfilled,
-            'rejected' => $onRejected,
-        ]))->promise();
+    public static function of($iterable, ?callable $onFulfilled = null, ?callable $onRejected = null): PromiseInterface
+    {
+        return (new EachPromise($iterable, ['fulfilled' => $onFulfilled, 'rejected' => $onRejected]))->promise();
     }
-
     /**
      * Like of, but only allows a certain number of outstanding promises at any
      * given time.
@@ -43,19 +35,10 @@ final class Each
      * @param mixed        $iterable
      * @param int|callable $concurrency
      */
-    public static function ofLimit(
-        $iterable,
-        $concurrency,
-        callable $onFulfilled = null,
-        callable $onRejected = null
-    ): PromiseInterface {
-        return (new EachPromise($iterable, [
-            'fulfilled' => $onFulfilled,
-            'rejected' => $onRejected,
-            'concurrency' => $concurrency,
-        ]))->promise();
+    public static function ofLimit($iterable, $concurrency, ?callable $onFulfilled = null, ?callable $onRejected = null): PromiseInterface
+    {
+        return (new EachPromise($iterable, ['fulfilled' => $onFulfilled, 'rejected' => $onRejected, 'concurrency' => $concurrency]))->promise();
     }
-
     /**
      * Like limit, but ensures that no promise in the given $iterable argument
      * is rejected. If any promise is rejected, then the aggregate promise is
@@ -64,18 +47,10 @@ final class Each
      * @param mixed        $iterable
      * @param int|callable $concurrency
      */
-    public static function ofLimitAll(
-        $iterable,
-        $concurrency,
-        callable $onFulfilled = null
-    ): PromiseInterface {
-        return self::ofLimit(
-            $iterable,
-            $concurrency,
-            $onFulfilled,
-            function ($reason, $idx, PromiseInterface $aggregate): void {
-                $aggregate->reject($reason);
-            }
-        );
+    public static function ofLimitAll($iterable, $concurrency, ?callable $onFulfilled = null): PromiseInterface
+    {
+        return self::ofLimit($iterable, $concurrency, $onFulfilled, function ($reason, $idx, PromiseInterface $aggregate): void {
+            $aggregate->reject($reason);
+        });
     }
 }

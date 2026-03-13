@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\Psr\Http\Client;
 
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\Psr\Http\Message\ResponseInterface;
-
 interface ClientInterface
 {
     /**
@@ -14,7 +13,7 @@ interface ClientInterface
      *
      * @return ResponseInterface
      *
-     * @throws \SlimStat\Dependencies\Psr\Http\Client\ClientExceptionInterface If an error happens while processing the request.
+     * @throws \Psr\Http\Client\ClientExceptionInterface If an error happens while processing the request.
      */
     public function sendRequest(RequestInterface $request): ResponseInterface;
 }

@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Buffered\Utils;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\MemoryStore as MemoryStoreCollection;
-
 /**
  * A collection implementation for Buffer.
  *
@@ -17,7 +16,6 @@ class BufferCollection extends MemoryStoreCollection
      * @var Buffer
      */
     protected $cache;
-
     /**
      * @param string $name
      */
@@ -25,7 +23,6 @@ class BufferCollection extends MemoryStoreCollection
     {
         parent::__construct($cache, $name);
     }
-
     /**
      * Check if a key existed in local storage, but is now expired.
      *
@@ -46,7 +43,6 @@ class BufferCollection extends MemoryStoreCollection
             // returned a value, clearly not yet expired
             return false;
         }
-
         // a known item, not returned by get, is expired
         return array_key_exists($key, $this->cache->items);
     }

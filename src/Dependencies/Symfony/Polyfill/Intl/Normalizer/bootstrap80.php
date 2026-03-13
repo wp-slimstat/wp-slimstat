@@ -8,12 +8,16 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-use SlimStat\Dependencies\Symfony\Polyfill\Intl\SlimStat_Normalizer as p;
-
+use SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer as p;
 if (!function_exists('normalizer_is_normalized')) {
-    function normalizer_is_normalized(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): bool { return p\SlimStat_Normalizer::isNormalized((string) $string, (int) $form); }
+    function normalizer_is_normalized(?string $string, ?int $form = SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer\Normalizer::FORM_C): bool
+    {
+        return SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer\Normalizer::isNormalized((string) $string, (int) $form);
+    }
 }
 if (!function_exists('normalizer_normalize')) {
-    function normalizer_normalize(?string $string, ?int $form = p\SlimStat_Normalizer::FORM_C): string|false { return p\SlimStat_Normalizer::normalize((string) $string, (int) $form); }
+    function normalizer_normalize(?string $string, ?int $form = SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer\Normalizer::FORM_C): string|false
+    {
+        return SlimStat\Dependencies\Symfony\Polyfill\Intl\Normalizer\Normalizer::normalize((string) $string, (int) $form);
+    }
 }

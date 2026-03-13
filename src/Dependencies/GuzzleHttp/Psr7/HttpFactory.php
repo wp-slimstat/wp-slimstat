@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Psr7;
 
 use SlimStat\Dependencies\Psr\Http\Message\RequestFactoryInterface;
@@ -16,7 +15,6 @@ use SlimStat\Dependencies\Psr\Http\Message\UploadedFileFactoryInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UploadedFileInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UriFactoryInterface;
 use SlimStat\Dependencies\Psr\Http\Message\UriInterface;
-
 /**
  * Implements all of the PSR-17 interfaces.
  *
@@ -25,25 +23,17 @@ use SlimStat\Dependencies\Psr\Http\Message\UriInterface;
  */
 final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInterface, ServerRequestFactoryInterface, StreamFactoryInterface, UploadedFileFactoryInterface, UriFactoryInterface
 {
-    public function createUploadedFile(
-        StreamInterface $stream,
-        int $size = null,
-        int $error = \UPLOAD_ERR_OK,
-        string $clientFilename = null,
-        string $clientMediaType = null
-    ): UploadedFileInterface {
+    public function createUploadedFile(StreamInterface $stream, ?int $size = null, int $error = \UPLOAD_ERR_OK, ?string $clientFilename = null, ?string $clientMediaType = null): UploadedFileInterface
+    {
         if ($size === null) {
             $size = $stream->getSize();
         }
-
         return new UploadedFile($stream, $size, $error, $clientFilename, $clientMediaType);
     }
-
     public function createStream(string $content = ''): StreamInterface
     {
         return Utils::streamFor($content);
     }
-
     public function createStreamFromFile(string $file, string $mode = 'r'): StreamInterface
     {
         try {
@@ -52,18 +42,14 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
             if ('' === $mode || false === \in_array($mode[0], ['r', 'w', 'a', 'x', 'c'], true)) {
                 throw new \InvalidArgumentException(sprintf('Invalid file opening mode "%s"', $mode), 0, $e);
             }
-
             throw $e;
         }
-
         return Utils::streamFor($resource);
     }
-
     public function createStreamFromResource($resource): StreamInterface
     {
         return Utils::streamFor($resource);
     }
-
     public function createServerRequest(string $method, $uri, array $serverParams = []): ServerRequestInterface
     {
         if (empty($method)) {
@@ -73,20 +59,16 @@ final class HttpFactory implements RequestFactoryInterface, ResponseFactoryInter
                 throw new \InvalidArgumentException('Cannot determine HTTP method');
             }
         }
-
         return new ServerRequest($method, $uri, [], null, '1.1', $serverParams);
     }
-
     public function createResponse(int $code = 200, string $reasonPhrase = ''): ResponseInterface
     {
         return new Response($code, [], null, '1.1', $reasonPhrase);
     }
-
     public function createRequest(string $method, $uri): RequestInterface
     {
         return new Request($method, $uri);
     }
-
     public function createUri(string $uri = ''): UriInterface
     {
         return new Uri($uri);

@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Formatter;
 
 /**
@@ -23,7 +22,6 @@ final class NullOutputFormatterStyle implements OutputFormatterStyleInterface
     {
         return $text;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -31,7 +29,6 @@ final class NullOutputFormatterStyle implements OutputFormatterStyleInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -39,7 +36,6 @@ final class NullOutputFormatterStyle implements OutputFormatterStyleInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -47,7 +43,6 @@ final class NullOutputFormatterStyle implements OutputFormatterStyleInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -55,7 +50,6 @@ final class NullOutputFormatterStyle implements OutputFormatterStyleInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */

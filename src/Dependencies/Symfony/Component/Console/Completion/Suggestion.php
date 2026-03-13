@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Completion;
 
 /**
@@ -19,17 +18,14 @@ namespace SlimStat\Dependencies\Symfony\Component\Console\Completion;
 class Suggestion
 {
     private $value;
-
     public function __construct(string $value)
     {
         $this->value = $value;
     }
-
     public function getValue(): string
     {
         return $this->value;
     }
-
     public function __toString(): string
     {
         return $this->getValue();
