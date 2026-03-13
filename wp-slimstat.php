@@ -1264,10 +1264,11 @@ class wp_slimstat
 
             try {
                 $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
-                $geographicProvider->updateDatabase();
+                $ok = $geographicProvider->updateDatabase();
 
-                // Set the last update time
-                update_option('slimstat_last_geoip_dl', time());
+                if ($ok) {
+                    update_option('slimstat_last_geoip_dl', time());
+                }
 
             } catch (\Throwable $e) {
                 wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
