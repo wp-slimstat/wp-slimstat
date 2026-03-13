@@ -48,7 +48,46 @@ export function restoreWpConfig(): void {
   }
 }
 
-// ─── MU-Plugin manager ─────────────────────────────────────────────
+// ─── MU-Plugin manifest ───────────────────────────────────────────
+
+interface MuPluginEntry { sourceFile: string; deployedFile: string; }
+
+const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
+  { sourceFile: 'ajax-logger-mu-plugin.php', deployedFile: 'geoip-ajax-logger.php' },
+  { sourceFile: 'cron-frontend-shim-mu-plugin.php', deployedFile: 'cron-frontend-shim-mu-plugin.php' },
+  { sourceFile: 'nonce-helper-mu-plugin.php', deployedFile: 'nonce-helper-mu-plugin.php' },
+  { sourceFile: 'option-mutator-mu-plugin.php', deployedFile: 'option-mutator-mu-plugin.php' },
+  { sourceFile: 'server-tracking-mu-plugin.php', deployedFile: 'server-tracking-mu-plugin.php' },
+  { sourceFile: 'header-injector-mu-plugin.php', deployedFile: 'header-injector-mu-plugin.php' },
+  { sourceFile: 'consent-simulator-mu-plugin.php', deployedFile: 'consent-simulator-mu-plugin.php' },
+  { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
+  { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
+];
+
+// ─── Generic MU-Plugin install/uninstall by name ──────────────────
+
+export function installMuPluginByName(name: string): void {
+  const entry = MU_PLUGIN_MANIFEST.find((e) => e.sourceFile === name);
+  if (!entry) throw new Error(`MU-Plugin "${name}" not found in manifest`);
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+}
+
+export function uninstallMuPluginByName(name: string): void {
+  const entry = MU_PLUGIN_MANIFEST.find((e) => e.deployedFile === name || e.sourceFile === name);
+  if (!entry) throw new Error(`MU-Plugin "${name}" not found in manifest`);
+  const dest = path.join(MU_PLUGINS, entry.deployedFile);
+  if (fs.existsSync(dest)) fs.unlinkSync(dest);
+}
+
+export function uninstallAllTestMuPlugins(): void {
+  for (const entry of MU_PLUGIN_MANIFEST) {
+    const dest = path.join(MU_PLUGINS, entry.deployedFile);
+    if (fs.existsSync(dest)) fs.unlinkSync(dest);
+  }
+}
+
+// ─── MU-Plugin manager (legacy) ───────────────────────────────────
 
 export function installMuPlugin(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });
@@ -59,7 +98,7 @@ export function uninstallMuPlugin(): void {
   if (fs.existsSync(LOGGER_DEST)) fs.unlinkSync(LOGGER_DEST);
 }
 
-// ─── Nonce helper MU-Plugin ──────────────────────────────────────
+// ─── Nonce helper MU-Plugin (legacy) ─────────────────────────────
 
 export function installNonceHelper(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });
@@ -301,6 +340,38 @@ export async function restoreSlimstatOptions(): Promise<void> {
   savedOptionsSnapshot = null;
 }
 
+// ─── Existence-aware option snapshot/restore ─────────────────────
+
+interface OptionSnapshot { exists: boolean; value: string | null; }
+const optionSnapshots = new Map<string, OptionSnapshot>();
+
+export async function snapshotOption(optionName: string): Promise<void> {
+  const [rows] = await getPool().execute(
+    'SELECT option_value FROM wp_options WHERE option_name = ?', [optionName]
+  ) as any;
+  optionSnapshots.set(optionName, rows.length > 0 ? { exists: true, value: rows[0].option_value } : { exists: false, value: null });
+}
+
+export async function restoreOption(optionName: string): Promise<void> {
+  const snap = optionSnapshots.get(optionName);
+  if (!snap) return;
+  if (!snap.exists) {
+    await getPool().execute('DELETE FROM wp_options WHERE option_name = ?', [optionName]);
+  } else {
+    await getPool().execute(
+      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES (?, ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+      [optionName, snap.value]
+    );
+  }
+  optionSnapshots.delete(optionName);
+}
+
+export async function restoreAllOptions(): Promise<void> {
+  for (const name of optionSnapshots.keys()) {
+    await restoreOption(name);
+  }
+}
+
 // ─── Stats table helpers ─────────────────────────────────────────
 
 export async function clearStatsTable(): Promise<void> {
@@ -347,4 +418,35 @@ export async function simulateFreshInstall(): Promise<void> {
 export async function simulateLegacyUpgrade(page: import('@playwright/test').Page, enableMaxmind: string): Promise<void> {
   await setSlimstatOption(page, 'enable_maxmind', enableMaxmind);
   await deleteSlimstatOption(page, 'geolocation_provider');
+}
+
+// ─── Shared waitForStat poller ───────────────────────────────────
+
+export async function waitForStat(marker: string, timeoutMs = 10_000, intervalMs = 250): Promise<{ country: string; city: string; location: string } | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const stat = await getLatestStat(marker);
+    if (stat) return stat;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return null;
+}
+
+// ─── Anonymous visit helper ──────────────────────────────────────
+
+export async function visitAsAnonymous(browser: import('@playwright/test').Browser, url: string): Promise<import('@playwright/test').Page> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  return page;
+}
+
+// ─── Fixture file cleanup ────────────────────────────────────────
+
+export function cleanupFixtureFiles(): void {
+  const fixtures = ['e2e-header-overrides.json', 'e2e-consent-state.json'];
+  for (const f of fixtures) {
+    const p = path.join(WP_CONTENT, f);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
 }
