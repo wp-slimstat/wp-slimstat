@@ -14,7 +14,6 @@ interface StreamFactoryInterface
      * @return StreamInterface
      */
     public function createStream(string $content = ''): StreamInterface;
-
     /**
      * Create a stream from an existing file.
      *
@@ -31,7 +30,6 @@ interface StreamFactoryInterface
      * @throws \InvalidArgumentException If the mode is invalid.
      */
     public function createStreamFromFile(string $filename, string $mode = 'r'): StreamInterface;
-
     /**
      * Create a new stream from an existing resource.
      *

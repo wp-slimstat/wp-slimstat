@@ -5,7 +5,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6;
 use DateTime;
 use DateTimeInterface;
 use SlimStat\Dependencies\Psr\Cache\CacheItemInterface;
-
 /**
  * Representation of a cache item, both existing & non-existing (to be created).
  *
@@ -19,44 +18,36 @@ class Item implements CacheItemInterface
      * @var string
      */
     protected $hash;
-
     /**
      * @var string
      */
     protected $key;
-
     /**
      * @var Repository
      */
     protected $repository;
-
     /**
      * @var mixed
      */
     protected $value;
-
     /**
      * @var int
      */
     protected $expire = 0;
-
     /**
      * @var bool
      */
     protected $isHit = null;
-
     /**
      * @var bool
      */
     protected $changed = false;
-
     /**
      * @param string $key
      */
     public function __construct($key, Repository $repository)
     {
         $this->key = $key;
-
         /*
          * Register this key (tied to this particular object) to the value
          * repository.
@@ -76,7 +67,6 @@ class Item implements CacheItemInterface
         $this->hash = spl_object_hash($this);
         $this->repository->add($this->hash, $this->key);
     }
-
     /**
      * When this item is being killed, we should no longer keep its value around
      * in the repository. Free up some memory!
@@ -85,7 +75,6 @@ class Item implements CacheItemInterface
     {
         $this->repository->remove($this->hash);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -93,7 +82,6 @@ class Item implements CacheItemInterface
     {
         return $this->key;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -103,15 +91,12 @@ class Item implements CacheItemInterface
         if (null !== $this->value) {
             return $this->value;
         }
-
         // sanity check
         if (!$this->isHit()) {
             return;
         }
-
         return $this->repository->get($this->hash);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -119,10 +104,8 @@ class Item implements CacheItemInterface
     {
         $this->value = $value;
         $this->changed = true;
-
         return $this;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -131,10 +114,8 @@ class Item implements CacheItemInterface
         if (null !== $this->isHit) {
             return $this->isHit;
         }
-
         return $this->repository->exists($this->hash);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -151,18 +132,14 @@ class Item implements CacheItemInterface
         } else {
             $class = get_class($this);
             $type = gettype($expiration);
-            $error = "Argument 1 passed to $class::expiresAt()  must be an ".
-                "instance of DateTime or DateTimeImmutable, $type given";
-
+            $error = "Argument 1 passed to {$class}::expiresAt()  must be an " . "instance of DateTime or DateTimeImmutable, {$type} given";
             if (class_exists('\TypeError')) {
                 throw new \TypeError($error);
             }
             trigger_error($error, E_USER_ERROR);
         }
-
         return $this;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -179,13 +156,11 @@ class Item implements CacheItemInterface
             // this is allowed, but just defaults to infinite
             $this->expire = 0;
         } else {
-            throw new InvalidArgumentException('Invalid time: '.serialize($time).'. Must be integer or instance of DateInterval.');
+            throw new InvalidArgumentException('Invalid time: ' . serialize($time) . '. Must be integer or instance of DateInterval.');
         }
         $this->changed = true;
-
         return $this;
     }
-
     /**
      * Returns the set expiration time in integer form (as it's what
      * KeyValueStore expects).
@@ -196,7 +171,6 @@ class Item implements CacheItemInterface
     {
         return $this->expire;
     }
-
     /**
      * Returns true if the item is already expired, false otherwise.
      *
@@ -205,10 +179,8 @@ class Item implements CacheItemInterface
     public function isExpired()
     {
         $expire = $this->getExpiration();
-
         return 0 !== $expire && $expire < time();
     }
-
     /**
      * We'll want to know if this Item was altered (value or expiration date)
      * once we'll want to store it.
@@ -219,7 +191,6 @@ class Item implements CacheItemInterface
     {
         return $this->changed;
     }
-
     /**
      * Allow isHit to be override, in case it's a value that is returned from
      * memory, when a value is being saved deferred.

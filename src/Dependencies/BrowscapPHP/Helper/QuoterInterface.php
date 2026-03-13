@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
 use UnexpectedValueException;
-
 /**
  * class to help quoting strings for using a regex
  */
@@ -19,7 +17,6 @@ interface QuoterInterface
      * @no-named-arguments
      */
     public function pregQuote(string $useragent, string $delimiter = '/'): string;
-
     /**
      * Reverts the quoting of a pattern.
      *

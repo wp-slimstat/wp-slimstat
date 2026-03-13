@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Helper;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputAwareInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
-
 /**
  * An implementation of InputAwareInterface for Helpers.
  *
@@ -22,7 +20,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Input\InputInterface;
 abstract class InputAwareHelper extends Helper implements InputAwareInterface
 {
     protected $input;
-
     /**
      * {@inheritdoc}
      */

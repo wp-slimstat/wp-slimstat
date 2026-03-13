@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\League\Flysystem;
 
 use RuntimeException;
-
 /**
  * @internal
  */
@@ -15,7 +13,6 @@ trait ProxyArrayAccessToProperties
     {
         return str_replace('_', '', lcfirst(ucwords($offset, '_')));
     }
-
     /**
      * @param mixed $offset
      *
@@ -24,10 +21,8 @@ trait ProxyArrayAccessToProperties
     public function offsetExists($offset): bool
     {
         $property = $this->formatPropertyName((string) $offset);
-
         return isset($this->{$property});
     }
-
     /**
      * @param mixed $offset
      *
@@ -37,10 +32,8 @@ trait ProxyArrayAccessToProperties
     public function offsetGet($offset)
     {
         $property = $this->formatPropertyName((string) $offset);
-
         return $this->{$property};
     }
-
     /**
      * @param mixed $offset
      * @param mixed $value
@@ -50,7 +43,6 @@ trait ProxyArrayAccessToProperties
     {
         throw new RuntimeException('Properties can not be manipulated');
     }
-
     /**
      * @param mixed $offset
      */

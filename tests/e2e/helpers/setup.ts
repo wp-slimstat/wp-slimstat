@@ -19,21 +19,26 @@ const MU_PLUGINS = path.join(WP_CONTENT, 'mu-plugins');
 const AJAX_LOG = path.join(WP_CONTENT, 'geoip-ajax-calls.log');
 const LOGGER_SRC = path.join(__dirname, 'ajax-logger-mu-plugin.php');
 const LOGGER_DEST = path.join(MU_PLUGINS, 'geoip-ajax-logger.php');
+const NONCE_HELPER_SRC = path.join(__dirname, 'nonce-helper-mu-plugin.php');
+const NONCE_HELPER_DEST = path.join(MU_PLUGINS, 'nonce-helper-mu-plugin.php');
 const CRON_LINE = "define('DISABLE_WP_CRON', true);";
 
 // ─── wp-config.php toggler ─────────────────────────────────────────
 
 let wpConfigBackup: string | null = null;
 
-export function enableDisableWpCron(): void {
+function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
-  wpConfigBackup = content;
-  if (content.includes('DISABLE_WP_CRON')) return; // already set
+  if (wpConfigBackup === null) wpConfigBackup = content;
+  if (content.includes(line)) return; // already set
   const marker = "/* That's all, stop editing!";
   const idx = content.indexOf(marker);
   if (idx === -1) throw new Error('Cannot find stop-editing marker in wp-config.php');
-  const updated = content.slice(0, idx) + CRON_LINE + '\n' + content.slice(idx);
-  fs.writeFileSync(WP_CONFIG, updated, 'utf8');
+  fs.writeFileSync(WP_CONFIG, content.slice(0, idx) + line + '\n' + content.slice(idx), 'utf8');
+}
+
+export function enableDisableWpCron(): void {
+  injectWpConfigLine(CRON_LINE);
 }
 
 export function restoreWpConfig(): void {
@@ -52,6 +57,17 @@ export function installMuPlugin(): void {
 
 export function uninstallMuPlugin(): void {
   if (fs.existsSync(LOGGER_DEST)) fs.unlinkSync(LOGGER_DEST);
+}
+
+// ─── Nonce helper MU-Plugin ──────────────────────────────────────
+
+export function installNonceHelper(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
+}
+
+export function uninstallNonceHelper(): void {
+  if (fs.existsSync(NONCE_HELPER_DEST)) fs.unlinkSync(NONCE_HELPER_DEST);
 }
 
 // ─── AJAX log reader ───────────────────────────────────────────────
@@ -182,6 +198,47 @@ export async function setProviderDisabled(): Promise<void> {
   await setSlimstatSetting('geolocation_provider', 'disable');
 }
 
+// ─── Cron frontend shim mu-plugin ────────────────────────────────
+
+const CRON_SHIM_SRC = path.join(__dirname, 'cron-frontend-shim-mu-plugin.php');
+const CRON_SHIM_DEST = path.join(MU_PLUGINS, 'cron-frontend-shim-mu-plugin.php');
+const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
+
+export function installCronFrontendShim(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.copyFileSync(CRON_SHIM_SRC, CRON_SHIM_DEST);
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+export function uninstallCronFrontendShim(): void {
+  if (fs.existsSync(CRON_SHIM_DEST)) fs.unlinkSync(CRON_SHIM_DEST);
+  // E2E_TESTING_LINE is removed when restoreWpConfig() runs in teardown
+}
+
+// ─── GeoIP timestamp snapshot/restore ────────────────────────────
+
+let savedGeoipRow: { value: string; autoload: string } | null | undefined = undefined;
+
+export async function snapshotGeoipTimestamp(): Promise<void> {
+  const [rows] = await getPool().execute(
+    "SELECT option_value, autoload FROM wp_options WHERE option_name = 'slimstat_last_geoip_dl'"
+  ) as any;
+  savedGeoipRow = rows.length > 0 ? { value: rows[0].option_value, autoload: rows[0].autoload } : null;
+}
+
+export async function restoreGeoipTimestamp(): Promise<void> {
+  if (savedGeoipRow === undefined) return;
+  if (savedGeoipRow === null) {
+    await clearGeoipTimestamp();
+  } else {
+    await getPool().execute(
+      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_last_geoip_dl', ?, ?) ON DUPLICATE KEY UPDATE option_value = VALUES(option_value), autoload = VALUES(autoload)",
+      [savedGeoipRow.value, savedGeoipRow.autoload]
+    );
+  }
+  savedGeoipRow = undefined;
+}
+
 // ─── Option mutator mu-plugin (safe WP-native serialization) ────
 
 const OPTION_MUTATOR_SRC = path.join(__dirname, 'option-mutator-mu-plugin.php');
@@ -261,6 +318,14 @@ export async function getLatestStat(testMarker: string): Promise<{ country: stri
 export async function getLatestStatFull(testMarker: string): Promise<{ id: number; resource: string; outbound_resource: string | null; dt_out: number; country: string; city: string } | null> {
   const [rows] = await getPool().execute(
     "SELECT id, resource, outbound_resource, dt_out, country, city FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
+    [`%${testMarker}%`]
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getLatestStatWithIp(testMarker: string): Promise<{ ip: string; country: string; city: string; location: string } | null> {
+  const [rows] = await getPool().execute(
+    "SELECT ip, country, city, location FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",
     [`%${testMarker}%`]
   ) as any;
   return rows.length > 0 ? rows[0] : null;

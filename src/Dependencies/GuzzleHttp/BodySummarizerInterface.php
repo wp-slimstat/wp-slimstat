@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\GuzzleHttp;
 
 use SlimStat\Dependencies\Psr\Http\Message\MessageInterface;
-
 interface BodySummarizerInterface
 {
     /**

@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\Psr\Http\Client;
 
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
-
 /**
  * Exception for when a request failed.
  *

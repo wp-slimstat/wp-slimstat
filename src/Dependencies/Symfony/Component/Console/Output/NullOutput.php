@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Output;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\NullOutputFormatter;
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInterface;
-
 /**
  * NullOutput suppresses all output.
  *
@@ -25,7 +23,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInt
 class NullOutput implements OutputInterface
 {
     private $formatter;
-
     /**
      * {@inheritdoc}
      */
@@ -33,7 +30,6 @@ class NullOutput implements OutputInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -45,7 +41,6 @@ class NullOutput implements OutputInterface
         // to comply with the interface we must return a OutputFormatterInterface
         return $this->formatter = new NullOutputFormatter();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -53,7 +48,6 @@ class NullOutput implements OutputInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -61,7 +55,6 @@ class NullOutput implements OutputInterface
     {
         return false;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -69,7 +62,6 @@ class NullOutput implements OutputInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */
@@ -77,7 +69,6 @@ class NullOutput implements OutputInterface
     {
         return self::VERBOSITY_QUIET;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -85,7 +76,6 @@ class NullOutput implements OutputInterface
     {
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -93,7 +83,6 @@ class NullOutput implements OutputInterface
     {
         return false;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -101,7 +90,6 @@ class NullOutput implements OutputInterface
     {
         return false;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -109,7 +97,6 @@ class NullOutput implements OutputInterface
     {
         return false;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -117,7 +104,6 @@ class NullOutput implements OutputInterface
     {
         // do nothing
     }
-
     /**
      * {@inheritdoc}
      */

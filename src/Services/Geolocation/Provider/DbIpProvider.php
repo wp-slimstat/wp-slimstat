@@ -60,6 +60,8 @@ class DbIpProvider extends AbstractGeoIPProvider
 
 		$this->ensureDirExists(dirname($this->dbPath));
 
+		$this->ensureWpFileApiLoaded();
+
 		foreach ($urls as $url) {
 			// Prepare a temp file for streaming
 			$tmp = wp_tempnam($url);

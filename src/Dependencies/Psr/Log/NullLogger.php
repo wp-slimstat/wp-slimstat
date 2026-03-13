@@ -21,7 +21,7 @@ class NullLogger extends AbstractLogger
      *
      * @return void
      *
-     * @throws \SlimStat\Dependencies\Psr\Log\InvalidArgumentException
+     * @throws \Psr\Log\InvalidArgumentException
      */
     public function log($level, $message, array $context = array())
     {

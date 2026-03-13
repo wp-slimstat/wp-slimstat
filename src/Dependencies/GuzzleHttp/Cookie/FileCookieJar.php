@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\GuzzleHttp\Cookie;
 
 use SlimStat\Dependencies\GuzzleHttp\Utils;
-
 /**
  * Persists non-session cookies using a JSON formatted file
  */
@@ -13,12 +12,10 @@ class FileCookieJar extends CookieJar
      * @var string filename
      */
     private $filename;
-
     /**
      * @var bool Control whether to persist session cookies or not.
      */
     private $storeSessionCookies;
-
     /**
      * Create a new FileCookieJar object
      *
@@ -33,12 +30,10 @@ class FileCookieJar extends CookieJar
         parent::__construct();
         $this->filename = $cookieFile;
         $this->storeSessionCookies = $storeSessionCookies;
-
         if (\file_exists($cookieFile)) {
             $this->load($cookieFile);
         }
     }
-
     /**
      * Saves the file when shutting down
      */
@@ -46,7 +41,6 @@ class FileCookieJar extends CookieJar
     {
         $this->save($this->filename);
     }
-
     /**
      * Saves the cookies to a file.
      *
@@ -63,13 +57,11 @@ class FileCookieJar extends CookieJar
                 $json[] = $cookie->toArray();
             }
         }
-
         $jsonStr = Utils::jsonEncode($json);
         if (false === \file_put_contents($filename, $jsonStr, \LOCK_EX)) {
             throw new \RuntimeException("Unable to save file {$filename}");
         }
     }
-
     /**
      * Load cookies from a JSON formatted file.
      *
@@ -88,7 +80,6 @@ class FileCookieJar extends CookieJar
         if ($json === '') {
             return;
         }
-
         $data = Utils::jsonDecode($json, true);
         if (\is_array($data)) {
             foreach ($data as $cookie) {

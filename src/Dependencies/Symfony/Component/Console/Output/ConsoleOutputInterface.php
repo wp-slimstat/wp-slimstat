@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Output;
 
 /**
@@ -25,8 +24,6 @@ interface ConsoleOutputInterface extends OutputInterface
      * @return OutputInterface
      */
     public function getErrorOutput();
-
     public function setErrorOutput(OutputInterface $error);
-
     public function section(): ConsoleSectionOutput;
 }

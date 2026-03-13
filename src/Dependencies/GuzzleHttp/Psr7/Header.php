@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Psr7;
 
 final class Header
@@ -18,7 +17,6 @@ final class Header
     {
         static $trimmed = "\"'  \n\t\r";
         $params = $matches = [];
-
         foreach ((array) $header as $value) {
             foreach (self::splitList($value) as $val) {
                 $part = [];
@@ -37,10 +35,8 @@ final class Header
                 }
             }
         }
-
         return $params;
     }
-
     /**
      * Converts an array of header values that may contain comma separated
      * headers into an array of headers with no comma separated values.
@@ -57,10 +53,8 @@ final class Header
                 $result[] = $parsed;
             }
         }
-
         return $result;
     }
-
     /**
      * Splits a HTTP header defined to contain a comma-separated list into
      * each individual value. Empty values will be removed.
@@ -79,13 +73,11 @@ final class Header
         if (!\is_array($values)) {
             $values = [$values];
         }
-
         $result = [];
         foreach ($values as $value) {
             if (!\is_string($value)) {
                 throw new \TypeError('$header must either be a string or an array containing strings.');
             }
-
             $v = '';
             $isQuoted = false;
             $isEscaped = false;
@@ -93,42 +85,33 @@ final class Header
                 if ($isEscaped) {
                     $v .= $value[$i];
                     $isEscaped = false;
-
                     continue;
                 }
-
                 if (!$isQuoted && $value[$i] === ',') {
                     $v = \trim($v);
                     if ($v !== '') {
                         $result[] = $v;
                     }
-
                     $v = '';
                     continue;
                 }
-
                 if ($isQuoted && $value[$i] === '\\') {
                     $isEscaped = true;
                     $v .= $value[$i];
-
                     continue;
                 }
                 if ($value[$i] === '"') {
                     $isQuoted = !$isQuoted;
                     $v .= $value[$i];
-
                     continue;
                 }
-
                 $v .= $value[$i];
             }
-
             $v = \trim($v);
             if ($v !== '') {
                 $result[] = $v;
             }
         }
-
         return $result;
     }
 }

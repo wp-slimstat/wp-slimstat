@@ -1,12 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP;
 
 use SlimStat\Dependencies\BrowscapPHP\Parser\ParserInterface;
 use stdClass;
-
 /**
  * Browscap.ini parsing class with caching and update capabilities
  */
@@ -20,7 +18,6 @@ interface BrowscapInterface
      * @no-named-arguments
      */
     public function setFormatter(Formatter\FormatterInterface $formatter): void;
-
     /**
      * Sets the parser instance to use
      *
@@ -29,7 +26,6 @@ interface BrowscapInterface
      * @no-named-arguments
      */
     public function setParser(ParserInterface $parser): void;
-
     /**
      * returns an instance of the used parser class
      *
@@ -38,11 +34,10 @@ interface BrowscapInterface
      * @no-named-arguments
      */
     public function getParser(): ParserInterface;
-
     /**
      * parses the given user agent to get the information about the browser
      *
-     * if no user agent is given, it uses {@see \SlimStat\Dependencies\BrowscapPHP\Helper\Support} to get it
+     * if no user agent is given, it uses {@see \BrowscapPHP\Helper\Support} to get it
      *
      * @param string $userAgent the user agent string
      *

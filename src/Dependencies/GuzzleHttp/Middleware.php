@@ -9,7 +9,6 @@ use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
 use SlimStat\Dependencies\Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-
 /**
  * Functions used to create and wrap handlers with handler middleware.
  */
@@ -29,24 +28,18 @@ final class Middleware
             return static function ($request, array $options) use ($handler) {
                 if (empty($options['cookies'])) {
                     return $handler($request, $options);
-                } elseif (!($options['cookies'] instanceof CookieJarInterface)) {
-                    throw new \InvalidArgumentException('cookies must be an instance of SlimStat\Dependencies\GuzzleHttp\Cookie\CookieJarInterface');
+                } elseif (!$options['cookies'] instanceof CookieJarInterface) {
+                    throw new \InvalidArgumentException('cookies must be an instance of GuzzleHttp\Cookie\CookieJarInterface');
                 }
                 $cookieJar = $options['cookies'];
                 $request = $cookieJar->withCookieHeader($request);
-
-                return $handler($request, $options)
-                    ->then(
-                        static function (ResponseInterface $response) use ($cookieJar, $request): ResponseInterface {
-                            $cookieJar->extractCookies($request, $response);
-
-                            return $response;
-                        }
-                    );
+                return $handler($request, $options)->then(static function (ResponseInterface $response) use ($cookieJar, $request): ResponseInterface {
+                    $cookieJar->extractCookies($request, $response);
+                    return $response;
+                });
             };
         };
     }
-
     /**
      * Middleware that throws exceptions for 4xx or 5xx responses when the
      * "http_errors" request option is set to true.
@@ -55,27 +48,23 @@ final class Middleware
      *
      * @return callable(callable): callable Returns a function that accepts the next handler.
      */
-    public static function httpErrors(BodySummarizerInterface $bodySummarizer = null): callable
+    public static function httpErrors(?BodySummarizerInterface $bodySummarizer = null): callable
     {
         return static function (callable $handler) use ($bodySummarizer): callable {
             return static function ($request, array $options) use ($handler, $bodySummarizer) {
                 if (empty($options['http_errors'])) {
                     return $handler($request, $options);
                 }
-
-                return $handler($request, $options)->then(
-                    static function (ResponseInterface $response) use ($request, $bodySummarizer) {
-                        $code = $response->getStatusCode();
-                        if ($code < 400) {
-                            return $response;
-                        }
-                        throw RequestException::create($request, $response, null, [], $bodySummarizer);
+                return $handler($request, $options)->then(static function (ResponseInterface $response) use ($request, $bodySummarizer) {
+                    $code = $response->getStatusCode();
+                    if ($code < 400) {
+                        return $response;
                     }
-                );
+                    throw RequestException::create($request, $response, null, [], $bodySummarizer);
+                });
             };
         };
     }
-
     /**
      * Middleware that pushes history data to an ArrayAccess container.
      *
@@ -90,35 +79,18 @@ final class Middleware
         if (!\is_array($container) && !$container instanceof \ArrayAccess) {
             throw new \InvalidArgumentException('history container must be an array or object implementing ArrayAccess');
         }
-
         return static function (callable $handler) use (&$container): callable {
             return static function (RequestInterface $request, array $options) use ($handler, &$container) {
-                return $handler($request, $options)->then(
-                    static function ($value) use ($request, &$container, $options) {
-                        $container[] = [
-                            'request' => $request,
-                            'response' => $value,
-                            'error' => null,
-                            'options' => $options,
-                        ];
-
-                        return $value;
-                    },
-                    static function ($reason) use ($request, &$container, $options) {
-                        $container[] = [
-                            'request' => $request,
-                            'response' => null,
-                            'error' => $reason,
-                            'options' => $options,
-                        ];
-
-                        return P\Create::rejectionFor($reason);
-                    }
-                );
+                return $handler($request, $options)->then(static function ($value) use ($request, &$container, $options) {
+                    $container[] = ['request' => $request, 'response' => $value, 'error' => null, 'options' => $options];
+                    return $value;
+                }, static function ($reason) use ($request, &$container, $options) {
+                    $container[] = ['request' => $request, 'response' => null, 'error' => $reason, 'options' => $options];
+                    return SlimStat\Dependencies\GuzzleHttp\Promise\Create::rejectionFor($reason);
+                });
             };
         };
     }
-
     /**
      * Middleware that invokes a callback before and after sending a request.
      *
@@ -132,7 +104,7 @@ final class Middleware
      *
      * @return callable Returns a function that accepts the next handler.
      */
-    public static function tap(callable $before = null, callable $after = null): callable
+    public static function tap(?callable $before = null, ?callable $after = null): callable
     {
         return static function (callable $handler) use ($before, $after): callable {
             return static function (RequestInterface $request, array $options) use ($handler, $before, $after) {
@@ -143,12 +115,10 @@ final class Middleware
                 if ($after) {
                     $after($request, $options, $response);
                 }
-
                 return $response;
             };
         };
     }
-
     /**
      * Middleware that handles request redirects.
      *
@@ -160,7 +130,6 @@ final class Middleware
             return new RedirectMiddleware($handler);
         };
     }
-
     /**
      * Middleware that retries requests based on the boolean result of
      * invoking the provided "decider" function.
@@ -176,22 +145,21 @@ final class Middleware
      *
      * @return callable Returns a function that accepts the next handler.
      */
-    public static function retry(callable $decider, callable $delay = null): callable
+    public static function retry(callable $decider, ?callable $delay = null): callable
     {
         return static function (callable $handler) use ($decider, $delay): RetryMiddleware {
             return new RetryMiddleware($decider, $handler, $delay);
         };
     }
-
     /**
      * Middleware that logs requests, responses, and errors using a message
      * formatter.
      *
-     * @phpstan-param \Psr\Log\LogLevel::* $logLevel  Level at which to log requests.
-     *
      * @param LoggerInterface                            $logger    Logs messages.
      * @param MessageFormatterInterface|MessageFormatter $formatter Formatter used to create message strings.
      * @param string                                     $logLevel  Level at which to log requests.
+     *
+     * @phpstan-param \Psr\Log\LogLevel::* $logLevel Level at which to log requests.
      *
      * @return callable Returns a function that accepts the next handler.
      */
@@ -201,28 +169,21 @@ final class Middleware
         if (!$formatter instanceof MessageFormatter && !$formatter instanceof MessageFormatterInterface) {
             throw new \LogicException(sprintf('Argument 2 to %s::log() must be of type %s', self::class, MessageFormatterInterface::class));
         }
-
         return static function (callable $handler) use ($logger, $formatter, $logLevel): callable {
             return static function (RequestInterface $request, array $options = []) use ($handler, $logger, $formatter, $logLevel) {
-                return $handler($request, $options)->then(
-                    static function ($response) use ($logger, $request, $formatter, $logLevel): ResponseInterface {
-                        $message = $formatter->format($request, $response);
-                        $logger->log($logLevel, $message);
-
-                        return $response;
-                    },
-                    static function ($reason) use ($logger, $request, $formatter): PromiseInterface {
-                        $response = $reason instanceof RequestException ? $reason->getResponse() : null;
-                        $message = $formatter->format($request, $response, P\Create::exceptionFor($reason));
-                        $logger->error($message);
-
-                        return P\Create::rejectionFor($reason);
-                    }
-                );
+                return $handler($request, $options)->then(static function ($response) use ($logger, $request, $formatter, $logLevel): ResponseInterface {
+                    $message = $formatter->format($request, $response);
+                    $logger->log($logLevel, $message);
+                    return $response;
+                }, static function ($reason) use ($logger, $request, $formatter): PromiseInterface {
+                    $response = $reason instanceof RequestException ? $reason->getResponse() : null;
+                    $message = $formatter->format($request, $response, SlimStat\Dependencies\GuzzleHttp\Promise\Create::exceptionFor($reason));
+                    $logger->error($message);
+                    return SlimStat\Dependencies\GuzzleHttp\Promise\Create::rejectionFor($reason);
+                });
             };
         };
     }
-
     /**
      * This middleware adds a default content-type if possible, a default
      * content-length or transfer-encoding header, and the expect header.
@@ -233,7 +194,6 @@ final class Middleware
             return new PrepareBodyMiddleware($handler);
         };
     }
-
     /**
      * Middleware that applies a map function to the request before passing to
      * the next handler.
@@ -249,7 +209,6 @@ final class Middleware
             };
         };
     }
-
     /**
      * Middleware that applies a map function to the resolved promise's
      * response.

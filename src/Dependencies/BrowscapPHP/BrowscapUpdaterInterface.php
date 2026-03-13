@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP;
 
 use SlimStat\Dependencies\BrowscapPHP\Exception\ErrorCachedVersionException;
@@ -14,7 +13,6 @@ use SlimStat\Dependencies\BrowscapPHP\Exception\NoNewVersionException;
 use SlimStat\Dependencies\BrowscapPHP\Helper\Exception;
 use SlimStat\Dependencies\BrowscapPHP\Helper\IniLoaderInterface;
 use UnexpectedValueException;
-
 /**
  * Browscap.ini parsing class with caching and update capabilities
  */
@@ -31,7 +29,6 @@ interface BrowscapUpdaterInterface
      * @no-named-arguments
      */
     public function convertFile(string $iniFile): void;
-
     /**
      * reads and parses an ini string and writes the results into the cache
      *
@@ -40,7 +37,6 @@ interface BrowscapUpdaterInterface
      * @no-named-arguments
      */
     public function convertString(string $iniString): void;
-
     /**
      * fetches a remote file and stores it into a local folder
      *
@@ -54,7 +50,6 @@ interface BrowscapUpdaterInterface
      * @no-named-arguments
      */
     public function fetch(string $file, string $remoteFile = IniLoaderInterface::PHP_INI): void;
-
     /**
      * fetches a remote file, parses it and writes the result into the cache
      *
@@ -71,7 +66,6 @@ interface BrowscapUpdaterInterface
      * @no-named-arguments
      */
     public function update(string $remoteFile = IniLoaderInterface::PHP_INI): void;
-
     /**
      * checks if an update on a remote location for the local file or the cache
      *

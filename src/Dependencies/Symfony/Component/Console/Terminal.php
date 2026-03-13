@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console;
 
 class Terminal
@@ -16,7 +15,6 @@ class Terminal
     private static $width;
     private static $height;
     private static $stty;
-
     /**
      * Gets the terminal width.
      *
@@ -28,14 +26,11 @@ class Terminal
         if (false !== $width) {
             return (int) trim($width);
         }
-
         if (null === self::$width) {
             self::initDimensions();
         }
-
         return self::$width ?: 80;
     }
-
     /**
      * Gets the terminal height.
      *
@@ -47,14 +42,11 @@ class Terminal
         if (false !== $height) {
             return (int) trim($height);
         }
-
         if (null === self::$height) {
             self::initDimensions();
         }
-
         return self::$height ?: 50;
     }
-
     /**
      * @internal
      */
@@ -63,15 +55,12 @@ class Terminal
         if (null !== self::$stty) {
             return self::$stty;
         }
-
         // skip check if shell_exec function is disabled
         if (!\function_exists('shell_exec')) {
             return false;
         }
-
-        return self::$stty = (bool) shell_exec('stty 2> '.('\\' === \DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null'));
+        return self::$stty = (bool) shell_exec('stty 2> ' . ('\\' === \DIRECTORY_SEPARATOR ? 'NUL' : '/dev/null'));
     }
-
     private static function initDimensions()
     {
         if ('\\' === \DIRECTORY_SEPARATOR) {
@@ -94,7 +83,6 @@ class Terminal
             self::initDimensionsUsingStty();
         }
     }
-
     /**
      * Returns whether STDOUT has vt100 support (some Windows 10+ configurations).
      */
@@ -102,7 +90,6 @@ class Terminal
     {
         return \function_exists('sapi_windows_vt100_support') && sapi_windows_vt100_support(fopen('php://stdout', 'w'));
     }
-
     /**
      * Initializes dimensions using the output of an stty columns line.
      */
@@ -120,7 +107,6 @@ class Terminal
             }
         }
     }
-
     /**
      * Runs and parses mode CON if it's available, suppressing any error output.
      *
@@ -129,14 +115,11 @@ class Terminal
     private static function getConsoleMode(): ?array
     {
         $info = self::readFromProcess('mode CON');
-
         if (null === $info || !preg_match('/--------+\r?\n.+?(\d+)\r?\n.+?(\d+)\r?\n/', $info, $matches)) {
             return null;
         }
-
         return [(int) $matches[2], (int) $matches[1]];
     }
-
     /**
      * Runs and parses stty -a if it's available, suppressing any error output.
      */
@@ -144,34 +127,23 @@ class Terminal
     {
         return self::readFromProcess('stty -a | grep columns');
     }
-
     private static function readFromProcess(string $command): ?string
     {
         if (!\function_exists('proc_open')) {
             return null;
         }
-
-        $descriptorspec = [
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-
+        $descriptorspec = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
         $cp = \function_exists('sapi_windows_cp_set') ? sapi_windows_cp_get() : 0;
-
-        $process = proc_open($command, $descriptorspec, $pipes, null, null, ['suppress_errors' => true]);
-        if (!\is_resource($process)) {
+        if (!$process = @proc_open($command, $descriptorspec, $pipes, null, null, ['suppress_errors' => true])) {
             return null;
         }
-
         $info = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
         fclose($pipes[2]);
         proc_close($process);
-
         if ($cp) {
             sapi_windows_cp_set($cp);
         }
-
         return $info;
     }
 }

@@ -5,7 +5,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
 use SlimStat\Dependencies\Psr\Cache\CacheItemInterface;
 use SlimStat\Dependencies\Psr\Cache\CacheItemPoolInterface;
-
 /**
  * Representation of the cache storage, which lets you read items from, and add
  * values to the cache.
@@ -21,35 +20,30 @@ class Pool implements CacheItemPoolInterface
      *
      * @var string
      */
-    /* public */ const KEY_INVALID_CHARACTERS = '{}()/\@:';
-
+    /* public */
+    const KEY_INVALID_CHARACTERS = '{}()/\@:';
     /**
      * @var KeyValueStore
      */
     protected $store;
-
     /**
      * @var Repository
      */
     protected $repository;
-
     /**
      * @var Item[]
      */
     protected $deferred = array();
-
     public function __construct(KeyValueStore $store)
     {
         $this->store = $store;
         $this->repository = new Repository($store);
     }
-
     public function __destruct()
     {
         // make sure all deferred items are actually saved
         $this->commit();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -66,21 +60,17 @@ class Pool implements CacheItemPoolInterface
              */
             $value = $this->deferred[$key];
             $item = is_object($value) ? clone $value : $value;
-
             /*
              * Deferred items should identify as being hit, unless if expired:
              * @see https://groups.google.com/forum/?fromgroups#!topic/php-fig/pxy_VYgm2sU
              */
             $item->overrideIsHit(!$item->isExpired());
-
             return $item;
         }
-
         // return a stub object - the real call to the cache store will only be
         // done once we actually want to access data from this object
         return new Item($key, $this->repository);
     }
-
     /**
      * {@inheritdoc}
      *
@@ -91,50 +81,39 @@ class Pool implements CacheItemPoolInterface
         $items = array();
         foreach ($keys as $key) {
             $this->assertValidKey($key);
-
             $items[$key] = $this->getItem($key);
         }
-
         return $items;
     }
-
     /**
      * {@inheritdoc}
      */
     public function hasItem($key)
     {
         $this->assertValidKey($key);
-
         $item = $this->getItem($key);
-
         return $item->isHit();
     }
-
     /**
      * {@inheritdoc}
      */
     public function clear()
     {
         $this->deferred = array();
-
         return $this->store->flush();
     }
-
     /**
      * {@inheritdoc}
      */
     public function deleteItem($key)
     {
         $this->assertValidKey($key);
-
         $this->store->delete($key);
         unset($this->deferred[$key]);
-
         // as long as the item is gone from the cache (even if it never existed
         // and delete failed because of that), we should return `true`
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -142,27 +121,22 @@ class Pool implements CacheItemPoolInterface
     {
         foreach ($keys as $key) {
             $this->assertValidKey($key);
-
             unset($this->deferred[$key]);
         }
-
         $this->store->deleteMulti($keys);
-
         // as long as the item is gone from the cache (even if it never existed
         // and delete failed because of that), we should return `true`
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
     public function save(CacheItemInterface $item)
     {
         if (!$item instanceof Item) {
-            throw new InvalidArgumentException('SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6\Pool can only save
-                SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6\Item objects');
+            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save
+                MatthiasMullie\Scrapbook\Psr6\Item objects');
         }
-
         if (!$item->hasChanged()) {
             /*
              * If the item didn't change, we don't have to re-save it. We do,
@@ -173,31 +147,25 @@ class Pool implements CacheItemPoolInterface
              */
             return null !== $item->get();
         }
-
         $expire = $item->getExpiration();
-
         return $this->store->set($item->getKey(), $item->get(), $expire);
     }
-
     /**
      * {@inheritdoc}
      */
     public function saveDeferred(CacheItemInterface $item)
     {
         if (!$item instanceof Item) {
-            throw new InvalidArgumentException('SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6\Pool can only save
-                SlimStat\Dependencies\MatthiasMullie\Scrapbook\Psr6\Item objects');
+            throw new InvalidArgumentException('MatthiasMullie\Scrapbook\Psr6\Pool can only save
+                MatthiasMullie\Scrapbook\Psr6\Item objects');
         }
-
         $this->deferred[$item->getKey()] = $item;
         // let's pretend that this actually comes from cache (we'll store it
         // there soon), unless if it's already expired (in which case it will
         // never reach cache...)
         $item->overrideIsHit(!$item->isExpired());
-
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -209,13 +177,11 @@ class Pool implements CacheItemPoolInterface
                 // already expired: don't even save it
                 continue;
             }
-
             // setMulti doesn't allow to set expiration times on a per-item basis,
             // so we'll have to group our requests per expiration date
             $expire = $item->getExpiration();
             $deferred[$expire][$item->getKey()] = $item->get();
         }
-
         // setMulti doesn't allow to set expiration times on a per-item basis,
         // so we'll have to group our requests per expiration date
         $success = true;
@@ -224,10 +190,8 @@ class Pool implements CacheItemPoolInterface
             $success &= !in_array(false, $status);
             unset($deferred[$expire]);
         }
-
         return (bool) $success;
     }
-
     /**
      * Throws an exception if $key is invalid.
      *
@@ -238,13 +202,12 @@ class Pool implements CacheItemPoolInterface
     protected function assertValidKey($key)
     {
         if (!is_string($key)) {
-            throw new InvalidArgumentException('Invalid key: '.var_export($key, true).'. Key should be a string.');
+            throw new InvalidArgumentException('Invalid key: ' . var_export($key, true) . '. Key should be a string.');
         }
-
         // valid key according to PSR-6 rules
         $invalid = preg_quote(static::KEY_INVALID_CHARACTERS, '/');
-        if (preg_match('/['.$invalid.']/', $key)) {
-            throw new InvalidArgumentException('Invalid key: '.$key.'. Contains (a) character(s) reserved for future extension: '.static::KEY_INVALID_CHARACTERS);
+        if (preg_match('/[' . $invalid . ']/', $key)) {
+            throw new InvalidArgumentException('Invalid key: ' . $key . '. Contains (a) character(s) reserved for future extension: ' . static::KEY_INVALID_CHARACTERS);
         }
     }
 }

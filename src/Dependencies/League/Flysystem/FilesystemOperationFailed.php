@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\League\Flysystem;
 
 interface FilesystemOperationFailed extends FilesystemException
@@ -17,6 +16,5 @@ interface FilesystemOperationFailed extends FilesystemException
     public const OPERATION_COPY = 'COPY';
     public const OPERATION_READ = 'READ';
     public const OPERATION_SET_VISIBILITY = 'SET_VISIBILITY';
-
     public function operation(): string;
 }

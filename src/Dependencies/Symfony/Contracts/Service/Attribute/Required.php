@@ -8,8 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
-namespace SlimStat\Dependencies\Symfony\Contracts\Service\SlimStat_SlimStat_Attribute;
+namespace SlimStat\Dependencies\Symfony\Contracts\Service\Attribute;
 
 /**
  * A required dependency.
@@ -19,7 +18,7 @@ namespace SlimStat\Dependencies\Symfony\Contracts\Service\SlimStat_SlimStat_Attr
  *
  * @author Alexander M. Turek <me@derrabus.de>
  */
-#[\SlimStat_SlimStat_Attribute(\SlimStat_SlimStat_Attribute::TARGET_METHOD | \SlimStat_SlimStat_Attribute::TARGET_PROPERTY)]
+#[\Attribute(\Attribute::TARGET_METHOD | \Attribute::TARGET_PROPERTY)]
 final class Required
 {
 }

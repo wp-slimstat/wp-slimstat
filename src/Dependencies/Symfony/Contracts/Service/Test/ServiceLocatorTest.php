@@ -8,11 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Contracts\Service\Test;
 
 class_alias(ServiceLocatorTestCase::class, ServiceLocatorTest::class);
-
 if (false) {
     /**
      * @deprecated since PHPUnit 9.6

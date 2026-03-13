@@ -1,12 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Parser;
 
 use SlimStat\Dependencies\BrowscapPHP\Formatter\FormatterInterface;
 use UnexpectedValueException;
-
 /**
  * the interface for the ini parser class
  */

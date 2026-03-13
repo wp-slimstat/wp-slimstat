@@ -7,7 +7,6 @@ use SlimStat\Dependencies\GuzzleHttp\Promise\EachPromise;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromiseInterface;
 use SlimStat\Dependencies\GuzzleHttp\Promise\PromisorInterface;
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
-
 /**
  * Sends an iterator of requests concurrently using a capped pool size.
  *
@@ -27,7 +26,6 @@ class Pool implements PromisorInterface
      * @var EachPromise
      */
     private $each;
-
     /**
      * @param ClientInterface $client   Client used to send the requests.
      * @param array|\Iterator $requests Requests or functions that return
@@ -43,15 +41,13 @@ class Pool implements PromisorInterface
         if (!isset($config['concurrency'])) {
             $config['concurrency'] = 25;
         }
-
         if (isset($config['options'])) {
             $opts = $config['options'];
             unset($config['options']);
         } else {
             $opts = [];
         }
-
-        $iterable = P\Create::iterFor($requests);
+        $iterable = SlimStat\Dependencies\GuzzleHttp\Promise\Create::iterFor($requests);
         $requests = static function () use ($iterable, $client, $opts) {
             foreach ($iterable as $key => $rfn) {
                 if ($rfn instanceof RequestInterface) {
@@ -63,10 +59,8 @@ class Pool implements PromisorInterface
                 }
             }
         };
-
         $this->each = new EachPromise($requests(), $config);
     }
-
     /**
      * Get promise
      */
@@ -74,7 +68,6 @@ class Pool implements PromisorInterface
     {
         return $this->each->promise();
     }
-
     /**
      * Sends multiple requests concurrently and returns an array of responses
      * and exceptions that uses the same ordering as the provided requests.
@@ -86,7 +79,7 @@ class Pool implements PromisorInterface
      * @param ClientInterface $client   Client used to send the requests
      * @param array|\Iterator $requests Requests to send concurrently.
      * @param array           $options  Passes through the options available in
-     *                                  {@see \SlimStat\Dependencies\GuzzleHttp\Pool::__construct}
+     *                                  {@see Pool::__construct}
      *
      * @return array Returns an array containing the response or an exception
      *               in the same order that the requests were sent.
@@ -101,10 +94,8 @@ class Pool implements PromisorInterface
         $pool = new static($client, $requests, $options);
         $pool->promise()->wait();
         \ksort($res);
-
         return $res;
     }
-
     /**
      * Execute callback(s)
      */

@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Parser\Helper;
 
 use Generator;
-
 /**
  * interface for the parser patternHelper
  */

@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Question;
 
 /**
@@ -19,7 +18,6 @@ namespace SlimStat\Dependencies\Symfony\Component\Console\Question;
 class ConfirmationQuestion extends Question
 {
     private $trueAnswerRegex;
-
     /**
      * @param string $question        The question to ask to the user
      * @param bool   $default         The default answer to return, true or false
@@ -28,11 +26,9 @@ class ConfirmationQuestion extends Question
     public function __construct(string $question, bool $default = true, string $trueAnswerRegex = '/^y/i')
     {
         parent::__construct($question, $default);
-
         $this->trueAnswerRegex = $trueAnswerRegex;
         $this->setNormalizer($this->getDefaultNormalizer());
     }
-
     /**
      * Returns the default answer normalizer.
      */
@@ -40,17 +36,14 @@ class ConfirmationQuestion extends Question
     {
         $default = $this->getDefault();
         $regex = $this->trueAnswerRegex;
-
         return function ($answer) use ($default, $regex) {
             if (\is_bool($answer)) {
                 return $answer;
             }
-
             $answerIsTrue = (bool) preg_match($regex, $answer);
             if (false === $default) {
                 return $answer && $answerIsTrue;
             }
-
             return '' === $answer || $answerIsTrue;
         };
     }

@@ -1,12 +1,11 @@
 <?php
-declare(strict_types=1);
 
+declare (strict_types=1);
 namespace SlimStat\Dependencies\League\MimeTypeDetection;
 
 interface ExtensionLookup
 {
     public function lookupExtension(string $mimetype): ?string;
-
     /**
      * @return string[]
      */

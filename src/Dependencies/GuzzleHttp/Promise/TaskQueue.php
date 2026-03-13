@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 
 /**
@@ -11,7 +10,7 @@ namespace SlimStat\Dependencies\GuzzleHttp\Promise;
  * maintains a constant stack size. You can use the task queue asynchronously
  * by calling the `run()` function of the global task queue in an event loop.
  *
- *     SlimStat\Dependencies\GuzzleHttp\Promise\Utils::queue()->run();
+ *     GuzzleHttp\Promise\Utils::queue()->run();
  *
  * @final
  */
@@ -19,7 +18,6 @@ class TaskQueue implements TaskQueueInterface
 {
     private $enableShutdown = true;
     private $queue = [];
-
     public function __construct(bool $withShutdown = true)
     {
         if ($withShutdown) {
@@ -27,24 +25,21 @@ class TaskQueue implements TaskQueueInterface
                 if ($this->enableShutdown) {
                     // Only run the tasks if an E_ERROR didn't occur.
                     $err = error_get_last();
-                    if (!$err || ($err['type'] ^ E_ERROR)) {
+                    if (!$err || $err['type'] ^ E_ERROR) {
                         $this->run();
                     }
                 }
             });
         }
     }
-
     public function isEmpty(): bool
     {
         return !$this->queue;
     }
-
     public function add(callable $task): void
     {
         $this->queue[] = $task;
     }
-
     public function run(): void
     {
         while ($task = array_shift($this->queue)) {
@@ -52,7 +47,6 @@ class TaskQueue implements TaskQueueInterface
             $task();
         }
     }
-
     /**
      * The task queue will be run and exhausted by default when the process
      * exits IFF the exit is not the result of a PHP E_ERROR error.

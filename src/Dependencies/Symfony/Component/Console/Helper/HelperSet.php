@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Helper;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Command\Command;
 use SlimStat\Dependencies\Symfony\Component\Console\Exception\InvalidArgumentException;
-
 /**
  * HelperSet represents a set of helpers to be used with a command.
  *
@@ -26,7 +24,6 @@ class HelperSet implements \IteratorAggregate
     /** @var array<string, Helper> */
     private $helpers = [];
     private $command;
-
     /**
      * @param Helper[] $helpers An array of helper
      */
@@ -36,17 +33,14 @@ class HelperSet implements \IteratorAggregate
             $this->set($helper, \is_int($alias) ? null : $alias);
         }
     }
-
     public function set(HelperInterface $helper, ?string $alias = null)
     {
         $this->helpers[$helper->getName()] = $helper;
         if (null !== $alias) {
             $this->helpers[$alias] = $helper;
         }
-
         $helper->setHelperSet($this);
     }
-
     /**
      * Returns true if the helper if defined.
      *
@@ -56,7 +50,6 @@ class HelperSet implements \IteratorAggregate
     {
         return isset($this->helpers[$name]);
     }
-
     /**
      * Gets a helper value.
      *
@@ -69,20 +62,16 @@ class HelperSet implements \IteratorAggregate
         if (!$this->has($name)) {
             throw new InvalidArgumentException(sprintf('The helper "%s" is not defined.', $name));
         }
-
         return $this->helpers[$name];
     }
-
     /**
      * @deprecated since Symfony 5.4
      */
     public function setCommand(?Command $command = null)
     {
         trigger_deprecation('symfony/console', '5.4', 'Method "%s()" is deprecated.', __METHOD__);
-
         $this->command = $command;
     }
-
     /**
      * Gets the command associated with this helper set.
      *
@@ -93,10 +82,8 @@ class HelperSet implements \IteratorAggregate
     public function getCommand()
     {
         trigger_deprecation('symfony/console', '5.4', 'Method "%s()" is deprecated.', __METHOD__);
-
         return $this->command;
     }
-
     /**
      * @return \Traversable<string, Helper>
      */

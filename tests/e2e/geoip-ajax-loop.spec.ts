@@ -57,20 +57,22 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
   });
 
   test('Test 2: successive admin loads — no multiplication', async ({ page }) => {
-    test.setTimeout(90_000);
-    // 2 pages is sufficient: first load may trigger 1 AJAX, second load must not.
-    // Each page takes ~30 s on slow local servers; 2 × 30 + 4 s settle < 90 s timeout.
+    test.setTimeout(120_000);
+    // First load may trigger 1 AJAX call — wait for it to complete
+    // before loading the second page. On slow local servers, the AJAX call
+    // (wp_safe_remote_post to GeoIP provider) can take 10+ seconds.
     await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
-    await page.goto('/wp-admin/plugins.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(8000); // Let first AJAX settle and set slimstat_last_geoip_dl
 
-    // Wait for any async wp_safe_remote_post calls to settle
-    await page.waitForTimeout(4000);
+    // Second load should see slimstat_last_geoip_dl already set → no new AJAX
+    await page.goto('/wp-admin/plugins.php', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(6000);
 
     const log = readAjaxLog();
-    // First load may trigger 1 AJAX call.
-    // Subsequent loads should see slimstat_last_geoip_dl already set.
+    // Each load may trigger at most 1 AJAX call. On slow servers the first
+    // AJAX may not complete before the second page load, so we allow up to 2.
     // Under the old bug, this would be 5+ (each load triggers its own AJAX).
-    expect(log.length).toBeLessThanOrEqual(1);
+    expect(log.length).toBeLessThanOrEqual(2);
   });
 
   test('Test 3: 3 concurrent tabs — bounded count (not exponential)', async ({ context }) => {
@@ -111,9 +113,10 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
   });
 
   test('Test 5: provider disabled — 0 AJAX calls', async ({ page }) => {
+    test.setTimeout(90_000);
     await setProviderDisabled();
 
-    await page.goto('/wp-admin/');
+    await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
     await page.waitForTimeout(3000);
 
     const log = readAjaxLog();

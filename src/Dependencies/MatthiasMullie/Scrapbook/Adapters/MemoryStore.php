@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\MemoryStore as Collection;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
-
 /**
  * No-storage cache: all values will be "cached" in memory, in a simple PHP
  * array. Values will only be valid for 1 request: whatever is in memory at the
@@ -23,17 +22,14 @@ class MemoryStore implements KeyValueStore
      * @var array
      */
     protected $items = array();
-
     /**
      * @var int
      */
     protected $limit = 0;
-
     /**
      * @var int
      */
     protected $size = 0;
-
     /**
      * @param int|string $limit Memory limit in bytes (defaults to 10% of memory_limit)
      */
@@ -50,7 +46,6 @@ class MemoryStore implements KeyValueStore
             $this->limit = $this->shorthandToBytes($limit);
         }
     }
-
     /**
      * {@inheritdoc}
      */
@@ -58,18 +53,13 @@ class MemoryStore implements KeyValueStore
     {
         if (!$this->exists($key)) {
             $token = null;
-
             return false;
         }
-
         $value = $this->items[$key][0];
-
         // use serialized version of stored value as CAS token
         $token = $value;
-
         return unserialize($value);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -77,38 +67,30 @@ class MemoryStore implements KeyValueStore
     {
         $items = array();
         $tokens = array();
-
         foreach ($keys as $key) {
             if (!$this->exists($key)) {
                 // omit missing keys from return array
                 continue;
             }
-
             $items[$key] = $this->get($key, $token);
             $tokens[$key] = $token;
         }
-
         return $items;
     }
-
     /**
      * {@inheritdoc}
      */
     public function set($key, $value, $expire = 0)
     {
         $this->size -= isset($this->items[$key]) ? strlen($this->items[$key][0]) : 0;
-
         $value = serialize($value);
         $expire = $this->normalizeTime($expire);
         $this->items[$key] = array($value, $expire);
-
         $this->size += strlen($value);
         $this->lru($key);
         $this->evict();
-
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -118,39 +100,31 @@ class MemoryStore implements KeyValueStore
         foreach ($items as $key => $value) {
             $success[$key] = $this->set($key, $value, $expire);
         }
-
         return $success;
     }
-
     /**
      * {@inheritdoc}
      */
     public function delete($key)
     {
         $exists = $this->exists($key);
-
         if ($exists) {
             $this->size -= strlen($this->items[$key][0]);
             unset($this->items[$key]);
         }
-
         return $exists;
     }
-
     /**
      * {@inheritdoc}
      */
     public function deleteMulti(array $keys)
     {
         $success = array();
-
         foreach ($keys as $key) {
             $success[$key] = $this->delete($key);
         }
-
         return $success;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -159,10 +133,8 @@ class MemoryStore implements KeyValueStore
         if ($this->exists($key)) {
             return false;
         }
-
         return $this->set($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -171,10 +143,8 @@ class MemoryStore implements KeyValueStore
         if (!$this->exists($key)) {
             return false;
         }
-
         return $this->set($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -183,15 +153,12 @@ class MemoryStore implements KeyValueStore
         if (!$this->exists($key)) {
             return false;
         }
-
         $this->get($key, $comparison);
         if ($comparison !== $token) {
             return false;
         }
-
         return $this->set($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -200,10 +167,8 @@ class MemoryStore implements KeyValueStore
         if ($offset <= 0 || $initial < 0) {
             return false;
         }
-
         return $this->doIncrement($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -212,23 +177,18 @@ class MemoryStore implements KeyValueStore
         if ($offset <= 0 || $initial < 0) {
             return false;
         }
-
         return $this->doIncrement($key, -$offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
     public function touch($key, $expire)
     {
         $expire = $this->normalizeTime($expire);
-
         // get current value & re-save it, with new expiration
         $value = $this->get($key, $token);
-
         return $this->cas($token, $key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -236,10 +196,8 @@ class MemoryStore implements KeyValueStore
     {
         $this->items = array();
         $this->size = 0;
-
         return true;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -247,7 +205,6 @@ class MemoryStore implements KeyValueStore
     {
         return new Collection($this, $name);
     }
-
     /**
      * Checks if a value exists in cache and is not yet expired.
      *
@@ -261,21 +218,16 @@ class MemoryStore implements KeyValueStore
             // key not in cache
             return false;
         }
-
         $expire = $this->items[$key][1];
         if (0 !== $expire && $expire < time()) {
             // not permanent & already expired
             $this->size -= strlen($this->items[$key][0]);
             unset($this->items[$key]);
-
             return false;
         }
-
         $this->lru($key);
-
         return true;
     }
-
     /**
      * Shared between increment/decrement: both have mostly the same logic
      * (decrement just increments a negative value), but need their validation
@@ -292,23 +244,18 @@ class MemoryStore implements KeyValueStore
     {
         if (!$this->exists($key)) {
             $this->set($key, $initial, $expire);
-
             return $initial;
         }
-
         $value = $this->get($key);
         if (!is_numeric($value) || $value < 0) {
             return false;
         }
-
         $value += $offset;
         // value can never be lower than 0
         $value = max(0, $value);
         $this->set($key, $value, $expire);
-
         return $value;
     }
-
     /**
      * Times can be:
      * * relative (in seconds) to current time, within 30 days
@@ -328,15 +275,12 @@ class MemoryStore implements KeyValueStore
         if (!$time) {
             return 0;
         }
-
         // relative time in seconds, <30 days
         if ($time < 30 * 24 * 60 * 60) {
             $time += time();
         }
-
         return $time;
     }
-
     /**
      * This cache uses least recently used algorithm. This is to be called
      * with the key to be marked as just used.
@@ -348,7 +292,6 @@ class MemoryStore implements KeyValueStore
         unset($this->items[$key]);
         $this->items[$key] = $value;
     }
-
     /**
      * Least recently used cache values will be evicted from cache should
      * it fill up too much.
@@ -360,7 +303,6 @@ class MemoryStore implements KeyValueStore
             $this->size -= strlen($item[0]);
         }
     }
-
     /**
      * Understands shorthand byte values (as used in e.g. memory_limit ini
      * setting) and converts them into bytes.
@@ -378,10 +320,8 @@ class MemoryStore implements KeyValueStore
             // cast to string('1.234E17'), then to int(1)
             return $shorthand;
         }
-
         $units = array('B' => 1024, 'M' => pow(1024, 2), 'G' => pow(1024, 3));
-
-        return (int) preg_replace_callback('/^([0-9]+)('.implode('|', array_keys($units)).')$/', function ($match) use ($units) {
+        return (int) preg_replace_callback('/^([0-9]+)(' . implode('|', array_keys($units)) . ')$/', function ($match) use ($units) {
             return $match[1] * $units[$match[2]];
         }, $shorthand);
     }

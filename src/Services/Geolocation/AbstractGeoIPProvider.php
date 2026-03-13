@@ -137,4 +137,11 @@ abstract class AbstractGeoIPProvider implements GeoServiceProviderInterface
             wp_mkdir_p($dir);
         }
     }
+
+    protected function ensureWpFileApiLoaded(): void
+    {
+        if (!function_exists('wp_tempnam')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+    }
 }

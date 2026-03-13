@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Redis as Adapter;
-
 /**
  * Redis adapter for a subset of data, in a different database.
  *
@@ -22,7 +21,6 @@ class Redis extends Adapter
         parent::__construct($client);
         $this->client->select($database);
     }
-
     /**
      * {@inheritdoc}
      */

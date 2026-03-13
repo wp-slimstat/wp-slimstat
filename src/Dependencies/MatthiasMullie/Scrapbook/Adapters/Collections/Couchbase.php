@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixReset;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Couchbase as Adapter;
-
 /**
  * Couchbase adapter for a subset of data, accomplished by prefixing keys.
  *

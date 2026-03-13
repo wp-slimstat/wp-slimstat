@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Scale;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
 use SplObjectStorage;
-
 /**
  * This class lets you scale your cache cluster by sharding the data across
  * multiple cache servers.
@@ -32,22 +31,19 @@ class Shard implements KeyValueStore
      * @var KeyValueStore[]
      */
     protected $caches = array();
-
     /**
      * Overloadable with multiple KeyValueStore objects.
      */
-    public function __construct(KeyValueStore $cache1, KeyValueStore $cache2 = null /* , [KeyValueStore $cache3, [...]] */)
+    public function __construct(KeyValueStore $cache1, KeyValueStore $cache2 = null)
     {
         $caches = func_get_args();
         $caches = array_filter($caches);
         $this->caches = $caches;
     }
-
     public function addCache(KeyValueStore $cache)
     {
         $this->caches[] = $cache;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -55,7 +51,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->get($key, $token);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -64,17 +59,14 @@ class Shard implements KeyValueStore
         $shards = $this->getShards($keys);
         $results = array();
         $tokens = array();
-
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $results += $shard->getMulti($keysOnShard, $shardTokens);
             $tokens += $shardTokens ?: array();
         }
-
         return $results;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -82,7 +74,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->set($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -90,17 +81,14 @@ class Shard implements KeyValueStore
     {
         $shards = $this->getShards(array_keys($items));
         $results = array();
-
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $itemsOnShard = array_intersect_key($items, array_flip($keysOnShard));
             $results += $shard->setMulti($itemsOnShard, $expire);
         }
-
         return $results;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -108,7 +96,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->delete($key);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -116,16 +103,13 @@ class Shard implements KeyValueStore
     {
         $shards = $this->getShards($keys);
         $results = array();
-
         /** @var KeyValueStore $shard */
         foreach ($shards as $shard) {
             $keysOnShard = $shards[$shard];
             $results += $shard->deleteMulti($keysOnShard);
         }
-
         return $results;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -133,7 +117,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->add($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -141,7 +124,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->replace($key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -149,7 +131,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->cas($token, $key, $value, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -157,7 +138,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->increment($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -165,7 +145,6 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->decrement($key, $offset, $initial, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -173,36 +152,29 @@ class Shard implements KeyValueStore
     {
         return $this->getShard($key)->touch($key, $expire);
     }
-
     /**
      * {@inheritdoc}
      */
     public function flush()
     {
         $result = true;
-
         foreach ($this->caches as $cache) {
             $result &= $cache->flush();
         }
-
         return (bool) $result;
     }
-
     /**
      * {@inheritdoc}
      */
     public function getCollection($name)
     {
         $shard = new static($this->caches[0]->getCollection($name));
-
         $count = count($this->caches);
         for ($i = 1; $i < $count; ++$i) {
             $shard->addCache($this->caches[$i]->getCollection($name));
         }
-
         return $shard;
     }
-
     /**
      * Get the shard (KeyValueStore object) that corresponds to a particular
      * cache key.
@@ -224,15 +196,11 @@ class Shard implements KeyValueStore
          * will do just fine here.
          */
         $hash = crc32($key);
-
         // crc32 on 32-bit machines can produce a negative int
         $hash = abs($hash);
-
         $index = $hash % count($this->caches);
-
         return $this->caches[$index];
     }
-
     /**
      * Get a [KeyValueStore => array of cache keys] map (SplObjectStorage) for
      * multiple cache keys.
@@ -242,16 +210,13 @@ class Shard implements KeyValueStore
     protected function getShards(array $keys)
     {
         $shards = new \SplObjectStorage();
-
         foreach ($keys as $key) {
             $shard = $this->getShard($key);
             if (!isset($shards[$shard])) {
                 $shards[$shard] = array();
             }
-
             $shards[$shard] = array_merge($shards[$shard], array($key));
         }
-
         return $shards;
     }
 }

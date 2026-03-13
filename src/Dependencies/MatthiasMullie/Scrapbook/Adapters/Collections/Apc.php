@@ -4,7 +4,6 @@ namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Apc as Adapter;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Utils\PrefixKeys;
-
 /**
  * APC adapter for a subset of data, accomplished by prefixing keys.
  *
@@ -19,9 +18,8 @@ class Apc extends PrefixKeys
      */
     public function __construct(Adapter $cache, $name)
     {
-        parent::__construct($cache, 'collection:'.$name.':');
+        parent::__construct($cache, 'collection:' . $name . ':');
     }
-
     /**
      * {@inheritdoc}
      */
@@ -36,11 +34,9 @@ class Apc extends PrefixKeys
          */
         $reflection = new \ReflectionMethod($this->cache, 'APCuIterator');
         $reflection->setAccessible(true);
-        $iterator = $reflection->invoke($this->cache, '/^'.preg_quote($this->prefix, '/').'/', \APC_ITER_KEY);
-
+        $iterator = $reflection->invoke($this->cache, '/^' . preg_quote($this->prefix, '/') . '/', \APC_ITER_KEY);
         $reflection = new \ReflectionMethod($this->cache, 'apcu_delete');
         $reflection->setAccessible(true);
-
         return $reflection->invoke($this->cache, $iterator);
     }
 }

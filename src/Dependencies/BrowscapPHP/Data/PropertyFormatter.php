@@ -1,13 +1,11 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Data;
 
 final class PropertyFormatter
 {
     private PropertyHolder $propertyHolder;
-
     /**
      * @throws void
      */
@@ -15,7 +13,6 @@ final class PropertyFormatter
     {
         $this->propertyHolder = $propertyHolder;
     }
-
     /**
      * formats the name of a property
      *
@@ -30,7 +27,6 @@ final class PropertyFormatter
         if ($this->propertyHolder->getPropertyType($property) === PropertyHolder::TYPE_BOOLEAN) {
             return $value === true || $value === 'true' || $value === '1';
         }
-
         return $value;
     }
 }

@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Output;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatter;
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInterface;
-
 /**
  * Base class for output classes.
  *
@@ -31,7 +29,6 @@ abstract class Output implements OutputInterface
 {
     private $verbosity;
     private $formatter;
-
     /**
      * @param int|null                      $verbosity The verbosity level (one of the VERBOSITY constants in OutputInterface)
      * @param bool                          $decorated Whether to decorate messages
@@ -43,7 +40,6 @@ abstract class Output implements OutputInterface
         $this->formatter = $formatter ?? new OutputFormatter();
         $this->formatter->setDecorated($decorated);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -51,7 +47,6 @@ abstract class Output implements OutputInterface
     {
         $this->formatter = $formatter;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -59,7 +54,6 @@ abstract class Output implements OutputInterface
     {
         return $this->formatter;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -67,7 +61,6 @@ abstract class Output implements OutputInterface
     {
         $this->formatter->setDecorated($decorated);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -75,7 +68,6 @@ abstract class Output implements OutputInterface
     {
         return $this->formatter->isDecorated();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -83,7 +75,6 @@ abstract class Output implements OutputInterface
     {
         $this->verbosity = $level;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -91,7 +82,6 @@ abstract class Output implements OutputInterface
     {
         return $this->verbosity;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -99,7 +89,6 @@ abstract class Output implements OutputInterface
     {
         return self::VERBOSITY_QUIET === $this->verbosity;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -107,7 +96,6 @@ abstract class Output implements OutputInterface
     {
         return self::VERBOSITY_VERBOSE <= $this->verbosity;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -115,7 +103,6 @@ abstract class Output implements OutputInterface
     {
         return self::VERBOSITY_VERY_VERBOSE <= $this->verbosity;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -123,7 +110,6 @@ abstract class Output implements OutputInterface
     {
         return self::VERBOSITY_DEBUG <= $this->verbosity;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -131,7 +117,6 @@ abstract class Output implements OutputInterface
     {
         $this->write($messages, true, $options);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -140,17 +125,13 @@ abstract class Output implements OutputInterface
         if (!is_iterable($messages)) {
             $messages = [$messages];
         }
-
         $types = self::OUTPUT_NORMAL | self::OUTPUT_RAW | self::OUTPUT_PLAIN;
         $type = $types & $options ?: self::OUTPUT_NORMAL;
-
         $verbosities = self::VERBOSITY_QUIET | self::VERBOSITY_NORMAL | self::VERBOSITY_VERBOSE | self::VERBOSITY_VERY_VERBOSE | self::VERBOSITY_DEBUG;
         $verbosity = $verbosities & $options ?: self::VERBOSITY_NORMAL;
-
         if ($verbosity > $this->getVerbosity()) {
             return;
         }
-
         foreach ($messages as $message) {
             switch ($type) {
                 case OutputInterface::OUTPUT_NORMAL:
@@ -162,11 +143,9 @@ abstract class Output implements OutputInterface
                     $message = strip_tags($this->formatter->format($message));
                     break;
             }
-
             $this->doWrite($message ?? '', $newline);
         }
     }
-
     /**
      * Writes a message to the output.
      */
