@@ -158,6 +158,30 @@ test.describe('GeoIP AJAX loop prevention (admin)', () => {
     expect(log.length).toBe(1);
     // The important thing: it's 1, not 2+. No self-recursion.
   });
+
+  test('MaxMind provider: single admin page load triggers at most 1 AJAX call', async ({ page }) => {
+    test.setTimeout(90_000);
+    // Switch provider to maxmind2 via DB before the page load
+    await clearGeoipTimestamp();
+    clearAjaxLog();
+
+    // Set provider to maxmind2 — the AJAX loop prevention should still work
+    // regardless of which provider is active
+    const mysql = await import('mysql2/promise');
+    const { MYSQL_CONFIG } = await import('./helpers/env');
+    const tmpPool = mysql.createPool(MYSQL_CONFIG);
+    await tmpPool.execute(
+      "UPDATE wp_options SET option_value = REPLACE(option_value, '\"geolocation_provider\":\"dbip\"', '\"geolocation_provider\":\"maxmind2\"') WHERE option_name = 'slimstat_options'"
+    );
+    await tmpPool.end();
+
+    await page.goto('/wp-admin/', { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(4000);
+
+    const log = readAjaxLog();
+    // Same assertion as Test 1: at most 1 AJAX call, not a cascade
+    expect(log.length).toBeLessThanOrEqual(1);
+  });
 });
 
 // ─── Separate test for non-admin user (uses 'author' project) ──────

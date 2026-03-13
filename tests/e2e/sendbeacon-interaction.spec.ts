@@ -114,4 +114,62 @@ test.describe('sendBeacon Interaction Tracking (#174)', () => {
     expect(stat!.id).toBeGreaterThan(0);
     expect(stat!.resource).toContain(marker);
   });
+
+  // ─── AC-TRK-005: outbound click tracked with dt_out timestamp ───
+
+  test('outbound click tracked with dt_out timestamp', async ({ page }) => {
+    test.setTimeout(60000);
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `outbound-click-${Date.now()}`;
+
+    // Capture the pageview ID from the REST response
+    let pageviewIdWithChecksum = '';
+    page.on('response', async (res) => {
+      if (res.url().includes('slimstat/v1/hit') || res.url().includes('rest_route=/slimstat')) {
+        try {
+          const body = await res.text();
+          const cleaned = body.replace(/^"|"$/g, '').trim();
+          if (/^\d+\./.test(cleaned)) {
+            pageviewIdWithChecksum = cleaned;
+          }
+        } catch {}
+      }
+    });
+
+    // Create a page with an external link
+    await page.goto(`/?p=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(5000);
+
+    expect(pageviewIdWithChecksum).toBeTruthy();
+
+    // Get the REST endpoint URL
+    const restUrl = await page.evaluate(() => (window as any).SlimStatParams?.ajaxurl_rest || '');
+    expect(restUrl).toBeTruthy();
+
+    const trackerClientId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
+    const idToUse = trackerClientId || pageviewIdWithChecksum;
+
+    // Simulate an outbound click via sendBeacon (text/plain)
+    const outboundUrl = 'https://external-site.org/outbound-test';
+    const noteObj = JSON.stringify({ type: 'click', text: 'External Link', id: 'outbound-link' });
+
+    const beaconRes = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: await page.evaluate(({ id, outUrl, note }: { id: string; outUrl: string; note: string }) => {
+        const b64 = (s: string) => btoa(unescape(encodeURIComponent(s)));
+        return `action=slimtrack&id=${id}&res=${b64(outUrl)}&pos=50,100&no=${b64(note)}`;
+      }, { id: idToUse, outUrl: outboundUrl, note: noteObj }),
+    });
+    expect(beaconRes.status()).toBe(200);
+    await page.waitForTimeout(1000);
+
+    // Verify outbound_resource and dt_out are populated
+    const stat = await getLatestStatFull(marker);
+    expect(stat).not.toBeNull();
+    expect(stat!.outbound_resource).toBeTruthy();
+    expect(stat!.outbound_resource).toContain('external-site.org/outbound-test');
+    expect(stat!.dt_out).toBeGreaterThan(0);
+  });
 });

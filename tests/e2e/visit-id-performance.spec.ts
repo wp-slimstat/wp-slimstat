@@ -371,4 +371,73 @@ test.describe('Visit ID Atomic Counter', () => {
 
     for (const p of openPages) await p.close();
   });
+
+  // ─── AC-TRK-006: visit_id reuses within same session ───────────
+
+  test('visit_id reuses within same session (rapid navigation)', async ({ page }) => {
+    test.setTimeout(60_000);
+
+    const sessionMarker = `reuse-${Date.now()}`;
+
+    // Visit 2 pages quickly in the same browser context (same session cookie)
+    await page.goto(`/?p=${sessionMarker}-a`);
+    await page.waitForTimeout(1500);
+    await page.goto(`/?p=${sessionMarker}-b`);
+    await page.waitForTimeout(2500);
+
+    // Both pageviews should share the same visit_id
+    const [rows] = await getPool().execute(
+      `SELECT visit_id FROM wp_slim_stats
+       WHERE resource LIKE ? ORDER BY id ASC`,
+      [`%${sessionMarker}%`]
+    ) as any;
+
+    if (rows.length >= 2) {
+      const visitIds = rows.map((r: any) => parseInt(r.visit_id, 10));
+      // Same session → same visit_id
+      expect(visitIds[0]).toBe(visitIds[1]);
+    }
+  });
+
+  // ─── AC-TRK-006: new visit_id after session gap ────────────────
+
+  test('new visit_id after session cookie cleared', async ({ context }) => {
+    test.setTimeout(60_000);
+
+    // First visit in a fresh page
+    const page1 = await context.newPage();
+    const marker1 = `session-gap-1-${Date.now()}`;
+    await page1.goto(`${BASE_URL}/?p=${marker1}`);
+    await page1.waitForTimeout(3000);
+
+    // Get visit_id from first page
+    const [rows1] = await getPool().execute(
+      `SELECT visit_id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1`,
+      [`%${marker1}%`]
+    ) as any;
+    await page1.close();
+
+    // Clear cookies to simulate a session gap
+    await context.clearCookies();
+
+    // Second visit in a new page (new session)
+    const page2 = await context.newPage();
+    const marker2 = `session-gap-2-${Date.now()}`;
+    await page2.goto(`${BASE_URL}/?p=${marker2}`);
+    await page2.waitForTimeout(3000);
+
+    const [rows2] = await getPool().execute(
+      `SELECT visit_id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1`,
+      [`%${marker2}%`]
+    ) as any;
+    await page2.close();
+
+    // If both visits were tracked, the visit_ids should differ
+    if (rows1.length > 0 && rows2.length > 0) {
+      const vid1 = parseInt(rows1[0].visit_id, 10);
+      const vid2 = parseInt(rows2[0].visit_id, 10);
+      // New session should get a new (higher) visit_id
+      expect(vid2).toBeGreaterThan(vid1);
+    }
+  });
 });

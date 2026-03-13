@@ -116,4 +116,41 @@ test.describe('Issue #150: Cloudflare IP geolocation regression', () => {
     expect(stat).toBeTruthy();
     expect(stat!.country).toBe('de');
   });
+
+  // ─── Test 4: IPv6 CF-Connecting-IP resolves country ──────────────
+
+  test('IPv6 CF-Connecting-IP resolves country when CF-Ray present', async ({ page, context }) => {
+    // 2001:4860:4860::8888 is Google Public DNS (US)
+    await context.setExtraHTTPHeaders({
+      'CF-Ray': 'test-e2e-issue-150-ipv6',
+      'CF-Connecting-IP': '2001:4860:4860::8888',
+    });
+
+    const marker = `cf-ipv6-${Date.now()}`;
+    await page.goto(`/?p=${marker}`);
+
+    const stat = await waitForStat(marker);
+    expect(stat).toBeTruthy();
+    // Google Public DNS IPv6 resolves to US in DB-IP
+    expect(stat!.country).toBe('us');
+  });
+
+  // ─── Test 5: Multiple proxy hops — first IP in X-Forwarded-For ──
+
+  test('multiple proxy hops: first IP in X-Forwarded-For used', async ({ page, context }) => {
+    // When behind Cloudflare with multiple proxy hops, X-Forwarded-For
+    // contains a chain: original client, proxy1, proxy2, ...
+    // The first public IP (8.8.8.8) should be used for geolocation.
+    await context.setExtraHTTPHeaders({
+      'CF-Ray': 'test-e2e-issue-150-xff',
+      'X-Forwarded-For': '8.8.8.8, 10.0.0.1',
+    });
+
+    const marker = `cf-xff-${Date.now()}`;
+    await page.goto(`/?p=${marker}`);
+
+    const stat = await waitForStat(marker);
+    expect(stat).toBeTruthy();
+    expect(stat!.country).toBe('us');
+  });
 });

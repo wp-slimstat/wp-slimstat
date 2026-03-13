@@ -125,4 +125,36 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
     expect(typeof body.data).toBe('string');
     expect(body.data).toContain('unexpected error');
   });
+
+  test('retry after partial download does not crash', async ({ page }) => {
+    test.setTimeout(90_000);
+
+    // Clear geoip timestamp to force a fresh download attempt
+    await clearGeoipTimestamp();
+
+    // First download attempt — HTTP is stubbed so it returns WP_Error (simulating partial download)
+    const res1 = await page.request.get(`${BASE_URL}/?test_dbip_cron=provider`);
+    expect(res1.ok()).toBeTruthy();
+    const body1 = await res1.json();
+    expect(body1.success).toBe(true);
+
+    // Clear timestamp again to simulate retry after partial download
+    await clearGeoipTimestamp();
+
+    // Second download attempt (retry) — should not crash or cause fatal error
+    const res2 = await page.request.get(`${BASE_URL}/?test_dbip_cron=provider`);
+    expect(res2.ok()).toBeTruthy();
+    const body2 = await res2.json();
+    expect(body2.success).toBe(true);
+
+    // Verify no fatal errors — the provider should handle retries gracefully
+    if (body2.error) {
+      expect(body2.error).not.toContain('Fatal');
+      expect(body2.error).not.toContain('undefined function');
+    }
+
+    // Timestamp should still be null (download fails due to HTTP stub)
+    const ts = await getGeoipTimestamp();
+    expect(ts).toBeNull();
+  });
 });

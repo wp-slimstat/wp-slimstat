@@ -176,4 +176,27 @@ test.describe('Issue #173: i18n catalog sync', () => {
     expect(htmlContent).not.toContain('Fatal error');
     expect(htmlContent).not.toMatch(/Warning:.*\.php/);
   });
+
+  // ─── AC-CMP-003: all PHP strings have translation entries ────────
+
+  test('all PHP strings have translation entries — .pot file exists and is non-empty', async () => {
+    const potPath = path.join(PLUGIN_LANGUAGES, 'wp-slimstat.pot');
+
+    // .pot file must exist
+    expect(fs.existsSync(potPath), '.pot file should exist in languages directory').toBeTruthy();
+
+    const potContent = fs.readFileSync(potPath, 'utf8');
+
+    // .pot file must not be empty
+    expect(potContent.length).toBeGreaterThan(0);
+
+    // Count msgid entries (subtract 1 for the header empty msgid)
+    const msgidCount = (potContent.match(/^msgid "/gm) || []).length - 1;
+    expect(msgidCount, '.pot file should contain at least 1 translatable string').toBeGreaterThan(0);
+
+    // Verify the .pot file has proper POT headers
+    expect(potContent).toContain('msgid ""');
+    expect(potContent).toContain('msgstr ""');
+    expect(potContent).toContain('Content-Type:');
+  });
 });

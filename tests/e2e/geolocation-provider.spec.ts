@@ -176,4 +176,39 @@ test.describe('Geolocation Provider Pipeline', () => {
       await expect(page).toHaveTitle(/Dashboard/);
     }
   });
+
+  // ─── Test 9: Switching provider applies on next page load ───────
+
+  test('switching provider from dbip to maxmind2 applies on next page load', async ({ page, context }) => {
+    // Start with dbip and inject CF headers so we can verify geolocation works
+    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
+    await setSlimstatOption(page, 'geolocation_country', 'no');
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+
+    await context.setExtraHTTPHeaders({
+      'CF-Ray': 'test-e2e-provider-switch',
+      'CF-Connecting-IP': '8.8.8.8',
+    });
+
+    // Visit with dbip provider active
+    const marker1 = `provider-switch-before-${Date.now()}`;
+    await page.goto(`/?p=${marker1}`);
+    await page.waitForTimeout(3000);
+
+    // Now switch to maxmind2
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind2');
+
+    // Visit again — maxmind2 should be active on this new page load.
+    // Without a MaxMind DB file, geolocation may fail gracefully, but no crash.
+    const marker2 = `provider-switch-after-${Date.now()}`;
+    const response = await page.goto(`/?p=${marker2}`);
+    expect(response?.status()).toBeLessThan(500);
+
+    // Verify the settings page reflects the new provider
+    await page.goto('/wp-admin/admin.php?page=slimconfig&tab=5');
+    const providerSelect = page.locator('select[name="geolocation_provider"]');
+    if (await providerSelect.count() > 0) {
+      await expect(providerSelect).toHaveValue('maxmind2');
+    }
+  });
 });
