@@ -17,6 +17,7 @@
 - Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
 - Fixed `.wrap.slimstat` CSS conflict with WordPress core styles
 - Fixed SlimEmail page structure and styling to match other admin pages
+- Fixed Browscap Flysystem namespace scoping mismatch — updated League\Flysystem imports to use SlimStat\Dependencies prefix ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
 - Load textdomain at `init` hook for WordPress 6.7.0+ compatibility
 - Synced shipped .po/.mo translation files with current .pot template — 261+ missing strings now included ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
 
