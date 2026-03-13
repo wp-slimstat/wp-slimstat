@@ -25,15 +25,18 @@ const CRON_LINE = "define('DISABLE_WP_CRON', true);";
 
 let wpConfigBackup: string | null = null;
 
-export function enableDisableWpCron(): void {
+function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
-  wpConfigBackup = content;
-  if (content.includes('DISABLE_WP_CRON')) return; // already set
+  if (wpConfigBackup === null) wpConfigBackup = content;
+  if (content.includes(line)) return; // already set
   const marker = "/* That's all, stop editing!";
   const idx = content.indexOf(marker);
   if (idx === -1) throw new Error('Cannot find stop-editing marker in wp-config.php');
-  const updated = content.slice(0, idx) + CRON_LINE + '\n' + content.slice(idx);
-  fs.writeFileSync(WP_CONFIG, updated, 'utf8');
+  fs.writeFileSync(WP_CONFIG, content.slice(0, idx) + line + '\n' + content.slice(idx), 'utf8');
+}
+
+export function enableDisableWpCron(): void {
+  injectWpConfigLine(CRON_LINE);
 }
 
 export function restoreWpConfig(): void {
@@ -186,35 +189,41 @@ export async function setProviderDisabled(): Promise<void> {
 
 const CRON_SHIM_SRC = path.join(__dirname, 'cron-frontend-shim-mu-plugin.php');
 const CRON_SHIM_DEST = path.join(MU_PLUGINS, 'cron-frontend-shim-mu-plugin.php');
+const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
 
 export function installCronFrontendShim(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });
   fs.copyFileSync(CRON_SHIM_SRC, CRON_SHIM_DEST);
+  injectWpConfigLine(E2E_TESTING_LINE);
 }
 
 export function uninstallCronFrontendShim(): void {
   if (fs.existsSync(CRON_SHIM_DEST)) fs.unlinkSync(CRON_SHIM_DEST);
+  // E2E_TESTING_LINE is removed when restoreWpConfig() runs in teardown
 }
 
 // ─── GeoIP timestamp snapshot/restore ────────────────────────────
 
-let savedGeoipTimestamp: number | null | undefined = undefined;
+let savedGeoipRow: { value: string; autoload: string } | null | undefined = undefined;
 
 export async function snapshotGeoipTimestamp(): Promise<void> {
-  savedGeoipTimestamp = await getGeoipTimestamp();
+  const [rows] = await getPool().execute(
+    "SELECT option_value, autoload FROM wp_options WHERE option_name = 'slimstat_last_geoip_dl'"
+  ) as any;
+  savedGeoipRow = rows.length > 0 ? { value: rows[0].option_value, autoload: rows[0].autoload } : null;
 }
 
 export async function restoreGeoipTimestamp(): Promise<void> {
-  if (savedGeoipTimestamp === undefined) return;
-  if (savedGeoipTimestamp === null) {
+  if (savedGeoipRow === undefined) return;
+  if (savedGeoipRow === null) {
     await clearGeoipTimestamp();
   } else {
     await getPool().execute(
-      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_last_geoip_dl', ?, 'no') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
-      [String(savedGeoipTimestamp)]
+      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_last_geoip_dl', ?, ?) ON DUPLICATE KEY UPDATE option_value = VALUES(option_value), autoload = VALUES(autoload)",
+      [savedGeoipRow.value, savedGeoipRow.autoload]
     );
   }
-  savedGeoipTimestamp = undefined;
+  savedGeoipRow = undefined;
 }
 
 // ─── Option mutator mu-plugin (safe WP-native serialization) ────

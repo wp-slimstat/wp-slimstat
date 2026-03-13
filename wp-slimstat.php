@@ -1262,9 +1262,8 @@ class wp_slimstat
                 return;
             }
 
-            $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
-
             try {
+                $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                 $geographicProvider->updateDatabase();
 
                 // Set the last update time

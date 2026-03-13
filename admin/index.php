@@ -2101,7 +2101,8 @@ class wp_slimstat_admin
 				wp_send_json_error($error_message);
             }
         } catch (\Throwable $exception) {
-            wp_send_json_error($exception->getMessage());
+            \wp_slimstat::log('GeoIP update AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
+            wp_send_json_error(__('An unexpected error occurred while updating the GeoIP database.', 'wp-slimstat'));
         }
     }
 
@@ -2130,7 +2131,8 @@ class wp_slimstat_admin
 
             wp_send_json_success($result['notice']);
         } catch (\Throwable $exception) {
-            wp_send_json_error($exception->getMessage());
+            \wp_slimstat::log('GeoIP check AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
+            wp_send_json_error(__('An unexpected error occurred while checking the GeoIP database.', 'wp-slimstat'));
         }
     }
 

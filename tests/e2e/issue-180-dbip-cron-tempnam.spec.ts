@@ -54,8 +54,9 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
     test.skip(body.had_wp_tempnam_before === true,
       'wp_tempnam already defined by another plugin — non-admin precondition not met, test inconclusive');
 
-    // The include guard should ensure wp_tempnam is available.
-    // An error containing "wp_tempnam" or "undefined function" means the fix is missing.
+    // The include guard should ensure wp_tempnam is available and the provider runs.
+    // HTTP is stubbed so updateDatabase() returns false, but no fatal error occurs.
+    expect(body.success, 'Provider call should succeed (HTTP stub returns WP_Error, updateDatabase returns false)').toBe(true);
     if (body.error) {
       expect(body.error).not.toContain('wp_tempnam');
       expect(body.error).not.toContain('undefined function');
@@ -93,12 +94,16 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
       },
     });
 
-    // If catch(\Throwable) is in place, the handler returns a JSON error
-    // with the sentinel message. If only catch(\Exception), PHP fatals → 500.
-    expect(res.ok()).toBeTruthy();
+    // If catch(\Throwable) is in place, the handler catches the \Error and
+    // returns a structured JSON error (200). If only catch(\Exception), PHP
+    // fatals → 500 non-JSON response.
+    expect(res.ok(), 'Handler should return 200 JSON, not 500 fatal').toBeTruthy();
 
     const body = await res.json();
     expect(body.success).toBe(false);
-    expect(body.data).toContain('test_simulated_php_error');
+    // The handler logs the real error and returns a generic localized message.
+    // Verify it's a proper string response, not raw exception data.
+    expect(typeof body.data).toBe('string');
+    expect(body.data).toContain('unexpected error');
   });
 });

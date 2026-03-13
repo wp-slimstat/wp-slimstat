@@ -8,7 +8,14 @@
  * 2. Early throw injection via init hook for testing \Throwable catch blocks
  *    in the admin AJAX handler.
  * 3. Nonce endpoint for authenticating admin AJAX test requests.
+ *
+ * Safety: all handlers are no-op unless SLIMSTAT_E2E_TESTING is defined.
  */
+
+// Guard: do nothing on non-test environments
+if (!defined('SLIMSTAT_E2E_TESTING') || SLIMSTAT_E2E_TESTING !== true) {
+    return;
+}
 
 // ── Early throw injection for admin AJAX Test 3 ──
 // When _test_throw_error is posted, register a pre_http_request filter that
