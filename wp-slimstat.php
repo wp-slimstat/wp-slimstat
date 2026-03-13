@@ -58,6 +58,21 @@ class wp_slimstat
     public static $wpdb;
     public static $upload_dir = '';
 
+    /**
+     * Flag indicating programmatic (server-side) tracking is active.
+     *
+     * When true, CMP consent checks are bypassed in Consent::canTrack() and
+     * Consent::piiAllowed(). This is used by slimtrack_server() for server-side
+     * contexts (cron, CLI, redirect handlers) where no browser session exists.
+     *
+     * DNT headers, IP anonymization/hashing, and other non-consent settings
+     * remain enforced.
+     *
+     * @var bool
+     * @since 5.4.3
+     */
+    public static $is_programmatic_tracking = false;
+
     public static $update_checker = [];
     public static $raw_post_array = [];
 
@@ -149,6 +164,51 @@ class wp_slimstat
         $stat = apply_filters('slimstat_set_stat', $stat);
 
         self::$stat = $stat;
+    }
+
+    /**
+     * Backward-compatible wrapper for the tracking API.
+     *
+     * This method delegates to the new namespaced Tracker class while maintaining
+     * the original method signature for third-party integrations.
+     *
+     * @since 5.4.3
+     * @return int|false The record ID on success, or a negative error code on failure.
+     */
+    public static function slimtrack()
+    {
+        return \SlimStat\Tracker\Tracker::slimtrack();
+    }
+
+    /**
+     * Server-side tracking API that bypasses CMP consent checks.
+     *
+     * Use this method for programmatic tracking in server-side contexts where no
+     * browser session exists (e.g., cron jobs, CLI scripts, redirect handlers).
+     *
+     * CMP consent is a browser-side concept. In server-side contexts, there is no
+     * browser session and CMP consent has no meaningful role.
+     *
+     * The following settings remain enforced:
+     * - DNT (Do Not Track) headers
+     * - IP anonymization and hashing settings
+     * - Tracker cookie configuration
+     * - All exclusion rules
+     *
+     * @since 5.4.3
+     * @return int|false The record ID on success, or a negative error code on failure.
+     */
+    public static function slimtrack_server()
+    {
+        self::$is_programmatic_tracking = true;
+
+        try {
+            $result = \SlimStat\Tracker\Tracker::slimtrack();
+        } finally {
+            self::$is_programmatic_tracking = false;
+        }
+
+        return $result;
     }
 
     /**
