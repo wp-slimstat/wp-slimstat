@@ -227,7 +227,7 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Fresh install: set defaults (geolocation disabled until user opts in)
+            // Fresh install: set defaults including geolocation_provider=dbip
             self::$settings = self::get_fresh_defaults();
             self::update_option('slimstat_options', self::$settings);
         }
@@ -893,14 +893,12 @@ class wp_slimstat
      * those defaults into stored settings — which would override the legacy
      * enable_maxmind flag on upgraded installs before lazy migration runs.
      *
-     * Geolocation is opt-in: fresh installs start with provider disabled so no
-     * external network calls (GeoIP DB downloads) happen until the user
-     * explicitly enables a provider through the settings UI.
+     * Fresh installs default to DB-IP (free, no license key required).
      */
     public static function get_fresh_defaults()
     {
         $defaults = self::init_options();
-        $defaults['geolocation_provider'] = 'disable';
+        $defaults['geolocation_provider'] = 'dbip';
         return $defaults;
     }
 
