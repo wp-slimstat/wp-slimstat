@@ -291,7 +291,97 @@ test.describe('Upgrade Data Integrity', () => {
     expect(settingsResponse?.status()).toBeLessThan(500);
   });
 
-  // ─── Test 7: Settings page shows correct provider after migration ──
+  // ─── Test 7: Legacy column values survive upgrade cycle ──────────
+
+  test('legacy column values survive upgrade cycle', async ({ page }) => {
+    // Seed a row with all columns filled to verify nothing is wiped during upgrade
+    const now = Math.floor(Date.now() / 1000);
+    const [result] = await getPool().execute(
+      `INSERT INTO wp_slim_stats
+        (ip, other_ip, username, email, country, location, city,
+         referer, resource, searchterms, notes, visit_id, server_latency,
+         page_performance, browser, browser_version, browser_type, platform,
+         language, fingerprint, user_agent, resolution, screen_width,
+         screen_height, content_type, category, author, content_id,
+         outbound_resource, tz_offset, dt_out, dt)
+       VALUES
+        (?, ?, ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?,
+         ?, ?, ?, ?, ?,
+         ?, ?, ?, ?)`,
+      [
+        '192.168.1.100', '10.0.0.1', 'testuser', 'test@example.com', 'us', '40.7128,-74.0060', 'New York',
+        'https://example.com/referrer', '/legacy-columns-test', 'search term', 'test note', 99001, 150,
+        250, 'Chrome', '120', 1, 'Windows',
+        'en-us', 'abc123fingerprint', 'Mozilla/5.0 Test Agent', '1920x1080', 1920,
+        1080, 'post', 'Uncategorized', 'admin', 42,
+        'https://external.com/link', -300, now + 60, now,
+      ]
+    ) as any;
+    const testId = result.insertId;
+    seededIds.push(testId);
+
+    // Snapshot the row before the upgrade cycle
+    const [beforeRows] = await getPool().execute(
+      `SELECT * FROM wp_slim_stats WHERE id = ?`,
+      [testId]
+    ) as any;
+    expect(beforeRows).toHaveLength(1);
+    const before = beforeRows[0];
+
+    // Trigger upgrade check by visiting admin pages
+    await page.goto('/wp-admin/');
+    await expect(page).toHaveTitle(/Dashboard/);
+    await page.goto('/wp-admin/admin.php?page=slimstat');
+    await page.waitForTimeout(2000);
+    await page.goto('/wp-admin/admin.php?page=slimconfig');
+    await page.waitForTimeout(1000);
+
+    // Verify all column values are intact after the upgrade cycle
+    const [afterRows] = await getPool().execute(
+      `SELECT * FROM wp_slim_stats WHERE id = ?`,
+      [testId]
+    ) as any;
+    expect(afterRows).toHaveLength(1);
+    const after = afterRows[0];
+
+    expect(after.ip).toBe(before.ip);
+    expect(after.other_ip).toBe(before.other_ip);
+    expect(after.username).toBe(before.username);
+    expect(after.email).toBe(before.email);
+    expect(after.country).toBe(before.country);
+    expect(after.location).toBe(before.location);
+    expect(after.city).toBe(before.city);
+    expect(after.referer).toBe(before.referer);
+    expect(after.resource).toBe(before.resource);
+    expect(after.searchterms).toBe(before.searchterms);
+    expect(after.notes).toBe(before.notes);
+    expect(after.visit_id).toBe(before.visit_id);
+    expect(after.server_latency).toBe(before.server_latency);
+    expect(after.page_performance).toBe(before.page_performance);
+    expect(after.browser).toBe(before.browser);
+    expect(after.browser_version).toBe(before.browser_version);
+    expect(after.browser_type).toBe(before.browser_type);
+    expect(after.platform).toBe(before.platform);
+    expect(after.language).toBe(before.language);
+    expect(after.fingerprint).toBe(before.fingerprint);
+    expect(after.user_agent).toBe(before.user_agent);
+    expect(after.resolution).toBe(before.resolution);
+    expect(after.screen_width).toBe(before.screen_width);
+    expect(after.screen_height).toBe(before.screen_height);
+    expect(after.content_type).toBe(before.content_type);
+    expect(after.category).toBe(before.category);
+    expect(after.author).toBe(before.author);
+    expect(after.content_id).toBe(before.content_id);
+    expect(after.outbound_resource).toBe(before.outbound_resource);
+    expect(after.tz_offset).toBe(before.tz_offset);
+    expect(after.dt_out).toBe(before.dt_out);
+    expect(after.dt).toBe(before.dt);
+  });
+
+  // ─── Test 8: Settings page shows correct provider after migration ──
 
   test('settings page shows correct provider after legacy migration', async ({ page }) => {
     // Start with legacy state

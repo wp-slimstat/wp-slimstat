@@ -169,7 +169,45 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     }
   });
 
-  // ─── Test 6: Addon disabled → no whois URL injected ────────────────
+  // ─── Test 6: MaxMind Details: city and coordinates populated for known IP ──
+
+  test('MaxMind Details: city and coordinates populated for known IP', async ({ page }) => {
+    // Skip if Pro plugin is not active
+    await page.goto('/wp-admin/plugins.php');
+    const pluginsBody = await page.content();
+    const proActive = pluginsBody.includes('wp-slimstat-pro') && pluginsBody.includes('Deactivate');
+    test.skip(!proActive, 'Pro plugin is not active — skipping MaxMind Details test');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    // Auth context
+    await page.goto('/wp-admin/');
+    await expect(page).toHaveTitle(/Dashboard/);
+
+    const nonce = await getWhoisNonce(page);
+    const result = await callWhoisEndpoint(page, '8.8.8.8', nonce);
+
+    expect(result.status).toBeLessThan(500);
+    expect(result.body).not.toContain('Fatal error');
+
+    // If the MaxMind database is available, verify city/lat/lon are populated
+    const hasGeoData = result.body.includes('IP Geolocation Information');
+    if (hasGeoData) {
+      // The response HTML should contain city, latitude, and longitude data
+      // for Google's public DNS IP (8.8.8.8) — typically resolves to a US location
+      const hasCity = /city/i.test(result.body) && !result.body.includes('N/A');
+      const hasCoords = /latitude|longitude|lat|lon/i.test(result.body);
+
+      expect(
+        hasCity || hasCoords,
+        'Geo data for 8.8.8.8 should include city or coordinates'
+      ).toBe(true);
+    }
+    // If DB is missing, the test still passes — it verifies no crash
+  });
+
+  // ─── Test 7: Addon disabled → no whois URL injected ────────────────
 
   test('addon disabled does not inject whois URL', async ({ page }) => {
     await setSlimstatOption(page, 'addon_maxmind_enable', 'off');

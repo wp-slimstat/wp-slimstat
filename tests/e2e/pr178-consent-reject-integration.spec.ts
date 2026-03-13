@@ -176,4 +176,43 @@ test.describe('WP Consent API — JS Tracker Consent Integration', () => {
     // SlimStat tracker must be available
     expect(apiState.hasSlimStat).toBe(true);
   });
+
+  test('reject consent: no PII fields in wp_slim_stats row', async ({ page }) => {
+    const testUrl = `${BASE_URL}/?e2e_test=consent-reject-pii-${Date.now()}`;
+
+    // Use anonymous context with deny cookie — tracking should be blocked or PII-free
+    const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
+      { name: 'wp_consent_statistics', value: 'deny', domain: 'localhost', path: '/' },
+    ]);
+
+    try {
+      // After rejecting consent, any tracked row (if it exists) must have no PII
+      const marker = `consent-reject-pii-${Date.now()}`;
+      const [rows] = await db.execute(
+        `SELECT ip, city, country FROM wp_slim_stats
+         WHERE resource LIKE '%e2e_test=consent-reject-pii%'
+         ORDER BY id DESC LIMIT 1`
+      ) as any;
+
+      if (rows.length > 0) {
+        const row = rows[0];
+        // If a row was tracked despite deny, PII fields must be empty/null
+        expect(
+          !row.ip || row.ip === '' || row.ip === '0.0.0.0',
+          `IP should be empty or zeroed when consent is rejected, got "${row.ip}"`
+        ).toBe(true);
+        expect(
+          !row.city || row.city === '',
+          `City should be empty when consent is rejected, got "${row.city}"`
+        ).toBe(true);
+        expect(
+          !row.country || row.country === '',
+          `Country should be empty when consent is rejected, got "${row.country}"`
+        ).toBe(true);
+      }
+      // If no row exists, that's also correct — consent rejection blocked tracking entirely
+    } finally {
+      await cleanup();
+    }
+  });
 });

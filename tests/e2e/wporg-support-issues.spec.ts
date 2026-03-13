@@ -206,6 +206,33 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     }
   });
 
+  // ─── Admin dashboard loads without PHP errors for default settings ──
+
+  test('admin dashboard loads without PHP errors for default settings', async ({ page }) => {
+    // Reset to default-like settings (GDPR off, no special privacy flags)
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'hash_ip', 'off');
+    await setSlimstatOption(page, 'anonymize_ip', 'off');
+
+    // Visit the SlimStat admin dashboard
+    const response = await page.goto('/wp-admin/admin.php?page=slimstat');
+    expect(response?.status(), 'SlimStat dashboard should not return 500').toBeLessThan(500);
+
+    const bodyText = await page.textContent('body');
+    expect(bodyText).not.toContain('Fatal error');
+    expect(bodyText).not.toContain('Parse error');
+    expect(bodyText).not.toContain('Warning:');
+    expect(bodyText).not.toContain('Notice:');
+
+    // Also check the settings page
+    const settingsResponse = await page.goto('/wp-admin/admin.php?page=slimconfig');
+    expect(settingsResponse?.status(), 'SlimStat settings should not return 500').toBeLessThan(500);
+
+    const settingsBody = await page.textContent('body');
+    expect(settingsBody).not.toContain('Fatal error');
+    expect(settingsBody).not.toContain('Parse error');
+  });
+
   // ─── Admin dashboard loads without errors for all GDPR configurations ──
 
   test('admin dashboard loads for GDPR on and off configurations', async ({ page }) => {

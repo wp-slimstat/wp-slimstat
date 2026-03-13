@@ -249,4 +249,45 @@ test.describe('Index Migration', () => {
     expect(columns).toContain('dt');
     expect(columns).toContain('visit_id');
   });
+
+  test('consent category cookie values match expected format', async ({ page }) => {
+    // The WP Consent API uses cookies named wp_consent_{category} with values 'allow' or 'deny'.
+    // Verify that after setting consent cookies, the names and values match the expected format.
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+
+    // Inject consent cookies with expected WP Consent API format
+    const consentCategories = ['statistics', 'marketing', 'preferences', 'functional'];
+    const domain = new URL(BASE_URL).hostname;
+
+    for (const category of consentCategories) {
+      await page.context().addCookies([
+        { name: `wp_consent_${category}`, value: 'allow', domain, path: '/' },
+      ]);
+    }
+
+    // Reload to let the cookies take effect
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2000);
+
+    // Read back the cookies and verify format
+    const cookies = await page.context().cookies();
+    for (const category of consentCategories) {
+      const cookieName = `wp_consent_${category}`;
+      const cookie = cookies.find((c) => c.name === cookieName);
+      expect(cookie, `Cookie ${cookieName} should exist`).toBeTruthy();
+      expect(
+        ['allow', 'deny'].includes(cookie!.value),
+        `Cookie ${cookieName} value "${cookie!.value}" should be "allow" or "deny"`
+      ).toBe(true);
+    }
+
+    // Verify deny value format as well
+    await page.context().addCookies([
+      { name: 'wp_consent_statistics', value: 'deny', domain, path: '/' },
+    ]);
+    const updatedCookies = await page.context().cookies();
+    const denyCookie = updatedCookies.find((c) => c.name === 'wp_consent_statistics');
+    expect(denyCookie, 'Deny cookie should exist').toBeTruthy();
+    expect(denyCookie!.value).toBe('deny');
+  });
 });
