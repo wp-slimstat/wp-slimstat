@@ -7,6 +7,12 @@
  * POST /wp-admin/admin-ajax.php?action=test_create_nonce
  * Body: nonce_action=<action_name>
  */
+
+// Guard: do nothing on non-test environments
+if (!defined('SLIMSTAT_E2E_TESTING') || SLIMSTAT_E2E_TESTING !== true) {
+    return;
+}
+
 add_action('wp_ajax_test_create_nonce', function () {
     if (!current_user_can('manage_options')) {
         wp_send_json_error('forbidden');
