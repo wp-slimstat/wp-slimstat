@@ -88,12 +88,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			}
 
 		// Download and extract the MaxMind database from tar.gz using WP APIs
-		if (!function_exists('download_url')) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
-		if (!function_exists('WP_Filesystem')) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-		}
+		$this->ensureWpFileApiLoaded();
 		WP_Filesystem();
 		global $wp_filesystem;
 
