@@ -17,6 +17,7 @@ import {
   snapshotGeoipTimestamp,
   restoreGeoipTimestamp,
   clearGeoipTimestamp,
+  getGeoipTimestamp,
   setSlimstatOption,
   closeDb,
 } from './helpers/setup';
@@ -73,6 +74,21 @@ test.describe('Issue #180: DbIpProvider wp_tempnam in non-admin context', () => 
     // to the shim's outer catch block.
     expect(body.escaped_catch, 'Cron callback did not catch \\Throwable — \\Error escaped').not.toBe(true);
     expect(body.success).toBe(true);
+  });
+
+  test('Test 4: Failed download does not update geoip timestamp', async ({ page }) => {
+    const res = await page.request.get(`${BASE_URL}/?test_dbip_cron=callback_download_fail`);
+    expect(res.ok()).toBeTruthy();
+
+    const body = await res.json();
+
+    // The download failed (HTTP stubbed with WP_Error → updateDatabase returns false).
+    // The timestamp must NOT be updated — otherwise retries are suppressed until next month.
+    expect(body.ts_changed, 'Timestamp should not change on failed download').toBe(false);
+
+    // Verify via DB that timestamp is still null (was cleared in beforeEach)
+    const ts = await getGeoipTimestamp();
+    expect(ts, 'slimstat_last_geoip_dl should remain null after failed download').toBeNull();
   });
 
   test('Test 3: Admin AJAX handler catches \\Throwable from provider', async ({ page }) => {

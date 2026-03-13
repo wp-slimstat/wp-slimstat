@@ -78,6 +78,30 @@ add_action('template_redirect', function () {
                                'class' => get_class($e),
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         }
+    } elseif ($mode === 'callback_download_fail') {
+        // Test 4: Cron callback with failed download — tests timestamp NOT updated
+        // Stub HTTP to return WP_Error (download fails, updateDatabase returns false)
+        add_filter('pre_http_request', function () {
+            return new \WP_Error('test_stub', 'HTTP stubbed — simulated download failure');
+        }, 1);
+
+        // Snapshot the timestamp before the callback
+        $ts_before = get_option('slimstat_last_geoip_dl', null);
+
+        try {
+            \wp_slimstat::wp_slimstat_update_geoip_database();
+        } catch (\Throwable $e) {
+            // Should not happen for WP_Error stub, but catch just in case
+        }
+
+        $ts_after = get_option('slimstat_last_geoip_dl', null);
+
+        echo json_encode([
+            'success'    => true,
+            'ts_before'  => $ts_before,
+            'ts_after'   => $ts_after,
+            'ts_changed' => $ts_after !== $ts_before,
+        ]);
     } elseif ($mode === 'callback_throwable') {
         // Test 2: Cron callback with forced \Error — tests \Throwable catch
         // Stub HTTP to throw \Error (not \Exception) — simulates engine-level failure
