@@ -21,7 +21,7 @@ if (!defined('SLIMSTAT_E2E_TESTING') || SLIMSTAT_E2E_TESTING !== true) {
 // cookie-law-info loads wp-admin/includes/file.php on frontend, which
 // defeats the include-guard test. MU-plugins load before regular plugins,
 // so filtering option_active_plugins prevents it from loading.
-if (!empty($_GET['test_dbip_cron']) && $_GET['test_dbip_cron'] === 'provider') {
+if (!empty($_GET['test_dbip_cron']) && 'provider' === sanitize_text_field($_GET['test_dbip_cron'])) {
     add_filter('option_active_plugins', function ($plugins) {
         return array_values(array_filter($plugins, function ($p) {
             return strpos($p, 'cookie-law-info') === false;
@@ -55,7 +55,7 @@ add_action('template_redirect', function () {
     // Record whether wp_tempnam was already defined (false-pass detection)
     $had_wp_tempnam_before = function_exists('wp_tempnam');
 
-    if ($mode === 'provider') {
+    if ('provider' === $mode) {
         // Test 1: Direct provider call — tests include guard
         // Stub HTTP to avoid network dependency (returns WP_Error)
         add_filter('pre_http_request', function () {
@@ -65,20 +65,46 @@ add_action('template_redirect', function () {
         try {
             $provider = \wp_slimstat::resolve_geolocation_provider();
             if (false === $provider) {
-                echo json_encode(['success' => false, 'error' => 'provider_disabled',
+                echo wp_json_encode(['success' => false, 'error' => 'provider_disabled',
                                    'had_wp_tempnam_before' => $had_wp_tempnam_before]);
                 die();
             }
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $service->updateDatabase();
-            echo json_encode(['success' => true, 'error' => null,
+            echo wp_json_encode(['success' => true, 'error' => null,
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         } catch (\Throwable $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage(),
+            echo wp_json_encode(['success' => false, 'error' => $e->getMessage(),
                                'class' => get_class($e),
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         }
-    } elseif ($mode === 'callback_throwable') {
+    } elseif ('callback_download_fail' === $mode) {
+        // Test 4: Cron callback with failed download — tests timestamp NOT updated
+        // Stub HTTP to return WP_Error (download fails, updateDatabase returns false)
+        add_filter('pre_http_request', function () {
+            return new \WP_Error('test_stub', 'HTTP stubbed — simulated download failure');
+        }, 1);
+
+        // Snapshot the timestamp before the callback
+        $ts_before = get_option('slimstat_last_geoip_dl', null);
+        $caught_error = null;
+
+        try {
+            \wp_slimstat::wp_slimstat_update_geoip_database();
+        } catch (\Throwable $e) {
+            $caught_error = $e->getMessage();
+        }
+
+        $ts_after = get_option('slimstat_last_geoip_dl', null);
+
+        echo wp_json_encode([
+            'success'    => null === $caught_error,
+            'error'      => $caught_error,
+            'ts_before'  => $ts_before,
+            'ts_after'   => $ts_after,
+            'ts_changed' => $ts_after !== $ts_before,
+        ]);
+    } elseif ('callback_throwable' === $mode) {
         // Test 2: Cron callback with forced \Error — tests \Throwable catch
         // Stub HTTP to throw \Error (not \Exception) — simulates engine-level failure
         add_filter('pre_http_request', function () {
@@ -88,12 +114,12 @@ add_action('template_redirect', function () {
         try {
             \wp_slimstat::wp_slimstat_update_geoip_database();
             // If we get here, the callback caught the \Error internally
-            echo json_encode(['success' => true, 'error' => null,
+            echo wp_json_encode(['success' => true, 'error' => null,
                                'escaped_catch' => false,
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         } catch (\Throwable $e) {
             // If we get here, the callback did NOT catch the \Throwable
-            echo json_encode(['success' => false, 'error' => $e->getMessage(),
+            echo wp_json_encode(['success' => false, 'error' => $e->getMessage(),
                                'class' => get_class($e), 'escaped_catch' => true,
                                'had_wp_tempnam_before' => $had_wp_tempnam_before]);
         }
