@@ -422,12 +422,21 @@ class wp_slimstat
     {
         static $cache = [];
 
-        // Key by the two settings values that drive resolution so the cache
-        // invalidates automatically when settings change mid-request (e.g.
-        // after a settings save updates self::$settings).
-        $provider_raw = self::$settings['geolocation_provider'] ?? '';
-        $legacy_raw   = self::$settings['enable_maxmind'] ?? 'disable';
-        $cache_key    = sanitize_text_field($provider_raw) . '|' . $legacy_raw;
+        // Sanitize both settings that drive resolution
+        $provider_san = sanitize_text_field(self::$settings['geolocation_provider'] ?? '');
+
+        // Normalize legacy tri-state ('on'|'no'|'disable') to deterministic token
+        $legacy_san = sanitize_text_field(self::$settings['enable_maxmind'] ?? '');
+        if ('on' === $legacy_san) {
+            $legacy_norm = 'on';
+        } elseif ('no' === $legacy_san) {
+            $legacy_norm = 'no';
+        } else {
+            $legacy_norm = 'disable';
+        }
+
+        // Cache key invalidates when settings change mid-request (e.g. settings save)
+        $cache_key = $provider_san . '|' . $legacy_norm;
 
         if (array_key_exists($cache_key, $cache)) {
             return $cache[$cache_key];
@@ -435,22 +444,21 @@ class wp_slimstat
 
         $result = false;
 
-        if (isset(self::$settings['geolocation_provider'])) {
-            $p = sanitize_text_field(self::$settings['geolocation_provider']);
-            if ('disable' === $p) {
+        if ('' !== $provider_san) {
+            if ('disable' === $provider_san) {
                 $cache[$cache_key] = false;
                 return false;
             }
-            if (in_array($p, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
-                $cache[$cache_key] = $p;
-                return $p;
+            if (in_array($provider_san, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
+                $cache[$cache_key] = $provider_san;
+                return $provider_san;
             }
-            // Invalid/empty value — fall through to legacy flag
+            // Invalid value — fall through to legacy flag
         }
 
-        if ('on' === $legacy_raw) {
+        if ('on' === $legacy_norm) {
             $result = 'maxmind';
-        } elseif ('no' === $legacy_raw) {
+        } elseif ('no' === $legacy_norm) {
             $result = 'dbip';
         }
 
