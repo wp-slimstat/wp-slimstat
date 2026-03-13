@@ -15,6 +15,11 @@
 - Fixed DbIpProvider fatal error during WP-Cron — `wp_tempnam()` undefined in non-admin context ([#180](https://github.com/wp-slimstat/wp-slimstat/issues/180))
 - Fixed failed GeoIP download incorrectly updating timestamp, suppressing retries until next monthly window
 - Sanitized and allowlisted `geolocation_provider` in GeoIP resolver
+- Memoized `resolve_geolocation_provider()` to avoid redundant calls per request
+- Restored `dbip` as default geolocation provider for fresh installs
+- Sanitized and normalized legacy `enable_maxmind` flag during provider resolution
+- Consolidated duplicate AJAX index handlers — eliminates ~150 lines of copy-paste code
+- Skip redundant `SHOW INDEX` queries on admin page load when indexes already confirmed
 - Fixed `.wrap.slimstat` CSS conflict with WordPress core styles
 - Fixed SlimEmail page structure and styling to match other admin pages
 - Fixed Browscap Flysystem namespace scoping mismatch — updated League\Flysystem imports to use SlimStat\Dependencies prefix ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
