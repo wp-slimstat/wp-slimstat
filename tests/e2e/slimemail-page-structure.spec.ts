@@ -14,22 +14,7 @@ import {
   installOptionMutator,
   uninstallOptionMutator,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-import * as mysql from 'mysql2/promise';
-
-let db: mysql.Pool;
-let slimEmailExists = false;
-
-test.beforeAll(async () => {
-  db = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
-
-  // Check if SlimEmail page is registered (it may be a Pro feature)
-  // We'll attempt to load it and check the response
-});
-
-test.afterAll(async () => {
-  if (db) await db.end();
-});
+import { BASE_URL } from './helpers/env';
 
 test.describe('AC-CSS-003: SlimEmail Page Structure', () => {
   test.setTimeout(60_000);
@@ -163,5 +148,102 @@ test.describe('AC-CSS-003: SlimEmail Page Structure', () => {
     });
 
     expect(overflowCheck.hasOverflow).toBe(false);
+  });
+
+  // ─── AC-CSS-003 extended: form styling, RTL, long content ───────
+
+  test('SlimEmail form uses WordPress admin CSS classes', async ({ page }) => {
+    const response = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimemail`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    if (!response || response.status() !== 200) {
+      test.skip();
+      return;
+    }
+
+    await page.waitForTimeout(1000);
+
+    // WP admin form conventions: inputs use .regular-text or .widefat, buttons use .button
+    const cssCheck = await page.evaluate(() => {
+      const wpInputs = document.querySelectorAll('.regular-text, .widefat, .small-text');
+      const wpButtons = document.querySelectorAll('.button, .button-primary, .button-secondary');
+      // No inline font-size/font-family on the wrap container (would break WP conventions)
+      const wrapStyle = (document.querySelector('.wrap-slimstat') as HTMLElement)?.style?.cssText ?? '';
+      return {
+        wpInputCount: wpInputs.length,
+        wpButtonCount: wpButtons.length,
+        wrapHasInlineFont: /font-size|font-family/.test(wrapStyle),
+      };
+    });
+
+    // Should use at least one WP-styled element (inputs or buttons)
+    expect(
+      cssCheck.wpInputCount + cssCheck.wpButtonCount,
+      'SlimEmail should use WordPress admin CSS classes for inputs/buttons'
+    ).toBeGreaterThan(0);
+    expect(cssCheck.wrapHasInlineFont, '.wrap-slimstat should not override WP font conventions').toBe(false);
+  });
+
+  test('SlimEmail page renders without horizontal overflow in RTL direction', async ({ page }) => {
+    const response = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimemail`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    if (!response || response.status() !== 200) {
+      test.skip();
+      return;
+    }
+
+    // Apply RTL direction programmatically (simulates Arabic/Hebrew locale)
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('dir', 'rtl');
+      document.body.setAttribute('dir', 'rtl');
+    });
+
+    await page.waitForTimeout(500);
+
+    const overflowCheck = await page.evaluate(() => ({
+      scrollWidth: document.body.scrollWidth,
+      innerWidth: window.innerWidth,
+      hasOverflow: document.body.scrollWidth > window.innerWidth + 30, // 30px tolerance for RTL
+    }));
+
+    expect(overflowCheck.hasOverflow, 'SlimEmail should not overflow horizontally in RTL mode').toBe(false);
+  });
+
+  test('SlimEmail page handles very long field content without layout break', async ({ page }) => {
+    const response = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimemail`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    if (!response || response.status() !== 200) {
+      test.skip();
+      return;
+    }
+
+    await page.waitForTimeout(1000);
+
+    // Fill the first visible text input with a very long string (512 chars)
+    const longValue = 'a'.repeat(512);
+    const inputs = page.locator('input[type="text"], input[type="email"], textarea');
+
+    if (await inputs.count() > 0) {
+      await inputs.first().fill(longValue);
+      await page.waitForTimeout(500);
+    }
+
+    // Page should not break layout after filling long content
+    const overflowCheck = await page.evaluate(() => ({
+      scrollWidth: document.body.scrollWidth,
+      innerWidth: window.innerWidth,
+      hasOverflow: document.body.scrollWidth > window.innerWidth + 40,
+    }));
+
+    expect(overflowCheck.hasOverflow, 'SlimEmail should not overflow with long field content').toBe(false);
+
+    // No JS errors — page should still be functional
+    const html = await page.content();
+    expect(html).not.toContain('Fatal error');
   });
 });

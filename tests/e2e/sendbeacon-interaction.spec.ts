@@ -278,4 +278,124 @@ test.describe('sendBeacon Interaction Tracking (#174)', () => {
     });
     expect(res.status()).toBeLessThan(500);
   });
+
+  // ─── AC-TRK-002 extended: long URL, malformed URL, exit-time beacon ─
+
+  test('very long outbound URL (2048 chars) does not cause PHP fatal', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `long-url-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const { restUrl, trackerIdRaw } = await page.evaluate(() => ({
+      restUrl: (window as any).SlimStatParams?.ajaxurl_rest || '',
+      trackerIdRaw: (window as any).SlimStatParams?.id || '',
+    }));
+    if (!restUrl) {
+      test.skip(true, 'REST URL not available — server-side tracking only');
+      return;
+    }
+    const idToUse = trackerIdRaw || 'invalid.0';
+    const longUrl = 'https://example.com/' + 'a'.repeat(2000);
+    const res = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: `action=slimtrack&id=${idToUse}&res=${Buffer.from(longUrl).toString('base64')}&pos=0,0`,
+    });
+
+    expect(res.status()).toBeLessThan(500);
+    const body = await res.text();
+    expect(body).not.toContain('Fatal error');
+  });
+
+  test('malformed outbound URL (no protocol) does not crash tracking endpoint', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `malformed-url-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const { restUrl, trackerIdRaw } = await page.evaluate(() => ({
+      restUrl: (window as any).SlimStatParams?.ajaxurl_rest || '',
+      trackerIdRaw: (window as any).SlimStatParams?.id || '',
+    }));
+    if (!restUrl) {
+      test.skip(true, 'REST URL not available — server-side tracking only');
+      return;
+    }
+    const idToUse = trackerIdRaw || 'invalid.0';
+    // Malformed URL — no protocol, just a path fragment
+    const malformedUrl = 'not-a-valid-url/just/a/path?foo=bar&baz=<script>';
+    const res = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: `action=slimtrack&id=${idToUse}&res=${Buffer.from(malformedUrl).toString('base64')}&pos=0,0`,
+    });
+
+    expect(res.status()).toBeLessThan(500);
+    const body = await res.text();
+    expect(body).not.toContain('Fatal error');
+  });
+
+  test('exit-time beacon (no outbound URL, pos only) does not crash endpoint', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `exit-beacon-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const { restUrl, trackerIdRaw } = await page.evaluate(() => ({
+      restUrl: (window as any).SlimStatParams?.ajaxurl_rest || '',
+      trackerIdRaw: (window as any).SlimStatParams?.id || '',
+    }));
+    if (!restUrl) {
+      test.skip(true, 'REST URL not available — server-side tracking only');
+      return;
+    }
+    const idToUse = trackerIdRaw || 'invalid.0';
+    // Exit-time beacon: only pos (scroll position / time on page), no res field
+    // This simulates the unload beacon that updates dt_out without an outbound click
+    const res = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: `action=slimtrack&id=${idToUse}&pos=42,135`,
+    });
+
+    expect(res.status()).toBeLessThan(500);
+    const body = await res.text();
+    expect(body).not.toContain('Fatal error');
+    expect(body).not.toContain('Undefined');
+  });
+
+  test('REST endpoint returns non-HTML structured response (no fatal page)', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `rest-response-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const { restUrl, trackerIdRaw } = await page.evaluate(() => ({
+      restUrl: (window as any).SlimStatParams?.ajaxurl_rest || '',
+      trackerIdRaw: (window as any).SlimStatParams?.id || '',
+    }));
+    if (!restUrl) {
+      test.skip(true, 'REST URL not available — server-side tracking only');
+      return;
+    }
+    const idToUse = trackerIdRaw || 'invalid.0';
+    const outUrl = 'https://example.com/rest-response-test';
+    const res = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: `action=slimtrack&id=${idToUse}&res=${Buffer.from(outUrl).toString('base64')}&pos=0,0`,
+    });
+
+    expect(res.status()).toBeLessThan(500);
+    const body = await res.text();
+    // Response should be a simple value (ID string or "0"), not a full HTML error page
+    expect(body).not.toContain('<html');
+    expect(body).not.toContain('Fatal error');
+    expect(body).not.toContain('<!DOCTYPE');
+  });
 });

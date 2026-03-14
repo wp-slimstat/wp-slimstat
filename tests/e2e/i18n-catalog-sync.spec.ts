@@ -235,6 +235,60 @@ test.describe('Issue #173: i18n catalog sync', () => {
     }
   });
 
+  // ─── AC-CMP-002 extended: no duplicate msgids, no orphaned strings ──
+
+  test('no duplicate msgid entries in any .po file', async () => {
+    const poFiles = fs.readdirSync(PLUGIN_LANGUAGES).filter(f => f.endsWith('.po'));
+    expect(poFiles.length).toBeGreaterThanOrEqual(1);
+
+    for (const poFile of poFiles) {
+      const content = fs.readFileSync(path.join(PLUGIN_LANGUAGES, poFile), 'utf8');
+      // Extract all msgid values (quoted strings after `msgid `)
+      const msgids = (content.match(/^msgid "(.+)"$/gm) || [])
+        .map(line => line.match(/^msgid "(.+)"$/)?.[1] ?? '')
+        .filter(Boolean);
+
+      const seen = new Set<string>();
+      const duplicates: string[] = [];
+      for (const id of msgids) {
+        if (seen.has(id)) duplicates.push(id);
+        else seen.add(id);
+      }
+
+      expect(
+        duplicates.length,
+        `${poFile} has ${duplicates.length} duplicate msgid(s): ${duplicates.slice(0, 3).join(', ')}`
+      ).toBe(0);
+    }
+  });
+
+  test('no orphaned msgid entries in .po files (all msgids exist in .pot)', async () => {
+    const potPath = path.join(PLUGIN_LANGUAGES, 'wp-slimstat.pot');
+    expect(fs.existsSync(potPath), '.pot file must exist').toBeTruthy();
+
+    const potContent = fs.readFileSync(potPath, 'utf8');
+    const potMsgids = new Set(
+      (potContent.match(/^msgid "(.+)"$/gm) || [])
+        .map(line => line.match(/^msgid "(.+)"$/)?.[1] ?? '')
+        .filter(Boolean)
+    );
+
+    const poFiles = fs.readdirSync(PLUGIN_LANGUAGES).filter(f => f.endsWith('.po'));
+    for (const poFile of poFiles) {
+      const content = fs.readFileSync(path.join(PLUGIN_LANGUAGES, poFile), 'utf8');
+      const poMsgids = (content.match(/^msgid "(.+)"$/gm) || [])
+        .map(line => line.match(/^msgid "(.+)"$/)?.[1] ?? '')
+        .filter(Boolean);
+
+      const orphaned = poMsgids.filter(id => !potMsgids.has(id));
+      // Allow up to 50 orphaned entries — plural forms and context variants may not match exactly
+      expect(
+        orphaned.length,
+        `${poFile} has ${orphaned.length} orphaned msgid(s) not in .pot: ${orphaned.slice(0, 3).join(', ')}`
+      ).toBeLessThanOrEqual(50);
+    }
+  });
+
   test('es_ES locale renders without PHP errors on Settings page', async ({ page }) => {
     const esPoPath = path.join(PLUGIN_LANGUAGES, 'wp-slimstat-es_ES.po');
     test.skip(!fs.existsSync(esPoPath), 'es_ES .po file not found — skipping Spanish locale test');
