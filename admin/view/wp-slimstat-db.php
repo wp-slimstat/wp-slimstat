@@ -1285,19 +1285,7 @@ class wp_slimstat_db
 
     public static function get_top_outbound()
     {
-        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''");
-        $clean_outbound_resources = [];
-
-        foreach ($mixed_outbound_resources as $a_mixed_resource) {
-            $exploded_resources = explode(';;;', $a_mixed_resource['outbound_resource'] ?? '');
-            foreach ($exploded_resources as $a_exploded_resource) {
-                if ($a_exploded_resource !== '') {
-                    $clean_outbound_resources[] = $a_exploded_resource;
-                }
-            }
-        }
-
-        $clean_outbound_resources = array_count_values($clean_outbound_resources);
+        $clean_outbound_resources = array_count_values(self::get_recent_outbound());
         arsort($clean_outbound_resources);
 
         $sorted_outbound_resources = [];
