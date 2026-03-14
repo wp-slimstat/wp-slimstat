@@ -134,7 +134,7 @@ export function readAjaxLog(): AjaxLogEntry[] {
 
 let pool: mysql.Pool | null = null;
 
-function getPool(): mysql.Pool {
+export function getPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool(MYSQL_CONFIG);
   }
@@ -434,6 +434,32 @@ export async function getDownloadCount(resourceMarker: string): Promise<number> 
     [`%${resourceMarker}%`],
   ) as any;
   return rows[0].cnt;
+}
+
+// ─── Shared pageview/tracker pollers ──────────────────────────────
+
+export async function waitForPageviewRow(
+  marker: string,
+  timeoutMs = 20_000,
+): Promise<{ id: number; resource: string; outbound_resource: string | null; dt_out: number; country: string; city: string } | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const row = await getLatestStatFull(marker);
+    if (row) return row;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return null;
+}
+
+export async function waitForTrackerId(page: import('@playwright/test').Page): Promise<string> {
+  await page.waitForFunction(
+    () => {
+      const p = (window as any).SlimStatParams;
+      return p && p.id && parseInt(p.id, 10) > 0;
+    },
+    { timeout: 10_000 },
+  );
+  return page.evaluate(() => (window as any).SlimStatParams?.id ?? '');
 }
 
 // ─── Scenario helpers ────────────────────────────────────────────

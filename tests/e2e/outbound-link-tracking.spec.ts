@@ -14,7 +14,6 @@
  *   - AJAX transport produces the same outbound tracking result as REST.
  */
 import { test, expect } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -22,33 +21,14 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
-  getLatestStatFull,
+  getPool,
+  waitForPageviewRow,
+  waitForTrackerId,
   closeDb,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { BASE_URL } from './helpers/env';
 
 // ─── DB helpers ──────────────────────────────────────────────────────────────
-
-let pool: mysql.Pool;
-
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-/** Wait for the initial pageview row to appear for a given URL marker. */
-async function waitForPageviewRow(
-  marker: string,
-  timeoutMs = 20_000,
-): Promise<{ id: number; outbound_resource: string | null; dt_out: number } | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const row = await getLatestStatFull(marker);
-    if (row) return row as { id: number; outbound_resource: string | null; dt_out: number };
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return null;
-}
 
 /** Poll the DB for outbound_resource to be set on a specific row ID. */
 async function waitForOutboundUpdate(
@@ -101,22 +81,6 @@ async function injectExternalLink(
   );
 }
 
-/**
- * Wait until window.SlimStatParams.id is populated.
- * In PHP mode (javascript_mode=off) the ID is embedded in the page HTML so this
- * resolves within milliseconds of DOMContentLoaded. Timeout is a safety net only.
- */
-async function waitForTrackerId(page: import('@playwright/test').Page): Promise<string> {
-  await page.waitForFunction(
-    () => {
-      const p = (window as any).SlimStatParams;
-      return p && p.id && parseInt(p.id, 10) > 0;
-    },
-    { timeout: 10_000 },
-  );
-  return page.evaluate(() => (window as any).SlimStatParams?.id ?? '');
-}
-
 // ─── Test suite ──────────────────────────────────────────────────────────────
 
 test.describe('Outbound Link Tracking — DOM click path', () => {
@@ -155,7 +119,6 @@ test.describe('Outbound Link Tracking — DOM click path', () => {
 
   test.afterAll(async () => {
     uninstallOptionMutator();
-    if (pool) await pool.end();
     await closeDb();
   });
 

@@ -14,7 +14,6 @@
  *   - Edge cases: query params, anonymous users, multiple clicks.
  */
 import { test, expect } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -24,42 +23,19 @@ import {
   clearStatsTable,
   waitForDownloadRow,
   getDownloadCount,
-  getLatestStatFull,
+  waitForPageviewRow,
+  waitForTrackerId,
   visitAsAnonymous,
   closeDb,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { BASE_URL } from './helpers/env';
 
 // ─── DB helpers ──────────────────────────────────────────────────────────────
 
-let pool: mysql.Pool;
-
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-/** Wait for the initial pageview row to appear for a given URL marker. */
-async function waitForPageviewRow(
-  marker: string,
-  timeoutMs = 20_000,
-): Promise<{ id: number } | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const row = await getLatestStatFull(marker);
-    if (row) return row;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return null;
-}
-
 /** Check that no download row exists for a given resource marker. */
 async function assertNoDownloadRow(resourceMarker: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT id FROM wp_slim_stats WHERE content_type = 'download' AND resource LIKE ?",
-    [`%${resourceMarker}%`],
-  )) as any;
-  expect(rows.length, `expected no download row for marker "${resourceMarker}"`).toBe(0);
+  const count = await getDownloadCount(resourceMarker);
+  expect(count, `expected no download row for marker "${resourceMarker}"`).toBe(0);
 }
 
 // ─── Page helpers ────────────────────────────────────────────────────────────
@@ -86,22 +62,6 @@ async function injectDownloadLink(
     },
     { href, id: attrs.id, className: attrs.className ?? '' },
   );
-}
-
-/**
- * Wait until window.SlimStatParams.id is populated.
- * In PHP mode (javascript_mode=off) the ID is embedded in the page HTML so this
- * resolves within milliseconds of DOMContentLoaded.
- */
-async function waitForTrackerId(page: import('@playwright/test').Page): Promise<string> {
-  await page.waitForFunction(
-    () => {
-      const p = (window as any).SlimStatParams;
-      return p && p.id && parseInt(p.id, 10) > 0;
-    },
-    { timeout: 10_000 },
-  );
-  return page.evaluate(() => (window as any).SlimStatParams?.id ?? '');
 }
 
 // ─── Test suite ──────────────────────────────────────────────────────────────
@@ -136,7 +96,6 @@ test.describe('Download Link Tracking — DOM click path', () => {
 
   test.afterAll(async () => {
     uninstallOptionMutator();
-    if (pool) await pool.end();
     await closeDb();
   });
 
@@ -196,7 +155,7 @@ test.describe('Download Link Tracking — DOM click path', () => {
     await page.click('#e2e-dl-jpg');
 
     // Wait for any tracking request to settle
-    await page.waitForTimeout(5_000);
+    await page.waitForTimeout(2_000);
     await assertNoDownloadRow(marker);
   });
 
@@ -236,7 +195,7 @@ test.describe('Download Link Tracking — DOM click path', () => {
     await injectDownloadLink(page, downloadUrl, { id: 'e2e-dl-nopdf' });
     await page.click('#e2e-dl-nopdf');
 
-    await page.waitForTimeout(5_000);
+    await page.waitForTimeout(2_000);
     await assertNoDownloadRow(marker);
   });
 
