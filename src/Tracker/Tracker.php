@@ -7,9 +7,15 @@ use SlimStat\Utils\Query;
 
 class Tracker
 {
+    /**
+     * Process AJAX tracking request.
+     * Returns the result for REST API and other callers.
+     *
+     * @return string|int The tracking result (record ID with checksum, error code, or 0)
+     */
     public static function slimtrack_ajax()
     {
-        Ajax::handle();
+        return Ajax::process();
     }
 
     public static function rewrite_rule_tracker()

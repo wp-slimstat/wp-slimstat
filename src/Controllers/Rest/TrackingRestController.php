@@ -185,23 +185,22 @@ class TrackingRestController implements RestControllerInterface
             \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
         }
 
-        // Handle tracking hits
-        $result = null;
-        if (function_exists('ob_start')) {
-            ob_start();
-            $maybe = Tracker::slimtrack_ajax();
-            $output = ob_get_clean();
-            $result = $maybe ?? $output;
-        } else {
-            $result = Tracker::slimtrack_ajax();
-        }
+        // Handle tracking hits - process() returns result without exit()
+        $result = Tracker::slimtrack_ajax();
 
-        // Normalize to string numeric id if possible
-        if (is_numeric($result) && (int) $result > 0) {
+        // Success: pure numeric ID (rare — most paths return checksum format)
+        if (is_numeric($result) && 0 < (int) $result) {
             return rest_ensure_response((string) $result);
         }
 
-        // If no numeric id detected, return a non-200 status to trigger fallback tracking methods
+        // Success: checksum-formatted string "<id>.<hash>" from Utils::getValueWithChecksum()
+        // Return the full checksum string so the JS tracker can send it back for
+        // subsequent requests (consent upgrade, events) where getValueWithoutChecksum() validates it.
+        if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && 0 < (int) $matches[1]) {
+            return rest_ensure_response($result);
+        }
+
+        // If no valid tracking ID detected, return a non-200 status to trigger fallback tracking methods
         return new \WP_Error(
             'slimstat_tracking_failed',
             esc_html__('[REST API] Tracking failed, falling back to alternative methods.', 'wp-slimstat'),

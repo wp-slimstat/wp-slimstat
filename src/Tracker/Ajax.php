@@ -6,21 +6,37 @@ use SlimStat\Utils\Consent;
 
 class Ajax
 {
+    /**
+     * Handle AJAX tracking request with exit (for admin-ajax.php).
+     * This wrapper calls process() and exits with the result.
+     */
     public static function handle()
+    {
+        $result = self::process();
+        exit($result);
+    }
+
+    /**
+     * Process tracking request and return result (for REST API and other contexts).
+     * Returns the tracking result without calling exit().
+     *
+     * @return string|int The tracking result (record ID with checksum, error code, or 0)
+     */
+    public static function process()
     {
         $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
         if (!empty($remote_ip)) {
             $key        = 'slimstat_rl_' . md5($remote_ip);
             $hits_in_5s = (int) get_transient($key);
             if ($hits_in_5s >= 10) {
-                exit(Utils::logError(429));
+                return Utils::logError(429);
             }
 
             set_transient($key, $hits_in_5s + 1, 5);
         }
 
         if ('on' != \wp_slimstat::$settings['is_tracking']) {
-            exit(Utils::logError(204));
+            return Utils::logError(204);
         }
 
         $id = 0;
@@ -67,7 +83,7 @@ class Ajax
             // Security: Validate referer format
             if (false === $parsed_ref) {
                 // Invalid referer format - reject request
-                exit(Utils::logError(201));
+                return Utils::logError(201);
             }
 
             // Security: Validate host (if present) - allow external domains for referer
@@ -76,7 +92,7 @@ class Ajax
                 // Validate host format (prevent injection)
                 if (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $parsed_ref['host'])) {
                     // Invalid host format - reject request
-                    exit(Utils::logError(201));
+                    return Utils::logError(201);
                 }
             }
 
@@ -94,13 +110,13 @@ class Ajax
         if (!empty($data_js['id'])) {
             $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
             if (false === $data_js['id']) {
-                exit(Utils::logError(101));
+                return Utils::logError(101);
             }
 
             $stat['id'] = intval($data_js['id']);
             if ($stat['id'] < 0) {
                 do_action('slimstat_track_exit_' . abs($stat['id']));
-                exit(Utils::getValueWithChecksum($stat['id']));
+                return Utils::getValueWithChecksum($stat['id']);
             }
 
             // Process IP according to consent status (cookie set only by consent upgrade handler)
@@ -137,7 +153,7 @@ class Ajax
                         // Security: Whitelist validation - only allow current site domain
                         if (!$is_allowed_host($parsed_resource['host'])) {
                             // Invalid host - reject request
-                            exit(Utils::logError(203));
+                            return Utils::logError(203);
                         }
 
                         // Security: Validate path format (prevent path traversal attacks)
@@ -147,7 +163,7 @@ class Ajax
                         // Validate path contains only safe characters
                         if (!preg_match('#^[/\w\-\.~!*\'();:@&=+$,?#\[\]%]*$#', $path)) {
                             // Invalid path format - reject request
-                            exit(Utils::logError(203));
+                            return Utils::logError(203);
                         }
 
                         // Extract path from resource URL
@@ -173,9 +189,9 @@ class Ajax
                 $visitIdAssigned = Session::ensureVisitId(true);
                 $stat = \wp_slimstat::get_stat();
 
-                // Security: Validate visit_id exists - exit if generation failed
+                // Security: Validate visit_id exists - return error if generation failed
                 if (empty($stat['visit_id']) || $stat['visit_id'] <= 0) {
-                    exit(Utils::logError(500));
+                    return Utils::logError(500);
                 }
 
                 $stat = Utils::getClientInfo($data_js, $stat);
@@ -244,7 +260,7 @@ class Ajax
                             $stat['id'] = intval($existing_record->id);
                             \wp_slimstat::set_stat($stat);
                             $GLOBALS['wpdb']->query('COMMIT');
-                            exit(Utils::getValueWithChecksum($stat['id']));
+                            return Utils::getValueWithChecksum($stat['id']);
                         }
 
                         $GLOBALS['wpdb']->query('COMMIT');
@@ -290,7 +306,7 @@ class Ajax
                     $resource        = Utils::base64UrlDecode($data_js['res']);
                     $parsed_resource = parse_url($resource ?: '');
                     if (false === $parsed_resource || empty($parsed_resource['host'])) {
-                        exit(Utils::logError(203));
+                        return Utils::logError(203);
                     }
 
                     if (!empty($parsed_resource['path']) && in_array(pathinfo($parsed_resource['path'], PATHINFO_EXTENSION), \wp_slimstat::string_to_array(\wp_slimstat::$settings['extensions_to_track']))) {
@@ -333,7 +349,7 @@ class Ajax
             if (!empty($data_js['res'])) {
                 $stat['resource'] = Utils::base64UrlDecode($data_js['res']);
                 if (false === parse_url($stat['resource'] ?: '')) {
-                    exit(Utils::logError(203));
+                    return Utils::logError(203);
                 }
             }
 
@@ -341,14 +357,14 @@ class Ajax
             if (!empty($data_js['ci'])) {
                 $data_js['ci'] = Utils::getValueWithoutChecksum($data_js['ci']);
                 if (false === $data_js['ci']) {
-                    exit(Utils::logError(102));
+                    return Utils::logError(102);
                 }
 
                 $decoded_ci = Utils::base64UrlDecode($data_js['ci']);
                 $content_info = json_decode($decoded_ci, true);
                 // Security: Only accept JSON-encoded content info, reject serialized data
                 if (empty($content_info) || !is_array($content_info)) {
-                    exit(Utils::logError(103));
+                    return Utils::logError(103);
                 }
 
                 foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
@@ -378,10 +394,10 @@ class Ajax
         }
 
         if (empty($id)) {
-            exit(0);
+            return 0;
         }
 
         do_action('slimstat_track_success');
-        exit(Utils::getValueWithChecksum($id));
+        return Utils::getValueWithChecksum($id);
     }
 }
