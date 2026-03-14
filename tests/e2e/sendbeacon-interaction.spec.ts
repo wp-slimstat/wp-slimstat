@@ -24,9 +24,11 @@ test.describe('sendBeacon Interaction Tracking (#174)', () => {
     installOptionMutator();
   });
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
+    await setSlimstatOption(page, 'is_tracking', 'on');
+    await setSlimstatOption(page, 'ignore_wp_users', 'off');
   });
 
   test.afterEach(async () => {

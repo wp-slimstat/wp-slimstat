@@ -280,29 +280,33 @@ var SlimStat = (function () {
         queueInFlight = true;
 
         var done = function (success) {
-            if (!success && item) {
-                item.attempts = (item.attempts || 0) + 1;
-                if (item.attempts < MAX_QUEUE_ATTEMPTS) {
-                    // Re-queue with a delay and exponential backoff
-                    var delay = 500 * Math.pow(2, item.attempts);
-                    setTimeout(function () {
-                        requestQueue.unshift(item);
-                    }, delay);
+            try {
+                if (!success && item) {
+                    item.attempts = (item.attempts || 0) + 1;
+                    if (item.attempts < MAX_QUEUE_ATTEMPTS) {
+                        // Re-queue with a delay and exponential backoff
+                        var delay = 500 * Math.pow(2, item.attempts);
+                        setTimeout(function () {
+                            requestQueue.unshift(item);
+                            if (!queueInFlight) processQueue();
+                        }, delay);
+                    } else {
+                        // Max attempts reached, move to offline storage
+                        SlimStat.store_offline(item.payload);
+                        if (item.opts && typeof item.opts.onComplete === "function") {
+                            item.opts.onComplete(false);
+                        }
+                    }
                 } else {
-                    // Max attempts reached, move to offline storage
-                    SlimStat.store_offline(item.payload);
                     if (item.opts && typeof item.opts.onComplete === "function") {
-                        item.opts.onComplete(false);
+                        item.opts.onComplete(!!success);
                     }
                 }
-            } else {
-                if (item.opts && typeof item.opts.onComplete === "function") {
-                    item.opts.onComplete(!!success);
-                }
+            } finally {
+                queueInFlight = false;
+                // Process next after a micro delay to allow ID assignment, etc.
+                setTimeout(processQueue, 50);
             }
-            queueInFlight = false;
-            // Process next after a micro delay to allow ID assignment, etc.
-            setTimeout(processQueue, 50); // increased delay to prevent tight loops on failure
         };
 
         processQueueItem(item, done);

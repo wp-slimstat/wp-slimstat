@@ -91,17 +91,10 @@ test.describe('Outbound Link Tracking — DOM click path', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    // handleConsentUpgradeResult is called inside sendPageview's onComplete callback
-    // but is never defined in wp-slimstat.js. Without this shim the ReferenceError
-    // it throws prevents queueInFlight from being reset to false, causing the
-    // sendBeacon queue to lock permanently and no outbound beacon to ever fire.
-    await page.addInitScript(() => {
-      (window as any).handleConsentUpgradeResult = function() { /* no-op shim */ };
-    });
-
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await setSlimstatOption(page, 'is_tracking', 'on');
+    await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     // Use PHP/server-side tracking mode so the stat row and params.id are both
     // created synchronously by PHP on page load. In JS mode the tracker sends an

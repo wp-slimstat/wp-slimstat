@@ -33,13 +33,10 @@ test.describe('Browscap Flysystem namespace fix — Issue #219 regression', () =
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      (window as any).handleConsentUpgradeResult = function () {};
-    });
-
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await setSlimstatOption(page, 'is_tracking', 'on');
+    await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     await setSlimstatOption(page, 'javascript_mode', 'off');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');

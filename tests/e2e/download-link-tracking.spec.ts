@@ -74,17 +74,10 @@ test.describe('Download Link Tracking — DOM click path', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    // handleConsentUpgradeResult shim — prevents ReferenceError that locks
-    // the sendBeacon queue (same issue as outbound-link-tracking spec).
-    await page.addInitScript(() => {
-      (window as any).handleConsentUpgradeResult = function () {
-        /* no-op shim */
-      };
-    });
-
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await setSlimstatOption(page, 'is_tracking', 'on');
+    await setSlimstatOption(page, 'ignore_wp_users', 'off');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     await setSlimstatOption(page, 'javascript_mode', 'off');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
@@ -302,13 +295,6 @@ test.describe('Download Link Tracking — DOM click path', () => {
     const anonPage = await visitAsAnonymous(browser, `${BASE_URL}/?e2e=${marker}`);
 
     try {
-      // Inject the handleConsentUpgradeResult shim for the anonymous context
-      await anonPage.addInitScript(() => {
-        (window as any).handleConsentUpgradeResult = function () {};
-      });
-      // Reload to apply the init script
-      await anonPage.reload({ waitUntil: 'domcontentloaded' });
-
       await waitForTrackerId(anonPage);
       await waitForPageviewRow(marker);
 
