@@ -1,4 +1,4 @@
-= 5.4.2 - 2026-03-11 =
+= 5.4.2 - 2026-03-14 =
 
 Fixed
 - Fixed Cloudflare sites reporting the proxy IP instead of the visitor's real IP address ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))

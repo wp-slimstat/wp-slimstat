@@ -75,7 +75,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.2 - 2026-03-11 =
+= 5.4.2 - 2026-03-14 =
 - **Fix**: Fixed Cloudflare sites reporting the proxy IP instead of the visitor's real IP address ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))
 - **Fix**: Fixed a performance issue that could cause 503 errors on high-traffic sites — visit ID generation now uses an efficient atomic counter ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
 - **Fix**: Fixed an infinite request loop when WP-Cron is disabled, which caused excessive geolocation lookups ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
