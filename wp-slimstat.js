@@ -144,6 +144,10 @@ var SlimStat = (function () {
 
     // -------------------------- Parameters Extraction -------------------------- //
     function extractSlimStatParams() {
+        // Preserve runtime-assigned properties (e.g. id set by XHR response)
+        // that would be lost when re-parsing from the DOM
+        var existingId = window.SlimStatParams && window.SlimStatParams.id;
+
         var meta = document.querySelector('meta[name="slimstat-params"]');
         if (meta) {
             try {
@@ -167,6 +171,12 @@ var SlimStat = (function () {
                 }
             }
         }
+
+        // Restore runtime-assigned id if the DOM source didn't include one
+        if (existingId && !window.SlimStatParams.id) {
+            window.SlimStatParams.id = existingId;
+        }
+
         return currentSlimStatParams();
     }
 
@@ -335,9 +345,15 @@ var SlimStat = (function () {
                         return;
                     }
                     if (xhr.status === 200) {
-                        var parsed = parseInt(xhr.responseText, 10);
+                        // REST API returns JSON-encoded strings (e.g. "5.abc...")
+                        // Strip wrapping quotes before parsing the numeric ID
+                        var responseId = xhr.responseText.replace(/^"|"$/g, '').trim();
+                        var parsed = parseInt(responseId, 10);
                         if (!isNaN(parsed) && parsed > 0) {
-                            params.id = xhr.responseText; // store new id
+                            // Write to current global params (not local ref which may be stale
+                            // if extractSlimStatParams replaced window.SlimStatParams)
+                            currentSlimStatParams().id = responseId;
+                            params.id = responseId; // keep local ref in sync too
                             // Mark that we've successfully tracked the initial pageview for this load
                             try {
                                 window.slimstatPageviewTracked = true;
