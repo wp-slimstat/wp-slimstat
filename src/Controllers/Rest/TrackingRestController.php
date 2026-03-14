@@ -189,13 +189,15 @@ class TrackingRestController implements RestControllerInterface
         $result = Tracker::slimtrack_ajax();
 
         // Success: pure numeric ID (rare — most paths return checksum format)
-        if (is_numeric($result) && (int) $result > 0) {
+        if (is_numeric($result) && 0 < (int) $result) {
             return rest_ensure_response((string) $result);
         }
 
         // Success: checksum-formatted string "<id>.<hash>" from Utils::getValueWithChecksum()
-        if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && (int) $matches[1] > 0) {
-            return rest_ensure_response($matches[1]);
+        // Return the full checksum string so the JS tracker can send it back for
+        // subsequent requests (consent upgrade, events) where getValueWithoutChecksum() validates it.
+        if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && 0 < (int) $matches[1]) {
+            return rest_ensure_response($result);
         }
 
         // If no valid tracking ID detected, return a non-200 status to trigger fallback tracking methods

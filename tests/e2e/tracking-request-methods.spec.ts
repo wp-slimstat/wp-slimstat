@@ -145,11 +145,17 @@ test.describe('Tracking Request Methods — All Transports', () => {
       const stat = await waitForStatRow(marker);
       expect(stat).toBeTruthy();
 
-      // If we captured the response, verify it contains a numeric ID
-      // REST response wraps the result in JSON — the body should contain a numeric string
+      // If we captured the response, verify it contains a valid checksum-formatted tracking ID
       if (restResponseBody) {
-        // Response should be parseable (not a 500 error page)
         expect(restResponseBody).not.toContain('Internal Server Error');
+        // REST wraps the result in JSON — parse and verify checksum format "<id>.<hash>"
+        try {
+          const parsed = JSON.parse(restResponseBody);
+          const body = typeof parsed === 'string' ? parsed : String(parsed);
+          expect(body).toMatch(/^\d+\.[0-9a-fA-F]+$/);
+        } catch {
+          // sendBeacon may produce non-JSON response — skip format check
+        }
       }
     });
   });
@@ -331,10 +337,7 @@ test.describe('Tracking Request Methods — All Transports', () => {
       expect(stat!.resource).toContain(marker);
 
       // When REST is blocked, AJAX should be used as fallback
-      // (unless server-side tracking captured it first)
-      if (ajaxFallbackUsed) {
-        expect(ajaxFallbackUsed).toBe(true);
-      }
+      expect(ajaxFallbackUsed).toBe(true);
     });
   });
 
