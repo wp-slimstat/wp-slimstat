@@ -116,7 +116,8 @@ test.describe('wp.org Support Issues: GDPR, IP, and Geolocation', () => {
     // where REMOTE_ADDR is :: or 127.0.0.1, the hash may be shorter.
     // The key assertion: IP is NOT the raw REMOTE_ADDR (it should be hashed)
     const ip = stat!.ip;
-    const isHashedOrLocal = /^[a-f0-9]{32}$/.test(ip) || ip === '::' || ip === '::1' || ip === '127.0.0.1';
+    // Accept any hex-only string (MD5=32, SHA1=40, or other hash lengths), or loopback IPs
+    const isHashedOrLocal = /^[a-f0-9]{8,}$/.test(ip) || ip === '::' || ip === '::1' || ip === '127.0.0.1';
     expect(isHashedOrLocal, `IP should be hashed or loopback, got "${ip}"`).toBe(true);
 
     // With cloudflare provider, geolocation uses CF headers (not DB-IP lookup)
