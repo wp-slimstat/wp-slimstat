@@ -1867,7 +1867,7 @@ class wp_slimstat_reports
         }
 
         if ('' !== $filters_html && '0' !== $filters_html) {
-            $filters_html = sprintf("<ul class='slimstat-filter-list'>%s</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='", $filters_html) . htmlentities(json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
+            $filters_html = sprintf("<ul class='slimstat-filter-list'>%s</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='", $filters_html) . htmlentities(wp_json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
         }
 
         if ('' !== $filters_html && '0' !== $filters_html) {

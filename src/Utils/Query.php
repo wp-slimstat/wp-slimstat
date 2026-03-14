@@ -873,7 +873,7 @@ class Query
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
         // Use JSON encode instead of serialize for security
-        $data     = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $data     = wp_json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (false === $data) {
             return false;
         }
@@ -892,7 +892,7 @@ class Query
                 'chunks' => count($chunks),
                 'size'   => strlen($data),
             ];
-            if (strlen(json_encode($meta)) > $max_chunk_size) {
+            if (strlen(wp_json_encode($meta)) > $max_chunk_size) {
                 return false;
             }
 
