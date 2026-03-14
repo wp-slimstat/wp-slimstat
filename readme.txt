@@ -76,26 +76,25 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Changelog ==
 = 5.4.2 - 2026-03-14 =
-- **Fix**: Fixed 500 errors on REST API and admin-ajax tracking endpoints caused by `exit()` terminating PHP before the REST framework could return responses ([PR #218](https://github.com/wp-slimstat/wp-slimstat/pull/218))
-- **Fix**: Fixed Cloudflare sites reporting the proxy IP instead of the visitor's real IP address ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))
-- **Fix**: Fixed a performance issue that could cause 503 errors on high-traffic sites — visit ID generation now uses an efficient atomic counter ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
-- **Fix**: Fixed an infinite request loop when WP-Cron is disabled, which caused excessive geolocation lookups ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
-- **Fix**: Fixed the `prefers-reduced-motion` CSS rule accidentally disabling animations across the entire site instead of only within SlimStat ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
-- **Fix**: Fixed outbound link clicks, file downloads, and page-exit events not being tracked — a silent regression in the sendBeacon + REST tracking flow ([#174](https://github.com/wp-slimstat/wp-slimstat/issues/174))
-- **Fix**: Fixed WP Consent API ignoring explicit consent rejections ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
-- **Fix**: Fixed WP Consent API incorrectly treating unconfigured consent types as granted ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
-- **Fix**: Fixed a fatal error when WP Consent API plugin is not installed alongside SlimStat ([PR #172](https://github.com/wp-slimstat/wp-slimstat/pull/172))
-- **Fix**: Fixed a fatal error in the geolocation provider when the DB-IP download function is unavailable during WP-Cron runs ([#180](https://github.com/wp-slimstat/wp-slimstat/issues/180))
-- **Fix**: Fixed failed GeoIP database downloads incorrectly marking the timestamp as updated, which prevented retries for up to a month ([PR #185](https://github.com/wp-slimstat/wp-slimstat/pull/185))
-- **Fix**: Fixed a CSS conflict between SlimStat's `.wrap` wrapper and WordPress core admin styles ([PR #175](https://github.com/wp-slimstat/wp-slimstat/pull/175))
-- **Fix**: Fixed the Email Reports admin page layout not matching other SlimStat admin pages ([PR #177](https://github.com/wp-slimstat/wp-slimstat/pull/177))
-- **Fix**: Fixed a namespace scoping error with the Browscap library after the Flysystem dependency was renamed ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
-- **Improved**: Restored the server-side tracking API (`wp_slimstat::slimtrack()`) for themes and plugins that call tracking programmatically ([#171](https://github.com/wp-slimstat/wp-slimstat/issues/171))
-- **Improved**: Unique visitor counts are now based on visit ID rather than IP address — works correctly even when IPs are anonymized or hashed ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
-- **Improved**: Plugin translations updated — 261+ previously untranslated strings are now available for all languages ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
-- **Improved**: Geolocation provider selection is now consistent across all request types including background WP-Cron tasks
-- **Improved**: Restored DB-IP as the default geolocation provider for new installs
-- **Improved**: Improved admin performance by reducing redundant database index queries on page load ([PR #189](https://github.com/wp-slimstat/wp-slimstat/pull/189))
+- **Fix**: Fixed tracking data not being recorded on some server configurations — REST API and admin-ajax endpoints now return responses correctly ([PR #218](https://github.com/wp-slimstat/wp-slimstat/pull/218))
+- **Fix**: Fixed visitor locations showing a proxy server IP instead of the real visitor IP on Cloudflare-powered sites ([#150](https://github.com/wp-slimstat/wp-slimstat/issues/150))
+- **Fix**: Fixed 503 errors that could occur on high-traffic sites due to inefficient visit ID generation ([#155](https://github.com/wp-slimstat/wp-slimstat/issues/155))
+- **Fix**: Fixed excessive server requests when WP-Cron is disabled, caused by repeated geolocation lookups ([#164](https://github.com/wp-slimstat/wp-slimstat/issues/164))
+- **Fix**: Fixed a CSS rule that could accidentally disable animations across your entire site, not just on SlimStat pages ([#167](https://github.com/wp-slimstat/wp-slimstat/issues/167))
+- **Fix**: Fixed outbound link clicks, file downloads, and page-exit events not being recorded — a silent regression in recent versions ([#174](https://github.com/wp-slimstat/wp-slimstat/issues/174))
+- **Fix**: Fixed consent rejections being ignored — visitors who declined tracking could still be tracked, and unconfigured consent types were incorrectly treated as granted ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
+- **Fix**: Fixed a crash when the WP Consent API plugin is not installed alongside SlimStat ([PR #172](https://github.com/wp-slimstat/wp-slimstat/pull/172))
+- **Fix**: Fixed a crash during background geolocation database updates ([#180](https://github.com/wp-slimstat/wp-slimstat/issues/180))
+- **Fix**: Fixed geolocation database updates not retrying after a failed download — previously blocked retries for up to a month ([PR #185](https://github.com/wp-slimstat/wp-slimstat/pull/185))
+- **Fix**: Fixed admin page styling conflicts with WordPress core styles ([PR #175](https://github.com/wp-slimstat/wp-slimstat/pull/175))
+- **Fix**: Fixed Email Reports page layout not matching other SlimStat admin pages ([PR #177](https://github.com/wp-slimstat/wp-slimstat/pull/177))
+- **Fix**: Fixed browser detection failing due to a library compatibility issue ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
+- **Improved**: Restored the server-side tracking API (`wp_slimstat::slimtrack()`) for themes and plugins that track visits programmatically ([#171](https://github.com/wp-slimstat/wp-slimstat/issues/171))
+- **Improved**: Unique visitor counts now work correctly even when IP addresses are anonymized or hashed ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
+- **Improved**: 261+ previously untranslated strings are now available for translation in all languages ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
+- **Improved**: Geolocation now works consistently across all request types, including background tasks
+- **Improved**: DB-IP restored as the default geolocation provider for new installations
+- **Improved**: Faster admin page loads by removing redundant database queries ([PR #189](https://github.com/wp-slimstat/wp-slimstat/pull/189))
 
 = 5.4.1 - 2026-03-09 =
 - **New**: The GDPR consent banner message, accept, and decline labels can now be translated with WPML and Polylang ([#145](https://github.com/wp-slimstat/wp-slimstat/issues/145))
