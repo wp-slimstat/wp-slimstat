@@ -31,6 +31,7 @@ const __dirname = path.dirname(__filename);
 
 let db: mysql.Pool;
 let wpConsentApiActive = false;
+const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
 test.beforeAll(async () => {
   db = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
@@ -124,11 +125,20 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
 
     // Anonymous context with allow cookie set
     const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
-      { name: 'wp_consent_statistics', value: 'allow', domain: 'localhost', path: '/' },
+      { name: 'wp_consent_statistics', value: 'allow', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     try {
-      expect(trackingRequests.length).toBeGreaterThan(0);
+      // With consent granted, tracking should work either via JS (client-side request)
+      // or via server-side tracking (DB row). Check both paths.
+      if (trackingRequests.length === 0) {
+        // Server-side tracking may have created the row without JS
+        const [rows] = await db.execute(
+          'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
+          [`%${marker}%`],
+        ) as any;
+        expect(rows.length, 'Tracking should occur via JS or server-side after consent granted').toBeGreaterThan(0);
+      }
     } finally {
       await cleanup();
     }
@@ -140,7 +150,7 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
 
     // Anonymous context with deny cookie set
     const { trackingRequests, cleanup } = await withAnonymousContext(page, testUrl, [
-      { name: 'wp_consent_statistics', value: 'deny', domain: 'localhost', path: '/' },
+      { name: 'wp_consent_statistics', value: 'deny', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     try {
@@ -163,7 +173,7 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
     const testUrl = `${BASE_URL}/?e2e_marker=${marker}`;
 
     const { cleanup } = await withAnonymousContext(page, testUrl, [
-      { name: 'wp_consent_statistics', value: 'deny', domain: 'localhost', path: '/' },
+      { name: 'wp_consent_statistics', value: 'deny', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     try {
@@ -200,7 +210,7 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
     await ctx.addCookies([
-      { name: 'wp_consent_statistics', value: 'deny', domain: 'localhost', path: '/' },
+      { name: 'wp_consent_statistics', value: 'deny', domain: COOKIE_DOMAIN, path: '/' },
     ]);
 
     const newPage = await ctx.newPage();

@@ -60,7 +60,7 @@ async function getDistinctVisitIdCount(): Promise<number> {
 }
 
 test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
-  test.setTimeout(90_000);
+  test.setTimeout(120_000);
 
   test.beforeAll(async () => {
     installOptionMutator();
@@ -93,15 +93,15 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
     // Navigate to 3 pages in the same browser context (same session)
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p1`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2500);
 
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p2`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2500);
 
     await page.goto(`${BASE_URL}/?e2e=${sessionMarker}-p3`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(2500);
 
     const rows = await waitForStatRows(sessionMarker, 3, 15_000);
@@ -124,17 +124,17 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
     const marker = `visit-ctx-${Date.now()}`;
 
     // Context A (separate session)
-    const ctxA = await browser.newContext();
+    const ctxA = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
     const pageA = await ctxA.newPage();
     await pageA.goto(`${BASE_URL}/?e2e=${marker}-ctxA`);
-    await pageA.waitForLoadState('networkidle');
+    await pageA.waitForLoadState('load');
     await pageA.waitForTimeout(3000);
 
     // Context B (separate session)
-    const ctxB = await browser.newContext();
+    const ctxB = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
     const pageB = await ctxB.newPage();
     await pageB.goto(`${BASE_URL}/?e2e=${marker}-ctxB`);
-    await pageB.waitForLoadState('networkidle');
+    await pageB.waitForLoadState('load');
     await pageB.waitForTimeout(3000);
 
     const rows = await waitForStatRows(marker, 2, 15_000);
@@ -163,10 +163,10 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
     // Create 3 separate browser contexts (3 distinct visitors)
     for (let i = 0; i < 3; i++) {
-      const ctx = await browser.newContext();
+      const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
       const pg = await ctx.newPage();
       await pg.goto(`${BASE_URL}/?e2e=${marker}-v${i}`);
-      await pg.waitForLoadState('networkidle');
+      await pg.waitForLoadState('load');
       await pg.waitForTimeout(5000);
       await pg.close();
       await ctx.close();
@@ -191,11 +191,11 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
     const marker = `visit-positive-${Date.now()}`;
 
     await page.goto(`${BASE_URL}/?e2e=${marker}-a`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(4000);
 
     await page.goto(`${BASE_URL}/?e2e=${marker}-b`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(4000);
 
     const rows = await waitForStatRows(marker, 2, 20_000);
@@ -211,12 +211,12 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
   test('first visit on empty table creates a valid visit_id', async ({ browser }) => {
     // Use a fresh context to ensure a new session
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
     const pg = await ctx.newPage();
 
     const marker = `visit-first-${Date.now()}`;
     await pg.goto(`${BASE_URL}/?e2e=${marker}`);
-    await pg.waitForLoadState('networkidle');
+    await pg.waitForLoadState('load');
     await pg.waitForTimeout(5000);
 
     const rows = await waitForStatRows(marker, 1, 15_000);

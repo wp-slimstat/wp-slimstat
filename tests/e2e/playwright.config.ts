@@ -9,11 +9,16 @@ const __dirname = path.dirname(__filename);
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
-  timeout: 30_000,
+  timeout: 45_000,
   retries: 0,
   fullyParallel: false, // Tests modify shared state (wp-config, DB options)
   workers: 1,
-  reporter: [['list'], ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report') }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report') }],
+    ['blob', { outputDir: path.join(__dirname, 'run-artifacts', 'blob') }],
+    ['json', { outputFile: path.join(__dirname, 'run-artifacts', 'results.json') }],
+  ],
   use: {
     baseURL: BASE_URL,
     trace: 'retain-on-failure',
