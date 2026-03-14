@@ -255,12 +255,13 @@ class wp_slimstat_reports
                 'title'         => __('Users Currently Online', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
+                    'type'    => 'top',
                     'columns' => 'username',
                     // Group OR conditions explicitly to help MySQL use indexes effectively
-                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')',
+                    // AND filter excludes anonymous/empty usernames from the deduplication
+                    'where'            => '((dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')) AND username <> "" AND username IS NOT NULL',
                     'use_date_filters' => false,
-                    'raw'              => ['wp_slimstat_db', 'get_recent'],
+                    'raw'              => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],

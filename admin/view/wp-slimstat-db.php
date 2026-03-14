@@ -1170,7 +1170,7 @@ class wp_slimstat_db
 			}
 
             $_having           = empty($_column['having']) ? '' : $_column['having'];
-            $_use_date_filters = empty($_column['use_date_filters']) ? true : $_column['use_date_filters'];
+            $_use_date_filters = isset($_column['use_date_filters']) ? (bool)$_column['use_date_filters'] : true;
             $_as_column        = empty($_column['as_column']) ? '' : $_column['as_column'];
             $_column           = $_column['columns'];
         }
