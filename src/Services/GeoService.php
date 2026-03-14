@@ -16,13 +16,10 @@ class GeoService
 
     private $pack = '';
 
-    private $enableMaxmind = '';
-
     private $maxmindLicense = '';
 
     public function __construct()
     {
-        $this->enableMaxmind  = \wp_slimstat::$settings['enable_maxmind'];
         $this->maxmindLicense = \wp_slimstat::$settings['maxmind_license_key'];
     }
 
@@ -44,17 +41,6 @@ class GeoService
             return $this->pack;
         }
         return \wp_slimstat::get_geolocation_precision();
-    }
-
-    public function setEnableMaxmind($enableMaxmind = false)
-    {
-        $this->enableMaxmind = $enableMaxmind;
-        return $this;
-    }
-
-    public function getEnableMaxmind()
-    {
-        return $this->enableMaxmind;
     }
 
     public function setMaxmindLicense($maxmindLicense = '')

@@ -369,26 +369,6 @@ $settings = [
                 'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = { ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '" };\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
             ],
 
-            // Tracker - Third-party Libraries
-            'third_party_libraries_header' => [
-                'title' => __('Third-party Libraries', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'enable_maxmind' => [
-                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'type'              => 'select',
-                'select_values'     => [
-                    'disable' => __('Disable', 'wp-slimstat'),
-                    'no'      => __('Use the JsDelivr', 'wp-slimstat'),
-                    'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat'),
-                ],
-                'description' => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat'),
-            ],
-            'maxmind_license_key' => [
-                'title'       => __('MaxMind License Key', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat'),
-            ],
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),
                 'type'        => 'toggle',
