@@ -1,19 +1,35 @@
+# Directories
 /.wordpress-org
 /.git
 /.github
 /node_modules
 /tests
+/test-results
+/admin/assets/scss
 
+# Build & dev files
 .distignore
 .gitignore
 .editorconfig
-.env.testing.example
-.gulpfile.js
-codeception.dist.yml
+.coderabbit.yaml
+.cursorrules
+.cursoruserrules
+.qodo
+.php-cs-fixer.dist.php
+pint.json
+rector.php
 composer.json
 composer.lock
-LICENSE
 package.json
 package-lock.json
-postcss.config.js
+bun.lock
+
+# Dev-only assets
+wp-slimstat.js
+wp-slimstat.min.js.map
+
+# Docs (wp.org uses readme.txt)
+CHANGELOG.md
 README.md
+LICENSE
+security.md
