@@ -342,4 +342,68 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     expect(result.body).not.toContain('Notice:');
     expect(result.body).not.toContain('Warning:');
   });
+
+  // ─── Feature 3 extended: empty result, exception, and loopback ──
+
+  test('DB-IP whois handles loopback IP gracefully (no fatal)', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    await expect(page).toHaveTitle(/Dashboard/);
+
+    const proActive = await isProActive(page);
+    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    const nonce = await getWhoisNonce(page);
+    const result = await callWhoisEndpoint(page, '127.0.0.1', nonce);
+
+    expect(result.status).toBeLessThan(500);
+    expect(result.body).not.toContain('Fatal error');
+    expect(result.body).not.toContain('Undefined');
+  });
+
+  test('DB-IP whois handles empty string IP gracefully (no fatal)', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    await expect(page).toHaveTitle(/Dashboard/);
+
+    const proActive = await isProActive(page);
+    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    const nonce = await getWhoisNonce(page);
+    // Empty IP — should not throw 500 or fatal
+    const url = `${BASE_URL}/wp-admin/admin-ajax.php?action=slimstat_ip2location_iframe_content&_wpnonce=${nonce}&ip=`;
+    const response = await page.request.get(url);
+    const body = await response.text();
+
+    expect(response.status()).toBeLessThan(500);
+    expect(body).not.toContain('Fatal error');
+    expect(body).not.toContain('Undefined');
+  });
+
+  test('DB-IP whois renders without error when provider is switched back from cloudflare', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    await expect(page).toHaveTitle(/Dashboard/);
+
+    const proActive = await isProActive(page);
+    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    // First set to cloudflare (blocks whois)
+    await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
+    const nonce1 = await getWhoisNonce(page);
+    const cfResult = await callWhoisEndpoint(page, '8.8.8.8', nonce1);
+    expect(cfResult.status).toBeLessThan(500);
+
+    // Then switch back to dbip — should work cleanly
+    await setSlimstatOption(page, 'geolocation_provider', 'dbip');
+    const nonce2 = await getWhoisNonce(page);
+    const dbipResult = await callWhoisEndpoint(page, '8.8.8.8', nonce2);
+    expect(dbipResult.status).toBeLessThan(500);
+    expect(dbipResult.body).not.toContain('Fatal error');
+  });
 });

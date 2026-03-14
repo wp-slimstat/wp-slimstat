@@ -199,4 +199,83 @@ test.describe('sendBeacon Interaction Tracking (#174)', () => {
       expect(stat!.id).toBeGreaterThan(0);
     }
   });
+
+  // ─── AC-TRK-005 extended: multiple outbound links & AJAX transport ─
+
+  test('multiple outbound link payloads sent sequentially do not error', async ({ page }) => {
+    test.setTimeout(60000);
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `multi-outbound-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(4000);
+
+    const pageviewStat = await getLatestStatFull(marker);
+    expect(pageviewStat).not.toBeNull();
+
+    const restUrl = await page.evaluate(() => (window as any).SlimStatParams?.ajaxurl_rest || '');
+    if (!restUrl) {
+      console.warn('SlimStatParams.ajaxurl_rest not available — server-side tracking only, skipping multi-outbound test');
+      return;
+    }
+
+    const idToUse = (await page.evaluate(() => (window as any).SlimStatParams?.id || '')) || `${pageviewStat!.id}.0`;
+
+    // Send 3 separate outbound payloads
+    const outboundUrls = [
+      'https://example.com/link-1',
+      'https://example.org/link-2',
+      'https://example.net/link-3',
+    ];
+    const b64 = (s: string) => Buffer.from(s).toString('base64');
+    const noteB64 = b64(JSON.stringify({ type: 'click', text: 'Link', id: 'link' }));
+
+    for (const outUrl of outboundUrls) {
+      const res = await page.request.post(restUrl, {
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        data: `action=slimtrack&id=${idToUse}&res=${b64(outUrl)}&pos=0,0&no=${noteB64}`,
+      });
+      // Each beacon call should be accepted — no 500 errors
+      expect(res.status()).toBeLessThan(500);
+    }
+  });
+
+  test('pageview via AJAX transport records tracking row', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'js');
+    const marker = `ajax-transport-${Date.now()}`;
+
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(5000);
+
+    const stat = await getLatestStatFull(marker);
+    // Either JS tracking or server-side fallback should have recorded the row
+    expect(stat).not.toBeNull();
+    expect(stat!.id).toBeGreaterThan(0);
+    expect(stat!.resource).toContain(marker);
+  });
+
+  test('beacon payload with invalid ID does not cause PHP fatal error', async ({ page }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+
+    const marker = `beacon-invalid-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3000);
+
+    const restUrl = await page.evaluate(() => (window as any).SlimStatParams?.ajaxurl_rest || '');
+    if (!restUrl) {
+      console.warn('REST URL not available — skipping invalid-beacon test');
+      return;
+    }
+
+    // Send a beacon with a completely invalid ID (should not cause 500)
+    const outUrl = 'https://example.com/invalid-beacon-test';
+    const res = await page.request.post(restUrl, {
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+      data: `action=slimtrack&id=invalid.id&res=${Buffer.from(outUrl).toString('base64')}&pos=0,0`,
+    });
+    expect(res.status()).toBeLessThan(500);
+  });
 });

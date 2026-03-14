@@ -212,4 +212,48 @@ test.describe('Issue #173: i18n catalog sync', () => {
     expect(potContent).toContain('msgstr ""');
     expect(potContent).toContain('Content-Type:');
   });
+
+  // ─── AC-CMP-002 extended: plural forms and additional locale ─────
+
+  test('.po files that declare plural forms have valid Plural-Forms header', async () => {
+    const poFiles = fs.readdirSync(PLUGIN_LANGUAGES).filter(f => f.endsWith('.po'));
+    expect(poFiles.length).toBeGreaterThanOrEqual(1);
+
+    for (const poFile of poFiles) {
+      const content = fs.readFileSync(path.join(PLUGIN_LANGUAGES, poFile), 'utf8');
+      const pluralMatch = content.match(/Plural-Forms:\s*(.+)/);
+      if (pluralMatch) {
+        expect(pluralMatch[1], `${poFile} Plural-Forms header should contain nplurals`).toMatch(/nplurals=/);
+        expect(pluralMatch[1], `${poFile} Plural-Forms header should contain plural`).toMatch(/plural=/);
+      }
+      // Compiled .mo file should exist alongside each .po file
+      const moFile = poFile.replace(/\.po$/, '.mo');
+      expect(
+        fs.existsSync(path.join(PLUGIN_LANGUAGES, moFile)),
+        `Compiled .mo file should exist alongside ${poFile}`
+      ).toBeTruthy();
+    }
+  });
+
+  test('es_ES locale renders without PHP errors on Settings page', async ({ page }) => {
+    const esPoPath = path.join(PLUGIN_LANGUAGES, 'wp-slimstat-es_ES.po');
+    test.skip(!fs.existsSync(esPoPath), 'es_ES .po file not found — skipping Spanish locale test');
+
+    await setWplang('es_ES');
+
+    await page.goto('/wp-admin/admin.php?page=slimconfig', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30_000,
+    });
+    await page.waitForTimeout(2000);
+
+    const bodyText = await page.locator('body').textContent() || '';
+    expect(bodyText).not.toContain('Fatal error');
+    expect(bodyText).not.toContain('msgid');
+    expect(bodyText).not.toContain('msgstr');
+
+    const html = await page.content();
+    expect(html).not.toContain('Fatal error');
+    expect(html).not.toMatch(/Warning:.*\.php/);
+  });
 });

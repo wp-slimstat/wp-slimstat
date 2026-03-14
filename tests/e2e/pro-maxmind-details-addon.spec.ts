@@ -38,6 +38,17 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   });
 
   /**
+   * Check if WP SlimStat Pro is active by inspecting the plugins page HTML.
+   * Does not require any mu-plugin.
+   */
+  async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
+    const res = await page.request.get(`${BASE_URL}/wp-admin/plugins.php`);
+    if (!res.ok()) return false;
+    const body = await res.text();
+    return body.includes('wp-slimstat-pro') && body.includes('Deactivate');
+  }
+
+  /**
    * Get a nonce for the whois AJAX endpoint via the nonce-helper mu-plugin.
    */
   async function getWhoisNonce(page: import('@playwright/test').Page): Promise<string> {
@@ -173,10 +184,8 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
   test('MaxMind Details: city and coordinates populated for known IP', async ({ page }) => {
     // Skip if Pro plugin is not active
-    await page.goto('/wp-admin/plugins.php');
-    const pluginsBody = await page.content();
-    const proActive = pluginsBody.includes('wp-slimstat-pro') && pluginsBody.includes('Deactivate');
-    test.skip(!proActive, 'Pro plugin is not active — skipping MaxMind Details test');
+    await page.goto('/wp-admin/');
+    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping MaxMind Details test');
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -218,5 +227,72 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
 
     const pageContent = await page.content();
     expect(pageContent).not.toContain('slimstat_ip2location_iframe_content');
+  });
+
+  // ─── Feature 2: MaxMind Provider Rich Data (REQ-AC2) ────────────────────────
+
+  test('MaxMind whois: no fatal on subdivision/postal code access for routable IP', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    const nonce = await getWhoisNonce(page);
+    const result = await callWhoisEndpoint(page, '8.8.8.8', nonce);
+
+    expect(result.status).toBeLessThan(500);
+    expect(result.body).not.toContain('Fatal error');
+    expect(result.body).not.toContain('Undefined index');
+    expect(result.body).not.toContain('Undefined array key');
+  });
+
+  test('MaxMind whois: coordinates array notation — no object-access fatal (REQ-AC6)', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    const nonce = await getWhoisNonce(page);
+    const result = await callWhoisEndpoint(page, '8.8.8.8', nonce);
+
+    expect(result.status).toBeLessThan(500);
+    expect(result.body).not.toContain('Fatal error');
+    // The fix uses $data['location']['latitude'] not $data->location->latitude
+    expect(result.body).not.toContain("Attempt to read property 'latitude'");
+    expect(result.body).not.toContain("Attempt to read property 'longitude'");
+  });
+
+  test('MaxMind whois: IPv6 address does not cause fatal error', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    const nonce = await getWhoisNonce(page);
+    const result = await callWhoisEndpoint(page, '2001:4860:4860::8888', nonce);
+
+    expect(result.status).toBeLessThan(500);
+    expect(result.body).not.toContain('Fatal error');
+    expect(result.body).not.toContain('Undefined');
+  });
+
+  test('MaxMind whois: private IPs handled without crash', async ({ page }) => {
+    await page.goto('/wp-admin/');
+    test.skip(!await isProActive(page), 'Pro plugin is not active — skipping');
+
+    await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
+    await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
+
+    await page.goto('/wp-admin/');
+    const nonce = await getWhoisNonce(page);
+
+    for (const ip of ['127.0.0.1', '192.168.1.1', '10.0.0.1']) {
+      const result = await callWhoisEndpoint(page, ip, nonce);
+      expect(result.status, `${ip} should not 500`).toBeLessThan(500);
+      expect(result.body, `${ip} should not fatal`).not.toContain('Fatal error');
+    }
   });
 });
