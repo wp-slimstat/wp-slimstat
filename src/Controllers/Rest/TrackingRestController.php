@@ -188,12 +188,17 @@ class TrackingRestController implements RestControllerInterface
         // Handle tracking hits - process() returns result without exit()
         $result = Tracker::slimtrack_ajax();
 
-        // Normalize to string numeric id if possible
+        // Success: pure numeric ID (rare — most paths return checksum format)
         if (is_numeric($result) && (int) $result > 0) {
             return rest_ensure_response((string) $result);
         }
 
-        // If no numeric id detected, return a non-200 status to trigger fallback tracking methods
+        // Success: checksum-formatted string "<id>.<hash>" from Utils::getValueWithChecksum()
+        if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && (int) $matches[1] > 0) {
+            return rest_ensure_response($matches[1]);
+        }
+
+        // If no valid tracking ID detected, return a non-200 status to trigger fallback tracking methods
         return new \WP_Error(
             'slimstat_tracking_failed',
             esc_html__('[REST API] Tracking failed, falling back to alternative methods.', 'wp-slimstat'),
