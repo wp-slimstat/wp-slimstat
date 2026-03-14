@@ -410,6 +410,32 @@ export async function getLatestStatByIp(): Promise<{ country: string; city: stri
   return rows.length > 0 ? rows[0] : null;
 }
 
+// ─── Download tracking helpers ────────────────────────────────────
+
+export async function waitForDownloadRow(
+  resourceMarker: string,
+  timeoutMs = 20_000,
+): Promise<{ id: number; resource: string; content_type: string } | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const [rows] = await getPool().execute(
+      "SELECT id, resource, content_type FROM wp_slim_stats WHERE content_type = 'download' AND resource LIKE ? ORDER BY id DESC LIMIT 1",
+      [`%${resourceMarker}%`],
+    ) as any;
+    if (rows.length > 0) return rows[0];
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return null;
+}
+
+export async function getDownloadCount(resourceMarker: string): Promise<number> {
+  const [rows] = await getPool().execute(
+    "SELECT COUNT(*) as cnt FROM wp_slim_stats WHERE content_type = 'download' AND resource LIKE ?",
+    [`%${resourceMarker}%`],
+  ) as any;
+  return rows[0].cnt;
+}
+
 // ─── Scenario helpers ────────────────────────────────────────────
 
 export async function simulateFreshInstall(): Promise<void> {
