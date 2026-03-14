@@ -1227,10 +1227,13 @@ var SlimStat = (function () {
         };
 
         var onComplete = function (success) {
-            if (options.consentUpgrade) {
-                handleConsentUpgradeResult(!!success);
+            try {
+                if (options.consentUpgrade) {
+                    markConsentUpgradeDone(!!success);
+                }
+            } finally {
+                resetPageviewFlags();
             }
-            resetPageviewFlags();
         };
 
         // Add consent parameters if provided (from banner accept)
