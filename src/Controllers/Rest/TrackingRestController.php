@@ -185,16 +185,8 @@ class TrackingRestController implements RestControllerInterface
             \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
         }
 
-        // Handle tracking hits
-        $result = null;
-        if (function_exists('ob_start')) {
-            ob_start();
-            $maybe = Tracker::slimtrack_ajax();
-            $output = ob_get_clean();
-            $result = $maybe ?? $output;
-        } else {
-            $result = Tracker::slimtrack_ajax();
-        }
+        // Handle tracking hits - process() returns result without exit()
+        $result = Tracker::slimtrack_ajax();
 
         // Normalize to string numeric id if possible
         if (is_numeric($result) && (int) $result > 0) {
