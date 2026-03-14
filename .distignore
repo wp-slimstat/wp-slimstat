@@ -24,10 +24,6 @@ package.json
 package-lock.json
 bun.lock
 
-# Dev-only assets
-wp-slimstat.js
-wp-slimstat.min.js.map
-
 # Docs (wp.org uses readme.txt)
 CHANGELOG.md
 README.md
