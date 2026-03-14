@@ -62,6 +62,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'consent-simulator-mu-plugin.php', deployedFile: 'consent-simulator-mu-plugin.php' },
   { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
   { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
+  { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
