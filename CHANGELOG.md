@@ -1,4 +1,4 @@
-= 5.4.2 - 2026-03-14 =
+= 5.4.2 - 2026-03-15 =
 
 Fixed
 - Fixed tracking data not being recorded on some server configurations — REST API and admin-ajax endpoints now return responses correctly ([PR #218](https://github.com/wp-slimstat/wp-slimstat/pull/218))
