@@ -171,8 +171,13 @@ test.describe('Admin Bar Realtime Refresh (#223/#224)', () => {
     // Server-rendered and AJAX values should be consistent.
     // Parse DOM text to numbers for comparison. Allow a small delta (±2)
     // because a new session could start between page render and AJAX call.
-    const serverOnline = parseInt(serverValues.online.replace(/,/g, ''), 10) || 0;
-    const serverSessions = parseInt(serverValues.sessions.replace(/,/g, ''), 10) || 0;
+    // Fail explicitly if DOM elements are empty (would mean broken element IDs)
+    expect(serverValues.online).not.toBe('');
+    expect(serverValues.sessions).not.toBe('');
+    const serverOnline = parseInt(serverValues.online.replace(/,/g, ''), 10);
+    const serverSessions = parseInt(serverValues.sessions.replace(/,/g, ''), 10);
+    expect(Number.isNaN(serverOnline)).toBe(false);
+    expect(Number.isNaN(serverSessions)).toBe(false);
 
     expect(data.sessions.count).toBeGreaterThanOrEqual(0);
     expect(data.online.count).toBeGreaterThanOrEqual(0);

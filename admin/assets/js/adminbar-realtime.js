@@ -2,8 +2,8 @@
  * Admin Bar Realtime Update
  * Updates all admin bar modal stats (online, sessions, views, referrals, chart) every minute.
  *
- * On frontend: self-polls via 200ms minute-boundary check.
- * On admin: defers to admin.js slimstat:minute_pulse (no self-polling).
+ * Self-polls via 200ms minute-boundary check on all pages.
+ * On admin pages with Live Analytics, skips fetch when admin.js pulse already handled it.
  *
  * @since 5.4.3 — Extended from online-only to full admin bar refresh (#223/#224)
  */
@@ -138,41 +138,26 @@
         xhr.send("action=slimstat_get_adminbar_stats&security=" + encodeURIComponent(SlimStatAdminBar.security));
     }
 
-    function checkMinutePulse() {
-        var now = new Date();
-        var currentSeconds = now.getSeconds();
-        var currentMinute = now.getMinutes();
-
-        if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
-            lastTriggerMinute = currentMinute;
-            fetchAdminBarStats();
-        }
-    }
-
     // Start polling on DOMContentLoaded
     document.addEventListener("DOMContentLoaded", function () {
         var hasAdminBar = document.querySelector(".slimstat-adminbar__stats-grid");
         if (!hasAdminBar) return;
 
         // When admin.js fires slimstat:minute_pulse (only on pages with a
-        // .refresh-timer, i.e. Live Analytics), mark the minute as handled
-        // so we don't make a duplicate request.
-        var pulseHandledMinute = -1;
+        // .refresh-timer, i.e. Live Analytics), it already calls
+        // slimstatUpdateAdminBar(). Mark the minute as handled to avoid
+        // a duplicate fetch.
         window.addEventListener("slimstat:minute_pulse", function () {
-            pulseHandledMinute = new Date().getMinutes();
+            lastTriggerMinute = new Date().getMinutes();
         });
 
-        // Override checkMinutePulse to skip if admin.js already handled this minute
+        // Poll every 200ms, fetch at :00 of each new minute unless
+        // admin.js already handled this minute via the pulse event.
         setInterval(function () {
             var now = new Date();
-            var currentSeconds = now.getSeconds();
-            var currentMinute = now.getMinutes();
-
-            if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
-                lastTriggerMinute = currentMinute;
-                if (pulseHandledMinute !== currentMinute) {
-                    fetchAdminBarStats();
-                }
+            if (now.getSeconds() === 0 && lastTriggerMinute !== now.getMinutes()) {
+                lastTriggerMinute = now.getMinutes();
+                fetchAdminBarStats();
             }
         }, 200);
     });

@@ -1813,7 +1813,7 @@ class wp_slimstat_admin
                 'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
             ];
 
-            $ttl = max(60 - (time() % 60), 1); // align to next minute boundary
+            $ttl = max(60 - (current_time('timestamp') % 60), 1); // align to next minute boundary
             set_transient($transient_key, $today_stats, $ttl);
         }
 
