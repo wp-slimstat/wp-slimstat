@@ -265,6 +265,7 @@ class wp_slimstat_admin
                 'slimstat_check_geoip_database'  => 'check_geoip_database',
                 'slimstat_get_filter_options'    => 'get_filter_options',
                 'slimstat_get_online_visitors'   => 'get_online_visitors',
+                'slimstat_get_adminbar_stats'    => 'get_adminbar_stats',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -1072,22 +1073,29 @@ class wp_slimstat_admin
                 SLIMSTAT_ANALYTICS_VERSION
             );
 
-            // Enqueue admin bar realtime JS for online visitors update (frontend only)
-            // In admin, admin.js handles this via slimstat:minute_pulse
-            if (!is_admin()) {
-                wp_enqueue_script(
-                    'slimstat-adminbar-realtime',
-                    plugins_url('/admin/assets/js/adminbar-realtime.js', __DIR__),
-                    [],
-                    SLIMSTAT_ANALYTICS_VERSION,
-                    true
-                );
+            // Enqueue admin bar realtime JS for stats auto-refresh (frontend + admin)
+            // On frontend: self-polls every minute
+            // On admin: defers to admin.js slimstat:minute_pulse
+            wp_enqueue_script(
+                'slimstat-adminbar-realtime',
+                plugins_url('/admin/assets/js/adminbar-realtime.js', __DIR__),
+                [],
+                SLIMSTAT_ANALYTICS_VERSION,
+                true
+            );
 
-                wp_localize_script('slimstat-adminbar-realtime', 'SlimStatAdminBar', [
-                    'ajax_url' => admin_url('admin-ajax.php'),
-                    'security' => wp_create_nonce('meta-box-order'),
-                ]);
-            }
+            wp_localize_script('slimstat-adminbar-realtime', 'SlimStatAdminBar', [
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'security'  => wp_create_nonce('meta-box-order'),
+                'is_pro'    => wp_slimstat::pro_is_installed(),
+                'i18n'      => [
+                    'was_last_day' => esc_html__('was %s last day', 'wp-slimstat'),
+                    'online_users' => esc_html__('Online Users', 'wp-slimstat'),
+                    'count_label'  => esc_html__('Count', 'wp-slimstat'),
+                    'now'          => esc_html__('Now', 'wp-slimstat'),
+                    'min_ago'      => esc_html__('min ago', 'wp-slimstat'),
+                ],
+            ]);
         }
     }
 
@@ -1211,7 +1219,7 @@ class wp_slimstat_admin
                 . '%s'
                 . '</span></div>',
                 $bar_class,
-                max($height_pct, 3), // minimum 3% for visibility
+                $count > 0 ? max($height_pct, 3) : 0, // 0% for empty, min 3% for non-zero
                 $count,
                 $minutes_ago,
                 esc_html__('Online Users', 'wp-slimstat'),
@@ -1253,22 +1261,22 @@ class wp_slimstat_admin
             // Sessions Today (top right)
             . '<div class="slimstat-adminbar__stat-card">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Sessions Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($sessions_today) . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-sessions-count">' . number_format_i18n($sessions_today) . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-sessions-compare">'
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
             . '</div></div>'
             // Views Today (bottom left) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . $views_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-views-count">' . $views_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-views-compare">'
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $views_yesterday_display)
             . '</div></div>'
             // Referrals Today (bottom right) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . $referrals_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-referrals-count">' . $referrals_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-referrals-compare">'
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $referrals_yesterday_display)
             . '</div></div>'
             . '</div>';
@@ -1283,7 +1291,7 @@ class wp_slimstat_admin
         // Add chart node
         $chart_wrapper_class = $is_pro ? 'slimstat-adminbar__chart-container' : 'slimstat-adminbar__chart-container slimstat-adminbar__chart-blur';
         $chart_html = '<div class="' . $chart_wrapper_class . '">'
-            . '<div class="slimstat-adminbar__chart-bars">' . $chart_bars . '</div>'
+            . '<div class="slimstat-adminbar__chart-bars" id="slimstat-adminbar-chart-bars">' . $chart_bars . '</div>'
             . '</div>';
 
         $GLOBALS['wp_admin_bar']->add_node([
@@ -1660,32 +1668,43 @@ class wp_slimstat_admin
     // END: manage_filters
 
     /**
-     * AJAX handler to get current online visitors count
+     * Check AJAX capability for view access.
+     * Returns true if user has permission, sends JSON error and returns false otherwise.
+     *
+     * @since 5.4.3
+     * @return bool
      */
-    public static function get_online_visitors()
+    private static function check_ajax_view_capability()
     {
-        check_ajax_referer('meta-box-order', 'security');
-
-        // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
         if (!current_user_can($minimum_capability)) {
-            wp_send_json_error(['message' => 'Insufficient permissions']);
-            return;
+            wp_send_json_error(['message' => esc_html__('Insufficient permissions', 'wp-slimstat')], 403);
+            return false;
         }
 
+        return true;
+    }
+
+    /**
+     * Get online visitors count (30-minute window, session-spanning).
+     * Shared by get_online_visitors() and get_adminbar_stats().
+     *
+     * @since 5.4.3
+     * @return int
+     */
+    private static function query_online_count()
+    {
         global $wpdb;
         $table = "{$wpdb->prefix}slim_stats";
         $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
-        $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
+        $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
-        $sql = $wpdb->prepare(
-            "
-            SELECT COUNT(*) FROM (
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM (
                 SELECT visit_id, MAX(
                     CASE
                         WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
@@ -1694,21 +1713,27 @@ class wp_slimstat_admin
                 ) AS last_activity
                 FROM {$table}
                 WHERE visit_id > 0
-                    AND (
-                        dt >= %d
-                        OR ( dt_out IS NOT NULL AND dt_out >= %d )
-                    )
+                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions
-            ",
-            $window_start,
-            $window_start,
-            $window_start
-        );
+            ) live_sessions",
+            $window_start, $window_start, $window_start
+        ));
 
-        $online_visitors = (int) $wpdb->get_var($sql);
-        $online_visitors = max(0, (int) $online_visitors);
+        return max(0, $count);
+    }
+
+    /**
+     * AJAX handler to get current online visitors count
+     */
+    public static function get_online_visitors()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        $online_visitors = self::query_online_count();
 
         wp_send_json_success([
             'count' => $online_visitors,
@@ -1717,6 +1742,130 @@ class wp_slimstat_admin
     }
 
     // END: get_online_visitors
+
+    /**
+     * AJAX handler: Returns all admin bar modal stats in a single request.
+     * Called every minute by adminbar-realtime.js and admin.js.
+     *
+     * @since 5.4.3
+     */
+    public static function get_adminbar_stats()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
+        $is_pro = wp_slimstat::pro_is_installed();
+
+        // --- Online count (always fresh — fast indexed query) ---
+        $online_count = self::query_online_count();
+
+        // --- Today stats (transient-cached, 60s TTL) ---
+        $blog_id = get_current_blog_id();
+        $transient_key = 'slimstat_adminbar_today_' . $blog_id;
+        $today_stats = get_transient($transient_key);
+
+        if (false === $today_stats) {
+            $today_start = strtotime('today', current_time('timestamp'));
+            $yesterday_start = $today_start - DAY_IN_SECONDS;
+            $yesterday_end = $today_start - 1;
+            $site_host = parse_url(home_url(), PHP_URL_HOST);
+            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
+
+            // Sessions + views: 2 queries instead of 4 using conditional aggregates
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
+                    COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
+                FROM {$table}
+                WHERE dt >= %d",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start
+            ));
+
+            // Referrals: 1 query with conditional aggregates
+            $ref_row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
+                FROM {$table}
+                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start,
+                $referer_like
+            ));
+
+            $today_stats = [
+                'sessions'             => (int) ($row->sessions_today ?? 0),
+                'sessions_yesterday'   => (int) ($row->sessions_yesterday ?? 0),
+                'views'                => (int) ($row->views_today ?? 0),
+                'views_yesterday'      => (int) ($row->views_yesterday ?? 0),
+                'referrals'            => (int) ($ref_row->referrals_today ?? 0),
+                'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
+            ];
+
+            $ttl = max(60 - (current_time('timestamp') % 60), 1); // align to next minute boundary
+            set_transient($transient_key, $today_stats, $ttl);
+        }
+
+        // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---
+        $chart_data = null;
+        if ($is_pro) {
+            try {
+                $live_report = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
+                $chart_result = $live_report->get_users_chart_data();
+                $chart_data = [
+                    'data'       => $chart_result['data'],
+                    'max_value'  => $chart_result['max_value'],
+                    'peak_index' => $chart_result['peak_index'],
+                ];
+            } catch (\Exception $e) {
+                // Graceful degradation — return stats without chart data
+                $chart_data = null;
+            }
+        }
+
+        // --- Build response ---
+        $response = [
+            'online' => [
+                'count'     => $online_count,
+                'formatted' => number_format_i18n($online_count),
+            ],
+            'sessions' => [
+                'count'     => $today_stats['sessions'],
+                'formatted' => number_format_i18n($today_stats['sessions']),
+                'yesterday' => number_format_i18n($today_stats['sessions_yesterday']),
+            ],
+            'is_pro' => $is_pro,
+        ];
+
+        if ($is_pro) {
+            $response['views'] = [
+                'count'     => $today_stats['views'],
+                'formatted' => number_format_i18n($today_stats['views']),
+                'yesterday' => number_format_i18n($today_stats['views_yesterday']),
+            ];
+            $response['referrals'] = [
+                'count'     => $today_stats['referrals'],
+                'formatted' => number_format_i18n($today_stats['referrals']),
+                'yesterday' => number_format_i18n($today_stats['referrals_yesterday']),
+            ];
+            $response['chart'] = $chart_data;
+        }
+
+        wp_send_json_success($response);
+    }
+
+    // END: get_adminbar_stats
 
     /**
      * Helper function to get icon URL for filter options
