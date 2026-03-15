@@ -90,16 +90,22 @@
                         bar.classList.remove("slimstat-adminbar__chart-bar--peak");
                     }
 
-                    // Update tooltip
+                    // Update tooltip (DOM-safe, no innerHTML)
                     var tooltip = bar.querySelector(".slimstat-adminbar__chart-tooltip");
                     if (tooltip) {
                         var minutesAgo = parseInt(bar.getAttribute("data-minutes-ago"), 10);
                         var timeText = minutesAgo === 0
                             ? (i18n.now || "Now")
                             : minutesAgo + " " + (i18n.min_ago || "min ago");
-                        tooltip.innerHTML = "<strong>" + (i18n.online_users || "Online Users") + "</strong>"
-                            + (i18n.count_label || "Count") + ": " + count + "<br>"
-                            + timeText;
+                        tooltip.textContent = "";
+                        var strong = document.createElement("strong");
+                        strong.textContent = i18n.online_users || "Online Users";
+                        tooltip.appendChild(strong);
+                        tooltip.appendChild(document.createTextNode(
+                            (i18n.count_label || "Count") + ": " + parseInt(count, 10)
+                        ));
+                        tooltip.appendChild(document.createElement("br"));
+                        tooltip.appendChild(document.createTextNode(timeText));
                     }
                 });
             }

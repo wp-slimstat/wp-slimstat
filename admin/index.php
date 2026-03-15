@@ -1820,13 +1820,18 @@ class wp_slimstat_admin
         // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---
         $chart_data = null;
         if ($is_pro) {
-            $live_report = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
-            $chart_result = $live_report->get_users_chart_data();
-            $chart_data = [
-                'data'       => $chart_result['data'],
-                'max_value'  => $chart_result['max_value'],
-                'peak_index' => $chart_result['peak_index'],
-            ];
+            try {
+                $live_report = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
+                $chart_result = $live_report->get_users_chart_data();
+                $chart_data = [
+                    'data'       => $chart_result['data'],
+                    'max_value'  => $chart_result['max_value'],
+                    'peak_index' => $chart_result['peak_index'],
+                ];
+            } catch (\Exception $e) {
+                // Graceful degradation — return stats without chart data
+                $chart_data = null;
+            }
         }
 
         // --- Build response ---
