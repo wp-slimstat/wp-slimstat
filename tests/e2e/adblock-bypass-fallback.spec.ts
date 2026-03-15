@@ -145,7 +145,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
       route.abort('blockedbyclient');
     });
     // Block the adblock bypass hash URL pattern (32-char hex path segments)
-    await anonPage.route(/\/[a-f0-9]{32}/, (route) => {
+    await anonPage.route(/\/[a-f0-9]{32}(?:\/|$)/, (route) => {
       route.abort('blockedbyclient');
     });
     // Block /request/ path
