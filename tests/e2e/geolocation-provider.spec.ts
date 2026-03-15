@@ -18,11 +18,16 @@ import {
   simulateFreshInstall,
   simulateLegacyUpgrade,
   closeDb,
+  installHeaderInjector,
+  uninstallHeaderInjector,
+  setHeaderOverrides,
+  clearHeaderOverrides,
 } from './helpers/setup';
 
 test.describe('Geolocation Provider Pipeline', () => {
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async () => {
@@ -31,10 +36,12 @@ test.describe('Geolocation Provider Pipeline', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
@@ -52,7 +59,7 @@ test.describe('Geolocation Provider Pipeline', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     // Verify the settings page shows DB-IP as selected provider
-    await page.goto('/wp-admin/admin.php?page=slimconfig&tab=5');
+    await page.goto('/wp-admin/admin.php?page=slimconfig&tab=2');
     const providerSelect = page.locator('select[name="geolocation_provider"]');
     if (await providerSelect.count() > 0) {
       await expect(providerSelect).toHaveValue('dbip');
@@ -120,14 +127,15 @@ test.describe('Geolocation Provider Pipeline', () => {
 
   // ─── Test 6: Cloudflare tracks city+subdivision with CF headers ─
 
-  test('Cloudflare provider tracks city+subdivision with CF headers', async ({ page, context }) => {
+  test('Cloudflare provider tracks city+subdivision with CF headers', async ({ page }) => {
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'geolocation_country', 'no'); // city precision
     await setSlimstatOption(page, 'gdpr_enabled', 'off'); // Disable GDPR so PII (geolocation) is allowed
+    await setSlimstatOption(page, 'ignore_wp_users', 'no'); // Track admin visits
 
-    // Inject Cloudflare headers — distinct city ("Munich") vs region ("Bavaria")
+    // Inject Cloudflare headers via mu-plugin — distinct city ("Munich") vs region ("Bavaria")
     // to prove the region→subdivision mapping works (city stored as "Munich (Bavaria)")
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-e2e-ray-001',
       'CF-IPCountry': 'DE',
       'CF-IPContinent': 'EU',
@@ -179,13 +187,13 @@ test.describe('Geolocation Provider Pipeline', () => {
 
   // ─── Test 9: Switching provider applies on next page load ───────
 
-  test('switching provider from dbip to maxmind2 applies on next page load', async ({ page, context }) => {
+  test('switching provider from dbip to maxmind2 applies on next page load', async ({ page }) => {
     // Start with dbip and inject CF headers so we can verify geolocation works
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'geolocation_country', 'no');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-e2e-provider-switch',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -205,7 +213,7 @@ test.describe('Geolocation Provider Pipeline', () => {
     expect(response?.status()).toBeLessThan(500);
 
     // Verify the settings page reflects the new provider
-    await page.goto('/wp-admin/admin.php?page=slimconfig&tab=5');
+    await page.goto('/wp-admin/admin.php?page=slimconfig&tab=2');
     const providerSelect = page.locator('select[name="geolocation_provider"]');
     if (await providerSelect.count() > 0) {
       await expect(providerSelect).toHaveValue('maxmind2');

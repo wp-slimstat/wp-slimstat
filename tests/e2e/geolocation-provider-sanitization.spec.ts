@@ -12,27 +12,21 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
-  getLatestStat,
   setSlimstatSetting,
   closeDb,
+  installHeaderInjector,
+  uninstallHeaderInjector,
+  setHeaderOverrides,
+  clearHeaderOverrides,
+  waitForStat,
 } from './helpers/setup';
-
-/** Poll getLatestStat until a row appears or timeout. */
-async function waitForStat(marker: string, timeoutMs = 10_000, intervalMs = 250) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const stat = await getLatestStat(marker);
-    if (stat) return stat;
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  return null;
-}
 
 test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
   test.setTimeout(60_000);
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
@@ -42,21 +36,23 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
 
   // ─── Test 1: Invalid provider value does not crash frontend ─────
 
-  test('invalid provider "bogus_provider" does not crash tracking', async ({ page, context }) => {
+  test('invalid provider "bogus_provider" does not crash tracking', async ({ page }) => {
     // Set invalid provider via direct DB manipulation (bypasses UI validation)
     await setSlimstatSetting('geolocation_provider', 'bogus_provider');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-sanitize-bogus',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -108,10 +104,10 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
 
   // ─── Test 5: Empty provider value handled safely ────────────────
 
-  test('empty provider value does not crash the pipeline', async ({ page, context }) => {
+  test('empty provider value does not crash the pipeline', async ({ page }) => {
     await setSlimstatSetting('geolocation_provider', '');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-sanitize-empty',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -123,7 +119,7 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
 
   // ─── Test 6: Valid providers all work after invalid value ───────
 
-  test('switching from invalid to valid provider restores geolocation', async ({ page, context }) => {
+  test('switching from invalid to valid provider restores geolocation', async ({ page }) => {
     // First, set an invalid provider
     await setSlimstatSetting('geolocation_provider', 'bogus_provider');
 
@@ -134,8 +130,9 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
     // Now switch to a valid provider via the proper API
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'geolocation_country', 'no');
+    await setSlimstatOption(page, 'ignore_wp_users', 'no');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-sanitize-restore',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -154,7 +151,7 @@ test.describe('AC-GEO-002/008: Provider Sanitization & Allowlisting', () => {
   test('settings page loads without error even with invalid provider in DB', async ({ page }) => {
     await setSlimstatSetting('geolocation_provider', 'bogus_provider');
 
-    const response = await page.goto('/wp-admin/admin.php?page=slimconfig&tab=5');
+    const response = await page.goto('/wp-admin/admin.php?page=slimconfig&tab=2');
     expect(response?.status()).toBeLessThan(500);
   });
 });

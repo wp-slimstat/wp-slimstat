@@ -3,6 +3,9 @@
  *
  * Validates that the DB-IP geolocation provider resolves country and city
  * for known public IPs, and correctly skips geolocation for private IPs.
+ *
+ * Uses the header-injector mu-plugin to set CF-Connecting-IP at the PHP level
+ * (Playwright's setExtraHTTPHeaders doesn't reach PHP through Local by Flywheel nginx).
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -13,61 +16,47 @@ import {
   restoreSlimstatOptions,
   clearStatsTable,
   getLatestStat,
-  getLatestStatWithIp,
   closeDb,
+  installHeaderInjector,
+  uninstallHeaderInjector,
+  setHeaderOverrides,
+  clearHeaderOverrides,
+  waitForStat,
 } from './helpers/setup';
-
-/** Poll getLatestStat until a row appears or timeout. */
-async function waitForStat(marker: string, timeoutMs = 10_000, intervalMs = 250) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const stat = await getLatestStat(marker);
-    if (stat) return stat;
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  return null;
-}
-
-/** Poll getLatestStatWithIp until a row appears or timeout. */
-async function waitForStatWithIp(marker: string, timeoutMs = 10_000, intervalMs = 250) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const stat = await getLatestStatWithIp(marker);
-    if (stat) return stat;
-    await new Promise((r) => setTimeout(r, intervalMs));
-  }
-  return null;
-}
 
 test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
   test.setTimeout(60_000);
 
   test.beforeAll(async () => {
     installOptionMutator();
+    installHeaderInjector();
   });
 
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
-    // Configure DB-IP provider with city-level precision, GDPR off
+    // Configure DB-IP provider with city-level precision, GDPR off, track WP users
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'geolocation_country', 'no');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'ignore_wp_users', 'no');
   });
 
   test.afterEach(async () => {
+    clearHeaderOverrides();
     await restoreSlimstatOptions();
   });
 
   test.afterAll(async () => {
+    uninstallHeaderInjector();
     uninstallOptionMutator();
     await closeDb();
   });
 
   // ─── Test 1: DB-IP resolves country for known US IP ─────────────
 
-  test('DB-IP resolves country for known public IP (8.8.8.8 → US)', async ({ page, context }) => {
-    await context.setExtraHTTPHeaders({
+  test('DB-IP resolves country for known public IP (8.8.8.8 → US)', async ({ page }) => {
+    setHeaderOverrides({
       'CF-Ray': 'test-dbip-precision-us',
       'CF-Connecting-IP': '8.8.8.8',
     });
@@ -82,9 +71,9 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
 
   // ─── Test 2: DB-IP resolves country and city are populated ──────
 
-  test('DB-IP resolves country and city (not empty) for known IP', async ({ page, context }) => {
+  test('DB-IP resolves country and city (not empty) for known IP', async ({ page }) => {
     // 5.9.49.12 = Hetzner IP in Germany, should have country and city
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-dbip-precision-de',
       'CF-Connecting-IP': '5.9.49.12',
     });
@@ -104,7 +93,7 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
   // ─── Test 3: Private IP yields no geolocation ──────────────────
 
   test('private IP (127.0.0.1) produces no geolocation country', async ({ page }) => {
-    // No CF headers → REMOTE_ADDR is 127.0.0.1 (local dev)
+    // No header overrides → REMOTE_ADDR is 127.0.0.1 (local dev)
     const marker = `dbip-private-${Date.now()}`;
     await page.goto(`/?p=${marker}`);
 
@@ -120,9 +109,9 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
 
   // ─── Test 4: DB-IP resolves different country correctly ─────────
 
-  test('DB-IP resolves Japanese IP to JP', async ({ page, context }) => {
+  test('DB-IP resolves Japanese IP to JP', async ({ page }) => {
     // 1.0.16.0 is an APNIC JP allocation
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-dbip-precision-jp',
       'CF-Connecting-IP': '1.0.16.0',
     });
@@ -137,11 +126,11 @@ test.describe('AC-GEO-003: DB-IP Provider Precision', () => {
 
   // ─── Test 5: DB-IP with country-only precision ──────────────────
 
-  test('DB-IP with country-only precision stores country but not city', async ({ page, context }) => {
+  test('DB-IP with country-only precision stores country but not city', async ({ page }) => {
     // Set country-only precision
     await setSlimstatOption(page, 'geolocation_country', 'yes');
 
-    await context.setExtraHTTPHeaders({
+    setHeaderOverrides({
       'CF-Ray': 'test-dbip-country-only',
       'CF-Connecting-IP': '8.8.8.8',
     });

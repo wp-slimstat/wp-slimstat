@@ -485,6 +485,16 @@ export async function waitForStat(marker: string, timeoutMs = 10_000, intervalMs
   return null;
 }
 
+export async function waitForStatWithIp(marker: string, timeoutMs = 10_000, intervalMs = 250): Promise<{ ip: string; country: string; city: string; location: string } | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const stat = await getLatestStatWithIp(marker);
+    if (stat) return stat;
+    await new Promise((r) => setTimeout(r, intervalMs));
+  }
+  return null;
+}
+
 // ─── Anonymous visit helper ──────────────────────────────────────
 
 export async function visitAsAnonymous(browser: import('@playwright/test').Browser, url: string): Promise<import('@playwright/test').Page> {
@@ -492,6 +502,39 @@ export async function visitAsAnonymous(browser: import('@playwright/test').Brows
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   return page;
+}
+
+// ─── Header override helpers (for header-injector mu-plugin) ─────
+
+const HEADER_OVERRIDES_FILE = path.join(WP_CONTENT, 'e2e-header-overrides.json');
+
+/**
+ * Write header overrides that the header-injector mu-plugin will read.
+ * Requires SLIMSTAT_E2E_TESTING constant and the mu-plugin to be installed.
+ */
+export function setHeaderOverrides(headers: Record<string, string>): void {
+  fs.writeFileSync(HEADER_OVERRIDES_FILE, JSON.stringify(headers), 'utf8');
+}
+
+/** Remove the header overrides file. */
+export function clearHeaderOverrides(): void {
+  fs.rmSync(HEADER_OVERRIDES_FILE, { force: true });
+}
+
+/**
+ * Install the header-injector mu-plugin and inject SLIMSTAT_E2E_TESTING into wp-config.
+ * Call once in beforeAll/beforeEach for tests that need server-side header injection.
+ */
+export function installHeaderInjector(): void {
+  installMuPluginByName('header-injector-mu-plugin.php');
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+/** Uninstall the header-injector mu-plugin, clear overrides, and restore wp-config. */
+export function uninstallHeaderInjector(): void {
+  uninstallMuPluginByName('header-injector-mu-plugin.php');
+  clearHeaderOverrides();
+  restoreWpConfig();
 }
 
 // ─── Fixture file cleanup ────────────────────────────────────────

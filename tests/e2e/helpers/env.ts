@@ -14,11 +14,11 @@ export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:10003';
 /** MySQL unix socket path */
 export const MYSQL_SOCKET = process.env.MYSQL_SOCKET || '/tmp/mysql.sock';
 
-/** WordPress installation root */
-export const WP_ROOT = process.env.WP_ROOT || '/tmp/wordpress';
-
 /** wp-slimstat plugin directory (derived from this file's location) */
 export const PLUGIN_DIR = path.resolve(__dirname, '..', '..', '..');
+
+/** WordPress installation root (derived from plugin dir: wp-content/plugins/wp-slimstat) */
+export const WP_ROOT = process.env.WP_ROOT || path.resolve(PLUGIN_DIR, '..', '..', '..');
 
 /** MySQL connection config */
 export const MYSQL_CONFIG = {
