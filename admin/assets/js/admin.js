@@ -1497,53 +1497,43 @@ var SlimStatAdmin = {
             }
         });
 
-        // Update online visitors count on pulse
+        // Update all admin bar stats + live analytics header on pulse
         window.addEventListener("slimstat:minute_pulse", function () {
             var onlineVisitorsElement = document.getElementById("slimstat-online-visitors-count");
-            var adminbarHeaderElement = document.getElementById("slimstat-adminbar-online-header");
-            var adminbarCountElement = document.getElementById("slimstat-adminbar-online-count");
-
-            // Check if any element exists that needs updating
-            var hasElements = onlineVisitorsElement || adminbarHeaderElement || adminbarCountElement;
+            var hasAdminBar = document.querySelector(".slimstat-adminbar__stats-grid");
             var securityNonce = jQuery("#meta-box-order-nonce").val();
 
-            if (hasElements && securityNonce) {
+            if ((onlineVisitorsElement || hasAdminBar) && securityNonce) {
                 jQuery.ajax({
                     url: ajaxurl,
                     type: "POST",
                     data: {
-                        action: "slimstat_get_online_visitors",
+                        action: "slimstat_get_adminbar_stats",
                         security: securityNonce
                     },
                     success: function (response) {
-                        if (response.success && response.data && response.data.formatted) {
-                            var newValue = response.data.count;
-                            var formattedValue = response.data.formatted;
-
-                            // Helper function to animate value change
-                            var animateElement = function(element) {
-                                if (!element) return;
-
-                                var currentValue = element.textContent.replace(/,/g, "");
-                                if (parseInt(currentValue, 10) !== newValue) {
-                                    element.style.transition = "transform 0.1s ease-out";
-                                    element.style.transform = "scale(1.05)";
-
+                        if (response.success && response.data) {
+                            // Update live analytics page header counter
+                            if (onlineVisitorsElement && response.data.online) {
+                                var formatted = response.data.online.formatted;
+                                if (onlineVisitorsElement.textContent !== formatted) {
+                                    onlineVisitorsElement.style.transition = "transform 0.1s ease-out";
+                                    onlineVisitorsElement.style.transform = "scale(1.05)";
                                     setTimeout(function () {
-                                        element.textContent = formattedValue;
-                                        element.style.transform = "scale(1)";
+                                        onlineVisitorsElement.textContent = formatted;
+                                        onlineVisitorsElement.style.transform = "scale(1)";
                                     }, 100);
                                 }
-                            };
+                            }
 
-                            // Update all elements
-                            animateElement(onlineVisitorsElement);
-                            animateElement(adminbarHeaderElement);
-                            animateElement(adminbarCountElement);
+                            // Update admin bar modal via shared function
+                            if (typeof window.slimstatUpdateAdminBar === "function") {
+                                window.slimstatUpdateAdminBar(response.data);
+                            }
                         }
                     },
                     error: function (xhr, status, error) {
-                        console.error("Failed to update online visitors:", error);
+                        console.error("Failed to update admin bar stats:", error);
                     }
                 });
             }
