@@ -89,7 +89,7 @@ class Tracker
         $identifier     = 0;
 
         if (isset($_COOKIE['slimstat_tracking_code'])) {
-            $identifier = self::_get_value_without_checksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+            $identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
             if (false === $identifier) {
                 return false;
             }
@@ -378,15 +378,6 @@ class Tracker
         return $_value . '.' . md5($_value . (\wp_slimstat::$settings['secret'] ?? ''));
     }
 
-    public static function _get_value_without_checksum($_value_with_checksum = '')
-    {
-        [$value, $checksum] = explode('.', $_value_with_checksum);
-        if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
-            return $value;
-        }
-
-        return false;
-    }
 
     public static function _is_blacklisted($_needles = [], $_haystack_string = '')
     {

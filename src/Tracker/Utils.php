@@ -39,6 +39,14 @@ class Utils
 			return $value;
 		}
 
+		// Legacy fallback: accept MD5 checksums from cookies set before v5.4.2.
+		// This prevents all active sessions from resetting on upgrade.
+		// Safe to remove after v5.5.
+		$legacy_secret = \wp_slimstat::$settings['secret'] ?? '';
+		if (hash_equals($checksum, md5($value . $legacy_secret))) {
+			return $value;
+		}
+
 		return false;
 	}
 

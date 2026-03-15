@@ -186,7 +186,13 @@ class TrackingRestController implements RestControllerInterface
         }
 
         // Handle tracking hits - process() returns result without exit()
-        $result = Tracker::slimtrack_ajax();
+        // Buffer output to prevent stray PHP notices or hook echoes from corrupting the REST response.
+        ob_start();
+        try {
+            $result = Tracker::slimtrack_ajax();
+        } finally {
+            ob_end_clean();
+        }
 
         // Success: pure numeric ID (rare — most paths return checksum format)
         if (is_numeric($result) && 0 < (int) $result) {
