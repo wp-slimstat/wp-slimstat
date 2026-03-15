@@ -277,7 +277,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 *
 	 * @return array Chart data
 	 */
-	private function get_users_chart_data(): array {
+	public function get_users_chart_data(): array {
 		global $wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {

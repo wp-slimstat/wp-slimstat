@@ -1180,29 +1180,12 @@ class wp_slimstat_admin
         $is_pro = wp_slimstat::pro_is_installed();
 
         // Query minute-by-minute data for the CSS bar chart (30-minute window)
-        // Only fetch real data for Pro users
+        // Reuse LiveAnalyticsReport's session-spanning query for consistent data (#221)
         if ($is_pro) {
-            $minute_data_raw = $wpdb->get_results($wpdb->prepare(
-                "SELECT
-                    FLOOR(dt / 60) * 60 AS minute_bucket,
-                    COUNT(DISTINCT visit_id) AS visitor_count
-                 FROM {$table}
-                 WHERE dt >= %d AND dt <= %d AND visit_id > 0
-                 GROUP BY minute_bucket
-                 ORDER BY minute_bucket ASC",
-                $window_start, $current_minute_start + 59
-            ), ARRAY_A);
-
-            // Build minute data array (30 slots)
-            $minute_data = array_fill(0, 30, 0);
-            foreach ($minute_data_raw as $row) {
-                $bucket = (int) $row['minute_bucket'];
-                $index = (int) (($bucket - $window_start) / 60);
-                if ($index >= 0 && $index < 30) {
-                    $minute_data[$index] = (int) $row['visitor_count'];
-                }
-            }
-            $max_count = max(1, max($minute_data));
+            $live_report  = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
+            $chart_result = $live_report->get_users_chart_data();
+            $minute_data  = $chart_result['data'];
+            $max_count    = $chart_result['max_value'];
         } else {
             // Fake placeholder data for non-Pro users
             $minute_data = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10, 7, 5, 6, 8, 9, 7, 6, 5, 8, 10, 9, 7, 6, 8, 5, 7, 6, 8];
