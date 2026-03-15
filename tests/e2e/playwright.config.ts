@@ -13,7 +13,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   fullyParallel: false, // Tests modify shared state (wp-config, DB options)
   workers: 1,
-  maxFailures: 10, // Fail-fast: stop after 10 failures to save time
+  maxFailures: process.env.CI ? 10 : 0, // Fail-fast in CI; run all locally
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report') }],
