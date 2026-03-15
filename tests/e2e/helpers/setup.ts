@@ -63,6 +63,8 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
   { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
   { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
+  { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
+  { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -534,6 +536,30 @@ export function installHeaderInjector(): void {
 export function uninstallHeaderInjector(): void {
   uninstallMuPluginByName('header-injector-mu-plugin.php');
   clearHeaderOverrides();
+  restoreWpConfig();
+}
+
+// ─── Rewrite-flush mu-plugin (for adblock bypass tests) ─────────
+
+export function installRewriteFlush(): void {
+  installMuPluginByName('rewrite-flush-mu-plugin.php');
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+export function uninstallRewriteFlush(): void {
+  uninstallMuPluginByName('rewrite-flush-mu-plugin.php');
+  restoreWpConfig();
+}
+
+// ─── Plugin-lifecycle mu-plugin (for health-check tests) ────────
+
+export function installPluginLifecycle(): void {
+  installMuPluginByName('plugin-lifecycle-mu-plugin.php');
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+export function uninstallPluginLifecycle(): void {
+  uninstallMuPluginByName('plugin-lifecycle-mu-plugin.php');
   restoreWpConfig();
 }
 
