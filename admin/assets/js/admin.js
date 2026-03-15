@@ -1516,13 +1516,8 @@ var SlimStatAdmin = {
                             // Update live analytics page header counter
                             if (onlineVisitorsElement && response.data.online) {
                                 var formatted = response.data.online.formatted;
-                                if (onlineVisitorsElement.textContent !== formatted) {
-                                    onlineVisitorsElement.style.transition = "transform 0.1s ease-out";
-                                    onlineVisitorsElement.style.transform = "scale(1.05)";
-                                    setTimeout(function () {
-                                        onlineVisitorsElement.textContent = formatted;
-                                        onlineVisitorsElement.style.transform = "scale(1)";
-                                    }, 100);
+                                if (typeof window.slimstatAnimateElement === "function") {
+                                    window.slimstatAnimateElement(onlineVisitorsElement, formatted);
                                 }
                             }
 

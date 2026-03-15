@@ -1668,13 +1668,14 @@ class wp_slimstat_admin
     // END: manage_filters
 
     /**
-     * AJAX handler to get current online visitors count
+     * Check AJAX capability for view access.
+     * Returns true if user has permission, sends JSON error and returns false otherwise.
+     *
+     * @since 5.4.3
+     * @return bool
      */
-    public static function get_online_visitors()
+    private static function check_ajax_view_capability()
     {
-        check_ajax_referer('meta-box-order', 'security');
-
-        // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
@@ -1682,18 +1683,28 @@ class wp_slimstat_admin
 
         if (!current_user_can($minimum_capability)) {
             wp_send_json_error(['message' => 'Insufficient permissions']);
-            return;
+            return false;
         }
 
+        return true;
+    }
+
+    /**
+     * Get online visitors count (30-minute window, session-spanning).
+     * Shared by get_online_visitors() and get_adminbar_stats().
+     *
+     * @since 5.4.3
+     * @return int
+     */
+    private static function query_online_count()
+    {
         global $wpdb;
         $table = "{$wpdb->prefix}slim_stats";
         $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
-        $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
+        $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
-        $sql = $wpdb->prepare(
-            "
-            SELECT COUNT(*) FROM (
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM (
                 SELECT visit_id, MAX(
                     CASE
                         WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
@@ -1702,21 +1713,27 @@ class wp_slimstat_admin
                 ) AS last_activity
                 FROM {$table}
                 WHERE visit_id > 0
-                    AND (
-                        dt >= %d
-                        OR ( dt_out IS NOT NULL AND dt_out >= %d )
-                    )
+                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions
-            ",
-            $window_start,
-            $window_start,
-            $window_start
-        );
+            ) live_sessions",
+            $window_start, $window_start, $window_start
+        ));
 
-        $online_visitors = (int) $wpdb->get_var($sql);
-        $online_visitors = max(0, (int) $online_visitors);
+        return max(0, $count);
+    }
+
+    /**
+     * AJAX handler to get current online visitors count
+     */
+    public static function get_online_visitors()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        $online_visitors = self::query_online_count();
 
         wp_send_json_success([
             'count' => $online_visitors,
@@ -1735,15 +1752,7 @@ class wp_slimstat_admin
     public static function get_adminbar_stats()
     {
         check_ajax_referer('meta-box-order', 'security');
-
-        // Capability check (same as get_online_visitors)
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
-            wp_send_json_error(['message' => 'Insufficient permissions']);
+        if (!self::check_ajax_view_capability()) {
             return;
         }
 
@@ -1752,27 +1761,7 @@ class wp_slimstat_admin
         $is_pro = wp_slimstat::pro_is_installed();
 
         // --- Online count (always fresh — fast indexed query) ---
-        $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
-        $window_minutes = 30;
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
-
-        $online_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM (
-                SELECT visit_id, MAX(
-                    CASE
-                        WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
-                        ELSE dt
-                    END
-                ) AS last_activity
-                FROM {$table}
-                WHERE visit_id > 0
-                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
-                GROUP BY visit_id
-                HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions",
-            $window_start, $window_start, $window_start
-        ));
-        $online_count = max(0, $online_count);
+        $online_count = self::query_online_count();
 
         // --- Today stats (transient-cached, 60s TTL) ---
         $blog_id = get_current_blog_id();
@@ -1783,45 +1772,45 @@ class wp_slimstat_admin
             $today_start = mktime(0, 0, 0);
             $yesterday_start = $today_start - 86400;
             $yesterday_end = $today_start - 1;
-
-            $sessions_today = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
-                $today_start
-            ));
-
-            $views_today = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(id) FROM {$table} WHERE dt >= %d",
-                $today_start
-            ));
-
-            $sessions_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
-                $yesterday_start, $yesterday_end
-            ));
-
-            $views_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d",
-                $yesterday_start, $yesterday_end
-            ));
-
             $site_host = parse_url(home_url(), PHP_URL_HOST);
-            $referrals_today = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(id) FROM {$table} WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-                $today_start, '%' . $wpdb->esc_like($site_host) . '%'
+            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
+
+            // Sessions + views: 2 queries instead of 4 using conditional aggregates
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
+                    COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
+                FROM {$table}
+                WHERE dt >= %d",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start
             ));
 
-            $referrals_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-                "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-                $yesterday_start, $yesterday_end, '%' . $wpdb->esc_like($site_host) . '%'
+            // Referrals: 1 query with conditional aggregates
+            $ref_row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
+                FROM {$table}
+                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start,
+                $referer_like
             ));
 
             $today_stats = [
-                'sessions'             => $sessions_today,
-                'sessions_yesterday'   => $sessions_yesterday,
-                'views'                => $views_today,
-                'views_yesterday'      => $views_yesterday,
-                'referrals'            => $referrals_today,
-                'referrals_yesterday'  => $referrals_yesterday,
+                'sessions'             => (int) ($row->sessions_today ?? 0),
+                'sessions_yesterday'   => (int) ($row->sessions_yesterday ?? 0),
+                'views'                => (int) ($row->views_today ?? 0),
+                'views_yesterday'      => (int) ($row->views_yesterday ?? 0),
+                'referrals'            => (int) ($ref_row->referrals_today ?? 0),
+                'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
             ];
 
             set_transient($transient_key, $today_stats, 60);

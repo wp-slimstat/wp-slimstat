@@ -38,38 +38,32 @@
     function updateAdminBar(data) {
         if (!data) return;
 
+        var i18n = (typeof SlimStatAdminBar !== "undefined" && SlimStatAdminBar.i18n) ? SlimStatAdminBar.i18n : {};
+
         // Online Users
         if (data.online) {
             animateElement(document.getElementById("slimstat-adminbar-online-header"), data.online.formatted);
             animateElement(document.getElementById("slimstat-adminbar-online-count"), data.online.formatted);
         }
 
-        // Sessions Today
-        if (data.sessions) {
-            animateElement(document.getElementById("slimstat-adminbar-sessions-count"), data.sessions.formatted);
-            var sessionsCompare = document.getElementById("slimstat-adminbar-sessions-compare");
-            if (sessionsCompare && data.sessions.yesterday && typeof SlimStatAdminBar !== "undefined" && SlimStatAdminBar.i18n) {
-                sessionsCompare.textContent = SlimStatAdminBar.i18n.was_last_day.replace("%s", data.sessions.yesterday);
-            }
-        }
+        // Stat cards: sessions (always), views + referrals (Pro only)
+        var statCards = [
+            { key: "sessions", proOnly: false },
+            { key: "views",    proOnly: true },
+            { key: "referrals", proOnly: true }
+        ];
 
-        // Views Today (Pro only)
-        if (data.is_pro && data.views) {
-            animateElement(document.getElementById("slimstat-adminbar-views-count"), data.views.formatted);
-            var viewsCompare = document.getElementById("slimstat-adminbar-views-compare");
-            if (viewsCompare && data.views.yesterday && typeof SlimStatAdminBar !== "undefined" && SlimStatAdminBar.i18n) {
-                viewsCompare.textContent = SlimStatAdminBar.i18n.was_last_day.replace("%s", data.views.yesterday);
-            }
-        }
+        statCards.forEach(function (card) {
+            if (card.proOnly && !data.is_pro) return;
+            var stat = data[card.key];
+            if (!stat) return;
 
-        // Referrals Today (Pro only)
-        if (data.is_pro && data.referrals) {
-            animateElement(document.getElementById("slimstat-adminbar-referrals-count"), data.referrals.formatted);
-            var referralsCompare = document.getElementById("slimstat-adminbar-referrals-compare");
-            if (referralsCompare && data.referrals.yesterday && typeof SlimStatAdminBar !== "undefined" && SlimStatAdminBar.i18n) {
-                referralsCompare.textContent = SlimStatAdminBar.i18n.was_last_day.replace("%s", data.referrals.yesterday);
+            animateElement(document.getElementById("slimstat-adminbar-" + card.key + "-count"), stat.formatted);
+            var compareEl = document.getElementById("slimstat-adminbar-" + card.key + "-compare");
+            if (compareEl && stat.yesterday && i18n.was_last_day) {
+                compareEl.textContent = i18n.was_last_day.replace("%s", stat.yesterday);
             }
-        }
+        });
 
         // Chart bars (Pro only)
         if (data.is_pro && data.chart && data.chart.data) {
@@ -79,7 +73,6 @@
                 var chartData = data.chart.data;
                 var maxVal = data.chart.max_value || 1;
                 var peakIdx = data.chart.peak_index;
-                var i18n = (typeof SlimStatAdminBar !== "undefined" && SlimStatAdminBar.i18n) ? SlimStatAdminBar.i18n : {};
 
                 bars.forEach(function (bar, i) {
                     if (i >= chartData.length) return;
@@ -115,6 +108,7 @@
 
     // Expose globally for admin.js
     window.slimstatUpdateAdminBar = updateAdminBar;
+    window.slimstatAnimateElement = animateElement;
 
     /**
      * Fetch all admin bar stats via AJAX and apply updates.
