@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Psr7;
 
 use SlimStat\Dependencies\Psr\Http\Message\StreamInterface;
-
 /**
  * Reads from multiple streams, one after the other.
  *
@@ -15,16 +13,12 @@ final class AppendStream implements StreamInterface
 {
     /** @var StreamInterface[] Streams being decorated */
     private $streams = [];
-
     /** @var bool */
     private $seekable = true;
-
     /** @var int */
     private $current = 0;
-
     /** @var int */
     private $pos = 0;
-
     /**
      * @param StreamInterface[] $streams Streams to decorate. Each stream must
      *                                   be readable.
@@ -35,23 +29,19 @@ final class AppendStream implements StreamInterface
             $this->addStream($stream);
         }
     }
-
     public function __toString(): string
     {
         try {
             $this->rewind();
-
             return $this->getContents();
         } catch (\Throwable $e) {
             if (\PHP_VERSION_ID >= 70400) {
                 throw $e;
             }
             trigger_error(sprintf('%s::__toString exception: %s', self::class, (string) $e), E_USER_ERROR);
-
             return '';
         }
     }
-
     /**
      * Add a stream to the AppendStream
      *
@@ -64,20 +54,16 @@ final class AppendStream implements StreamInterface
         if (!$stream->isReadable()) {
             throw new \InvalidArgumentException('Each stream must be readable');
         }
-
         // The stream is only seekable if all streams are seekable
         if (!$stream->isSeekable()) {
             $this->seekable = false;
         }
-
         $this->streams[] = $stream;
     }
-
     public function getContents(): string
     {
         return Utils::copyToString($this);
     }
-
     /**
      * Closes each attached stream.
      */
@@ -85,14 +71,11 @@ final class AppendStream implements StreamInterface
     {
         $this->pos = $this->current = 0;
         $this->seekable = true;
-
         foreach ($this->streams as $stream) {
             $stream->close();
         }
-
         $this->streams = [];
     }
-
     /**
      * Detaches each attached stream.
      *
@@ -102,21 +85,16 @@ final class AppendStream implements StreamInterface
     {
         $this->pos = $this->current = 0;
         $this->seekable = true;
-
         foreach ($this->streams as $stream) {
             $stream->detach();
         }
-
         $this->streams = [];
-
         return null;
     }
-
     public function tell(): int
     {
         return $this->pos;
     }
-
     /**
      * Tries to calculate the size by adding the size of each stream.
      *
@@ -126,7 +104,6 @@ final class AppendStream implements StreamInterface
     public function getSize(): ?int
     {
         $size = 0;
-
         foreach ($this->streams as $stream) {
             $s = $stream->getSize();
             if ($s === null) {
@@ -134,22 +111,16 @@ final class AppendStream implements StreamInterface
             }
             $size += $s;
         }
-
         return $size;
     }
-
     public function eof(): bool
     {
-        return !$this->streams
-            || ($this->current >= count($this->streams) - 1
-             && $this->streams[$this->current]->eof());
+        return !$this->streams || $this->current >= count($this->streams) - 1 && $this->streams[$this->current]->eof();
     }
-
     public function rewind(): void
     {
         $this->seek(0);
     }
-
     /**
      * Attempts to seek to the given position. Only supports SEEK_SET.
      */
@@ -160,19 +131,15 @@ final class AppendStream implements StreamInterface
         } elseif ($whence !== SEEK_SET) {
             throw new \RuntimeException('The AppendStream can only seek with SEEK_SET');
         }
-
         $this->pos = $this->current = 0;
-
         // Rewind each stream
         foreach ($this->streams as $i => $stream) {
             try {
                 $stream->rewind();
             } catch (\Exception $e) {
-                throw new \RuntimeException('Unable to seek stream '
-                    .$i.' of the AppendStream', 0, $e);
+                throw new \RuntimeException('Unable to seek stream ' . $i . ' of the AppendStream', 0, $e);
             }
         }
-
         // Seek to the actual position by reading from each stream
         while ($this->pos < $offset && !$this->eof()) {
             $result = $this->read(min(8096, $offset - $this->pos));
@@ -181,7 +148,6 @@ final class AppendStream implements StreamInterface
             }
         }
     }
-
     /**
      * Reads from all of the appended streams until the length is met or EOF.
      */
@@ -191,7 +157,6 @@ final class AppendStream implements StreamInterface
         $total = count($this->streams) - 1;
         $remaining = $length;
         $progressToNext = false;
-
         while ($remaining > 0) {
             // Progress to the next stream if needed.
             if ($progressToNext || $this->streams[$this->current]->eof()) {
@@ -201,43 +166,33 @@ final class AppendStream implements StreamInterface
                 }
                 ++$this->current;
             }
-
             $result = $this->streams[$this->current]->read($remaining);
-
             if ($result === '') {
                 $progressToNext = true;
                 continue;
             }
-
             $buffer .= $result;
             $remaining = $length - strlen($buffer);
         }
-
         $this->pos += strlen($buffer);
-
         return $buffer;
     }
-
     public function isReadable(): bool
     {
         return true;
     }
-
     public function isWritable(): bool
     {
         return false;
     }
-
     public function isSeekable(): bool
     {
         return $this->seekable;
     }
-
     public function write($string): int
     {
         throw new \RuntimeException('Cannot write to an AppendStream');
     }
-
     /**
      * @return mixed
      */

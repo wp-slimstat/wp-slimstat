@@ -227,7 +227,7 @@ class GDPRService
 			? __('Accept', 'wp-slimstat')
 			: $this->translateString($this->settings['gdpr_accept_button_text'], 'gdpr_accept_button_text');
 		$denyText = empty($this->settings['gdpr_decline_button_text'])
-			? __('Deny', 'wp-slimstat')
+			? __('Decline', 'wp-slimstat')
 			: $this->translateString($this->settings['gdpr_decline_button_text'], 'gdpr_decline_button_text');
 
 		$acceptButton = sprintf(

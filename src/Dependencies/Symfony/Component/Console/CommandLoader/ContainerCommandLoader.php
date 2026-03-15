@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\CommandLoader;
 
 use SlimStat\Dependencies\Psr\Container\ContainerInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Exception\CommandNotFoundException;
-
 /**
  * Loads commands from a PSR-11 container.
  *
@@ -23,7 +21,6 @@ class ContainerCommandLoader implements CommandLoaderInterface
 {
     private $container;
     private $commandMap;
-
     /**
      * @param array $commandMap An array with command names as keys and service ids as values
      */
@@ -32,7 +29,6 @@ class ContainerCommandLoader implements CommandLoaderInterface
         $this->container = $container;
         $this->commandMap = $commandMap;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -41,10 +37,8 @@ class ContainerCommandLoader implements CommandLoaderInterface
         if (!$this->has($name)) {
             throw new CommandNotFoundException(sprintf('Command "%s" does not exist.', $name));
         }
-
         return $this->container->get($this->commandMap[$name]);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -52,7 +46,6 @@ class ContainerCommandLoader implements CommandLoaderInterface
     {
         return isset($this->commandMap[$name]) && $this->container->has($this->commandMap[$name]);
     }
-
     /**
      * {@inheritdoc}
      */

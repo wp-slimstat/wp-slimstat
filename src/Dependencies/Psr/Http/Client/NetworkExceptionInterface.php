@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\Psr\Http\Client;
 
 use SlimStat\Dependencies\Psr\Http\Message\RequestInterface;
-
 /**
  * Thrown when the request cannot be completed because of network issues.
  *

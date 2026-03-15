@@ -255,12 +255,13 @@ class wp_slimstat_reports
                 'title'         => __('Users Currently Online', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
+                    'type'    => 'top',
                     'columns' => 'username',
                     // Group OR conditions explicitly to help MySQL use indexes effectively
-                    'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')',
+                    // AND filter excludes anonymous/empty usernames from the deduplication
+                    'where'            => '((dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')) AND username <> "" AND username IS NOT NULL',
                     'use_date_filters' => false,
-                    'raw'              => ['wp_slimstat_db', 'get_recent'],
+                    'raw'              => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
@@ -1746,8 +1747,8 @@ class wp_slimstat_reports
                         $settings_url = network_admin_url('admin.php?page=slimconfig&amp;tab=');
                     }
                     // Provider-aware GeoIP notice (world map): only for DB providers when DB file is missing
-                    $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
-                    $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+                    $provider = wp_slimstat::resolve_geolocation_provider();
+                    $uses_db  = in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
                     $db_missing = false;
                     if ($uses_db) {
                         try {
@@ -1866,7 +1867,7 @@ class wp_slimstat_reports
         }
 
         if ('' !== $filters_html && '0' !== $filters_html) {
-            $filters_html = sprintf("<ul class='slimstat-filter-list'>%s</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='", $filters_html) . htmlentities(json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
+            $filters_html = sprintf("<ul class='slimstat-filter-list'>%s</ul><a href='#' id='slimstat-save-filter' class='slimstat-filter-action-button button-secondary noslimstat' data-filter-array='", $filters_html) . htmlentities(wp_json_encode($_filters_array), ENT_QUOTES, 'UTF-8') . "'>" . __('Save', 'wp-slimstat') . '</a>';
         }
 
         if ('' !== $filters_html && '0' !== $filters_html) {

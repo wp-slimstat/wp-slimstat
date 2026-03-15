@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Cache;
 
 use SlimStat\Dependencies\Psr\SimpleCache\InvalidArgumentException;
-
 /**
  * a cache proxy to be able to use the cache adapters provided by the WurflCache package
  */
@@ -19,7 +17,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function getVersion(): ?int;
-
     /**
      * Gets the release date of the Browscap data
      *
@@ -28,7 +25,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function getReleaseDate(): ?string;
-
     /**
      * Gets the type of the Browscap data
      *
@@ -37,7 +33,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function getType(): ?string;
-
     /**
      * Get an item.
      *
@@ -48,7 +43,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function getItem(string $cacheId, bool $withVersion = true, ?bool &$success = null);
-
     /**
      * save the content into an php file
      *
@@ -62,7 +56,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function setItem(string $cacheId, $content, bool $withVersion = true): bool;
-
     /**
      * Test if an item exists.
      *
@@ -71,7 +64,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function hasItem(string $cacheId, bool $withVersion = true): bool;
-
     /**
      * Remove an item.
      *
@@ -80,7 +72,6 @@ interface BrowscapCacheInterface
      * @no-named-arguments
      */
     public function removeItem(string $cacheId, bool $withVersion = true): bool;
-
     /**
      * Flush the whole storage
      *

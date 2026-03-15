@@ -462,9 +462,13 @@
     }
 }
 
-/* Reduced motion support */
+/* Reduced motion support — scoped to SlimStat elements only (#167) */
 @media (prefers-reduced-motion: reduce) {
-    * {
+    #slimstat-gdpr-banner,
+    #slimstat-gdpr-banner *,
+    .slimstat-gdpr-management,
+    .slimstat-gdpr-management *,
+    .slimstat-consent-status {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;

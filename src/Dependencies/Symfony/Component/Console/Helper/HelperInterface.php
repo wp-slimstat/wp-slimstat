@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Helper;
 
 /**
@@ -22,14 +21,12 @@ interface HelperInterface
      * Sets the helper set associated with this helper.
      */
     public function setHelperSet(?HelperSet $helperSet = null);
-
     /**
      * Gets the helper set associated with this helper.
      *
      * @return HelperSet|null
      */
     public function getHelperSet();
-
     /**
      * Returns the canonical name of this helper.
      *

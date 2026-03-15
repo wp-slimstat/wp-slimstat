@@ -14,6 +14,13 @@ $last_tracker_error = get_option('slimstat_tracker_error', []);
 // Retrieve any geoip errors for display
 $last_geoip_error = get_option('slimstat_geoip_error', []);
 
+// Lazy-migrate: populate geolocation_provider from legacy flag for correct <select> rendering.
+// Persists on next save (line 939 saves entire $settings array).
+if (!isset(wp_slimstat::$settings['geolocation_provider'])) {
+    $resolved = wp_slimstat::resolve_geolocation_provider();
+    wp_slimstat::$settings['geolocation_provider'] = false !== $resolved ? $resolved : 'disable';
+}
+
 // Build General → Tracker rows, conditionally adding Tracking Request Method under Tracking Mode
 $general_rows = [
     // General - Tracker
@@ -175,7 +182,7 @@ $settings = [
 				'type'               => 'text',
 				'before_input_field' => '',
 				'after_input_field'  => '',
-				'description'        => __('Leave empty to use the default "Deny" text.', 'wp-slimstat'),
+				'description'        => __('Leave empty to use the default "Decline" text.', 'wp-slimstat'),
 				'conditional' => [
 					'field' => 'gdpr_enabled,consent_integration',
 					'type' => 'checked,equals',
@@ -282,6 +289,7 @@ $settings = [
 				'title'         => __('Geolocation Provider', 'wp-slimstat'),
 				'type'          => 'select',
 				'select_values' => [
+					'disable'    => __('Disabled', 'wp-slimstat'),
 					'maxmind'    => __('MaxMind GeoLite2 (recommended)', 'wp-slimstat'),
 					'dbip'       => __('DB-IP City Lite (free)', 'wp-slimstat'),
 					'cloudflare' => __('Cloudflare Header', 'wp-slimstat'),
@@ -315,7 +323,7 @@ $settings = [
                 'type'             => 'toggle',
                 'custom_label_on'  => __('Country', 'wp-slimstat'),
                 'custom_label_off' => __('City', 'wp-slimstat'),
-                'description'      => __('Choose between Country and City precision. City uses a larger database and may take longer to download (and more disk space). Country is smaller and faster. Applies to DB‑IP and MaxMind; Cloudflare always provides country only.', 'wp-slimstat'),
+                'description'      => __('Choose between Country and City precision. For DB‑IP and MaxMind, City uses a larger database. For Cloudflare, city-level data requires the <strong>Add visitor location headers</strong> Managed Transform enabled in your Cloudflare dashboard (Rules &gt; Transform Rules &gt; Managed Transforms). Without it, only country is available.', 'wp-slimstat'),
             ],
             'session_duration' => [
                 'title'             => __('Visit Duration', 'wp-slimstat'),
@@ -358,29 +366,9 @@ $settings = [
             'external_pages_script' => [
                 'type'   => 'custom',
                 'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat'),
-                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = { ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '" };\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/trunk/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
+                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
             ],
 
-            // Tracker - Third-party Libraries
-            'third_party_libraries_header' => [
-                'title' => __('Third-party Libraries', 'wp-slimstat'),
-                'type'  => 'section_header',
-            ],
-            'enable_maxmind' => [
-                'title'             => __('GeoIP Database Source', 'wp-slimstat'),
-                'type'              => 'select',
-                'select_values'     => [
-                    'disable' => __('Disable', 'wp-slimstat'),
-                    'no'      => __('Use the JsDelivr', 'wp-slimstat'),
-                    'on'      => __('Use the MaxMind server with your own license key', 'wp-slimstat'),
-                ],
-                'description' => __('Choose a service to update the GeoIP database to ensure your geographic information is accurate and up-to-date.', 'wp-slimstat') . '<br />' . __('<b>Note: </b>If the database file is missing, it will be downloaded when you save the settings.', 'wp-slimstat'),
-            ],
-            'maxmind_license_key' => [
-                'title'       => __('MaxMind License Key', 'wp-slimstat'),
-                'type'        => 'text',
-                'description' => __('To be able to automatically download and update the MaxMind GeoLite2 database, you must sign up on <a href="https://dev.maxmind.com/geoip/geoip2/geolite2/" target="_blank">MaxMind GeoLite2</a> and create a license key. Then enter your license key in this field. Disable- and re-enable MaxMind Geolocation above to activate the license key. Note: It takes a couple of minutes after you created the license key to get it activated on the MaxMind website.', 'wp-slimstat'),
-            ],
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -787,7 +775,7 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
                 break;
 
             case 'reset-settings':
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::init_options());
+                wp_slimstat::update_option('slimstat_options', wp_slimstat::get_fresh_defaults());
                 wp_slimstat_admin::show_message(__('All settings were successfully reset to their default values.', 'wp-slimstat'));
                 break;
 
@@ -836,7 +824,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
 
 		// Geolocation settings save (provider-based)
 		if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
-			$prevProvider = wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$resolved_prev = wp_slimstat::resolve_geolocation_provider();
+			$prevProvider  = false !== $resolved_prev ? $resolved_prev : 'disable';
 			$provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
             $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
             $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
@@ -846,8 +835,17 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
             wp_slimstat::$settings['geolocation_country']  = 'country' === $precision ? 'on' : 'no';
             wp_slimstat::$settings['maxmind_license_key']  = $license;
 
+            // Sync legacy flag for tracker (Processor.php) and PRO compatibility
+            if ('maxmind' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'on';
+            } elseif ('dbip' === $provider || 'cloudflare' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'no';
+            } elseif ('disable' === $provider) {
+                wp_slimstat::$settings['enable_maxmind'] = 'disable';
+            }
+
             // If provider needs a DB, schedule a background update to avoid timeouts during save
-            if ('cloudflare' !== $provider) {
+            if (in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true)) {
                 try {
                     // Pass new settings explicitly since they haven't been saved to wp_slimstat::$settings yet
                     $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [
@@ -1000,7 +998,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 
 ?>
 <div class="backdrop-container">
-    <div class="wrap slimstat-config">
+    <div class="wrap-slimstat slimstat-config">
         <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
         <ul class="nav-tabs">
             <?php echo $tabs_html ?>

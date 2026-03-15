@@ -166,7 +166,10 @@ class RestApiManager
                 \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
             }
 
-            Tracker::slimtrack_ajax();
+            $result = Tracker::slimtrack_ajax();
+            // Output result and exit for adblock bypass requests
+            echo $result;
+            exit;
         }
     }
 }

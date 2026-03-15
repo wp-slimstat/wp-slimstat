@@ -6,17 +6,20 @@ use SlimStat\Dependencies\GeoIp2\Database\Reader;
 
 class GeoService
 {
+    /** All supported geolocation providers */
+    const ALL_PROVIDERS = ['maxmind', 'dbip', 'cloudflare'];
+
+    /** Providers that require a local GeoIP database file */
+    const DB_PROVIDERS = ['maxmind', 'dbip'];
+
     private $update = false;
 
     private $pack = '';
-
-    private $enableMaxmind = '';
 
     private $maxmindLicense = '';
 
     public function __construct()
     {
-        $this->enableMaxmind  = \wp_slimstat::$settings['enable_maxmind'];
         $this->maxmindLicense = \wp_slimstat::$settings['maxmind_license_key'];
     }
 
@@ -37,18 +40,7 @@ class GeoService
         if (!empty($this->pack)) {
             return $this->pack;
         }
-        return ('on' == \wp_slimstat::$settings['geolocation_country']) ? 'country' : 'city';
-    }
-
-    public function setEnableMaxmind($enableMaxmind = false)
-    {
-        $this->enableMaxmind = $enableMaxmind;
-        return $this;
-    }
-
-    public function getEnableMaxmind()
-    {
-        return $this->enableMaxmind;
+        return \wp_slimstat::get_geolocation_precision();
     }
 
     public function setMaxmindLicense($maxmindLicense = '')
@@ -64,17 +56,18 @@ class GeoService
 
     public function isGeoIPEnabled()
     {
-        return 'disable' != $this->enableMaxmind;
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        return false !== $provider;
     }
 
     public function isMaxMindEnabled()
     {
-        return 'on' == $this->enableMaxmind;
+        return 'maxmind' === \wp_slimstat::resolve_geolocation_provider();
     }
 
     public function isJsDelivrEnabled()
     {
-        return 'no' == $this->enableMaxmind;
+        return 'dbip' === \wp_slimstat::resolve_geolocation_provider();
     }
 
     public function getUserIP()
@@ -83,10 +76,12 @@ class GeoService
             return sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
+        // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
-                foreach (explode(',', $_SERVER[$a_header]) as $ip) {
+                foreach (explode(',', sanitize_text_field(wp_unslash($_SERVER[$a_header]))) as $ip) {
+                    $ip = trim($ip);
                     if (false !== filter_var($ip, FILTER_VALIDATE_IP)) {
                         return $ip;
                     }
@@ -100,8 +95,11 @@ class GeoService
 	public function download()
 	{
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
-			if (in_array($provider, ['maxmind', 'dbip'], true)) {
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				return ['status' => false, 'error' => __('Geolocation is disabled.', 'wp-slimstat')];
+			}
+			if (in_array($provider, self::DB_PROVIDERS, true)) {
                 // GeolocationService reads settings automatically
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
                 $ok      = $service->updateDatabase();
@@ -110,7 +108,7 @@ class GeoService
                     'notice' => $ok ? __('GeoIP Database Successfully Updated!', 'wp-slimstat') : __('Failed to update GeoIP Database.', 'wp-slimstat'),
                 ];
             }
-            return [ 'status' => false, 'error' => __('GeoIP is disabled. Please choose a DB-based provider and save settings.', 'wp-slimstat') ];
+            return [ 'status' => true, 'notice' => __('This provider does not use a local database.', 'wp-slimstat') ];
         } catch (\Exception $exception) {
             $this->logError($exception->getMessage());
             return [ 'status' => false, 'error' => $exception->getMessage() ];
@@ -123,7 +121,13 @@ class GeoService
 	public function checkDatabase()
 	{
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				return ['status' => false, 'notice' => __('Geolocation is disabled.', 'wp-slimstat')];
+			}
+			if (!in_array($provider, self::DB_PROVIDERS, true)) {
+				return ['status' => true, 'notice' => __('This provider does not use a local database.', 'wp-slimstat')];
+			}
             // GeolocationService reads settings automatically
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $dbPath  = $service->getProvider()->getDbPath();
@@ -165,7 +169,13 @@ class GeoService
 
 	public function deleteDatabaseFile()
 	{
-		$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+		$provider = \wp_slimstat::resolve_geolocation_provider();
+		if (false === $provider) {
+			return;
+		}
+		if (!in_array($provider, self::DB_PROVIDERS, true)) {
+			return;
+		}
         // GeolocationService reads settings automatically
         $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
         $dbPath  = $service->getProvider()->getDbPath();

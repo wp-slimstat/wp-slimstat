@@ -1,15 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\IniParser;
 
 use Generator;
 use InvalidArgumentException;
-use SlimStat_JsonException;
+use JsonException;
 use OutOfRangeException;
 use UnexpectedValueException;
-
 /**
  * Ini parser class (compatible with PHP 5.3+)
  */
@@ -21,12 +19,11 @@ interface ParserInterface
      * @throws OutOfRangeException
      * @throws UnexpectedValueException
      * @throws InvalidArgumentException
-     * @throws SlimStat_JsonException
+     * @throws JsonException
      *
      * @no-named-arguments
      */
     public function createIniParts(string $content): Generator;
-
     /**
      * Creates new pattern cache files
      *

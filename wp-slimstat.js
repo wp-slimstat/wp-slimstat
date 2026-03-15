@@ -144,6 +144,10 @@ var SlimStat = (function () {
 
     // -------------------------- Parameters Extraction -------------------------- //
     function extractSlimStatParams() {
+        // Preserve runtime-assigned properties (e.g. id set by XHR response)
+        // that would be lost when re-parsing from the DOM
+        var existingId = window.SlimStatParams && window.SlimStatParams.id;
+
         var meta = document.querySelector('meta[name="slimstat-params"]');
         if (meta) {
             try {
@@ -167,6 +171,12 @@ var SlimStat = (function () {
                 }
             }
         }
+
+        // Restore runtime-assigned id if the DOM source didn't include one
+        if (existingId && !window.SlimStatParams.id) {
+            window.SlimStatParams.id = existingId;
+        }
+
         return currentSlimStatParams();
     }
 
@@ -270,29 +280,33 @@ var SlimStat = (function () {
         queueInFlight = true;
 
         var done = function (success) {
-            if (!success && item) {
-                item.attempts = (item.attempts || 0) + 1;
-                if (item.attempts < MAX_QUEUE_ATTEMPTS) {
-                    // Re-queue with a delay and exponential backoff
-                    var delay = 500 * Math.pow(2, item.attempts);
-                    setTimeout(function () {
-                        requestQueue.unshift(item);
-                    }, delay);
+            try {
+                if (!success && item) {
+                    item.attempts = (item.attempts || 0) + 1;
+                    if (item.attempts < MAX_QUEUE_ATTEMPTS) {
+                        // Re-queue with a delay and exponential backoff
+                        var delay = 500 * Math.pow(2, item.attempts);
+                        setTimeout(function () {
+                            requestQueue.unshift(item);
+                            if (!queueInFlight) processQueue();
+                        }, delay);
+                    } else {
+                        // Max attempts reached, move to offline storage
+                        SlimStat.store_offline(item.payload);
+                        if (item.opts && typeof item.opts.onComplete === "function") {
+                            item.opts.onComplete(false);
+                        }
+                    }
                 } else {
-                    // Max attempts reached, move to offline storage
-                    SlimStat.store_offline(item.payload);
                     if (item.opts && typeof item.opts.onComplete === "function") {
-                        item.opts.onComplete(false);
+                        item.opts.onComplete(!!success);
                     }
                 }
-            } else {
-                if (item.opts && typeof item.opts.onComplete === "function") {
-                    item.opts.onComplete(!!success);
-                }
+            } finally {
+                queueInFlight = false;
+                // Process next after a micro delay to allow ID assignment, etc.
+                setTimeout(processQueue, 50);
             }
-            queueInFlight = false;
-            // Process next after a micro delay to allow ID assignment, etc.
-            setTimeout(processQueue, 50); // increased delay to prevent tight loops on failure
         };
 
         processQueueItem(item, done);
@@ -335,9 +349,15 @@ var SlimStat = (function () {
                         return;
                     }
                     if (xhr.status === 200) {
-                        var parsed = parseInt(xhr.responseText, 10);
+                        // REST API returns JSON-encoded strings (e.g. "5.abc...")
+                        // Strip wrapping quotes before parsing the numeric ID
+                        var responseId = xhr.responseText.replace(/^"|"$/g, '').trim();
+                        var parsed = parseInt(responseId, 10);
                         if (!isNaN(parsed) && parsed > 0) {
-                            params.id = xhr.responseText; // store new id
+                            // Write to current global params (not local ref which may be stale
+                            // if extractSlimStatParams replaced window.SlimStatParams)
+                            currentSlimStatParams().id = responseId;
+                            params.id = responseId; // keep local ref in sync too
                             // Mark that we've successfully tracked the initial pageview for this load
                             try {
                                 window.slimstatPageviewTracked = true;
@@ -722,9 +742,24 @@ var SlimStat = (function () {
 
             if (isFunction(window.wp_has_consent)) {
                 try {
-                    var hasConsent = window.wp_has_consent(category);
-                    if (hasConsent) return true;
-                    return false;
+                    // Guard: if no consent_type is registered (CMP hasn't set it),
+                    // wp_has_consent() returns true regardless of deny cookies.
+                    // Temporarily set fallback to 'optin' so the cookie is actually checked.
+                    var savedFallback = window.wp_fallback_consent_type;
+                    var consentTypeSet = (typeof window.wp_consent_type !== "undefined" && window.wp_consent_type) ||
+                                         (window.wp_fallback_consent_type && window.wp_fallback_consent_type !== "");
+                    if (!consentTypeSet) {
+                        window.wp_fallback_consent_type = "optin";
+                    }
+                    try {
+                        var hasConsent = window.wp_has_consent(category);
+                        if (hasConsent) return true;
+                        return false;
+                    } finally {
+                        if (!consentTypeSet) {
+                            window.wp_fallback_consent_type = savedFallback;
+                        }
+                    }
                 } catch (err2) {}
             }
 
@@ -1044,6 +1079,12 @@ var SlimStat = (function () {
                 }
             }
 
+            // Use previous consent upgrade only if current consent is unknown (null)
+            // Do NOT override an explicit rejection (false) with a previous consent
+            if (cmpAllows === null && hasConsentUpgradeSucceeded()) {
+                cmpAllows = true;
+            }
+
             if (cmpAllows === null) {
                 if (anonMode) {
                     cmpAllows = true;
@@ -1052,13 +1093,6 @@ var SlimStat = (function () {
                 } else {
                     cmpAllows = true;
                 }
-            } else {
-            }
-
-            // Only use previous consent upgrade if current consent is unknown (null)
-            // Do NOT override an explicit rejection (false) with a previous consent
-            if (cmpAllows !== true && hasConsentUpgradeSucceeded()) {
-                cmpAllows = true;
             }
         }
 
@@ -1213,10 +1247,13 @@ var SlimStat = (function () {
         };
 
         var onComplete = function (success) {
-            if (options.consentUpgrade) {
-                handleConsentUpgradeResult(!!success);
+            try {
+                if (options.consentUpgrade) {
+                    markConsentUpgradeDone(!!success);
+                }
+            } finally {
+                resetPageviewFlags();
             }
-            resetPageviewFlags();
         };
 
         // Add consent parameters if provided (from banner accept)

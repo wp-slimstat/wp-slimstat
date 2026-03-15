@@ -1,15 +1,12 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Formatter;
 
 use stdClass;
-
 use function array_key_exists;
 use function array_merge;
 use function strtolower;
-
 /**
  * formatter for backwards compatibility with 2.x
  */
@@ -22,7 +19,6 @@ final class LegacyFormatter implements FormatterInterface
      * @phpstan-var array{lowercase?: bool}
      */
     private array $options = [];
-
     /**
      * Default formatter options
      *
@@ -30,14 +26,12 @@ final class LegacyFormatter implements FormatterInterface
      * @phpstanvar array{lowercase: bool}
      */
     private array $defaultOptions = ['lowercase' => false];
-
     /**
      * Variable to save the settings in, type depends on implementation
      *
      * @var string[]|bool[]|null[]
      */
     private array $data = [];
-
     /**
      * @param bool[] $options Formatter options
      * @phpstan-param array{lowercase?: bool} $options
@@ -48,7 +42,6 @@ final class LegacyFormatter implements FormatterInterface
     {
         $this->options = array_merge($this->defaultOptions, $options);
     }
-
     /**
      * Sets the data (done by the parser)
      *
@@ -60,7 +53,6 @@ final class LegacyFormatter implements FormatterInterface
     {
         $this->data = $settings;
     }
-
     /**
      * Gets the data (in the preferred format)
      *
@@ -69,15 +61,12 @@ final class LegacyFormatter implements FormatterInterface
     public function getData(): stdClass
     {
         $output = new stdClass();
-
         foreach ($this->data as $key => $property) {
             if (array_key_exists('lowercase', $this->options) && $this->options['lowercase']) {
                 $key = strtolower($key);
             }
-
             $output->{$key} = $property;
         }
-
         return $output;
     }
 }

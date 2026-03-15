@@ -8,11 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\CI;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
 /**
  * Utility class for Github actions.
  *
@@ -21,37 +19,22 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 class GithubActionReporter
 {
     private $output;
-
     /**
      * @see https://github.com/actions/toolkit/blob/5e5e1b7aacba68a53836a34db4a288c3c1c1585b/packages/core/src/command.ts#L80-L85
      */
-    private const ESCAPED_DATA = [
-        '%' => '%25',
-        "\r" => '%0D',
-        "\n" => '%0A',
-    ];
-
+    private const ESCAPED_DATA = ['%' => '%25', "\r" => '%0D', "\n" => '%0A'];
     /**
      * @see https://github.com/actions/toolkit/blob/5e5e1b7aacba68a53836a34db4a288c3c1c1585b/packages/core/src/command.ts#L87-L94
      */
-    private const ESCAPED_PROPERTIES = [
-        '%' => '%25',
-        "\r" => '%0D',
-        "\n" => '%0A',
-        ':' => '%3A',
-        ',' => '%2C',
-    ];
-
+    private const ESCAPED_PROPERTIES = ['%' => '%25', "\r" => '%0D', "\n" => '%0A', ':' => '%3A', ',' => '%2C'];
     public function __construct(OutputInterface $output)
     {
         $this->output = $output;
     }
-
     public static function isGithubActionEnvironment(): bool
     {
         return false !== getenv('GITHUB_ACTIONS');
     }
-
     /**
      * Output an error using the Github annotations format.
      *
@@ -61,7 +44,6 @@ class GithubActionReporter
     {
         $this->log('error', $message, $file, $line, $col);
     }
-
     /**
      * Output a warning using the Github annotations format.
      *
@@ -71,7 +53,6 @@ class GithubActionReporter
     {
         $this->log('warning', $message, $file, $line, $col);
     }
-
     /**
      * Output a debug log using the Github annotations format.
      *
@@ -81,19 +62,15 @@ class GithubActionReporter
     {
         $this->log('debug', $message, $file, $line, $col);
     }
-
     private function log(string $type, string $message, ?string $file = null, ?int $line = null, ?int $col = null): void
     {
         // Some values must be encoded.
         $message = strtr($message, self::ESCAPED_DATA);
-
         if (!$file) {
             // No file provided, output the message solely:
             $this->output->writeln(sprintf('::%s::%s', $type, $message));
-
             return;
         }
-
         $this->output->writeln(sprintf('::%s file=%s,line=%s,col=%s::%s', $type, strtr($file, self::ESCAPED_PROPERTIES), strtr($line ?? 1, self::ESCAPED_PROPERTIES), strtr($col ?? 0, self::ESCAPED_PROPERTIES), $message));
     }
 }

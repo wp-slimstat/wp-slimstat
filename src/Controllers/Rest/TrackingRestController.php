@@ -15,6 +15,20 @@ if (! defined('ABSPATH')) {
 
 class TrackingRestController implements RestControllerInterface
 {
+    /**
+     * Sanitize signed integer REST params without relying on internal PHP functions.
+     *
+     * WordPress REST passes sanitize callbacks three arguments. Internal functions like
+     * intval() fatally error on PHP 8 when called with that signature.
+     *
+     * @param mixed $value Raw REST parameter value.
+     * @return int
+     */
+    public static function sanitize_integer_param($value): int
+    {
+        return is_numeric($value) ? (int) $value : 0;
+    }
+
     public function register_routes(): void
     {
         register_rest_route('slimstat/v1', '/hit', [
@@ -88,7 +102,7 @@ class TrackingRestController implements RestControllerInterface
                 'tz' => [
                     'required'          => false,
                     'type'              => 'integer',
-                    'sanitize_callback' => 'intval',
+                    'sanitize_callback' => [self::class, 'sanitize_integer_param'],
                 ],
                 'pos' => [
                     'required'          => false,
@@ -114,17 +128,31 @@ class TrackingRestController implements RestControllerInterface
         // Ensure tracking payload is available to the Ajax handler even for REST requests.
         // The tracker reads wp_slimstat::$raw_post_array, which may be empty for REST JSON bodies.
         if (class_exists('\wp_slimstat')) {
-            $payload = $request->get_params();
-            if (!is_array($payload)) {
-                $payload = [];
+            $rest_params = $request->get_params();
+            if (!is_array($rest_params)) {
+                $rest_params = [];
             }
 
-            // Sanitize known scalar keys explicitly; preserve all other keys for extension compatibility
-            $scalar_keys = ['action', 'n', 'bw', 'bh', 'ref', 'res', 'lt', 'dc', 'ob', 'ss_nonce'];
-            foreach ($scalar_keys as $key) {
-                if (isset($payload[$key])) {
-                    $payload[$key] = sanitize_text_field(wp_unslash((string) $payload[$key]));
+            // Sanitize known scalar keys from REST params (skip when empty — common for sendBeacon)
+            if (!empty($rest_params)) {
+                $scalar_keys = ['action', 'n', 'bw', 'bh', 'ref', 'res', 'lt', 'dc', 'ob', 'ss_nonce'];
+                foreach ($scalar_keys as $key) {
+                    if (isset($rest_params[$key])) {
+                        $rest_params[$key] = sanitize_text_field(wp_unslash((string) $rest_params[$key]));
+                    }
                 }
+            }
+
+            // For sendBeacon text/plain requests, php://input was already correctly
+            // parsed at plugin init (wp-slimstat.php:1559-1575). REST API cannot parse
+            // text/plain bodies, so get_params() returns incomplete data. Merge to
+            // preserve init-parsed data while letting REST-sanitized params override.
+            if (!empty(\wp_slimstat::$raw_post_array)) {
+                $payload = !empty($rest_params)
+                    ? array_merge(\wp_slimstat::$raw_post_array, $rest_params)
+                    : \wp_slimstat::$raw_post_array;
+            } else {
+                $payload = $rest_params;
             }
 
             $payload['action'] = 'slimtrack';
@@ -157,23 +185,28 @@ class TrackingRestController implements RestControllerInterface
             \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, $consent_data);
         }
 
-        // Handle tracking hits
-        $result = null;
-        if (function_exists('ob_start')) {
-            ob_start();
-            $maybe = Tracker::slimtrack_ajax();
-            $output = ob_get_clean();
-            $result = $maybe ?? $output;
-        } else {
+        // Handle tracking hits - process() returns result without exit()
+        // Buffer output to prevent stray PHP notices or hook echoes from corrupting the REST response.
+        ob_start();
+        try {
             $result = Tracker::slimtrack_ajax();
+        } finally {
+            ob_end_clean();
         }
 
-        // Normalize to string numeric id if possible
-        if (is_numeric($result) && (int) $result > 0) {
+        // Success: pure numeric ID (rare — most paths return checksum format)
+        if (is_numeric($result) && 0 < (int) $result) {
             return rest_ensure_response((string) $result);
         }
 
-        // If no numeric id detected, return a non-200 status to trigger fallback tracking methods
+        // Success: checksum-formatted string "<id>.<hash>" from Utils::getValueWithChecksum()
+        // Return the full checksum string so the JS tracker can send it back for
+        // subsequent requests (consent upgrade, events) where getValueWithoutChecksum() validates it.
+        if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && 0 < (int) $matches[1]) {
+            return rest_ensure_response($result);
+        }
+
+        // If no valid tracking ID detected, return a non-200 status to trigger fallback tracking methods
         return new \WP_Error(
             'slimstat_tracking_failed',
             esc_html__('[REST API] Tracking failed, falling back to alternative methods.', 'wp-slimstat'),

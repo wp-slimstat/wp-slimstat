@@ -8,7 +8,6 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Polyfill\Php80;
 
 /**
@@ -16,28 +15,27 @@ namespace SlimStat\Dependencies\Symfony\Polyfill\Php80;
  *
  * @internal
  */
-class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
+class PhpToken implements \Stringable
 {
     /**
      * @var int
      */
     public $id;
-
     /**
      * @var string
      */
     public $text;
-
     /**
-     * @var int
+     * @var -1|positive-int
      */
     public $line;
-
     /**
      * @var int
      */
     public $pos;
-
+    /**
+     * @param -1|positive-int $line
+     */
     public function __construct(int $id, string $text, int $line = -1, int $position = -1)
     {
         $this->id = $id;
@@ -45,16 +43,13 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
         $this->line = $line;
         $this->pos = $position;
     }
-
     public function getTokenName(): ?string
     {
         if ('UNKNOWN' === $name = token_name($this->id)) {
             $name = \strlen($this->text) > 1 || \ord($this->text) < 32 ? null : $this->text;
         }
-
         return $name;
     }
-
     /**
      * @param int|string|array $kind
      */
@@ -65,22 +60,18 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
                 return true;
             }
         }
-
         return false;
     }
-
     public function isIgnorable(): bool
     {
         return \in_array($this->id, [\T_WHITESPACE, \T_COMMENT, \T_DOC_COMMENT, \T_OPEN_TAG], true);
     }
-
     public function __toString(): string
     {
         return (string) $this->text;
     }
-
     /**
-     * @return static[]
+     * @return list<static>
      */
     public static function tokenize(string $code, int $flags = 0): array
     {
@@ -97,7 +88,6 @@ class SlimStat_SlimStat_PhpToken implements \SlimStat_SlimStat_Stringable
             $tokens[$index] = new static($id, $text, $line, $position);
             $position += \strlen($text);
         }
-
         return $tokens;
     }
 }

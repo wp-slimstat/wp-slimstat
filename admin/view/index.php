@@ -7,7 +7,7 @@ use SlimStat\Components\DateRangeHelper;
 ?>
 
 <div class="backdrop-container">
-    <div class="wrap slimstat">
+    <div class="wrap-slimstat">
         <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
 
         <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
@@ -95,8 +95,8 @@ if (!empty($saved_filters)) {
 
         <?php
         // Provider-aware GeoIP notice: show only if a DB-based provider is selected and the database file is missing
-        $provider = wp_slimstat::$settings['geolocation_provider'] ?? 'dbip';
-        $uses_db  = in_array($provider, ['dbip', 'maxmind'], true);
+        $provider = wp_slimstat::resolve_geolocation_provider();
+        $uses_db  = in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
         if ($uses_db && 'on' == wp_slimstat::$settings['notice_geolite']) {
             try {
                 $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);

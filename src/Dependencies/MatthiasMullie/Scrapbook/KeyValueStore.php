@@ -23,7 +23,6 @@ interface KeyValueStore
      * @return mixed|bool Value, or false on failure
      */
     public function get($key, &$token = null);
-
     /**
      * Retrieves multiple items at once.
      *
@@ -43,7 +42,6 @@ interface KeyValueStore
      * @return mixed[] [key => value]
      */
     public function getMulti(array $keys, array &$tokens = null);
-
     /**
      * Stores a value, regardless of whether or not the key already exists (in
      * which case it will overwrite the existing value for that key).
@@ -61,7 +59,6 @@ interface KeyValueStore
      * @return bool
      */
     public function set($key, $value, $expire = 0);
-
     /**
      * Store multiple values at once.
      *
@@ -80,7 +77,6 @@ interface KeyValueStore
      * @return bool[]
      */
     public function setMulti(array $items, $expire = 0);
-
     /**
      * Deletes an item from the cache.
      * Returns true if item existed & was successfully deleted, false otherwise.
@@ -93,7 +89,6 @@ interface KeyValueStore
      * @return bool
      */
     public function delete($key);
-
     /**
      * Deletes multiple items at once (reduced network traffic compared to
      * individual operations).
@@ -106,7 +101,6 @@ interface KeyValueStore
      * @return bool[]
      */
     public function deleteMulti(array $keys);
-
     /**
      * Adds an item under new key.
      *
@@ -123,7 +117,6 @@ interface KeyValueStore
      * @return bool
      */
     public function add($key, $value, $expire = 0);
-
     /**
      * Replaces an item.
      *
@@ -140,7 +133,6 @@ interface KeyValueStore
      * @return bool
      */
     public function replace($key, $value, $expire = 0);
-
     /**
      * Replaces an item in 1 atomic operation, to ensure it didn't change since
      * it was originally read, when the CAS token was issued.
@@ -160,7 +152,6 @@ interface KeyValueStore
      * @return bool
      */
     public function cas($token, $key, $value, $expire = 0);
-
     /**
      * Increments a counter value, or sets an initial value if it does not yet
      * exist.
@@ -180,7 +171,6 @@ interface KeyValueStore
      * @return int|bool New value or false on failure
      */
     public function increment($key, $offset = 1, $initial = 0, $expire = 0);
-
     /**
      * Decrements a counter value, or sets an initial value if it does not yet
      * exist.
@@ -200,7 +190,6 @@ interface KeyValueStore
      * @return int|bool New value or false on failure
      */
     public function decrement($key, $offset = 1, $initial = 0, $expire = 0);
-
     /**
      * Updates an item's expiration time without altering the stored value.
      *
@@ -216,7 +205,6 @@ interface KeyValueStore
      * @return bool
      */
     public function touch($key, $expire);
-
     /**
      * Clears the entire cache (or the everything for the given collection).
      *
@@ -226,7 +214,6 @@ interface KeyValueStore
      * @return bool
      */
     public function flush();
-
     /**
      * Returns an isolated subset (collection) in which to store or fetch data
      * from.

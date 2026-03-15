@@ -73,7 +73,7 @@ class IPHashProvider
                     } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
                     $wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
                     try {
-                        if ((bool) \wp_has_consent($wpConsentCategory)) {
+                        if (\SlimStat\Utils\Consent::wpHasConsentSafe($wpConsentCategory)) {
                             $hasCmpConsentButNoCookie = true;
                         }
                     } catch (\Throwable $e) {

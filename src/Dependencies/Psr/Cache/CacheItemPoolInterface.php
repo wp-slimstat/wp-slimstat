@@ -23,14 +23,13 @@ interface CacheItemPoolInterface
      *   The key for which to return the corresponding Cache Item.
      *
      * @throws InvalidArgumentException
-     *   If the $key string is not a legal value a \SlimStat\Dependencies\Psr\Cache\InvalidArgumentException
+     *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
      * @return CacheItemInterface
      *   The corresponding Cache Item.
      */
     public function getItem($key);
-
     /**
      * Returns a traversable set of cache items.
      *
@@ -38,7 +37,7 @@ interface CacheItemPoolInterface
      *   An indexed array of keys of items to retrieve.
      *
      * @throws InvalidArgumentException
-     *   If any of the keys in $keys are not a legal value a \SlimStat\Dependencies\Psr\Cache\InvalidArgumentException
+     *   If any of the keys in $keys are not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
      * @return array|\Traversable
@@ -48,7 +47,6 @@ interface CacheItemPoolInterface
      *   traversable MUST be returned instead.
      */
     public function getItems(array $keys = array());
-
     /**
      * Confirms if the cache contains specified cache item.
      *
@@ -60,14 +58,13 @@ interface CacheItemPoolInterface
      *   The key for which to check existence.
      *
      * @throws InvalidArgumentException
-     *   If the $key string is not a legal value a \SlimStat\Dependencies\Psr\Cache\InvalidArgumentException
+     *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
      * @return bool
      *   True if item exists in the cache, false otherwise.
      */
     public function hasItem($key);
-
     /**
      * Deletes all items in the pool.
      *
@@ -75,7 +72,6 @@ interface CacheItemPoolInterface
      *   True if the pool was successfully cleared. False if there was an error.
      */
     public function clear();
-
     /**
      * Removes the item from the pool.
      *
@@ -83,29 +79,26 @@ interface CacheItemPoolInterface
      *   The key to delete.
      *
      * @throws InvalidArgumentException
-     *   If the $key string is not a legal value a \SlimStat\Dependencies\Psr\Cache\InvalidArgumentException
+     *   If the $key string is not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
      * @return bool
      *   True if the item was successfully removed. False if there was an error.
      */
     public function deleteItem($key);
-
     /**
      * Removes multiple items from the pool.
      *
      * @param string[] $keys
      *   An array of keys that should be removed from the pool.
-
      * @throws InvalidArgumentException
-     *   If any of the keys in $keys are not a legal value a \SlimStat\Dependencies\Psr\Cache\InvalidArgumentException
+     *   If any of the keys in $keys are not a legal value a \Psr\Cache\InvalidArgumentException
      *   MUST be thrown.
      *
      * @return bool
      *   True if the items were successfully removed. False if there was an error.
      */
     public function deleteItems(array $keys);
-
     /**
      * Persists a cache item immediately.
      *
@@ -116,7 +109,6 @@ interface CacheItemPoolInterface
      *   True if the item was successfully persisted. False if there was an error.
      */
     public function save(CacheItemInterface $item);
-
     /**
      * Sets a cache item to be persisted later.
      *
@@ -127,7 +119,6 @@ interface CacheItemPoolInterface
      *   False if the item could not be queued or if a commit was attempted and failed. True otherwise.
      */
     public function saveDeferred(CacheItemInterface $item);
-
     /**
      * Persists any deferred cache items.
      *

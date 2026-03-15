@@ -1,12 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Helper;
 
 use SlimStat\Dependencies\Symfony\Component\Filesystem\Exception\IOException;
 use SlimStat\Dependencies\Symfony\Component\Filesystem\Filesystem as BaseFilesystem;
-
 use function basename;
 use function dirname;
 use function file_put_contents;
@@ -16,7 +14,6 @@ use function md5;
 use function sprintf;
 use function time;
 use function unlink;
-
 /**
  * Provides basic utility to manipulate the file system.
  *
@@ -39,32 +36,25 @@ class Filesystem extends BaseFilesystem
     public function dumpFile(string $filename, $content, ?int $mode = 0666): void
     {
         $dir = dirname($filename);
-
-        if (! is_dir($dir)) {
+        if (!is_dir($dir)) {
             $this->mkdir($dir);
-        } elseif (! is_writable($dir)) {
+        } elseif (!is_writable($dir)) {
             throw new IOException(sprintf('Unable to write to the "%s" directory.', $dir), 0, null, $dir);
         }
-
         // "tempnam" did not work with VFSStream for tests
         $tmpFile = dirname($filename) . '/temp_' . md5(time() . basename($filename));
-
         if (@file_put_contents($tmpFile, $content) === false) {
             throw new IOException(sprintf('Failed to write file "%s".', $filename), 0, null, $filename);
         }
-
         try {
             $this->rename($tmpFile, $filename, true);
         } catch (IOException $e) {
             unlink($tmpFile);
-
             throw $e;
         }
-
         if ($mode === null) {
             return;
         }
-
         $this->chmod($filename, $mode);
     }
 }

@@ -5,7 +5,6 @@ namespace SlimStat\Tracker;
 use SlimStat\Utils\Query;
 use SlimStat\Services\Browscap;
 use SlimStat\Services\Privacy;
-use SlimStat\Services\GeoService;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
@@ -67,6 +66,14 @@ class Processor
 
         // Store original IP for GeoIP lookup (before hashing)
         $originalIpForGeo = !empty($stat['other_ip']) ? $stat['other_ip'] : $stat['ip'];
+
+        // Cloudflare: prefer CF-Connecting-IP for geolocation when request is verified
+        // as coming through CF (CF-Ray header present). This handles the edge case where
+        // mod_remoteip restores real IP to REMOTE_ADDR but other_ip picks up the CF edge IP.
+        $cfIp = Utils::getCfClientIp();
+        if ($cfIp) {
+            $originalIpForGeo = $cfIp;
+        }
 
         // Store original IP before processing (needed for consent upgrade lookup)
         $originalIpBeforeProcessing = $stat['ip'];
@@ -235,11 +242,10 @@ class Processor
         }
 
         // GeoIP lookup requires PII consent (GeoIP data is PII)
-        $geographicProvider = new GeoService();
-        if ($geographicProvider->isGeoIPEnabled() && Consent::piiAllowed()) {
+        $provider = \wp_slimstat::resolve_geolocation_provider();
+        if (false !== $provider && Consent::piiAllowed()) {
             try {
-                $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                $precision = $geographicProvider->getPack();
+                $precision = \wp_slimstat::get_geolocation_precision();
                 $geoService = new GeolocationService($provider, ['precision' => $precision]);
                 $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
@@ -503,13 +509,16 @@ class Processor
                         // Perform GeoIP lookup if enabled and PII allowed
                         // Only do GeoIP lookup if we're updating IP (not keeping hash)
                         if (!$hashIpEnabled && !empty($update_data['ip'])) {
-                            $geographicProvider = new GeoService();
-                            if ($geographicProvider->isGeoIPEnabled()) {
+                            $provider = \wp_slimstat::resolve_geolocation_provider();
+                            if (false !== $provider) {
                                 try {
-                                    $provider = $geographicProvider->isMaxMindEnabled() ? 'maxmind' : 'dbip';
-                                    $precision = $geographicProvider->getPack();
+                                    $precision = \wp_slimstat::get_geolocation_precision();
+                                    // Prefer CF-Connecting-IP (verified by Cloudflare) when available,
+                                    // else fall back to the best proxy-header IP, then REMOTE_ADDR.
+                                    $geoIp = Utils::getCfClientIp() ?? (!empty($realOtherIp) ? $realOtherIp : $realIp);
+
                                     $geoService = new GeolocationService($provider, ['precision' => $precision]);
-                                    $geolocation_data = $geoService->locate($realIp);
+                                    $geolocation_data = $geoService->locate($geoIp);
                                     if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
                                         $update_data['country'] = strtolower($geolocation_data['country_code']);
                                         if (!empty($geolocation_data['city'])) {
@@ -528,28 +537,10 @@ class Processor
                             }
                         }
 
-                        // generate visit_id from attributes
-                        $next_visit_id = Query::select('AUTO_INCREMENT')
-                            ->from('information_schema.TABLES')
-                            ->whereRaw("TABLE_SCHEMA = DATABASE()")
-                            ->where('TABLE_NAME', '=', $table)
-                            ->getVar();
-
-                        if ($next_visit_id === null || $next_visit_id <= 0) {
-                            $max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
-                            $next_visit_id = intval($max_visit_id) + 1;
-                        }
-
+                        // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
+                        $next_visit_id = VisitIdGenerator::generateNextVisitId();
                         if ($next_visit_id <= 0) {
                             $next_visit_id = time();
-                        }
-
-                        $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-                        if ($existing_visit_id !== null) {
-                            do {
-                                $next_visit_id++;
-                                $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-                            } while ($existing_visit_id !== null);
                         }
 
                         $stat['visit_id'] = intval($next_visit_id);
@@ -710,4 +701,5 @@ class Processor
 
         return $status;
     }
+
 }

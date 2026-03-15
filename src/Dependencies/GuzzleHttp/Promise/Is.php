@@ -1,7 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\GuzzleHttp\Promise;
 
 final class Is
@@ -13,7 +12,6 @@ final class Is
     {
         return $promise->getState() === PromiseInterface::PENDING;
     }
-
     /**
      * Returns true if a promise is fulfilled or rejected.
      */
@@ -21,7 +19,6 @@ final class Is
     {
         return $promise->getState() !== PromiseInterface::PENDING;
     }
-
     /**
      * Returns true if a promise is fulfilled.
      */
@@ -29,7 +26,6 @@ final class Is
     {
         return $promise->getState() === PromiseInterface::FULFILLED;
     }
-
     /**
      * Returns true if a promise is rejected.
      */

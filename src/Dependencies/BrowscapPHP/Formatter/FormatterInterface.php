@@ -1,11 +1,9 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Formatter;
 
 use stdClass;
-
 /**
  * interface for formating the output
  */
@@ -21,7 +19,6 @@ interface FormatterInterface
      * @no-named-arguments
      */
     public function setData(array $settings): void;
-
     /**
      * Gets the data (in the preferred format)
      *

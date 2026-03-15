@@ -265,6 +265,7 @@ class wp_slimstat_admin
                 'slimstat_check_geoip_database'  => 'check_geoip_database',
                 'slimstat_get_filter_options'    => 'get_filter_options',
                 'slimstat_get_online_visitors'   => 'get_online_visitors',
+                'slimstat_get_adminbar_stats'    => 'get_adminbar_stats',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -293,7 +294,9 @@ class wp_slimstat_admin
         // Fallback: if WP-Cron is disabled or scheduling failed, trigger a non-blocking direct update
         // This ensures environments with DISABLE_WP_CRON still receive GeoIP database updates
         $cron_disabled = (defined('DISABLE_WP_CRON') && DISABLE_WP_CRON) || !wp_next_scheduled('wp_slimstat_update_geoip_database');
-        if ($cron_disabled) {
+        $geoip_provider = \wp_slimstat::resolve_geolocation_provider();
+        if ($cron_disabled && false !== $geoip_provider && is_admin() && !wp_doing_ajax()
+            && current_user_can(\wp_slimstat::$settings['capability_can_admin'])) {
             // Update if DB is missing or last update is older than the most recent past scheduled window
             $last_update = (int) get_option('slimstat_last_geoip_dl', 0);
 
@@ -308,20 +311,22 @@ class wp_slimstat_admin
                 $this_update = $this_month_update;
             }
 
-		$db_missing = false;
-		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
-			$uses_db  = in_array($provider, ['maxmind', 'dbip'], true);
-                if ($uses_db) {
-                    $service    = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
-                    $db_missing = !file_exists($service->getProvider()->getDbPath());
+            $needs_update = $last_update < $this_update;
+            $db_missing = false;
+            if (!$needs_update) {
+                // Time check passed — only check DB existence if time says we're current
+                try {
+                    $uses_db = in_array($geoip_provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true);
+                    if ($uses_db) {
+                        $service    = new \SlimStat\Services\Geolocation\GeolocationService($geoip_provider, []);
+                        $db_missing = !file_exists($service->getProvider()->getDbPath());
+                    }
+                } catch (\Throwable $e) {
+                    $db_missing = true;
                 }
-            } catch (\Throwable $e) {
-                // If any error occurs while checking, consider DB missing to be safe
-                $db_missing = true;
             }
 
-            if ($db_missing || $last_update < $this_update) {
+            if ($needs_update || $db_missing) {
                 // Fire admin-ajax in a non-blocking way to run the existing update handler
                 $ajax_url = admin_url('admin-ajax.php');
                 // Forward only WordPress authentication cookies for security
@@ -372,24 +377,18 @@ class wp_slimstat_admin
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
-        $index_checks = [
-            ['option' => 'slimstat_country_dt_indexed', 'key' => 'idx_country_dt'],
-            ['option' => 'slimstat_dt_screen_indexed', 'key' => 'idx_dt_screen_width_screen_height'],
-            ['option' => 'slimstat_dt_browser_indexed', 'key' => 'idx_dt_browser_browser_version'],
-            ['option' => 'slimstat_dt_platform_indexed', 'key' => 'idx_dt_platform'],
-        ];
-        foreach ($index_checks as $idx) {
-            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
+        // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
+        foreach (self::get_index_definitions() as $def) {
+            if ('yes' === get_option($def['option'])) {
+                continue;
+            }
+            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $def['name']));
             if (!empty($exists)) {
-                update_option($idx['option'], 'yes');
+                update_option($def['option'], 'yes');
             }
         }
 
-        self::register_country_dt_index_hooks();
-        self::register_dt_screen_index_hooks();
-        self::register_dt_browser_index_hooks();
-        self::register_dt_platform_index_hooks();
-        self::register_dt_out_index_hooks();
+        self::register_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
@@ -486,6 +485,9 @@ class wp_slimstat_admin
         // Create the tables
         self::init_tables($my_wpdb);
 
+        // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
+        \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
+
         // Ensure country/dt index exists for performance
         $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
         if (!$has_index || 0 === count($has_index)) {
@@ -513,6 +515,13 @@ class wp_slimstat_admin
             $my_wpdb->query(sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix));
         }
         update_option('slimstat_dt_platform_indexed', 'yes');
+
+        // --- Add (dt, visit_id) covering index for visitor counter queries ---
+        $dt_visit_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%sstats_dt_visit_idx'", $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
+        if (empty($dt_visit_index)) {
+            $my_wpdb->query(sprintf('CREATE INDEX %sstats_dt_visit_idx ON %sslim_stats (dt, visit_id)', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
+        }
+        update_option('slimstat_dt_visit_indexed', 'yes');
 
         return true;
     }
@@ -577,7 +586,8 @@ class wp_slimstat_admin
 				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
 				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) )
+				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) ),
+				INDEX {$GLOBALS['wpdb']->prefix}stats_dt_visit_idx (dt, visit_id)
 			) COLLATE utf8_general_ci {$use_innodb}";
 
         // This table will track outbound links (clicks on links to external sites)
@@ -739,6 +749,28 @@ class wp_slimstat_admin
             wp_slimstat::$settings['use_separate_menu'] = 'on';
         }
 
+        // --- Updates for version 5.4.3 ---
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.3', '<')) {
+            // Add (dt, visit_id) covering index for visitor counter queries
+            $idx_name = $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx';
+            $check = $my_wpdb->get_results(sprintf(
+                "SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'",
+                $GLOBALS['wpdb']->prefix, $idx_name
+            ));
+            if (empty($check)) {
+                $result = $my_wpdb->query(sprintf(
+                    'CREATE INDEX %s ON %sslim_stats (dt, visit_id)',
+                    $idx_name, $GLOBALS['wpdb']->prefix
+                ));
+                if ($result !== false) {
+                    update_option('slimstat_dt_visit_indexed', 'yes');
+                }
+                // If fails (large table timeout), show_indexes_notice() surfaces a retry button
+            } else {
+                update_option('slimstat_dt_visit_indexed', 'yes');
+            }
+        }
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
@@ -819,6 +851,14 @@ class wp_slimstat_admin
     }
 
     // END: wp_slimstat_stylesheet
+
+    /**
+     * Adds a shared body class to all Slimstat admin screens.
+     */
+    public static function add_admin_body_class($classes)
+    {
+        return $classes . ' slimstat-admin-page';
+    }
 
     /**
      * Loads user-defined stylesheet code
@@ -1010,6 +1050,9 @@ class wp_slimstat_admin
             add_action('load-' . $a_entry, [self::class, 'wp_slimstat_stylesheet']);
             add_action('load-' . $a_entry, [self::class, 'wp_slimstat_enqueue_scripts']);
             add_action('load-' . $a_entry, [self::class, 'contextual_help']);
+            add_action('load-' . $a_entry, function () {
+                add_filter('admin_body_class', [wp_slimstat_admin::class, 'add_admin_body_class']);
+            });
         }
 
         return $_s;
@@ -1030,22 +1073,29 @@ class wp_slimstat_admin
                 SLIMSTAT_ANALYTICS_VERSION
             );
 
-            // Enqueue admin bar realtime JS for online visitors update (frontend only)
-            // In admin, admin.js handles this via slimstat:minute_pulse
-            if (!is_admin()) {
-                wp_enqueue_script(
-                    'slimstat-adminbar-realtime',
-                    plugins_url('/admin/assets/js/adminbar-realtime.js', __DIR__),
-                    [],
-                    SLIMSTAT_ANALYTICS_VERSION,
-                    true
-                );
+            // Enqueue admin bar realtime JS for stats auto-refresh (frontend + admin)
+            // On frontend: self-polls every minute
+            // On admin: defers to admin.js slimstat:minute_pulse
+            wp_enqueue_script(
+                'slimstat-adminbar-realtime',
+                plugins_url('/admin/assets/js/adminbar-realtime.js', __DIR__),
+                [],
+                SLIMSTAT_ANALYTICS_VERSION,
+                true
+            );
 
-                wp_localize_script('slimstat-adminbar-realtime', 'SlimStatAdminBar', [
-                    'ajax_url' => admin_url('admin-ajax.php'),
-                    'security' => wp_create_nonce('meta-box-order'),
-                ]);
-            }
+            wp_localize_script('slimstat-adminbar-realtime', 'SlimStatAdminBar', [
+                'ajax_url'  => admin_url('admin-ajax.php'),
+                'security'  => wp_create_nonce('meta-box-order'),
+                'is_pro'    => wp_slimstat::pro_is_installed(),
+                'i18n'      => [
+                    'was_last_day' => esc_html__('was %s last day', 'wp-slimstat'),
+                    'online_users' => esc_html__('Online Users', 'wp-slimstat'),
+                    'count_label'  => esc_html__('Count', 'wp-slimstat'),
+                    'now'          => esc_html__('Now', 'wp-slimstat'),
+                    'min_ago'      => esc_html__('min ago', 'wp-slimstat'),
+                ],
+            ]);
         }
     }
 
@@ -1074,9 +1124,9 @@ class wp_slimstat_admin
         $yesterday_start = $today_start - 86400;
         $yesterday_end = $today_start - 1;
 
-        // Visitors Today (unique IPs)
-        $visitors_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT ip) FROM {$table} WHERE dt >= %d",
+        // Sessions Today (unique sessions - using visit_id for anonymous/hashed IP compatibility)
+        $sessions_today = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
             $today_start
         ));
 
@@ -1086,9 +1136,9 @@ class wp_slimstat_admin
             $today_start
         ));
 
-        // Yesterday's visitors
-        $visitors_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT ip) FROM {$table} WHERE dt BETWEEN %d AND %d",
+        // Yesterday's sessions (unique sessions - using visit_id for anonymous/hashed IP compatibility)
+        $sessions_yesterday = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
             $yesterday_start, $yesterday_end
         ));
 
@@ -1138,29 +1188,12 @@ class wp_slimstat_admin
         $is_pro = wp_slimstat::pro_is_installed();
 
         // Query minute-by-minute data for the CSS bar chart (30-minute window)
-        // Only fetch real data for Pro users
+        // Reuse LiveAnalyticsReport's session-spanning query for consistent data (#221)
         if ($is_pro) {
-            $minute_data_raw = $wpdb->get_results($wpdb->prepare(
-                "SELECT
-                    FLOOR(dt / 60) * 60 AS minute_bucket,
-                    COUNT(DISTINCT visit_id) AS visitor_count
-                 FROM {$table}
-                 WHERE dt >= %d AND dt <= %d AND visit_id > 0
-                 GROUP BY minute_bucket
-                 ORDER BY minute_bucket ASC",
-                $window_start, $current_minute_start + 59
-            ), ARRAY_A);
-
-            // Build minute data array (30 slots)
-            $minute_data = array_fill(0, 30, 0);
-            foreach ($minute_data_raw as $row) {
-                $bucket = (int) $row['minute_bucket'];
-                $index = (int) (($bucket - $window_start) / 60);
-                if ($index >= 0 && $index < 30) {
-                    $minute_data[$index] = (int) $row['visitor_count'];
-                }
-            }
-            $max_count = max(1, max($minute_data));
+            $live_report  = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
+            $chart_result = $live_report->get_users_chart_data();
+            $minute_data  = $chart_result['data'];
+            $max_count    = $chart_result['max_value'];
         } else {
             // Fake placeholder data for non-Pro users
             $minute_data = [3, 5, 4, 7, 6, 8, 5, 9, 7, 6, 8, 10, 7, 5, 6, 8, 9, 7, 6, 5, 8, 10, 9, 7, 6, 8, 5, 7, 6, 8];
@@ -1186,7 +1219,7 @@ class wp_slimstat_admin
                 . '%s'
                 . '</span></div>',
                 $bar_class,
-                max($height_pct, 3), // minimum 3% for visibility
+                $count > 0 ? max($height_pct, 3) : 0, // 0% for empty, min 3% for non-zero
                 $count,
                 $minutes_ago,
                 esc_html__('Online Users', 'wp-slimstat'),
@@ -1225,25 +1258,25 @@ class wp_slimstat_admin
             . '<span class="slimstat-adminbar__realtime-pulse"></span> '
             . esc_html__('Realtime', 'wp-slimstat') . '</div>'
             . '</div>'
-            // Visitors Today (top right)
+            // Sessions Today (top right)
             . '<div class="slimstat-adminbar__stat-card">'
-            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Visitors Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . number_format_i18n($visitors_today) . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
-            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($visitors_yesterday))
+            . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Sessions Today', 'wp-slimstat') . '</div>'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-sessions-count">' . number_format_i18n($sessions_today) . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-sessions-compare">'
+            . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
             . '</div></div>'
             // Views Today (bottom left) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . $views_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-views-count">' . $views_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-views-compare">'
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $views_yesterday_display)
             . '</div></div>'
             // Referrals Today (bottom right) - blur for non-Pro
             . '<div class="slimstat-adminbar__stat-card' . $blur_class . '">'
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
-            . '<div class="slimstat-adminbar__stat-count">' . $referrals_display . '</div>'
-            . '<div class="slimstat-adminbar__stat-comparison">'
+            . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-referrals-count">' . $referrals_display . '</div>'
+            . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-referrals-compare">'
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $referrals_yesterday_display)
             . '</div></div>'
             . '</div>';
@@ -1258,7 +1291,7 @@ class wp_slimstat_admin
         // Add chart node
         $chart_wrapper_class = $is_pro ? 'slimstat-adminbar__chart-container' : 'slimstat-adminbar__chart-container slimstat-adminbar__chart-blur';
         $chart_html = '<div class="' . $chart_wrapper_class . '">'
-            . '<div class="slimstat-adminbar__chart-bars">' . $chart_bars . '</div>'
+            . '<div class="slimstat-adminbar__chart-bars" id="slimstat-adminbar-chart-bars">' . $chart_bars . '</div>'
             . '</div>';
 
         $GLOBALS['wp_admin_bar']->add_node([
@@ -1635,32 +1668,43 @@ class wp_slimstat_admin
     // END: manage_filters
 
     /**
-     * AJAX handler to get current online visitors count
+     * Check AJAX capability for view access.
+     * Returns true if user has permission, sends JSON error and returns false otherwise.
+     *
+     * @since 5.4.3
+     * @return bool
      */
-    public static function get_online_visitors()
+    private static function check_ajax_view_capability()
     {
-        check_ajax_referer('meta-box-order', 'security');
-
-        // If this user is whitelisted, we use the minimum capability
         $minimum_capability = 'read';
         if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
             $minimum_capability = wp_slimstat::$settings['capability_can_view'];
         }
 
         if (!current_user_can($minimum_capability)) {
-            wp_send_json_error(['message' => 'Insufficient permissions']);
-            return;
+            wp_send_json_error(['message' => esc_html__('Insufficient permissions', 'wp-slimstat')], 403);
+            return false;
         }
 
+        return true;
+    }
+
+    /**
+     * Get online visitors count (30-minute window, session-spanning).
+     * Shared by get_online_visitors() and get_adminbar_stats().
+     *
+     * @since 5.4.3
+     * @return int
+     */
+    private static function query_online_count()
+    {
         global $wpdb;
         $table = "{$wpdb->prefix}slim_stats";
         $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
-        $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
+        $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
-        $sql = $wpdb->prepare(
-            "
-            SELECT COUNT(*) FROM (
+        $count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM (
                 SELECT visit_id, MAX(
                     CASE
                         WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
@@ -1669,21 +1713,27 @@ class wp_slimstat_admin
                 ) AS last_activity
                 FROM {$table}
                 WHERE visit_id > 0
-                    AND (
-                        dt >= %d
-                        OR ( dt_out IS NOT NULL AND dt_out >= %d )
-                    )
+                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions
-            ",
-            $window_start,
-            $window_start,
-            $window_start
-        );
+            ) live_sessions",
+            $window_start, $window_start, $window_start
+        ));
 
-        $online_visitors = (int) $wpdb->get_var($sql);
-        $online_visitors = max(0, (int) $online_visitors);
+        return max(0, $count);
+    }
+
+    /**
+     * AJAX handler to get current online visitors count
+     */
+    public static function get_online_visitors()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        $online_visitors = self::query_online_count();
 
         wp_send_json_success([
             'count' => $online_visitors,
@@ -1692,6 +1742,130 @@ class wp_slimstat_admin
     }
 
     // END: get_online_visitors
+
+    /**
+     * AJAX handler: Returns all admin bar modal stats in a single request.
+     * Called every minute by adminbar-realtime.js and admin.js.
+     *
+     * @since 5.4.3
+     */
+    public static function get_adminbar_stats()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
+        $is_pro = wp_slimstat::pro_is_installed();
+
+        // --- Online count (always fresh — fast indexed query) ---
+        $online_count = self::query_online_count();
+
+        // --- Today stats (transient-cached, 60s TTL) ---
+        $blog_id = get_current_blog_id();
+        $transient_key = 'slimstat_adminbar_today_' . $blog_id;
+        $today_stats = get_transient($transient_key);
+
+        if (false === $today_stats) {
+            $today_start = strtotime('today', current_time('timestamp'));
+            $yesterday_start = $today_start - DAY_IN_SECONDS;
+            $yesterday_end = $today_start - 1;
+            $site_host = parse_url(home_url(), PHP_URL_HOST);
+            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
+
+            // Sessions + views: 2 queries instead of 4 using conditional aggregates
+            $row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
+                    COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
+                FROM {$table}
+                WHERE dt >= %d",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start
+            ));
+
+            // Referrals: 1 query with conditional aggregates
+            $ref_row = $wpdb->get_row($wpdb->prepare(
+                "SELECT
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
+                FROM {$table}
+                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start,
+                $referer_like
+            ));
+
+            $today_stats = [
+                'sessions'             => (int) ($row->sessions_today ?? 0),
+                'sessions_yesterday'   => (int) ($row->sessions_yesterday ?? 0),
+                'views'                => (int) ($row->views_today ?? 0),
+                'views_yesterday'      => (int) ($row->views_yesterday ?? 0),
+                'referrals'            => (int) ($ref_row->referrals_today ?? 0),
+                'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
+            ];
+
+            $ttl = max(60 - (current_time('timestamp') % 60), 1); // align to next minute boundary
+            set_transient($transient_key, $today_stats, $ttl);
+        }
+
+        // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---
+        $chart_data = null;
+        if ($is_pro) {
+            try {
+                $live_report = new \SlimStat\Reports\Types\Analytics\LiveAnalyticsReport();
+                $chart_result = $live_report->get_users_chart_data();
+                $chart_data = [
+                    'data'       => $chart_result['data'],
+                    'max_value'  => $chart_result['max_value'],
+                    'peak_index' => $chart_result['peak_index'],
+                ];
+            } catch (\Exception $e) {
+                // Graceful degradation — return stats without chart data
+                $chart_data = null;
+            }
+        }
+
+        // --- Build response ---
+        $response = [
+            'online' => [
+                'count'     => $online_count,
+                'formatted' => number_format_i18n($online_count),
+            ],
+            'sessions' => [
+                'count'     => $today_stats['sessions'],
+                'formatted' => number_format_i18n($today_stats['sessions']),
+                'yesterday' => number_format_i18n($today_stats['sessions_yesterday']),
+            ],
+            'is_pro' => $is_pro,
+        ];
+
+        if ($is_pro) {
+            $response['views'] = [
+                'count'     => $today_stats['views'],
+                'formatted' => number_format_i18n($today_stats['views']),
+                'yesterday' => number_format_i18n($today_stats['views_yesterday']),
+            ];
+            $response['referrals'] = [
+                'count'     => $today_stats['referrals'],
+                'formatted' => number_format_i18n($today_stats['referrals']),
+                'yesterday' => number_format_i18n($today_stats['referrals_yesterday']),
+            ];
+            $response['chart'] = $chart_data;
+        }
+
+        wp_send_json_success($response);
+    }
+
+    // END: get_adminbar_stats
 
     /**
      * Helper function to get icon URL for filter options
@@ -2021,9 +2195,15 @@ class wp_slimstat_admin
 		}
 
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				wp_send_json_error(__('Geolocation is disabled.', 'wp-slimstat'));
+				return;
+			}
             if ('cloudflare' === $provider) {
+                update_option('slimstat_last_geoip_dl', time());
                 wp_send_json_success(__('Cloudflare geolocation does not require a database.', 'wp-slimstat'));
+                return;
             }
 
             // License validation is handled by the MaxMind provider; do not pre-check here
@@ -2032,6 +2212,7 @@ class wp_slimstat_admin
             $ok      = $service->updateDatabase();
 
 			if ($ok) {
+                update_option('slimstat_last_geoip_dl', time());
                 wp_send_json_success(__('GeoIP Database Successfully Updated!', 'wp-slimstat'));
             } else {
                 // Log the error for debugging
@@ -2045,8 +2226,9 @@ class wp_slimstat_admin
 				}
 				wp_send_json_error($error_message);
             }
-        } catch (\Exception $exception) {
-            wp_send_json_error($exception->getMessage());
+        } catch (\Throwable $exception) {
+            \wp_slimstat::log('GeoIP update AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
+            wp_send_json_error(__('An unexpected error occurred while updating the GeoIP database.', 'wp-slimstat'));
         }
     }
 
@@ -2060,17 +2242,23 @@ class wp_slimstat_admin
 		}
 
 		try {
-			$provider = \wp_slimstat::$settings['geolocation_provider'] ?? 'maxmind';
+			$provider = \wp_slimstat::resolve_geolocation_provider();
+			if (false === $provider) {
+				wp_send_json_error(__('Geolocation is disabled.', 'wp-slimstat'));
+				return;
+			}
             if ('cloudflare' === $provider) {
                 wp_send_json_success(__('Cloudflare geolocation is active. No database to check.', 'wp-slimstat'));
+                return;
             }
             $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
             $exists  = file_exists($service->getProvider()->getDbPath());
             $result  = [ 'notice' => $exists ? __('GeoIP Database is present and ready.', 'wp-slimstat') : __('GeoIP Database not found.', 'wp-slimstat') ];
 
             wp_send_json_success($result['notice']);
-        } catch (\Exception $exception) {
-            wp_send_json_error($exception->getMessage());
+        } catch (\Throwable $exception) {
+            \wp_slimstat::log('GeoIP check AJAX error: ' . $exception->getMessage() . ' in ' . $exception->getFile() . ':' . $exception->getLine(), 'error');
+            wp_send_json_error(__('An unexpected error occurred while checking the GeoIP database.', 'wp-slimstat'));
         }
     }
 
@@ -2274,129 +2462,81 @@ class wp_slimstat_admin
         return null;
     }
 
-    public static function ajax_add_country_dt_index()
+    /**
+     * Index definitions for all AJAX-managed database indexes.
+     * Each entry maps an AJAX action (nonce) to its index metadata.
+     */
+    private static function get_index_definitions(): array
     {
-        check_ajax_referer('slimstat_add_country_dt_index');
+        $prefix = $GLOBALS['wpdb']->prefix;
+        return [
+            'slimstat_add_country_dt_index' => [
+                'name'    => 'idx_country_dt',
+                'columns' => 'country, dt',
+                'option'  => 'slimstat_country_dt_indexed',
+            ],
+            'slimstat_add_dt_screen_index' => [
+                'name'    => 'idx_dt_screen_width_screen_height',
+                'columns' => 'dt, screen_width, screen_height',
+                'option'  => 'slimstat_dt_screen_indexed',
+            ],
+            'slimstat_add_dt_browser_index' => [
+                'name'    => 'idx_dt_browser_browser_version',
+                'columns' => 'dt, browser, browser_version',
+                'option'  => 'slimstat_dt_browser_indexed',
+            ],
+            'slimstat_add_dt_platform_index' => [
+                'name'    => 'idx_dt_platform',
+                'columns' => 'dt, platform',
+                'option'  => 'slimstat_dt_platform_indexed',
+            ],
+            'slimstat_add_dt_out_index' => [
+                'name'    => 'idx_dt_out',
+                'columns' => 'dt_out',
+                'option'  => 'slimstat_dt_out_indexed',
+            ],
+            'slimstat_add_dt_visit_index' => [
+                'name'    => $prefix . 'stats_dt_visit_idx',
+                'columns' => 'dt, visit_id',
+                'option'  => 'slimstat_dt_visit_indexed',
+            ],
+        ];
+    }
+
+    /**
+     * Generic AJAX handler for ensuring a database index exists.
+     */
+    private static function ajax_ensure_index(string $nonce, string $index_name, string $columns, string $option_key): void
+    {
+        check_ajax_referer($nonce);
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
+        }
         global $wpdb;
-        $table     = $wpdb->prefix . 'slim_stats';
-        $has_index = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = 'idx_country_dt'", $table));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_country_dt_indexed', 'yes');
+        $table = $wpdb->prefix . 'slim_stats';
+        $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
+        if (!empty($exists)) {
+            update_option($option_key, 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %s (country, dt)', $table));
+        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (%s)', $index_name, $table, $columns));
         if (false !== $result) {
-            update_option('slimstat_country_dt_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_country_dt_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_country_dt_index', [self::class, 'ajax_add_country_dt_index']);
-    }
-
-    public static function ajax_add_dt_screen_index()
-    {
-        check_ajax_referer('slimstat_add_dt_screen_index');
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_screen_width_screen_height';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_screen_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, screen_width, screen_height)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_screen_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_screen_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_screen_index', [self::class, 'ajax_add_dt_screen_index']);
-    }
-
-    public static function ajax_add_dt_browser_index()
-    {
-        check_ajax_referer('slimstat_add_dt_browser_index');
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_browser_browser_version';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_browser_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, browser, browser_version)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_browser_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_browser_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_browser_index', [self::class, 'ajax_add_dt_browser_index']);
-    }
-
-    public static function ajax_add_dt_platform_index()
-    {
-        check_ajax_referer('slimstat_add_dt_platform_index');
-        global $wpdb;
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_platform';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_platform_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt, platform)', $index_name, $table));
-        if (false !== $result) {
-            update_option('slimstat_dt_platform_indexed', 'yes');
-            wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
-        } else {
-            wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
-        }
-    }
-
-    public static function register_dt_platform_index_hooks()
-    {
-        add_action('wp_ajax_slimstat_add_dt_platform_index', [self::class, 'ajax_add_dt_platform_index']);
-    }
-
-    public static function ajax_add_dt_out_index()
-    {
-        global $wpdb;
-        check_ajax_referer('slimstat_add_dt_out_index');
-
-        $table      = $wpdb->prefix . 'slim_stats';
-        $index_name = 'idx_dt_out';
-        $has_index  = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
-        if ($has_index && count($has_index) > 0) {
-            update_option('slimstat_dt_out_indexed', 'yes');
-            wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
-        }
-
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (dt_out)', $index_name, $table));
-        if ($result) {
-            update_option('slimstat_dt_out_indexed', 'yes');
+            update_option($option_key, 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
         }
-        wp_send_json_error(__('Unable to add index or it already exists.', 'wp-slimstat'));
+        wp_send_json_error(__('Unable to add index.', 'wp-slimstat'));
     }
 
-    public static function register_dt_out_index_hooks()
+    /**
+     * Register AJAX hooks for all index management actions.
+     */
+    public static function register_index_hooks(): void
     {
-        add_action('wp_ajax_slimstat_add_dt_out_index', [self::class, 'ajax_add_dt_out_index']);
+        foreach (self::get_index_definitions() as $action => $def) {
+            add_action('wp_ajax_' . $action, function () use ($action, $def) {
+                self::ajax_ensure_index($action, $def['name'], $def['columns'], $def['option']);
+            });
+        }
     }
 
     public static function show_indexes_notice()
@@ -2453,6 +2593,15 @@ class wp_slimstat_admin
                 'desc'   => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
                 'key'    => 'idx_dt_platform',
                 'ajax'   => 'slimstat_add_dt_platform_index',
+                'btn'    => __('Apply', 'wp-slimstat'),
+            ],
+            [
+                'option' => 'slimstat_dt_visit_indexed',
+                'id'     => 'dt-visit',
+                'label'  => __('Visitor Counter Performance', 'wp-slimstat'),
+                'desc'   => __('Index on <code>dt</code>, <code>visit_id</code>', 'wp-slimstat'),
+                'key'    => $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx',
+                'ajax'   => 'slimstat_add_dt_visit_index',
                 'btn'    => __('Apply', 'wp-slimstat'),
             ],
         ];

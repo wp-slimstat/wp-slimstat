@@ -39,6 +39,14 @@ class Utils
 			return $value;
 		}
 
+		// Legacy fallback: accept MD5 checksums from cookies set before v5.4.2.
+		// This prevents all active sessions from resetting on upgrade.
+		// Safe to remove after v5.5.
+		$legacy_secret = \wp_slimstat::$settings['secret'] ?? '';
+		if (hash_equals($checksum, md5($value . $legacy_secret))) {
+			return $value;
+		}
+
 		return false;
 	}
 
@@ -130,6 +138,8 @@ class Utils
 			$ipArray[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
 		}
 
+		// CF-Connecting-IP is handled separately via getCfClientIp() with CF-Ray validation.
+		// Including it here would bypass that check and allow IP spoofing on non-CF origins.
 		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
 			if (!empty($_SERVER[$header])) {
@@ -138,13 +148,33 @@ class Utils
 					$ip = trim($ip);
 					if (false !== filter_var($ip, FILTER_VALIDATE_IP) && $ip != $ipArray[0]) {
 						$ipArray[1] = $ip;
-						break;
+						break 2;
 					}
 				}
 			}
 		}
 
 		return apply_filters('slimstat_filter_ip_address', $ipArray);
+	}
+
+	/**
+	 * Returns the validated Cloudflare client IP when the request is verified as coming
+	 * through Cloudflare (CF-Ray header present). Returns null for non-CF requests.
+	 *
+	 * @return string|null Validated IP address, or null if not a CF request.
+	 */
+	public static function getCfClientIp(): ?string
+	{
+		if (empty($_SERVER['HTTP_CF_RAY']) || empty($_SERVER['HTTP_CF_CONNECTING_IP'])) {
+			return null;
+		}
+
+		$cfIp = filter_var(
+			sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_CONNECTING_IP'])),
+			FILTER_VALIDATE_IP
+		);
+
+		return $cfIp ?: null;
 	}
 
 	public static function getLanguage()

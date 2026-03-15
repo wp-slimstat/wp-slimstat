@@ -8,11 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Completion;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Input\InputOption;
-
 /**
  * Stores all completion suggestions for the current input.
  *
@@ -22,7 +20,6 @@ final class CompletionSuggestions
 {
     private $valueSuggestions = [];
     private $optionSuggestions = [];
-
     /**
      * Add a suggested value for an input option or argument.
      *
@@ -33,10 +30,8 @@ final class CompletionSuggestions
     public function suggestValue($value): self
     {
         $this->valueSuggestions[] = !$value instanceof Suggestion ? new Suggestion($value) : $value;
-
         return $this;
     }
-
     /**
      * Add multiple suggested values at once for an input option or argument.
      *
@@ -49,10 +44,8 @@ final class CompletionSuggestions
         foreach ($values as $value) {
             $this->suggestValue($value);
         }
-
         return $this;
     }
-
     /**
      * Add a suggestion for an input option name.
      *
@@ -61,10 +54,8 @@ final class CompletionSuggestions
     public function suggestOption(InputOption $option): self
     {
         $this->optionSuggestions[] = $option;
-
         return $this;
     }
-
     /**
      * Add multiple suggestions for input option names at once.
      *
@@ -77,10 +68,8 @@ final class CompletionSuggestions
         foreach ($options as $option) {
             $this->suggestOption($option);
         }
-
         return $this;
     }
-
     /**
      * @return InputOption[]
      */
@@ -88,7 +77,6 @@ final class CompletionSuggestions
     {
         return $this->optionSuggestions;
     }
-
     /**
      * @return Suggestion[]
      */

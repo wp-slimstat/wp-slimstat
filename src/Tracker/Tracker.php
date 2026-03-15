@@ -7,9 +7,15 @@ use SlimStat\Utils\Query;
 
 class Tracker
 {
+    /**
+     * Process AJAX tracking request.
+     * Returns the result for REST API and other callers.
+     *
+     * @return string|int The tracking result (record ID with checksum, error code, or 0)
+     */
     public static function slimtrack_ajax()
     {
-        Ajax::handle();
+        return Ajax::process();
     }
 
     public static function rewrite_rule_tracker()
@@ -83,7 +89,7 @@ class Tracker
         $identifier     = 0;
 
         if (isset($_COOKIE['slimstat_tracking_code'])) {
-            $identifier = self::_get_value_without_checksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
+            $identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
             if (false === $identifier) {
                 return false;
             }
@@ -97,30 +103,10 @@ class Tracker
                 \wp_slimstat::$settings['session_duration'] = 1800;
             }
 
-            $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-            $next_visit_id = Query::select('AUTO_INCREMENT')
-                ->from('information_schema.TABLES')
-                ->whereRaw("TABLE_SCHEMA = DATABASE()")
-                ->where('TABLE_NAME', '=', $table)
-                ->getVar();
-
-            if ($next_visit_id === null || $next_visit_id <= 0) {
-                $max_visit_id  = Query::select('COALESCE(MAX(visit_id), 0)')->from($table)->getVar();
-                $next_visit_id = intval($max_visit_id) + 1;
-            }
-
+            // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
+            $next_visit_id = VisitIdGenerator::generateNextVisitId();
             if ($next_visit_id <= 0) {
                 $next_visit_id = time();
-            }
-
-            $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-
-            if ($existing_visit_id !== null) {
-                do {
-                    $next_visit_id++;
-                    $existing_visit_id = Query::select('visit_id')->from($table)->where('visit_id', '=', $next_visit_id)->getVar();
-                } while ($existing_visit_id !== null);
             }
 
             $stat = \wp_slimstat::get_stat();
@@ -158,6 +144,7 @@ class Tracker
             $ip_array[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
 
+        // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
             if (!empty($_SERVER[$a_header])) {
@@ -166,7 +153,7 @@ class Tracker
                     $a_ip = trim($a_ip);
                     if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
                         $ip_array[1] = $a_ip;
-                        break;
+                        break 2;
                     }
                 }
             }
@@ -391,15 +378,6 @@ class Tracker
         return $_value . '.' . md5($_value . (\wp_slimstat::$settings['secret'] ?? ''));
     }
 
-    public static function _get_value_without_checksum($_value_with_checksum = '')
-    {
-        [$value, $checksum] = explode('.', $_value_with_checksum);
-        if ($checksum === md5($value . (\wp_slimstat::$settings['secret'] ?? ''))) {
-            return $value;
-        }
-
-        return false;
-    }
 
     public static function _is_blacklisted($_needles = [], $_haystack_string = '')
     {

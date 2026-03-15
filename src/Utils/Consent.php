@@ -43,6 +43,72 @@ class Consent
 	}
 
 	/**
+	 * Build the context array for the slimstat_can_track filter.
+	 *
+	 * This context allows filter callbacks to distinguish between normal browser requests
+	 * and programmatic/server-side tracking calls (e.g., from slimtrack_server()).
+	 *
+	 * @since 5.4.4
+	 * @return array Context array with 'programmatic' flag and 'source' identifier
+	 */
+	public static function buildFilterContext(): array
+	{
+		return [
+			'programmatic' => \wp_slimstat::$is_programmatic_tracking,
+			'source'       => \wp_slimstat::$is_programmatic_tracking ? 'server' : 'browser',
+		];
+	}
+
+	/**
+	 * Apply the slimstat_can_track filter with tracking context.
+	 *
+	 * Centralizes the filter call so context is never accidentally omitted.
+	 *
+	 * @since 5.4.4
+	 * @param bool $default Default tracking decision before filter override.
+	 * @return bool Filtered tracking decision.
+	 */
+	private static function applyCanTrackFilter(bool $default): bool
+	{
+		return (bool) apply_filters('slimstat_can_track', $default, self::buildFilterContext());
+	}
+
+	/**
+	 * Safe wrapper around wp_has_consent() that ensures wp_get_consent_type() is set.
+	 *
+	 * When no CMP has registered a consent type, wp_has_consent() defaults to true
+	 * regardless of the user's actual consent cookie. This helper temporarily sets
+	 * the consent type to 'optin' if unregistered, then cleans up the filter.
+	 *
+	 * @param string $category Consent category (e.g. 'statistics').
+	 * @return bool Whether the user has granted consent for the given category.
+	 */
+	public static function wpHasConsentSafe(string $category): bool
+	{
+		if (!function_exists('wp_has_consent')) {
+			return false;
+		}
+
+		$callback   = null;
+		$needsFilter = function_exists('wp_get_consent_type') && ! wp_get_consent_type();
+
+		if ($needsFilter) {
+			$callback = static function () {
+				return 'optin';
+			};
+			add_filter('wp_get_consent_type', $callback, 10, 1);
+		}
+
+		try {
+			return (bool) \wp_has_consent($category);
+		} finally {
+			if ($needsFilter && $callback !== null) {
+				remove_filter('wp_get_consent_type', $callback, 10);
+			}
+		}
+	}
+
+	/**
 	 * Normalize consent data from various CMP formats to a standard structure.
 	 *
 	 * Converts different CMP consent formats (WP Consent API, Real Cookie Banner, etc.)
@@ -137,12 +203,13 @@ class Consent
 	 * This is the PRIMARY consent gate. If this returns false, no tracking occurs at all.
 	 *
 	 * Decision tree:
-	 * 1. Check DNT header (if enabled in settings)
-	 * 2. Check Anonymous Tracking mode (allows tracking without consent)
-	 * 3. Determine if configuration collects PII (cookies OR full IPs)
-	 * 4. If collects PII: Check CMP consent (for server-side verifiable CMPs or conservative blocking)
-	 * 5. Apply 'slimstat_can_track' filter for external override
-	 * 6. Return final decision
+	 * 1. Check programmatic tracking flag (bypasses CMP consent checks)
+	 * 2. Check DNT header (if enabled in settings)
+	 * 3. Check Anonymous Tracking mode (allows tracking without consent)
+	 * 4. Determine if configuration collects PII (cookies OR full IPs)
+	 * 5. If collects PII: Check CMP consent (for server-side verifiable CMPs or conservative blocking)
+	 * 6. Apply 'slimstat_can_track' filter for external override
+	 * 7. Return final decision
 	 *
 	 * @return bool True if tracking is allowed, false otherwise
 	 */
@@ -156,14 +223,7 @@ class Consent
 
 		// If GDPR is disabled, allow normal tracking without consent checks
 		if (!$gdprEnabled) {
-			/**
-			 * Filter: slimstat_can_track
-			 *
-			 * Allows third parties to override tracking decision when GDPR is disabled.
-			 *
-			 * @param bool $default Default decision (true when GDPR disabled)
-			 */
-			return (bool) apply_filters('slimstat_can_track', $default);
+			return self::applyCanTrackFilter($default);
 		}
 
 		// GDPR is enabled - consent integration is REQUIRED
@@ -173,25 +233,31 @@ class Consent
 		// Note: getIntegrationKey() now auto-returns 'slimstat_banner' if GDPR is enabled
 		// So this block should rarely execute unless GDPR is explicitly disabled
 		if (!$hasConsentIntegration) {
-			/**
-			 * Filter: slimstat_can_track
-			 *
-			 * Allows third parties to override tracking decision.
-			 *
-			 * @param bool $default Default decision (false when GDPR enabled but no consent integration)
-			 */
-			return (bool) apply_filters('slimstat_can_track', false);
+			return self::applyCanTrackFilter(false);
 		}
 
 		// GDPR is enabled and consent integration is configured - proceed with consent checks
 
 		// Respect Do Not Track if enabled in settings
 		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
+		$dntBlocked = false;
 		if ($respectDnt) {
 			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
 			if ('1' === $dntHeader) {
-				$default = false;
+				$default    = false;
+				$dntBlocked = true;
 			}
+		}
+
+		// Programmatic tracking mode - bypass CMP consent checks
+		// Used by slimtrack_server() for server-side contexts (cron, CLI, redirect handlers)
+		// where no browser session exists and CMP consent has no meaningful role.
+		// DNT is non-negotiable: short-circuit before the filter so callbacks cannot override it.
+		if (\wp_slimstat::$is_programmatic_tracking) {
+			if ($dntBlocked) {
+				return false;
+			}
+			return self::applyCanTrackFilter($default);
 		}
 
 		// Anonymous Tracking mode - ALWAYS allow tracking (no PII collected by default)
@@ -239,8 +305,7 @@ class Consent
 				if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 					$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 					try {
-						// Check consent status - if not granted, block tracking
-						if (!\wp_has_consent($wpConsentCategory)) {
+						if (!self::wpHasConsentSafe($wpConsentCategory)) {
 							$default = false;
 						}
 					} catch (\Throwable $e) {
@@ -252,17 +317,7 @@ class Consent
 			// If configuration doesn't collect PII: $default remains true (tracking allowed)
 		}
 
-		/**
-		 * Filter: slimstat_can_track
-		 *
-		 * Allows third parties (e.g., CMP plugins) to declare if analytics tracking is allowed.
-		 * Return true to allow tracking, false to disable it.
-		 *
-		 * @param bool $default Default decision (DNT-aware + CMP-aware)
-		 */
-		$canTrack = (bool) apply_filters('slimstat_can_track', $default);
-
-		return $canTrack;
+		return self::applyCanTrackFilter($default);
 	}
 
 	/**
@@ -277,20 +332,22 @@ class Consent
 	 * - Any other identifiable data
 	 *
 	 * Decision tree:
-	 * 1. HIGHEST PRIORITY: Anonymous tracking mode
+	 * 1. Check programmatic tracking flag (bypasses CMP consent checks)
+	 *
+	 * 2. HIGHEST PRIORITY: Anonymous tracking mode
 	 *    - If enabled: PII NEVER allowed unless explicit consent given
 	 *
-	 * 2. Check DNT header (if enabled in settings)
+	 * 3. Check DNT header (if enabled in settings)
 	 *    - If DNT=1: PII NEVER allowed (regardless of other settings)
 	 *
-	 * 3. Determine if current configuration collects PII:
+	 * 4. Determine if current configuration collects PII:
 	 *    - Cookies enabled? → collects PII
 	 *    - Full IPs stored (not anonymized AND not hashed)? → collects PII
 	 *
-	 * 4. If configuration doesn't collect PII:
+	 * 5. If configuration doesn't collect PII:
 	 *    - Return true (no PII to protect, operations allowed)
 	 *
-	 * 5. If configuration collects PII:
+	 * 6. If configuration collects PII:
 	 *    - Check CMP consent status (if CMP integration enabled)
 	 *    - WP Consent API: read server-side consent
 	 *    - Other CMPs: conservative default (no consent)
@@ -325,6 +382,29 @@ class Consent
 		}
 
 		// GDPR is enabled and consent integration is configured - proceed with consent checks
+
+		// Check DNT header first - this supersedes all other checks including programmatic tracking
+		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
+		if ($respectDnt) {
+			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
+			if ('1' === $dntHeader) {
+				// DNT header present - NEVER allow PII
+				return false;
+			}
+		}
+
+		// Programmatic tracking mode - bypass CMP consent checks
+		// Used by slimtrack_server() for server-side contexts (cron, CLI, redirect handlers)
+		// where no browser session exists and CMP consent has no meaningful role.
+		// DNT headers are still respected above.
+		// Anonymous mode constraints remain intact; only CMP checks are bypassed.
+		if (\wp_slimstat::$is_programmatic_tracking) {
+			$isAnonymousTracking = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
+			if ($isAnonymousTracking && !$explicitConsentGiven) {
+				return false;
+			}
+			return true;
+		}
 
 		// PRIORITY 1: Anonymous tracking mode - strictest setting
 		// In this mode, PII is BLOCKED by default until explicit consent is granted
@@ -361,14 +441,7 @@ class Consent
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 				try {
-
-                    if( ! wp_get_consent_type() ) {
-                        add_filter('wp_get_consent_type', function($type) {
-                            return 'optin';
-                        }, 10, 1);
-                    }
-
-                    if ((bool) \wp_has_consent($wpConsentCategory)) {
+					if (self::wpHasConsentSafe($wpConsentCategory)) {
 						$hasCmpConsent = true;
 					}
 				} catch (\Throwable $e) {
@@ -443,18 +516,7 @@ class Consent
 			return $result;
 		}
 
-		// PRIORITY 2: Do Not Track header - user explicitly requests no tracking
-		// This supersedes all consent mechanisms when enabled
-		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
-		if ($respectDnt) {
-			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
-			if ('1' === $dntHeader) {
-				// DNT header present - NEVER allow PII
-				return false;
-			}
-		}
-
-		// PRIORITY 3: Determine if current configuration collects PII
+		// PRIORITY 2: Determine if current configuration collects PII
 		$setTrackerCookie = ('on' === ($settings['set_tracker_cookie'] ?? 'on'));
 		$anonymizeIp      = ('on' === ($settings['anonymize_ip'] ?? 'off'));
 		$hashIp           = ('on' === ($settings['hash_ip'] ?? 'off'));
@@ -469,7 +531,7 @@ class Consent
 			return true;
 		}
 
-		// PRIORITY 4: Configuration DOES collect PII - check consent status
+		// PRIORITY 3: Configuration DOES collect PII - check consent status
 		$integrationKey = self::getIntegrationKey();
 
 		// SlimStat Banner integration - check consent cookie
@@ -482,7 +544,7 @@ class Consent
 		if ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 			$wpConsentCategory = (string) ($settings['consent_level_integration'] ?? 'statistics');
 			try {
-				return (bool) \wp_has_consent($wpConsentCategory);
+				return self::wpHasConsentSafe($wpConsentCategory);
 			} catch (\Throwable $e) {
 				// Consent API error - be conservative, deny PII
 				return false;
@@ -561,7 +623,7 @@ class Consent
 			return false;
 		}
 
-		// PRIORITY 5: No CMP integration configured
+		// PRIORITY 4: No CMP integration configured
 		// When GDPR is enabled and no CMP is configured, be conservative and deny PII
 		// unless the configuration doesn't collect PII
 		// Site admins should either:

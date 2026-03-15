@@ -8,11 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Contracts\Service;
 
-use SlimStat\Dependencies\Symfony\Contracts\Service\SlimStat_SlimStat_Attribute\SubscribedService;
-
+use SlimStat\Dependencies\Symfony\Contracts\Service\Attribute\SubscribedService;
 /**
  * A ServiceSubscriber exposes its dependencies via the static {@link getSubscribedServices} method.
  *

@@ -8,13 +8,11 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Output;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Helper\Helper;
 use SlimStat\Dependencies\Symfony\Component\Console\Terminal;
-
 /**
  * @author Pierre du Plessis <pdples@gmail.com>
  * @author Gabriel Ostrolucký <gabriel.ostrolucky@gmail.com>
@@ -25,7 +23,6 @@ class ConsoleSectionOutput extends StreamOutput
     private $lines = 0;
     private $sections;
     private $terminal;
-
     /**
      * @param resource               $stream
      * @param ConsoleSectionOutput[] $sections
@@ -34,10 +31,9 @@ class ConsoleSectionOutput extends StreamOutput
     {
         parent::__construct($stream, $verbosity, $decorated, $formatter);
         array_unshift($sections, $this);
-        $this->sections = &$sections;
+        $this->sections =& $sections;
         $this->terminal = new Terminal();
     }
-
     /**
      * Clears previous output for this section.
      *
@@ -48,19 +44,16 @@ class ConsoleSectionOutput extends StreamOutput
         if (empty($this->content) || !$this->isDecorated()) {
             return;
         }
-
         if ($lines) {
-            array_splice($this->content, -($lines * 2)); // Multiply lines by 2 to cater for each new line added between content
+            array_splice($this->content, -($lines * 2));
+            // Multiply lines by 2 to cater for each new line added between content
         } else {
             $lines = $this->lines;
             $this->content = [];
         }
-
         $this->lines -= $lines;
-
         parent::doWrite($this->popStreamContentUntilCurrentSection($lines), false);
     }
-
     /**
      * Overwrites the previous output with a new message.
      *
@@ -71,12 +64,10 @@ class ConsoleSectionOutput extends StreamOutput
         $this->clear();
         $this->writeln($message);
     }
-
     public function getContent(): string
     {
         return implode('', $this->content);
     }
-
     /**
      * @internal
      */
@@ -88,7 +79,6 @@ class ConsoleSectionOutput extends StreamOutput
             $this->content[] = \PHP_EOL;
         }
     }
-
     /**
      * {@inheritdoc}
      */
@@ -96,18 +86,13 @@ class ConsoleSectionOutput extends StreamOutput
     {
         if (!$this->isDecorated()) {
             parent::doWrite($message, $newline);
-
             return;
         }
-
         $erasedContent = $this->popStreamContentUntilCurrentSection();
-
         $this->addContent($message);
-
         parent::doWrite($message, true);
         parent::doWrite($erasedContent, false);
     }
-
     /**
      * At initial stage, cursor is at the end of stream output. This method makes cursor crawl upwards until it hits
      * current section. Then it erases content it crawled through. Optionally, it erases part of current section too.
@@ -116,26 +101,21 @@ class ConsoleSectionOutput extends StreamOutput
     {
         $numberOfLinesToClear = $numberOfLinesToClearFromCurrentSection;
         $erasedContent = [];
-
         foreach ($this->sections as $section) {
             if ($section === $this) {
                 break;
             }
-
             $numberOfLinesToClear += $section->lines;
             $erasedContent[] = $section->getContent();
         }
-
         if ($numberOfLinesToClear > 0) {
             // move cursor up n lines
             parent::doWrite(sprintf("\x1b[%dA", $numberOfLinesToClear), false);
             // erase to end of screen
             parent::doWrite("\x1b[0J", false);
         }
-
         return implode('', array_reverse($erasedContent));
     }
-
     private function getDisplayLength(string $text): int
     {
         return Helper::width(Helper::removeDecoration($this->getFormatter(), str_replace("\t", '        ', $text)));

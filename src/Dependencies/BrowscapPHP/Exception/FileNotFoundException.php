@@ -1,13 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
+declare (strict_types=1);
 namespace SlimStat\Dependencies\BrowscapPHP\Exception;
 
 use Exception;
-
 use function sprintf;
-
 /**
  * Exception to handle errors because a file does not exist
  */

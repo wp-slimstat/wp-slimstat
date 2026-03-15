@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.1
+ * Version: 5.4.2
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.1');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.2');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -57,6 +57,21 @@ class wp_slimstat
 
     public static $wpdb;
     public static $upload_dir = '';
+
+    /**
+     * Flag indicating programmatic (server-side) tracking is active.
+     *
+     * When true, CMP consent checks are bypassed in Consent::canTrack() and
+     * Consent::piiAllowed(). This is used by slimtrack_server() for server-side
+     * contexts (cron, CLI, redirect handlers) where no browser session exists.
+     *
+     * DNT headers, IP anonymization/hashing, and other non-consent settings
+     * remain enforced.
+     *
+     * @var bool
+     * @since 5.4.3
+     */
+    public static $is_programmatic_tracking = false;
 
     public static $update_checker = [];
     public static $raw_post_array = [];
@@ -152,6 +167,52 @@ class wp_slimstat
     }
 
     /**
+     * Backward-compatible wrapper for the tracking API.
+     *
+     * This method delegates to the new namespaced Tracker class while maintaining
+     * the original method signature for third-party integrations.
+     *
+     * @since 5.4.3
+     * @return int|false The record ID on success, or a negative error code on failure.
+     */
+    public static function slimtrack()
+    {
+        return \SlimStat\Tracker\Tracker::slimtrack();
+    }
+
+    /**
+     * Server-side tracking API that bypasses CMP consent checks.
+     *
+     * Use this method for programmatic tracking in server-side contexts where no
+     * browser session exists (e.g., cron jobs, CLI scripts, redirect handlers).
+     *
+     * CMP consent is a browser-side concept. In server-side contexts, there is no
+     * browser session and CMP consent has no meaningful role.
+     *
+     * The following settings remain enforced:
+     * - DNT (Do Not Track) headers
+     * - IP anonymization and hashing settings
+     * - Tracker cookie configuration
+     * - All exclusion rules
+     *
+     * @since 5.4.3
+     * @return int|false The record ID on success, or a negative error code on failure.
+     */
+    public static function slimtrack_server()
+    {
+        $previous_programmatic_state = self::$is_programmatic_tracking;
+        self::$is_programmatic_tracking = true;
+
+        try {
+            $result = \SlimStat\Tracker\Tracker::slimtrack();
+        } finally {
+            self::$is_programmatic_tracking = $previous_programmatic_state;
+        }
+
+        return $result;
+    }
+
+    /**
      * Initializes variables and actions
      */
     public static function init()
@@ -166,8 +227,9 @@ class wp_slimstat
         }
 
         if (empty(self::$settings)) {
-            // Save the default values in the database
-            self::update_option('slimstat_options', self::init_options());
+            // Fresh install: set defaults including geolocation_provider=dbip
+            self::$settings = self::get_fresh_defaults();
+            self::update_option('slimstat_options', self::$settings);
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
@@ -346,6 +408,62 @@ class wp_slimstat
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
         }
+    }
+
+    /**
+     * Resolve the active geolocation provider.
+     *
+     * New UI sets 'geolocation_provider' explicitly (incl. 'disable').
+     * Legacy installs only have 'enable_maxmind' (tri-state: 'on', 'no', 'disable').
+     *
+     * @return string|false  'maxmind', 'dbip', 'cloudflare', or false if disabled
+     */
+    public static function resolve_geolocation_provider()
+    {
+        static $cache = [];
+
+        // Sanitize both settings that drive resolution
+        $provider_san = sanitize_text_field(self::$settings['geolocation_provider'] ?? '');
+
+        // Normalize legacy tri-state ('on'|'no'|'disable') to deterministic token
+        $legacy_san = sanitize_text_field(self::$settings['enable_maxmind'] ?? '');
+        if ('on' === $legacy_san) {
+            $legacy_norm = 'on';
+        } elseif ('no' === $legacy_san) {
+            $legacy_norm = 'no';
+        } else {
+            $legacy_norm = 'disable';
+        }
+
+        // Cache key invalidates when settings change mid-request (e.g. settings save)
+        $cache_key = $provider_san . '|' . $legacy_norm;
+
+        if (array_key_exists($cache_key, $cache)) {
+            return $cache[$cache_key];
+        }
+
+        $result = false;
+
+        if ('' !== $provider_san) {
+            if ('disable' === $provider_san) {
+                $cache[$cache_key] = false;
+                return false;
+            }
+            if (in_array($provider_san, \SlimStat\Services\GeoService::ALL_PROVIDERS, true)) {
+                $cache[$cache_key] = $provider_san;
+                return $provider_san;
+            }
+            // Invalid value — fall through to legacy flag
+        }
+
+        if ('on' === $legacy_norm) {
+            $result = 'maxmind';
+        } elseif ('no' === $legacy_norm) {
+            $result = 'dbip';
+        }
+
+        $cache[$cache_key] = $result;
+        return $result;
     }
 
     /**
@@ -777,6 +895,30 @@ class wp_slimstat
     // end date_i18n
 
     /**
+     * Returns default options with geolocation_provider set for fresh installs and resets.
+     *
+     * geolocation_provider is excluded from init_options() because init() merges
+     * those defaults into stored settings — which would override the legacy
+     * enable_maxmind flag on upgraded installs before lazy migration runs.
+     *
+     * Fresh installs default to DB-IP (free, no license key required).
+     */
+    public static function get_fresh_defaults()
+    {
+        $defaults = self::init_options();
+        $defaults['geolocation_provider'] = 'dbip';
+        return $defaults;
+    }
+
+    /**
+     * Returns the current geolocation precision ('country' or 'city').
+     */
+    public static function get_geolocation_precision()
+    {
+        return ('on' == self::$settings['geolocation_country']) ? 'country' : 'city';
+    }
+
+    /**
      * Sets the default values for all the options
      */
     public static function init_options()
@@ -818,8 +960,8 @@ class wp_slimstat
 			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
-			'gdpr_accept_button_text'  => __('Accept', 'wp-slimstat'),
-			'gdpr_decline_button_text' => __('Decline', 'wp-slimstat'),
+			'gdpr_accept_button_text'  => 'Accept',
+			'gdpr_decline_button_text' => 'Decline',
             'gdpr_theme_mode'          => 'auto', // 'light', 'dark', 'auto'
             'anonymous_tracking'       => 'off',   // Changed: Enable anonymous tracking by default
             'do_not_track'             => 'off',
@@ -833,6 +975,10 @@ class wp_slimstat
             'extensions_to_track'                    => 'pdf,doc,xls,zip',
 
             // Tracker - Advanced Options
+            // NOTE: geolocation_provider is intentionally NOT in init_options().
+            // init() merges these defaults into stored settings, which would override
+            // the legacy enable_maxmind flag on upgraded installs before lazy migration runs.
+            // Use get_fresh_defaults() for new installs and settings reset.
             'geolocation_country' => 'on',
             'session_duration'    => 1800,
             'extend_session'      => 'no',
@@ -1045,7 +1191,10 @@ class wp_slimstat
         // Add dependencies for consent integrations (e.g., WP Consent API)
         $dependencies = [];
         if ((self::$settings['consent_integration'] ?? '') === 'wp_consent_api') {
-            $dependencies[] = 'wp-consent-api';
+            // Only add dependency if the WP Consent API script is actually registered
+            if (wp_script_is('wp-consent-api', 'registered') || wp_script_is('wp-consent-api', 'enqueued')) {
+                $dependencies[] = 'wp-consent-api';
+            }
         }
 
         // Register the correct script for adblock bypass, CDN, or default
@@ -1204,17 +1353,20 @@ class wp_slimstat
         if ($last_update < $this_update) {
 
             // Determine which geolocation provider to use
-            $provider = self::$settings['geolocation_provider'] ?? 'dbip';
-
-            $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+            $provider = self::resolve_geolocation_provider();
+            if (false === $provider) {
+                return;
+            }
 
             try {
-                $geographicProvider->updateDatabase();
+                $geographicProvider = new \SlimStat\Services\Geolocation\GeolocationService($provider, []);
+                $ok = $geographicProvider->updateDatabase();
 
-                // Set the last update time
-                update_option('slimstat_last_geoip_dl', time());
+                if ($ok) {
+                    update_option('slimstat_last_geoip_dl', time());
+                }
 
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 wp_slimstat::log('Geolocation database update failed: ' . $e->getMessage(), 'error');
             }
         }
@@ -1541,8 +1693,8 @@ if (function_exists('add_action')) {
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 
-    // Load textdomain early (before init at priority 20)
-    add_action('plugins_loaded', ['wp_slimstat', 'load_textdomain'], 10);
+    // Load textdomain at init (required by WordPress 6.7.0+)
+    add_action('init', ['wp_slimstat', 'load_textdomain'], 1);
 
     // Add the appropriate actions
     add_action('plugins_loaded', ['wp_slimstat', 'init'], 20);

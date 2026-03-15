@@ -8,14 +8,12 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Style;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Formatter\OutputFormatterInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Helper\ProgressBar;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\ConsoleOutputInterface;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
 /**
  * Decorates output to add console style guide helpers.
  *
@@ -24,12 +22,10 @@ use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
 abstract class OutputStyle implements OutputInterface, StyleInterface
 {
     private $output;
-
     public function __construct(OutputInterface $output)
     {
         $this->output = $output;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -37,7 +33,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->write(str_repeat(\PHP_EOL, $count));
     }
-
     /**
      * @return ProgressBar
      */
@@ -45,7 +40,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return new ProgressBar($this->output, $max);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -53,7 +47,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->write($messages, $newline, $type);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -61,7 +54,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->writeln($messages, $type);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -69,7 +61,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->setVerbosity($level);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -77,7 +68,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->getVerbosity();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -85,7 +75,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->setDecorated($decorated);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -93,7 +82,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->isDecorated();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -101,7 +89,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         $this->output->setFormatter($formatter);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -109,7 +96,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->getFormatter();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -117,7 +103,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->isQuiet();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -125,7 +110,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->isVerbose();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -133,7 +117,6 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->isVeryVerbose();
     }
-
     /**
      * {@inheritdoc}
      */
@@ -141,13 +124,11 @@ abstract class OutputStyle implements OutputInterface, StyleInterface
     {
         return $this->output->isDebug();
     }
-
     protected function getErrorOutput()
     {
         if (!$this->output instanceof ConsoleOutputInterface) {
             return $this->output;
         }
-
         return $this->output->getErrorOutput();
     }
 }

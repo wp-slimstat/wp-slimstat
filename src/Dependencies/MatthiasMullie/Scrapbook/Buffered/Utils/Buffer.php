@@ -3,7 +3,6 @@
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Buffered\Utils;
 
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\MemoryStore;
-
 /**
  * This is a helper class for BufferedStore & TransactionalStore, which buffer
  * real cache requests in memory.
@@ -32,7 +31,6 @@ class Buffer extends MemoryStore
      * @var array
      */
     public $items = array();
-
     /**
      * Checks if a value exists in cache and is not yet expired.
      * Contrary to default MemoryStore, expired items must *not* be deleted
@@ -49,18 +47,14 @@ class Buffer extends MemoryStore
             // key not in cache
             return false;
         }
-
         $expire = $this->items[$key][1];
         if (0 !== $expire && $expire < time()) {
             // not permanent & already expired
             return false;
         }
-
         $this->lru($key);
-
         return true;
     }
-
     /**
      * Check if a key existed in local storage, but is now expired.
      *
@@ -81,11 +75,9 @@ class Buffer extends MemoryStore
             // returned a value, clearly not yet expired
             return false;
         }
-
         // a known item, not returned by get, is expired
         return array_key_exists($key, $this->items);
     }
-
     /**
      * {@inheritdoc}
      */

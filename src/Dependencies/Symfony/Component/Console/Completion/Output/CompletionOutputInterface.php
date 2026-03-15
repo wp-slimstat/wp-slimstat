@@ -8,12 +8,10 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\Completion\Output;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Completion\CompletionSuggestions;
 use SlimStat\Dependencies\Symfony\Component\Console\Output\OutputInterface;
-
 /**
  * Transforms the {@see CompletionSuggestions} object into output readable by the shell completion.
  *

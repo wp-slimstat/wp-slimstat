@@ -8,11 +8,9 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-
 namespace SlimStat\Dependencies\Symfony\Component\Console\CommandLoader;
 
 use SlimStat\Dependencies\Symfony\Component\Console\Exception\CommandNotFoundException;
-
 /**
  * A simple command loader using factories to instantiate commands lazily.
  *
@@ -21,7 +19,6 @@ use SlimStat\Dependencies\Symfony\Component\Console\Exception\CommandNotFoundExc
 class FactoryCommandLoader implements CommandLoaderInterface
 {
     private $factories;
-
     /**
      * @param callable[] $factories Indexed by command names
      */
@@ -29,7 +26,6 @@ class FactoryCommandLoader implements CommandLoaderInterface
     {
         $this->factories = $factories;
     }
-
     /**
      * {@inheritdoc}
      */
@@ -37,7 +33,6 @@ class FactoryCommandLoader implements CommandLoaderInterface
     {
         return isset($this->factories[$name]);
     }
-
     /**
      * {@inheritdoc}
      */
@@ -46,12 +41,9 @@ class FactoryCommandLoader implements CommandLoaderInterface
         if (!isset($this->factories[$name])) {
             throw new CommandNotFoundException(sprintf('Command "%s" does not exist.', $name));
         }
-
         $factory = $this->factories[$name];
-
         return $factory();
     }
-
     /**
      * {@inheritdoc}
      */

@@ -26,6 +26,8 @@ class Query
 
     private $setClauses = [];
 
+    private $setValuesToPrepare = [];
+
     private $joinClauses = [];
 
     private $whereClauses = [];
@@ -206,11 +208,11 @@ class Query
         foreach ($values as $field => $value) {
             $column = '`' . str_replace('`', '``', $field) . '`';
             if (is_string($value)) {
-                $this->setClauses[]      = sprintf('%s = %%s', $column);
-                $this->valuesToPrepare[] = $value;
+                $this->setClauses[]           = sprintf('%s = %%s', $column);
+                $this->setValuesToPrepare[]   = $value;
             } elseif (is_numeric($value)) {
-                $this->setClauses[]      = sprintf('%s = %%s', $column);
-                $this->valuesToPrepare[] = $value;
+                $this->setClauses[]           = sprintf('%s = %%s', $column);
+                $this->setValuesToPrepare[]   = $value;
             } elseif (is_null($value)) {
                 $this->setClauses[] = $column . ' = NULL';
             }
@@ -231,7 +233,7 @@ class Query
     {
         $this->setClauses[] = sprintf('`%s` = %s', str_replace('`', '``', $column), $expression);
         if (!empty($params)) {
-            $this->valuesToPrepare = array_merge($this->valuesToPrepare, $params);
+            $this->setValuesToPrepare = array_merge($this->setValuesToPrepare, $params);
         }
 
         return $this;
@@ -871,7 +873,7 @@ class Query
     {
         $cacheKey = $this->getCacheKeyForQuery($query, $args);
         // Use JSON encode instead of serialize for security
-        $data     = json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $data     = wp_json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if (false === $data) {
             return false;
         }
@@ -890,7 +892,7 @@ class Query
                 'chunks' => count($chunks),
                 'size'   => strlen($data),
             ];
-            if (strlen(json_encode($meta)) > $max_chunk_size) {
+            if (strlen(wp_json_encode($meta)) > $max_chunk_size) {
                 return false;
             }
 
@@ -1280,7 +1282,9 @@ class Query
             return false;
         }
 
-        $prepared_query = $this->prepareQuery($query, $this->valuesToPrepare);
+        // SET values must come before WHERE values to match SQL clause order
+        $allValues = array_merge($this->setValuesToPrepare, $this->valuesToPrepare);
+        $prepared_query = $this->prepareQuery($query, $allValues);
 
         $result = $this->db->query($prepared_query);
 
@@ -1294,7 +1298,9 @@ class Query
     public function getSqlQuery()
     {
         $query = $this->buildQuery();
-        return $this->prepareQuery($query, $this->valuesToPrepare);
+        // SET values must come before WHERE values to match SQL clause order
+        $allValues = array_merge($this->setValuesToPrepare, $this->valuesToPrepare);
+        return $this->prepareQuery($query, $allValues);
     }
 
     /**
