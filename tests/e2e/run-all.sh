@@ -51,6 +51,7 @@ run_batch E upgrade-safety upgrade-data-integrity
 run_batch F pro-maxmind-details-addon pro-version-floor-check \
   pro-coordinates-display pro-dbip-whois-data
 run_batch G pr184-server-side-tracking-api wporg-support-issues
+run_batch H server-side-tracking-js-disabled adblock-bypass-fallback plugin-health-checks
 
 # ─── k6 (Suite 05) — sequential: load/stress invalidate metrics if overlapped
 K6_EXIT=0
