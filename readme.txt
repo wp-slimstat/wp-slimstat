@@ -89,6 +89,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Fix**: Fixed admin page styling conflicts with WordPress core styles ([PR #175](https://github.com/wp-slimstat/wp-slimstat/pull/175))
 - **Fix**: Fixed Email Reports page layout not matching other SlimStat admin pages ([PR #177](https://github.com/wp-slimstat/wp-slimstat/pull/177))
 - **Fix**: Fixed browser detection failing due to a library compatibility issue ([#187](https://github.com/wp-slimstat/wp-slimstat/issues/187))
+- **Fix**: Fixed the external page tracking snippet being completely broken — the snippet only set the legacy `ajaxurl` parameter while the tracker expects transport-specific endpoints ([#220](https://github.com/wp-slimstat/wp-slimstat/issues/220))
 - **Improved**: Restored the server-side tracking API (`wp_slimstat::slimtrack()`) for themes and plugins that track visits programmatically ([#171](https://github.com/wp-slimstat/wp-slimstat/issues/171))
 - **Improved**: Unique visitor counts now work correctly even when IP addresses are anonymized or hashed ([PR #178](https://github.com/wp-slimstat/wp-slimstat/pull/178))
 - **Improved**: 261+ previously untranslated strings are now available for translation in all languages ([#173](https://github.com/wp-slimstat/wp-slimstat/issues/173))
