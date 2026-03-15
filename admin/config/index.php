@@ -323,7 +323,7 @@ $settings = [
                 'type'             => 'toggle',
                 'custom_label_on'  => __('Country', 'wp-slimstat'),
                 'custom_label_off' => __('City', 'wp-slimstat'),
-                'description'      => __('Choose between Country and City precision. City uses a larger database and may take longer to download (and more disk space). Country is smaller and faster. Applies to DB‑IP and MaxMind; Cloudflare always provides country only.', 'wp-slimstat'),
+                'description'      => __('Choose between Country and City precision. For DB‑IP and MaxMind, City uses a larger database. For Cloudflare, city-level data requires the <strong>Add visitor location headers</strong> Managed Transform enabled in your Cloudflare dashboard (Rules &gt; Transform Rules &gt; Managed Transforms). Without it, only country is available.', 'wp-slimstat'),
             ],
             'session_duration' => [
                 'title'             => __('Visit Duration', 'wp-slimstat'),
