@@ -63,13 +63,17 @@ function ensureLogin() {
     testcookie: '1',
   }, { redirects: 5 });
 
-  // Extract nonce from admin page
+  // Extract nonce from SlimStatAdminBar localized data
   const adminRes = http.get(`${BASE_URL}/wp-admin/index.php`);
   const match = adminRes.body.match(/"security"\s*:\s*"([a-f0-9]+)"/);
-  if (match) {
-    nonce = match[1];
+  if (!match || !match[1] || match[1].length < 8) {
+    console.error('Failed to extract valid SlimStatAdminBar nonce from admin page');
+    console.error(`  Login status: ${adminRes.status}, body length: ${adminRes.body.length}`);
+    // Don't set loggedIn — force retry on next iteration
+    return;
   }
 
+  nonce = match[1];
   loggedIn = true;
 }
 

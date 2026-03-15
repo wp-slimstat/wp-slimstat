@@ -78,7 +78,7 @@
                     if (i >= chartData.length) return;
 
                     var count = chartData[i];
-                    var heightPct = Math.max(Math.round((count / maxVal) * 100), 3);
+                    var heightPct = count > 0 ? Math.max(Math.round((count / maxVal) * 100), 3) : 0;
 
                     bar.style.height = heightPct + "%";
                     bar.setAttribute("data-count", count);
@@ -149,17 +149,31 @@
         }
     }
 
-    // Start polling on DOMContentLoaded (frontend only — admin.js handles admin context)
+    // Start polling on DOMContentLoaded
     document.addEventListener("DOMContentLoaded", function () {
         var hasAdminBar = document.querySelector(".slimstat-adminbar__stats-grid");
         if (!hasAdminBar) return;
 
-        // In admin context, admin.js dispatches slimstat:minute_pulse and calls
-        // window.slimstatUpdateAdminBar() directly — no self-polling needed.
-        if (typeof SlimStatAdmin !== "undefined") {
-            return;
-        }
+        // When admin.js fires slimstat:minute_pulse (only on pages with a
+        // .refresh-timer, i.e. Live Analytics), mark the minute as handled
+        // so we don't make a duplicate request.
+        var pulseHandledMinute = -1;
+        window.addEventListener("slimstat:minute_pulse", function () {
+            pulseHandledMinute = new Date().getMinutes();
+        });
 
-        setInterval(checkMinutePulse, 200);
+        // Override checkMinutePulse to skip if admin.js already handled this minute
+        setInterval(function () {
+            var now = new Date();
+            var currentSeconds = now.getSeconds();
+            var currentMinute = now.getMinutes();
+
+            if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
+                lastTriggerMinute = currentMinute;
+                if (pulseHandledMinute !== currentMinute) {
+                    fetchAdminBarStats();
+                }
+            }
+        }, 200);
     });
 })();

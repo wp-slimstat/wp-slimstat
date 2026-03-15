@@ -1219,7 +1219,7 @@ class wp_slimstat_admin
                 . '%s'
                 . '</span></div>',
                 $bar_class,
-                max($height_pct, 3), // minimum 3% for visibility
+                $count > 0 ? max($height_pct, 3) : 0, // 0% for empty, min 3% for non-zero
                 $count,
                 $minutes_ago,
                 esc_html__('Online Users', 'wp-slimstat'),
@@ -1682,7 +1682,7 @@ class wp_slimstat_admin
         }
 
         if (!current_user_can($minimum_capability)) {
-            wp_send_json_error(['message' => 'Insufficient permissions']);
+            wp_send_json_error(['message' => esc_html__('Insufficient permissions', 'wp-slimstat')], 403);
             return false;
         }
 
@@ -1769,8 +1769,8 @@ class wp_slimstat_admin
         $today_stats = get_transient($transient_key);
 
         if (false === $today_stats) {
-            $today_start = mktime(0, 0, 0);
-            $yesterday_start = $today_start - 86400;
+            $today_start = strtotime('today', current_time('timestamp'));
+            $yesterday_start = $today_start - DAY_IN_SECONDS;
             $yesterday_end = $today_start - 1;
             $site_host = parse_url(home_url(), PHP_URL_HOST);
             $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
@@ -1813,7 +1813,8 @@ class wp_slimstat_admin
                 'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
             ];
 
-            set_transient($transient_key, $today_stats, 60);
+            $ttl = max(60 - (time() % 60), 1); // align to next minute boundary
+            set_transient($transient_key, $today_stats, $ttl);
         }
 
         // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---

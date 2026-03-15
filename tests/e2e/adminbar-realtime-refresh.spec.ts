@@ -168,11 +168,19 @@ test.describe('Admin Bar Realtime Refresh (#223/#224)', () => {
     const json = await response.json();
     const data = json.data;
 
-    // Server-rendered and AJAX values should be consistent
-    // (they may differ slightly due to time between render and AJAX call,
-    //  but sessions count for "today" should be stable within seconds)
+    // Server-rendered and AJAX values should be consistent.
+    // Parse DOM text to numbers for comparison. Allow a small delta (±2)
+    // because a new session could start between page render and AJAX call.
+    const serverOnline = parseInt(serverValues.online.replace(/,/g, ''), 10) || 0;
+    const serverSessions = parseInt(serverValues.sessions.replace(/,/g, ''), 10) || 0;
+
     expect(data.sessions.count).toBeGreaterThanOrEqual(0);
     expect(data.online.count).toBeGreaterThanOrEqual(0);
+
+    // Online count: allow ±2 delta (sessions may start/end between render and AJAX)
+    expect(Math.abs(data.online.count - serverOnline)).toBeLessThanOrEqual(2);
+    // Sessions today: allow ±2 delta
+    expect(Math.abs(data.sessions.count - serverSessions)).toBeLessThanOrEqual(2);
 
     // Verify formatted values are proper number strings
     expect(data.online.formatted).toMatch(/^\d[\d,]*$/);
