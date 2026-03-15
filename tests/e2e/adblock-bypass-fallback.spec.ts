@@ -88,10 +88,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     const hasAdblockRequest = postUrls.some(
       (url) => url.includes('/request/') || url.match(/\/[a-f0-9]{32}/)
     );
-    // If the tracker used the adblock_bypass transport, it should POST to the hash URL.
-    // However, the tracker may still prefer REST/AJAX if they're available —
-    // this test primarily confirms the hit was recorded.
-    expect(stat).not.toBeNull();
+    expect(hasAdblockRequest).toBeTruthy();
 
     await ctx.close();
   });

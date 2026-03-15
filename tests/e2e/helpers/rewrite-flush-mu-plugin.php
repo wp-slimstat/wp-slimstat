@@ -10,14 +10,18 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 if ( ! defined( 'SLIMSTAT_E2E_TESTING' ) || ! SLIMSTAT_E2E_TESTING ) {
-    return;
+	return;
 }
 
 add_action( 'wp_ajax_e2e_flush_rewrite_rules', function () {
-    flush_rewrite_rules( true );
-    wp_send_json_success( [ 'flushed' => true ] );
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( 'Insufficient permissions', 403 );
+	}
+
+	flush_rewrite_rules( true );
+	wp_send_json_success( [ 'flushed' => true ] );
 } );
