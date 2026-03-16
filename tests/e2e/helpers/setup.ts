@@ -65,6 +65,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
   { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
   { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
+  { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
