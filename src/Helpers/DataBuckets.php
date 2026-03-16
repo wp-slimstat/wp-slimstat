@@ -116,7 +116,7 @@ class DataBuckets
         }
 
         // Move start to the next week if it is not the start of the week
-        $start->modify('next ' . $dayNames[$startOfWeek]);
+        $start->modify('next ' . ($dayNames[$startOfWeek] ?? 'Monday'));
         if ($start->getTimestamp() <= $this->start) {
             $start->modify('+1 week');
         }
