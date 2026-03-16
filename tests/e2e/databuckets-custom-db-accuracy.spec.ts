@@ -10,13 +10,23 @@
  * Also simulates the slimstat_custom_wpdb filter (used by the external DB addon)
  * to confirm that Query.php's use of global $wpdb creates no read/write split.
  *
+ * How the chart works:
+ *  - Chart data is server-side rendered into `data-data` HTML attribute on
+ *    `[id^="slimstat_chart_data_"]` element (readable without AJAX)
+ *  - `slimstat_fetch_chart_data` AJAX fires only when user changes granularity
+ *  - Both paths go through DataBuckets::addRow() — same fix applies to both
+ *
  * Tests:
- *  1. Weekly chart totals match DB record count (default DB)
- *  2. Weekly chart totals match DB record count (custom DB filter active)
- *  3. Boundary edge case: records in the last week of range still appear
+ *  1. Direct AJAX call returns v1 sum matching DB count (default DB)
+ *  2. Server-rendered chart `data-data` v1 sum >= DB count (default DB)
+ *  3. Out-of-range records are NOT counted in chart
+ *  4. Empty range — zero records, no crash, sum = 0
+ *  5. Custom DB filter active — Query.php still reads from default DB (no split)
+ *  6. Phantom bucket regression — last-week records land in valid bucket
+ *
+ * Source: Support #14684 / GitHub #231
  */
 import { test, expect } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -33,12 +43,8 @@ import {
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── DB helpers ───────────────────────────────────────────────────────────────
 
-/**
- * Insert N stat rows with a given Unix timestamp directly into wp_slim_stats.
- * Uses a synthetic resource path so rows are identifiable in assertions.
- */
 async function insertRows(timestamp: number, count: number, label: string): Promise<void> {
   const pool = getPool();
   for (let i = 0; i < count; i++) {
@@ -50,7 +56,6 @@ async function insertRows(timestamp: number, count: number, label: string): Prom
   }
 }
 
-/** Count all rows inserted by this test suite. */
 async function countTestRows(): Promise<number> {
   const [rows] = (await getPool().execute(
     "SELECT COUNT(*) as cnt FROM wp_slim_stats WHERE user_agent = 'databuckets-e2e-test'"
@@ -58,74 +63,100 @@ async function countTestRows(): Promise<number> {
   return parseInt(rows[0].cnt, 10);
 }
 
+// ─── Chart AJAX helper ─────────────────────────────────────────────────────────
+
 /**
- * Intercept the slimstat_fetch_chart_data AJAX response to get chart datasets.
- * Navigates to the admin dashboard and waits for the first chart data AJAX response.
- * Returns the parsed JSON response or null if none was captured within timeout.
+ * Navigate to slimview2 and extract the chart nonce.
+ *
+ * Must be called BEFORE any state that could break slimview2 rendering —
+ * specifically before activating the custom DB simulator, which causes
+ * wp_slimstat_db to query a non-existent slimext_slim_stats table.
  */
-async function captureChartData(
-  page: import('@playwright/test').Page,
-  startTs: number,
-  endTs: number,
-  granularity: 'weekly' | 'daily' | 'monthly' = 'weekly'
-): Promise<any> {
-  let chartResponse: any = null;
-
-  // Intercept the AJAX call for chart data
-  page.on('response', async (response) => {
-    if (
-      response.url().includes('admin-ajax.php') &&
-      response.request().method() === 'POST'
-    ) {
-      try {
-        const body = await response.text();
-        if (body.includes('datasets')) {
-          chartResponse = JSON.parse(body);
-        }
-      } catch {
-        // Ignore non-JSON responses
-      }
-    }
+async function extractChartNonce(page: import('@playwright/test').Page): Promise<string> {
+  await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+    waitUntil: 'domcontentloaded',
   });
-
-  // Navigate to the dashboard with a specific date range to trigger chart data load
-  // SlimStat uses start_date / end_date (YYYY-MM-DD) params
-  const fmt = (ts: number) => {
-    const d = new Date(ts * 1000);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-  const startDate = fmt(startTs);
-  const endDate = fmt(endTs);
-
-  await page.goto(
-    `${BASE_URL}/wp-admin/admin.php?page=slimview1&start_date=${startDate}&end_date=${endDate}&granularity=${granularity}`,
-    { waitUntil: 'domcontentloaded' }
-  );
-
-  // Wait for chart AJAX response to land
-  await page.waitForTimeout(6000);
-
-  return chartResponse;
+  const nonce = await page.evaluate(() => (window as any).slimstat_chart_vars?.nonce || null);
+  if (!nonce) throw new Error('slimstat_chart_vars.nonce not found — chart JS not loaded on slimview2');
+  return nonce;
 }
 
 /**
- * Sum all v1 values across all datasets buckets in a DataBuckets response.
+ * Call the slimstat_fetch_chart_data AJAX endpoint with a pre-fetched nonce.
+ * Use extractChartNonce() first, especially when page state may break slimview2.
  */
-function sumChartV1(chartData: any): number {
-  if (!chartData?.data?.datasets) return 0;
-  const datasets = chartData.data.datasets;
-  // datasets may be { v1: [...], v2: [...] } or an array — handle both
-  if (datasets.v1 && Array.isArray(datasets.v1)) {
-    return (datasets.v1 as number[]).reduce((a, b) => a + b, 0);
+async function callChartAjaxWithNonce(
+  page: import('@playwright/test').Page,
+  nonce: string,
+  startTs: number,
+  endTs: number,
+  granularity: 'weekly' | 'daily' | 'monthly' | 'hourly' | 'yearly' = 'weekly'
+): Promise<any> {
+  const args = JSON.stringify({
+    start: startTs,
+    end: endTs,
+    chart_data: {
+      data1: 'COUNT(id)',
+      data2: 'COUNT( DISTINCT ip )',
+    },
+  });
+
+  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'slimstat_fetch_chart_data', nonce, args, granularity },
+  });
+
+  expect(res.ok(), `Chart AJAX returned HTTP ${res.status()}`).toBe(true);
+  return res.json();
+}
+
+/**
+ * Convenience: extract nonce from slimview2 then call chart AJAX.
+ * Only use when slimview2 is guaranteed to render correctly (no custom DB active).
+ */
+async function callChartAjax(
+  page: import('@playwright/test').Page,
+  startTs: number,
+  endTs: number,
+  granularity: 'weekly' | 'daily' | 'monthly' | 'hourly' | 'yearly' = 'weekly'
+): Promise<any> {
+  const nonce = await extractChartNonce(page);
+  return callChartAjaxWithNonce(page, nonce, startTs, endTs, granularity);
+}
+
+/**
+ * Read the server-rendered chart data from the `data-data` HTML attribute.
+ * This is what the page shows on first load (without any AJAX interaction).
+ */
+async function readServerRenderedChart(page: import('@playwright/test').Page): Promise<any> {
+  const raw = await page.evaluate(() => {
+    const el = document.querySelector('[id^="slimstat_chart_data_"]');
+    return el ? el.getAttribute('data-data') : null;
+  });
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
   }
-  // Fallback: iterate all keys
-  let total = 0;
-  for (const key of Object.keys(datasets)) {
-    if (Array.isArray(datasets[key])) {
-      total += (datasets[key] as number[]).reduce((a: number, b: number) => a + b, 0);
-    }
+}
+
+/**
+ * Sum all v1 values in chart datasets.
+ * Handles both AJAX response structure (json.data.data.datasets.v1)
+ * and server-rendered structure (json.datasets.v1).
+ */
+function sumV1(json: any): number {
+  // AJAX response: { success: true, data: { data: { datasets: { v1: [...] } } } }
+  const ajaxDatasets = json?.data?.data?.datasets?.v1;
+  if (Array.isArray(ajaxDatasets)) {
+    return (ajaxDatasets as number[]).reduce((a, b) => a + b, 0);
   }
-  return total;
+  // Server-rendered: { datasets: { v1: [...] } }
+  const serverDatasets = json?.datasets?.v1;
+  if (Array.isArray(serverDatasets)) {
+    return (serverDatasets as number[]).reduce((a, b) => a + b, 0);
+  }
+  return 0;
 }
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
@@ -133,18 +164,18 @@ function sumChartV1(chartData: any): number {
 test.describe('DataBuckets chart accuracy — default and custom DB (Support #14684)', () => {
   test.setTimeout(180_000);
 
-  // 3-week range ending today
+  // 3-week range ending now
   const now = Math.floor(Date.now() / 1000);
   const week = 7 * 24 * 3600;
   const rangeStart = now - 3 * week;
   const rangeEnd = now;
 
   // Timestamps for records in each of 3 weeks
-  const week1Ts = rangeStart + Math.floor(week * 0.5);  // middle of week 1
-  const week2Ts = rangeStart + Math.floor(week * 1.5);  // middle of week 2
-  const week3Ts = rangeStart + Math.floor(week * 2.5);  // middle of week 3 (current)
+  const week1Ts = rangeStart + Math.floor(week * 0.5); // middle of week 1
+  const week2Ts = rangeStart + Math.floor(week * 1.5); // middle of week 2
+  const week3Ts = rangeStart + Math.floor(week * 2.5); // middle of week 3
 
-  test.beforeAll(async () => {
+  test.beforeAll(() => {
     installOptionMutator();
     installMuPluginByName('custom-db-simulator-mu-plugin.php');
   });
@@ -169,118 +200,216 @@ test.describe('DataBuckets chart accuracy — default and custom DB (Support #14
     await restoreOption('slimstat_test_use_custom_db');
   });
 
-  // ─── Test 1: Chart weekly totals match DB (default DB) ────────────────────
+  // ─── Test 1: Direct AJAX — sum matches DB count ──────────────────────────────
 
-  test('weekly chart total matches inserted record count — default DB', async ({ page }) => {
-    // Insert 9 known records across 3 weeks: 3 + 4 + 2
-    await insertRows(week1Ts, 3, 'w1');
-    await insertRows(week2Ts, 4, 'w2');
-    await insertRows(week3Ts, 2, 'w3');
+  test('direct AJAX: weekly chart v1 sum equals inserted record count (default DB)', async ({ page }) => {
+    // Insert 9 records across 3 weeks: 3 + 4 + 2
+    await insertRows(week1Ts, 3, 'ajax-w1');
+    await insertRows(week2Ts, 4, 'ajax-w2');
+    await insertRows(week3Ts, 2, 'ajax-w3');
 
     const dbCount = await countTestRows();
     expect(dbCount).toBe(9);
 
-    const chartData = await captureChartData(page, rangeStart, rangeEnd, 'weekly');
+    const json = await callChartAjax(page, rangeStart, rangeEnd, 'weekly');
 
-    // If chart data was captured via AJAX interception, verify totals
-    if (chartData?.success) {
-      const chartTotal = sumChartV1(chartData);
-      // Chart total should match DB — no records lost to phantom bucket
-      expect(chartTotal).toBeGreaterThanOrEqual(dbCount);
-      console.log(`Test 1: DB=${dbCount}, chart.v1 sum=${chartTotal}`);
-    } else {
-      // Chart AJAX wasn't intercepted — verify page renders without errors as fallback
-      const html = await page.content();
-      expect(html).not.toContain('Fatal error');
-      expect(html).not.toContain('Call to undefined function');
-      console.log(`Test 1: Chart AJAX not intercepted. DB=${dbCount}. Page rendered without errors.`);
+    // AJAX must succeed — nonce validated, no PHP error
+    expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
+
+    // Chart v1 (pageviews) sum must equal DB count — no records silently lost
+    const chartSum = sumV1(json);
+    expect(chartSum).toBe(dbCount);
+
+    // Correct number of labels: one per ISO week in range (3 weeks)
+    const labels: string[] = json?.data?.data?.labels ?? [];
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+
+    console.log(`Test 1 PASS — DB=${dbCount}, chart.v1 sum=${chartSum}, labels=${labels.length}`);
+  });
+
+  // ─── Test 2: Server-rendered — sum matches DB count ─────────────────────────
+
+  test('server-rendered chart data-data v1 sum >= inserted record count (default DB)', async ({ page }) => {
+    await insertRows(week1Ts, 3, 'sr-w1');
+    await insertRows(week2Ts, 4, 'sr-w2');
+    await insertRows(week3Ts, 2, 'sr-w3');
+
+    const dbCount = await countTestRows();
+    expect(dbCount).toBe(9);
+
+    // Navigate to slimview2 — chart reports (slim_p1_01) are rendered server-side here
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      waitUntil: 'domcontentloaded',
+    });
+    // Use 'attached' not 'visible' — chart elements may be inside collapsed postboxes
+    await page.waitForSelector('[id^="slimstat_chart_data_"]', { state: 'attached', timeout: 10_000 });
+
+    const chartData = await readServerRenderedChart(page);
+    expect(chartData, 'data-data attribute missing or empty').not.toBeNull();
+
+    // The page has a default date range (usually last 30 days); our records are within it
+    const chartSum = sumV1(chartData);
+    // chartSum >= 9: our 9 records should be in the default date range
+    // (may be > 9 if there is other existing data in the DB for this range)
+    expect(chartSum).toBeGreaterThanOrEqual(dbCount);
+
+    const html = await page.content();
+    expect(html).not.toContain('Fatal error');
+    expect(html).not.toContain('Undefined offset');
+
+    console.log(`Test 2 PASS — DB=${dbCount}, server-rendered sum=${chartSum}`);
+  });
+
+  // ─── Test 3: Out-of-range records are NOT counted ────────────────────────────
+
+  test('records with dt outside the AJAX range are excluded from chart datasets', async ({ page }) => {
+    // Insert 5 records INSIDE the 3-week range
+    await insertRows(week2Ts, 5, 'in-range');
+
+    // Insert 3 records OUTSIDE the range (7 days before rangeStart)
+    const beforeRangeTs = rangeStart - week;
+    await insertRows(beforeRangeTs, 3, 'out-of-range');
+
+    const totalDb = await countTestRows();
+    expect(totalDb).toBe(8); // 5 in + 3 out
+
+    const json = await callChartAjax(page, rangeStart, rangeEnd, 'weekly');
+    expect(json.success).toBe(true);
+
+    const chartSum = sumV1(json);
+    // Chart should only count the 5 in-range records — out-of-range are filtered by DB query
+    expect(chartSum).toBe(5);
+
+    console.log(`Test 3 PASS — total DB=${totalDb}, in-range=5, chart.v1 sum=${chartSum}`);
+  });
+
+  // ─── Test 4: Empty range — zero records, no crash ────────────────────────────
+
+  test('chart AJAX returns success with v1 sum = 0 when no records exist', async ({ page }) => {
+    // DB is cleared in beforeEach — no records at all
+    const dbCount = await countTestRows();
+    expect(dbCount).toBe(0);
+
+    const json = await callChartAjax(page, rangeStart, rangeEnd, 'weekly');
+
+    // Must not crash — DataBuckets must handle empty results gracefully
+    expect(json.success, `Expected success, got: ${JSON.stringify(json.data)}`).toBe(true);
+
+    const chartSum = sumV1(json);
+    expect(chartSum).toBe(0);
+
+    // Labels must still be generated (buckets exist even when empty)
+    const labels: string[] = json?.data?.data?.labels ?? [];
+    expect(labels.length).toBeGreaterThanOrEqual(3); // 3 weeks → ≥3 labels
+
+    console.log(`Test 4 PASS — empty range, chart.v1 sum=${chartSum}, labels=${labels.length}`);
+  });
+
+  // ─── Test 5: Custom DB filter active — chart AJAX remains stable ──────────────
+
+  test('chart AJAX succeeds and reads from default wp_slim_stats when slimstat_custom_wpdb filter is active', async ({ page }) => {
+    /**
+     * Regression test: activating the slimstat_custom_wpdb filter must NOT crash
+     * the chart AJAX endpoint. The filter only affects wp_slimstat::$wpdb (used for
+     * tracking writes and admin queries); Chart.php's sqlFor() always uses global $wpdb
+     * via Query.php, so it always reads from wp_slim_stats regardless of the filter.
+     *
+     * Architecture note (confirmed from code):
+     *   - Chart.php:sqlFor()  → Query::select()->from($wpdb->prefix.'slim_stats')
+     *   - Query.__construct()  → $this->db = global $wpdb   ← unchanged by the filter
+     *   - wp_slimstat::$wpdb   → slimext_ prefix            ← only affects admin ops
+     *
+     * This test verifies that:
+     *   1. The AJAX handler returns HTTP 200 (no fatal / no "already closed" error)
+     *   2. Chart data accurately reflects wp_slim_stats contents (data is NOT lost)
+     *   3. The off-by-one fix (DataBuckets.php:209) works correctly under this filter
+     */
+
+    // Create the external DB table (required so wp_slimstat_admin::init() doesn't crash
+    // when it runs SHOW TABLES LIKE 'wp_slim_stats' via wp_slimstat::$wpdb)
+    await getPool().execute('CREATE TABLE IF NOT EXISTS slimext_slim_stats LIKE wp_slim_stats');
+
+    try {
+      // Extract nonce BEFORE activating the filter (safe to do either way, but consistent)
+      const nonce = await extractChartNonce(page);
+
+      // Insert 5 records into wp_slim_stats (the default table Chart.php reads from)
+      await insertRows(week2Ts, 5, 'custom-db-default');
+
+      // Activate the custom DB simulator — wp_slimstat::$wpdb now has prefix 'slimext_'
+      await getPool().execute(
+        "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_test_use_custom_db', 'yes', 'yes') ON DUPLICATE KEY UPDATE option_value = 'yes'"
+      );
+
+      // Chart AJAX must succeed — the custom DB filter must NOT crash the handler
+      const json = await callChartAjaxWithNonce(page, nonce, rangeStart, rangeEnd, 'weekly');
+
+      expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
+
+      // Chart reads from wp_slim_stats (global $wpdb path) — our 5 records must be visible
+      const chartSum = sumV1(json);
+      expect(chartSum).toBe(5);
+
+      const labels: string[] = json?.data?.data?.labels ?? [];
+      expect(labels.length).toBeGreaterThanOrEqual(3);
+
+      console.log(`Test 5 PASS — custom DB filter active, chart reads default DB: sum=${chartSum}, labels=${labels.length}`);
+    } finally {
+      // Cleanup external DB table regardless of test outcome
+      await getPool().execute('DROP TABLE IF EXISTS slimext_slim_stats');
     }
   });
 
-  // ─── Test 2: Custom DB filter active — no read/write split ───────────────
+  // ─── Test 6: Phantom bucket regression — boundary records counted correctly ──
 
-  test('weekly chart total matches DB when slimstat_custom_wpdb filter is active', async ({ page }) => {
-    // Activate the custom DB simulator filter
-    // NOTE: Since Query.php uses global $wpdb (not filtered), this confirms
-    // that the filter being active does NOT split reads and writes.
-    await getPool().execute(
-      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_test_use_custom_db', 'yes', 'yes') ON DUPLICATE KEY UPDATE option_value = 'yes'"
+  test('DataBuckets off-by-one regression: records at last-week boundary land in valid bucket', async ({ page }) => {
+    /**
+     * Regression test for DataBuckets.php:209 off-by-one:
+     *
+     * OLD: `$offset <= $this->points`  → allowed $offset == points → phantom bucket
+     * NEW: `$offset >= 0 && $offset < $this->points` → only [0, points-1] valid
+     *
+     * Scenario: insert records across ALL 3 weeks including specifically in week 3
+     * (the last valid bucket). With the old code, a calculation error could cause
+     * some last-week records to be placed in an out-of-bounds index.
+     *
+     * Assertion: sum(datasets.v1) == count of records inserted within the range.
+     * If any records silently fall into a phantom bucket, the sum will be less
+     * than the DB count — and this test will catch it.
+     */
+
+    // Insert 2 records near the end of the range (last week, close to rangeEnd)
+    // These are the records most likely to trigger the off-by-one
+    const lastWeekTs = rangeEnd - 3600; // 1 hour before end
+    const midLastWeekTs = rangeEnd - Math.floor(week * 0.25); // 1.75 days before end
+    await insertRows(lastWeekTs, 2, 'phantom-end');
+    await insertRows(midLastWeekTs, 3, 'phantom-mid-last');
+
+    // Also insert in weeks 1 and 2 to verify those buckets are fine
+    await insertRows(week1Ts, 1, 'phantom-w1');
+    await insertRows(week2Ts, 1, 'phantom-w2');
+
+    const dbCount = await countTestRows();
+    expect(dbCount).toBe(7); // 2 + 3 + 1 + 1
+
+    const json = await callChartAjax(page, rangeStart, rangeEnd, 'weekly');
+    expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
+
+    const chartSum = sumV1(json);
+
+    // Critical assertion: ALL valid records must appear in chart.
+    // If the off-by-one bug is present, records near the range boundary
+    // would land in datasets[points] (phantom, no label) and be invisible.
+    expect(chartSum).toBe(dbCount);
+
+    // Verify no extra phantom datasets beyond label count
+    const labels: string[] = json?.data?.data?.labels ?? [];
+    const v1Array: number[] = json?.data?.data?.datasets?.v1 ?? [];
+    // After the fix, v1 array length should match labels length
+    expect(v1Array.length).toBeLessThanOrEqual(labels.length);
+
+    console.log(
+      `Test 6 PASS — DB=${dbCount}, chart.v1 sum=${chartSum}, labels=${labels.length}, v1 array length=${v1Array.length}`
     );
-
-    // Insert 9 records spanning 3 weeks
-    await insertRows(week1Ts, 3, 'custom-w1');
-    await insertRows(week2Ts, 4, 'custom-w2');
-    await insertRows(week3Ts, 2, 'custom-w3');
-
-    const dbCount = await countTestRows();
-    expect(dbCount).toBe(9);
-
-    // Trigger a live pageview to confirm new tracking still writes to the correct DB
-    const ctxAnon = await page.context().browser()!.newContext({ storageState: undefined } as any);
-    const anonPage = await ctxAnon.newPage();
-    await anonPage.goto(`${BASE_URL}/?databuckets-custom-db-live`, { waitUntil: 'domcontentloaded' });
-    await anonPage.waitForTimeout(3000);
-    await anonPage.close();
-    await ctxAnon.close();
-
-    // Count rows again — the live tracking row should be present
-    const [liveRows] = (await getPool().execute(
-      "SELECT COUNT(*) as cnt FROM wp_slim_stats WHERE resource LIKE '%databuckets-custom-db-live%'"
-    )) as any;
-    const liveCount = parseInt(liveRows[0].cnt, 10);
-    // Live tracking may or may not fire depending on settings/user agent filtering
-    // Assert at minimum the 9 inserted rows are still present
-    const totalAfterLive = await countTestRows();
-    expect(totalAfterLive).toBe(9);
-
-    // Navigate to chart
-    const chartData = await captureChartData(page, rangeStart, rangeEnd, 'weekly');
-
-    if (chartData?.success) {
-      const chartTotal = sumChartV1(chartData);
-      // Chart should see at least the 9 DB rows — no split
-      expect(chartTotal).toBeGreaterThanOrEqual(9);
-      console.log(`Test 2 (custom DB): DB=${totalAfterLive}, chart.v1 sum=${chartTotal}, live rows=${liveCount}`);
-    } else {
-      const html = await page.content();
-      expect(html).not.toContain('Fatal error');
-      console.log(`Test 2 (custom DB): Chart AJAX not intercepted. DB=${totalAfterLive}. No fatal error.`);
-    }
-  });
-
-  // ─── Test 3: Boundary edge case — last week of range still counted ────────
-
-  test('records at the last-week boundary are counted in chart, not phantom bucket', async ({ page }) => {
-    // Insert records specifically into the last week of the 3-week range
-    // With the old bug ($offset <= $this->points), records at offset == 3 would
-    // land in datasets[3] with no label and be silently invisible.
-    // After fix ($offset >= 0 && $offset < $this->points), these are correctly
-    // placed at offset 2 (last bucket) or rejected if truly out of bounds.
-    const lastWeekTs = rangeEnd - 3600; // 1 hour before range end
-    await insertRows(lastWeekTs, 5, 'boundary');
-
-    const dbCount = await countTestRows();
-    expect(dbCount).toBe(5);
-
-    const chartData = await captureChartData(page, rangeStart, rangeEnd, 'weekly');
-
-    if (chartData?.success) {
-      const chartTotal = sumChartV1(chartData);
-      // After fix: boundary records counted in valid bucket, not phantom
-      expect(chartTotal).toBeGreaterThanOrEqual(5);
-
-      // Also confirm no PHP error about undefined offset
-      const html = await page.content();
-      expect(html).not.toContain('Undefined offset');
-      expect(html).not.toContain('Fatal error');
-
-      console.log(`Test 3 (boundary): DB=${dbCount}, chart.v1 sum=${chartTotal}`);
-    } else {
-      // Fallback: page must render without errors
-      const html = await page.content();
-      expect(html).not.toContain('Fatal error');
-      expect(html).not.toContain('Undefined offset');
-      console.log(`Test 3 (boundary): Chart AJAX not intercepted. DB=${dbCount}. No errors.`);
-    }
   });
 });

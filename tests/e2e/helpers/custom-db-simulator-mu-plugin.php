@@ -20,5 +20,17 @@ add_filter('slimstat_custom_wpdb', function ($current_wpdb) {
     $custom         = clone $GLOBALS['wpdb'];
     $custom->prefix = 'slimext_';
 
+    // Reset the protected $result property to prevent "mysqli_result already closed" errors.
+    // clone() creates a shallow copy: $custom->result still references the same mysqli_result
+    // object as $GLOBALS['wpdb']->result. When the original wpdb frees that result on its next
+    // query, $custom->result holds a dangling closed resource → fatal on next use.
+    try {
+        $ref = new ReflectionProperty('wpdb', 'result');
+        $ref->setAccessible(true);
+        $ref->setValue($custom, null);
+    } catch (ReflectionException $e) {
+        // If reflection fails, proceed anyway; the worst case is a query-monitor warning.
+    }
+
     return $custom;
 });
