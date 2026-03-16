@@ -104,7 +104,8 @@ class DataBuckets
     {
         $start       = (new \DateTime())->setTimestamp($this->start);
         $end         = (new \DateTime())->setTimestamp($this->end);
-        $startOfWeek = get_option('start_of_week', 1);
+        $startOfWeek = (int) get_option('start_of_week', 1);
+        $dayNames    = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
         // Adjust start to the first day of the week
         $firstLabel     = $start->format($this->labelFormat);
@@ -115,7 +116,7 @@ class DataBuckets
         }
 
         // Move start to the next week if it is not the start of the week
-        $start->modify('next ' . jddayofweek($startOfWeek - 1, 1));
+        $start->modify('next ' . $dayNames[$startOfWeek]);
         if ($start->getTimestamp() <= $this->start) {
             $start->modify('+1 week');
         }
