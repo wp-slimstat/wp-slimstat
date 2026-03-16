@@ -1,3 +1,12 @@
+= 5.4.3 - 2026-03-16 =
+
+Fixed
+- Fixed fatal error on servers without the PHP calendar extension ([PR #229](https://github.com/wp-slimstat/wp-slimstat/pull/229))
+- Added defensive fallback for corrupted `start_of_week` option in calendar-related reports
+
+Improved
+- Moved day names array to a class constant in DataBuckets for better maintainability
+
 = 5.4.2 - 2026-03-15 =
 
 Fixed
