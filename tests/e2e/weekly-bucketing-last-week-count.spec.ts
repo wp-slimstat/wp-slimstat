@@ -173,6 +173,10 @@ test.describe('Weekly bucketing: last week hit count (March 14-17 bug)', () => {
    *   Bucket 4: Mar 16 (Mon) - Mar 17 (Tue) ← should contain only Mar 16-17 data
    */
   test('March 14 data lands in Mar 9 bucket, NOT in Mar 16 bucket (sow=1)', async () => {
+    // Explicitly set start_of_week=1 (Monday) — don't rely on WP default
+    await snapshotOption('start_of_week');
+    await getPool().execute("UPDATE wp_options SET option_value = '1' WHERE option_name = 'start_of_week'");
+
     // Seed: 3 hits on Mar 14 (Saturday), 2 hits on Mar 15 (Sunday),
     //        5 hits on Mar 16 (Monday), 4 hits on Mar 17 (Tuesday)
     const mar14 = utcMidnight('2026-03-14'); // Saturday
@@ -226,6 +230,8 @@ test.describe('Weekly bucketing: last week hit count (March 14-17 bug)', () => {
     expect(v1.length).toBe(labels.length);
 
     console.log('Test 1 PASS — Mar 14 correctly in Mar 9 bucket, Mar 16-17 in last bucket');
+
+    await restoreOption('start_of_week');
   });
 
   /**
