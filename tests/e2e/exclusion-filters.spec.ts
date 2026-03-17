@@ -1,0 +1,263 @@
+/**
+ * E2E: Exclusion Filters — validates ignore_content_types, ignore_bots,
+ * ignore_resources, and ignore_wp_users in the tracking pipeline.
+ *
+ * Covers GitHub issue #233 (CPT exclusion requires cpt: prefix).
+ *
+ * @see jaan-to/outputs/qa/cases/10-exclusion-filters/10-test-cases-exclusion-filters.md
+ */
+import { test, expect } from '@playwright/test';
+import {
+  getPool,
+  closeDb,
+  clearStatsTable,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
+  installHeaderInjector,
+  uninstallHeaderInjector,
+  setHeaderOverrides,
+  enableDisableWpCron,
+  restoreWpConfig,
+} from './helpers/setup';
+import { BASE_URL } from './helpers/env';
+import * as path from 'path';
+import * as fs from 'fs';
+import { WP_ROOT } from './helpers/env';
+
+// ─── CPT registration mu-plugin ──────────────────────────────────
+const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
+const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
+
+const CPT_MU_PLUGIN_CONTENT = `<?php
+/**
+ * E2E Test: Register 'product' CPT for exclusion filter testing.
+ */
+if (!defined('ABSPATH')) exit;
+add_action('init', function() {
+    register_post_type('product', [
+        'public'       => true,
+        'label'        => 'Products',
+        'has_archive'  => true,
+        'rewrite'      => ['slug' => 'product'],
+        'supports'     => ['title', 'editor'],
+        'show_in_rest' => true,
+    ]);
+});
+`;
+
+function installCptMuPlugin(): void {
+  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
+  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
+}
+
+function uninstallCptMuPlugin(): void {
+  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
+}
+
+// ─── DB helpers ──────────────────────────────────────────────────
+
+async function getRecentStatByResource(resourceLike: string): Promise<any | null> {
+  const [rows] = await getPool().execute(
+    'SELECT id, resource, content_type, browser_type, username FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
+    [`%${resourceLike}%`]
+  ) as any;
+  return rows.length > 0 ? rows[0] : null;
+}
+
+async function getStatCount(): Promise<number> {
+  const [rows] = await getPool().execute('SELECT COUNT(*) as cnt FROM wp_slim_stats') as any;
+  return rows[0].cnt;
+}
+
+async function createProductPost(title: string, slug: string): Promise<number> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const [result] = await getPool().execute(
+    `INSERT INTO wp_posts (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_name, post_modified, post_modified_gmt, post_type, to_ping, pinged, post_content_filtered)
+     VALUES (1, ?, ?, 'Test content.', ?, '', 'publish', 'closed', 'closed', ?, ?, ?, 'product', '', '', '')`,
+    [now, now, title, slug, now, now]
+  ) as any;
+  return result.insertId;
+}
+
+// ─── Test suite ──────────────────────────────────────────────────
+
+test.describe('Exclusion Filters (@tracking-exclusions)', () => {
+  test.beforeAll(async () => {
+    enableDisableWpCron();
+    installCptMuPlugin();
+    await snapshotSlimstatOptions();
+    // Ensure server-side tracking is on
+    await setSlimstatSetting('javascript_mode', 'off');
+    await setSlimstatSetting('is_tracking', 'on');
+  });
+
+  test.afterAll(async () => {
+    await restoreSlimstatOptions();
+    uninstallCptMuPlugin();
+    restoreWpConfig();
+    await closeDb();
+  });
+
+  test.beforeEach(async () => {
+    await clearStatsTable();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 1: CPT exclusion WITH cpt: prefix — should exclude
+  // REQ-EXCL-003 — @smoke @positive @priority-critical
+  // ────────────────────────────────────────────────────────────────
+  test('CPT excluded when ignore_content_types contains cpt:product', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', 'cpt:product');
+
+    // Create product post via direct DB insert
+    const slug = `e2e-cpt-excl-${Date.now()}`;
+    const postId = await createProductPost('E2E CPT Exclusion Test', slug);
+    // Use pretty permalink to avoid 301 redirect being tracked as redirect:301
+    const productUrl = `${BASE_URL}/product/${slug}/`;
+
+    // Clear stats after post creation
+    await clearStatsTable();
+
+    // Visit single product post as anonymous user
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
+    await anonPage.waitForTimeout(4000);
+
+    // Check that no row was tracked for this specific resource
+    const stat = await getRecentStatByResource(slug);
+    expect(stat).toBeNull();
+
+    await anonPage.close();
+    await anonCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 2: CPT exclusion WITHOUT prefix — should NOT exclude
+  // REQ-EXCL-004 — @smoke @negative @priority-critical
+  // Confirms GitHub issue #233 behavior
+  // ────────────────────────────────────────────────────────────────
+  test('CPT NOT excluded when ignore_content_types lacks cpt: prefix (#233)', async ({ browser }) => {
+    // Set exclusion WITHOUT the cpt: prefix — this should fail to match
+    await setSlimstatSetting('ignore_content_types', 'product');
+
+    // Create product post via direct DB insert
+    const slug = `e2e-cpt-noprefix-${Date.now()}`;
+    const postId = await createProductPost('E2E No-Prefix Product', slug);
+    // Use pretty permalink to avoid 301 redirect being tracked as redirect:301
+    const productUrl = `${BASE_URL}/product/${slug}/`;
+
+    // Clear stats after post creation
+    await clearStatsTable();
+
+    // Visit as anonymous
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
+    await anonPage.waitForTimeout(4000);
+
+    // Without cpt: prefix, the exclusion should NOT match — pageview tracked
+    const stat = await getRecentStatByResource(slug);
+    expect(stat).not.toBeNull();
+
+    // Verify the tracked row has content_type starting with 'cpt:'
+    expect(stat!.content_type).toMatch(/^cpt:/);
+
+    await anonPage.close();
+    await anonCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 3: Bot exclusion — ignore_bots=on excludes Googlebot
+  // REQ-EXCL-001 — @smoke @positive @priority-critical
+  // ────────────────────────────────────────────────────────────────
+  test('Bot excluded when ignore_bots is on with Googlebot UA', async ({ browser }) => {
+    await setSlimstatSetting('ignore_bots', 'on');
+
+    // Install header injector to override UA server-side
+    installHeaderInjector();
+    setHeaderOverrides({ 'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)' });
+
+    const countBefore = await getStatCount();
+
+    // Visit with Googlebot UA
+    const anonCtx = await browser.newContext({
+      userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+    });
+    const anonPage = await anonCtx.newPage();
+    const marker = `e2e-bot-test-${Date.now()}`;
+    await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+    await anonPage.waitForTimeout(4000);
+
+    const countAfter = await getStatCount();
+
+    // Bot should be excluded
+    expect(countAfter).toBe(countBefore);
+
+    await anonPage.close();
+    await anonCtx.close();
+    uninstallHeaderInjector();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 4: Permalink exclusion — ignore_resources with /wp-login.php
+  // REQ-EXCL-005 — @smoke @positive @priority-critical
+  // ────────────────────────────────────────────────────────────────
+  test('Permalink excluded when ignore_resources matches /wp-login.php', async ({ browser }) => {
+    await setSlimstatSetting('ignore_resources', '/wp-login.php');
+
+    const countBefore = await getStatCount();
+
+    // Visit wp-login.php as anonymous
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
+    await anonPage.waitForTimeout(4000);
+
+    const countAfter = await getStatCount();
+
+    // wp-login.php should be excluded
+    expect(countAfter).toBe(countBefore);
+
+    await anonPage.close();
+    await anonCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 5: User exclusion — ignore_wp_users=on with logged-in admin
+  // REQ-EXCL-006 — @smoke @positive @priority-critical
+  // ────────────────────────────────────────────────────────────────
+  test('Logged-in admin excluded when ignore_wp_users is on', async ({ browser }) => {
+    await setSlimstatSetting('ignore_wp_users', 'on');
+
+    // Login directly in a fresh browser context
+    const adminCtx = await browser.newContext();
+    const adminPage = await adminCtx.newPage();
+    await adminPage.goto(`${BASE_URL}/wp-login.php`);
+    await adminPage.fill('#user_login', 'parhumm');
+    await adminPage.fill('#user_pass', 'testpass123');
+    await adminPage.click('#wp-submit');
+    await adminPage.waitForURL('**/wp-admin/**', { timeout: 30_000 });
+
+    // Clear stats table after login
+    await clearStatsTable();
+
+    // Navigate as logged-in admin to a frontend page with a marker
+    const marker = `e2e-user-excl-${Date.now()}`;
+    await adminPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+    await adminPage.waitForTimeout(4000);
+
+    // Check specifically for a tracked row matching our marker URL
+    const [rows] = await getPool().execute(
+      'SELECT id, resource, username, content_type FROM wp_slim_stats WHERE resource LIKE ?',
+      [`%${marker}%`]
+    ) as any;
+
+    // Admin should NOT be tracked — no row matching our marker
+    expect(rows.length).toBe(0);
+
+    await adminPage.close();
+    await adminCtx.close();
+  });
+});
