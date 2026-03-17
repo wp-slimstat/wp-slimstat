@@ -195,7 +195,21 @@ class DataBuckets
                 $offset = $diff->y * 12 + $diff->m;
             }
         } elseif ('WEEK' === $this->gran) {
-            $offset = date('W', $dt) - date('W', $base) + (date('Y', $dt) - date('Y', $base)) * 52;
+            $startOfWeek = (int) get_option('start_of_week', 1);
+
+            // Calculate the start-of-week date for both base and dt
+            // This respects WordPress start_of_week setting instead of using ISO weeks
+            $baseDayOfWeek = (int) date('w', $base); // 0=Sun, 6=Sat
+            $baseDiff = ($baseDayOfWeek - $startOfWeek + 7) % 7;
+            $baseWeekStart = strtotime(date('Y-m-d', strtotime("-{$baseDiff} days", $base)));
+
+            $dtDayOfWeek = (int) date('w', $dt);
+            $dtDiff = ($dtDayOfWeek - $startOfWeek + 7) % 7;
+            $dtWeekStart = strtotime(date('Y-m-d', strtotime("-{$dtDiff} days", $dt)));
+
+            // Calculate weeks between the two week start dates
+            $offset = (int) round(($dtWeekStart - $baseWeekStart) / (7 * 86400));
+
             if ($offset < 0) {
                 $offset = -1;
             }
