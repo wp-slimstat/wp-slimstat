@@ -43,6 +43,8 @@ add_action('init', function() {
         'supports'     => ['title', 'editor'],
         'show_in_rest' => true,
     ]);
+    // Flush rewrite rules so /product/{slug}/ pretty permalinks resolve immediately.
+    flush_rewrite_rules();
 });
 `;
 
@@ -123,11 +125,13 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const anonCtx = await browser.newContext();
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
-    await anonPage.waitForTimeout(4000);
 
-    // Check that no row was tracked for this specific resource
-    const stat = await getRecentStatByResource(slug);
-    expect(stat).toBeNull();
+    // Server-side tracking fires during shutdown (same PHP request), so the DB
+    // state is settled by the time goto() resolves. Poll until consistent null.
+    await expect.poll(
+      () => getRecentStatByResource(slug),
+      { timeout: 6_000, intervals: [500] }
+    ).toBeNull();
 
     await anonPage.close();
     await anonCtx.close();
@@ -155,13 +159,16 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const anonCtx = await browser.newContext();
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
-    await anonPage.waitForTimeout(4000);
 
-    // Without cpt: prefix, the exclusion should NOT match — pageview tracked
-    const stat = await getRecentStatByResource(slug);
-    expect(stat).not.toBeNull();
+    // Without cpt: prefix, the exclusion should NOT match — pageview tracked.
+    // Poll until the row appears (expect.poll returns void, so fetch separately for assertions).
+    await expect.poll(
+      () => getRecentStatByResource(slug),
+      { timeout: 10_000, intervals: [500] }
+    ).not.toBeNull();
 
     // Verify the tracked row has content_type starting with 'cpt:'
+    const stat = await getRecentStatByResource(slug);
     expect(stat!.content_type).toMatch(/^cpt:/);
 
     await anonPage.close();
@@ -181,23 +188,27 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
 
     const countBefore = await getStatCount();
 
-    // Visit with Googlebot UA
-    const anonCtx = await browser.newContext({
-      userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
-    });
-    const anonPage = await anonCtx.newPage();
-    const marker = `e2e-bot-test-${Date.now()}`;
-    await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await anonPage.waitForTimeout(4000);
+    let anonCtx: import('@playwright/test').BrowserContext | undefined;
+    let anonPage: import('@playwright/test').Page | undefined;
+    try {
+      // Visit with Googlebot UA
+      anonCtx = await browser.newContext({
+        userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+      });
+      anonPage = await anonCtx.newPage();
+      const marker = `e2e-bot-test-${Date.now()}`;
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
 
-    const countAfter = await getStatCount();
-
-    // Bot should be excluded
-    expect(countAfter).toBe(countBefore);
-
-    await anonPage.close();
-    await anonCtx.close();
-    uninstallHeaderInjector();
+      // Bot should be excluded — poll to confirm count stays unchanged
+      await expect.poll(
+        () => getStatCount(),
+        { timeout: 6_000, intervals: [500] }
+      ).toBe(countBefore);
+    } finally {
+      await anonPage?.close();
+      await anonCtx?.close();
+      uninstallHeaderInjector();
+    }
   });
 
   // ────────────────────────────────────────────────────────────────
@@ -213,12 +224,12 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const anonCtx = await browser.newContext();
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
-    await anonPage.waitForTimeout(4000);
 
-    const countAfter = await getStatCount();
-
-    // wp-login.php should be excluded
-    expect(countAfter).toBe(countBefore);
+    // wp-login.php should be excluded — poll to confirm count stays unchanged
+    await expect.poll(
+      () => getStatCount(),
+      { timeout: 6_000, intervals: [500] }
+    ).toBe(countBefore);
 
     await anonPage.close();
     await anonCtx.close();
@@ -246,16 +257,12 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Navigate as logged-in admin to a frontend page with a marker
     const marker = `e2e-user-excl-${Date.now()}`;
     await adminPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await adminPage.waitForTimeout(4000);
 
-    // Check specifically for a tracked row matching our marker URL
-    const [rows] = await getPool().execute(
-      'SELECT id, resource, username, content_type FROM wp_slim_stats WHERE resource LIKE ?',
-      [`%${marker}%`]
-    ) as any;
-
-    // Admin should NOT be tracked — no row matching our marker
-    expect(rows.length).toBe(0);
+    // Admin should NOT be tracked — poll to confirm no row matching our marker appears
+    await expect.poll(
+      () => getRecentStatByResource(marker),
+      { timeout: 6_000, intervals: [500] }
+    ).toBeNull();
 
     await adminPage.close();
     await adminCtx.close();
