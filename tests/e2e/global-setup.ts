@@ -49,7 +49,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // Login as admin (parhumm)
   await loginAndSave(
     baseURL,
-    'parhumm',
+    'bashiri',
     'testpass123',
     path.join(AUTH_DIR, 'admin.json')
   );
