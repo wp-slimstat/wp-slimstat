@@ -195,17 +195,10 @@ class DataBuckets
                 $offset = $diff->y * 12 + $diff->m;
             }
         } elseif ('WEEK' === $this->gran) {
-            $startOfWeek = (int) get_option('start_of_week', 1);
-
             // Calculate the start-of-week date for both base and dt
             // This respects WordPress start_of_week setting instead of using ISO weeks
-            $baseDayOfWeek = (int) date('w', $base); // 0=Sun, 6=Sat
-            $baseDiff = ($baseDayOfWeek - $startOfWeek + 7) % 7;
-            $baseWeekStart = strtotime(date('Y-m-d', strtotime("-{$baseDiff} days", $base)));
-
-            $dtDayOfWeek = (int) date('w', $dt);
-            $dtDiff = ($dtDayOfWeek - $startOfWeek + 7) % 7;
-            $dtWeekStart = strtotime(date('Y-m-d', strtotime("-{$dtDiff} days", $dt)));
+            $baseWeekStart = $this->getWeekStartTimestamp($base);
+            $dtWeekStart = $this->getWeekStartTimestamp($dt);
 
             // Calculate weeks between the two week start dates
             $offset = (int) round(($dtWeekStart - $baseWeekStart) / (7 * 86400));
@@ -243,6 +236,18 @@ class DataBuckets
             $timestamp = strtotime($offset, $baseTime);
             return date($params['data_points_label'], $timestamp);
         }, $labels, array_keys($labels));
+    }
+
+    /**
+     * Get the start-of-week timestamp for a given timestamp.
+     * Respects WordPress start_of_week setting.
+     */
+    private function getWeekStartTimestamp(int $timestamp): int
+    {
+        $startOfWeek = (int) get_option('start_of_week', 1);
+        $dayOfWeek = (int) date('w', $timestamp); // 0=Sun, 6=Sat
+        $diff = ($dayOfWeek - $startOfWeek + 7) % 7;
+        return strtotime(date('Y-m-d', strtotime("-{$diff} days", $timestamp)));
     }
 
     private function shiftDatasets(): void
@@ -284,7 +289,7 @@ class DataBuckets
             'prev_labels'   => $this->prev_labels,
             'datasets'      => $this->datasets,
             'datasets_prev' => $this->datasetsPrev,
-            'today'         => 'WEEK' === $this->gran && wp_date('YW', $this->end, wp_timezone()) === wp_date('YW', time(), wp_timezone()) ? str_replace("'", '', $this->labels[count($this->labels) - 1]) : wp_date($this->labelFormat, time(), wp_timezone()),
+            'today'         => 'WEEK' === $this->gran && $this->getWeekStartTimestamp($this->end) === $this->getWeekStartTimestamp(time()) ? str_replace("'", '', $this->labels[count($this->labels) - 1]) : wp_date($this->labelFormat, time(), wp_timezone()),
             'granularity'   => $this->gran,
         ];
     }
