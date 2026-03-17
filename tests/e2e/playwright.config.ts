@@ -12,6 +12,9 @@ export default defineConfig({
   timeout: 45_000,
   retries: process.env.CI ? 1 : 0,
   fullyParallel: false, // Tests modify shared state (wp-config, DB options)
+  // Single worker required: chart tests use TRUNCATE TABLE for isolation,
+  // which would race with parallel workers. Do NOT increase without
+  // switching to per-test user_agent filtering or transaction rollback.
   workers: 1,
   maxFailures: process.env.CI ? 10 : 0, // Fail-fast in CI; run all locally
   reporter: [

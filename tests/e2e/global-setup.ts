@@ -46,7 +46,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
-  // Login as admin (parhumm)
+  // Login as admin (parhumm — administrator role)
   await loginAndSave(
     baseURL,
     'parhumm',
