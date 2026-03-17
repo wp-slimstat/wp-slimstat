@@ -412,4 +412,52 @@ test.describe('DataBuckets chart accuracy — default and custom DB (Support #14
       `Test 6 PASS — DB=${dbCount}, chart.v1 sum=${chartSum}, labels=${labels.length}, v1 array length=${v1Array.length}`
     );
   });
+
+  // ─── Test 7: Monthly granularity — sum matches DB count ──────────────────────
+
+  test('chart AJAX with MONTHLY granularity: v1 sum equals inserted record count', async ({ page }) => {
+    /**
+     * Coverage gap for DataBuckets.php:209 fix — MONTH granularity uses a
+     * different offset formula ($diff->y * 12 + $diff->m) from WEEK.
+     * Records before the range start calculate to offset -1 and are rejected
+     * by the >= 0 check (not shifted, just dropped — shiftDatasets() is dead).
+     *
+     * This test verifies that records within a 2-month range all land in valid
+     * buckets and the chart sum equals the DB count.
+     */
+
+    // Fixed 2-month range: 2026-02-01 → 2026-03-31 UTC (past, cache-eligible range)
+    const monthStart = 1738368000; // 2026-02-01 00:00 UTC
+    const monthEnd   = 1743379199; // 2026-03-31 23:59 UTC
+    const feb15Ts    = 1739577600; // 2026-02-15 UTC (mid Feb)
+    const mar10Ts    = 1741564800; // 2026-03-10 UTC (mid Mar)
+
+    await insertRows(feb15Ts, 4, 'month-feb');
+    await insertRows(mar10Ts, 3, 'month-mar');
+
+    const dbCount = await countTestRows();
+    expect(dbCount).toBe(7);
+
+    // Clear transients — past ranges are cached; stale cache from other tests would fail this
+    await getPool().execute(
+      "DELETE FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'"
+    );
+
+    const json = await callChartAjax(page, monthStart, monthEnd, 'monthly');
+    expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
+
+    const chartSum = sumV1(json);
+
+    // All 7 records are within the 2-month range; none should fall to offset -1
+    expect(chartSum).toBe(dbCount);
+
+    const labels: string[] = json?.data?.data?.labels ?? [];
+    expect(labels.length).toBeGreaterThanOrEqual(2); // Feb + Mar
+
+    // v1 array length must not exceed label count (no phantom bucket beyond bounds)
+    const v1Array: number[] = json?.data?.data?.datasets?.v1 ?? [];
+    expect(v1Array.length).toBeLessThanOrEqual(labels.length);
+
+    console.log(`Test 7 PASS — monthly: DB=${dbCount}, chart.v1 sum=${chartSum}, labels=${labels.length}`);
+  });
 });
