@@ -77,6 +77,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.4.4 - 2026-03-17 =
 - **Fix**: Chart data not showing due to incorrect bounds check ([PR #232](https://github.com/wp-slimstat/wp-slimstat/pull/232))
+- **Fix**: Weekly chart not showing today's data and not respecting start_of_week setting ([PR #235](https://github.com/wp-slimstat/wp-slimstat/pull/235))
 - **Improved**: Added `cpt:` prefix guidance to content type exclusion setting
 
 = 5.4.3 - 2026-03-16 =
