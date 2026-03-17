@@ -206,7 +206,7 @@ class DataBuckets
         }
 
         // Ensure offset is within bounds
-        if ($offset <= $this->points) {
+        if ($offset >= 0 && $offset < $this->points) {
             $target = 'current' === $period ? 'datasets' : 'datasetsPrev';
             if (!isset($this->{$target}['v1'][$offset])) {
                 $this->{$target}['v1'][$offset] = 0;
