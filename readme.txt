@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.3
+Stable tag: 5.4.4
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,10 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.4 - 2026-03-17 =
+- **Fix**: Chart data not showing due to incorrect bounds check ([PR #232](https://github.com/wp-slimstat/wp-slimstat/pull/232))
+- **Improved**: Added `cpt:` prefix guidance to content type exclusion setting
+
 = 5.4.3 - 2026-03-16 =
 - **Fix**: Fixed fatal error on servers without the PHP calendar extension ([PR #229](https://github.com/wp-slimstat/wp-slimstat/pull/229))
 - **Fix**: Added defensive fallback for corrupted `start_of_week` option in calendar-related reports
