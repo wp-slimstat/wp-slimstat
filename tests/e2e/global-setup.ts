@@ -46,10 +46,10 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
-  // Login as admin (parhumm)
+  // Login as admin (parhumm — administrator role)
   await loginAndSave(
     baseURL,
-    'bashiri',
+    'parhumm',
     'testpass123',
     path.join(AUTH_DIR, 'admin.json')
   );

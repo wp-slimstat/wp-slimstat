@@ -14,134 +14,25 @@
  *   - Previous period data populated for both granularities
  */
 import { test, expect } from '@playwright/test';
-import { execSync } from 'child_process';
-import * as fs from 'fs';
-import * as path from 'path';
-import { getPool, closeDb, snapshotOption, restoreOption } from './helpers/setup';
-import { WP_ROOT } from './helpers/env';
-
-// ─── WP-CLI chart AJAX simulation ───────────────────────────────────────────
-
-function fetchChartData(startTs: number, endTs: number, granularity: string): any {
-  const tmpFile = path.join('/tmp', `slimstat-gran-${Date.now()}.php`);
-  const phpCode = `<?php
-wp_set_current_user(get_users(['role' => 'administrator', 'number' => 1])[0]->ID);
-
-$_POST['args'] = json_encode([
-    'start' => ${startTs},
-    'end' => ${endTs},
-    'chart_data' => [
-        'data1' => 'COUNT(id)',
-        'data2' => 'COUNT( DISTINCT ip )',
-    ],
-]);
-$_POST['granularity'] = '${granularity}';
-$_REQUEST['granularity'] = '${granularity}';
-$_POST['nonce'] = wp_create_nonce('slimstat_chart_nonce');
-$_REQUEST['_ajax_nonce'] = $_POST['nonce'];
-
-global $wpdb;
-$wpdb->query("DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'");
-
-ob_start();
-try {
-    \\SlimStat\\Modules\\Chart::ajaxFetchChartData();
-} catch (\\Throwable $e) {
-    ob_end_clean();
-    echo json_encode(['error' => $e->getMessage()]);
-    exit;
-}
-$output = ob_get_clean();
-echo $output;
-`;
-
-  fs.writeFileSync(tmpFile, phpCode);
-
-  function extractJson(raw: string): any {
-    const start = raw.indexOf('{"success"');
-    if (start === -1) return null;
-    try {
-      return JSON.parse(raw.substring(start));
-    } catch {
-      let depth = 0;
-      for (let i = start; i < raw.length; i++) {
-        if (raw[i] === '{') depth++;
-        if (raw[i] === '}') depth--;
-        if (depth === 0) {
-          try { return JSON.parse(raw.substring(start, i + 1)); } catch { return null; }
-        }
-      }
-    }
-    return null;
-  }
-
-  try {
-    const raw = execSync(`wp eval-file "${tmpFile}" --path="${WP_ROOT}" 2>/dev/null`, {
-      encoding: 'utf8',
-      timeout: 30_000,
-    });
-    const parsed = extractJson(raw);
-    if (parsed) return parsed;
-    throw new Error(`No JSON in output: ${raw.substring(0, 300)}`);
-  } catch (e: any) {
-    if (e.stdout) {
-      const parsed = extractJson(e.stdout);
-      if (parsed) return parsed;
-    }
-    throw new Error(`WP-CLI chart call failed: ${e.message}`);
-  } finally {
-    try { fs.unlinkSync(tmpFile); } catch {}
-  }
-}
-
-// ─── DB helpers ───────────────────────────────────────────────────────────────
-
-async function insertRows(timestamp: number, count: number, label: string): Promise<void> {
-  const pool = getPool();
-  for (let i = 0; i < count; i++) {
-    await pool.execute(
-      `INSERT INTO wp_slim_stats (dt, ip, resource, browser, browser_version, platform, language, visit_id, user_agent)
-       VALUES (?, CONCAT('10.0.0.', FLOOR(RAND()*254)+1), ?, 'test', '0', 'test', 'en', 1, 'gran-validation-e2e')`,
-      [timestamp + i * 60, `/gran-${label}-${i}`]
-    );
-  }
-}
-
-async function clearTestData(): Promise<void> {
-  await getPool().execute("TRUNCATE TABLE wp_slim_stats");
-  await getPool().execute(
-    "DELETE FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'"
-  );
-}
-
-function utcMidnight(dateStr: string): number {
-  return Math.floor(new Date(dateStr + 'T00:00:00Z').getTime() / 1000);
-}
-
-function getV1(json: any): number[] {
-  return json?.data?.data?.datasets?.v1 ?? [];
-}
-
-function getV1Prev(json: any): number[] {
-  return json?.data?.data?.datasets_prev?.v1 ?? [];
-}
-
-function getLabels(json: any): string[] {
-  return json?.data?.data?.labels ?? [];
-}
-
-function sumArr(arr: number[]): number {
-  return arr.reduce((a, b) => a + b, 0);
-}
+import { getPool, snapshotOption, restoreOption } from './helpers/setup';
+import {
+  fetchChartData, insertRows, clearTestData,
+  getV1, getV1Prev, getLabels, sumArr, utcMidnight,
+} from './helpers/chart';
 
 // ─── DAILY TESTS ──────────────────────────────────────────────────────────────
 
 test.describe('Daily chart granularity', () => {
   test.setTimeout(90_000);
 
+  test.beforeAll(async () => {
+    await snapshotOption('start_of_week');
+    await getPool().execute("UPDATE wp_options SET option_value = '1' WHERE option_name = 'start_of_week'");
+  });
+
   test.afterAll(async () => {
+    await restoreOption('start_of_week');
     await clearTestData();
-    await closeDb();
   });
 
   test.beforeEach(async () => {
@@ -179,7 +70,6 @@ test.describe('Daily chart granularity', () => {
     expect(chartSum, 'Daily sum must match DB').toBe(totalExpected);
     expect(v1.length, 'Bucket count = label count').toBe(labels.length);
 
-    // Each seeded date should have exactly 5 in its bucket
     const nonZero = v1.filter(v => v > 0);
     expect(nonZero.length, '11 days with data').toBe(11);
     for (const val of nonZero) {
@@ -229,9 +119,7 @@ test.describe('Daily chart granularity', () => {
    * Test D3: Daily previous period is populated
    */
   test('D3: daily previous period data is populated', async () => {
-    // Current period
     await insertRows(utcMidnight('2026-03-10'), 8, 'curr');
-    // Previous period (28 days earlier)
     await insertRows(utcMidnight('2026-02-10'), 12, 'prev');
 
     const rangeStart = utcMidnight('2026-02-18');
@@ -258,9 +146,14 @@ test.describe('Daily chart granularity', () => {
 test.describe('Monthly chart granularity', () => {
   test.setTimeout(90_000);
 
+  test.beforeAll(async () => {
+    await snapshotOption('start_of_week');
+    await getPool().execute("UPDATE wp_options SET option_value = '1' WHERE option_name = 'start_of_week'");
+  });
+
   test.afterAll(async () => {
+    await restoreOption('start_of_week');
     await clearTestData();
-    await closeDb();
   });
 
   test.beforeEach(async () => {
@@ -269,11 +162,8 @@ test.describe('Monthly chart granularity', () => {
 
   /**
    * Test M1: Monthly buckets — data grouped by calendar month
-   *
-   * Range: 6 months (Sep 2025 - Mar 2026) to trigger monthly granularity
    */
   test('M1: monthly buckets match DB total for 5-month range', async () => {
-    // Seed data across months (start from Nov to avoid first-bucket edge case)
     await insertRows(utcMidnight('2025-11-20'), 15, 'nov');
     await insertRows(utcMidnight('2025-12-25'), 20, 'dec');
     await insertRows(utcMidnight('2026-01-10'), 25, 'jan');
@@ -281,7 +171,6 @@ test.describe('Monthly chart granularity', () => {
     await insertRows(utcMidnight('2026-03-07'), 35, 'mar');
     const totalExpected = 15 + 20 + 25 + 30 + 35; // 125
 
-    // Start range at mid-October to avoid first-bucket timezone edge case
     const rangeStart = utcMidnight('2025-10-15');
     const rangeEnd = utcMidnight('2026-03-17') + 86399;
 
@@ -300,7 +189,6 @@ test.describe('Monthly chart granularity', () => {
     expect(chartSum, 'Monthly sum must match DB').toBe(totalExpected);
     expect(v1.length, 'Bucket count = label count').toBe(labels.length);
 
-    // November through March should each have their exact count
     const novIdx = labels.findIndex(l => l.includes('November'));
     const decIdx = labels.findIndex(l => l.includes('December'));
     const janIdx = labels.findIndex(l => l.includes('January'));
@@ -355,9 +243,7 @@ test.describe('Monthly chart granularity', () => {
    * Test M3: Monthly previous period is populated
    */
   test('M3: monthly previous period data is populated', async () => {
-    // Current period
     await insertRows(utcMidnight('2026-02-15'), 10, 'curr');
-    // Previous period (6 months earlier = ~Aug 2025)
     await insertRows(utcMidnight('2025-08-15'), 15, 'prev');
 
     const rangeStart = utcMidnight('2025-10-01');
@@ -398,7 +284,6 @@ test.describe('Monthly chart granularity', () => {
     console.log('Labels:', labels);
     console.log('V1:', v1);
 
-    // Feb bucket and Mar bucket should be separate
     const febIdx = labels.findIndex(l => l.includes('February'));
     const marIdx = labels.findIndex(l => l.includes('March'));
 
@@ -418,7 +303,6 @@ test.describe('Cross-granularity consistency', () => {
 
   test.afterAll(async () => {
     await clearTestData();
-    await closeDb();
   });
 
   test.beforeEach(async () => {
@@ -433,7 +317,6 @@ test.describe('Cross-granularity consistency', () => {
     await getPool().execute("UPDATE wp_options SET option_value = '6' WHERE option_name = 'start_of_week'");
 
     try {
-      // Seed from Nov onwards to avoid monthly first-bucket edge case
       const dates = [
         '2025-11-20', '2025-12-25',
         '2026-01-10', '2026-02-14', '2026-02-28',
