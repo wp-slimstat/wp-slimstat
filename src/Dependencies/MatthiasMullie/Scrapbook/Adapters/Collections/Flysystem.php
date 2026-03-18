@@ -2,9 +2,9 @@
 
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections;
 
-use League\Flysystem\FileNotFoundException;
-use League\Flysystem\Filesystem;
-use League\Flysystem\UnableToDeleteFile;
+use SlimStat\Dependencies\League\Flysystem\FileNotFoundException;
+use SlimStat\Dependencies\League\Flysystem\Filesystem;
+use SlimStat\Dependencies\League\Flysystem\UnableToDeleteFile;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Flysystem as Adapter;
 /**
  * Flysystem 1.x and 2.x adapter for a subset of data, in a subfolder.

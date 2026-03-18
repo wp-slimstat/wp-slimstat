@@ -2,12 +2,12 @@
 
 namespace SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters;
 
-use League\Flysystem\FileExistsException;
-use League\Flysystem\FileNotFoundException;
-use League\Flysystem\Filesystem;
-use League\Flysystem\UnableToDeleteFile;
-use League\Flysystem\UnableToReadFile;
-use League\Flysystem\UnableToWriteFile;
+use SlimStat\Dependencies\League\Flysystem\FileExistsException;
+use SlimStat\Dependencies\League\Flysystem\FileNotFoundException;
+use SlimStat\Dependencies\League\Flysystem\Filesystem;
+use SlimStat\Dependencies\League\Flysystem\UnableToDeleteFile;
+use SlimStat\Dependencies\League\Flysystem\UnableToReadFile;
+use SlimStat\Dependencies\League\Flysystem\UnableToWriteFile;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\Adapters\Collections\Flysystem as Collection;
 use SlimStat\Dependencies\MatthiasMullie\Scrapbook\KeyValueStore;
 /**
@@ -33,7 +33,7 @@ class Flysystem implements KeyValueStore
     public function __construct(Filesystem $filesystem)
     {
         $this->filesystem = $filesystem;
-        $this->version = class_exists('League\Flysystem\Local\LocalFilesystemAdapter') ? 2 : 1;
+        $this->version = class_exists('SlimStat\Dependencies\League\Flysystem\Local\LocalFilesystemAdapter') ? 2 : 1;
     }
     /**
      * {@inheritdoc}
