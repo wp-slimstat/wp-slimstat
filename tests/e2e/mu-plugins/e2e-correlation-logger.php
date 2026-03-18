@@ -55,3 +55,5 @@ add_filter('slimstat_filter_pageview_stat', function (array $stat) use ($_e2e_ta
 
     return $stat;
 }, 99); // Late priority to run after all built-in notes are appended.
+
+unset($_e2e_run_id, $_e2e_tag); // prevent global scope pollution via wp-settings.php include
