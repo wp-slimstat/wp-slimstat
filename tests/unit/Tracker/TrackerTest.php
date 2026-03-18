@@ -72,9 +72,7 @@ class TrackerTest extends WpSlimstatTestCase
         } catch (\Throwable $e) {
             // Query builder throws because there is no DB in unit scope — expected.
         }
-
-        // If we reached here, sanitize_url was called (Monkey would have failed otherwise).
-        $this->assertTrue(true, 'sanitize_url was invoked for the resource field');
+        // Brain Monkey tearDown verifies the ->once() expectation; no assertion needed here.
     }
 
     /**
@@ -101,8 +99,7 @@ class TrackerTest extends WpSlimstatTestCase
         } catch (\Throwable $e) {
             // Query builder throws without a DB — expected.
         }
-
-        $this->assertTrue(true, 'sanitize_text_field was invoked for non-resource fields');
+        // Brain Monkey tearDown verifies the ->once() expectation; no assertion needed here.
     }
 
     // -----------------------------------------------------------------------

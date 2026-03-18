@@ -24,4 +24,16 @@ abstract class WpSlimstatTestCase extends TestCase
         Monkey\tearDown(); // resets WP stubs, closes Mockery, restores Patchwork
         parent::tearDown();
     }
+
+    /**
+     * Stubs the common WP sanitization/escape functions used throughout Tracker tests.
+     * Call from a test's setUp() or at the start of tests that exercise code calling these.
+     */
+    protected function stubCommonWpFunctions(): void
+    {
+        Monkey\Functions\stubs([
+            'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
+            'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
+        ]);
+    }
 }

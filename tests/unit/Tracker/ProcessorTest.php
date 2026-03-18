@@ -29,6 +29,20 @@ class ProcessorTest extends WpSlimstatTestCase
         \wp_slimstat::$is_programmatic_tracking = false;
     }
 
+    /**
+     * Clear all proxy IP headers from $_SERVER so Utils::getRemoteIp() reads only REMOTE_ADDR.
+     */
+    private function clearProxyHeaders(): void
+    {
+        foreach ([
+            'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP',
+        ] as $key) {
+            unset($_SERVER[$key]);
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Consent gate
     // -----------------------------------------------------------------------
@@ -82,11 +96,7 @@ class ProcessorTest extends WpSlimstatTestCase
                 return $value;
             });
 
-        // Stub WP functions that run before the IP check.
-        Functions\stubs([
-            'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
-            'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
-        ]);
+        $this->stubCommonWpFunctions();
 
         // Seed stat with a timestamp so the dt-empty check passes.
         \wp_slimstat::set_stat(['dt' => time(), 'notes' => []]);
@@ -95,11 +105,7 @@ class ProcessorTest extends WpSlimstatTestCase
         // output by clearing the relevant superglobal keys.
         $backup = $_SERVER;
         $_SERVER['REMOTE_ADDR'] = '';
-        foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR',
-                  'HTTP_FORWARDED', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP',
-                  'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'] as $key) {
-            unset($_SERVER[$key]);
-        }
+        $this->clearProxyHeaders();
 
         try {
             $result = \SlimStat\Tracker\Processor::process();
@@ -136,10 +142,7 @@ class ProcessorTest extends WpSlimstatTestCase
                 return $value;
             });
 
-        Functions\stubs([
-            'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
-            'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
-        ]);
+        $this->stubCommonWpFunctions();
 
         \wp_slimstat::set_stat(['dt' => time(), 'notes' => []]);
 
@@ -147,11 +150,7 @@ class ProcessorTest extends WpSlimstatTestCase
         // FILTER_VALIDATE_IP accepts 0.0.0.0, so it will pass the validation
         // inside Utils::getRemoteIp() and land in $ip_array[0].
         $_SERVER['REMOTE_ADDR'] = '0.0.0.0';
-        foreach (['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR',
-                  'HTTP_FORWARDED', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP',
-                  'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'] as $key) {
-            unset($_SERVER[$key]);
-        }
+        $this->clearProxyHeaders();
 
         try {
             $result = \SlimStat\Tracker\Processor::process();

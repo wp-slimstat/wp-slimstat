@@ -19,7 +19,7 @@
  *   if (out.includes('FIXTURE_SKIP:multisite')) test.skip();
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -40,10 +40,9 @@ export function seedProfile(profile: SiteProfile, wpPath = '/var/www/html'): str
     const fixturePath = path.join(__dirname, `${profile}.php`);
 
     try {
-        const output = execSync(
-            `wp eval-file "${fixturePath}" --path="${wpPath}" --allow-root`,
-            { stdio: 'pipe' }
-        );
+        const output = execFileSync('wp', ['eval-file', fixturePath, `--path=${wpPath}`, '--allow-root'], {
+            stdio: 'pipe',
+        });
         return output.toString();
     } catch (err) {
         const message = (err as NodeJS.ErrnoException & { stdout?: Buffer; stderr?: Buffer }).stdout?.toString()

@@ -154,8 +154,8 @@ test.describe('Analytics Correctness Invariants', () => {
     await page.goto(`${BASE_URL}/?e2e=${marker}`);
     await page.waitForLoadState('networkidle');
 
-    // Allow extra time for any deferred/beacon requests to settle
-    await page.waitForTimeout(4_000);
+    // Poll until the row appears (or 15s deadline), then wait a further settle window.
+    await waitForStatRow(marker);
 
     const count = await countStatRows(marker);
 
@@ -168,13 +168,11 @@ test.describe('Analytics Correctness Invariants', () => {
   // ─── Bonus: sequential pageviews each get their own distinct row ────────
 
   test('INV-5: two sequential pageviews produce two distinct rows with different IDs', async ({ page }) => {
-    const marker1 = `${RUN_ID}-inv5a-${Date.now()}`;
-    // Small timestamp offset so marker2 is always distinct even on fast machines
-    const marker2 = `${RUN_ID}-inv5b-${Date.now() + 1}`;
+    const marker1 = `${RUN_ID}-inv5a`;
+    const marker2 = `${RUN_ID}-inv5b`;
 
     await page.goto(`${BASE_URL}/?e2e=${marker1}`);
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1_500);
 
     await page.goto(`${BASE_URL}/?e2e=${marker2}`);
     await page.waitForLoadState('networkidle');
