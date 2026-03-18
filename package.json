@@ -6,9 +6,15 @@
     "build": "esbuild wp-slimstat.js --bundle --minify --sourcemap --outfile=wp-slimstat.min.js",
     "test:e2e": "npx playwright test --config=tests/e2e/playwright.config.ts",
     "test:perf": "k6 run tests/perf/geoip-load.js",
-    "test:qa": "bash tests/run-qa.sh"
+    "test:qa": "bash tests/run-qa.sh",
+    "wp-env": "wp-env",
+    "env:start": "wp-env start",
+    "env:stop": "wp-env stop",
+    "env:clean": "wp-env clean",
+    "env:run": "wp-env run tests-cli"
   },
   "devDependencies": {
+    "@wordpress/env": "^10.0.0",
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs2": "^7.0.0",
     "@playwright/test": "^1.58.2",
