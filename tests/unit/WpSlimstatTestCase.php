@@ -9,6 +9,8 @@ use PHPUnit\Framework\TestCase;
 
 abstract class WpSlimstatTestCase extends TestCase
 {
+    // MockeryPHPUnitIntegration provides assertion-count verification;
+    // Brain Monkey owns Mockery::close() in tearDown — the double-close is harmless (no-op).
     use MockeryPHPUnitIntegration;
 
     protected function setUp(): void
@@ -19,7 +21,7 @@ abstract class WpSlimstatTestCase extends TestCase
 
     protected function tearDown(): void
     {
-        Monkey\tearDown();
+        Monkey\tearDown(); // resets WP stubs, closes Mockery, restores Patchwork
         parent::tearDown();
     }
 }
