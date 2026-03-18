@@ -52,7 +52,6 @@ if (!class_exists('wp_slimstat')) {
             'ignore_prefetch'          => 'off',
             'extend_session'           => 'off',
             'track_same_domain_referers' => 'off',
-            'anonymize_ip'             => 'off',
             'secret'                   => 'test-secret',
         ];
 
