@@ -29,8 +29,19 @@ class ComposerAutoloaderInit09c8e0e0cfea3b2fb368cb99a2eeaaec
         require __DIR__ . '/autoload_static.php';
         call_user_func(\Composer\Autoload\ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec::getInitializer($loader));
 
-        $loader->setClassMapAuthoritative(true);
         $loader->register(true);
+
+        $filesToLoad = \Composer\Autoload\ComposerStaticInit09c8e0e0cfea3b2fb368cb99a2eeaaec::$files;
+        $requireFile = \Closure::bind(static function ($fileIdentifier, $file) {
+            if (empty($GLOBALS['__composer_autoload_files'][$fileIdentifier])) {
+                $GLOBALS['__composer_autoload_files'][$fileIdentifier] = true;
+
+                require $file;
+            }
+        }, null, null);
+        foreach ($filesToLoad as $fileIdentifier => $file) {
+            $requireFile($fileIdentifier, $file);
+        }
 
         return $loader;
     }
