@@ -1,0 +1,253 @@
+##############################################################################
+# wp-slimstat CI — 3-Tier Pipeline
+#
+# Tier 1 · fast      PHPUnit unit tests + PHP lint   every push / PR
+# Tier 2 · standard  Playwright E2E via wp-env        push/PR to main/development
+# Tier 3 · nightly   Full PHP matrix + k6 perf        cron 02:00 UTC daily
+##############################################################################
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  schedule:
+    # Tier 3 nightly — 02:00 UTC
+    - cron: "0 2 * * *"
+
+##############################################################################
+# TIER 1 — fast (PHPUnit unit + PHP lint, target <3 min)
+# Runs on: every push and every pull_request
+##############################################################################
+jobs:
+  fast:
+    name: "Tier 1 · fast · PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ["7.4", "8.2"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+          # PHP 8.5 deprecation notices from vendor are expected — do not use
+          # --quiet; --no-progress suppresses download bars without hiding test output.
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-
+
+      - name: Install Composer dependencies
+        # mozart post-install hook requires a global mozart binary which is not
+        # available in CI — skip the hook with --no-scripts; the autoloader is
+        # still generated via the next step.
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        run: composer dump-autoload --no-interaction
+
+      - name: Run PHPUnit unit tests
+        run: composer test:unit
+
+      - name: PHP syntax lint (src/)
+        # Print only files with errors; grep exits 1 when nothing matches (no
+        # errors), so we invert: fail only when errors ARE found.
+        run: |
+          ERRORS=$(find src/ -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          if [ -n "$ERRORS" ]; then
+            echo "$ERRORS"
+            exit 1
+          fi
+          echo "No syntax errors found."
+
+##############################################################################
+# TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
+# Runs on: push or PR targeting main or development branches only
+##############################################################################
+  standard:
+    name: "Tier 2 · standard · E2E"
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name != 'schedule' &&
+      (
+        github.ref == 'refs/heads/main' ||
+        github.ref == 'refs/heads/development' ||
+        (github.event_name == 'pull_request' &&
+          (github.base_ref == 'main' || github.base_ref == 'development'))
+      )
+
+    env:
+      TEST_BASE_URL: http://localhost:8889
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install npm dependencies
+        run: npm ci --no-progress
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start wp-env
+        # @wordpress/env ships as a devDependency; invoke via npx so we don't
+        # need a global install.  wp-env requires Docker — ubuntu-latest runners
+        # ship with Docker pre-installed.
+        run: npx wp-env start
+        timeout-minutes: 5
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          retention-days: 7
+
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
+
+##############################################################################
+# TIER 3 — nightly (full PHP matrix + k6 perf, runs on cron schedule only)
+##############################################################################
+  nightly:
+    name: "Tier 3 · nightly · PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        run: composer dump-autoload --no-interaction
+
+      - name: Run full PHPUnit suite
+        # composer test:all runs phpunit + all standalone PHP test scripts.
+        # Individual scripts may exit non-zero on CI if they depend on a live DB
+        # or environment; run phpunit directly for the nightly matrix gate.
+        run: composer test:unit
+
+      # ── k6 performance tests ─────────────────────────────────────────────
+      # Only run k6 on one PHP version to avoid redundant load generation.
+      - name: Install k6
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Set up Node.js (for wp-env + k6 tests)
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Install npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        run: npm ci --no-progress
+
+      - name: Start wp-env (for k6 target)
+        if: ${{ matrix.php == '8.2' }}
+        run: npx wp-env start
+        timeout-minutes: 5
+
+      - name: Run k6 performance tests
+        if: ${{ matrix.php == '8.2' }}
+        env:
+          # k6 thresholds enforced inside tests/perf/geoip-load.js:
+          #   p(95) < 200   (200 ms)
+          #   p(99) < 500   (500 ms)
+          #   error_rate  < 0.005  (0.5 %)
+          #   db_write_p95 < 20    (20 ms) — requires custom trend metric in the script
+          K6_BASE_URL: http://localhost:8889
+        run: npm run test:perf
+
+      # ── EXPLAIN gate (placeholder) ───────────────────────────────────────
+      # TODO: implement a custom script (or k6 extension) that:
+      #   1. Captures SHOW STATUS / slow-query log during k6 run.
+      #   2. Re-runs suspect queries with EXPLAIN.
+      #   3. Fails this step if any row shows access_type=ALL on a table whose
+      #      row count (SHOW TABLE STATUS) exceeds 100,000.
+      # Scaffold below runs a no-op until the script is written.
+      - name: EXPLAIN gate — full-table-scan check
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          echo "[TODO] EXPLAIN gate not yet implemented."
+          echo "       Add a script at tests/perf/explain-gate.sh that:"
+          echo "         1. Extracts queries logged during k6 run."
+          echo "         2. Runs EXPLAIN on each query against the wp-env DB."
+          echo "         3. Fails (exit 1) if access_type=ALL on table row_count > 100000."
+          exit 0
+
+      - name: Stop wp-env
+        if: ${{ matrix.php == '8.2' && always() }}
+        run: npx wp-env stop
