@@ -54,20 +54,26 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
-  // Login as admin (parhumm — administrator role)
+  // Login as admin — override via WP_ADMIN_USER / WP_ADMIN_PASS env vars.
+  // CI default: admin / password (wp-env). Local default: parhumm / testpass123.
+  const adminUser = process.env.WP_ADMIN_USER ?? 'parhumm';
+  const adminPass = process.env.WP_ADMIN_PASS ?? 'testpass123';
   await loginAndSave(
     baseURL,
-    'parhumm',
-    'testpass123',
+    adminUser,
+    adminPass,
     path.join(AUTH_DIR, 'admin.json')
   );
 
-  // Login as author (dordane) — non-fatal; some test environments lack this user
+  // Login as author — override via WP_AUTHOR_USER / WP_AUTHOR_PASS env vars.
+  // Non-fatal; some test environments lack this user.
+  const authorUser = process.env.WP_AUTHOR_USER ?? 'dordane';
+  const authorPass = process.env.WP_AUTHOR_PASS ?? 'testpass123';
   try {
     await loginAndSave(
       baseURL,
-      'dordane',
-      'testpass123',
+      authorUser,
+      authorPass,
       path.join(AUTH_DIR, 'author.json')
     );
   } catch (e) {

@@ -143,6 +143,11 @@ jobs:
         timeout-minutes: 5
 
       - name: Run E2E tests
+        env:
+          # wp-env creates a fresh WordPress with default admin credentials.
+          # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
+          WP_ADMIN_USER: admin
+          WP_ADMIN_PASS: password
         run: npm run test:e2e
 
       - name: Upload Playwright report (on failure)
