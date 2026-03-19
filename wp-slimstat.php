@@ -1194,6 +1194,7 @@ class wp_slimstat
 			}
 			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
 			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
+			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
 			$params['gdpr_consent_method'] = $method;
 		}
 

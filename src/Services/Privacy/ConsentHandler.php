@@ -36,7 +36,12 @@ class ConsentHandler
 	 */
 	public static function handleConsentRevoked()
 	{
-		check_ajax_referer('wp_rest', 'nonce');
+		// Only verify nonce for logged-in users. Anonymous users on cached pages
+		// don't have a valid nonce. This endpoint only deletes the caller's own
+		// tracking cookie, so there is no CSRF attack surface for anonymous users.
+		if (get_current_user_id() > 0) {
+			check_ajax_referer('wp_rest', 'nonce');
+		}
 
 		if (function_exists('wp_cache_delete')) {
 			wp_cache_delete('slimstat_consent_state', 'slimstat');
@@ -95,14 +100,19 @@ class ConsentHandler
 			$pageview_id_raw = isset($_POST['pageview_id']) ? sanitize_text_field(wp_unslash($_POST['pageview_id'])) : '';
 		}
 
-		if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
-			if ($return_json) {
-				wp_send_json_error([
-					'message' => __('Invalid security token.', 'wp-slimstat'),
-				]);
-				return;
+		// Only verify nonce for logged-in users. Anonymous users on cached pages
+		// don't have a valid nonce. This endpoint only sets the caller's own
+		// consent cookie, so there is no CSRF attack surface for anonymous users.
+		if (get_current_user_id() > 0) {
+			if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
+				if ($return_json) {
+					wp_send_json_error([
+						'message' => __('Invalid security token.', 'wp-slimstat'),
+					]);
+					return;
+				}
+				return false;
 			}
-			return false;
 		}
 
 		if (empty(\wp_slimstat::$settings['use_slimstat_banner']) ||

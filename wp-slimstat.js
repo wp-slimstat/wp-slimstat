@@ -2079,6 +2079,19 @@ if (!window.requestIdleCallback) {
                 return;
             }
 
+            // Cached page guard: check if user already has a consent cookie.
+            // On cached pages the banner HTML is baked into the static response
+            // even though the user previously consented. Detect and suppress.
+            var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
+            var existingConsent = detectSlimStatBanner(cookieName, "statistics");
+            if (existingConsent !== null) {
+                if (banner.parentNode) {
+                    banner.parentNode.removeChild(banner);
+                }
+                bannerInitialized = true;
+                return;
+            }
+
             bannerInitialized = true;
 
             setTimeout(function () {
@@ -2143,12 +2156,16 @@ if (!window.requestIdleCallback) {
             var nonce = params.wp_rest_nonce || "";
             var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
             var cookiePath = params.gdpr_cookie_path || params.baseurl || "/";
+            var cookieDomain = params.gdpr_cookie_domain || "";
 
             // Set cookie immediately
             try {
                 var expiry = new Date();
                 expiry.setTime(expiry.getTime() + 365 * 24 * 60 * 60 * 1000);
                 var cookie = cookieName + "=" + consent + "; path=" + cookiePath + "; expires=" + expiry.toUTCString() + "; SameSite=Lax";
+                if (cookieDomain) {
+                    cookie += "; domain=" + cookieDomain;
+                }
                 if (window && window.location && window.location.protocol === "https:") {
                     cookie += "; Secure";
                 }
