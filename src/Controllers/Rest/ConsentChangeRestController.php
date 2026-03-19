@@ -150,8 +150,7 @@ class ConsentChangeRestController implements RestControllerInterface
 		// don't have a valid nonce (wp_rest_nonce is only generated for logged-in
 		// users). This endpoint only modifies the caller's own consent state
 		// (cookie-based), so there is no CSRF attack surface for anonymous users.
-		$user_id = get_current_user_id();
-		if ($user_id > 0) {
+		if (get_current_user_id() > 0) {
 			$nonce = $request->get_param('nonce');
 			if (!wp_verify_nonce($nonce, 'wp_rest')) {
 				return new \WP_Error(

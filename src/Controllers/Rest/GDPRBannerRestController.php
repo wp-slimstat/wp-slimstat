@@ -69,8 +69,7 @@ class GDPRBannerRestController implements RestControllerInterface
 		// Only verify nonce for logged-in users. Anonymous users on cached pages
 		// don't have a valid nonce. This endpoint only sets the caller's own
 		// consent cookie, so there is no CSRF attack surface for anonymous users.
-		$user_id = get_current_user_id();
-		if ($user_id > 0) {
+		if (get_current_user_id() > 0) {
 			$nonce = $request->get_param('nonce');
 			if (!wp_verify_nonce($nonce, 'wp_rest')) {
 				return new \WP_Error(
