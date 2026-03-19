@@ -167,29 +167,23 @@ jobs:
 
           echo "WP_ROOT=$WP_VOL" >> $GITHUB_ENV
 
-          # ── MySQL container internal IP ─────────────────────────────────
-          MYSQL_CTR=$(docker ps --format "{{.Names}}" | grep -i "mysql\|mariadb" | head -1)
+          # ── MySQL access via host-mapped port ────────────────────────────
+          # wp-env maps container port 3306 to a dynamic host port.
+          # Use docker port to discover it (more reliable than container IP).
+          MYSQL_CTR=$(docker ps --format "{{.Names}}" | grep -i "tests-mysql\|tests-mariadb" | head -1)
           echo "MySQL container: $MYSQL_CTR"
 
-          MYSQL_IP=$(docker inspect "$MYSQL_CTR" \
-            --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
-          # Use first IP if multiple networks return multiple IPs
-          MYSQL_IP=$(echo "$MYSQL_IP" | tr ' ' '\n' | grep -v '^$' | head -1)
-          echo "MySQL IP: $MYSQL_IP"
+          MYSQL_HOST_PORT=$(docker port "$MYSQL_CTR" 3306 2>/dev/null | head -1 | cut -d: -f2)
+          echo "MySQL host port: $MYSQL_HOST_PORT"
 
-          # Get exact database name used by the wp-env test site (port 8889).
-          # wp-env run tests uses the test WordPress instance's WP-CLI.
-          DB_NAME=$(npx wp-env run tests wp config get DB_NAME --quiet 2>/dev/null || true)
-          # Strip carriage returns / whitespace (Windows line endings from Docker)
-          DB_NAME=$(echo "$DB_NAME" | tr -d '\r' | xargs)
-          echo "Database name from wp-cli: '$DB_NAME'"
-          # Fall back to "wordpress" if WP-CLI discovery fails
-          DB_NAME="${DB_NAME:-wordpress}"
+          # Read DB_NAME directly from wp-config.php (now accessible via WP_VOL)
+          DB_NAME=$(grep -oP "define\(\s*'DB_NAME'\s*,\s*'\K[^']+" "$WP_VOL/wp-config.php" || echo "wordpress")
+          echo "Database name from wp-config: '$DB_NAME'"
 
-          # Disable Unix socket; switch to TCP
+          # Disable Unix socket; use TCP via host-mapped port
           echo "MYSQL_SOCKET=" >> $GITHUB_ENV
-          echo "MYSQL_HOST=${MYSQL_IP:-127.0.0.1}" >> $GITHUB_ENV
-          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_PORT=${MYSQL_HOST_PORT:-3306}" >> $GITHUB_ENV
           echo "MYSQL_USER=root" >> $GITHUB_ENV
           echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
           echo "MYSQL_DATABASE=$DB_NAME" >> $GITHUB_ENV
