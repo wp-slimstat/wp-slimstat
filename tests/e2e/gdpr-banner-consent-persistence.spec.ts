@@ -192,7 +192,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
 
     // Click Accept
-    await newPage.click('[data-consent="accepted"]', { force: true });
+    await newPage.locator('[data-consent="accepted"]').dispatchEvent('click');
     await newPage.waitForTimeout(3000);
 
     // Banner should be removed from DOM
@@ -263,7 +263,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
 
     // Click Decline
-    await newPage.click('[data-consent="denied"]', { force: true });
+    await newPage.locator('[data-consent="denied"]').dispatchEvent('click');
     await newPage.waitForTimeout(3000);
 
     // Banner should be removed from DOM
@@ -486,7 +486,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await expect(testPage.locator('#slimstat-gdpr-banner')).toBeVisible();
 
     // Step 4: Click Accept
-    await testPage.click('[data-consent="accepted"]', { force: true });
+    await testPage.locator('[data-consent="accepted"]').dispatchEvent('click');
     await testPage.waitForTimeout(3000);
 
     // Step 5: Consent-change response should be 200 (not 403)
@@ -540,7 +540,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
 
     // Click Accept to trigger cookie creation
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
-    await newPage.click('[data-consent="accepted"]', { force: true });
+    await newPage.locator('[data-consent="accepted"]').dispatchEvent('click');
     await newPage.waitForTimeout(3000);
 
     // Read cookies
@@ -596,7 +596,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await newPage.waitForTimeout(3000);
 
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
-    await newPage.click('[data-consent="accepted"]', { force: true });
+    await newPage.locator('[data-consent="accepted"]').dispatchEvent('click');
     await newPage.waitForTimeout(3000);
 
     // Navigate across multiple pages and verify banner never reappears
