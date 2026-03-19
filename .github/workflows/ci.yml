@@ -142,6 +142,47 @@ jobs:
         run: npx wp-env start
         timeout-minutes: 5
 
+      - name: Expose wp-env filesystem and MySQL to E2E tests
+        # wp-env runs WordPress inside Docker containers. The E2E test helpers
+        # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
+        # and direct MySQL access. This step:
+        #   1. Finds the WordPress container and its volume path on the host.
+        #   2. Makes wp-config.php and mu-plugins writable by the runner user.
+        #   3. Sets WP_ROOT so setup.ts points at the real WordPress root.
+        #   4. Finds the MySQL container's internal IP for TCP connections.
+        #   5. Sets MYSQL_* env vars (socket disabled, TCP used instead).
+        run: |
+          # ── WordPress container and volume ─────────────────────────────
+          WP_CTR=$(docker ps --format "{{.Names}}" | grep -v "cli" | grep -v "mysql\|mariadb" | head -1)
+          echo "WordPress container: $WP_CTR"
+
+          WP_VOL=$(docker inspect "$WP_CTR" \
+            --format '{{range .Mounts}}{{if eq .Destination "/var/www/html"}}{{.Source}}{{end}}{{end}}')
+          echo "WP volume path: $WP_VOL"
+
+          # Grant runner user write access to wp-config.php and mu-plugins
+          sudo mkdir -p "$WP_VOL/wp-content/mu-plugins"
+          sudo chown -R "$(id -u):$(id -g)" "$WP_VOL/wp-content/mu-plugins"
+          sudo chown "$(id -u):$(id -g)" "$WP_VOL/wp-config.php"
+
+          echo "WP_ROOT=$WP_VOL" >> $GITHUB_ENV
+
+          # ── MySQL container internal IP ─────────────────────────────────
+          MYSQL_CTR=$(docker ps --format "{{.Names}}" | grep -i "mysql\|mariadb" | head -1)
+          echo "MySQL container: $MYSQL_CTR"
+
+          MYSQL_IP=$(docker inspect "$MYSQL_CTR" \
+            --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+          echo "MySQL IP: $MYSQL_IP"
+
+          # Disable Unix socket; switch to TCP
+          echo "MYSQL_SOCKET=" >> $GITHUB_ENV
+          echo "MYSQL_HOST=${MYSQL_IP:-127.0.0.1}" >> $GITHUB_ENV
+          echo "MYSQL_PORT=3306" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE=wordpress" >> $GITHUB_ENV
+
       - name: Run E2E tests
         env:
           # wp-env creates a fresh WordPress with default admin credentials.

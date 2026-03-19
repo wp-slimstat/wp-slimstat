@@ -11,18 +11,30 @@ const __dirname = path.dirname(__filename);
 /** WordPress site base URL */
 export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:10003';
 
-/** MySQL unix socket path */
-export const MYSQL_SOCKET = process.env.MYSQL_SOCKET || '/tmp/mysql.sock';
-
 /** wp-slimstat plugin directory (derived from this file's location) */
 export const PLUGIN_DIR = path.resolve(__dirname, '..', '..', '..');
 
-/** WordPress installation root (derived from plugin dir: wp-content/plugins/wp-slimstat) */
+/** WordPress installation root.
+ *  Override via WP_ROOT env var (required in CI where wp-env runs inside Docker
+ *  and the checkout path is not a real WordPress installation).
+ *  Local default: 3 levels up from the plugin dir (wp-content/plugins/wp-slimstat → WP root).
+ */
 export const WP_ROOT = process.env.WP_ROOT || path.resolve(PLUGIN_DIR, '..', '..', '..');
 
-/** MySQL connection config */
+/** MySQL unix socket path. Set to empty string in CI to use TCP instead. */
+const _mysqlSocket = process.env.MYSQL_SOCKET ?? '/tmp/mysql.sock';
+
+/** MySQL connection config.
+ *  Uses Unix socket when MYSQL_SOCKET is set (local dev default: /tmp/mysql.sock).
+ *  Falls back to TCP (MYSQL_HOST / MYSQL_PORT) when MYSQL_SOCKET is empty string.
+ */
 export const MYSQL_CONFIG = {
-  socketPath: MYSQL_SOCKET,
+  ...(_mysqlSocket
+    ? { socketPath: _mysqlSocket }
+    : {
+        host: process.env.MYSQL_HOST || '127.0.0.1',
+        port: parseInt(process.env.MYSQL_PORT || '3306', 10),
+      }),
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || 'root',
   database: process.env.MYSQL_DATABASE || 'local',
