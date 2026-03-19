@@ -2,7 +2,8 @@
  * E2E: Exclusion Filters — validates ignore_content_types, ignore_bots,
  * ignore_resources, and ignore_wp_users in the tracking pipeline.
  *
- * Covers GitHub issue #233 (CPT exclusion requires cpt: prefix).
+ * Covers GitHub issues #233 and #236 (CPT exclusion requires cpt: prefix,
+ * including attachment pages).
  *
  * @see jaan-to/outputs/qa/cases/10-exclusion-filters/10-test-cases-exclusion-filters.md
  */
@@ -78,6 +79,16 @@ async function createProductPost(title: string, slug: string): Promise<number> {
     `INSERT INTO wp_posts (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_name, post_modified, post_modified_gmt, post_type, to_ping, pinged, post_content_filtered)
      VALUES (1, ?, ?, 'Test content.', ?, '', 'publish', 'closed', 'closed', ?, ?, ?, 'product', '', '', '')`,
     [now, now, title, slug, now, now]
+  ) as any;
+  return result.insertId;
+}
+
+async function createAttachmentPost(title: string, slug: string): Promise<number> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const [result] = await getPool().execute(
+    `INSERT INTO wp_posts (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, guid, menu_order, post_type, post_mime_type, post_parent, comment_count)
+     VALUES (1, ?, ?, '', ?, '', 'inherit', 'closed', 'closed', ?, '', '', ?, ?, '', ?, 0, 'attachment', 'image/jpeg', 0, 0)`,
+    [now, now, title, slug, now, now, `${BASE_URL}/wp-content/uploads/${slug}.jpg`]
   ) as any;
   return result.insertId;
 }
@@ -266,5 +277,58 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
 
     await adminPage.close();
     await adminCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 6: Attachment exclusion WITH cpt: prefix — should exclude
+  // REQ-EXCL-007 — @positive @priority-high
+  // Confirms GitHub issue #236 behavior
+  // ────────────────────────────────────────────────────────────────
+  test('Attachment excluded when ignore_content_types = cpt:attachment (#236)', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', 'cpt:attachment');
+
+    const slug = `e2e-attachment-excl-${Date.now()}`;
+    const attachmentId = await createAttachmentPost('E2E Attachment Exclusion Test', slug);
+    const attachmentUrl = `${BASE_URL}/?attachment_id=${attachmentId}`;
+
+    await clearStatsTable();
+
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
+
+    await expect.poll(
+      () => getStatCount(),
+      { timeout: 6_000, intervals: [500] }
+    ).toBe(0);
+
+    await anonPage.close();
+    await anonCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 7: Attachment without exclusion — should track
+  // REQ-EXCL-008 — @positive @priority-high
+  // ────────────────────────────────────────────────────────────────
+  test('Attachment tracked without exclusion, stat saved (#236)', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', '');
+
+    const slug = `e2e-attachment-track-${Date.now()}`;
+    const attachmentId = await createAttachmentPost('E2E Attachment Tracking Test', slug);
+    const attachmentUrl = `${BASE_URL}/?attachment_id=${attachmentId}`;
+
+    await clearStatsTable();
+
+    const anonCtx = await browser.newContext();
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
+
+    await expect.poll(
+      () => getStatCount(),
+      { timeout: 10_000, intervals: [500] }
+    ).toBeGreaterThan(0);
+
+    await anonPage.close();
+    await anonCtx.close();
   });
 });

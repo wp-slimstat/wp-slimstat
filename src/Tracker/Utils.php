@@ -284,7 +284,7 @@ class Utils
 			$content_info['content_type'] = 'page';
 			$content_info['content_id']   = $GLOBALS['post']->ID;
 		} elseif (is_attachment()) {
-			$content_info['content_type'] = 'attachment';
+			$content_info['content_type'] = 'cpt:attachment';
 		} elseif (is_singular()) {
 			$content_info['content_type'] = 'singular';
 		} elseif (is_post_type_archive()) {
