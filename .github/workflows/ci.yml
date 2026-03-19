@@ -128,6 +128,13 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Create wp-env override (CI — no sibling plugins)
+        # .wp-env.json references ../wp-slimstat-pro, ../cookie-law-info, and
+        # ../wp-consent-api which don't exist in CI. Override to use only the
+        # current plugin. .wp-env.override.json is gitignored and safe to create.
+        run: |
+          echo '{"plugins": ["."]}' > .wp-env.override.json
+
       - name: Start wp-env
         # @wordpress/env ships as a devDependency; invoke via npx so we don't
         # need a global install.  wp-env requires Docker — ubuntu-latest runners
