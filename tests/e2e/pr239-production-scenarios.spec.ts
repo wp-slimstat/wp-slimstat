@@ -128,18 +128,19 @@ test.describe('Cached page: real HTML capture', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('captured real WP page served as cache — no nonce in output, no 403', async ({ browser }) => {
+  test('captured real WP page served as cache — nonce present but no header sent, no 403', async ({ browser }) => {
     // Step 1: Fetch real WordPress page HTML as anonymous (no cookies)
     const { ctx: fetchCtx, page: fetchPage } = await anonContext(browser);
     const response = await fetchPage.request.get(`${BASE_URL}/?e2e=cache-capture-${Date.now()}`);
     const realHtml = await response.text();
     await fetchCtx.close();
 
-    // Step 2: Verify the real HTML does NOT contain wp_rest_nonce for anonymous
+    // Step 2: Verify the real HTML HAS nonce (for consent) but is_logged_in is '0'
     const paramsMatch = realHtml.match(/var SlimStatParams\s*=\s*(\{[^;]+\})\s*;/);
     expect(paramsMatch, 'SlimStatParams must exist in page HTML').toBeTruthy();
     const capturedParams = JSON.parse(paramsMatch![1]);
-    expect(capturedParams.wp_rest_nonce, 'Real anonymous page should NOT have wp_rest_nonce').toBeFalsy();
+    expect(capturedParams.wp_rest_nonce, 'Nonce must be present (for consent)').toBeTruthy();
+    expect(capturedParams.is_logged_in, 'is_logged_in must be 0 for anonymous').toBe('0');
 
     // Step 3: Serve the captured HTML as a "cached page" to a new visitor
     const { ctx, page } = await anonContext(browser);
@@ -184,6 +185,9 @@ test.describe('Cached page: stale nonce', () => {
     const { ctx, page } = await anonContext(browser);
     const { requests, responses } = trackRestHits(page);
 
+    // Simulate a page cached while an admin was logged in:
+    // is_logged_in is '1' (from the admin session that populated the cache),
+    // but the nonce is stale (expired since the cache was built).
     const cachedParams = {
       transport: 'rest',
       ajaxurl: `${BASE_URL}/wp-json/slimstat/v1/hit`,
@@ -192,6 +196,7 @@ test.describe('Cached page: stale nonce', () => {
       baseurl: '/',
       ci: 'test-stale-nonce',
       wp_rest_nonce: 'stale_nonce_from_cache_12345',
+      is_logged_in: '1',
     };
 
     await page.route('**/cached-stale-nonce', (route) =>
@@ -361,7 +366,7 @@ test.describe('GDPR: endpoint and nonce params', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('GDPR on — consent endpoint set, no nonce for anonymous', async ({ browser }) => {
+  test('GDPR on — consent endpoint set, nonce available, is_logged_in=0', async ({ browser }) => {
     await setOption('gdpr_enabled', 'on');
     await setOption('use_slimstat_banner', 'on');
     await setOption('consent_integration', 'slimstat_banner');
@@ -372,7 +377,10 @@ test.describe('GDPR: endpoint and nonce params', () => {
     if (params.gdpr_consent_endpoint) {
       expect(params.gdpr_consent_endpoint).toContain('/slimstat/v1/gdpr/consent');
     }
-    expect(params.wp_rest_nonce, 'Anonymous + GDPR should not have nonce').toBeFalsy();
+    // Nonce must be present for consent banner to work
+    expect(params.wp_rest_nonce, 'Nonce must be present for consent operations').toBeTruthy();
+    // But is_logged_in must be 0 so tracking doesn't send X-WP-Nonce header
+    expect(params.is_logged_in, 'is_logged_in must be 0 for anonymous').toBe('0');
     await ctx.close();
   });
 });

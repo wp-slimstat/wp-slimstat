@@ -1160,12 +1160,12 @@ class wp_slimstat
             $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())));
         }
 
-        // Only send REST nonce for logged-in users. Anonymous users don't need it
-        // (permission_callback is __return_true), and sending it causes a 403 on
-        // cached pages where the nonce becomes stale (no session cookie to validate).
-        if (is_user_logged_in()) {
-            $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
-        }
+        // Always generate wp_rest_nonce (needed for consent banner CSRF protection).
+        // The JS uses is_logged_in to decide whether to send it as X-WP-Nonce header
+        // on tracking requests. Anonymous users skip the header (avoids 403 on cached
+        // pages) but still have the nonce available for consent operations.
+        $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
+        $params['is_logged_in'] = is_user_logged_in() ? '1' : '0';
         // Expose consent/DNT info to client
 		$params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';

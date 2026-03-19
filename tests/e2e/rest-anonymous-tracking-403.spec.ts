@@ -212,17 +212,16 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
     await ctx.close();
   });
 
-  test('wp_rest_nonce should NOT be set for anonymous visitors', async ({ browser }) => {
+  test('anonymous: nonce present (for consent) but is_logged_in is 0 (no header)', async ({ browser }) => {
     const ctx = await browser.newContext();
     const anonPage = await ctx.newPage();
     await anonPage.goto(`${BASE_URL}/?e2e=nonce-check-anon`, { waitUntil: 'domcontentloaded' });
     const anonParams = await anonPage.evaluate(() => (window as any).SlimStatParams || null);
     expect(anonParams).toBeTruthy();
-    // Anonymous users should NOT have a nonce — it causes a 403 on cached pages
-    expect(
-      anonParams.wp_rest_nonce,
-      'Anonymous users should NOT have wp_rest_nonce — it causes unnecessary 403 retries',
-    ).toBeFalsy();
+    // Nonce IS present (needed for consent banner CSRF protection)
+    expect(anonParams.wp_rest_nonce, 'wp_rest_nonce must be present for consent operations').toBeTruthy();
+    // But is_logged_in is '0' so JS won't send it as X-WP-Nonce header
+    expect(anonParams.is_logged_in, 'is_logged_in must be 0 for anonymous').toBe('0');
 
     await ctx.close();
   });

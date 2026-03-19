@@ -326,7 +326,10 @@ var SlimStat = (function () {
             })
         );
         function sendXHR(url, onFail, xhrOpts) {
-            xhrOpts = xhrOpts || { useNonce: true };
+            // Only send X-WP-Nonce header for logged-in users. Anonymous users skip it
+            // to avoid 403 on cached pages where the nonce becomes stale. The nonce is
+            // still available in params for consent operations (banner_consent_nonce).
+            xhrOpts = xhrOpts || { useNonce: params.is_logged_in === "1" };
             var xhr;
             try {
                 xhr = new XMLHttpRequest();
@@ -413,7 +416,7 @@ var SlimStat = (function () {
                 function () {
                     trySend(i + 1);
                 },
-                { useNonce: true }
+                { useNonce: params.is_logged_in === "1" }
             );
         }
         trySend(0);
