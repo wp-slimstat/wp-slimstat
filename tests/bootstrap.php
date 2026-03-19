@@ -10,4 +10,4 @@ define('WP_CONTENT_DIR', dirname(dirname($root)));
 require_once $root . '/vendor/autoload.php';
 
 // Shared stubs required by Tracker unit tests.
-require_once __DIR__ . '/unit/Tracker/stubs.php';
+require_once __DIR__ . '/Unit/Tracker/stubs.php';
