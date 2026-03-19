@@ -995,13 +995,13 @@ body {
   height: 500px;
 }
 
-/* Fix nested postbox in dashboard widgets - hide redundant inner h3 */
-#dashboard-widgets [id*="slim_p"].postbox .postbox h3 {
+/* Fix nested postbox in dashboard widgets - hide only the direct inner report header */
+#dashboard-widgets [id*="slim_p"].postbox > .inside > .postbox > h3 {
   display: none;
 }
 
-/* Fix nested postbox in dashboard widgets - let outer container control height */
-#dashboard-widgets [id*="slim_p"].postbox .postbox .inside {
+/* Fix nested postbox in dashboard widgets - let only the direct inner report container auto-size */
+#dashboard-widgets [id*="slim_p"].postbox > .inside > .postbox > .inside {
   height: auto;
 }
 
