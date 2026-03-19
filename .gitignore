@@ -44,6 +44,10 @@ nbproject
 #composer.lock
 composer.lock
 
+# Composer dependencies — installed by CI; not part of plugin runtime
+# (production deps are scoped into src/Dependencies/ via Mozart)
+/vendor/
+
 # Testing
 .env.testing
 test-results/
