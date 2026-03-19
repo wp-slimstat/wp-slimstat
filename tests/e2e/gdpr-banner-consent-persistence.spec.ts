@@ -136,6 +136,8 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
 
   test.beforeEach(async () => {
     await snapshotOptions();
+    await setOption('is_tracking', 'on');
+    await setOption('javascript_mode', 'on');
     await setOption('consent_integration', 'slimstat_banner');
     await setOption('use_slimstat_banner', 'on');
     await setOption('gdpr_enabled', 'on');
@@ -143,6 +145,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await setOption('anonymous_tracking', 'off');
     await setOption('set_tracker_cookie', 'on');
     await setOption('ignore_capabilities', '');
+    await setOption('ignore_wp_users', 'no');
     await clearStatsTable();
   });
 
