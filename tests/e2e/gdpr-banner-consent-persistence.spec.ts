@@ -290,13 +290,13 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     // DB: no rows for either marker
     await new Promise((r) => setTimeout(r, 2000));
 
-    const [rows1] = (await db.execute(
+    const [rows1] = (await getPool().execute(
       'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
       [`%decline-journey-${ts}%`],
     )) as any;
     expect(rows1.length, 'No DB rows for first declined page').toBe(0);
 
-    const [rows2] = (await db.execute(
+    const [rows2] = (await getPool().execute(
       'SELECT id FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1',
       [`%decline-page2-${ts}%`],
     )) as any;
