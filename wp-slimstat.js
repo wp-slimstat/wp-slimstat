@@ -326,7 +326,12 @@ var SlimStat = (function () {
             })
         );
         function sendXHR(url, onFail, xhrOpts) {
-            xhrOpts = xhrOpts || { useNonce: true };
+            // Send X-WP-Nonce header only when is_logged_in='1' (set by PHP at render time).
+            // Anonymous pages: is_logged_in='0' → no nonce header → no 403.
+            // Admin-cached pages served to anonymous: is_logged_in='1' (stale) → sends nonce
+            // → 403 → retry without nonce → 200 (handled by the retry logic at line 345-349).
+            // The nonce is still available in params for consent (banner_consent_nonce).
+            xhrOpts = xhrOpts || { useNonce: params.is_logged_in === "1" };
             var xhr;
             try {
                 xhr = new XMLHttpRequest();
@@ -413,7 +418,7 @@ var SlimStat = (function () {
                 function () {
                     trySend(i + 1);
                 },
-                { useNonce: true }
+                { useNonce: params.is_logged_in === "1" }
             );
         }
         trySend(0);

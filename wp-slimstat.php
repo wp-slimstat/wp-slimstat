@@ -1113,17 +1113,21 @@ class wp_slimstat
 		$rest_base_url     = rest_url();
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
-        $adblock_hash      = \SlimStat\Providers\RestApiManager::getSecureAdblockHash();
-        $adblock_url       = home_url(sprintf('request/%s/', $adblock_hash));
 
-        // Always provide all possible endpoints for fallback logic
         $params = [
             'transport'       => $method,
             'ajaxurl_rest'    => $rest_url,
 			'resturl'         => $rest_base_url,
             'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
-            'ajaxurl_adblock' => $adblock_url,
         ];
+
+        // Only provide adblock bypass URL when the rewrite rule is active.
+        // The rewrite rule is only registered for 'adblock_bypass' transport,
+        // so this URL would 404 for other transports — a dead fallback.
+        if ('adblock_bypass' === $method) {
+            $adblock_hash      = \SlimStat\Providers\RestApiManager::getSecureAdblockHash();
+            $params['ajaxurl_adblock'] = home_url(sprintf('request/%s/', $adblock_hash));
+        }
 
         // Set the primary ajaxurl based on the selected method
         if ('rest' === $method) {
@@ -1131,7 +1135,7 @@ class wp_slimstat
         } elseif ('ajax' === $method) {
             $params['ajaxurl'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
         } elseif ('adblock_bypass' === $method) {
-            $params['ajaxurl'] = $adblock_url;
+            $params['ajaxurl'] = $params['ajaxurl_adblock'];
             // Also set transport to 'adblock_bypass' for JS clarity
             $params['transport'] = 'adblock_bypass';
         } else {
@@ -1156,7 +1160,14 @@ class wp_slimstat
             $params['ci'] = \SlimStat\Tracker\Utils::getValueWithChecksum(\SlimStat\Tracker\Utils::base64UrlEncode(wp_json_encode(\SlimStat\Tracker\Utils::getContentInfo())));
         }
 
+        // Always generate wp_rest_nonce (needed for consent banner CSRF protection).
+        // The JS uses is_logged_in to decide whether to send it as X-WP-Nonce header.
+        // Anonymous pages: is_logged_in='0' → no header → no 403 on cached pages.
+        // Admin-cached pages: is_logged_in='1' (stale) → sends nonce → may 403 → retry
+        // without nonce (handled by JS retry logic). This is acceptable since most caches
+        // exclude logged-in users, and the retry adds only one extra request.
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
+        $params['is_logged_in'] = is_user_logged_in() ? '1' : '0';
         // Expose consent/DNT info to client
 		$params['wp_consent_integration'] = (self::$settings['consent_integration'] ?? '') === 'wp_consent_api' ? 'enabled' : 'disabled';
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
@@ -1177,7 +1188,7 @@ class wp_slimstat
 			} elseif ('ajax' === $method) {
 				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
 			} elseif ('adblock_bypass' === $method) {
-				$params['gdpr_consent_endpoint'] = $adblock_url;
+				$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
 			} else {
 				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
 			}
