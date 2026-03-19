@@ -118,11 +118,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ hashFiles('package.json') }}
           restore-keys: npm-
 
       - name: Install npm dependencies
-        run: npm ci --no-progress
+        # package-lock.json is gitignored; use npm install instead of npm ci.
+        run: npm install --no-progress
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -222,12 +223,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
+          key: npm-${{ hashFiles('package.json') }}
           restore-keys: npm-
 
       - name: Install npm dependencies
         if: ${{ matrix.php == '8.2' }}
-        run: npm ci --no-progress
+        run: npm install --no-progress
 
       - name: Start wp-env (for k6 target)
         if: ${{ matrix.php == '8.2' }}
