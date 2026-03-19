@@ -30,7 +30,42 @@ import {
   enableDisableWpCron,
   restoreWpConfig,
 } from './helpers/setup';
-import { BASE_URL } from './helpers/env';
+import { BASE_URL, WP_ROOT } from './helpers/env';
+import * as path from 'path';
+import * as fs from 'fs';
+
+// ─── Trackable CPT fixture ────────────────────────────────────────
+
+const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
+const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
+
+const CPT_MU_PLUGIN_CONTENT = `<?php
+/**
+ * E2E Test: Register 'product' CPT for server-mode user exclusion testing.
+ */
+if (!defined('ABSPATH')) exit;
+add_action('init', function() {
+    register_post_type('product', [
+        'public'       => true,
+        'label'        => 'Products',
+        'has_archive'  => true,
+        'rewrite'      => ['slug' => 'product'],
+        'supports'     => ['title', 'editor'],
+        'show_in_rest' => true,
+    ]);
+    // Flush rewrite rules so /product/{slug}/ resolves immediately in E2E.
+    flush_rewrite_rules();
+});
+`;
+
+function installCptMuPlugin(): void {
+  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
+  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
+}
+
+function uninstallCptMuPlugin(): void {
+  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
+}
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -42,10 +77,25 @@ async function getRecentStatByResource(resourceLike: string): Promise<any | null
   return rows.length > 0 ? rows[0] : null;
 }
 
-async function getStatCount(): Promise<number> {
-  const [rows] = await getPool().execute('SELECT COUNT(*) as cnt FROM wp_slim_stats') as any;
-  return rows[0].cnt;
+/**
+ * Create a published product post with a unique slug.
+ *
+ * Server-mode tracking does not reliably persist homepage query-string markers
+ * in this local environment, so these tests use the same product permalinks
+ * already proven by exclusion-filters.spec.ts to generate pageview rows.
+ */
+async function createTrackableProduct(title: string, slug: string): Promise<string> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  await getPool().execute(
+    `INSERT INTO wp_posts (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_name, post_modified, post_modified_gmt, post_type, to_ping, pinged, post_content_filtered)
+     VALUES (1, ?, ?, 'Server mode user exclusion test content.', ?, '', 'publish', 'closed', 'closed', ?, ?, ?, 'product', '', '', '')`,
+    [now, now, title, slug, now, now]
+  );
+
+  return `${BASE_URL}/product/${slug}/`;
 }
+
+const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
 // ─── Login helper ────────────────────────────────────────────────
 
@@ -53,7 +103,7 @@ async function loginAsAdmin(browser: import('@playwright/test').Browser): Promis
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
 }> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
   await page.fill('#user_login', 'parhumm');
@@ -70,6 +120,7 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
 
   test.beforeAll(async () => {
     enableDisableWpCron();
+    installCptMuPlugin();
     await snapshotSlimstatOptions();
     // Enable server-side tracking mode (javascript_mode=off)
     await setSlimstatSetting('javascript_mode', 'off');
@@ -82,6 +133,7 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
 
   test.afterAll(async () => {
     await restoreSlimstatOptions();
+    uninstallCptMuPlugin();
     restoreWpConfig();
     await closeDb();
   });
@@ -102,17 +154,13 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     // Clear stats after login (login page itself might be tracked)
     await clearStatsTable();
 
-    // Visit a frontend page with a unique marker
-    const marker = `e2e-server-user-excl-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+    const slug = `e2e-server-user-excl-${Date.now()}`;
+    const pageUrl = await createTrackableProduct('E2E Server User Exclusion', slug);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
-    // Server-side tracking happens synchronously during page load
-    // Wait a moment for any async DB writes
-    await page.waitForTimeout(2_000);
-
-    // Admin should NOT be tracked
+    // Admin should NOT be tracked on a page that the server-mode tracker does record.
     await expect.poll(
-      () => getRecentStatByResource(marker),
+      () => getRecentStatByResource(slug),
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
@@ -130,13 +178,13 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     const { context, page } = await loginAsAdmin(browser);
     await clearStatsTable();
 
-    const marker = `e2e-server-username-excl-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2_000);
+    const slug = `e2e-server-username-excl-${Date.now()}`;
+    const pageUrl = await createTrackableProduct('E2E Username Exclusion', slug);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
     // User 'parhumm' should be excluded by username blacklist
     await expect.poll(
-      () => getRecentStatByResource(marker),
+      () => getRecentStatByResource(slug),
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
@@ -157,13 +205,13 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     const { context, page } = await loginAsAdmin(browser);
     await clearStatsTable();
 
-    const marker = `e2e-server-cap-excl-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2_000);
+    const slug = `e2e-server-cap-excl-${Date.now()}`;
+    const pageUrl = await createTrackableProduct('E2E Capability Exclusion', slug);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
     // Admin should be excluded by capability blacklist
     await expect.poll(
-      () => getRecentStatByResource(marker),
+      () => getRecentStatByResource(slug),
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
@@ -183,19 +231,22 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     await setSlimstatSetting('ignore_users', '');
     await setSlimstatSetting('ignore_capabilities', '');
 
-    // Anonymous context (no login)
-    const context = await browser.newContext();
+    // This suite runs under the Playwright "admin" project, so an explicit empty
+    // storage state is required to create a truly anonymous browser context.
+    const context = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const page = await context.newPage();
 
     await clearStatsTable();
-
-    const marker = `e2e-server-anon-control-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2_000);
+    const slug = `e2e-server-anon-control-${Date.now()}`;
+    const pageUrl = await createTrackableProduct('E2E Anonymous Server Control', slug);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
     // Anonymous user SHOULD be tracked (ignore_wp_users only blocks logged-in users)
     await expect.poll(
-      () => getRecentStatByResource(marker),
+      () => getRecentStatByResource(slug),
       { timeout: 10_000, intervals: [500] }
     ).not.toBeNull();
 
@@ -215,18 +266,18 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     const { context, page } = await loginAsAdmin(browser);
     await clearStatsTable();
 
-    const marker = `e2e-server-admin-tracked-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2_000);
+    const slug = `e2e-server-admin-tracked-${Date.now()}`;
+    const pageUrl = await createTrackableProduct('E2E Admin Server Control', slug);
+    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
     // Admin SHOULD be tracked when ignore_wp_users is off
     await expect.poll(
-      () => getRecentStatByResource(marker),
+      () => getRecentStatByResource(slug),
       { timeout: 10_000, intervals: [500] }
     ).not.toBeNull();
 
     // Verify the tracked row has the username
-    const stat = await getRecentStatByResource(marker);
+    const stat = await getRecentStatByResource(slug);
     expect(stat).not.toBeNull();
     expect(stat!.username).toBe('parhumm');
 

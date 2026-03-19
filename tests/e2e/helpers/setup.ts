@@ -184,8 +184,9 @@ export async function setSlimstatSetting(key: string, value: string): Promise<vo
   let raw: string = rows[0].option_value;
 
   // PHP serialized format: s:<len>:"key";s:<len>:"value";
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const keyPattern = new RegExp(
-    `s:\\d+:"${key}";s:\\d+:"[^"]*"`,
+    `s:\\d+:"${escapedKey}";s:\\d+:"[^"]*"`,
     'g'
   );
   const replacement = `s:${key.length}:"${key}";s:${value.length}:"${value}"`;
