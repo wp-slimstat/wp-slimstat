@@ -58,15 +58,19 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
         # mozart post-install hook requires a global mozart binary which is not
         # available in CI — skip the hook with --no-scripts; the autoloader is
         # still generated via the next step.
+        if: ${{ matrix.php != '7.4' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
+        if: ${{ matrix.php != '7.4' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run PHPUnit unit tests
+        if: ${{ matrix.php != '7.4' }}
         run: composer test:unit
 
       - name: PHP syntax lint (src/)
@@ -176,15 +180,19 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
+        if: ${{ matrix.php != '7.4' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
+        if: ${{ matrix.php != '7.4' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run full PHPUnit suite
         # composer test:all runs phpunit + all standalone PHP test scripts.
         # Individual scripts may exit non-zero on CI if they depend on a live DB
         # or environment; run phpunit directly for the nightly matrix gate.
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
+        if: ${{ matrix.php != '7.4' }}
         run: composer test:unit
 
       # ── k6 performance tests ─────────────────────────────────────────────
