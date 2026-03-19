@@ -6,6 +6,15 @@
   "config": {
     "platform-check": false
   },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "packages/veronalabs-browscap-php",
+      "options": {
+        "symlink": false
+      }
+    }
+  ],
   "autoload": {
     "psr-4": {
       "SlimStat\\": "src/"
