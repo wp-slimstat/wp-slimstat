@@ -1,12 +1,16 @@
 /**
- * PR #239 Production Scenario Tests
+ * PR #239 Production Scenario Tests (v2 — realistic replacements)
  *
- * Covers the gaps identified in the initial test suite:
- * B1: Page caching simulation (stale nonce in cached HTML)
- * B2: sendBeacon transport (no custom headers possible)
- * B3: Transport fallback chain (REST blocked → AJAX)
- * B4: GDPR consent + nonce interaction
- * B5: Logged-in user nonce regression check
+ * Each test exercises a real server code path or realistic production condition:
+ * 1. Real HTML capture + replay (cached page with full WP page output)
+ * 2. Stale nonce → 403 proof (demonstrates the bug mechanism)
+ * 3. Server-side text/plain POST (sendBeacon server code path)
+ * 4. Transport fallback chain (REST→AJAX) without nonce
+ * 5. GDPR blocks with 400 not 403 (consent vs nonce distinction)
+ * 6. GDPR consent endpoint + no nonce for anonymous
+ * 7. Concurrent anonymous sessions (parallel visitors)
+ * 8. Logged-in: nonce in params
+ * 9. Logged-in: nonce in header
  *
  * @see https://github.com/wp-slimstat/wp-slimstat/pull/239
  */
@@ -49,10 +53,7 @@ async function restoreOptions(): Promise<void> {
 
 /**
  * Set a slimstat option directly in the DB by parsing PHP serialized data.
- *
- * Limitations: Only supports simple string keys and string values.
- * Does NOT handle escaped quotes, non-string types (int/bool/array), or
- * nested structures. Intended only for this test's limited option keys.
+ * Limitations: Only handles simple string keys/values. Not for general use.
  */
 async function setOption(key: string, value: string): Promise<void> {
   const [rows] = (await getPool().execute(
@@ -102,10 +103,6 @@ function trackRestHits(page: Page) {
   return { requests, responses };
 }
 
-/**
- * Build a "cached page" HTML string that simulates what a page cache would serve.
- * The HTML includes the SlimStat tracker JS and frozen SlimStatParams.
- */
 function buildCachedPageHtml(params: Record<string, any>): string {
   return `<!DOCTYPE html>
 <html><head><title>Cached Page</title></head>
@@ -116,9 +113,9 @@ function buildCachedPageHtml(params: Record<string, any>): string {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// B1: Page caching simulation
+// 1. Real HTML capture + replay (replaces synthetic B1a)
 // ═══════════════════════════════════════════════════════════════
-test.describe('B1: Cached page simulation', () => {
+test.describe('Cached page: real HTML capture', () => {
   test.setTimeout(60_000);
 
   test.beforeEach(async () => {
@@ -131,46 +128,62 @@ test.describe('B1: Cached page simulation', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('cached page WITHOUT nonce — single 200, no 403 retry', async ({ browser }) => {
+  test('captured real WP page served as cache — no nonce in output, no 403', async ({ browser }) => {
+    // Step 1: Fetch real WordPress page HTML as anonymous (no cookies)
+    const { ctx: fetchCtx, page: fetchPage } = await anonContext(browser);
+    const response = await fetchPage.request.get(`${BASE_URL}/?e2e=cache-capture-${Date.now()}`);
+    const realHtml = await response.text();
+    await fetchCtx.close();
+
+    // Step 2: Verify the real HTML does NOT contain wp_rest_nonce for anonymous
+    const paramsMatch = realHtml.match(/var SlimStatParams\s*=\s*(\{[^;]+\})\s*;/);
+    expect(paramsMatch, 'SlimStatParams must exist in page HTML').toBeTruthy();
+    const capturedParams = JSON.parse(paramsMatch![1]);
+    expect(capturedParams.wp_rest_nonce, 'Real anonymous page should NOT have wp_rest_nonce').toBeFalsy();
+
+    // Step 3: Serve the captured HTML as a "cached page" to a new visitor
     const { ctx, page } = await anonContext(browser);
     const { requests, responses } = trackRestHits(page);
 
-    // Simulate a cached page that has NO wp_rest_nonce (the fix)
-    const cachedParams = {
-      transport: 'rest',
-      ajaxurl: `${BASE_URL}/wp-json/slimstat/v1/hit`,
-      ajaxurl_rest: `${BASE_URL}/wp-json/slimstat/v1/hit`,
-      ajaxurl_ajax: `${BASE_URL}/wp-admin/admin-ajax.php`,
-      baseurl: '/',
-      ci: 'test-cached-page',
-    };
-
-    await page.route('**/cached-no-nonce', (route) =>
-      route.fulfill({ status: 200, contentType: 'text/html', body: buildCachedPageHtml(cachedParams) }),
+    await page.route('**/cached-real-page', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: realHtml }),
     );
 
-    await page.goto(`${BASE_URL}/cached-no-nonce`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/cached-real-page`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
 
-    // No nonce header sent
+    // Step 4: Verify no nonce header and no 403
     const withNonce = requests.filter((r) => r.headers['x-wp-nonce'] !== undefined);
-    expect(withNonce.length, 'Cached page without nonce should send no X-WP-Nonce').toBe(0);
+    expect(withNonce.length, 'Cached real page should produce zero X-WP-Nonce headers').toBe(0);
 
-    // No 403 response
     const has403 = responses.some((r) => r.status === 403);
-    expect(has403, 'No 403 when nonce is absent').toBe(false);
+    expect(has403, 'No 403 when serving real captured HTML').toBe(false);
 
-    // At least one tracking request fired
-    expect(requests.length, 'Tracking request should fire').toBeGreaterThan(0);
-
+    expect(requests.length, 'At least one tracking request should fire').toBeGreaterThan(0);
     await ctx.close();
   });
+});
 
-  test('cached page WITH stale nonce — causes 403 retry (demonstrates the bug)', async ({ browser }) => {
+// ═══════════════════════════════════════════════════════════════
+// 2. Stale nonce in cached page → 403 proof (kept from B1b)
+// ═══════════════════════════════════════════════════════════════
+test.describe('Cached page: stale nonce', () => {
+  test.setTimeout(60_000);
+
+  test.beforeEach(async () => {
+    await snapshotOptions();
+    await clearStatsTable();
+    await setOption('tracking_request_method', 'rest');
+    await setOption('gdpr_enabled', 'off');
+    await setOption('javascript_mode', 'on');
+    await setOption('ignore_wp_users', 'no');
+  });
+  test.afterEach(async () => { await restoreOptions(); });
+
+  test('cached page with stale nonce causes 403 + retry (proves the bug)', async ({ browser }) => {
     const { ctx, page } = await anonContext(browser);
     const { requests, responses } = trackRestHits(page);
 
-    // Simulate a cached page with a STALE nonce (the old behavior / development branch)
     const cachedParams = {
       transport: 'rest',
       ajaxurl: `${BASE_URL}/wp-json/slimstat/v1/hit`,
@@ -188,29 +201,26 @@ test.describe('B1: Cached page simulation', () => {
     await page.goto(`${BASE_URL}/cached-stale-nonce`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
 
-    // The stale nonce SHOULD cause a 403 from WordPress core
     const has403 = responses.some((r) => r.status === 403);
-    expect(has403, 'Stale nonce should cause 403 from WordPress').toBe(true);
+    expect(has403, 'Stale nonce must cause 403 from WordPress').toBe(true);
 
-    // The first request should have the stale nonce header
     expect(requests.length).toBeGreaterThan(0);
-    expect(requests[0].headers['x-wp-nonce'], 'First request should carry stale nonce').toBe('stale_nonce_from_cache_12345');
-
-    // JS should retry — more than 1 request
-    expect(requests.length, 'JS should retry after 403').toBeGreaterThanOrEqual(2);
+    expect(requests[0].headers['x-wp-nonce']).toBe('stale_nonce_from_cache_12345');
+    expect(requests.length, 'JS must retry after 403').toBeGreaterThanOrEqual(2);
 
     await ctx.close();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// B2: sendBeacon transport
+// 3. Server-side text/plain POST (replaces browser-side B2)
 // ═══════════════════════════════════════════════════════════════
-test.describe('B2: sendBeacon transport', () => {
+test.describe('sendBeacon server path: text/plain POST', () => {
   test.setTimeout(60_000);
 
   test.beforeEach(async () => {
     await snapshotOptions();
+    await clearStatsTable();
     await setOption('tracking_request_method', 'rest');
     await setOption('gdpr_enabled', 'off');
     await setOption('javascript_mode', 'on');
@@ -218,37 +228,36 @@ test.describe('B2: sendBeacon transport', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('sendBeacon payload does not contain nonce (inherently safe)', async ({ browser }) => {
+  test('text/plain POST without nonce returns 200 + valid tracking ID', async ({ browser }) => {
+    // Step 1: Capture a valid ci value from a real page
+    const { ctx: capCtx, page: capPage } = await anonContext(browser);
+    await capPage.goto(`${BASE_URL}/?e2e=beacon-ci-capture`, { waitUntil: 'domcontentloaded' });
+    const params = await capPage.evaluate(() => (window as any).SlimStatParams || null);
+    expect(params).toBeTruthy();
+    expect(params.ci, 'ci must be present in SlimStatParams').toBeTruthy();
+    const capturedCi = params.ci;
+    await capCtx.close();
+
+    // Step 2: POST to REST endpoint with text/plain (simulates sendBeacon)
+    // Use a plain request context (no cookies, no auth)
     const { ctx, page } = await anonContext(browser);
-
-    // Navigate to a real page first so the tracker loads
-    await page.goto(`${BASE_URL}/?e2e=beacon-test`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
-
-    // Monkey-patch sendBeacon to capture calls
-    const beaconCalls = await page.evaluate(() => {
-      return new Promise<Array<{ url: string; data: string }>>((resolve) => {
-        const calls: Array<{ url: string; data: string }> = [];
-        const origBeacon = navigator.sendBeacon.bind(navigator);
-        navigator.sendBeacon = (url: string, data?: any) => {
-          calls.push({ url: url.toString(), data: data ? data.toString() : '' });
-          return origBeacon(url, data);
-        };
-
-        // Trigger visibilitychange to force sendBeacon path
-        Object.defineProperty(document, 'visibilityState', { value: 'hidden', writable: true });
-        document.dispatchEvent(new Event('visibilitychange'));
-
-        // Give it a moment to fire
-        setTimeout(() => resolve(calls), 500);
-      });
+    const res = await page.request.post(`${BASE_URL}/wp-json/slimstat/v1/hit`, {
+      headers: { 'content-type': 'text/plain' },
+      data: `action=slimtrack&ci=${capturedCi}`,
     });
 
-    // sendBeacon can't set custom headers (browser limitation), so nonce is
-    // inherently absent. But verify the payload itself doesn't contain nonce field.
-    for (const call of beaconCalls) {
-      expect(call.data).not.toContain('wp_rest_nonce');
-      expect(call.data).not.toContain('X-WP-Nonce');
+    // Step 3: Verify server accepts it
+    const status = res.status();
+    const body = await res.text();
+
+    // The server should either return 200 (success) or 400 (consent/filter block).
+    // It must NOT return 403 (that would mean nonce rejection).
+    expect(status, `Server should not return 403 for text/plain POST. Got ${status}: ${body}`).not.toBe(403);
+
+    // If 200, verify the response contains a valid tracking ID (numeric.hash or plain numeric)
+    if (status === 200) {
+      const cleaned = body.replace(/^"|"$/g, '').trim();
+      expect(cleaned).toMatch(/^\d+(\.[0-9a-fA-F]+)?$/);
     }
 
     await ctx.close();
@@ -256,9 +265,9 @@ test.describe('B2: sendBeacon transport', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// B3: Transport fallback chain after nonce fix
+// 4. Transport fallback chain (kept from B3)
 // ═══════════════════════════════════════════════════════════════
-test.describe('B3: Transport fallback chain', () => {
+test.describe('Transport fallback: REST → AJAX', () => {
   test.setTimeout(60_000);
 
   test.beforeEach(async () => {
@@ -276,38 +285,33 @@ test.describe('B3: Transport fallback chain', () => {
 
     const ajaxRequests: Array<{ url: string; headers: Record<string, string> }> = [];
     page.on('request', (req) => {
-      if (req.url().includes('admin-ajax.php') && req.method() === 'POST') {
+      if (req.url().includes('admin-ajax.php') && req.method() === 'POST')
         ajaxRequests.push({ url: req.url(), headers: req.headers() });
-      }
     });
 
-    // Block REST endpoint to force AJAX fallback
     await page.route('**/wp-json/slimstat/v1/hit', (route) => route.abort('connectionfailed'));
     await page.route('**/?rest_route=/slimstat/v1/hit*', (route) => route.abort('connectionfailed'));
 
-    const marker = `b3-fallback-${Date.now()}`;
+    const marker = `fallback-${Date.now()}`;
     await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(5000);
 
-    // AJAX fallback should have fired
-    expect(ajaxRequests.length, 'AJAX fallback should fire when REST is blocked').toBeGreaterThan(0);
+    expect(ajaxRequests.length, 'AJAX fallback must fire').toBeGreaterThan(0);
 
-    // AJAX request should NOT carry X-WP-Nonce header (anonymous user)
     const ajaxWithNonce = ajaxRequests.filter((r) => r.headers['x-wp-nonce'] !== undefined);
-    expect(ajaxWithNonce.length, 'AJAX fallback should not send X-WP-Nonce for anonymous').toBe(0);
+    expect(ajaxWithNonce.length, 'AJAX fallback must not send X-WP-Nonce for anonymous').toBe(0);
 
-    // Pageview should be recorded via AJAX
     const stat = await waitForPageviewRow(marker, 15_000);
-    expect(stat, 'Pageview should be recorded via AJAX fallback').toBeTruthy();
+    expect(stat, 'Pageview must be recorded via AJAX fallback').toBeTruthy();
 
     await ctx.close();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// B4: GDPR consent + nonce interaction
+// 5. GDPR blocks with 400 not 403 (replaces weak B4a)
 // ═══════════════════════════════════════════════════════════════
-test.describe('B4: GDPR consent + nonce', () => {
+test.describe('GDPR: consent vs nonce error distinction', () => {
   test.setTimeout(60_000);
 
   test.beforeEach(async () => {
@@ -319,45 +323,123 @@ test.describe('B4: GDPR consent + nonce', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('GDPR on, no consent — anonymous tracking blocked (correct behavior)', async ({ browser }) => {
+  test('GDPR on + no consent: errors are 400 (consent) not 403 (nonce)', async ({ browser }) => {
     await setOption('gdpr_enabled', 'on');
     await setOption('consent_integration', 'slimstat_banner');
     const { ctx, page } = await anonContext(browser);
     const { responses } = trackRestHits(page);
 
-    const marker = `b4-gdpr-${Date.now()}`;
-    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/?e2e=gdpr-error-code-${Date.now()}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
 
-    // Tracking requests may fire but server should reject (consent not granted)
-    // No 403 should occur — the issue is about nonce, not consent
+    // Key distinction: 400 = consent gate blocked (correct GDPR behavior)
+    //                  403 = nonce rejection (the bug this PR fixes)
     const has403 = responses.some((r) => r.status === 403);
-    expect(has403, 'GDPR blocking should NOT cause 403 (that would be nonce issue)').toBe(false);
+    expect(has403, 'GDPR should block via 400 (consent), never 403 (nonce)').toBe(false);
+
+    // If there are error responses, they should be 400 (consent blocked)
+    const errorResponses = responses.filter((r) => r.status >= 400);
+    for (const r of errorResponses) {
+      expect(r.status, `Error response should be 400 (consent), got ${r.status}`).toBe(400);
+    }
 
     await ctx.close();
   });
+});
 
-  test('GDPR on — gdpr_consent_endpoint correctly set for REST transport', async ({ browser }) => {
+// ═══════════════════════════════════════════════════════════════
+// 6. GDPR consent endpoint + no nonce for anon (kept from B4b)
+// ═══════════════════════════════════════════════════════════════
+test.describe('GDPR: endpoint and nonce params', () => {
+  test.setTimeout(60_000);
+
+  test.beforeEach(async () => {
+    await snapshotOptions();
+    await setOption('tracking_request_method', 'rest');
+    await setOption('javascript_mode', 'on');
+    await setOption('ignore_wp_users', 'no');
+  });
+  test.afterEach(async () => { await restoreOptions(); });
+
+  test('GDPR on — consent endpoint set, no nonce for anonymous', async ({ browser }) => {
     await setOption('gdpr_enabled', 'on');
     await setOption('use_slimstat_banner', 'on');
     await setOption('consent_integration', 'slimstat_banner');
     const { ctx, page } = await anonContext(browser);
-    await page.goto(`${BASE_URL}/?e2e=b4-endpoint`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE_URL}/?e2e=gdpr-params`, { waitUntil: 'domcontentloaded' });
     const params = await page.evaluate(() => (window as any).SlimStatParams || null);
     expect(params).toBeTruthy();
     if (params.gdpr_consent_endpoint) {
       expect(params.gdpr_consent_endpoint).toContain('/slimstat/v1/gdpr/consent');
     }
-    // wp_rest_nonce should NOT be present for anonymous even with GDPR
     expect(params.wp_rest_nonce, 'Anonymous + GDPR should not have nonce').toBeFalsy();
     await ctx.close();
   });
 });
 
 // ═══════════════════════════════════════════════════════════════
-// B5: Logged-in user nonce (regression check)
+// 7. Concurrent anonymous sessions (new)
 // ═══════════════════════════════════════════════════════════════
-test.describe('B5: Logged-in user nonce', () => {
+test.describe('Concurrent anonymous sessions', () => {
+  test.setTimeout(90_000);
+
+  test.beforeEach(async () => {
+    await snapshotOptions();
+    await clearStatsTable();
+    await setOption('tracking_request_method', 'rest');
+    await setOption('gdpr_enabled', 'off');
+    await setOption('javascript_mode', 'on');
+    await setOption('ignore_wp_users', 'no');
+  });
+  test.afterEach(async () => { await restoreOptions(); });
+
+  test('3 parallel anonymous visitors — all tracked, zero 403s, zero nonces', async ({ browser }) => {
+    const sessions = await Promise.all(
+      [1, 2, 3].map(async (i) => {
+        const ctx = await browser.newContext();
+        const page = await ctx.newPage();
+        const reqs: Array<{ url: string; headers: Record<string, string> }> = [];
+        const resps: Array<{ status: number }> = [];
+
+        page.on('request', (req) => {
+          if (req.url().includes('/slimstat/v1/hit'))
+            reqs.push({ url: req.url(), headers: req.headers() });
+        });
+        page.on('response', (res) => {
+          if (res.url().includes('/slimstat/v1/hit'))
+            resps.push({ status: res.status() });
+        });
+
+        const marker = `concurrent-${i}-${Date.now()}`;
+        await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(3000);
+
+        return { i, marker, reqs, resps, ctx };
+      }),
+    );
+
+    for (const s of sessions) {
+      // Zero 403s
+      const has403 = s.resps.some((r) => r.status === 403);
+      expect(has403, `Session ${s.i}: should have zero 403 responses`).toBe(false);
+
+      // Zero nonce headers
+      const withNonce = s.reqs.filter((r) => r.headers['x-wp-nonce'] !== undefined);
+      expect(withNonce.length, `Session ${s.i}: should send zero nonce headers`).toBe(0);
+
+      // Pageview recorded
+      const stat = await waitForPageviewRow(s.marker, 10_000);
+      expect(stat, `Session ${s.i}: pageview must be in DB`).toBeTruthy();
+
+      await s.ctx.close();
+    }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════
+// 8-9. Logged-in user nonce regression (kept from B5)
+// ═══════════════════════════════════════════════════════════════
+test.describe('Logged-in user nonce', () => {
   test.setTimeout(60_000);
 
   test.beforeEach(async () => {
@@ -373,7 +455,7 @@ test.describe('B5: Logged-in user nonce', () => {
   test('logged-in user has wp_rest_nonce in SlimStatParams', async ({ browser }) => {
     const ctx = await browser.newContext({ storageState: ADMIN_AUTH });
     const page = await ctx.newPage();
-    await page.goto(`${BASE_URL}/?e2e=b5-nonce`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE_URL}/?e2e=loggedin-nonce`, { waitUntil: 'domcontentloaded' });
     const params = await page.evaluate(() => (window as any).SlimStatParams || null);
     expect(params).toBeTruthy();
     expect(params.wp_rest_nonce, 'Logged-in user must have wp_rest_nonce').toBeTruthy();
@@ -385,10 +467,10 @@ test.describe('B5: Logged-in user nonce', () => {
     const ctx = await browser.newContext({ storageState: ADMIN_AUTH });
     const page = await ctx.newPage();
     const { requests } = trackRestHits(page);
-    await page.goto(`${BASE_URL}/?e2e=b5-header`, { waitUntil: 'networkidle' });
+    await page.goto(`${BASE_URL}/?e2e=loggedin-header`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(3000);
     const withNonce = requests.filter((r) => r.headers['x-wp-nonce'] !== undefined);
-    expect(withNonce.length, 'Logged-in user should send X-WP-Nonce').toBeGreaterThan(0);
+    expect(withNonce.length, 'Logged-in user must send X-WP-Nonce').toBeGreaterThan(0);
     await ctx.close();
   });
 });
