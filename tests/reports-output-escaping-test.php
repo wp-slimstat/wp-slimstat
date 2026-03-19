@@ -16,12 +16,17 @@
 
 declare(strict_types=1);
 
-$wordpress_root = dirname(__DIR__, 4);
-$wp_load_path   = $wordpress_root . '/wp-load.php';
+$default_wp_load_path = dirname(__DIR__, 4) . '/wp-load.php';
+$wp_load_override     = getenv('TESTS_WP_LOAD_PATH');
+$wp_load_path         = (false !== $wp_load_override && '' !== trim($wp_load_override)) ? trim($wp_load_override) : $default_wp_load_path;
+
+if (is_dir($wp_load_path)) {
+    $wp_load_path = rtrim($wp_load_path, '/\\') . '/wp-load.php';
+}
 
 if (!file_exists($wp_load_path)) {
-    fwrite(STDERR, "SKIP: wp-load.php not found at {$wp_load_path}\n");
-    exit(0);
+    fwrite(STDERR, "ERROR: wp-load.php not found at {$wp_load_path}. Set TESTS_WP_LOAD_PATH to an absolute wp-load.php path or WordPress root.\n");
+    exit(1);
 }
 
 if (!defined('SHORTINIT')) {
