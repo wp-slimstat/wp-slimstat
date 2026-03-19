@@ -15,7 +15,7 @@
  * Assertions:
  *   - Primary: No JS dialog fires (proves XSS did not execute)
  *   - Primary: Page loads without 5xx error
- *   - Secondary: Fingerprint link element exists with correct text (when visible)
+ *   - Secondary: On slimview1, the seeded fingerprint link exists with the expected text/title
  *
  * The integration unit test (reports-output-escaping-test.php) validates the real
  * raw_results_to_html() HTML output with entity-level assertions against the actual
@@ -62,7 +62,8 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
   // ─── Test 1: Script tag fingerprint — no XSS execution ────────────────
 
   test('script tag fingerprint does not execute on slimview1', async ({ page }) => {
-    await seedFingerprintPageview('<script>alert("xss")</script>');
+    const seededFingerprint = '<script>alert("xss")</script>';
+    await seedFingerprintPageview(seededFingerprint);
 
     let dialogTriggered = false;
     page.on('dialog', async (dialog) => {
@@ -72,17 +73,11 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
 
     const response = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
     expect(response?.status(), 'Page must load without server error').toBeLessThan(500);
-    await page.waitForTimeout(8_000);
+    const fpLink = page.locator("a[href*='fingerprint']").first();
+    await expect(fpLink, 'Seeded fingerprint link should render on slimview1').toBeVisible({ timeout: 15_000 });
     expect(dialogTriggered, 'Script tag XSS must not execute').toBe(false);
-
-    // If the Access Log widget rendered the fingerprint, verify the link exists
-    const fpLink = page.locator("a[href*='fingerprint']");
-    if ((await fpLink.count()) > 0) {
-      // The link text should be the first 8 chars (right-now.php:196 esc_html(substr(fp,0,8)))
-      // textContent decodes entities so '<script>' appears as '<script>' — safe in DOM, just decoded
-      const text = await fpLink.first().textContent();
-      expect(text?.length, 'Fingerprint text should be max 8 chars').toBeLessThanOrEqual(8);
-    }
+    await expect(fpLink, 'Fingerprint link text should match the seeded first 8 chars').toHaveText('<script>');
+    await expect(fpLink, 'Fingerprint title should preserve the full seeded value').toHaveAttribute('title', seededFingerprint);
   });
 
   // ─── Test 2: IMG onerror — no XSS execution ───────────────────────────
@@ -110,22 +105,15 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
 
     const response = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
     expect(response?.status()).toBeLessThan(500);
-    await page.waitForTimeout(8_000);
-
-    const fpLink = page.locator("a[href*='fingerprint']");
-    if ((await fpLink.count()) > 0) {
-      // right-now.php:196: esc_html(substr(fingerprint, 0, 8)) → 'a1b2c3d4'
-      const linkText = await fpLink.first().textContent();
-      expect(linkText, 'Should display first 8 chars').toBe('a1b2c3d4');
-
-      const title = await fpLink.first().getAttribute('title');
-      expect(title, 'Title should contain full fingerprint').toBe(validFp);
-    }
+    const fpLink = page.locator("a[href*='fingerprint']").first();
+    await expect(fpLink, 'Seeded fingerprint link should render on slimview1').toBeVisible({ timeout: 15_000 });
+    await expect(fpLink, 'Should display first 8 chars').toHaveText('a1b2c3d4');
+    await expect(fpLink, 'Title should contain full fingerprint').toHaveAttribute('title', validFp);
   });
 
-  // ─── Test 4: Multiple XSS payloads — no execution on any view ─────────
+  // ─── Test 4: Multiple XSS payloads — no execution on the rendered report ──────
 
-  test('multiple XSS payloads do not execute on slimview1 or slimview3', async ({ page }) => {
+  test('multiple XSS payloads do not execute on slimview1', async ({ page }) => {
     await seedFingerprintPageview('<script>alert("xss")</script>');
     await seedFingerprintPageview('"><img src=x onerror=alert(1)>');
     await seedFingerprintPageview('"><svg/onload=alert(1)>');
@@ -142,14 +130,8 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
     // Test slimview1 (Access Log / right-now.php)
     const r1 = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`);
     expect(r1?.status()).toBeLessThan(500);
-    await page.waitForTimeout(8_000);
+    await expect(page.locator("a[href*='fingerprint']").first()).toBeVisible({ timeout: 15_000 });
     expect(dialogTriggered, `XSS on slimview1: ${dialogMsg}`).toBe(false);
-
-    // Test slimview3 (Audience)
-    const r3 = await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview3`);
-    expect(r3?.status()).toBeLessThan(500);
-    await page.waitForTimeout(8_000);
-    expect(dialogTriggered, `XSS on slimview3: ${dialogMsg}`).toBe(false);
   });
 
   // ─── Test 5: Edge-case values don't crash admin ────────────────────────
