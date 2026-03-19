@@ -98,6 +98,16 @@ test.afterAll(async () => {
   await closeDb();
 });
 
+// ─── CookieYes dismissal cookies ─────────────────────────────────────
+// The test site has cookie-law-info (CookieYes) active. Its overlay blocks
+// the SlimStat banner buttons. Pre-set these cookies to dismiss CookieYes.
+const COOKIEYES_DISMISS_COOKIES = [
+  { name: 'viewed_cookie_policy', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
+  { name: 'CookieLawInfoConsent', value: 'true', domain: COOKIE_DOMAIN, path: '/' },
+  { name: 'cookielawinfo-checkbox-necessary', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
+  { name: 'cookielawinfo-checkbox-analytics', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
+];
+
 // ─── Helper functions ────────────────────────────────────────────────
 
 function isSlimstatTrackingRequest(req: import('@playwright/test').Request): boolean {
@@ -149,6 +159,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
   }) => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
     const ts = Date.now();
@@ -229,6 +240,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
   }) => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
     const ts = Date.now();
@@ -320,6 +332,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     // Step 2: Serve captured HTML to a context with 'accepted' cookie
     const testCtx = await browser.newContext();
     await testCtx.addCookies([
+      ...COOKIEYES_DISMISS_COOKIES,
       {
         name: 'slimstat_gdpr_consent',
         value: 'accepted',
@@ -372,6 +385,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     // Step 2: Serve captured HTML to a context with 'denied' cookie
     const testCtx = await browser.newContext();
     await testCtx.addCookies([
+      ...COOKIEYES_DISMISS_COOKIES,
       {
         name: 'slimstat_gdpr_consent',
         value: 'denied',
@@ -442,6 +456,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
 
     // Step 3: Serve modified HTML via page.route()
     const testCtx = await browser.newContext();
+    await testCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const testPage = await testCtx.newPage();
 
     const consentChangeResponses: { status: number; url: string }[] = [];
@@ -506,6 +521,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
   }) => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
     await newPage.goto(`${BASE_URL}/?e2e_marker=cookie-domain-${Date.now()}`, {
@@ -561,6 +577,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
   }) => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
     const ts = Date.now();
@@ -619,6 +636,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
   }) => {
     const browser = page.context().browser()!;
     const ctx = await browser.newContext();
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
     const trackingRequests: string[] = [];
