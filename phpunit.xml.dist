@@ -6,7 +6,7 @@
          cacheResultFile=".phpunit.result.cache">
     <testsuites>
         <testsuite name="Unit">
-            <directory>tests/unit</directory>
+            <directory>tests/Unit</directory>
         </testsuite>
     </testsuites>
     <php>
