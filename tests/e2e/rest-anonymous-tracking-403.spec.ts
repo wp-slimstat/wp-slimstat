@@ -16,30 +16,13 @@ import {
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
-let pool: mysql.Pool;
+let pool: mysql.Pool | null = null;
 
 function getPool(): mysql.Pool {
   if (!pool) {
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
-}
-
-/** Set a slimstat option directly via DB (no MU-plugin needed). */
-async function setSlimstatOptionDb(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  const opts = rows.length > 0 ? JSON.parse(rows[0].option_value.replace(/^a:\d+:\{/, '{').replace(/\}$/, '}')) : {};
-  // Actually slimstat uses PHP serialized options. Let's use a direct approach.
-  // Read the serialized value, update via PHP-aware method
-  await getPool().execute(
-    `UPDATE wp_options SET option_value = REPLACE(
-       REPLACE(option_value, CONCAT('"', ?, '";'), CONCAT('"', ?, '";"')),
-       CONCAT('"', ?, '";"'), CONCAT('"', ?, '";')
-     ) WHERE option_name = 'slimstat_options'`,
-    [key, key, key, key],
-  );
 }
 
 /** Snapshot and restore slimstat_options directly via DB. */
@@ -61,13 +44,15 @@ async function restoreOptions(): Promise<void> {
   }
 }
 
-/** Set a slimstat option by deserializing, modifying, and re-serializing via PHP eval on WordPress. */
+/**
+ * Set a slimstat option directly in the DB by parsing PHP serialized data.
+ *
+ * Limitations: Only supports simple string keys and string values.
+ * Does NOT handle escaped quotes, non-string types (int/bool/array), or
+ * nested structures. Intended only for this test's limited option keys
+ * (tracking_request_method, gdpr_enabled, javascript_mode, ignore_wp_users).
+ */
 async function setOption(key: string, value: string): Promise<void> {
-  // Direct SQL approach: read the serialized option, modify in PHP via a simpler trick
-  // Since slimstat options are stored as PHP serialized arrays, we need to
-  // read → unserialize → modify → serialize → write
-  // The safest way without MU-plugin is to use the WordPress test site directly.
-  // Let's use a direct DB query to read, parse (approximately), update, and write back.
   const [rows] = (await getPool().execute(
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
   )) as any;
@@ -129,6 +114,10 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   });
 
   test.afterAll(async () => {
+    if (pool) {
+      await pool.end();
+      pool = null;
+    }
     await closeDb();
   });
 
