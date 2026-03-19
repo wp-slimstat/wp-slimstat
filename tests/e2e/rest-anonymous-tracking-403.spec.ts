@@ -7,7 +7,7 @@
  *
  * @see https://github.com/wp-slimstat/wp-slimstat/issues/238
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
 import {
   clearStatsTable,
@@ -23,6 +23,15 @@ function getPool(): mysql.Pool {
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
+}
+
+function trackRestHits(page: Page) {
+  const requests: Array<{ url: string; headers: Record<string, string> }> = [];
+  page.on('request', (req) => {
+    if (req.url().includes('/wp-json/slimstat/v1/hit') || req.url().includes('rest_route=/slimstat/v1/hit'))
+      requests.push({ url: req.url(), headers: req.headers() });
+  });
+  return { requests };
 }
 
 /** Snapshot and restore slimstat_options directly via DB. */
@@ -212,16 +221,23 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
     await ctx.close();
   });
 
-  test('anonymous: nonce present (for consent) but is_logged_in is 0 (no header)', async ({ browser }) => {
+  test('anonymous: nonce present (for consent), is_logged_in=0, no X-WP-Nonce header', async ({ browser }) => {
     const ctx = await browser.newContext();
     const anonPage = await ctx.newPage();
-    await anonPage.goto(`${BASE_URL}/?e2e=nonce-check-anon`, { waitUntil: 'domcontentloaded' });
+    const { requests } = trackRestHits(anonPage);
+
+    await anonPage.goto(`${BASE_URL}/?e2e=nonce-flag-check`, { waitUntil: 'networkidle' });
+    await anonPage.waitForTimeout(3000);
+
     const anonParams = await anonPage.evaluate(() => (window as any).SlimStatParams || null);
     expect(anonParams).toBeTruthy();
     // Nonce IS present (needed for consent banner CSRF protection)
-    expect(anonParams.wp_rest_nonce, 'wp_rest_nonce must be present for consent operations').toBeTruthy();
-    // But is_logged_in is '0' so JS won't send it as X-WP-Nonce header
+    expect(anonParams.wp_rest_nonce, 'wp_rest_nonce must be present for consent').toBeTruthy();
+    // is_logged_in is '0' → JS skips X-WP-Nonce header
     expect(anonParams.is_logged_in, 'is_logged_in must be 0 for anonymous').toBe('0');
+    // Verify no nonce header was sent
+    const withNonce = requests.filter((r) => r.headers['x-wp-nonce'] !== undefined);
+    expect(withNonce.length, 'No X-WP-Nonce header when is_logged_in=0').toBe(0);
 
     await ctx.close();
   });

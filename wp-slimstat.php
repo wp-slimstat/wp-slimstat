@@ -1161,9 +1161,11 @@ class wp_slimstat
         }
 
         // Always generate wp_rest_nonce (needed for consent banner CSRF protection).
-        // The JS uses is_logged_in to decide whether to send it as X-WP-Nonce header
-        // on tracking requests. Anonymous users skip the header (avoids 403 on cached
-        // pages) but still have the nonce available for consent operations.
+        // The JS uses is_logged_in to decide whether to send it as X-WP-Nonce header.
+        // Anonymous pages: is_logged_in='0' → no header → no 403 on cached pages.
+        // Admin-cached pages: is_logged_in='1' (stale) → sends nonce → may 403 → retry
+        // without nonce (handled by JS retry logic). This is acceptable since most caches
+        // exclude logged-in users, and the retry adds only one extra request.
         $params['wp_rest_nonce'] = wp_create_nonce('wp_rest');
         $params['is_logged_in'] = is_user_logged_in() ? '1' : '0';
         // Expose consent/DNT info to client
