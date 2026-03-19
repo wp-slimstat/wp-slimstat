@@ -2082,14 +2082,23 @@ if (!window.requestIdleCallback) {
             // Cached page guard: check if user already has a consent cookie.
             // On cached pages the banner HTML is baked into the static response
             // even though the user previously consented. Detect and suppress.
-            var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
-            var existingConsent = detectSlimStatBanner(cookieName, "statistics");
-            if (existingConsent !== null) {
-                if (banner.parentNode) {
-                    banner.parentNode.removeChild(banner);
+            // Note: reads cookie inline to avoid esbuild scope/renaming issues
+            // with cross-scope function references.
+            var consentCookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
+            try {
+                var safeName = consentCookieName.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
+                var cookiePattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
+                var cookieMatch = document.cookie.match(cookiePattern);
+                if (cookieMatch) {
+                    // User already made a consent decision — remove stale banner
+                    if (banner.parentNode) {
+                        banner.parentNode.removeChild(banner);
+                    }
+                    bannerInitialized = true;
+                    return;
                 }
-                bannerInitialized = true;
-                return;
+            } catch (e) {
+                // If cookie check fails, show banner (safe default)
             }
 
             bannerInitialized = true;
