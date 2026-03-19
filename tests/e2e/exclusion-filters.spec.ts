@@ -92,6 +92,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Ensure server-side tracking is on
     await setSlimstatSetting('javascript_mode', 'off');
     await setSlimstatSetting('is_tracking', 'on');
+    // CRITICAL: Disable GDPR to isolate exclusion filters from consent gate (#246)
+    // Without this, fresh browser contexts have no consent cookie, so Consent::canTrack()
+    // returns false for ALL users - making user exclusion tests false positives.
+    await setSlimstatSetting('gdpr_enabled', 'off');
   });
 
   test.afterAll(async () => {
