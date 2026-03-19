@@ -355,7 +355,11 @@ class Tracker
         }
 
         if (!empty($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
-            $_stat['fingerprint'] = sanitize_text_field($_data_js['fh']);
+            $fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $_data_js['fh']);
+            if (strlen($fingerprint) > 256) {
+                $fingerprint = substr($fingerprint, 0, 256);
+            }
+            $_stat['fingerprint'] = sanitize_text_field($fingerprint);
         }
 
         if (!empty($_data_js['tz'])) {
