@@ -172,30 +172,19 @@ jobs:
           echo "MySQL container: $MYSQL_CTR"
 
           MYSQL_IP=$(docker inspect "$MYSQL_CTR" \
-            --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' | tr -d ' ')
-          # Trim to just the first IP if multiple are returned
-          MYSQL_IP=$(echo "$MYSQL_IP" | awk '{print $1}')
+            --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+          # Use first IP if multiple networks return multiple IPs
+          MYSQL_IP=$(echo "$MYSQL_IP" | tr ' ' '\n' | grep -v '^$' | head -1)
           echo "MySQL IP: $MYSQL_IP"
 
-          # Wait for MySQL to be ready, then discover the actual database name.
-          # wp-env uses "wordpress" for the main site and "tests-wordpress" for
-          # the test site (port 8889 / TEST_BASE_URL). Both may exist; pick the
-          # test-site database since that is what the E2E tests target.
-          for i in $(seq 1 20); do
-            DB_LIST=$(docker exec "$MYSQL_CTR" mysql -uroot -ppassword \
-              -e "SHOW DATABASES;" 2>/dev/null || true)
-            [ -n "$DB_LIST" ] && break
-            sleep 2
-          done
-          echo "Available databases: $DB_LIST"
-
-          # Prefer "tests-wordpress"; fall back to "wordpress"
-          if echo "$DB_LIST" | grep -q "tests-wordpress"; then
-            DB_NAME="tests-wordpress"
-          else
-            DB_NAME="wordpress"
-          fi
-          echo "Using database: $DB_NAME"
+          # Get exact database name used by the wp-env test site (port 8889).
+          # wp-env run tests uses the test WordPress instance's WP-CLI.
+          DB_NAME=$(npx wp-env run tests wp config get DB_NAME --quiet 2>/dev/null || true)
+          # Strip carriage returns / whitespace (Windows line endings from Docker)
+          DB_NAME=$(echo "$DB_NAME" | tr -d '\r' | xargs)
+          echo "Database name from wp-cli: '$DB_NAME'"
+          # Fall back to "wordpress" if WP-CLI discovery fails
+          DB_NAME="${DB_NAME:-wordpress}"
 
           # Disable Unix socket; switch to TCP
           echo "MYSQL_SOCKET=" >> $GITHUB_ENV
