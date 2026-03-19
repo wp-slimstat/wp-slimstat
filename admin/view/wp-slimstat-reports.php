@@ -1395,7 +1395,7 @@ class wp_slimstat_reports
 
                 if (is_admin()) {
                     $column_value  = is_array($results[$i]) && isset($results[$i][$_args['columns']]) ? $results[$i][$_args['columns']] : '';
-                    $element_value = "<a class='slimstat-filter-link' href='" . esc_attr(self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $column_value)) . sprintf("'>%s</a>", $element_value);
+                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $column_value) . sprintf("'>%s</a>", $element_value);
                 }
 
                 if (!empty($_args['type']) && 'recent' == $_args['type']) {
