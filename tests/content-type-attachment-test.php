@@ -274,7 +274,7 @@ $legacyContentInfo = Tracker::_get_content_info();
 assert_same('cpt:attachment', $legacyContentInfo['content_type'], 'Tracker::_get_content_info should prefix attachment content types');
 
 assert_true(Utils::isBlacklisted('cpt:attachment', 'cpt:attachment'), 'Exact attachment CPT exclusions should match');
-assert_false(Utils::isBlacklisted('attachment', 'cpt:attachment'), 'Legacy attachment values should not match prefixed exclusions');
+assert_true(Utils::isBlacklisted('cpt:attachment', 'attachment'), 'Legacy attachment exclusions should still match prefixed attachment content types');
 assert_true(Utils::isBlacklisted('cpt:attachment', 'cpt:*'), 'Wildcard CPT exclusions should match attachments');
 
 echo "All {$assertions} assertions passed in content-type-attachment-test.php\n";

@@ -323,10 +323,12 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
 
+    // Attachment pageviews are stored against the resolved attachment permalink,
+    // so poll the slug-specific row rather than the global stat count.
     await expect.poll(
-      () => getStatCount(),
+      async () => (await getRecentStatByResource(slug))?.content_type ?? null,
       { timeout: 10_000, intervals: [500] }
-    ).toBeGreaterThan(0);
+    ).toBe('cpt:attachment');
 
     await anonPage.close();
     await anonCtx.close();
