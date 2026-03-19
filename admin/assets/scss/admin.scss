@@ -992,7 +992,17 @@ body {
 }
 
 #dashboard-widgets #slim_p7_02.postbox .inside {
-  height: 320px;
+  height: 500px;
+}
+
+/* Fix nested postbox in dashboard widgets - hide redundant inner h3 */
+#dashboard-widgets [id*="slim_p"].postbox .postbox h3 {
+  display: none;
+}
+
+/* Fix nested postbox in dashboard widgets - let outer container control height */
+#dashboard-widgets [id*="slim_p"].postbox .postbox .inside {
+  height: auto;
 }
 
 .closed .slimScrollDiv {
