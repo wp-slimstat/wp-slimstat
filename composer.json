@@ -43,6 +43,7 @@
     "test:lazy-migration": "php tests/lazy-migration-test.php",
     "test:rest-controller": "php tests/tracking-rest-controller-test.php",
     "test:reports-escaping": "php tests/reports-output-escaping-test.php",
+    "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
     "test:all": [
       "@test:license-tags",
       "@test:geoip-resolver",
@@ -50,7 +51,8 @@
       "@test:legacy-sync",
       "@test:lazy-migration",
       "@test:rest-controller",
-      "@test:reports-escaping"
+      "@test:reports-escaping",
+      "@test:fingerprint-sanitize"
     ]
   }
 }
