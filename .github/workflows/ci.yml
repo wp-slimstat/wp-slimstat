@@ -74,10 +74,12 @@ jobs:
         run: composer test:unit
 
       - name: PHP syntax lint (src/)
+        # Lint plugin source only — skip src/Dependencies/ which contains
+        # Mozart-scoped vendor files that may use PHP 8.0+ syntax.
         # Print only files with errors; grep exits 1 when nothing matches (no
         # errors), so we invert: fail only when errors ARE found.
         run: |
-          ERRORS=$(find src/ -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          ERRORS=$(find src/ -not -path "src/Dependencies/*" -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
           if [ -n "$ERRORS" ]; then
             echo "$ERRORS"
             exit 1
