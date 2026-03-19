@@ -185,6 +185,11 @@ class Ajax
                     $stat['resource'] = \wp_slimstat::get_request_uri();
                 }
 
+                // Sync local stat (including id from client) to global before ensureVisitId,
+                // which calls get_stat()/set_stat() internally and would lose the id otherwise.
+                // See: https://github.com/wp-slimstat/wp-slimstat/issues/242
+                \wp_slimstat::set_stat($stat);
+
                 // Security: Ensure visit ID is generated successfully
                 $visitIdAssigned = Session::ensureVisitId(true);
                 $stat = \wp_slimstat::get_stat();
