@@ -213,30 +213,34 @@ class Processor
 
         if (!isset($stat['content_type'])) {
             $content_info = Utils::getContentInfo();
-            // Normalize legacy ignore_content_types=attachment to match the
-            // cpt:attachment format introduced in the #236 fix.
-            $ignore_content_types = \wp_slimstat::$settings['ignore_content_types'] ?? '';
-            if ('' !== $ignore_content_types) {
-                $ignore_content_types = implode(',', array_unique(array_merge(
-                    \wp_slimstat::string_to_array($ignore_content_types),
-                    array_map(
-                        function ($v) { return 'cpt:' . $v; },
-                        array_filter(
-                            \wp_slimstat::string_to_array($ignore_content_types),
-                            function ($v) { return 'attachment' === $v; }
-                        )
-                    )
-                )));
-            }
-
-            if (!empty($ignore_content_types) && Utils::isBlacklisted($content_info['content_type'], $ignore_content_types)) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
 
             if (is_array($content_info)) {
                 $stat += $content_info;
             }
+        }
+
+        // Check content_type exclusions AFTER content_type is resolved — whether
+        // from server-side detection (above) or from the JS tracker's ci payload
+        // (Ajax.php). This ensures ignore_content_types works in both modes (#236).
+        $ignore_content_types = \wp_slimstat::$settings['ignore_content_types'] ?? '';
+        if ('' !== $ignore_content_types) {
+            // Normalize legacy ignore_content_types=attachment to match the
+            // cpt:attachment format introduced in the #236 fix.
+            $ignore_content_types = implode(',', array_unique(array_merge(
+                \wp_slimstat::string_to_array($ignore_content_types),
+                array_map(
+                    function ($v) { return 'cpt:' . $v; },
+                    array_filter(
+                        \wp_slimstat::string_to_array($ignore_content_types),
+                        function ($v) { return 'attachment' === $v; }
+                    )
+                )
+            )));
+        }
+
+        if (!empty($ignore_content_types) && !empty($stat['content_type']) && Utils::isBlacklisted($stat['content_type'], $ignore_content_types)) {
+            Query::setProcessingTimestamp(null);
+            return false;
         }
 
         if ((is_archive() || is_search()) && !empty($GLOBALS['wp_query']->found_posts)) {

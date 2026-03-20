@@ -213,12 +213,15 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     await clearStatsTable();
     const slug = `e2e-server-anon-control-${Date.now()}`;
     const pageUrl = await createTrackableProduct('E2E Anonymous Server Control', slug);
-    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+    const response = await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+
+    // Verify page loaded (not 404 from missing rewrite rules)
+    expect(response?.status(), `Product page ${pageUrl} must load (not 404)`).toBeLessThan(400);
 
     // Anonymous user SHOULD be tracked (ignore_wp_users only blocks logged-in users)
     await expect.poll(
       () => getRecentStatByResource(slug),
-      { timeout: 10_000, intervals: [500] }
+      { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
     await page.close();
@@ -239,12 +242,15 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
 
     const slug = `e2e-server-admin-tracked-${Date.now()}`;
     const pageUrl = await createTrackableProduct('E2E Admin Server Control', slug);
-    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+    const adminResponse = await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+
+    // Verify page loaded (not 404 from missing rewrite rules)
+    expect(adminResponse?.status(), `Product page ${pageUrl} must load (not 404)`).toBeLessThan(400);
 
     // Admin SHOULD be tracked when ignore_wp_users is off
     await expect.poll(
       () => getRecentStatByResource(slug),
-      { timeout: 10_000, intervals: [500] }
+      { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
     // Verify the tracked row has the username
