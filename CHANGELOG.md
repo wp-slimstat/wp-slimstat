@@ -10,7 +10,7 @@ Fixed
 - Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
 - Increased Access Log widget height on WP Dashboard
 - Synced stat before `ensureVisitId` to prevent ID loss on finalization
-- Skipped REST nonce for anonymous users, removed dead adblock fallback URL
+- Skipped REST nonce for anonymous users on non-consent tracking endpoints, removed dead adblock fallback URL
 
 Security
 - Restored nonce verification for all consent endpoints

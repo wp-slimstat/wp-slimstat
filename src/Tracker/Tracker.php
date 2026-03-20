@@ -354,8 +354,8 @@ class Tracker
             $_stat['page_performance'] = intval($_data_js['pp']);
         }
 
-        if (!empty($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
-            $fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $_data_js['fh']);
+        if (!empty($_data_js['fh']) && is_scalar($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
+            $fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', (string) $_data_js['fh']);
             if (strlen($fingerprint) > 256) {
                 $fingerprint = substr($fingerprint, 0, 256);
             }

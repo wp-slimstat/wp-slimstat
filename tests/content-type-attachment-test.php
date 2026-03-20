@@ -258,7 +258,9 @@ if (!function_exists('is_paged')) {
 
 require_once __DIR__ . '/../src/Tracker/Utils.php';
 require_once __DIR__ . '/../src/Tracker/Tracker.php';
+require_once __DIR__ . '/../src/Tracker/Processor.php';
 
+use SlimStat\Tracker\Processor;
 use SlimStat\Tracker\Tracker;
 use SlimStat\Tracker\Utils;
 
@@ -284,16 +286,7 @@ if (!class_exists('wp_slimstat', false)) {
 	// wp_slimstat stub already exists from above
 }
 $legacy_setting = 'attachment';
-$normalized = implode(',', array_unique(array_merge(
-	\wp_slimstat::string_to_array($legacy_setting),
-	array_map(
-		function ($v) { return 'cpt:' . $v; },
-		array_filter(
-			\wp_slimstat::string_to_array($legacy_setting),
-			function ($v) { return 'attachment' === $v; }
-		)
-	)
-)));
+$normalized = Processor::normalizeLegacySetting($legacy_setting);
 assert_true(Utils::isBlacklisted('cpt:attachment', $normalized), 'Processor-normalized legacy "attachment" setting should match cpt:attachment');
 
 echo "All {$assertions} assertions passed in content-type-attachment-test.php\n";

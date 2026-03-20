@@ -85,7 +85,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 - **Fix**: Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
 - **Fix**: Increased Access Log widget height on WP Dashboard
 - **Fix**: Synced stat before `ensureVisitId` to prevent ID loss on finalization
-- **Fix**: Skipped REST nonce for anonymous users, removed dead adblock fallback URL
+- **Fix**: Skipped REST nonce for anonymous users on non-consent tracking endpoints, removed dead adblock fallback URL
 - **Security**: Restored nonce verification for all consent endpoints
 - **Improved**: Refactored `isUserExcluded()` into standalone method with full test coverage
 - **Improved**: Inlined `get_current_user_id()` in nonce guards for clarity

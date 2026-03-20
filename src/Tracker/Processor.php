@@ -19,12 +19,6 @@ class Processor
      * may not be initialized by the 'wp' hook (e.g., object caching plugins,
      * multisite, or custom authentication flows).
      *
-     * @since 5.4.5
-     * @return bool True if the current user should be excluded.
-     */
-    /**
-     * Check if the current WordPress user should be excluded from tracking.
-     *
      * Returns null when the user is not excluded (or not logged in).
      * Returns the WP_User object when excluded, so callers can reuse
      * the resolved user without calling wp_get_current_user() again.
@@ -242,16 +236,7 @@ class Processor
         if ('' !== $ignore_content_types) {
             // Normalize legacy ignore_content_types=attachment to match the
             // cpt:attachment format introduced in the #236 fix.
-            $ignore_content_types = implode(',', array_unique(array_merge(
-                \wp_slimstat::string_to_array($ignore_content_types),
-                array_map(
-                    function ($v) { return 'cpt:' . $v; },
-                    array_filter(
-                        \wp_slimstat::string_to_array($ignore_content_types),
-                        function ($v) { return 'attachment' === $v; }
-                    )
-                )
-            )));
+            $ignore_content_types = self::normalizeLegacySetting($ignore_content_types);
         }
 
         if (!empty($ignore_content_types) && !empty($stat['content_type']) && Utils::isBlacklisted($stat['content_type'], $ignore_content_types)) {
@@ -790,6 +775,27 @@ class Processor
         }
 
         return $status;
+    }
+
+    /**
+     * Normalize a legacy ignore_content_types setting so bare "attachment"
+     * also matches the "cpt:attachment" content_type format (#236).
+     *
+     * @param string $setting Comma-separated content type exclusion list.
+     * @return string Normalized comma-separated list.
+     */
+    public static function normalizeLegacySetting($setting)
+    {
+        return implode(',', array_unique(array_merge(
+            \wp_slimstat::string_to_array($setting),
+            array_map(
+                function ($v) { return 'cpt:' . $v; },
+                array_filter(
+                    \wp_slimstat::string_to_array($setting),
+                    function ($v) { return 'attachment' === $v; }
+                )
+            )
+        )));
     }
 
 }
