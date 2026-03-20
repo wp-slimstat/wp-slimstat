@@ -932,13 +932,19 @@ var SlimStat = (function () {
                 payload.pageview_id = String(pageviewId);
             }
 
+            // Build headers — only include X-WP-Nonce when nonce is non-empty.
+            // Anonymous users on cached pages have no valid nonce. Sending an
+            // empty/stale X-WP-Nonce causes WordPress core (rest_cookie_check_errors)
+            // to reject with 403 before the controller handler even runs.
+            var headers = { "Content-Type": "application/json" };
+            if (nonce) {
+                headers["X-WP-Nonce"] = nonce;
+            }
+
             if (typeof window.fetch === "function") {
                 fetch(endpoint, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-WP-Nonce": nonce,
-                    },
+                    headers: headers,
                     credentials: "same-origin",
                     body: JSON.stringify(payload),
                 })
@@ -953,7 +959,9 @@ var SlimStat = (function () {
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", endpoint, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.setRequestHeader("X-WP-Nonce", nonce);
+                if (nonce) {
+                    xhr.setRequestHeader("X-WP-Nonce", nonce);
+                }
                 xhr.onload = function () {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         try {
@@ -2079,6 +2087,28 @@ if (!window.requestIdleCallback) {
                 return;
             }
 
+            // Cached page guard: check if user already has a consent cookie.
+            // On cached pages the banner HTML is baked into the static response
+            // even though the user previously consented. Detect and suppress.
+            // Note: reads cookie inline to avoid esbuild scope/renaming issues
+            // with cross-scope function references.
+            var consentCookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
+            try {
+                var safeName = consentCookieName.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
+                var cookiePattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
+                var cookieMatch = document.cookie.match(cookiePattern);
+                if (cookieMatch) {
+                    // User already made a consent decision — remove stale banner
+                    if (banner.parentNode) {
+                        banner.parentNode.removeChild(banner);
+                    }
+                    bannerInitialized = true;
+                    return;
+                }
+            } catch (e) {
+                // If cookie check fails, show banner (safe default)
+            }
+
             bannerInitialized = true;
 
             setTimeout(function () {
@@ -2143,12 +2173,16 @@ if (!window.requestIdleCallback) {
             var nonce = params.wp_rest_nonce || "";
             var cookieName = params.gdpr_cookie_name || "slimstat_gdpr_consent";
             var cookiePath = params.gdpr_cookie_path || params.baseurl || "/";
+            var cookieDomain = params.gdpr_cookie_domain || "";
 
             // Set cookie immediately
             try {
                 var expiry = new Date();
                 expiry.setTime(expiry.getTime() + 365 * 24 * 60 * 60 * 1000);
                 var cookie = cookieName + "=" + consent + "; path=" + cookiePath + "; expires=" + expiry.toUTCString() + "; SameSite=Lax";
+                if (cookieDomain) {
+                    cookie += "; domain=" + cookieDomain;
+                }
                 if (window && window.location && window.location.protocol === "https:") {
                     cookie += "; Secure";
                 }
