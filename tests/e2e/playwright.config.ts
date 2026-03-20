@@ -30,6 +30,7 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   globalSetup: path.join(__dirname, 'global-setup.ts'),
+  globalTeardown: path.join(__dirname, 'global-teardown.ts'),
   projects: [
     {
       name: 'admin',

@@ -1,5 +1,6 @@
 /**
- * Global setup: authenticates admin and author users, saves browser state.
+ * Global setup: authenticates admin and author users, saves browser state,
+ * and installs all MU-plugins needed by the test suite.
  * Reuses cached auth files if they are less than 30 minutes old.
  */
 import { chromium, FullConfig } from '@playwright/test';
@@ -7,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { BASE_URL } from './helpers/env';
+import { installAllTestMuPlugins, installCptMuPlugin } from './helpers/setup';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,6 +45,12 @@ async function loginAndSave(
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const baseURL = BASE_URL;
+
+  // Install all MU-plugins once so individual specs don't need to manage them.
+  // This prevents state contamination when one spec's afterAll removes a plugin
+  // that the next spec expects to be present.
+  installAllTestMuPlugins();
+  installCptMuPlugin();
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
