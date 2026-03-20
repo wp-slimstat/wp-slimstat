@@ -17,72 +17,25 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import * as mysql from 'mysql2/promise';
 import {
+  getPool,
   clearStatsTable,
   waitForPageviewRow,
   closeDb,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { BASE_URL } from './helpers/env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ADMIN_AUTH = path.join(__dirname, '.auth/admin.json');
 
-let pool: mysql.Pool | null = null;
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-let savedOptions: string | null = null;
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-
-/**
- * Set a slimstat option directly in the DB by parsing PHP serialized data.
- * Limitations: Only handles simple string keys/values. Not for general use.
- */
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-  let serialized: string = rows[0].option_value;
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-  if (keyIdx === -1) {
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${oldCount + 1}:{`);
-      const lastBrace = serialized.lastIndexOf('}');
-      serialized = serialized.substring(0, lastBrace) + `s:${key.length}:"${key}";s:${value.length}:"${value}";` + '}';
-    }
-  } else {
-    const valueStart = keyIdx + keyPattern.length;
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      serialized = serialized.substring(0, valueStart) + `s:${value.length}:"${value}";` + serialized.substring(valueStart + valueMatch[0].length);
-    }
-  }
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity within this spec
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 async function anonContext(browser: any): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext();

@@ -236,8 +236,14 @@ test.describe('User Exclusion — JS/Client-Side Mode (@user-exclusion-js)', () 
     const marker = `e2e-js-stale-nonce-${Date.now()}`;
     await page.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
 
-    // Tamper with the nonce BEFORE the tracker fires
-    // (race: the tracker uses requestIdleCallback/setTimeout(250ms), so we have a window)
+    // Tamper with the nonce BEFORE the tracker fires to simulate a cached page
+    // with a stale nonce. Note: extractSlimStatParams() may re-parse the nonce
+    // from the DOM, but the mutation still triggers the 403→failover path.
+    // The assertion is valid because Processor::isUserExcluded() checks the
+    // authenticated session cookies (not the nonce) to determine exclusion.
+    // This test verifies that server-side exclusion holds even when the client
+    // nonce flow fails (403→transport failover), ensuring the nonce-less retry
+    // doesn't bypass user exclusion by stripping authentication.
     await page.evaluate(() => {
       const w = window as any;
       if (w.SlimStatParams) {

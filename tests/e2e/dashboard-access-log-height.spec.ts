@@ -9,18 +9,25 @@ import { test, expect } from '@playwright/test';
 import { getPool, closeDb } from './helpers/setup';
 
 test.describe('Dashboard Access Log Widget Height (#247)', () => {
+  const createdVisitIds: number[] = [];
+
   test.beforeAll(async () => {
     // Seed at least 15 pageviews so the widget has content
     const pool = getPool();
-    const values = Array.from({ length: 15 }, (_, i) => [
-      `192.168.1.${i + 1}`,
-      ['/', '/sample-page/', '/hello-world/', '/about/', '/contact/'][i % 5],
-      Math.floor(Date.now() / 1000) - i * 120,
-      ['Chrome 120', 'Firefox 115', 'Safari 17'][i % 3],
-      ['Windows', 'macOS', 'Linux'][i % 3],
-      'text/html',
-      100 + i,
-    ]);
+    const visitIdBase = Date.now();
+    const values = Array.from({ length: 15 }, (_, i) => {
+      const visitId = visitIdBase + i;
+      createdVisitIds.push(visitId);
+      return [
+        `192.168.1.${i + 1}`,
+        ['/', '/sample-page/', '/hello-world/', '/about/', '/contact/'][i % 5],
+        Math.floor(Date.now() / 1000) - i * 120,
+        ['Chrome 120', 'Firefox 115', 'Safari 17'][i % 3],
+        ['Windows', 'macOS', 'Linux'][i % 3],
+        'text/html',
+        visitId,
+      ];
+    });
     for (const row of values) {
       await pool.execute(
         'INSERT INTO wp_slim_stats (ip, resource, dt, browser, platform, content_type, visit_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -30,9 +37,13 @@ test.describe('Dashboard Access Log Widget Height (#247)', () => {
   });
 
   test.afterAll(async () => {
-    await getPool().execute(
-      'DELETE FROM wp_slim_stats WHERE visit_id BETWEEN 100 AND 114'
-    );
+    if (createdVisitIds.length > 0) {
+      const placeholders = createdVisitIds.map(() => '?').join(',');
+      await getPool().execute(
+        `DELETE FROM wp_slim_stats WHERE visit_id IN (${placeholders})`,
+        createdVisitIds
+      );
+    }
     await closeDb();
   });
 

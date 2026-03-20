@@ -575,3 +575,34 @@ export function cleanupFixtureFiles(): void {
     if (fs.existsSync(p)) fs.unlinkSync(p);
   }
 }
+
+// ─── Shared CPT MU-plugin for E2E tests ──────────────────────────
+
+const CPT_MU_PLUGIN_PATH = path.join(MU_PLUGINS, 'e2e-test-product-cpt.php');
+
+export const CPT_MU_PLUGIN_CONTENT = `<?php
+/**
+ * E2E Test: Register 'product' CPT for testing.
+ */
+if (!defined('ABSPATH')) exit;
+add_action('init', function() {
+    register_post_type('product', [
+        'public'       => true,
+        'label'        => 'Products',
+        'has_archive'  => true,
+        'rewrite'      => ['slug' => 'product'],
+        'supports'     => ['title', 'editor'],
+        'show_in_rest' => true,
+    ]);
+    flush_rewrite_rules();
+});
+`;
+
+export function installCptMuPlugin(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.writeFileSync(CPT_MU_PLUGIN_PATH, CPT_MU_PLUGIN_CONTENT, 'utf8');
+}
+
+export function uninstallCptMuPlugin(): void {
+  if (fs.existsSync(CPT_MU_PLUGIN_PATH)) fs.unlinkSync(CPT_MU_PLUGIN_PATH);
+}

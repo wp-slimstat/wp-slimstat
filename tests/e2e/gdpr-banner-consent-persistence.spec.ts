@@ -12,89 +12,24 @@
  */
 import { test, expect, type Page } from '@playwright/test';
 import {
+  getPool,
   closeDb,
   clearStatsTable,
   waitForPageviewRow,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-import * as mysql from 'mysql2/promise';
+import { BASE_URL } from './helpers/env';
 
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
-let pool: mysql.Pool | null = null;
-
-function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
-  }
-  return pool;
-}
-
-/** Snapshot and restore slimstat_options directly via DB. */
-let savedOptions: string | null = null;
-
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-
-/**
- * Set a slimstat option directly in the DB by parsing PHP serialized data.
- * Supports simple string keys and string values only.
- */
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-
-  let serialized: string = rows[0].option_value;
-
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-
-  if (keyIdx === -1) {
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      const newCount = oldCount + 1;
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${newCount}:{`);
-      const lastBrace = serialized.lastIndexOf('}');
-      const entry = `s:${key.length}:"${key}";s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, lastBrace) + entry + '}';
-    }
-  } else {
-    const valueStart = keyIdx + keyPattern.length;
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      const oldValue = valueMatch[0];
-      const newValue = `s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, valueStart) + newValue + serialized.substring(valueStart + oldValue.length);
-    }
-  }
-
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity within this spec
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 test.afterAll(async () => {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
   await closeDb();
 });
 

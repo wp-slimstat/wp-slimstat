@@ -29,43 +29,10 @@ import {
   restoreSlimstatOptions,
   enableDisableWpCron,
   restoreWpConfig,
+  installCptMuPlugin,
+  uninstallCptMuPlugin,
 } from './helpers/setup';
-import { BASE_URL, WP_ROOT } from './helpers/env';
-import * as path from 'path';
-import * as fs from 'fs';
-
-// ─── Trackable CPT fixture ────────────────────────────────────────
-
-const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
-
-const CPT_MU_PLUGIN_CONTENT = `<?php
-/**
- * E2E Test: Register 'product' CPT for server-mode user exclusion testing.
- */
-if (!defined('ABSPATH')) exit;
-add_action('init', function() {
-    register_post_type('product', [
-        'public'       => true,
-        'label'        => 'Products',
-        'has_archive'  => true,
-        'rewrite'      => ['slug' => 'product'],
-        'supports'     => ['title', 'editor'],
-        'show_in_rest' => true,
-    ]);
-    // Flush rewrite rules so /product/{slug}/ resolves immediately in E2E.
-    flush_rewrite_rules();
-});
-`;
-
-function installCptMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
-  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
-}
-
-function uninstallCptMuPlugin(): void {
-  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
-}
+import { BASE_URL } from './helpers/env';
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
