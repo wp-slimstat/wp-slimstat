@@ -56,18 +56,6 @@ class Utils
 			$needles = [$needles];
 		}
 
-		// Preserve legacy ignore_content_types=attachment configs after
-		// attachment pages were normalized to the cpt:attachment format.
-		$expanded_needles = [];
-		foreach ($needles as $needle) {
-			$expanded_needles[] = $needle;
-			if (is_string($needle) && 0 === strpos($needle, 'cpt:attachment')) {
-				$expanded_needles[] = substr($needle, 4);
-			}
-		}
-
-		$needles = array_values(array_unique($expanded_needles));
-
 		foreach (\wp_slimstat::string_to_array($haystackString) as $item) {
 			$pattern = str_replace(['\\*', '\\!'], ['(.*)', '.'], preg_quote($item, '@'));
 

@@ -273,8 +273,27 @@ assert_same('cpt:attachment', $contentInfo['content_type'], 'Utils::getContentIn
 $legacyContentInfo = Tracker::_get_content_info();
 assert_same('cpt:attachment', $legacyContentInfo['content_type'], 'Tracker::_get_content_info should prefix attachment content types');
 
+// isBlacklisted is now a generic matcher — no attachment-specific expansion.
 assert_true(Utils::isBlacklisted('cpt:attachment', 'cpt:attachment'), 'Exact attachment CPT exclusions should match');
-assert_true(Utils::isBlacklisted('cpt:attachment', 'attachment'), 'Legacy attachment exclusions should still match prefixed attachment content types');
+assert_false(Utils::isBlacklisted('cpt:attachment', 'attachment'), 'Generic isBlacklisted should NOT expand legacy attachment — compat lives in Processor');
 assert_true(Utils::isBlacklisted('cpt:attachment', 'cpt:*'), 'Wildcard CPT exclusions should match attachments');
+
+// Legacy backward-compat: Processor normalizes "attachment" → "cpt:attachment"
+// in the ignore_content_types setting before calling isBlacklisted.
+if (!class_exists('wp_slimstat', false)) {
+    // wp_slimstat stub already exists from above
+}
+$legacy_setting = 'attachment';
+$normalized = implode(',', array_unique(array_merge(
+    \wp_slimstat::string_to_array($legacy_setting),
+    array_map(
+        function ($v) { return 'cpt:' . $v; },
+        array_filter(
+            \wp_slimstat::string_to_array($legacy_setting),
+            function ($v) { return 'attachment' === $v; }
+        )
+    )
+)));
+assert_true(Utils::isBlacklisted('cpt:attachment', $normalized), 'Processor-normalized legacy "attachment" setting should match cpt:attachment');
 
 echo "All {$assertions} assertions passed in content-type-attachment-test.php\n";

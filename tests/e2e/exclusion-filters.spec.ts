@@ -288,8 +288,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await setSlimstatSetting('ignore_content_types', 'cpt:attachment');
 
     const slug = `e2e-attachment-excl-${Date.now()}`;
-    const attachmentId = await createAttachmentPost('E2E Attachment Exclusion Test', slug);
-    const attachmentUrl = `${BASE_URL}/?attachment_id=${attachmentId}`;
+    await createAttachmentPost('E2E Attachment Exclusion Test', slug);
+    // Visit the pretty permalink directly — /?attachment_id=X triggers a 301
+    // redirect whose content_type is 'redirect:301', not 'cpt:attachment'.
+    const attachmentUrl = `${BASE_URL}/${slug}/`;
 
     await clearStatsTable();
 
@@ -297,10 +299,11 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
 
+    // Poll for the slug-specific row — should remain null (excluded).
     await expect.poll(
-      () => getStatCount(),
+      () => getRecentStatByResource(slug),
       { timeout: 6_000, intervals: [500] }
-    ).toBe(0);
+    ).toBeNull();
 
     await anonPage.close();
     await anonCtx.close();
