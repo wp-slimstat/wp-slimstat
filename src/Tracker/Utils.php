@@ -376,7 +376,9 @@ class Utils
 				$piiAllowed = Consent::piiAllowed();
 
 				if ($piiAllowed || $isAnonymousTracking) {
-					$fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $dataJs['fh']);
+					// Guard against array injection (e.g. fh[]=...) from untrusted input
+					$rawFh = is_scalar($dataJs['fh']) ? (string) $dataJs['fh'] : '';
+					$fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $rawFh);
 					if (strlen($fingerprint) > 256) {
 						$fingerprint = substr($fingerprint, 0, 256);
 					}

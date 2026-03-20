@@ -20,43 +20,10 @@ import {
   setHeaderOverrides,
   enableDisableWpCron,
   restoreWpConfig,
+  installCptMuPlugin,
+  uninstallCptMuPlugin,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
-import * as path from 'path';
-import * as fs from 'fs';
-import { WP_ROOT } from './helpers/env';
-
-// ─── CPT registration mu-plugin ──────────────────────────────────
-const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
-
-const CPT_MU_PLUGIN_CONTENT = `<?php
-/**
- * E2E Test: Register 'product' CPT for exclusion filter testing.
- */
-if (!defined('ABSPATH')) exit;
-add_action('init', function() {
-    register_post_type('product', [
-        'public'       => true,
-        'label'        => 'Products',
-        'has_archive'  => true,
-        'rewrite'      => ['slug' => 'product'],
-        'supports'     => ['title', 'editor'],
-        'show_in_rest' => true,
-    ]);
-    // Flush rewrite rules so /product/{slug}/ pretty permalinks resolve immediately.
-    flush_rewrite_rules();
-});
-`;
-
-function installCptMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
-  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
-}
-
-function uninstallCptMuPlugin(): void {
-  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
-}
 
 const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
@@ -315,7 +282,7 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
 
     await clearStatsTable();
 
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({ storageState: EMPTY_STORAGE_STATE });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
 
@@ -342,7 +309,7 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
 
     await clearStatsTable();
 
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({ storageState: EMPTY_STORAGE_STATE });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
 

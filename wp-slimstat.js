@@ -346,11 +346,12 @@ var SlimStat = (function () {
             xhr.withCredentials = true;
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) {
-                    // Special handling for nonce failure: retry immediately without nonce
-                    if (xhr.status === 403 && xhrOpts.useNonce && params.wp_rest_nonce) {
-                        // To prevent loops, we only retry once without the nonce.
-                        // The onFail logic will be handled by the retry's result.
-                        sendXHR(url, onFail, { useNonce: false });
+                    // On 403 (stale nonce / cookie auth rejected), trigger the failover
+                    // to the next transport (e.g. admin-ajax.php) instead of retrying
+                    // without X-WP-Nonce, which would strip authentication and bypass
+                    // Processor::isUserExcluded() for logged-in users.
+                    if (xhr.status === 403 && xhrOpts.useNonce) {
+                        if (onFail) onFail();
                         return;
                     }
                     if (xhr.status === 200) {
@@ -2097,13 +2098,18 @@ if (!window.requestIdleCallback) {
                 var safeName = consentCookieName.replace(/([.$?*|{}()\[\]\\\/\+^])/g, "\\$1");
                 var cookiePattern = "(?:^|;)\\s*" + safeName + "=([^;]*)";
                 var cookieMatch = document.cookie.match(cookiePattern);
-                if (cookieMatch) {
-                    // User already made a consent decision — remove stale banner
-                    if (banner.parentNode) {
-                        banner.parentNode.removeChild(banner);
+                if (cookieMatch && cookieMatch[1]) {
+                    // Validate the cookie has a real consent value (not empty/whitespace)
+                    var cookieVal = "";
+                    try { cookieVal = decodeURIComponent(cookieMatch[1]).trim(); } catch (ignore) { cookieVal = cookieMatch[1].trim(); }
+                    if (cookieVal) {
+                        // User already made a consent decision — remove stale banner
+                        if (banner.parentNode) {
+                            banner.parentNode.removeChild(banner);
+                        }
+                        bannerInitialized = true;
+                        return;
                     }
-                    bannerInitialized = true;
-                    return;
                 }
             } catch (e) {
                 // If cookie check fails, show banner (safe default)

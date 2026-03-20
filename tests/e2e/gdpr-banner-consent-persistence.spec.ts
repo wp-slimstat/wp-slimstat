@@ -12,89 +12,24 @@
  */
 import { test, expect, type Page } from '@playwright/test';
 import {
+  getPool,
   closeDb,
   clearStatsTable,
   waitForPageviewRow,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-import * as mysql from 'mysql2/promise';
+import { BASE_URL } from './helpers/env';
 
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
-let pool: mysql.Pool | null = null;
-
-function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool({ ...MYSQL_CONFIG, connectionLimit: 3 });
-  }
-  return pool;
-}
-
-/** Snapshot and restore slimstat_options directly via DB. */
-let savedOptions: string | null = null;
-
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-
-/**
- * Set a slimstat option directly in the DB by parsing PHP serialized data.
- * Supports simple string keys and string values only.
- */
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-
-  let serialized: string = rows[0].option_value;
-
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-
-  if (keyIdx === -1) {
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      const newCount = oldCount + 1;
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${newCount}:{`);
-      const lastBrace = serialized.lastIndexOf('}');
-      const entry = `s:${key.length}:"${key}";s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, lastBrace) + entry + '}';
-    }
-  } else {
-    const valueStart = keyIdx + keyPattern.length;
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      const oldValue = valueMatch[0];
-      const newValue = `s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, valueStart) + newValue + serialized.substring(valueStart + oldValue.length);
-    }
-  }
-
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity within this spec
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 test.afterAll(async () => {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
   await closeDb();
 });
 
@@ -161,7 +96,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     page,
   }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
@@ -185,11 +120,8 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     // Banner should be visible
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
 
-    // Click Accept
-    await newPage.evaluate(() => {
-      const btn = document.querySelector('[data-consent="accepted"]') as HTMLElement;
-      if (btn) btn.click();
-    });
+    // Click Accept using Playwright locator (more reliable than evaluate-click)
+    await newPage.locator('[data-consent="accepted"]').click();
     await newPage.waitForTimeout(3000);
 
     // Banner should no longer be visible
@@ -210,12 +142,14 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     expect(consentCookie, 'slimstat_gdpr_consent cookie should exist').toBeTruthy();
     expect(consentCookie!.value).toBe('accepted');
 
-    // Verify tracking data was recorded (soft check — the consent upgrade
-    // tracking flow may not complete reliably with evaluate-click).
-    // The core fix (cookie persistence + banner suppression) is validated above.
+    // Verify tracking fires after consent. In GDPR mode without anonymous_tracking,
+    // the initial pageview is blocked until consent is granted, so the row may only
+    // appear after the consent upgrade flow completes (which depends on timing).
+    // The core fix validated above is cookie persistence + banner suppression.
     const row1 = await waitForPageviewRow(`accept-journey-${ts}`, 10_000);
+    // Soft-check: log if tracking didn't complete but don't fail the consent test
     if (!row1) {
-      console.warn('WARN: First page tracking not recorded — consent upgrade may not have completed');
+      console.warn(`WARN: Tracking row for accept-journey-${ts} not found — consent upgrade may not have fired in time`);
     }
 
     await newPage.close();
@@ -230,7 +164,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     page,
   }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
@@ -317,7 +251,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     const ts = Date.now();
 
     // Step 1: Capture real WordPress HTML
-    const captureCtx = await browser.newContext();
+    const captureCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const capturePage = await captureCtx.newPage();
     const response = await capturePage.request.get(
       `${BASE_URL}/?e2e_marker=cached-accept-${ts}`,
@@ -327,7 +261,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await captureCtx.close();
 
     // Step 2: Serve captured HTML to a context with 'accepted' cookie
-    const testCtx = await browser.newContext();
+    const testCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await testCtx.addCookies([
       ...COOKIEYES_DISMISS_COOKIES,
       {
@@ -370,7 +304,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     const ts = Date.now();
 
     // Step 1: Capture real WordPress HTML
-    const captureCtx = await browser.newContext();
+    const captureCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const capturePage = await captureCtx.newPage();
     const response = await capturePage.request.get(
       `${BASE_URL}/?e2e_marker=cached-deny-${ts}`,
@@ -380,7 +314,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     await captureCtx.close();
 
     // Step 2: Serve captured HTML to a context with 'denied' cookie
-    const testCtx = await browser.newContext();
+    const testCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await testCtx.addCookies([
       ...COOKIEYES_DISMISS_COOKIES,
       {
@@ -436,7 +370,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     const ts = Date.now();
 
     // Step 1: Capture real WordPress HTML
-    const captureCtx = await browser.newContext();
+    const captureCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const capturePage = await captureCtx.newPage();
     const response = await capturePage.request.get(
       `${BASE_URL}/?e2e_marker=stale-nonce-${ts}`,
@@ -452,7 +386,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     );
 
     // Step 3: Serve modified HTML via page.route() and track consent-change responses
-    const testCtx = await browser.newContext();
+    const testCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await testCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const testPage = await testCtx.newPage();
 
@@ -520,7 +454,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     page,
   }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
@@ -579,7 +513,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     page,
   }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 
@@ -641,7 +575,7 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     page,
   }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const newPage = await ctx.newPage();
 

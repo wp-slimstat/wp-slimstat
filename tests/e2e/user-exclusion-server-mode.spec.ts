@@ -29,43 +29,10 @@ import {
   restoreSlimstatOptions,
   enableDisableWpCron,
   restoreWpConfig,
+  installCptMuPlugin,
+  uninstallCptMuPlugin,
 } from './helpers/setup';
-import { BASE_URL, WP_ROOT } from './helpers/env';
-import * as path from 'path';
-import * as fs from 'fs';
-
-// ─── Trackable CPT fixture ────────────────────────────────────────
-
-const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
-
-const CPT_MU_PLUGIN_CONTENT = `<?php
-/**
- * E2E Test: Register 'product' CPT for server-mode user exclusion testing.
- */
-if (!defined('ABSPATH')) exit;
-add_action('init', function() {
-    register_post_type('product', [
-        'public'       => true,
-        'label'        => 'Products',
-        'has_archive'  => true,
-        'rewrite'      => ['slug' => 'product'],
-        'supports'     => ['title', 'editor'],
-        'show_in_rest' => true,
-    ]);
-    // Flush rewrite rules so /product/{slug}/ resolves immediately in E2E.
-    flush_rewrite_rules();
-});
-`;
-
-function installCptMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
-  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
-}
-
-function uninstallCptMuPlugin(): void {
-  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
-}
+import { BASE_URL } from './helpers/env';
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -139,6 +106,10 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
   });
 
   test.beforeEach(async () => {
+    // Reset exclusion knobs to prevent state leakage between tests
+    await setSlimstatSetting('ignore_wp_users', 'no');
+    await setSlimstatSetting('ignore_users', '');
+    await setSlimstatSetting('ignore_capabilities', '');
     await clearStatsTable();
   });
 
@@ -188,8 +159,6 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
-    // Reset ignore_users for next tests
-    await setSlimstatSetting('ignore_users', '');
     await page.close();
     await context.close();
   });
@@ -215,8 +184,6 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
-    // Reset ignore_capabilities for next tests
-    await setSlimstatSetting('ignore_capabilities', '');
     await page.close();
     await context.close();
   });
@@ -242,12 +209,15 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     await clearStatsTable();
     const slug = `e2e-server-anon-control-${Date.now()}`;
     const pageUrl = await createTrackableProduct('E2E Anonymous Server Control', slug);
-    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+    const response = await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+
+    // Verify page loaded (not 404 from missing rewrite rules)
+    expect(response?.status(), `Product page ${pageUrl} must load (not 404)`).toBeLessThan(400);
 
     // Anonymous user SHOULD be tracked (ignore_wp_users only blocks logged-in users)
     await expect.poll(
       () => getRecentStatByResource(slug),
-      { timeout: 10_000, intervals: [500] }
+      { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
     await page.close();
@@ -268,17 +238,19 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
 
     const slug = `e2e-server-admin-tracked-${Date.now()}`;
     const pageUrl = await createTrackableProduct('E2E Admin Server Control', slug);
-    await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
+    const adminResponse = await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
-    // Admin SHOULD be tracked when ignore_wp_users is off
+    // Verify page loaded (not 404 from missing rewrite rules)
+    expect(adminResponse?.status(), `Product page ${pageUrl} must load (not 404)`).toBeLessThan(400);
+
+    // Admin SHOULD be tracked when ignore_wp_users is off.
+    // Poll until the row appears, then verify username in the same result.
+    let stat: any = null;
     await expect.poll(
-      () => getRecentStatByResource(slug),
-      { timeout: 10_000, intervals: [500] }
+      async () => { stat = await getRecentStatByResource(slug); return stat; },
+      { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
-    // Verify the tracked row has the username
-    const stat = await getRecentStatByResource(slug);
-    expect(stat).not.toBeNull();
     expect(stat!.username).toBe('parhumm');
 
     await page.close();

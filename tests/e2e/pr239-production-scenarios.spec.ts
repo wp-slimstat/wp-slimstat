@@ -17,72 +17,25 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import * as mysql from 'mysql2/promise';
 import {
+  getPool,
   clearStatsTable,
   waitForPageviewRow,
   closeDb,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { BASE_URL } from './helpers/env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ADMIN_AUTH = path.join(__dirname, '.auth/admin.json');
 
-let pool: mysql.Pool | null = null;
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-let savedOptions: string | null = null;
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-
-/**
- * Set a slimstat option directly in the DB by parsing PHP serialized data.
- * Limitations: Only handles simple string keys/values. Not for general use.
- */
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-  let serialized: string = rows[0].option_value;
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-  if (keyIdx === -1) {
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${oldCount + 1}:{`);
-      const lastBrace = serialized.lastIndexOf('}');
-      serialized = serialized.substring(0, lastBrace) + `s:${key.length}:"${key}";s:${value.length}:"${value}";` + '}';
-    }
-  } else {
-    const valueStart = keyIdx + keyPattern.length;
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      serialized = serialized.substring(0, valueStart) + `s:${value.length}:"${value}";` + serialized.substring(valueStart + valueMatch[0].length);
-    }
-  }
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity within this spec
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 async function anonContext(browser: any): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext();
@@ -293,15 +246,13 @@ test.describe('sendBeacon server path: text/plain POST', () => {
     const status = res.status();
     const body = await res.text();
 
-    // The server should either return 200 (success) or 400 (consent/filter block).
-    // It must NOT return 403 (that would mean nonce rejection).
-    expect(status, `Server should not return 403 for text/plain POST. Got ${status}: ${body}`).not.toBe(403);
+    // The server must return 200 (success) — not 403 (nonce rejection) or 400 (processing failure).
+    expect(status, `Server must not return 403 for text/plain POST. Got ${status}: ${body}`).not.toBe(403);
+    expect(status, `text/plain sendBeacon should return 200. Got ${status}: ${body}`).toBe(200);
 
-    // If 200, verify the response contains a valid tracking ID (numeric.hash or plain numeric)
-    if (status === 200) {
-      const cleaned = body.replace(/^"|"$/g, '').trim();
-      expect(cleaned).toMatch(/^\d+(\.[0-9a-fA-F]+)?$/);
-    }
+    // Verify the response contains a valid tracking ID (numeric.hash or plain numeric)
+    const cleaned = body.replace(/^"|"$/g, '').trim();
+    expect(cleaned).toMatch(/^\d+(\.[0-9a-fA-F]+)?$/);
 
     await ctx.close();
   });
@@ -520,6 +471,5 @@ test.describe('Logged-in user nonce', () => {
 });
 
 test.afterAll(async () => {
-  if (pool) { await pool.end(); pool = null; }
   await closeDb();
 });

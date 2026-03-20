@@ -8,22 +8,15 @@
  * @see https://github.com/wp-slimstat/wp-slimstat/issues/238
  */
 import { test, expect, Page } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
 import {
   clearStatsTable,
   waitForPageviewRow,
   closeDb,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-
-let pool: mysql.Pool | null = null;
-
-function getPool(): mysql.Pool {
-  if (!pool) {
-    pool = mysql.createPool(MYSQL_CONFIG);
-  }
-  return pool;
-}
+import { BASE_URL } from './helpers/env';
 
 function trackRestHits(page: Page) {
   const requests: Array<{ url: string; headers: Record<string, string> }> = [];
@@ -34,76 +27,10 @@ function trackRestHits(page: Page) {
   return { requests };
 }
 
-/** Snapshot and restore slimstat_options directly via DB. */
-let savedOptions: string | null = null;
-
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-
-/**
- * Set a slimstat option directly in the DB by parsing PHP serialized data.
- *
- * Limitations: Only supports simple string keys and string values.
- * Does NOT handle escaped quotes, non-string types (int/bool/array), or
- * nested structures. Intended only for this test's limited option keys
- * (tracking_request_method, gdpr_enabled, javascript_mode, ignore_wp_users).
- */
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-
-  let serialized: string = rows[0].option_value;
-
-  // PHP serialized format: s:N:"key";s:N:"value";
-  // We need to find and replace the value for the given key
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-
-  if (keyIdx === -1) {
-    // Key not found — append it before the closing }
-    // Find the array count at the beginning: a:N:{...}
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      const newCount = oldCount + 1;
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${newCount}:{`);
-      // Insert before the final }
-      const lastBrace = serialized.lastIndexOf('}');
-      const entry = `s:${key.length}:"${key}";s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, lastBrace) + entry + '}';
-    }
-  } else {
-    // Key found — replace the value that follows it
-    const valueStart = keyIdx + keyPattern.length;
-    // The value is: s:N:"..."; — find the next semicolon-terminated string
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      const oldValue = valueMatch[0];
-      const newValue = `s:${value.length}:"${value}";`;
-      serialized = serialized.substring(0, valueStart) + newValue + serialized.substring(valueStart + oldValue.length);
-    }
-  }
-
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 test.describe('REST Anonymous Tracking — Issue #238', () => {
   test.setTimeout(60_000);
@@ -111,7 +38,6 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   test.beforeEach(async () => {
     await snapshotOptions();
     await clearStatsTable();
-    // Set options via DB
     await setOption('tracking_request_method', 'rest');
     await setOption('gdpr_enabled', 'off');
     await setOption('javascript_mode', 'on');
@@ -123,16 +49,12 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   });
 
   test.afterAll(async () => {
-    if (pool) {
-      await pool.end();
-      pool = null;
-    }
     await closeDb();
   });
 
   test('anonymous REST tracking should succeed with exactly one request (no nonce retry)', async ({ browser }) => {
     // Use a fresh browser context with no cookies (anonymous visitor)
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const restRequests: Array<{ url: string; headers: Record<string, string> }> = [];
@@ -185,7 +107,7 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   });
 
   test('adblock fallback URL should not be injected when transport is REST', async ({ browser }) => {
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `adblock-url-${Date.now()}`;
@@ -208,7 +130,7 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   });
 
   test('anonymous REST tracking should record a pageview in the database', async ({ browser }) => {
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `anon-pv-${Date.now()}`;
@@ -222,7 +144,7 @@ test.describe('REST Anonymous Tracking — Issue #238', () => {
   });
 
   test('anonymous: nonce present (for consent), is_logged_in=0, no X-WP-Nonce header', async ({ browser }) => {
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     const { requests } = trackRestHits(anonPage);
 

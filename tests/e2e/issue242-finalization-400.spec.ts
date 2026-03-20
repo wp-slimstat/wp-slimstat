@@ -8,68 +8,21 @@
  * @see https://github.com/wp-slimstat/wp-slimstat/issues/242
  */
 import { test, expect, Page, BrowserContext } from '@playwright/test';
-import * as path from 'path';
-import { fileURLToPath } from 'url';
-import * as mysql from 'mysql2/promise';
 import {
+  getPool,
   clearStatsTable,
   waitForPageviewRow,
   closeDb,
+  setSlimstatSetting,
+  snapshotSlimstatOptions,
+  restoreSlimstatOptions,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { BASE_URL } from './helpers/env';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-let pool: mysql.Pool | null = null;
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-let savedOptions: string | null = null;
-async function snapshotOptions(): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  savedOptions = rows.length > 0 ? rows[0].option_value : null;
-}
-async function restoreOptions(): Promise<void> {
-  if (savedOptions !== null) {
-    await getPool().execute(
-      "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-      [savedOptions],
-    );
-  }
-}
-async function setOption(key: string, value: string): Promise<void> {
-  const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
-  )) as any;
-  if (rows.length === 0) return;
-  let serialized: string = rows[0].option_value;
-  const keyPattern = `s:${key.length}:"${key}";`;
-  const keyIdx = serialized.indexOf(keyPattern);
-  if (keyIdx === -1) {
-    const match = serialized.match(/^a:(\d+):\{/);
-    if (match) {
-      const oldCount = parseInt(match[1], 10);
-      serialized = serialized.replace(`a:${oldCount}:{`, `a:${oldCount + 1}:{`);
-      const lastBrace = serialized.lastIndexOf('}');
-      serialized = serialized.substring(0, lastBrace) + `s:${key.length}:"${key}";s:${value.length}:"${value}";` + '}';
-    }
-  } else {
-    const valueStart = keyIdx + keyPattern.length;
-    const valueMatch = serialized.substring(valueStart).match(/^s:\d+:"[^"]*";/);
-    if (valueMatch) {
-      serialized = serialized.substring(0, valueStart) + `s:${value.length}:"${value}";` + serialized.substring(valueStart + valueMatch[0].length);
-    }
-  }
-  await getPool().execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
-    [serialized],
-  );
-}
+// Alias shared helpers for brevity within this spec
+const snapshotOptions = snapshotSlimstatOptions;
+const restoreOptions = restoreSlimstatOptions;
+const setOption = setSlimstatSetting;
 
 async function anonContext(browser: any): Promise<{ ctx: BrowserContext; page: Page }> {
   const ctx = await browser.newContext();
@@ -163,12 +116,14 @@ test.describe('Issue #242: Finalization 400 regression', () => {
     )) as any;
     expect(rowCheck.length, `Row ${rowId} should still exist after finalization`).toBe(1);
 
-    // Total row count should not increase (finalization updates, doesn't insert)
+    // Total row count should not grow significantly. Finalization primarily updates
+    // the existing row (dt_out), but the JS tracker may also fire a navigation hit
+    // concurrently, which can create one additional row. Allow +1 for this race.
     const [afterRows] = (await getPool().execute(
       'SELECT COUNT(*) as cnt FROM wp_slim_stats',
     )) as any;
     const countAfter = Number(afterRows[0].cnt);
-    expect(countAfter, `Row count should not increase. Before: ${countBefore}, After: ${countAfter}`).toBeLessThanOrEqual(countBefore + 1);
+    expect(countAfter, `Row count grew too much. Before: ${countBefore}, After: ${countAfter}`).toBeLessThanOrEqual(countBefore + 1);
 
     await ctx.close();
   });
@@ -204,6 +159,5 @@ test.describe('Issue #242: Finalization 400 regression', () => {
 });
 
 test.afterAll(async () => {
-  if (pool) { await pool.end(); pool = null; }
   await closeDb();
 });
