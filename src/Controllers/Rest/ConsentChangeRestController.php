@@ -337,10 +337,13 @@ class ConsentChangeRestController implements RestControllerInterface
 		if (null !== $pageview_id && $pageview_id > 0) {
 			$stat = IPHashProvider::upgradeToPii([]);
 
-			if (!empty($GLOBALS['current_user']->ID)) {
-				$stat['username'] = $GLOBALS['current_user']->data->user_login;
-				$stat['email']    = $GLOBALS['current_user']->data->user_email;
-				$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+			// Use wp_get_current_user() defensively (#246) — $GLOBALS['current_user']
+			// may not be resolved in edge-case environments (object caching, multisite).
+			$user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+			if (!empty($user) && !empty($user->ID)) {
+				$stat['username'] = $user->data->user_login;
+				$stat['email']    = $user->data->user_email;
+				$stat['notes']    = '[user:' . $user->data->ID . ']';
 			}
 
 			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
