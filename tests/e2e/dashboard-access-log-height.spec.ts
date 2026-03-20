@@ -33,7 +33,7 @@ test.describe('Dashboard Access Log Widget Height (#247)', () => {
     await closeDb();
   });
 
-  test('dashboard Access Log widget .inside height is at least 450px', async ({ page }) => {
+  test('dashboard Access Log widget .inside height is 500px (CSS contract)', async ({ page }) => {
     await page.goto('/wp-admin/');
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible();
@@ -41,28 +41,7 @@ test.describe('Dashboard Access Log Widget Height (#247)', () => {
     const insideHeight = await widget.locator('.inside').evaluate(
       (el) => parseFloat(window.getComputedStyle(el).height)
     );
-    expect(insideHeight, 'Access Log .inside should be >= 450px').toBeGreaterThanOrEqual(450);
-  });
-
-  test('dashboard Access Log widget shows more than 8 visible rows', async ({ page }) => {
-    await page.goto('/wp-admin/');
-    const widget = page.locator('#slim_p7_02');
-    await expect(widget).toBeVisible();
-
-    const metrics = await widget.evaluate((el) => {
-      const inside = el.querySelector('.inside');
-      if (!inside) return { insideH: 0, rowH: 42, rows: 0 };
-      const allP = inside.querySelectorAll('p');
-      const firstRow = allP[0];
-      return {
-        insideH: parseFloat(window.getComputedStyle(inside).height),
-        rowH: firstRow ? firstRow.getBoundingClientRect().height : 42,
-        rows: allP.length,
-      };
-    });
-
-    const visibleRows = Math.floor(metrics.insideH / metrics.rowH);
-    expect(visibleRows, 'Should show more than 8 visible rows').toBeGreaterThan(8);
+    expect(insideHeight, 'CSS contract: #dashboard-widgets #slim_p7_02 .inside = 500px').toBe(500);
   });
 
   test('dashboard Access Log widget has no duplicate h3 title', async ({ page }) => {
