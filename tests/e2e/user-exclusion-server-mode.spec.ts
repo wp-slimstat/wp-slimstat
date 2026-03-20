@@ -159,8 +159,6 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
-    // Reset ignore_users for next tests
-    await setSlimstatSetting('ignore_users', '');
     await page.close();
     await context.close();
   });
@@ -186,8 +184,6 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
       { timeout: 6_000, intervals: [500] }
     ).toBeNull();
 
-    // Reset ignore_capabilities for next tests
-    await setSlimstatSetting('ignore_capabilities', '');
     await page.close();
     await context.close();
   });
@@ -247,15 +243,14 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     // Verify page loaded (not 404 from missing rewrite rules)
     expect(adminResponse?.status(), `Product page ${pageUrl} must load (not 404)`).toBeLessThan(400);
 
-    // Admin SHOULD be tracked when ignore_wp_users is off
+    // Admin SHOULD be tracked when ignore_wp_users is off.
+    // Poll until the row appears, then verify username in the same result.
+    let stat: any = null;
     await expect.poll(
-      () => getRecentStatByResource(slug),
+      async () => { stat = await getRecentStatByResource(slug); return stat; },
       { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
-    // Verify the tracked row has the username
-    const stat = await getRecentStatByResource(slug);
-    expect(stat).not.toBeNull();
     expect(stat!.username).toBe('parhumm');
 
     await page.close();

@@ -22,17 +22,27 @@ class Processor
      * @since 5.4.5
      * @return bool True if the current user should be excluded.
      */
-    public static function isUserExcluded(): bool
+    /**
+     * Check if the current WordPress user should be excluded from tracking.
+     *
+     * Returns null when the user is not excluded (or not logged in).
+     * Returns the WP_User object when excluded, so callers can reuse
+     * the resolved user without calling wp_get_current_user() again.
+     *
+     * @since 5.4.5
+     * @return \WP_User|object|null The excluded user, or null if not excluded.
+     */
+    public static function getExcludedUser()
     {
         $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
 
         if (empty($user) || empty($user->ID)) {
-            return false;
+            return null;
         }
 
         // Check "Exclude all WP Users" toggle
         if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
-            return true;
+            return $user;
         }
 
         // Check role/capability blacklist — matches both role slugs (e.g. "editor")
@@ -40,20 +50,18 @@ class Processor
         // exclude users by either mechanism via the ignore_capabilities setting.
         $capSetting = \wp_slimstat::$settings['ignore_capabilities'] ?? '';
         if (!empty($capSetting)) {
-            // Check role slugs first
             if (!empty($user->roles)) {
                 foreach ($user->roles as $role) {
                     if (Utils::isBlacklisted($role, $capSetting)) {
-                        return true;
+                        return $user;
                     }
                 }
             }
 
-            // Check individual capability keys (e.g. manage_options, edit_posts)
             if (!empty($user->allcaps) && is_array($user->allcaps)) {
                 foreach ($user->allcaps as $cap => $granted) {
                     if ($granted && Utils::isBlacklisted($cap, $capSetting)) {
-                        return true;
+                        return $user;
                     }
                 }
             }
@@ -63,10 +71,18 @@ class Processor
         if (!empty(\wp_slimstat::$settings['ignore_users'])
             && !empty($user->data->user_login)
             && Utils::isBlacklisted($user->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
-            return true;
+            return $user;
         }
 
-        return false;
+        return null;
+    }
+
+    /**
+     * @deprecated Use getExcludedUser() !== null instead.
+     */
+    public static function isUserExcluded(): bool
+    {
+        return self::getExcludedUser() !== null;
     }
 
     public static function process()
@@ -258,7 +274,10 @@ class Processor
 
         // User exclusion: uses wp_get_current_user() defensively to ensure the
         // user object is resolved even in edge-case environments (#246).
-        if (self::isUserExcluded()) {
+        // getExcludedUser() returns the WP_User if excluded, null otherwise,
+        // so we can reuse the resolved user object for PII collection below.
+        $excludedUser = self::getExcludedUser();
+        if ($excludedUser !== null) {
             Query::setProcessingTimestamp(null);
             return false;
         }
