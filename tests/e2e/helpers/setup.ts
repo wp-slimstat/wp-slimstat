@@ -594,7 +594,11 @@ add_action('init', function() {
         'supports'     => ['title', 'editor'],
         'show_in_rest' => true,
     ]);
-    flush_rewrite_rules();
+    // Flush rewrite rules once after CPT registration (not on every request)
+    if (!get_transient('e2e_product_cpt_flushed')) {
+        flush_rewrite_rules();
+        set_transient('e2e_product_cpt_flushed', 1, HOUR_IN_SECONDS);
+    }
 });
 `;
 

@@ -116,12 +116,14 @@ test.describe('Issue #242: Finalization 400 regression', () => {
     )) as any;
     expect(rowCheck.length, `Row ${rowId} should still exist after finalization`).toBe(1);
 
-    // Total row count should not increase (finalization updates, doesn't insert)
+    // Total row count should not grow significantly. Finalization primarily updates
+    // the existing row (dt_out), but the JS tracker may also fire a navigation hit
+    // concurrently, which can create one additional row. Allow +1 for this race.
     const [afterRows] = (await getPool().execute(
       'SELECT COUNT(*) as cnt FROM wp_slim_stats',
     )) as any;
     const countAfter = Number(afterRows[0].cnt);
-    expect(countAfter, `Row count should not increase. Before: ${countBefore}, After: ${countAfter}`).toBeLessThanOrEqual(countBefore + 1);
+    expect(countAfter, `Row count grew too much. Before: ${countBefore}, After: ${countAfter}`).toBeLessThanOrEqual(countBefore + 1);
 
     await ctx.close();
   });
@@ -157,6 +159,5 @@ test.describe('Issue #242: Finalization 400 regression', () => {
 });
 
 test.afterAll(async () => {
-  if (pool) { await pool.end(); pool = null; }
   await closeDb();
 });

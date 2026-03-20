@@ -106,6 +106,10 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
   });
 
   test.beforeEach(async () => {
+    // Reset exclusion knobs to prevent state leakage between tests
+    await setSlimstatSetting('ignore_wp_users', 'no');
+    await setSlimstatSetting('ignore_users', '');
+    await setSlimstatSetting('ignore_capabilities', '');
     await clearStatsTable();
   });
 

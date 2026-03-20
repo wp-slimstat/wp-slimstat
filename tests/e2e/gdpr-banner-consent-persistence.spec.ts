@@ -120,11 +120,8 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     // Banner should be visible
     await expect(newPage.locator('#slimstat-gdpr-banner')).toBeVisible();
 
-    // Click Accept
-    await newPage.evaluate(() => {
-      const btn = document.querySelector('[data-consent="accepted"]') as HTMLElement;
-      if (btn) btn.click();
-    });
+    // Click Accept using Playwright locator (more reliable than evaluate-click)
+    await newPage.locator('[data-consent="accepted"]').click();
     await newPage.waitForTimeout(3000);
 
     // Banner should no longer be visible
@@ -145,13 +142,9 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     expect(consentCookie, 'slimstat_gdpr_consent cookie should exist').toBeTruthy();
     expect(consentCookie!.value).toBe('accepted');
 
-    // Verify tracking data was recorded (soft check — the consent upgrade
-    // tracking flow may not complete reliably with evaluate-click).
-    // The core fix (cookie persistence + banner suppression) is validated above.
+    // Verify tracking data was recorded — hard-fail if not found
     const row1 = await waitForPageviewRow(`accept-journey-${ts}`, 10_000);
-    if (!row1) {
-      console.warn('WARN: First page tracking not recorded — consent upgrade may not have completed');
-    }
+    expect(row1, `Tracking row for accept-journey-${ts} must exist after consent`).toBeTruthy();
 
     await newPage.close();
     await ctx.close();

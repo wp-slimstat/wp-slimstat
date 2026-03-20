@@ -246,15 +246,13 @@ test.describe('sendBeacon server path: text/plain POST', () => {
     const status = res.status();
     const body = await res.text();
 
-    // The server should either return 200 (success) or 400 (consent/filter block).
-    // It must NOT return 403 (that would mean nonce rejection).
-    expect(status, `Server should not return 403 for text/plain POST. Got ${status}: ${body}`).not.toBe(403);
+    // The server must return 200 (success) — not 403 (nonce rejection) or 400 (processing failure).
+    expect(status, `Server must not return 403 for text/plain POST. Got ${status}: ${body}`).not.toBe(403);
+    expect(status, `text/plain sendBeacon should return 200. Got ${status}: ${body}`).toBe(200);
 
-    // If 200, verify the response contains a valid tracking ID (numeric.hash or plain numeric)
-    if (status === 200) {
-      const cleaned = body.replace(/^"|"$/g, '').trim();
-      expect(cleaned).toMatch(/^\d+(\.[0-9a-fA-F]+)?$/);
-    }
+    // Verify the response contains a valid tracking ID (numeric.hash or plain numeric)
+    const cleaned = body.replace(/^"|"$/g, '').trim();
+    expect(cleaned).toMatch(/^\d+(\.[0-9a-fA-F]+)?$/);
 
     await ctx.close();
   });
@@ -473,6 +471,5 @@ test.describe('Logged-in user nonce', () => {
 });
 
 test.afterAll(async () => {
-  if (pool) { await pool.end(); pool = null; }
   await closeDb();
 });
