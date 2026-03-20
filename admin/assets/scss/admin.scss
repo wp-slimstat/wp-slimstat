@@ -995,15 +995,6 @@ body {
   height: 500px;
 }
 
-/* Fix nested postbox in dashboard widgets - hide only the direct inner report header */
-#dashboard-widgets [id*="slim_p"].postbox > .inside > .postbox > h3 {
-  display: none;
-}
-
-/* Fix nested postbox in dashboard widgets - let only the direct inner report container auto-size */
-#dashboard-widgets [id*="slim_p"].postbox > .inside > .postbox > .inside {
-  height: auto;
-}
 
 .closed .slimScrollDiv {
   height: 0 !important;
