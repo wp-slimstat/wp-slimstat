@@ -11,6 +11,49 @@ use SlimStat\Utils\Consent;
 
 class Processor
 {
+    /**
+     * Check if the current WordPress user should be excluded from tracking.
+     *
+     * Uses wp_get_current_user() defensively to ensure the user object is fully
+     * resolved, even in edge-case environments where $GLOBALS['current_user']
+     * may not be initialized by the 'wp' hook (e.g., object caching plugins,
+     * multisite, or custom authentication flows).
+     *
+     * @since 5.4.5
+     * @return bool True if the current user should be excluded.
+     */
+    public static function isUserExcluded(): bool
+    {
+        $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+
+        if (empty($user) || empty($user->ID)) {
+            return false;
+        }
+
+        // Check "Exclude all WP Users" toggle
+        if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
+            return true;
+        }
+
+        // Check role/capability blacklist
+        if (!empty($user->roles)) {
+            foreach ($user->roles as $role) {
+                if (Utils::isBlacklisted($role, \wp_slimstat::$settings['ignore_capabilities'] ?? '')) {
+                    return true;
+                }
+            }
+        }
+
+        // Check username blacklist
+        if (!empty(\wp_slimstat::$settings['ignore_users'])
+            && !empty($user->data->user_login)
+            && Utils::isBlacklisted($user->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
+            return true;
+        }
+
+        return false;
+    }
+
     public static function process()
     {
         // Consent gate: delegate to external CMPs via filter; SlimStat does not manage consent.
@@ -178,30 +221,20 @@ class Processor
         // If this is a consent upgrade request, pass explicit consent flag
         $piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 
-        if (!empty($GLOBALS['current_user']->ID)) {
-            if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
+        // User exclusion: uses wp_get_current_user() defensively to ensure the
+        // user object is resolved even in edge-case environments (#246).
+        if (self::isUserExcluded()) {
+            Query::setProcessingTimestamp(null);
+            return false;
+        }
 
-            foreach ($GLOBALS['current_user']->roles as $capability) {
-                if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
-                    Query::setProcessingTimestamp(null);
-                    return false;
-                }
-            }
-
-            if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
-
+        $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+        if (!empty($user) && !empty($user->ID)) {
             // Only store username/email if PII is allowed (consent granted in anonymous mode)
             if ($piiAllowed) {
-                $stat['username'] = $GLOBALS['current_user']->data->user_login;
-                $stat['email']    = $GLOBALS['current_user']->data->user_email;
-                $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
-            } else {
+                $stat['username'] = $user->data->user_login;
+                $stat['email']    = $user->data->user_email;
+                $stat['notes'][]  = 'user:' . $user->data->ID;
             }
             $not_spam = true;
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
