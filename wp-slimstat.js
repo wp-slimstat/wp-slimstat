@@ -2102,7 +2102,7 @@ if (!window.requestIdleCallback) {
                     // Validate the cookie has a real consent value (not empty/whitespace)
                     var cookieVal = "";
                     try { cookieVal = decodeURIComponent(cookieMatch[1]).trim(); } catch (ignore) { cookieVal = cookieMatch[1].trim(); }
-                    if (cookieVal) {
+                    if (cookieVal === "accepted" || cookieVal === "denied") {
                         // User already made a consent decision — remove stale banner
                         if (banner.parentNode) {
                             banner.parentNode.removeChild(banner);
