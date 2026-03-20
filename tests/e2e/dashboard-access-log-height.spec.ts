@@ -30,6 +30,9 @@ test.describe('Dashboard Access Log Widget Height (#247)', () => {
   });
 
   test.afterAll(async () => {
+    await getPool().execute(
+      'DELETE FROM wp_slim_stats WHERE visit_id BETWEEN 100 AND 114'
+    );
     await closeDb();
   });
 
