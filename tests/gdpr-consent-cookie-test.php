@@ -467,6 +467,61 @@ $consent_result = \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent
 assert_true($consent_result, 'handleBannerConsent should return true with valid nonce');
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Section 3: Production Path — ConsentChangeRestController + handleConsentRevoked
+// The production banner JS POSTs to /consent-change (not /gdpr/consent)
+// and calls slimstat_consent_revoked AJAX for deny. Test both.
+// ═══════════════════════════════════════════════════════════════════════════
+
+require_once __DIR__ . '/../src/Controllers/Rest/ConsentChangeRestController.php';
+
+// ─── Test 12: ConsentChangeRestController rejects anonymous with bad nonce ───
+
+$_stub_user_id     = 0;
+$_stub_nonce_valid = false;
+
+$cc = new \SlimStat\Controllers\Rest\ConsentChangeRestController();
+$req = new \WP_REST_Request('POST', '/slimstat/v1/consent-change', [
+    'source' => 'slimstat_banner',
+    'parsed' => ['statistics' => 'allow'],
+    'nonce'  => 'stale_nonce',
+]);
+$res = $cc->handle_consent_change($req);
+
+assert_true($res instanceof \WP_Error, 'consent-change should return WP_Error for anonymous with bad nonce');
+assert_same('rest_forbidden', $res->get_error_code(), 'consent-change should return rest_forbidden');
+
+// ─── Test 13: ConsentChangeRestController rejects logged-in with bad nonce ───
+
+$_stub_user_id     = 1;
+$_stub_nonce_valid = false;
+
+$cc = new \SlimStat\Controllers\Rest\ConsentChangeRestController();
+$req = new \WP_REST_Request('POST', '/slimstat/v1/consent-change', [
+    'source' => 'slimstat_banner',
+    'parsed' => ['statistics' => 'allow'],
+    'nonce'  => 'expired',
+]);
+$res = $cc->handle_consent_change($req);
+
+assert_true($res instanceof \WP_Error, 'consent-change should return WP_Error for logged-in with bad nonce');
+
+// ─── Test 14: ConsentHandler::handleConsentRevoked rejects bad nonce ───
+// handleConsentRevoked uses check_ajax_referer which dies on failure.
+// Our stub throws RuntimeException.
+
+$_stub_user_id     = 0;
+$_stub_nonce_valid = false;
+$_POST['nonce'] = 'stale';
+
+$revoke_rejected = false;
+try {
+    \SlimStat\Services\Privacy\ConsentHandler::handleConsentRevoked();
+} catch (\RuntimeException $e) {
+    $revoke_rejected = true;
+}
+assert_true($revoke_rejected, 'handleConsentRevoked should reject bad nonce (check_ajax_referer fails)');
+
+// ═══════════════════════════════════════════════════════════════════════════
 
 echo "All {$assertions} assertions passed in gdpr-consent-cookie-test.php\n";
 
