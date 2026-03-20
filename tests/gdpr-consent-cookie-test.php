@@ -265,16 +265,25 @@ if (!class_exists('WP_Error')) {
 if (!class_exists('WP_REST_Request')) {
     class WP_REST_Request
     {
-        private $params = [];
+        private $method;
+        private $route;
+        private $attributes;
 
-        public function __construct(array $params = [])
+        public function __construct(string $method = 'GET', string $route = '', array $attributes = [])
         {
-            $this->params = $params;
+            $this->method     = $method;
+            $this->route      = $route;
+            $this->attributes = $attributes;
         }
 
-        public function get_param($key)
+        public function get_param(string $key)
         {
-            return $this->params[$key] ?? null;
+            return $this->attributes[$key] ?? null;
+        }
+
+        public function get_method(): string
+        {
+            return $this->method;
         }
     }
 }
@@ -285,10 +294,15 @@ if (!class_exists('WP_REST_Response')) {
         public $data;
         public $status;
 
-        public function __construct($data = null, $status = 200)
+        public function __construct($data = null, int $status = 200)
         {
             $this->data   = $data;
             $this->status = $status;
+        }
+
+        public function get_status(): int
+        {
+            return $this->status;
         }
     }
 }
@@ -370,66 +384,87 @@ require_once __DIR__ . '/../src/Interfaces/RestControllerInterface.php';
 require_once __DIR__ . '/../src/Controllers/Rest/GDPRBannerRestController.php';
 require_once __DIR__ . '/../src/Services/Privacy/ConsentHandler.php';
 
-// ─── Test 6: GDPRBannerRestController rejects request with bad nonce ───
+// ─── Test 6: GDPRBannerRestController rejects anonymous user with bad nonce ───
+// Nonce is verified for ALL users (including anonymous) to prevent CSRF-based forced consent.
 
+$_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
 \wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
-$request = new \WP_REST_Request(['consent' => 'accepted', 'nonce' => 'bad_nonce_123']);
+$request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'bad_nonce_123']);
 $result = $controller->handle_consent($request);
 
-assert_true($result instanceof \WP_Error, 'handle_consent should return WP_Error when nonce is invalid');
+assert_true($result instanceof \WP_Error, 'handle_consent should return WP_Error for anonymous with invalid nonce');
 assert_same('rest_forbidden', $result->get_error_code(), 'handle_consent should return rest_forbidden error code');
 assert_same(403, $result->get_error_data()['status'], 'handle_consent should return 403 status');
 
-// ─── Test 7: GDPRBannerRestController accepts request with valid nonce ───
+// ─── Test 7: GDPRBannerRestController rejects logged-in user with bad nonce ───
 
+$_stub_user_id     = 1; // logged-in
+$_stub_nonce_valid = false;
+\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+
+$controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
+$request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'expired_nonce']);
+$result = $controller->handle_consent($request);
+
+assert_true($result instanceof \WP_Error, 'handle_consent should return WP_Error for logged-in user with bad nonce');
+assert_same('rest_forbidden', $result->get_error_code(), 'handle_consent should return rest_forbidden for logged-in bad nonce');
+
+// ─── Test 8: GDPRBannerRestController accepts request with valid nonce ───
+
+$_stub_user_id     = 1; // logged-in
 $_stub_nonce_valid = true;
 $_setcookie_calls = [];
 \wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
-$request = new \WP_REST_Request(['consent' => 'accepted', 'nonce' => 'valid_nonce']);
+$request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'valid_nonce']);
 $result = $controller->handle_consent($request);
 
 assert_true($result instanceof \WP_REST_Response, 'handle_consent should return WP_REST_Response on valid nonce');
-assert_same(200, $result->status, 'handle_consent should return 200 on success');
+assert_same(200, $result->get_status(), 'handle_consent should return 200 on success');
 assert_true($result->data['success'] ?? false, 'handle_consent response should indicate success');
 
-// ─── Test 8: GDPRBannerRestController rejects empty nonce ───
+// ─── Test 9: GDPRBannerRestController rejects empty nonce (anonymous cached page) ───
 
+$_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
 \wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
-$request = new \WP_REST_Request(['consent' => 'accepted', 'nonce' => '']);
+$request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => '']);
 $result = $controller->handle_consent($request);
 
-assert_true($result instanceof \WP_Error, 'handle_consent should return WP_Error when nonce is empty');
-assert_same('rest_forbidden', $result->get_error_code(), 'handle_consent should return rest_forbidden for empty nonce');
+assert_true($result instanceof \WP_Error, 'handle_consent should return WP_Error for anonymous with empty nonce');
+assert_same('rest_forbidden', $result->get_error_code(), 'empty nonce from cached page should be rejected');
 
-// ─── Test 9: ConsentHandler::handleBannerConsent rejects empty nonce ───
+// ─── Test 10: ConsentHandler::handleBannerConsent rejects invalid nonce ───
 
+$_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
 \wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
-$_stub_json_error = null;
 
-$caught_error = false;
-try {
-    \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, [
-        'nonce'   => '',
-        'consent' => 'accepted',
-    ]);
-} catch (\Throwable $e) {
-    // handleBannerConsent returns false for non-JSON mode with bad nonce
-}
-// In non-JSON mode, it returns false when nonce fails
+// In non-JSON mode, handleBannerConsent returns false when nonce fails
 $nonce_result = \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, [
     'nonce'   => 'stale_nonce',
     'consent' => 'accepted',
 ]);
 assert_false($nonce_result, 'handleBannerConsent should return false when nonce verification fails');
+
+// ─── Test 11: ConsentHandler::handleBannerConsent succeeds with valid nonce ───
+
+$_stub_user_id     = 1; // logged-in
+$_stub_nonce_valid = true;
+$_setcookie_calls = [];
+\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+
+$consent_result = \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, [
+    'nonce'   => 'valid_nonce',
+    'consent' => 'accepted',
+]);
+assert_true($consent_result, 'handleBannerConsent should return true with valid nonce');
 
 // ═══════════════════════════════════════════════════════════════════════════
 
