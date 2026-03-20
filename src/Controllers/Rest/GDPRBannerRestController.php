@@ -49,7 +49,7 @@ class GDPRBannerRestController implements RestControllerInterface
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'nonce'   => [
-						'required'          => false,
+						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					],
@@ -66,18 +66,19 @@ class GDPRBannerRestController implements RestControllerInterface
 	 */
 	public function handle_consent(\WP_REST_Request $request)
 	{
-		// Only verify nonce for logged-in users. Anonymous users on cached pages
-		// don't have a valid nonce. This endpoint only sets the caller's own
-		// consent cookie, so there is no CSRF attack surface for anonymous users.
-		if (get_current_user_id() > 0) {
-			$nonce = $request->get_param('nonce');
-			if (!wp_verify_nonce($nonce, 'wp_rest')) {
-				return new \WP_Error(
-					'rest_forbidden',
-					__('Invalid security token.', 'wp-slimstat'),
-					['status' => 403]
-				);
-			}
+		// Verify nonce for all users — consent is a state-changing operation.
+		// A cross-site POST without nonce verification could force-accept consent,
+		// enabling PII tracking without genuine user action (GDPR violation).
+		// On cached pages, anonymous users may have a stale/empty nonce — the
+		// request will fail with 403, but the JS cookie still records consent
+		// client-side, and tracking works via the /hit endpoint (PR #235).
+		$nonce = $request->get_param('nonce');
+		if (!wp_verify_nonce($nonce, 'wp_rest')) {
+			return new \WP_Error(
+				'rest_forbidden',
+				__('Invalid security token.', 'wp-slimstat'),
+				['status' => 403]
+			);
 		}
 
 		// Check if SlimStat banner is enabled

@@ -451,10 +451,17 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
       '"wp_rest_nonce":"stale_expired_nonce_12345"',
     );
 
-    // Step 3: Serve modified HTML via page.route()
+    // Step 3: Serve modified HTML via page.route() and track consent-change responses
     const testCtx = await browser.newContext();
     await testCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const testPage = await testCtx.newPage();
+
+    const consentResponses: { status: number; url: string }[] = [];
+    testPage.on('response', (res) => {
+      if (isConsentChangeRequest({ url: () => res.url(), method: () => 'POST' } as any)) {
+        consentResponses.push({ status: res.status(), url: res.url() });
+      }
+    });
 
     await testPage.route(`**/?e2e_marker=stale-nonce*`, (route) =>
       route.fulfill({
@@ -479,15 +486,28 @@ test.describe('GDPR Banner Consent Persistence — #240 #241', () => {
     });
     await testPage.waitForTimeout(3000);
 
-    // Step 5: Consent cookie should be set (proves consent flow completed despite stale nonce)
+    // Step 5: Client-side cookie MUST be set (JS handles consent regardless of server response)
     const cookies = await testCtx.cookies();
     const consentCookie = cookies.find(
       (c) => c.name === 'slimstat_gdpr_consent',
     );
     expect(
       consentCookie,
-      'slimstat_gdpr_consent cookie should be set after accepting on stale-nonce cached page',
+      'slimstat_gdpr_consent cookie should be set client-side even with stale nonce',
     ).toBeTruthy();
+
+    // Step 6: Server-side consent-change POST should return 403 (nonce verified for all users).
+    // This is the correct security behavior — stale nonce is rejected.
+    // Consent is still recorded via the client-side cookie.
+    if (consentResponses.length > 0) {
+      const has403 = consentResponses.some((r) => r.status === 403);
+      expect(
+        has403,
+        `Stale nonce should cause 403 on consent-change endpoint (got: ${JSON.stringify(consentResponses)})`,
+      ).toBe(true);
+    }
+    // Note: if no consent-change responses captured (evaluate-click limitation), the
+    // cookie assertion above still validates the client-side consent flow works.
 
     await testPage.close();
     await testCtx.close();

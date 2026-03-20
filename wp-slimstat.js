@@ -932,13 +932,19 @@ var SlimStat = (function () {
                 payload.pageview_id = String(pageviewId);
             }
 
+            // Build headers — only include X-WP-Nonce when nonce is non-empty.
+            // Anonymous users on cached pages have no valid nonce. Sending an
+            // empty/stale X-WP-Nonce causes WordPress core (rest_cookie_check_errors)
+            // to reject with 403 before the controller handler even runs.
+            var headers = { "Content-Type": "application/json" };
+            if (nonce) {
+                headers["X-WP-Nonce"] = nonce;
+            }
+
             if (typeof window.fetch === "function") {
                 fetch(endpoint, {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-WP-Nonce": nonce,
-                    },
+                    headers: headers,
                     credentials: "same-origin",
                     body: JSON.stringify(payload),
                 })
@@ -953,7 +959,9 @@ var SlimStat = (function () {
                 var xhr = new XMLHttpRequest();
                 xhr.open("POST", endpoint, true);
                 xhr.setRequestHeader("Content-Type", "application/json");
-                xhr.setRequestHeader("X-WP-Nonce", nonce);
+                if (nonce) {
+                    xhr.setRequestHeader("X-WP-Nonce", nonce);
+                }
                 xhr.onload = function () {
                     if (xhr.status >= 200 && xhr.status < 300) {
                         try {
