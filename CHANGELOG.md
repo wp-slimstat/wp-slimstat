@@ -1,3 +1,24 @@
+= 5.4.5 - 2026-03-20 =
+
+Fixed
+- Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)
+- GDPR consent cookie domain, cached page banner display, and anonymous nonce handling
+- Removed double-escaping in report filters and tightened XSS sanitization (#243, #244)
+- Strict fingerprint input sanitization (#244)
+- Output escaping in reports default case (#244)
+- Store attachment content_type as `cpt:attachment` (#236)
+- Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
+- Increased Access Log widget height on WP Dashboard
+- Synced stat before `ensureVisitId` to prevent ID loss on finalization
+- Skipped REST nonce for anonymous users, removed dead adblock fallback URL
+
+Security
+- Restored nonce verification for all consent endpoints
+
+Improved
+- Refactored `isUserExcluded()` into standalone method with full test coverage
+- Inlined `get_current_user_id()` in nonce guards for clarity
+
 = 5.4.4 - 2026-03-17 =
 
 Fixed
