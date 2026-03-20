@@ -35,11 +35,26 @@ class Processor
             return true;
         }
 
-        // Check role/capability blacklist
-        if (!empty($user->roles)) {
-            foreach ($user->roles as $role) {
-                if (Utils::isBlacklisted($role, \wp_slimstat::$settings['ignore_capabilities'] ?? '')) {
-                    return true;
+        // Check role/capability blacklist — matches both role slugs (e.g. "editor")
+        // and capability keys (e.g. "manage_options", "edit_posts") so admins can
+        // exclude users by either mechanism via the ignore_capabilities setting.
+        $capSetting = \wp_slimstat::$settings['ignore_capabilities'] ?? '';
+        if (!empty($capSetting)) {
+            // Check role slugs first
+            if (!empty($user->roles)) {
+                foreach ($user->roles as $role) {
+                    if (Utils::isBlacklisted($role, $capSetting)) {
+                        return true;
+                    }
+                }
+            }
+
+            // Check individual capability keys (e.g. manage_options, edit_posts)
+            if (!empty($user->allcaps) && is_array($user->allcaps)) {
+                foreach ($user->allcaps as $cap => $granted) {
+                    if ($granted && Utils::isBlacklisted($cap, $capSetting)) {
+                        return true;
+                    }
                 }
             }
         }
@@ -525,10 +540,13 @@ class Processor
                         }
 
                         // Add username and email if logged in and PII allowed
-                        if (!empty($GLOBALS['current_user']->ID)) {
-                            $update_data['username'] = $GLOBALS['current_user']->data->user_login;
-                            $update_data['email']    = $GLOBALS['current_user']->data->user_email;
-                            $user_note = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+                        // Use wp_get_current_user() defensively (#246) — $GLOBALS['current_user']
+                        // may not be resolved in edge-case environments (object caching, multisite).
+                        $upgradeUser = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+                        if (!empty($upgradeUser) && !empty($upgradeUser->ID)) {
+                            $update_data['username'] = $upgradeUser->data->user_login;
+                            $update_data['email']    = $upgradeUser->data->user_email;
+                            $user_note = '[user:' . $upgradeUser->data->ID . ']';
                             if (empty($existing_record->notes) || false === strpos($existing_record->notes, $user_note)) {
                                 $update_data['notes'] = $user_note;
                             }
