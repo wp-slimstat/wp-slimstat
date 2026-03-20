@@ -198,8 +198,9 @@ test.describe('User Exclusion — JS/Client-Side Mode (@user-exclusion-js)', () 
     await setSlimstatSetting('ignore_wp_users', 'on');
     await setSlimstatSetting('tracking_request_method', 'ajax');
 
-    // Anonymous context (no login)
-    const context = await browser.newContext();
+    // Explicit empty storageState to override the admin project's default auth.
+    // Without this, browser.newContext() inherits admin cookies → not truly anonymous.
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
 
     await clearStatsTable();
