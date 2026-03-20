@@ -52,11 +52,12 @@ class Utils
 
 	public static function isBlacklisted($needles = [], $haystackString = '')
 	{
+		if (!is_array($needles)) {
+			$needles = [$needles];
+		}
+
 		foreach (\wp_slimstat::string_to_array($haystackString) as $item) {
 			$pattern = str_replace(['\\*', '\\!'], ['(.*)', '.'], preg_quote($item, '@'));
-			if (!is_array($needles)) {
-				$needles = [$needles];
-			}
 
 			foreach ($needles as $needle) {
 				if (preg_match(sprintf('@^%s$@i', $pattern), $needle)) {
@@ -284,7 +285,7 @@ class Utils
 			$content_info['content_type'] = 'page';
 			$content_info['content_id']   = $GLOBALS['post']->ID;
 		} elseif (is_attachment()) {
-			$content_info['content_type'] = 'attachment';
+			$content_info['content_type'] = 'cpt:attachment';
 		} elseif (is_singular()) {
 			$content_info['content_type'] = 'singular';
 		} elseif (is_post_type_archive()) {
