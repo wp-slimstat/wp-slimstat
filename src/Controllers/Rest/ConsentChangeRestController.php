@@ -146,6 +146,11 @@ class ConsentChangeRestController implements RestControllerInterface
 	{
 		$this->currentRequest = $request;
 
+		// Verify nonce for all users — consent is a state-changing operation.
+		// Without verification, a cross-site POST could force-accept consent,
+		// enabling PII tracking without genuine user action (GDPR violation).
+		// On cached pages with stale nonces, this returns 403 — the JS cookie
+		// still records consent client-side, and tracking works via /hit (PR #235).
 		$nonce = $request->get_param('nonce');
 		if (!wp_verify_nonce($nonce, 'wp_rest')) {
 			return new \WP_Error(

@@ -375,7 +375,11 @@ class Utils
 				$piiAllowed = Consent::piiAllowed();
 
 				if ($piiAllowed || $isAnonymousTracking) {
-					$stat['fingerprint'] = sanitize_text_field($dataJs['fh']);
+					$fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', $dataJs['fh']);
+					if (strlen($fingerprint) > 256) {
+						$fingerprint = substr($fingerprint, 0, 256);
+					}
+					$stat['fingerprint'] = sanitize_text_field($fingerprint);
 				}
 			} catch (\Throwable $e) {
 				// Fingerprint not stored when consent check fails (GDPR-safe default)

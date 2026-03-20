@@ -29,6 +29,21 @@ class TrackingRestController implements RestControllerInterface
         return is_numeric($value) ? (int) $value : 0;
     }
 
+    /**
+     * Sanitize fingerprint parameter: alphanumeric + dash + underscore only, max 256 chars.
+     *
+     * @param mixed $value Raw fingerprint value.
+     * @return string Sanitized fingerprint.
+     */
+    public static function sanitize_fingerprint_param($value): string
+    {
+        $value = preg_replace('/[^a-zA-Z0-9\-_]/', '', (string) $value);
+        if (strlen($value) > 256) {
+            $value = substr($value, 0, 256);
+        }
+        return sanitize_text_field($value);
+    }
+
     public function register_routes(): void
     {
         register_rest_route('slimstat/v1', '/hit', [
@@ -97,7 +112,7 @@ class TrackingRestController implements RestControllerInterface
                 'fh' => [
                     'required'          => false,
                     'type'              => 'string',
-                    'sanitize_callback' => 'sanitize_text_field',
+                    'sanitize_callback' => [self::class, 'sanitize_fingerprint_param'],
                 ],
                 'tz' => [
                     'required'          => false,
