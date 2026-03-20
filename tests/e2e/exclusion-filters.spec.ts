@@ -57,6 +57,8 @@ function uninstallCptMuPlugin(): void {
   if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
 }
 
+const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
+
 // ─── DB helpers ──────────────────────────────────────────────────
 
 async function getRecentStatByResource(resourceLike: string): Promise<any | null> {
@@ -92,6 +94,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Ensure server-side tracking is on
     await setSlimstatSetting('javascript_mode', 'off');
     await setSlimstatSetting('is_tracking', 'on');
+    // CRITICAL: Disable GDPR to isolate exclusion filters from consent gate (#246)
+    // Without this, fresh browser contexts have no consent cookie, so Consent::canTrack()
+    // returns false for ALL users - making user exclusion tests false positives.
+    await setSlimstatSetting('gdpr_enabled', 'off');
   });
 
   test.afterAll(async () => {
@@ -122,7 +128,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await clearStatsTable();
 
     // Visit single product post as anonymous user
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
 
@@ -156,7 +165,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await clearStatsTable();
 
     // Visit as anonymous
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
 
@@ -193,6 +205,8 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     try {
       // Visit with Googlebot UA
       anonCtx = await browser.newContext({
+        javaScriptEnabled: false,
+        storageState: EMPTY_STORAGE_STATE,
         userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
       });
       anonPage = await anonCtx.newPage();
@@ -221,7 +235,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const countBefore = await getStatCount();
 
     // Visit wp-login.php as anonymous
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
 
@@ -240,10 +257,13 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   // REQ-EXCL-006 — @smoke @positive @priority-critical
   // ────────────────────────────────────────────────────────────────
   test('Logged-in admin excluded when ignore_wp_users is on', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', '');
+    await setSlimstatSetting('ignore_bots', 'off');
+    await setSlimstatSetting('ignore_resources', '');
     await setSlimstatSetting('ignore_wp_users', 'on');
 
     // Login directly in a fresh browser context
-    const adminCtx = await browser.newContext();
+    const adminCtx = await browser.newContext({ javaScriptEnabled: false });
     const adminPage = await adminCtx.newPage();
     await adminPage.goto(`${BASE_URL}/wp-login.php`);
     await adminPage.fill('#user_login', 'parhumm');
@@ -254,15 +274,15 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Clear stats table after login
     await clearStatsTable();
 
-    // Navigate as logged-in admin to a frontend page with a marker
-    const marker = `e2e-user-excl-${Date.now()}`;
-    await adminPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+    // Use a real product permalink so the assertion proves exclusion on a trackable URL.
+    const slug = `e2e-user-excl-${Date.now()}`;
+    await createProductPost('E2E User Exclusion Product', slug);
+    const productUrl = `${BASE_URL}/product/${slug}/`;
+    await adminPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
+    await adminPage.waitForTimeout(2_000);
 
-    // Admin should NOT be tracked — poll to confirm no row matching our marker appears
-    await expect.poll(
-      () => getRecentStatByResource(marker),
-      { timeout: 6_000, intervals: [500] }
-    ).toBeNull();
+    // Admin should NOT be tracked on this specific product permalink.
+    expect(await getRecentStatByResource(slug)).toBeNull();
 
     await adminPage.close();
     await adminCtx.close();

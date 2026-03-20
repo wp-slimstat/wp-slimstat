@@ -25,6 +25,12 @@ import {
   restoreWpConfig,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ADMIN_AUTH = path.join(__dirname, '.auth', 'admin.json');
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -42,19 +48,16 @@ async function getStatCount(): Promise<number> {
 }
 
 // ─── Login helper ────────────────────────────────────────────────
+// Uses the pre-authenticated storageState from global-setup instead of
+// logging in via the UI. This eliminates the 30-45s login timeout flakes
+// caused by wp-admin page load overhead in Local by Flywheel.
 
 async function loginAsAdmin(browser: import('@playwright/test').Browser): Promise<{
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
 }> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: ADMIN_AUTH });
   const page = await context.newPage();
-  await page.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
-  await page.fill('#user_login', 'parhumm');
-  await page.fill('#user_pass', 'testpass123');
-  await page.click('#wp-submit');
-  // Use domcontentloaded — wp-admin full load is slow due to tracking scripts
-  await page.waitForURL('**/wp-admin/**', { timeout: 45_000, waitUntil: 'domcontentloaded' });
   return { context, page };
 }
 
@@ -195,8 +198,9 @@ test.describe('User Exclusion — JS/Client-Side Mode (@user-exclusion-js)', () 
     await setSlimstatSetting('ignore_wp_users', 'on');
     await setSlimstatSetting('tracking_request_method', 'ajax');
 
-    // Anonymous context (no login)
-    const context = await browser.newContext();
+    // Explicit empty storageState to override the admin project's default auth.
+    // Without this, browser.newContext() inherits admin cookies → not truly anonymous.
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
 
     await clearStatsTable();

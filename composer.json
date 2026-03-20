@@ -45,6 +45,7 @@
     "test:reports-escaping": "php tests/reports-output-escaping-test.php",
     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
+    "test:user-exclusion": "php tests/user-exclusion-processor-test.php",
     "test:all": [
       "@test:license-tags",
       "@test:geoip-resolver",
@@ -54,7 +55,8 @@
       "@test:rest-controller",
       "@test:reports-escaping",
       "@test:fingerprint-sanitize",
-      "@test:gdpr-consent"
+      "@test:gdpr-consent",
+      "@test:user-exclusion"
     ]
   }
 }
