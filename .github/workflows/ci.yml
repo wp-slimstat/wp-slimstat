@@ -142,33 +142,18 @@ jobs:
         run: npx wp-env start
         timeout-minutes: 5
 
-      - name: Activate plugin and verify tables in wp-env
+      - name: Activate plugin and create database tables
+        # wp-env auto-activates the plugin but doesn't fire admin_init, which is
+        # where init_tables() runs. Force table creation via wp eval.
         run: |
-          # Check table prefix used by this WordPress instance
-          echo "--- Table prefix ---"
-          npx wp-env run tests-cli -- wp eval 'echo $GLOBALS["wpdb"]->prefix . PHP_EOL;'
-
-          # Force deactivate+reactivate to trigger table creation
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
-          npx wp-env run tests-cli -- wp plugin list --status=active
-
-          # Show ALL tables in the database
-          echo "--- All tables ---"
-          npx wp-env run tests-cli -- wp db query "SHOW TABLES;"
-
-          # If no slimstat tables, force creation via wp eval
-          TABLES=$(npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';" 2>/dev/null || true)
-          echo "SlimStat tables: $TABLES"
-          if [ -z "$TABLES" ] || ! echo "$TABLES" | grep -q "slim"; then
-            echo "Tables missing — forcing creation via wp eval..."
-            npx wp-env run tests-cli -- wp eval '
-              include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
-              wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
-              echo "Tables created." . PHP_EOL;
-            '
-            npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
-          fi
+          npx wp-env run tests-cli -- wp eval '
+            include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
+            wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
+          '
+          echo "--- Verifying tables ---"
+          npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers

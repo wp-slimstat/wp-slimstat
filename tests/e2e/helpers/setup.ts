@@ -406,7 +406,12 @@ export async function restoreAllOptions(): Promise<void> {
 // ─── Stats table helpers ─────────────────────────────────────────
 
 export async function clearStatsTable(): Promise<void> {
-  await getPool().execute("TRUNCATE TABLE wp_slim_stats");
+  const pool = getPool();
+  // Disable FK checks — wp_slim_events has a FK reference to wp_slim_stats
+  await pool.execute("SET FOREIGN_KEY_CHECKS = 0");
+  await pool.execute("TRUNCATE TABLE wp_slim_stats");
+  await pool.execute("TRUNCATE TABLE wp_slim_events");
+  await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
 }
 
 export async function getLatestStat(testMarker: string): Promise<{ country: string; city: string; location: string } | null> {
