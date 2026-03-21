@@ -120,7 +120,10 @@ export async function insertRows(
  * Parallel workers would cause data races — do NOT change workers setting.
  */
 export async function clearTestData(): Promise<void> {
+  await getPool().execute("SET FOREIGN_KEY_CHECKS = 0");
   await getPool().execute("TRUNCATE TABLE wp_slim_stats");
+  await getPool().execute("TRUNCATE TABLE wp_slim_events");
+  await getPool().execute("SET FOREIGN_KEY_CHECKS = 1");
   await getPool().execute(
     "DELETE FROM wp_options WHERE option_name LIKE '_transient_wp_slimstat_%' OR option_name LIKE '_transient_timeout_wp_slimstat_%'"
   );

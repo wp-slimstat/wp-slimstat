@@ -73,7 +73,11 @@ async function seedRegularPageviews(count: number): Promise<void> {
 }
 
 async function clearStatsTable(): Promise<void> {
-  await getPool().execute('TRUNCATE TABLE wp_slim_stats');
+  const p = getPool();
+  await p.execute('SET FOREIGN_KEY_CHECKS = 0');
+  await p.execute('TRUNCATE TABLE wp_slim_stats');
+  await p.execute('TRUNCATE TABLE wp_slim_events');
+  await p.execute('SET FOREIGN_KEY_CHECKS = 1');
 }
 
 test.describe('Outbound Link Report Display', () => {
