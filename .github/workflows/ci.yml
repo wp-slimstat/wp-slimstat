@@ -142,12 +142,16 @@ jobs:
         run: npx wp-env start
         timeout-minutes: 5
 
-      - name: Activate plugin in wp-env
-        # wp-env mounts the plugin but may not auto-activate it.
-        # The plugin creates wp_slim_stats tables on activation.
+      - name: Activate plugin and verify tables in wp-env
+        # wp-env auto-activates plugins but the activation hook may run before
+        # the DB is ready, leaving tables missing. Force a deactivate/reactivate
+        # cycle to ensure the plugin's activation hook creates wp_slim_stats tables.
         run: |
-          npx wp-env run tests-cli wp plugin activate wp-slimstat
-          npx wp-env run tests-cli wp plugin list --status=active
+          npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
+          npx wp-env run tests-cli -- wp plugin activate wp-slimstat
+          npx wp-env run tests-cli -- wp plugin list --status=active
+          echo "--- Verifying SlimStat tables ---"
+          npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
