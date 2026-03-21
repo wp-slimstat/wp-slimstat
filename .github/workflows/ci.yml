@@ -169,16 +169,22 @@ jobs:
 
           # ── MySQL access via host-mapped port ────────────────────────────
           # wp-env maps container port 3306 to a dynamic host port.
-          # Use docker port to discover it (more reliable than container IP).
           MYSQL_CTR=$(docker ps --format "{{.Names}}" | grep -i "tests-mysql\|tests-mariadb" | head -1)
           echo "MySQL container: $MYSQL_CTR"
 
           MYSQL_HOST_PORT=$(docker port "$MYSQL_CTR" 3306 2>/dev/null | head -1 | cut -d: -f2)
           echo "MySQL host port: $MYSQL_HOST_PORT"
 
-          # Read DB_NAME directly from wp-config.php (now accessible via WP_VOL)
-          DB_NAME=$(grep -oP "define\(\s*'DB_NAME'\s*,\s*'\K[^']+" "$WP_VOL/wp-config.php" || echo "wordpress")
-          echo "Database name from wp-config: '$DB_NAME'"
+          # Discover the actual database name from MySQL itself (not wp-config).
+          # wp-env MariaDB images ship 'mariadb' binary, not 'mysql'.
+          ALL_DBS=$(docker exec "$MYSQL_CTR" mariadb -uroot -ppassword \
+            -sNe "SHOW DATABASES" 2>/dev/null || true)
+          echo "All databases: $ALL_DBS"
+
+          # Pick the WordPress database (exclude system databases)
+          DB_NAME=$(echo "$ALL_DBS" | grep -v -E "^(information_schema|mysql|performance_schema|sys)$" | head -1)
+          echo "Selected database: '$DB_NAME'"
+          DB_NAME="${DB_NAME:-wordpress}"
 
           # Disable Unix socket; use TCP via host-mapped port
           echo "MYSQL_SOCKET=" >> $GITHUB_ENV
