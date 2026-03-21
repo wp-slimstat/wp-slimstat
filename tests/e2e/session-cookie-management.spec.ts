@@ -51,7 +51,7 @@ async function waitForStatRows(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const [rows] = (await getPool().execute(
-      'SELECT * FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC',
+      'SELECT id, visit_id, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
       [`%${marker}%`],
     )) as any;
     if (rows.length >= minRows) return rows;
@@ -59,7 +59,7 @@ async function waitForStatRows(
   }
   // Return whatever we have (may be fewer than minRows)
   const [rows] = (await getPool().execute(
-    'SELECT * FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC',
+    'SELECT id, visit_id, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
     [`%${marker}%`],
   )) as any;
   return rows;
@@ -151,46 +151,48 @@ test.describe('Session & Cookie Management — #199', () => {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
 
-    // Configure tracking (GDPR off, JS mode, cookies on)
-    await setSlimstatOption(page, 'gdpr_enabled', 'off');
-    await setSlimstatOption(page, 'javascript_mode', 'on');
-    await setSlimstatOption(page, 'set_tracker_cookie', 'on');
-    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+    try {
+      // Configure tracking (GDPR off, JS mode, cookies on)
+      await setSlimstatOption(page, 'gdpr_enabled', 'off');
+      await setSlimstatOption(page, 'javascript_mode', 'on');
+      await setSlimstatOption(page, 'set_tracker_cookie', 'on');
+      await setSlimstatOption(page, 'tracking_request_method', 'rest');
 
-    const markerBefore = `session-before-${Date.now()}`;
-    const markerAfter = `session-after-${Date.now()}`;
+      const markerBefore = `session-before-${Date.now()}`;
+      const markerAfter = `session-after-${Date.now()}`;
 
-    // Visit #1: establish a session
-    await page.goto(`${BASE_URL}/?e2e_marker=${markerBefore}`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(3000);
+      // Visit #1: establish a session
+      await page.goto(`${BASE_URL}/?e2e_marker=${markerBefore}`);
+      await page.waitForLoadState('load');
+      await page.waitForTimeout(3000);
 
-    const rowsBefore = await waitForStatRows(markerBefore, 1, 15_000);
-    expect(rowsBefore.length, 'First visit should produce a DB row').toBeGreaterThanOrEqual(1);
-    const visitIdBefore = parseInt(rowsBefore[0].visit_id, 10);
-    expect(visitIdBefore, 'First visit_id should be positive').toBeGreaterThan(0);
+      const rowsBefore = await waitForStatRows(markerBefore, 1, 15_000);
+      expect(rowsBefore.length, 'First visit should produce a DB row').toBeGreaterThanOrEqual(1);
+      const visitIdBefore = parseInt(rowsBefore[0].visit_id, 10);
+      expect(visitIdBefore, 'First visit_id should be positive').toBeGreaterThan(0);
 
-    // Clear ALL cookies — simulates cookie expiry
-    await ctx.clearCookies();
+      // Clear ALL cookies — simulates cookie expiry
+      await ctx.clearCookies();
 
-    // Visit #2: should start a new session
-    await page.goto(`${BASE_URL}/?e2e_marker=${markerAfter}`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(3000);
+      // Visit #2: should start a new session
+      await page.goto(`${BASE_URL}/?e2e_marker=${markerAfter}`);
+      await page.waitForLoadState('load');
+      await page.waitForTimeout(3000);
 
-    const rowsAfter = await waitForStatRows(markerAfter, 1, 15_000);
-    expect(rowsAfter.length, 'Second visit should produce a DB row').toBeGreaterThanOrEqual(1);
-    const visitIdAfter = parseInt(rowsAfter[0].visit_id, 10);
-    expect(visitIdAfter, 'Second visit_id should be positive').toBeGreaterThan(0);
+      const rowsAfter = await waitForStatRows(markerAfter, 1, 15_000);
+      expect(rowsAfter.length, 'Second visit should produce a DB row').toBeGreaterThanOrEqual(1);
+      const visitIdAfter = parseInt(rowsAfter[0].visit_id, 10);
+      expect(visitIdAfter, 'Second visit_id should be positive').toBeGreaterThan(0);
 
-    // The two visit_ids MUST differ — cookie loss means new session
-    expect(
-      visitIdAfter,
-      `visit_id after cookie clear (${visitIdAfter}) must differ from before (${visitIdBefore})`,
-    ).not.toBe(visitIdBefore);
-
-    await page.close();
-    await ctx.close();
+      // The two visit_ids MUST differ — cookie loss means new session
+      expect(
+        visitIdAfter,
+        `visit_id after cookie clear (${visitIdAfter}) must differ from before (${visitIdBefore})`,
+      ).not.toBe(visitIdBefore);
+    } finally {
+      await page.close();
+      await ctx.close();
+    }
   });
 
   // ═══════════════════════════════════════════════════════════════════
