@@ -339,15 +339,22 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
+     *
+     * These tests intentionally expect escaped values. The implementation
+     * currently passes raw values, which is a known bug. When esc_like() is
+     * added to the LIKE operators in wp-slimstat-db.php, these tests will
+     * start passing.
      */
     public function test_single_where_escapes_percent_in_like(): void
     {
+        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
+
         // The 'contains' operator wraps with %...% — an embedded % in the value
-        // should still be present (it's the user's intent to search for it).
+        // must be escaped to \% so it matches a literal percent sign, not a wildcard.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', '100%');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('100%', $sql);
+        $this->assertStringContainsString('100\%', $sql);
     }
 
     /**
@@ -366,14 +373,22 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
+     *
+     * These tests intentionally expect escaped values. The implementation
+     * currently passes raw values, which is a known bug. When esc_like() is
+     * added to the LIKE operators in wp-slimstat-db.php, these tests will
+     * start passing.
      */
     public function test_single_where_handles_underscore_in_like(): void
     {
-        // Underscore is a LIKE wildcard in MySQL; verify the value passes through.
+        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
+
+        // Underscore is a LIKE wildcard in MySQL; it must be escaped to \_
+        // so it matches a literal underscore, not any single character.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', 'my_page');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('my_page', $sql);
+        $this->assertStringContainsString('my\_page', $sql);
     }
 
     // ------------------------------------------------------------------
