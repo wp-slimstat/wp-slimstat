@@ -338,14 +338,22 @@ export async function setSlimstatOption(_page: import('@playwright/test').Page, 
   const [rows] = await pool.execute(
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
   ) as any;
-  if (!rows.length) {
-    throw new Error('slimstat_options row not found in wp_options — is the plugin activated?');
-  }
-  const opts = phpUnserialize(rows[0].option_value) as Record<string, any>;
+
+  // If the row is missing (e.g. after simulateFreshInstall()), start with
+  // an empty options object and upsert instead of crashing.
+  const opts = rows.length
+    ? (phpUnserialize(rows[0].option_value) as Record<string, any>)
+    : {};
   opts[key] = value;
   const serialized = phpSerialize(opts);
+
+  // Upsert: INSERT if the row was deleted, UPDATE if it exists.
+  // NOTE: Direct DB writes bypass the WordPress object cache. In CI
+  // (wp-env default) this is fine because there is no persistent object
+  // cache. In local dev with Redis/Memcached, the next get_option() call
+  // may read stale cached data until the next full page load clears it.
   await pool.execute(
-    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_options', ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
     [serialized]
   );
 }

@@ -51,7 +51,7 @@ async function waitForStatRows(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const [rows] = (await getPool().execute(
-      'SELECT id, visit_id, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
+      'SELECT id, visit_id, ip, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
       [`%${marker}%`],
     )) as any;
     if (rows.length >= minRows) return rows;
@@ -59,7 +59,7 @@ async function waitForStatRows(
   }
   // Return whatever we have (may be fewer than minRows)
   const [rows] = (await getPool().execute(
-    'SELECT id, visit_id, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
+    'SELECT id, visit_id, ip, resource FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id ASC LIMIT 20',
     [`%${marker}%`],
   )) as any;
   return rows;
@@ -197,26 +197,31 @@ test.describe('Session & Cookie Management — #199', () => {
 
   // ═══════════════════════════════════════════════════════════════════
   // Test 3: Consent upgrade preserves session
-  //   With GDPR enabled, decline tracking and navigate (should NOT
-  //   track). Then accept consent and navigate — tracking should
-  //   resume with a NEW visit_id.
+  //   With GDPR + anonymous_tracking enabled, decline consent and
+  //   navigate — anonymous rows (hashed IP, no PII) should be recorded.
+  //   Then accept consent and navigate — tracking should continue with
+  //   full PII (real IP). Exercises the real merge/upgrade code path in
+  //   Processor.php ($isAnonymousTracking && $piiAllowed).
   //
   //   Regression for bug #246 where consent-upgrade broke session merge.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('consent upgrade — decline then accept resumes tracking with new visit_id', async ({
+  test('consent upgrade — anonymous rows while declined, PII rows after accept', async ({
     page,
   }) => {
     await clearStatsTable();
 
-    // Enable GDPR with SlimStat banner
+    // Enable GDPR with SlimStat banner + anonymous tracking so that
+    // declined visitors still get tracked without PII. This exercises
+    // the real merge/upgrade path in Processor.php (gated on
+    // $isAnonymousTracking && $piiAllowed).
     await setSlimstatOption(page, 'gdpr_enabled', 'on');
     await setSlimstatOption(page, 'consent_integration', 'slimstat_banner');
     await setSlimstatOption(page, 'use_slimstat_banner', 'on');
     await setSlimstatOption(page, 'javascript_mode', 'on');
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
-    await setSlimstatOption(page, 'anonymous_tracking', 'off');
+    await setSlimstatOption(page, 'anonymous_tracking', 'on');
 
     const browser = page.context().browser()!;
     const ts = Date.now();
@@ -261,7 +266,7 @@ test.describe('Session & Cookie Management — #199', () => {
     // Reset tracking counter to isolate post-decline navigation
     trackingRequests.length = 0;
 
-    // ── Phase 2: Navigate while declined — should NOT track ───────
+    // ── Phase 2: Navigate while declined — anonymous tracking records a row ─
 
     const declinedNavMarker = `consent-declined-nav-${ts}`;
     await testPage.goto(`${BASE_URL}/?e2e_marker=${declinedNavMarker}`, {
@@ -272,19 +277,16 @@ test.describe('Session & Cookie Management — #199', () => {
     // Banner should NOT reappear (decision persisted)
     await expect(testPage.locator('#slimstat-gdpr-banner')).not.toBeVisible();
 
-    // No tracking requests should have fired while consent is denied
+    // With anonymous_tracking=on, the tracker still fires even when consent
+    // is denied — it just strips PII (IP is hashed, no username/email).
+    const anonRows = await waitForStatRows(declinedNavMarker, 1, 15_000);
     expect(
-      trackingRequests.length,
-      'No tracking requests should fire while consent is denied',
-    ).toBe(0);
-
-    // Verify no DB rows for declined navigation
-    await new Promise((r) => setTimeout(r, 2000));
-    const [declinedRows] = (await getPool().execute(
-      'SELECT id FROM wp_slim_stats WHERE resource LIKE ?',
-      [`%${declinedNavMarker}%`],
-    )) as any;
-    expect(declinedRows.length, 'No DB rows should exist for declined navigation').toBe(0);
+      anonRows.length,
+      'Anonymous tracking should record a row even when consent is denied',
+    ).toBeGreaterThanOrEqual(1);
+    // Store the anonymous IP for later comparison — it should be a hash,
+    // not the real IP address.
+    const anonymousIp = anonRows[0].ip;
 
     // ── Phase 3: Accept consent (upgrade) ─────────────────────────
 
@@ -322,7 +324,7 @@ test.describe('Session & Cookie Management — #199', () => {
     });
     await testPage.waitForTimeout(3000);
 
-    // ── Phase 4: Verify tracking resumed ──────────────────────────
+    // ── Phase 4: Verify tracking resumed with PII ─────────────────
 
     // At least one tracking request should have fired after acceptance
     expect(
@@ -339,15 +341,13 @@ test.describe('Session & Cookie Management — #199', () => {
     const postConsentVisitId = parseInt(acceptRows[0].visit_id, 10);
     expect(postConsentVisitId, 'Post-consent visit_id should be positive').toBeGreaterThan(0);
 
-    // Verify no rows exist for the decline-phase markers (tracking was correctly blocked)
-    const [declinePhaseRows] = (await getPool().execute(
-      'SELECT id FROM wp_slim_stats WHERE resource LIKE ?',
-      [`%${declineMarker}%`],
-    )) as any;
+    // Key assertion: post-consent rows should have a real IP (PII),
+    // which differs from the hashed IP stored during anonymous tracking.
+    const piiIp = acceptRows[0].ip;
     expect(
-      declinePhaseRows.length,
-      'No DB rows should exist for the initial declined page',
-    ).toBe(0);
+      piiIp,
+      'Post-consent IP (PII) should differ from anonymous hashed IP',
+    ).not.toBe(anonymousIp);
 
     // If the second accepted page was also tracked, verify it shares the same visit_id
     const acceptNav2Rows = await waitForStatRows(acceptNav2Marker, 1, 10_000);
