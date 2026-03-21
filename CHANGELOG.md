@@ -19,13 +19,21 @@ Improved
 - Refactored `isUserExcluded()` into standalone method with full test coverage
 - Inlined `get_current_user_id()` in nonce guards for clarity
 
-Infrastructure
+Infrastructure (cycle/01)
 - Added PHPUnit 10.5 + Brain Monkey + Mockery unit test framework (23 tests, 27 assertions across Tracker, Processor, Session classes)
 - Added @wordpress/env Docker environment (WordPress 6.4, PHP 7.4) for reproducible local and CI testing
 - Added 3-tier GitHub Actions CI pipeline: Tier 1 PHPUnit + lint on every push (<3 min), Tier 2 E2E on main/development PRs, Tier 3 full PHP matrix + k6 nightly
 - Added Playwright analytics correctness invariants spec (5 tests verifying row creation, visit_id chain, resource field match, no duplicate inserts)
 - Added 5 deterministic site profile fixtures (publisher, store, membership, brochure, multisite) for consistent E2E test state
 - Added E2E correlation ID harness MU-plugin for per-run row isolation in wp_slim_stats
+
+Infrastructure (cycle/02)
+- Fixed E2E tests in CI — rewrote setSlimstatOption to direct DB via php-serialize (82 specs now pass, up from 1)
+- Fixed FK constraint errors on TRUNCATE TABLE wp_slim_stats across all test files
+- Fixed rewrite flush to use permalink page visit instead of AJAX (works in wp-env Docker)
+- Added session & cookie management E2E tests — visit_id continuity, cookie expiry, consent-upgrade regression (#246)
+- Added admin settings persistence E2E tests — save/reload, multi-setting atomicity, navigation survival
+- Added query builder unit tests — 29 tests covering SQL generation, all filter operators, escaping, date ranges
 
 = 5.4.4 - 2026-03-17 =
 
