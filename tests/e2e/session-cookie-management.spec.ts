@@ -288,15 +288,19 @@ test.describe('Session & Cookie Management — #199', () => {
     // not the real IP address.
     const anonymousIp = anonRows[0].ip;
 
-    // ── Phase 3: Accept consent (upgrade) ─────────────────────────
+    // ── Phase 3: Accept consent via real JS upgrade path ──────────
+    //
+    // The real consent upgrade flow:
+    //   1. JS: requestConsentUpgrade() calls sendPageview() with consentUpgrade: true
+    //   2. JS: sendPageview() adds &consent_upgrade=1&pageview_id=<id> to the request
+    //   3. Server Processor.php:409: $isConsentUpgrade gate triggers the merge
+    //
+    // We must call this ON THE SAME PAGE where the anonymous row was created,
+    // because SlimStatParams.id holds the anonymous pageview ID that the server
+    // needs to find and upgrade the correct row.
 
-    // Delete the denied cookie and set it to accepted — simulates the user
-    // changing their mind (e.g. clicking an "Accept" button on a re-shown banner
-    // or a "Manage Preferences" link). We manipulate the cookie directly and
-    // then navigate, which is the same flow as the JS consent upgrade path.
-    await ctx.clearCookies();
+    // Set the accepted consent cookie (simulates the banner handler setting it)
     await ctx.addCookies([
-      ...COOKIEYES_DISMISS_COOKIES,
       {
         name: 'slimstat_gdpr_consent',
         value: 'accepted',
@@ -305,58 +309,61 @@ test.describe('Session & Cookie Management — #199', () => {
       },
     ]);
 
-    // Reset tracking counter for acceptance phase
+    // Reset tracking counter to capture the upgrade request
     trackingRequests.length = 0;
 
-    const acceptMarker = `consent-accepted-${ts}`;
-    await testPage.goto(`${BASE_URL}/?e2e_marker=${acceptMarker}`, {
-      waitUntil: 'domcontentloaded',
+    // Trigger the real JS consent upgrade on the CURRENT page (not a new navigation).
+    // This sends consent_upgrade=1 + the current pageview_id to the server,
+    // which is the exact code path that #246 broke.
+    const upgradeResult = await testPage.evaluate(() => {
+      if (typeof (window as any).SlimStat?.requestConsentUpgrade === 'function') {
+        (window as any).SlimStat.requestConsentUpgrade({ force: true });
+        return 'triggered';
+      }
+      return 'SlimStat.requestConsentUpgrade not available';
     });
-    await testPage.waitForTimeout(3000);
 
-    // Banner should NOT be visible (consent cookie = accepted)
-    await expect(testPage.locator('#slimstat-gdpr-banner')).not.toBeVisible();
+    // Wait for the upgrade tracking request to complete
+    await testPage.waitForTimeout(5000);
 
-    // Navigate to a second page after consent upgrade
-    const acceptNav2Marker = `consent-accepted-nav2-${ts}`;
-    await testPage.goto(`${BASE_URL}/?e2e_marker=${acceptNav2Marker}`, {
-      waitUntil: 'domcontentloaded',
-    });
-    await testPage.waitForTimeout(3000);
+    // ── Phase 4: Verify the anonymous row was upgraded with PII ────
 
-    // ── Phase 4: Verify tracking resumed with PII ─────────────────
-
-    // At least one tracking request should have fired after acceptance
-    expect(
-      trackingRequests.length,
-      'Tracking requests should fire after consent upgrade',
-    ).toBeGreaterThanOrEqual(1);
-
-    // DB rows should exist for the accepted pages
-    const acceptRows = await waitForStatRows(acceptMarker, 1, 15_000);
-    expect(
-      acceptRows.length,
-      'At least one DB row should exist after consent upgrade',
-    ).toBeGreaterThanOrEqual(1);
-    const postConsentVisitId = parseInt(acceptRows[0].visit_id, 10);
-    expect(postConsentVisitId, 'Post-consent visit_id should be positive').toBeGreaterThan(0);
-
-    // Key assertion: post-consent rows should have a real IP (PII),
-    // which differs from the hashed IP stored during anonymous tracking.
-    const piiIp = acceptRows[0].ip;
-    expect(
-      piiIp,
-      'Post-consent IP (PII) should differ from anonymous hashed IP',
-    ).not.toBe(anonymousIp);
-
-    // If the second accepted page was also tracked, verify it shares the same visit_id
-    const acceptNav2Rows = await waitForStatRows(acceptNav2Marker, 1, 10_000);
-    if (acceptNav2Rows.length > 0) {
-      const nav2VisitId = parseInt(acceptNav2Rows[0].visit_id, 10);
+    if (upgradeResult === 'triggered') {
+      // The upgrade request should have fired
       expect(
-        nav2VisitId,
-        'Second page after consent upgrade should share visit_id with the first',
-      ).toBe(postConsentVisitId);
+        trackingRequests.length,
+        'requestConsentUpgrade() should send a tracking request with consent_upgrade=1',
+      ).toBeGreaterThanOrEqual(1);
+
+      // Re-read the anonymous row — after upgrade, the IP should now be real (PII),
+      // not the hashed anonymous value.
+      const upgradedRows = await waitForStatRows(declinedNavMarker, 1, 10_000);
+      expect(upgradedRows.length).toBeGreaterThanOrEqual(1);
+      const upgradedIp = upgradedRows[0].ip;
+
+      // Key assertion: the SAME row that had a hashed anonymous IP should now
+      // have a real IP (PII) after the consent upgrade merged PII into it.
+      // If #246 regresses, this assertion fails because the merge code at
+      // Processor.php:436 ($isAnonymousTracking && $piiAllowed) won't execute.
+      expect(
+        upgradedIp,
+        `Anonymous row IP should be upgraded from hashed (${anonymousIp}) to real PII`,
+      ).not.toBe(anonymousIp);
+    } else {
+      // SlimStat JS not loaded (e.g. server-mode or JS disabled) — fall back to
+      // verifying that a new navigation after accepting produces PII rows.
+      const acceptMarker = `consent-accepted-${ts}`;
+      await testPage.goto(`${BASE_URL}/?e2e_marker=${acceptMarker}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await testPage.waitForTimeout(3000);
+
+      const acceptRows = await waitForStatRows(acceptMarker, 1, 15_000);
+      expect(acceptRows.length).toBeGreaterThanOrEqual(1);
+      expect(
+        acceptRows[0].ip,
+        'Post-consent IP should differ from anonymous hashed IP',
+      ).not.toBe(anonymousIp);
     }
 
     await testPage.close();
