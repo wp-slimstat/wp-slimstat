@@ -44,6 +44,14 @@ nbproject
 #composer.lock
 composer.lock
 
+# Composer vendor packages — dev deps (PHPUnit, Mockery) use PHP 8.1+
+# syntax that causes parse errors in wp-env PHP 7.4 containers.
+# The autoloader (vendor/autoload.php + vendor/composer/) MUST stay
+# tracked because wp-slimstat.php requires it at line 18.
+/vendor/*
+!/vendor/autoload.php
+!/vendor/composer/
+
 # Testing
 .env.testing
 test-results/

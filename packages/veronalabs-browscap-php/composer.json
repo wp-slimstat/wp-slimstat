@@ -1,0 +1,7 @@
+{
+  "name": "veronalabs/browscap-php",
+  "version": "dev-standalone",
+  "type": "library",
+  "description": "Browscap-PHP stub — actual files already embedded via Mozart in src/Dependencies/",
+  "autoload": {}
+}
