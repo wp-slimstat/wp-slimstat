@@ -11,6 +11,74 @@ use SlimStat\Utils\Consent;
 
 class Processor
 {
+    /**
+     * Check if the current WordPress user should be excluded from tracking.
+     *
+     * Uses wp_get_current_user() defensively to ensure the user object is fully
+     * resolved, even in edge-case environments where $GLOBALS['current_user']
+     * may not be initialized by the 'wp' hook (e.g., object caching plugins,
+     * multisite, or custom authentication flows).
+     *
+     * Returns null when the user is not excluded (or not logged in).
+     * Returns the WP_User object when excluded, so callers can reuse
+     * the resolved user without calling wp_get_current_user() again.
+     *
+     * @since 5.4.5
+     * @return \WP_User|object|null The excluded user, or null if not excluded.
+     */
+    public static function getExcludedUser()
+    {
+        $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+
+        if (empty($user) || empty($user->ID)) {
+            return null;
+        }
+
+        // Check "Exclude all WP Users" toggle
+        if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
+            return $user;
+        }
+
+        // Check role/capability blacklist — matches both role slugs (e.g. "editor")
+        // and capability keys (e.g. "manage_options", "edit_posts") so admins can
+        // exclude users by either mechanism via the ignore_capabilities setting.
+        $capSetting = \wp_slimstat::$settings['ignore_capabilities'] ?? '';
+        if (!empty($capSetting)) {
+            if (!empty($user->roles)) {
+                foreach ($user->roles as $role) {
+                    if (Utils::isBlacklisted($role, $capSetting)) {
+                        return $user;
+                    }
+                }
+            }
+
+            if (!empty($user->allcaps) && is_array($user->allcaps)) {
+                foreach ($user->allcaps as $cap => $granted) {
+                    if ($granted && Utils::isBlacklisted($cap, $capSetting)) {
+                        return $user;
+                    }
+                }
+            }
+        }
+
+        // Check username blacklist
+        if (!empty(\wp_slimstat::$settings['ignore_users'])
+            && !empty($user->data->user_login)
+            && Utils::isBlacklisted($user->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
+            return $user;
+        }
+
+        return null;
+    }
+
+    /**
+     * @deprecated Use getExcludedUser() !== null instead.
+     */
+    public static function isUserExcluded(): bool
+    {
+        return self::getExcludedUser() !== null;
+    }
+
     public static function process()
     {
         // Consent gate: delegate to external CMPs via filter; SlimStat does not manage consent.
@@ -155,14 +223,25 @@ class Processor
 
         if (!isset($stat['content_type'])) {
             $content_info = Utils::getContentInfo();
-            if (!empty(\wp_slimstat::$settings['ignore_content_types']) && Utils::isBlacklisted($content_info['content_type'], \wp_slimstat::$settings['ignore_content_types'])) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
 
             if (is_array($content_info)) {
                 $stat += $content_info;
             }
+        }
+
+        // Check content_type exclusions AFTER content_type is resolved — whether
+        // from server-side detection (above) or from the JS tracker's ci payload
+        // (Ajax.php). This ensures ignore_content_types works in both modes (#236).
+        $ignore_content_types = \wp_slimstat::$settings['ignore_content_types'] ?? '';
+        if ('' !== $ignore_content_types) {
+            // Normalize legacy ignore_content_types=attachment to match the
+            // cpt:attachment format introduced in the #236 fix.
+            $ignore_content_types = self::normalizeLegacySetting($ignore_content_types);
+        }
+
+        if (!empty($ignore_content_types) && !empty($stat['content_type']) && Utils::isBlacklisted($stat['content_type'], $ignore_content_types)) {
+            Query::setProcessingTimestamp(null);
+            return false;
         }
 
         if ((is_archive() || is_search()) && !empty($GLOBALS['wp_query']->found_posts)) {
@@ -178,30 +257,23 @@ class Processor
         // If this is a consent upgrade request, pass explicit consent flag
         $piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 
-        if (!empty($GLOBALS['current_user']->ID)) {
-            if ('on' == \wp_slimstat::$settings['ignore_wp_users']) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
+        // User exclusion: uses wp_get_current_user() defensively to ensure the
+        // user object is resolved even in edge-case environments (#246).
+        // getExcludedUser() returns the WP_User if excluded, null otherwise,
+        // so we can reuse the resolved user object for PII collection below.
+        $excludedUser = self::getExcludedUser();
+        if ($excludedUser !== null) {
+            Query::setProcessingTimestamp(null);
+            return false;
+        }
 
-            foreach ($GLOBALS['current_user']->roles as $capability) {
-                if (Utils::isBlacklisted($capability, \wp_slimstat::$settings['ignore_capabilities'])) {
-                    Query::setProcessingTimestamp(null);
-                    return false;
-                }
-            }
-
-            if (!empty(\wp_slimstat::$settings['ignore_users']) && Utils::isBlacklisted($GLOBALS['current_user']->data->user_login, \wp_slimstat::$settings['ignore_users'])) {
-                Query::setProcessingTimestamp(null);
-                return false;
-            }
-
+        $user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+        if (!empty($user) && !empty($user->ID)) {
             // Only store username/email if PII is allowed (consent granted in anonymous mode)
             if ($piiAllowed) {
-                $stat['username'] = $GLOBALS['current_user']->data->user_login;
-                $stat['email']    = $GLOBALS['current_user']->data->user_email;
-                $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
-            } else {
+                $stat['username'] = $user->data->user_login;
+                $stat['email']    = $user->data->user_email;
+                $stat['notes'][]  = 'user:' . $user->data->ID;
             }
             $not_spam = true;
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
@@ -492,10 +564,13 @@ class Processor
                         }
 
                         // Add username and email if logged in and PII allowed
-                        if (!empty($GLOBALS['current_user']->ID)) {
-                            $update_data['username'] = $GLOBALS['current_user']->data->user_login;
-                            $update_data['email']    = $GLOBALS['current_user']->data->user_email;
-                            $user_note = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+                        // Use wp_get_current_user() defensively (#246) — $GLOBALS['current_user']
+                        // may not be resolved in edge-case environments (object caching, multisite).
+                        $upgradeUser = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+                        if (!empty($upgradeUser) && !empty($upgradeUser->ID)) {
+                            $update_data['username'] = $upgradeUser->data->user_login;
+                            $update_data['email']    = $upgradeUser->data->user_email;
+                            $user_note = '[user:' . $upgradeUser->data->ID . ']';
                             if (empty($existing_record->notes) || false === strpos($existing_record->notes, $user_note)) {
                                 $update_data['notes'] = $user_note;
                             }
@@ -700,6 +775,27 @@ class Processor
         }
 
         return $status;
+    }
+
+    /**
+     * Normalize a legacy ignore_content_types setting so bare "attachment"
+     * also matches the "cpt:attachment" content_type format (#236).
+     *
+     * @param string $setting Comma-separated content type exclusion list.
+     * @return string Normalized comma-separated list.
+     */
+    public static function normalizeLegacySetting($setting)
+    {
+        return implode(',', array_unique(array_merge(
+            \wp_slimstat::string_to_array($setting),
+            array_map(
+                function ($v) { return 'cpt:' . $v; },
+                array_filter(
+                    \wp_slimstat::string_to_array($setting),
+                    function ($v) { return 'attachment' === $v; }
+                )
+            )
+        )));
     }
 
 }

@@ -79,13 +79,34 @@ export function installMuPluginByName(name: string): void {
 }
 
 export function uninstallMuPluginByName(name: string): void {
+  if (isGlobalMuPluginsManaged()) return;
   const entry = MU_PLUGIN_MANIFEST.find((e) => e.deployedFile === name || e.sourceFile === name);
   if (!entry) throw new Error(`MU-Plugin "${name}" not found in manifest`);
   const dest = path.join(MU_PLUGINS, entry.deployedFile);
   if (fs.existsSync(dest)) fs.unlinkSync(dest);
 }
 
+/**
+ * Sentinel file placed by installAllTestMuPlugins() to signal that
+ * per-spec afterAll uninstall calls should be no-ops.
+ * This persists across the separate globalSetup worker and the test workers.
+ */
+const GLOBAL_MU_SENTINEL = path.join(MU_PLUGINS, '.e2e-global-managed');
+
+function isGlobalMuPluginsManaged(): boolean {
+  return fs.existsSync(GLOBAL_MU_SENTINEL);
+}
+
+export function installAllTestMuPlugins(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  for (const entry of MU_PLUGIN_MANIFEST) {
+    fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+  }
+  fs.writeFileSync(GLOBAL_MU_SENTINEL, '', 'utf8');
+}
+
 export function uninstallAllTestMuPlugins(): void {
+  if (fs.existsSync(GLOBAL_MU_SENTINEL)) fs.unlinkSync(GLOBAL_MU_SENTINEL);
   for (const entry of MU_PLUGIN_MANIFEST) {
     const dest = path.join(MU_PLUGINS, entry.deployedFile);
     if (fs.existsSync(dest)) fs.unlinkSync(dest);
@@ -100,6 +121,7 @@ export function installMuPlugin(): void {
 }
 
 export function uninstallMuPlugin(): void {
+  if (isGlobalMuPluginsManaged()) return;
   if (fs.existsSync(LOGGER_DEST)) fs.unlinkSync(LOGGER_DEST);
 }
 
@@ -111,6 +133,7 @@ export function installNonceHelper(): void {
 }
 
 export function uninstallNonceHelper(): void {
+  if (isGlobalMuPluginsManaged()) return;
   if (fs.existsSync(NONCE_HELPER_DEST)) fs.unlinkSync(NONCE_HELPER_DEST);
 }
 
@@ -184,8 +207,9 @@ export async function setSlimstatSetting(key: string, value: string): Promise<vo
   let raw: string = rows[0].option_value;
 
   // PHP serialized format: s:<len>:"key";s:<len>:"value";
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const keyPattern = new RegExp(
-    `s:\\d+:"${key}";s:\\d+:"[^"]*"`,
+    `s:\\d+:"${escapedKey}";s:\\d+:"[^"]*"`,
     'g'
   );
   const replacement = `s:${key.length}:"${key}";s:${value.length}:"${value}"`;
@@ -255,6 +279,7 @@ export function installCronFrontendShim(): void {
 }
 
 export function uninstallCronFrontendShim(): void {
+  if (isGlobalMuPluginsManaged()) return;
   if (fs.existsSync(CRON_SHIM_DEST)) fs.unlinkSync(CRON_SHIM_DEST);
   // E2E_TESTING_LINE is removed when restoreWpConfig() runs in teardown
 }
@@ -295,6 +320,7 @@ export function installOptionMutator(): void {
 }
 
 export function uninstallOptionMutator(): void {
+  if (isGlobalMuPluginsManaged()) return;
   if (fs.existsSync(OPTION_MUTATOR_DEST)) fs.unlinkSync(OPTION_MUTATOR_DEST);
 }
 
@@ -573,4 +599,40 @@ export function cleanupFixtureFiles(): void {
     const p = path.join(WP_CONTENT, f);
     if (fs.existsSync(p)) fs.unlinkSync(p);
   }
+}
+
+// ─── Shared CPT MU-plugin for E2E tests ──────────────────────────
+
+const CPT_MU_PLUGIN_PATH = path.join(MU_PLUGINS, 'e2e-test-product-cpt.php');
+
+export const CPT_MU_PLUGIN_CONTENT = `<?php
+/**
+ * E2E Test: Register 'product' CPT for testing.
+ */
+if (!defined('ABSPATH')) exit;
+add_action('init', function() {
+    register_post_type('product', [
+        'public'       => true,
+        'label'        => 'Products',
+        'has_archive'  => true,
+        'rewrite'      => ['slug' => 'product'],
+        'supports'     => ['title', 'editor'],
+        'show_in_rest' => true,
+    ]);
+    // Flush rewrite rules once after CPT registration (not on every request)
+    if (!get_transient('e2e_product_cpt_flushed')) {
+        flush_rewrite_rules();
+        set_transient('e2e_product_cpt_flushed', 1, HOUR_IN_SECONDS);
+    }
+});
+`;
+
+export function installCptMuPlugin(): void {
+  fs.mkdirSync(MU_PLUGINS, { recursive: true });
+  fs.writeFileSync(CPT_MU_PLUGIN_PATH, CPT_MU_PLUGIN_CONTENT, 'utf8');
+}
+
+export function uninstallCptMuPlugin(): void {
+  if (isGlobalMuPluginsManaged()) return;
+  if (fs.existsSync(CPT_MU_PLUGIN_PATH)) fs.unlinkSync(CPT_MU_PLUGIN_PATH);
 }

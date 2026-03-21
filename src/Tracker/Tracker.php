@@ -273,7 +273,7 @@ class Tracker
             $content_info['content_type'] = 'page';
             $content_info['content_id']   = $GLOBALS['post']->ID;
         } elseif (is_attachment()) {
-            $content_info['content_type'] = 'attachment';
+            $content_info['content_type'] = 'cpt:attachment';
         } elseif (is_singular()) {
             $content_info['content_type'] = 'singular';
         } elseif (is_post_type_archive()) {
@@ -354,8 +354,12 @@ class Tracker
             $_stat['page_performance'] = intval($_data_js['pp']);
         }
 
-        if (!empty($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
-            $_stat['fingerprint'] = sanitize_text_field($_data_js['fh']);
+        if (!empty($_data_js['fh']) && is_scalar($_data_js['fh']) && 'on' != \wp_slimstat::$settings['anonymize_ip']) {
+            $fingerprint = preg_replace('/[^a-zA-Z0-9\-_]/', '', (string) $_data_js['fh']);
+            if (strlen($fingerprint) > 256) {
+                $fingerprint = substr($fingerprint, 0, 256);
+            }
+            $_stat['fingerprint'] = sanitize_text_field($fingerprint);
         }
 
         if (!empty($_data_js['tz'])) {

@@ -1390,11 +1390,13 @@ class wp_slimstat_reports
                         $element_value = $resource_title;
                         break;
                     default:
+                        $element_value = esc_html($element_value);
                 }
 
                 if (is_admin()) {
-                    $column_value  = is_array($results[$i]) && isset($results[$i][$_args['columns']]) ? $results[$i][$_args['columns']] : '';
-                    $element_value = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . htmlentities(strval($column_value), ENT_QUOTES, 'UTF-8')) . sprintf("'>%s</a>", $element_value);
+                    $column_value         = is_array($results[$i]) && isset($results[$i][$_args['columns']]) ? (string) $results[$i][$_args['columns']] : '';
+                    $encoded_column_value = rawurlencode($column_value);
+                    $element_value        = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
                 }
 
                 if (!empty($_args['type']) && 'recent' == $_args['type']) {

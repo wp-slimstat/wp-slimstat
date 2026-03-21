@@ -146,6 +146,11 @@ class ConsentChangeRestController implements RestControllerInterface
 	{
 		$this->currentRequest = $request;
 
+		// Verify nonce for all users — consent is a state-changing operation.
+		// Without verification, a cross-site POST could force-accept consent,
+		// enabling PII tracking without genuine user action (GDPR violation).
+		// On cached pages with stale nonces, this returns 403 — the JS cookie
+		// still records consent client-side, and tracking works via /hit (PR #235).
 		$nonce = $request->get_param('nonce');
 		if (!wp_verify_nonce($nonce, 'wp_rest')) {
 			return new \WP_Error(
@@ -332,10 +337,13 @@ class ConsentChangeRestController implements RestControllerInterface
 		if (null !== $pageview_id && $pageview_id > 0) {
 			$stat = IPHashProvider::upgradeToPii([]);
 
-			if (!empty($GLOBALS['current_user']->ID)) {
-				$stat['username'] = $GLOBALS['current_user']->data->user_login;
-				$stat['email']    = $GLOBALS['current_user']->data->user_email;
-				$stat['notes']    = '[user:' . $GLOBALS['current_user']->data->ID . ']';
+			// Use wp_get_current_user() defensively (#246) — $GLOBALS['current_user']
+			// may not be resolved in edge-case environments (object caching, multisite).
+			$user = function_exists('wp_get_current_user') ? wp_get_current_user() : null;
+			if (!empty($user) && !empty($user->ID)) {
+				$stat['username'] = $user->data->user_login;
+				$stat['email']    = $user->data->user_email;
+				$stat['notes']    = '[user:' . $user->data->ID . ']';
 			}
 
 			$table = $GLOBALS['wpdb']->prefix . 'slim_stats';

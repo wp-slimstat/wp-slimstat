@@ -2,7 +2,8 @@
  * E2E: Exclusion Filters — validates ignore_content_types, ignore_bots,
  * ignore_resources, and ignore_wp_users in the tracking pipeline.
  *
- * Covers GitHub issue #233 (CPT exclusion requires cpt: prefix).
+ * Covers GitHub issues #233 and #236 (CPT exclusion requires cpt: prefix,
+ * including attachment pages).
  *
  * @see jaan-to/outputs/qa/cases/10-exclusion-filters/10-test-cases-exclusion-filters.md
  */
@@ -19,43 +20,12 @@ import {
   setHeaderOverrides,
   enableDisableWpCron,
   restoreWpConfig,
+  installCptMuPlugin,
+  uninstallCptMuPlugin,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
-import * as path from 'path';
-import * as fs from 'fs';
-import { WP_ROOT } from './helpers/env';
 
-// ─── CPT registration mu-plugin ──────────────────────────────────
-const MU_PLUGINS_DIR = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const CPT_MU_PLUGIN = path.join(MU_PLUGINS_DIR, 'e2e-test-product-cpt.php');
-
-const CPT_MU_PLUGIN_CONTENT = `<?php
-/**
- * E2E Test: Register 'product' CPT for exclusion filter testing.
- */
-if (!defined('ABSPATH')) exit;
-add_action('init', function() {
-    register_post_type('product', [
-        'public'       => true,
-        'label'        => 'Products',
-        'has_archive'  => true,
-        'rewrite'      => ['slug' => 'product'],
-        'supports'     => ['title', 'editor'],
-        'show_in_rest' => true,
-    ]);
-    // Flush rewrite rules so /product/{slug}/ pretty permalinks resolve immediately.
-    flush_rewrite_rules();
-});
-`;
-
-function installCptMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS_DIR, { recursive: true });
-  fs.writeFileSync(CPT_MU_PLUGIN, CPT_MU_PLUGIN_CONTENT, 'utf8');
-}
-
-function uninstallCptMuPlugin(): void {
-  if (fs.existsSync(CPT_MU_PLUGIN)) fs.unlinkSync(CPT_MU_PLUGIN);
-}
+const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -82,6 +52,16 @@ async function createProductPost(title: string, slug: string): Promise<number> {
   return result.insertId;
 }
 
+async function createAttachmentPost(title: string, slug: string): Promise<number> {
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const [result] = await getPool().execute(
+    `INSERT INTO wp_posts (post_author, post_date, post_date_gmt, post_content, post_title, post_excerpt, post_status, comment_status, ping_status, post_name, to_ping, pinged, post_modified, post_modified_gmt, post_content_filtered, guid, menu_order, post_type, post_mime_type, post_parent, comment_count)
+     VALUES (1, ?, ?, '', ?, '', 'inherit', 'closed', 'closed', ?, '', '', ?, ?, '', ?, 0, 'attachment', 'image/jpeg', 0, 0)`,
+    [now, now, title, slug, now, now, `${BASE_URL}/wp-content/uploads/${slug}.jpg`]
+  ) as any;
+  return result.insertId;
+}
+
 // ─── Test suite ──────────────────────────────────────────────────
 
 test.describe('Exclusion Filters (@tracking-exclusions)', () => {
@@ -92,6 +72,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Ensure server-side tracking is on
     await setSlimstatSetting('javascript_mode', 'off');
     await setSlimstatSetting('is_tracking', 'on');
+    // CRITICAL: Disable GDPR to isolate exclusion filters from consent gate (#246)
+    // Without this, fresh browser contexts have no consent cookie, so Consent::canTrack()
+    // returns false for ALL users - making user exclusion tests false positives.
+    await setSlimstatSetting('gdpr_enabled', 'off');
   });
 
   test.afterAll(async () => {
@@ -122,7 +106,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await clearStatsTable();
 
     // Visit single product post as anonymous user
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
 
@@ -156,7 +143,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await clearStatsTable();
 
     // Visit as anonymous
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
 
@@ -193,6 +183,8 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     try {
       // Visit with Googlebot UA
       anonCtx = await browser.newContext({
+        javaScriptEnabled: false,
+        storageState: EMPTY_STORAGE_STATE,
         userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
       });
       anonPage = await anonCtx.newPage();
@@ -221,7 +213,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const countBefore = await getStatCount();
 
     // Visit wp-login.php as anonymous
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({
+      javaScriptEnabled: false,
+      storageState: EMPTY_STORAGE_STATE,
+    });
     const anonPage = await anonCtx.newPage();
     await anonPage.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
 
@@ -240,10 +235,13 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   // REQ-EXCL-006 — @smoke @positive @priority-critical
   // ────────────────────────────────────────────────────────────────
   test('Logged-in admin excluded when ignore_wp_users is on', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', '');
+    await setSlimstatSetting('ignore_bots', 'off');
+    await setSlimstatSetting('ignore_resources', '');
     await setSlimstatSetting('ignore_wp_users', 'on');
 
     // Login directly in a fresh browser context
-    const adminCtx = await browser.newContext();
+    const adminCtx = await browser.newContext({ javaScriptEnabled: false });
     const adminPage = await adminCtx.newPage();
     await adminPage.goto(`${BASE_URL}/wp-login.php`);
     await adminPage.fill('#user_login', 'parhumm');
@@ -254,17 +252,75 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     // Clear stats table after login
     await clearStatsTable();
 
-    // Navigate as logged-in admin to a frontend page with a marker
-    const marker = `e2e-user-excl-${Date.now()}`;
-    await adminPage.goto(`${BASE_URL}/?e2e_marker=${marker}`, { waitUntil: 'domcontentloaded' });
+    // Use a real product permalink so the assertion proves exclusion on a trackable URL.
+    const slug = `e2e-user-excl-${Date.now()}`;
+    await createProductPost('E2E User Exclusion Product', slug);
+    const productUrl = `${BASE_URL}/product/${slug}/`;
+    await adminPage.goto(productUrl, { waitUntil: 'domcontentloaded' });
+    await adminPage.waitForTimeout(2_000);
 
-    // Admin should NOT be tracked — poll to confirm no row matching our marker appears
-    await expect.poll(
-      () => getRecentStatByResource(marker),
-      { timeout: 6_000, intervals: [500] }
-    ).toBeNull();
+    // Admin should NOT be tracked on this specific product permalink.
+    expect(await getRecentStatByResource(slug)).toBeNull();
 
     await adminPage.close();
     await adminCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 6: Attachment exclusion WITH cpt: prefix — should exclude
+  // REQ-EXCL-007 — @positive @priority-high
+  // Confirms GitHub issue #236 behavior
+  // ────────────────────────────────────────────────────────────────
+  test('Attachment excluded when ignore_content_types = cpt:attachment (#236)', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', 'cpt:attachment');
+
+    const slug = `e2e-attachment-excl-${Date.now()}`;
+    await createAttachmentPost('E2E Attachment Exclusion Test', slug);
+    // Visit the pretty permalink directly — /?attachment_id=X triggers a 301
+    // redirect whose content_type is 'redirect:301', not 'cpt:attachment'.
+    const attachmentUrl = `${BASE_URL}/${slug}/`;
+
+    await clearStatsTable();
+
+    const anonCtx = await browser.newContext({ storageState: EMPTY_STORAGE_STATE });
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
+
+    // Poll for the slug-specific row — should remain null (excluded).
+    await expect.poll(
+      () => getRecentStatByResource(slug),
+      { timeout: 6_000, intervals: [500] }
+    ).toBeNull();
+
+    await anonPage.close();
+    await anonCtx.close();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Test 7: Attachment without exclusion — should track
+  // REQ-EXCL-008 — @positive @priority-high
+  // ────────────────────────────────────────────────────────────────
+  test('Attachment tracked without exclusion, stat saved (#236)', async ({ browser }) => {
+    await setSlimstatSetting('ignore_content_types', '');
+
+    const slug = `e2e-attachment-track-${Date.now()}`;
+    const attachmentId = await createAttachmentPost('E2E Attachment Tracking Test', slug);
+    const attachmentUrl = `${BASE_URL}/?attachment_id=${attachmentId}`;
+
+    await clearStatsTable();
+
+    const anonCtx = await browser.newContext({ storageState: EMPTY_STORAGE_STATE });
+    const anonPage = await anonCtx.newPage();
+    await anonPage.goto(attachmentUrl, { waitUntil: 'domcontentloaded' });
+
+    // Attachment pageviews are stored against the resolved attachment permalink,
+    // so poll the slug-specific row rather than the global stat count.
+    await expect.poll(
+      async () => (await getRecentStatByResource(slug))?.content_type ?? null,
+      { timeout: 10_000, intervals: [500] }
+    ).toBe('cpt:attachment');
+
+    await anonPage.close();
+    await anonCtx.close();
   });
 });

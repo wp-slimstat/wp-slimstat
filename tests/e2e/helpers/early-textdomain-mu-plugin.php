@@ -8,7 +8,7 @@ if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) return;
 
 $GLOBALS['e2e_textdomain_log'] = [];
 
-add_filter('load_textdomain', function($override, $domain, $mofile) {
+add_filter('load_textdomain', function($override, $domain, $mofile = '') {
     if ($domain === 'wp-slimstat' || $domain === 'wp-slimstat-pro') {
         $GLOBALS['e2e_textdomain_log'][] = [
             'domain' => $domain,

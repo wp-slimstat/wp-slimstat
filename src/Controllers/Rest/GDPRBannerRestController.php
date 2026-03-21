@@ -66,7 +66,12 @@ class GDPRBannerRestController implements RestControllerInterface
 	 */
 	public function handle_consent(\WP_REST_Request $request)
 	{
-		// Verify nonce
+		// Verify nonce for all users — consent is a state-changing operation.
+		// A cross-site POST without nonce verification could force-accept consent,
+		// enabling PII tracking without genuine user action (GDPR violation).
+		// On cached pages, anonymous users may have a stale/empty nonce — the
+		// request will fail with 403, but the JS cookie still records consent
+		// client-side, and tracking works via the /hit endpoint (PR #235).
 		$nonce = $request->get_param('nonce');
 		if (!wp_verify_nonce($nonce, 'wp_rest')) {
 			return new \WP_Error(

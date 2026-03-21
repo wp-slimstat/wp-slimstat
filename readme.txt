@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.4
+Stable tag: 5.4.5
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,21 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.5 - 2026-03-20 =
+- **Fix**: Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)
+- **Fix**: GDPR consent cookie domain, cached page banner display, and anonymous nonce handling
+- **Fix**: Removed double-escaping in report filters and tightened XSS sanitization (#243, #244)
+- **Fix**: Strict fingerprint input sanitization (#244)
+- **Fix**: Output escaping in reports default case (#244)
+- **Fix**: Store attachment content_type as `cpt:attachment` (#236)
+- **Fix**: Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
+- **Fix**: Increased Access Log widget height on WP Dashboard
+- **Fix**: Synced stat before `ensureVisitId` to prevent ID loss on finalization
+- **Fix**: Skipped REST nonce for anonymous users on non-consent tracking endpoints, removed dead adblock fallback URL
+- **Security**: Restored nonce verification for all consent endpoints
+- **Improved**: Refactored `isUserExcluded()` into standalone method with full test coverage
+- **Improved**: Inlined `get_current_user_id()` in nonce guards for clarity
+
 = 5.4.4 - 2026-03-17 =
 - **Fix**: Chart data not showing due to incorrect bounds check ([PR #232](https://github.com/wp-slimstat/wp-slimstat/pull/232))
 - **Fix**: Weekly chart not showing today's data and not respecting start_of_week setting ([PR #235](https://github.com/wp-slimstat/wp-slimstat/pull/235))
