@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as mysql from 'mysql2/promise';
+import { serialize as phpSerialize, unserialize as phpUnserialize } from 'php-serialize';
 import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL } from './env';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -325,28 +326,46 @@ export function uninstallOptionMutator(): void {
 }
 
 /**
- * Set a slimstat option using WordPress's native serialization.
- * Requires the option-mutator mu-plugin to be installed and an authenticated page context.
+ * Set a slimstat option via direct DB manipulation.
+ * Reads the serialized slimstat_options from wp_options, updates the key,
+ * and writes back. Works in both local dev and wp-env Docker CI.
+ *
+ * The `page` parameter is kept for API compatibility (42 spec files call this)
+ * but is no longer used — all work is done via the MySQL pool.
  */
-export async function setSlimstatOption(page: import('@playwright/test').Page, key: string, value: string): Promise<void> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'test_set_slimstat_option', key, value },
-  });
-  if (!res.ok()) {
-    throw new Error(`setSlimstatOption(${key}, ${value}) failed: ${res.status()}`);
+export async function setSlimstatOption(_page: import('@playwright/test').Page, key: string, value: string): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  if (!rows.length) {
+    throw new Error('slimstat_options row not found in wp_options — is the plugin activated?');
   }
+  const opts = phpUnserialize(rows[0].option_value) as Record<string, any>;
+  opts[key] = value;
+  const serialized = phpSerialize(opts);
+  await pool.execute(
+    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
+    [serialized]
+  );
 }
 
 /**
- * Delete a slimstat option key using WordPress's native serialization.
+ * Delete a slimstat option key via direct DB manipulation.
  */
-export async function deleteSlimstatOption(page: import('@playwright/test').Page, key: string): Promise<void> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'test_set_slimstat_option', key, delete: '1' },
-  });
-  if (!res.ok()) {
-    throw new Error(`deleteSlimstatOption(${key}) failed: ${res.status()}`);
-  }
+export async function deleteSlimstatOption(_page: import('@playwright/test').Page, key: string): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  if (!rows.length) return; // nothing to delete from
+  const opts = phpUnserialize(rows[0].option_value) as Record<string, any>;
+  delete opts[key];
+  const serialized = phpSerialize(opts);
+  await pool.execute(
+    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
+    [serialized]
+  );
 }
 
 // ─── Full settings snapshot/restore ──────────────────────────────
