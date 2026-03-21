@@ -24,6 +24,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { closeDb } from './helpers/setup';
 
 let pool: mysql.Pool;
 
@@ -77,6 +78,7 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
 
   test.afterAll(async () => {
     if (pool) await pool.end();
+    await closeDb();
   });
 
   // ─── Test 1: Script tag fingerprint — no XSS execution ────────────────

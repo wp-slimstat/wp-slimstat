@@ -1,4 +1,11 @@
 <?php
+/**
+ * Query builder unit tests for wp_slimstat_db SQL generation.
+ *
+ * @package WpSlimstat
+ * @license GPL-2.0-or-later
+ */
+
 declare(strict_types=1);
 
 namespace WpSlimstat\Tests\Unit;

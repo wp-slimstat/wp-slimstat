@@ -18,6 +18,7 @@
 import { test, expect, Page } from '@playwright/test';
 import * as mysql from 'mysql2/promise';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { closeDb } from './helpers/setup';
 
 let pool: mysql.Pool;
 
@@ -95,6 +96,7 @@ test.describe('Outbound Link Report Display', () => {
 
   test.afterAll(async () => {
     if (pool) await pool.end();
+    await closeDb();
   });
 
   // ─── Test 1: slim_p4_01 — Recent Outbound Links ──────────────────
