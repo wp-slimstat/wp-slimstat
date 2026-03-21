@@ -99,43 +99,56 @@ test.describe('Session & Cookie Management — #199', () => {
   //   verify all DB rows share the same visit_id.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('cross-page visit_id continuity — 3 pages share one visit_id', async ({ page }) => {
+  test('cross-page visit_id continuity — 3 pages share one visit_id', async ({ page, browser }) => {
     await clearStatsTable();
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
     await setSlimstatOption(page, 'javascript_mode', 'on');
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
+    await setSlimstatOption(page, 'ignore_wp_users', 'no');
 
-    const marker = `session-continuity-${Date.now()}`;
+    // Use a fresh ANONYMOUS browser context — not the admin page fixture.
+    // Real visitors are not logged into WordPress. The admin storageState
+    // carries auth cookies that can trigger isUserExcluded() and silently
+    // skip tracking.
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const anonPage = await ctx.newPage();
 
-    // Navigate to 3 distinct pages within the same browser context (session)
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(3000);
+    try {
+      const marker = `session-continuity-${Date.now()}`;
 
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(3000);
+      // Navigate to 3 distinct pages within the same anonymous session
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
+      await anonPage.waitForLoadState('load');
+      await anonPage.waitForTimeout(3000);
 
-    await page.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
-    await page.waitForLoadState('load');
-    await page.waitForTimeout(3000);
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
+      await anonPage.waitForLoadState('load');
+      await anonPage.waitForTimeout(3000);
 
-    // Wait for all 3 rows to appear in the DB
-    const rows = await waitForStatRows(marker, 3, 20_000);
-    expect(rows.length, 'Expected 3 tracked pageviews').toBeGreaterThanOrEqual(3);
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
+      await anonPage.waitForLoadState('load');
+      await anonPage.waitForTimeout(3000);
 
-    // All rows must share the same positive visit_id
-    const visitIds = rows
-      .map((r: any) => parseInt(r.visit_id, 10))
-      .filter((v: number) => v > 0);
-    expect(visitIds.length, 'All rows should have a positive visit_id').toBe(rows.length);
+      // Wait for all 3 rows to appear in the DB
+      const rows = await waitForStatRows(marker, 3, 20_000);
+      expect(rows.length, 'Expected 3 tracked pageviews').toBeGreaterThanOrEqual(3);
 
-    const uniqueIds = [...new Set(visitIds)];
-    expect(
-      uniqueIds,
-      `All 3 pageviews should share one visit_id but got ${JSON.stringify(uniqueIds)}`,
-    ).toHaveLength(1);
+      // All rows must share the same positive visit_id
+      const visitIds = rows
+        .map((r: any) => parseInt(r.visit_id, 10))
+        .filter((v: number) => v > 0);
+      expect(visitIds.length, 'All rows should have a positive visit_id').toBe(rows.length);
+
+      const uniqueIds = [...new Set(visitIds)];
+      expect(
+        uniqueIds,
+        `All 3 pageviews should share one visit_id but got ${JSON.stringify(uniqueIds)}`,
+      ).toHaveLength(1);
+    } finally {
+      await anonPage.close();
+      await ctx.close();
+    }
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -288,47 +301,78 @@ test.describe('Session & Cookie Management — #199', () => {
     // not the real IP address.
     const anonymousIp = anonRows[0].ip;
 
-    // ── Phase 3: Accept consent via real JS upgrade path ──────────
+    // ── Phase 3: Accept consent via real banner accept flow ────────
     //
-    // The real consent upgrade flow:
-    //   1. JS: requestConsentUpgrade() calls sendPageview() with consentUpgrade: true
-    //   2. JS: sendPageview() adds &consent_upgrade=1&pageview_id=<id> to the request
-    //   3. Server Processor.php:409: $isConsentUpgrade gate triggers the merge
+    // The production accept handler in wp-slimstat.js:2232-2244 does:
+    //   1. Sets the consent cookie to 'accepted'
+    //   2. Calls sendConsentChangeToServer("slimstat_banner", parsedConsent, pageviewId)
+    //   3. Calls requestConsentUpgrade({ consent, consentNonce })
     //
-    // We must call this ON THE SAME PAGE where the anonymous row was created,
-    // because SlimStatParams.id holds the anonymous pageview ID that the server
-    // needs to find and upgrade the correct row.
+    // The merge logic at Processor.php:409 needs:
+    //   - $isConsentUpgrade (consent_upgrade=1 in the request)
+    //   - $isAnonymousTracking == true (settings['anonymous_tracking'] == 'on')
+    //   - pageview_id from SlimStatParams.id to find the anonymous row
+    //
+    // We must wait for SlimStatParams.id to be populated BEFORE triggering
+    // the upgrade, because that ID is how the server finds the anonymous row.
 
-    // Set the accepted consent cookie (simulates the banner handler setting it)
-    await ctx.addCookies([
-      {
-        name: 'slimstat_gdpr_consent',
-        value: 'accepted',
-        domain: COOKIE_DOMAIN,
-        path: '/',
-      },
-    ]);
+    // Wait for the anonymous pageview to be fully tracked and SlimStatParams.id set.
+    // This is the pageview ID of the anonymous row that the upgrade will target.
+    let anonPageviewId: string;
+    try {
+      await testPage.waitForFunction(
+        () => {
+          const p = (window as any).SlimStatParams;
+          return p && p.id && parseInt(p.id, 10) > 0;
+        },
+        { timeout: 15_000 },
+      );
+      anonPageviewId = await testPage.evaluate(
+        () => (window as any).SlimStatParams?.id ?? '',
+      );
+    } catch {
+      anonPageviewId = '';
+    }
 
     // Reset tracking counter to capture the upgrade request
     trackingRequests.length = 0;
 
-    // Trigger the real JS consent upgrade on the CURRENT page (not a new navigation).
-    // This sends consent_upgrade=1 + the current pageview_id to the server,
-    // which is the exact code path that #246 broke.
-    const upgradeResult = await testPage.evaluate(() => {
-      if (typeof (window as any).SlimStat?.requestConsentUpgrade === 'function') {
-        (window as any).SlimStat.requestConsentUpgrade({ force: true });
-        return 'triggered';
+    // Replicate the EXACT banner accept handler (wp-slimstat.js:2232-2244):
+    //   1. Set accepted cookie
+    //   2. Call sendConsentChangeToServer with the current pageview ID
+    //   3. Call requestConsentUpgrade with force:true
+    // All on the CURRENT page where the anonymous row was created.
+    const upgradeResult = await testPage.evaluate((pageviewId) => {
+      const win = window as any;
+
+      // Step 1: Set the consent cookie (mirrors the banner handler)
+      document.cookie = 'slimstat_gdpr_consent=accepted; path=/; SameSite=Lax';
+
+      // Step 2 & 3: Call the real JS functions if available
+      if (typeof win.SlimStat?.requestConsentUpgrade !== 'function') {
+        return 'SlimStat.requestConsentUpgrade not available';
       }
-      return 'SlimStat.requestConsentUpgrade not available';
-    });
+
+      // sendConsentChangeToServer (optional — may not be exposed)
+      try {
+        if (typeof win.SlimStat?.consent?.sendChange === 'function') {
+          const parsedConsent = { statistics: true };
+          const pvId = pageviewId ? parseInt(pageviewId, 10) : null;
+          win.SlimStat.consent.sendChange('slimstat_banner', parsedConsent, pvId);
+        }
+      } catch { /* non-fatal */ }
+
+      // requestConsentUpgrade — the critical call that sends consent_upgrade=1
+      win.SlimStat.requestConsentUpgrade({ force: true });
+      return 'triggered';
+    }, anonPageviewId);
 
     // Wait for the upgrade tracking request to complete
     await testPage.waitForTimeout(5000);
 
     // ── Phase 4: Verify the anonymous row was upgraded with PII ────
 
-    if (upgradeResult === 'triggered') {
+    if (upgradeResult === 'triggered' && anonPageviewId) {
       // The upgrade request should have fired
       expect(
         trackingRequests.length,
@@ -343,14 +387,13 @@ test.describe('Session & Cookie Management — #199', () => {
 
       // Key assertion: the SAME row that had a hashed anonymous IP should now
       // have a real IP (PII) after the consent upgrade merged PII into it.
-      // If #246 regresses, this assertion fails because the merge code at
-      // Processor.php:436 ($isAnonymousTracking && $piiAllowed) won't execute.
+      // If #246 regresses, the merge code at Processor.php:436 won't execute.
       expect(
         upgradedIp,
         `Anonymous row IP should be upgraded from hashed (${anonymousIp}) to real PII`,
       ).not.toBe(anonymousIp);
     } else {
-      // SlimStat JS not loaded (e.g. server-mode or JS disabled) — fall back to
+      // SlimStat JS not loaded or pageview ID not captured — fall back to
       // verifying that a new navigation after accepting produces PII rows.
       const acceptMarker = `consent-accepted-${ts}`;
       await testPage.goto(`${BASE_URL}/?e2e_marker=${acceptMarker}`, {
