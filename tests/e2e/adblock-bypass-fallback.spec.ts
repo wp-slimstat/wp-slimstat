@@ -45,14 +45,12 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     await closeDb();
   });
 
-  /** Flush rewrite rules via the mu-plugin AJAX endpoint. */
+  /** Flush rewrite rules by visiting the permalink settings page.
+   *  This triggers flush_rewrite_rules() as a side effect — works in both
+   *  local dev and wp-env Docker CI (no AJAX mu-plugin dependency). */
   async function flushRewrites(page: import('@playwright/test').Page): Promise<void> {
-    const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-      form: { action: 'e2e_flush_rewrite_rules' },
-    });
-    if (!res.ok()) {
-      throw new Error(`flush_rewrite_rules failed: ${res.status()}`);
-    }
+    await page.goto(`${BASE_URL}/wp-admin/options-permalink.php`);
+    await page.waitForLoadState('load');
   }
 
   // ─── Test 1: adblock_bypass transport records a hit ──────────────
