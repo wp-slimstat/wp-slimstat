@@ -301,24 +301,38 @@ test.describe('Session & Cookie Management — #199', () => {
     // not the real IP address.
     const anonymousIp = anonRows[0].ip;
 
-    // ── Phase 3: Accept consent via real banner accept flow ────────
+    // ── Phase 3: Click Accept on the real banner ──────────────────
     //
-    // The production accept handler in wp-slimstat.js:2232-2244 does:
-    //   1. Sets the consent cookie to 'accepted'
-    //   2. Calls sendConsentChangeToServer("slimstat_banner", parsedConsent, pageviewId)
-    //   3. Calls requestConsentUpgrade({ consent, consentNonce })
+    // Production flow (wp-slimstat.js:2232-2244):
+    //   1. User clicks [data-consent="accepted"] on the banner
+    //   2. JS sets slimstat_gdpr_consent=accepted cookie
+    //   3. JS calls sendConsentChangeToServer("slimstat_banner", consent, pageviewId)
+    //   4. JS calls requestConsentUpgrade({ consent, consentNonce })
+    //   5. Server Processor.php:409 receives consent_upgrade=1 + pageview_id
+    //   6. Server merges PII into the anonymous row
     //
-    // The merge logic at Processor.php:409 needs:
-    //   - $isConsentUpgrade (consent_upgrade=1 in the request)
-    //   - $isAnonymousTracking == true (settings['anonymous_tracking'] == 'on')
-    //   - pageview_id from SlimStatParams.id to find the anonymous row
-    //
-    // We must wait for SlimStatParams.id to be populated BEFORE triggering
-    // the upgrade, because that ID is how the server finds the anonymous row.
+    // We trigger this by navigating to a new page (which creates a fresh
+    // anonymous row + shows the banner again after we clear the consent cookie),
+    // then clicking Accept. No manual cookie setting, no direct JS calls,
+    // no force:true bypass.
 
-    // Wait for the anonymous pageview to be fully tracked and SlimStatParams.id set.
-    // This is the pageview ID of the anonymous row that the upgrade will target.
-    let anonPageviewId: string;
+    // Clear the denied consent cookie so the banner re-appears on next navigation
+    const consentCookies = (await ctx.cookies()).filter(
+      (c) => c.name === 'slimstat_gdpr_consent',
+    );
+    if (consentCookies.length > 0) {
+      // clearCookies removes ALL cookies; re-add CookieYes dismissal cookies
+      await ctx.clearCookies();
+      await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    }
+
+    // Navigate to a new page — banner should re-appear, anonymous row created
+    const upgradeMarker = `consent-upgrade-${ts}`;
+    await testPage.goto(`${BASE_URL}/?e2e_marker=${upgradeMarker}`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    // Wait for the anonymous pageview to be tracked (SlimStatParams.id populated)
     try {
       await testPage.waitForFunction(
         () => {
@@ -327,87 +341,62 @@ test.describe('Session & Cookie Management — #199', () => {
         },
         { timeout: 15_000 },
       );
-      anonPageviewId = await testPage.evaluate(
-        () => (window as any).SlimStatParams?.id ?? '',
-      );
     } catch {
-      anonPageviewId = '';
+      // If SlimStatParams.id isn't set, the upgrade won't target a specific row
+      // but the test can still verify the banner flow works.
     }
 
-    // Reset tracking counter to capture the upgrade request
+    // Banner should be visible again (consent cookie was cleared)
+    await expect(testPage.locator('#slimstat-gdpr-banner')).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Record the anonymous row's IP before upgrade
+    const preUpgradeRows = await waitForStatRows(upgradeMarker, 1, 15_000);
+    expect(
+      preUpgradeRows.length,
+      'Anonymous row should exist before clicking Accept',
+    ).toBeGreaterThanOrEqual(1);
+    const preUpgradeIp = preUpgradeRows[0].ip;
+
+    // Reset tracking counter to isolate the upgrade request
     trackingRequests.length = 0;
 
-    // Replicate the EXACT banner accept handler (wp-slimstat.js:2232-2244):
-    //   1. Set accepted cookie
-    //   2. Call sendConsentChangeToServer with the current pageview ID
-    //   3. Call requestConsentUpgrade with force:true
-    // All on the CURRENT page where the anonymous row was created.
-    const upgradeResult = await testPage.evaluate((pageviewId) => {
-      const win = window as any;
-
-      // Step 1: Set the consent cookie (mirrors the banner handler)
-      document.cookie = 'slimstat_gdpr_consent=accepted; path=/; SameSite=Lax';
-
-      // Step 2 & 3: Call the real JS functions if available
-      if (typeof win.SlimStat?.requestConsentUpgrade !== 'function') {
-        return 'SlimStat.requestConsentUpgrade not available';
-      }
-
-      // sendConsentChangeToServer (optional — may not be exposed)
-      try {
-        if (typeof win.SlimStat?.consent?.sendChange === 'function') {
-          const parsedConsent = { statistics: true };
-          const pvId = pageviewId ? parseInt(pageviewId, 10) : null;
-          win.SlimStat.consent.sendChange('slimstat_banner', parsedConsent, pvId);
-        }
-      } catch { /* non-fatal */ }
-
-      // requestConsentUpgrade — the critical call that sends consent_upgrade=1
-      win.SlimStat.requestConsentUpgrade({ force: true });
-      return 'triggered';
-    }, anonPageviewId);
-
-    // Wait for the upgrade tracking request to complete
+    // Click the REAL Accept button — this triggers the full production
+    // banner handler: cookie set → sendConsentChangeToServer → requestConsentUpgrade
+    // No manual cookie injection, no force:true, no direct JS calls.
+    await testPage.locator('[data-consent="accepted"]').click();
     await testPage.waitForTimeout(5000);
+
+    // Verify the consent cookie is now 'accepted'
+    const postAcceptCookies = await ctx.cookies();
+    const acceptedCookie = postAcceptCookies.find(
+      (c) => c.name === 'slimstat_gdpr_consent',
+    );
+    expect(acceptedCookie, 'Consent cookie should be set after clicking Accept').toBeTruthy();
+    expect(acceptedCookie!.value).toBe('accepted');
 
     // ── Phase 4: Verify the anonymous row was upgraded with PII ────
 
-    if (upgradeResult === 'triggered' && anonPageviewId) {
-      // The upgrade request should have fired
-      expect(
-        trackingRequests.length,
-        'requestConsentUpgrade() should send a tracking request with consent_upgrade=1',
-      ).toBeGreaterThanOrEqual(1);
+    // At least one upgrade tracking request should have fired
+    expect(
+      trackingRequests.length,
+      'Clicking Accept should trigger a consent upgrade tracking request',
+    ).toBeGreaterThanOrEqual(1);
 
-      // Re-read the anonymous row — after upgrade, the IP should now be real (PII),
-      // not the hashed anonymous value.
-      const upgradedRows = await waitForStatRows(declinedNavMarker, 1, 10_000);
-      expect(upgradedRows.length).toBeGreaterThanOrEqual(1);
-      const upgradedIp = upgradedRows[0].ip;
+    // Re-read the row — after upgrade, the IP should be real PII
+    const upgradedRows = await waitForStatRows(upgradeMarker, 1, 10_000);
+    expect(upgradedRows.length).toBeGreaterThanOrEqual(1);
+    const upgradedIp = upgradedRows[0].ip;
 
-      // Key assertion: the SAME row that had a hashed anonymous IP should now
-      // have a real IP (PII) after the consent upgrade merged PII into it.
-      // If #246 regresses, the merge code at Processor.php:436 won't execute.
-      expect(
-        upgradedIp,
-        `Anonymous row IP should be upgraded from hashed (${anonymousIp}) to real PII`,
-      ).not.toBe(anonymousIp);
-    } else {
-      // SlimStat JS not loaded or pageview ID not captured — fall back to
-      // verifying that a new navigation after accepting produces PII rows.
-      const acceptMarker = `consent-accepted-${ts}`;
-      await testPage.goto(`${BASE_URL}/?e2e_marker=${acceptMarker}`, {
-        waitUntil: 'domcontentloaded',
-      });
-      await testPage.waitForTimeout(3000);
-
-      const acceptRows = await waitForStatRows(acceptMarker, 1, 15_000);
-      expect(acceptRows.length).toBeGreaterThanOrEqual(1);
-      expect(
-        acceptRows[0].ip,
-        'Post-consent IP should differ from anonymous hashed IP',
-      ).not.toBe(anonymousIp);
-    }
+    // Key assertion: the SAME row that had a hashed anonymous IP should now
+    // have a real IP (PII) after the consent upgrade merged PII into it.
+    // If #246 regresses, the merge code at Processor.php:436 won't execute
+    // and the IP will remain hashed.
+    expect(
+      upgradedIp,
+      `Anonymous row IP should be upgraded from hashed (${preUpgradeIp}) to real PII`,
+    ).not.toBe(preUpgradeIp);
 
     await testPage.close();
     await ctx.close();
