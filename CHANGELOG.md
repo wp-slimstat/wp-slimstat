@@ -1,5 +1,17 @@
 = 5.4.6 - 2026-03-22 =
 
+**Action Required — please read before updating**
+
+This release resets three privacy settings to safe defaults. If you are upgrading from
+v5.4.1–5.4.5, this corrects values that a bug in those versions forced on incorrectly. If you
+are upgrading from v5.3.x, these settings did not exist before — tracking will continue to work
+exactly as it did. In both cases, if you want to enable any of the following, configure them after
+updating:
+
+- Consent banner: Settings → Tracker → Consent Management → Consent Plugin Integration
+- Anonymize IP addresses: Settings → Tracker → Data Protection → Anonymize IP Addresses
+- Hash IP addresses: Settings → Tracker → Data Protection → Hash IP Addresses
+
 Fixed
 - Visitor counts dropping to zero after upgrading from 5.3.x: anonymous visitors were
   silently blocked by a consent requirement that was switched on automatically, even on
@@ -21,16 +33,6 @@ Fixed
 Improved
 - Tracker health diagnostics now distinguish between fatal errors and recoverable warnings,
   so a GeoIP lookup failure or a stale payload no longer shows up as a broken tracker.
-
-Important note for sites that configured consent or IP privacy settings in v5.4.x
-- This release includes a one-time correction that resets consent and IP settings which
-  were forced to incorrect values by a bug in v5.4.1-v5.4.5. If you deliberately enabled
-  the consent banner, IP anonymization, or IP hashing in those versions, those settings
-  will be reset on the first page load after updating. Please check the following after
-  updating and re-enable anything that was intentional:
-  Settings → Tracker → Consent Management → Consent Plugin Integration
-  Settings → Tracker → Data Protection → Anonymize IP Addresses
-  Settings → Tracker → Data Protection → Hash IP Addresses
 
 = 5.4.5 - 2026-03-20 =
 
