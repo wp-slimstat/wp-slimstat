@@ -325,6 +325,28 @@ var SlimStat = (function () {
                 return t !== selected;
             })
         );
+
+        // Debug recording: track transport attempts when slimstat_debug is on
+        var debugEnabled = params.slimstat_debug === "on";
+        var debugAttempts = [];
+
+        function debugRecord(transport, url, status, bodyKind, parsedId, errorCode) {
+            if (!debugEnabled) return;
+            debugAttempts.push({ transport: transport, url: url, status: status, bodyKind: bodyKind, parsedId: parsedId, errorCode: errorCode });
+        }
+
+        function debugFinalize(outcome) {
+            if (!debugEnabled) return;
+            try {
+                window.__slimstatDebug = window.__slimstatDebug || {};
+                window.__slimstatDebug.lastPageview = {
+                    selectedTransport: selected,
+                    attempts: debugAttempts,
+                    finalOutcome: outcome
+                };
+            } catch (e) { /* ignore */ }
+        }
+
         function sendXHR(url, onFail, xhrOpts) {
             // Send X-WP-Nonce header only when is_logged_in='1' (set by PHP at render time).
             // Anonymous pages: is_logged_in='0' → no nonce header → no 403.
@@ -351,6 +373,7 @@ var SlimStat = (function () {
                     // without X-WP-Nonce, which would strip authentication and bypass
                     // Processor::isUserExcluded() for logged-in users.
                     if (xhr.status === 403 && xhrOpts.useNonce) {
+                        debugRecord(xhrOpts._transport || "", url, 403, "forbidden", null, null);
                         if (onFail) onFail();
                         return;
                     }
@@ -371,18 +394,27 @@ var SlimStat = (function () {
                                 /* ignore */
                             }
                             flushPendingInteractions(); // Flush buffered interactions now that we have an ID
+                            debugRecord(xhrOpts._transport || "", url, 200, "numeric", parsed, null);
+                            debugFinalize("success");
                         }
 
                         // Initial pageview creation must return a valid pageview ID.
                         // Treat empty/non-numeric responses as failures so fallback/retry can run.
                         if (requiresIdResponse && (isNaN(parsed) || parsed <= 0)) {
+                            var bodyKind = responseId === "" ? "empty" : (parsed <= 0 ? "zero_or_negative" : "non_numeric");
+                            debugRecord(xhrOpts._transport || "", url, 200, bodyKind, parsed, parsed < 0 ? parsed : null);
                             if (onFail) onFail();
                             return;
                         }
 
+                        // Non-pageview path (events/interactions) — record for debug
+                        if (isNaN(parsed) || parsed <= 0) {
+                            debugRecord(xhrOpts._transport || "", url, 200, "event_ok", null, null);
+                        }
                         callback(true);
                     } else {
                         // Non-200 status is a failure, trigger retry/failover
+                        debugRecord(xhrOpts._transport || "", url, xhr.status, "http_error", null, null);
                         if (onFail) onFail();
                     }
                 }
@@ -391,6 +423,7 @@ var SlimStat = (function () {
                 xhr.send(payload);
             } catch (e) {
                 // This catches network errors before send, also a failure
+                debugRecord(xhrOpts._transport || "", url, 0, "network_error", null, null);
                 if (onFail) onFail();
             }
             return true;
@@ -398,6 +431,7 @@ var SlimStat = (function () {
         function trySend(i) {
             if (i >= order.length) {
                 // All transport methods have been tried and failed
+                debugFinalize("failed");
                 callback(false);
                 return false;
             }
@@ -408,9 +442,12 @@ var SlimStat = (function () {
                 // Beacon is fire-and-forget; we assume success for queue processing
                 var ok = navigator.sendBeacon(url, payload);
                 if (ok) {
+                    debugRecord(method, url, 0, "beacon", null, null);
+                    debugFinalize("success");
                     callback(true);
                     return true;
                 }
+                debugRecord(method, url, 0, "beacon_failed", null, null);
                 // If beacon fails, immediately try next method
                 return trySend(i + 1);
             }
@@ -419,7 +456,7 @@ var SlimStat = (function () {
                 function () {
                     trySend(i + 1);
                 },
-                { useNonce: params.is_logged_in === "1" }
+                { useNonce: params.is_logged_in === "1", _transport: method }
             );
         }
         trySend(0);

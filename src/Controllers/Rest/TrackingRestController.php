@@ -209,6 +209,8 @@ class TrackingRestController implements RestControllerInterface
             ob_end_clean();
         }
 
+        \SlimStat\Tracker\Utils::sendTrackingHeaders('rest', $result);
+
         // Success: pure numeric ID (rare — most paths return checksum format)
         if (is_numeric($result) && 0 < (int) $result) {
             return rest_ensure_response((string) $result);

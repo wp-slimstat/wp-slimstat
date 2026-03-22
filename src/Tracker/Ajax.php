@@ -13,7 +13,9 @@ class Ajax
     public static function handle()
     {
         $result = self::process();
-        exit($result);
+        Utils::sendTrackingHeaders('ajax', $result);
+        echo $result;
+        exit;
     }
 
     /**
@@ -398,8 +400,9 @@ class Ajax
             $id = Processor::process();
         }
 
-        if (empty($id)) {
-            return 0;
+        $isErrorCode = is_int($id) && $id < 0;
+        if (empty($id) || $isErrorCode) {
+            return $isErrorCode ? $id : 0;
         }
 
         do_action('slimstat_track_success');

@@ -9,10 +9,55 @@ class Utils
 {
 	public static function logError($errorCode = 0)
 	{
+		// Throttle 3xx exclusion codes: only write if error code changed.
+		// These fire on every bot/excluded request — writing each time would
+		// cause DB write storms on high-traffic sites.
+		if ($errorCode >= 300 && $errorCode < 400) {
+			$stored = \get_option('slimstat_tracker_error', []);
+			$sameCode = !empty($stored[0]) && (int) $stored[0] === $errorCode;
+			// In debug mode, always refresh timestamp so support sees a fresh reproduction
+			if ($sameCode && !self::isDebugMode()) {
+				do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
+				return -$errorCode;
+			}
+		}
+
 		\wp_slimstat::update_option('slimstat_tracker_error', [$errorCode, \wp_slimstat::date_i18n('U')]);
-		$stat = \wp_slimstat::get_stat();
-		do_action('slimstat_track_exit_' . abs($errorCode), $stat);
+		do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
 		return -$errorCode;
+	}
+
+	/**
+	 * Check if tracker debug mode is active.
+	 *
+	 * @return bool
+	 */
+	public static function isDebugMode(): bool
+	{
+		return (defined('WP_DEBUG') && WP_DEBUG)
+			|| ('on' === (\wp_slimstat::$settings['slimstat_debug'] ?? 'off'));
+	}
+
+	/**
+	 * Send debug response headers for tracking requests.
+	 * Only emits when debug mode is active.
+	 *
+	 * @param string    $transport The transport method (rest, ajax, adblock_bypass).
+	 * @param string|int $result   The tracking result.
+	 */
+	public static function sendTrackingHeaders(string $transport, $result): void
+	{
+		if (!self::isDebugMode() || headers_sent()) {
+			return;
+		}
+
+		$code = is_numeric($result) ? (int) $result : 0;
+		header('X-SlimStat-Transport: ' . sanitize_text_field($transport));
+		header('X-SlimStat-Outcome: ' . ($code > 0 ? 'success' : 'error'));
+
+		if ($code <= 0) {
+			header('X-SlimStat-Error-Code: ' . intval($code));
+		}
 	}
 
 	public static function getValueWithChecksum($value = 0)

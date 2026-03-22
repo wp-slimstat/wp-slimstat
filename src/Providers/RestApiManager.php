@@ -7,6 +7,7 @@ use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\ConsentChangeRestController;
 use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
+use SlimStat\Controllers\Rest\TrackerHealthRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
@@ -49,6 +50,7 @@ class RestApiManager
 			new GDPRBannerRestController(),
 			new ConsentChangeRestController(),
 			new ConsentHealthRestController(),
+			new TrackerHealthRestController(),
 		];
 
         /**
@@ -168,6 +170,7 @@ class RestApiManager
 
             $result = Tracker::slimtrack_ajax();
             // Output result and exit for adblock bypass requests
+            \SlimStat\Tracker\Utils::sendTrackingHeaders('adblock_bypass', $result);
             echo $result;
             exit;
         }

@@ -1064,6 +1064,7 @@ class wp_slimstat
             // -----------------------------------------------------------------------
             'last_tracker_error'  => [0, '', 0],
             'show_sql_debug'      => 'no',
+            'slimstat_debug'      => 'off',
             'db_indexes'          => 'on',
             'enable_maxmind'      => 'disable',
             'maxmind_license_key' => '',
@@ -1197,6 +1198,10 @@ class wp_slimstat
 			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
 			$params['gdpr_consent_method'] = $method;
 		}
+
+        if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
+            $params['slimstat_debug'] = 'on';
+        }
 
         $params = apply_filters('slimstat_js_params', $params);
 

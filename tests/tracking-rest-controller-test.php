@@ -22,6 +22,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/stubs/tracking-stubs.php';
 require_once __DIR__ . '/stubs/slimstat-tracker-stub.php';
 require_once __DIR__ . '/../src/Interfaces/RestControllerInterface.php';
+require_once __DIR__ . '/../src/Tracker/Utils.php';
 require_once __DIR__ . '/../src/Controllers/Rest/TrackingRestController.php';
 
 use SlimStat\Controllers\Rest\TrackingRestController;

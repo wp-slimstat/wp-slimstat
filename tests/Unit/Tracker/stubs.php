@@ -7,6 +7,14 @@
  */
 declare(strict_types=1);
 
+// ── WordPress functions needed by source files ─────────────────────────────
+if (!function_exists('get_option')) {
+    function get_option($option, $default = false) { return $default; }
+}
+if (!function_exists('delete_option')) {
+    function delete_option($option) { return true; }
+}
+
 // ── WordPress constants needed by source files ────────────────────────────
 if (!defined('COOKIEPATH')) {
     define('COOKIEPATH', '/');

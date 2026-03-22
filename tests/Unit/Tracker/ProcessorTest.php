@@ -64,7 +64,7 @@ class ProcessorTest extends WpSlimstatTestCase
 
         $result = \SlimStat\Tracker\Processor::process();
 
-        $this->assertFalse($result, 'process() must return false when consent is denied');
+        $this->assertSame(-301, $result, 'process() must return -301 (consent denied) when canTrack is false');
     }
 
     // -----------------------------------------------------------------------
@@ -109,7 +109,7 @@ class ProcessorTest extends WpSlimstatTestCase
 
         try {
             $result = \SlimStat\Tracker\Processor::process();
-            $this->assertFalse($result, 'process() must return false when IP is empty');
+            $this->assertSame(-202, $result, 'process() must return -202 (empty IP) when IP is empty');
         } catch (\Throwable $e) {
             // Some code paths after the consent gate may throw without full WP
             // environment (e.g. undefined functions).  Treat that as a TODO.
@@ -154,7 +154,7 @@ class ProcessorTest extends WpSlimstatTestCase
 
         try {
             $result = \SlimStat\Tracker\Processor::process();
-            $this->assertFalse($result, 'process() must return false for 0.0.0.0 IP');
+            $this->assertSame(-202, $result, 'process() must return -202 (empty IP) for 0.0.0.0 IP');
         } catch (\Throwable $e) {
             $this->markTestIncomplete(
                 'Could not exercise 0.0.0.0 guard without full WP environment: ' . $e->getMessage()
