@@ -71,4 +71,4 @@ bun.lock
 package-lock.json
 
 # PHP CS Fixer configuration file
-.php-cs-fixer.dist.php
+.php-cs-fixer.dist.php.phpunit.result.cache
