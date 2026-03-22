@@ -66,6 +66,7 @@
     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
     "test:user-exclusion": "php tests/user-exclusion-processor-test.php",
+    "test:ajax-resource-fix": "php tests/ajax-resource-fix-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -79,7 +80,8 @@
       "@test:reports-escaping",
       "@test:fingerprint-sanitize",
       "@test:gdpr-consent",
-      "@test:user-exclusion"
+      "@test:user-exclusion",
+      "@test:ajax-resource-fix"
     ]
   }
 }

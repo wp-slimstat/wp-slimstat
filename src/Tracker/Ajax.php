@@ -182,9 +182,13 @@ class Ajax
                     }
                 }
 
-                // If resource not set, use default from get_stat()
+                // Update path: if no explicit resource was provided by JS, do NOT fall back to
+                // REQUEST_URI. REQUEST_URI here is the tracking endpoint itself
+                // (/wp-json/slimstat/v1/hit or /wp-admin/admin-ajax.php), not the page the
+                // visitor is on. Unsetting ensures Storage::updateRow()'s array_filter() omits
+                // the resource column so the DB value set on the initial pageview is preserved.
                 if (empty($stat['resource'])) {
-                    $stat['resource'] = \wp_slimstat::get_request_uri();
+                    unset($stat['resource']);
                 }
 
                 // Sync local stat (including id from client) to global before ensureVisitId,

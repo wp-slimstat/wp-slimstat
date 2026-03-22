@@ -16,6 +16,9 @@ if (!function_exists('delete_option')) {
 }
 
 // ── WordPress constants needed by source files ────────────────────────────
+if (!defined('DAY_IN_SECONDS')) {
+    define('DAY_IN_SECONDS', 86400);
+}
 if (!defined('COOKIEPATH')) {
     define('COOKIEPATH', '/');
 }

@@ -283,11 +283,17 @@ class Consent
 				// Check CMP integration for consent
 				$integrationKey = self::getIntegrationKey();
 
-				// SlimStat Banner integration - check consent cookie
+				// SlimStat Banner integration - check consent cookie.
+				// Only enforce when the banner is explicitly enabled by the admin.
+				// Sites where the banner is off (e.g. upgrades from 5.3.x that never
+				// configured GDPR) must not have tracking silently blocked, because
+				// visitors have no way to grant consent through a banner they never see.
 				if ('slimstat_banner' === $integrationKey) {
-					$gdpr_service = new \SlimStat\Services\GDPRService($settings);
-					if (!$gdpr_service->hasConsent()) {
-						$default = false;
+					if ('on' === ($settings['use_slimstat_banner'] ?? 'off')) {
+						$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+						if (!$gdpr_service->hasConsent()) {
+							$default = false;
+						}
 					}
 				}
 
@@ -534,8 +540,14 @@ class Consent
 		// PRIORITY 3: Configuration DOES collect PII - check consent status
 		$integrationKey = self::getIntegrationKey();
 
-		// SlimStat Banner integration - check consent cookie
+		// SlimStat Banner integration - check consent cookie.
+		// Only enforce when the banner is explicitly enabled by the admin (same
+		// guard as canTrack()). If the banner is off, PII gating is not enforced
+		// via SlimStat's banner — preserves pre-5.4.0 behaviour for upgrades.
 		if ('slimstat_banner' === $integrationKey) {
+			if ('on' !== ($settings['use_slimstat_banner'] ?? 'off')) {
+				return true;
+			}
 			$gdpr_service = new \SlimStat\Services\GDPRService($settings);
 			return $gdpr_service->hasConsent();
 		}

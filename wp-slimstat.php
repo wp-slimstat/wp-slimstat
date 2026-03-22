@@ -956,7 +956,7 @@ class wp_slimstat
             'anonymize_ip'             => 'on',   // Changed: Anonymize IPs by default
             'hash_ip'                  => 'on',   // Changed: Hash IPs by default
 			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
-			'use_slimstat_banner'      => 'on',   // Changed: Enable banner by default when GDPR is enabled
+			'use_slimstat_banner'      => 'off',  // Admin must explicitly enable; auto-enabling is a breaking change for upgrades from 5.3.x
 			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
