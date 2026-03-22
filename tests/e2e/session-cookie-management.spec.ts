@@ -332,19 +332,17 @@ test.describe('Session & Cookie Management — #199', () => {
       waitUntil: 'domcontentloaded',
     });
 
-    // Wait for the anonymous pageview to be tracked (SlimStatParams.id populated)
-    try {
-      await testPage.waitForFunction(
-        () => {
-          const p = (window as any).SlimStatParams;
-          return p && p.id && parseInt(p.id, 10) > 0;
-        },
-        { timeout: 15_000 },
-      );
-    } catch {
-      // If SlimStatParams.id isn't set, the upgrade won't target a specific row
-      // but the test can still verify the banner flow works.
-    }
+    // Wait for the anonymous pageview to be tracked (SlimStatParams.id populated).
+    // This MUST succeed — the consent upgrade needs the pageview ID to target
+    // the anonymous row for merging. If this times out, the test should fail
+    // because the upgrade assertion would be meaningless without it.
+    await testPage.waitForFunction(
+      () => {
+        const p = (window as any).SlimStatParams;
+        return p && p.id && parseInt(p.id, 10) > 0;
+      },
+      { timeout: 15_000 },
+    );
 
     // Banner should be visible again (consent cookie was cleared)
     await expect(testPage.locator('#slimstat-gdpr-banner')).toBeVisible({
@@ -366,7 +364,14 @@ test.describe('Session & Cookie Management — #199', () => {
     // banner handler: cookie set → sendConsentChangeToServer → requestConsentUpgrade
     // No manual cookie injection, no force:true, no direct JS calls.
     await testPage.locator('[data-consent="accepted"]').click();
-    await testPage.waitForTimeout(5000);
+
+    // Wait for the consent upgrade tracking request to complete.
+    // The banner handler sends a REST/AJAX request with consent_upgrade=1.
+    // Poll trackingRequests instead of a blind timeout.
+    const upgradeDeadline = Date.now() + 15_000;
+    while (trackingRequests.length === 0 && Date.now() < upgradeDeadline) {
+      await new Promise((r) => setTimeout(r, 500));
+    }
 
     // Verify the consent cookie is now 'accepted'
     const postAcceptCookies = await ctx.cookies();
