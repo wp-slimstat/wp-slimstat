@@ -733,17 +733,15 @@ class Processor
 
         $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
-        if (empty($stat['id'])) {
+        if (false === $stat['id']) {
             include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
             \wp_slimstat_admin::init_environment();
             $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
-            if (empty($stat['id'])) {
+            if (false === $stat['id']) {
                 Query::setProcessingTimestamp(null);
                 // Store DB error detail for admin diagnostics
-                $dbError = $GLOBALS['wpdb']->last_error;
-                if (!empty($dbError)) {
-                    \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
-                }
+                $dbError = (string) $GLOBALS['wpdb']->last_error;
+                \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
                 return Utils::logError(200);
             }
         }

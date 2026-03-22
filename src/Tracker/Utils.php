@@ -140,6 +140,11 @@ class Utils
 
 	public static function getValueWithoutChecksum($valueWithChecksum = '')
 	{
+		if (!is_scalar($valueWithChecksum)) {
+			return false;
+		}
+
+		$valueWithChecksum = (string) $valueWithChecksum;
 		$parts = explode('.', $valueWithChecksum);
 		if (count($parts) !== 2) {
 			return false;

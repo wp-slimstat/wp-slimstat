@@ -6,8 +6,10 @@ import {
   closeDb,
   getPool,
   installRewriteFlush,
+  restoreOption,
   restoreSlimstatOptions,
   setSlimstatOptions,
+  snapshotOption,
   snapshotSlimstatOptions,
   uninstallRewriteFlush,
   waitForPageviewRow,
@@ -18,6 +20,11 @@ import { BASE_URL } from './helpers/env';
 async function flushRewrites(page: import('@playwright/test').Page): Promise<void> {
   await page.goto(`${BASE_URL}/wp-admin/options-permalink.php`);
   await page.waitForLoadState('load');
+  const saveButton = page.locator('#submit');
+  if (await saveButton.isVisible()) {
+    await saveButton.click();
+    await page.waitForLoadState('load');
+  }
 }
 
 async function getSlimstatSecret(): Promise<string> {
@@ -233,6 +240,56 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(debugData?.attempts?.some((attempt: any) => attempt.transport === 'rest_query' && attempt.bodyKind === 'numeric')).toBe(true);
 
     await ctx.close();
+  });
+
+  test('REST query fallback uses index.php routing on index-permalink installs', async ({ page, browser }) => {
+    await setSlimstatOptions(page, {
+      tracking_request_method: 'rest',
+      javascript_mode: 'on',
+    });
+    await snapshotOption('permalink_structure');
+    await getPool().execute(
+      "UPDATE wp_options SET option_value = ? WHERE option_name = 'permalink_structure'",
+      ['/index.php/%postname%/'],
+    );
+
+    try {
+      await flushRewrites(page);
+
+      const ctx = await browser.newContext();
+      const anonPage = await ctx.newPage();
+      let queryRouteUrl = '';
+
+      await anonPage.route('**/wp-json/slimstat/v1/hit', async (route) => {
+        await route.fulfill({
+          status: 404,
+          contentType: 'text/html; charset=UTF-8',
+          body: '<html><body>404</body></html>',
+        });
+      });
+
+      anonPage.on('request', (req) => {
+        if (req.method() === 'POST' && req.url().includes('rest_route=')) {
+          queryRouteUrl = req.url();
+        }
+      });
+
+      const marker = `recovery-rest-query-index-${Date.now()}`;
+      await anonPage.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+
+      const stat = await waitForPageviewRow(marker, 20_000);
+      expect(stat).not.toBeNull();
+      expect(stat!.resource).toContain(marker);
+      expect(decodeURIComponent(queryRouteUrl)).toContain('/index.php?rest_route=/slimstat/v1/hit');
+
+      const debugData = await anonPage.evaluate(() => (window as any).__slimstatDebug?.lastPageview);
+      expect(debugData?.attempts?.some((attempt: any) => attempt.transport === 'rest_query' && attempt.bodyKind === 'numeric')).toBe(true);
+
+      await ctx.close();
+    } finally {
+      await restoreOption('permalink_structure');
+      await flushRewrites(page);
+    }
   });
 
   test('stale or malformed ci falls back to external content metadata instead of aborting tracking', async ({ page }) => {

@@ -1112,7 +1112,13 @@ class wp_slimstat
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
 		$rest_base_url     = rest_url();
-        $rest_query_url    = add_query_arg('rest_route', '/slimstat/v1/hit', home_url('/'));
+        // Mirror WordPress core's non-pretty REST routing so query fallback still works
+        // on index-permalink and subdirectory installs.
+        $rest_query_base   = trailingslashit(get_home_url(null, '', 'rest'));
+        if ('index.php' !== substr(untrailingslashit($rest_query_base), -9)) {
+            $rest_query_base .= 'index.php';
+        }
+        $rest_query_url    = add_query_arg('rest_route', '/slimstat/v1/hit', $rest_query_base);
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
 
