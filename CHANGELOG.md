@@ -9,7 +9,7 @@ Fixed
   reports: these are internal tracking addresses, not real pages visitors viewed.
 - Visitor IP addresses being recorded as masked or hashed values after upgrading from
   5.3.x: full IPs are now stored again, matching pre-5.4 behavior. If you want to keep
-  IP anonymization, re-enable it in Settings → Data Protection after updating.
+  IP anonymization, re-enable it in Settings → Tracker → Data Protection after updating.
 - Tracking not working at all on sites using WP Rocket, W3TC, or any other page caching
   plugin on fresh installs: new installations now default to a tracking mode that works
   correctly regardless of caching.
@@ -21,6 +21,16 @@ Fixed
 Improved
 - Tracker health diagnostics now distinguish between fatal errors and recoverable warnings,
   so a GeoIP lookup failure or a stale payload no longer shows up as a broken tracker.
+
+Important note for sites that configured consent or IP privacy settings in v5.4.x
+- This release includes a one-time correction that resets consent and IP settings which
+  were forced to incorrect values by a bug in v5.4.1-v5.4.5. If you deliberately enabled
+  the consent banner, IP anonymization, or IP hashing in those versions, those settings
+  will be reset on the first page load after updating. Please check the following after
+  updating and re-enable anything that was intentional:
+  Settings → Tracker → Consent Management → Consent Plugin Integration
+  Settings → Tracker → Data Protection → Anonymize IP Addresses
+  Settings → Tracker → Data Protection → Hash IP Addresses
 
 = 5.4.5 - 2026-03-20 =
 
