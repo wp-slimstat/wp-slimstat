@@ -120,15 +120,12 @@ test.describe('Session & Cookie Management — #199', () => {
       // Navigate to 3 distinct pages within the same anonymous session
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
       await anonPage.waitForLoadState('load');
-      await anonPage.waitForTimeout(3000);
 
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
       await anonPage.waitForLoadState('load');
-      await anonPage.waitForTimeout(3000);
 
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
       await anonPage.waitForLoadState('load');
-      await anonPage.waitForTimeout(3000);
 
       // Wait for all 3 rows to appear in the DB
       const rows = await waitForStatRows(marker, 3, 20_000);
@@ -177,7 +174,6 @@ test.describe('Session & Cookie Management — #199', () => {
       // Visit #1: establish a session
       await page.goto(`${BASE_URL}/?e2e_marker=${markerBefore}`);
       await page.waitForLoadState('load');
-      await page.waitForTimeout(3000);
 
       const rowsBefore = await waitForStatRows(markerBefore, 1, 15_000);
       expect(rowsBefore.length, 'First visit should produce a DB row').toBeGreaterThanOrEqual(1);
@@ -190,7 +186,6 @@ test.describe('Session & Cookie Management — #199', () => {
       // Visit #2: should start a new session
       await page.goto(`${BASE_URL}/?e2e_marker=${markerAfter}`);
       await page.waitForLoadState('load');
-      await page.waitForTimeout(3000);
 
       const rowsAfter = await waitForStatRows(markerAfter, 1, 15_000);
       expect(rowsAfter.length, 'Second visit should produce a DB row').toBeGreaterThanOrEqual(1);
@@ -258,7 +253,6 @@ test.describe('Session & Cookie Management — #199', () => {
     await testPage.goto(`${BASE_URL}/?e2e_marker=${declineMarker}`, {
       waitUntil: 'domcontentloaded',
     });
-    await testPage.waitForTimeout(3000);
 
     // Banner should be visible for a fresh visitor
     await expect(testPage.locator('#slimstat-gdpr-banner')).toBeVisible();
@@ -285,7 +279,6 @@ test.describe('Session & Cookie Management — #199', () => {
     await testPage.goto(`${BASE_URL}/?e2e_marker=${declinedNavMarker}`, {
       waitUntil: 'domcontentloaded',
     });
-    await testPage.waitForTimeout(3000);
 
     // Banner should NOT reappear (decision persisted)
     await expect(testPage.locator('#slimstat-gdpr-banner')).not.toBeVisible();

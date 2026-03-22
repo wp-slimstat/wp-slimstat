@@ -99,9 +99,9 @@ test.describe('Admin Settings Persistence', () => {
 
     // Flip the toggle: if checked, uncheck; if unchecked, check
     if (wasChecked) {
-      await checkbox.uncheck({ force: true });
+      await checkbox.uncheck();
     } else {
-      await checkbox.check({ force: true });
+      await checkbox.check();
     }
 
     // Submit the form
@@ -154,15 +154,15 @@ test.describe('Admin Settings Persistence', () => {
 
     // Flip both toggles and change the select
     if (jsWasChecked) {
-      await jsModeCheckbox.uncheck({ force: true });
+      await jsModeCheckbox.uncheck();
     } else {
-      await jsModeCheckbox.check({ force: true });
+      await jsModeCheckbox.check();
     }
 
     if (dashWasChecked) {
-      await dashWidgetsCheckbox.uncheck({ force: true });
+      await dashWidgetsCheckbox.uncheck();
     } else {
-      await dashWidgetsCheckbox.check({ force: true });
+      await dashWidgetsCheckbox.check();
     }
 
     await requestMethodSelect.selectOption(newMethod);
@@ -207,9 +207,9 @@ test.describe('Admin Settings Persistence', () => {
     const wasChecked = await postsColCheckbox.isChecked();
 
     if (wasChecked) {
-      await postsColCheckbox.uncheck({ force: true });
+      await postsColCheckbox.uncheck();
     } else {
-      await postsColCheckbox.check({ force: true });
+      await postsColCheckbox.check();
     }
 
     // Submit and wait for confirmation
