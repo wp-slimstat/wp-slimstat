@@ -1,17 +1,26 @@
 = 5.4.6 - 2026-03-22 =
 
 Fixed
-- On first boot after upgrade, a one-time migration resets four settings that v5.4.1 forced to harmful defaults: use_slimstat_banner (was silently blocking all anonymous tracking), javascript_mode (was baking stale IDs into cached HTML for caching-plugin sites), anonymize_ip, and hash_ip (both restored to 5.3.x full-IP behavior)
-- Stopped /wp-json/slimstat/v1/hit and /wp-admin/admin-ajax.php from appearing as top URLs in the dashboard
-- Guarded JS use_slimstat_banner param with gdpr_enabled to prevent silent pageview drops when GDPR is disabled
-- Restored Client mode as the fresh-install default so tracking works on WP Rocket and W3TC sites out of the box
-- Recovered client-side tracking across adblock-bypass, AJAX, pretty REST, and `rest_route` REST transports when a transport fails
-- Recovered from stale signed pageview IDs and stale content metadata without abandoning the pageview
-- Hardened adblock-bypass responses with POST-only handling and no-store cache headers
-- Stopped non-fatal tracker warnings and GeoIP lookup failures from polluting the fatal tracker error channel
+- Visitor counts dropping to zero after upgrading from 5.3.x: anonymous visitors were
+  silently blocked by a consent requirement that was switched on automatically, even on
+  sites that never configured a consent banner. This update corrects that automatically
+  on first load — no action needed.
+- /wp-json/slimstat/v1/hit and /wp-admin/admin-ajax.php appearing as top pages in
+  reports: these are internal tracking addresses, not real pages visitors viewed.
+- Visitor IP addresses being recorded as masked or hashed values after upgrading from
+  5.3.x: full IPs are now stored again, matching pre-5.4 behavior. If you want to keep
+  IP anonymization, re-enable it in Settings → Data Protection after updating.
+- Tracking not working at all on sites using WP Rocket, W3TC, or any other page caching
+  plugin on fresh installs: new installations now default to a tracking mode that works
+  correctly regardless of caching.
+- Tracking silently dropping pageviews when a transport fails: the tracker now tries
+  available fallbacks (adblock-bypass, AJAX, REST) before giving up on a pageview.
+- Stale page data causing pageviews to be abandoned after a browser caches plugin assets:
+  the tracker now recovers gracefully and completes the pageview.
 
 Improved
-- Added tracker health warning reporting for non-fatal stale-payload diagnostics
+- Tracker health diagnostics now distinguish between fatal errors and recoverable warnings,
+  so a GeoIP lookup failure or a stale payload no longer shows up as a broken tracker.
 
 = 5.4.5 - 2026-03-20 =
 
