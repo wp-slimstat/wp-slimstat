@@ -290,9 +290,13 @@ test.describe('Session & Cookie Management — #199', () => {
       anonRows.length,
       'Anonymous tracking should record a row even when consent is denied',
     ).toBeGreaterThanOrEqual(1);
-    // Store the anonymous IP for later comparison — it should be a hash,
-    // not the real IP address.
+    // Capture the anonymous row's IP and visit_id BEFORE any upgrade runs.
+    // The IP should be hashed (anonymous tracking strips PII).
+    // The visit_id is the original session identifier — we'll verify it
+    // survives the consent upgrade unchanged (not rewritten to a new value).
     const anonymousIp = anonRows[0].ip;
+    const preUpgradeVisitId = parseInt(anonRows[0].visit_id, 10);
+    expect(preUpgradeVisitId, 'Phase 2 visit_id should be positive before upgrade').toBeGreaterThan(0);
 
     // ── Phase 3: Click Accept on the real banner ──────────────────
     //
@@ -415,8 +419,18 @@ test.describe('Session & Cookie Management — #199', () => {
       `Phase 2 anonymous row IP should be upgraded from hashed (${anonymousIp}) to PII`,
     ).not.toBe(anonymousIp);
 
-    // Key assertion 2: Both rows should share the same visit_id,
-    // proving session continuity was preserved across the consent upgrade.
+    // Key assertion 2: The Phase 2 visit_id must be UNCHANGED after upgrade.
+    // We captured preUpgradeVisitId BEFORE clicking Accept. If the merge code
+    // at Processor.php:615 rewrites all rows to a fresh visit_id, this fails.
+    // This proves the ORIGINAL session identifier was preserved, not just that
+    // rows were rewritten together.
+    expect(
+      earlierVisitId,
+      `Phase 2 visit_id (${earlierVisitId}) must match pre-upgrade value (${preUpgradeVisitId}) — session identity preserved`,
+    ).toBe(preUpgradeVisitId);
+
+    // Key assertion 3: Both rows should share the same visit_id,
+    // proving session continuity across the consent upgrade.
     expect(
       upgradeVisitId,
       `Upgrade row visit_id (${upgradeVisitId}) should match Phase 2 row (${earlierVisitId})`,
