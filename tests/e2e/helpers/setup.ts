@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as mysql from 'mysql2/promise';
+import { serialize as phpSerialize, unserialize as phpUnserialize } from 'php-serialize';
 import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL } from './env';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -325,28 +326,90 @@ export function uninstallOptionMutator(): void {
 }
 
 /**
- * Set a slimstat option using WordPress's native serialization.
- * Requires the option-mutator mu-plugin to be installed and an authenticated page context.
+ * Set a slimstat option via direct DB manipulation.
+ * Reads the serialized slimstat_options from wp_options, updates the key,
+ * and writes back. Works in both local dev and wp-env Docker CI.
+ *
+ * The `page` parameter is kept for API compatibility (42 spec files call this)
+ * but is no longer used — all work is done via the MySQL pool.
  */
-export async function setSlimstatOption(page: import('@playwright/test').Page, key: string, value: string): Promise<void> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'test_set_slimstat_option', key, value },
-  });
-  if (!res.ok()) {
-    throw new Error(`setSlimstatOption(${key}, ${value}) failed: ${res.status()}`);
+export async function setSlimstatOption(_page: import('@playwright/test').Page, key: string, value: string): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+
+  // If the row is missing (e.g. after simulateFreshInstall()), start with
+  // an empty options object and upsert instead of crashing.
+  let opts: Record<string, any> = {};
+  if (rows.length) {
+    const unserialized = phpUnserialize(rows[0].option_value);
+    if (typeof unserialized !== 'object' || unserialized === null) {
+      throw new Error(`Failed to unserialize slimstat_options: got ${typeof unserialized}`);
+    }
+    opts = unserialized as Record<string, any>;
   }
+  opts[key] = value;
+  const serialized = phpSerialize(opts);
+
+  // Upsert: INSERT if the row was deleted, UPDATE if it exists.
+  // NOTE: Direct DB writes bypass the WordPress object cache. In CI
+  // (wp-env default) this is fine because there is no persistent object
+  // cache. In local dev with Redis/Memcached, the next get_option() call
+  // may read stale cached data until the next full page load clears it.
+  await pool.execute(
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_options', ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+    [serialized]
+  );
 }
 
 /**
- * Delete a slimstat option key using WordPress's native serialization.
+ * Delete a slimstat option key via direct DB manipulation.
  */
-export async function deleteSlimstatOption(page: import('@playwright/test').Page, key: string): Promise<void> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'test_set_slimstat_option', key, delete: '1' },
-  });
-  if (!res.ok()) {
-    throw new Error(`deleteSlimstatOption(${key}) failed: ${res.status()}`);
+export async function deleteSlimstatOption(_page: import('@playwright/test').Page, key: string): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  if (!rows.length) return; // nothing to delete from
+  const unserialized = phpUnserialize(rows[0].option_value);
+  if (typeof unserialized !== 'object' || unserialized === null) {
+    throw new Error(`Failed to unserialize slimstat_options: got ${typeof unserialized}`);
   }
+  const opts = unserialized as Record<string, any>;
+  delete opts[key];
+  const serialized = phpSerialize(opts);
+  await pool.execute(
+    "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
+    [serialized]
+  );
+}
+
+/**
+ * Set multiple slimstat options in a single DB roundtrip.
+ * Reads the serialized options once, updates all keys, writes back once.
+ */
+export async function setSlimstatOptions(
+  _page: import('@playwright/test').Page,
+  opts: Record<string, string>,
+): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  let current: Record<string, any> = {};
+  if (rows.length) {
+    const unserialized = phpUnserialize(rows[0].option_value);
+    if (typeof unserialized === 'object' && unserialized !== null) {
+      current = unserialized as Record<string, any>;
+    }
+  }
+  Object.assign(current, opts);
+  const serialized = phpSerialize(current);
+  await pool.execute(
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_options', ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+    [serialized]
+  );
 }
 
 // ─── Full settings snapshot/restore ──────────────────────────────
