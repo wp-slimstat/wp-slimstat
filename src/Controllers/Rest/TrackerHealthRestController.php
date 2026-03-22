@@ -1,4 +1,20 @@
 <?php
+/**
+ * Tracker Health REST Controller
+ *
+ * Provides a diagnostic REST endpoint for admin users to inspect the current
+ * tracker configuration, exclusion settings, and last recorded error.
+ *
+ * @package   SlimStat\Controllers\Rest
+ * @author    Jason Jebbink
+ * @license   GPL-2.0-or-later
+ * @link      https://wp-slimstat.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ */
 
 declare(strict_types=1);
 
@@ -10,8 +26,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+/**
+ * REST controller for the /slimstat/v1/tracker-health endpoint.
+ *
+ * Returns tracker configuration and the last recorded error so that
+ * site admins (or support) can diagnose tracking failures remotely.
+ */
 class TrackerHealthRestController implements RestControllerInterface
 {
+    /**
+     * Register the tracker-health REST route.
+     *
+     * @return void
+     */
     public function register_routes(): void
     {
         register_rest_route('slimstat/v1', '/tracker-health', [
@@ -23,6 +50,15 @@ class TrackerHealthRestController implements RestControllerInterface
         ]);
     }
 
+    /**
+     * Handle a tracker-health request.
+     *
+     * Collects current tracker settings, exclusion rules, the last recorded
+     * tracker error, and GeoIP status into a single diagnostic payload.
+     *
+     * @param \WP_REST_Request $request The incoming REST request.
+     * @return \WP_REST_Response JSON response with diagnostic data.
+     */
     public function handle(\WP_REST_Request $request): \WP_REST_Response
     {
         $settings = \wp_slimstat::$settings;
@@ -43,11 +79,21 @@ class TrackerHealthRestController implements RestControllerInterface
         $lastError     = get_option('slimstat_tracker_error', []);
         $errorCode     = !empty($lastError[0]) ? (int) $lastError[0] : null;
 
-        // Ensure i18n strings are loaded (REST requests may not trigger admin init)
-        if ($errorCode !== null && method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
-            \wp_slimstat_i18n::init_dynamic_strings();
+        // Resolve a human-readable label for the error code via i18n (if available).
+        // The i18n class lives in languages/index.php and may not be loaded during
+        // REST requests, so we guard with class_exists.
+        $errorLabel = '';
+        if ($errorCode !== null && class_exists('\wp_slimstat_i18n')) {
+            if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
+                \wp_slimstat_i18n::init_dynamic_strings();
+            }
+            $lookupKey = 'e-' . $errorCode;
+            $rawLabel  = \wp_slimstat_i18n::get_string($lookupKey);
+            // If get_string returns the lookup key itself, no translation exists
+            if ($rawLabel !== $lookupKey && $rawLabel !== '') {
+                $errorLabel = $rawLabel;
+            }
         }
-        $errorLabel    = $errorCode !== null ? \wp_slimstat_i18n::get_string('e-' . $errorCode) : '';
         $errorTime     = !empty($lastError[1]) ? (int) $lastError[1] : null;
         $errorDetail   = get_option('slimstat_tracker_error_detail', null);
         $geoipError    = get_option('slimstat_geoip_error', null);

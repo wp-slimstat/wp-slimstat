@@ -339,11 +339,14 @@ var SlimStat = (function () {
             if (!debugEnabled) return;
             try {
                 window.__slimstatDebug = window.__slimstatDebug || {};
-                window.__slimstatDebug.lastPageview = {
-                    selectedTransport: selected,
-                    attempts: debugAttempts,
-                    finalOutcome: outcome
-                };
+                // Only write lastPageview for initial pageview tracking (not events/interactions)
+                if (requiresIdResponse) {
+                    window.__slimstatDebug.lastPageview = {
+                        selectedTransport: selected,
+                        attempts: debugAttempts,
+                        finalOutcome: outcome
+                    };
+                }
             } catch (e) { /* ignore */ }
         }
 

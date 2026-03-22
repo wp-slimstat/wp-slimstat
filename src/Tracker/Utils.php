@@ -51,7 +51,11 @@ class Utils
 			return;
 		}
 
-		$code = is_numeric($result) ? (int) $result : 0;
+		// $result may be a checksummed string like "123.<hmac>" — extract numeric prefix
+		$numericResult = is_string($result) && strpos($result, '.') !== false
+			? strstr($result, '.', true)
+			: $result;
+		$code = is_numeric($numericResult) ? (int) $numericResult : 0;
 		header('X-SlimStat-Transport: ' . sanitize_text_field($transport));
 		header('X-SlimStat-Outcome: ' . ($code > 0 ? 'success' : 'error'));
 
