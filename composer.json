@@ -71,6 +71,7 @@
     "test:v5460-migration": "php tests/v5460-settings-migration-test.php",
     "test:early-translation": "php tests/early-translation-test.php",
     "test:tracker-health-auth": "php tests/tracker-health-auth-test.php",
+    "test:browscap-isolation": "php tests/browscap-settings-isolation-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -89,7 +90,8 @@
       "@test:js-banner-gdpr",
       "@test:v5460-migration",
       "@test:early-translation",
-      "@test:tracker-health-auth"
+      "@test:tracker-health-auth",
+      "@test:browscap-isolation"
     ]
   }
 }
