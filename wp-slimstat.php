@@ -234,6 +234,38 @@ class wp_slimstat
 
         self::$settings = array_merge(self::init_options(), self::$settings);
 
+        // One-shot migration: runs once on first boot after installing this build.
+        // '_migration_5460' is absent from all pre-5.4.6 installs; array_merge fills it
+        // with '0' from init_options(), triggering this block exactly once. After running,
+        // the flag is saved as '1' in DB and the block is permanently skipped.
+        if ('0' === (self::$settings['_migration_5460'] ?? '0')) {
+            // use_slimstat_banner='on' silently blocked all anonymous visitor tracking in v5.4.1+.
+            // Track whether it was set — used as the reliable v5.4.1 default fingerprint below.
+            $_ss_banner_was_on = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+            if ($_ss_banner_was_on) {
+                self::$settings['use_slimstat_banner'] = 'off';
+            }
+            // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
+            // every cached-page visitor to silently update the first visitor's DB record.
+            // ONLY reset when banner was also 'on' (v5.4.1 paired-default fingerprint) so that
+            // 5.3.x users who deliberately chose Server mode are not touched.
+            if ($_ss_banner_was_on && 'off' === (self::$settings['javascript_mode'] ?? 'on')) {
+                self::$settings['javascript_mode'] = 'on';
+            }
+            // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
+            // Restore 5.3.x behavior: full IPs stored, no daily visitor hash.
+            if ('on' === (self::$settings['anonymize_ip'] ?? 'off')) {
+                self::$settings['anonymize_ip'] = 'off';
+            }
+            if ('on' === (self::$settings['hash_ip'] ?? 'off')) {
+                self::$settings['hash_ip'] = 'off';
+            }
+            unset($_ss_banner_was_on);
+            // Mark done so this block never runs again after this request.
+            self::$settings['_migration_5460'] = '1';
+            self::update_option('slimstat_options', self::$settings);
+        }
+
         // Allow third party tools to edit the options
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
@@ -925,6 +957,7 @@ class wp_slimstat
     {
         return [
             'version'                => SLIMSTAT_ANALYTICS_VERSION,
+            '_migration_5460'        => '0',  // one-shot: reset broken v5.4.1 defaults on first boot after this build
             'secret'                 => wp_hash(wp_generate_password(64, true, true)),
             'browscap_last_modified' => 0,
 
@@ -953,8 +986,8 @@ class wp_slimstat
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
             'gdpr_enabled'             => 'on',   // Changed: Enable GDPR by default for safety
-            'anonymize_ip'             => 'on',   // Changed: Anonymize IPs by default
-            'hash_ip'                  => 'on',   // Changed: Hash IPs by default
+            'anonymize_ip'             => 'off',  // Restored: full IPs stored by default (5.3.x behavior)
+            'hash_ip'                  => 'off',  // Restored: no daily visitor hash by default (5.3.x behavior)
 			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
 			'use_slimstat_banner'      => 'off',  // Admin must explicitly enable; auto-enabling is a breaking change for upgrades from 5.3.x
 			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
