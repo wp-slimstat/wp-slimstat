@@ -90,19 +90,32 @@ jsbanner_assert_same(
 // Server mode requires PHP to execute per request. When page-caching plugins
 // (WP Rocket, W3TC, etc.) serve cached HTML, PHP never runs, slimtrack() never
 // fires, and enqueue_tracker() silently returns false without loading the JS tracker.
-// Client mode works regardless of caching.
+// Worse: the first visitor's signed ID is baked into the cached HTML; subsequent
+// visitors silently update the first visitor's DB record instead of creating
+// their own pageview (silent data corruption, not just zero tracking).
+// Client mode works correctly regardless of caching.
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Load only the get_fresh_defaults() return value by requiring the plugin file
-// with a stub environment — instead, we test the expression directly.
-// The default is 'on' as set in wp-slimstat.php:937.
-$expected_default = 'on';  // mirrors the fixed line
-$actual_default   = 'on';  // the value now in get_fresh_defaults()
+// Parse the actual value from wp-slimstat.php so this test catches a regression
+// if the default is accidentally reverted to 'off'.
+$plugin_source = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
+if ($plugin_source === false) {
+    fwrite(STDERR, "FAIL: TEST 5: could not read wp-slimstat.php\n");
+    exit(1);
+}
+
+preg_match("/'javascript_mode'\s*=>\s*'(on|off)'/", $plugin_source, $js_mode_matches);
 
 jsbanner_assert_same(
-    $expected_default,
-    $actual_default,
-    'TEST 5: fresh-install javascript_mode default must be on (Client mode)'
+    1,
+    count($js_mode_matches) >= 2 ? 1 : 0,
+    'TEST 5a: javascript_mode default definition must exist in wp-slimstat.php'
+);
+
+jsbanner_assert_same(
+    'on',
+    $js_mode_matches[1] ?? '',
+    'TEST 5b: fresh-install javascript_mode default must be "on" (Client mode) — Server mode breaks all page-caching sites'
 );
 
 echo "All {$assertions} assertions passed in js-params-banner-gdpr-consistency-test.php\n";
