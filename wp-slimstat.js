@@ -662,10 +662,15 @@ var SlimStat = (function () {
                         if (response.isNegative) {
                             sawExplicitReject = true;
                             explicitRejectCode = response.parsed;
+                            // -101 (stale ID checksum) is recoverable — try stale-id recovery
                             if (response.parsed === -101 && handleStaleIdRecovery(xhrOpts._transport || "", url, onFail, xhrOpts)) {
                                 return;
                             }
-                            if (onFail) onFail();
+                            // All other negative codes are definitive server-side rejections
+                            // (e.g. -304 IP excluded, -313 bot detected). Do NOT fallback to
+                            // other transports — they'll reject identically and waste requests.
+                            debugFinalize("rejected");
+                            callback({ success: false, rejected: true, errorCode: explicitRejectCode });
                             return;
                         }
 
