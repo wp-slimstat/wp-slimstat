@@ -934,7 +934,7 @@ class wp_slimstat
             // General - Tracker
             'is_tracking'       => 'on',
             'track_admin_pages' => 'no',
-            'javascript_mode'   => 'off',  // Changed: Enable server-side tracking by default
+            'javascript_mode'   => 'on',   // Client mode: works with all caching plugins (WP Rocket, W3TC, etc.)
 
             // General - WordPress Integration
             'add_dashboard_widgets'  => 'on',
@@ -1188,7 +1188,11 @@ class wp_slimstat
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
         $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
         $params['set_tracker_cookie'] = self::$settings['set_tracker_cookie'] ?? 'on';
-		$params['use_slimstat_banner'] = self::$settings['use_slimstat_banner'] ?? 'off';
+		// Mirror the same dual-condition guard used by the PHP banner output (lines 305-306):
+		// banner HTML is only rendered when BOTH gdpr_enabled=on AND use_slimstat_banner=on.
+		// If gdpr_enabled is off, the banner DOM never exists — JS must not enter banner-init mode
+		// or it will set a "ran" lock and silently skip _send_pageview for all visitors.
+		$params['use_slimstat_banner'] = ('on' === $params['gdpr_enabled'] && 'on' === (self::$settings['use_slimstat_banner'] ?? 'off')) ? 'on' : 'off';
 
 		if ('on' === $params['use_slimstat_banner']) {
 			// Set GDPR consent endpoint based on tracking method

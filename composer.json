@@ -67,6 +67,7 @@
     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
     "test:user-exclusion": "php tests/user-exclusion-processor-test.php",
     "test:ajax-resource-fix": "php tests/ajax-resource-fix-test.php",
+    "test:js-banner-gdpr": "php tests/js-params-banner-gdpr-consistency-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -81,7 +82,8 @@
       "@test:fingerprint-sanitize",
       "@test:gdpr-consent",
       "@test:user-exclusion",
-      "@test:ajax-resource-fix"
+      "@test:ajax-resource-fix",
+      "@test:js-banner-gdpr"
     ]
   }
 }
