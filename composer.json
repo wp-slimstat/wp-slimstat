@@ -70,6 +70,7 @@
     "test:js-banner-gdpr": "php tests/js-params-banner-gdpr-consistency-test.php",
     "test:v5460-migration": "php tests/v5460-settings-migration-test.php",
     "test:early-translation": "php tests/early-translation-test.php",
+    "test:tracker-health-auth": "php tests/tracker-health-auth-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -87,7 +88,8 @@
       "@test:ajax-resource-fix",
       "@test:js-banner-gdpr",
       "@test:v5460-migration",
-      "@test:early-translation"
+      "@test:early-translation",
+      "@test:tracker-health-auth"
     ]
   }
 }

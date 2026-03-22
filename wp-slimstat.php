@@ -254,13 +254,20 @@ class wp_slimstat
             }
             // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
             // Restore 5.3.x behavior: full IPs stored, no daily visitor hash.
-            if ('on' === (self::$settings['anonymize_ip'] ?? 'off')) {
+            $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
+            $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
+            if ($_ss_ip_was_anonymized) {
                 self::$settings['anonymize_ip'] = 'off';
             }
-            if ('on' === (self::$settings['hash_ip'] ?? 'off')) {
+            if ($_ss_ip_was_hashed) {
                 self::$settings['hash_ip'] = 'off';
             }
-            unset($_ss_banner_was_on);
+            // Queue a one-time admin notice when IP storage behavior changed so admins
+            // know to review Settings → Data Protection (EU sites may need to re-enable).
+            if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
+                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
+            }
+            unset($_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
             // Mark done so this block never runs again after this request.
             self::$settings['_migration_5460'] = '1';
             self::update_option('slimstat_options', self::$settings);
@@ -379,6 +386,9 @@ class wp_slimstat
         // Register privacy policy content
         add_action('admin_init', [self::class, 'registerPrivacyPolicyContent']);
 
+        // One-time notice when the v5.4.6 migration reset IP anonymization settings
+        add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
+
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
         \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
 
@@ -424,6 +434,35 @@ class wp_slimstat
     public static function load_textdomain()
     {
         load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+    }
+
+    /**
+     * Show a one-time admin notice when the v5.4.6 migration reset anonymize_ip
+     * or hash_ip from 'on' to 'off'. EU-facing sites may need to re-enable these.
+     * The transient is deleted after display so the notice appears exactly once.
+     */
+    public static function show_migration_5460_ip_notice(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        if (!get_transient('slimstat_migration_5460_ip_notice')) {
+            return;
+        }
+
+        delete_transient('slimstat_migration_5460_ip_notice');
+
+        $settings_url = admin_url('admin.php?page=slimstat_settings&tab=data_protection');
+        ?>
+        <div class="notice notice-warning">
+            <p>
+                <strong><?php esc_html_e('SlimStat Analytics — IP Privacy Settings Reset', 'wp-slimstat'); ?></strong><br>
+                <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
+                &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
+            </p>
+        </div>
+        <?php
     }
 
     /**
