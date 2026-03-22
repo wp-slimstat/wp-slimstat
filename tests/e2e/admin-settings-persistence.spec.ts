@@ -33,7 +33,11 @@ async function getSlimstatOptionsFromDb(): Promise<Record<string, any>> {
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'",
   )) as any;
   if (rows.length === 0) return {};
-  return phpUnserialize(rows[0].option_value) as Record<string, any>;
+  const unserialized = phpUnserialize(rows[0].option_value);
+  if (typeof unserialized !== 'object' || unserialized === null) {
+    throw new Error(`Failed to unserialize slimstat_options: got ${typeof unserialized}`);
+  }
+  return unserialized as Record<string, any>;
 }
 
 // ─── Test suite ───────────────────────────────────────────────────────

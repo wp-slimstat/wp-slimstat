@@ -341,9 +341,14 @@ export async function setSlimstatOption(_page: import('@playwright/test').Page, 
 
   // If the row is missing (e.g. after simulateFreshInstall()), start with
   // an empty options object and upsert instead of crashing.
-  const opts = rows.length
-    ? (phpUnserialize(rows[0].option_value) as Record<string, any>)
-    : {};
+  let opts: Record<string, any> = {};
+  if (rows.length) {
+    const unserialized = phpUnserialize(rows[0].option_value);
+    if (typeof unserialized !== 'object' || unserialized === null) {
+      throw new Error(`Failed to unserialize slimstat_options: got ${typeof unserialized}`);
+    }
+    opts = unserialized as Record<string, any>;
+  }
   opts[key] = value;
   const serialized = phpSerialize(opts);
 
@@ -367,11 +372,42 @@ export async function deleteSlimstatOption(_page: import('@playwright/test').Pag
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
   ) as any;
   if (!rows.length) return; // nothing to delete from
-  const opts = phpUnserialize(rows[0].option_value) as Record<string, any>;
+  const unserialized = phpUnserialize(rows[0].option_value);
+  if (typeof unserialized !== 'object' || unserialized === null) {
+    throw new Error(`Failed to unserialize slimstat_options: got ${typeof unserialized}`);
+  }
+  const opts = unserialized as Record<string, any>;
   delete opts[key];
   const serialized = phpSerialize(opts);
   await pool.execute(
     "UPDATE wp_options SET option_value = ? WHERE option_name = 'slimstat_options'",
+    [serialized]
+  );
+}
+
+/**
+ * Set multiple slimstat options in a single DB roundtrip.
+ * Reads the serialized options once, updates all keys, writes back once.
+ */
+export async function setSlimstatOptions(
+  _page: import('@playwright/test').Page,
+  opts: Record<string, string>,
+): Promise<void> {
+  const pool = getPool();
+  const [rows] = await pool.execute(
+    "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"
+  ) as any;
+  let current: Record<string, any> = {};
+  if (rows.length) {
+    const unserialized = phpUnserialize(rows[0].option_value);
+    if (typeof unserialized === 'object' && unserialized !== null) {
+      current = unserialized as Record<string, any>;
+    }
+  }
+  Object.assign(current, opts);
+  const serialized = phpSerialize(current);
+  await pool.execute(
+    "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_options', ?, 'yes') ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
     [serialized]
   );
 }
