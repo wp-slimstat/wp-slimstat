@@ -212,6 +212,12 @@ class Utils
 
 	public static function dtrPton($ip)
 	{
+		if (empty($ip)) {
+			return '';
+		}
+
+		$unpacked = false;
+
 		if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
 			$unpacked = unpack('A4', inet_pton($ip));
 		} elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
