@@ -350,18 +350,24 @@ class wp_slimstat
                 $plugin = plugin_basename(SLIMSTAT_FILE);
                 add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
 
-                // Register cookie info with WP Consent API for CMP display
+                // Register cookie info with WP Consent API for CMP display.
+                // Deferred to 'init' (priority 10) so the textdomain is loaded first
+                // (load_textdomain runs on 'init' priority 1). Calling __() here would
+                // trigger a _load_textdomain_just_in_time notice in WordPress 6.7+.
                 if (function_exists('wp_add_cookie_info')) {
-                    wp_add_cookie_info(
-                        'slimstat_tracking_code',
-                        'SlimStat Analytics',
-                        'statistics',
-                        intval(self::$settings['session_duration'] ?? 1800) . ' ' . __('seconds', 'wp-slimstat'),
-                        __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
-                        '',
-                        false,
-                        false
-                    );
+                    $session_duration = intval(self::$settings['session_duration'] ?? 1800);
+                    add_action('init', static function () use ($session_duration) {
+                        wp_add_cookie_info(
+                            'slimstat_tracking_code',
+                            'SlimStat Analytics',
+                            'statistics',
+                            $session_duration . ' ' . __('seconds', 'wp-slimstat'),
+                            __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
+                            '',
+                            false,
+                            false
+                        );
+                    }, 10);
                 }
             }
         }
