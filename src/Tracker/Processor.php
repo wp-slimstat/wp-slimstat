@@ -322,7 +322,11 @@ class Processor
                 // Log the error for diagnostics but continue processing.
                 // This prevents GeoIP issues (missing DB, filesystem errors, etc.)
                 // from silently killing ALL tracking on the site.
-                Utils::logError(205);
+                $geoip_message = Utils::getTrackerCodeLabel(205);
+                if ('' === $geoip_message) {
+                    $geoip_message = __('GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the "Update Database" button to download a fresh copy.', 'wp-slimstat');
+                }
+                Utils::logGeoIpError($geoip_message);
             }
 
             if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {

@@ -246,6 +246,10 @@ test.describe('Tracker Observability — Production Scenario', () => {
     expect(data.last_tracker_error).toHaveProperty('label');
     expect(data.last_tracker_error).toHaveProperty('recorded_at');
     expect(data.last_tracker_error).toHaveProperty('detail');
+    expect(data.last_tracker_warning).toBeDefined();
+    expect(data.last_tracker_warning).toHaveProperty('code');
+    expect(data.last_tracker_warning).toHaveProperty('label');
+    expect(data.last_tracker_warning).toHaveProperty('recorded_at');
   });
 
   // ─────────────────────────────────────────────────────────────────

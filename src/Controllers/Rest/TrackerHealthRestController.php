@@ -78,24 +78,12 @@ class TrackerHealthRestController implements RestControllerInterface
 
         $lastError     = get_option('slimstat_tracker_error', []);
         $errorCode     = !empty($lastError[0]) ? (int) $lastError[0] : null;
-
-        // Resolve a human-readable label for the error code via i18n (if available).
-        // The i18n class lives in languages/index.php and may not be loaded during
-        // REST requests, so we guard with class_exists.
-        $errorLabel = '';
-        if ($errorCode !== null && class_exists('\wp_slimstat_i18n')) {
-            if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
-                \wp_slimstat_i18n::init_dynamic_strings();
-            }
-            $lookupKey = 'e-' . $errorCode;
-            $rawLabel  = \wp_slimstat_i18n::get_string($lookupKey);
-            // If get_string returns the lookup key itself, no translation exists
-            if ($rawLabel !== $lookupKey && $rawLabel !== '') {
-                $errorLabel = $rawLabel;
-            }
-        }
+        $errorLabel    = \SlimStat\Tracker\Utils::getTrackerCodeLabel($errorCode);
         $errorTime     = !empty($lastError[1]) ? (int) $lastError[1] : null;
         $errorDetail   = get_option('slimstat_tracker_error_detail', null);
+        $lastWarning   = get_option('slimstat_tracker_warning', []);
+        $warningCode   = !empty($lastWarning[0]) ? (int) $lastWarning[0] : null;
+        $warningTime   = !empty($lastWarning[1]) ? (int) $lastWarning[1] : null;
         $geoipError    = get_option('slimstat_geoip_error', null);
         $geoipProvider = \wp_slimstat::resolve_geolocation_provider();
 
@@ -112,6 +100,11 @@ class TrackerHealthRestController implements RestControllerInterface
                 'label'       => $errorLabel,
                 'recorded_at' => $errorTime ? gmdate('Y-m-d H:i:s', $errorTime) : null,
                 'detail'      => ($errorCode === 200 && !empty($errorDetail)) ? $errorDetail : null,
+            ],
+            'last_tracker_warning'   => [
+                'code'        => $warningCode,
+                'label'       => \SlimStat\Tracker\Utils::getTrackerCodeLabel($warningCode),
+                'recorded_at' => $warningTime ? gmdate('Y-m-d H:i:s', $warningTime) : null,
             ],
             'last_geoip_error'       => !empty($geoipError) ? $geoipError : null,
         ];

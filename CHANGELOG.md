@@ -1,3 +1,14 @@
+= 5.4.6 - 2026-03-22 =
+
+Fixed
+- Recovered client-side tracking across adblock-bypass, AJAX, pretty REST, and `rest_route` REST transports when a transport fails
+- Recovered from stale signed pageview IDs and stale content metadata without abandoning the pageview
+- Hardened adblock-bypass responses with POST-only handling and no-store cache headers
+- Stopped non-fatal tracker warnings and GeoIP lookup failures from polluting the fatal tracker error channel
+
+Improved
+- Added tracker health warning reporting for non-fatal stale-payload diagnostics
+
 = 5.4.5 - 2026-03-20 =
 
 Fixed

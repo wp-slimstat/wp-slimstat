@@ -32,6 +32,67 @@ class Utils
 	}
 
 	/**
+	 * Store a non-fatal tracker warning without marking the last pageview as failed.
+	 *
+	 * @param int $warningCode Warning code defined in languages/index.php.
+	 * @return void
+	 */
+	public static function logWarning(int $warningCode): void
+	{
+		$stored = \get_option('slimstat_tracker_warning', []);
+		$sameCode = !empty($stored[0]) && (int) $stored[0] === $warningCode;
+		if ($sameCode && !self::isDebugMode()) {
+			do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
+			return;
+		}
+
+		\wp_slimstat::update_option('slimstat_tracker_warning', [$warningCode, \wp_slimstat::date_i18n('U')]);
+		do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
+	}
+
+	/**
+	 * Store a GeoIP-specific warning without polluting tracker failure diagnostics.
+	 *
+	 * @param string $message Human-readable GeoIP error.
+	 * @return void
+	 */
+	public static function logGeoIpError(string $message): void
+	{
+		$stored = \get_option('slimstat_geoip_error', []);
+		$sameMessage = !empty($stored['error']) && $stored['error'] === $message;
+		if ($sameMessage && !self::isDebugMode()) {
+			return;
+		}
+
+		\wp_slimstat::update_option('slimstat_geoip_error', [
+			'time'  => time(),
+			'error' => sanitize_text_field($message),
+		]);
+	}
+
+	/**
+	 * Resolve a tracker code to a human-readable label when translations are loaded.
+	 *
+	 * @param int|null $code Tracker error or warning code.
+	 * @return string
+	 */
+	public static function getTrackerCodeLabel(?int $code): string
+	{
+		if ($code === null || !class_exists('\wp_slimstat_i18n')) {
+			return '';
+		}
+
+		if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
+			\wp_slimstat_i18n::init_dynamic_strings();
+		}
+
+		$lookupKey = 'e-' . $code;
+		$rawLabel = \wp_slimstat_i18n::get_string($lookupKey);
+
+		return ($rawLabel !== $lookupKey && $rawLabel !== '') ? $rawLabel : '';
+	}
+
+	/**
 	 * Check if tracker debug mode is active.
 	 *
 	 * @return bool

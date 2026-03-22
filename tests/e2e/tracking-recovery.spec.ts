@@ -53,6 +53,23 @@ async function getTotalEventCount(): Promise<number> {
   return rows[0]?.cnt ?? 0;
 }
 
+async function clearDiagnosticOptions(): Promise<void> {
+  await getPool().execute(
+    "DELETE FROM wp_options WHERE option_name IN ('slimstat_tracker_error', 'slimstat_tracker_warning', 'slimstat_geoip_error', 'slimstat_tracker_error_detail')"
+  );
+}
+
+async function getTrackerHealth(page: import('@playwright/test').Page): Promise<any> {
+  await page.goto(`${BASE_URL}/wp-admin/`);
+  await page.waitForLoadState('load');
+  const nonce = await page.evaluate(() => (window as any).wpApiSettings?.nonce ?? '');
+  const response = await page.request.get(`${BASE_URL}/wp-json/slimstat/v1/tracker-health`, {
+    headers: { 'X-WP-Nonce': nonce },
+  });
+  expect(response.status()).toBe(200);
+  return response.json();
+}
+
 test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () => {
   test.setTimeout(90_000);
 
@@ -63,6 +80,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
+    await clearDiagnosticOptions();
     await setSlimstatOptions(page, {
       gdpr_enabled: 'off',
       javascript_mode: 'on',
@@ -268,6 +286,11 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     const malformedFull = await getLatestStatRow(markerMalformed);
     expect(checksumFull?.content_type).toBe('external');
     expect(malformedFull?.content_type).toBe('external');
+
+    const health = await getTrackerHealth(page);
+    expect([102, 103]).not.toContain(health.last_tracker_error.code);
+    expect(health.last_tracker_warning.code).toBe(103);
+    expect(typeof health.last_tracker_warning.label).toBe('string');
   });
 
   test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }) => {

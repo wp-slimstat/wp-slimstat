@@ -364,7 +364,7 @@ class Ajax
             if (!empty($data_js['ci'])) {
                 $validated_ci = Utils::getValueWithoutChecksum($data_js['ci']);
                 if (false === $validated_ci) {
-                    Utils::logError(102);
+                    Utils::logWarning(102);
                     $data_js['ci'] = '';
                 } else {
                     $data_js['ci'] = $validated_ci;
@@ -377,7 +377,7 @@ class Ajax
                 // Security: Only accept JSON-encoded content info, reject serialized data.
                 // If the payload is stale or malformed, continue without trusting its metadata.
                 if (empty($content_info) || !is_array($content_info)) {
-                    Utils::logError(103);
+                    Utils::logWarning(103);
                     $stat['content_type'] = 'external';
                 } else {
                     foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
