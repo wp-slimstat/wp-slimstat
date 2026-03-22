@@ -171,8 +171,8 @@ test.describe('Tracker Observability — Production Scenario', () => {
     expect(debugData.selectedTransport).toBe('adblock_bypass');
     expect(debugData.attempts).toBeInstanceOf(Array);
     expect(debugData.attempts.length).toBeGreaterThan(0);
-    // All transports should fail since IP is excluded
-    expect(debugData.finalOutcome).toBe('failed');
+    // All transports reject since IP is excluded
+    expect(debugData.finalOutcome).toBe('rejected');
 
     // First attempt should be adblock_bypass
     expect(debugData.attempts[0].transport).toBe('adblock_bypass');
@@ -320,7 +320,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     // Step 4: Verify JS debug captured the failure chain
     const debugData = await anonPage.evaluate(() => (window as any).__slimstatDebug?.lastPageview);
     expect(debugData).toBeDefined();
-    expect(debugData.finalOutcome).toBe('failed');
+    expect(debugData.finalOutcome).toBe('rejected');
     expect(debugData.attempts.length).toBeGreaterThanOrEqual(1);
 
     // Step 5: Verify at least one response has debug headers

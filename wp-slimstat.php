@@ -1112,12 +1112,14 @@ class wp_slimstat
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
 		$rest_base_url     = rest_url();
+        $rest_query_url    = add_query_arg('rest_route', '/slimstat/v1/hit', home_url('/'));
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
 
         $params = [
             'transport'       => $method,
             'ajaxurl_rest'    => $rest_url,
+            'ajaxurl_rest_query' => $rest_query_url,
 			'resturl'         => $rest_base_url,
             'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
         ];

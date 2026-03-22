@@ -362,23 +362,30 @@ class Ajax
 
             $stat = Utils::getClientInfo($data_js, $stat);
             if (!empty($data_js['ci'])) {
-                $data_js['ci'] = Utils::getValueWithoutChecksum($data_js['ci']);
-                if (false === $data_js['ci']) {
-                    return Utils::logError(102);
+                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci']);
+                if (false === $validated_ci) {
+                    Utils::logError(102);
+                    $data_js['ci'] = '';
+                } else {
+                    $data_js['ci'] = $validated_ci;
                 }
+            }
 
+            if (!empty($data_js['ci'])) {
                 $decoded_ci = Utils::base64UrlDecode($data_js['ci']);
                 $content_info = json_decode($decoded_ci, true);
-                // Security: Only accept JSON-encoded content info, reject serialized data
+                // Security: Only accept JSON-encoded content info, reject serialized data.
+                // If the payload is stale or malformed, continue without trusting its metadata.
                 if (empty($content_info) || !is_array($content_info)) {
-                    return Utils::logError(103);
-                }
-
-                foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
-                    if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
-                        $stat[$a_key] = sanitize_text_field($content_info[$a_key]);
-                    } elseif (!empty($content_info[$a_key])) {
-                        $stat[$a_key] = absint($content_info[$a_key]);
+                    Utils::logError(103);
+                    $stat['content_type'] = 'external';
+                } else {
+                    foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
+                        if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
+                            $stat[$a_key] = sanitize_text_field($content_info[$a_key]);
+                        } elseif (!empty($content_info[$a_key])) {
+                            $stat[$a_key] = absint($content_info[$a_key]);
+                        }
                     }
                 }
             } else {

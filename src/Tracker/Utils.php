@@ -22,6 +22,10 @@ class Utils
 			}
 		}
 
+		if (200 !== (int) $errorCode) {
+			\wp_slimstat::update_option('slimstat_tracker_error_detail', '');
+		}
+
 		\wp_slimstat::update_option('slimstat_tracker_error', [$errorCode, \wp_slimstat::date_i18n('U')]);
 		do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
 		return -$errorCode;

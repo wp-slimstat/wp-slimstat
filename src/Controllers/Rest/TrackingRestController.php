@@ -16,6 +16,20 @@ if (! defined('ABSPATH')) {
 class TrackingRestController implements RestControllerInterface
 {
     /**
+     * Emit a plain-text tracking response so REST matches the other transports.
+     *
+     * @param string|int $result Tracking result or fallback body.
+     * @param int        $status HTTP status code.
+     */
+    private static function output_tracking_response($result, int $status = 200): void
+    {
+        status_header($status);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo (string) $result;
+        exit;
+    }
+
+    /**
      * Sanitize signed integer REST params without relying on internal PHP functions.
      *
      * WordPress REST passes sanitize callbacks three arguments. Internal functions like
@@ -211,23 +225,14 @@ class TrackingRestController implements RestControllerInterface
 
         \SlimStat\Tracker\Utils::sendTrackingHeaders('rest', $result);
 
-        // Success: pure numeric ID (rare — most paths return checksum format)
-        if (is_numeric($result) && 0 < (int) $result) {
-            return rest_ensure_response((string) $result);
+        if (is_numeric($result)) {
+            self::output_tracking_response((string) $result);
         }
 
-        // Success: checksum-formatted string "<id>.<hash>" from Utils::getValueWithChecksum()
-        // Return the full checksum string so the JS tracker can send it back for
-        // subsequent requests (consent upgrade, events) where getValueWithoutChecksum() validates it.
         if (is_string($result) && preg_match('/^(\d+)\.[0-9a-fA-F]+$/', $result, $matches) && 0 < (int) $matches[1]) {
-            return rest_ensure_response($result);
+            self::output_tracking_response($result);
         }
 
-        // If no valid tracking ID detected, return a non-200 status to trigger fallback tracking methods
-        return new \WP_Error(
-            'slimstat_tracking_failed',
-            esc_html__('[REST API] Tracking failed, falling back to alternative methods.', 'wp-slimstat'),
-            ['status' => 400]
-        );
+        self::output_tracking_response('0');
     }
 }

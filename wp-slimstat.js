@@ -44,7 +44,7 @@ var SlimStat = (function () {
         while (pendingInteractions.length) {
             var raw = pendingInteractions.shift();
             var payload = "action=slimtrack&id=" + params.id + raw;
-            sendToServer(payload, true, { priority: "normal" });
+            sendToServer(payload, true, { priority: "normal", interactionRaw: raw });
         }
     }
 
@@ -232,6 +232,177 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Transport -------------------------- //
+    var TRANSPORT_MEMORY_KEY = "slimstat_transport_memory";
+    var STALE_ID_GUARD_KEY = "slimstat_stale_id_guard";
+    var TRANSPORT_MEMORY_TTL = 30 * 60 * 1000;
+    var STALE_ID_GUARD_TTL = 30 * 1000;
+
+    function loadSessionState(key, fallback) {
+        try {
+            var raw = sessionStorage.getItem(key);
+            if (!raw) return fallback;
+            var parsed = JSON.parse(raw);
+            return parsed && typeof parsed === "object" ? parsed : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function saveSessionState(key, value) {
+        try {
+            sessionStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function clearSessionState(key) {
+        try {
+            sessionStorage.removeItem(key);
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function pruneTransportMemory(state) {
+        var now = Date.now();
+        var nextState = state && typeof state === "object" ? state : { lastSuccess: null, failures: {} };
+        if (!nextState.failures || typeof nextState.failures !== "object") {
+            nextState.failures = {};
+        }
+        Object.keys(nextState.failures).forEach(function (key) {
+            if (now - nextState.failures[key] > TRANSPORT_MEMORY_TTL) {
+                delete nextState.failures[key];
+            }
+        });
+        if (nextState.lastSuccess && now - nextState.lastSuccess.ts > TRANSPORT_MEMORY_TTL) {
+            nextState.lastSuccess = null;
+        }
+        return nextState;
+    }
+
+    function loadTransportMemory() {
+        return pruneTransportMemory(loadSessionState(TRANSPORT_MEMORY_KEY, { lastSuccess: null, failures: {} }));
+    }
+
+    function saveTransportMemory(state) {
+        saveSessionState(TRANSPORT_MEMORY_KEY, pruneTransportMemory(state));
+    }
+
+    function rememberTransportSuccess(configuredTransport, transport) {
+        var state = loadTransportMemory();
+        state.lastSuccess = { configuredTransport: configuredTransport, transport: transport, ts: Date.now() };
+        delete state.failures[configuredTransport + ":" + transport];
+        saveTransportMemory(state);
+    }
+
+    function rememberTransportFailure(configuredTransport, transport) {
+        var state = loadTransportMemory();
+        state.failures[configuredTransport + ":" + transport] = Date.now();
+        saveTransportMemory(state);
+    }
+
+    function getPreferredTransport(configuredTransport) {
+        var state = loadTransportMemory();
+        var success = state.lastSuccess;
+        if (!success || success.configuredTransport !== configuredTransport) return configuredTransport;
+        var selectedFailureTs = state.failures[configuredTransport + ":" + configuredTransport];
+        if (!selectedFailureTs || Date.now() - selectedFailureTs > TRANSPORT_MEMORY_TTL) {
+            return configuredTransport;
+        }
+        return success.transport || configuredTransport;
+    }
+
+    function moveTransportToFront(order, preferred) {
+        if (!preferred) return order;
+        var seenPreferred = false;
+        var front = [];
+        var rest = [];
+        order.forEach(function (transport) {
+            if (transport === preferred && !seenPreferred) {
+                front.push(transport);
+                seenPreferred = true;
+            } else {
+                rest.push(transport);
+            }
+        });
+        return front.concat(rest);
+    }
+
+    function buildTransportOrder(selected, endpoints, requiresIdResponse) {
+        var maps = {
+            adblock_bypass: ["adblock_bypass", "ajax", "rest_pretty", "rest_query"],
+            rest: ["rest_pretty", "rest_query", "ajax", "adblock_bypass"],
+            ajax: ["ajax", "rest_pretty", "rest_query", "adblock_bypass"],
+        };
+        var base = maps[selected] ? maps[selected].slice() : ["rest_pretty", "rest_query", "ajax", "adblock_bypass"];
+        if (requiresIdResponse) {
+            base = moveTransportToFront(base, getPreferredTransport(selected));
+        }
+        return base.filter(function (transport, index) {
+            return !!endpoints[transport] && base.indexOf(transport) === index;
+        });
+    }
+
+    function hasIdParam(payload) {
+        return /(?:^|&)id=/.test(payload);
+    }
+
+    function isFinalizePayload(payload) {
+        return /(?:^|&)fv=/.test(payload);
+    }
+
+    function isInteractionPayload(payload) {
+        return /(?:^|&)pos=/.test(payload) || /(?:^|&)no=/.test(payload);
+    }
+
+    function extractInteractionRaw(payload) {
+        var idx = payload.indexOf("&res=");
+        return idx === -1 ? "" : payload.slice(idx);
+    }
+
+    function clearCurrentPageviewId() {
+        var current = currentSlimStatParams();
+        delete current.id;
+        try {
+            window.slimstatPageviewTracked = false;
+        } catch (e) {
+            /* ignore */
+        }
+    }
+
+    function rebuildPageviewPayloadWithoutId(payload) {
+        var rebuilt = payload.replace(/^action=slimtrack&id=[^&]*/, buildPageviewBase(currentSlimStatParams()));
+        return rebuilt.replace(/&pageview_id=[^&]*/g, "");
+    }
+
+    function hasActiveStaleIdGuard() {
+        var guard = loadSessionState(STALE_ID_GUARD_KEY, null);
+        if (!guard || !guard.ts) return false;
+        var currentPath = window.location.pathname + window.location.search;
+        return guard.path === currentPath && Date.now() - guard.ts < STALE_ID_GUARD_TTL;
+    }
+
+    function setStaleIdGuard() {
+        saveSessionState(STALE_ID_GUARD_KEY, {
+            path: window.location.pathname + window.location.search,
+            ts: Date.now(),
+        });
+    }
+
+    function clearStaleIdGuard() {
+        clearSessionState(STALE_ID_GUARD_KEY);
+    }
+
+    function shouldValidateIdWithXHR(useBeacon, payload) {
+        if (!useBeacon || !hasIdParam(payload)) return false;
+        try {
+            return window.slimstatPageviewTracked !== true;
+        } catch (e) {
+            return true;
+        }
+    }
+
     function sendToServer(payload, useBeacon, opts) {
         if (isEmpty(payload)) return false;
         opts = opts || {};
@@ -279,9 +450,12 @@ var SlimStat = (function () {
 
         queueInFlight = true;
 
-        var done = function (success) {
+        var done = function (result) {
+            var success = result === true || (result && result.success === true);
+            var handled = !!(result && result.handled);
+            var rejected = !!(result && result.rejected);
             try {
-                if (!success && item) {
+                if (!success && !handled && !rejected && item) {
                     item.attempts = (item.attempts || 0) + 1;
                     if (item.attempts < MAX_QUEUE_ATTEMPTS) {
                         // Re-queue with a delay and exponential backoff
@@ -315,16 +489,18 @@ var SlimStat = (function () {
     function processQueueItem(item, callback) {
         var params = currentSlimStatParams();
         var payload = item.payload;
-        var useBeacon = item.useBeacon;
+        var useBeacon = shouldValidateIdWithXHR(item.useBeacon, payload) ? false : item.useBeacon;
         var requiresIdResponse = isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0;
-        var transports = ["rest", "ajax", "adblock_bypass"];
-        var endpoints = { rest: params.ajaxurl_rest, ajax: params.ajaxurl_ajax, adblock_bypass: params.ajaxurl_adblock };
+        var endpoints = {
+            rest_pretty: params.ajaxurl_rest,
+            rest_query: params.ajaxurl_rest_query,
+            ajax: params.ajaxurl_ajax,
+            adblock_bypass: params.ajaxurl_adblock,
+        };
         var selected = params.transport;
-        var order = [selected].concat(
-            transports.filter(function (t) {
-                return t !== selected;
-            })
-        );
+        var order = buildTransportOrder(selected, endpoints, requiresIdResponse);
+        var explicitRejectCode = null;
+        var sawExplicitReject = false;
 
         // Debug recording: track transport attempts when slimstat_debug is on
         var debugEnabled = params.slimstat_debug === "on";
@@ -342,12 +518,83 @@ var SlimStat = (function () {
                 // Only write lastPageview for initial pageview tracking (not events/interactions)
                 if (requiresIdResponse) {
                     window.__slimstatDebug.lastPageview = {
-                        selectedTransport: selected,
+                        selectedTransport: order[0] || selected,
                         attempts: debugAttempts,
                         finalOutcome: outcome
                     };
                 }
             } catch (e) { /* ignore */ }
+        }
+
+        function handleTransportFailure(transport) {
+            if (requiresIdResponse) {
+                rememberTransportFailure(selected, transport);
+            }
+        }
+
+        function handleTransportSuccess(transport) {
+            if (requiresIdResponse) {
+                rememberTransportSuccess(selected, transport);
+            }
+            clearStaleIdGuard();
+        }
+
+        function handleStaleIdRecovery(transport, url, onFail, xhrOpts) {
+            if (item.staleIdRecoveryTried || !hasIdParam(payload) || isFinalizePayload(payload) || hasActiveStaleIdGuard()) {
+                return false;
+            }
+
+            item.staleIdRecoveryTried = true;
+            setStaleIdGuard();
+            clearCurrentPageviewId();
+
+            if (isInteractionPayload(payload)) {
+                var raw = (item.opts && item.opts.interactionRaw) || extractInteractionRaw(payload);
+                if (raw) {
+                    bufferInteraction(raw);
+                }
+                debugRecord(transport, url, 200, "stale_id_recovery", null, -101);
+                setTimeout(function () {
+                    SlimStat._send_pageview({ isIdRecovery: true });
+                }, 0);
+                callback({ success: false, handled: true });
+                return true;
+            }
+
+            requiresIdResponse = true;
+            payload = rebuildPageviewPayloadWithoutId(payload);
+            item.payload = payload;
+            debugRecord(transport, url, 200, "stale_id_retry", null, -101);
+            sendXHR(url, onFail, xhrOpts);
+            return true;
+        }
+
+        function classifyResponseBody(rawBody) {
+            var responseBody = (rawBody || "").replace(/^"|"$/g, "").trim();
+            var isChecksum = /^\d+\.[0-9a-fA-F]+$/.test(responseBody);
+            var isPositiveNumeric = /^\d+$/.test(responseBody) && parseInt(responseBody, 10) > 0;
+            var isNegativeNumeric = /^-\d+$/.test(responseBody);
+            var parsed = isChecksum || isPositiveNumeric || isNegativeNumeric ? parseInt(responseBody, 10) : NaN;
+            var bodyKind = "non_numeric";
+
+            if (responseBody === "") {
+                bodyKind = "empty";
+            } else if (/^<!doctype html/i.test(responseBody) || /^<html/i.test(responseBody) || responseBody.charAt(0) === "<") {
+                bodyKind = "html";
+            } else if (isChecksum || isPositiveNumeric) {
+                bodyKind = "numeric";
+            } else if (isNegativeNumeric || responseBody === "0") {
+                bodyKind = "zero_or_negative";
+            }
+
+            return {
+                responseBody: responseBody,
+                parsed: parsed,
+                bodyKind: bodyKind,
+                isPositive: !isNaN(parsed) && parsed > 0 && (isChecksum || isPositiveNumeric),
+                isNegative: !isNaN(parsed) && parsed < 0 && isNegativeNumeric,
+                isTransportFailure: responseBody === "" || responseBody === "0" || bodyKind === "html" || bodyKind === "non_numeric",
+            };
         }
 
         function sendXHR(url, onFail, xhrOpts) {
@@ -377,47 +624,62 @@ var SlimStat = (function () {
                     // Processor::isUserExcluded() for logged-in users.
                     if (xhr.status === 403 && xhrOpts.useNonce) {
                         debugRecord(xhrOpts._transport || "", url, 403, "forbidden", null, null);
+                        handleTransportFailure(xhrOpts._transport || "");
                         if (onFail) onFail();
                         return;
                     }
                     if (xhr.status === 200) {
-                        // REST API returns JSON-encoded strings (e.g. "5.abc...")
-                        // Strip wrapping quotes before parsing the numeric ID
-                        var responseId = xhr.responseText.replace(/^"|"$/g, '').trim();
-                        var parsed = parseInt(responseId, 10);
-                        if (!isNaN(parsed) && parsed > 0) {
+                        var response = classifyResponseBody(xhr.responseText);
+                        if (response.isPositive) {
                             // Write to current global params (not local ref which may be stale
                             // if extractSlimStatParams replaced window.SlimStatParams)
-                            currentSlimStatParams().id = responseId;
-                            params.id = responseId; // keep local ref in sync too
+                            currentSlimStatParams().id = response.responseBody;
+                            params.id = response.responseBody; // keep local ref in sync too
                             // Mark that we've successfully tracked the initial pageview for this load
                             try {
                                 window.slimstatPageviewTracked = true;
                             } catch (trackErr) {
                                 /* ignore */
                             }
+                            handleTransportSuccess(xhrOpts._transport || "");
                             flushPendingInteractions(); // Flush buffered interactions now that we have an ID
-                            debugRecord(xhrOpts._transport || "", url, 200, "numeric", parsed, null);
+                            debugRecord(xhrOpts._transport || "", url, 200, response.bodyKind, response.parsed, null);
                             debugFinalize("success");
+                            clearStaleIdGuard();
+                            callback(true);
+                            return;
                         }
 
-                        // Initial pageview creation must return a valid pageview ID.
-                        // Treat empty/non-numeric responses as failures so fallback/retry can run.
-                        if (requiresIdResponse && (isNaN(parsed) || parsed <= 0)) {
-                            var bodyKind = responseId === "" ? "empty" : (parsed <= 0 ? "zero_or_negative" : "non_numeric");
-                            debugRecord(xhrOpts._transport || "", url, 200, bodyKind, parsed, parsed < 0 ? parsed : null);
+                        debugRecord(
+                            xhrOpts._transport || "",
+                            url,
+                            200,
+                            response.bodyKind,
+                            isNaN(response.parsed) ? null : response.parsed,
+                            response.isNegative ? response.parsed : null
+                        );
+
+                        if (response.isNegative) {
+                            sawExplicitReject = true;
+                            explicitRejectCode = response.parsed;
+                            if (response.parsed === -101 && handleStaleIdRecovery(xhrOpts._transport || "", url, onFail, xhrOpts)) {
+                                return;
+                            }
                             if (onFail) onFail();
                             return;
                         }
 
-                        // Non-pageview path (events/interactions) — record for debug
-                        if (isNaN(parsed) || parsed <= 0) {
-                            debugRecord(xhrOpts._transport || "", url, 200, "event_ok", null, null);
+                        if (response.isTransportFailure) {
+                            handleTransportFailure(xhrOpts._transport || "");
+                            if (onFail) onFail();
+                            return;
                         }
+
                         callback(true);
                     } else {
                         // Non-200 status is a failure, trigger retry/failover
-                        debugRecord(xhrOpts._transport || "", url, xhr.status, "http_error", null, null);
+                        debugRecord(xhrOpts._transport || "", url, xhr.status, xhr.status === 0 ? "network_error" : "http_error", null, null);
+                        handleTransportFailure(xhrOpts._transport || "");
                         if (onFail) onFail();
                     }
                 }
@@ -427,15 +689,20 @@ var SlimStat = (function () {
             } catch (e) {
                 // This catches network errors before send, also a failure
                 debugRecord(xhrOpts._transport || "", url, 0, "network_error", null, null);
+                handleTransportFailure(xhrOpts._transport || "");
                 if (onFail) onFail();
             }
             return true;
         }
         function trySend(i) {
             if (i >= order.length) {
-                // All transport methods have been tried and failed
+                if (sawExplicitReject) {
+                    debugFinalize("rejected");
+                    callback({ success: false, rejected: true, errorCode: explicitRejectCode });
+                    return false;
+                }
                 debugFinalize("failed");
-                callback(false);
+                callback({ success: false });
                 return false;
             }
             var method = order[i];
@@ -447,10 +714,11 @@ var SlimStat = (function () {
                 if (ok) {
                     debugRecord(method, url, 0, "beacon", null, null);
                     debugFinalize("success");
-                    callback(true);
+                    callback({ success: true });
                     return true;
                 }
                 debugRecord(method, url, 0, "beacon_failed", null, null);
+                handleTransportFailure(method);
                 // If beacon fails, immediately try next method
                 return trySend(i + 1);
             }
@@ -553,7 +821,7 @@ var SlimStat = (function () {
         if (payload === lastInteractionPayload && now - lastInteractionTime < 1000) return false; // dedupe bursts
         lastInteractionPayload = payload;
         lastInteractionTime = now;
-        var sent = sendToServer(payload, useBeacon);
+        var sent = sendToServer(payload, useBeacon, { interactionRaw: raw });
         if (sent) {
             // Flag that at least one meaningful interaction happened this pageview
             try {
