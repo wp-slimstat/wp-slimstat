@@ -309,14 +309,17 @@ test.describe('Session & Cookie Management — #199', () => {
     // then clicking Accept. No manual cookie setting, no direct JS calls,
     // no force:true bypass.
 
-    // Clear the denied consent cookie so the banner re-appears on next navigation
-    const consentCookies = (await ctx.cookies()).filter(
+    // Clear ONLY the consent cookie so the banner re-appears on next navigation.
+    // CRITICAL: Do NOT clear all cookies — slimstat_tracking_code must survive
+    // so the server preserves session continuity across the consent upgrade.
+    // If cleared, Processor.php:382 forces a new visit_id (fallback branch)
+    // instead of upgrading the existing anonymous session rows (line 646-650).
+    const allCookies = await ctx.cookies();
+    const cookiesToRemove = allCookies.filter(
       (c) => c.name === 'slimstat_gdpr_consent',
     );
-    if (consentCookies.length > 0) {
-      // clearCookies removes ALL cookies; re-add CookieYes dismissal cookies
-      await ctx.clearCookies();
-      await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    for (const cookie of cookiesToRemove) {
+      await ctx.clearCookies({ name: cookie.name, domain: cookie.domain });
     }
 
     // Navigate to a new page — banner should re-appear, anonymous row created
@@ -382,19 +385,42 @@ test.describe('Session & Cookie Management — #199', () => {
       'Clicking Accept should trigger a consent upgrade tracking request',
     ).toBeGreaterThanOrEqual(1);
 
-    // Re-read the row — after upgrade, the IP should be real PII
+    // ── Verify the upgrade row itself has PII ──
     const upgradedRows = await waitForStatRows(upgradeMarker, 1, 10_000);
     expect(upgradedRows.length).toBeGreaterThanOrEqual(1);
     const upgradedIp = upgradedRows[0].ip;
+    const upgradeVisitId = parseInt(upgradedRows[0].visit_id, 10);
 
-    // Key assertion: the SAME row that had a hashed anonymous IP should now
-    // have a real IP (PII) after the consent upgrade merged PII into it.
-    // If #246 regresses, the merge code at Processor.php:436 won't execute
-    // and the IP will remain hashed.
     expect(
       upgradedIp,
-      `Anonymous row IP should be upgraded from hashed (${preUpgradeIp}) to real PII`,
+      `Upgrade row IP should be real PII, not hashed (${preUpgradeIp})`,
     ).not.toBe(preUpgradeIp);
+
+    // ── Verify the EARLIER anonymous rows from Phase 2 were ALSO upgraded ──
+    // The production merge at Processor.php:646-650 upgrades ALL rows with
+    // matching visit_id + anonymous IP within the session window. If this
+    // doesn't happen, only the upgrade-trigger row gets PII while earlier
+    // browsing during the declined phase keeps hashed IPs.
+    const earlierRows = await waitForStatRows(declinedNavMarker, 1, 10_000);
+    expect(earlierRows.length, 'Phase 2 anonymous row should still exist').toBeGreaterThanOrEqual(1);
+    const earlierIp = earlierRows[0].ip;
+    const earlierVisitId = parseInt(earlierRows[0].visit_id, 10);
+
+    // Key assertion 1: Earlier anonymous row's IP should now be PII
+    // (upgraded by the merge at Processor.php:646-650).
+    // If the merge didn't run (e.g. tracking cookie was cleared, forcing
+    // fallback branch), the earlier row keeps its hashed IP.
+    expect(
+      earlierIp,
+      `Phase 2 anonymous row IP should be upgraded from hashed (${anonymousIp}) to PII`,
+    ).not.toBe(anonymousIp);
+
+    // Key assertion 2: Both rows should share the same visit_id,
+    // proving session continuity was preserved across the consent upgrade.
+    expect(
+      upgradeVisitId,
+      `Upgrade row visit_id (${upgradeVisitId}) should match Phase 2 row (${earlierVisitId})`,
+    ).toBe(earlierVisitId);
 
     await testPage.close();
     await ctx.close();
