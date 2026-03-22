@@ -111,8 +111,7 @@ class Processor
         [$stat['ip'], $stat['other_ip']] = Utils::getRemoteIp();
         if (empty($stat['ip']) || '0.0.0.0' == $stat['ip']) {
             Query::setProcessingTimestamp(null);
-            Utils::logError(202);
-            return false;
+            return Utils::logError(202);
         }
 
         foreach (\wp_slimstat::string_to_array(\wp_slimstat::$settings['ignore_ip']) as $ipRange) {
@@ -175,8 +174,7 @@ class Processor
         $parsed_url = parse_url($stat['resource'] ?? '');
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
-            Utils::logError(203);
-            return false;
+            return Utils::logError(203);
         }
 
 
@@ -195,8 +193,7 @@ class Processor
             $parsed_url = parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
                 Query::setProcessingTimestamp(null);
-                Utils::logError(201);
-                return false;
+                return Utils::logError(201);
             }
 
             if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), ['http', 'https', 'android-app'])) {
@@ -321,9 +318,11 @@ class Processor
                 $geoService = new GeolocationService($provider, ['precision' => $precision]);
                 $geolocation_data = $geoService->locate($originalIpForGeo);
             } catch (\Exception $e) {
-                Query::setProcessingTimestamp(null);
+                // GeoIP failure is non-fatal — record pageview without geo data.
+                // Log the error for diagnostics but continue processing.
+                // This prevents GeoIP issues (missing DB, filesystem errors, etc.)
+                // from silently killing ALL tracking on the site.
                 Utils::logError(205);
-                return false;
             }
 
             if (!empty($geolocation_data) && !empty($geolocation_data['country_code']) && 'xx' != $geolocation_data['country_code']) {
@@ -741,8 +740,7 @@ class Processor
                 if (!empty($dbError)) {
                     \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
                 }
-                Utils::logError(200);
-                return false;
+                return Utils::logError(200);
             }
         }
 
