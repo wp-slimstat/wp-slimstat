@@ -409,7 +409,7 @@ class wp_slimstat
 			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
 		}
 
-		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'on'))
+		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'off'))
 			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
@@ -1332,7 +1332,7 @@ class wp_slimstat
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
         $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'statistics');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
-        $gdpr_enabled_setting = strtolower((string) (self::$settings['gdpr_enabled'] ?? 'on'));
+        $gdpr_enabled_setting = strtolower((string) (self::$settings['gdpr_enabled'] ?? 'off'));
         $params['gdpr_enabled'] = in_array($gdpr_enabled_setting, ['off', 'no', 'false', '0'], true) ? 'off' : 'on';
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
@@ -1598,7 +1598,7 @@ class wp_slimstat
         $content .= '<li>' . __('Opt-out of tracking by revoking consent (if GDPR mode is enabled)', 'wp-slimstat') . '</li>';
         $content .= '</ul>';
 
-        if ('on' === (self::$settings['gdpr_enabled'] ?? 'on')) {
+        if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
             $content .= '<p>' . __('You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator.', 'wp-slimstat') . '</p>';
         }
 

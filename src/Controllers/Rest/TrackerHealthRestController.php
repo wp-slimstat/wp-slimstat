@@ -91,7 +91,7 @@ class TrackerHealthRestController implements RestControllerInterface
             'version'                => defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : '',
             'tracking_request_method' => $settings['tracking_request_method'] ?? 'rest',
             'javascript_mode'        => $settings['javascript_mode'] ?? 'on',
-            'gdpr_enabled'           => $settings['gdpr_enabled'] ?? 'on',
+            'gdpr_enabled'           => $settings['gdpr_enabled'] ?? 'off',
             'anonymous_tracking'     => $settings['anonymous_tracking'] ?? 'off',
             'geolocation_provider'   => false !== $geoipProvider ? $geoipProvider : 'disabled',
             'ignore_settings'        => $ignoreSettings,

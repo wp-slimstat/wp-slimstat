@@ -52,7 +52,7 @@ class ConsentHealthRestController implements RestControllerInterface
 		$integration_key = Consent::getIntegrationKey();
 		$settings = \wp_slimstat::$settings;
 
-		$health['gdpr_enabled'] = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+		$health['gdpr_enabled'] = ('on' === ($settings['gdpr_enabled'] ?? 'off'));
 		$health['anonymous_tracking'] = ('on' === ($settings['anonymous_tracking'] ?? 'off'));
 		$health['configured_integration'] = $integration_key;
 
