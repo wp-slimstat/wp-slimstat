@@ -55,6 +55,7 @@
       "~/.composer/vendor/bin/mozart compose",
       "composer dump-autoload"
     ],
+    "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative",
     "test:license-tags": "php tests/license-tag-gating-test.php",
     "test:geoip-resolver": "php tests/resolve-geolocation-provider-test.php",
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
