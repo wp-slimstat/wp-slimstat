@@ -238,16 +238,12 @@ $settings = [
 					'type' => 'checked',
 				],
             ],
+*/
             'do_not_track' => [
                 'title'       => __('Respect Do Not Track (DNT)', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking).<br/><br/>GDPR does not require this, but it demonstrates respect for user privacy preferences. Recommended for privacy-focused websites.', 'wp-slimstat'),
-                'conditional' => [
-					'field' => 'gdpr_enabled',
-					'type' => 'checked',
-				],
+                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking). GDPR does not require this, but it demonstrates respect for user privacy preferences.', 'wp-slimstat'),
             ],
-*/
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP Addresses', 'wp-slimstat'),
                 'type'        => 'toggle',

@@ -517,7 +517,7 @@ class wp_slimstat
 
         delete_transient('slimstat_migration_5460_ip_notice');
 
-        $settings_url = admin_url('admin.php?page=slimstat_settings&tab=data_protection');
+        $settings_url = admin_url('admin.php?page=slimconfig&tab=2');
         ?>
         <div class="notice notice-warning">
             <p>
