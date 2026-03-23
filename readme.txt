@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.5
+Stable tag: 5.4.6
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,12 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.6 - 2026-03-22 =
+- **Fix**: Recovered client-side tracking now falls through across adblock-bypass, AJAX, pretty REST, and `rest_route` REST transports when a transport fails
+- **Fix**: Stale signed pageview IDs and stale content metadata no longer strand client-side tracking
+- **Fix**: Hardened adblock-bypass responses with POST-only handling and no-store cache headers
+- **Improved**: Tracker diagnostics now keep non-fatal warnings and GeoIP failures out of the fatal tracker error channel
+
 = 5.4.5 - 2026-03-20 =
 - **Fix**: Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)
 - **Fix**: GDPR consent cookie domain, cached page banner display, and anonymous nonce handling

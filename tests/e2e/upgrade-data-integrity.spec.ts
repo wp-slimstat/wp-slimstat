@@ -241,7 +241,7 @@ test.describe('Upgrade Data Integrity', () => {
     await setSlimstatOption(page, 'gdpr_enabled', 'off'); // Ensure tracking not blocked by GDPR
 
     // Clear stats so we get a clean read
-    await getPool().execute('TRUNCATE TABLE wp_slim_stats');
+    await clearStatsTable();
 
     // Inject CF headers for a known location
     await context.setExtraHTTPHeaders({

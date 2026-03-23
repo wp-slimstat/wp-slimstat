@@ -13,7 +13,9 @@ class Ajax
     public static function handle()
     {
         $result = self::process();
-        exit($result);
+        Utils::sendTrackingHeaders('ajax', $result);
+        echo $result;
+        exit;
     }
 
     /**
@@ -180,9 +182,13 @@ class Ajax
                     }
                 }
 
-                // If resource not set, use default from get_stat()
+                // Update path: if no explicit resource was provided by JS, do NOT fall back to
+                // REQUEST_URI. REQUEST_URI here is the tracking endpoint itself
+                // (/wp-json/slimstat/v1/hit or /wp-admin/admin-ajax.php), not the page the
+                // visitor is on. Unsetting ensures Storage::updateRow()'s array_filter() omits
+                // the resource column so the DB value set on the initial pageview is preserved.
                 if (empty($stat['resource'])) {
-                    $stat['resource'] = \wp_slimstat::get_request_uri();
+                    unset($stat['resource']);
                 }
 
                 // Sync local stat (including id from client) to global before ensureVisitId,
@@ -360,23 +366,30 @@ class Ajax
 
             $stat = Utils::getClientInfo($data_js, $stat);
             if (!empty($data_js['ci'])) {
-                $data_js['ci'] = Utils::getValueWithoutChecksum($data_js['ci']);
-                if (false === $data_js['ci']) {
-                    return Utils::logError(102);
+                $validated_ci = Utils::getValueWithoutChecksum($data_js['ci']);
+                if (false === $validated_ci) {
+                    Utils::logWarning(102);
+                    $data_js['ci'] = '';
+                } else {
+                    $data_js['ci'] = $validated_ci;
                 }
+            }
 
+            if (!empty($data_js['ci'])) {
                 $decoded_ci = Utils::base64UrlDecode($data_js['ci']);
                 $content_info = json_decode($decoded_ci, true);
-                // Security: Only accept JSON-encoded content info, reject serialized data
+                // Security: Only accept JSON-encoded content info, reject serialized data.
+                // If the payload is stale or malformed, continue without trusting its metadata.
                 if (empty($content_info) || !is_array($content_info)) {
-                    return Utils::logError(103);
-                }
-
-                foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
-                    if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
-                        $stat[$a_key] = sanitize_text_field($content_info[$a_key]);
-                    } elseif (!empty($content_info[$a_key])) {
-                        $stat[$a_key] = absint($content_info[$a_key]);
+                    Utils::logWarning(103);
+                    $stat['content_type'] = 'external';
+                } else {
+                    foreach (['content_type', 'category', 'content_id', 'author'] as $a_key) {
+                        if (!empty($content_info[$a_key]) && 'content_id' !== $a_key) {
+                            $stat[$a_key] = sanitize_text_field($content_info[$a_key]);
+                        } elseif (!empty($content_info[$a_key])) {
+                            $stat[$a_key] = absint($content_info[$a_key]);
+                        }
                     }
                 }
             } else {
@@ -398,8 +411,9 @@ class Ajax
             $id = Processor::process();
         }
 
-        if (empty($id)) {
-            return 0;
+        $isErrorCode = is_int($id) && $id < 0;
+        if (empty($id) || $isErrorCode) {
+            return $isErrorCode ? $id : 0;
         }
 
         do_action('slimstat_track_success');

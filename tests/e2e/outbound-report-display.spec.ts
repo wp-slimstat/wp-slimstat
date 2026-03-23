@@ -16,15 +16,8 @@
  * report pages and assert the data is visible. No tracking settings needed.
  */
 import { test, expect, Page } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-
-let pool: mysql.Pool;
-
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
+import { BASE_URL } from './helpers/env';
+import { getPool, closeDb, clearStatsTable } from './helpers/setup';
 
 /** Login if the page was redirected to wp-login.php */
 async function ensureLoggedIn(page: Page): Promise<void> {
@@ -72,10 +65,6 @@ async function seedRegularPageviews(count: number): Promise<void> {
   }
 }
 
-async function clearStatsTable(): Promise<void> {
-  await getPool().execute('TRUNCATE TABLE wp_slim_stats');
-}
-
 test.describe('Outbound Link Report Display', () => {
   test.setTimeout(90_000);
 
@@ -90,7 +79,7 @@ test.describe('Outbound Link Report Display', () => {
   });
 
   test.afterAll(async () => {
-    if (pool) await pool.end();
+    await closeDb();
   });
 
   // ─── Test 1: slim_p4_01 — Recent Outbound Links ──────────────────

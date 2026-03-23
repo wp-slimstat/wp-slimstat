@@ -16,7 +16,7 @@ export default defineConfig({
   // which would race with parallel workers. Do NOT increase without
   // switching to per-test user_agent filtering or transaction rollback.
   workers: 1,
-  maxFailures: process.env.CI ? 10 : 0, // Fail-fast in CI; run all locally
+  maxFailures: process.env.CI ? 50 : 0, // Allow more failures in CI to get full pass/fail picture
   reporter: [
     ['list'],
     ['html', { open: 'never', outputFolder: path.join(__dirname, 'playwright-report') }],

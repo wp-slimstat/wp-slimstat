@@ -1,3 +1,39 @@
+= 5.4.6 - 2026-03-22 =
+
+**Action Required — please read before updating**
+
+This release resets three privacy settings to safe defaults. If you are upgrading from
+v5.4.1–5.4.5, this corrects values that a bug in those versions forced on incorrectly. If you
+are upgrading from v5.3.x, these settings did not exist before — tracking will continue to work
+exactly as it did. In both cases, if you want to enable any of the following, configure them after
+updating:
+
+- Consent banner: Settings → Tracker → Consent Management → Consent Plugin Integration
+- Anonymize IP addresses: Settings → Tracker → Data Protection → Anonymize IP Addresses
+- Hash IP addresses: Settings → Tracker → Data Protection → Hash IP Addresses
+
+Fixed
+- Visitor counts dropping to zero after upgrading from 5.3.x: anonymous visitors were
+  silently blocked by a consent requirement that was switched on automatically, even on
+  sites that never configured a consent banner. This update corrects that automatically
+  on first load — no action needed.
+- /wp-json/slimstat/v1/hit and /wp-admin/admin-ajax.php appearing as top pages in
+  reports: these are internal tracking addresses, not real pages visitors viewed.
+- Visitor IP addresses being recorded as masked or hashed values after upgrading from
+  5.3.x: full IPs are now stored again, matching pre-5.4 behavior. If you want to keep
+  IP anonymization, re-enable it in Settings → Tracker → Data Protection after updating.
+- Tracking not working at all on sites using WP Rocket, W3TC, or any other page caching
+  plugin on fresh installs: new installations now default to a tracking mode that works
+  correctly regardless of caching.
+- Tracking silently dropping pageviews when a transport fails: the tracker now tries
+  available fallbacks (adblock-bypass, AJAX, REST) before giving up on a pageview.
+- Stale page data causing pageviews to be abandoned after a browser caches plugin assets:
+  the tracker now recovers gracefully and completes the pageview.
+
+Improved
+- Tracker health diagnostics now distinguish between fatal errors and recoverable warnings,
+  so a GeoIP lookup failure or a stale payload no longer shows up as a broken tracker.
+
 = 5.4.5 - 2026-03-20 =
 
 Fixed
@@ -18,6 +54,22 @@ Security
 Improved
 - Refactored `isUserExcluded()` into standalone method with full test coverage
 - Inlined `get_current_user_id()` in nonce guards for clarity
+
+Infrastructure (cycle/01)
+- Added PHPUnit 10.5 + Brain Monkey + Mockery unit test framework (23 tests, 27 assertions across Tracker, Processor, Session classes)
+- Added @wordpress/env Docker environment (WordPress 6.4, PHP 7.4) for reproducible local and CI testing
+- Added 3-tier GitHub Actions CI pipeline: Tier 1 PHPUnit + lint on every push (<3 min), Tier 2 E2E on main/development PRs, Tier 3 full PHP matrix + k6 nightly
+- Added Playwright analytics correctness invariants spec (5 tests verifying row creation, visit_id chain, resource field match, no duplicate inserts)
+- Added 5 deterministic site profile fixtures (publisher, store, membership, brochure, multisite) for consistent E2E test state
+- Added E2E correlation ID harness MU-plugin for per-run row isolation in wp_slim_stats
+
+Infrastructure (cycle/02)
+- Fixed E2E tests in CI — rewrote setSlimstatOption to direct DB via php-serialize (82 specs now pass, up from 1)
+- Fixed FK constraint errors on TRUNCATE TABLE wp_slim_stats across all test files
+- Fixed rewrite flush to use permalink page visit instead of AJAX (works in wp-env Docker)
+- Added session & cookie management E2E tests — visit_id continuity, cookie expiry, consent-upgrade regression (#246)
+- Added admin settings persistence E2E tests — save/reload, multi-setting atomicity, navigation survival
+- Added query builder unit tests — 29 tests covering SQL generation, all filter operators, escaping, date ranges
 
 = 5.4.4 - 2026-03-17 =
 

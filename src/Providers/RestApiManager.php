@@ -7,6 +7,7 @@ use SlimStat\Tracker\Tracker;
 use SlimStat\Controllers\Rest\ConsentChangeRestController;
 use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
+use SlimStat\Controllers\Rest\TrackerHealthRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
@@ -33,7 +34,7 @@ class RestApiManager
         self::load_controllers();
         add_action('rest_api_init', [self::class, 'register_routes']);
         add_action('init', [self::class, 'rewriteRuleRequest']);
-        add_action('template_redirect', [self::class, 'handleAdblockTracking']);
+        add_action('parse_request', [self::class, 'handleAdblockTracking']);
     }
 
     /**
@@ -49,6 +50,7 @@ class RestApiManager
 			new GDPRBannerRestController(),
 			new ConsentChangeRestController(),
 			new ConsentHealthRestController(),
+			new TrackerHealthRestController(),
 		];
 
         /**
@@ -127,14 +129,46 @@ class RestApiManager
      *
      * @since 5.2.14
      */
-    public static function handleAdblockTracking(): void
+    private static function prepareAdblockTrackingResponse(): void
     {
-        $request_param = get_query_var('slimstat_request');
+        if (!defined('DONOTCACHEPAGE')) {
+            define('DONOTCACHEPAGE', true);
+        }
+
+        if (!defined('DONOTCACHEOBJECT')) {
+            define('DONOTCACHEOBJECT', true);
+        }
+
+        if (!defined('DONOTCACHEDB')) {
+            define('DONOTCACHEDB', true);
+        }
+
+        nocache_headers();
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    }
+
+    public static function handleAdblockTracking($wp = null): void
+    {
+        $request_param = '';
+        if (isset($wp->query_vars) && is_array($wp->query_vars) && !empty($wp->query_vars['slimstat_request'])) {
+            $request_param = sanitize_text_field((string) $wp->query_vars['slimstat_request']);
+        } else {
+            $request_param = get_query_var('slimstat_request');
+        }
+
         if (empty($request_param)) {
             return;
         }
 
-        // Use the safe raw post array, as $_POST may not be populated on template_redirect
+        self::prepareAdblockTrackingResponse();
+
+        if ('POST' !== strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+            status_header(405);
+            header('Allow: POST');
+            exit;
+        }
+
+        // Use the safe raw post array, as $_POST may not be populated consistently this early.
         $post_data = \wp_slimstat::$raw_post_array;
         $action = $post_data['action'] ?? '';
 
@@ -168,8 +202,12 @@ class RestApiManager
 
             $result = Tracker::slimtrack_ajax();
             // Output result and exit for adblock bypass requests
+            \SlimStat\Tracker\Utils::sendTrackingHeaders('adblock_bypass', $result);
             echo $result;
             exit;
         }
+
+        status_header(404);
+        exit;
     }
 }
