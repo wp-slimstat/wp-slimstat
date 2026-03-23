@@ -5,6 +5,14 @@ zero, IPs were masked without your permission, and a consent banner appeared on 
 never asked for one. This release fixes all of that. After updating, your site works the way
 it did before 5.4.0 — no manual steps required.
 
+If you want to enable GDPR features
+- Consent banner: Settings → Tracker → Data Protection → GDPR Compliance Mode = On, then
+  Settings → Tracker → Consent Management → choose SlimStat Banner, WP Consent API, or
+  Real Cookie Banner
+- Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
+- Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
+
+
 Fixed
 - Visitor counts dropping to zero after upgrading: a consent banner was silently enabled on
   every site, blocking all anonymous visitors. The banner is now off by default. If you had
@@ -31,13 +39,6 @@ Improved
 - Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
 - Session cookies are restored by default — returning visitors are recognized across pages
   again, just like in v5.3.x.
-
-If you want to enable GDPR features
-- Consent banner: Settings → Tracker → Data Protection → GDPR Compliance Mode = On, then
-  Settings → Tracker → Consent Management → choose SlimStat Banner, WP Consent API, or
-  Real Cookie Banner
-- Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
-- Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
 
 = 5.4.5 - 2026-03-20 =
 
