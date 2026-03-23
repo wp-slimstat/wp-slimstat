@@ -523,6 +523,10 @@ class wp_slimstat_admin
         }
         update_option('slimstat_dt_visit_indexed', 'yes');
 
+        // Flush rewrite rules so adblock bypass rewrite is written to .htaccess.
+        // Caching plugins (WP Rocket, W3TC) route via .htaccess before WordPress loads.
+        flush_rewrite_rules(false);
+
         return true;
     }
 

@@ -118,7 +118,9 @@ class RestApiManager
      */
     public static function getSecureAdblockHash(): string
     {
-        $data = site_url() . 'slimstat_request' . SLIMSTAT_ANALYTICS_VERSION;
+        // Do NOT include SLIMSTAT_ANALYTICS_VERSION — cached pages (WP Rocket, W3TC)
+        // bake this hash into HTML. A version change would invalidate all cached bypass URLs.
+        $data = site_url() . 'slimstat_request';
         // Use hash_hmac with WordPress auth salt for unpredictable hash
         // Truncate to 32 chars to match the rewrite rule pattern
         return substr(hash_hmac('sha256', $data, wp_salt('auth')), 0, 32);

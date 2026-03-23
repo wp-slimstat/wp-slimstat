@@ -34,13 +34,51 @@ function mig_assert_same($expected, $actual, string $msg): void
  * Simulate the migration block from wp_slimstat::init().
  * Returns the settings array after migration runs (or doesn't run).
  */
+/**
+ * Simulate wp_has_consent() availability for testing.
+ */
+$GLOBALS['_test_wp_has_consent_available'] = false;
+function test_wp_has_consent_exists(): bool
+{
+    return $GLOBALS['_test_wp_has_consent_available'];
+}
+
 function run_migration(array $settings): array
 {
     if ('0' === ($settings['_migration_5460'] ?? '0')) {
-        $_ss_banner_was_on = ('on' === ($settings['use_slimstat_banner'] ?? 'off'));
-        if ($_ss_banner_was_on) {
+        // Save ORIGINAL banner value before consent-intent detection modifies it
+        $_ss_banner_was_on_original = ('on' === ($settings['use_slimstat_banner'] ?? 'off'));
+
+        // --- Consent intent detection ---
+        $_had_opt_out_banner  = ('on' === ($settings['display_opt_out'] ?? 'no'));
+        $_had_opt_out_cookies = !empty(trim($settings['opt_out_cookie_names'] ?? ''));
+        $_had_opt_in_cookies  = !empty(trim($settings['opt_in_cookie_names'] ?? ''));
+        $_current_integration = $settings['consent_integration'] ?? '';
+        $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
+
+        if ($_has_third_party_cmp) {
+            $settings['gdpr_enabled'] = 'on';
+        } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
+            $settings['gdpr_enabled'] = 'on';
+            $settings['use_slimstat_banner'] = 'on';
+            if ($_had_opt_in_cookies && test_wp_has_consent_exists()) {
+                $settings['consent_integration'] = 'wp_consent_api';
+            } else {
+                $settings['consent_integration'] = 'slimstat_banner';
+            }
+        } else {
+            $settings['gdpr_enabled'] = 'off';
+            $settings['consent_integration'] = '';
             $settings['use_slimstat_banner'] = 'off';
         }
+
+        if ('off' === $settings['gdpr_enabled']
+            && 'off' === ($settings['set_tracker_cookie'] ?? 'on')) {
+            $settings['set_tracker_cookie'] = 'on';
+        }
+
+        // Existing banner/IP/JS-mode resets — use ORIGINAL banner value
+        $_ss_banner_was_on = $_ss_banner_was_on_original;
         if ($_ss_banner_was_on && 'off' === ($settings['javascript_mode'] ?? 'on')) {
             $settings['javascript_mode'] = 'on';
         }
@@ -66,10 +104,11 @@ $result = run_migration([
     // '_migration_5460' absent (old install)
 ]);
 
-mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 1: use_slimstat_banner must be reset to off');
-mig_assert_same('on',  $result['javascript_mode'],     'TEST 1: javascript_mode must be reset to on (banner was on = v5.4.1 fingerprint)');
+mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 1: use_slimstat_banner must be off (GDPR disabled)');
+mig_assert_same('on',  $result['javascript_mode'],     'TEST 1: javascript_mode must be reset to on (original banner was on = v5.4.1 fingerprint)');
 mig_assert_same('off', $result['anonymize_ip'],        'TEST 1: anonymize_ip must be reset to off');
 mig_assert_same('off', $result['hash_ip'],             'TEST 1: hash_ip must be reset to off');
+mig_assert_same('off', $result['gdpr_enabled'],        'TEST 1: gdpr_enabled off (no old consent intent)');
 mig_assert_same('1',   $result['_migration_5460'],     'TEST 1: migration flag must be set to 1');
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -141,5 +180,122 @@ mig_assert_same('on',  $result['javascript_mode'],     'TEST 5: javascript_mode 
 mig_assert_same('off', $result['anonymize_ip'],        'TEST 5: anonymize_ip reset to off');
 mig_assert_same('off', $result['hash_ip'],             'TEST 5: hash_ip reset to off');
 mig_assert_same('1',   $result['_migration_5460'],     'TEST 5: flag written to 1');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 6: v5.3.x upgrade with NO consent config → GDPR off, pure v5.3.x
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner' => 'off',
+    'javascript_mode'     => 'on',
+    'anonymize_ip'        => 'no',
+    'hash_ip'             => 'off',
+    'display_opt_out'     => 'no',
+    'opt_in_cookie_names' => '',
+    'opt_out_cookie_names'=> '',
+    'set_tracker_cookie'  => 'on',
+]);
+
+mig_assert_same('off', $result['gdpr_enabled'],        'TEST 6: gdpr_enabled must be off (no consent intent)');
+mig_assert_same('',    $result['consent_integration'],  'TEST 6: consent_integration must be empty');
+mig_assert_same('off', $result['use_slimstat_banner'],  'TEST 6: use_slimstat_banner must be off');
+mig_assert_same('on',  $result['set_tracker_cookie'],   'TEST 6: set_tracker_cookie stays on');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 7: v5.3.x upgrade with display_opt_out='on' → GDPR on + banner
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner' => 'off',
+    'javascript_mode'     => 'on',
+    'anonymize_ip'        => 'no',
+    'display_opt_out'     => 'on',
+    'opt_in_cookie_names' => '',
+    'opt_out_cookie_names'=> '',
+]);
+
+mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 7: gdpr_enabled must be on (opt-out intent)');
+mig_assert_same('slimstat_banner', $result['consent_integration'],  'TEST 7: consent_integration mapped to slimstat_banner');
+mig_assert_same('on',              $result['use_slimstat_banner'],  'TEST 7: use_slimstat_banner must be on');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 8: v5.3.x upgrade with opt_in_cookie_names → GDPR on
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner' => 'off',
+    'display_opt_out'     => 'no',
+    'opt_in_cookie_names' => 'my_consent_cookie=yes',
+    'opt_out_cookie_names'=> '',
+]);
+
+mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 8: gdpr_enabled on (opt-in intent)');
+mig_assert_same('slimstat_banner', $result['consent_integration'],  'TEST 8: consent_integration mapped to slimstat_banner (no WP Consent API)');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 9: v5.3.x with opt_in + WP Consent API available → uses wp_consent_api
+// ═══════════════════════════════════════════════════════════════════════════
+$GLOBALS['_test_wp_has_consent_available'] = true;
+$result = run_migration([
+    'use_slimstat_banner' => 'off',
+    'display_opt_out'     => 'no',
+    'opt_in_cookie_names' => 'cookieyes-consent=yes',
+    'opt_out_cookie_names'=> '',
+]);
+
+mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 9: gdpr_enabled on');
+mig_assert_same('wp_consent_api',  $result['consent_integration'],  'TEST 9: auto-detected WP Consent API');
+$GLOBALS['_test_wp_has_consent_available'] = false;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 10: v5.4.x upgrade with defaults (no consent intent) → GDPR off
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner'  => 'on',
+    'javascript_mode'      => 'off',
+    'anonymize_ip'         => 'on',
+    'hash_ip'              => 'on',
+    'gdpr_enabled'         => 'on',
+    'consent_integration'  => 'slimstat_banner',
+    'set_tracker_cookie'   => 'off',
+    'display_opt_out'      => 'no',
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+]);
+
+mig_assert_same('off', $result['gdpr_enabled'],        'TEST 10: gdpr_enabled off (no old consent intent)');
+mig_assert_same('',    $result['consent_integration'],  'TEST 10: consent_integration empty');
+mig_assert_same('off', $result['use_slimstat_banner'],  'TEST 10: banner off');
+mig_assert_same('on',  $result['set_tracker_cookie'],   'TEST 10: set_tracker_cookie restored to on');
+mig_assert_same('on',  $result['javascript_mode'],      'TEST 10: javascript_mode reset to client');
+mig_assert_same('off', $result['anonymize_ip'],         'TEST 10: anonymize_ip off');
+mig_assert_same('off', $result['hash_ip'],              'TEST 10: hash_ip off');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 11: v5.4.x with third-party CMP (wp_consent_api) → preserved
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'consent_integration'  => 'wp_consent_api',
+    'gdpr_enabled'         => 'on',
+    'use_slimstat_banner'  => 'off',
+    'display_opt_out'      => 'no',
+    'opt_in_cookie_names'  => '',
+]);
+
+mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 11: gdpr_enabled preserved');
+mig_assert_same('wp_consent_api',  $result['consent_integration'],  'TEST 11: CMP preserved');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 12: v5.3.x → v5.4.x → v5.4.6 chain: old opt-out data survives
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'gdpr_enabled'         => 'on',
+    'consent_integration'  => 'slimstat_banner',
+    'use_slimstat_banner'  => 'on',
+    'display_opt_out'      => 'on',         // survived from v5.3.x
+    'opt_out_cookie_names' => 'my_optout=true',  // survived from v5.3.x
+    'opt_in_cookie_names'  => '',
+]);
+
+mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 12: gdpr_enabled on (old opt-out detected)');
+mig_assert_same('slimstat_banner', $result['consent_integration'],  'TEST 12: slimstat_banner');
+mig_assert_same('on',              $result['use_slimstat_banner'],  'TEST 12: banner on');
 
 echo "All {$assertions} assertions passed in v5460-settings-migration-test.php\n";

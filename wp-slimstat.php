@@ -239,12 +239,55 @@ class wp_slimstat
         // with '0' from init_options(), triggering this block exactly once. After running,
         // the flag is saved as '1' in DB and the block is permanently skipped.
         if ('0' === (self::$settings['_migration_5460'] ?? '0')) {
-            // use_slimstat_banner='on' silently blocked all anonymous visitor tracking in v5.4.1+.
-            // Track whether it was set — used as the reliable v5.4.1 default fingerprint below.
-            $_ss_banner_was_on = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
-            if ($_ss_banner_was_on) {
+            // Save ORIGINAL use_slimstat_banner before consent-intent detection modifies it.
+            // This is the reliable v5.4.1 default fingerprint used for javascript_mode reset below.
+            $_ss_banner_was_on_original = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+
+            // --- Consent intent detection ---
+            // Read legacy v5.3.x consent settings to detect if user had configured privacy.
+            // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
+            $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
+            $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
+            $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
+
+            // Check if user deliberately chose a third-party CMP in v5.4.x
+            $_current_integration = self::$settings['consent_integration'] ?? '';
+            $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
+
+            if ($_has_third_party_cmp) {
+                // User deliberately configured a third-party CMP — preserve their setup
+                self::$settings['gdpr_enabled'] = 'on';
+            } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
+                // User had consent/privacy config in v5.3.x — map to GDPR system
+                self::$settings['gdpr_enabled'] = 'on';
+                self::$settings['use_slimstat_banner'] = 'on';
+                // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
+                // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
+                if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
+                    self::$settings['consent_integration'] = 'wp_consent_api';
+                } else {
+                    self::$settings['consent_integration'] = 'slimstat_banner';
+                }
+            } else {
+                // No consent config ever — pure v5.3.x behavior: all tracked, no banner
+                self::$settings['gdpr_enabled'] = 'off';
+                self::$settings['consent_integration'] = '';
                 self::$settings['use_slimstat_banner'] = 'off';
             }
+
+            // Restore session cookie when GDPR is off (v5.3.x default was 'on')
+            if ('off' === self::$settings['gdpr_enabled']
+                && 'off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
+                self::$settings['set_tracker_cookie'] = 'on';
+            }
+
+            unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
+                  $_current_integration, $_has_third_party_cmp);
+
+            // use_slimstat_banner='on' in the ORIGINAL DB was the v5.4.1 fingerprint.
+            // Use the saved original value (before consent-intent detection modified it).
+            $_ss_banner_was_on = $_ss_banner_was_on_original;
+            unset($_ss_banner_was_on_original);
             // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
             // every cached-page visitor to silently update the first visitor's DB record.
             // ONLY reset when banner was also 'on' (v5.4.1 paired-default fingerprint) so that
@@ -271,29 +314,39 @@ class wp_slimstat
             // Mark done so this block never runs again after this request.
             self::$settings['_migration_5460'] = '1';
             self::update_option('slimstat_options', self::$settings);
+
+            // Flush rewrite rules so adblock bypass rewrite is written to .htaccess.
+            // Required for caching plugins (WP Rocket, W3TC) that route via .htaccess.
+            if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'ajax')) {
+                flush_rewrite_rules(false);
+            }
         }
 
         // Allow third party tools to edit the options
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
-		$consent_integration = self::$settings['consent_integration'] ?? '';
+		// Consent-sync: derive use_slimstat_banner from consent_integration.
+		// Only run when GDPR is on — when off, banner stays off and canTrack() returns true early.
+		if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
+			$consent_integration = self::$settings['consent_integration'] ?? '';
 
-		// If WP Consent API is selected but the function doesn't exist, reset to default
-		if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
-			$consent_integration = '';
-			self::$settings['consent_integration'] = '';
-		}
+			// If WP Consent API is selected but the function doesn't exist, reset to default
+			if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
+				$consent_integration = '';
+				self::$settings['consent_integration'] = '';
+			}
 
-		if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
-			$consent_integration = 'slimstat_banner';
-			self::$settings['consent_integration'] = $consent_integration;
-		}
+			if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
+				$consent_integration = 'slimstat_banner';
+				self::$settings['consent_integration'] = $consent_integration;
+			}
 
-		if ('slimstat_banner' === $consent_integration) {
-			self::$settings['use_slimstat_banner'] = 'on';
-		} else {
-			self::$settings['use_slimstat_banner'] = 'off';
-		}
+			if ('slimstat_banner' === $consent_integration) {
+				self::$settings['use_slimstat_banner'] = 'on';
+			} else {
+				self::$settings['use_slimstat_banner'] = 'off';
+			}
+		} // end GDPR consent-sync
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -1030,12 +1083,12 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'gdpr_enabled'             => 'on',   // Changed: Enable GDPR by default for safety
+            'gdpr_enabled'             => 'off',  // v5.3.x had no GDPR — off by default; admin enables when ready
             'anonymize_ip'             => 'off',  // Restored: full IPs stored by default (5.3.x behavior)
             'hash_ip'                  => 'off',  // Restored: no daily visitor hash by default (5.3.x behavior)
-			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
-			'use_slimstat_banner'      => 'off',  // Admin must explicitly enable; auto-enabling is a breaking change for upgrades from 5.3.x
-			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
+			'set_tracker_cookie'       => 'on',   // v5.3.x default: session cookie identifies returning visitors
+			'use_slimstat_banner'      => 'off',  // Admin must explicitly enable via consent integration
+			'consent_integration'      => '',      // No CMP by default — admin selects when enabling GDPR
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
 			'gdpr_accept_button_text'  => 'Accept',
