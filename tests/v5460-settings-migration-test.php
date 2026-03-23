@@ -246,6 +246,9 @@ $GLOBALS['_test_wp_has_consent_available'] = false;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST 10: v5.4.x upgrade with defaults (no consent intent) → GDPR off
+//
+// v5.4.0 set consent_integration='slimstat_banner' + use_slimstat_banner='on' as defaults
+// but this was not a deliberate user choice. Per plan: these users get v5.3.x-like behavior.
 // ═══════════════════════════════════════════════════════════════════════════
 $result = run_migration([
     'use_slimstat_banner'  => 'on',

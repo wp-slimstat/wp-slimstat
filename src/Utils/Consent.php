@@ -27,7 +27,7 @@ class Consent
 		// Fallback: if GDPR is enabled but no integration is explicitly set, use slimstat_banner
 		// This ensures backward compatibility with existing installations
 		if ('' === $integrationKey) {
-			$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+			$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'off'));
 			if ($gdprEnabled) {
 				// Auto-enable SlimStat banner if GDPR is on but no integration configured
 				$integrationKey = 'slimstat_banner';
@@ -230,7 +230,7 @@ class Consent
 		}
 
 		// Check if GDPR compliance mode is enabled
-		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'off'));
 
 		// If GDPR is disabled, allow normal tracking without consent checks
 		if (!$gdprEnabled) {
@@ -367,7 +367,7 @@ class Consent
 		$settings = \wp_slimstat::$settings;
 
 		// Check if GDPR compliance mode is enabled
-		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
+		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'off'));
 
 		// If GDPR is disabled, allow PII collection without consent checks
 		if (!$gdprEnabled) {

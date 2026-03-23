@@ -67,19 +67,18 @@ et_assert(
 // AND that it co-occurs with the add_action('init', static function wrapper.
 // ═══════════════════════════════════════════════════════════════════════════
 et_assert(
-    str_contains($source, "__('seconds', 'wp-slimstat')"),
-    "TEST 2a: __('seconds', 'wp-slimstat') must still exist in source (not deleted)"
+    str_contains($source, "_n(") && str_contains($source, "'wp-slimstat'"),
+    "TEST 2a: _n() with 'wp-slimstat' textdomain must exist in source for plural-aware cookie duration"
 );
 
-// Extract the wp_add_cookie_info block and confirm it is inside add_action
-preg_match(
-    "/add_action\s*\(\s*['\"]init['\"]\s*,\s*static\s+function[^;]+;/s",
-    $source,
-    $action_block
-);
+// Verify that _n() appears between add_action('init', static function and wp_add_cookie_info
+// This confirms the plural-aware translation is inside the deferred closure, not at top level.
 et_assert(
-    !empty($action_block) && str_contains($action_block[0], "__('seconds', 'wp-slimstat')"),
-    "TEST 2b: __('seconds', 'wp-slimstat') must appear inside the add_action('init', ...) closure"
+    (bool) preg_match(
+        "/add_action\s*\(\s*['\"]init['\"]\s*,\s*static\s+function.*?wp_add_cookie_info.*?_n\s*\(/s",
+        $source
+    ),
+    "TEST 2b: _n() must appear inside the add_action('init', ...) closure for deferred translation"
 );
 
 // ═══════════════════════════════════════════════════════════════════════════

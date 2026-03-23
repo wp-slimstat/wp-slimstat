@@ -315,11 +315,14 @@ class wp_slimstat
             self::$settings['_migration_5460'] = '1';
             self::update_option('slimstat_options', self::$settings);
 
-            // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
-            // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before
-            // WordPress loads — a soft flush would not help.
+            // Schedule a hard-flush of rewrite rules on 'init' (priority 99) so it runs
+            // AFTER the bypass rewrite rule is registered (RestApiManager::rewriteRuleRequest
+            // runs on 'init' default priority). Flushing here during plugins_loaded would be
+            // too early — the rule wouldn't exist yet.
             if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'ajax')) {
-                flush_rewrite_rules();
+                add_action('init', static function () {
+                    flush_rewrite_rules();
+                }, 99);
             }
         }
 
@@ -331,10 +334,13 @@ class wp_slimstat
 		if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
 			$consent_integration = self::$settings['consent_integration'] ?? '';
 
-			// If WP Consent API is selected but the function doesn't exist, reset to default
+			// If WP Consent API is selected but the plugin isn't installed, fall back to
+			// SlimStat's own banner so consent enforcement stays active. Resetting to ''
+			// would leave GDPR on but with no consent mechanism — getIntegrationKey()
+			// silently picks 'slimstat_banner' but without the banner UI enabled.
 			if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
-				$consent_integration = '';
-				self::$settings['consent_integration'] = '';
+				$consent_integration = 'slimstat_banner';
+				self::$settings['consent_integration'] = 'slimstat_banner';
 			}
 
 			if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
@@ -420,9 +426,13 @@ class wp_slimstat
                     add_action('init', static function () use ($session_duration) {
                         wp_add_cookie_info(
                             'slimstat_tracking_code',
-                            'SlimStat Analytics',
+                            __('SlimStat Analytics', 'wp-slimstat'),
                             'statistics',
-                            $session_duration . ' ' . __('seconds', 'wp-slimstat'),
+                            sprintf(
+                                /* translators: %d: number of seconds for session duration */
+                                _n('%d second', '%d seconds', $session_duration, 'wp-slimstat'),
+                                $session_duration
+                            ),
                             __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
                             '',
                             false,
