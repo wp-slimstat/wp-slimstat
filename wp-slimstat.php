@@ -375,9 +375,16 @@ class wp_slimstat
         // Apply filter to allow customization of the upload directory
         self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
 
-        // Allow add-ons to turn off the tracker based on other conditions
-        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', false === strpos(self::get_request_uri(), 'wp-admin/admin-ajax.php'));
+        // Allow add-ons to turn off the tracker based on other conditions.
+        // Exclude admin-ajax.php (handled by AJAX handler) and the adblock bypass
+        // /request/{hash}/ URL (handled by RestApiManager::handleAdblockTracking).
+        // Without this, server-side tracking records these internal URLs as page visits.
+        $_request_uri = self::get_request_uri();
+        $_is_internal_endpoint = false !== strpos($_request_uri, 'wp-admin/admin-ajax.php')
+            || (bool) preg_match('#/request/[a-f0-9]{32}/?$#', $_request_uri);
+        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', !$_is_internal_endpoint);
         $is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+        unset($_request_uri, $_is_internal_endpoint);
 
         // Enable the tracker (both server- and client-side)
         if ((!is_admin() || 'on' == self::$settings['track_admin_pages']) && 'on' == self::$settings['is_tracking'] && $is_tracking_filter) {
