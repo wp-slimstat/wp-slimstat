@@ -1117,7 +1117,7 @@ class wp_slimstat_db
         // LIMIT
         $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit(sprintf('%d OFFSET %d', $limit, $start));
+        $query->limit($limit, $start);
 
         $query->allowCaching(false);
 

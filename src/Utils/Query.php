@@ -376,15 +376,22 @@ class Query
     }
 
     /**
-     * Sets the LIMIT clause for the query.
+     * Sets the LIMIT clause for the query, with an optional OFFSET.
      *
-     * @param int $limit The maximum number of results to return.
+     * @param int $limit  The maximum number of results to return.
+     * @param int $offset The number of rows to skip. Defaults to 0.
      *
      * @return $this
      */
-    public function limit($limit)
+    public function limit($limit, $offset = 0)
     {
-        $this->limitClause = 'LIMIT ' . intval($limit);
+        $limit  = intval($limit);
+        $offset = intval($offset);
+        if ($offset > 0) {
+            $this->limitClause = sprintf('LIMIT %d OFFSET %d', $limit, $offset);
+        } else {
+            $this->limitClause = 'LIMIT ' . $limit;
+        }
         return $this;
     }
 
