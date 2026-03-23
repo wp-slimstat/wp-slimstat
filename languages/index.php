@@ -579,6 +579,24 @@ class wp_slimstat_i18n
                 'e-203' => __('Malformed resource URL', 'wp-slimstat'),
                 'e-204' => __('Tracking is turned off, but it looks like the client-side code is still attached to your pages. Do you have a caching tool enabled?', 'wp-slimstat'),
                 'e-205' => __('GeoIP database file is missing or corrupt. Please go to Settings -> Tracker and click on the "Update Database" button to download a fresh copy.', 'wp-slimstat'),
+
+                // Tracker Exclusion Codes (3xx)
+                'e-301' => __('Pageview not tracked: consent denied by CMP or GDPR settings.', 'wp-slimstat'),
+                'e-302' => __('Pageview not tracked: the slimstat_filter_pageview_stat_init filter returned empty.', 'wp-slimstat'),
+                'e-304' => __('Pageview not tracked: visitor IP matched an exclusion rule.', 'wp-slimstat'),
+                'e-305' => __('Pageview not tracked: resource URL matched an exclusion rule.', 'wp-slimstat'),
+                'e-306' => __('Pageview not tracked: referer URL matched an exclusion rule.', 'wp-slimstat'),
+                'e-307' => __('Pageview not tracked: content type matched an exclusion rule.', 'wp-slimstat'),
+                'e-308' => __('Pageview not tracked: internal admin-ajax or SlimStat admin request.', 'wp-slimstat'),
+                'e-309' => __('Pageview not tracked: WordPress user matched an exclusion rule.', 'wp-slimstat'),
+                'e-310' => __('Pageview not tracked: browser language matched an exclusion rule.', 'wp-slimstat'),
+                'e-311' => __('Pageview not tracked: visitor country matched an exclusion rule.', 'wp-slimstat'),
+                'e-312' => __('Pageview not tracked: prefetch or preview request blocked.', 'wp-slimstat'),
+                'e-313' => __('Pageview not tracked: visitor detected as a bot or crawler.', 'wp-slimstat'),
+                'e-314' => __('Pageview not tracked: browser matched an exclusion rule.', 'wp-slimstat'),
+                'e-315' => __('Pageview not tracked: platform matched an exclusion rule.', 'wp-slimstat'),
+                'e-316' => __('Pageview not tracked: the slimstat_filter_pageview_stat filter returned empty.', 'wp-slimstat'),
+                'e-317' => __('Pageview not tracked: visitor identified as a spammer.', 'wp-slimstat'),
             ];
 
             // set_transient( 'slimstat_dynamic_strings', self::$dynamic_strings, 86400 );

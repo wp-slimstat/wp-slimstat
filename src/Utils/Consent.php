@@ -218,6 +218,17 @@ class Consent
 		$settings = \wp_slimstat::$settings;
 		$default  = true;
 
+		// DNT is non-negotiable: check before GDPR mode and before any filter.
+		// do_not_track is a site-owner setting independent of GDPR — it must block
+		// tracking even when gdpr_enabled=off.
+		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
+		if ($respectDnt) {
+			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
+			if ('1' === $dntHeader) {
+				return false; // DNT always wins — no filter override
+			}
+		}
+
 		// Check if GDPR compliance mode is enabled
 		$gdprEnabled = ('on' === ($settings['gdpr_enabled'] ?? 'on'));
 
@@ -238,25 +249,11 @@ class Consent
 
 		// GDPR is enabled and consent integration is configured - proceed with consent checks
 
-		// Respect Do Not Track if enabled in settings
-		$respectDnt = ('on' === ($settings['do_not_track'] ?? 'off'));
-		$dntBlocked = false;
-		if ($respectDnt) {
-			$dntHeader = isset($_SERVER['HTTP_DNT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_DNT'])) : '';
-			if ('1' === $dntHeader) {
-				$default    = false;
-				$dntBlocked = true;
-			}
-		}
-
 		// Programmatic tracking mode - bypass CMP consent checks
 		// Used by slimtrack_server() for server-side contexts (cron, CLI, redirect handlers)
 		// where no browser session exists and CMP consent has no meaningful role.
-		// DNT is non-negotiable: short-circuit before the filter so callbacks cannot override it.
+		// DNT already returned false above if the header was set — safe to skip here.
 		if (\wp_slimstat::$is_programmatic_tracking) {
-			if ($dntBlocked) {
-				return false;
-			}
 			return self::applyCanTrackFilter($default);
 		}
 
@@ -283,11 +280,17 @@ class Consent
 				// Check CMP integration for consent
 				$integrationKey = self::getIntegrationKey();
 
-				// SlimStat Banner integration - check consent cookie
+				// SlimStat Banner integration - check consent cookie.
+				// Only enforce when the banner is explicitly enabled by the admin.
+				// Sites where the banner is off (e.g. upgrades from 5.3.x that never
+				// configured GDPR) must not have tracking silently blocked, because
+				// visitors have no way to grant consent through a banner they never see.
 				if ('slimstat_banner' === $integrationKey) {
-					$gdpr_service = new \SlimStat\Services\GDPRService($settings);
-					if (!$gdpr_service->hasConsent()) {
-						$default = false;
+					if ('on' === ($settings['use_slimstat_banner'] ?? 'off')) {
+						$gdpr_service = new \SlimStat\Services\GDPRService($settings);
+						if (!$gdpr_service->hasConsent()) {
+							$default = false;
+						}
 					}
 				}
 
@@ -534,8 +537,14 @@ class Consent
 		// PRIORITY 3: Configuration DOES collect PII - check consent status
 		$integrationKey = self::getIntegrationKey();
 
-		// SlimStat Banner integration - check consent cookie
+		// SlimStat Banner integration - check consent cookie.
+		// Only enforce when the banner is explicitly enabled by the admin (same
+		// guard as canTrack()). If the banner is off, PII gating is not enforced
+		// via SlimStat's banner — preserves pre-5.4.0 behaviour for upgrades.
 		if ('slimstat_banner' === $integrationKey) {
+			if ('on' !== ($settings['use_slimstat_banner'] ?? 'off')) {
+				return true;
+			}
 			$gdpr_service = new \SlimStat\Services\GDPRService($settings);
 			return $gdpr_service->hasConsent();
 		}

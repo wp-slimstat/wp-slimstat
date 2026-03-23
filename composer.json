@@ -66,6 +66,13 @@
     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
     "test:user-exclusion": "php tests/user-exclusion-processor-test.php",
+    "test:ajax-resource-fix": "php tests/ajax-resource-fix-test.php",
+    "test:js-banner-gdpr": "php tests/js-params-banner-gdpr-consistency-test.php",
+    "test:v5460-migration": "php tests/v5460-settings-migration-test.php",
+    "test:early-translation": "php tests/early-translation-test.php",
+    "test:tracker-health-auth": "php tests/tracker-health-auth-test.php",
+    "test:browscap-isolation": "php tests/browscap-settings-isolation-test.php",
+    "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -79,7 +86,14 @@
       "@test:reports-escaping",
       "@test:fingerprint-sanitize",
       "@test:gdpr-consent",
-      "@test:user-exclusion"
+      "@test:user-exclusion",
+      "@test:ajax-resource-fix",
+      "@test:js-banner-gdpr",
+      "@test:v5460-migration",
+      "@test:early-translation",
+      "@test:tracker-health-auth",
+      "@test:browscap-isolation",
+      "@test:dnt-gdpr"
     ]
   }
 }

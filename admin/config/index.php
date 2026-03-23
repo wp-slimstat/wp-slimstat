@@ -715,6 +715,11 @@ $settings = [
                 'type'        => 'toggle',
                 'description' => __('Enable this option to display the SQL code associated to each report. This can be useful to troubleshoot issues with data consistency or missing pageviews.', 'wp-slimstat'),
             ],
+            'slimstat_debug' => [
+                'title'       => __('Tracker Debug Mode', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Enable detailed tracker diagnostics. When active, tracking responses include debug headers (X-SlimStat-Transport, X-SlimStat-Outcome, X-SlimStat-Error-Code) and the browser records transport attempts in window.__slimstatDebug. Disable after troubleshooting.', 'wp-slimstat'),
+            ],
             'db_indexes' => [
                 'title'       => __('Increase Performance', 'wp-slimstat'),
                 'type'        => 'toggle',

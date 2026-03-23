@@ -18,6 +18,9 @@ if (!function_exists('esc_html__')) {
 if (!function_exists('rest_ensure_response')) {
     function rest_ensure_response($data) { return $data; }
 }
+if (!function_exists('status_header')) {
+    function status_header($code, $description = '') {}
+}
 
 // ─── WP_REST_Request stub ────────────────────────────────────────
 if (!class_exists('WP_REST_Request')) {

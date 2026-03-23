@@ -149,9 +149,16 @@ class Browscap
         if (file_exists(wp_slimstat::$upload_dir . '/browscap-cache-master/version.txt')) {
             if ($current_timestamp - wp_slimstat::$settings['browscap_last_modified'] > 604800) {
 
-                // No matter what the outcome is, we'll check again in one week
+                // No matter what the outcome is, we'll check again in one week.
+                // Update only the timestamp key in the DB — do NOT write the full settings array.
+                // Writing wp_slimstat::$settings here persists runtime-derived values (e.g.
+                // use_slimstat_banner computed from consent_integration) and clobbers settings
+                // intentionally saved by the migration with different values.
                 wp_slimstat::$settings['browscap_last_modified'] = $current_timestamp;
-                wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
+                $_stored_for_browscap = get_option('slimstat_options', []);
+                $_stored_for_browscap['browscap_last_modified'] = $current_timestamp;
+                wp_slimstat::update_option('slimstat_options', $_stored_for_browscap);
+                unset($_stored_for_browscap);
 
                 // Now check the version number on the server
                 $response = wp_remote_get('https://raw.githubusercontent.com/slimstat/browscap-cache/master/version.txt');

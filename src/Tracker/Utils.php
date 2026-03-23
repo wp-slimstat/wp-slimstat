@@ -9,10 +9,124 @@ class Utils
 {
 	public static function logError($errorCode = 0)
 	{
+		// Throttle 3xx exclusion codes: only write if error code changed.
+		// These fire on every bot/excluded request — writing each time would
+		// cause DB write storms on high-traffic sites.
+		if ($errorCode >= 300 && $errorCode < 400) {
+			$stored = \get_option('slimstat_tracker_error', []);
+			$sameCode = !empty($stored[0]) && (int) $stored[0] === $errorCode;
+			// In debug mode, always refresh timestamp so support sees a fresh reproduction
+			if ($sameCode && !self::isDebugMode()) {
+				do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
+				return -$errorCode;
+			}
+		}
+
+		if (200 !== (int) $errorCode) {
+			\wp_slimstat::update_option('slimstat_tracker_error_detail', '');
+		}
+
 		\wp_slimstat::update_option('slimstat_tracker_error', [$errorCode, \wp_slimstat::date_i18n('U')]);
-		$stat = \wp_slimstat::get_stat();
-		do_action('slimstat_track_exit_' . abs($errorCode), $stat);
+		do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
 		return -$errorCode;
+	}
+
+	/**
+	 * Store a non-fatal tracker warning without marking the last pageview as failed.
+	 *
+	 * @param int $warningCode Warning code defined in languages/index.php.
+	 * @return void
+	 */
+	public static function logWarning(int $warningCode): void
+	{
+		$stored = \get_option('slimstat_tracker_warning', []);
+		$sameCode = !empty($stored[0]) && (int) $stored[0] === $warningCode;
+		if ($sameCode && !self::isDebugMode()) {
+			do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
+			return;
+		}
+
+		\wp_slimstat::update_option('slimstat_tracker_warning', [$warningCode, \wp_slimstat::date_i18n('U')]);
+		do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
+	}
+
+	/**
+	 * Store a GeoIP-specific warning without polluting tracker failure diagnostics.
+	 *
+	 * @param string $message Human-readable GeoIP error.
+	 * @return void
+	 */
+	public static function logGeoIpError(string $message): void
+	{
+		$stored = \get_option('slimstat_geoip_error', []);
+		$sameMessage = !empty($stored['error']) && $stored['error'] === $message;
+		if ($sameMessage && !self::isDebugMode()) {
+			return;
+		}
+
+		\wp_slimstat::update_option('slimstat_geoip_error', [
+			'time'  => time(),
+			'error' => sanitize_text_field($message),
+		]);
+	}
+
+	/**
+	 * Resolve a tracker code to a human-readable label when translations are loaded.
+	 *
+	 * @param int|null $code Tracker error or warning code.
+	 * @return string
+	 */
+	public static function getTrackerCodeLabel(?int $code): string
+	{
+		if ($code === null || !class_exists('\wp_slimstat_i18n')) {
+			return '';
+		}
+
+		if (method_exists('\wp_slimstat_i18n', 'init_dynamic_strings')) {
+			\wp_slimstat_i18n::init_dynamic_strings();
+		}
+
+		$lookupKey = 'e-' . $code;
+		$rawLabel = \wp_slimstat_i18n::get_string($lookupKey);
+
+		return ($rawLabel !== $lookupKey && $rawLabel !== '') ? $rawLabel : '';
+	}
+
+	/**
+	 * Check if tracker debug mode is active.
+	 *
+	 * @return bool
+	 */
+	public static function isDebugMode(): bool
+	{
+		return (defined('WP_DEBUG') && WP_DEBUG)
+			|| ('on' === (\wp_slimstat::$settings['slimstat_debug'] ?? 'off'));
+	}
+
+	/**
+	 * Send debug response headers for tracking requests.
+	 * Only emits when debug mode is active.
+	 *
+	 * @param string    $transport The transport method (rest, ajax, adblock_bypass).
+	 * @param string|int $result   The tracking result.
+	 */
+	public static function sendTrackingHeaders(string $transport, $result): void
+	{
+		if (!self::isDebugMode() || headers_sent()) {
+			return;
+		}
+
+		// $result may be a checksummed string like "123.<hmac>" — extract numeric prefix
+		$numericResult = is_string($result) && strpos($result, '.') !== false
+			? strstr($result, '.', true)
+			: $result;
+		$code = is_numeric($numericResult) ? (int) $numericResult : 0;
+		header('X-SlimStat-Transport: ' . sanitize_text_field($transport));
+		header('X-SlimStat-Outcome: ' . ($code > 0 ? 'success' : 'error'));
+
+		if ($code <= 0) {
+			header('X-SlimStat-Error-Code: ' . intval($code));
+		}
 	}
 
 	public static function getValueWithChecksum($value = 0)
@@ -26,6 +140,11 @@ class Utils
 
 	public static function getValueWithoutChecksum($valueWithChecksum = '')
 	{
+		if (!is_scalar($valueWithChecksum)) {
+			return false;
+		}
+
+		$valueWithChecksum = (string) $valueWithChecksum;
 		$parts = explode('.', $valueWithChecksum);
 		if (count($parts) !== 2) {
 			return false;
@@ -93,6 +212,12 @@ class Utils
 
 	public static function dtrPton($ip)
 	{
+		if (empty($ip)) {
+			return '';
+		}
+
+		$unpacked = false;
+
 		if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
 			$unpacked = unpack('A4', inet_pton($ip));
 		} elseif (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {
