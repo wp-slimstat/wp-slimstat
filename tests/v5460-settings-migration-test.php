@@ -43,9 +43,12 @@ function test_wp_has_consent_exists(): bool
     return $GLOBALS['_test_wp_has_consent_available'];
 }
 
+define('TEST_SLIMSTAT_VERSION', '5.4.6');
+
 function run_migration(array $settings): array
 {
-    if ('0' === ($settings['_migration_5460'] ?? '0')) {
+    $_migration_ran = $settings['_migration_5460'] ?? '0';
+    if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, TEST_SLIMSTAT_VERSION, '<'))) {
         // Save ORIGINAL banner value before consent-intent detection modifies it
         $_ss_banner_was_on_original = ('on' === ($settings['use_slimstat_banner'] ?? 'off'));
 
@@ -88,7 +91,7 @@ function run_migration(array $settings): array
         if ('on' === ($settings['hash_ip'] ?? 'off')) {
             $settings['hash_ip'] = 'off';
         }
-        $settings['_migration_5460'] = '1';
+        $settings['_migration_5460'] = TEST_SLIMSTAT_VERSION;
     }
     return $settings;
 }
@@ -109,22 +112,22 @@ mig_assert_same('on',  $result['javascript_mode'],     'TEST 1: javascript_mode 
 mig_assert_same('off', $result['anonymize_ip'],        'TEST 1: anonymize_ip must be reset to off');
 mig_assert_same('off', $result['hash_ip'],             'TEST 1: hash_ip must be reset to off');
 mig_assert_same('off', $result['gdpr_enabled'],        'TEST 1: gdpr_enabled off (no old consent intent)');
-mig_assert_same('1',   $result['_migration_5460'],     'TEST 1: migration flag must be set to 1');
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'],     'TEST 1: migration flag must be set to 1');
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TEST 2: Migration already ran (flag = '1') — nothing must change
+// TEST 2: Migration already ran (flag = current version) — nothing must change
 // ═══════════════════════════════════════════════════════════════════════════
 $result = run_migration([
     'use_slimstat_banner' => 'on',   // still bad — but migration must NOT touch it
     'javascript_mode'     => 'off',
     'anonymize_ip'        => 'on',
     'hash_ip'             => 'on',
-    '_migration_5460'     => '1',    // already ran
+    '_migration_5460'     => TEST_SLIMSTAT_VERSION,    // already ran this version
 ]);
 
-mig_assert_same('on',  $result['use_slimstat_banner'], 'TEST 2: migration must be skipped when flag is 1 — settings unchanged');
+mig_assert_same('on',  $result['use_slimstat_banner'], 'TEST 2: migration must be skipped when flag matches version — settings unchanged');
 mig_assert_same('off', $result['javascript_mode'],     'TEST 2: javascript_mode unchanged when migration skipped');
-mig_assert_same('1',   $result['_migration_5460'],     'TEST 2: flag stays 1');
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'],     'TEST 2: flag stays at version');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST 3: New install — all values already correct, migration fires but changes nothing
@@ -141,7 +144,7 @@ mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 3: use_slimstat_ban
 mig_assert_same('on',  $result['javascript_mode'],     'TEST 3: javascript_mode unchanged (already on)');
 mig_assert_same('off', $result['anonymize_ip'],        'TEST 3: anonymize_ip unchanged (already off)');
 mig_assert_same('off', $result['hash_ip'],             'TEST 3: hash_ip unchanged (already off)');
-mig_assert_same('1',   $result['_migration_5460'],     'TEST 3: flag written to 1 even on new install');
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'],     'TEST 3: flag written to 1 even on new install');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST 4: 5.3.x upgrade — banner was never set ('off'), javascript_mode was 'off'
@@ -160,7 +163,7 @@ mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 4: use_slimstat_ban
 mig_assert_same('off', $result['javascript_mode'],     'TEST 4: javascript_mode must NOT be reset for 5.3.x users (banner was off = no v5.4.1 fingerprint)');
 mig_assert_same('no',  $result['anonymize_ip'],        'TEST 4: anonymize_ip stays as no (not on → migration check fails)');
 mig_assert_same('off', $result['hash_ip'],             'TEST 4: hash_ip stays off');
-mig_assert_same('1',   $result['_migration_5460'],     'TEST 4: flag written to 1');
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'],     'TEST 4: flag written to 1');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST 5: Partial bad state — only anonymize_ip and hash_ip bad, banner already off
@@ -179,7 +182,7 @@ mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 5: banner stays off
 mig_assert_same('on',  $result['javascript_mode'],     'TEST 5: javascript_mode unchanged (banner was off = no fingerprint)');
 mig_assert_same('off', $result['anonymize_ip'],        'TEST 5: anonymize_ip reset to off');
 mig_assert_same('off', $result['hash_ip'],             'TEST 5: hash_ip reset to off');
-mig_assert_same('1',   $result['_migration_5460'],     'TEST 5: flag written to 1');
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'],     'TEST 5: flag written to 1');
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEST 6: v5.3.x upgrade with NO consent config → GDPR off, pure v5.3.x
@@ -300,5 +303,48 @@ $result = run_migration([
 mig_assert_same('on',              $result['gdpr_enabled'],        'TEST 12: gdpr_enabled on (old opt-out detected)');
 mig_assert_same('slimstat_banner', $result['consent_integration'],  'TEST 12: slimstat_banner');
 mig_assert_same('on',              $result['use_slimstat_banner'],  'TEST 12: banner on');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 13: Downgrade→re-upgrade: flag has old version → migration re-runs
+//
+// User ran v5.4.6, downgraded to v5.4.3, then re-upgrades to a newer v5.4.7.
+// The flag stores '5.4.6' but new version is '5.4.7' (simulated via TEST_SLIMSTAT_VERSION).
+// Migration should re-run because version_compare('5.4.6', '5.4.7', '<') = true.
+// But in our test TEST_SLIMSTAT_VERSION = '5.4.6', so we simulate with an older flag.
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner'  => 'on',
+    'javascript_mode'      => 'off',
+    'anonymize_ip'         => 'on',
+    'hash_ip'              => 'on',
+    'gdpr_enabled'         => 'on',
+    'consent_integration'  => 'slimstat_banner',
+    'set_tracker_cookie'   => 'off',
+    'display_opt_out'      => 'no',
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+    '_migration_5460'      => '5.4.5',  // ran on an older version → should re-run
+]);
+
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'], 'TEST 13: flag updated to current version after re-run');
+mig_assert_same('off', $result['gdpr_enabled'],        'TEST 13: migration re-ran and set gdpr_enabled=off');
+mig_assert_same('off', $result['anonymize_ip'],         'TEST 13: anonymize_ip reset');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 14: Flag '1' from old code treated as < current version → re-runs
+// ═══════════════════════════════════════════════════════════════════════════
+$result = run_migration([
+    'use_slimstat_banner'  => 'on',
+    'javascript_mode'      => 'off',
+    'anonymize_ip'         => 'on',
+    'hash_ip'              => 'on',
+    'display_opt_out'      => 'no',
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+    '_migration_5460'      => '1',  // old-style flag from earlier code
+]);
+
+mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'], 'TEST 14: old "1" flag triggers re-run, updated to version');
+mig_assert_same('off', $result['anonymize_ip'],         'TEST 14: migration re-ran');
 
 echo "All {$assertions} assertions passed in v5460-settings-migration-test.php\n";

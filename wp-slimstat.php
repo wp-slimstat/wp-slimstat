@@ -236,9 +236,11 @@ class wp_slimstat
 
         // One-shot migration: runs once on first boot after installing this build.
         // '_migration_5460' is absent from all pre-5.4.6 installs; array_merge fills it
-        // with '0' from init_options(), triggering this block exactly once. After running,
-        // the flag is saved as '1' in DB and the block is permanently skipped.
-        if ('0' === (self::$settings['_migration_5460'] ?? '0')) {
+        // with '0' from init_options(). After running, the flag stores the version that ran it.
+        // On downgrade→re-upgrade, the stored version will differ from SLIMSTAT_ANALYTICS_VERSION,
+        // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
+        $_migration_ran = self::$settings['_migration_5460'] ?? '0';
+        if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
             // Save ORIGINAL use_slimstat_banner before consent-intent detection modifies it.
             // This is the reliable v5.4.1 default fingerprint used for javascript_mode reset below.
             $_ss_banner_was_on_original = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
@@ -311,19 +313,16 @@ class wp_slimstat
                 set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
             }
             unset($_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
-            // Mark done so this block never runs again after this request.
-            self::$settings['_migration_5460'] = '1';
+            // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
+            self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
             self::update_option('slimstat_options', self::$settings);
 
-            // Schedule a hard-flush of rewrite rules on 'init' (priority 99) so it runs
-            // AFTER the bypass rewrite rule is registered (RestApiManager::rewriteRuleRequest
-            // runs on 'init' default priority). Flushing here during plugins_loaded would be
-            // too early — the rule wouldn't exist yet.
-            if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'ajax')) {
-                add_action('init', static function () {
-                    flush_rewrite_rules();
-                }, 99);
-            }
+            // Rewrite rules are flushed via two other paths:
+            // 1. Activation hook: admin/index.php init_environment() calls flush_rewrite_rules()
+            // 2. Settings change: RestApiManager sets 'slimstat_permalink_structure_updated' option,
+            //    which triggers flush_rewrite_rules() on next init via rewriteRuleRequest()
+            // No flush needed here — doing so during migration (plugins_loaded) would fire before
+            // the rewrite rule is registered on 'init' and waste a DB write.
         }
 
         // Allow third party tools to edit the options
