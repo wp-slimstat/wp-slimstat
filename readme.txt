@@ -77,10 +77,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Changelog ==
 = 5.4.6 - 2026-03-23 =
 
-We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to
-zero, IPs were masked without your permission, and a consent banner appeared on sites that
-never asked for one. This release fixes all of that. After updating, your site works the way
-it did before 5.4.0 — no manual steps required.
+We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to zero, IPs were masked without your permission, and a consent banner appeared on sites that never asked for one. This release fixes all of that. After updating, your site works the way it did before 5.4.0 — no manual steps required.
 
 If you want to enable GDPR features:
 
@@ -94,15 +91,18 @@ If you want to enable GDPR features:
 * IPs being masked or hashed without your permission: v5.4.0 changed IP storage defaults, so full IP addresses were replaced with anonymized or hashed values. Your IPs are now stored in full again, matching pre-5.4 behavior.
 * Tracking broken on sites using WP Rocket, W3TC, or other caching plugins: fresh installs defaulted to server-side tracking, which doesn't work with page caching. We've restored browser-based (JavaScript) tracking as the default.
 * Ad-blocker bypass failing after plugin updates: the bypass URL included the plugin version, so cached pages had a stale URL after every update. The bypass URL is now stable across versions.
-* Internal tracking URLs appearing as "top pages" in reports. These are now filtered out.
+* Internal tracking URLs and bypass file URLs appearing as pages in the Access Log. All SlimStat-internal URLs are now filtered from both reports and server-side tracking.
+* Access Log pagination showing the same rows when clicking the next-page arrow. The second page now correctly shows the next set of results.
 * Pageviews silently lost when a transport fails: the tracker now tries adblock-bypass, AJAX, and REST fallbacks before giving up.
 * Stale cached tracker data causing abandoned pageviews: the tracker recovers gracefully.
-* "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored regardless of your GDPR setting.
+* "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored regardless of your GDPR setting. The DNT toggle is now always visible in settings.
+* Migration admin notice linking to a non-existent settings page. The link now correctly opens Settings → Tracker → Data Protection.
 
 **Improved**
 
 * Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
 * Session cookies are restored by default — returning visitors are recognized across pages again, just like in v5.3.x.
+* Cookie info registered with WP Consent API now uses proper plural-aware translations.
 
 = 5.4.5 - 2026-03-20 =
 - **Fix**: Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)

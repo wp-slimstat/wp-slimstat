@@ -12,7 +12,6 @@ If you want to enable GDPR features
 - Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
 - Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
 
-
 Fixed
 - Visitor counts dropping to zero after upgrading: a consent banner was silently enabled on
   every site, blocking all anonymous visitors. The banner is now off by default. If you had
@@ -27,18 +26,23 @@ Fixed
 - Ad-blocker bypass failing after plugin updates: the bypass URL included the plugin version,
   so cached pages had a stale URL after every update. The bypass URL is now stable across
   versions, and we flush the rewrite rules on activation so caching plugins route it correctly.
-- Internal tracking URLs (/wp-json/slimstat/v1/hit, /wp-admin/admin-ajax.php) appearing as
-  "top pages" in reports. These are now filtered out — you'll only see real pages.
+- Internal tracking URLs and bypass file URLs appearing as pages in the Access Log. All
+  SlimStat-internal URLs are now filtered from both reports and server-side tracking.
+- Access Log pagination showing the same rows when clicking the next-page arrow. The second
+  page now correctly shows the next set of results.
 - Pageviews silently lost when a transport fails: the tracker now tries adblock-bypass, AJAX,
   and REST fallbacks before giving up.
 - Stale cached tracker data causing abandoned pageviews: the tracker recovers gracefully.
 - "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored
-  regardless of your GDPR setting.
+  regardless of your GDPR setting. The DNT toggle is now always visible in settings.
+- Migration admin notice linking to a non-existent settings page. The link now correctly
+  opens Settings → Tracker → Data Protection.
 
 Improved
 - Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
 - Session cookies are restored by default — returning visitors are recognized across pages
   again, just like in v5.3.x.
+- Cookie info registered with WP Consent API now uses proper plural-aware translations.
 
 = 5.4.5 - 2026-03-20 =
 
