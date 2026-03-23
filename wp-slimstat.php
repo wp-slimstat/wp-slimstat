@@ -315,10 +315,11 @@ class wp_slimstat
             self::$settings['_migration_5460'] = '1';
             self::update_option('slimstat_options', self::$settings);
 
-            // Flush rewrite rules so adblock bypass rewrite is written to .htaccess.
-            // Required for caching plugins (WP Rocket, W3TC) that route via .htaccess.
+            // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
+            // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before
+            // WordPress loads — a soft flush would not help.
             if ('adblock_bypass' === (self::$settings['tracking_request_method'] ?? 'ajax')) {
-                flush_rewrite_rules(false);
+                flush_rewrite_rules();
             }
         }
 
