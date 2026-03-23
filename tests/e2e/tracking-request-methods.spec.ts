@@ -148,14 +148,8 @@ test.describe('Tracking Request Methods — All Transports', () => {
       // If we captured the response, verify it contains a valid checksum-formatted tracking ID
       if (restResponseBody) {
         expect(restResponseBody).not.toContain('Internal Server Error');
-        // REST wraps the result in JSON — parse and verify checksum format "<id>.<hash>"
-        try {
-          const parsed = JSON.parse(restResponseBody);
-          const body = typeof parsed === 'string' ? parsed : String(parsed);
-          expect(body).toMatch(/^\d+\.[0-9a-fA-F]+$/);
-        } catch {
-          // sendBeacon may produce non-JSON response — skip format check
-        }
+        const body = restResponseBody.replace(/^"|"$/g, '').trim();
+        expect(body).toMatch(/^\d+\.[0-9a-fA-F]+$/);
       }
     });
   });

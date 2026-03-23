@@ -6,13 +6,32 @@
   "config": {
     "platform-check": false
   },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "packages/veronalabs-browscap-php",
+      "options": {
+        "symlink": false
+      }
+    }
+  ],
   "autoload": {
     "psr-4": {
       "SlimStat\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "WpSlimstat\\Tests\\": "tests/"
+    }
+  },
   "require": {
     "veronalabs/browscap-php": "dev-standalone"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5",
+    "brain/monkey": "^2.6",
+    "mockery/mockery": "^1.6"
   },
   "extra": {
     "mozart": {
@@ -36,6 +55,7 @@
       "~/.composer/vendor/bin/mozart compose",
       "composer dump-autoload"
     ],
+    "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative",
     "test:license-tags": "php tests/license-tag-gating-test.php",
     "test:geoip-resolver": "php tests/resolve-geolocation-provider-test.php",
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
@@ -47,7 +67,16 @@
     "test:fingerprint-sanitize": "php tests/fingerprint-sanitization-test.php",
     "test:gdpr-consent": "php tests/gdpr-consent-cookie-test.php",
     "test:user-exclusion": "php tests/user-exclusion-processor-test.php",
+    "test:ajax-resource-fix": "php tests/ajax-resource-fix-test.php",
+    "test:js-banner-gdpr": "php tests/js-params-banner-gdpr-consistency-test.php",
+    "test:v5460-migration": "php tests/v5460-settings-migration-test.php",
+    "test:early-translation": "php tests/early-translation-test.php",
+    "test:tracker-health-auth": "php tests/tracker-health-auth-test.php",
+    "test:browscap-isolation": "php tests/browscap-settings-isolation-test.php",
+    "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
+    "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
+      "@test:unit",
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
@@ -58,7 +87,14 @@
       "@test:reports-escaping",
       "@test:fingerprint-sanitize",
       "@test:gdpr-consent",
-      "@test:user-exclusion"
+      "@test:user-exclusion",
+      "@test:ajax-resource-fix",
+      "@test:js-banner-gdpr",
+      "@test:v5460-migration",
+      "@test:early-translation",
+      "@test:tracker-health-auth",
+      "@test:browscap-isolation",
+      "@test:dnt-gdpr"
     ]
   }
 }

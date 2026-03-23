@@ -238,16 +238,12 @@ $settings = [
 					'type' => 'checked',
 				],
             ],
+*/
             'do_not_track' => [
                 'title'       => __('Respect Do Not Track (DNT)', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking).<br/><br/>GDPR does not require this, but it demonstrates respect for user privacy preferences. Recommended for privacy-focused websites.', 'wp-slimstat'),
-                'conditional' => [
-					'field' => 'gdpr_enabled',
-					'type' => 'checked',
-				],
+                'description' => __('<strong>Privacy Enhancement:</strong> Honor the DNT browser header. When a visitor has DNT enabled in their browser, NO tracking occurs (not even anonymous tracking). GDPR does not require this, but it demonstrates respect for user privacy preferences.', 'wp-slimstat'),
             ],
-*/
             'anonymize_ip' => [
                 'title'       => __('Anonymize IP Addresses', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -714,6 +710,11 @@ $settings = [
                 'title'       => __('SQL Debug', 'wp-slimstat'),
                 'type'        => 'toggle',
                 'description' => __('Enable this option to display the SQL code associated to each report. This can be useful to troubleshoot issues with data consistency or missing pageviews.', 'wp-slimstat'),
+            ],
+            'slimstat_debug' => [
+                'title'       => __('Tracker Debug Mode', 'wp-slimstat'),
+                'type'        => 'toggle',
+                'description' => __('Enable detailed tracker diagnostics. When active, tracking responses include debug headers (X-SlimStat-Transport, X-SlimStat-Outcome, X-SlimStat-Error-Code) and the browser records transport attempts in window.__slimstatDebug. Disable after troubleshooting.', 'wp-slimstat'),
             ],
             'db_indexes' => [
                 'title'       => __('Increase Performance', 'wp-slimstat'),

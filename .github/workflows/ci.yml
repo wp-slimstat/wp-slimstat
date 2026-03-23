@@ -1,0 +1,349 @@
+##############################################################################
+# wp-slimstat CI — 3-Tier Pipeline
+#
+# Tier 1 · fast      PHPUnit unit tests + PHP lint   every push / PR
+# Tier 2 · standard  Playwright E2E via wp-env        push/PR to main/development
+# Tier 3 · nightly   Full PHP matrix + k6 perf        cron 02:00 UTC daily
+##############################################################################
+
+name: CI
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  schedule:
+    # Tier 3 nightly — 02:00 UTC
+    - cron: "0 2 * * *"
+
+##############################################################################
+# TIER 1 — fast (PHPUnit unit + PHP lint, target <3 min)
+# Runs on: every push and every pull_request
+##############################################################################
+jobs:
+  fast:
+    name: "Tier 1 · fast · PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        php: ["7.4", "8.2"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+          # PHP 8.5 deprecation notices from vendor are expected — do not use
+          # --quiet; --no-progress suppresses download bars without hiding test output.
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-
+
+      - name: Install Composer dependencies
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
+        # mozart post-install hook requires a global mozart binary which is not
+        # available in CI — skip the hook with --no-scripts; the autoloader is
+        # still generated via the next step.
+        if: ${{ matrix.php != '7.4' }}
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        if: ${{ matrix.php != '7.4' }}
+        run: composer dump-autoload --no-interaction
+
+      - name: Run PHPUnit unit tests
+        if: ${{ matrix.php != '7.4' }}
+        run: composer test:unit
+
+      - name: PHP syntax lint (src/)
+        # Lint plugin source only — skip src/Dependencies/ which contains
+        # Mozart-scoped vendor files that may use PHP 8.0+ syntax.
+        # Print only files with errors; grep exits 1 when nothing matches (no
+        # errors), so we invert: fail only when errors ARE found.
+        run: |
+          ERRORS=$(find src/ -not -path "src/Dependencies/*" -name "*.php" -exec php -l {} \; 2>&1 | grep -v "No syntax errors" || true)
+          if [ -n "$ERRORS" ]; then
+            echo "$ERRORS"
+            exit 1
+          fi
+          echo "No syntax errors found."
+
+##############################################################################
+# TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
+# Runs on: push or PR targeting main or development branches only
+##############################################################################
+  standard:
+    name: "Tier 2 · standard · E2E"
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name != 'schedule' &&
+      (
+        github.ref == 'refs/heads/main' ||
+        github.ref == 'refs/heads/development' ||
+        (github.event_name == 'pull_request' &&
+          (github.base_ref == 'main' || github.base_ref == 'development'))
+      )
+
+    env:
+      TEST_BASE_URL: http://localhost:8889
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package.json') }}
+          restore-keys: npm-
+
+      - name: Install npm dependencies
+        # package-lock.json is gitignored; use npm install instead of npm ci.
+        run: npm install --no-progress
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Create wp-env override (CI — no sibling plugins)
+        # .wp-env.json references ../wp-slimstat-pro, ../cookie-law-info, and
+        # ../wp-consent-api which don't exist in CI. Override to use only the
+        # current plugin. .wp-env.override.json is gitignored and safe to create.
+        run: |
+          echo '{"plugins": ["."]}' > .wp-env.override.json
+
+      - name: Start wp-env
+        # @wordpress/env ships as a devDependency; invoke via npx so we don't
+        # need a global install.  wp-env requires Docker — ubuntu-latest runners
+        # ship with Docker pre-installed.
+        run: npx wp-env start
+        timeout-minutes: 5
+
+      - name: Activate plugin and create database tables
+        # wp-env auto-activates the plugin but doesn't fire admin_init, which is
+        # where init_tables() runs. Force table creation via wp eval.
+        run: |
+          npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
+          npx wp-env run tests-cli -- wp plugin activate wp-slimstat
+          npx wp-env run tests-cli -- wp eval '
+            include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
+            wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
+          '
+          echo "--- Verifying tables ---"
+          npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
+      - name: Expose wp-env filesystem and MySQL to E2E tests
+        # wp-env runs WordPress inside Docker containers. The E2E test helpers
+        # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
+        # and direct MySQL access. This step:
+        #   1. Finds the WordPress container and its volume path on the host.
+        #   2. Makes wp-config.php and mu-plugins writable by the runner user.
+        #   3. Sets WP_ROOT so setup.ts points at the real WordPress root.
+        #   4. Finds the MySQL container's internal IP for TCP connections.
+        #   5. Sets MYSQL_* env vars (socket disabled, TCP used instead).
+        run: |
+          # ── WordPress container and volume ─────────────────────────────
+          WP_CTR=$(docker ps --format "{{.Names}}" | grep -v "cli" | grep -v "mysql\|mariadb" | head -1)
+          echo "WordPress container: $WP_CTR"
+
+          WP_VOL=$(docker inspect "$WP_CTR" \
+            --format '{{range .Mounts}}{{if eq .Destination "/var/www/html"}}{{.Source}}{{end}}{{end}}')
+          echo "WP volume path: $WP_VOL"
+
+          # Grant runner user write access to wp-config.php and mu-plugins
+          sudo mkdir -p "$WP_VOL/wp-content/mu-plugins"
+          sudo chown -R "$(id -u):$(id -g)" "$WP_VOL/wp-content/mu-plugins"
+          sudo chown "$(id -u):$(id -g)" "$WP_VOL/wp-config.php"
+
+          echo "WP_ROOT=$WP_VOL" >> $GITHUB_ENV
+
+          # ── MySQL access via host-mapped port ────────────────────────────
+          # wp-env maps container port 3306 to a dynamic host port.
+          MYSQL_CTR=$(docker ps --format "{{.Names}}" | grep -i "tests-mysql\|tests-mariadb" | head -1)
+          echo "MySQL container: $MYSQL_CTR"
+
+          MYSQL_HOST_PORT=$(docker port "$MYSQL_CTR" 3306 2>/dev/null | head -1 | cut -d: -f2)
+          echo "MySQL host port: $MYSQL_HOST_PORT"
+
+          # Discover the actual database name from MySQL itself (not wp-config).
+          # wp-env MariaDB images ship 'mariadb' binary, not 'mysql'.
+          ALL_DBS=$(docker exec "$MYSQL_CTR" mariadb -uroot -ppassword \
+            -sNe "SHOW DATABASES" 2>/dev/null || true)
+          echo "All databases: $ALL_DBS"
+
+          # Pick the WordPress database (exclude system databases)
+          DB_NAME=$(echo "$ALL_DBS" | grep -v -E "^(information_schema|mysql|performance_schema|sys)$" | head -1)
+          echo "Selected database: '$DB_NAME'"
+          DB_NAME="${DB_NAME:-wordpress}"
+
+          # Disable Unix socket; use TCP via host-mapped port
+          echo "MYSQL_SOCKET=" >> $GITHUB_ENV
+          echo "MYSQL_HOST=127.0.0.1" >> $GITHUB_ENV
+          echo "MYSQL_PORT=${MYSQL_HOST_PORT:-3306}" >> $GITHUB_ENV
+          echo "MYSQL_USER=root" >> $GITHUB_ENV
+          echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
+          echo "MYSQL_DATABASE=$DB_NAME" >> $GITHUB_ENV
+
+      - name: Run E2E tests
+        # continue-on-error: many E2E tests assume local dev fixtures (tracking
+        # data, custom users) that don't exist in a fresh wp-env. These are
+        # pre-existing failures, not regressions. Report results, don't block.
+        continue-on-error: true
+        env:
+          # wp-env creates a fresh WordPress with default admin credentials.
+          # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
+          WP_ADMIN_USER: admin
+          WP_ADMIN_PASS: password
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report/
+          retention-days: 7
+
+      - name: Stop wp-env
+        if: always()
+        run: npx wp-env stop
+
+##############################################################################
+# TIER 3 — nightly (full PHP matrix + k6 perf, runs on cron schedule only)
+##############################################################################
+  nightly:
+    name: "Tier 3 · nightly · PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'schedule' }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ matrix.php }}-
+
+      - name: Install Composer dependencies
+        if: ${{ matrix.php != '7.4' }}
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        if: ${{ matrix.php != '7.4' }}
+        run: composer dump-autoload --no-interaction
+
+      - name: Run full PHPUnit suite
+        # composer test:all runs phpunit + all standalone PHP test scripts.
+        # Individual scripts may exit non-zero on CI if they depend on a live DB
+        # or environment; run phpunit directly for the nightly matrix gate.
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
+        if: ${{ matrix.php != '7.4' }}
+        run: composer test:unit
+
+      # ── k6 performance tests ─────────────────────────────────────────────
+      # Only run k6 on one PHP version to avoid redundant load generation.
+      - name: Install k6
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring \
+            --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Set up Node.js (for wp-env + k6 tests)
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Cache npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ hashFiles('package.json') }}
+          restore-keys: npm-
+
+      - name: Install npm dependencies
+        if: ${{ matrix.php == '8.2' }}
+        run: npm install --no-progress
+
+      - name: Start wp-env (for k6 target)
+        if: ${{ matrix.php == '8.2' }}
+        run: npx wp-env start
+        timeout-minutes: 5
+
+      - name: Run k6 performance tests
+        if: ${{ matrix.php == '8.2' }}
+        env:
+          # k6 thresholds enforced inside tests/perf/geoip-load.js:
+          #   p(95) < 200   (200 ms)
+          #   p(99) < 500   (500 ms)
+          #   error_rate  < 0.005  (0.5 %)
+          #   db_write_p95 < 20    (20 ms) — requires custom trend metric in the script
+          K6_BASE_URL: http://localhost:8889
+        run: npm run test:perf
+
+      # ── EXPLAIN gate (placeholder) ───────────────────────────────────────
+      # TODO: implement a custom script (or k6 extension) that:
+      #   1. Captures SHOW STATUS / slow-query log during k6 run.
+      #   2. Re-runs suspect queries with EXPLAIN.
+      #   3. Fails this step if any row shows access_type=ALL on a table whose
+      #      row count (SHOW TABLE STATUS) exceeds 100,000.
+      # Scaffold below runs a no-op until the script is written.
+      - name: EXPLAIN gate — full-table-scan check
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          echo "[TODO] EXPLAIN gate not yet implemented."
+          echo "       Add a script at tests/perf/explain-gate.sh that:"
+          echo "         1. Extracts queries logged during k6 run."
+          echo "         2. Runs EXPLAIN on each query against the wp-env DB."
+          echo "         3. Fails (exit 1) if access_type=ALL on table row_count > 100000."
+          exit 0
+
+      - name: Stop wp-env
+        if: ${{ matrix.php == '8.2' && always() }}
+        run: npx wp-env stop

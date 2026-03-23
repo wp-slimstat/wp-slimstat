@@ -23,6 +23,23 @@ composer.lock
 package.json
 package-lock.json
 bun.lock
+phpunit.xml.dist
+.wp-env.json
+.wp-env.override.json
+
+# Dev-only directories not needed in release
+/packages
+/vendor/bin
+/vendor/mockery
+/vendor/phpunit
+/vendor/brain
+/vendor/hamcrest
+/vendor/myclabs
+/vendor/nikic
+/vendor/sebastian
+/vendor/theseer
+/vendor/phar-io
+/vendor/antecedent
 
 # Docs (wp.org uses readme.txt)
 CHANGELOG.md

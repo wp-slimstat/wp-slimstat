@@ -1,3 +1,49 @@
+= 5.4.6 - 2026-03-23 =
+
+We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to
+zero, IPs were masked without your permission, and a consent banner appeared on sites that
+never asked for one. This release fixes all of that. After updating, your site works the way
+it did before 5.4.0 — no manual steps required.
+
+If you want to enable GDPR features
+- Consent banner: Settings → Tracker → Data Protection → GDPR Compliance Mode = On, then
+  Settings → Tracker → Consent Management → choose SlimStat Banner, WP Consent API, or
+  Real Cookie Banner
+- Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
+- Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
+
+Fixed
+- Visitor counts dropping to zero after upgrading: a consent banner was silently enabled on
+  every site, blocking all anonymous visitors. The banner is now off by default. If you had
+  configured opt-in or opt-out privacy features in an earlier version, we detect that and
+  keep consent enabled for you automatically.
+- IPs being masked or hashed without your permission: v5.4.0 changed IP storage defaults,
+  so full IP addresses were replaced with anonymized or hashed values. Your IPs are now
+  stored in full again, matching pre-5.4 behavior.
+- Tracking broken on sites using WP Rocket, W3TC, or other caching plugins: fresh installs
+  defaulted to server-side tracking, which doesn't work with page caching. We've restored
+  browser-based (JavaScript) tracking as the default — it works with every caching setup.
+- Ad-blocker bypass failing after plugin updates: the bypass URL included the plugin version,
+  so cached pages had a stale URL after every update. The bypass URL is now stable across
+  versions, and we flush the rewrite rules on activation so caching plugins route it correctly.
+- Internal tracking URLs and bypass file URLs appearing as pages in the Access Log. All
+  SlimStat-internal URLs are now filtered from both reports and server-side tracking.
+- Access Log pagination showing the same rows when clicking the next-page arrow. The second
+  page now correctly shows the next set of results.
+- Pageviews silently lost when a transport fails: the tracker now tries adblock-bypass, AJAX,
+  and REST fallbacks before giving up.
+- Stale cached tracker data causing abandoned pageviews: the tracker recovers gracefully.
+- "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored
+  regardless of your GDPR setting. The DNT toggle is now always visible in settings.
+- Migration admin notice linking to a non-existent settings page. The link now correctly
+  opens Settings → Tracker → Data Protection.
+
+Improved
+- Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
+- Session cookies are restored by default — returning visitors are recognized across pages
+  again, just like in v5.3.x.
+- Cookie info registered with WP Consent API now uses proper plural-aware translations.
+
 = 5.4.5 - 2026-03-20 =
 
 Fixed
@@ -18,6 +64,22 @@ Security
 Improved
 - Refactored `isUserExcluded()` into standalone method with full test coverage
 - Inlined `get_current_user_id()` in nonce guards for clarity
+
+Infrastructure (cycle/01)
+- Added PHPUnit 10.5 + Brain Monkey + Mockery unit test framework (23 tests, 27 assertions across Tracker, Processor, Session classes)
+- Added @wordpress/env Docker environment (WordPress 6.4, PHP 7.4) for reproducible local and CI testing
+- Added 3-tier GitHub Actions CI pipeline: Tier 1 PHPUnit + lint on every push (<3 min), Tier 2 E2E on main/development PRs, Tier 3 full PHP matrix + k6 nightly
+- Added Playwright analytics correctness invariants spec (5 tests verifying row creation, visit_id chain, resource field match, no duplicate inserts)
+- Added 5 deterministic site profile fixtures (publisher, store, membership, brochure, multisite) for consistent E2E test state
+- Added E2E correlation ID harness MU-plugin for per-run row isolation in wp_slim_stats
+
+Infrastructure (cycle/02)
+- Fixed E2E tests in CI — rewrote setSlimstatOption to direct DB via php-serialize (82 specs now pass, up from 1)
+- Fixed FK constraint errors on TRUNCATE TABLE wp_slim_stats across all test files
+- Fixed rewrite flush to use permalink page visit instead of AJAX (works in wp-env Docker)
+- Added session & cookie management E2E tests — visit_id continuity, cookie expiry, consent-upgrade regression (#246)
+- Added admin settings persistence E2E tests — save/reload, multi-setting atomicity, navigation survival
+- Added query builder unit tests — 29 tests covering SQL generation, all filter operators, escaping, date ranges
 
 = 5.4.4 - 2026-03-17 =
 

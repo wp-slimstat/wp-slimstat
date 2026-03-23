@@ -22,19 +22,8 @@
  * renderer code. This E2E test validates the full browser execution context.
  */
 import { test, expect, type Page } from '@playwright/test';
-import * as mysql from 'mysql2/promise';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
-
-let pool: mysql.Pool;
-
-function getPool(): mysql.Pool {
-  if (!pool) pool = mysql.createPool(MYSQL_CONFIG);
-  return pool;
-}
-
-async function clearStatsTable(): Promise<void> {
-  await getPool().execute('TRUNCATE TABLE wp_slim_stats');
-}
+import { BASE_URL } from './helpers/env';
+import { getPool, closeDb, clearStatsTable } from './helpers/setup';
 
 async function seedFingerprintPageview(fingerprint: string): Promise<number> {
   const now = Math.floor(Date.now() / 1000);
@@ -72,7 +61,7 @@ test.describe('Reports Fingerprint XSS Escaping (#243, #244)', () => {
   });
 
   test.afterAll(async () => {
-    if (pool) await pool.end();
+    await closeDb();
   });
 
   // ─── Test 1: Script tag fingerprint — no XSS execution ────────────────

@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.5
+ * Version: 5.4.6
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.5');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.6');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -234,27 +234,125 @@ class wp_slimstat
 
         self::$settings = array_merge(self::init_options(), self::$settings);
 
+        // One-shot migration: runs once on first boot after installing this build.
+        // '_migration_5460' is absent from all pre-5.4.6 installs; array_merge fills it
+        // with '0' from init_options(). After running, the flag stores the version that ran it.
+        // On downgrade→re-upgrade, the stored version will differ from SLIMSTAT_ANALYTICS_VERSION,
+        // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
+        $_migration_ran = self::$settings['_migration_5460'] ?? '0';
+        if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
+            // Save ORIGINAL use_slimstat_banner before consent-intent detection modifies it.
+            // This is the reliable v5.4.1 default fingerprint used for javascript_mode reset below.
+            $_ss_banner_was_on_original = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
+
+            // --- Consent intent detection ---
+            // Read legacy v5.3.x consent settings to detect if user had configured privacy.
+            // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
+            $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
+            $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
+            $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
+
+            // Check if user deliberately chose a third-party CMP in v5.4.x
+            $_current_integration = self::$settings['consent_integration'] ?? '';
+            $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
+
+            if ($_has_third_party_cmp) {
+                // User deliberately configured a third-party CMP — preserve their setup
+                self::$settings['gdpr_enabled'] = 'on';
+            } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
+                // User had consent/privacy config in v5.3.x — map to GDPR system
+                self::$settings['gdpr_enabled'] = 'on';
+                self::$settings['use_slimstat_banner'] = 'on';
+                // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
+                // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
+                if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
+                    self::$settings['consent_integration'] = 'wp_consent_api';
+                } else {
+                    self::$settings['consent_integration'] = 'slimstat_banner';
+                }
+            } else {
+                // No consent config ever — pure v5.3.x behavior: all tracked, no banner
+                self::$settings['gdpr_enabled'] = 'off';
+                self::$settings['consent_integration'] = '';
+                self::$settings['use_slimstat_banner'] = 'off';
+            }
+
+            // Restore session cookie when GDPR is off (v5.3.x default was 'on')
+            if ('off' === self::$settings['gdpr_enabled']
+                && 'off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
+                self::$settings['set_tracker_cookie'] = 'on';
+            }
+
+            unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
+                  $_current_integration, $_has_third_party_cmp);
+
+            // use_slimstat_banner='on' in the ORIGINAL DB was the v5.4.1 fingerprint.
+            // Use the saved original value (before consent-intent detection modified it).
+            $_ss_banner_was_on = $_ss_banner_was_on_original;
+            unset($_ss_banner_was_on_original);
+            // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
+            // every cached-page visitor to silently update the first visitor's DB record.
+            // ONLY reset when banner was also 'on' (v5.4.1 paired-default fingerprint) so that
+            // 5.3.x users who deliberately chose Server mode are not touched.
+            if ($_ss_banner_was_on && 'off' === (self::$settings['javascript_mode'] ?? 'on')) {
+                self::$settings['javascript_mode'] = 'on';
+            }
+            // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
+            // Restore 5.3.x behavior: full IPs stored, no daily visitor hash.
+            $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
+            $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
+            if ($_ss_ip_was_anonymized) {
+                self::$settings['anonymize_ip'] = 'off';
+            }
+            if ($_ss_ip_was_hashed) {
+                self::$settings['hash_ip'] = 'off';
+            }
+            // Queue a one-time admin notice when IP storage behavior changed so admins
+            // know to review Settings → Data Protection (EU sites may need to re-enable).
+            if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
+                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
+            }
+            unset($_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
+            // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
+            self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
+            self::update_option('slimstat_options', self::$settings);
+
+            // Rewrite rules are flushed via two other paths:
+            // 1. Activation hook: admin/index.php init_environment() calls flush_rewrite_rules()
+            // 2. Settings change: RestApiManager sets 'slimstat_permalink_structure_updated' option,
+            //    which triggers flush_rewrite_rules() on next init via rewriteRuleRequest()
+            // No flush needed here — doing so during migration (plugins_loaded) would fire before
+            // the rewrite rule is registered on 'init' and waste a DB write.
+        }
+
         // Allow third party tools to edit the options
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);
 
-		$consent_integration = self::$settings['consent_integration'] ?? '';
+		// Consent-sync: derive use_slimstat_banner from consent_integration.
+		// Only run when GDPR is on — when off, banner stays off and canTrack() returns true early.
+		if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
+			$consent_integration = self::$settings['consent_integration'] ?? '';
 
-		// If WP Consent API is selected but the function doesn't exist, reset to default
-		if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
-			$consent_integration = '';
-			self::$settings['consent_integration'] = '';
-		}
+			// If WP Consent API is selected but the plugin isn't installed, fall back to
+			// SlimStat's own banner so consent enforcement stays active. Resetting to ''
+			// would leave GDPR on but with no consent mechanism — getIntegrationKey()
+			// silently picks 'slimstat_banner' but without the banner UI enabled.
+			if ('wp_consent_api' === $consent_integration && !function_exists('wp_has_consent')) {
+				$consent_integration = 'slimstat_banner';
+				self::$settings['consent_integration'] = 'slimstat_banner';
+			}
 
-		if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
-			$consent_integration = 'slimstat_banner';
-			self::$settings['consent_integration'] = $consent_integration;
-		}
+			if ('' === $consent_integration && ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'))) {
+				$consent_integration = 'slimstat_banner';
+				self::$settings['consent_integration'] = $consent_integration;
+			}
 
-		if ('slimstat_banner' === $consent_integration) {
-			self::$settings['use_slimstat_banner'] = 'on';
-		} else {
-			self::$settings['use_slimstat_banner'] = 'off';
-		}
+			if ('slimstat_banner' === $consent_integration) {
+				self::$settings['use_slimstat_banner'] = 'on';
+			} else {
+				self::$settings['use_slimstat_banner'] = 'off';
+			}
+		} // end GDPR consent-sync
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -277,9 +375,18 @@ class wp_slimstat
         // Apply filter to allow customization of the upload directory
         self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
 
-        // Allow add-ons to turn off the tracker based on other conditions
-        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', false === strpos(self::get_request_uri(), 'wp-admin/admin-ajax.php'));
+        // Allow add-ons to turn off the tracker based on other conditions.
+        // Exclude internal SlimStat endpoints from server-side tracking so they
+        // don't appear as page visits in the Access Log:
+        //  - admin-ajax.php (AJAX tracking handler)
+        //  - /request/{hash}/ (adblock bypass tracking endpoint)
+        //  - /{hash}.js, /{hash}.css (adblock bypass JS/CSS file serving via Routing.php)
+        $_request_uri = self::get_request_uri();
+        $_is_internal_endpoint = false !== strpos($_request_uri, 'wp-admin/admin-ajax.php')
+            || (bool) preg_match('#/request/[a-f0-9]{32}/?$|/[a-f0-9]{32}\.(?:js|css)(?:\?|$)#', $_request_uri);
+        $is_tracking_filter    = apply_filters('slimstat_filter_pre_tracking', !$_is_internal_endpoint);
         $is_tracking_filter_js = apply_filters('slimstat_filter_pre_tracking_js', true);
+        unset($_request_uri, $_is_internal_endpoint);
 
         // Enable the tracker (both server- and client-side)
         if ((!is_admin() || 'on' == self::$settings['track_admin_pages']) && 'on' == self::$settings['is_tracking'] && $is_tracking_filter) {
@@ -302,7 +409,7 @@ class wp_slimstat
 			add_filter('script_loader_tag', [self::class, 'add_defer_to_script_tag'], 10, 2);
 		}
 
-		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'on'))
+		$banner_enabled = ('on' === (self::$settings['gdpr_enabled'] ?? 'off'))
 			&& ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
 		if ($banner_enabled) {
 			add_action('wp_enqueue_scripts', [self::class, 'enqueue_gdpr_assets'], 20);
@@ -318,18 +425,28 @@ class wp_slimstat
                 $plugin = plugin_basename(SLIMSTAT_FILE);
                 add_filter("wp_consent_api_registered_{$plugin}", '__return_true');
 
-                // Register cookie info with WP Consent API for CMP display
+                // Register cookie info with WP Consent API for CMP display.
+                // Deferred to 'init' (priority 10) so the textdomain is loaded first
+                // (load_textdomain runs on 'init' priority 1). Calling __() here would
+                // trigger a _load_textdomain_just_in_time notice in WordPress 6.7+.
                 if (function_exists('wp_add_cookie_info')) {
-                    wp_add_cookie_info(
-                        'slimstat_tracking_code',
-                        'SlimStat Analytics',
-                        'statistics',
-                        intval(self::$settings['session_duration'] ?? 1800) . ' ' . __('seconds', 'wp-slimstat'),
-                        __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
-                        '',
-                        false,
-                        false
-                    );
+                    $session_duration = intval(self::$settings['session_duration'] ?? 1800);
+                    add_action('init', static function () use ($session_duration) {
+                        wp_add_cookie_info(
+                            'slimstat_tracking_code',
+                            __('SlimStat Analytics', 'wp-slimstat'),
+                            'statistics',
+                            sprintf(
+                                /* translators: %d: number of seconds for session duration */
+                                _n('%d second', '%d seconds', $session_duration, 'wp-slimstat'),
+                                $session_duration
+                            ),
+                            __('Session cookie that identifies returning visitors for analytics.', 'wp-slimstat'),
+                            '',
+                            false,
+                            false
+                        );
+                    }, 10);
                 }
             }
         }
@@ -340,6 +457,9 @@ class wp_slimstat
 
         // Register privacy policy content
         add_action('admin_init', [self::class, 'registerPrivacyPolicyContent']);
+
+        // One-time notice when the v5.4.6 migration reset IP anonymization settings
+        add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
 
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
         \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
@@ -386,6 +506,35 @@ class wp_slimstat
     public static function load_textdomain()
     {
         load_plugin_textdomain('wp-slimstat', false, '/wp-slimstat/languages');
+    }
+
+    /**
+     * Show a one-time admin notice when the v5.4.6 migration reset anonymize_ip
+     * or hash_ip from 'on' to 'off'. EU-facing sites may need to re-enable these.
+     * The transient is deleted after display so the notice appears exactly once.
+     */
+    public static function show_migration_5460_ip_notice(): void
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        if (!get_transient('slimstat_migration_5460_ip_notice')) {
+            return;
+        }
+
+        delete_transient('slimstat_migration_5460_ip_notice');
+
+        $settings_url = admin_url('admin.php?page=slimconfig&tab=2');
+        ?>
+        <div class="notice notice-warning">
+            <p>
+                <strong><?php esc_html_e('SlimStat Analytics — IP Privacy Settings Reset', 'wp-slimstat'); ?></strong><br>
+                <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
+                &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
+            </p>
+        </div>
+        <?php
     }
 
     /**
@@ -925,6 +1074,7 @@ class wp_slimstat
     {
         return [
             'version'                => SLIMSTAT_ANALYTICS_VERSION,
+            '_migration_5460'        => '0',  // one-shot: reset broken v5.4.1 defaults on first boot after this build
             'secret'                 => wp_hash(wp_generate_password(64, true, true)),
             'browscap_last_modified' => 0,
 
@@ -934,7 +1084,7 @@ class wp_slimstat
             // General - Tracker
             'is_tracking'       => 'on',
             'track_admin_pages' => 'no',
-            'javascript_mode'   => 'off',  // Changed: Enable server-side tracking by default
+            'javascript_mode'   => 'on',   // Client mode: works with all caching plugins (WP Rocket, W3TC, etc.)
 
             // General - WordPress Integration
             'add_dashboard_widgets'  => 'on',
@@ -952,12 +1102,12 @@ class wp_slimstat
 
             // Tracker - Data Protection
             // anonymize_ip: mask IP before storing; hash_ip: generate daily visitor_id based on masked IP + UA
-            'gdpr_enabled'             => 'on',   // Changed: Enable GDPR by default for safety
-            'anonymize_ip'             => 'on',   // Changed: Anonymize IPs by default
-            'hash_ip'                  => 'on',   // Changed: Hash IPs by default
-			'set_tracker_cookie'       => 'off',  // Changed: Don't set cookies by default (GDPR-safe)
-			'use_slimstat_banner'      => 'on',   // Changed: Enable banner by default when GDPR is enabled
-			'consent_integration'      => 'slimstat_banner', // Changed: Use SlimStat banner by default when GDPR is enabled
+            'gdpr_enabled'             => 'off',  // v5.3.x had no GDPR — off by default; admin enables when ready
+            'anonymize_ip'             => 'off',  // Restored: full IPs stored by default (5.3.x behavior)
+            'hash_ip'                  => 'off',  // Restored: no daily visitor hash by default (5.3.x behavior)
+			'set_tracker_cookie'       => 'on',   // v5.3.x default: session cookie identifies returning visitors
+			'use_slimstat_banner'      => 'off',  // Admin must explicitly enable via consent integration
+			'consent_integration'      => '',      // No CMP by default — admin selects when enabling GDPR
             'consent_level_integration'=> 'statistics',
 			'opt_out_message'          => '',
 			'gdpr_accept_button_text'  => 'Accept',
@@ -1064,6 +1214,7 @@ class wp_slimstat
             // -----------------------------------------------------------------------
             'last_tracker_error'  => [0, '', 0],
             'show_sql_debug'      => 'no',
+            'slimstat_debug'      => 'off',
             'db_indexes'          => 'on',
             'enable_maxmind'      => 'disable',
             'maxmind_license_key' => '',
@@ -1111,12 +1262,20 @@ class wp_slimstat
         // Prepare URLs for all methods
         $rest_url          = rest_url('slimstat/v1/hit');
 		$rest_base_url     = rest_url();
+        // Mirror WordPress core's non-pretty REST routing so query fallback still works
+        // on index-permalink and subdirectory installs.
+        $rest_query_base   = trailingslashit(get_home_url(null, '', 'rest'));
+        if ('index.php' !== substr(untrailingslashit($rest_query_base), -9)) {
+            $rest_query_base .= 'index.php';
+        }
+        $rest_query_url    = add_query_arg('rest_route', '/slimstat/v1/hit', $rest_query_base);
         $ajax_url          = admin_url('admin-ajax.php');
         $ajax_url_relative = admin_url('admin-ajax.php', 'relative');
 
         $params = [
             'transport'       => $method,
             'ajaxurl_rest'    => $rest_url,
+            'ajaxurl_rest_query' => $rest_query_url,
 			'resturl'         => $rest_base_url,
             'ajaxurl_ajax'    => ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url,
         ];
@@ -1173,13 +1332,17 @@ class wp_slimstat
 		$params['consent_integration'] = self::$settings['consent_integration'] ?? '';
         $params['consent_level_integration'] = (self::$settings['consent_level_integration'] ?? 'statistics');
         $params['respect_dnt'] = self::$settings['do_not_track'] ?? 'off';
-        $gdpr_enabled_setting = strtolower((string) (self::$settings['gdpr_enabled'] ?? 'on'));
+        $gdpr_enabled_setting = strtolower((string) (self::$settings['gdpr_enabled'] ?? 'off'));
         $params['gdpr_enabled'] = in_array($gdpr_enabled_setting, ['off', 'no', 'false', '0'], true) ? 'off' : 'on';
         $params['anonymous_tracking'] = self::$settings['anonymous_tracking'] ?? 'off';
         $params['anonymize_ip'] = self::$settings['anonymize_ip'] ?? 'no';
         $params['hash_ip'] = self::$settings['hash_ip'] ?? 'no';
         $params['set_tracker_cookie'] = self::$settings['set_tracker_cookie'] ?? 'on';
-		$params['use_slimstat_banner'] = self::$settings['use_slimstat_banner'] ?? 'off';
+		// Mirror the same dual-condition guard used by the PHP banner output (lines 305-306):
+		// banner HTML is only rendered when BOTH gdpr_enabled=on AND use_slimstat_banner=on.
+		// If gdpr_enabled is off, the banner DOM never exists — JS must not enter banner-init mode
+		// or it will set a "ran" lock and silently skip _send_pageview for all visitors.
+		$params['use_slimstat_banner'] = ('on' === $params['gdpr_enabled'] && 'on' === (self::$settings['use_slimstat_banner'] ?? 'off')) ? 'on' : 'off';
 
 		if ('on' === $params['use_slimstat_banner']) {
 			// Set GDPR consent endpoint based on tracking method
@@ -1197,6 +1360,10 @@ class wp_slimstat
 			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
 			$params['gdpr_consent_method'] = $method;
 		}
+
+        if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
+            $params['slimstat_debug'] = 'on';
+        }
 
         $params = apply_filters('slimstat_js_params', $params);
 
@@ -1431,7 +1598,7 @@ class wp_slimstat
         $content .= '<li>' . __('Opt-out of tracking by revoking consent (if GDPR mode is enabled)', 'wp-slimstat') . '</li>';
         $content .= '</ul>';
 
-        if ('on' === (self::$settings['gdpr_enabled'] ?? 'on')) {
+        if ('on' === (self::$settings['gdpr_enabled'] ?? 'off')) {
             $content .= '<p>' . __('You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator.', 'wp-slimstat') . '</p>';
         }
 
