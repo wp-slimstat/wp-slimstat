@@ -1,38 +1,43 @@
-= 5.4.6 - 2026-03-22 =
+= 5.4.6 - 2026-03-23 =
 
-**Action Required — please read before updating**
-
-This release resets three privacy settings to safe defaults. If you are upgrading from
-v5.4.1–5.4.5, this corrects values that a bug in those versions forced on incorrectly. If you
-are upgrading from v5.3.x, these settings did not exist before — tracking will continue to work
-exactly as it did. In both cases, if you want to enable any of the following, configure them after
-updating:
-
-- Consent banner: Settings → Tracker → Consent Management → Consent Plugin Integration
-- Anonymize IP addresses: Settings → Tracker → Data Protection → Anonymize IP Addresses
-- Hash IP addresses: Settings → Tracker → Data Protection → Hash IP Addresses
+We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to
+zero, IPs were masked without your permission, and a consent banner appeared on sites that
+never asked for one. This release fixes all of that. After updating, your site works the way
+it did before 5.4.0 — no manual steps required.
 
 Fixed
-- Visitor counts dropping to zero after upgrading from 5.3.x: anonymous visitors were
-  silently blocked by a consent requirement that was switched on automatically, even on
-  sites that never configured a consent banner. This update corrects that automatically
-  on first load — no action needed.
-- /wp-json/slimstat/v1/hit and /wp-admin/admin-ajax.php appearing as top pages in
-  reports: these are internal tracking addresses, not real pages visitors viewed.
-- Visitor IP addresses being recorded as masked or hashed values after upgrading from
-  5.3.x: full IPs are now stored again, matching pre-5.4 behavior. If you want to keep
-  IP anonymization, re-enable it in Settings → Tracker → Data Protection after updating.
-- Tracking not working at all on sites using WP Rocket, W3TC, or any other page caching
-  plugin on fresh installs: new installations now default to a tracking mode that works
-  correctly regardless of caching.
-- Tracking silently dropping pageviews when a transport fails: the tracker now tries
-  available fallbacks (adblock-bypass, AJAX, REST) before giving up on a pageview.
-- Stale page data causing pageviews to be abandoned after a browser caches plugin assets:
-  the tracker now recovers gracefully and completes the pageview.
+- Visitor counts dropping to zero after upgrading: a consent banner was silently enabled on
+  every site, blocking all anonymous visitors. The banner is now off by default. If you had
+  configured opt-in or opt-out privacy features in an earlier version, we detect that and
+  keep consent enabled for you automatically.
+- IPs being masked or hashed without your permission: v5.4.0 changed IP storage defaults,
+  so full IP addresses were replaced with anonymized or hashed values. Your IPs are now
+  stored in full again, matching pre-5.4 behavior.
+- Tracking broken on sites using WP Rocket, W3TC, or other caching plugins: fresh installs
+  defaulted to server-side tracking, which doesn't work with page caching. We've restored
+  browser-based (JavaScript) tracking as the default — it works with every caching setup.
+- Ad-blocker bypass failing after plugin updates: the bypass URL included the plugin version,
+  so cached pages had a stale URL after every update. The bypass URL is now stable across
+  versions, and we flush the rewrite rules on activation so caching plugins route it correctly.
+- Internal tracking URLs (/wp-json/slimstat/v1/hit, /wp-admin/admin-ajax.php) appearing as
+  "top pages" in reports. These are now filtered out — you'll only see real pages.
+- Pageviews silently lost when a transport fails: the tracker now tries adblock-bypass, AJAX,
+  and REST fallbacks before giving up.
+- Stale cached tracker data causing abandoned pageviews: the tracker recovers gracefully.
+- "Respect Do Not Track" setting only working when GDPR mode was on: DNT is now honored
+  regardless of your GDPR setting.
 
 Improved
-- Tracker health diagnostics now distinguish between fatal errors and recoverable warnings,
-  so a GeoIP lookup failure or a stale payload no longer shows up as a broken tracker.
+- Tracker health diagnostics now distinguish between fatal errors and recoverable warnings.
+- Session cookies are restored by default — returning visitors are recognized across pages
+  again, just like in v5.3.x.
+
+If you want to enable GDPR features
+- Consent banner: Settings → Tracker → Data Protection → GDPR Compliance Mode = On, then
+  Settings → Tracker → Consent Management → choose SlimStat Banner, WP Consent API, or
+  Real Cookie Banner
+- Anonymize IPs: Settings → Tracker → Data Protection → Anonymize IP Addresses = On
+- Hash IPs: Settings → Tracker → Data Protection → Hash IP Addresses = On
 
 = 5.4.5 - 2026-03-20 =
 
