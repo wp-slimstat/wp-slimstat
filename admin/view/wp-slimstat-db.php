@@ -1255,7 +1255,7 @@ class wp_slimstat_db
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
-            ->perPage(self::$filters_normalized['misc']['start_from'], self::$filters_normalized['misc']['limit_results']);
+            ->perPage((intval(self::$filters_normalized['misc']['start_from']) / max(1, intval(self::$filters_normalized['misc']['limit_results']))) + 1, self::$filters_normalized['misc']['limit_results']);
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
