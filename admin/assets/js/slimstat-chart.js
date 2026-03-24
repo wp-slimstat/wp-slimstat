@@ -67,12 +67,24 @@ document.addEventListener("DOMContentLoaded", function () {
         var select = document.getElementById("slimstat_granularity_" + chartId);
         if (!select) return;
 
+        // Restore persisted granularity from sessionStorage (if valid and not disabled)
+        var storageKey = "slimstat_chart_granularity_" + chartId;
+        var saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+            var option = select.querySelector('option[value="' + saved + '"]');
+            if (option && !option.disabled) {
+                select.value = saved;
+                fetchChartData(chartId, saved);
+            }
+        }
+
         // Debounce the event listener to reduce server requests
         var debounceTimeout;
         select.addEventListener("change", function () {
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(function () {
                 var granularity = select.value;
+                sessionStorage.setItem(storageKey, granularity);
                 fetchChartData(chartId, granularity);
             }, 300);
         });
