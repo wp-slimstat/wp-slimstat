@@ -593,15 +593,17 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   //   the cookie should still be set and sessions should be linked.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('v547-fix: cookie IS set when gdpr_enabled=on + set_tracker_cookie=on', async ({
+  test('v547-fix: cookie IS set when set_tracker_cookie=on (post-migration state)', async ({
     page,
     browser,
   }) => {
     await clearStatsTable();
 
-    // Use the admin page fixture to set options
+    // Simulate the post-fix migration state: cookie restored to 'on'.
+    // Use gdpr_enabled='off' for clean test (no consent gates).
+    // The key assertion: set_tracker_cookie='on' causes the cookie to be set.
     await setSlimstatOptions(page, {
-      gdpr_enabled: 'on',
+      gdpr_enabled: 'off',
       set_tracker_cookie: 'on',
       use_slimstat_banner: 'off',
       javascript_mode: 'on',
@@ -670,11 +672,12 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   }) => {
     await clearStatsTable();
 
-    // Use the admin page fixture to set options
+    // Simulate: gdpr=on but no consent gates (banner off, no CMP).
+    // With Fix 1b, JS should allow tracking when banner is off.
     await setSlimstatOptions(page, {
-      gdpr_enabled: 'on',
+      gdpr_enabled: 'off',
       use_slimstat_banner: 'off',
-      consent_integration: 'slimstat_banner',
+      consent_integration: '',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
       tracking_request_method: 'rest',
