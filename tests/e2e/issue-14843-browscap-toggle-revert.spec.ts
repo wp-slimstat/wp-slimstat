@@ -312,4 +312,52 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     // Browscap should still be 'no'
     expect(opts['enable_browscap'], 'enable_browscap should remain no').toBe('no');
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 7: v5.4.7 regression — browscap error includes WP_Error details
+  //   After the fix, the error message shown in the admin notice should
+  //   contain the specific WP_Error message (not just a generic string),
+  //   and it should be longer than the pre-fix generic message.
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('v547-fix: browscap error includes WP_Error details', async ({ page }) => {
+    await setSlimstatOption(page, 'enable_browscap', 'no');
+    enableUnzipBlocker('unzip_fail');
+
+    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    await page.locator('#enable_browscap').check();
+    await page.locator('input.slimstat-settings-button[type="submit"]').click();
+    await page.waitForLoadState('domcontentloaded');
+
+    // Collect all notice/message text from the page
+    const noticeArea = page.locator(
+      '.slimstat-notice, .notice, .updated, #setting-error-settings_updated, #message',
+    );
+    const noticeTexts = await noticeArea.allInnerTexts();
+    const allNoticeText = noticeTexts.join(' ');
+
+    console.log('v547-fix: browscap error notice text length:', allNoticeText.length);
+    console.log('v547-fix: browscap error notice text:', allNoticeText.substring(0, 300));
+
+    // The generic pre-fix message is short (e.g., "There was an error uncompressing the Browscap database.")
+    // After the fix, the WP_Error details are appended, making the message longer.
+    // The mu-plugin returns: "Simulated unzip failure: ZipArchive extension not available (E2E test)"
+    expect(
+      allNoticeText.toLowerCase(),
+      'v547-fix: error message should contain specific WP_Error details from unzip_file()',
+    ).toContain('simulated unzip failure');
+
+    // The error text should be substantially longer than a generic ~60-char message
+    // because it now includes the WP_Error reason string
+    const errorRelatedText = allNoticeText
+      .toLowerCase()
+      .split('\n')
+      .filter((line) => line.includes('browscap') || line.includes('error') || line.includes('unzip'))
+      .join(' ');
+
+    expect(
+      errorRelatedText.length,
+      'v547-fix: error message with WP_Error details should be longer than generic message',
+    ).toBeGreaterThan(60);
+  });
 });

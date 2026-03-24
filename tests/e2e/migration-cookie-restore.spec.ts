@@ -583,4 +583,160 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       'AFTER FIX: set_tracker_cookie must be "on" even with third-party CMP',
     ).toBe('on'); // <-- Will FAIL until fix is applied
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 8: v5.4.7 regression — cookie IS set when gdpr_enabled=on +
+  //   set_tracker_cookie=on (no banner required)
+  //
+  //   With the fix applied, when GDPR is enabled but the built-in
+  //   banner is off (user relies on external CMP or no banner),
+  //   the cookie should still be set and sessions should be linked.
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('v547-fix: cookie IS set when gdpr_enabled=on + set_tracker_cookie=on', async ({
+    browser,
+  }) => {
+    await clearStatsTable();
+
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    // Use a fresh admin page to set options
+    const adminPage = await ctx.newPage();
+    await adminPage.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
+
+    await setSlimstatOptions(adminPage, {
+      gdpr_enabled: 'on',
+      set_tracker_cookie: 'on',
+      use_slimstat_banner: 'off',
+      javascript_mode: 'on',
+      tracking_request_method: 'rest',
+      anonymous_tracking: 'off',
+      anonymize_ip: 'off',
+      hash_ip: 'off',
+    });
+    await adminPage.close();
+    await ctx.close();
+
+    // Fresh anonymous context
+    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    const anonPage = await anonCtx.newPage();
+
+    try {
+      const marker = `v547-fix-cookie-${Date.now()}`;
+
+      // Visit page 1
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
+      await anonPage.waitForLoadState('load');
+
+      // Wait for tracking to complete
+      await anonPage.waitForFunction(
+        () => {
+          const p = (window as any).SlimStatParams;
+          return p && p.id && parseInt(p.id, 10) > 0;
+        },
+        { timeout: 15_000 },
+      );
+      await anonPage.waitForTimeout(1000);
+
+      // Cookie should be set
+      let cookies = await anonCtx.cookies();
+      const trackingCookie = cookies.find((c) => c.name === 'slimstat_tracking_code');
+      expect(
+        trackingCookie,
+        'v547-fix: slimstat_tracking_code cookie must be set when gdpr=on + set_tracker_cookie=on',
+      ).toBeTruthy();
+
+      // Visit page 2
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
+      await anonPage.waitForLoadState('load');
+
+      // Both rows should share the same visit_id
+      const rows = await waitForStatRows(marker, 2, 20_000);
+      expect(rows.length, 'Both pageviews should be tracked').toBeGreaterThanOrEqual(2);
+
+      const visitIds = rows
+        .map((r: any) => parseInt(r.visit_id, 10))
+        .filter((v: number) => v > 0);
+      const uniqueIds = [...new Set(visitIds)];
+      expect(
+        uniqueIds,
+        `v547-fix: both pages should share one visit_id, got ${JSON.stringify(uniqueIds)}`,
+      ).toHaveLength(1);
+    } finally {
+      await anonPage.close();
+      await anonCtx.close();
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 9: v5.4.7 regression (defense-in-depth) — tracking fires
+  //   when gdpr=on, banner=off, integration=slimstat_banner
+  //
+  //   This catches the JS/PHP consent mismatch: JS should NOT block
+  //   tracking when use_slimstat_banner='off' even if consent_integration
+  //   is still set to 'slimstat_banner'.
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('v547-fix: tracking fires when gdpr=on, banner=off, integration=slimstat_banner', async ({
+    browser,
+  }) => {
+    await clearStatsTable();
+
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    const adminPage = await ctx.newPage();
+    await adminPage.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
+
+    await setSlimstatOptions(adminPage, {
+      gdpr_enabled: 'on',
+      use_slimstat_banner: 'off',
+      consent_integration: 'slimstat_banner',
+      javascript_mode: 'on',
+      set_tracker_cookie: 'on',
+      tracking_request_method: 'rest',
+      anonymous_tracking: 'off',
+      anonymize_ip: 'off',
+      hash_ip: 'off',
+    });
+    await adminPage.close();
+    await ctx.close();
+
+    // Fresh anonymous context
+    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    const anonPage = await anonCtx.newPage();
+
+    try {
+      const marker = `v547-fix-tracking-${Date.now()}`;
+
+      // Intercept network for tracking POST
+      let trackingRequestSent = false;
+      anonPage.on('request', (req) => {
+        if (isSlimstatTrackingRequest(req)) {
+          trackingRequestSent = true;
+        }
+      });
+
+      // Visit as anonymous
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`);
+      await anonPage.waitForLoadState('load');
+
+      // Wait for tracking to fire
+      const deadline = Date.now() + 15_000;
+      while (!trackingRequestSent && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      expect(
+        trackingRequestSent,
+        'v547-fix: tracking request must fire when banner=off even with consent_integration=slimstat_banner',
+      ).toBe(true);
+
+      // Verify DB record exists
+      const rows = await waitForStatRows(marker, 1, 15_000);
+      expect(rows.length, 'v547-fix: pageview should be recorded in DB').toBeGreaterThanOrEqual(1);
+    } finally {
+      await anonPage.close();
+      await anonCtx.close();
+    }
+  });
 });

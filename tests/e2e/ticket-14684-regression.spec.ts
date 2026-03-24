@@ -636,6 +636,41 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 			'JS tracking request was sent in server-side mode — params.id guard (line 1511) is not working'
 		).toBe(false);
 	});
+
+	test('v547-fix: migration resets javascript_mode=on when banner was off', async ({
+		page,
+	}) => {
+		/**
+		 * v5.4.7 regression test: the migration must unconditionally reset
+		 * javascript_mode to 'on', even when use_slimstat_banner is 'off'.
+		 *
+		 * This is a targeted regression test verifying the specific scenario
+		 * where a user disabled the banner and was stuck on server-side tracking.
+		 */
+
+		// Set pre-migration state: banner OFF, javascript_mode OFF, migration not run
+		await setSlimstatOption(page, 'javascript_mode', 'off');
+		await setSlimstatOption(page, 'use_slimstat_banner', 'off');
+		await setSlimstatOption(page, '_migration_5460', '0');
+
+		// Trigger migration by loading any admin page
+		await page.goto(`${BASE_URL}/wp-admin/`, {
+			waitUntil: 'domcontentloaded',
+		});
+		await page.waitForTimeout(2000);
+
+		// Verify javascript_mode was reset to 'on'
+		const jsMode = await getSlimstatOptionValue('javascript_mode');
+
+		console.log(
+			`v547-fix migration with banner=off: javascript_mode=${jsMode}`
+		);
+
+		expect(
+			jsMode,
+			'v547-fix: javascript_mode must be reset to "on" even when use_slimstat_banner is "off"'
+		).toBe('on');
+	});
 });
 
 // ─── Bug 4: Stale Cached params.id ──────────────────────────────────────────────

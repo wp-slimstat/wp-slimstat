@@ -212,4 +212,50 @@ test.describe('Chart granularity persistence (#265)', () => {
     );
     expect(chartErrors, 'No chart-related console errors').toEqual([]);
   });
+
+  /**
+   * v5.4.7 regression: granularity persists in sessionStorage after change.
+   *
+   * Verifies that the JS writes the selected granularity to sessionStorage
+   * and that on page reload the dropdown is restored from that stored value.
+   */
+  test('v547-fix: granularity persists in sessionStorage after change', async ({ page }) => {
+    await goToOverview(page);
+
+    // Change granularity to 'daily'
+    await setGranularity(page, 'daily');
+    expect(await getSelectedGranularity(page)).toBe('daily');
+
+    // Verify sessionStorage has the value
+    const storedValue = await page.evaluate(() => {
+      // Check common storage key patterns
+      return (
+        sessionStorage.getItem('slimstat_granularity') ||
+        sessionStorage.getItem('slimstatGranularity') ||
+        sessionStorage.getItem('ss_granularity') ||
+        null
+      );
+    });
+
+    console.log('v547-fix: sessionStorage granularity value:', storedValue);
+
+    // The stored value should reflect 'daily'
+    expect(
+      storedValue,
+      'v547-fix: granularity should be stored in sessionStorage after selection change',
+    ).toBeTruthy();
+    expect(storedValue).toBe('daily');
+
+    // Reload page
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(GRANULARITY_SELECT, { timeout: 15_000 });
+
+    // Verify select still shows 'daily'
+    const afterReload = await getSelectedGranularity(page);
+    console.log('v547-fix: granularity after reload:', afterReload);
+    expect(
+      afterReload,
+      'v547-fix: granularity must persist as "daily" after page reload via sessionStorage',
+    ).toBe('daily');
+  });
 });
