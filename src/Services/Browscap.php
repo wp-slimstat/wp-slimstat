@@ -174,15 +174,25 @@ class Browscap
 
         // Download the most recent version of our pre-processed Browscap database
         if ($download_remote_file) {
-            $response = wp_safe_remote_get('https://github.com/slimstat/browscap-cache/archive/master.zip', ['timeout' => 300, 'stream' => true, 'filename' => $browscap_zip]);
+            // wp_remote_get (not wp_safe_remote_get) — GitHub archive URLs redirect to
+            // codeload.github.com; wp_safe_remote_get blocks external redirects on some hosts.
+            $response = wp_remote_get('https://github.com/slimstat/browscap-cache/archive/master.zip', ['timeout' => 300, 'stream' => true, 'filename' => $browscap_zip]);
 
             if (!file_exists($browscap_zip)) {
                 return [6, __('There was an error saving the Browscap data file on your server. Please check your folder permissions.', 'wp-slimstat')];
             }
 
             if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
+                $http_code = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_response_code($response);
                 @unlink($browscap_zip);
-                return [7, __('There was an error downloading the Browscap data file from our server. Please try again later.', 'wp-slimstat')];
+                return [7, sprintf(__('There was an error downloading the Browscap data file (HTTP %s). Please try again later.', 'wp-slimstat'), $http_code)];
+            }
+
+            // Validate the downloaded file is actually a ZIP archive
+            $header = file_get_contents($browscap_zip, false, null, 0, 4);
+            if (empty($header) || $header !== "PK\x03\x04") {
+                @unlink($browscap_zip);
+                return [8, __('The downloaded Browscap file is not a valid ZIP archive. Your host may be blocking the download.', 'wp-slimstat')];
             }
 
             // Delete the folder, if it exists
@@ -191,7 +201,7 @@ class Browscap
             // We're ready to unzip the file
             $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
             if (is_wp_error($result)) {
-                return [9, __('There was an error uncompressing the Browscap data file on your server. Please check your folder permissions and PHP configuration.', 'wp-slimstat')];
+                return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
             }
 
             @unlink($browscap_zip);
