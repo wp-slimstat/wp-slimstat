@@ -196,7 +196,7 @@ class Chart
 
     private function fetchChartData(array $args): array
     {
-        global $wpdb;
+        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
@@ -275,7 +275,7 @@ class Chart
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
-        global $wpdb;
+        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         
@@ -435,7 +435,7 @@ class Chart
      */
     private function validateSqlExpression(string $expression): string
     {
-        global $wpdb;
+        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 
         // Remove extra whitespace and normalize
         $expression = preg_replace('/\s+/', ' ', trim($expression));
