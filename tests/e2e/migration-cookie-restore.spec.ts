@@ -594,16 +594,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   // ═══════════════════════════════════════════════════════════════════
 
   test('v547-fix: cookie IS set when gdpr_enabled=on + set_tracker_cookie=on', async ({
+    page,
     browser,
   }) => {
     await clearStatsTable();
 
-    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    // Use a fresh admin page to set options
-    const adminPage = await ctx.newPage();
-    await adminPage.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
-
-    await setSlimstatOptions(adminPage, {
+    // Use the admin page fixture to set options
+    await setSlimstatOptions(page, {
       gdpr_enabled: 'on',
       set_tracker_cookie: 'on',
       use_slimstat_banner: 'off',
@@ -613,8 +610,6 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       anonymize_ip: 'off',
       hash_ip: 'off',
     });
-    await adminPage.close();
-    await ctx.close();
 
     // Fresh anonymous context
     const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
@@ -670,15 +665,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   // ═══════════════════════════════════════════════════════════════════
 
   test('v547-fix: tracking fires when gdpr=on, banner=off, integration=slimstat_banner', async ({
+    page,
     browser,
   }) => {
     await clearStatsTable();
 
-    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    const adminPage = await ctx.newPage();
-    await adminPage.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
-
-    await setSlimstatOptions(adminPage, {
+    // Use the admin page fixture to set options
+    await setSlimstatOptions(page, {
       gdpr_enabled: 'on',
       use_slimstat_banner: 'off',
       consent_integration: 'slimstat_banner',
@@ -689,8 +682,6 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       anonymize_ip: 'off',
       hash_ip: 'off',
     });
-    await adminPage.close();
-    await ctx.close();
 
     // Fresh anonymous context
     const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
