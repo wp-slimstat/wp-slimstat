@@ -277,9 +277,9 @@ class wp_slimstat
                 self::$settings['use_slimstat_banner'] = 'off';
             }
 
-            // Restore session cookie when GDPR is off (v5.3.x default was 'on')
-            if ('off' === self::$settings['gdpr_enabled']
-                && 'off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
+            // Restore session cookie unconditionally — Consent::piiAllowed() in
+            // Session.php gates the actual setcookie() call at runtime, not this setting.
+            if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
                 self::$settings['set_tracker_cookie'] = 'on';
             }
 
@@ -292,9 +292,11 @@ class wp_slimstat
             unset($_ss_banner_was_on_original);
             // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
             // every cached-page visitor to silently update the first visitor's DB record.
-            // ONLY reset when banner was also 'on' (v5.4.1 paired-default fingerprint) so that
-            // 5.3.x users who deliberately chose Server mode are not touched.
-            if ($_ss_banner_was_on && 'off' === (self::$settings['javascript_mode'] ?? 'on')) {
+            // Always reset — server-side mode was a v5.4.0 default, not a user choice.
+            // Trade-off: the rare v5.3.x user who deliberately chose Server mode will be
+            // switched to Client mode. Acceptable because caching plugins (the vast majority
+            // case) completely break server-side tracking.
+            if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
                 self::$settings['javascript_mode'] = 'on';
             }
             // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
