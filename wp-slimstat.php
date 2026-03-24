@@ -277,48 +277,42 @@ class wp_slimstat
                 self::$settings['use_slimstat_banner'] = 'off';
             }
 
-            // Restore session cookie unconditionally — Consent::piiAllowed() in
-            // Session.php gates the actual setcookie() call at runtime, not this setting.
-            if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
-                self::$settings['set_tracker_cookie'] = 'on';
-            }
-
             unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
                   $_current_integration, $_has_third_party_cmp);
 
-            // use_slimstat_banner='on' in the ORIGINAL DB was the v5.4.1 fingerprint.
-            // Use the saved original value (before consent-intent detection modified it).
-            $_ss_banner_was_on = $_ss_banner_was_on_original;
-            unset($_ss_banner_was_on_original);
-            // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
-            // every cached-page visitor to silently update the first visitor's DB record.
-            // Always reset — server-side mode was a v5.4.0 default, not a user choice.
-            // Trade-off: the rare v5.3.x user who deliberately chose Server mode will be
-            // switched to Client mode. Acceptable because caching plugins (the vast majority
-            // case) completely break server-side tracking.
-            if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
-                self::$settings['javascript_mode'] = 'on';
-            }
-            // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
-            // Restore 5.3.x behavior: full IPs stored, no daily visitor hash.
-            $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
-            $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
-            if ($_ss_ip_was_anonymized) {
-                self::$settings['anonymize_ip'] = 'off';
-            }
-            if ($_ss_ip_was_hashed) {
-                self::$settings['hash_ip'] = 'off';
-            }
-            // Queue a one-time admin notice when IP storage behavior changed so admins
-            // know to review Settings → Data Protection (EU sites may need to re-enable).
-            if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
-                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
-            }
-            // Queue a one-time admin notice to purge page cache after migration
-            // (stale SlimStatParams in cached HTML may prevent tracking).
-            set_transient('slimstat_migration_cache_purge_notice', '1', 7 * DAY_IN_SECONDS);
+            // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
+            // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
+            if (version_compare($_migration_ran, '5.4.7', '<')) {
+                // Restore session cookie — Consent::piiAllowed() in Session.php gates
+                // the actual setcookie() call at runtime, not this setting.
+                if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
+                    self::$settings['set_tracker_cookie'] = 'on';
+                }
 
-            unset($_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
+                // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML.
+                // Always reset — server-side mode was a v5.4.0 default, not a user choice.
+                $_ss_banner_was_on = $_ss_banner_was_on_original;
+                if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
+                    self::$settings['javascript_mode'] = 'on';
+                }
+
+                // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
+                $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
+                $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
+                if ($_ss_ip_was_anonymized) {
+                    self::$settings['anonymize_ip'] = 'off';
+                }
+                if ($_ss_ip_was_hashed) {
+                    self::$settings['hash_ip'] = 'off';
+                }
+                if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
+                    set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
+                }
+                // Purge page cache notice (stale SlimStatParams in cached HTML).
+                set_transient('slimstat_migration_cache_purge_notice', '1', 7 * DAY_IN_SECONDS);
+            }
+
+            unset($_ss_banner_was_on_original, $_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
             // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
             self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
             self::update_option('slimstat_options', self::$settings);

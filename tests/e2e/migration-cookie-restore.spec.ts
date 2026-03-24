@@ -666,16 +666,20 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   //   is still set to 'slimstat_banner'.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('v547-fix: tracking fires when gdpr=on, banner=off, integration=slimstat_banner', async ({
+  test('v547-fix: tracking fires when gdpr=on, banner=off, no CMP', async ({
     page,
     browser,
   }) => {
     await clearStatsTable();
 
-    // Simulate: gdpr=on but no consent gates (banner off, no CMP).
-    // With Fix 1b, JS should allow tracking when banner is off.
+    // Test: gdpr=on but banner=off and no CMP configured.
+    // PHP consent-sync sets use_slimstat_banner='off' (else branch at line 353).
+    // With gdpr=on, JS consent check runs — must still allow tracking when no
+    // consent gates are configured. Fix 1b is defense-in-depth for the
+    // slimstat_banner integration block, but can't be triggered in E2E because
+    // PHP consent-sync prevents the exact mismatch state.
     await setSlimstatOptions(page, {
-      gdpr_enabled: 'off',
+      gdpr_enabled: 'on',
       use_slimstat_banner: 'off',
       consent_integration: '',
       javascript_mode: 'on',

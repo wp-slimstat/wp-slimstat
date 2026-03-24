@@ -219,7 +219,7 @@ test.describe('Chart granularity persistence (#265)', () => {
    * Verifies that the JS writes the selected granularity to sessionStorage
    * and that on page reload the dropdown is restored from that stored value.
    */
-  test.fixme('v547-fix: granularity persists in sessionStorage after change', async ({ page }) => {
+  test('v547-fix: granularity persists in sessionStorage after change', async ({ page }) => {
     await goToOverview(page);
 
     // Change granularity to 'daily'
@@ -228,13 +228,10 @@ test.describe('Chart granularity persistence (#265)', () => {
 
     // Verify sessionStorage has the value (key is slimstat_chart_granularity_ + chartId)
     const storedValue = await page.evaluate(() => {
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith('slimstat_chart_granularity_')) {
-          return sessionStorage.getItem(key);
-        }
-      }
-      return null;
+      const chartEl = document.querySelector('[id^="slimstat_chart_data_"]');
+      if (!chartEl || !chartEl.id) return null;
+      const chartId = chartEl.id.replace('slimstat_chart_data_', '');
+      return sessionStorage.getItem('slimstat_chart_granularity_' + chartId);
     });
 
     console.log('v547-fix: sessionStorage granularity value:', storedValue);

@@ -66,11 +66,15 @@ document.addEventListener("DOMContentLoaded", function () {
     function setupGranularitySelect(chartId) {
         var select = document.getElementById("slimstat_granularity_" + chartId);
         if (!select) return;
+        // Guard against duplicate bindings (reinitializeCharts calls this again)
+        if (select.dataset.slimstatGranularityBound === "1") return;
+        select.dataset.slimstatGranularityBound = "1";
 
         // Restore persisted granularity from sessionStorage (if valid and not disabled)
         var storageKey = "slimstat_chart_granularity_" + chartId;
-        var saved = sessionStorage.getItem(storageKey);
-        if (saved) {
+        var saved = null;
+        try { saved = sessionStorage.getItem(storageKey); } catch (e) {}
+        if (saved && saved !== select.value) {
             var option = select.querySelector('option[value="' + saved + '"]');
             if (option && !option.disabled) {
                 select.value = saved;
@@ -84,7 +88,7 @@ document.addEventListener("DOMContentLoaded", function () {
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(function () {
                 var granularity = select.value;
-                sessionStorage.setItem(storageKey, granularity);
+                try { sessionStorage.setItem(storageKey, granularity); } catch (e) {}
                 fetchChartData(chartId, granularity);
             }, 300);
         });
