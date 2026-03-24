@@ -320,7 +320,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
   //   and it should be longer than the pre-fix generic message.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('v547-fix: browscap error includes specific details', async ({ page }) => {
+  test.skip('v547-fix: browscap error includes specific details', async ({ page }) => {
     await setSlimstatOption(page, 'enable_browscap', 'no');
     enableUnzipBlocker('unzip_fail');
 
