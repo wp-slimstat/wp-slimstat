@@ -226,15 +226,15 @@ test.describe('Chart granularity persistence (#265)', () => {
     await setGranularity(page, 'daily');
     expect(await getSelectedGranularity(page)).toBe('daily');
 
-    // Verify sessionStorage has the value
+    // Verify sessionStorage has the value (key is slimstat_chart_granularity_ + chartId)
     const storedValue = await page.evaluate(() => {
-      // Check common storage key patterns
-      return (
-        sessionStorage.getItem('slimstat_granularity') ||
-        sessionStorage.getItem('slimstatGranularity') ||
-        sessionStorage.getItem('ss_granularity') ||
-        null
-      );
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('slimstat_chart_granularity_')) {
+          return sessionStorage.getItem(key);
+        }
+      }
+      return null;
     });
 
     console.log('v547-fix: sessionStorage granularity value:', storedValue);

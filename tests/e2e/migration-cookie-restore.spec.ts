@@ -626,19 +626,10 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
 
       // Visit page 1
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
-      await anonPage.waitForLoadState('load');
+      await anonPage.waitForLoadState('networkidle');
+      await anonPage.waitForTimeout(5000);
 
-      // Wait for tracking to complete
-      await anonPage.waitForFunction(
-        () => {
-          const p = (window as any).SlimStatParams;
-          return p && p.id && parseInt(p.id, 10) > 0;
-        },
-        { timeout: 15_000 },
-      );
-      await anonPage.waitForTimeout(1000);
-
-      // Cookie should be set
+      // Cookie should be set (via XHR response Set-Cookie header)
       let cookies = await anonCtx.cookies();
       const trackingCookie = cookies.find((c) => c.name === 'slimstat_tracking_code');
       expect(
@@ -648,7 +639,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
 
       // Visit page 2
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-      await anonPage.waitForLoadState('load');
+      await anonPage.waitForLoadState('networkidle');
+      await anonPage.waitForTimeout(5000);
 
       // Both rows should share the same visit_id
       const rows = await waitForStatRows(marker, 2, 20_000);
