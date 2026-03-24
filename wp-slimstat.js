@@ -1399,10 +1399,15 @@ var SlimStat = (function () {
             }
 
             if (cmpAllows === null && (integrationKey === "slimstat_banner" || integrationKey === "slimstat")) {
-                var cookieName = s.gdpr_cookie_name || "slimstat_gdpr_consent";
-                var bannerConsent = detectSlimStatBanner(cookieName, consentLevel);
-                if (bannerConsent !== null) {
-                    cmpAllows = bannerConsent;
+                if (s.use_slimstat_banner !== "on") {
+                    // Banner not rendered — no consent gate (mirrors PHP Consent.php:288-295)
+                    cmpAllows = true;
+                } else {
+                    var cookieName = s.gdpr_cookie_name || "slimstat_gdpr_consent";
+                    var bannerConsent = detectSlimStatBanner(cookieName, consentLevel);
+                    if (bannerConsent !== null) {
+                        cmpAllows = bannerConsent;
+                    }
                 }
             }
 
