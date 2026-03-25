@@ -296,13 +296,13 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $chartWhere : $chartWhere;
         }
 
-        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
-        // Positive offset = east of UTC = '+' sign in CONVERT_TZ
-        // Note: FROM_UNIXTIME returns server-local, but CONVERT_TZ source '+00:00'
-        // treats it as UTC. This sign fix corrects daily/weekly/monthly grouping.
-        // Hourly grouping on non-UTC servers needs a deeper refactor (tracked separately).
+        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
+        // The sign appears inverted vs DataBuckets.php — this is INTENTIONAL:
+        // FROM_UNIXTIME(dt) returns server-local time, but CONVERT_TZ source '+00:00'
+        // declares it as UTC. The "inverted" sign cancels the implicit timezone shift,
+        // producing actual UTC. DataBuckets then applies the correct offset for display.
         $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
-        $sign               = ($totalOffsetSeconds < 0) ? '-' : '+';
+        $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
         $m                  = floor(($abs % 3600) / 60);
