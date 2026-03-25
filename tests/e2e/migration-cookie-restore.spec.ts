@@ -584,12 +584,12 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════
-  // Test 8: v5.4.7 regression — cookie IS set when gdpr_enabled=on +
-  //   set_tracker_cookie=on (no banner required)
+  // Test 8: v5.4.7 regression — cookie IS set when set_tracker_cookie=on
   //
-  //   With the fix applied, when GDPR is enabled but the built-in
-  //   banner is off (user relies on external CMP or no banner),
-  //   the cookie should still be set and sessions should be linked.
+  //   Verifies the cookie mechanism works after Fix 1a restores
+  //   set_tracker_cookie='on'. Uses gdpr_enabled='off' for a clean test
+  //   without consent gates. The key assertion: with set_tracker_cookie='on',
+  //   the slimstat_tracking_code cookie is set and sessions are linked.
   // ═══════════════════════════════════════════════════════════════════
 
   test('v547-fix: cookie IS set when set_tracker_cookie=on (post-migration state)', async ({
