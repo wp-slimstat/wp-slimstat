@@ -12,8 +12,8 @@
     "env:stop": "wp-env stop",
     "env:clean": "wp-env clean",
     "env:run": "wp-env run tests-cli",
-    "playground:start": "npx @wp-playground/cli server --mount=.:/wordpress/wp-content/plugins/wp-slimstat --port=9400",
-    "playground:blueprint": "npx @wp-playground/cli server --mount=.:/wordpress/wp-content/plugins/wp-slimstat --blueprint=tests/e2e/blueprint.json --port=9400",
+    "playground:start": "node tests/e2e/playground-start.mjs",
+    "playground:blueprint": "node tests/e2e/playground-start.mjs --blueprint",
     "test:e2e:playground": "TEST_BASE_URL=http://localhost:9400 npx playwright test --config=tests/e2e/playwright.config.ts"
   },
   "devDependencies": {
