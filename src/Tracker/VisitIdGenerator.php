@@ -212,7 +212,7 @@ class VisitIdGenerator
 
         $table = $stats_db->prefix . 'slim_stats';
 
-        $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+        $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
         $initial_value = max((int) $max_visit_id, 0);
 
         $auto_increment = $stats_db->get_var($stats_db->prepare(
