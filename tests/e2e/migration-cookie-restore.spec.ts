@@ -629,18 +629,69 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     ).toBe('on');
   });
 
-  // Test 9 (Fix 1b) — NOT E2E TESTABLE
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 9: v5.4.7 — Fix 1b: JS allows tracking when banner is off
   //
-  // Fix 1b adds a JS guard: `if (s.use_slimstat_banner !== "on") cmpAllows = true`
-  // inside the slimstat_banner integration block. To trigger it, JS must see
-  // use_slimstat_banner='off' + integrationKey='slimstat_banner' + gdpr_enabled='on'.
+  //   Uses consent_integration='slimstat' (not 'slimstat_banner') to bypass
+  //   PHP consent-sync while still entering the JS guard block at line 1401.
+  //   JS checks: integrationKey === "slimstat_banner" || integrationKey === "slimstat"
+  //   PHP only forces banner=on for 'slimstat_banner', not 'slimstat'.
   //
-  // This state is unreachable in E2E because:
-  // 1. PHP consent-sync (wp-slimstat.php:350-354) forces use_slimstat_banner='on'
-  //    when consent_integration='slimstat_banner' — before JS params are built
-  // 2. page.route() HTML interception causes blank page rendering in Playwright
-  // 3. addInitScript Object.defineProperty also breaks page rendering
-  //
-  // Fix 1b is defense-in-depth: protects against future consent-sync regressions
-  // or third-party filter modifications. Verified via code review only.
+  //   DIFFERENTIATES: FAIL on development (no guard → cmpAllows=false),
+  //                   PASS on fix branch (Fix 1b guard → cmpAllows=true).
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('v547-fix: JS allows tracking with consent_integration=slimstat + banner=off', async ({
+    page,
+    browser,
+  }) => {
+    await clearStatsTable();
+
+    // consent_integration='slimstat' enters JS block (line 1401) but PHP consent-sync
+    // at line 345 only forces banner=on for 'slimstat_banner'. With 'slimstat', PHP
+    // sets use_slimstat_banner='off' (else branch) — creating the exact mismatch.
+    await setSlimstatOptions(page, {
+      gdpr_enabled: 'on',
+      consent_integration: 'slimstat',
+      use_slimstat_banner: 'off',
+      javascript_mode: 'on',
+      set_tracker_cookie: 'on',
+      tracking_request_method: 'rest',
+      anonymous_tracking: 'off',
+    });
+
+    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    const anonPage = await anonCtx.newPage();
+
+    let trackingFired = false;
+    anonPage.on('request', (req) => {
+      if (isSlimstatTrackingRequest(req)) {
+        trackingFired = true;
+      }
+    });
+
+    try {
+      const marker = `v547-1b-${Date.now()}`;
+      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`);
+      await anonPage.waitForLoadState('networkidle');
+
+      // Poll for tracking request instead of fixed timeout
+      const deadline = Date.now() + 15_000;
+      while (!trackingFired && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+
+      expect(
+        trackingFired,
+        'v547-fix: JS must allow tracking when use_slimstat_banner=off + integrationKey=slimstat',
+      ).toBe(true);
+
+      const rows = await waitForStatRows(marker, 1, 15_000);
+      expect(rows.length, 'Pageview recorded in DB').toBeGreaterThanOrEqual(1);
+    } finally {
+      await anonPage.close();
+      await anonCtx.close();
+    }
+  });
 });
