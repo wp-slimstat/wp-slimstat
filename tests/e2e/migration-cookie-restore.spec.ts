@@ -629,94 +629,18 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     ).toBe('on');
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 9: v5.4.7 — Fix 1b: JS allows tracking when banner param is
-  //   overridden to 'off' via addInitScript
+  // Test 9 (Fix 1b) — NOT E2E TESTABLE
   //
-  //   Uses addInitScript to override SlimStatParams.use_slimstat_banner
-  //   after the localized script sets it, simulating the mismatch state.
+  // Fix 1b adds a JS guard: `if (s.use_slimstat_banner !== "on") cmpAllows = true`
+  // inside the slimstat_banner integration block. To trigger it, JS must see
+  // use_slimstat_banner='off' + integrationKey='slimstat_banner' + gdpr_enabled='on'.
   //
-  //   DIFFERENTIATES: FAIL on development (JS blocks — no guard),
-  //                   PASS on fix branch (Fix 1b guard fires).
-  // ═══════════════════════════════════════════════════════════════════
-
-  test('v547-fix: JS allows tracking when use_slimstat_banner overridden to off', async ({
-    page,
-    browser,
-  }) => {
-    await clearStatsTable();
-
-    // Set gdpr=on + slimstat_banner integration (PHP will force banner=on)
-    await setSlimstatOptions(page, {
-      gdpr_enabled: 'on',
-      consent_integration: 'slimstat_banner',
-      use_slimstat_banner: 'on',
-      javascript_mode: 'on',
-      set_tracker_cookie: 'on',
-      tracking_request_method: 'rest',
-      anonymous_tracking: 'off',
-    });
-
-    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
-    const anonPage = await anonCtx.newPage();
-
-    // Override SlimStatParams.use_slimstat_banner AFTER wp_localize_script sets it.
-    // MutationObserver watches for the script tag insertion and patches the value.
-    await anonPage.addInitScript(() => {
-      const observer = new MutationObserver(() => {
-        if ((window as any).SlimStatParams && (window as any).SlimStatParams.use_slimstat_banner === 'on') {
-          (window as any).SlimStatParams.use_slimstat_banner = 'off';
-          observer.disconnect();
-        }
-      });
-      observer.observe(document, { childList: true, subtree: true });
-      // Also patch via defineProperty as fallback
-      let _sp: any = undefined;
-      Object.defineProperty(window, 'SlimStatParams', {
-        configurable: true,
-        get() { return _sp; },
-        set(v) {
-          if (v && v.use_slimstat_banner === 'on') {
-            v.use_slimstat_banner = 'off';
-          }
-          _sp = v;
-          // Restore normal property after first set
-          Object.defineProperty(window, 'SlimStatParams', {
-            configurable: true, writable: true, enumerable: true, value: v
-          });
-        }
-      });
-    });
-
-    let trackingFired = false;
-    anonPage.on('request', (req) => {
-      if (isSlimstatTrackingRequest(req)) {
-        trackingFired = true;
-      }
-    });
-
-    try {
-      const marker = `v547-1b-${Date.now()}`;
-      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`);
-      await anonPage.waitForLoadState('networkidle');
-
-      // Wait for tracking request with polling instead of fixed timeout
-      const deadline = Date.now() + 15_000;
-      while (!trackingFired && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 500));
-      }
-
-      expect(
-        trackingFired,
-        'v547-fix: JS must allow tracking when use_slimstat_banner is off (Fix 1b guard)',
-      ).toBe(true);
-
-      const rows = await waitForStatRows(marker, 1, 15_000);
-      expect(rows.length, 'Pageview recorded in DB').toBeGreaterThanOrEqual(1);
-    } finally {
-      await anonPage.close();
-      await anonCtx.close();
-    }
-  });
+  // This state is unreachable in E2E because:
+  // 1. PHP consent-sync (wp-slimstat.php:350-354) forces use_slimstat_banner='on'
+  //    when consent_integration='slimstat_banner' — before JS params are built
+  // 2. page.route() HTML interception causes blank page rendering in Playwright
+  // 3. addInitScript Object.defineProperty also breaks page rendering
+  //
+  // Fix 1b is defense-in-depth: protects against future consent-sync regressions
+  // or third-party filter modifications. Verified via code review only.
 });
