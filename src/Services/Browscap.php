@@ -185,7 +185,7 @@ class Browscap
             if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
                 $http_code = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_response_code($response);
                 @unlink($browscap_zip);
-                return [7, sprintf(__('There was an error downloading the Browscap data file (HTTP %s). Please try again later.', 'wp-slimstat'), $http_code)];
+                return [7, sprintf(__('There was an error downloading the Browscap data file (%s). Please try again later.', 'wp-slimstat'), $http_code)];
             }
 
             // Validate the downloaded file is actually a ZIP archive

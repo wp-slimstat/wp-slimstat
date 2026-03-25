@@ -17,6 +17,7 @@
  */
 import { test, expect, type Page } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
+import { insertRows, clearTestData } from './helpers/chart';
 
 // ─── Constants ────────────────────────────────────────────────────────
 
@@ -220,6 +221,13 @@ test.describe('Chart granularity persistence (#265)', () => {
    * and that on page reload the dropdown is restored from that stored value.
    */
   test('v547-fix: granularity persists in sessionStorage after change', async ({ page }) => {
+    // Seed stats data so chart renders with granularity select visible
+    await clearTestData();
+    const now = Math.floor(Date.now() / 1000);
+    for (let i = 0; i < 30; i++) {
+      await insertRows(now - i * 86400, 2, `gran-seed-${i}`);
+    }
+
     await goToOverview(page);
 
     // Change granularity to 'daily'

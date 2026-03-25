@@ -241,10 +241,6 @@ class wp_slimstat
         // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
         $_migration_ran = self::$settings['_migration_5460'] ?? '0';
         if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
-            // Save ORIGINAL use_slimstat_banner before consent-intent detection modifies it.
-            // This is the reliable v5.4.1 default fingerprint used for javascript_mode reset below.
-            $_ss_banner_was_on_original = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
-
             // --- Consent intent detection ---
             // Read legacy v5.3.x consent settings to detect if user had configured privacy.
             // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
@@ -291,7 +287,6 @@ class wp_slimstat
 
                 // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML.
                 // Always reset — server-side mode was a v5.4.0 default, not a user choice.
-                $_ss_banner_was_on = $_ss_banner_was_on_original;
                 if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
                     self::$settings['javascript_mode'] = 'on';
                 }
@@ -312,7 +307,7 @@ class wp_slimstat
                 set_transient('slimstat_migration_cache_purge_notice', '1', 7 * DAY_IN_SECONDS);
             }
 
-            unset($_ss_banner_was_on_original, $_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
+            unset($_ss_ip_was_anonymized, $_ss_ip_was_hashed);
             // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
             self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
             self::update_option('slimstat_options', self::$settings);
