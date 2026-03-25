@@ -155,11 +155,8 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // Migration detects display_opt_out='on' → sets gdpr_enabled='on'
     expect(gdprEnabled, 'gdpr_enabled should be on (legacy consent detected)').toBe('on');
 
-    // BUG: set_tracker_cookie is NOT restored because the restore logic
-    // only fires when gdpr_enabled='off' (wp-slimstat.php line 281-282).
-    // This test documents the bug. After the fix, change the assertion.
-    //
-    // Fix 1a applied: migration now restores set_tracker_cookie='on' unconditionally.
+    // Fix 1a: migration now restores set_tracker_cookie='on' unconditionally,
+    // regardless of gdpr_enabled state. On development branch this returns 'off'.
     expect(
       setTrackerCookie,
       'set_tracker_cookie must be restored to "on" after migration (Fix 1a)',
@@ -584,22 +581,17 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════════
-  // Test 8: v5.4.7 — migration restores cookie AND anonymous sessions work
+  // Test 8: v5.4.7 — migration restores set_tracker_cookie via the
+  //   full migration path (not just setting the value directly)
   //
-  //   Simulates the broken migration path: set_tracker_cookie='off' +
-  //   gdpr_enabled='on' + legacy consent (display_opt_out='on').
-  //   Triggers migration, then verifies cookie is set for anonymous visitors.
-  //
-  //   DIFFERENTIATES: FAIL on development (migration keeps cookie off),
-  //                   PASS on fix branch (migration restores cookie).
+  //   DIFFERENTIATES: FAIL on development (GDPR gate blocks restore),
+  //                   PASS on fix branch (unconditional restore).
+  //   Cookie behavior for anonymous visitors is covered by Test 4.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('v547-fix: migration restores cookie and anonymous sessions link', async ({
+  test('v547-fix: migration restores set_tracker_cookie via full migration path', async ({
     page,
-    browser,
   }) => {
-    await clearStatsTable();
-
     // Set the broken pre-migration state:
     // - display_opt_out='on' (legacy v5.3.x consent → triggers gdpr_enabled='on' path)
     // - set_tracker_cookie='off' (broken v5.4.0 default)
@@ -608,73 +600,41 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       display_opt_out: 'on',
       set_tracker_cookie: 'off',
       javascript_mode: 'on',
-      tracking_request_method: 'rest',
-      anonymous_tracking: 'off',
-      anonymize_ip: 'off',
-      hash_ip: 'off',
       _migration_5460: '0',
     });
 
     // Trigger migration by loading admin page
     await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(2000);
 
-    // Verify migration restored set_tracker_cookie
+    // Wait for migration to complete by polling the DB option
+    let cookieSetting: string | undefined;
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      const migFlag = await getSlimstatOption('_migration_5460');
+      if (migFlag && migFlag !== '0') {
+        cookieSetting = await getSlimstatOption('set_tracker_cookie');
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    if (!cookieSetting) {
+      cookieSetting = await getSlimstatOption('set_tracker_cookie');
+    }
+
     // development: stays 'off' (GDPR gate blocks restore) → FAIL
     // fix branch: restored to 'on' → PASS
-    const cookieSetting = await getSlimstatOption('set_tracker_cookie');
     expect(
       cookieSetting,
       'v547-fix: migration must restore set_tracker_cookie to "on" even when gdpr_enabled="on"',
     ).toBe('on');
-
-    // Now verify cookie actually works for anonymous visitors
-    // (gdpr_enabled='on' + use_slimstat_banner='on' means banner shows,
-    // but gdpr_enabled='off' path is simpler — set it for cookie test)
-    await setSlimstatOptions(page, {
-      gdpr_enabled: 'off',
-      use_slimstat_banner: 'off',
-    });
-
-    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
-    const anonPage = await anonCtx.newPage();
-
-    try {
-      const marker = `v547-cookie-${Date.now()}`;
-
-      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
-      await anonPage.waitForLoadState('networkidle');
-      await anonPage.waitForTimeout(5000);
-
-      const cookies = await anonCtx.cookies();
-      const trackingCookie = cookies.find((c) => c.name === 'slimstat_tracking_code');
-      expect(trackingCookie, 'Cookie must be set after migration fix').toBeTruthy();
-
-      // Second page — sessions should link
-      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
-      await anonPage.waitForLoadState('networkidle');
-      await anonPage.waitForTimeout(5000);
-
-      const rows = await waitForStatRows(marker, 2, 20_000);
-      expect(rows.length, 'Both pageviews tracked').toBeGreaterThanOrEqual(2);
-
-      const uniqueVisitIds = [...new Set(rows.map((r: any) => r.visit_id))];
-      expect(uniqueVisitIds, 'Sessions linked via cookie').toHaveLength(1);
-    } finally {
-      await anonPage.close();
-      await anonCtx.close();
-    }
   });
 
   // ═══════════════════════════════════════════════════════════════════
   // Test 9: v5.4.7 — Fix 1b: JS allows tracking when banner param is
-  //   overridden to 'off' via response interception
+  //   overridden to 'off' via addInitScript
   //
-  //   Uses page.route() to flip use_slimstat_banner from 'on' to 'off'
-  //   in the HTML response, simulating the mismatch state that Fix 1b
-  //   guards against. PHP consent-sync normally prevents this state,
-  //   so route interception is the only way to trigger it in E2E.
+  //   Uses addInitScript to override SlimStatParams.use_slimstat_banner
+  //   after the localized script sets it, simulating the mismatch state.
   //
   //   DIFFERENTIATES: FAIL on development (JS blocks — no guard),
   //                   PASS on fix branch (Fix 1b guard fires).
@@ -695,30 +655,38 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       set_tracker_cookie: 'on',
       tracking_request_method: 'rest',
       anonymous_tracking: 'off',
-      anonymize_ip: 'off',
-      hash_ip: 'off',
     });
 
     const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
     const anonPage = await anonCtx.newPage();
 
-    // Intercept HTML and flip use_slimstat_banner to 'off' in SlimStatParams.
-    // This simulates the mismatch: JS sees banner=off + integrationKey=slimstat_banner.
-    // On development: no guard → detectSlimStatBanner() returns null → cmpAllows=false → blocked
-    // On fix branch: Fix 1b guard fires → cmpAllows=true → tracking allowed
-    await anonPage.route('**/*', async (route) => {
-      if (route.request().resourceType() === 'document') {
-        const response = await route.fetch();
-        let body = await response.text();
-        body = body.replace(
-          /"use_slimstat_banner":"on"/g,
-          '"use_slimstat_banner":"off"',
-        );
-        await route.fulfill({ response, body });
-      } else {
-        await route.continue();
-      }
+    // Override SlimStatParams.use_slimstat_banner AFTER wp_localize_script sets it.
+    // MutationObserver watches for the script tag insertion and patches the value.
+    await anonPage.addInitScript(() => {
+      const observer = new MutationObserver(() => {
+        if ((window as any).SlimStatParams && (window as any).SlimStatParams.use_slimstat_banner === 'on') {
+          (window as any).SlimStatParams.use_slimstat_banner = 'off';
+          observer.disconnect();
+        }
+      });
+      observer.observe(document, { childList: true, subtree: true });
+      // Also patch via defineProperty as fallback
+      let _sp: any = undefined;
+      Object.defineProperty(window, 'SlimStatParams', {
+        configurable: true,
+        get() { return _sp; },
+        set(v) {
+          if (v && v.use_slimstat_banner === 'on') {
+            v.use_slimstat_banner = 'off';
+          }
+          _sp = v;
+          // Restore normal property after first set
+          Object.defineProperty(window, 'SlimStatParams', {
+            configurable: true, writable: true, enumerable: true, value: v
+          });
+        }
+      });
     });
 
     let trackingFired = false;
@@ -732,7 +700,12 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       const marker = `v547-1b-${Date.now()}`;
       await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`);
       await anonPage.waitForLoadState('networkidle');
-      await anonPage.waitForTimeout(8000);
+
+      // Wait for tracking request with polling instead of fixed timeout
+      const deadline = Date.now() + 15_000;
+      while (!trackingFired && Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
 
       expect(
         trackingFired,
