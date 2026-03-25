@@ -657,7 +657,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
       tracking_request_method: 'rest',
-      anonymous_tracking: 'off',
+      anonymous_tracking: 'on',
     });
 
     const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
