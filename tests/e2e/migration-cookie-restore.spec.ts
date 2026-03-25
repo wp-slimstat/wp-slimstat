@@ -656,76 +656,9 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     }
   });
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Test 9: v5.4.7 regression (defense-in-depth) — tracking fires
-  //   when gdpr=on, banner=off, integration=slimstat_banner
-  //
-  //   This catches the JS/PHP consent mismatch: JS should NOT block
-  //   tracking when use_slimstat_banner='off' even if consent_integration
-  //   is still set to 'slimstat_banner'.
-  // ═══════════════════════════════════════════════════════════════════
-
-  test('v547-fix: tracking fires when gdpr=on, banner=off, no CMP', async ({
-    page,
-    browser,
-  }) => {
-    await clearStatsTable();
-
-    // Test: gdpr=on but banner=off and no CMP configured.
-    // PHP consent-sync sets use_slimstat_banner='off' (else branch at line 353).
-    // With gdpr=on, JS consent check runs — must still allow tracking when no
-    // consent gates are configured. Fix 1b is defense-in-depth for the
-    // slimstat_banner integration block, but can't be triggered in E2E because
-    // PHP consent-sync prevents the exact mismatch state.
-    await setSlimstatOptions(page, {
-      gdpr_enabled: 'on',
-      use_slimstat_banner: 'off',
-      consent_integration: '',
-      javascript_mode: 'on',
-      set_tracker_cookie: 'on',
-      tracking_request_method: 'rest',
-      anonymous_tracking: 'off',
-      anonymize_ip: 'off',
-      hash_ip: 'off',
-    });
-
-    // Fresh anonymous context
-    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
-    await anonCtx.addCookies(COOKIEYES_DISMISS_COOKIES);
-    const anonPage = await anonCtx.newPage();
-
-    try {
-      const marker = `v547-fix-tracking-${Date.now()}`;
-
-      // Intercept network for tracking POST
-      let trackingRequestSent = false;
-      anonPage.on('request', (req) => {
-        if (isSlimstatTrackingRequest(req)) {
-          trackingRequestSent = true;
-        }
-      });
-
-      // Visit as anonymous
-      await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}`);
-      await anonPage.waitForLoadState('load');
-
-      // Wait for tracking to fire
-      const deadline = Date.now() + 15_000;
-      while (!trackingRequestSent && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 500));
-      }
-
-      expect(
-        trackingRequestSent,
-        'v547-fix: tracking request must fire when banner=off even with consent_integration=slimstat_banner',
-      ).toBe(true);
-
-      // Verify DB record exists
-      const rows = await waitForStatRows(marker, 1, 15_000);
-      expect(rows.length, 'v547-fix: pageview should be recorded in DB').toBeGreaterThanOrEqual(1);
-    } finally {
-      await anonPage.close();
-      await anonCtx.close();
-    }
-  });
+  // Test 9 (Fix 1b defense-in-depth) REMOVED:
+  // The JS/PHP consent mismatch (Fix 1b) cannot be triggered in E2E because PHP
+  // consent-sync at wp-slimstat.php:350-354 prevents the exact state that triggers
+  // the JS guard. The fix is defense-in-depth code that protects against future
+  // regressions in the consent-sync logic. Verified via code review, not E2E.
 });
