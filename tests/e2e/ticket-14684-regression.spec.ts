@@ -10,7 +10,7 @@
  * Bug 4: Cloudflare/cache serves stale params.id from server-side mode
  *         → JS skips tracking on all cached pages
  *
- * Source: Support ticket #14684 (Andy Spero — Synology NAS + SPCP + Cloudflare)
+ * Source: Support ticket #14684 (Synology NAS + SPCP + Cloudflare)
  * Analysis: jaan-to/outputs/qa/ticket-14684-root-cause-analysis.md
  */
 import { test, expect, type Page } from '@playwright/test';
