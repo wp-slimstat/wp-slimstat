@@ -1,3 +1,22 @@
+= 5.4.7 - 2026-03-25 =
+
+This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from
+5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.
+
+- Fix: Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
+- Fix: Client-side (JavaScript) tracking restored unconditionally — fixes zero tracking on cached sites
+- Fix: Charts and reports now query the correct database for External Database addon users
+- Fix: Chart granularity selection (Daily/Weekly/Monthly) persists across page reloads
+- Fix: Browscap Library errors now show specific failure details instead of generic messages
+- Fix: Downloaded Browscap files validated as ZIP before extraction
+- Fix: Browscap download compatible with hosts that block GitHub redirects
+- Fix: Migration forced-resets gated to run once (5.4.7 only), preserving admin choices on future updates
+- Fix: Fresh installs no longer see unnecessary cache purge notice
+- Fix: Visit counter seeds correctly from external database for Pro addon users
+- New: One-time admin notice reminding to purge page cache after upgrade
+- Improvement: Chart granularity select prevents duplicate event listeners on re-initialization
+- Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
+
 = 5.4.6 - 2026-03-23 =
 
 We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to
