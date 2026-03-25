@@ -159,12 +159,11 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // only fires when gdpr_enabled='off' (wp-slimstat.php line 281-282).
     // This test documents the bug. After the fix, change the assertion.
     //
-    // BEFORE FIX: expect 'off' (bug present)
-    // AFTER FIX:  expect 'on'  (bug fixed)
+    // Fix 1a applied: migration now restores set_tracker_cookie='on' unconditionally.
     expect(
       setTrackerCookie,
-      'set_tracker_cookie should be restored to "on" after migration (BUG: currently stays "off")',
-    ).toBe('off'); // <-- Change to 'on' after applying the fix
+      'set_tracker_cookie must be restored to "on" after migration (Fix 1a)',
+    ).toBe('on');
   });
 
   // ═══════════════════════════════════════════════════════════════════
