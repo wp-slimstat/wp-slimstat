@@ -278,7 +278,8 @@ class wp_slimstat
 
             // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
             // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
-            if (version_compare($_migration_ran, '5.4.7', '<')) {
+            // Skip for fresh installs ('0' = never ran, no broken settings to fix).
+            if ('0' !== $_migration_ran && version_compare($_migration_ran, '5.4.7', '<')) {
                 // Restore session cookie — Consent::piiAllowed() in Session.php gates
                 // the actual setcookie() call at runtime, not this setting.
                 if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
