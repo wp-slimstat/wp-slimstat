@@ -228,7 +228,9 @@ test.describe('Chart granularity persistence (#265)', () => {
       await insertRows(now - i * 86400, 2, `gran-seed-${i}`);
     }
 
-    await goToOverview(page);
+    // Navigate to the actual Overview page (slimview2 has charts, not slimlayout)
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector(GRANULARITY_SELECT, { timeout: 15_000 });
 
     // Change granularity to 'daily'
     await setGranularity(page, 'daily');
