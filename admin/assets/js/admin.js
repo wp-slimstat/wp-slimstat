@@ -1390,6 +1390,10 @@ var SlimStatAdmin = {
             var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
+            // Fallback to sessionStorage when the select is missing or about to be destroyed
+            if (!granularity && jQuery("#" + id).hasClass("chart")) {
+                try { granularity = sessionStorage.getItem("slimstat_chart_granularity_" + id); } catch(e) {}
+            }
             jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
 
             // Clear the autorefresh timer, if set
@@ -1441,6 +1445,11 @@ var SlimStatAdmin = {
 
                     if (jQuery("#" + id).hasClass("chart")) {
                         jQuery(inner_content).html(filteredResponse.html());
+                        // Re-initialize chart after DOM insertion — inline scripts
+                        // from the AJAX response may have run in a detached context
+                        if (typeof window.reinitializeSlimStatCharts === "function") {
+                            window.reinitializeSlimStatCharts(id);
+                        }
                     } else {
                         jQuery(inner_content).fadeOut(500, function () {
                             jQuery(this).html(filteredResponse.html()).fadeIn(500);

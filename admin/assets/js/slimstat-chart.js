@@ -82,13 +82,13 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        // Debounce the event listener to reduce server requests
+        // Debounce the AJAX fetch but write sessionStorage immediately
         var debounceTimeout;
         select.addEventListener("change", function () {
+            var granularity = select.value;
+            try { sessionStorage.setItem(storageKey, granularity); } catch (e) {}
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(function () {
-                var granularity = select.value;
-                try { sessionStorage.setItem(storageKey, granularity); } catch (e) {}
                 fetchChartData(chartId, granularity);
             }, 300);
         });
