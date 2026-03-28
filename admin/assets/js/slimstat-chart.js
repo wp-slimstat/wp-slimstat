@@ -25,6 +25,23 @@ document.addEventListener("DOMContentLoaded", function () {
         setupGranularitySelect(chartId);
     });
 
+    // Migrate old per-chart sessionStorage keys to shared localStorage
+    try {
+        var keys = [];
+        for (var i = 0; i < sessionStorage.length; i++) {
+            var key = sessionStorage.key(i);
+            if (key && key.indexOf("slimstat_chart_granularity_") === 0) {
+                keys.push(key);
+            }
+        }
+        if (keys.length > 0 && !localStorage.getItem(GRANULARITY_STORAGE_KEY)) {
+            localStorage.setItem(GRANULARITY_STORAGE_KEY, sessionStorage.getItem(keys[0]));
+        }
+        for (var j = 0; j < keys.length; j++) {
+            sessionStorage.removeItem(keys[j]);
+        }
+    } catch (e) {}
+
     function initializeChart(element, chartId) {
         var args = JSON.parse(element.getAttribute("data-args"));
         var data = JSON.parse(element.getAttribute("data-data"));
@@ -63,6 +80,8 @@ document.addEventListener("DOMContentLoaded", function () {
         renderCustomLegend(chart, chartId, datasets, prevDatasets, totals, translations);
     }
 
+    var GRANULARITY_STORAGE_KEY = "slimstat_chart_granularity";
+
     function setupGranularitySelect(chartId) {
         var select = document.getElementById("slimstat_granularity_" + chartId);
         if (!select) return;
@@ -70,10 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (select.dataset.slimstatGranularityBound === "1") return;
         select.dataset.slimstatGranularityBound = "1";
 
-        // Restore persisted granularity from sessionStorage (if valid and not disabled)
-        var storageKey = "slimstat_chart_granularity_" + chartId;
+        // Restore persisted granularity from localStorage (shared across all charts)
         var saved = null;
-        try { saved = sessionStorage.getItem(storageKey); } catch (e) {}
+        try { saved = localStorage.getItem(GRANULARITY_STORAGE_KEY); } catch (e) {}
         if (saved && saved !== select.value) {
             var option = select.querySelector('option[value="' + saved + '"]');
             if (option && !option.disabled) {
@@ -82,11 +100,24 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
 
-        // Debounce the AJAX fetch but write sessionStorage immediately
         var debounceTimeout;
         select.addEventListener("change", function () {
             var granularity = select.value;
-            try { sessionStorage.setItem(storageKey, granularity); } catch (e) {}
+            try { localStorage.setItem(GRANULARITY_STORAGE_KEY, granularity); } catch (e) {}
+
+            // Sync all other chart dropdowns on the page
+            var allSelects = document.querySelectorAll(".slimstat-granularity-select");
+            for (var i = 0; i < allSelects.length; i++) {
+                var otherSelect = allSelects[i];
+                if (otherSelect === select) continue;
+                var otherOption = otherSelect.querySelector('option[value="' + granularity + '"]');
+                if (otherOption && !otherOption.disabled && otherSelect.value !== granularity) {
+                    otherSelect.value = granularity;
+                    var otherId = otherSelect.id.replace("slimstat_granularity_", "");
+                    fetchChartData(otherId, granularity);
+                }
+            }
+
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(function () {
                 fetchChartData(chartId, granularity);

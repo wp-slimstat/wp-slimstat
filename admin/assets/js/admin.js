@@ -1390,9 +1390,9 @@ var SlimStatAdmin = {
             var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();
             var granularity = jQuery("#" + id + " .slimstat-granularity-select").val();
-            // Fallback to sessionStorage when the select is missing or about to be destroyed
+            // Fallback to localStorage when the select is missing or about to be destroyed
             if (!granularity && jQuery("#" + id).hasClass("chart")) {
-                try { granularity = sessionStorage.getItem("slimstat_chart_granularity_" + id); } catch(e) {}
+                try { granularity = localStorage.getItem("slimstat_chart_granularity"); } catch(e) {}
             }
             jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
 
