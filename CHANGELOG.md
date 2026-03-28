@@ -11,9 +11,7 @@ This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If yo
 - Fix: Downloaded Browscap files validated as ZIP before extraction
 - Fix: Browscap download compatible with hosts that block GitHub redirects
 - Fix: Migration forced-resets gated to run once (5.4.7 only), preserving admin choices on future updates
-- Fix: Fresh installs no longer see unnecessary cache purge notice
 - Fix: Visit counter seeds correctly from external database for Pro addon users
-- New: One-time admin notice reminding to purge page cache after upgrade
 - Improvement: Chart granularity select prevents duplicate event listeners on re-initialization
 - Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
 

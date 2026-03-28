@@ -5948,14 +5948,6 @@ msgstr ""
 msgid "Review Settings → Data Protection"
 msgstr ""
 
-#: wp-slimstat.php:558
-msgid "SlimStat Analytics — Please Purge Your Page Cache"
-msgstr ""
-
-#: wp-slimstat.php:559
-msgid "SlimStat tracking settings have been updated. Please purge your page cache (e.g., WP Super Cache, W3 Total Cache, LiteSpeed, Cloudflare) to ensure accurate visitor tracking."
-msgstr ""
-
 #: wp-slimstat.php:727
 msgid "Invalid Report ID"
 msgstr ""

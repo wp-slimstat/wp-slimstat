@@ -304,8 +304,6 @@ class wp_slimstat
                 if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
                     set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
                 }
-                // Purge page cache notice (stale SlimStatParams in cached HTML).
-                set_transient('slimstat_migration_cache_purge_notice', '1', 7 * DAY_IN_SECONDS);
             }
 
             unset($_ss_ip_was_anonymized, $_ss_ip_was_hashed);
@@ -457,9 +455,6 @@ class wp_slimstat
         // One-time notice when the v5.4.6 migration reset IP anonymization settings
         add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
 
-        // One-time notice to purge page cache after migration
-        add_action('admin_notices', [self::class, 'show_migration_cache_purge_notice']);
-
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
         \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
 
@@ -531,32 +526,6 @@ class wp_slimstat
                 <strong><?php esc_html_e('SlimStat Analytics — IP Privacy Settings Reset', 'wp-slimstat'); ?></strong><br>
                 <?php esc_html_e('This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings.', 'wp-slimstat'); ?>
                 &nbsp;<a href="<?php echo esc_url($settings_url); ?>"><?php esc_html_e('Review Settings → Data Protection', 'wp-slimstat'); ?></a>
-            </p>
-        </div>
-        <?php
-    }
-
-    /**
-     * Show a one-time admin notice after migration advising users to purge page caches.
-     * Stale cached pages may contain old SlimStatParams that prevent tracking.
-     */
-    public static function show_migration_cache_purge_notice(): void
-    {
-        if (!current_user_can('manage_options')) {
-            return;
-        }
-
-        if (!get_transient('slimstat_migration_cache_purge_notice')) {
-            return;
-        }
-
-        delete_transient('slimstat_migration_cache_purge_notice');
-
-        ?>
-        <div class="notice notice-info is-dismissible">
-            <p>
-                <strong><?php esc_html_e('SlimStat Analytics — Please Purge Your Page Cache', 'wp-slimstat'); ?></strong><br>
-                <?php esc_html_e('SlimStat tracking settings have been updated. Please purge your page cache (e.g., WP Super Cache, W3 Total Cache, LiteSpeed, Cloudflare) to ensure accurate visitor tracking.', 'wp-slimstat'); ?>
             </p>
         </div>
         <?php
