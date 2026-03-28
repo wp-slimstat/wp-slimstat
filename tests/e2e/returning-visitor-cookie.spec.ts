@@ -525,4 +525,80 @@ test.describe('Returning Visitor Cookie Behavior', () => {
       await ctx.close();
     }
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Focused: JS mode + cookie on — returning visitor cookie set and
+  //   Access Log groups by fingerprint
+  //
+  //   Explicitly sets javascript_mode=on + set_tracker_cookie=on,
+  //   visits 3 pages, and verifies:
+  //   1. slimstat_tracking_code cookie is set
+  //   2. All 3 DB rows share the same visit_id (session linked)
+  //   3. Grouping fields (visit_id, ip, browser, platform, fingerprint)
+  //      are consistent — proving right-now.php:83 would group them
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('JS mode + cookie on — returning visitor cookie set and access log groups by fingerprint', async ({ page, browser }) => {
+    await clearStatsTable();
+    await setSlimstatOptions(page, {
+      javascript_mode: 'on',
+      set_tracker_cookie: 'on',
+      gdpr_enabled: 'off',
+      tracking_request_method: 'rest',
+      ignore_wp_users: 'no',
+      anonymous_tracking: 'off',
+    });
+
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
+    const anonPage = await ctx.newPage();
+
+    try {
+      const marker = `return-jsmode-fp-${Date.now()}`;
+
+      // Visit 3 pages in same session
+      for (const suffix of ['p1', 'p2', 'p3']) {
+        await anonPage.goto(`${BASE_URL}/?e2e_marker=${marker}-${suffix}`, { waitUntil: 'load' });
+        await anonPage.waitForTimeout(3000);
+      }
+
+      // 1. Cookie must be set
+      const cookie = await findTrackingCookie(ctx);
+      expect(
+        cookie,
+        'slimstat_tracking_code cookie must be set with javascript_mode=on + set_tracker_cookie=on',
+      ).toBeTruthy();
+
+      // 2. All 3 rows share same visit_id
+      const rows = await waitForStatRows(marker, 3, 20_000);
+      expect(rows.length, 'All 3 pageviews should be tracked').toBeGreaterThanOrEqual(3);
+
+      const visitIds = [...new Set(rows.map((r: any) => parseInt(r.visit_id, 10)))];
+      expect(visitIds, 'All 3 rows should share one visit_id (cookie-linked session)').toHaveLength(1);
+      expect(visitIds[0], 'visit_id must be positive').toBeGreaterThan(0);
+
+      // 3. Grouping fields for right-now.php:83 — all must match
+      const ips = [...new Set(rows.map((r: any) => r.ip))];
+      expect(ips, 'All rows should have same IP').toHaveLength(1);
+
+      const browsers = [...new Set(rows.map((r: any) => r.browser))];
+      expect(browsers, 'All rows should have same browser').toHaveLength(1);
+
+      const platforms = [...new Set(rows.map((r: any) => r.platform))];
+      expect(platforms, 'All rows should have same platform').toHaveLength(1);
+
+      // Fingerprint: may be empty in headless Chromium (FingerprintJS depends on
+      // canvas/WebGL which headless may not support). Either all empty or all same.
+      const fingerprints = [...new Set(rows.map((r: any) => r.fingerprint || ''))];
+      expect(
+        fingerprints,
+        `All rows should have consistent fingerprint (all same or all empty), got ${JSON.stringify(fingerprints)}`,
+      ).toHaveLength(1);
+
+      console.log(`JS mode test: visit_id=${visitIds[0]}, ip=${ips[0]}, browser=${browsers[0]}, platform=${platforms[0]}, fingerprint=${fingerprints[0] || '(empty)'}`);
+    } finally {
+      await anonPage.close();
+      await ctx.close();
+    }
+  });
 });
