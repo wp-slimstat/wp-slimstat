@@ -320,22 +320,37 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
     // The Access Log report (slim_p7_02) is on slimview1, NOT slimview3.
     // right-now.php:199 renders <p class='header ...'> for each visitor group.
     // 3 same-session pages should produce exactly 1 header.
+    //
+    // Navigate to slimview1. If the admin session expired (earlier tests navigate
+    // many admin pages), ensureAdminLoggedIn handles re-auth, then we retry.
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
     await ensureAdminLoggedIn(page);
 
-    // Early-fail guard: ensure the report loaded with data (not "No data to display")
-    const noData = await page.locator('p.nodata').count();
+    // After re-auth we may be on wp-admin dashboard — navigate to slimview1 again
+    if (!page.url().includes('page=slimview1')) {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
+        waitUntil: 'domcontentloaded',
+      });
+    }
+    await page.waitForLoadState('networkidle');
+
+    // Scope assertions to the Access Log report container (#slim_p7_02)
+    const reportContainer = page.locator('#slim_p7_02 .inside');
+    await expect(reportContainer).toBeVisible({ timeout: 20_000 });
+
+    // Wait for report content to render (may be AJAX-loaded)
+    await reportContainer.locator('p[class*="header"]').first().waitFor({ timeout: 15_000 });
+
+    // Early-fail guard: ensure the report has data (not "No data to display")
+    const noData = await reportContainer.locator('p.nodata').count();
     expect(noData, 'Access Log should have data, not "No data to display"').toBe(0);
 
-    // Wait for the report content to render
-    await page.waitForSelector('p.header', { timeout: 15_000 });
-
-    // Count visitor header <p class="header"> elements.
-    // With ignore_wp_users=no, the admin loading this page may also be tracked,
-    // so we assert at least 1 header exists and our test data is grouped.
-    const headerCount = await page.locator('p.header').count();
+    // Count visitor header <p class="header..."> elements within the report.
+    // With ignore_wp_users=on (set above), only anonymous test pageviews are tracked,
+    // so exactly 1 visitor header should appear for our 3 same-session pages.
+    const headerCount = await reportContainer.locator('p[class*="header"]').count();
     expect(
       headerCount,
       `Bug 3 regression: 3 same-session pages must produce exactly 1 visitor header in the Access Log DOM, got ${headerCount}`,

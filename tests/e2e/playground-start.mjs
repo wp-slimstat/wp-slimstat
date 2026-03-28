@@ -25,8 +25,15 @@ if (process.argv.includes('--blueprint')) {
 const extra = process.argv.slice(2).filter(a => a !== '--blueprint');
 args.push(...extra);
 
+// Merge the DNS flag into any existing NODE_OPTIONS instead of replacing it.
+const dnsFlag = '--dns-result-order=ipv4first';
+const existingNodeOpts = process.env.NODE_OPTIONS || '';
+const mergedNodeOpts = existingNodeOpts.includes(dnsFlag)
+  ? existingNodeOpts
+  : `${dnsFlag} ${existingNodeOpts}`.trim();
+
 execFileSync(cli, args, {
   cwd: root,
   stdio: 'inherit',
-  env: { ...process.env, NODE_OPTIONS: '--dns-result-order=ipv4first' },
+  env: { ...process.env, NODE_OPTIONS: mergedNodeOpts },
 });
