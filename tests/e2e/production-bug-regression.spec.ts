@@ -27,6 +27,22 @@ import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
+/** Re-authenticate if the page was redirected to wp-login.php */
+async function ensureAdminLoggedIn(page: import('@playwright/test').Page): Promise<void> {
+  if (page.url().includes('wp-login.php')) {
+    const user = process.env.WP_ADMIN_USER || 'parhumm';
+    const pass = process.env.WP_ADMIN_PASS || 'testpass123';
+    await page.fill('#user_login', user);
+    await page.fill('#user_pass', pass);
+    await page.click('#wp-submit');
+    await page.waitForLoadState('domcontentloaded');
+    // If still on login page (e.g. error), wait a moment and retry
+    if (page.url().includes('wp-login.php')) {
+      await page.waitForTimeout(2000);
+    }
+  }
+}
+
 const COOKIEYES_DISMISS_COOKIES = [
   { name: 'viewed_cookie_policy', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },
   { name: 'CookieLawInfoConsent', value: 'true', domain: COOKIE_DOMAIN, path: '/' },
@@ -183,23 +199,32 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
       const visitId = parseInt(rows[0].visit_id, 10);
       expect(visitId, 'visit_id must be positive').toBeGreaterThan(0);
 
-      // Query online count using the same pattern as query_online_count()
-      // (admin/index.php:1711-1726) — 30-minute window, grouped by visit_id
-      const now = Math.floor(Date.now() / 1000);
-      const windowStart = now - (30 * 60);
+      // Replicate the EXACT production SQL from query_online_count()
+      // (admin/index.php:1704-1729) including dt_out/MAX(CASE...) and HAVING.
+      // Uses current_minute_start aligned to minute boundary, 30-min window.
+      const nowSec = Math.floor(Date.now() / 1000);
+      const currentMinuteStart = Math.floor(nowSec / 60) * 60;
+      const windowStart = currentMinuteStart - (29 * 60);
       const [countRows] = (await getPool().execute(
         `SELECT COUNT(*) as cnt FROM (
-          SELECT visit_id
-          FROM wp_slim_stats
-          WHERE visit_id > 0 AND dt >= ?
-          GROUP BY visit_id
+            SELECT visit_id, MAX(
+                CASE
+                    WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
+                    ELSE dt
+                END
+            ) AS last_activity
+            FROM wp_slim_stats
+            WHERE visit_id > 0
+                AND (dt >= ? OR (dt_out IS NOT NULL AND dt_out >= ?))
+            GROUP BY visit_id
+            HAVING (FLOOR(last_activity / 60) * 60 + 59) >= ?
         ) live_sessions`,
-        [windowStart],
+        [windowStart, windowStart, windowStart],
       )) as any;
 
       expect(
         parseInt(countRows[0].cnt, 10),
-        'Bug 1&2 regression: online count must be > 0 after a tracked pageview',
+        'Bug 1&2 regression: online count must be > 0 (exact production SQL with dt_out/HAVING)',
       ).toBeGreaterThan(0);
     } finally {
       await anonPage.close();
@@ -215,34 +240,25 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
   test('Bug 1&2: admin bar shows non-zero online count', async ({ page }) => {
     // Stats from previous test should still exist.
-    // Load any admin page as authenticated user and check the admin bar.
-    await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
+    // Load a SlimStat admin page — the online count is in the SlimStat page header
+    // (header.php:109), NOT the WP admin bar.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'domcontentloaded' });
+    await ensureAdminLoggedIn(page);
 
-    // The SlimStat admin bar item should be present
-    const adminBar = page.locator('#wp-admin-bar-slimstat-header, #wp-admin-bar-slimstat');
-    const barExists = await adminBar.count();
+    // The online count element: <span id="slimstat-online-visitors-count">
+    const onlineCount = page.locator('#slimstat-online-visitors-count');
+    await expect(
+      onlineCount,
+      'Online visitors count element must exist in SlimStat header (#slimstat-online-visitors-count)',
+    ).toBeVisible({ timeout: 10_000 });
 
-    if (barExists > 0) {
-      const barText = await adminBar.innerText();
-      // The admin bar typically shows "X online" or a count
-      // We just verify it doesn't show "0" exclusively
-      console.log('Admin bar SlimStat text:', barText);
-
-      // Look for the online count element specifically
-      const onlineCount = page.locator('.slimstat-online-count, #slimstat-admin-bar-online');
-      const countExists = await onlineCount.count();
-      if (countExists > 0) {
-        const countText = await onlineCount.innerText();
-        const count = parseInt(countText.replace(/\D/g, ''), 10);
-        expect(
-          count,
-          'Bug 1&2 regression: admin bar online count should be > 0',
-        ).toBeGreaterThan(0);
-      }
-    } else {
-      // Admin bar not visible — skip gracefully
-      console.log('SlimStat admin bar element not found — skipping admin bar assertion');
-    }
+    const countText = await onlineCount.innerText();
+    console.log('SlimStat header online count text:', countText);
+    const count = parseInt(countText.replace(/\D/g, ''), 10);
+    expect(
+      count,
+      'Bug 1&2 regression: online visitors count should be > 0',
+    ).toBeGreaterThan(0);
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -258,19 +274,22 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
   // should appear under ONE visitor header in the Access Log.
   // ═══════════════════════════════════════════════════════════════════
 
-  test('Bug 3: same-session pages share grouping fields (visit_id, ip, browser, platform)', async ({
+  test('Bug 3: same-session pages grouped under one visitor header in Access Log DOM', async ({
     page,
     browser,
   }) => {
-    await clearStatsTable();
     await setSlimstatOptions(page, {
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
       tracking_request_method: 'rest',
-      ignore_wp_users: 'no',
+      ignore_wp_users: 'on',
       anonymous_tracking: 'off',
     });
+
+    // Clear stats AFTER setting options (setSlimstatOptions navigates admin pages
+    // which may generate tracked pageviews before ignore_wp_users takes effect)
+    await clearStatsTable();
 
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies(COOKIEYES_DISMISS_COOKIES);
@@ -289,28 +308,38 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
       const rows = await waitForStatRows(marker, 3, 20_000);
       expect(rows.length, 'All 3 pageviews should be tracked').toBeGreaterThanOrEqual(3);
 
-      // All rows should share the same grouping fields used by right-now.php:83
-      // (visit_id, ip, browser, platform) — this is what determines whether
-      // rows appear under one visitor header or separate ones.
       const visitIds = [...new Set(rows.map((r: any) => parseInt(r.visit_id, 10)))];
       expect(visitIds, 'All 3 rows should share one visit_id').toHaveLength(1);
       expect(visitIds[0], 'visit_id must be positive').toBeGreaterThan(0);
-
-      const ips = [...new Set(rows.map((r: any) => r.ip))];
-      expect(ips, 'All rows should have same IP (consistent visitor identity)').toHaveLength(1);
-
-      const browsers = [...new Set(rows.map((r: any) => r.browser))];
-      expect(browsers, 'All rows should have same browser').toHaveLength(1);
-
-      const platforms = [...new Set(rows.map((r: any) => r.platform))];
-      expect(platforms, 'All rows should have same platform').toHaveLength(1);
-
-      // With matching visit_id + ip + browser + platform, right-now.php:83
-      // will group these under one visitor header in the Access Log.
     } finally {
       await anonPage.close();
       await ctx.close();
     }
+
+    // Load the Access Log page (slimview1 = Real-Time) as admin and assert DOM visitor headers.
+    // The Access Log report (slim_p7_02) is on slimview1, NOT slimview3.
+    // right-now.php:199 renders <p class='header ...'> for each visitor group.
+    // 3 same-session pages should produce exactly 1 header.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await ensureAdminLoggedIn(page);
+
+    // Early-fail guard: ensure the report loaded with data (not "No data to display")
+    const noData = await page.locator('p.nodata').count();
+    expect(noData, 'Access Log should have data, not "No data to display"').toBe(0);
+
+    // Wait for the report content to render
+    await page.waitForSelector('p.header', { timeout: 15_000 });
+
+    // Count visitor header <p class="header"> elements.
+    // With ignore_wp_users=no, the admin loading this page may also be tracked,
+    // so we assert at least 1 header exists and our test data is grouped.
+    const headerCount = await page.locator('p.header').count();
+    expect(
+      headerCount,
+      `Bug 3 regression: 3 same-session pages must produce exactly 1 visitor header in the Access Log DOM, got ${headerCount}`,
+    ).toBe(1);
   });
 
   // ═══════════════════════════════════════════════════════════════════
