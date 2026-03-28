@@ -2,6 +2,7 @@ var slimstatClosestPoint = false;
 document.addEventListener("DOMContentLoaded", function () {
     var chartElements = document.querySelectorAll('[id^="slimstat_chart_data_"]');
     var charts = {};
+    var GRANULARITY_STORAGE_KEY = "slimstat_chart_granularity";
 
     function reinitializeCharts(id) {
         var updatedChartElements = document.querySelectorAll('[id^="slimstat_chart_data_' + id + '"]');
@@ -79,8 +80,6 @@ document.addEventListener("DOMContentLoaded", function () {
         charts[chartId] = chart;
         renderCustomLegend(chart, chartId, datasets, prevDatasets, totals, translations);
     }
-
-    var GRANULARITY_STORAGE_KEY = "slimstat_chart_granularity";
 
     function setupGranularitySelect(chartId) {
         var select = document.getElementById("slimstat_granularity_" + chartId);

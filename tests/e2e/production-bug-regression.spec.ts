@@ -34,10 +34,8 @@ async function ensureAdminLoggedIn(page: import('@playwright/test').Page): Promi
     const pass = process.env.WP_ADMIN_PASS || 'testpass123';
     await page.fill('#user_login', user);
     await page.fill('#user_pass', pass);
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 30_000 }),
-      page.click('#wp-submit'),
-    ]);
+    await page.click('#wp-submit');
+    await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
   }
 }
 

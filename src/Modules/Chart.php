@@ -556,7 +556,7 @@ class Chart
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
             ['slimstat_chartjs'],
-            '1.0',
+            '1.3',
             true
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
