@@ -9,15 +9,15 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-03-25T12:23:19+00:00\n"
+"POT-Creation-Date: 2026-03-29T06:28:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
 
 #. Plugin Name of the plugin
 #: wp-slimstat.php
-#: wp-slimstat.php:433
-#: wp-slimstat.php:1590
+#: wp-slimstat.php:431
+#: wp-slimstat.php:1559
 msgid "SlimStat Analytics"
 msgstr ""
 
@@ -161,7 +161,7 @@ msgid "Display important notifications inside the plugin, such as new version re
 msgstr ""
 
 #: admin/config/index.php:106
-#: wp-slimstat.php:1630
+#: wp-slimstat.php:1599
 msgid "Consent Management"
 msgstr ""
 
@@ -1201,7 +1201,7 @@ msgstr ""
 #: src/Migration/Admin/MigrationAdmin.php:227
 #: src/Migration/Admin/MigrationAdmin.php:273
 #: src/Migration/Admin/MigrationAdmin.php:300
-#: wp-slimstat.php:1914
+#: wp-slimstat.php:1883
 msgid "Permission denied"
 msgstr ""
 
@@ -5925,164 +5925,164 @@ msgid "We're not seeing activity in the last 30 minutes yet."
 msgstr ""
 
 #. translators: %d: number of seconds for session duration
-#: wp-slimstat.php:437
+#: wp-slimstat.php:435
 #, php-format
 msgid "%d second"
 msgid_plural "%d seconds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: wp-slimstat.php:440
+#: wp-slimstat.php:438
 msgid "Session cookie that identifies returning visitors for analytics."
 msgstr ""
 
-#: wp-slimstat.php:531
+#: wp-slimstat.php:526
 msgid "SlimStat Analytics — IP Privacy Settings Reset"
 msgstr ""
 
-#: wp-slimstat.php:532
+#: wp-slimstat.php:527
 msgid "This update restored full-IP storage (the 5.3.x default) by turning off IP anonymization and daily visitor hashing. If your site serves EU visitors, please review your Data Protection settings."
 msgstr ""
 
-#: wp-slimstat.php:533
+#: wp-slimstat.php:528
 msgid "Review Settings → Data Protection"
 msgstr ""
 
-#: wp-slimstat.php:727
+#: wp-slimstat.php:696
 msgid "Invalid Report ID"
 msgstr ""
 
-#: wp-slimstat.php:904
+#: wp-slimstat.php:873
 msgid "[REST API] The <code>dimension</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:908
+#: wp-slimstat.php:877
 msgid "[REST API] The <code>function</code> parameter is required. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:939
+#: wp-slimstat.php:908
 msgid "[REST API] You sent an invalid request. Accepted function values include: <code>count, count-all, recent, recent-all, top and top-all</code>. Please review your request and try again."
 msgstr ""
 
-#: wp-slimstat.php:953
+#: wp-slimstat.php:922
 msgid "[REST API] Please use a valid token in order to access the REST API endpoint at this URL."
 msgstr ""
 
-#: wp-slimstat.php:976
+#: wp-slimstat.php:945
 msgid "You will need to specify a valid token to be able to query the data. Tokens are defined in Slimstat > Settings > Access Control."
 msgstr ""
 
-#: wp-slimstat.php:980
+#: wp-slimstat.php:949
 msgid "This parameter specifies the type of QUERY you would like to perform. Accepted funciton values include: count, count-all, recent, recent-all, top and top-all."
 msgstr ""
 
-#: wp-slimstat.php:985
+#: wp-slimstat.php:954
 msgid "This parameter indicates what dimension to return: * (all data), ip, resource, browser, operating system, etc. You can only specify one dimension at a time."
 msgstr ""
 
-#: wp-slimstat.php:990
+#: wp-slimstat.php:959
 #, php-format
 msgid "This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)"
 msgstr ""
 
-#: wp-slimstat.php:1591
+#: wp-slimstat.php:1560
 msgid "What personal data we collect and why"
 msgstr ""
 
-#: wp-slimstat.php:1592
+#: wp-slimstat.php:1561
 msgid "SlimStat Analytics collects the following data about website visitors:"
 msgstr ""
 
-#: wp-slimstat.php:1594
+#: wp-slimstat.php:1563
 msgid "IP Address: Collected for analytics and security purposes. May be anonymized or hashed based on your privacy settings."
 msgstr ""
 
-#: wp-slimstat.php:1595
+#: wp-slimstat.php:1564
 msgid "Page URLs: Tracks which pages are visited to analyze website usage."
 msgstr ""
 
-#: wp-slimstat.php:1596
+#: wp-slimstat.php:1565
 msgid "Referrer Information: Tracks where visitors came from (search engines, other websites, etc.)."
 msgstr ""
 
-#: wp-slimstat.php:1597
+#: wp-slimstat.php:1566
 msgid "Browser and Device Information: User agent, screen resolution, and device type for analytics."
 msgstr ""
 
-#: wp-slimstat.php:1598
+#: wp-slimstat.php:1567
 msgid "Timestamp: Date and time of each page visit."
 msgstr ""
 
-#: wp-slimstat.php:1601
+#: wp-slimstat.php:1570
 msgid "Cookies: A tracking cookie is used to identify returning visitors and maintain session continuity."
 msgstr ""
 
-#: wp-slimstat.php:1605
+#: wp-slimstat.php:1574
 msgid "User Information: If you are logged in, your username and email may be associated with your visits (only with consent when GDPR mode is enabled)."
 msgstr ""
 
-#: wp-slimstat.php:1610
+#: wp-slimstat.php:1579
 msgid "How long we retain your data"
 msgstr ""
 
-#: wp-slimstat.php:1613
+#: wp-slimstat.php:1582
 #, php-format
 msgid "Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements."
 msgstr ""
 
-#: wp-slimstat.php:1615
+#: wp-slimstat.php:1584
 msgid "Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies."
 msgstr ""
 
-#: wp-slimstat.php:1618
+#: wp-slimstat.php:1587
 msgid "Your rights"
 msgstr ""
 
-#: wp-slimstat.php:1619
+#: wp-slimstat.php:1588
 msgid "Under GDPR, you have the right to:"
 msgstr ""
 
-#: wp-slimstat.php:1621
+#: wp-slimstat.php:1590
 msgid "Access your personal data collected by SlimStat"
 msgstr ""
 
-#: wp-slimstat.php:1622
+#: wp-slimstat.php:1591
 msgid "Request deletion of your personal data (Right to be Forgotten)"
 msgstr ""
 
-#: wp-slimstat.php:1623
+#: wp-slimstat.php:1592
 msgid "Opt-out of tracking by revoking consent (if GDPR mode is enabled)"
 msgstr ""
 
-#: wp-slimstat.php:1627
+#: wp-slimstat.php:1596
 msgid "You can exercise these rights by using the WordPress Privacy Tools (Tools → Export Personal Data / Erase Personal Data) or by contacting the site administrator."
 msgstr ""
 
-#: wp-slimstat.php:1632
+#: wp-slimstat.php:1601
 msgid "This website uses Anonymous Tracking Mode. Initial tracking occurs without collecting personally identifiable information (PII). Full tracking with PII collection only occurs after you grant explicit consent."
 msgstr ""
 
-#: wp-slimstat.php:1634
+#: wp-slimstat.php:1603
 msgid "Tracking requires your consent when GDPR mode is enabled. You can grant or revoke consent at any time through the consent management interface."
 msgstr ""
 
-#: wp-slimstat.php:1815
+#: wp-slimstat.php:1784
 msgid "Report"
 msgstr ""
 
-#: wp-slimstat.php:1823
+#: wp-slimstat.php:1792
 msgid "Title"
 msgstr ""
 
-#: wp-slimstat.php:1828
+#: wp-slimstat.php:1797
 msgid "Optional filters"
 msgstr ""
 
-#: wp-slimstat.php:1918
+#: wp-slimstat.php:1887
 msgid "Invalid nonce"
 msgstr ""
 
-#: wp-slimstat.php:1930
+#: wp-slimstat.php:1899
 #, php-format
 msgid "Slimstat cache cleared (%d items)"
 msgstr ""
