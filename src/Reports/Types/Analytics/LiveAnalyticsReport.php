@@ -145,7 +145,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		// 2) pages and countries in last 30 minutes (unique)
 		$threshold_30 = $now - ( 30 * 60 );
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
-			->from( "{$wpdb->prefix}slim_stats" )
+			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
 			->getRow();
 
@@ -166,7 +166,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$wpdb = \wp_slimstat::$wpdb;
 
 		$window_seconds = max( 60, $window_seconds );
-		$table          = "{$wpdb->prefix}slim_stats";
+		$table          = "{$GLOBALS['wpdb']->prefix}slim_stats";
 
 		$current_minute_start = (int) floor( \wp_slimstat::now() / 60 ) * 60;
 		$window_minutes       = (int) ceil( $window_seconds / 60 );
@@ -249,7 +249,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			// Use Query class for secure and cached queries
 			$minuteExpr = 'FLOOR(dt / 60) * 60';
 			$results = Query::select( "{$minuteExpr} as minute_timestamp, COUNT(DISTINCT {$field}) as count" )
-				->from( "{$wpdb->prefix}slim_stats" )
+				->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 				->where( 'dt', '>=', $start_minute )
 					->whereRaw( $condition )
 					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility
@@ -313,7 +313,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$start_minute = $end_minute - ( ( $bucket_count - 1 ) * $bucket_size );
 		$window_start = $start_minute;
 		$window_end   = $end_minute + ( $bucket_size - 1 );
-		$table        = "{$wpdb->prefix}slim_stats";
+		$table        = "{$GLOBALS['wpdb']->prefix}slim_stats";
 
 		$numbers = [];
 		for ( $i = 0; $i < $bucket_count; $i++ ) {
