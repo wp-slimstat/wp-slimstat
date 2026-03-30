@@ -1038,6 +1038,21 @@ class wp_slimstat
     // end date_i18n
 
     /**
+     * Returns the current timestamp in the same format stored in the dt column.
+     * MUST be used by all queries that compare against dt values.
+     *
+     * WordPress date_i18n('U') returns current_time('timestamp') — a legacy
+     * quirk where 'U' format includes the site's GMT offset. This matches
+     * how Processor::process() stores $stat['dt'] via self::date_i18n('U').
+     *
+     * @since 5.4.7
+     * @return int Current timestamp matching dt column format
+     */
+    public static function now(): int {
+        return (int) self::date_i18n('U');
+    }
+
+    /**
      * Returns default options with geolocation_provider set for fresh installs and resets.
      *
      * geolocation_provider is excluded from init_options() because init() merges

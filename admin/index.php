@@ -1167,7 +1167,7 @@ class wp_slimstat_admin
         ));
 
         // Online Users — same 30-minute window query as header.php
-        $current_minute_start = (int) floor(time() / 60) * 60;
+        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_minutes = 30;
         $window_start = $current_minute_start - (($window_minutes - 1) * 60);
 
@@ -1705,7 +1705,7 @@ class wp_slimstat_admin
     {
         $db = wp_slimstat::$wpdb;
         $table = "{$db->prefix}slim_stats";
-        $current_minute_start = (int) floor(time() / 60) * 60;
+        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
         $count = (int) $db->get_var($db->prepare(

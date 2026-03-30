@@ -83,7 +83,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'countries_live'          => $live_counts['countries'] ?? 0,
 			'active_users_per_minute' => $chart_data,
 			'selected_metric'         => $selected_metric,
-			'last_updated'            => time(),
+			'last_updated'            => \wp_slimstat::now(),
 		];
 	}
 
@@ -119,7 +119,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return int
 	 */
 	private function get_30min_threshold(): int {
-		return time() - ( 30 * 60 );
+		return \wp_slimstat::now() - ( 30 * 60 );
 	}
 
 	/**
@@ -140,7 +140,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		}
 
 		$users_count = $this->get_sessions_count_within_window( 30 * 60 );
-		$now         = time();
+		$now         = \wp_slimstat::now();
 
 		// 2) pages and countries in last 30 minutes (unique)
 		$threshold_30 = $now - ( 30 * 60 );
@@ -168,7 +168,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$window_seconds = max( 60, $window_seconds );
 		$table          = "{$wpdb->prefix}slim_stats";
 
-		$current_minute_start = (int) floor( time() / 60 ) * 60;
+		$current_minute_start = (int) floor( \wp_slimstat::now() / 60 ) * 60;
 		$window_minutes       = (int) ceil( $window_seconds / 60 );
 		if ( $window_minutes < 1 ) {
 			$window_minutes = 1;
@@ -239,7 +239,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			$chart_data = $this->get_users_chart_data();
 		} else {
 			// Align pages/countries metric to the same window as users: last 30 minutes including current minute
-			$now = time();
+			$now = \wp_slimstat::now();
 			$end_minute = (int) floor( $now / 60 ) * 60; // start of current minute
 			$start_minute = $end_minute - ( 29 * 60 );
 
@@ -282,7 +282,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		if ( ! $this->is_tracking_enabled() ) {
 			$empty = $this->get_empty_chart_data();
-			$empty['cache_time'] = time();
+			$empty['cache_time'] = \wp_slimstat::now();
 
 			return $empty;
 		}
@@ -291,7 +291,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$cached    = get_transient( $cache_key );
 		if ( false !== $cached && is_array( $cached ) ) {
 			$cache_time = $cached['cache_time'] ?? 0;
-			$now        = time();
+			$now        = \wp_slimstat::now();
 			$seconds    = (int) date( 's', $now );
 
 			// Cache is valid only if we're NOT at :00 of the minute
@@ -308,7 +308,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 		$bucket_count = 30;
 		$bucket_size  = 60;
-		$now          = time();
+		$now          = \wp_slimstat::now();
 		$end_minute   = (int) floor( $now / $bucket_size ) * $bucket_size;
 		$start_minute = $end_minute - ( ( $bucket_count - 1 ) * $bucket_size );
 		$window_start = $start_minute;
@@ -402,7 +402,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array
 	 */
 	private function format_chart_data( $data_source, bool $is_grouped = false ): array {
-		$current_time = time();
+		$current_time = \wp_slimstat::now();
 
 		// Build lookup array with optimized memory usage
 		$data_lookup = [];
@@ -689,7 +689,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'data'       => array_fill( 0, 30, 0 ),
 			'max_value'  => 1,
 			'peak_index' => null,
-			'cache_time' => time(),
+			'cache_time' => \wp_slimstat::now(),
 		];
 	}
 
