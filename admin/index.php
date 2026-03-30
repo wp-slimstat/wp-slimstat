@@ -1123,47 +1123,47 @@ class wp_slimstat_admin
             return;
         }
 
-        $db = wp_slimstat::$wpdb;
-        $table = "{$db->prefix}slim_stats";
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
         $today_start = mktime(0, 0, 0);
         $yesterday_start = $today_start - 86400;
         $yesterday_end = $today_start - 1;
 
         // Sessions Today (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_today = (int) $db->get_var($db->prepare(
+        $sessions_today = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
             $today_start
         ));
 
         // Views Today (pageviews)
-        $views_today = (int) $db->get_var($db->prepare(
+        $views_today = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(id) FROM {$table} WHERE dt >= %d",
             $today_start
         ));
 
         // Yesterday's sessions (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_yesterday = (int) $db->get_var($db->prepare(
+        $sessions_yesterday = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
             $yesterday_start, $yesterday_end
         ));
 
         // Yesterday's views
-        $views_yesterday = (int) $db->get_var($db->prepare(
+        $views_yesterday = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d",
             $yesterday_start, $yesterday_end
         ));
 
         // Referrals Today (external referrers only)
         $site_host = parse_url(home_url(), PHP_URL_HOST);
-        $referrals_today = (int) $db->get_var($db->prepare(
+        $referrals_today = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(id) FROM {$table} WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $today_start, '%' . $db->esc_like($site_host) . '%'
+            $today_start, '%' . $wpdb->esc_like($site_host) . '%'
         ));
 
         // Referrals Yesterday
-        $referrals_yesterday = (int) $db->get_var($db->prepare(
+        $referrals_yesterday = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $yesterday_start, $yesterday_end, '%' . $db->esc_like($site_host) . '%'
+            $yesterday_start, $yesterday_end, '%' . $wpdb->esc_like($site_host) . '%'
         ));
 
         // Online Users — same 30-minute window query as header.php
@@ -1171,7 +1171,7 @@ class wp_slimstat_admin
         $window_minutes = 30;
         $window_start = $current_minute_start - (($window_minutes - 1) * 60);
 
-        $online_count = (int) $db->get_var($db->prepare(
+        $online_count = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT visit_id, MAX(
                     CASE
@@ -1703,12 +1703,12 @@ class wp_slimstat_admin
      */
     private static function query_online_count()
     {
-        $db = wp_slimstat::$wpdb;
-        $table = "{$db->prefix}slim_stats";
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
         $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
-        $count = (int) $db->get_var($db->prepare(
+        $count = (int) $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM (
                 SELECT visit_id, MAX(
                     CASE
@@ -1761,8 +1761,8 @@ class wp_slimstat_admin
             return;
         }
 
-        $db = wp_slimstat::$wpdb;
-        $table = "{$db->prefix}slim_stats";
+        global $wpdb;
+        $table = "{$wpdb->prefix}slim_stats";
         $is_pro = wp_slimstat::pro_is_installed();
 
         // --- Online count (always fresh — fast indexed query) ---
@@ -1778,10 +1778,10 @@ class wp_slimstat_admin
             $yesterday_start = $today_start - DAY_IN_SECONDS;
             $yesterday_end = $today_start - 1;
             $site_host = parse_url(home_url(), PHP_URL_HOST);
-            $referer_like = '%' . $db->esc_like($site_host) . '%';
+            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
 
             // Sessions + views: 2 queries instead of 4 using conditional aggregates
-            $row = $db->get_row($db->prepare(
+            $row = $wpdb->get_row($wpdb->prepare(
                 "SELECT
                     COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
                     COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
@@ -1797,7 +1797,7 @@ class wp_slimstat_admin
             ));
 
             // Referrals: 1 query with conditional aggregates
-            $ref_row = $db->get_row($db->prepare(
+            $ref_row = $wpdb->get_row($wpdb->prepare(
                 "SELECT
                     SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
                     SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
