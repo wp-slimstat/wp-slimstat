@@ -1123,8 +1123,8 @@ class wp_slimstat_admin
             return;
         }
 
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $today_start = mktime(0, 0, 0);
         $yesterday_start = $today_start - 86400;
         $yesterday_end = $today_start - 1;
@@ -1703,8 +1703,8 @@ class wp_slimstat_admin
      */
     private static function query_online_count()
     {
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
@@ -1761,8 +1761,8 @@ class wp_slimstat_admin
             return;
         }
 
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $is_pro = wp_slimstat::pro_is_installed();
 
         // --- Online count (always fresh — fast indexed query) ---

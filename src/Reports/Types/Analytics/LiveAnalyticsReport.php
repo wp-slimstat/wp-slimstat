@@ -129,7 +129,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array{users: int, pages: int, countries: int}
 	 */
 	private function get_all_live_counts(): array {
-		global $wpdb;
+		$wpdb = \wp_slimstat::$wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {
 			return [
@@ -163,7 +163,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return int
 	 */
 	private function get_sessions_count_within_window( int $window_seconds ): int {
-		global $wpdb;
+		$wpdb = \wp_slimstat::$wpdb;
 
 		$window_seconds = max( 60, $window_seconds );
 		$table          = "{$wpdb->prefix}slim_stats";
@@ -228,7 +228,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array
 	 */
 	private function get_chart_data_for_metric( string $metric = 'users' ): array {
-		global $wpdb;
+		$wpdb = \wp_slimstat::$wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {
 			return $this->get_empty_chart_data();
@@ -278,7 +278,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @return array Chart data
 	 */
 	public function get_users_chart_data(): array {
-		global $wpdb;
+		$wpdb = \wp_slimstat::$wpdb;
 
 		if ( ! $this->is_tracking_enabled() ) {
 			$empty = $this->get_empty_chart_data();
