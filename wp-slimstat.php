@@ -1486,7 +1486,7 @@ class wp_slimstat
             return;
         }
 
-        $days_ago             = strtotime(self::date_i18n('Y-m-d H:i:s') . sprintf(' -%d days', $autopurge_interval));
+        $days_ago             = self::now() - ( $autopurge_interval * DAY_IN_SECONDS );
         $table_stats          = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_stats_archive  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';

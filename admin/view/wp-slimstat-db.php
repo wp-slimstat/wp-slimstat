@@ -1037,13 +1037,13 @@ class wp_slimstat_db
         $results[4]['tooltip'] = __('Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses.', 'wp-slimstat');
 
         $results[5]['metric'] = __('Last 30 minutes', 'wp-slimstat');
-        $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (date_i18n('U') - 1800), false));
+        $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 
         $results[6]['metric'] = __('Today', 'wp-slimstat');
-        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d'), date_i18n('Y')))), false));
+        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d'), wp_slimstat::date_i18n('Y')))), false));
 
         $results[7]['metric'] = __('Yesterday', 'wp-slimstat');
-        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (date_i18n('U', mktime(0, 0, 0, date_i18n('m'), date_i18n('d') - 1, date_i18n('Y')))) . ' AND ' . (date_i18n('U', mktime(23, 59, 59, date_i18n('m'), date_i18n('d') - 1, date_i18n('Y')))), false));
+        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))), false));
 
         // Turn date_i18n filters back on
         wp_slimstat::toggle_date_i18n_filters(true);

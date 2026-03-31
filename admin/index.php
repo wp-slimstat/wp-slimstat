@@ -2517,8 +2517,8 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
         }
-        global $wpdb;
-        $table = $wpdb->prefix . 'slim_stats';
+        $wpdb = wp_slimstat::$wpdb;
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if (!empty($exists)) {
             update_option($option_key, 'yes');
