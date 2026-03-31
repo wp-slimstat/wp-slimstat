@@ -57,8 +57,7 @@ class Query
      */
     public function __construct()
     {
-        global $wpdb;
-        $this->db = $wpdb;
+        $this->db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
     }
 
     /**

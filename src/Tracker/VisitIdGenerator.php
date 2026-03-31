@@ -206,14 +206,16 @@ class VisitIdGenerator
      */
     private static function getInitialCounterValue(): int
     {
-        global $wpdb;
+        // Use wp_slimstat::$wpdb for slim_stats (may be on external DB).
+        // Lines 73/182 stay on global $wpdb — they query wp_options (always main WP DB).
+        $stats_db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 
-        $table = $wpdb->prefix . 'slim_stats';
+        $table = $stats_db->prefix . 'slim_stats';
 
-        $max_visit_id = $wpdb->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM {$table}");
+        $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
         $initial_value = max((int) $max_visit_id, 0);
 
-        $auto_increment = $wpdb->get_var($wpdb->prepare(
+        $auto_increment = $stats_db->get_var($stats_db->prepare(
             "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
             $table
         ));

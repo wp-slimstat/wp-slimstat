@@ -307,57 +307,51 @@ test.describe('DataBuckets chart accuracy — default and custom DB (Support #14
 
   // ─── Test 5: Custom DB filter active — chart AJAX remains stable ──────────────
 
-  test('chart AJAX succeeds and reads from default wp_slim_stats when slimstat_custom_wpdb filter is active', async ({ page }) => {
+  test('chart AJAX succeeds and reads from wp_slim_stats when slimstat_custom_wpdb filter is active', async ({ page }) => {
     /**
-     * Regression test: activating the slimstat_custom_wpdb filter must NOT crash
-     * the chart AJAX endpoint. The filter only affects wp_slimstat::$wpdb (used for
-     * tracking writes and admin queries); Chart.php's sqlFor() always uses global $wpdb
-     * via Query.php, so it always reads from wp_slim_stats regardless of the filter.
+     * Regression test for CustomDB prefix bug: when the slimstat_custom_wpdb filter
+     * returns a custom wpdb instance, the chart must still query the correctly-prefixed
+     * table (wp_slim_stats) — not a broken unprefixed table name.
      *
-     * Architecture note (confirmed from code):
-     *   - Chart.php:sqlFor()  → Query::select()->from($wpdb->prefix.'slim_stats')
-     *   - Query.__construct()  → $this->db = global $wpdb   ← unchanged by the filter
-     *   - wp_slimstat::$wpdb   → slimext_ prefix            ← only affects admin ops
+     * The fix has two layers:
+     *   1. CustomDBAddon calls set_prefix() on the new wpdb (primary fix, in Pro)
+     *   2. Chart.php uses $GLOBALS['wpdb']->prefix for table names (defense-in-depth)
+     *
+     * The simulator now mirrors the fixed behavior: set_prefix($GLOBALS['wpdb']->prefix)
+     * so the custom wpdb has the correct prefix. Chart.php also uses global prefix
+     * as defense-in-depth.
      *
      * This test verifies that:
-     *   1. The AJAX handler returns HTTP 200 (no fatal / no "already closed" error)
+     *   1. The AJAX handler returns HTTP 200 (no fatal error)
      *   2. Chart data accurately reflects wp_slim_stats contents (data is NOT lost)
      *   3. The off-by-one fix (DataBuckets.php:209) works correctly under this filter
      */
 
-    // Create the external DB table (required so wp_slimstat_admin::init() doesn't crash
-    // when it runs SHOW TABLES LIKE 'wp_slim_stats' via wp_slimstat::$wpdb)
-    await getPool().execute('CREATE TABLE IF NOT EXISTS slimext_slim_stats LIKE wp_slim_stats');
+    // Extract nonce BEFORE activating the filter (safe to do either way, but consistent)
+    const nonce = await extractChartNonce(page);
 
-    try {
-      // Extract nonce BEFORE activating the filter (safe to do either way, but consistent)
-      const nonce = await extractChartNonce(page);
+    // Insert 5 records into wp_slim_stats (the table Chart.php reads from)
+    await insertRows(week2Ts, 5, 'custom-db-default');
 
-      // Insert 5 records into wp_slim_stats (the default table Chart.php reads from)
-      await insertRows(week2Ts, 5, 'custom-db-default');
+    // Activate the custom DB simulator — wp_slimstat::$wpdb now uses a cloned wpdb
+    // with set_prefix() called (same prefix as global, simulating fixed CustomDB addon)
+    await getPool().execute(
+      "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_test_use_custom_db', 'yes', 'yes') ON DUPLICATE KEY UPDATE option_value = 'yes'"
+    );
 
-      // Activate the custom DB simulator — wp_slimstat::$wpdb now has prefix 'slimext_'
-      await getPool().execute(
-        "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_test_use_custom_db', 'yes', 'yes') ON DUPLICATE KEY UPDATE option_value = 'yes'"
-      );
+    // Chart AJAX must succeed — the custom DB filter must NOT crash the handler
+    const json = await callChartAjaxWithNonce(page, nonce, rangeStart, rangeEnd, 'weekly');
 
-      // Chart AJAX must succeed — the custom DB filter must NOT crash the handler
-      const json = await callChartAjaxWithNonce(page, nonce, rangeStart, rangeEnd, 'weekly');
+    expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
 
-      expect(json.success, `AJAX error: ${JSON.stringify(json.data)}`).toBe(true);
+    // Chart reads from wp_slim_stats — our 5 records must be visible
+    const chartSum = sumV1(json);
+    expect(chartSum).toBe(5);
 
-      // Chart reads from wp_slim_stats (global $wpdb path) — our 5 records must be visible
-      const chartSum = sumV1(json);
-      expect(chartSum).toBe(5);
+    const labels: string[] = json?.data?.data?.labels ?? [];
+    expect(labels.length).toBeGreaterThanOrEqual(3);
 
-      const labels: string[] = json?.data?.data?.labels ?? [];
-      expect(labels.length).toBeGreaterThanOrEqual(3);
-
-      console.log(`Test 5 PASS — custom DB filter active, chart reads default DB: sum=${chartSum}, labels=${labels.length}`);
-    } finally {
-      // Cleanup external DB table regardless of test outcome
-      await getPool().execute('DROP TABLE IF EXISTS slimext_slim_stats');
-    }
+    console.log(`Test 5 PASS — custom DB filter active, chart reads correct table: sum=${chartSum}, labels=${labels.length}`);
   });
 
   // ─── Test 6: Phantom bucket regression — boundary records counted correctly ──

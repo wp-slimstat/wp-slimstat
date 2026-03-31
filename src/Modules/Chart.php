@@ -196,8 +196,6 @@ class Chart
 
     private function fetchChartData(array $args): array
     {
-        global $wpdb;
-
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
 
@@ -275,7 +273,7 @@ class Chart
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
-        global $wpdb;
+        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         
@@ -298,7 +296,11 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $chartWhere : $chartWhere;
         }
 
-        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility
+        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
+        // The sign appears inverted vs DataBuckets.php — this is INTENTIONAL:
+        // FROM_UNIXTIME(dt) returns server-local time, but CONVERT_TZ source '+00:00'
+        // declares it as UTC. The "inverted" sign cancels the implicit timezone shift,
+        // producing actual UTC. DataBuckets then applies the correct offset for display.
         $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
@@ -349,7 +351,7 @@ class Chart
         // AND filters are applied to the whole time expression instead of
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
-            ->from($wpdb->prefix . 'slim_stats')
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
             ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
@@ -366,7 +368,7 @@ class Chart
     // Ensure totals WHERE uses grouped OR so filters are applied correctly.
     $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
         $totalsQuery  = Query::select($totalsFields)
-            ->from($wpdb->prefix . 'slim_stats')
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
             ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
@@ -435,8 +437,6 @@ class Chart
      */
     private function validateSqlExpression(string $expression): string
     {
-        global $wpdb;
-
         // Remove extra whitespace and normalize
         $expression = preg_replace('/\s+/', ' ', trim($expression));
 
@@ -556,7 +556,7 @@ class Chart
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
             ['slimstat_chartjs'],
-            '1.0',
+            '1.3',
             true
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [

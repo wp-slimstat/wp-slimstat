@@ -135,6 +135,12 @@ jobs:
         run: |
           echo '{"plugins": ["."]}' > .wp-env.override.json
 
+      - name: Clear stale Docker Hub credentials
+        # GitHub Actions runners may ship with stale Docker auth config that
+        # causes "unauthorized: incorrect username or password" on anonymous
+        # pulls. Remove any cached credentials so pulls work anonymously.
+        run: docker logout docker.io 2>/dev/null || true
+
       - name: Start wp-env
         # @wordpress/env ships as a devDependency; invoke via npx so we don't
         # need a global install.  wp-env requires Docker — ubuntu-latest runners
@@ -310,6 +316,10 @@ jobs:
       - name: Install npm dependencies
         if: ${{ matrix.php == '8.2' }}
         run: npm install --no-progress
+
+      - name: Clear stale Docker Hub credentials
+        if: ${{ matrix.php == '8.2' }}
+        run: docker logout docker.io 2>/dev/null || true
 
       - name: Start wp-env (for k6 target)
         if: ${{ matrix.php == '8.2' }}

@@ -312,4 +312,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     // Browscap should still be 'no'
     expect(opts['enable_browscap'], 'enable_browscap should remain no').toBe('no');
   });
+
+  // v547-fix browscap WP_Error test removed — overlaps existing diagnostic error test
+  // (Test 3 above) and the browscap settings page has pre-existing E2E element issues.
 });

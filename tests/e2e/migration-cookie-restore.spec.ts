@@ -155,16 +155,12 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // Migration detects display_opt_out='on' → sets gdpr_enabled='on'
     expect(gdprEnabled, 'gdpr_enabled should be on (legacy consent detected)').toBe('on');
 
-    // BUG: set_tracker_cookie is NOT restored because the restore logic
-    // only fires when gdpr_enabled='off' (wp-slimstat.php line 281-282).
-    // This test documents the bug. After the fix, change the assertion.
-    //
-    // BEFORE FIX: expect 'off' (bug present)
-    // AFTER FIX:  expect 'on'  (bug fixed)
+    // Fix 1a: migration now restores set_tracker_cookie='on' unconditionally,
+    // regardless of gdpr_enabled state. On development branch this returns 'off'.
     expect(
       setTrackerCookie,
-      'set_tracker_cookie should be restored to "on" after migration (BUG: currently stays "off")',
-    ).toBe('off'); // <-- Change to 'on' after applying the fix
+      'set_tracker_cookie must be restored to "on" after migration (Fix 1a)',
+    ).toBe('on');
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -583,4 +579,72 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
       'AFTER FIX: set_tracker_cookie must be "on" even with third-party CMP',
     ).toBe('on'); // <-- Will FAIL until fix is applied
   });
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 8: v5.4.7 — migration restores set_tracker_cookie via the
+  //   full migration path (not just setting the value directly)
+  //
+  //   DIFFERENTIATES: FAIL on development (GDPR gate blocks restore),
+  //                   PASS on fix branch (unconditional restore).
+  //   Cookie behavior for anonymous visitors is covered by Test 4.
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('v547-fix: migration restores set_tracker_cookie via full migration path', async ({
+    page,
+  }) => {
+    // Set the broken pre-migration state:
+    // - display_opt_out='on' (legacy v5.3.x consent → triggers gdpr_enabled='on' path)
+    // - set_tracker_cookie='off' (broken v5.4.0 default)
+    // - _migration_5460='0' (force migration re-run)
+    await setSlimstatOptions(page, {
+      display_opt_out: 'on',
+      set_tracker_cookie: 'off',
+      javascript_mode: 'on',
+      _migration_5460: '0',
+    });
+
+    // Trigger migration by loading admin page
+    await page.goto(`${BASE_URL}/wp-admin/`, { waitUntil: 'domcontentloaded' });
+
+    // Wait for migration to complete by polling the DB option
+    let cookieSetting: string | undefined;
+    const deadline = Date.now() + 10_000;
+    while (Date.now() < deadline) {
+      const migFlag = await getSlimstatOption('_migration_5460');
+      if (migFlag && migFlag !== '0') {
+        cookieSetting = await getSlimstatOption('set_tracker_cookie');
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    if (!cookieSetting) {
+      cookieSetting = await getSlimstatOption('set_tracker_cookie');
+    }
+
+    // development: stays 'off' (GDPR gate blocks restore) → FAIL
+    // fix branch: restored to 'on' → PASS
+    expect(
+      cookieSetting,
+      'v547-fix: migration must restore set_tracker_cookie to "on" even when gdpr_enabled="on"',
+    ).toBe('on');
+  });
+
+  // Test 9 (Fix 1b) — NOT E2E TESTABLE
+  //
+  // Fix 1b adds a JS guard for `use_slimstat_banner !== 'on'` inside the
+  // slimstat_banner/slimstat integration block. We found that using
+  // consent_integration='slimstat' bypasses PHP consent-sync (enters JS block
+  // but PHP doesn't force banner=on). However:
+  //
+  // - With anonymous_tracking='off': JS Fix 1b allows tracking but PHP
+  //   Consent::canTrack() blocks the request (no consent cookie) → test fails
+  //   on BOTH branches
+  // - With anonymous_tracking='on': PHP allows tracking but JS also allows it
+  //   via anonMode=true (line 1416) BEFORE reaching the Fix 1b guard → test
+  //   passes on BOTH branches
+  //
+  // The JS-side consent check and PHP-side consent check are coupled: for
+  // end-to-end tracking to work, BOTH must allow it. Fix 1b only affects the
+  // JS side, and there's no way to make PHP allow + JS block in the same E2E
+  // test without mocking. Fix 1b is defense-in-depth, verified via code review.
 });

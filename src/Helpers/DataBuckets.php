@@ -41,7 +41,7 @@ class DataBuckets
 
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
     {
-        global $wpdb;
+        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
 
         $this->labelFormat = $labelFormat;
         $this->gran        = $gran;

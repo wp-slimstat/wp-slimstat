@@ -10,7 +10,7 @@
  * Bug 4: Cloudflare/cache serves stale params.id from server-side mode
  *         → JS skips tracking on all cached pages
  *
- * Source: Support ticket #14684 (Andy Spero — Synology NAS + SPCP + Cloudflare)
+ * Source: Support ticket #14684 (Synology NAS + SPCP + Cloudflare)
  * Analysis: jaan-to/outputs/qa/ticket-14684-root-cause-analysis.md
  */
 import { test, expect, type Page } from '@playwright/test';
@@ -636,6 +636,9 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 			'JS tracking request was sent in server-side mode — params.id guard (line 1511) is not working'
 		).toBe(false);
 	});
+
+	// v547-fix test removed — duplicate of the test above (line 512) which covers
+	// the same scenario: banner=off + javascript_mode=off + migration re-run.
 });
 
 // ─── Bug 4: Stale Cached params.id ──────────────────────────────────────────────

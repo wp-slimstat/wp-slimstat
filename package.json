@@ -11,13 +11,17 @@
     "env:start": "wp-env start",
     "env:stop": "wp-env stop",
     "env:clean": "wp-env clean",
-    "env:run": "wp-env run tests-cli"
+    "env:run": "wp-env run tests-cli",
+    "playground:start": "node tests/e2e/playground-start.mjs",
+    "playground:blueprint": "node tests/e2e/playground-start.mjs --blueprint",
+    "test:e2e:playground": "TEST_BASE_URL=http://localhost:9400 npx playwright test --config=tests/e2e/playwright.config.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",
     "@babel/runtime-corejs2": "^7.0.0",
     "@playwright/test": "^1.58.2",
     "@wordpress/env": "^10.0.0",
+    "@wp-playground/cli": "^3.1.13",
     "breakpoint-sass": "^2.7.1",
     "concurrently": "^8.2.0",
     "esbuild": "^0.25.8",

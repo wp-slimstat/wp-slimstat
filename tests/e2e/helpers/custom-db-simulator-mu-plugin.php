@@ -18,7 +18,10 @@ add_filter('slimstat_custom_wpdb', function ($current_wpdb) {
 
     // Use $GLOBALS to avoid PHP 8.2 fatal: cannot use global with same name as parameter
     $custom         = clone $GLOBALS['wpdb'];
-    $custom->prefix = 'slimext_';
+    // Use set_prefix() like the real CustomDBAddon does after the fix.
+    // This sets the correct prefix so Chart.php and other code using
+    // wp_slimstat::$wpdb->prefix get the right table name.
+    $custom->set_prefix($GLOBALS['wpdb']->prefix);
 
     // Reset the protected $result property to prevent "mysqli_result already closed" errors.
     // clone() creates a shallow copy: $custom->result still references the same mysqli_result

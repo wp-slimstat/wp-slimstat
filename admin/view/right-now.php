@@ -80,7 +80,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
 
     // Print visit header?
-    if (0 == $i || $results[$i - 1]['visit_id'] != $results[$i]['visit_id'] || $results[$i - 1]['ip'] != $results[$i]['ip'] || $results[$i - 1]['browser'] != $results[$i]['browser'] || $results[$i - 1]['platform'] != $results[$i]['platform'] || $results[$i - 1]['username'] != $results[$i]['username']) {
+    if (0 == $i || $results[$i - 1]['visit_id'] != $results[$i]['visit_id'] || $results[$i - 1]['ip'] != $results[$i]['ip'] || $results[$i - 1]['browser'] != $results[$i]['browser'] || $results[$i - 1]['platform'] != $results[$i]['platform'] || $results[$i - 1]['username'] != $results[$i]['username'] || (!empty($results[$i]['fingerprint']) && ($results[$i - 1]['fingerprint'] ?? '') != $results[$i]['fingerprint'])) {
 
         // Color-coded headers
         $sek           = isset($results[$i]['referer']) ? wp_slimstat::get_lossy_url(parse_url($results[$i]['referer'], PHP_URL_HOST)) : '';
