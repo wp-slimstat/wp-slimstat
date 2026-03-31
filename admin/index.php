@@ -2612,8 +2612,8 @@ class wp_slimstat_admin
         ];
 
         $pending = array_filter($indexes, function ($idx) {
-            global $wpdb;
-            $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $wpdb->prefix, $idx['key']));
+            $db = wp_slimstat::$wpdb;
+            $exists = $db->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
             return empty($exists);
         });
         if ([] === $pending) {
