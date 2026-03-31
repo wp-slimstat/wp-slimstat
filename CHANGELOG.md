@@ -1,4 +1,4 @@
-= 5.4.7 - 2026-03-29 =
+= 5.4.8 - 2026-03-31 =
 
 This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from
 5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.

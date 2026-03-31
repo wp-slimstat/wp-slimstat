@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.7
+Stable tag: 5.4.8
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,7 +75,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.7 - 2026-03-29 =
+= 5.4.8 - 2026-03-31 =
 
 This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from 5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.
 
