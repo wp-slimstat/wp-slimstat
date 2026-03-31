@@ -107,19 +107,20 @@ test.describe.serial("FingerprintJS v4 integration", () => {
     await setSlimstatOption(page, "anonymous_tracking", "on");
 
     const marker = `fp-anon-${Date.now()}`;
+    let sawSlimtrackRequest = false;
     let capturedFh: string | null = null;
 
     page.on("request", (req) => {
       const url = req.url();
       const postData = req.postData() || "";
-      if (
-        (url.includes("/wp-json/slimstat/v1/hit") ||
-          url.includes("admin-ajax.php") ||
-          postData.includes("action=slimtrack")) &&
-        postData.includes("fh=")
-      ) {
+      const isSlimtrack =
+        url.includes("/wp-json/slimstat/v1/hit") ||
+        url.includes("admin-ajax.php") ||
+        postData.includes("action=slimtrack");
+      if (isSlimtrack && postData.includes("fh=")) {
+        sawSlimtrackRequest = true;
         const match = postData.match(/fh=([^&]*)/);
-        if (match) capturedFh = match[1];
+        capturedFh = match ? match[1] : "";
       }
     });
 
@@ -127,7 +128,8 @@ test.describe.serial("FingerprintJS v4 integration", () => {
     await page.waitForLoadState("networkidle");
     await page.waitForTimeout(5000);
 
-    expect(capturedFh ?? "", "fh= should be empty in anonymous mode").toBe("");
+    expect(sawSlimtrackRequest, "a slimtrack request with fh= must be observed").toBe(true);
+    expect(capturedFh, "fh= should be empty in anonymous mode").toBe("");
 
     // Restore is handled by afterAll via restoreSlimstatOptions
   });
