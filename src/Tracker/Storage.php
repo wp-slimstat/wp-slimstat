@@ -33,7 +33,7 @@ class Storage
 
 		$data = array_filter($data);
 
-		$table_name = \wp_slimstat::$wpdb->prefix . 'slim_stats';
+		$table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$query = Query::update($table_name)->ignore()->where('id', '=', $id);
 
 		if (!empty($data['notes']) && is_array($data['notes'])) {

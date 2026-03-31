@@ -776,6 +776,12 @@ class wp_slimstat_admin
             }
         }
 
+        // Clear stale query cache transients on upgrade to prevent data inconsistencies
+        // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
+        $GLOBALS['wpdb']->query(
+            "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%' LIMIT 1000"
+        );
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
@@ -1123,8 +1129,8 @@ class wp_slimstat_admin
             return;
         }
 
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $today_start = mktime(0, 0, 0);
         $yesterday_start = $today_start - 86400;
         $yesterday_end = $today_start - 1;
@@ -1167,7 +1173,7 @@ class wp_slimstat_admin
         ));
 
         // Online Users — same 30-minute window query as header.php
-        $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
+        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_minutes = 30;
         $window_start = $current_minute_start - (($window_minutes - 1) * 60);
 
@@ -1703,9 +1709,9 @@ class wp_slimstat_admin
      */
     private static function query_online_count()
     {
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
-        $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
+        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_start = $current_minute_start - (29 * 60); // 30-minute window
 
         $count = (int) $wpdb->get_var($wpdb->prepare(
@@ -1761,8 +1767,8 @@ class wp_slimstat_admin
             return;
         }
 
-        global $wpdb;
-        $table = "{$wpdb->prefix}slim_stats";
+        $wpdb = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $is_pro = wp_slimstat::pro_is_installed();
 
         // --- Online count (always fresh — fast indexed query) ---
@@ -2112,11 +2118,12 @@ class wp_slimstat_admin
             $limit
         );
 
-        // Execute query
-        $results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
+        // Execute query — use wp_slimstat::$wpdb so External DB addon
+        // queries the correct database.
+        $results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
 
         // Check for database errors
-        if ($GLOBALS['wpdb']->last_error) {
+        if (wp_slimstat::$wpdb->last_error) {
             wp_send_json_error('Database query failed');
             return;
         }
@@ -2124,6 +2131,45 @@ class wp_slimstat_admin
         // Ensure results is an array
         if (!is_array($results)) {
             $results = [];
+        }
+
+        // Split multi-value columns into individual values.
+        // These columns store multiple entries in a single DB field:
+        //   outbound_resource: "url1;;;url2;;;url3"
+        //   notes:             "[tag1][tag2][tag3]"
+        //   category:          "1,5,12"
+        $multi_value_separators = [
+            'outbound_resource' => ';;;',
+            'category'          => ',',
+        ];
+
+        if (isset($multi_value_separators[$dimension])) {
+            $separator = $multi_value_separators[$dimension];
+            $expanded = [];
+            foreach ($results as $row) {
+                if (empty($row['value'])) continue;
+                foreach (explode($separator, $row['value']) as $val) {
+                    $val = trim($val);
+                    if ($val !== '') $expanded[] = ['value' => $val];
+                }
+            }
+            $results = $expanded;
+        } elseif ($dimension === 'notes') {
+            $expanded = [];
+            foreach ($results as $row) {
+                if (empty($row['value'])) continue;
+                preg_match_all('/\[([^\]]+)\]/', $row['value'], $matches);
+                foreach ($matches[1] as $val) {
+                    $val = trim($val);
+                    if ($val !== '') $expanded[] = ['value' => $val];
+                }
+            }
+            $results = $expanded;
+        }
+
+        // Cap expanded results to prevent explosion from splitting
+        if (count($results) > $limit) {
+            $results = array_slice($results, 0, $limit);
         }
 
         $options = [];
@@ -2517,8 +2563,8 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
         }
-        global $wpdb;
-        $table = $wpdb->prefix . 'slim_stats';
+        $wpdb = wp_slimstat::$wpdb;
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
         if (!empty($exists)) {
             update_option($option_key, 'yes');
@@ -2612,8 +2658,8 @@ class wp_slimstat_admin
         ];
 
         $pending = array_filter($indexes, function ($idx) {
-            global $wpdb;
-            $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $wpdb->prefix, $idx['key']));
+            $db = wp_slimstat::$wpdb;
+            $exists = $db->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
             return empty($exists);
         });
         if ([] === $pending) {

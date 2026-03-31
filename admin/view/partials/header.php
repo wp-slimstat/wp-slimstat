@@ -18,9 +18,9 @@ if ($displayNotifications && class_exists(NotificationFactory::class)) {
 $online_visitors = 0;
 
 if (class_exists('wp_slimstat_db')) {
-    global $wpdb;
-    $table = "{$wpdb->prefix}slim_stats";
-    $current_minute_start = (int) floor(current_time('timestamp') / 60) * 60;
+    $wpdb = \wp_slimstat::$wpdb;
+    $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
+    $current_minute_start = (int) floor(\wp_slimstat::now() / 60) * 60;
     $window_minutes = 30; // 30 minutes - synced with Live Analytics Users Live
     $window_start = $current_minute_start - (($window_minutes - 1) * 60);
 

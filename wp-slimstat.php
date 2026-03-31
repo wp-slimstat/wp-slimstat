@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.6
+ * Version: 5.4.8
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.6');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.8');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -241,10 +241,6 @@ class wp_slimstat
         // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
         $_migration_ran = self::$settings['_migration_5460'] ?? '0';
         if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
-            // Save ORIGINAL use_slimstat_banner before consent-intent detection modifies it.
-            // This is the reliable v5.4.1 default fingerprint used for javascript_mode reset below.
-            $_ss_banner_was_on_original = ('on' === (self::$settings['use_slimstat_banner'] ?? 'off'));
-
             // --- Consent intent detection ---
             // Read legacy v5.3.x consent settings to detect if user had configured privacy.
             // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
@@ -277,42 +273,40 @@ class wp_slimstat
                 self::$settings['use_slimstat_banner'] = 'off';
             }
 
-            // Restore session cookie when GDPR is off (v5.3.x default was 'on')
-            if ('off' === self::$settings['gdpr_enabled']
-                && 'off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
-                self::$settings['set_tracker_cookie'] = 'on';
-            }
-
             unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
                   $_current_integration, $_has_third_party_cmp);
 
-            // use_slimstat_banner='on' in the ORIGINAL DB was the v5.4.1 fingerprint.
-            // Use the saved original value (before consent-intent detection modified it).
-            $_ss_banner_was_on = $_ss_banner_was_on_original;
-            unset($_ss_banner_was_on_original);
-            // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML, causing
-            // every cached-page visitor to silently update the first visitor's DB record.
-            // ONLY reset when banner was also 'on' (v5.4.1 paired-default fingerprint) so that
-            // 5.3.x users who deliberately chose Server mode are not touched.
-            if ($_ss_banner_was_on && 'off' === (self::$settings['javascript_mode'] ?? 'on')) {
-                self::$settings['javascript_mode'] = 'on';
+            // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
+            // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
+            // Skip for fresh installs ('0' = never ran, no broken settings to fix).
+            if ('0' !== $_migration_ran && version_compare($_migration_ran, '5.4.7', '<')) {
+                // Restore session cookie — Consent::piiAllowed() in Session.php gates
+                // the actual setcookie() call at runtime, not this setting.
+                if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
+                    self::$settings['set_tracker_cookie'] = 'on';
+                }
+
+                // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML.
+                // Always reset — server-side mode was a v5.4.0 default, not a user choice.
+                if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
+                    self::$settings['javascript_mode'] = 'on';
+                }
+
+                // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
+                $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
+                $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
+                if ($_ss_ip_was_anonymized) {
+                    self::$settings['anonymize_ip'] = 'off';
+                }
+                if ($_ss_ip_was_hashed) {
+                    self::$settings['hash_ip'] = 'off';
+                }
+                if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
+                    set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
+                }
             }
-            // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
-            // Restore 5.3.x behavior: full IPs stored, no daily visitor hash.
-            $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
-            $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
-            if ($_ss_ip_was_anonymized) {
-                self::$settings['anonymize_ip'] = 'off';
-            }
-            if ($_ss_ip_was_hashed) {
-                self::$settings['hash_ip'] = 'off';
-            }
-            // Queue a one-time admin notice when IP storage behavior changed so admins
-            // know to review Settings → Data Protection (EU sites may need to re-enable).
-            if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
-                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
-            }
-            unset($_ss_banner_was_on, $_ss_ip_was_anonymized, $_ss_ip_was_hashed);
+
+            unset($_ss_ip_was_anonymized, $_ss_ip_was_hashed);
             // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
             self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
             self::update_option('slimstat_options', self::$settings);
@@ -1044,6 +1038,21 @@ class wp_slimstat
     // end date_i18n
 
     /**
+     * Returns the current timestamp in the same format stored in the dt column.
+     * MUST be used by all queries that compare against dt values.
+     *
+     * WordPress date_i18n('U') returns current_time('timestamp') — a legacy
+     * quirk where 'U' format includes the site's GMT offset. This matches
+     * how Processor::process() stores $stat['dt'] via self::date_i18n('U').
+     *
+     * @since 5.4.7
+     * @return int Current timestamp matching dt column format
+     */
+    public static function now(): int {
+        return (int) self::date_i18n('U');
+    }
+
+    /**
      * Returns default options with geolocation_provider set for fresh installs and resets.
      *
      * geolocation_provider is excluded from init_options() because init() merges
@@ -1477,7 +1486,7 @@ class wp_slimstat
             return;
         }
 
-        $days_ago             = strtotime(self::date_i18n('Y-m-d H:i:s') . sprintf(' -%d days', $autopurge_interval));
+        $days_ago             = self::now() - ( $autopurge_interval * DAY_IN_SECONDS );
         $table_stats          = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_stats_archive  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';

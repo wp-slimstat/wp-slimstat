@@ -1899,11 +1899,28 @@ class wp_slimstat_reports
 
         $fn = wp_slimstat_db::parse_filters($_filters_string);
 
+        // Detect filters being removed (passed with operator but no value)
+        $filters_to_remove = [];
+        if (!empty($_filters_string)) {
+            $matches = explode('&&&', $_filters_string);
+            foreach ($matches as $a_match) {
+                preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
+                if (!empty($a_filter[1]) && (!isset($a_filter[3]) || trim($a_filter[3]) === '')) {
+                    $filters_to_remove[$a_filter[1]] = $a_filter[2];
+                }
+            }
+        }
+
         // Columns
         if (!empty($fn['columns'])) {
             foreach ($fn['columns'] as $a_key => $a_filter) {
                 $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($a_filter[0] . ' ' . str_replace('=', '%3D', $a_filter[1]));
             }
+        }
+
+        // Include filters being removed with operator only (no value) so JS can detect and remove them
+        foreach ($filters_to_remove as $a_key => $operator) {
+            $request_uri .= sprintf('&amp;fs%%5B%s%%5D=', $a_key) . urlencode($operator);
         }
 
         // Date ranges

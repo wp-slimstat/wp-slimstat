@@ -2,6 +2,7 @@ var slimstatClosestPoint = false;
 document.addEventListener("DOMContentLoaded", function () {
     var chartElements = document.querySelectorAll('[id^="slimstat_chart_data_"]');
     var charts = {};
+    var GRANULARITY_STORAGE_KEY = "slimstat_chart_granularity";
 
     function reinitializeCharts(id) {
         var updatedChartElements = document.querySelectorAll('[id^="slimstat_chart_data_' + id + '"]');
@@ -24,6 +25,23 @@ document.addEventListener("DOMContentLoaded", function () {
         initializeChart(element, chartId);
         setupGranularitySelect(chartId);
     });
+
+    // Migrate old per-chart sessionStorage keys to shared localStorage
+    try {
+        var keys = [];
+        for (var i = 0; i < sessionStorage.length; i++) {
+            var key = sessionStorage.key(i);
+            if (key && key.indexOf("slimstat_chart_granularity_") === 0) {
+                keys.push(key);
+            }
+        }
+        if (keys.length > 0 && !localStorage.getItem(GRANULARITY_STORAGE_KEY)) {
+            localStorage.setItem(GRANULARITY_STORAGE_KEY, sessionStorage.getItem(keys[0]));
+        }
+        for (var j = 0; j < keys.length; j++) {
+            sessionStorage.removeItem(keys[j]);
+        }
+    } catch (e) {}
 
     function initializeChart(element, chartId) {
         var args = JSON.parse(element.getAttribute("data-args"));
@@ -66,13 +84,41 @@ document.addEventListener("DOMContentLoaded", function () {
     function setupGranularitySelect(chartId) {
         var select = document.getElementById("slimstat_granularity_" + chartId);
         if (!select) return;
+        // Guard against duplicate bindings (reinitializeCharts calls this again)
+        if (select.dataset.slimstatGranularityBound === "1") return;
+        select.dataset.slimstatGranularityBound = "1";
 
-        // Debounce the event listener to reduce server requests
+        // Restore persisted granularity from localStorage (shared across all charts)
+        var saved = null;
+        try { saved = localStorage.getItem(GRANULARITY_STORAGE_KEY); } catch (e) {}
+        if (saved && saved !== select.value) {
+            var option = select.querySelector('option[value="' + saved + '"]');
+            if (option && !option.disabled) {
+                select.value = saved;
+                fetchChartData(chartId, saved);
+            }
+        }
+
         var debounceTimeout;
         select.addEventListener("change", function () {
+            var granularity = select.value;
+            try { localStorage.setItem(GRANULARITY_STORAGE_KEY, granularity); } catch (e) {}
+
+            // Sync all other chart dropdowns on the page
+            var allSelects = document.querySelectorAll(".slimstat-granularity-select");
+            for (var i = 0; i < allSelects.length; i++) {
+                var otherSelect = allSelects[i];
+                if (otherSelect === select) continue;
+                var otherOption = otherSelect.querySelector('option[value="' + granularity + '"]');
+                if (otherOption && !otherOption.disabled && otherSelect.value !== granularity) {
+                    otherSelect.value = granularity;
+                    var otherId = otherSelect.id.replace("slimstat_granularity_", "");
+                    fetchChartData(otherId, granularity);
+                }
+            }
+
             clearTimeout(debounceTimeout);
             debounceTimeout = setTimeout(function () {
-                var granularity = select.value;
                 fetchChartData(chartId, granularity);
             }, 300);
         });

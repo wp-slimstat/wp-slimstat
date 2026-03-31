@@ -24,6 +24,13 @@ class Consent
 		$settings = \wp_slimstat::$settings;
 		$integrationKey = $settings['consent_integration'] ?? '';
 
+		// Normalize shorthand: JS accepts both 'slimstat' and 'slimstat_banner',
+		// but PHP consent checks only handle 'slimstat_banner'. Map the alias so
+		// canTrack() and piiAllowed() recognize it consistently.
+		if ('slimstat' === $integrationKey) {
+			$integrationKey = 'slimstat_banner';
+		}
+
 		// Fallback: if GDPR is enabled but no integration is explicitly set, use slimstat_banner
 		// This ensures backward compatibility with existing installations
 		if ('' === $integrationKey) {

@@ -1,3 +1,43 @@
+= 5.4.8 - 2026-03-31 =
+
+This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from
+5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.
+
+**Migration & Tracking**
+- Fix: Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
+- Fix: Client-side (JavaScript) tracking restored unconditionally — fixes zero tracking on cached sites
+- Fix: Migration forced-resets gated to run once, preserving admin choices on future updates
+- Fix: FingerprintJS v4 now generates fingerprints correctly — the required `.get()` call was missing since the v3→v4 migration, causing empty fingerprint hashes on every tracking request
+- Fix: JS consent check now mirrors PHP logic when SlimStat banner is off
+
+**External Database Addon**
+- Fix: Charts and reports now query the correct database for External DB addon users
+- Fix: Real-time analytics queries (live visitors, access log) use the correct database connection
+- Fix: Complex report queries (e.g. Recent Events) now query the correct database when External DB addon is active
+- Fix: Filter dropdown autocomplete now queries the correct database for External DB addon users
+- Fix: Visit counter seeds correctly from external database for Pro addon users
+- Fix: Index existence check uses the correct database when Custom DB is active
+- Fix: Table prefix set correctly on custom wpdb instances
+
+**Reports & Filters**
+- Fix: Country percentages exceeding 100% in Audience Location map — query cache now stays fresh for live date ranges ([#270](https://github.com/wp-slimstat/wp-slimstat/issues/270))
+- Fix: Filter removal via red cross button not working — hidden form inputs now properly cleared
+- Fix: Outbound Link, Notes, and Category filter dropdowns now show individual values instead of raw concatenated strings
+- Fix: Filter 'equals' operator now works on Outbound Link, Notes, and Category columns (auto-upgraded to substring match)
+- Fix: Chart granularity selection (Daily/Weekly/Monthly) persists across page reloads ([#265](https://github.com/wp-slimstat/wp-slimstat/issues/265))
+- Fix: Chart granularity now syncs across all charts on the same page
+- Fix: Chart timezone offset corrected for non-UTC servers
+
+**Browscap Library**
+- Fix: Browscap Library now initializes WordPress filesystem before extraction — resolves toggle revert on some hosts ([#14843](https://github.com/wp-slimstat/wp-slimstat/issues/14843))
+- Fix: Browscap errors now show specific failure details instead of generic messages
+- Fix: Downloaded Browscap files validated as ZIP before extraction
+- Fix: Browscap download compatible with hosts that block GitHub redirects
+
+**Improvements**
+- Improvement: Chart granularity persisted via localStorage for cross-session consistency
+- Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
+
 = 5.4.6 - 2026-03-23 =
 
 We heard you — upgrading to 5.4.x broke tracking for many of you. Visitor counts dropped to
