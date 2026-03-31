@@ -35,10 +35,13 @@ const SETTINGS_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=2`;
 /** Sentinel file that the mu-plugin reads to decide how to block unzip */
 const SENTINEL_PATH = path.join(WP_ROOT, 'wp-content', 'e2e-block-browscap-unzip.json');
 
+/** Browscap cache directory created by a successful download+unzip */
+const BROWSCAP_CACHE_DIR = path.join(WP_ROOT, 'wp-content', 'uploads', 'wp-slimstat', 'browscap-cache-master');
+
 // ─── Helpers ───────────────────────────────────────────────────────
 
 /** Write the sentinel file that tells the mu-plugin to block browscap unzip */
-function enableUnzipBlocker(mode: 'unzip_fail' | 'corrupt_zip' = 'unzip_fail'): void {
+function enableUnzipBlocker(mode: 'unzip_fail' | 'corrupt_zip' | 'fs_method_block' = 'unzip_fail'): void {
   fs.writeFileSync(SENTINEL_PATH, JSON.stringify({ mode }), 'utf8');
 }
 
@@ -82,6 +85,11 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
 
   test.afterEach(async () => {
     disableUnzipBlocker();
+    // Remove any browscap cache created by successful downloads (e.g. Test 3)
+    // so each test starts from a clean browscap state.
+    if (fs.existsSync(BROWSCAP_CACHE_DIR)) {
+      fs.rmSync(BROWSCAP_CACHE_DIR, { recursive: true, force: true });
+    }
   });
 
   // ═══════════════════════════════════════════════════════════════════
@@ -180,11 +188,12 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     // Check for success message
     const bodyText = await page.locator('body').innerText();
     const hasSuccess = bodyText.includes('installed on your server') || bodyText.includes('does not need to be updated');
-    const hasError = /error.*browscap|browscap.*error|uncompressing/i.test(bodyText);
 
-    if (hasError) {
-      // If the test environment can't download from GitHub (offline, firewall),
-      // skip rather than fail — this is an environment limitation, not a code bug.
+    // Only skip for genuine connectivity/download failures — not for code bugs
+    // like filesystem init errors (error 10) or unzip failures (error 9).
+    const hasConnectivityError = /error downloading the Browscap|error checking the remote|error saving the Browscap|not a valid ZIP archive|Your host may be blocking/i.test(bodyText);
+
+    if (hasConnectivityError) {
       test.skip(true, 'Browscap download failed — test environment cannot reach GitHub');
     }
 
@@ -323,7 +332,7 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
 
   test('toggle shows filesystem error when WP_Filesystem fails', async ({ page }) => {
     await setSlimstatOption(page, 'enable_browscap', 'no');
-    enableUnzipBlocker('fs_method_block' as any);
+    enableUnzipBlocker('fs_method_block');
 
     await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
     await page.locator('#enable_browscap').check();
