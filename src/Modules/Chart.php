@@ -351,7 +351,7 @@ class Chart
         // AND filters are applied to the whole time expression instead of
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
-            ->from($wpdb->prefix . 'slim_stats')
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
             ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
@@ -368,7 +368,7 @@ class Chart
     // Ensure totals WHERE uses grouped OR so filters are applied correctly.
     $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
         $totalsQuery  = Query::select($totalsFields)
-            ->from($wpdb->prefix . 'slim_stats')
+            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
             ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
 
         // Apply additional filters if any
