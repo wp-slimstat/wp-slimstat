@@ -81,15 +81,25 @@ This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If yo
 
 * Fix: Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
 * Fix: Client-side (JavaScript) tracking restored unconditionally — fixes zero tracking on cached sites
-* Fix: Charts and reports now query the correct database for External Database addon users
-* Fix: Real-time users showing zero resolved for sites with access log grouping
+* Fix: Migration forced-resets gated to run once, preserving admin choices on future updates
+* Fix: FingerprintJS v4 now generates fingerprints correctly — `.get()` call was missing since v3→v4 migration
+* Fix: JS consent check now mirrors PHP logic when SlimStat banner is off
+* Fix: Charts and reports now query the correct database for External DB addon users
+* Fix: Real-time analytics queries use the correct database connection for External DB
+* Fix: Complex report queries (e.g. Recent Events) now work with External DB addon
+* Fix: Filter dropdown autocomplete now queries the correct database for External DB
+* Fix: Visit counter seeds correctly from external database for Pro addon users
+* Fix: Country percentages exceeding 100% in Audience Location map — query cache now stays fresh for live date ranges
+* Fix: Filter removal via red cross button not working
+* Fix: Outbound Link, Notes, and Category filter dropdowns now show individual values instead of raw concatenated strings
+* Fix: Filter 'equals' operator now works on Outbound Link, Notes, and Category columns
 * Fix: Chart granularity selection (Daily/Weekly/Monthly) persists across page reloads
 * Fix: Chart granularity now syncs across all charts on the same page
-* Fix: Browscap Library errors now show specific failure details instead of generic messages
+* Fix: Chart timezone offset corrected for non-UTC servers
+* Fix: Browscap Library now initializes WordPress filesystem before extraction (resolves toggle revert)
+* Fix: Browscap errors now show specific failure details instead of generic messages
 * Fix: Downloaded Browscap files validated as ZIP before extraction
 * Fix: Browscap download compatible with hosts that block GitHub redirects
-* Fix: Migration forced-resets gated to run once (5.4.7 only), preserving admin choices on future updates
-* Fix: Visit counter seeds correctly from external database for Pro addon users
 * Improvement: Chart granularity persisted via localStorage for cross-session consistency
 * Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
 
