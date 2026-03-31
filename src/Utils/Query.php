@@ -1120,9 +1120,21 @@ class Query
      */
     public function getVar()
     {
+        // When caching is enabled and the date range includes today, skip cache
+        // to stay consistent with getAll() which always fetches fresh live data.
+        // Without this, cached scalar values (e.g. $pageviews) become stale while
+        // getAll() returns fresh grouped data, causing percentage calculations >100%.
+        $useCache = $this->allowCaching;
+        if ($useCache) {
+            [$split] = $this->getSplitDateRanges();
+            if ($split) {
+                $useCache = false;
+            }
+        }
+
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
                 return $cachedResult;
@@ -1130,7 +1142,7 @@ class Query
         }
 
         $result = $this->db->get_var($query);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1146,9 +1158,17 @@ class Query
      */
     public function getRow()
     {
+        $useCache = $this->allowCaching;
+        if ($useCache) {
+            [$split] = $this->getSplitDateRanges();
+            if ($split) {
+                $useCache = false;
+            }
+        }
+
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
                 return $cachedResult;
@@ -1156,7 +1176,7 @@ class Query
         }
 
         $result = $this->db->get_row($query);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
@@ -1172,9 +1192,17 @@ class Query
      */
     public function getCol()
     {
+        $useCache = $this->allowCaching;
+        if ($useCache) {
+            [$split] = $this->getSplitDateRanges();
+            if ($split) {
+                $useCache = false;
+            }
+        }
+
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
                 return $cachedResult;
@@ -1182,7 +1210,7 @@ class Query
         }
 
         $result = $this->db->get_col($query);
-        if ($this->allowCaching) {
+        if ($useCache) {
             $this->setCachedResultForQuery($query, $this->valuesToPrepare, $result, $this->cacheExpiration);
         }
 
