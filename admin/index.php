@@ -2112,11 +2112,12 @@ class wp_slimstat_admin
             $limit
         );
 
-        // Execute query
-        $results = $GLOBALS['wpdb']->get_results($sql, ARRAY_A);
+        // Execute query — use wp_slimstat::$wpdb so External DB addon
+        // queries the correct database.
+        $results = wp_slimstat::$wpdb->get_results($sql, ARRAY_A);
 
         // Check for database errors
-        if ($GLOBALS['wpdb']->last_error) {
+        if (wp_slimstat::$wpdb->last_error) {
             wp_send_json_error('Database query failed');
             return;
         }

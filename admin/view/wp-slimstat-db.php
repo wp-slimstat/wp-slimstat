@@ -516,8 +516,9 @@ class wp_slimstat_db
             }
         }
 
-        // Fallback to direct wpdb for complex queries
-        return $GLOBALS['wpdb']->get_results($_sql, ARRAY_A);
+        // Fallback to wpdb for complex queries — use wp_slimstat::$wpdb
+        // so External DB addon queries the correct database.
+        return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
     }
 
     protected static function is_simple_count_query($sql)
