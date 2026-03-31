@@ -16,6 +16,10 @@ This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If yo
 - Fix: Migration forced-resets gated to run once (5.4.7 only), preserving admin choices on future updates
 - Fix: Visit counter seeds correctly from external database for Pro addon users
 - Fix: Country percentages exceeding 100% in Audience Location map — query cache now stays fresh for live date ranges ([#270](https://github.com/wp-slimstat/wp-slimstat/issues/270))
+- Fix: Complex report queries (e.g. Recent Events) now query the correct database when External DB addon is active
+- Fix: Filter dropdown autocomplete now queries the correct database for External DB addon users
+- Fix: Outbound Link, Notes, and Category filter dropdowns now show individual values instead of raw concatenated strings
+- Fix: Filter 'equals' operator now works on Outbound Link, Notes, and Category columns (auto-upgraded to substring match)
 - Improvement: Chart granularity persisted via localStorage for cross-session consistency
 - Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
 
