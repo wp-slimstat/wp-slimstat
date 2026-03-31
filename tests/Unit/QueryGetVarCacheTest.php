@@ -56,7 +56,13 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
         $this->wpdb->shouldReceive('prepare')
             ->andReturnUsing(function () {
                 $args = func_get_args();
-                return vsprintf(str_replace(['%s', '%d'], "'%s'", $args[0]), array_slice($args, 1));
+                $format = str_replace(['%s', '%d'], "'%s'", $args[0]);
+                // Query::prepareQuery may pass values as a single array arg
+                $values = array_slice($args, 1);
+                if (count($values) === 1 && is_array($values[0])) {
+                    $values = $values[0];
+                }
+                return vsprintf($format, $values);
             });
         $this->wpdb->shouldReceive('get_var')->once()->andReturn('42');
 
@@ -86,7 +92,12 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
         $this->wpdb->shouldReceive('prepare')
             ->andReturnUsing(function () {
                 $args = func_get_args();
-                return vsprintf(str_replace(['%s', '%d'], "'%s'", $args[0]), array_slice($args, 1));
+                $format = str_replace(['%s', '%d'], "'%s'", $args[0]);
+                $values = array_slice($args, 1);
+                if (count($values) === 1 && is_array($values[0])) {
+                    $values = $values[0];
+                }
+                return vsprintf($format, $values);
             });
 
         // Query should always run (no cache)
@@ -118,7 +129,12 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
         $this->wpdb->shouldReceive('prepare')
             ->andReturnUsing(function () {
                 $args = func_get_args();
-                return vsprintf(str_replace(['%s', '%d'], "'%s'", $args[0]), array_slice($args, 1));
+                $format = str_replace(['%s', '%d'], "'%s'", $args[0]);
+                $values = array_slice($args, 1);
+                if (count($values) === 1 && is_array($values[0])) {
+                    $values = $values[0];
+                }
+                return vsprintf($format, $values);
             });
 
         $this->wpdb->shouldReceive('get_var')->once()->andReturn('50');
