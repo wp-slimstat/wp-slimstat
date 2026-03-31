@@ -348,6 +348,23 @@ class wp_slimstat_db
      */
     public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '')
     {
+        // Auto-upgrade operators for multi-value columns where exact match
+        // never works (values stored as concatenated strings in a single field).
+        $multi_value_like_columns = ['outbound_resource', 'notes'];
+        if ($_operator === 'equals' && in_array($_dimension, $multi_value_like_columns, true)) {
+            $_operator = 'contains';
+        }
+        if ($_operator === 'is_not_equal_to' && in_array($_dimension, $multi_value_like_columns, true)) {
+            $_operator = 'does_not_contain';
+        }
+        // Category uses comma-separated IDs — use LIKE for substring matching.
+        if ($_operator === 'equals' && $_dimension === 'category') {
+            $_operator = 'contains';
+        }
+        if ($_operator === 'is_not_equal_to' && $_dimension === 'category') {
+            $_operator = 'does_not_contain';
+        }
+
         $filter_empty     = (!empty(self::$columns_names[$_dimension]) && 'varchar' == self::$columns_names[$_dimension][1]) ? 'IS NULL' : '= 0';
         $filter_not_empty = (!empty(self::$columns_names[$_dimension]) && 'varchar' == self::$columns_names[$_dimension][1]) ? 'IS NOT NULL' : '<> 0';
 

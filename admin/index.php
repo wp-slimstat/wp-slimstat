@@ -2133,6 +2133,45 @@ class wp_slimstat_admin
             $results = [];
         }
 
+        // Split multi-value columns into individual values.
+        // These columns store multiple entries in a single DB field:
+        //   outbound_resource: "url1;;;url2;;;url3"
+        //   notes:             "[tag1][tag2][tag3]"
+        //   category:          "1,5,12"
+        $multi_value_separators = [
+            'outbound_resource' => ';;;',
+            'category'          => ',',
+        ];
+
+        if (isset($multi_value_separators[$dimension])) {
+            $separator = $multi_value_separators[$dimension];
+            $expanded = [];
+            foreach ($results as $row) {
+                if (empty($row['value'])) continue;
+                foreach (explode($separator, $row['value']) as $val) {
+                    $val = trim($val);
+                    if ($val !== '') $expanded[] = ['value' => $val];
+                }
+            }
+            $results = $expanded;
+        } elseif ($dimension === 'notes') {
+            $expanded = [];
+            foreach ($results as $row) {
+                if (empty($row['value'])) continue;
+                preg_match_all('/\[([^\]]+)\]/', $row['value'], $matches);
+                foreach ($matches[1] as $val) {
+                    $val = trim($val);
+                    if ($val !== '') $expanded[] = ['value' => $val];
+                }
+            }
+            $results = $expanded;
+        }
+
+        // Cap expanded results to prevent explosion from splitting
+        if (count($results) > $limit) {
+            $results = array_slice($results, 0, $limit);
+        }
+
         $options = [];
         $seen_values = []; // Track values to prevent duplicates (case-insensitive)
         $dimensions_with_icons = ['country', 'browser', 'language', 'platform', 'username'];
