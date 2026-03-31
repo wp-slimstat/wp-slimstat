@@ -1615,6 +1615,9 @@ var SlimStat = (function () {
                 // Only proceed with promise chain if we have a valid promise
                 if (fpPromise && typeof fpPromise.then === "function") {
                     fpPromise
+                        .then(function (fp) {
+                            return fp.get();
+                        })
                         .then(function (result) {
                             initFingerprintHash(result);
                             sendToServer(payloadBase + buildSlimStatData(result.components || {}) + consentUpgradeParam, useBeacon, { immediate: isEmpty(params.id), onComplete: onComplete });
