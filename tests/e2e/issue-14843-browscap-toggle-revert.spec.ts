@@ -313,6 +313,37 @@ test.describe('Issue #14843 — Browscap toggle revert on save', () => {
     expect(opts['enable_browscap'], 'enable_browscap should remain no').toBe('no');
   });
 
-  // v547-fix browscap WP_Error test removed — overlaps existing diagnostic error test
-  // (Test 3 above) and the browscap settings page has pre-existing E2E element issues.
+  // ═══════════════════════════════════════════════════════════════════
+  // Test 7: WP_Filesystem() failure returns error code 10
+  //   Uses the fs_method_block sentinel mode to make the
+  //   'filesystem_method' filter return '' — causing WP_Filesystem()
+  //   to return false. The fix should catch this and show an
+  //   actionable error mentioning FS_METHOD.
+  // ═══════════════════════════════════════════════════════════════════
+
+  test('toggle shows filesystem error when WP_Filesystem fails', async ({ page }) => {
+    await setSlimstatOption(page, 'enable_browscap', 'no');
+    enableUnzipBlocker('fs_method_block' as any);
+
+    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    await page.locator('#enable_browscap').check();
+    await page.locator('input.slimstat-settings-button[type="submit"]').click();
+    await page.waitForLoadState('domcontentloaded');
+
+    // Should show an error mentioning filesystem or FS_METHOD
+    const bodyText = await page.locator('body').innerText();
+    expect(
+      bodyText.toLowerCase(),
+      'Error message should mention filesystem initialization failure',
+    ).toMatch(/filesystem|fs_method/i);
+
+    // Toggle should revert to OFF
+    await page.goto(SETTINGS_URL, { waitUntil: 'domcontentloaded' });
+    const isChecked = await page.locator('#enable_browscap').isChecked();
+    expect(isChecked, 'Browscap toggle should revert to OFF when WP_Filesystem fails').toBe(false);
+
+    // DB should remain 'no'
+    const opts = await getSlimstatOptionsFromDb();
+    expect(opts['enable_browscap'], 'DB should store "no" when WP_Filesystem fails').toBe('no');
+  });
 });

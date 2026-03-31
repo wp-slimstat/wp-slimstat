@@ -12,6 +12,7 @@ This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If yo
 - Fix: Browscap Library errors now show specific failure details instead of generic messages
 - Fix: Downloaded Browscap files validated as ZIP before extraction
 - Fix: Browscap download compatible with hosts that block GitHub redirects
+- Fix: Browscap Library now initializes WordPress filesystem before extraction (resolves toggle revert on some hosts)
 - Fix: Migration forced-resets gated to run once (5.4.7 only), preserving admin choices on future updates
 - Fix: Visit counter seeds correctly from external database for Pro addon users
 - Improvement: Chart granularity persisted via localStorage for cross-session consistency

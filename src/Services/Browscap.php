@@ -198,6 +198,17 @@ class Browscap
             // Delete the folder, if it exists
             wp_slimstat_admin::rmdir(wp_slimstat::$upload_dir . '/browscap-cache-master/');
 
+            // Ensure WP File API is loaded (not auto-loaded on frontend init hook)
+            if (!function_exists('unzip_file')) {
+                require_once ABSPATH . 'wp-admin/includes/file.php';
+            }
+
+            // Initialize WP_Filesystem — required by unzip_file() (see file.php:1595)
+            if (!WP_Filesystem(false, wp_slimstat::$upload_dir)) {
+                @unlink($browscap_zip);
+                return [10, __('Could not initialize the WordPress filesystem. Please check your server permissions or set <code>FS_METHOD</code> to "direct" in wp-config.php.', 'wp-slimstat')];
+            }
+
             // We're ready to unzip the file
             $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
             if (is_wp_error($result)) {
