@@ -776,6 +776,12 @@ class wp_slimstat_admin
             }
         }
 
+        // Clear stale query cache transients on upgrade to prevent data inconsistencies
+        // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
+        $GLOBALS['wpdb']->query(
+            "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%'"
+        );
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';

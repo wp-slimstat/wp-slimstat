@@ -35,6 +35,7 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
             'get_transient'    => false,
             'set_transient'    => true,
             'delete_transient' => true,
+            'wp_json_encode'   => static fn($data, ...$opts) => json_encode($data),
         ]);
     }
 
