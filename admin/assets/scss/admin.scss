@@ -24,6 +24,7 @@ body {
   &.slimstat_page_slimview3,
   &.slimstat_page_slimview4,
   &.slimstat_page_slimview5,
+  &.slimstat_page_slimview6,
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
@@ -421,6 +422,7 @@ body {
   &.slimstat_page_slimview3,
   &.slimstat_page_slimview4,
   &.slimstat_page_slimview5,
+  &.slimstat_page_slimview6,
   &.slimstat_page_slimconfig,
   &.slimstat_page_slimpro,
   &.slimstat_page_slimlayout,
@@ -4296,4 +4298,148 @@ x:-o-prefocus {
 .rtl .slimstat-select-text .slimstat-option-icon {
   margin-right: 0;
   margin-left: 5px;
+}
+
+// Events KPI Grid
+.slimstat-events-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.slimstat-kpi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.slimstat-kpi-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+  color: $wpBlue;
+}
+
+.slimstat-kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: $grayOne;
+}
+
+.slimstat-kpi-label {
+  font-size: 12px;
+  color: $grayTwo;
+  margin-top: 4px;
+}
+
+// Events Table
+.slimstat-events-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 12px;
+    color: $grayTwo;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tr:hover {
+    background: #f6f7f7;
+  }
+}
+
+.slimstat-ev-type {
+  width: 40px;
+
+  .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.slimstat-ev-name {
+  font-weight: 500;
+}
+
+.slimstat-ev-page {
+  color: $grayTwo;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slimstat-ev-hits {
+  position: relative;
+  min-width: 80px;
+}
+
+.slimstat-ev-hits-num {
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+.slimstat-ev-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background: var(--box-bar-color, #e8f0fe);
+  border-radius: 3px;
+  z-index: 0;
+}
+
+// Goals Section
+.slimstat-goals-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid #e0e0e0;
+    font-size: 12px;
+    color: $grayTwo;
+    text-transform: uppercase;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  tr:hover {
+    background: #f6f7f7;
+  }
+}
+
+.slimstat-goal-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+
+  &.active {
+    background: $Green;
+  }
+
+  &.inactive {
+    background: $grayThree;
+  }
 }

@@ -1299,6 +1299,104 @@ class wp_slimstat_db
         return $sorted_outbound_resources;
     }
 
+    public static function get_events_summary()
+    {
+        global $wpdb;
+        $events_table = $wpdb->prefix . 'slim_events';
+        $stats_table  = $wpdb->prefix . 'slim_stats';
+
+        $has_filters = !empty(self::$filters_normalized['columns']);
+        $join_clause = $has_filters ? "INNER JOIN {$stats_table} t1 ON te.id = t1.id" : '';
+        $alias       = $has_filters ? 't1' : '';
+
+        $where_base = self::get_combined_where('1=1', 'te.notes', true, $alias);
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$events_table} te {$join_clause} WHERE {$where_base}");
+
+        $clicks = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$events_table} te {$join_clause} WHERE " .
+            self::get_combined_where('(te.notes LIKE \'%\"type\":\"click\"%\' OR te.notes LIKE \'%\"type\":\"mousedown\"%\')', 'te.notes', true, $alias));
+
+        $keypress = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$events_table} te {$join_clause} WHERE " .
+            self::get_combined_where('te.notes LIKE \'%\"type\":\"keypress\"%\'', 'te.notes', true, $alias));
+
+        $custom = $total - $clicks - $keypress;
+
+        return [
+            'total'    => $total,
+            'clicks'   => $clicks,
+            'keypress' => $keypress,
+            'custom'   => max(0, $custom),
+        ];
+    }
+
+    public static function get_top_events_detailed()
+    {
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+
+        $query = Query::select('te.notes, t1.resource, COUNT(*) as counthits')
+            ->from($table_events . ' te')
+            ->join($table_stats . ' t1', 'te.id', 't1.id')
+            ->whereRaw(self::get_combined_where('1=1', 'te.notes', true, 't1'))
+            ->groupBy('te.notes, t1.resource')
+            ->orderBy('counthits DESC');
+
+        $start_from    = intval(self::$filters_normalized['misc']['start_from']);
+        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
+        $page          = ($start_from / max(1, $limit_results)) + 1;
+        $query->perPage($page, $limit_results);
+
+        self::maybe_enable_query_cache($query);
+        return $query->getAll();
+    }
+
+    public static function get_recent_events_detailed()
+    {
+        return self::get_results(
+            "SELECT te.notes, te.position, te.dt, t1.resource, t1.ip, t1.country, t1.browser, t1.username
+             FROM {$GLOBALS['wpdb']->prefix}slim_events te
+             INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id
+             WHERE " . self::get_combined_where('1=1', 'te.notes', true, 't1') . '
+             ORDER BY te.dt DESC',
+            'te.*, t1.resource, t1.ip, t1.country, t1.browser, t1.username',
+            'te.dt DESC'
+        );
+    }
+
+    public static function get_top_goals()
+    {
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+
+        $query = Query::select('te.event_description, te.notes, COUNT(*) as counthits')
+            ->from($table_events . ' te')
+            ->join($table_stats . ' t1', 'te.id', 't1.id')
+            ->whereRaw(self::get_combined_where('te.type = 1', 'te.notes', true, 't1'))
+            ->groupBy('te.event_description')
+            ->orderBy('counthits DESC');
+
+        $start_from    = intval(self::$filters_normalized['misc']['start_from']);
+        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
+        $page          = ($start_from / max(1, $limit_results)) + 1;
+        $query->perPage($page, $limit_results);
+
+        self::maybe_enable_query_cache($query);
+        return $query->getAll();
+    }
+
+    public static function get_recent_goals()
+    {
+        return self::get_results(
+            "SELECT te.event_description, te.notes, te.dt, t1.resource, t1.ip, t1.country, t1.browser, t1.username
+             FROM {$GLOBALS['wpdb']->prefix}slim_events te
+             INNER JOIN {$GLOBALS['wpdb']->prefix}slim_stats t1 ON te.id = t1.id
+             WHERE " . self::get_combined_where('te.type = 1', 'te.notes', true, 't1') . '
+             ORDER BY te.dt DESC',
+            'te.*, t1.resource, t1.ip, t1.country, t1.browser, t1.username',
+            'te.dt DESC'
+        );
+    }
+
     public static function get_traffic_sources_summary()
     {
         $results           = [];

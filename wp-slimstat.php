@@ -831,6 +831,9 @@ class wp_slimstat
         // Include our browser detector library
         \SlimStat\Services\Browscap::init();
 
+        // Initialize Goal tracking
+        \SlimStat\Goals\GoalEvaluator::init();
+
         // Make sure the upload directory is exist and is protected.
         self::create_upload_directory();
 

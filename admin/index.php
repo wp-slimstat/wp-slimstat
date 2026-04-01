@@ -76,6 +76,13 @@ class wp_slimstat_admin
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
             ],
+            'slimview6' => [
+                'is_report_group' => true,
+                'show_in_sidebar' => true,
+                'title'           => __('Events', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_view'],
+            ],
             'slimemail' => [
                 'is_report_group' => false,
                 'show_in_sidebar' => true,
