@@ -1,3 +1,7 @@
+= 5.4.9 - 2026-04-03 =
+* Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
+* Fix: Use sanitized URI in dashboard widget enqueue condition for consistency
+
 = 5.4.8 - 2026-03-31 =
 
 This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from
