@@ -292,16 +292,20 @@ test.describe('Meta-box-order conflict (#15036)', () => {
 
       // Click the clone button (slimstat-font-docs)
       const cloneButton = firstPostbox.locator('.slimstat-font-docs');
-      if (await cloneButton.count() > 0) {
-        const capturePromise = captureMetaBoxOrderRequest(page);
-        await cloneButton.click();
-
-        const newCount = await container.locator('.postbox').count();
-        expect(newCount, 'Clone should add one postbox').toBe(initialCount + 1);
-
-        const body = await capturePromise;
-        expect(body.page, 'Clone AJAX sends slimlayout page').toContain('_page_slimlayout');
+      const cloneCount = await cloneButton.count();
+      if (cloneCount === 0) {
+        test.skip(true, 'Clone button (.slimstat-font-docs) not present on first postbox');
       }
+      expect(cloneCount, 'Clone button should exist on first postbox').toBeGreaterThan(0);
+
+      const capturePromise = captureMetaBoxOrderRequest(page);
+      await cloneButton.click();
+
+      const newCount = await container.locator('.postbox').count();
+      expect(newCount, 'Clone should add one postbox').toBe(initialCount + 1);
+
+      const body = await capturePromise;
+      expect(body.page, 'Clone AJAX sends slimlayout page').toContain('_page_slimlayout');
     });
 
     test('2.3 — Move-to-inactive button relocates report on Customize page', async ({ page }) => {
@@ -312,21 +316,29 @@ test.describe('Meta-box-order conflict (#15036)', () => {
         '.slimstat-layout .postbox-container:not(#postbox-container-inactive) .postbox'
       ).first();
 
-      if (await activePostbox.count() > 0) {
-        const minusButton = activePostbox.locator('.slimstat-font-minus-circled');
-        if (await minusButton.count() > 0) {
-          const inactiveBefore = await page.locator('#postbox-container-inactive .postbox').count();
-
-          const capturePromise = captureMetaBoxOrderRequest(page);
-          await minusButton.click();
-
-          const inactiveAfter = await page.locator('#postbox-container-inactive .postbox').count();
-          expect(inactiveAfter, 'Inactive container gains one postbox').toBe(inactiveBefore + 1);
-
-          const body = await capturePromise;
-          expect(body.page, 'Move AJAX sends slimlayout page').toContain('_page_slimlayout');
-        }
+      const activeCount = await activePostbox.count();
+      if (activeCount === 0) {
+        test.skip(true, 'No active postboxes found outside inactive container');
       }
+      expect(activeCount, 'Should have active postboxes').toBeGreaterThan(0);
+
+      const minusButton = activePostbox.locator('.slimstat-font-minus-circled');
+      const minusCount = await minusButton.count();
+      if (minusCount === 0) {
+        test.skip(true, 'Minus button (.slimstat-font-minus-circled) not present on active postbox');
+      }
+      expect(minusCount, 'Minus button should exist on active postbox').toBeGreaterThan(0);
+
+      const inactiveBefore = await page.locator('#postbox-container-inactive .postbox').count();
+
+      const capturePromise = captureMetaBoxOrderRequest(page);
+      await minusButton.click();
+
+      const inactiveAfter = await page.locator('#postbox-container-inactive .postbox').count();
+      expect(inactiveAfter, 'Inactive container gains one postbox').toBe(inactiveBefore + 1);
+
+      const body = await capturePromise;
+      expect(body.page, 'Move AJAX sends slimlayout page').toContain('_page_slimlayout');
     });
   });
 
