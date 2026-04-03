@@ -244,7 +244,7 @@ class wp_slimstat_admin
             $request_length = strlen($sanitized_uri);
             $temp           = $request_length - 10;
 
-            if (false !== strpos($_SERVER['REQUEST_URI'], 'index.php') || ($temp >= 0 && $temp <= $request_length && false !== strpos($sanitized_uri, '/wp-admin/', $temp))) {
+            if (false !== strpos($_SERVER['REQUEST_URI'], '/wp-admin/index.php') || ($temp >= 0 && $temp <= $request_length && false !== strpos($sanitized_uri, '/wp-admin/', $temp))) {
                 add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_enqueue_scripts']);
                 add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_stylesheet']);
             }

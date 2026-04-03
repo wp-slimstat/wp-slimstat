@@ -1151,8 +1151,8 @@ jQuery(function () {
     //
 
     // Initialize sortable for customizer layout
-    if (jQuery(".meta-box-sortables").length) {
-        jQuery(".meta-box-sortables").sortable({
+    if (jQuery(".slimstat-layout").length && jQuery(".meta-box-sortables").length) {
+        jQuery(".slimstat-layout .meta-box-sortables").sortable({
             connectWith: ".meta-box-sortables",
             items: ".postbox",
             placeholder: "sortable-placeholder",
