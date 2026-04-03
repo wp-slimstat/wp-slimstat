@@ -78,7 +78,6 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
 * Fix: Use sanitized URI in dashboard widget enqueue condition for consistency
-* Fix: Auto-repair corrupted Dashboard widget order on upgrade (resets to WordPress defaults)
 
 = 5.4.8 - 2026-03-31 =
 
