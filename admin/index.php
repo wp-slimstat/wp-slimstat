@@ -776,6 +776,16 @@ class wp_slimstat_admin
             }
         }
 
+        // --- Updates for version 5.4.9 ---
+        // Fix corrupted WP Dashboard widget order caused by Slimstat's sortable handler
+        // running on all admin pages (fixed in this version). Delete stale dashboard
+        // meta-box-order so WordPress regenerates fresh defaults. See #282.
+        if (version_compare(wp_slimstat::$settings['version'], '5.4.9', '<')) {
+            $GLOBALS['wpdb']->query(
+                "DELETE FROM {$GLOBALS['wpdb']->usermeta} WHERE meta_key = 'meta-box-order_dashboard'"
+            );
+        }
+
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
         // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
         $GLOBALS['wpdb']->query(
