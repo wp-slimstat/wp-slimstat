@@ -4374,3 +4374,66 @@ x:-o-prefocus {
     margin: 0 4px;
   }
 }
+
+// Goals Manager (in Events tab)
+#slim_p7_07 .inside {
+  height: auto !important;
+  overflow: visible;
+}
+
+.slimstat-goal-row {
+  .slimstat-goal-detail {
+    color: $grayTwo;
+    font-size: 0.9em;
+    margin-left: 8px;
+    float: none !important;
+
+    code {
+      background: $grayFour;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.95em;
+    }
+  }
+}
+
+.slimstat-goal-status {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+
+  &.active { background: $Green; }
+  &.inactive { background: $grayThree; }
+}
+
+.slimstat-goal-add-form {
+  padding: 10px;
+  border-top: 1px solid $graySix;
+}
+
+.slimstat-goal-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  border: none !important;
+
+  input.regular-text {
+    width: auto;
+    min-width: 150px;
+    flex: 1;
+  }
+
+  select {
+    min-width: 100px;
+  }
+}
+
+.slimstat-goal-message {
+  border: none !important;
+  font-weight: 500;
+  padding: 6px 10px !important;
+}

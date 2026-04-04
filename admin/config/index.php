@@ -57,125 +57,6 @@ $general_rows = [
     ],
 ];
 
-// Goals Manager renderer
-function slimstat_render_goals_manager() {
-    $goals = \SlimStat\Goals\GoalEvaluator::get_goals();
-
-    $operators = [
-        'equals'       => __('equals', 'wp-slimstat'),
-        'contains'     => __('contains', 'wp-slimstat'),
-        'starts_with'  => __('starts with', 'wp-slimstat'),
-        'ends_with'    => __('ends with', 'wp-slimstat'),
-        'matches'      => __('matches (regex)', 'wp-slimstat'),
-        'not_equals'   => __('does not equal', 'wp-slimstat'),
-        'not_contains' => __('does not contain', 'wp-slimstat'),
-    ];
-
-    $fields = [
-        'resource'     => __('Page URL', 'wp-slimstat'),
-        'content_type' => __('Content Type', 'wp-slimstat'),
-        'referer'      => __('Referrer', 'wp-slimstat'),
-        'country'      => __('Country', 'wp-slimstat'),
-        'browser'      => __('Browser', 'wp-slimstat'),
-    ];
-
-    ob_start();
-    ?>
-    <div id="slimstat-goals-manager">
-        <table class="slimstat-goals-table widefat">
-            <thead>
-                <tr>
-                    <th><?php _e('Active', 'wp-slimstat'); ?></th>
-                    <th><?php _e('Name', 'wp-slimstat'); ?></th>
-                    <th><?php _e('Condition', 'wp-slimstat'); ?></th>
-                    <th><?php _e('Actions', 'wp-slimstat'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($goals)): ?>
-                    <tr class="slimstat-goal-empty-row">
-                        <td colspan="4"><?php _e('No goals defined yet. Click "Add Goal" to create one.', 'wp-slimstat'); ?></td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($goals as $i => $goal): ?>
-                        <tr>
-                            <td>
-                                <input type="hidden" name="slimstat_goals[<?php echo $i; ?>][id]" value="<?php echo esc_attr($goal['id']); ?>">
-                                <input type="hidden" name="slimstat_goals[<?php echo $i; ?>][type]" value="page_visit">
-                                <input type="checkbox" name="slimstat_goals[<?php echo $i; ?>][active]" value="1" <?php checked(!empty($goal['active'])); ?>>
-                            </td>
-                            <td>
-                                <input type="text" name="slimstat_goals[<?php echo $i; ?>][name]" value="<?php echo esc_attr($goal['name'] ?? ''); ?>" placeholder="<?php esc_attr_e('Goal name', 'wp-slimstat'); ?>" class="regular-text">
-                            </td>
-                            <td>
-                                <?php
-                                $conditions = $goal['conditions'] ?? [['field' => 'resource', 'operator' => 'equals', 'value' => '']];
-                                foreach ($conditions as $ci => $condition):
-                                ?>
-                                <div class="slimstat-goal-condition">
-                                    <select name="slimstat_goals[<?php echo $i; ?>][conditions][<?php echo $ci; ?>][field]">
-                                        <?php foreach ($fields as $fk => $fl): ?>
-                                            <option value="<?php echo esc_attr($fk); ?>" <?php selected($condition['field'] ?? '', $fk); ?>><?php echo esc_html($fl); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <select name="slimstat_goals[<?php echo $i; ?>][conditions][<?php echo $ci; ?>][operator]">
-                                        <?php foreach ($operators as $ok => $ol): ?>
-                                            <option value="<?php echo esc_attr($ok); ?>" <?php selected($condition['operator'] ?? '', $ok); ?>><?php echo esc_html($ol); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <input type="text" name="slimstat_goals[<?php echo $i; ?>][conditions][<?php echo $ci; ?>][value]" value="<?php echo esc_attr($condition['value'] ?? ''); ?>" placeholder="<?php esc_attr_e('/thank-you/', 'wp-slimstat'); ?>" class="regular-text">
-                                </div>
-                                <?php endforeach; ?>
-                            </td>
-                            <td>
-                                <button type="button" class="button slimstat-goal-delete" data-index="<?php echo $i; ?>"><?php _e('Delete', 'wp-slimstat'); ?></button>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </tbody>
-        </table>
-        <p>
-            <button type="button" class="button button-secondary" id="slimstat-add-goal"><?php _e('Add Goal', 'wp-slimstat'); ?></button>
-        </p>
-    </div>
-    <script>
-    jQuery(function($) {
-        var goalIndex = <?php echo count($goals); ?>;
-        var fields = <?php echo wp_json_encode($fields); ?>;
-        var operators = <?php echo wp_json_encode($operators); ?>;
-
-        $('#slimstat-add-goal').on('click', function() {
-            $('.slimstat-goal-empty-row').remove();
-            var fieldOpts = '', opOpts = '';
-            $.each(fields, function(k, v) { fieldOpts += '<option value="' + k + '">' + v + '</option>'; });
-            $.each(operators, function(k, v) { opOpts += '<option value="' + k + '">' + v + '</option>'; });
-
-            var row = '<tr>' +
-                '<td><input type="hidden" name="slimstat_goals[' + goalIndex + '][id]" value="' + (goalIndex + 1) + '">' +
-                '<input type="hidden" name="slimstat_goals[' + goalIndex + '][type]" value="page_visit">' +
-                '<input type="checkbox" name="slimstat_goals[' + goalIndex + '][active]" value="1" checked></td>' +
-                '<td><input type="text" name="slimstat_goals[' + goalIndex + '][name]" value="" placeholder="Goal name" class="regular-text"></td>' +
-                '<td><div class="slimstat-goal-condition">' +
-                '<select name="slimstat_goals[' + goalIndex + '][conditions][0][field]">' + fieldOpts + '</select>' +
-                '<select name="slimstat_goals[' + goalIndex + '][conditions][0][operator]">' + opOpts + '</select>' +
-                '<input type="text" name="slimstat_goals[' + goalIndex + '][conditions][0][value]" value="" placeholder="/thank-you/" class="regular-text">' +
-                '</div></td>' +
-                '<td><button type="button" class="button slimstat-goal-delete" data-index="' + goalIndex + '">Delete</button></td>' +
-                '</tr>';
-            $('.slimstat-goals-table tbody').append(row);
-            goalIndex++;
-        });
-
-        $(document).on('click', '.slimstat-goal-delete', function() {
-            $(this).closest('tr').remove();
-        });
-    });
-    </script>
-    <?php
-    return ob_get_clean();
-}
-
 // Define all the options
 $settings = [
     1 => [
@@ -874,21 +755,6 @@ $settings = [
         'title' => __('License', 'wp-slimstat'),
     ],
 
-    9 => [
-        'title'  => __('Goals', 'wp-slimstat'),
-        'rows'   => [
-            'goals_description' => [
-                'type'   => 'custom',
-                'title'  => '<p class="description">' . __('Define goals to track visitor conversions. A goal is triggered when a pageview matches all of its conditions. Goal completions are recorded as events and shown on the Events tab.', 'wp-slimstat') . '</p>',
-                'markup' => '',
-            ],
-            'goals_manager' => [
-                'type'   => 'custom',
-                'title'  => '',
-                'markup' => slimstat_render_goals_manager(),
-            ],
-        ],
-    ],
 ];
 
 
@@ -1025,39 +891,6 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         // Refresh WP permalinks, in case the user has changed the tracking method
         if (isset($_POST['options']['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $_POST['options']['tracking_request_method']) {
             update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
-        }
-
-        // Save Goals (tab 9)
-        if ($current_tab === 9 && isset($_POST['slimstat_goals'])) {
-            $raw_goals = wp_unslash($_POST['slimstat_goals']);
-            $clean_goals = [];
-            foreach ($raw_goals as $goal_data) {
-                $clean_goal = [
-                    'id'         => intval($goal_data['id'] ?? 0),
-                    'name'       => sanitize_text_field($goal_data['name'] ?? ''),
-                    'type'       => 'page_visit',
-                    'active'     => !empty($goal_data['active']),
-                    'conditions' => [],
-                ];
-                if (!empty($goal_data['conditions']) && is_array($goal_data['conditions'])) {
-                    foreach ($goal_data['conditions'] as $cond) {
-                        $clean_goal['conditions'][] = [
-                            'field'    => sanitize_text_field($cond['field'] ?? 'resource'),
-                            'operator' => sanitize_text_field($cond['operator'] ?? 'equals'),
-                            'value'    => sanitize_text_field($cond['value'] ?? ''),
-                        ];
-                    }
-                }
-                if (!empty($clean_goal['name'])) {
-                    $clean_goals[] = $clean_goal;
-                }
-            }
-            \SlimStat\Goals\GoalEvaluator::save_goals($clean_goals);
-            $save_messages[] = __('Goals saved successfully.', 'wp-slimstat');
-        } elseif ($current_tab === 9 && !isset($_POST['slimstat_goals'])) {
-            // All goals deleted
-            \SlimStat\Goals\GoalEvaluator::save_goals([]);
-            $save_messages[] = __('All goals have been removed.', 'wp-slimstat');
         }
 
         // All other options

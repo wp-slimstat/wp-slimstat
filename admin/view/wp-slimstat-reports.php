@@ -910,6 +910,15 @@ class wp_slimstat_reports
                 'locations' => ['slimview6'],
             ],
 
+            // Goal management
+            'slim_p7_07' => [
+                'title'         => __('Goals', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_goals_manager'],
+                'callback_args' => [],
+                'classes'       => ['full-width'],
+                'locations'     => ['slimview6'],
+            ],
+
             // Goal reports
             'slim_p7_05' => [
                 'title'         => __('Top Goals', 'wp-slimstat'),
@@ -1827,6 +1836,147 @@ class wp_slimstat_reports
         }
 
         echo self::report_pagination($count_page_results, count($all_results));
+
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            die();
+        }
+    }
+
+    public static function show_goals_manager($_args = [])
+    {
+        $goals = \SlimStat\Goals\GoalEvaluator::get_goals();
+
+        $operators = [
+            'equals'       => __('equals', 'wp-slimstat'),
+            'contains'     => __('contains', 'wp-slimstat'),
+            'starts_with'  => __('starts with', 'wp-slimstat'),
+            'ends_with'    => __('ends with', 'wp-slimstat'),
+            'matches'      => __('matches (regex)', 'wp-slimstat'),
+            'not_equals'   => __('does not equal', 'wp-slimstat'),
+            'not_contains' => __('does not contain', 'wp-slimstat'),
+        ];
+
+        $fields = [
+            'resource'     => __('Page URL', 'wp-slimstat'),
+            'content_type' => __('Content Type', 'wp-slimstat'),
+            'referer'      => __('Referrer', 'wp-slimstat'),
+            'country'      => __('Country', 'wp-slimstat'),
+            'browser'      => __('Browser', 'wp-slimstat'),
+        ];
+
+        // Render existing goals as rows
+        if (!empty($goals)) {
+            foreach ($goals as $i => $goal) {
+                $status_class = !empty($goal['active']) ? 'active' : 'inactive';
+                $status_label = !empty($goal['active']) ? __('Active', 'wp-slimstat') : __('Inactive', 'wp-slimstat');
+                $cond = $goal['conditions'][0] ?? ['field' => 'resource', 'operator' => 'equals', 'value' => ''];
+                $field_label = $fields[$cond['field']] ?? $cond['field'];
+                $op_label    = $operators[$cond['operator']] ?? $cond['operator'];
+
+                echo '<p class="slimstat-goal-row" data-goal-index="' . $i . '">';
+                echo '<span class="slimstat-goal-status ' . $status_class . '" title="' . esc_attr($status_label) . '"></span>';
+                echo esc_html($goal['name'] ?? __('Goal', 'wp-slimstat'));
+                echo '<span class="slimstat-goal-detail">' . esc_html($field_label) . ' ' . esc_html($op_label) . ' <code>' . esc_html($cond['value']) . '</code></span>';
+                echo '<span><a href="#" class="slimstat-goal-delete" data-index="' . $i . '">' . __('Delete', 'wp-slimstat') . '</a></span>';
+                echo '</p>';
+            }
+        }
+
+        // Add new goal form
+        echo '<div class="slimstat-goal-add-form">';
+        echo '<p class="slimstat-goal-form-row">';
+        echo '<input type="text" id="slimstat-goal-name" placeholder="' . esc_attr__('Goal name', 'wp-slimstat') . '" class="regular-text">';
+        echo '<select id="slimstat-goal-field">';
+        foreach ($fields as $fk => $fl) {
+            echo '<option value="' . esc_attr($fk) . '">' . esc_html($fl) . '</option>';
+        }
+        echo '</select>';
+        echo '<select id="slimstat-goal-operator">';
+        foreach ($operators as $ok => $ol) {
+            echo '<option value="' . esc_attr($ok) . '">' . esc_html($ol) . '</option>';
+        }
+        echo '</select>';
+        echo '<input type="text" id="slimstat-goal-value" placeholder="' . esc_attr__('/thank-you/', 'wp-slimstat') . '" class="regular-text">';
+        echo '<button type="button" class="button button-primary" id="slimstat-goal-save">' . __('Add Goal', 'wp-slimstat') . '</button>';
+        echo '</p>';
+        echo '<p class="slimstat-goal-message" style="display:none;"></p>';
+        echo '</div>';
+
+        // JavaScript for AJAX save/delete
+        ?>
+        <script>
+        jQuery(function($) {
+            var goalsData = <?php echo wp_json_encode($goals); ?>;
+            var nonce = $('#meta-box-order-nonce').val();
+
+            function saveAllGoals(callback) {
+                $.post(ajaxurl, {
+                    action: 'slimstat_save_goals',
+                    security: nonce,
+                    goals: goalsData
+                }, function(response) {
+                    var $msg = $('.slimstat-goal-message');
+                    if (response.success) {
+                        $msg.text(response.data.message).css('color', '#24cb7d').show().delay(3000).fadeOut();
+                    } else {
+                        $msg.text(response.data.message || 'Error').css('color', '#ff3636').show();
+                    }
+                    if (callback) callback(response.success);
+                });
+            }
+
+            $('#slimstat-goal-save').on('click', function() {
+                var name  = $('#slimstat-goal-name').val().trim();
+                var value = $('#slimstat-goal-value').val().trim();
+                if (!name || !value) {
+                    $('.slimstat-goal-message').text('<?php echo esc_js(__('Please fill in the goal name and value.', 'wp-slimstat')); ?>').css('color', '#ff3636').show();
+                    return;
+                }
+
+                var newGoal = {
+                    id: goalsData.length + 1,
+                    name: name,
+                    type: 'page_visit',
+                    active: true,
+                    conditions: [{
+                        field: $('#slimstat-goal-field').val(),
+                        operator: $('#slimstat-goal-operator').val(),
+                        value: value
+                    }]
+                };
+                goalsData.push(newGoal);
+
+                saveAllGoals(function(success) {
+                    if (success) {
+                        // Clear form
+                        $('#slimstat-goal-name, #slimstat-goal-value').val('');
+                        // Reload the report
+                        var $box = $('#slim_p7_07');
+                        if ($box.length) {
+                            $box.find('.refresh').trigger('click');
+                        }
+                    } else {
+                        goalsData.pop();
+                    }
+                });
+            });
+
+            $(document).on('click', '.slimstat-goal-delete', function(e) {
+                e.preventDefault();
+                var idx = parseInt($(this).data('index'));
+                goalsData.splice(idx, 1);
+                saveAllGoals(function(success) {
+                    if (success) {
+                        var $box = $('#slim_p7_07');
+                        if ($box.length) {
+                            $box.find('.refresh').trigger('click');
+                        }
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();

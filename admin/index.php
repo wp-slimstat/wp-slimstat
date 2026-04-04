@@ -273,6 +273,7 @@ class wp_slimstat_admin
                 'slimstat_get_filter_options'    => 'get_filter_options',
                 'slimstat_get_online_visitors'   => 'get_online_visitors',
                 'slimstat_get_adminbar_stats'    => 'get_adminbar_stats',
+                'slimstat_save_goals'            => 'save_goals',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -1564,6 +1565,51 @@ class wp_slimstat_admin
     }
 
     // END: delete_pageview
+
+    public static function save_goals()
+    {
+        check_ajax_referer('meta-box-order', 'security');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Insufficient permissions.', 'wp-slimstat')]);
+        }
+
+        $raw_goals = isset($_POST['goals']) ? wp_unslash($_POST['goals']) : [];
+        $clean_goals = [];
+
+        if (is_array($raw_goals)) {
+            foreach ($raw_goals as $goal_data) {
+                $clean_goal = [
+                    'id'         => intval($goal_data['id'] ?? 0),
+                    'name'       => sanitize_text_field($goal_data['name'] ?? ''),
+                    'type'       => 'page_visit',
+                    'active'     => !empty($goal_data['active']),
+                    'conditions' => [],
+                ];
+                if (!empty($goal_data['conditions']) && is_array($goal_data['conditions'])) {
+                    foreach ($goal_data['conditions'] as $cond) {
+                        $clean_goal['conditions'][] = [
+                            'field'    => sanitize_text_field($cond['field'] ?? 'resource'),
+                            'operator' => sanitize_text_field($cond['operator'] ?? 'equals'),
+                            'value'    => sanitize_text_field($cond['value'] ?? ''),
+                        ];
+                    }
+                }
+                if (!empty($clean_goal['name'])) {
+                    $clean_goals[] = $clean_goal;
+                }
+            }
+        }
+
+        \SlimStat\Goals\GoalEvaluator::save_goals($clean_goals);
+        wp_send_json_success([
+            'message' => sprintf(
+                _n('%d goal saved.', '%d goals saved.', count($clean_goals), 'wp-slimstat'),
+                count($clean_goals)
+            ),
+            'count' => count($clean_goals),
+        ]);
+    }
 
     /**
      * Deletes a given pageview from the database
