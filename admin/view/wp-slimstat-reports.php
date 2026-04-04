@@ -887,6 +887,7 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['full-width'],
                 'locations' => ['slimview6'],
+                'postbox_config' => ['no_border' => true, 'no_background' => true],
             ],
             'slim_p7_03' => [
                 'title'         => __('Top Events', 'wp-slimstat'),
@@ -895,7 +896,7 @@ class wp_slimstat_reports
                     'type' => 'top',
                     'raw'  => ['wp_slimstat_db', 'get_top_events_detailed'],
                 ],
-                'classes'   => ['full-width', 'tall'],
+                'classes'   => ['large', 'tall'],
                 'locations' => ['slimview6'],
             ],
             'slim_p7_04' => [
@@ -905,7 +906,7 @@ class wp_slimstat_reports
                     'type' => 'recent',
                     'raw'  => ['wp_slimstat_db', 'get_recent_events_detailed'],
                 ],
-                'classes'   => ['full-width', 'tall'],
+                'classes'   => ['large', 'tall'],
                 'locations' => ['slimview6'],
             ],
 
@@ -917,7 +918,7 @@ class wp_slimstat_reports
                     'type' => 'top',
                     'raw'  => ['wp_slimstat_db', 'get_top_goals'],
                 ],
-                'classes'   => ['normal'],
+                'classes'   => ['large'],
                 'locations' => ['slimview6'],
             ],
             'slim_p7_06' => [
@@ -927,7 +928,7 @@ class wp_slimstat_reports
                     'type' => 'recent',
                     'raw'  => ['wp_slimstat_db', 'get_recent_goals'],
                 ],
-                'classes'   => ['normal'],
+                'classes'   => ['large'],
                 'locations' => ['slimview6'],
             ],
 
@@ -1662,21 +1663,16 @@ class wp_slimstat_reports
         $data = call_user_func($_args['raw']);
 
         $cards = [
-            ['label' => __('Total Events', 'wp-slimstat'),  'value' => $data['total'],    'icon' => 'chart-bar'],
-            ['label' => __('Clicks', 'wp-slimstat'),         'value' => $data['clicks'],   'icon' => 'click'],
-            ['label' => __('Keypress', 'wp-slimstat'),       'value' => $data['keypress'], 'icon' => 'keyboard'],
-            ['label' => __('Custom Events', 'wp-slimstat'),  'value' => $data['custom'],   'icon' => 'event'],
+            ['label' => __('Total Events', 'wp-slimstat'),  'value' => $data['total']],
+            ['label' => __('Clicks', 'wp-slimstat'),         'value' => $data['clicks']],
+            ['label' => __('Keypress', 'wp-slimstat'),       'value' => $data['keypress']],
+            ['label' => __('Custom Events', 'wp-slimstat'),  'value' => $data['custom']],
         ];
 
-        echo '<div class="slimstat-events-kpi-grid">';
+        echo '<div class="slimstat-kpi-row">';
         foreach ($cards as $card) {
             printf(
-                '<div class="slimstat-kpi-card">
-                    <span class="slimstat-kpi-icon dashicons dashicons-%s"></span>
-                    <span class="slimstat-kpi-value">%s</span>
-                    <span class="slimstat-kpi-label">%s</span>
-                </div>',
-                esc_attr($card['icon']),
+                '<div class="slimstat-kpi-card"><span class="slimstat-kpi-value">%s</span><span class="slimstat-kpi-label">%s</span></div>',
                 number_format_i18n($card['value']),
                 esc_html($card['label'])
             );
@@ -1708,66 +1704,70 @@ class wp_slimstat_reports
             return [];
         }
 
-        $is_top  = ($_args['type'] ?? '') === 'top';
+        $is_top   = ($_args['type'] ?? '') === 'top';
         $max_hits = $is_top && !empty($results[0]['counthits']) ? intval($results[0]['counthits']) : 1;
-
-        echo '<table class="slimstat-events-table"><thead><tr>';
-        echo '<th class="slimstat-ev-type">' . __('Type', 'wp-slimstat') . '</th>';
-        echo '<th class="slimstat-ev-name">' . __('Event', 'wp-slimstat') . '</th>';
-        echo '<th class="slimstat-ev-page">' . __('Page', 'wp-slimstat') . '</th>';
-        if ($is_top) {
-            echo '<th class="slimstat-ev-hits">' . __('Hits', 'wp-slimstat') . '</th>';
-        } else {
-            echo '<th class="slimstat-ev-time">' . __('Time', 'wp-slimstat') . '</th>';
-        }
-        echo '</tr></thead><tbody>';
 
         foreach ($results as $row) {
             $event    = self::get_event_smart_label($row['notes'] ?? '');
-            $resource = !empty($row['resource']) ? esc_html($row['resource']) : '—';
+            $resource = !empty($row['resource']) ? esc_html($row['resource']) : '';
 
-            echo '<tr class="slimstat-tooltip-trigger">';
-            echo '<td class="slimstat-ev-type"><span class="dashicons dashicons-' . esc_attr($event['icon']) . '" title="' . esc_attr($event['type_label']) . '"></span></td>';
-            echo '<td class="slimstat-ev-name">' . $event['label'] . '</td>';
-            echo '<td class="slimstat-ev-page">' . $resource . '</td>';
-
-            if ($is_top) {
+            // Build the bar for top events
+            $bar = '';
+            if ($is_top && !empty($row['counthits'])) {
                 $hits      = intval($row['counthits']);
                 $bar_width = ($hits / $max_hits) * 100;
-                echo '<td class="slimstat-ev-hits">';
-                echo '<span class="slimstat-ev-bar" style="width:' . esc_attr($bar_width) . '%"></span>';
-                echo '<span class="slimstat-ev-hits-num">' . number_format_i18n($hits) . '</span>';
-                echo '</td>';
-            } else {
-                $time = !empty($row['dt']) ? date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $row['dt'], true) : '—';
-                echo '<td class="slimstat-ev-time">' . esc_html($time) . '</td>';
+                $bar       = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . esc_attr($bar_width) . '%"></span></span>';
             }
 
-            if (!$is_top && !empty($row['ip'])) {
-                echo '<b class="slimstat-tooltip-content">';
-                echo __('IP', 'wp-slimstat') . ': ' . esc_html($row['ip']);
+            // Build the display label with type badge
+            $type_badge = '<span class="slimstat-ev-badge">' . esc_html($event['type_label']) . '</span> ';
+            $label      = $type_badge . $event['label'];
+            if (!empty($resource)) {
+                $label .= ' <span class="slimstat-ev-resource">' . $resource . '</span>';
+            }
+
+            // Build the count/time span
+            $count_span = '';
+            if ($is_top && !empty($row['counthits'])) {
+                $count_span = '<span>' . number_format_i18n(intval($row['counthits'])) . '</span>';
+            } elseif (!$is_top && !empty($row['dt'])) {
+                $time       = date_i18n(get_option('time_format'), $row['dt'], true);
+                $count_span = '<span>' . esc_html($time) . '</span>';
+            }
+
+            // Build tooltip for recent events
+            $tooltip = '';
+            if (!$is_top) {
+                $tooltip_parts = [];
+                if (!empty($row['resource'])) {
+                    $tooltip_parts[] = __('Page', 'wp-slimstat') . ': ' . esc_html($row['resource']);
+                }
+                if (!empty($row['ip'])) {
+                    $tooltip_parts[] = __('IP', 'wp-slimstat') . ': ' . esc_html($row['ip']);
+                }
                 if (!empty($row['country'])) {
-                    echo '<br>' . __('Country', 'wp-slimstat') . ': ' . esc_html($row['country']);
+                    $tooltip_parts[] = __('Country', 'wp-slimstat') . ': ' . esc_html($row['country']);
                 }
                 if (!empty($row['browser'])) {
-                    echo '<br>' . __('Browser', 'wp-slimstat') . ': ' . esc_html($row['browser']);
-                }
-                if (!empty($row['position']) && $row['position'] !== '0,0') {
-                    echo '<br>' . __('Coordinates', 'wp-slimstat') . ': ' . esc_html($row['position']);
+                    $tooltip_parts[] = __('Browser', 'wp-slimstat') . ': ' . esc_html($row['browser']);
                 }
                 if (!empty($row['username'])) {
-                    echo '<br>' . __('User', 'wp-slimstat') . ': ' . esc_html($row['username']);
+                    $tooltip_parts[] = __('User', 'wp-slimstat') . ': ' . esc_html($row['username']);
                 }
                 if (!empty($event['raw']['id'])) {
-                    echo '<br>' . __('Element ID', 'wp-slimstat') . ': #' . esc_html($event['raw']['id']);
+                    $tooltip_parts[] = __('Element ID', 'wp-slimstat') . ': #' . esc_html($event['raw']['id']);
                 }
-                echo '</b>';
+                if (!empty($row['dt'])) {
+                    $tooltip_parts[] = __('Date', 'wp-slimstat') . ': ' . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $row['dt'], true);
+                }
+                if (!empty($tooltip_parts)) {
+                    $tooltip = '<b class="slimstat-tooltip-content">' . implode('<br>', $tooltip_parts) . '</b>';
+                }
             }
 
-            echo '</tr>';
+            echo sprintf("<p class='slimstat-tooltip-trigger'>%s%s %s%s</p>", $bar, $label, $count_span, $tooltip);
         }
 
-        echo '</tbody></table>';
         echo self::report_pagination($count_page_results, count($all_results));
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
