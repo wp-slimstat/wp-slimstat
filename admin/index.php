@@ -954,11 +954,15 @@ class wp_slimstat_admin
 
         // Pass some information to Javascript
         $params = [
-            'async_load'        => empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load'],
-            'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
-            'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
-            'page_location'     => self::$page_location,
-            'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+            'async_load'          => empty(wp_slimstat::$settings['async_load']) ? 'no' : wp_slimstat::$settings['async_load'],
+            'datepicker_image'    => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
+            'refresh_interval'    => intval(wp_slimstat::$settings['refresh_interval']),
+            'page_location'       => self::$page_location,
+            'clear_cache_nonce'   => wp_create_nonce('slimstat_clear_cache'),
+            'rest_settings_url'   => rest_url('slimstat/v1/settings'),
+            'rest_probe_url'      => rest_url('slimstat/v1/settings-probe'),
+            'rest_nonce'          => wp_create_nonce('wp_rest'),
+            'settings_nonce'      => wp_create_nonce('slimstat_save_settings'),
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }

@@ -8,6 +8,7 @@ use SlimStat\Controllers\Rest\ConsentChangeRestController;
 use SlimStat\Controllers\Rest\ConsentHealthRestController;
 use SlimStat\Controllers\Rest\GDPRBannerRestController;
 use SlimStat\Controllers\Rest\TrackerHealthRestController;
+use SlimStat\Controllers\Rest\SettingsRestController;
 use SlimStat\Controllers\Rest\TrackingRestController;
 
 // don't load directly.
@@ -51,6 +52,7 @@ class RestApiManager
 			new ConsentChangeRestController(),
 			new ConsentHealthRestController(),
 			new TrackerHealthRestController(),
+			new SettingsRestController(),
 		];
 
         /**

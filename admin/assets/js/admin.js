@@ -6,6 +6,167 @@ if (typeof SlimStatAdminParams == "undefined") {
     };
 }
 
+// ---- WAF-Resistant Settings Save (REST API + JSON) ---------------------------------
+// Intercepts the settings form POST and sends via REST API with JSON body to avoid
+// ModSecurity/OWASP CRS false positives. Falls back to base64 encoding if blocked.
+// See: https://github.com/wp-slimstat/wp-slimstat/issues/285
+(function () {
+    "use strict";
+
+    // Only activate on the settings page
+    if (typeof SlimStatAdminParams.rest_settings_url === "undefined") return;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var form = document.querySelector('form[action*="slimview-options"]');
+        if (!form) {
+            // Try matching by the hidden nonce field
+            var nonceField = document.querySelector('input[name="slimstat_update_settings"]');
+            if (nonceField) form = nonceField.closest("form");
+        }
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            // Only intercept POST saves (not GET actions like reset/truncate)
+            var actionInput = form.querySelector('input[name="action"]');
+            if (actionInput && actionInput.value) return; // Let GET actions through
+
+            // Check for action in URL (reset-settings, truncate-table, etc.)
+            var formAction = form.getAttribute("action") || window.location.href;
+            if (formAction.indexOf("action=") !== -1) return;
+
+            e.preventDefault();
+
+            // Sync TinyMCE editors
+            if (typeof tinyMCE !== "undefined" && tinyMCE.triggerSave) {
+                tinyMCE.triggerSave();
+            }
+
+            // Sync CodeMirror editors
+            if (window.slimstatCodeMirror && window.slimstatCodeMirror.save) {
+                window.slimstatCodeMirror.save();
+            }
+            // Also check for wp.codeEditor instances
+            document.querySelectorAll(".wp-editor-area, .code-editor").forEach(function (el) {
+                if (el.CodeMirror) el.CodeMirror.save();
+            });
+
+            // Extract tab number from URL
+            var urlParams = new URLSearchParams(window.location.search);
+            var tab = parseInt(urlParams.get("tab")) || 1;
+
+            // Serialize form data into options object
+            var formData = new FormData(form);
+            var options = {};
+            formData.forEach(function (value, key) {
+                var match = key.match(/^options\[(.+)\]$/);
+                if (match) {
+                    options[match[1]] = value;
+                }
+            });
+
+            // Show saving indicator
+            var submitBtn = form.querySelector('input[type="submit"], button[type="submit"]');
+            var originalText = "";
+            if (submitBtn) {
+                originalText = submitBtn.value || submitBtn.textContent;
+                if (submitBtn.value !== undefined) submitBtn.value = "Saving...";
+                submitBtn.disabled = true;
+            }
+
+            slimstatSaveViaRest(tab, options)
+                .then(function (result) {
+                    if (result && result.success) {
+                        showSettingsNotice(
+                            result.messages && result.messages.length
+                                ? result.messages.join(" ")
+                                : "Your new settings have been saved.",
+                            result.messages && result.messages.length ? "warning" : "info"
+                        );
+                    } else {
+                        showSettingsNotice(
+                            (result && result.error) || "Save failed. Please try again.",
+                            "error"
+                        );
+                    }
+                })
+                .catch(function () {
+                    // Final fallback: submit the form traditionally
+                    form.removeEventListener("submit", arguments.callee);
+                    form.submit();
+                })
+                .finally(function () {
+                    if (submitBtn) {
+                        if (submitBtn.value !== undefined) submitBtn.value = originalText;
+                        submitBtn.disabled = false;
+                    }
+                });
+        });
+    });
+
+    function slimstatSaveViaRest(tab, options) {
+        var useBase64 =
+            typeof SLIMSTAT_MODSEC_FIX !== "undefined" ||
+            (window.slimstatWafBlocked === true);
+
+        var body = useBase64
+            ? {
+                  tab: tab,
+                  encoded_options: btoa(unescape(encodeURIComponent(JSON.stringify(options)))),
+                  nonce: SlimStatAdminParams.settings_nonce,
+              }
+            : {
+                  tab: tab,
+                  options: options,
+                  nonce: SlimStatAdminParams.settings_nonce,
+              };
+
+        return fetch(SlimStatAdminParams.rest_settings_url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": SlimStatAdminParams.rest_nonce,
+            },
+            body: JSON.stringify(body),
+        })
+            .then(function (response) {
+                if (response.status === 403) {
+                    // WAF blocked the JSON request — retry with base64
+                    if (!useBase64) {
+                        window.slimstatWafBlocked = true;
+                        return slimstatSaveViaRest(tab, options);
+                    }
+                    throw new Error("WAF blocked");
+                }
+                return response.json();
+            });
+    }
+
+    function showSettingsNotice(message, type) {
+        var existing = document.querySelectorAll(".slimstat-rest-notice");
+        existing.forEach(function (el) { el.remove(); });
+
+        var notice = document.createElement("div");
+        notice.className = "notice notice-" + type + " is-dismissible slimstat-rest-notice";
+        notice.innerHTML = "<p>" + message + "</p>";
+
+        var wrap = document.querySelector(".wrap");
+        if (wrap) {
+            var firstHeading = wrap.querySelector("h2, h1");
+            if (firstHeading && firstHeading.nextSibling) {
+                firstHeading.parentNode.insertBefore(notice, firstHeading.nextSibling);
+            } else {
+                wrap.insertBefore(notice, wrap.firstChild);
+            }
+        }
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(function () {
+            if (notice.parentNode) notice.remove();
+        }, 5000);
+    }
+})();
+
 // Clear Cache Button Handler
 jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
     e.preventDefault();

@@ -760,6 +760,19 @@ $settings = [
 // Allow third-party tools to add their own settings
 $settings = apply_filters('slimstat_options_on_page', $settings);
 
+// WAF Detection: Show admin notice if server firewall may block settings saves
+$waf_probe = \SlimStat\Services\WafDetectionService::probe();
+if (!empty($waf_probe['blocked'])) {
+    $waf_name = 'unknown' !== $waf_probe['waf'] ? ucfirst($waf_probe['waf']) : __('a web application firewall', 'wp-slimstat');
+    echo '<div class="notice notice-warning is-dismissible"><p>';
+    printf(
+        /* translators: %s: WAF name (e.g., "LiteSpeed", "ModSecurity") */
+        esc_html__('Your server appears to have %s enabled, which may block settings saves. SlimStat will automatically use a compatible save method. If you experience issues, contact your hosting provider to whitelist SlimStat.', 'wp-slimstat'),
+        '<strong>' . esc_html($waf_name) . '</strong>'
+    );
+    echo '</p></div>';
+}
+
 // Save options
 $save_messages = [];
 if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_verify_nonce($_REQUEST['slimstat_update_settings'], 'slimstat_update_settings')) {
@@ -803,163 +816,16 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         if (!check_admin_referer('slimstat_save_settings')) {
             wp_die(__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
         }
-        // DB Indexes
-        if (!empty($_POST['options']['db_indexes'])) {
-            if ('on' == $_POST['options']['db_indexes'] && 'no' == wp_slimstat::$settings['db_indexes']) {
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                $save_messages[]                     = __('Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat');
-                wp_slimstat::$settings['db_indexes'] = 'on';
-            } elseif ('no' == $_POST['options']['db_indexes'] && 'on' == wp_slimstat::$settings['db_indexes']) {
-                // An empty value means that the toggle has been switched to "Off"
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_resource_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_browser_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_searchterms_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_fingerprint_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                $save_messages[]                     = __('Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat');
-                wp_slimstat::$settings['db_indexes'] = 'no';
-            }
-        }
 
-		// Geolocation settings save (provider-based)
-		if (isset($_POST['options']['geolocation_country']) || isset($_POST['options']['geolocation_provider']) || isset($_POST['options']['maxmind_license_key'])) {
-			$resolved_prev = wp_slimstat::resolve_geolocation_provider();
-			$prevProvider  = false !== $resolved_prev ? $resolved_prev : 'disable';
-			$provider     = sanitize_text_field($_POST['options']['geolocation_provider'] ?? $prevProvider);
-            $precision    = ('on' === ($_POST['options']['geolocation_country'] ?? (wp_slimstat::$settings['geolocation_country'] ?? 'on'))) ? 'country' : 'city';
-            $license      = sanitize_text_field($_POST['options']['maxmind_license_key'] ?? (wp_slimstat::$settings['maxmind_license_key'] ?? ''));
+        // Delegate to the shared save service
+        $result = \SlimStat\Services\SettingsSaveService::save(
+            $current_tab,
+            wp_unslash($_POST['options']),
+            $settings
+        );
 
-            // Save settings
-            wp_slimstat::$settings['geolocation_provider'] = $provider;
-            wp_slimstat::$settings['geolocation_country']  = 'country' === $precision ? 'on' : 'no';
-            wp_slimstat::$settings['maxmind_license_key']  = $license;
-
-            // Sync legacy flag for tracker (Processor.php) and PRO compatibility
-            if ('maxmind' === $provider) {
-                wp_slimstat::$settings['enable_maxmind'] = 'on';
-            } elseif ('dbip' === $provider || 'cloudflare' === $provider) {
-                wp_slimstat::$settings['enable_maxmind'] = 'no';
-            } elseif ('disable' === $provider) {
-                wp_slimstat::$settings['enable_maxmind'] = 'disable';
-            }
-
-            // If provider needs a DB, schedule a background update to avoid timeouts during save
-            if (in_array($provider, \SlimStat\Services\GeoService::DB_PROVIDERS, true)) {
-                try {
-                    // Pass new settings explicitly since they haven't been saved to wp_slimstat::$settings yet
-                    $service = new \SlimStat\Services\Geolocation\GeolocationService($provider, [
-                        'dbPath'    => \wp_slimstat::$upload_dir,
-                        'license'   => $license,
-                        'precision' => $precision,
-                    ]);
-                    $dbExists = file_exists($service->getProvider()->getDbPath());
-
-                    if (!$dbExists || $provider !== $prevProvider) {
-                        // Schedule a single-run background job shortly after save
-                        if (!wp_next_scheduled('wp_slimstat_update_geoip_database')) {
-                            wp_schedule_single_event(time() + 10, 'wp_slimstat_update_geoip_database');
-                        }
-                        $save_messages[] = __('The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now.', 'wp-slimstat');
-                    }
-                } catch (\Exception $e) {
-                    $save_messages[] = $e->getMessage();
-                }
-            }
-        }
-
-        // Browscap Library
-        if (!empty($_POST['options']['enable_browscap'])) {
-            if ('on' == $_POST['options']['enable_browscap'] && 'no' == wp_slimstat::$settings['enable_browscap']) {
-                $error = \SlimStat\Services\Browscap::update_browscap_database(true);
-                if (0 == $error[0]) {
-                    wp_slimstat::$settings['enable_browscap'] = 'on';
-                }
-                $save_messages[] = $error[1];
-            } elseif ('no' == $_POST['options']['enable_browscap'] && 'on' == wp_slimstat::$settings['enable_browscap']) {
-                if (wp_slimstat_admin::rmdir(wp_slimstat::$upload_dir . '/browscap-cache-master')) {
-                    $save_messages[]                          = __('The Browscap data file has been uninstalled from your server.', 'wp-slimstat');
-                    wp_slimstat::$settings['enable_browscap'] = 'no';
-                } else {
-                    $save_messages[] = __('There was an error deleting the Browscap data folder on your server. Please check your permissions.', 'wp-slimstat');
-                }
-            }
-        }
-
-        // Refresh WP permalinks, in case the user has changed the tracking method
-        if (isset($_POST['options']['tracking_request_method']) && wp_slimstat::$settings['tracking_request_method'] != $_POST['options']['tracking_request_method']) {
-            update_option('slimstat_permalink_structure_updated', true); // This will trigger a rewrite rules flush
-        }
-
-        // All other options
-        foreach (wp_unslash($_POST['options']) as $a_post_slug => $a_post_value) {
-            if (empty($settings[$current_tab]['rows'][$a_post_slug]) || !empty($settings[$current_tab]['rows'][$a_post_slug]['readonly']) || in_array($settings[$current_tab]['rows'][$a_post_slug]['type'], ['section_header', 'plain-text']) || in_array($a_post_slug, ['enable_maxmind', 'enable_browscap'])) {
-                continue;
-            }
-
-            if (isset($a_post_value)) {
-                if ('rich_text' === $settings[$current_tab]['rows'][$a_post_slug]['type']) {
-                    // Rich text editor: use wp_kses_post to sanitize HTML
-                    wp_slimstat::$settings[$a_post_slug] = wp_kses_post($a_post_value);
-                } elseif (empty($settings[$current_tab]['rows'][$a_post_slug]['use_code_editor'])) {
-                    wp_slimstat::$settings[$a_post_slug] = sanitize_text_field($a_post_value);
-                } else {
-                    // Code editor content: strip all tags to prevent XSS
-                    wp_slimstat::$settings[$a_post_slug] = wp_strip_all_tags($a_post_value);
-                }
-            }
-
-            // If the Network Settings add-on is enabled, there might be a switch to decide if this option needs to override what single sites have set
-            if (is_network_admin()) {
-                if ('on' == $_POST['options']['addon_network_settings_' . $a_post_slug]) {
-                    wp_slimstat::$settings['addon_network_settings_' . $a_post_slug] = 'on';
-                } else {
-                    wp_slimstat::$settings['addon_network_settings_' . $a_post_slug] = 'no';
-                }
-            } elseif (isset(wp_slimstat::$settings['addon_network_settings_' . $a_post_slug])) {
-                // Keep settings clean
-                unset(wp_slimstat::$settings['addon_network_settings_' . $a_post_slug]);
-            }
-        }
-
-        // Keep legacy banner toggle in sync with the selected consent integration.
-        $current_consent_integration = wp_slimstat::$settings['consent_integration'] ?? '';
-        if ('slimstat_banner' === $current_consent_integration) {
-            wp_slimstat::$settings['use_slimstat_banner'] = 'on';
-        } else {
-            wp_slimstat::$settings['use_slimstat_banner'] = 'off';
-        }
-
-        // Allow third-party functions to manipulate the options right before they are saved
-        wp_slimstat::$settings = apply_filters('slimstat_save_options', wp_slimstat::$settings);
-
-        // Save the new values in the database
-        wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
-
-        // Register GDPR banner strings for WPML/Polylang translation
-        $gdpr_translatable = [
-            'opt_out_message'          => wp_slimstat::$settings['opt_out_message'] ?? '',
-            'gdpr_accept_button_text'  => wp_slimstat::$settings['gdpr_accept_button_text'] ?? '',
-            'gdpr_decline_button_text' => wp_slimstat::$settings['gdpr_decline_button_text'] ?? '',
-        ];
-
-        foreach ($gdpr_translatable as $name => $value) {
-            if (empty($value)) {
-                continue;
-            }
-
-            // WPML registration
-            do_action('wpml_register_single_string', 'wp-slimstat', $name, $value);
-
-            // Native Polylang registration
-            if (function_exists('pll_register_string')) {
-                pll_register_string($name, $value, 'wp-slimstat', ($name === 'opt_out_message'));
-            }
-        }
-
-        if ([] !== $save_messages) {
-            wp_slimstat_admin::show_message(implode(' ', $save_messages), 'warning');
+        if (!empty($result['messages'])) {
+            wp_slimstat_admin::show_message(implode(' ', $result['messages']), 'warning');
         } else {
             wp_slimstat_admin::show_message(__('Your new settings have been saved.', 'wp-slimstat'), 'info');
         }
