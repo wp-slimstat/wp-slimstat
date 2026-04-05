@@ -91,7 +91,8 @@ if (typeof SlimStatAdminParams == "undefined") {
                 })
                 .catch(function () {
                     // Final fallback: submit the form traditionally
-                    form.removeEventListener("submit", arguments.callee);
+                    // Note: programmatic form.submit() does not fire the submit event,
+                    // so it won't re-enter this handler — no need to remove listener.
                     form.submit();
                 })
                 .finally(function () {
@@ -148,7 +149,9 @@ if (typeof SlimStatAdminParams == "undefined") {
 
         var notice = document.createElement("div");
         notice.className = "notice notice-" + type + " is-dismissible slimstat-rest-notice";
-        notice.innerHTML = "<p>" + message + "</p>";
+        var p = document.createElement("p");
+        p.textContent = message;
+        notice.appendChild(p);
 
         var wrap = document.querySelector(".wrap");
         if (wrap) {
