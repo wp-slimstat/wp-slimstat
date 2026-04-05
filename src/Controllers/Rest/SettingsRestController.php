@@ -44,6 +44,11 @@ class SettingsRestController implements RestControllerInterface
                     'required' => true,
                     'type'     => 'string',
                 ],
+                'is_network' => [
+                    'required' => false,
+                    'type'     => 'boolean',
+                    'default'  => false,
+                ],
             ],
         ]);
 
@@ -97,8 +102,13 @@ class SettingsRestController implements RestControllerInterface
             }
         }
 
-        // Save via the shared service (uses built-in field type knowledge for REST calls)
-        $result = SettingsSaveService::save($tab, $options);
+        $is_network = (bool) $request->get_param('is_network');
+
+        // Load settings definitions via the same filter Pro addons use to register fields.
+        // This ensures Pro addon fields (heatmap CSS, custom DB, etc.) get proper sanitization.
+        $settings_defs = apply_filters('slimstat_options_on_page', []);
+
+        $result = SettingsSaveService::save($tab, $options, $settings_defs, $is_network);
 
         return new \WP_REST_Response($result);
     }

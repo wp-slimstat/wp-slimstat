@@ -41,9 +41,12 @@ class SettingsSaveService
      * @param array $options       The options array (field_name => value).
      * @param array $settings_defs The settings definitions array (from the filter).
      *                             When empty, falls back to built-in field type knowledge.
+     * @param bool  $is_network    Whether saving from network admin context (multisite).
+     *                             Callers must pass this explicitly since is_network_admin()
+     *                             returns false in REST API context.
      * @return array Result with 'success', 'messages', and optional 'warning'.
      */
-    public static function save(int $tab, array $options, array $settings_defs = []): array
+    public static function save(int $tab, array $options, array $settings_defs = [], bool $is_network = false): array
     {
         $messages = [];
 
@@ -140,6 +143,11 @@ class SettingsSaveService
                 continue;
             }
 
+            // Skip network override metadata fields — handled in the network block below
+            if (strpos($slug, 'addon_network_settings_') === 0) {
+                continue;
+            }
+
             // When settings definitions are available, use them for validation
             if (!empty($current_tab_rows)) {
                 if (empty($current_tab_rows[$slug]) || !empty($current_tab_rows[$slug]['readonly']) || in_array($current_tab_rows[$slug]['type'] ?? '', ['section_header', 'plain-text'])) {
@@ -171,7 +179,7 @@ class SettingsSaveService
             }
 
             // Network admin override flags
-            if (is_network_admin()) {
+            if ($is_network) {
                 if ('on' == ($options['addon_network_settings_' . $slug] ?? 'no')) {
                     \wp_slimstat::$settings['addon_network_settings_' . $slug] = 'on';
                 } else {
@@ -190,11 +198,23 @@ class SettingsSaveService
             \wp_slimstat::$settings['use_slimstat_banner'] = 'off';
         }
 
+        // Set save context for third-party filters (e.g., Pro license validation)
+        // that may need to know the tab and source without relying on get_current_screen()
+        \wp_slimstat::$save_context = [
+            'tab'        => $tab,
+            'is_network' => $is_network,
+            'via'        => !empty($settings_defs) ? 'admin_form' : 'rest_api',
+        ];
+
         // Third-party filter hook
         \wp_slimstat::$settings = apply_filters('slimstat_save_options', \wp_slimstat::$settings);
 
-        // Persist
-        \wp_slimstat::update_option('slimstat_options', \wp_slimstat::$settings);
+        // Persist — use network option when saving from network admin context
+        \wp_slimstat::update_option('slimstat_options', \wp_slimstat::$settings, $is_network);
+
+        // Note: save_context remains set after save completes so callers
+        // and late-firing hooks can still access it. It is reset at the
+        // start of the next save() call.
 
         // Register GDPR banner strings for WPML/Polylang translation
         $gdpr_translatable = [

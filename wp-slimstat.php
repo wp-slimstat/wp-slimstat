@@ -55,6 +55,16 @@ class wp_slimstat
 {
     public static $settings = [];
 
+    /**
+     * Context metadata set during settings save for third-party filter compatibility.
+     * Contains 'tab', 'is_network', and 'via' (admin_form or rest_api).
+     * Allows Pro and other hooks to detect save context without get_current_screen().
+     *
+     * @since 5.4.10
+     * @var array
+     */
+    public static $save_context = [];
+
     public static $wpdb;
     public static $upload_dir = '';
 
@@ -1245,12 +1255,12 @@ class wp_slimstat
     /**
      * Saves a given option in the database
      */
-    public static function update_option($_key = '', $_value = '')
+    public static function update_option($_key = '', $_value = '', bool $_is_network = false)
     {
-        if (!is_network_admin()) {
-            update_option($_key, $_value);
-        } else {
+        if ($_is_network || is_network_admin()) {
             update_site_option($_key, $_value);
+        } else {
+            update_option($_key, $_value);
         }
     }
     // end update_option

@@ -963,6 +963,7 @@ class wp_slimstat_admin
             'rest_probe_url'      => rest_url('slimstat/v1/settings-probe'),
             'rest_nonce'          => wp_create_nonce('wp_rest'),
             'settings_nonce'      => wp_create_nonce('slimstat_save_settings'),
+            'is_network_admin'    => is_network_admin() ? '1' : '0',
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }

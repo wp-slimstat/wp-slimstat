@@ -821,7 +821,8 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         $result = \SlimStat\Services\SettingsSaveService::save(
             $current_tab,
             wp_unslash($_POST['options']),
-            $settings
+            $settings,
+            is_network_admin()
         );
 
         if (!empty($result['messages'])) {

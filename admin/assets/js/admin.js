@@ -76,17 +76,18 @@ if (typeof SlimStatAdminParams == "undefined") {
             slimstatSaveViaRest(tab, options)
                 .then(function (result) {
                     if (result && result.success) {
-                        showSettingsNotice(
-                            result.messages && result.messages.length
-                                ? result.messages.join(" ")
-                                : "Your new settings have been saved.",
-                            result.messages && result.messages.length ? "warning" : "info"
-                        );
+                        // Reload page to show updated values and PHP-rendered admin notices
+                        // (preserves WAF benefit since the save itself went through REST)
+                        window.location.reload();
                     } else {
                         showSettingsNotice(
                             (result && result.error) || "Save failed. Please try again.",
                             "error"
                         );
+                        if (submitBtn) {
+                            if (submitBtn.value !== undefined) submitBtn.value = originalText;
+                            submitBtn.disabled = false;
+                        }
                     }
                 })
                 .catch(function () {
@@ -94,12 +95,6 @@ if (typeof SlimStatAdminParams == "undefined") {
                     // Note: programmatic form.submit() does not fire the submit event,
                     // so it won't re-enter this handler — no need to remove listener.
                     form.submit();
-                })
-                .finally(function () {
-                    if (submitBtn) {
-                        if (submitBtn.value !== undefined) submitBtn.value = originalText;
-                        submitBtn.disabled = false;
-                    }
                 });
         });
     });
@@ -109,16 +104,20 @@ if (typeof SlimStatAdminParams == "undefined") {
             typeof SLIMSTAT_MODSEC_FIX !== "undefined" ||
             (window.slimstatWafBlocked === true);
 
+        var isNetwork = SlimStatAdminParams.is_network_admin === "1";
+
         var body = useBase64
             ? {
                   tab: tab,
                   encoded_options: btoa(unescape(encodeURIComponent(JSON.stringify(options)))),
                   nonce: SlimStatAdminParams.settings_nonce,
+                  is_network: isNetwork,
               }
             : {
                   tab: tab,
                   options: options,
                   nonce: SlimStatAdminParams.settings_nonce,
+                  is_network: isNetwork,
               };
 
         return fetch(SlimStatAdminParams.rest_settings_url, {

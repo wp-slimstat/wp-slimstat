@@ -97,9 +97,10 @@ if (!function_exists('wp_verify_nonce')) {
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat {
         public static $settings = [];
+        public static $save_context = [];
         public static $upload_dir = '/tmp';
         public static $wpdb;
-        public static function update_option($key, $value) {}
+        public static function update_option($key, $value, bool $is_network = false) {}
         public static function resolve_geolocation_provider() {
             return self::$settings['geolocation_provider'] ?? false;
         }
