@@ -50,6 +50,16 @@ class WafDetectionService
             return $result;
         }
 
+        // Only include cookies if the probe URL is same-origin to avoid leaking
+        // the admin cookie jar to a cross-origin REST endpoint (e.g., when
+        // rest_url() returns a different host due to CDN or proxy config).
+        $cookies = [];
+        $probe_host = wp_parse_url($probe_url, PHP_URL_HOST);
+        $site_host  = wp_parse_url(site_url(), PHP_URL_HOST);
+        if ($probe_host === $site_host) {
+            $cookies = wp_unslash($_COOKIE);
+        }
+
         $response = wp_remote_post($probe_url, [
             'body'      => wp_json_encode(['test' => '<script>alert(1)</script> SELECT * FROM']),
             'headers'   => [
@@ -58,7 +68,7 @@ class WafDetectionService
             ],
             'timeout'   => 10,
             'sslverify' => apply_filters('https_local_ssl_verify', false),
-            'cookies'   => wp_unslash($_COOKIE),
+            'cookies'   => $cookies,
         ]);
 
         if (is_wp_error($response)) {

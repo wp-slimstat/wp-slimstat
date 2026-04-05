@@ -35,6 +35,17 @@ function assert_true($actual, string $message): void
     }
 }
 
+function assert_false($actual, string $message): void
+{
+    global $assertions;
+    $assertions++;
+
+    if (false !== $actual) {
+        fwrite(STDERR, "FAIL: {$message} (expected false, got " . var_export($actual, true) . ")\n");
+        exit(1);
+    }
+}
+
 function assert_contains(string $needle, string $haystack, string $message): void
 {
     global $assertions;
@@ -354,6 +365,35 @@ $result = SettingsSaveService::save(3, $decoded, []);
 assert_true($result['success'], 'save from base64-decoded options should succeed');
 assert_contains('<a href="/privacy">', wp_slimstat::$settings['opt_out_message'], 'rich_text from base64 preserves HTML');
 assert_contains('color: #21759b', wp_slimstat::$settings['custom_css'], 'code_editor from base64 preserves CSS');
+
+// ─── Test 14: Network admin scenario — is_network=true sets flags ──
+
+wp_slimstat::$settings = ['some_network_field' => 'old'];
+
+$result = SettingsSaveService::save(1, [
+    'some_network_field' => 'new',
+    'addon_network_settings_some_network_field' => 'on',
+], [], true); // is_network = true
+
+assert_true($result['success'], 'network admin save should succeed');
+assert_same('new', wp_slimstat::$settings['some_network_field'], 'field value updated in network save');
+assert_same('on', wp_slimstat::$settings['addon_network_settings_some_network_field'] ?? 'MISSING',
+    'network override flag should be set when is_network=true');
+
+// ─── Test 15: Network admin scenario — is_network=false cleans flags ─
+
+wp_slimstat::$settings = [
+    'local_field' => 'old',
+    'addon_network_settings_local_field' => 'on', // leftover from network save
+];
+
+$result = SettingsSaveService::save(1, [
+    'local_field' => 'updated',
+], [], false); // is_network = false
+
+assert_same('updated', wp_slimstat::$settings['local_field'], 'field updated in non-network save');
+assert_false(isset(wp_slimstat::$settings['addon_network_settings_local_field']),
+    'leftover network override flag should be cleaned up when is_network=false');
 
 // ─── Done ───────────────────────────────────────────────────────────
 

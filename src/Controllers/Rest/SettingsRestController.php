@@ -6,6 +6,15 @@
  * of form-encoded POST, avoiding ModSecurity/OWASP CRS false positives.
  *
  * @package   SlimStat\Controllers\Rest
+ * @author    Jason Jebbink
+ * @license   GPL-2.0-or-later
+ * @link      https://wp-slimstat.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * @since     5.4.10
  * @see       https://github.com/wp-slimstat/wp-slimstat/issues/285
  */
@@ -79,7 +88,10 @@ class SettingsRestController implements RestControllerInterface
         // Verify SlimStat-specific nonce (defense in depth on top of WP REST cookie auth)
         $nonce = $request->get_param('nonce');
         if (!$nonce || !wp_verify_nonce($nonce, 'slimstat_save_settings')) {
-            return new \WP_REST_Response(['success' => false, 'error' => 'Invalid nonce.'], 403);
+            return new \WP_REST_Response(
+                ['success' => false, 'error' => __('Invalid nonce.', 'wp-slimstat')],
+                403
+            );
         }
 
         $tab = (int) $request->get_param('tab');
@@ -89,16 +101,25 @@ class SettingsRestController implements RestControllerInterface
         if (!empty($encoded) && is_string($encoded)) {
             $decoded = base64_decode($encoded, true);
             if (false === $decoded) {
-                return new \WP_REST_Response(['success' => false, 'error' => 'Invalid encoding.'], 400);
+                return new \WP_REST_Response(
+                    ['success' => false, 'error' => __('Invalid encoding.', 'wp-slimstat')],
+                    400
+                );
             }
             $options = json_decode($decoded, true);
             if (!is_array($options)) {
-                return new \WP_REST_Response(['success' => false, 'error' => 'Invalid options format.'], 400);
+                return new \WP_REST_Response(
+                    ['success' => false, 'error' => __('Invalid options format.', 'wp-slimstat')],
+                    400
+                );
             }
         } else {
             $options = $request->get_param('options');
             if (!is_array($options)) {
-                return new \WP_REST_Response(['success' => false, 'error' => 'Options must be an object.'], 400);
+                return new \WP_REST_Response(
+                    ['success' => false, 'error' => __('Options must be an object.', 'wp-slimstat')],
+                    400
+                );
             }
         }
 
