@@ -6,6 +6,15 @@
  * and REST API endpoints to share the same settings save logic.
  *
  * @package   SlimStat\Services
+ * @author    Jason Jebbink
+ * @license   GPL-2.0-or-later
+ * @link      https://wp-slimstat.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * @since     5.4.10
  */
 
@@ -51,6 +60,10 @@ class SettingsSaveService
         $messages = [];
 
         // DB Indexes
+        // Note: sprintf is used instead of $wpdb->prepare() because these are SQL
+        // identifiers (table/index names), not values. $wpdb->prepare() cannot bind
+        // identifiers. $GLOBALS['wpdb']->prefix is a trusted WordPress-controlled value
+        // set during bootstrap, not user input.
         if (!empty($options['db_indexes'])) {
             if ('on' == $options['db_indexes'] && 'no' == \wp_slimstat::$settings['db_indexes']) {
                 \wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));

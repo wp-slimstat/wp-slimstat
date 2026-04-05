@@ -1258,6 +1258,11 @@ class wp_slimstat
     public static function update_option($_key = '', $_value = '', bool $_is_network = false)
     {
         if ($_is_network || is_network_admin()) {
+            // Network-scoped writes require manage_network_options capability
+            // to prevent non-super-admins from forcing network-level persistence.
+            if (!current_user_can('manage_network_options')) {
+                return;
+            }
             update_site_option($_key, $_value);
         } else {
             update_option($_key, $_value);
