@@ -6,6 +6,15 @@
  * (ModSecurity, LiteSpeed, Cloudflare, etc.) is blocking requests.
  *
  * @package   SlimStat\Services
+ * @author    Jason Jebbink
+ * @license   GPL-2.0-or-later
+ * @link      https://wp-slimstat.com
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
  * @since     5.4.10
  * @see       https://github.com/wp-slimstat/wp-slimstat/issues/285
  */
@@ -50,14 +59,30 @@ class WafDetectionService
             return $result;
         }
 
-        // Only include cookies if the probe URL is same-origin to avoid leaking
-        // the admin cookie jar to a cross-origin REST endpoint (e.g., when
-        // rest_url() returns a different host due to CDN or proxy config).
+        // Only include auth cookies if the probe URL is same-origin (scheme + host + port)
+        // to avoid leaking the admin cookie jar to cross-origin endpoints.
         $cookies = [];
-        $probe_host = wp_parse_url($probe_url, PHP_URL_HOST);
-        $site_host  = wp_parse_url(site_url(), PHP_URL_HOST);
-        if ($probe_host === $site_host) {
-            $cookies = wp_unslash($_COOKIE);
+        $probe_parts = wp_parse_url($probe_url);
+        $site_parts  = wp_parse_url(site_url());
+
+        $probe_origin = ($probe_parts['scheme'] ?? 'http') . '://' . ($probe_parts['host'] ?? '')
+                      . (isset($probe_parts['port']) ? ':' . $probe_parts['port'] : '');
+        $site_origin  = ($site_parts['scheme'] ?? 'http') . '://' . ($site_parts['host'] ?? '')
+                      . (isset($site_parts['port']) ? ':' . $site_parts['port'] : '');
+
+        if ($probe_origin === $site_origin) {
+            // Forward only WordPress auth cookies, not the entire cookie jar
+            $auth_cookie_names = [
+                AUTH_COOKIE,
+                SECURE_AUTH_COOKIE,
+                LOGGED_IN_COOKIE,
+            ];
+            $raw_cookies = wp_unslash($_COOKIE);
+            foreach ($auth_cookie_names as $name) {
+                if (isset($raw_cookies[$name])) {
+                    $cookies[$name] = $raw_cookies[$name];
+                }
+            }
         }
 
         $response = wp_remote_post($probe_url, [

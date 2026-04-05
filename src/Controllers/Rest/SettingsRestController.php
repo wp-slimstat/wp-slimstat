@@ -127,6 +127,10 @@ class SettingsRestController implements RestControllerInterface
 
         // Load settings definitions via the same filter Pro addons use to register fields.
         // This ensures Pro addon fields (heatmap CSS, custom DB, etc.) get proper sanitization.
+        // Note: base free plugin definitions (tabs 1-6) are built inline in admin/config/index.php
+        // and not available here. SettingsSaveService handles free fields via built-in constants
+        // (RICH_TEXT_FIELDS, CODE_EDITOR_FIELDS). If new special field types are added to the
+        // free plugin, update those constants or extract base definitions into a shared builder.
         $settings_defs = apply_filters('slimstat_options_on_page', []);
 
         $result = SettingsSaveService::save($tab, $options, $settings_defs, $is_network);

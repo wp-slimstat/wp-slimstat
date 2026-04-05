@@ -130,13 +130,14 @@ if (typeof SlimStatAdminParams == "undefined") {
             body: JSON.stringify(body),
         })
             .then(function (response) {
-                // 403, 406, 503 are common WAF-block status codes
-                if (response.status === 403 || response.status === 406 || response.status === 503) {
-                    if (!useBase64) {
+                if (!response.ok) {
+                    // 403, 406, 503 are common WAF-block status codes — retry with base64
+                    if ((response.status === 403 || response.status === 406 || response.status === 503) && !useBase64) {
                         window.slimstatWafBlocked = true;
                         return slimstatSaveViaRest(tab, options);
                     }
-                    throw new Error("WAF blocked");
+                    // All other non-OK responses fall through to .catch → legacy form submit
+                    throw new Error("HTTP " + response.status);
                 }
                 return response.json();
             });
