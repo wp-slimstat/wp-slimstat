@@ -6,6 +6,170 @@ if (typeof SlimStatAdminParams == "undefined") {
     };
 }
 
+// ---- WAF-Resistant Settings Save (REST API + JSON) ---------------------------------
+// Intercepts the settings form POST and sends via REST API with JSON body to avoid
+// ModSecurity/OWASP CRS false positives. Falls back to base64 encoding if blocked.
+// See: https://github.com/wp-slimstat/wp-slimstat/issues/285
+(function () {
+    "use strict";
+
+    // Only activate on the settings page
+    if (typeof SlimStatAdminParams.rest_settings_url === "undefined") return;
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var form = document.querySelector('form[action*="slimview-options"]');
+        if (!form) {
+            // Try matching by the hidden nonce field
+            var nonceField = document.querySelector('input[name="slimstat_update_settings"]');
+            if (nonceField) form = nonceField.closest("form");
+        }
+        if (!form) return;
+
+        form.addEventListener("submit", function (e) {
+            // Only intercept POST saves (not GET actions like reset/truncate)
+            var actionInput = form.querySelector('input[name="action"]');
+            if (actionInput && actionInput.value) return; // Let GET actions through
+
+            // Check for action in URL (reset-settings, truncate-table, etc.)
+            var formAction = form.getAttribute("action") || window.location.href;
+            if (formAction.indexOf("action=") !== -1) return;
+
+            e.preventDefault();
+
+            // Sync TinyMCE editors
+            if (typeof tinyMCE !== "undefined" && tinyMCE.triggerSave) {
+                tinyMCE.triggerSave();
+            }
+
+            // Sync CodeMirror editors
+            if (window.slimstatCodeMirror && window.slimstatCodeMirror.save) {
+                window.slimstatCodeMirror.save();
+            }
+            // Also check for wp.codeEditor instances
+            document.querySelectorAll(".wp-editor-area, .code-editor").forEach(function (el) {
+                if (el.CodeMirror) el.CodeMirror.save();
+            });
+
+            // Extract tab number from URL
+            var urlParams = new URLSearchParams(window.location.search);
+            var tab = parseInt(urlParams.get("tab")) || 1;
+
+            // Serialize form data into options object
+            var formData = new FormData(form);
+            var options = {};
+            formData.forEach(function (value, key) {
+                var match = key.match(/^options\[(.+)\]$/);
+                if (match) {
+                    options[match[1]] = value;
+                }
+            });
+
+            // Show saving indicator
+            var submitBtn = form.querySelector('input[type="submit"], button[type="submit"]');
+            var originalText = "";
+            if (submitBtn) {
+                originalText = submitBtn.value || submitBtn.textContent;
+                if (submitBtn.value !== undefined) submitBtn.value = "Saving...";
+                submitBtn.disabled = true;
+            }
+
+            slimstatSaveViaRest(tab, options)
+                .then(function (result) {
+                    if (result && result.success) {
+                        // Reload page to show updated values and PHP-rendered admin notices
+                        // (preserves WAF benefit since the save itself went through REST)
+                        window.location.reload();
+                    } else {
+                        showSettingsNotice(
+                            (result && result.error) || "Save failed. Please try again.",
+                            "error"
+                        );
+                        if (submitBtn) {
+                            if (submitBtn.value !== undefined) submitBtn.value = originalText;
+                            submitBtn.disabled = false;
+                        }
+                    }
+                })
+                .catch(function () {
+                    // Final fallback: submit the form traditionally
+                    // Note: programmatic form.submit() does not fire the submit event,
+                    // so it won't re-enter this handler — no need to remove listener.
+                    form.submit();
+                });
+        });
+    });
+
+    function slimstatSaveViaRest(tab, options) {
+        var useBase64 =
+            typeof SLIMSTAT_MODSEC_FIX !== "undefined" ||
+            (window.slimstatWafBlocked === true);
+
+        var isNetwork = SlimStatAdminParams.is_network_admin === "1";
+
+        var body = useBase64
+            ? {
+                  tab: tab,
+                  encoded_options: btoa(unescape(encodeURIComponent(JSON.stringify(options)))),
+                  nonce: SlimStatAdminParams.settings_nonce,
+                  is_network: isNetwork,
+              }
+            : {
+                  tab: tab,
+                  options: options,
+                  nonce: SlimStatAdminParams.settings_nonce,
+                  is_network: isNetwork,
+              };
+
+        return fetch(SlimStatAdminParams.rest_settings_url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-WP-Nonce": SlimStatAdminParams.rest_nonce,
+            },
+            body: JSON.stringify(body),
+        })
+            .then(function (response) {
+                if (!response.ok) {
+                    // 403, 406, 503 are common WAF-block status codes — retry with base64
+                    if ((response.status === 403 || response.status === 406 || response.status === 503) && !useBase64) {
+                        window.slimstatWafBlocked = true;
+                        return slimstatSaveViaRest(tab, options);
+                    }
+                    // All other non-OK responses fall through to .catch → legacy form submit
+                    throw new Error("HTTP " + response.status);
+                }
+                return response.json();
+            });
+    }
+
+    function showSettingsNotice(message, type) {
+        var existing = document.querySelectorAll(".slimstat-rest-notice");
+        existing.forEach(function (el) { el.remove(); });
+
+        var notice = document.createElement("div");
+        notice.className = "notice notice-" + type + " is-dismissible slimstat-rest-notice";
+        var p = document.createElement("p");
+        p.textContent = message;
+        notice.appendChild(p);
+
+        var wrap = document.querySelector(".wrap");
+        if (wrap) {
+            var firstHeading = wrap.querySelector("h2, h1");
+            if (firstHeading && firstHeading.nextSibling) {
+                firstHeading.parentNode.insertBefore(notice, firstHeading.nextSibling);
+            } else {
+                wrap.insertBefore(notice, wrap.firstChild);
+            }
+        }
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(function () {
+            if (notice.parentNode) notice.remove();
+        }, 5000);
+    }
+})();
+
 // Clear Cache Button Handler
 jQuery(document).on("click", "#slimstat-clear-cache", function (e) {
     e.preventDefault();

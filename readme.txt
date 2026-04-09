@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.9
+Stable tag: 5.4.10
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,20 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.10 - 2026-04-09 =
+
+This release fixes settings page 403 errors on shared hosting with ModSecurity/OWASP CRS (Namecheap, GoDaddy, Bluehost, SiteGround, any host with LiteSpeed + ModSecurity).
+
+**WAF-Resistant Settings Save** (#285)
+* Fix: Settings page no longer returns 403 on hosts with ModSecurity/OWASP CRS false positives
+* New: Settings save now uses the REST API (JSON body) to avoid WAF pattern matching
+* New: Automatic base64 fallback if the JSON REST endpoint is also blocked
+* New: Admin notice auto-detects server-level WAFs (ModSecurity, LiteSpeed, Cloudflare, Sucuri, Imunify360) and warns users
+* New: `SLIMSTAT_MODSEC_FIX` constant to force base64 mode from the first save
+* Security: Network-scoped option writes now require `manage_network_options` capability
+* Compat: Traditional form POST still works if JavaScript is disabled (graceful degradation)
+* Compat: New `wp_slimstat::$save_context` static property provides tab/is_network/via metadata for third-party filter callbacks
+
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
 * Fix: Use sanitized URI in dashboard widget enqueue condition for consistency

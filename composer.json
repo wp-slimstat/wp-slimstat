@@ -75,6 +75,8 @@
     "test:browscap-isolation": "php tests/browscap-settings-isolation-test.php",
     "test:browscap-filesystem": "php tests/browscap-wp-filesystem-test.php",
     "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
+    "test:settings-save-service": "php tests/settings-save-service-test.php",
+    "test:settings-rest-controller": "php tests/settings-rest-controller-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -96,7 +98,9 @@
       "@test:tracker-health-auth",
       "@test:browscap-isolation",
       "@test:browscap-filesystem",
-      "@test:dnt-gdpr"
+      "@test:dnt-gdpr",
+      "@test:settings-save-service",
+      "@test:settings-rest-controller"
     ]
   }
 }

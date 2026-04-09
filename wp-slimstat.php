@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.9
+ * Version: 5.4.10
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.9');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.10');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -54,6 +54,16 @@ require_once __DIR__ . '/src/Constants.php';
 class wp_slimstat
 {
     public static $settings = [];
+
+    /**
+     * Context metadata set during settings save for third-party filter compatibility.
+     * Contains 'tab', 'is_network', and 'via' (admin_form or rest_api).
+     * Allows Pro and other hooks to detect save context without get_current_screen().
+     *
+     * @since 5.4.10
+     * @var array
+     */
+    public static $save_context = [];
 
     public static $wpdb;
     public static $upload_dir = '';
@@ -1245,12 +1255,17 @@ class wp_slimstat
     /**
      * Saves a given option in the database
      */
-    public static function update_option($_key = '', $_value = '')
+    public static function update_option($_key = '', $_value = '', bool $_is_network = false)
     {
-        if (!is_network_admin()) {
-            update_option($_key, $_value);
-        } else {
+        if ($_is_network || is_network_admin()) {
+            // Network-scoped writes require manage_network_options capability
+            // to prevent non-super-admins from forcing network-level persistence.
+            if (!current_user_can('manage_network_options')) {
+                return;
+            }
             update_site_option($_key, $_value);
+        } else {
+            update_option($_key, $_value);
         }
     }
     // end update_option
