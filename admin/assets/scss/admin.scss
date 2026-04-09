@@ -741,6 +741,7 @@ body {
   height: 240px;
   margin: 0 !important;
   overflow: auto;
+
   // #156 — native scroll: contain wheel chaining and reserve scrollbar gutter
   overscroll-behavior: contain;
   scrollbar-gutter: stable;

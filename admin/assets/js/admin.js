@@ -1373,8 +1373,12 @@ jQuery(function () {
 
 // ----- BEGIN: SLIMSTATADMIN HELPER FUNCTIONS ---------------------------------------
 var SlimStatAdmin = {
-    refresh_handle: null,
     _lastManualRefreshTime: 0,
+    // #258 — Hook installed by access_log_count_down() so refresh_report() can
+    // rearm the auto-refresh scheduler after a manual refresh / pagination /
+    // Screen Options re-activation. Without this, the next auto-refresh tick
+    // could fire well within refresh_interval seconds of the manual refresh.
+    _resetAutoRefreshSchedule: null,
 
     refresh_report: function (id, opts) {
         opts = opts || {};
@@ -1390,11 +1394,6 @@ var SlimStatAdmin = {
             // scroll position is not destroyed before the AJAX even returns.
             if (id != "slim_p7_02") {
                 jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
-            }
-
-            // Clear the autorefresh timer, if set
-            if (SlimStatAdmin.refresh_handle != null) {
-                clearInterval(SlimStatAdmin.refresh_handle);
             }
 
             data = {
@@ -1459,6 +1458,13 @@ var SlimStatAdmin = {
                         jQuery(inner_content).html(filteredResponse.html());
                         jQuery(inner_content).scrollTop(savedScrollTop);
                         SlimStatAdmin._lastManualRefreshTime = Date.now();
+                        // #258 — Rearm the auto-refresh scheduler so the next tick
+                        // is `refresh_interval` seconds AFTER this refresh, not
+                        // after the previous auto-tick (avoids double-refresh
+                        // when a manual click lands mid-cycle).
+                        if (typeof SlimStatAdmin._resetAutoRefreshSchedule === "function") {
+                            SlimStatAdmin._resetAutoRefreshSchedule();
+                        }
                     } else {
                         jQuery(inner_content).fadeOut(500, function () {
                             jQuery(this).html(filteredResponse.html()).fadeIn(500);
@@ -1506,6 +1512,14 @@ var SlimStatAdmin = {
             if (refreshIntervalSec <= 0) return; // disabled
             refreshTimerHandle = setTimeout(onRefreshTick, refreshIntervalSec * 1000);
         }
+
+        // #258 — Public hook so refresh_report() can rearm the scheduler after
+        // a manual / pagination / Screen Options refresh, preventing the next
+        // auto-tick from firing too soon after an out-of-band refresh.
+        SlimStatAdmin._resetAutoRefreshSchedule = function () {
+            lastRefreshAt = Date.now();
+            scheduleNextRefresh();
+        };
 
         function onRefreshTick() {
             // #258 B2 — defer if user is hovering or actively scrolling

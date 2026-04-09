@@ -172,9 +172,16 @@ test.describe('Access Log auto-refresh — #258', () => {
     expect(refreshCount, 'refresh should resume after mouseleave').toBeGreaterThan(0);
   });
 
-  test('admin-bar minute pulse fires regardless of access-log refresh interval', async ({ page }) => {
-    // Set a long access-log interval so we can prove the admin-bar pulse
-    // is decoupled and still ticks every 60 seconds.
+  test('admin-bar minute_pulse listener is wired regardless of refresh_interval', async ({ page }) => {
+    // NOTE on coverage scope: this test verifies that the slimstat:minute_pulse
+    // LISTENER is correctly wired with refresh_interval=300 (i.e. it doesn't
+    // get accidentally suppressed by the access-log scheduler refactor). It
+    // does NOT verify that the wall-clock-anchored scheduleAdminBarPulse()
+    // setTimeout fires at the natural 60-second cadence — that would require
+    // either a 60-90s real-time wait (slow) or Playwright clock injection
+    // (not currently set up in this suite). The cadence is enforced by the
+    // implementation in admin.js:scheduleAdminBarPulse() and is verified
+    // manually in the smoke checklist on the PR.
     await setSlimstatOption(page, 'refresh_interval', '300');
 
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
@@ -233,13 +240,13 @@ test.describe('Access Log auto-refresh — #258', () => {
     // Trigger the access log refresh by calling refresh_report directly with
     // forceRecent: true (matches what the auto-refresh listener does on the
     // fixed branch). On the buggy branch this same call goes through the
-    // fadeOut→html→fadeIn path that resets scrollTop to 0.
-    await page.evaluate(() => {
+    // fadeOut→html→fadeIn path that resets scrollTop to 0. Await the
+    // returned deferred to avoid timing-dependent waits.
+    await page.evaluate(() => new Promise<void>((resolve) => {
       const SlimStatAdmin = (window as any).SlimStatAdmin;
       const refresh = SlimStatAdmin.refresh_report('slim_p7_02', { forceRecent: true });
-      refresh();
-    });
-    await page.waitForTimeout(3_000);
+      refresh().always(() => resolve());
+    }));
 
     const after = await inside.evaluate((el) => el.scrollTop);
     // Allow a small drift; the key is that we did NOT reset to 0.

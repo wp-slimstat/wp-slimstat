@@ -100,12 +100,12 @@ test.describe('Access Log custom date range — #287', () => {
     // Invoke the factory exactly the way pagination and Screen Options do —
     // without any options. The pre-fix code drops fs[day]/fs[month]/fs[year]/
     // fs[interval] from the payload anyway; the post-fix code keeps them.
-    await page.evaluate(() => {
+    // Await the returned jQuery deferred so we don't depend on a fixed timeout.
+    await page.evaluate(() => new Promise<void>((resolve) => {
       const SlimStatAdmin = (window as any).SlimStatAdmin;
       const refresh = SlimStatAdmin.refresh_report('slim_p7_02');
-      refresh();
-    });
-    await page.waitForTimeout(3_000);
+      refresh().always(() => resolve());
+    }));
 
     const slimP702 = payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'refresh_report invocation should fire AJAX').toBeGreaterThan(0);
@@ -193,13 +193,13 @@ test.describe('Access Log custom date range — #287', () => {
     // .pagination .refresh-timer is mounted — and the PHP gate at
     // wp-slimstat-reports.php:1058 hides the timer for past date ranges).
     // Call the factory directly with forceRecent: true to prove the strip
-    // logic still fires under the new conditional.
-    await page.evaluate(() => {
+    // logic still fires under the new conditional. Await the deferred so we
+    // don't depend on a fixed timeout.
+    await page.evaluate(() => new Promise<void>((resolve) => {
       const SlimStatAdmin = (window as any).SlimStatAdmin;
       const refresh = SlimStatAdmin.refresh_report('slim_p7_02', { forceRecent: true });
-      refresh();
-    });
-    await page.waitForTimeout(3_000);
+      refresh().always(() => resolve());
+    }));
 
     const slimP702 = payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'forceRecent invocation should fire AJAX').toBeGreaterThan(0);
