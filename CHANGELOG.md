@@ -1,11 +1,3 @@
-= 5.4.11 - 2026-04-09 =
-
-Hotfix for 5.4.10-beta — removes the self-inflicted WAF probe that was triggering LiteSpeed/ModSecurity to block legitimate admin access.
-
-**Hotfix** (#285)
-* Fix: Removed automatic WAF detection probe on settings page load. The probe was sending a test payload with XSS/SQLi signatures to a loopback REST endpoint, which LiteSpeed's built-in WAF correctly flagged as an attack and could blocklist the admin's IP. WAF detection now happens reactively in JavaScript only when a real save attempt returns 403/406/503.
-* Security: Neutered the probe payload in WafDetectionService to a benign value in case third-party code invokes it manually.
-
 = 5.4.10 - 2026-04-09 =
 
 This release fixes settings page 403 errors on shared hosting with ModSecurity/OWASP CRS (Namecheap, GoDaddy, Bluehost, SiteGround, any host with LiteSpeed + ModSecurity).
