@@ -453,10 +453,9 @@ jQuery(function () {
         // Remove any temporary filters set here above
         jQuery(".slimstat-temp-filter").remove();
 
-        // Re-initialize SlimScroll on the new content
-        jQuery("#" + id + " .inside").slimScroll({
-            scrollTo: "0px",
-        });
+        // Reset scroll position on the new content (native scroll, see #156)
+        var _inside = document.querySelector("#" + id + " .inside");
+        if (_inside) { _inside.scrollTop = 0; }
     });
 
     // Asynchronous reports are loaded dynamically after the page loads
@@ -1283,14 +1282,6 @@ jQuery(function () {
     // ----- BEGIN: INIT THIRD-PARTY LIBRARIES ---------------------------------------
     //
 
-    // SlimScroll
-    jQuery("[id^=slim_] .inside").slimScroll({
-        distance: "2px",
-        opacity: "0.15",
-        size: "5px",
-        wheelStep: 10,
-    });
-
     // QTip
     jQuery(document).on("mouseover", ".slimstat-tooltip-trigger", function (e) {
         if (typeof jQuery(this).attr("data-hasqtip") != "undefined") {
@@ -1385,7 +1376,8 @@ var SlimStatAdmin = {
     refresh_handle: null,
     _lastManualRefreshTime: 0,
 
-    refresh_report: function (id) {
+    refresh_report: function (id, opts) {
+        opts = opts || {};
         return function () {
             var inner_content = "#" + id + " .inside";
             var defer = jQuery.Deferred();
@@ -1394,7 +1386,11 @@ var SlimStatAdmin = {
             if (!granularity && jQuery("#" + id).hasClass("chart")) {
                 try { granularity = localStorage.getItem("slimstat_chart_granularity"); } catch(e) {}
             }
-            jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+            // #258 B3 — Skip the spinner injection for the Access Log so the user's
+            // scroll position is not destroyed before the AJAX even returns.
+            if (id != "slim_p7_02") {
+                jQuery("#" + id + " .inside").html('<p class="loading"><i class="slimstat-font-spin4 animate-spin"></i></p>');
+            }
 
             // Clear the autorefresh timer, if set
             if (SlimStatAdmin.refresh_handle != null) {
@@ -1415,8 +1411,11 @@ var SlimStatAdmin = {
                 data[filters_input[i]["name"]] = filters_input[i]["value"];
             }
 
-            // If this is the real-time report, remove date filters to get fresh data
-            if (id == "slim_p7_02") {
+            // #287 — Only strip date filters on the live auto-refresh pulse
+            // (called via refresh_report("slim_p7_02", { forceRecent: true })).
+            // Pagination, Screen Options re-activation, and initial async load
+            // must preserve any custom date range the user selected.
+            if (id == "slim_p7_02" && opts.forceRecent) {
                 // Remove both prefixed (fs[]) and non-prefixed date filters
                 delete data.hour;
                 delete data.day;
@@ -1450,14 +1449,20 @@ var SlimStatAdmin = {
                         if (typeof window.reinitializeSlimStatCharts === "function") {
                             window.reinitializeSlimStatCharts(id);
                         }
+                    } else if (id == "slim_p7_02") {
+                        // #258 B3 — Scroll-preserving swap for the Access Log.
+                        // The fadeOut/fadeIn dance and scroll-resetting spinner are
+                        // omitted here so the user's reading position survives the
+                        // refresh. Native scrollTop on .inside is preserved across
+                        // jQuery.html() (children replace, parent stays).
+                        var savedScrollTop = jQuery(inner_content).scrollTop() || 0;
+                        jQuery(inner_content).html(filteredResponse.html());
+                        jQuery(inner_content).scrollTop(savedScrollTop);
+                        SlimStatAdmin._lastManualRefreshTime = Date.now();
                     } else {
                         jQuery(inner_content).fadeOut(500, function () {
                             jQuery(this).html(filteredResponse.html()).fadeIn(500);
                         });
-
-                        if (id == "slim_p7_02") {
-                            SlimStatAdmin._lastManualRefreshTime = Date.now();
-                        }
                     }
                 })
                 .complete(function () {
@@ -1469,44 +1474,106 @@ var SlimStatAdmin = {
     },
 
     access_log_count_down: function () {
-        var lastTriggerMinute = -1;
+        // #258 — Honor refresh_interval setting, pause on user interaction, preserve scroll.
+        // The previous implementation hardcoded a 60-second wall-clock cycle and ignored
+        // SlimStatAdminParams.refresh_interval. It also fired refreshes mid-scroll, wiping
+        // the user's reading position. See issues #258 and #287.
+        //
+        // Architecture:
+        //   - Two independent schedulers, intentionally decoupled:
+        //       1. scheduleNextRefresh()    — drives the Access Log refresh on the configured
+        //                                     interval, dispatches `slimstat:access_log_refresh`
+        //       2. scheduleAdminBarPulse()  — drives the admin-bar online-visitors update on a
+        //                                     fixed 60-second wall-clock cadence, dispatches the
+        //                                     existing `slimstat:minute_pulse` so the admin-bar
+        //                                     listener (which exists on every admin page) keeps
+        //                                     working regardless of refresh_interval
+        //   - hoverPaused / userActiveUntil gate suspends the Access Log refresh while the user
+        //     is hovering or actively scrolling the panel
+        //   - visibilitychange suspends the Access Log refresh when the tab is hidden
+        var refreshIntervalSec = parseInt(SlimStatAdminParams.refresh_interval, 10) || 0;
+        var lastRefreshAt = Date.now();
+        var refreshTimerHandle = null;
+        var countdownDisplayHandle = null;
+        var hoverPaused = false;
+        var userActiveUntil = 0;
 
-        function slimstat_sync_and_countdown() {
-            var now = new Date();
-            var currentSeconds = now.getSeconds();
-            var currentMinute = now.getMinutes();
-
-            // Check if a manual refresh happened recently (within 2 seconds)
-            var timeSinceManualRefresh = Date.now() - SlimStatAdmin._lastManualRefreshTime;
-            if (timeSinceManualRefresh < 2000) {
-                jQuery(".refresh-timer").html("0:00");
-                // Reset the trigger minute to sync with the wall clock after manual refresh
-                lastTriggerMinute = -1;
-                return;
+        function scheduleNextRefresh() {
+            if (refreshTimerHandle) {
+                clearTimeout(refreshTimerHandle);
+                refreshTimerHandle = null;
             }
-
-            // Trigger pulse at exactly :00 of a new minute
-            if (currentSeconds === 0 && lastTriggerMinute !== currentMinute) {
-                lastTriggerMinute = currentMinute;
-                window.dispatchEvent(new CustomEvent("slimstat:minute_pulse"));
-            }
-
-            var remaining = (60 - currentSeconds) % 60;
-            var minutes = Math.floor(remaining / 60);
-            var seconds = remaining % 60;
-
-            jQuery(".refresh-timer").html(minutes + ":" + (seconds < 10 ? "0" : "") + seconds);
+            if (refreshIntervalSec <= 0) return; // disabled
+            refreshTimerHandle = setTimeout(onRefreshTick, refreshIntervalSec * 1000);
         }
 
-        // Sync refresh with the global pulse
-        window.addEventListener("slimstat:minute_pulse", function () {
+        function onRefreshTick() {
+            // #258 B2 — defer if user is hovering or actively scrolling
+            if (hoverPaused || Date.now() < userActiveUntil) {
+                refreshTimerHandle = setTimeout(onRefreshTick, 1000);
+                return;
+            }
+            // Suppress for 2s after a manual refresh (preserves prior behavior)
+            if (Date.now() - SlimStatAdmin._lastManualRefreshTime < 2000) {
+                refreshTimerHandle = setTimeout(onRefreshTick, 2000);
+                return;
+            }
+            // Only fire if the timer is still mounted (panel still on page)
             if (jQuery(".pagination .refresh-timer").length > 0) {
-                var refresh = SlimStatAdmin.refresh_report("slim_p7_02");
+                window.dispatchEvent(new CustomEvent("slimstat:access_log_refresh"));
+            }
+            lastRefreshAt = Date.now();
+            scheduleNextRefresh();
+        }
+
+        function updateCountdownDisplay() {
+            if (refreshIntervalSec <= 0) {
+                jQuery(".refresh-timer").html("");
+                return;
+            }
+            // Freeze the ticker while the user is interacting
+            if (hoverPaused) return;
+            var elapsed = Math.floor((Date.now() - lastRefreshAt) / 1000);
+            var remaining = Math.max(0, refreshIntervalSec - elapsed);
+            var mm = Math.floor(remaining / 60);
+            var ss = remaining % 60;
+            jQuery(".refresh-timer").html(mm + ":" + (ss < 10 ? "0" : "") + ss);
+        }
+
+        function startCountdownDisplay() {
+            if (countdownDisplayHandle) {
+                clearInterval(countdownDisplayHandle);
+            }
+            countdownDisplayHandle = setInterval(updateCountdownDisplay, 1000);
+            updateCountdownDisplay();
+        }
+
+        // #258 — Independent scheduler for the admin-bar pulse, anchored to wall-clock :00.
+        // This MUST keep running regardless of refresh_interval so that the admin-bar
+        // online-visitors counter (which exists on every admin page) continues to update.
+        function scheduleAdminBarPulse() {
+            var now = new Date();
+            var msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+            if (msUntilNextMinute < 1000) msUntilNextMinute += 60000;
+            setTimeout(function tick() {
+                window.dispatchEvent(new CustomEvent("slimstat:minute_pulse"));
+                setTimeout(tick, 60000);
+            }, msUntilNextMinute);
+        }
+        scheduleAdminBarPulse();
+
+        // #258 / #287 — Refresh the Access Log when our setting-driven scheduler fires.
+        // forceRecent: true keeps the live behavior of always returning current data,
+        // independent of the user's selected date range.
+        window.addEventListener("slimstat:access_log_refresh", function () {
+            if (jQuery(".pagination .refresh-timer").length > 0) {
+                var refresh = SlimStatAdmin.refresh_report("slim_p7_02", { forceRecent: true });
                 refresh();
             }
         });
 
-        // Update all admin bar stats + live analytics header on pulse
+        // Admin bar online-visitors updater — fires on every 60s wall-clock pulse,
+        // independent of the Access Log refresh cadence. Unchanged behavior.
         window.addEventListener("slimstat:minute_pulse", function () {
             var onlineVisitorsElement = document.getElementById("slimstat-online-visitors-count");
             var hasAdminBar = document.querySelector(".slimstat-adminbar__stats-grid");
@@ -1522,15 +1589,12 @@ var SlimStatAdmin = {
                     },
                     success: function (response) {
                         if (response.success && response.data) {
-                            // Update live analytics page header counter
                             if (onlineVisitorsElement && response.data.online) {
                                 var formatted = response.data.online.formatted;
                                 if (typeof window.slimstatAnimateElement === "function") {
                                     window.slimstatAnimateElement(onlineVisitorsElement, formatted);
                                 }
                             }
-
-                            // Update admin bar modal via shared function
                             if (typeof window.slimstatUpdateAdminBar === "function") {
                                 window.slimstatUpdateAdminBar(response.data);
                             }
@@ -1543,33 +1607,48 @@ var SlimStatAdmin = {
             }
         });
 
+        // #258 B2 — Pause on hover and on active wheel / touch scrolling
+        jQuery(document)
+            .on("mouseenter", "#slim_p7_02 .inside", function () { hoverPaused = true; })
+            .on("mouseleave", "#slim_p7_02 .inside", function () { hoverPaused = false; })
+            .on("wheel touchmove touchstart", "#slim_p7_02 .inside", function () {
+                userActiveUntil = Date.now() + 2000;
+            });
+
+        // #258 B2 — Pause when the tab is hidden (mirrors live-analytics.js)
+        document.addEventListener("visibilitychange", function () {
+            if (document.hidden) {
+                if (refreshTimerHandle) {
+                    clearTimeout(refreshTimerHandle);
+                    refreshTimerHandle = null;
+                }
+            } else if (refreshIntervalSec > 0 && jQuery(".pagination .refresh-timer").length > 0) {
+                lastRefreshAt = Date.now();
+                scheduleNextRefresh();
+            }
+        });
+
+        // Restart the scheduler if the refresh-timer DOM is added mid-session
+        // (e.g. after refresh_report() rebuilds the pagination bar).
         var observer = new MutationObserver(function (mutationsList) {
             mutationsList.forEach(function (mutation) {
                 mutation.addedNodes.forEach(function (node) {
-                    if (node.nodeType === 1 && node.classList.contains("refresh-timer")) {
-                        if (SlimStatAdmin.refresh_handle != null) {
-                            window.clearInterval(SlimStatAdmin.refresh_handle);
-                        }
-                        // Check every 200ms to ensure we catch the :00 second exactly
-                        SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
-                        slimstat_sync_and_countdown();
+                    if (node.nodeType === 1 && node.classList && node.classList.contains("refresh-timer")) {
+                        if (refreshIntervalSec <= 0) return;
+                        lastRefreshAt = Date.now();
+                        startCountdownDisplay();
+                        scheduleNextRefresh();
                     }
                 });
             });
         });
+        observer.observe(document.body, { childList: true, subtree: true });
 
-        // Start observing the document body or a more specific container
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-        });
-
-        if (jQuery(".pagination .refresh-timer").length > 0 && typeof SlimStatAdminParams.refresh_interval != "undefined") {
-            if (SlimStatAdmin.refresh_handle != null) {
-                window.clearInterval(SlimStatAdmin.refresh_handle);
-            }
-            SlimStatAdmin.refresh_handle = window.setInterval(slimstat_sync_and_countdown, 200);
-            slimstat_sync_and_countdown();
+        // Bootstrap on initial load
+        if (jQuery(".pagination .refresh-timer").length > 0 && refreshIntervalSec > 0) {
+            lastRefreshAt = Date.now();
+            startCountdownDisplay();
+            scheduleNextRefresh();
         }
     },
     get_query_string_filters: function (url) {
@@ -1639,174 +1718,6 @@ var SlimStatAdmin = {
     },
 };
 // ----- END: SLIMSTATADMIN HELPER FUNCTIONS -----------------------------------------
-
-/* SlimScroll v1.3.8 | https://rocha.la | Copyright (c) 2011 Piotr Rochala. Released under the MIT and GPL licenses. */
-!(function (e) {
-    e.fn.extend({
-        slimScroll: function (i) {
-            var s = { width: "auto", size: "7px", color: "#000", position: "right", distance: "1px", start: "top", opacity: 0.4, alwaysVisible: !1, disableFadeOut: !1, railVisible: !1, railColor: "#333", railOpacity: 0.2, railDraggable: !0, railClass: "slimScrollRail", barClass: "slimScrollBar", wrapperClass: "slimScrollDiv", allowPageScroll: !1, wheelStep: 20, touchScrollStep: 200, borderRadius: "7px", railBorderRadius: "7px" },
-                o = e.extend(s, i);
-            return (
-                this.each(function () {
-                    function s(t) {
-                        if (h) {
-                            var t = t || window.event,
-                                i = 0;
-                            t.wheelDelta && (i = -t.wheelDelta / 120), t.detail && (i = t.detail / 3);
-                            var s = t.target || t.srcTarget || t.srcElement;
-                            e(s)
-                                .closest("." + o.wrapperClass)
-                                .is(x.parent()) && r(i, !0),
-                                t.preventDefault && !y && t.preventDefault(),
-                                y || (t.returnValue = !1);
-                        }
-                    }
-
-                    function r(e, t, i) {
-                        y = !1;
-                        var s = e,
-                            r = x.outerHeight() - D.outerHeight();
-                        if ((t && ((s = parseInt(D.css("top")) + ((e * parseInt(o.wheelStep)) / 100) * D.outerHeight()), (s = Math.min(Math.max(s, 0), r)), (s = e > 0 ? Math.ceil(s) : Math.floor(s)), D.css({ top: s + "px" })), (v = parseInt(D.css("top")) / (x.outerHeight() - D.outerHeight())), (s = v * (x[0].scrollHeight - x.outerHeight())), i)) {
-                            s = e;
-                            var a = (s / x[0].scrollHeight) * x.outerHeight();
-                            (a = Math.min(Math.max(a, 0), r)), D.css({ top: a + "px" });
-                        }
-                        x.scrollTop(s), x.trigger("slimscrolling", ~~s), n(), c();
-                    }
-
-                    function a(e) {
-                        window.addEventListener ? (e.addEventListener("DOMMouseScroll", s, !1), e.addEventListener("mousewheel", s, !1)) : document.attachEvent("onmousewheel", s);
-                    }
-
-                    function l() {
-                        (f = Math.max((x.outerHeight() / x[0].scrollHeight) * x.outerHeight(), m)), D.css({ height: f + "px" });
-                        var e = f == x.outerHeight() ? "none" : "block";
-                        D.css({ display: e });
-                    }
-
-                    function n() {
-                        if ((l(), clearTimeout(p), v == ~~v)) {
-                            if (((y = o.allowPageScroll), b != v)) {
-                                var e = 0 == ~~v ? "top" : "bottom";
-                                x.trigger("slimscroll", e);
-                            }
-                        } else y = !1;
-                        return (b = v), f >= x.outerHeight() ? void (y = !0) : (D.stop(!0, !0).fadeIn("fast"), void (o.railVisible && R.stop(!0, !0).fadeIn("fast")));
-                    }
-
-                    function c() {
-                        o.alwaysVisible ||
-                            (p = setTimeout(function () {
-                                (o.disableFadeOut && h) || u || d || (D.fadeOut("slow"), R.fadeOut("slow"));
-                            }, 1e3));
-                    }
-
-                    var h,
-                        u,
-                        d,
-                        p,
-                        g,
-                        f,
-                        v,
-                        b,
-                        w = "<div></div>",
-                        m = 30,
-                        y = !1,
-                        x = e(this);
-                    if (x.parent().hasClass(o.wrapperClass)) {
-                        var C = x.scrollTop();
-                        if (((D = x.siblings("." + o.barClass)), (R = x.siblings("." + o.railClass)), l(), e.isPlainObject(i))) {
-                            if ("height" in i && "auto" == i.height) {
-                                x.parent().css("height", "auto"), x.css("height", "auto");
-                                var H = x.parent().parent().height();
-                                x.parent().css("height", H), x.css("height", H);
-                            } else if ("height" in i) {
-                                var S = i.height;
-                                x.parent().css("height", S), x.css("height", S);
-                            }
-                            if ("scrollTo" in i) C = parseInt(o.scrollTo);
-                            else if ("scrollBy" in i) C += parseInt(o.scrollBy);
-                            else if ("destroy" in i) return D.remove(), R.remove(), void x.unwrap();
-                            r(C, !1, !0);
-                        }
-                    } else if (!(e.isPlainObject(i) && "destroy" in i)) {
-                        o.height = "auto" == o.height ? x.parent().height() : o.height;
-                        var E = e(w).addClass(o.wrapperClass).css({ position: "relative", overflow: "hidden", width: o.width, height: o.height });
-                        x.css({ overflow: "hidden", width: o.width, height: o.height });
-                        var R = e(w)
-                                .addClass(o.railClass)
-                                .css({ width: o.size, height: "100%", position: "absolute", top: 0, display: o.alwaysVisible && o.railVisible ? "block" : "none", "border-radius": o.railBorderRadius, background: o.railColor, opacity: o.railOpacity, zIndex: 90 }),
-                            D = e(w)
-                                .addClass(o.barClass)
-                                .css({ background: o.color, width: o.size, position: "absolute", top: 0, opacity: o.opacity, display: o.alwaysVisible ? "block" : "none", "border-radius": o.borderRadius, BorderRadius: o.borderRadius, MozBorderRadius: o.borderRadius, WebkitBorderRadius: o.borderRadius, zIndex: 99 }),
-                            M = "right" == o.position ? { right: o.distance } : { left: o.distance };
-                        R.css(M),
-                            D.css(M),
-                            x.wrap(E),
-                            x.parent().append(D),
-                            x.parent().append(R),
-                            o.railDraggable &&
-                                D.bind("mousedown", function (i) {
-                                    var s = e(document);
-                                    return (
-                                        (d = !0),
-                                        (t = parseFloat(D.css("top"))),
-                                        (pageY = i.pageY),
-                                        s.bind("mousemove.slimscroll", function (e) {
-                                            (currTop = t + e.pageY - pageY), D.css("top", currTop), r(0, D.position().top, !1);
-                                        }),
-                                        s.bind("mouseup.slimscroll", function (e) {
-                                            (d = !1), c(), s.unbind(".slimscroll");
-                                        }),
-                                        !1
-                                    );
-                                }).bind("selectstart.slimscroll", function (e) {
-                                    return e.stopPropagation(), e.preventDefault(), !1;
-                                }),
-                            R.hover(
-                                function () {
-                                    n();
-                                },
-                                function () {
-                                    c();
-                                }
-                            ),
-                            D.hover(
-                                function () {
-                                    u = !0;
-                                },
-                                function () {
-                                    u = !1;
-                                }
-                            ),
-                            x.hover(
-                                function () {
-                                    (h = !0), n(), c();
-                                },
-                                function () {
-                                    (h = !1), c();
-                                }
-                            ),
-                            x.bind("touchstart", function (e, t) {
-                                e.originalEvent.touches.length && (g = e.originalEvent.touches[0].pageY);
-                            }),
-                            x.bind("touchmove", function (e) {
-                                if ((y || e.originalEvent.preventDefault(), e.originalEvent.touches.length)) {
-                                    var t = (g - e.originalEvent.touches[0].pageY) / o.touchScrollStep;
-                                    r(t, !0), (g = e.originalEvent.touches[0].pageY);
-                                }
-                            }),
-                            l(),
-                            "bottom" === o.start ? (D.css({ top: x.outerHeight() - D.outerHeight() }), r(0, !0)) : "top" !== o.start && (r(e(o.start).position().top, null, !0), o.alwaysVisible || D.hide()),
-                            a(this);
-                    }
-                }),
-                this
-            );
-        },
-    }),
-        e.fn.extend({ slimscroll: e.fn.slimScroll });
-})(jQuery);
 
 /* qTip2 v3.0.3 | https://qtip2.com | Released under the MIT and GPL licenses. */
 !(function (a, b, c) {
