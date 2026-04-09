@@ -125,6 +125,16 @@ class SettingsRestController implements RestControllerInterface
 
         $is_network = (bool) $request->get_param('is_network');
 
+        // Defense in depth: reject network-scope requests upfront unless the user has
+        // manage_network_options. wp_slimstat::update_option() also checks this, but it
+        // returns silently — the REST endpoint should explicitly return 403 instead.
+        if ($is_network && !current_user_can('manage_network_options')) {
+            return new \WP_REST_Response(
+                ['success' => false, 'error' => __('Insufficient permissions for network-scope settings.', 'wp-slimstat')],
+                403
+            );
+        }
+
         // Load settings definitions via the same filter Pro addons use to register fields.
         // This ensures Pro addon fields (heatmap CSS, custom DB, etc.) get proper sanitization.
         // Note: base free plugin definitions (tabs 1-6) are built inline in admin/config/index.php
