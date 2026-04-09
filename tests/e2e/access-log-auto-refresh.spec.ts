@@ -20,41 +20,20 @@
  *
  * Source: customer support ticket #15082 (sanitized).
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
 import {
   closeDb,
   clearStatsTable,
-  getPool,
   setSlimstatOption,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
+  seedPageviews,
+  captureAdminAjax,
 } from './helpers/setup';
 
-async function ensureLoggedIn(page: Page): Promise<void> {
-  if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
-    await page.click('#wp-submit');
-    await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
-  }
-}
-
-/** Seed enough current-date pageviews so the access log has rows + a refresh-timer. */
-async function seedCurrentPageviews(count: number): Promise<void> {
-  const now = Math.floor(Date.now() / 1000);
-  for (let i = 0; i < count; i++) {
-    await getPool().execute(
-      `INSERT INTO wp_slim_stats
-         (resource, dt, ip, visit_id, browser, platform, content_type)
-       VALUES (?, ?, '127.0.0.1', 1, 'Chrome', 'Windows', 'post')`,
-      [`/e2e-258-row-${i}/`, now - i],
-    );
-  }
-}
-
 test.describe('Access Log auto-refresh — #258', () => {
-  test.setTimeout(180_000);
+  test.setTimeout(60_000);
 
   test.beforeAll(async () => {
     await snapshotSlimstatOptions();
@@ -62,7 +41,15 @@ test.describe('Access Log auto-refresh — #258', () => {
 
   test.beforeEach(async () => {
     await clearStatsTable();
-    await seedCurrentPageviews(50);
+    // Seed 50 current-date pageviews so the access log has rows + the
+    // refresh-timer is mounted (utime['end'] >= now-300).
+    const now = Math.floor(Date.now() / 1000);
+    await seedPageviews({
+      count: 50,
+      resourcePrefix: '/e2e-258-row-',
+      baseDt: now - 49,
+      stepSeconds: 1,
+    });
   });
 
   test.afterAll(async () => {
@@ -78,20 +65,14 @@ test.describe('Access Log auto-refresh — #258', () => {
     // in 8 seconds and the test fails.
     await setSlimstatOption(page, 'refresh_interval', '5');
 
-    let refreshCount = 0;
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_load_report') && body.includes('slim_p7_02')) {
-          refreshCount++;
-        }
-      }
-    });
+    const cap = captureAdminAjax(
+      page,
+      (b) => b.includes('slimstat_load_report') && b.includes('slim_p7_02'),
+    );
 
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
 
     // SlimStatAdminParams.refresh_interval should expose 5.
@@ -104,12 +85,12 @@ test.describe('Access Log auto-refresh — #258', () => {
     // then keep the cursor off the panel and wait through ~8 seconds —
     // enough for at least one 5-second tick to fire.
     await page.waitForTimeout(2_000);
-    refreshCount = 0;
+    cap.reset();
     await page.mouse.move(0, 0);
     await page.waitForTimeout(8_000);
 
     expect(
-      refreshCount,
+      cap.payloads.length,
       'with refresh_interval=5, at least one auto-refresh should fire within 8s',
     ).toBeGreaterThan(0);
   });
@@ -120,12 +101,11 @@ test.describe('Access Log auto-refresh — #258', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(6_000);
 
     // PHP gate at wp-slimstat-reports.php:1058 should suppress the
     // <i class="refresh-timer"> element entirely when refresh_interval = 0.
+    // This is a server-side render assertion — no need to wait for AJAX.
     const timerCount = await page.locator('.pagination .refresh-timer').count();
     expect(timerCount, 'refresh-timer element should not render when interval=0').toBe(0);
   });
@@ -134,42 +114,38 @@ test.describe('Access Log auto-refresh — #258', () => {
     // Use a short interval to keep the test runtime manageable.
     await setSlimstatOption(page, 'refresh_interval', '5');
 
+    const cap = captureAdminAjax(
+      page,
+      (b) => b.includes('slimstat_load_report') && b.includes('slim_p7_02'),
+    );
+
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(7_000);
-
-    // Verify the refresh-timer is mounted.
-    const timerCount = await page.locator('.pagination .refresh-timer').count();
-    test.skip(timerCount === 0, 'refresh-timer not mounted; skipping hover test');
-
-    // Start counting slim_p7_02 AJAX requests.
-    let refreshCount = 0;
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_load_report') && body.includes('slim_p7_02')) {
-          refreshCount++;
-        }
-      }
-    });
+    // Wait until the refresh-timer is actually mounted before starting the
+    // measurement window.
+    const timer = page.locator('.pagination .refresh-timer');
+    test.skip(
+      (await timer.count()) === 0,
+      'refresh-timer not mounted; skipping hover test',
+    );
 
     // Hover the panel and hold the cursor there for ~12s (well over 5s interval).
     const inside = page.locator('#slim_p7_02 .inside');
     const box = await inside.boundingBox();
     if (!box) test.skip(true, '.inside has no bounding box');
+    cap.reset();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
     await page.waitForTimeout(12_000);
 
     // No auto-refresh should have fired during the hover.
-    expect(refreshCount, 'refresh fired while hovered').toBe(0);
+    expect(cap.payloads.length, 'refresh fired while hovered').toBe(0);
 
     // Move pointer away and wait for the next interval — refresh should resume.
     await page.mouse.move(0, 0);
     await page.waitForTimeout(8_000);
-    expect(refreshCount, 'refresh should resume after mouseleave').toBeGreaterThan(0);
+    expect(cap.payloads.length, 'refresh should resume after mouseleave').toBeGreaterThan(0);
   });
 
   test('admin-bar minute_pulse listener is wired regardless of refresh_interval', async ({ page }) => {
@@ -184,29 +160,32 @@ test.describe('Access Log auto-refresh — #258', () => {
     // manually in the smoke checklist on the PR.
     await setSlimstatOption(page, 'refresh_interval', '300');
 
+    const cap = captureAdminAjax(page, (b) => b.includes('slimstat_get_adminbar_stats'));
+
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
-    await page.waitForTimeout(3_000);
+    // Wait for SlimStatAdmin to hydrate so the minute_pulse listener is bound.
+    await page.waitForFunction(
+      () => typeof (window as any).SlimStatAdmin === 'object',
+      { timeout: 15_000 },
+    );
 
-    // Programmatically dispatch the admin-bar pulse and verify the listener
-    // sends the get_adminbar_stats AJAX call.
-    const adminBarCalls: string[] = [];
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_get_adminbar_stats')) adminBarCalls.push(body);
-      }
-    });
+    cap.reset();
 
     await page.evaluate(() => {
       window.dispatchEvent(new CustomEvent('slimstat:minute_pulse'));
     });
-    await page.waitForTimeout(2_000);
+    // Wait for the AJAX response triggered by the listener.
+    await page.waitForResponse(
+      (resp) =>
+        resp.url().includes('admin-ajax.php') &&
+        (resp.request().postData() || '').includes('slimstat_get_adminbar_stats'),
+      { timeout: 15_000 },
+    );
 
     expect(
-      adminBarCalls.length,
+      cap.payloads.length,
       'admin-bar listener should respond to slimstat:minute_pulse',
     ).toBeGreaterThan(0);
   });
@@ -217,9 +196,12 @@ test.describe('Access Log auto-refresh — #258', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(7_000);
+    // Wait for SlimStatAdmin to hydrate before invoking refresh_report.
+    await page.waitForFunction(
+      () => typeof (window as any).SlimStatAdmin?.refresh_report === 'function',
+      { timeout: 15_000 },
+    );
 
     const inside = page.locator('#slim_p7_02 .inside');
     test.skip(

@@ -478,6 +478,92 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
 }
 
+/**
+ * Bulk-seed pageview rows into wp_slim_stats with a single multi-row INSERT.
+ *
+ * Replaces the per-spec `for (let i = 0; i < count; i++) { await getPool().execute(...) }`
+ * pattern that was duplicated across many specs. ~50× faster than the loop
+ * because it uses one DB roundtrip instead of N.
+ *
+ * @param opts.count           Number of rows to seed
+ * @param opts.resourcePrefix  Each row's `resource` becomes `${prefix}${i}` (default: '/e2e-row-')
+ * @param opts.baseDt          Base unix timestamp; row i gets `baseDt + i * stepSeconds` (default: now)
+ * @param opts.stepSeconds     Seconds between consecutive rows (default: 1)
+ * @param opts.contentType     content_type column value (default: 'post')
+ */
+export async function seedPageviews(opts: {
+  count: number;
+  resourcePrefix?: string;
+  baseDt?: number;
+  stepSeconds?: number;
+  contentType?: string;
+}): Promise<void> {
+  const {
+    count,
+    resourcePrefix = '/e2e-row-',
+    baseDt = Math.floor(Date.now() / 1000),
+    stepSeconds = 1,
+    contentType = 'post',
+  } = opts;
+  if (count <= 0) return;
+
+  const placeholders: string[] = [];
+  const values: any[] = [];
+  for (let i = 0; i < count; i++) {
+    placeholders.push('(?, ?, ?, ?, ?, ?, ?)');
+    values.push(
+      `${resourcePrefix}${i}`,
+      baseDt + i * stepSeconds,
+      '127.0.0.1',
+      1,
+      'Chrome',
+      'Windows',
+      contentType,
+    );
+  }
+  await getPool().query(
+    `INSERT INTO wp_slim_stats
+       (resource, dt, ip, visit_id, browser, platform, content_type)
+     VALUES ${placeholders.join(', ')}`,
+    values,
+  );
+}
+
+/**
+ * Subscribe to admin-ajax.php POST request bodies, optionally filtering by
+ * an action or substring. Returns a `payloads` array that grows as matching
+ * requests are observed, plus a `reset()` to clear it before a measurement
+ * window.
+ *
+ * Replaces the `page.on('request', ...)` boilerplate that was duplicated
+ * across multiple new spec files.
+ *
+ * @example
+ *   const cap = captureAdminAjax(page, (body) => body.includes('slim_p7_02'));
+ *   cap.reset();
+ *   await someAction();
+ *   expect(cap.payloads.length).toBeGreaterThan(0);
+ */
+export function captureAdminAjax(
+  page: import('@playwright/test').Page,
+  filter?: (body: string) => boolean,
+): { payloads: string[]; reset(): void } {
+  const payloads: string[] = [];
+  page.on('request', (req) => {
+    if (req.method() !== 'POST') return;
+    if (!req.url().includes('admin-ajax.php')) return;
+    const body = req.postData() || '';
+    if (filter && !filter(body)) return;
+    payloads.push(body);
+  });
+  return {
+    payloads,
+    reset() {
+      payloads.length = 0;
+    },
+  };
+}
+
 export async function getLatestStat(testMarker: string): Promise<{ country: string; city: string; location: string } | null> {
   const [rows] = await getPool().execute(
     "SELECT country, city, location FROM wp_slim_stats WHERE resource LIKE ? ORDER BY id DESC LIMIT 1",

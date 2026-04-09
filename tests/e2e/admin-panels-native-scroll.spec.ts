@@ -18,37 +18,22 @@
  *
  * Source: customer support ticket #15082 (sanitized).
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
-import { closeDb, clearStatsTable, getPool } from './helpers/setup';
-
-async function ensureLoggedIn(page: Page): Promise<void> {
-  if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
-    await page.click('#wp-submit');
-    await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
-  }
-}
-
-async function seedManyRows(count: number): Promise<void> {
-  const now = Math.floor(Date.now() / 1000);
-  for (let i = 0; i < count; i++) {
-    await getPool().execute(
-      `INSERT INTO wp_slim_stats
-         (resource, dt, ip, visit_id, browser, platform, content_type)
-       VALUES (?, ?, '127.0.0.1', 1, 'Chrome', 'Windows', 'post')`,
-      [`/e2e-156-row-${i}/`, now - i],
-    );
-  }
-}
+import { closeDb, clearStatsTable, seedPageviews } from './helpers/setup';
 
 test.describe('Native scroll on report panels — #156', () => {
-  test.setTimeout(90_000);
+  test.setTimeout(60_000);
 
   test.beforeEach(async () => {
     await clearStatsTable();
-    await seedManyRows(60);
+    const now = Math.floor(Date.now() / 1000);
+    await seedPageviews({
+      count: 60,
+      resourcePrefix: '/e2e-156-row-',
+      baseDt: now - 59,
+      stepSeconds: 1,
+    });
   });
 
   test.afterAll(async () => {
@@ -59,9 +44,7 @@ test.describe('Native scroll on report panels — #156', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(6_000);
 
     // jQuery plugin must not be defined.
     const slimScrollFn = await page.evaluate(
@@ -81,7 +64,6 @@ test.describe('Native scroll on report panels — #156', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02 .inside')).toBeVisible({ timeout: 30_000 });
 
     const styles = await page.locator('#slim_p7_02 .inside').evaluate((el) => {
@@ -111,9 +93,7 @@ test.describe('Native scroll on report panels — #156', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
       waitUntil: 'domcontentloaded',
     });
-    await ensureLoggedIn(page);
     await expect(page.locator('#slim_p7_02 .inside')).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(2_000);
 
     // Sample every report panel that has a .inside scroll container.
     const panelStyles = await page.locator('[id^="slim_p"] .inside').evaluateAll((els) => {

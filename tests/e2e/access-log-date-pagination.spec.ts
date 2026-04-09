@@ -14,41 +14,21 @@
  *
  * Source: customer support ticket #15082 (sanitized).
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { BASE_URL } from './helpers/env';
-import { getPool, closeDb, clearStatsTable } from './helpers/setup';
-
-/** Login if the page was redirected to wp-login.php */
-async function ensureLoggedIn(page: Page): Promise<void> {
-  if (page.url().includes('wp-login.php')) {
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
-    await page.click('#wp-submit');
-    await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
-  }
-}
+import {
+  closeDb,
+  clearStatsTable,
+  seedPageviews,
+  captureAdminAjax,
+} from './helpers/setup';
 
 // A custom date range well in the past, outside the default last-7-days window.
 // Picked deterministically so the same window can be asserted across runs.
 const RANGE_FROM = '2026-02-01';
 const RANGE_TO   = '2026-02-28';
 const SEED_RESOURCE_PREFIX = '/e2e-287-row-';
-
-/**
- * Seed N pageview rows with a `dt` inside the custom range so the date filter
- * has rows to return when the user paginates through them.
- */
-async function seedFebruaryPageviews(count: number): Promise<void> {
-  const baseTs = Math.floor(new Date('2026-02-15T12:00:00Z').getTime() / 1000);
-  for (let i = 0; i < count; i++) {
-    await getPool().execute(
-      `INSERT INTO wp_slim_stats
-         (resource, dt, ip, visit_id, browser, platform, content_type)
-       VALUES (?, ?, '127.0.0.1', 1, 'Chrome', 'Windows', 'post')`,
-      [`${SEED_RESOURCE_PREFIX}${i}`, baseTs + i],
-    );
-  }
-}
+const FEB_BASE_TS = Math.floor(new Date('2026-02-15T12:00:00Z').getTime() / 1000);
 
 test.describe('Access Log custom date range — #287', () => {
   test.setTimeout(90_000);
@@ -57,7 +37,11 @@ test.describe('Access Log custom date range — #287', () => {
     await clearStatsTable();
     // Seed 75 rows in February 2026 (the access log default page size is 50).
     // The "last 7 days" view (today is 2026-04+) is empty.
-    await seedFebruaryPageviews(75);
+    await seedPageviews({
+      count: 75,
+      resourcePrefix: SEED_RESOURCE_PREFIX,
+      baseDt: FEB_BASE_TS,
+    });
   });
 
   test.afterAll(async () => {
@@ -72,19 +56,12 @@ test.describe('Access Log custom date range — #287', () => {
     // activation, pagination, async load, and granularity callers all
     // invoke refresh_report without forceRecent, and they all must
     // preserve the user's date range.
-    const payloads: string[] = [];
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_load_report')) payloads.push(body);
-      }
-    });
+    const cap = captureAdminAjax(page, (b) => b.includes('slimstat_load_report'));
 
     await page.goto(
       `${BASE_URL}/wp-admin/admin.php?page=slimview1&type=custom&from=${RANGE_FROM}&to=${RANGE_TO}`,
       { waitUntil: 'domcontentloaded' },
     );
-    await ensureLoggedIn(page);
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
@@ -95,7 +72,7 @@ test.describe('Access Log custom date range — #287', () => {
     // condition-based wait on the rendered DOM, not on a fixed timeout.
     await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
-    payloads.length = 0;
+    cap.reset();
 
     // Invoke the factory exactly the way pagination and Screen Options do —
     // without any options. The pre-fix code drops fs[day]/fs[month]/fs[year]/
@@ -107,7 +84,7 @@ test.describe('Access Log custom date range — #287', () => {
       refresh().always(() => resolve());
     }));
 
-    const slimP702 = payloads.filter((p) => p.includes('slim_p7_02'));
+    const slimP702 = cap.payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'refresh_report invocation should fire AJAX').toBeGreaterThan(0);
 
     // The payload MUST contain the active date filters because no caller
@@ -126,19 +103,12 @@ test.describe('Access Log custom date range — #287', () => {
   });
 
   test('pagination next-page click preserves the custom date range', async ({ page }) => {
-    const payloads: string[] = [];
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_load_report')) payloads.push(body);
-      }
-    });
+    const cap = captureAdminAjax(page, (b) => b.includes('slimstat_load_report'));
 
     await page.goto(
       `${BASE_URL}/wp-admin/admin.php?page=slimview1&type=custom&from=${RANGE_FROM}&to=${RANGE_TO}`,
       { waitUntil: 'domcontentloaded' },
     );
-    await ensureLoggedIn(page);
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
@@ -156,7 +126,7 @@ test.describe('Access Log custom date range — #287', () => {
     const linkCount = await nextLink.count();
     test.skip(linkCount === 0, 'no next-page link rendered (need >1 page of seed data)');
 
-    payloads.length = 0;
+    cap.reset();
 
     // Wait for the AJAX response triggered by the click instead of sleeping.
     const ajaxPromise = page.waitForResponse(
@@ -173,8 +143,8 @@ test.describe('Access Log custom date range — #287', () => {
     await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
     // The pagination AJAX MUST include the custom date filters.
-    expect(payloads.length, 'pagination should fire at least one AJAX call').toBeGreaterThan(0);
-    const slimP702 = payloads.filter((p) => p.includes('slim_p7_02'));
+    expect(cap.payloads.length, 'pagination should fire at least one AJAX call').toBeGreaterThan(0);
+    const slimP702 = cap.payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'pagination should fire a slim_p7_02 AJAX call').toBeGreaterThan(0);
     const hasDateFilter = slimP702.some(
       (p) => p.includes('fs%5Bday%5D') || p.includes('fs[day]'),
@@ -183,19 +153,12 @@ test.describe('Access Log custom date range — #287', () => {
   });
 
   test('forceRecent: true still strips date filters from AJAX (regression guard)', async ({ page }) => {
-    const payloads: string[] = [];
-    page.on('request', (req) => {
-      if (req.method() === 'POST' && req.url().includes('admin-ajax.php')) {
-        const body = req.postData() || '';
-        if (body.includes('slimstat_load_report')) payloads.push(body);
-      }
-    });
+    const cap = captureAdminAjax(page, (b) => b.includes('slimstat_load_report'));
 
     await page.goto(
       `${BASE_URL}/wp-admin/admin.php?page=slimview1&type=custom&from=${RANGE_FROM}&to=${RANGE_TO}`,
       { waitUntil: 'domcontentloaded' },
     );
-    await ensureLoggedIn(page);
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
@@ -206,7 +169,7 @@ test.describe('Access Log custom date range — #287', () => {
       { timeout: 15_000 },
     );
 
-    payloads.length = 0;
+    cap.reset();
 
     // Bypass the access_log_count_down listener guard (which only fires when
     // .pagination .refresh-timer is mounted — and the PHP gate at
@@ -220,7 +183,7 @@ test.describe('Access Log custom date range — #287', () => {
       refresh().always(() => resolve());
     }));
 
-    const slimP702 = payloads.filter((p) => p.includes('slim_p7_02'));
+    const slimP702 = cap.payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'forceRecent invocation should fire AJAX').toBeGreaterThan(0);
 
     // The forceRecent payload MUST NOT contain any date filters.
