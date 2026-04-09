@@ -86,7 +86,7 @@ class WafDetectionService
         }
 
         $response = wp_remote_post($probe_url, [
-            'body'      => wp_json_encode(['test' => '<script>alert(1)</script> SELECT * FROM']),
+            'body'      => wp_json_encode(['probe' => 'slimstat']),
             'headers'   => [
                 'Content-Type' => 'application/json',
                 'X-WP-Nonce'   => wp_create_nonce('wp_rest'),

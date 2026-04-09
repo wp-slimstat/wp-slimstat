@@ -760,18 +760,10 @@ $settings = [
 // Allow third-party tools to add their own settings
 $settings = apply_filters('slimstat_options_on_page', $settings);
 
-// WAF Detection: Show admin notice if server firewall may block settings saves
-$waf_probe = \SlimStat\Services\WafDetectionService::probe();
-if (!empty($waf_probe['blocked'])) {
-    $waf_name = 'unknown' !== $waf_probe['waf'] ? ucfirst($waf_probe['waf']) : __('a web application firewall', 'wp-slimstat');
-    echo '<div class="notice notice-warning is-dismissible"><p>';
-    printf(
-        /* translators: %s: WAF name (e.g., "LiteSpeed", "ModSecurity") */
-        esc_html__('Your server appears to have %s enabled, which may block settings saves. SlimStat will automatically use a compatible save method. If you experience issues, contact your hosting provider to whitelist SlimStat.', 'wp-slimstat'),
-        '<strong>' . esc_html($waf_name) . '</strong>'
-    );
-    echo '</p></div>';
-}
+// NOTE: Auto-probe removed in 5.4.11-beta — the probe payload was triggering
+// LiteSpeed WAF and getting users' IPs banned. WAF detection now happens
+// reactively in admin.js when a real save attempt returns 403/406/503.
+// See: https://github.com/wp-slimstat/wp-slimstat/issues/285
 
 // Save options
 $save_messages = [];
