@@ -88,12 +88,12 @@ test.describe('Access Log custom date range — #287', () => {
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(3_000);
 
-    // Sanity check: the seeded February rows should be in the server-
-    // rendered widget (proves the URL/PHP filter pipeline is working).
-    const widgetHtml = await widget.innerHTML();
-    expect(widgetHtml, 'access log should show seeded February rows').toContain(SEED_RESOURCE_PREFIX);
+    // Wait for the seeded rows to actually appear in the widget rather than
+    // sleeping. The Access Log is server-rendered for slim_p7_02 (skipped
+    // by the async-load loop because of .refresh-timer), so this is a
+    // condition-based wait on the rendered DOM, not on a fixed timeout.
+    await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
     payloads.length = 0;
 
@@ -142,17 +142,35 @@ test.describe('Access Log custom date range — #287', () => {
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(3_000);
+    // Condition-based wait: the seeded rows must be present before we
+    // hunt for the pagination link.
+    await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
-    // Find any pagination link inside the access log pagination bar that
-    // includes fs[start_from] in its href (the "next page" / page-N links).
-    const linkCount = await widget.locator('.pagination a[href*="start_from"]').count();
-    test.skip(linkCount === 0, 'no pagination link rendered (need >1 page of seed data)');
+    // Use the deterministic "next page" arrow class. SlimStat's pagination
+    // helper renders the next-page anchor with `slimstat-font-angle-right`
+    // (and previous with `slimstat-font-angle-left`). The previous selector
+    // `.pagination a[href*="start_from"]` matched ANY paginated anchor —
+    // including page-N and last-page links — so `.first()` could pick the
+    // wrong one when more than one was rendered.
+    const nextLink = widget.locator('.pagination a.refresh.slimstat-font-angle-right');
+    const linkCount = await nextLink.count();
+    test.skip(linkCount === 0, 'no next-page link rendered (need >1 page of seed data)');
 
     payloads.length = 0;
 
-    await widget.locator('.pagination a[href*="start_from"]').first().click();
-    await page.waitForTimeout(3_000);
+    // Wait for the AJAX response triggered by the click instead of sleeping.
+    const ajaxPromise = page.waitForResponse(
+      (resp) =>
+        resp.url().includes('admin-ajax.php') &&
+        resp.request().method() === 'POST' &&
+        (resp.request().postData() || '').includes('slim_p7_02'),
+      { timeout: 15_000 },
+    );
+    await nextLink.first().click();
+    await ajaxPromise;
+    // Wait for the swapped DOM to actually contain the new rows before
+    // asserting the body — this races the .done callback's html() swap.
+    await expect(widget).toContainText(SEED_RESOURCE_PREFIX, { timeout: 15_000 });
 
     // The pagination AJAX MUST include the custom date filters.
     expect(payloads.length, 'pagination should fire at least one AJAX call').toBeGreaterThan(0);
@@ -162,10 +180,6 @@ test.describe('Access Log custom date range — #287', () => {
       (p) => p.includes('fs%5Bday%5D') || p.includes('fs[day]'),
     );
     expect(hasDateFilter, 'pagination payload must include fs[day] (#287)').toBe(true);
-
-    // The next page should still contain seeded February rows.
-    const widgetHtml = await widget.innerHTML();
-    expect(widgetHtml, 'next page should still contain February rows').toContain(SEED_RESOURCE_PREFIX);
   });
 
   test('forceRecent: true still strips date filters from AJAX (regression guard)', async ({ page }) => {
@@ -185,7 +199,12 @@ test.describe('Access Log custom date range — #287', () => {
 
     const widget = page.locator('#slim_p7_02');
     await expect(widget).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(3_000);
+    // Condition-based wait: ensure SlimStatAdmin is hydrated before invoking
+    // refresh_report directly.
+    await page.waitForFunction(
+      () => typeof (window as any).SlimStatAdmin?.refresh_report === 'function',
+      { timeout: 15_000 },
+    );
 
     payloads.length = 0;
 

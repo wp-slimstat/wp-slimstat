@@ -439,23 +439,31 @@ jQuery(function () {
 
         var id = jQuery(this).parents(".postbox").attr("id");
 
-        // Is this a pagination link?
+        // Is this a pagination link? Pagination anchors carry fs[start_from]
+        // in their href; the manual refresh icon does not. We use this to
+        // distinguish "navigate to a new page" (scroll to top of new page)
+        // from "refresh in place" (preserve the user's reading position).
+        var isPagination = false;
         if (typeof jQuery(this).attr("href").split("?")[1] == "string") {
             clean_filters = SlimStatAdmin.get_query_string_filters(jQuery(this).attr("href").split("?")[1].substring(1));
             if (typeof clean_filters["fs[start_from]"] == "string") {
+                isPagination = true;
                 jQuery('<input type="hidden" name="fs[start_from]" class="slimstat-post-filter slimstat-temp-filter" value="' + clean_filters["fs[start_from]"] + '">').appendTo("#slimstat-filters-form");
             }
         }
 
-        refresh = SlimStatAdmin.refresh_report(id);
+        // #156 / #258 — pass scrollToTop so refresh_report() can decide where
+        // to set scrollTop AFTER the AJAX swap completes. The previous code
+        // reset scrollTop=0 synchronously here, which (a) caused a visible
+        // jump while the AJAX was still in flight and (b) defeated the
+        // #258-B3 scroll preservation for manual refresh button clicks on
+        // slim_p7_02 (the user wants their reading position preserved on
+        // manual refresh, but reset to 0 on pagination "next page").
+        var refresh = SlimStatAdmin.refresh_report(id, { scrollToTop: isPagination });
         refresh();
 
         // Remove any temporary filters set here above
         jQuery(".slimstat-temp-filter").remove();
-
-        // Reset scroll position on the new content (native scroll, see #156)
-        var _inside = document.querySelector("#" + id + " .inside");
-        if (_inside) { _inside.scrollTop = 0; }
     });
 
     // Asynchronous reports are loaded dynamically after the page loads
@@ -1454,7 +1462,12 @@ var SlimStatAdmin = {
                         // omitted here so the user's reading position survives the
                         // refresh. Native scrollTop on .inside is preserved across
                         // jQuery.html() (children replace, parent stays).
-                        var savedScrollTop = jQuery(inner_content).scrollTop() || 0;
+                        // For pagination clicks (opts.scrollToTop), reset to 0
+                        // AFTER the swap completes so the user lands at the top
+                        // of the new page without a visible mid-AJAX jump.
+                        var savedScrollTop = opts.scrollToTop
+                            ? 0
+                            : (jQuery(inner_content).scrollTop() || 0);
                         jQuery(inner_content).html(filteredResponse.html());
                         jQuery(inner_content).scrollTop(savedScrollTop);
                         SlimStatAdmin._lastManualRefreshTime = Date.now();
@@ -1467,7 +1480,15 @@ var SlimStatAdmin = {
                         }
                     } else {
                         jQuery(inner_content).fadeOut(500, function () {
-                            jQuery(this).html(filteredResponse.html()).fadeIn(500);
+                            jQuery(this).html(filteredResponse.html()).fadeIn(500, function () {
+                                // #156 — for non-Access-Log reports, reset
+                                // scrollTop AFTER fadeIn completes so the
+                                // pagination "next page" lands at the top
+                                // without a visible mid-AJAX jump.
+                                if (opts.scrollToTop) {
+                                    jQuery(this).scrollTop(0);
+                                }
+                            });
                         });
                     }
                 })
