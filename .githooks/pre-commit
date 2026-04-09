@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+#
+# wp-slimstat pre-commit gate.
+# Runs composer test:unit when staged changes include PHP files.
+# /simplify is enforced via CLAUDE.md, not here (shell hooks cannot call Claude skills).
+#
+set -euo pipefail
+
+echo "→ running fast gate before commit (wp-slimstat)"
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+if [ -z "$staged" ]; then
+  echo "  no staged files, gate skipped"
+  exit 0
+fi
+
+if printf '%s\n' "$staged" | grep -q '\.php$'; then
+  composer test:unit
+else
+  echo "  no PHP changes, gate skipped"
+fi
+
+exit 0
