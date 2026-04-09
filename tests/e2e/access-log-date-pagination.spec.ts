@@ -122,9 +122,16 @@ test.describe('Access Log custom date range — #287', () => {
     // `.pagination a[href*="start_from"]` matched ANY paginated anchor —
     // including page-N and last-page links — so `.first()` could pick the
     // wrong one when more than one was rendered.
+    //
+    // Hard-assert the next-page link exists. With 75 seeded rows and a
+    // default page size of 50, the next-page arrow MUST be rendered. If
+    // it's not, the seed setup, the URL params, or the PHP rendering
+    // regressed and the test should fail loudly, not skip.
     const nextLink = widget.locator('.pagination a.refresh.slimstat-font-angle-right');
-    const linkCount = await nextLink.count();
-    test.skip(linkCount === 0, 'no next-page link rendered (need >1 page of seed data)');
+    await expect(
+      nextLink,
+      'next-page arrow must be rendered (75 rows / 50 per page)',
+    ).toHaveCount(1, { timeout: 5_000 });
 
     cap.reset();
 

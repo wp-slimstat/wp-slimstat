@@ -123,18 +123,20 @@ test.describe('Access Log auto-refresh — #258', () => {
       waitUntil: 'domcontentloaded',
     });
     await expect(page.locator('#slim_p7_02')).toBeVisible({ timeout: 30_000 });
-    // Wait until the refresh-timer is actually mounted before starting the
-    // measurement window.
+    // Hard-assert the refresh-timer is mounted. With refresh_interval=5
+    // and 50 current-date rows seeded in beforeEach, the PHP gate at
+    // wp-slimstat-reports.php:1058 (`refresh_interval > 0 && utime['end']
+    // >= now-300`) is satisfied — if the timer is missing, the seed setup
+    // or the gate broke and the test should fail loudly, not skip.
     const timer = page.locator('.pagination .refresh-timer');
-    test.skip(
-      (await timer.count()) === 0,
-      'refresh-timer not mounted; skipping hover test',
-    );
+    await expect(timer, 'refresh-timer must be mounted').toHaveCount(1, { timeout: 5_000 });
 
-    // Hover the panel and hold the cursor there for ~12s (well over 5s interval).
+    // Hard-assert the .inside element has a bounding box so the mouse can
+    // be positioned over it. Since #slim_p7_02 is visible (asserted above),
+    // .inside must have a layout box.
     const inside = page.locator('#slim_p7_02 .inside');
     const box = await inside.boundingBox();
-    if (!box) test.skip(true, '.inside has no bounding box');
+    expect(box, '.inside must have a bounding box').not.toBeNull();
     cap.reset();
     await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
     await page.waitForTimeout(12_000);
@@ -203,16 +205,21 @@ test.describe('Access Log auto-refresh — #258', () => {
       { timeout: 15_000 },
     );
 
+    // Hard-assert .inside is present. Since #slim_p7_02 is visible
+    // (asserted above), .inside must exist as well.
     const inside = page.locator('#slim_p7_02 .inside');
-    test.skip(
-      (await inside.count()) === 0,
-      'no .inside container present',
-    );
+    await expect(inside, '.inside must be present').toHaveCount(1);
 
-    // Force the panel to be scrollable enough to hold a position.
+    // Hard-assert the panel actually overflows. With 50 seeded rows and a
+    // 465px tall postbox (.postbox.tall .inside), the content must
+    // overflow by hundreds of pixels — if not, either the seed dropped
+    // rows or the SCSS height regressed.
     const scrollHeight = await inside.evaluate((el) => el.scrollHeight);
     const clientHeight = await inside.evaluate((el) => el.clientHeight);
-    test.skip(scrollHeight - clientHeight < 100, 'panel does not overflow enough to scroll');
+    expect(
+      scrollHeight - clientHeight,
+      'access log panel must overflow with 50 seeded rows',
+    ).toBeGreaterThanOrEqual(100);
 
     // Scroll inside the panel and capture the position.
     await inside.evaluate((el) => { el.scrollTop = 80; });
