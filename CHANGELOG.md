@@ -1,3 +1,14 @@
+= 5.4.10 - 2026-04-09 =
+
+**Access Log usability — three customer-reported fixes**
+
+- Fix: Access Log pagination no longer drops the user's selected custom date range. Clicking the next/previous arrow now returns rows from the chosen window instead of jumping to the current date. Fixes initial async load and Screen Options re-activation as well, since they share the same code path. ([#287](https://github.com/wp-slimstat/wp-slimstat/issues/287))
+- Fix: "Auto Refresh" setting in Settings → Reports is now actually honored. Previously the value was checked for existence only and the refresh was hardcoded to a 60-second wall-clock cycle regardless of the setting. The countdown now reflects the configured interval (e.g. `0:30` for 30 seconds). ([#258](https://github.com/wp-slimstat/wp-slimstat/issues/258))
+- Improvement: Access Log auto-refresh now pauses while you are hovering over the panel, scrolling with the mouse wheel or trackpad, or while the browser tab is hidden. Refresh resumes automatically once you move the cursor off the panel.
+- Improvement: Scroll position inside the Access Log is now preserved across each refresh — no more "jump to top" while you are reading.
+- Refactor: Replaced the bundled jQuery SlimScroll v1.3.8 plugin (~167 lines) with native CSS scrolling. Report panels now use a visible, regular-speed scrollbar; trackpad and Magic Mouse momentum scrolling no longer chains to the page (uses `overscroll-behavior: contain`). Fixes the long-standing "scrollbar invisible / super slow / page scrolls along" complaints on macOS. ([#156](https://github.com/wp-slimstat/wp-slimstat/issues/156))
+- Note for theme/plugin developers: the bundled SlimScroll's `slimscrolling` and `slimscroll` jQuery events are no longer dispatched. Custom code listening on those events should migrate to the native `scroll` event on `.inside` containers.
+
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
 * Fix: Use sanitized URI in dashboard widget enqueue condition for consistency
