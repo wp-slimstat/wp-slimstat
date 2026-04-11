@@ -1681,17 +1681,36 @@ var SlimStatAdmin = {
         // #258 / #287 — Refresh the Access Log when our setting-driven scheduler fires.
         // forceRecent: true keeps the live behavior of always returning current data,
         // independent of the user's selected date range.
+        // Defense-in-depth: re-check hoverPaused here because onRefreshTick()'s
+        // setTimeout can win a race against the mouseenter handler in the event
+        // loop — the tick fires before hoverPaused is set, dispatches this event,
+        // and one refresh leaks through. This second gate catches that case.
         window.addEventListener(EVENT_ACCESS_LOG_REFRESH, function () {
+            if (hoverPaused || Date.now() < userActiveUntil) return;
             if ($refreshTimer.length > 0) {
                 var refresh = SlimStatAdmin.refresh_report(ACCESS_LOG_ID, { forceRecent: true });
                 refresh();
             }
         });
 
-        // #258 B2 — Pause on hover and on active wheel / touch scrolling
+        // #258 B2 — Pause on hover and on active wheel / touch scrolling.
+        // mouseenter: set hoverPaused AND kill the pending onRefreshTick
+        // timeout so a queued tick can't race the flag and fire a refresh.
+        // mouseleave: clear hoverPaused and reschedule the next tick.
         jQuery(document)
-            .on("mouseenter", ACCESS_LOG_INSIDE_SELECTOR, function () { hoverPaused = true; })
-            .on("mouseleave", ACCESS_LOG_INSIDE_SELECTOR, function () { hoverPaused = false; })
+            .on("mouseenter", ACCESS_LOG_INSIDE_SELECTOR, function () {
+                hoverPaused = true;
+                if (refreshTimerHandle) {
+                    clearTimeout(refreshTimerHandle);
+                    refreshTimerHandle = null;
+                }
+            })
+            .on("mouseleave", ACCESS_LOG_INSIDE_SELECTOR, function () {
+                hoverPaused = false;
+                if (refreshIntervalSec > 0 && !refreshTimerHandle) {
+                    scheduleNextRefresh();
+                }
+            })
             .on("wheel touchmove touchstart", ACCESS_LOG_INSIDE_SELECTOR, function () {
                 userActiveUntil = Date.now() + USER_ACTIVE_GRACE_MS;
             });
