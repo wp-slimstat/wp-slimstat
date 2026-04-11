@@ -30,6 +30,23 @@ const RANGE_TO   = '2026-02-28';
 const SEED_RESOURCE_PREFIX = '/e2e-287-row-';
 const FEB_BASE_TS = Math.floor(new Date('2026-02-15T12:00:00Z').getTime() / 1000);
 
+// Date-filter keys used in SlimStat AJAX payloads. Each key appears in both
+// URL-encoded (`fs%5Bday%5D`) and literal (`fs[day]`) forms depending on
+// the serialization path.
+const DATE_FILTER_KEYS = ['day', 'month', 'year', 'interval'] as const;
+
+/** Returns true if the payload contains at least one date-filter key. */
+function payloadHasDateFilter(payload: string, keys: readonly string[] = DATE_FILTER_KEYS): boolean {
+  return keys.some(
+    (k) => payload.includes(`fs%5B${k}%5D`) || payload.includes(`fs[${k}]`),
+  );
+}
+
+/** Returns true if the payload contains NONE of the date-filter keys. */
+function payloadStrippedDateFilters(payload: string): boolean {
+  return !payloadHasDateFilter(payload);
+}
+
 test.describe('Access Log custom date range — #287', () => {
   test.setTimeout(90_000);
 
@@ -89,15 +106,8 @@ test.describe('Access Log custom date range — #287', () => {
 
     // The payload MUST contain the active date filters because no caller
     // passed forceRecent.
-    const hasDateFilter = slimP702.some(
-      (p) =>
-        p.includes('fs%5Bday%5D') ||
-        p.includes('fs[day]') ||
-        p.includes('fs%5Binterval%5D') ||
-        p.includes('fs[interval]'),
-    );
     expect(
-      hasDateFilter,
+      slimP702.some((p) => payloadHasDateFilter(p)),
       'refresh_report() without forceRecent must preserve fs[day]/fs[interval] (#287)',
     ).toBe(true);
   });
@@ -153,10 +163,10 @@ test.describe('Access Log custom date range — #287', () => {
     expect(cap.payloads.length, 'pagination should fire at least one AJAX call').toBeGreaterThan(0);
     const slimP702 = cap.payloads.filter((p) => p.includes('slim_p7_02'));
     expect(slimP702.length, 'pagination should fire a slim_p7_02 AJAX call').toBeGreaterThan(0);
-    const hasDateFilter = slimP702.some(
-      (p) => p.includes('fs%5Bday%5D') || p.includes('fs[day]'),
-    );
-    expect(hasDateFilter, 'pagination payload must include fs[day] (#287)').toBe(true);
+    expect(
+      slimP702.some((p) => payloadHasDateFilter(p, ['day'])),
+      'pagination payload must include fs[day] (#287)',
+    ).toBe(true);
   });
 
   test('forceRecent: true still strips date filters from AJAX (regression guard)', async ({ page }) => {
@@ -194,17 +204,9 @@ test.describe('Access Log custom date range — #287', () => {
     expect(slimP702.length, 'forceRecent invocation should fire AJAX').toBeGreaterThan(0);
 
     // The forceRecent payload MUST NOT contain any date filters.
-    const stripped = slimP702.every(
-      (p) =>
-        !p.includes('fs%5Bday%5D') &&
-        !p.includes('fs[day]') &&
-        !p.includes('fs%5Bmonth%5D') &&
-        !p.includes('fs[month]') &&
-        !p.includes('fs%5Byear%5D') &&
-        !p.includes('fs[year]') &&
-        !p.includes('fs%5Binterval%5D') &&
-        !p.includes('fs[interval]'),
-    );
-    expect(stripped, 'forceRecent payload should NOT contain fs[day|month|year|interval]').toBe(true);
+    expect(
+      slimP702.every((p) => payloadStrippedDateFilters(p)),
+      'forceRecent payload should NOT contain fs[day|month|year|interval]',
+    ).toBe(true);
   });
 });

@@ -1605,6 +1605,10 @@ var SlimStatAdmin = {
         var hoverPaused = false;
         var userActiveUntil = 0;
         var lastDisplayedCountdown = "";
+        // Cached jQuery reference — refreshed when MutationObserver detects a
+        // new .refresh-timer node (pagination rebuild). Avoids a DOM query on
+        // every 1Hz countdown tick and every refresh-tick guard.
+        var $refreshTimer = jQuery("#" + ACCESS_LOG_ID + " .pagination .refresh-timer");
 
         function scheduleNextRefresh() {
             if (refreshTimerHandle) {
@@ -1635,7 +1639,7 @@ var SlimStatAdmin = {
                 return;
             }
             // Only fire if the timer is still mounted (panel still on page)
-            if (jQuery(".pagination .refresh-timer").length > 0) {
+            if ($refreshTimer.length > 0) {
                 window.dispatchEvent(new CustomEvent(EVENT_ACCESS_LOG_REFRESH));
             }
             lastRefreshAt = Date.now();
@@ -1645,7 +1649,7 @@ var SlimStatAdmin = {
         function updateCountdownDisplay() {
             if (refreshIntervalSec <= 0) {
                 if (lastDisplayedCountdown !== "") {
-                    jQuery(".refresh-timer").html("");
+                    $refreshTimer.html("");
                     lastDisplayedCountdown = "";
                 }
                 return;
@@ -1662,7 +1666,7 @@ var SlimStatAdmin = {
             // invalidation on the pagination bar.
             if (next === lastDisplayedCountdown) return;
             lastDisplayedCountdown = next;
-            jQuery(".refresh-timer").html(next);
+            $refreshTimer.html(next);
         }
 
         function startCountdownDisplay() {
@@ -1678,7 +1682,7 @@ var SlimStatAdmin = {
         // forceRecent: true keeps the live behavior of always returning current data,
         // independent of the user's selected date range.
         window.addEventListener(EVENT_ACCESS_LOG_REFRESH, function () {
-            if (jQuery(".pagination .refresh-timer").length > 0) {
+            if ($refreshTimer.length > 0) {
                 var refresh = SlimStatAdmin.refresh_report(ACCESS_LOG_ID, { forceRecent: true });
                 refresh();
             }
@@ -1699,7 +1703,7 @@ var SlimStatAdmin = {
                     clearTimeout(refreshTimerHandle);
                     refreshTimerHandle = null;
                 }
-            } else if (refreshIntervalSec > 0 && jQuery(".pagination .refresh-timer").length > 0) {
+            } else if (refreshIntervalSec > 0 && $refreshTimer.length > 0) {
                 lastRefreshAt = Date.now();
                 scheduleNextRefresh();
             }
@@ -1715,6 +1719,9 @@ var SlimStatAdmin = {
                 mutationsList.forEach(function (mutation) {
                     mutation.addedNodes.forEach(function (node) {
                         if (node.nodeType === 1 && node.classList && node.classList.contains("refresh-timer")) {
+                            // Refresh the cached jQuery reference after
+                            // pagination rebuilds the timer element.
+                            $refreshTimer = jQuery("#" + ACCESS_LOG_ID + " .pagination .refresh-timer");
                             if (refreshIntervalSec <= 0) return;
                             lastRefreshAt = Date.now();
                             startCountdownDisplay();
@@ -1727,7 +1734,7 @@ var SlimStatAdmin = {
         }
 
         // Bootstrap on initial load
-        if (jQuery(".pagination .refresh-timer").length > 0 && refreshIntervalSec > 0) {
+        if ($refreshTimer.length > 0 && refreshIntervalSec > 0) {
             lastRefreshAt = Date.now();
             startCountdownDisplay();
             scheduleNextRefresh();
