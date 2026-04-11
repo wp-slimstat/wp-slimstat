@@ -1603,6 +1603,7 @@ var SlimStatAdmin = {
         var refreshTimerHandle = null;
         var countdownDisplayHandle = null;
         var hoverPaused = false;
+        var hoverStartedAt = 0;
         var userActiveUntil = 0;
         var lastDisplayedCountdown = "";
         // Cached jQuery reference — refreshed when MutationObserver detects a
@@ -1616,7 +1617,11 @@ var SlimStatAdmin = {
                 refreshTimerHandle = null;
             }
             if (refreshIntervalSec <= 0) return; // disabled
-            refreshTimerHandle = setTimeout(onRefreshTick, refreshIntervalSec * COUNTDOWN_TICK_MS);
+            // Use remaining time instead of full interval so mid-cycle
+            // callers (mouseleave, visibilitychange) resume correctly.
+            var elapsed = Date.now() - lastRefreshAt;
+            var remainingMs = Math.max(0, refreshIntervalSec * 1000 - elapsed);
+            refreshTimerHandle = setTimeout(onRefreshTick, remainingMs);
         }
 
         // #258 — Public hook so refresh_report() can rearm the scheduler after
@@ -1700,6 +1705,7 @@ var SlimStatAdmin = {
         jQuery(document)
             .on("mouseenter", ACCESS_LOG_INSIDE_SELECTOR, function () {
                 hoverPaused = true;
+                hoverStartedAt = Date.now();
                 if (refreshTimerHandle) {
                     clearTimeout(refreshTimerHandle);
                     refreshTimerHandle = null;
@@ -1707,6 +1713,13 @@ var SlimStatAdmin = {
             })
             .on("mouseleave", ACCESS_LOG_INSIDE_SELECTOR, function () {
                 hoverPaused = false;
+                // Shift lastRefreshAt forward by the hover duration so the
+                // countdown resumes from where it froze, not from the actual
+                // elapsed time (which would cause a visible jump).
+                if (hoverStartedAt > 0) {
+                    lastRefreshAt += Date.now() - hoverStartedAt;
+                    hoverStartedAt = 0;
+                }
                 if (refreshIntervalSec > 0 && !refreshTimerHandle) {
                     scheduleNextRefresh();
                 }
