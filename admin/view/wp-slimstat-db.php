@@ -1174,6 +1174,9 @@ class wp_slimstat_db
 
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
+        $_order_by    = 'counthits DESC';
+        $_more_select = '';
+
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $where_params = !empty($_column['where_params']) ? $_column['where_params'] : [];
