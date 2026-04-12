@@ -1540,4 +1540,279 @@ class wp_slimstat_db
 
         return $results;
     }
+
+    // ---- Goals & Funnels Query Methods ---- //
+
+    /**
+     * Returns the SQL WHERE fragment for a single goal/step condition.
+     * Uses the existing get_single_where_clause() to map operators to SQL.
+     *
+     * @param array  $goal   Goal definition with dimension, operator, value keys.
+     * @param string $alias  Table alias (e.g., 't1' or 'te').
+     * @return array [sql_fragment, value] pair for wpdb::prepare().
+     */
+    private static function build_goal_where($goal, $alias = '')
+    {
+        $dimension = $goal['dimension'];
+
+        // Event-based goals query the events table notes column
+        if ($dimension === 'event_notes') {
+            $dimension = 'notes';
+            if (empty($alias)) {
+                $alias = 'te';
+            }
+        }
+
+        return self::get_single_where_clause($dimension, $goal['operator'], $goal['value'], $alias);
+    }
+
+    /**
+     * Visitor identifier expression that handles NULL fingerprints.
+     */
+    private static function visitor_id_expr($alias = '')
+    {
+        $prefix = !empty($alias) ? $alias . '.' : '';
+        return sprintf(
+            "COALESCE(%sfingerprint, CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
+            $prefix,
+            $prefix,
+            $prefix
+        );
+    }
+
+    /**
+     * Get results for a single goal: total hits, unique visitors, conversion rate.
+     *
+     * @param array $goal Goal definition.
+     * @return array ['total' => int, 'uniques' => int, 'cr' => float]
+     */
+    public static function get_goal_results($goal)
+    {
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $visitor_id   = self::visitor_id_expr('t1');
+        $is_event     = ($goal['dimension'] === 'event_notes');
+
+        $where_clause = self::build_goal_where($goal, $is_event ? 'te' : 't1');
+        if (empty($where_clause[0])) {
+            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
+        }
+
+        // Build the date filter portion
+        $date_where = self::get_combined_where('', '*', true, 't1');
+
+        // Prepare the WHERE clause with value
+        $prepared_where = wp_slimstat::$wpdb->prepare($where_clause[0], $where_clause[1]);
+
+        if ($is_event) {
+            $sql = sprintf(
+                "SELECT COUNT(*) as total, COUNT(DISTINCT %s) as uniques
+                 FROM %s te
+                 INNER JOIN %s t1 ON te.id = t1.id
+                 WHERE %s AND %s",
+                $visitor_id,
+                $table_events,
+                $table_stats,
+                $prepared_where,
+                $date_where
+            );
+        } else {
+            $sql = sprintf(
+                "SELECT COUNT(*) as total, COUNT(DISTINCT %s) as uniques
+                 FROM %s t1
+                 WHERE %s AND %s",
+                $visitor_id,
+                $table_stats,
+                $prepared_where,
+                $date_where
+            );
+        }
+
+        // Check transient cache (1-hour TTL, keyed by goal + date range)
+        $cache_key = 'slimstat_goal_' . md5($sql);
+        $result    = get_transient($cache_key);
+
+        if (false === $result) {
+            $result = wp_slimstat::$wpdb->get_row($sql, ARRAY_A);
+            set_transient($cache_key, $result, HOUR_IN_SECONDS);
+        }
+
+        $total   = !empty($result['total']) ? intval($result['total']) : 0;
+        $uniques = !empty($result['uniques']) ? intval($result['uniques']) : 0;
+
+        // Get total unique visitors in period for CR% calculation (cached)
+        $total_visitors = self::get_total_unique_visitors();
+        $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
+
+        return ['total' => $total, 'uniques' => $uniques, 'cr' => $cr];
+    }
+
+    /**
+     * Get total unique visitors in the current date range (cached).
+     *
+     * @return int
+     */
+    private static function get_total_unique_visitors()
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $visitor_id  = self::visitor_id_expr('t1');
+        $date_where  = self::get_combined_where('', '*', true, 't1');
+
+        $sql = sprintf(
+            "SELECT COUNT(DISTINCT %s) FROM %s t1 WHERE %s",
+            $visitor_id,
+            $table_stats,
+            $date_where
+        );
+
+        $cached = intval(wp_slimstat::$wpdb->get_var($sql));
+        return $cached;
+    }
+
+    /**
+     * Get raw goal results as flat array (for Export CSV / Email Reports).
+     * Accepts standard $_args array like get_top().
+     *
+     * @param array $_args Callback args from report definition.
+     * @return array Array of associative arrays with goal_name, uniques, total, cr keys.
+     */
+    public static function get_goals_raw($_args = [])
+    {
+        $goals   = get_option('slimstat_goals', []);
+        $results = [];
+
+        foreach ($goals as $goal) {
+            if (empty($goal['active'])) {
+                continue;
+            }
+            $data      = self::get_goal_results($goal);
+            $results[] = [
+                'goal_name' => $goal['name'],
+                'uniques'   => $data['uniques'],
+                'total'     => $data['total'],
+                'cr'        => $data['cr'] . '%',
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get funnel results: visitors at each step with drop-off.
+     * Uses iterative PHP approach for MySQL 5.6 compatibility.
+     *
+     * @param array $funnel Funnel definition with steps array.
+     * @return array Array of step results: name, visitors, pct, dropoff.
+     */
+    public static function get_funnel_results($funnel)
+    {
+        if (empty($funnel['steps']) || count($funnel['steps']) < 2) {
+            return [];
+        }
+
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $visitor_id   = self::visitor_id_expr('t1');
+        $date_where   = self::get_combined_where('', '*', true, 't1');
+        $temp_table   = $GLOBALS['wpdb']->prefix . 'slim_funnel_tmp';
+
+        $results     = [];
+        $step1_count = 0;
+        $use_temp    = false;
+
+        foreach ($funnel['steps'] as $step_index => $step) {
+            $is_event     = ($step['dimension'] === 'event_notes');
+            $where_clause = self::build_goal_where($step, $is_event ? 'te' : 't1');
+
+            if (empty($where_clause[0])) {
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0];
+                continue;
+            }
+
+            $prepared_where = wp_slimstat::$wpdb->prepare($where_clause[0], $where_clause[1]);
+
+            // For step 2+, filter by previous step's visitors via temp table
+            $fp_filter = '';
+            if ($step_index > 0 && $use_temp) {
+                $fp_filter = sprintf(' AND %s IN (SELECT vid FROM %s)', $visitor_id, $temp_table);
+            } elseif ($step_index > 0 && !$use_temp) {
+                // Previous step had zero visitors
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0];
+                continue;
+            }
+
+            if ($is_event) {
+                $select_sql = sprintf(
+                    "SELECT DISTINCT %s as vid FROM %s te INNER JOIN %s t1 ON te.id = t1.id WHERE %s AND %s%s",
+                    $visitor_id, $table_events, $table_stats, $prepared_where, $date_where, $fp_filter
+                );
+            } else {
+                $select_sql = sprintf(
+                    "SELECT DISTINCT %s as vid FROM %s t1 WHERE %s AND %s%s",
+                    $visitor_id, $table_stats, $prepared_where, $date_where, $fp_filter
+                );
+            }
+
+            // Count visitors for this step
+            $count_sql      = "SELECT COUNT(*) FROM ($select_sql) AS step_visitors";
+            $visitor_count  = intval(wp_slimstat::$wpdb->get_var($count_sql));
+
+            if ($step_index === 0) {
+                $step1_count = $visitor_count;
+            }
+
+            // Store this step's visitors in temp table for next step
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_table");
+            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_table (vid VARCHAR(256) NOT NULL, KEY(vid)) AS $select_sql");
+            $use_temp = ($visitor_count > 0);
+
+            $prev_count = ($step_index > 0 && !empty($results[$step_index - 1])) ? $results[$step_index - 1]['visitors'] : $visitor_count;
+            $dropoff    = $prev_count - $visitor_count;
+
+            $results[] = [
+                'name'     => $step['name'],
+                'visitors' => $visitor_count,
+                'pct'      => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                'dropoff'  => max(0, $dropoff),
+            ];
+        }
+
+        // Cleanup
+        wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_table");
+
+        return $results;
+    }
+
+    /**
+     * Get raw funnel results as flat array (for Export CSV / Email Reports).
+     *
+     * @param array $_args Callback args from report definition.
+     * @return array Flat rows with funnel_name, step_name, step_order, visitors, pct, dropoff.
+     */
+    public static function get_funnels_raw($_args = [])
+    {
+        $funnels = get_option('slimstat_funnels', []);
+        $results = [];
+
+        foreach ($funnels as $funnel) {
+            $step_results = self::get_funnel_results($funnel);
+            foreach ($step_results as $i => $step) {
+                $results[] = [
+                    'funnel_name' => $funnel['name'],
+                    'step_name'   => $step['name'],
+                    'step_order'  => $i + 1,
+                    'visitors'    => $step['visitors'],
+                    'pct'         => $step['pct'] . '%',
+                    'dropoff'     => $step['dropoff'],
+                ];
+            }
+        }
+
+        return $results;
+    }
 }

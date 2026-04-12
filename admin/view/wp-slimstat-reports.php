@@ -9,6 +9,7 @@ class wp_slimstat_reports
         'slimview3' => [],
         'slimview4' => [],
         'slimview5' => [],
+        'slimview6' => [],
         'dashboard' => [],
         'inactive'  => [],
     ];
@@ -897,6 +898,32 @@ class wp_slimstat_reports
                 'locations' => ['slimview1'],
                 'tooltip'   => __('Dots on the map represent the most recent pageviews geolocated by City. This feature is only available by enabling the corresponding precision level in the settings.', 'wp-slimstat'),
             ],
+
+            // Goals & Funnels reports
+            'slim_p9_01' => [
+                'title'         => __('Goals', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_goals'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'goal_name',
+                    'raw'     => ['wp_slimstat_db', 'get_goals_raw'],
+                ],
+                'classes'   => ['full-width', 'tall'],
+                'locations' => ['slimview6'],
+                'tooltip'   => __('Track conversions for custom goals you define. Goals are evaluated retroactively against existing data.', 'wp-slimstat'),
+            ],
+            'slim_p9_02' => [
+                'title'         => __('Funnels', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_funnels'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'funnel_step',
+                    'raw'     => ['wp_slimstat_db', 'get_funnels_raw'],
+                ],
+                'classes'   => ['full-width', 'extralarge'],
+                'locations' => ['slimview6'],
+                'tooltip'   => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
+            ],
         ];
 
         if ('on' != wp_slimstat::$settings['geolocation_country']) {
@@ -1582,15 +1609,41 @@ class wp_slimstat_reports
         }
 
         foreach ($results as $a_result) {
-            echo "<p class='slimstat-tooltip-trigger'>" . esc_html( $a_result[ 'notes' ] );
+            // Parse JSON notes to show human-readable label: text > value > id > type > raw
+            $label = $a_result['notes'];
+            $note_data = json_decode($a_result['notes'], true);
+            if (is_array($note_data)) {
+                if (!empty($note_data['text'])) {
+                    $label = trim($note_data['text']);
+                } elseif (!empty($note_data['value'])) {
+                    $label = $note_data['value'];
+                } elseif (!empty($note_data['id'])) {
+                    $label = $note_data['id'];
+                } elseif (!empty($note_data['type'])) {
+                    $label = ucfirst($note_data['type']);
+                }
+            }
+
+            echo "<p class='slimstat-tooltip-trigger'>" . esc_html($label);
 
             if (!empty($a_result['counthits'])) {
-                echo sprintf('<span>%s</span>', esc_html( $a_result[ 'counthits' ] ));
+                echo sprintf('<span>%s</span>', esc_html($a_result['counthits']));
             }
 
             if (!empty($a_result['dt'])) {
                 $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt'], true);
-                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . esc_html( $a_result['ip'] ) . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url( $blog_url . $a_result[ 'resource' ] ), esc_html( $blog_url . $a_result[ 'resource' ] )) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html( $a_result[ 'position' ] )) . __('Date', 'wp-slimstat') . (': ' . $date_time);
+                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . esc_html($a_result['ip']) . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url($blog_url . $a_result['resource']), esc_html($blog_url . $a_result['resource'])) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html($a_result['position'])) . __('Date', 'wp-slimstat') . (': ' . $date_time);
+            } elseif (is_array($note_data)) {
+                // For "top" mode (no dt), show full JSON breakdown in tooltip
+                $tooltip_parts = [];
+                foreach ($note_data as $key => $val) {
+                    if (!empty($val)) {
+                        $tooltip_parts[] = ucfirst($key) . ': ' . esc_html($val);
+                    }
+                }
+                if (!empty($tooltip_parts)) {
+                    echo '<b class="slimstat-tooltip-content">' . implode('<br/>', $tooltip_parts);
+                }
             }
 
             echo '</b></p>';
@@ -1606,6 +1659,281 @@ class wp_slimstat_reports
             die();
         }
         return null;
+    }
+
+    /**
+     * Renders the Goals report with inline management UI.
+     */
+    public static function show_goals($_args = [])
+    {
+        $goals      = get_option('slimstat_goals', []);
+        $max_goals  = apply_filters('slimstat_max_goals', 1);
+        $is_widget  = !empty($_args['is_widget']);
+        $dimensions = wp_slimstat_admin::get_goal_dimensions();
+        $operators  = wp_slimstat_admin::get_goal_operators();
+
+        if (empty($goals)) {
+            echo '<p class="nodata">' . esc_html__('No goals defined yet.', 'wp-slimstat') . '</p>';
+        } else {
+            echo '<table class="slimstat-goals-table widefat"><thead><tr>';
+            echo '<th>' . esc_html__('Goal', 'wp-slimstat') . '</th>';
+            echo '<th>' . esc_html__('Uniques', 'wp-slimstat') . '</th>';
+            echo '<th>' . esc_html__('Total', 'wp-slimstat') . '</th>';
+            echo '<th>' . esc_html__('CR%', 'wp-slimstat') . '</th>';
+            if (!$is_widget) {
+                echo '<th>' . esc_html__('Actions', 'wp-slimstat') . '</th>';
+            }
+            echo '</tr></thead><tbody>';
+
+            foreach ($goals as $goal) {
+                if (empty($goal['active'])) {
+                    continue;
+                }
+                $data = wp_slimstat_db::get_goal_results($goal);
+                echo '<tr>';
+                echo '<td>' . esc_html($goal['name']) . '</td>';
+                echo '<td>' . esc_html(number_format_i18n($data['uniques'])) . '</td>';
+                echo '<td>' . esc_html(number_format_i18n($data['total'])) . '</td>';
+                echo '<td>' . esc_html($data['cr']) . '%</td>';
+                if (!$is_widget) {
+                    echo '<td>';
+                    echo '<a href="#" class="slimstat-goal-delete" data-goal-id="' . esc_attr($goal['id']) . '">' . esc_html__('Delete', 'wp-slimstat') . '</a>';
+                    echo '</td>';
+                }
+                echo '</tr>';
+            }
+            echo '</tbody></table>';
+        }
+
+        // Consent coverage indicator
+        if (function_exists('wp_has_consent')) {
+            echo '<p class="slimstat-consent-notice"><em>' . esc_html__('Goal data reflects visitors who provided statistics consent.', 'wp-slimstat') . '</em></p>';
+        }
+
+        // Inline Add Goal form (not shown in widget/shortcode mode)
+        if (!$is_widget) {
+            $active_count = count(array_filter($goals, function ($g) {
+                return !empty($g['active']);
+            }));
+
+            if ($active_count < $max_goals) {
+                echo '<div class="slimstat-goal-form">';
+                echo '<h4>' . esc_html__('Add Goal', 'wp-slimstat') . '</h4>';
+
+                echo '<label>' . esc_html__('Name', 'wp-slimstat') . '</label>';
+                echo '<input type="text" name="goal_name" class="regular-text" placeholder="' . esc_attr__('e.g. Visit Pricing Page', 'wp-slimstat') . '">';
+
+                echo '<label>' . esc_html__('Dimension', 'wp-slimstat') . '</label>';
+                self::render_dimension_select('goal_dimension', $dimensions);
+
+                echo '<label>' . esc_html__('Operator', 'wp-slimstat') . '</label>';
+                self::render_operator_select('goal_operator', $operators);
+
+                echo '<label>' . esc_html__('Value', 'wp-slimstat') . '</label>';
+                echo '<input type="text" name="goal_value" class="regular-text" placeholder="' . esc_attr__('e.g. /pricing/', 'wp-slimstat') . '">';
+
+                echo '<button type="button" class="button button-primary slimstat-save-goal">' . esc_html__('Save Goal', 'wp-slimstat') . '</button>';
+                echo '</div>';
+            } else {
+                if (!wp_slimstat::pro_is_installed()) {
+                    echo '<p class="slimstat-upsell">';
+                    echo esc_html__('Upgrade to Pro for up to 5 goals.', 'wp-slimstat') . ' ';
+                    echo '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=goals" target="_blank">' . esc_html__('Learn more', 'wp-slimstat') . '</a>';
+                    echo '</p>';
+                }
+            }
+        }
+
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            die();
+        }
+    }
+
+    /**
+     * Renders the Funnels report (locked for free, Chart.js for Pro).
+     */
+    public static function show_funnels($_args = [])
+    {
+        $funnels_enabled = apply_filters('slimstat_max_funnels', 0) > 0;
+        $is_widget       = !empty($_args['is_widget']);
+
+        if (!$funnels_enabled) {
+            // Locked upsell for free users
+            echo '<div class="slimstat-funnel--locked">';
+            echo '<div class="slimstat-funnel-promo">';
+
+            // Mock blurred funnel bars
+            echo '<div class="slimstat-funnel-mock">';
+            echo '<div class="slimstat-funnel-mock-bars">';
+            $mock_heights = [200, 140, 80];
+            $mock_labels  = [__('Step 1', 'wp-slimstat'), __('Step 2', 'wp-slimstat'), __('Step 3', 'wp-slimstat')];
+            foreach ($mock_heights as $i => $h) {
+                echo '<div class="slimstat-funnel-mock-step">';
+                echo '<div class="slimstat-funnel-mock-bar" style="height:' . $h . 'px;"></div>';
+                echo '<div class="slimstat-funnel-mock-label">' . esc_html($mock_labels[$i]) . '</div>';
+                echo '</div>';
+            }
+            echo '</div></div>';
+
+            // Promo overlay
+            echo '<div class="slimstat-funnel-overlay">';
+            echo '<h3>' . esc_html__('Unlock the Full Power of SlimStat Analytics', 'wp-slimstat') . '</h3>';
+            echo '<p>' . esc_html__('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat') . '</p>';
+            echo '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel" class="button button-primary" target="_blank">' . esc_html__('Unlock SlimStat Pro', 'wp-slimstat') . '</a>';
+            echo '</div>';
+
+            echo '</div></div>';
+
+            if (defined('DOING_AJAX') && DOING_AJAX) {
+                die();
+            }
+            return;
+        }
+
+        // Pro users: show funnel data
+        $funnels     = get_option('slimstat_funnels', []);
+        $max_funnels = apply_filters('slimstat_max_funnels', 0);
+        $dimensions  = wp_slimstat_admin::get_goal_dimensions();
+        $operators   = wp_slimstat_admin::get_goal_operators();
+
+        if (empty($funnels)) {
+            echo '<p class="nodata">' . esc_html__('No funnels configured.', 'wp-slimstat') . '</p>';
+        } else {
+            // Funnel selector if multiple
+            if (count($funnels) > 1 && !$is_widget) {
+                echo '<div class="slimstat-funnel-tabs">';
+                foreach ($funnels as $i => $f) {
+                    $active_class = ($i === 0) ? ' active' : '';
+                    echo '<button class="button slimstat-funnel-tab' . $active_class . '" data-funnel-index="' . $i . '">' . esc_html($f['name']) . '</button>';
+                }
+                echo '</div>';
+            }
+
+            foreach ($funnels as $fi => $funnel) {
+                // Only compute the active (first) funnel; others load via tab switch
+                $step_results = ($fi === 0) ? wp_slimstat_db::get_funnel_results($funnel) : [];
+                $display      = ($fi === 0) ? '' : ' style="display:none;"';
+
+                echo '<div class="slimstat-funnel-chart" data-funnel-index="' . $fi . '"' . $display . '>';
+                echo '<h4>' . esc_html($funnel['name']) . '</h4>';
+
+                if (!empty($step_results)) {
+                    $step1_visitors = $step_results[0]['visitors'];
+                    $total_cr       = ($step1_visitors > 0 && count($step_results) > 1) ? $step_results[count($step_results) - 1]['pct'] : 100;
+
+                    echo '<p class="slimstat-funnel-summary">';
+                    echo esc_html(sprintf(
+                        __('%d-step funnel · %s%% conversion rate', 'wp-slimstat'),
+                        count($step_results),
+                        $total_cr
+                    ));
+                    echo '</p>';
+
+                    // Render horizontal bar chart using CSS (Chart.js enhancement can be added later)
+                    echo '<div class="slimstat-funnel-bars">';
+                    foreach ($step_results as $si => $step) {
+                        $width = ($step1_visitors > 0) ? round(($step['visitors'] / $step1_visitors) * 100) : 0;
+
+                        echo '<div class="slimstat-funnel-step">';
+                        echo '<div class="slimstat-funnel-step-label">';
+                        echo '<span class="step-name">' . esc_html($step['name']) . '</span>';
+                        echo '<span class="step-count">' . esc_html(number_format_i18n($step['visitors'])) . ' (' . esc_html($step['pct']) . '%)</span>';
+                        echo '</div>';
+                        echo '<div class="slimstat-funnel-bar-track">';
+                        echo '<div class="slimstat-funnel-bar-fill" style="width:' . $width . '%;"></div>';
+                        echo '</div>';
+
+                        // Drop-off indicator
+                        if ($si > 0 && $step['dropoff'] > 0) {
+                            $prev_visitors  = $step_results[$si - 1]['visitors'];
+                            $dropoff_pct    = ($prev_visitors > 0) ? round(($step['dropoff'] / $prev_visitors) * 100, 1) : 0;
+                            echo '<div class="slimstat-funnel-dropoff">';
+                            echo '<span>↓ ' . esc_html(number_format_i18n($step['dropoff'])) . ' ' . esc_html__('dropped', 'wp-slimstat') . ' (' . esc_html($dropoff_pct) . '%)</span>';
+                            echo '</div>';
+                        }
+                        echo '</div>';
+                    }
+                    echo '</div>';
+                }
+
+                if (!$is_widget) {
+                    echo '<a href="#" class="slimstat-funnel-delete" data-funnel-id="' . esc_attr($funnel['id']) . '">' . esc_html__('Delete Funnel', 'wp-slimstat') . '</a>';
+                }
+
+                echo '</div>';
+            }
+        }
+
+        // Add Funnel form (Pro only, not in widget)
+        if (!$is_widget && count($funnels) < $max_funnels) {
+            echo '<div class="slimstat-funnel-form">';
+            echo '<h4>' . esc_html__('Add Funnel', 'wp-slimstat') . '</h4>';
+
+            echo '<label>' . esc_html__('Funnel Name', 'wp-slimstat') . '</label>';
+            echo '<input type="text" name="funnel_name" class="regular-text" placeholder="' . esc_attr__('e.g. Registration Flow', 'wp-slimstat') . '">';
+
+            echo '<div class="slimstat-funnel-steps">';
+            // Render 2 initial step forms
+            for ($s = 1; $s <= 2; $s++) {
+                self::render_step_form($s, $dimensions, $operators);
+            }
+            echo '</div>';
+
+            echo '<button type="button" class="button slimstat-add-step">' . esc_html__('+ Add Step', 'wp-slimstat') . '</button>';
+            echo ' <button type="button" class="button button-primary slimstat-save-funnel">' . esc_html__('Save Funnel', 'wp-slimstat') . '</button>';
+            echo '<p class="description">' . esc_html__('Minimum 2 steps, maximum 5 steps.', 'wp-slimstat') . '</p>';
+            echo '</div>';
+        }
+
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            die();
+        }
+    }
+
+    /**
+     * Renders a dimension dropdown select.
+     */
+    private static function render_dimension_select($name, $dimensions)
+    {
+        echo '<select name="' . esc_attr($name) . '">';
+        foreach ($dimensions as $key => $label) {
+            echo '<option value="' . esc_attr($key) . '">' . esc_html($label) . '</option>';
+        }
+        echo '</select>';
+    }
+
+    /**
+     * Renders an operator dropdown select.
+     */
+    private static function render_operator_select($name, $operators)
+    {
+        echo '<select name="' . esc_attr($name) . '">';
+        foreach ($operators as $op) {
+            $op_label = !empty(wp_slimstat_db::$operator_names[$op]) ? wp_slimstat_db::$operator_names[$op] : $op;
+            echo '<option value="' . esc_attr($op) . '">' . esc_html($op_label) . '</option>';
+        }
+        echo '</select>';
+    }
+
+    /**
+     * Renders a single funnel step form row.
+     */
+    private static function render_step_form($step_num, $dimensions, $operators)
+    {
+        echo '<div class="slimstat-funnel-step-form" data-step="' . $step_num . '">';
+        echo '<strong>' . esc_html(sprintf(__('Step %d', 'wp-slimstat'), $step_num)) . '</strong> ';
+
+        echo '<input type="text" name="steps[' . ($step_num - 1) . '][name]" placeholder="' . esc_attr__('Step name', 'wp-slimstat') . '" class="regular-text">';
+
+        self::render_dimension_select('steps[' . ($step_num - 1) . '][dimension]', $dimensions);
+        self::render_operator_select('steps[' . ($step_num - 1) . '][operator]', $operators);
+
+        echo '<input type="text" name="steps[' . ($step_num - 1) . '][value]" placeholder="' . esc_attr__('Value', 'wp-slimstat') . '" class="regular-text">';
+
+        if ($step_num > 2) {
+            echo ' <button type="button" class="button slimstat-remove-step">×</button>';
+        }
+        echo '</div>';
     }
 
     public static function show_group_by($_args = [])
