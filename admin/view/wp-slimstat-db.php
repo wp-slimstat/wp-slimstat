@@ -988,10 +988,9 @@ class wp_slimstat_db
         // ORDER BY
         $query->orderBy('counthits DESC');
 
-        // LIMIT
-        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by()
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit, $start);
+        $query->limit($limit);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1191,6 +1190,8 @@ class wp_slimstat_db
             $_having           = empty($_column['having']) ? '' : $_column['having'];
             $_use_date_filters = isset($_column['use_date_filters']) ? (bool)$_column['use_date_filters'] : true;
             $_as_column        = empty($_column['as_column']) ? '' : $_column['as_column'];
+            $_order_by         = empty($_column['order_by']) ? 'counthits DESC' : $_column['order_by'];
+            $_more_select      = empty($_column['more_select']) ? '' : $_column['more_select'];
             $_column           = $_column['columns'];
         }
 
@@ -1203,7 +1204,11 @@ class wp_slimstat_db
         }
 
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::select([$_column, 'COUNT(*) AS counthits'])->from($table);
+        $select_cols = [$_column, 'COUNT(*) AS counthits'];
+        if (!empty($_more_select)) {
+            $select_cols[] = $_more_select;
+        }
+        $query = Query::select($select_cols)->from($table);
 
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
@@ -1232,12 +1237,14 @@ class wp_slimstat_db
 		}
 
         // ORDER BY
-        $query->orderBy('counthits DESC');
+        $query->orderBy($_order_by);
 
-        // LIMIT
-        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
+        // handles page slicing via array_slice in the rendering callbacks.
+        // SQL OFFSET is unreliable here because tied counthits values
+        // produce non-deterministic row ordering across pages.
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit, $start);
+        $query->limit($limit);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1271,7 +1278,7 @@ class wp_slimstat_db
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
-            ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])), max(0, intval(self::$filters_normalized['misc']['start_from'])));
+            ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])));
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
@@ -1295,13 +1302,23 @@ class wp_slimstat_db
 
         $query->groupBy('te.notes')->orderBy('counthits DESC');
 
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit);
+
         self::maybe_enable_query_cache($query);
         return $query->getAll();
     }
 
     public static function get_top_outbound()
     {
+        // Zero out start_from before fetching raw data — get_recent_outbound()
+        // calls get_recent() which applies SQL OFFSET. We need the full
+        // (un-offset) result set for correct aggregation; PHP-side pagination
+        // in the rendering callback handles page slicing.
+        $saved_start = self::$filters_normalized['misc']['start_from'];
+        self::$filters_normalized['misc']['start_from'] = 0;
         $clean_outbound_resources = array_count_values(self::get_recent_outbound());
+        self::$filters_normalized['misc']['start_from'] = $saved_start;
         arsort($clean_outbound_resources);
 
         $sorted_outbound_resources = [];

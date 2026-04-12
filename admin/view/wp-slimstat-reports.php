@@ -481,10 +481,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Users', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'username',
-                    'where'   => 'notes LIKE "%user:%"',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'recent',
+                    'columns'     => 'username',
+                    'where'       => 'notes LIKE "%user:%"',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
+                    'order_by'    => 'dt DESC',
+                    'more_select' => 'MAX(dt) AS dt',
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview3'],
@@ -1128,9 +1130,15 @@ class wp_slimstat_reports
                 echo '</p>';
             }
         } else {
+            // SQL-paginated reports (type=recent) already applied OFFSET in
+            // the query — slice from 0. PHP-paginated reports (type=top) fetch
+            // all rows up to limit_results — slice from start_from.
+            $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+                ? 0
+                : intval(wp_slimstat_db::$filters_normalized['misc']['start_from']);
             $results = array_slice(
                 $all_results,
-                0,
+                $start_from,
                 wp_slimstat::$settings['rows_to_show']
             );
 
@@ -1502,9 +1510,12 @@ class wp_slimstat_reports
     {
         $all_results = call_user_func($_args['raw'], $_args);
 
+        $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+            ? 0
+            : intval(wp_slimstat_db::$filters_normalized['misc']['start_from']);
         $results = array_slice(
             $all_results,
-            0,
+            $start_from,
             wp_slimstat::$settings['rows_to_show']
         );
 
@@ -1559,9 +1570,12 @@ class wp_slimstat_reports
 
         $results = [];
         if (is_array($all_results) && count($all_results)) {
+            $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+                ? 0
+                : intval(wp_slimstat_db::$filters_normalized['misc']['start_from']);
             $results = array_slice(
                 $all_results,
-                0,
+                $start_from,
                 wp_slimstat::$settings['rows_to_show']
             );
         }
