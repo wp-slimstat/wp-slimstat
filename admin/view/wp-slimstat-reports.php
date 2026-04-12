@@ -1067,20 +1067,26 @@ class wp_slimstat_reports
     /**
      * Returns the total result count for pagination display.
      *
-     * For type=recent reports, the SQL result set shrinks on later pages
-     * (LIMIT+OFFSET), so we query the true total via count_records().
+     * For type=recent reports, get_recent() uses LIMIT+OFFSET so
+     * count($all_results) shrinks on later pages. We use count_records()
+     * for the true total, but cap it to limit_results because get_recent()
+     * can only access that many rows via SQL. The existing "200+" suffix
+     * in report_pagination() signals when more rows exist beyond the cap.
+     *
      * For type=top reports, SQL fetches the full set (no OFFSET) and
      * count($all_results) is already stable.
      */
     private static function get_report_total_count($_args, $all_results)
     {
         if (!empty($_args['type']) && $_args['type'] === 'recent') {
-            return wp_slimstat_db::count_records(
+            $true_total = wp_slimstat_db::count_records(
                 'id',
                 !empty($_args['where']) ? $_args['where'] : '',
                 true,
                 $_args['where_params'] ?? []
             );
+            $limit = intval(wp_slimstat::$settings['limit_results']);
+            return min($true_total, $limit);
         }
         return count($all_results);
     }

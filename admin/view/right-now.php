@@ -42,7 +42,7 @@ $results = array_slice(
     wp_slimstat::$settings['number_results_raw_data']
 );
 
-$count_all_results  = wp_slimstat_db::count_records('id');
+$count_all_results  = min(wp_slimstat_db::count_records('id'), intval(wp_slimstat::$settings['limit_results']));
 $count_page_results = count($results);
 
 // Echo the debug message
