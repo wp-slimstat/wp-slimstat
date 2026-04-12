@@ -989,10 +989,9 @@ class wp_slimstat_db
         $query->orderBy('counthits DESC');
 
         // LIMIT
-        $start_from = intval(self::$filters_normalized['misc']['start_from']);
-        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
-        $page = ($start_from / $limit_results) + 1;
-        $query->perPage($page, $limit_results);
+        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit, $start);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1236,10 +1235,9 @@ class wp_slimstat_db
         $query->orderBy('counthits DESC');
 
         // LIMIT
-        $start_from = intval(self::$filters_normalized['misc']['start_from']);
-        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
-        $page = ($start_from / $limit_results) + 1;
-        $query->perPage($page, $limit_results);
+        $start = max(0, intval(self::$filters_normalized['misc']['start_from']));
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit, $start);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1273,7 +1271,7 @@ class wp_slimstat_db
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
-            ->perPage((intval(self::$filters_normalized['misc']['start_from']) / max(1, intval(self::$filters_normalized['misc']['limit_results']))) + 1, self::$filters_normalized['misc']['limit_results']);
+            ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])), max(0, intval(self::$filters_normalized['misc']['start_from'])));
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
