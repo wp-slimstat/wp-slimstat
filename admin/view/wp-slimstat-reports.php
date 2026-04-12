@@ -1064,6 +1064,27 @@ class wp_slimstat_reports
         return $pagination . ($pagination_buttons . '</p>');
     }
 
+    /**
+     * Returns the total result count for pagination display.
+     *
+     * For type=recent reports, the SQL result set shrinks on later pages
+     * (LIMIT+OFFSET), so we query the true total via count_records().
+     * For type=top reports, SQL fetches the full set (no OFFSET) and
+     * count($all_results) is already stable.
+     */
+    private static function get_report_total_count($_args, $all_results)
+    {
+        if (!empty($_args['type']) && $_args['type'] === 'recent') {
+            return wp_slimstat_db::count_records(
+                'id',
+                !empty($_args['where']) ? $_args['where'] : '',
+                true,
+                $_args['where_params'] ?? []
+            );
+        }
+        return count($all_results);
+    }
+
     public static function callback_wrapper()
     {
         // If this user is whitelisted, we use the minimum capability
@@ -1475,7 +1496,7 @@ class wp_slimstat_reports
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '</div>';
             }
-            echo self::report_pagination($count_page_results, count($all_results));
+            echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '<div>';
             }
@@ -1554,7 +1575,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, count($all_results));
+        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }
@@ -1622,7 +1643,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, count($all_results));
+        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }
