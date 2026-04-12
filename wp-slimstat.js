@@ -794,6 +794,11 @@ var SlimStat = (function () {
             if (idAttr) noteObj.id = idAttr;
         }
         noteObj.type = event.type;
+        // Override type for tel/mailto links and submit buttons
+        if (resourceUrl && resourceUrl.indexOf("tel:") === 0) noteObj.type = "tel";
+        else if (resourceUrl && resourceUrl.indexOf("mailto:") === 0) noteObj.type = "mailto";
+        else if (target.getAttribute && target.getAttribute("type") === "submit") noteObj.type = "submit";
+
         if (event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
         else if (event.type === "mousedown") noteObj.button = event.which === 1 ? "left" : event.which === 2 ? "middle" : "right";
 
@@ -2268,6 +2273,24 @@ if (!window.requestIdleCallback) {
         });
 
         // No GDPR consent buttons; managed by CMPs
+
+        // Track form submissions (covers Enter key, programmatic form.submit())
+        SlimStat.add_event(document.body, "submit", function (e) {
+            var form = e.target;
+            if (!form || !form.nodeName || form.nodeName.toLowerCase() !== "form") return;
+
+            // Skip consent forms
+            if (form.hasAttribute && form.hasAttribute("data-consent")) return;
+
+            // Use submit button as target if available, fallback to form
+            var submitBtn = form.querySelector('[type="submit"]');
+            var syntheticEvent = {
+                type: "submit",
+                target: submitBtn || form,
+                which: 1
+            };
+            SlimStat.ss_track(syntheticEvent, null, true);
+        });
     }
 
     function setupNavigationHooks() {

@@ -1,0 +1,283 @@
+/* Goals & Funnels - WP Slimstat */
+
+/* Goals Table */
+.slimstat-goals-table {
+    margin: 0 0 15px;
+    border-collapse: collapse;
+}
+
+.slimstat-goals-table th,
+.slimstat-goals-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e4e7;
+}
+
+.slimstat-goals-table th {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #646970;
+}
+
+.slimstat-goals-table td:nth-child(2),
+.slimstat-goals-table td:nth-child(3),
+.slimstat-goals-table td:nth-child(4),
+.slimstat-goals-table th:nth-child(2),
+.slimstat-goals-table th:nth-child(3),
+.slimstat-goals-table th:nth-child(4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-goal-delete {
+    color: #b32d2e;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.slimstat-goal-delete:hover {
+    color: #a00;
+    text-decoration: underline;
+}
+
+/* Goal Form */
+.slimstat-goal-form {
+    padding: 15px;
+    background: #f6f7f7;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.slimstat-goal-form h4 {
+    margin: 0 0 10px;
+}
+
+.slimstat-goal-form label {
+    display: block;
+    font-weight: 500;
+    margin: 8px 0 3px;
+    font-size: 12px;
+}
+
+.slimstat-goal-form input[type="text"],
+.slimstat-goal-form select {
+    width: 100%;
+    max-width: 400px;
+}
+
+.slimstat-goal-form .button {
+    margin-top: 12px;
+}
+
+/* Upsell */
+.slimstat-upsell {
+    padding: 10px 15px;
+    background: #fff8e5;
+    border-left: 4px solid #dba617;
+    margin: 10px 0;
+}
+
+.slimstat-upsell a {
+    font-weight: 600;
+}
+
+.slimstat-consent-notice {
+    font-size: 11px;
+    color: #646970;
+    margin: 5px 0;
+}
+
+/* Funnel Locked State */
+.slimstat-funnel--locked {
+    position: relative;
+    min-height: 280px;
+}
+
+.slimstat-funnel-promo {
+    position: relative;
+}
+
+.slimstat-funnel-mock {
+    filter: blur(4px);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.slimstat-funnel-mock-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    height: 200px;
+    padding: 20px;
+}
+
+.slimstat-funnel-mock-step {
+    flex: 1;
+    text-align: center;
+}
+
+.slimstat-funnel-mock-bar {
+    background: #6366f1;
+    border-radius: 4px 4px 0 0;
+}
+
+.slimstat-funnel-mock-label {
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+.slimstat-funnel-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    text-align: center;
+    z-index: 2;
+}
+
+.slimstat-funnel-overlay h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.slimstat-funnel-overlay p {
+    margin: 0 0 15px;
+    color: #646970;
+}
+
+/* Funnel Tabs */
+.slimstat-funnel-tabs {
+    margin-bottom: 15px;
+    display: flex;
+    gap: 5px;
+}
+
+.slimstat-funnel-tab.active {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+/* Funnel Chart */
+.slimstat-funnel-chart h4 {
+    margin: 0 0 5px;
+}
+
+.slimstat-funnel-summary {
+    color: #646970;
+    font-size: 13px;
+    margin: 0 0 15px;
+}
+
+.slimstat-funnel-bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.slimstat-funnel-step {
+    margin-bottom: 2px;
+}
+
+.slimstat-funnel-step-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 3px;
+}
+
+.slimstat-funnel-step-label .step-name {
+    font-weight: 500;
+}
+
+.slimstat-funnel-step-label .step-count {
+    color: #646970;
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-funnel-bar-track {
+    height: 28px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.slimstat-funnel-bar-fill {
+    height: 100%;
+    background: #6366f1;
+    border-radius: 4px;
+    min-width: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Gradient color for steps */
+.slimstat-funnel-step:nth-child(1) .slimstat-funnel-bar-fill { background: #6366f1; }
+.slimstat-funnel-step:nth-child(2) .slimstat-funnel-bar-fill { background: #818cf8; }
+.slimstat-funnel-step:nth-child(3) .slimstat-funnel-bar-fill { background: #a5b4fc; }
+.slimstat-funnel-step:nth-child(4) .slimstat-funnel-bar-fill { background: #c7d2fe; }
+.slimstat-funnel-step:nth-child(5) .slimstat-funnel-bar-fill { background: #e0e7ff; }
+
+.slimstat-funnel-dropoff {
+    font-size: 11px;
+    color: #b32d2e;
+    padding: 2px 0 6px;
+}
+
+.slimstat-funnel-delete {
+    display: inline-block;
+    margin-top: 10px;
+    color: #b32d2e;
+    text-decoration: none;
+    font-size: 12px;
+}
+
+/* Funnel Form */
+.slimstat-funnel-form {
+    padding: 15px;
+    background: #f6f7f7;
+    border: 1px solid #e2e4e7;
+    border-radius: 4px;
+    margin-top: 15px;
+}
+
+.slimstat-funnel-form h4 {
+    margin: 0 0 10px;
+}
+
+.slimstat-funnel-step-form {
+    padding: 8px 0;
+    border-bottom: 1px solid #e2e4e7;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.slimstat-funnel-step-form strong {
+    min-width: 50px;
+}
+
+.slimstat-funnel-step-form input[type="text"] {
+    max-width: 180px;
+}
+
+.slimstat-funnel-step-form select {
+    max-width: 150px;
+}
+
+.slimstat-funnel-form .button {
+    margin-top: 10px;
+}
+
+.slimstat-funnel-form .description {
+    font-size: 11px;
+    color: #646970;
+}
