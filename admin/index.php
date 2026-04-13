@@ -787,6 +787,25 @@ class wp_slimstat_admin
             }
         }
 
+        // --- Goals & Funnels composite indexes for query performance ---
+        if (empty(wp_slimstat::$settings['goals_indexes'])) {
+            $goal_indexes = [
+                ['table' => 'slim_stats',  'name' => 'idx_goal_queries',   'sql' => 'ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20))'],
+                ['table' => 'slim_stats',  'name' => 'idx_funnel_queries', 'sql' => 'ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191))'],
+                ['table' => 'slim_events', 'name' => 'idx_events_notes_dt', 'sql' => 'ADD INDEX idx_events_notes_dt (dt, notes(64))'],
+            ];
+            foreach ($goal_indexes as $idx) {
+                $table = $GLOBALS['wpdb']->prefix . $idx['table'];
+                $exists = wp_slimstat::$wpdb->get_results(
+                    wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $idx['name'])
+                );
+                if (empty($exists)) {
+                    wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}");
+                }
+            }
+            wp_slimstat::$settings['goals_indexes'] = 'on';
+        }
+
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
         // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
         $GLOBALS['wpdb']->query(
@@ -1573,6 +1592,15 @@ class wp_slimstat_admin
     // ---- Goals & Funnels CRUD ---- //
 
     /**
+     * Invalidates all goal/funnel/visitor caches by incrementing version.
+     * Works with both wp_options and external object cache (Redis/Memcached).
+     */
+    private static function clear_goals_cache()
+    {
+        update_option('slimstat_goals_cache_ver', time(), false);
+    }
+
+    /**
      * Returns validated goal dimensions available for selection.
      */
     public static function get_goal_dimensions()
@@ -1666,6 +1694,7 @@ class wp_slimstat_admin
         }
 
         update_option('slimstat_goals', $goals, false);
+        self::clear_goals_cache();
         wp_send_json_success(['goals' => $goals]);
     }
 
@@ -1687,6 +1716,7 @@ class wp_slimstat_admin
         }));
 
         update_option('slimstat_goals', $goals, false);
+        self::clear_goals_cache();
         wp_send_json_success(['goals' => $goals]);
     }
 
@@ -1755,6 +1785,7 @@ class wp_slimstat_admin
         }
 
         update_option('slimstat_funnels', $funnels, false);
+        self::clear_goals_cache();
         wp_send_json_success(['funnels' => $funnels]);
     }
 
@@ -1776,6 +1807,7 @@ class wp_slimstat_admin
         }));
 
         update_option('slimstat_funnels', $funnels, false);
+        self::clear_goals_cache();
         wp_send_json_success(['funnels' => $funnels]);
     }
 
