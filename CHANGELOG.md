@@ -1,9 +1,12 @@
-= 5.4.10 - 2026-04-09 =
+= 5.4.10 - 2026-04-13 =
 
-**Access Log usability — three customer-reported fixes**
+**Access Log usability & report pagination fixes**
 
 - Fix: Access Log pagination no longer drops the user's selected custom date range. Clicking the next/previous arrow now returns rows from the chosen window instead of jumping to the current date. Fixes initial async load and Screen Options re-activation as well, since they share the same code path. ([#287](https://github.com/wp-slimstat/wp-slimstat/issues/287))
 - Fix: "Auto Refresh" setting in Settings → Reports is now actually honored. Previously the value was checked for existence only and the refresh was hardcoded to a 60-second wall-clock cycle regardless of the setting. The countdown now reflects the configured interval (e.g. `0:30` for 30 seconds). ([#258](https://github.com/wp-slimstat/wp-slimstat/issues/258))
+- Fix: Recent Users, Recent Posts, and Recent Pages Not Found now show unique items instead of duplicating the same entry for every pageview. Counts match actual unique items across all date ranges. ([#288](https://github.com/wp-slimstat/wp-slimstat/issues/288))
+- Fix: Access Log "last page" no longer shows "No data to display". The query engine now correctly distributes OFFSET across split date-range partitions instead of applying it independently to each partition.
+- Fix: Report pagination totals are now stable across pages and correctly capped to the configured limit.
 - Improvement: Access Log auto-refresh now pauses while you are hovering over the panel, scrolling with the mouse wheel or trackpad, or while the browser tab is hidden. Refresh resumes automatically once you move the cursor off the panel.
 - Improvement: Scroll position inside the Access Log is now preserved across each refresh — no more "jump to top" while you are reading.
 - Refactor: Replaced the bundled jQuery SlimScroll v1.3.8 plugin (~167 lines) with native CSS scrolling. Report panels now use a visible, regular-speed scrollbar; trackpad and Magic Mouse momentum scrolling no longer chains to the page (uses `overscroll-behavior: contain`). Fixes the long-standing "scrollbar invisible / super slow / page scrolls along" complaints on macOS. ([#156](https://github.com/wp-slimstat/wp-slimstat/issues/156))

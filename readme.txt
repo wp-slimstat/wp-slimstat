@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.9
+Stable tag: 5.4.10
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,16 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.10 - 2026-04-13 =
+* Fix: Access Log pagination no longer drops the user's selected custom date range
+* Fix: Auto Refresh setting in Settings → Reports is now honored
+* Fix: Recent Users, Recent Posts, and Recent Pages Not Found now show unique items instead of duplicating the same entry for every pageview
+* Fix: Access Log "last page" no longer shows "No data to display"
+* Fix: Report pagination totals are now stable across pages
+* Improvement: Access Log auto-refresh pauses on hover, scroll, and hidden tab
+* Improvement: Scroll position preserved across Access Log refresh
+* Refactor: Replaced jQuery SlimScroll with native CSS scrolling
+
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
 * Fix: Use sanitized URI in dashboard widget enqueue condition for consistency
