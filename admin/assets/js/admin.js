@@ -1445,6 +1445,11 @@ var SlimStatAdmin = {
                 delete data["fs[interval_hours]"];
             }
 
+            // Set in-flight guard for Access Log requests
+            if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
+                SlimStatAdmin._isAccessLogInFlight = true;
+            }
+
             jQuery
                 .ajax({ method: "POST", url: ajaxurl, data: data })
                 .done(function (response) {
@@ -1500,6 +1505,10 @@ var SlimStatAdmin = {
                     }
                 })
                 .complete(function () {
+                    // Clear in-flight guard for Access Log requests
+                    if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
+                        SlimStatAdmin._isAccessLogInFlight = false;
+                    }
                     defer.resolve();
                 });
 
@@ -1632,9 +1641,18 @@ var SlimStatAdmin = {
             scheduleNextRefresh();
         };
 
+        // In-flight guard: prevents auto-refresh from firing while a
+        // manual/pagination AJAX request is still pending.
+        SlimStatAdmin._isAccessLogInFlight = false;
+
         function onRefreshTick() {
             // #258 B2 — defer if user is hovering or actively scrolling
             if (hoverPaused || Date.now() < userActiveUntil) {
+                refreshTimerHandle = setTimeout(onRefreshTick, INTERACTION_BACKOFF_MS);
+                return;
+            }
+            // Skip if a manual/pagination request is already in flight
+            if (SlimStatAdmin._isAccessLogInFlight) {
                 refreshTimerHandle = setTimeout(onRefreshTick, INTERACTION_BACKOFF_MS);
                 return;
             }
@@ -1750,9 +1768,16 @@ var SlimStatAdmin = {
             var observer = new MutationObserver(function (mutationsList) {
                 mutationsList.forEach(function (mutation) {
                     mutation.addedNodes.forEach(function (node) {
-                        if (node.nodeType === 1 && node.classList && node.classList.contains("refresh-timer")) {
-                            // Refresh the cached jQuery reference after
-                            // pagination rebuilds the timer element.
+                        if (node.nodeType !== 1 || !node.classList) return;
+                        // Detect the refresh-timer itself OR a parent
+                        // (.pagination) that contains one — covers both
+                        // direct insertion and full pagination rebuilds.
+                        var isTimer = node.classList.contains("refresh-timer");
+                        var containsTimer = !isTimer && (
+                            node.classList.contains("pagination") ||
+                            (node.querySelector && node.querySelector(".refresh-timer"))
+                        );
+                        if (isTimer || containsTimer) {
                             $refreshTimer = jQuery("#" + ACCESS_LOG_ID + " .pagination .refresh-timer");
                             if (refreshIntervalSec <= 0) return;
                             lastRefreshAt = Date.now();

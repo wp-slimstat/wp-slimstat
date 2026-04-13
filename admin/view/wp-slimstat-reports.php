@@ -481,11 +481,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Users', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'     => 'top',
-                    'columns'  => 'username',
-                    'where'    => 'notes LIKE "%user:%"',
-                    'order_by' => 'MAX(dt) DESC',
-                    'raw'      => ['wp_slimstat_db', 'get_top'],
+                    'type'        => 'top',
+                    'columns'     => 'username',
+                    'where'       => 'notes LIKE "%user:%"',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview3'],
@@ -591,12 +592,13 @@ class wp_slimstat_reports
                 'title'         => __('Recent Posts', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'      => 'top',
-                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
-                    'as_column' => 'resource',
-                    'where'     => 'content_type = "post"',
-                    'order_by'  => 'MAX(dt) DESC',
-                    'raw'       => ['wp_slimstat_db', 'get_top'],
+                    'type'        => 'top',
+                    'columns'     => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column'   => 'resource',
+                    'where'       => 'content_type = "post"',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -618,11 +620,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Pages Not Found', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'     => 'top',
-                    'columns'  => 'resource',
-                    'where'    => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
-                    'order_by' => 'MAX(dt) DESC',
-                    'raw'      => ['wp_slimstat_db', 'get_top'],
+                    'type'        => 'top',
+                    'columns'     => 'resource',
+                    'where'       => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -1436,12 +1439,10 @@ class wp_slimstat_reports
                     $element_value        = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
                 }
 
-                if (!empty($_args['type']) && 'recent' == $_args['type']) {
-                    if (is_array($results[$i]) && isset($results[$i]['dt'])) {
-                        $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
-                    } else {
-                        // No date available, just show details if any
-                    }
+                // Show last-seen timestamp when dt is available in the result
+                // (both type=recent raw rows and type=top with more_select=MAX(dt) AS dt)
+                if (is_array($results[$i]) && isset($results[$i]['dt']) && $results[$i]['dt'] > 0) {
+                    $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {

@@ -985,8 +985,8 @@ class wp_slimstat_db
         // GROUP BY
         $query->groupBy($_args['group_by']);
 
-        // ORDER BY
-        $query->orderBy('counthits DESC');
+        // ORDER BY — tie-breaker on group key for deterministic pagination
+        $query->orderBy('counthits DESC, ' . $_args['group_by'] . ' ASC');
 
         // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by()
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
@@ -1239,13 +1239,16 @@ class wp_slimstat_db
 			$query->havingRaw($_having);
 		}
 
-        // ORDER BY
-        $query->orderBy($_order_by);
+        // ORDER BY — append group key as tie-breaker for deterministic
+        // pagination when many rows share the primary sort value.
+        $order_with_tiebreak = $_order_by;
+        if (false === stripos($_order_by, $group_by_column)) {
+            $order_with_tiebreak .= ', ' . $group_by_column . ' ASC';
+        }
+        $query->orderBy($order_with_tiebreak);
 
         // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
         // handles page slicing via array_slice in the rendering callbacks.
-        // SQL OFFSET is unreliable here because tied counthits values
-        // produce non-deterministic row ordering across pages.
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
         $query->limit($limit);
 
@@ -1320,8 +1323,11 @@ class wp_slimstat_db
         // in the rendering callback handles page slicing.
         $saved_start = self::$filters_normalized['misc']['start_from'];
         self::$filters_normalized['misc']['start_from'] = 0;
-        $clean_outbound_resources = array_count_values(self::get_recent_outbound());
-        self::$filters_normalized['misc']['start_from'] = $saved_start;
+        try {
+            $clean_outbound_resources = array_count_values(self::get_recent_outbound());
+        } finally {
+            self::$filters_normalized['misc']['start_from'] = $saved_start;
+        }
         arsort($clean_outbound_resources);
 
         $sorted_outbound_resources = [];

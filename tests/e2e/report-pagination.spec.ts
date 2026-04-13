@@ -27,9 +27,8 @@ async function seedUserPageviews(count: number): Promise<void> {
   const placeholders: string[] = [];
   const values: any[] = [];
   const baseDt = Math.floor(Date.now() / 1000);
-  const users = ['alice', 'bob', 'charlie', 'diana', 'eve'];
-
   for (let i = 0; i < count; i++) {
+    const username = `user-${i}`;
     placeholders.push('(?, ?, ?, ?, ?, ?, ?, ?)');
     values.push(
       `/user-page-${i}`,
@@ -38,8 +37,8 @@ async function seedUserPageviews(count: number): Promise<void> {
       1,
       'Chrome',
       'Windows',
-      users[i % users.length],
-      `[user:${users[i % users.length]}]`,
+      username,
+      `[user:${username}]`,
     );
   }
   await pool.query(
