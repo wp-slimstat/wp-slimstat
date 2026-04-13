@@ -1621,13 +1621,13 @@ class wp_slimstat_db
             return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
         }
 
-        $date_where = self::get_combined_where('', '*', true, 't1');
-        $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
-        $cache_key  = 'slimstat_goal_' . $goal['id'] . '_' . md5($date_where . $cache_ver);
-        $result     = get_transient($cache_key);
+        $filters_where = self::get_combined_where('', '*', true, 't1');
+        $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
+        $result        = get_transient($cache_key);
 
         if (false === $result) {
-            $where_combined = $goal_where . ' AND ' . $date_where;
+            $where_combined = $goal_where . ' AND ' . $filters_where;
 
             if ($is_event) {
                 $from = sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats);
@@ -1773,7 +1773,7 @@ class wp_slimstat_db
 
             // Store this step's visitors in temp table for next step
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_table");
-            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_table (vid VARCHAR(64) NOT NULL, KEY(vid)) ENGINE=MEMORY AS $select_sql");
+            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_table (vid VARCHAR(64) NOT NULL, KEY(vid)) AS $select_sql");
             $use_temp = ($visitor_count > 0);
 
             $prev_count = ($step_index > 0 && !empty($results[$step_index - 1])) ? $results[$step_index - 1]['visitors'] : $visitor_count;
