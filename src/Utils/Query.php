@@ -1383,12 +1383,32 @@ class Query
             $baseValues = $baseValuesToPrepare;
             array_splice($baseValues, $dtIdx, 2);
 
+            // Remove OFFSET from sub-queries: each partition is smaller
+            // than the full date range, so applying the original OFFSET to
+            // each one independently can skip past all rows in that
+            // partition.  Instead, fetch without OFFSET and apply it after
+            // merging.
+            $parsedOffset = 0;
+            $parsedLimit  = 0;
+            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $this->limitClause, $m)) {
+                $parsedLimit  = intval($m[1]);
+                $parsedOffset = intval($m[2]);
+            } elseif (preg_match('/LIMIT\s+(\d+)/i', $this->limitClause, $m)) {
+                $parsedLimit = intval($m[1]);
+            }
+            // Sub-queries fetch up to offset+limit rows (no OFFSET) so we
+            // have enough data to slice after merging.
+            $subLimit = $parsedOffset + $parsedLimit;
+
             // Clone for historical
             $histQuery                  = clone $this;
             $histQuery->whereClauses    = $baseWhereClauses;
             $histQuery->valuesToPrepare = $baseValues;
             $histQuery->whereDate('dt', ['from' => $histFrom, 'to' => $histTo]);
             $histQuery->allowCaching(true, $this->cacheExpiration);
+            if ($subLimit > 0) {
+                $histQuery->limit($subLimit);
+            }
             try {
                 $historical = $histQuery->getAll();
             } catch (Exception $e) {
@@ -1401,6 +1421,9 @@ class Query
             $liveQuery->valuesToPrepare = $baseValues;
             $liveQuery->whereDate('dt', ['from' => $liveFrom, 'to' => $liveTo], true);
             $liveQuery->allowCaching(false, 0);
+            if ($subLimit > 0) {
+                $liveQuery->limit($subLimit);
+            }
             try {
                 $live = $liveQuery->getAll();
             } catch (Exception $e) {
@@ -1416,6 +1439,11 @@ class Query
             $merged = $this->mergeGroupResults($live, $historical);
             if (is_array($merged)) {
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
+            }
+
+            // Apply the original OFFSET+LIMIT after merging
+            if ($parsedOffset > 0 && is_array($merged)) {
+                $merged = array_slice($merged, $parsedOffset, $parsedLimit);
             }
 
             return $merged;
