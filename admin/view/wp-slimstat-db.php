@@ -1592,12 +1592,12 @@ class wp_slimstat_db
     // ---- Goals & Funnels Query Methods ---- //
 
     /**
-     * Returns the SQL WHERE fragment for a single goal/step condition.
-     * Uses the existing get_single_where_clause() to map operators to SQL.
+     * Returns a prepared SQL WHERE fragment for a single goal/step condition.
+     * Uses the existing get_single_where_clause() which returns an already-prepared string.
      *
      * @param array  $goal   Goal definition with dimension, operator, value keys.
      * @param string $alias  Table alias (e.g., 't1' or 'te').
-     * @return array [sql_fragment, value] pair for wpdb::prepare().
+     * @return string Prepared SQL WHERE fragment (e.g., "t1.resource = '/shop/'").
      */
     private static function build_goal_where($goal, $alias = '')
     {
@@ -1641,16 +1641,13 @@ class wp_slimstat_db
         $visitor_id   = self::visitor_id_expr('t1');
         $is_event     = ($goal['dimension'] === 'event_notes');
 
-        $where_clause = self::build_goal_where($goal, $is_event ? 'te' : 't1');
-        if (empty($where_clause[0])) {
+        // build_goal_where() returns an already-prepared SQL string
+        $goal_where = self::build_goal_where($goal, $is_event ? 'te' : 't1');
+        if (empty($goal_where)) {
             return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
         }
 
-        // Build the date filter portion
         $date_where = self::get_combined_where('', '*', true, 't1');
-
-        // Prepare the WHERE clause with value
-        $prepared_where = wp_slimstat::$wpdb->prepare($where_clause[0], $where_clause[1]);
 
         if ($is_event) {
             $sql = sprintf(
@@ -1661,7 +1658,7 @@ class wp_slimstat_db
                 $visitor_id,
                 $table_events,
                 $table_stats,
-                $prepared_where,
+                $goal_where,
                 $date_where
             );
         } else {
@@ -1671,7 +1668,7 @@ class wp_slimstat_db
                  WHERE %s AND %s",
                 $visitor_id,
                 $table_stats,
-                $prepared_where,
+                $goal_where,
                 $date_where
             );
         }
@@ -1735,7 +1732,7 @@ class wp_slimstat_db
         $results = [];
 
         foreach ($goals as $goal) {
-            if (empty($goal['active'])) {
+            if (empty($goal['active']) || empty($goal['name']) || empty($goal['dimension'])) {
                 continue;
             }
             $data      = self::get_goal_results($goal);
@@ -1775,14 +1772,13 @@ class wp_slimstat_db
 
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event     = ($step['dimension'] === 'event_notes');
-            $where_clause = self::build_goal_where($step, $is_event ? 'te' : 't1');
+            // build_goal_where() returns an already-prepared SQL string
+            $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
 
-            if (empty($where_clause[0])) {
+            if (empty($step_where)) {
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0];
                 continue;
             }
-
-            $prepared_where = wp_slimstat::$wpdb->prepare($where_clause[0], $where_clause[1]);
 
             // For step 2+, filter by previous step's visitors via temp table
             $fp_filter = '';
@@ -1797,12 +1793,12 @@ class wp_slimstat_db
             if ($is_event) {
                 $select_sql = sprintf(
                     "SELECT DISTINCT %s as vid FROM %s te INNER JOIN %s t1 ON te.id = t1.id WHERE %s AND %s%s",
-                    $visitor_id, $table_events, $table_stats, $prepared_where, $date_where, $fp_filter
+                    $visitor_id, $table_events, $table_stats, $step_where, $date_where, $fp_filter
                 );
             } else {
                 $select_sql = sprintf(
                     "SELECT DISTINCT %s as vid FROM %s t1 WHERE %s AND %s%s",
-                    $visitor_id, $table_stats, $prepared_where, $date_where, $fp_filter
+                    $visitor_id, $table_stats, $step_where, $date_where, $fp_filter
                 );
             }
 
@@ -1848,6 +1844,9 @@ class wp_slimstat_db
         $results = [];
 
         foreach ($funnels as $funnel) {
+            if (empty($funnel['name']) || empty($funnel['steps'])) {
+                continue;
+            }
             $step_results = self::get_funnel_results($funnel);
             foreach ($step_results as $i => $step) {
                 $results[] = [
