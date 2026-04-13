@@ -1630,23 +1630,29 @@ class wp_slimstat_reports
                 echo sprintf('<span>%s</span>', esc_html($a_result['counthits']));
             }
 
+            $has_tooltip = false;
             if (!empty($a_result['dt'])) {
                 $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt'], true);
                 echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . esc_html($a_result['ip']) . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url($blog_url . $a_result['resource']), esc_html($blog_url . $a_result['resource'])) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html($a_result['position'])) . __('Date', 'wp-slimstat') . (': ' . $date_time);
+                $has_tooltip = true;
             } elseif (is_array($note_data)) {
                 // For "top" mode (no dt), show full JSON breakdown in tooltip
                 $tooltip_parts = [];
                 foreach ($note_data as $key => $val) {
                     if (!empty($val)) {
-                        $tooltip_parts[] = ucfirst($key) . ': ' . esc_html($val);
+                        $tooltip_parts[] = esc_html(ucfirst($key)) . ': ' . esc_html($val);
                     }
                 }
                 if (!empty($tooltip_parts)) {
                     echo '<b class="slimstat-tooltip-content">' . implode('<br/>', $tooltip_parts);
+                    $has_tooltip = true;
                 }
             }
 
-            echo '</b></p>';
+            if ($has_tooltip) {
+                echo '</b>';
+            }
+            echo '</p>';
         }
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';

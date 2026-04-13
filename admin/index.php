@@ -1604,6 +1604,7 @@ class wp_slimstat_admin
      */
     private static function sanitize_goal($raw)
     {
+        $raw        = wp_unslash($raw);
         $dimensions = self::get_goal_dimensions();
         $operators  = self::get_goal_operators();
 

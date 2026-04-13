@@ -26,7 +26,7 @@
 .slimstat-goals-table th:nth-child(2),
 .slimstat-goals-table th:nth-child(3),
 .slimstat-goals-table th:nth-child(4) {
-    text-align: right;
+    text-align: end;
     font-variant-numeric: tabular-nums;
 }
 
@@ -75,7 +75,7 @@
 .slimstat-upsell {
     padding: 10px 15px;
     background: #fff8e5;
-    border-left: 4px solid #dba617;
+    border-inline-start: 4px solid #dba617;
     margin: 10px 0;
 }
 
