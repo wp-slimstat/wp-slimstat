@@ -828,6 +828,9 @@ jQuery(function () {
         }
     }
 
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatSearchableSelect = SlimStatSearchableSelect;
+
     // Initialize searchable select instance
     let searchableSelectInstance = null;
 
@@ -877,6 +880,9 @@ jQuery(function () {
 
         return timeRange;
     }
+
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatGetTimeRangeForAjax = getTimeRangeForAjax;
 
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {

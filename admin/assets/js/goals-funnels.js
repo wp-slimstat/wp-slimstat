@@ -176,4 +176,100 @@
         $('.slimstat-funnel-chart[data-funnel-index="' + index + '"]').show();
     });
 
+    // ---- Auto-suggest for value fields ---- //
+
+    var _currentXHR = null;
+    var _optionsCache = {};
+
+    /**
+     * Initialize a SlimStatSearchableSelect on a value input element.
+     * Reuses the existing slimstat_get_filter_options AJAX endpoint.
+     */
+    function initAutoSuggest(inputEl, dimension) {
+        if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
+
+        // Abort any in-flight request
+        if (_currentXHR) { _currentXHR.abort(); _currentXHR = null; }
+
+        // Destroy previous instance via its destroy() method
+        if (inputEl._slimstatSearchable && typeof inputEl._slimstatSearchable.destroy === 'function') {
+            inputEl._slimstatSearchable.destroy();
+            inputEl._slimstatSearchable = null;
+        }
+
+        if (!dimension) {
+            return;
+        }
+
+        // Map event_notes to notes for the AJAX endpoint
+        var ajaxDimension = (dimension === 'event_notes') ? 'notes' : dimension;
+
+        // Use cached options if available
+        if (_optionsCache[ajaxDimension]) {
+            buildWidget(inputEl, _optionsCache[ajaxDimension]);
+            return;
+        }
+
+        // Get time range from admin.js helper
+        var timeRange = typeof window.SlimStatGetTimeRangeForAjax === 'function'
+            ? window.SlimStatGetTimeRangeForAjax() : {};
+
+        // Fetch options from existing AJAX endpoint
+        _currentXHR = $.post(ajaxUrl, {
+            action: 'slimstat_get_filter_options',
+            dimension: ajaxDimension,
+            security: $('#meta-box-order-nonce').val(),
+            time_range_type: timeRange.type || '',
+            time_range_from: timeRange.from || '',
+            time_range_to: timeRange.to || ''
+        }, function (response) {
+            _currentXHR = null;
+            if (response.success && response.data) {
+                _optionsCache[ajaxDimension] = response.data;
+                buildWidget(inputEl, response.data);
+            }
+        });
+    }
+
+    function buildWidget(inputEl, options) {
+        var instance = new window.SlimStatSearchableSelect(inputEl, {
+            placeholder: 'Select or type a value...',
+            searchPlaceholder: 'Search...',
+            noResultsText: 'No matching values'
+        });
+        instance.setOptions(options);
+        inputEl._slimstatSearchable = instance;
+    }
+
+    // When goal dimension changes, init auto-suggest on value field
+    $(document).on('change', '[name="goal_dimension"]', function () {
+        var dimension = $(this).val();
+        var $valueInput = $(this).closest('.slimstat-goal-form').find('[name="goal_value"]');
+        if ($valueInput.length) {
+            initAutoSuggest($valueInput[0], dimension);
+        }
+    });
+
+    // When funnel step dimension changes, init auto-suggest on step value field
+    $(document).on('change', 'select[name*="[dimension]"]', function () {
+        var dimension = $(this).val();
+        var $valueInput = $(this).closest('.slimstat-funnel-step-form').find('input[name*="[value]"]');
+        if ($valueInput.length) {
+            initAutoSuggest($valueInput[0], dimension);
+        }
+    });
+
+    // Disable value field for operators that don't need one
+    $(document).on('change', '[name="goal_operator"], select[name*="[operator]"]', function () {
+        var op = $(this).val();
+        var $form = $(this).closest('.slimstat-goal-form, .slimstat-funnel-step-form');
+        var $valueInput = $form.find('[name="goal_value"], input[name*="[value]"]');
+
+        if (op === 'is_empty' || op === 'is_not_empty') {
+            $valueInput.prop('disabled', true).val('');
+        } else {
+            $valueInput.prop('disabled', false);
+        }
+    });
+
 })(jQuery);
