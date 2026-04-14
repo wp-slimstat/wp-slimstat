@@ -1080,14 +1080,25 @@ class wp_slimstat_reports
      *
      * For type=top reports, SQL fetches the full set (no OFFSET) and
      * count($all_results) is already stable.
+     *
+     * Reports may set 'total_callback' to a callable that returns the
+     * true total for expanded result sets (e.g. get_recent_outbound
+     * explodes ;;;-delimited rows).
      */
     private static function get_report_total_count($_args, $all_results)
     {
+        // Report-specific total override (e.g. expanded outbound links)
+        if (!empty($_args['total_callback']) && is_callable($_args['total_callback'])) {
+            $limit = intval(wp_slimstat::$settings['limit_results']);
+            return min(call_user_func($_args['total_callback']), $limit);
+        }
+
         if (!empty($_args['type']) && $_args['type'] === 'recent') {
+            $use_date_filters = $_args['use_date_filters'] ?? true;
             $true_total = wp_slimstat_db::count_records(
                 'id',
                 !empty($_args['where']) ? $_args['where'] : '',
-                true,
+                $use_date_filters,
                 $_args['where_params'] ?? []
             );
             $limit = intval(wp_slimstat::$settings['limit_results']);
