@@ -84,7 +84,7 @@ class Browscap
      * a crawler (e.g., Chrome-based Googlebot identified as "Chrome").
      *
      * Only fires on the Browscap-resolved path — when UADetector runs
-     * full detection, its own generic bot regex (line 272) already covers this.
+     * full detection, its own generic bot regex already covers this.
      *
      * @since 5.4.9
      * @param array $browser Browser data with 'user_agent' key.

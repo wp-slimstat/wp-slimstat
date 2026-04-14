@@ -45,8 +45,8 @@ safety_assert(
 // TEST 2: Browscap.php get_browser() must call apply_bot_safety_net
 // ═══════════════════════════════════════════════════════════════════════════
 safety_assert(
-    false !== strpos($browscap_src, 'apply_bot_safety_net('),
-    'TEST 2: Browscap.php must call apply_bot_safety_net()'
+    (bool) preg_match('/function\s+get_browser\s*\([^)]*\)\s*\{[\s\S]*?apply_bot_safety_net\s*\(/', $browscap_src),
+    'TEST 2: Browscap.php get_browser() must call apply_bot_safety_net()'
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
