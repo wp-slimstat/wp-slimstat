@@ -1645,6 +1645,29 @@ var SlimStatAdmin = {
         // manual/pagination AJAX request is still pending.
         SlimStatAdmin._isAccessLogInFlight = false;
 
+        // Returns true when the Access Log is showing page 1 (no
+        // "previous page" arrows in the pagination bar).
+        function isAccessLogOnPage1() {
+            return !accessLogNode.querySelector(
+                ".pagination .slimstat-font-angle-left, .pagination .slimstat-font-angle-double-left"
+            );
+        }
+
+        // Stop auto-refresh entirely (used when navigating to page 2+).
+        // MutationObserver restarts it when the user returns to page 1.
+        SlimStatAdmin._stopAutoRefresh = function () {
+            if (refreshTimerHandle) {
+                clearTimeout(refreshTimerHandle);
+                refreshTimerHandle = null;
+            }
+            if (countdownDisplayHandle) {
+                clearInterval(countdownDisplayHandle);
+                countdownDisplayHandle = null;
+            }
+            $refreshTimer.html('');
+            lastDisplayedCountdown = '';
+        };
+
         function onRefreshTick() {
             // #258 B2 — defer if user is hovering or actively scrolling
             if (hoverPaused || Date.now() < userActiveUntil) {
@@ -1659,6 +1682,10 @@ var SlimStatAdmin = {
             // Suppress for 2s after a manual refresh (preserves prior behavior)
             if (Date.now() - SlimStatAdmin._lastManualRefreshTime < MANUAL_REFRESH_SUPPRESS_MS) {
                 refreshTimerHandle = setTimeout(onRefreshTick, MANUAL_REFRESH_SUPPRESS_MS);
+                return;
+            }
+            // Only fire on page 1 — skip if user has paginated
+            if (!isAccessLogOnPage1()) {
                 return;
             }
             // Only fire if the timer is still mounted (panel still on page)
@@ -1780,6 +1807,14 @@ var SlimStatAdmin = {
                         if (isTimer || containsTimer) {
                             $refreshTimer = jQuery("#" + ACCESS_LOG_ID + " .pagination .refresh-timer");
                             if (refreshIntervalSec <= 0) return;
+
+                            // Only auto-refresh on page 1 — if "previous"
+                            // arrows exist, the user has paginated away.
+                            if (!isAccessLogOnPage1()) {
+                                SlimStatAdmin._stopAutoRefresh();
+                                return;
+                            }
+
                             lastRefreshAt = Date.now();
                             startCountdownDisplay();
                             scheduleNextRefresh();
