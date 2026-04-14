@@ -1021,6 +1021,85 @@ class Query
     }
 
     /**
+     * Re-sort merged results to honour the original ORDER BY clause.
+     *
+     * After mergeGroupResults() sums counts from historical + live partitions,
+     * the relative ordering may no longer match the SQL ORDER BY (e.g. a row
+     * whose counthits grew after summing should move up).  This method parses
+     * the stored orderClause and applies an equivalent PHP usort().
+     *
+     * Only fields that exist as keys in the result rows are used for sorting;
+     * SQL expressions (MAX(dt), REPLACE(…), etc.) are silently skipped because
+     * they don't appear as array keys after $wpdb->get_results().
+     *
+     * @param array $results Merged result rows (associative arrays).
+     *
+     * @return array Re-sorted rows.
+     */
+    protected function sortMergedResults(array $results): array
+    {
+        if (empty($this->orderClause) || empty($results)) {
+            return $results;
+        }
+
+        // Strip "ORDER BY " prefix → "counthits DESC, resource ASC"
+        $orderStr = preg_replace('/^ORDER\s+BY\s+/i', '', $this->orderClause);
+        $parts    = array_map('trim', explode(',', $orderStr));
+
+        // Determine which fields actually exist in the result rows.
+        $availableKeys = array_keys($results[0]);
+
+        $sortFields = [];
+        foreach ($parts as $part) {
+            if (preg_match('/^(.+?)\s+(ASC|DESC)$/i', $part, $m)) {
+                $field = $m[1];
+                $dir   = strtoupper($m[2]);
+
+                if (in_array($field, $availableKeys, true)) {
+                    $sortFields[] = ['field' => $field, 'dir' => $dir];
+                }
+            }
+        }
+
+        if (empty($sortFields)) {
+            return $results;
+        }
+
+        usort($results, static function ($a, $b) use ($sortFields) {
+            foreach ($sortFields as $sf) {
+                $field = $sf['field'];
+                $valA  = $a[$field] ?? null;
+                $valB  = $b[$field] ?? null;
+
+                // NULLs sort last regardless of direction.
+                if (null === $valA && null === $valB) {
+                    continue;
+                }
+                if (null === $valA) {
+                    return 1;
+                }
+                if (null === $valB) {
+                    return -1;
+                }
+
+                if (is_numeric($valA) && is_numeric($valB)) {
+                    $cmp = ((float) $valA <=> (float) $valB);
+                } else {
+                    $cmp = strcmp((string) $valA, (string) $valB);
+                }
+
+                if (0 !== $cmp) {
+                    return ('DESC' === $sf['dir']) ? -$cmp : $cmp;
+                }
+            }
+
+            return 0;
+        });
+
+        return $results;
+    }
+
+    /**
      * Helper: Extract date ranges from WHERE clauses
      *
      * @return array Array of extracted date ranges with keys from, to, clauseIdx, and valueIdx
@@ -1437,6 +1516,11 @@ class Query
             // Let mergeGroupResults determine the group key automatically
             // This handles complex GROUP BY expressions and aliases properly
             $merged = $this->mergeGroupResults($live, $historical);
+
+            // Re-sort merged results to honour the original ORDER BY.
+            // mergeGroupResults() sums counthits but loses sort order.
+            $merged = $this->sortMergedResults($merged);
+
             if (is_array($merged)) {
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
             }
