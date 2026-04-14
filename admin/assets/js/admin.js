@@ -1665,6 +1665,7 @@ var SlimStatAdmin = {
                 countdownDisplayHandle = null;
             }
             $refreshTimer.html('');
+            jQuery("#" + ACCESS_LOG_ID + " .refresh-countdown").hide();
             lastDisplayedCountdown = '';
         };
 
@@ -1815,6 +1816,7 @@ var SlimStatAdmin = {
                                 return;
                             }
 
+                            jQuery("#" + ACCESS_LOG_ID + " .refresh-countdown").show();
                             lastRefreshAt = Date.now();
                             startCountdownDisplay();
                             scheduleNextRefresh();
