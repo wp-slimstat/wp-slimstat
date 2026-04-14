@@ -9,13 +9,16 @@ class UADetector
     //		1: crawler
     //		2: mobile
 
+    /** Generic bot detection regex — shared with Browscap::apply_bot_safety_net(). */
+    public const BOT_GENERIC_REGEX = '#(robot|bot[\s\-_\/\)]|bot$|blog|checker|crawl|feed|fetcher|libwww|[^\.e]link\s?|parser|reader|spider|verifier|href|https?\://|.+(?:\@|\s?at\s?)[a-z0-9_\-]+(?:\.|\s?dot\s?)|www[0-9]?\.[a-z0-9_\-]+\..+|\/.+\.(s?html?|aspx?|php5?|cgi))#i';
+
     public static function get_browser($_user_agent = '')
     {
         $browser = ['browser' => 'Default Browser', 'browser_version' => '', 'browser_type' => 0, 'platform' => 'unknown', 'user_agent' => $_user_agent];
 
         if (empty($_user_agent) || strlen($_user_agent) <= 5) {
             $browser['browser_type'] = 1;
-        } elseif (preg_match('#\(compatible;\sGooglebot(?:([a-z\-]+)?)/(\d\.\d);[\s\+]+http\://www\.google\.com/bot\.html\)$#i', $_user_agent, $match) > 0) {
+        } elseif (preg_match('#\(compatible;\sGooglebot(?:([a-z\-]+)?)/(\d\.\d);[\s\+]+http\://www\.google\.com/bot\.html\)#i', $_user_agent, $match) > 0) {
             $browser['browser']         = 'Googlebot';
             $browser['browser_version'] = $match[2];
             $browser['browser_type']    = 1;
@@ -269,7 +272,7 @@ class UADetector
             $browser['browser_type']    = 1;
         }
 
-        if (preg_match('#(robot|bot[\s\-_\/\)]|bot$|blog|checker|crawl|feed|fetcher|libwww|[^\.e]link\s?|parser|reader|spider|verifier|href|https?\://|.+(?:\@|\s?at\s?)[a-z0-9_\-]+(?:\.|\s?dot\s?)|www[0-9]?\.[a-z0-9_\-]+\..+|\/.+\.(s?html?|aspx?|php5?|cgi))#i', $_user_agent) > 0) {
+        if (preg_match(self::BOT_GENERIC_REGEX, $_user_agent) > 0) {
             $browser['browser_type'] = 1;
         }
 

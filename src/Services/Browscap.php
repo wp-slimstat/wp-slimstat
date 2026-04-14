@@ -63,6 +63,13 @@ class Browscap
             $browser['browser_version'] = $browser_version['browser_version'];
         }
 
+        // Safety net: detect bots by UA keywords when Browscap did not flag as crawler.
+        // Catches Chrome-based crawlers (Googlebot, Bingbot) that Browscap may
+        // identify as regular browsers without setting crawler=true. See #291.
+        if (0 === (int) $browser['browser_type']) {
+            $browser = self::apply_bot_safety_net($browser);
+        }
+
         // Let third-party tools manipulate the data
         $browser = apply_filters('slimstat_filter_browscap', $browser);
 
@@ -70,6 +77,31 @@ class Browscap
     }
 
     // end get_browser
+
+    /**
+     * Post-resolution bot safety net. Checks the UA string for known bot
+     * indicators when Browscap resolved a browser but did not flag it as
+     * a crawler (e.g., Chrome-based Googlebot identified as "Chrome").
+     *
+     * Only fires on the Browscap-resolved path — when UADetector runs
+     * full detection, its own generic bot regex (line 272) already covers this.
+     *
+     * @since 5.4.9
+     * @param array $browser Browser data with 'user_agent' key.
+     * @return array Browser data with browser_type=1 if bot detected.
+     */
+    public static function apply_bot_safety_net(array $browser): array
+    {
+        if (empty($browser['user_agent'])) {
+            return $browser;
+        }
+
+        if (preg_match(UADetector::BOT_GENERIC_REGEX, $browser['user_agent']) > 0) {
+            $browser['browser_type'] = 1;
+        }
+
+        return $browser;
+    }
 
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {

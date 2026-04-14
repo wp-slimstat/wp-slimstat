@@ -204,6 +204,71 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   });
 
   // ────────────────────────────────────────────────────────────────
+  // Tests 3b-3d: Chrome-based bot exclusion — #291
+  // Parameterized: bot UAs should be excluded, real Chrome should not
+  // ────────────────────────────────────────────────────────────────
+  const botExclusionCases: Array<{ name: string; ua: string; marker: string; excluded: boolean }> = [
+    {
+      name: 'Chrome-based desktop Googlebot excluded',
+      ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.6723.117 Safari/537.36',
+      marker: 'e2e-chrome-bot',
+      excluded: true,
+    },
+    {
+      name: 'Chrome-based Bingbot excluded',
+      ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36',
+      marker: 'e2e-chrome-bingbot',
+      excluded: true,
+    },
+    {
+      name: 'Real Chrome browser NOT excluded (false-positive guard)',
+      ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+      marker: 'e2e-real-chrome',
+      excluded: false,
+    },
+  ];
+
+  for (const { name, ua, marker: markerPrefix, excluded } of botExclusionCases) {
+    test(`${name} when ignore_bots is on`, async ({ browser }) => {
+      await setSlimstatSetting('ignore_bots', 'on');
+
+      installHeaderInjector();
+      setHeaderOverrides({ 'User-Agent': ua });
+
+      const countBefore = await getStatCount();
+
+      let anonCtx: import('@playwright/test').BrowserContext | undefined;
+      let anonPage: import('@playwright/test').Page | undefined;
+      try {
+        anonCtx = await browser.newContext({
+          javaScriptEnabled: false,
+          storageState: EMPTY_STORAGE_STATE,
+          userAgent: ua,
+        });
+        anonPage = await anonCtx.newPage();
+        const testMarker = `${markerPrefix}-${Date.now()}`;
+        await anonPage.goto(`${BASE_URL}/?e2e_marker=${testMarker}`, { waitUntil: 'domcontentloaded' });
+
+        if (excluded) {
+          await expect.poll(
+            () => getStatCount(),
+            { timeout: 6_000, intervals: [500] }
+          ).toBe(countBefore);
+        } else {
+          await expect.poll(
+            () => getStatCount(),
+            { timeout: 6_000, intervals: [500] }
+          ).toBeGreaterThan(countBefore);
+        }
+      } finally {
+        await anonPage?.close();
+        await anonCtx?.close();
+        uninstallHeaderInjector();
+      }
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────────
   // Test 4: Permalink exclusion — ignore_resources with /wp-login.php
   // REQ-EXCL-005 — @smoke @positive @priority-critical
   // ────────────────────────────────────────────────────────────────
