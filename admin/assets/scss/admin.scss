@@ -807,6 +807,10 @@ body {
   float: right;
 }
 
+[id^="slim_"] p span.refresh-countdown {
+  float: none;
+}
+
 [id^="slim_"] p span.pageview-screenres {
   margin-left: 10px;
 }
