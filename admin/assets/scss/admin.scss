@@ -1185,6 +1185,10 @@ body {
   float: left;
 }
 
+.rtl [id^="slim_"] p span.refresh-countdown {
+  float: none;
+}
+
 .rtl .qtip-content {
   text-align: right;
 }

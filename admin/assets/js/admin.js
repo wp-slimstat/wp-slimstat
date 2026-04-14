@@ -1766,7 +1766,7 @@ var SlimStatAdmin = {
                     lastRefreshAt += Date.now() - hoverStartedAt;
                     hoverStartedAt = 0;
                 }
-                if (refreshIntervalSec > 0 && !refreshTimerHandle) {
+                if (refreshIntervalSec > 0 && !refreshTimerHandle && isAccessLogOnPage1()) {
                     scheduleNextRefresh();
                 }
             })
@@ -1781,7 +1781,7 @@ var SlimStatAdmin = {
                     clearTimeout(refreshTimerHandle);
                     refreshTimerHandle = null;
                 }
-            } else if (refreshIntervalSec > 0 && $refreshTimer.length > 0) {
+            } else if (refreshIntervalSec > 0 && $refreshTimer.length > 0 && isAccessLogOnPage1()) {
                 lastRefreshAt = Date.now();
                 scheduleNextRefresh();
             }
@@ -1807,7 +1807,7 @@ var SlimStatAdmin = {
                         );
                         if (isTimer || containsTimer) {
                             $refreshTimer = jQuery("#" + ACCESS_LOG_ID + " .pagination .refresh-timer");
-                            if (refreshIntervalSec <= 0) return;
+                            if (refreshIntervalSec <= 0 || $refreshTimer.length === 0) return;
 
                             // Only auto-refresh on page 1 — if "previous"
                             // arrows exist, the user has paginated away.
@@ -1827,8 +1827,8 @@ var SlimStatAdmin = {
             observer.observe(accessLogNode, { childList: true, subtree: true });
         }
 
-        // Bootstrap on initial load
-        if ($refreshTimer.length > 0 && refreshIntervalSec > 0) {
+        // Bootstrap on initial load — only on page 1
+        if ($refreshTimer.length > 0 && refreshIntervalSec > 0 && isAccessLogOnPage1()) {
             lastRefreshAt = Date.now();
             startCountdownDisplay();
             scheduleNextRefresh();
