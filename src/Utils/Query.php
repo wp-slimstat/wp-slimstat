@@ -1525,8 +1525,11 @@ class Query
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
             }
 
-            // Apply the original OFFSET+LIMIT after merging
-            if ($parsedOffset > 0 && is_array($merged)) {
+            // Apply the original OFFSET+LIMIT after merging.
+            // Check $parsedLimit (not $parsedOffset) so "top" reports
+            // (which use LIMIT without OFFSET) also get capped after the
+            // two partitions are merged and re-sorted.
+            if ($parsedLimit > 0 && is_array($merged)) {
                 $merged = array_slice($merged, $parsedOffset, $parsedLimit);
             }
 
