@@ -1,17 +1,21 @@
 = 5.4.10 - 2026-04-13 =
 
-**Access Log usability & report pagination fixes**
+**Report fixes**
 
-- Fix: Access Log pagination no longer drops the user's selected custom date range. Clicking the next/previous arrow now returns rows from the chosen window instead of jumping to the current date. Fixes initial async load and Screen Options re-activation as well, since they share the same code path. ([#287](https://github.com/wp-slimstat/wp-slimstat/issues/287))
-- Fix: "Auto Refresh" setting in Settings → Reports is now actually honored. Previously the value was checked for existence only and the refresh was hardcoded to a 60-second wall-clock cycle regardless of the setting. The countdown now reflects the configured interval (e.g. `0:30` for 30 seconds). ([#258](https://github.com/wp-slimstat/wp-slimstat/issues/258))
-- Fix: Recent Users, Recent Posts, and Recent Pages Not Found now show unique items instead of duplicating the same entry for every pageview. Counts match actual unique items across all date ranges. ([#288](https://github.com/wp-slimstat/wp-slimstat/issues/288))
-- Fix: Access Log "last page" no longer shows "No data to display". The query engine now correctly distributes OFFSET across split date-range partitions instead of applying it independently to each partition.
-- Fix: Report pagination totals are now stable across pages and correctly capped to the configured limit.
-- Fix: "Top Web Pages" and other top-type reports now correctly apply the result limit after merging split date-range partitions. Previously, up to twice the configured limit could leak through, inflating pagination totals and potentially misordering rows.
-- Improvement: Access Log auto-refresh now pauses while you are hovering over the panel, scrolling with the mouse wheel or trackpad, or while the browser tab is hidden. Refresh resumes automatically once you move the cursor off the panel.
-- Improvement: Scroll position inside the Access Log is now preserved across each refresh — no more "jump to top" while you are reading.
-- Refactor: Replaced the bundled jQuery SlimScroll v1.3.8 plugin (~167 lines) with native CSS scrolling. Report panels now use a visible, regular-speed scrollbar; trackpad and Magic Mouse momentum scrolling no longer chains to the page (uses `overscroll-behavior: contain`). Fixes the long-standing "scrollbar invisible / super slow / page scrolls along" complaints on macOS. ([#156](https://github.com/wp-slimstat/wp-slimstat/issues/156))
-- Note for theme/plugin developers: the bundled SlimScroll's `slimscrolling` and `slimscroll` jQuery events are no longer dispatched. Custom code listening on those events should migrate to the native `scroll` event on `.inside` containers.
+- Clicking next/previous page in the Access Log no longer resets your date range — it stays on the dates you picked ([#287](https://github.com/wp-slimstat/wp-slimstat/issues/287))
+- The auto-refresh interval in Settings → Reports is now respected. Previously the countdown was stuck at 60 seconds no matter what you set ([#258](https://github.com/wp-slimstat/wp-slimstat/issues/258))
+- Recent Users, Recent Posts, and Recent Pages Not Found no longer show the same item repeated hundreds of times. Each item now appears once with the correct count ([#288](https://github.com/wp-slimstat/wp-slimstat/issues/288))
+- The last page of the Access Log now shows data instead of "No data to display"
+- Pagination totals are now consistent — the count no longer changes when you move between pages
+- Top Web Pages and other "Top" reports now respect the result limit correctly
+
+**Usability improvements**
+
+- Auto-refresh pauses when you hover over the Access Log, scroll inside it, or switch to another browser tab — no more losing your place
+- Scroll position is preserved across refreshes — the panel no longer jumps to the top
+- Report panels now use native scrolling with a visible scrollbar. Fixes the long-standing issue where the scrollbar was invisible or unusably slow on macOS ([#156](https://github.com/wp-slimstat/wp-slimstat/issues/156))
+
+**Developer note:** The bundled SlimScroll jQuery plugin has been removed. If your code listens for `slimscrolling` or `slimscroll` events, switch to the native `scroll` event on `.inside` containers.
 
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
@@ -22,40 +26,24 @@
 This release fixes remaining tracking issues from the 5.4.x upgrade cycle. If you upgraded from
 5.3.x through 5.4.0-5.4.6, this update restores session cookies and client-side tracking automatically.
 
-**Migration & Tracking**
-- Fix: Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
-- Fix: Client-side (JavaScript) tracking restored unconditionally — fixes zero tracking on cached sites
-- Fix: Migration forced-resets gated to run once, preserving admin choices on future updates
-- Fix: FingerprintJS v4 now generates fingerprints correctly — the required `.get()` call was missing since the v3→v4 migration, causing empty fingerprint hashes on every tracking request
-- Fix: JS consent check now mirrors PHP logic when SlimStat banner is off
+**Tracking**
+- Session cookies now restored for all upgrade paths, not just GDPR-disabled sites
+- Client-side (JavaScript) tracking restored — fixes zero tracking on cached sites
+- Returning visitors are now recognized correctly again thanks to restored fingerprint generation
+- Consent check in the browser now matches the server-side logic when the SlimStat banner is off
 
 **External Database Addon**
-- Fix: Charts and reports now query the correct database for External DB addon users
-- Fix: Real-time analytics queries (live visitors, access log) use the correct database connection
-- Fix: Complex report queries (e.g. Recent Events) now query the correct database when External DB addon is active
-- Fix: Filter dropdown autocomplete now queries the correct database for External DB addon users
-- Fix: Visit counter seeds correctly from external database for Pro addon users
-- Fix: Index existence check uses the correct database when Custom DB is active
-- Fix: Table prefix set correctly on custom wpdb instances
+- Charts, reports, real-time analytics, filters, and visit counters now all query the correct database when using the External DB addon
 
 **Reports & Filters**
-- Fix: Country percentages exceeding 100% in Audience Location map — query cache now stays fresh for live date ranges ([#270](https://github.com/wp-slimstat/wp-slimstat/issues/270))
-- Fix: Filter removal via red cross button not working — hidden form inputs now properly cleared
-- Fix: Outbound Link, Notes, and Category filter dropdowns now show individual values instead of raw concatenated strings
-- Fix: Filter 'equals' operator now works on Outbound Link, Notes, and Category columns (auto-upgraded to substring match)
-- Fix: Chart granularity selection (Daily/Weekly/Monthly) persists across page reloads ([#265](https://github.com/wp-slimstat/wp-slimstat/issues/265))
-- Fix: Chart granularity now syncs across all charts on the same page
-- Fix: Chart timezone offset corrected for non-UTC servers
+- Country percentages no longer exceed 100% — stale cache cleared for live date ranges ([#270](https://github.com/wp-slimstat/wp-slimstat/issues/270))
+- The red "x" button to remove a filter works again
+- Outbound Link, Notes, and Category filters now show individual values instead of jumbled strings
+- Chart granularity (Daily/Weekly/Monthly) now saves correctly and syncs across all charts ([#265](https://github.com/wp-slimstat/wp-slimstat/issues/265))
 
-**Browscap Library**
-- Fix: Browscap Library now initializes WordPress filesystem before extraction — resolves toggle revert on some hosts ([#14843](https://github.com/wp-slimstat/wp-slimstat/issues/14843))
-- Fix: Browscap errors now show specific failure details instead of generic messages
-- Fix: Downloaded Browscap files validated as ZIP before extraction
-- Fix: Browscap download compatible with hosts that block GitHub redirects
-
-**Improvements**
-- Improvement: Chart granularity persisted via localStorage for cross-session consistency
-- Improvement: sessionStorage access wrapped in try/catch for private browsing compatibility
+**Browscap (Browser Detection)**
+- Browser detection library now downloads and extracts reliably on all hosts ([#14843](https://github.com/wp-slimstat/wp-slimstat/issues/14843))
+- Errors show specific failure details instead of generic messages
 
 = 5.4.6 - 2026-03-23 =
 
@@ -105,40 +93,14 @@ Improved
 
 = 5.4.5 - 2026-03-20 =
 
-Fixed
-- Hardened user exclusion logic — fixed consent-upgrade path, capability key matching, and defensive `wp_get_current_user()` calls (#246)
-- GDPR consent cookie domain, cached page banner display, and anonymous nonce handling
-- Removed double-escaping in report filters and tightened XSS sanitization (#243, #244)
-- Strict fingerprint input sanitization (#244)
-- Output escaping in reports default case (#244)
-- Store attachment content_type as `cpt:attachment` (#236)
-- Narrowed dashboard nested widget CSS selectors to avoid style conflicts (#247)
-- Increased Access Log widget height on WP Dashboard
-- Synced stat before `ensureVisitId` to prevent ID loss on finalization
-- Skipped REST nonce for anonymous users on non-consent tracking endpoints, removed dead adblock fallback URL
-
-Security
-- Restored nonce verification for all consent endpoints
-
-Improved
-- Refactored `isUserExcluded()` into standalone method with full test coverage
-- Inlined `get_current_user_id()` in nonce guards for clarity
-
-Infrastructure (cycle/01)
-- Added PHPUnit 10.5 + Brain Monkey + Mockery unit test framework (23 tests, 27 assertions across Tracker, Processor, Session classes)
-- Added @wordpress/env Docker environment (WordPress 6.4, PHP 7.4) for reproducible local and CI testing
-- Added 3-tier GitHub Actions CI pipeline: Tier 1 PHPUnit + lint on every push (<3 min), Tier 2 E2E on main/development PRs, Tier 3 full PHP matrix + k6 nightly
-- Added Playwright analytics correctness invariants spec (5 tests verifying row creation, visit_id chain, resource field match, no duplicate inserts)
-- Added 5 deterministic site profile fixtures (publisher, store, membership, brochure, multisite) for consistent E2E test state
-- Added E2E correlation ID harness MU-plugin for per-run row isolation in wp_slim_stats
-
-Infrastructure (cycle/02)
-- Fixed E2E tests in CI — rewrote setSlimstatOption to direct DB via php-serialize (82 specs now pass, up from 1)
-- Fixed FK constraint errors on TRUNCATE TABLE wp_slim_stats across all test files
-- Fixed rewrite flush to use permalink page visit instead of AJAX (works in wp-env Docker)
-- Added session & cookie management E2E tests — visit_id continuity, cookie expiry, consent-upgrade regression (#246)
-- Added admin settings persistence E2E tests — save/reload, multi-setting atomicity, navigation survival
-- Added query builder unit tests — 29 tests covering SQL generation, all filter operators, escaping, date ranges
+**Fixed**
+- User exclusion rules now work correctly across all consent and role scenarios ([#246](https://github.com/wp-slimstat/wp-slimstat/issues/246))
+- GDPR consent banner now displays reliably on cached pages
+- Tightened security on report filters and fingerprint inputs ([#243](https://github.com/wp-slimstat/wp-slimstat/issues/243), [#244](https://github.com/wp-slimstat/wp-slimstat/issues/244))
+- Attachments now appear under their correct content type in reports ([#236](https://github.com/wp-slimstat/wp-slimstat/issues/236))
+- Dashboard widget styles no longer conflict with other plugins ([#247](https://github.com/wp-slimstat/wp-slimstat/issues/247))
+- Increased Access Log widget height on the WordPress Dashboard
+- Visit tracking no longer loses data when multiple events fire quickly
 
 = 5.4.4 - 2026-03-17 =
 
