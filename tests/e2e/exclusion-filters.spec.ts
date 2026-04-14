@@ -207,28 +207,23 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   // Tests 3b-3d: Chrome-based bot exclusion — #291
   // Parameterized: bot UAs should be excluded, real Chrome should not
   // ────────────────────────────────────────────────────────────────
-  const botExclusionCases: Array<{ name: string; ua: string; marker: string; excluded: boolean }> = [
+  // Chrome-based bot UAs that must be excluded when ignore_bots is on (#291).
+  // False-positive guard (real browsers NOT excluded) is covered by unit tests:
+  // UADetectorBotTest + BrowscapBotSafetyNetTest verify Chrome/Firefox/Safari/Edge.
+  const chromeBotCases = [
     {
       name: 'Chrome-based desktop Googlebot excluded',
       ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.6723.117 Safari/537.36',
       marker: 'e2e-chrome-bot',
-      excluded: true,
     },
     {
       name: 'Chrome-based Bingbot excluded',
       ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36',
       marker: 'e2e-chrome-bingbot',
-      excluded: true,
-    },
-    {
-      name: 'Real Chrome browser NOT excluded (false-positive guard)',
-      ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-      marker: 'e2e-real-chrome',
-      excluded: false,
     },
   ];
 
-  for (const { name, ua, marker: markerPrefix, excluded } of botExclusionCases) {
+  for (const { name, ua, marker: markerPrefix } of chromeBotCases) {
     test(`${name} when ignore_bots is on`, async ({ browser }) => {
       await setSlimstatSetting('ignore_bots', 'on');
 
@@ -249,17 +244,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
         const testMarker = `${markerPrefix}-${Date.now()}`;
         await anonPage.goto(`${BASE_URL}/?e2e_marker=${testMarker}`, { waitUntil: 'domcontentloaded' });
 
-        if (excluded) {
-          await expect.poll(
-            () => getStatCount(),
-            { timeout: 6_000, intervals: [500] }
-          ).toBe(countBefore);
-        } else {
-          await expect.poll(
-            () => getStatCount(),
-            { timeout: 6_000, intervals: [500] }
-          ).toBeGreaterThan(countBefore);
-        }
+        await expect.poll(
+          () => getStatCount(),
+          { timeout: 6_000, intervals: [500] }
+        ).toBe(countBefore);
       } finally {
         await anonPage?.close();
         await anonCtx?.close();
