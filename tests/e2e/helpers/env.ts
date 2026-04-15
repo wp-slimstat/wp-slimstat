@@ -28,6 +28,10 @@ const _mysqlSocket = process.env.MYSQL_SOCKET ?? '/tmp/mysql.sock';
  *  Uses Unix socket when MYSQL_SOCKET is set (local dev default: /tmp/mysql.sock).
  *  Falls back to TCP (MYSQL_HOST / MYSQL_PORT) when MYSQL_SOCKET is empty string.
  */
+/** WordPress admin credentials. CI default: admin / password (wp-env). */
+export const ADMIN_USER = process.env.WP_ADMIN_USER ?? 'parhumm';
+export const ADMIN_PASS = process.env.WP_ADMIN_PASS ?? 'testpass123';
+
 export const MYSQL_CONFIG = {
   ...(_mysqlSocket
     ? { socketPath: _mysqlSocket }
