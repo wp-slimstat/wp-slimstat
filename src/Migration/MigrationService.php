@@ -9,6 +9,7 @@ use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
 use SlimStat\Migration\Migrations\CreateDtOutIndex;
 use SlimStat\Migration\Migrations\CreateDtPlatformIndex;
 use SlimStat\Migration\Migrations\CreateDtScreenIndex;
+use SlimStat\Migration\Migrations\RecoverCorruptedHeatmapPositions;
 
 /**
  * Service class to initialize and manage the migration system.
@@ -34,6 +35,7 @@ class MigrationService
             $manager->register(new CreateDtScreenIndex($wpdb));
             $manager->register(new CreateDtBrowserIndex($wpdb));
             $manager->register(new CreateDtPlatformIndex($wpdb));
+            $manager->register(new RecoverCorruptedHeatmapPositions($wpdb));
 
             $admin = new MigrationAdmin($manager);
             $admin->hooks();
