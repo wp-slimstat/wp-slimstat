@@ -8,6 +8,8 @@
  * @see jaan-to/outputs/qa/cases/10-exclusion-filters/10-test-cases-exclusion-filters.md
  */
 import { test, expect } from '@playwright/test';
+import { execSync } from 'child_process';
+import path from 'path';
 import {
   getPool,
   closeDb,
@@ -20,10 +22,11 @@ import {
   setHeaderOverrides,
   enableDisableWpCron,
   restoreWpConfig,
+  injectWpConfigLine,
   installCptMuPlugin,
   uninstallCptMuPlugin,
 } from './helpers/setup';
-import { BASE_URL } from './helpers/env';
+import { BASE_URL, ADMIN_USER, ADMIN_PASS, WP_ROOT } from './helpers/env';
 
 const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
@@ -67,9 +70,18 @@ async function createAttachmentPost(title: string, slug: string): Promise<number
 test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   test.beforeAll(async () => {
     enableDisableWpCron();
+    // Disable page caching (WP Rocket, WP Super Cache, etc.) so server-side
+    // tracking fires on every request instead of serving cached HTML.
+    injectWpConfigLine("define('DONOTCACHEPAGE', true);");
+    // Purge any existing WP Rocket cache so stale pages don't bypass tracking.
+    try { execSync(`rm -rf "${path.join(WP_ROOT, 'wp-content/cache/wp-rocket')}"`, { stdio: 'ignore' }); } catch {}
     installCptMuPlugin();
     await snapshotSlimstatOptions();
-    // Ensure server-side tracking is on
+    // Ensure server-side tracking is on.
+    // The migration block (wp-slimstat.php:282-293) forces javascript_mode='on'
+    // for sites upgraded from < 5.4.7. Set _migration_5460 to current version
+    // so the migration is skipped and javascript_mode='off' persists.
+    await setSlimstatSetting('_migration_5460', '99.0.0');
     await setSlimstatSetting('javascript_mode', 'off');
     await setSlimstatSetting('is_tracking', 'on');
     // CRITICAL: Disable GDPR to isolate exclusion filters from consent gate (#246)
@@ -204,6 +216,59 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
   });
 
   // ────────────────────────────────────────────────────────────────
+  // Tests 3b-3d: Chrome-based bot exclusion — #291
+  // Parameterized: bot UAs should be excluded, real Chrome should not
+  // ────────────────────────────────────────────────────────────────
+  // Chrome-based bot UAs that must be excluded when ignore_bots is on (#291).
+  // False-positive guard (real browsers NOT excluded) is covered by unit tests:
+  // UADetectorBotTest + BrowscapBotSafetyNetTest verify Chrome/Firefox/Safari/Edge.
+  const chromeBotCases = [
+    {
+      name: 'Chrome-based desktop Googlebot excluded',
+      ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/130.0.6723.117 Safari/537.36',
+      marker: 'e2e-chrome-bot',
+    },
+    {
+      name: 'Chrome-based Bingbot excluded',
+      ua: 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm) Chrome/116.0.1938.76 Safari/537.36',
+      marker: 'e2e-chrome-bingbot',
+    },
+  ];
+
+  for (const { name, ua, marker: markerPrefix } of chromeBotCases) {
+    test(`${name} when ignore_bots is on`, async ({ browser }) => {
+      await setSlimstatSetting('ignore_bots', 'on');
+
+      installHeaderInjector();
+      setHeaderOverrides({ 'User-Agent': ua });
+
+      const countBefore = await getStatCount();
+
+      let anonCtx: import('@playwright/test').BrowserContext | undefined;
+      let anonPage: import('@playwright/test').Page | undefined;
+      try {
+        anonCtx = await browser.newContext({
+          javaScriptEnabled: false,
+          storageState: EMPTY_STORAGE_STATE,
+          userAgent: ua,
+        });
+        anonPage = await anonCtx.newPage();
+        const testMarker = `${markerPrefix}-${Date.now()}`;
+        await anonPage.goto(`${BASE_URL}/?e2e_marker=${testMarker}`, { waitUntil: 'domcontentloaded' });
+
+        await expect.poll(
+          () => getStatCount(),
+          { timeout: 6_000, intervals: [500] }
+        ).toBe(countBefore);
+      } finally {
+        await anonPage?.close();
+        await anonCtx?.close();
+        uninstallHeaderInjector();
+      }
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────────
   // Test 4: Permalink exclusion — ignore_resources with /wp-login.php
   // REQ-EXCL-005 — @smoke @positive @priority-critical
   // ────────────────────────────────────────────────────────────────
@@ -244,8 +309,8 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     const adminCtx = await browser.newContext({ javaScriptEnabled: false });
     const adminPage = await adminCtx.newPage();
     await adminPage.goto(`${BASE_URL}/wp-login.php`);
-    await adminPage.fill('#user_login', 'parhumm');
-    await adminPage.fill('#user_pass', 'testpass123');
+    await adminPage.fill('#user_login', ADMIN_USER);
+    await adminPage.fill('#user_pass', ADMIN_PASS);
     await adminPage.click('#wp-submit');
     await adminPage.waitForURL('**/wp-admin/**', { timeout: 30_000 });
 
@@ -304,8 +369,10 @@ test.describe('Exclusion Filters (@tracking-exclusions)', () => {
     await setSlimstatSetting('ignore_content_types', '');
 
     const slug = `e2e-attachment-track-${Date.now()}`;
-    const attachmentId = await createAttachmentPost('E2E Attachment Tracking Test', slug);
-    const attachmentUrl = `${BASE_URL}/?attachment_id=${attachmentId}`;
+    await createAttachmentPost('E2E Attachment Tracking Test', slug);
+    // Use pretty permalink — /?attachment_id=N triggers a 301 redirect whose
+    // tracked resource is the redirect target, not the original URL.
+    const attachmentUrl = `${BASE_URL}/${slug}/`;
 
     await clearStatsTable();
 

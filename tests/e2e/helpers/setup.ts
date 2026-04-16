@@ -28,7 +28,7 @@ const CRON_LINE = "define('DISABLE_WP_CRON', true);";
 
 let wpConfigBackup: string | null = null;
 
-function injectWpConfigLine(line: string): void {
+export function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
   if (wpConfigBackup === null) wpConfigBackup = content;
   if (content.includes(line)) return; // already set

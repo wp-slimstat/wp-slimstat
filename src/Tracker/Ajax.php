@@ -2,6 +2,7 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Services\Browscap;
 use SlimStat\Utils\Consent;
 
 class Ajax
@@ -132,6 +133,17 @@ class Ajax
         \wp_slimstat::set_stat($stat);
 
         if (!empty($data_js['id'])) {
+            // Defense-in-depth: check bot status even for follow-up AJAX events.
+            // The initial pageview (id=empty) goes through Processor::process() which
+            // has the full bot check, but follow-up events skip Processor entirely.
+            // This ensures bots executing JS are still blocked on updates. See #291.
+            if ('on' == \wp_slimstat::$settings['ignore_bots']) {
+                $browser = Browscap::get_browser();
+                if (1 == $browser['browser_type']) {
+                    return Utils::logError(313);
+                }
+            }
+
             $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
             if (false === $data_js['id']) {
                 return Utils::logError(101);
