@@ -647,6 +647,44 @@ export async function waitForTrackerId(page: import('@playwright/test').Page): P
   return page.evaluate(() => (window as any).SlimStatParams?.id ?? '');
 }
 
+// ─── Event row helpers ───────────────────────────────────────────
+
+/**
+ * Poll wp_slim_events for a row matching the given stat id.
+ * Returns the first match or null on timeout.
+ */
+export async function waitForEventRow(
+  statId: number,
+  timeoutMs = 20_000,
+): Promise<{ id: number; position: string | null; notes: string | null; dt: number } | null> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    const [rows] = await getPool().execute(
+      'SELECT id, position, notes, dt FROM wp_slim_events WHERE id = ? LIMIT 1',
+      [statId],
+    ) as any;
+    if (rows.length > 0) return rows[0];
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  return null;
+}
+
+/**
+ * Insert a row into wp_slim_events.
+ * The statId MUST reference an existing wp_slim_stats.id (FK constraint).
+ */
+export async function seedEventRow(
+  statId: number,
+  position: string,
+  dt?: number,
+): Promise<void> {
+  const timestamp = dt ?? Math.floor(Date.now() / 1000);
+  await getPool().execute(
+    'INSERT INTO wp_slim_events (id, position, dt) VALUES (?, ?, ?)',
+    [statId, position, timestamp],
+  );
+}
+
 // ─── Scenario helpers ────────────────────────────────────────────
 
 export async function simulateFreshInstall(): Promise<void> {
