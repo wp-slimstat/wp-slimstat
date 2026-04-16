@@ -173,13 +173,13 @@ class QuerySortMergedTest extends WpSlimstatTestCase
         $this->assertSame('/c', $result[2]['resource']);
     }
 
-    public function test_sql_expression_skipped_gracefully(): void
+    public function test_sql_aggregate_expression_resolves_to_alias(): void
     {
         $query = Query::select(['username', 'COUNT(*) AS counthits', 'MAX(dt) AS dt'])
             ->from('wp_slim_stats')
             ->orderBy('MAX(dt) DESC');
 
-        // MAX(dt) is NOT a key in the result — only 'dt' is (the alias).
+        // MAX(dt) resolves to the 'dt' alias in the result set.
         $input = [
             ['username' => 'alice', 'counthits' => '5',  'dt' => '1000'],
             ['username' => 'bob',   'counthits' => '10', 'dt' => '2000'],
@@ -187,9 +187,9 @@ class QuerySortMergedTest extends WpSlimstatTestCase
 
         $result = $this->invokeSortMergedResults($query, $input);
 
-        // No sortable field found → input order preserved
-        $this->assertSame('alice', $result[0]['username']);
-        $this->assertSame('bob', $result[1]['username']);
+        // MAX(dt) DESC → sorted by dt descending: bob (2000) before alice (1000)
+        $this->assertSame('bob', $result[0]['username']);
+        $this->assertSame('alice', $result[1]['username']);
     }
 
     public function test_mixed_sortable_and_expression_fields(): void
