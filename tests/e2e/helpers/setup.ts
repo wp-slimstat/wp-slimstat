@@ -660,7 +660,7 @@ export async function waitForEventRow(
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const [rows] = await getPool().execute(
-      'SELECT id, position, notes, dt FROM wp_slim_events WHERE id = ? LIMIT 1',
+      'SELECT id, position, notes, dt FROM wp_slim_events WHERE id = ? ORDER BY event_id DESC LIMIT 1',
       [statId],
     ) as any;
     if (rows.length > 0) return rows[0];

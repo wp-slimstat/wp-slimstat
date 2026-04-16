@@ -132,6 +132,7 @@ async function callHeatmapEndpoint(
 }
 
 test.describe('Heatmap position sanitization', () => {
+  test.describe.configure({ mode: 'serial' });
   test.setTimeout(60_000);
 
   test.beforeAll(async () => {
