@@ -98,7 +98,7 @@ async function findPaginatedReports(page: any): Promise<PaginatedReport[]> {
     jQuery('.postbox').each(function () {
       const $box = jQuery(this);
       const id = $box.attr('id') || '';
-      const $nextArrow = $box.find('.pagination a.refresh.slimstat-font-angle-right');
+      const $nextArrow = $box.find('.pagination a.refresh.slimstat-font-angle-right, .pagination a.refresh.slimstat-font-angle-left');
       if ($nextArrow.length > 0) {
         const showingText = $box.find('.pagination').text().trim();
         results.push({ id, showingText });

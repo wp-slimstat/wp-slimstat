@@ -1504,7 +1504,7 @@ var SlimStatAdmin = {
                         });
                     }
                 })
-                .complete(function () {
+                .always(function () {
                     // Clear in-flight guard for Access Log requests
                     if (id == SlimStatAdmin.ACCESS_LOG_REPORT_ID) {
                         SlimStatAdmin._isAccessLogInFlight = false;
@@ -1553,7 +1553,7 @@ var SlimStatAdmin = {
         function scheduleAdminBarPulse() {
             var now = new Date();
             var msUntilNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-            if (msUntilNextMinute < COUNTDOWN_TICK_MS) msUntilNextMinute += ADMINBAR_PULSE_MS;
+            if (msUntilNextMinute <= 0) msUntilNextMinute += ADMINBAR_PULSE_MS;
             setTimeout(function tick() {
                 window.dispatchEvent(new CustomEvent(EVENT_MINUTE_PULSE));
                 setTimeout(tick, ADMINBAR_PULSE_MS);
@@ -1706,7 +1706,7 @@ var SlimStatAdmin = {
                 return;
             }
             // Freeze the ticker while the user is interacting
-            if (hoverPaused) return;
+            if (hoverPaused || Date.now() < userActiveUntil) return;
             var elapsed = Math.floor((Date.now() - lastRefreshAt) / 1000);
             var remaining = Math.max(0, refreshIntervalSec - elapsed);
             var mm = Math.floor(remaining / 60);

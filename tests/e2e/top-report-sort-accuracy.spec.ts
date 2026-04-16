@@ -72,9 +72,9 @@ async function getReportRows(
     const rows: { label: string; count: number }[] = [];
     jQuery(`#${id} .inside p:not(.pagination):not(.loading):not(.nodata)`).each(function () {
       const $el = jQuery(this as HTMLElement);
-      // Label: first <a> text, or first text node
+      // Label: the filter-link anchor, or first text node as fallback
       const label =
-        $el.find('a').first().text().trim() ||
+        $el.find('a.slimstat-filter-link').first().text().trim() ||
         $el
           .contents()
           .filter(function () {
@@ -83,8 +83,8 @@ async function getReportRows(
           .first()
           .text()
           .trim();
-      // Count: the <span> inside the row
-      const countText = $el.find('span').first().text().trim();
+      // Count: the hit-count span (skip .slimstat-tooltip-bar-wrap)
+      const countText = $el.find('span').not('.slimstat-tooltip-bar-wrap').first().text().trim();
       const count = parseInt(countText.replace(/,/g, ''), 10) || 0;
       rows.push({ label, count });
     });

@@ -19,6 +19,7 @@ use SlimStat\Utils\Query;
 
 class QuerySortMergedTest extends WpSlimstatTestCase
 {
+    /** @var \Mockery\MockInterface&\stdClass */
     private $wpdb;
 
     protected function setUp(): void
@@ -62,6 +63,9 @@ class QuerySortMergedTest extends WpSlimstatTestCase
     private function invokeSortMergedResults(Query $query, array $results): array
     {
         $ref = new \ReflectionMethod(Query::class, 'sortMergedResults');
+        if (\PHP_VERSION_ID < 80100) {
+            $ref->setAccessible(true);
+        }
         return $ref->invoke($query, $results);
     }
 
