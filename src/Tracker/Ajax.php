@@ -7,19 +7,23 @@ use SlimStat\Utils\Consent;
 class Ajax
 {
     /**
-     * Sanitize click position to "x,y" format with 1-5 digit coordinates.
+     * Validate click position as strict "x,y" format with 1-5 digit coordinates.
+     *
+     * Rejects any value that does not match after whitespace trimming.
+     * No character stripping — tampered payloads are rejected outright
+     * so GDPR exports never contain repaired/synthetic coordinates.
      *
      * @param mixed $raw Raw position value from client.
-     * @return string Sanitized "x,y" or empty string if invalid.
+     * @return string Validated "x,y" or empty string if invalid.
      */
     public static function sanitizePosition($raw): string
     {
         if (!is_string($raw)) {
             return '';
         }
-        $position = preg_replace('/[^0-9,]/', '', $raw);
-        if (!empty($position) && !preg_match('/^\d{1,5},\d{1,5}$/', $position)) {
-            $position = '';
+        $position = trim($raw);
+        if ($position !== '' && !preg_match('/^\d{1,5},\d{1,5}$/', $position)) {
+            return '';
         }
         return $position;
     }

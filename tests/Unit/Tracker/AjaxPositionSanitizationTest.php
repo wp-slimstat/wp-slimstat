@@ -11,11 +11,15 @@ class AjaxPositionSanitizationTest extends WpSlimstatTestCase
     public function test_sanitize_position_preserves_only_valid_coordinate_pairs(): void
     {
         $cases = [
+            // Valid coordinates — preserved
             'standard coordinates' => ['320,480', '320,480'],
             'origin coordinates' => ['0,0', '0,0'],
             '4k coordinates' => ['3840,2160', '3840,2160'],
             'max boundary' => ['99999,99999', '99999,99999'],
             'leading zeros preserved' => ['007,042', '007,042'],
+            'whitespace trimmed' => [' 320,480 ', '320,480'],
+
+            // Invalid — rejected outright (no character stripping)
             'six digit x rejected' => ['100000,200', ''],
             'xss payload rejected' => ['<script>alert(1)</script>', ''],
             'missing comma rejected' => ['320480', ''],
@@ -23,12 +27,12 @@ class AjaxPositionSanitizationTest extends WpSlimstatTestCase
             'empty string rejected' => ['', ''],
             'leading comma rejected' => [',200', ''],
             'trailing comma rejected' => ['200,', ''],
-            'minus stripped before validation' => ['-5,300', '5,300'],
-            'whitespace stripped before validation' => [' 320 , 480 ', '320,480'],
+            'negative coordinate rejected' => ['-5,300', ''],
+            'inner whitespace rejected' => [' 320 , 480 ', ''],
             'double comma rejected' => ['320,,480', ''],
             'comma only rejected' => [',', ''],
-            'letters strip to empty' => ['abc', ''],
-            'sql payload stripped then validated' => ['100,200;DROP TABLE', '100,200'],
+            'letters rejected' => ['abc', ''],
+            'sql payload rejected' => ['100,200;DROP TABLE', ''],
             'non scalar input rejected' => [['320,480'], ''],
         ];
 
