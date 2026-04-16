@@ -43,7 +43,11 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
 
         do {
             $rows = $this->wpdb->get_results(
-                $base_sql . " AND e.event_id > {$cursor} ORDER BY e.event_id ASC LIMIT {$batch_size}",
+                $this->wpdb->prepare(
+                    $base_sql . ' AND e.event_id > %d ORDER BY e.event_id ASC LIMIT %d',
+                    $cursor,
+                    $batch_size
+                ),
                 ARRAY_A
             );
 
@@ -59,22 +63,30 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             foreach ($rows as $row) {
                 $candidate = $this->recoverPosition((string) $row['position'], (int) $row['screen_width']);
                 if ($candidate !== null) {
-                    $event_id = (int) $row['event_id'];
-                    $escaped = $this->wpdb->prepare('%s', $candidate);
-                    $updates[$event_id] = $escaped;
+                    $updates[(int) $row['event_id']] = $candidate;
                 }
             }
 
             if (!empty($updates)) {
+                // Build a prepared CASE/WHEN with %d/%s placeholders.
                 $cases = [];
-                foreach ($updates as $event_id => $escaped) {
-                    $cases[] = "WHEN {$event_id} THEN {$escaped}";
+                $values = [];
+                foreach ($updates as $event_id => $position) {
+                    $cases[] = 'WHEN %d THEN %s';
+                    $values[] = $event_id;
+                    $values[] = $position;
                 }
-                $id_list = implode(',', array_keys($updates));
+                $id_placeholders = implode(',', array_fill(0, count($updates), '%d'));
+                $values = array_merge($values, array_keys($updates));
+
+                // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- dynamic CASE count
                 $result = $this->wpdb->query(
-                    "UPDATE {$events_table} SET position = CASE event_id "
-                    . implode(' ', $cases)
-                    . " END WHERE event_id IN ({$id_list})"
+                    $this->wpdb->prepare(
+                        "UPDATE {$events_table} SET position = CASE event_id "
+                        . implode(' ', $cases)
+                        . " END WHERE event_id IN ({$id_placeholders})",
+                        $values
+                    )
                 );
                 if ($result === false) {
                     return false;
@@ -140,7 +152,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             $x = substr($position, 0, $split);
             $y = substr($position, $split);
 
-            if (($x !== '0' && str_starts_with($x, '0')) || ($y !== '0' && str_starts_with($y, '0'))) {
+            if (($x !== '0' && $x[0] === '0') || ($y !== '0' && $y[0] === '0')) {
                 continue;
             }
 
