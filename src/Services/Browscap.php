@@ -40,6 +40,10 @@ class Browscap
      */
     public static function get_browser($_user_agent = '')
     {
+        // Memoize: UA doesn't change within a PHP request, so avoid repeated
+        // Browscap file I/O and regex matching on follow-up AJAX calls. #291
+        static $cached = null;
+
         $browser = [
             'browser'         => 'Default Browser',
             'browser_version' => '',
@@ -50,6 +54,10 @@ class Browscap
 
         if (empty($browser['user_agent'])) {
             return $browser;
+        }
+
+        if (null !== $cached && $cached['user_agent'] === $browser['user_agent']) {
+            return $cached;
         }
 
         if ('on' == wp_slimstat::$settings['enable_browscap'] && PHP_VERSION_ID >= 70400) {
@@ -72,6 +80,8 @@ class Browscap
 
         // Let third-party tools manipulate the data
         $browser = apply_filters('slimstat_filter_browscap', $browser);
+
+        $cached = $browser;
 
         return $browser;
     }

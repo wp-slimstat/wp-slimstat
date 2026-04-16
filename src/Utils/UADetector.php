@@ -52,7 +52,7 @@ class UADetector
             $browser['browser']                              = $match[3];
             $browser['browser_version']                      = $match[4];
             [$browser['platform'], $browser['browser_type']] = self::_get_win_os_version($match[1]);
-        } elseif (preg_match('#^Mozilla/\d\.\d\s\(compatible;\sbingbot/(\d\.\d)[^a-z0-9]+http\://www\.bing\.com/bingbot\.htm.$#', $_user_agent, $match) > 0) {
+        } elseif (preg_match('#compatible;\sbingbot/(\d\.\d)[^a-z0-9]+http\://www\.bing\.com/bingbot\.htm#', $_user_agent, $match) > 0) {
             $browser['browser'] = 'BingBot';
             if (isset($match[1]) && ('' !== $match[1] && '0' !== $match[1])) {
                 $browser['browser_version'] = $match[1];

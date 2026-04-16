@@ -57,6 +57,17 @@ class UADetectorBotTest extends WpSlimstatTestCase
         $browser = \SlimStat\Utils\UADetector::get_browser($ua);
 
         $this->assertSame(1, $browser['browser_type'], 'Chrome-based Bingbot must be browser_type=1');
+        $this->assertSame('BingBot', $browser['browser'], 'Chrome-based Bingbot must be identified by specific regex, not generic fallback');
+    }
+
+    /** @test */
+    public function test_old_bingbot_detected_as_crawler(): void
+    {
+        $ua = 'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)';
+        $browser = \SlimStat\Utils\UADetector::get_browser($ua);
+
+        $this->assertSame(1, $browser['browser_type'], 'Old-style Bingbot must be browser_type=1');
+        $this->assertSame('BingBot', $browser['browser'], 'Old-style Bingbot browser name');
     }
 
     /** @test */

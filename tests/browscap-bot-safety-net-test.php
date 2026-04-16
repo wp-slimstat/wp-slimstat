@@ -98,4 +98,27 @@ safety_assert(
     'TEST 8: UADetector must use self::BOT_GENERIC_REGEX in the generic bot check'
 );
 
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 9: UADetector Bingbot regex must NOT use ^ or $ anchors
+// Anchors prevent matching Chrome-based Bingbot UAs (same fix as Googlebot).
+// ═══════════════════════════════════════════════════════════════════════════
+safety_assert(
+    false === strpos($uadetector_src, "bingbot\\.htm.\$#"),
+    'TEST 9a: UADetector Bingbot regex must not use $ end-of-string anchor'
+);
+safety_assert(
+    false === strpos($uadetector_src, "#^Mozilla.*bingbot"),
+    'TEST 9b: UADetector Bingbot regex must not use ^ start-of-string anchor'
+);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 10: Ajax.php must check ignore_bots in the follow-up event path
+// ═══════════════════════════════════════════════════════════════════════════
+$ajax_src = file_get_contents(dirname(__DIR__) . '/src/Tracker/Ajax.php');
+safety_assert(false !== $ajax_src, 'Could not read src/Tracker/Ajax.php');
+safety_assert(
+    false !== strpos($ajax_src, "ignore_bots") && false !== strpos($ajax_src, 'Browscap::get_browser'),
+    'TEST 10: Ajax.php must check ignore_bots via Browscap::get_browser() for follow-up events'
+);
+
 echo "All {$assertions} assertions passed in browscap-bot-safety-net-test.php\n";
