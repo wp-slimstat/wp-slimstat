@@ -1157,14 +1157,15 @@ class wp_slimstat_db
 
     public static function get_recent_outbound()
     {
-        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''");
+        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''", '', true, '', 'dt');
         $clean_outbound_resources = [];
 
         foreach ($mixed_outbound_resources as $a_mixed_resource) {
+            $row_dt = isset($a_mixed_resource['dt']) ? intval($a_mixed_resource['dt']) : 0;
             $exploded_resources = explode(';;;', $a_mixed_resource['outbound_resource'] ?? '');
             foreach ($exploded_resources as $a_exploded_resource) {
                 if ($a_exploded_resource !== '') {
-                    $clean_outbound_resources[] = $a_exploded_resource;
+                    $clean_outbound_resources[] = ['url' => $a_exploded_resource, 'dt' => $row_dt];
                 }
             }
         }
@@ -1324,17 +1325,35 @@ class wp_slimstat_db
         $saved_start = self::$filters_normalized['misc']['start_from'];
         self::$filters_normalized['misc']['start_from'] = 0;
         try {
-            $clean_outbound_resources = array_count_values(self::get_recent_outbound());
+            $raw_outbound = self::get_recent_outbound();
         } finally {
             self::$filters_normalized['misc']['start_from'] = $saved_start;
         }
-        arsort($clean_outbound_resources);
+
+        // Aggregate: count hits and track max dt per unique URL
+        $aggregated = [];
+        foreach ($raw_outbound as $item) {
+            $url = $item['url'];
+            if (!isset($aggregated[$url])) {
+                $aggregated[$url] = ['counthits' => 0, 'dt' => 0];
+            }
+            $aggregated[$url]['counthits']++;
+            if ($item['dt'] > $aggregated[$url]['dt']) {
+                $aggregated[$url]['dt'] = $item['dt'];
+            }
+        }
+
+        // Sort by most recent first (Recent panel)
+        uasort($aggregated, static function ($a, $b) {
+            return $b['dt'] <=> $a['dt'];
+        });
 
         $sorted_outbound_resources = [];
-        foreach ($clean_outbound_resources as $a_resource => $a_count) {
+        foreach ($aggregated as $url => $data) {
             $sorted_outbound_resources[] = [
-                'outbound_resource' => $a_resource,
-                'counthits'         => $a_count,
+                'outbound_resource' => $url,
+                'counthits'         => $data['counthits'],
+                'dt'                => $data['dt'],
             ];
         }
 

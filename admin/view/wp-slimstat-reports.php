@@ -1484,7 +1484,7 @@ class wp_slimstat_reports
 
                     if ((!empty($_args['criteria']) && 'swap' == $_args['criteria']) || 'on' == wp_slimstat::$settings['show_hits']) {
                         $percentage  = ' <span>' . $counthits . '</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . (('outbound_resource' != $_args['columns']) ? $percentage_value . '%' . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details : '');
+                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $percentage_value . '%' . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
                     } else {
                         $percentage  = ' <span>' . $percentage_value . '%</span>';
                         $row_details = __('Hits', 'wp-slimstat') . ': ' . $counthits . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
