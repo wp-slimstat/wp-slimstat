@@ -4,10 +4,27 @@
 
 - Clicking next/previous page in the Access Log no longer resets your date range — it stays on the dates you picked ([#287](https://github.com/wp-slimstat/wp-slimstat/issues/287))
 - The auto-refresh interval in Settings → Reports is now respected. Previously the countdown was stuck at 60 seconds no matter what you set ([#258](https://github.com/wp-slimstat/wp-slimstat/issues/258))
-- Recent Users, Recent Posts, and Recent Pages Not Found no longer show the same item repeated hundreds of times. Each item now appears once with the correct count ([#288](https://github.com/wp-slimstat/wp-slimstat/issues/288))
-- The last page of the Access Log now shows data instead of "No data to display"
+- All "Recent" panels (Users, Posts, Pages Not Found, Outbound Links, Downloads, Countries, Browsers, Languages, Operating Systems, Viewport Sizes, Categories, Tags) now show unique items instead of duplicating the same entry for every pageview ([#288](https://github.com/wp-slimstat/wp-slimstat/issues/288))
+- The last page of the Access Log now shows data instead of "No data to display" — the query engine correctly distributes OFFSET across split date-range partitions
 - Pagination totals are now consistent — the count no longer changes when you move between pages
-- Top Web Pages and other "Top" reports now respect the result limit correctly
+- Top Web Pages and other "Top" reports now respect the result limit after merging split date-range partitions — previously up to 2× the configured limit could leak through
+- Top reports are re-sorted after split-query merge so row order stays correct when counthits change after summing partitions
+- Top Posts now normalizes trailing slashes, matching the Recent Posts panel
+- Currently Online panel switched to grouped query — no more duplicate IPs
+- Recent Outbound Links now aggregates by URL with hit counts and shows the most recent timestamp in the tooltip
+- Visit Duration report buckets are now sorted by most hits first, with Average Visit Duration always at the bottom
+
+**Tracking & bot detection**
+
+- Chrome-based crawlers (Googlebot, Bingbot) that Browscap identifies as regular browsers are now caught by a UA keyword safety net ([#291](https://github.com/wp-slimstat/wp-slimstat/issues/291))
+- Bots that execute JavaScript are now checked on follow-up AJAX events, not just the initial pageview ([#291](https://github.com/wp-slimstat/wp-slimstat/issues/291))
+- Browscap result is memoized within each PHP request to avoid repeated file I/O on follow-up AJAX calls
+- Googlebot and Bingbot UA regex patterns loosened to match Chrome-based variants that don't end with the expected suffix
+
+**Heatmap**
+
+- Click position sanitization now validates strict "x,y" format — tampered payloads are rejected outright instead of being character-stripped ([#278](https://github.com/wp-slimstat/wp-slimstat/issues/278), [#293](https://github.com/wp-slimstat/wp-slimstat/issues/293))
+- New one-time migration recovers corrupted heatmap positions where the comma was previously stripped, restoring historical click coordinates when a single unambiguous split exists ([#278](https://github.com/wp-slimstat/wp-slimstat/issues/278))
 
 **Usability improvements**
 
@@ -15,7 +32,11 @@
 - Scroll position is preserved across refreshes — the panel no longer jumps to the top
 - Report panels now use native scrolling with a visible scrollbar. Fixes the long-standing issue where the scrollbar was invisible or unusably slow on macOS ([#156](https://github.com/wp-slimstat/wp-slimstat/issues/156))
 
-**Developer note:** The bundled SlimScroll jQuery plugin has been removed. If your code listens for `slimscrolling` or `slimscroll` events, switch to the native `scroll` event on `.inside` containers.
+**Developer notes**
+
+- The bundled SlimScroll jQuery plugin has been removed. If your code listens for `slimscrolling` or `slimscroll` events, switch to the native `scroll` event on `.inside` containers.
+- "Top" reports no longer use SQL OFFSET — pagination is handled PHP-side via `array_slice` after the full result set (up to `limit_results`) is fetched. Custom report code that relied on SQL-level pagination for `get_top()` should be updated.
+- Added `.githooks/pre-commit` hook that runs `php -l` on all staged PHP files.
 
 = 5.4.9 - 2026-04-03 =
 * Fix: Scoped sortable handler to Slimstat Customize page only — prevents corrupting WordPress Dashboard widget layout
