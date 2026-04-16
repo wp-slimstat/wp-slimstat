@@ -1055,8 +1055,15 @@ class Query
                 $field = $m[1];
                 $dir   = strtoupper($m[2]);
 
-                if (in_array($field, $availableKeys, true)) {
-                    $sortFields[] = ['field' => $field, 'dir' => $dir];
+                // Resolve SQL aggregate functions to their result-set alias.
+                // e.g. MAX(dt) → dt (from "MAX(dt) AS dt" in the SELECT).
+                $resolvedField = $field;
+                if (!in_array($field, $availableKeys, true) && preg_match('/^(?:MAX|MIN|COUNT|SUM|AVG)\((\w+)\)$/i', $field, $aggMatch)) {
+                    $resolvedField = $aggMatch[1];
+                }
+
+                if (in_array($resolvedField, $availableKeys, true)) {
+                    $sortFields[] = ['field' => $resolvedField, 'dir' => $dir];
                 }
             }
         }
