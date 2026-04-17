@@ -596,7 +596,8 @@ class wp_slimstat_reports
                     'where'       => "outbound_resource IS NOT NULL AND outbound_resource != ''",
                     'order_by'    => 'MAX(dt) DESC',
                     'more_select' => 'MAX(dt) AS dt',
-                    'raw'         => ['wp_slimstat_db', 'get_top_outbound'],
+                    'raw'            => ['wp_slimstat_db', 'get_top_outbound'],
+                    'sort_outbound'  => 'dt',
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
@@ -1057,7 +1058,13 @@ class wp_slimstat_reports
 
         $_results_per_page = ($_results_per_page < 0) ? wp_slimstat::$settings['rows_to_show'] : $_results_per_page;
 
-        $endpoint           = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
+        // Use a local offset to avoid mutating the shared static property
+        $effective_start = wp_slimstat_db::$filters_normalized['misc']['start_from'];
+        if ($effective_start >= $_count_all_results && $_count_all_results > 0) {
+            $effective_start = max(0, $_count_all_results - $_results_per_page);
+        }
+
+        $endpoint           = min($_count_all_results, $effective_start + $_results_per_page);
         $pagination_buttons = '';
         $direction_prev     = is_rtl() ? 'right' : 'left';
         $direction_next     = is_rtl() ? 'left' : 'right';
@@ -1070,18 +1077,18 @@ class wp_slimstat_reports
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
         if ($endpoint < $_count_all_results && $_count_page_results > 0) {
-            $startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page;
+            $startpoint = $effective_start + $_results_per_page;
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
-        if (wp_slimstat_db::$filters_normalized['misc']['start_from'] > 0) {
-            $startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > $_results_per_page) ? wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page : 0;
+        if ($effective_start > 0) {
+            $startpoint = ($effective_start > $_results_per_page) ? $effective_start - $_results_per_page : 0;
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
-        if (wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page > 0) {
+        if ($effective_start - $_results_per_page > 0) {
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
         }
 
-        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
             $pagination .= ' <span class="refresh-countdown">[' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]</span>';

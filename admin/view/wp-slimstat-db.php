@@ -1316,8 +1316,13 @@ class wp_slimstat_db
         return $query->getAll();
     }
 
-    public static function get_top_outbound()
+    public static function get_top_outbound($_args = [])
     {
+        $sort_by = 'counthits';
+        if (is_array($_args) && !empty($_args['sort_outbound'])) {
+            $sort_by = $_args['sort_outbound'];
+        }
+
         // Zero out start_from before fetching raw data — get_recent_outbound()
         // calls get_recent() which applies SQL OFFSET. We need the full
         // (un-offset) result set for correct aggregation; PHP-side pagination
@@ -1343,10 +1348,16 @@ class wp_slimstat_db
             }
         }
 
-        // Sort by most recent first (Recent panel)
-        uasort($aggregated, static function ($a, $b) {
-            return $b['dt'] <=> $a['dt'];
-        });
+        // Sort: 'dt' for Recent panel, 'counthits' (default) for Top panel
+        if ($sort_by === 'dt') {
+            uasort($aggregated, static function ($a, $b) {
+                return $b['dt'] <=> $a['dt'];
+            });
+        } else {
+            uasort($aggregated, static function ($a, $b) {
+                return $b['counthits'] <=> $a['counthits'] ?: $b['dt'] <=> $a['dt'];
+            });
+        }
 
         $sorted_outbound_resources = [];
         foreach ($aggregated as $url => $data) {
