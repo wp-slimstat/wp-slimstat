@@ -1,4 +1,4 @@
-= 5.4.10 - 2026-04-13 =
+= 5.4.10 - 2026-04-17 =
 
 **Report fixes**
 
@@ -12,6 +12,11 @@
 - Top Posts now normalizes trailing slashes, matching the Recent Posts panel
 - Currently Online panel switched to grouped query — no more duplicate IPs
 - Recent Outbound Links now aggregates by URL with hit counts and shows the most recent timestamp in the tooltip
+- Top Outbound Links and Recent Outbound Links now use the correct sort order — Recent sorts by last click time, Top sorts by hit count ([#15081](https://github.com/wp-slimstat/wp-slimstat/issues/15081))
+- Outbound link URLs are now sanitized before storage, and the concatenation column is capped at 2048 characters to prevent unbounded growth ([#15081](https://github.com/wp-slimstat/wp-slimstat/issues/15081))
+- Navigating past the last page of a report no longer shows a blank page — pagination now clamps to the nearest valid page
+- Top report hit counts and percentages are now shown inline (count + percentage) instead of swapping between the two
+- Split-query merge now correctly preserves duplicate rows for non-aggregated queries (e.g. Access Log)
 - Visit Duration report buckets are now sorted by most hits first, with Average Visit Duration always at the bottom
 
 **Tracking & bot detection**

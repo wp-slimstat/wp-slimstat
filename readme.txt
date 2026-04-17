@@ -75,12 +75,15 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.10 - 2026-04-13 =
+= 5.4.10 - 2026-04-17 =
 * Fix: Access Log pagination no longer drops the user's selected custom date range
 * Fix: Auto Refresh setting in Settings → Reports is now honored
-* Fix: Recent Users, Recent Posts, and Recent Pages Not Found now show unique items instead of duplicating the same entry for every pageview
+* Fix: Recent panels now show unique items instead of duplicating the same entry for every pageview
 * Fix: Access Log "last page" no longer shows "No data to display"
 * Fix: Report pagination totals are now stable across pages
+* Fix: Outbound link tracking — correct sort order, sanitized URLs, and bounded storage
+* Fix: Chrome-based crawlers (Googlebot, Bingbot) now correctly detected as bots
+* Fix: Heatmap click positions validated and corrupted historical data recovered
 * Improvement: Access Log auto-refresh pauses on hover, scroll, and hidden tab
 * Improvement: Scroll position preserved across Access Log refresh
 * Refactor: Replaced jQuery SlimScroll with native CSS scrolling
