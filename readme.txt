@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.10
+Stable tag: 5.4.11
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,7 +75,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.10 - 2026-04-17 =
+= 5.4.11 - 2026-04-17 =
 * Fix: Access Log pagination no longer drops the user's selected custom date range
 * Fix: Auto Refresh setting in Settings → Reports is now honored
 * Fix: Recent panels now show unique items instead of duplicating the same entry for every pageview
