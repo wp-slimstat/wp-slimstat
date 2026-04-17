@@ -43,7 +43,7 @@ class Storage
 		}
 
 		if (!empty($data['outbound_resource'])) {
-			$url = $data['outbound_resource'];
+			$url = sanitize_url(wp_unslash($data['outbound_resource']));
 			$query->setRaw(
 				'outbound_resource',
 				"IF(outbound_resource IS NULL OR outbound_resource = '', %s, IF(LENGTH(outbound_resource) + LENGTH(%s) + 3 <= 2048, CONCAT(outbound_resource, ';;;', %s), outbound_resource))",
