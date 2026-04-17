@@ -502,6 +502,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Migration\\Migrations\\CreateDtOutIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateDtOutIndex.php',
         'SlimStat\\Migration\\Migrations\\CreateDtPlatformIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateDtPlatformIndex.php',
         'SlimStat\\Migration\\Migrations\\CreateDtScreenIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateDtScreenIndex.php',
+        'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => __DIR__ . '/../..' . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
         'SlimStat\\Modules\\Chart' => __DIR__ . '/../..' . '/src/Modules/Chart.php',
         'SlimStat\\Providers\\IPHashProvider' => __DIR__ . '/../..' . '/src/Providers/IPHashProvider.php',
         'SlimStat\\Providers\\RestApiManager' => __DIR__ . '/../..' . '/src/Providers/RestApiManager.php',
