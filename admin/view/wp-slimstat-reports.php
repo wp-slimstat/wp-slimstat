@@ -1050,6 +1050,7 @@ class wp_slimstat_reports
 
     private static function get_clamped_start($total_results, $results_per_page)
     {
+        $results_per_page = max(1, intval($results_per_page));
         $start = intval(wp_slimstat_db::$filters_normalized['misc']['start_from']);
         if ($total_results > 0 && $start >= $total_results) {
             $start = max(0, $total_results - $results_per_page);
