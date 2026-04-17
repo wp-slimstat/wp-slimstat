@@ -1157,11 +1157,14 @@ class wp_slimstat_db
 
     public static function get_recent_outbound()
     {
-        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''", '', true, '', 'dt');
+        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''", '', true, '', 'dt, dt_out');
         $clean_outbound_resources = [];
 
         foreach ($mixed_outbound_resources as $a_mixed_resource) {
-            $row_dt = isset($a_mixed_resource['dt']) ? intval($a_mixed_resource['dt']) : 0;
+            // Prefer dt_out (actual outbound click time) over dt (pageview creation time)
+            $row_dt = isset($a_mixed_resource['dt_out']) && intval($a_mixed_resource['dt_out']) > 0
+                ? intval($a_mixed_resource['dt_out'])
+                : (isset($a_mixed_resource['dt']) ? intval($a_mixed_resource['dt']) : 0);
             $exploded_resources = explode(';;;', $a_mixed_resource['outbound_resource'] ?? '');
             foreach ($exploded_resources as $a_exploded_resource) {
                 if ($a_exploded_resource !== '') {

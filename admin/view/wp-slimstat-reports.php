@@ -679,7 +679,6 @@ class wp_slimstat_reports
                     'columns'  => 'resource',
                     'where'    => 'content_type = "download"',
                     'raw'      => ['wp_slimstat_db', 'get_top'],
-                    'criteria' => 'swap',
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
@@ -821,7 +820,6 @@ class wp_slimstat_reports
                     'type'     => 'top',
                     'columns'  => 'outbound_resource',
                     'raw'      => ['wp_slimstat_db', 'get_top_outbound'],
-                    'criteria' => 'swap',
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4', 'dashboard'],
@@ -1489,13 +1487,7 @@ class wp_slimstat_reports
                     $counthits        = number_format_i18n($results[$i]['counthits']);
                     $percentage_value = number_format_i18n((float)$percentage_value, 2);
 
-                    if ((!empty($_args['criteria']) && 'swap' == $_args['criteria']) || 'on' == wp_slimstat::$settings['show_hits']) {
-                        $percentage  = ' <span>' . $counthits . '</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $percentage_value . '%' . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
-                    } else {
-                        $percentage  = ' <span>' . $percentage_value . '%</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $counthits . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
-                    }
+                    $percentage = ' <span>' . $counthits . ' (' . $percentage_value . '%)</span>';
                 }
 
                 // Some columns require a special post-treatment
