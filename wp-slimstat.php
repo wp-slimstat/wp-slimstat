@@ -1154,7 +1154,6 @@ class wp_slimstat
             'use_current_month_timespan'      => 'no',
             'posts_column_day_interval'       => 28,
             'rows_to_show'                    => '20',
-            'show_hits'                       => 'no',
             'ip_lookup_service'               => 'https://ip-api.com/#',
             'comparison_chart'                => 'on',
             'show_display_name'               => 'no',

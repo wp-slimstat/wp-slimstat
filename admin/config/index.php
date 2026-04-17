@@ -418,11 +418,6 @@ $settings = [
                 'type'        => 'toggle',
                 'description' => __('For improved legibility, most reports list post and page titles instead of their permalinks. Use this option to change this behavior.', 'wp-slimstat'),
             ],
-            'show_hits' => [
-                'title'       => __('Display Hits', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __('By default, Top and Recent reports display the percentage of pageviews compared to the total for each entry, and the actual number of hits on hover in a tooltip. Enable this feature if you prefer to see the number of hits directly and the percentage in the tooltip.', 'wp-slimstat'),
-            ],
             'convert_ip_addresses' => [
                 'title'       => __('Show Hostnames', 'wp-slimstat'),
                 'type'        => 'toggle',

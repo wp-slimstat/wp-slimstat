@@ -1520,9 +1520,13 @@ class Query
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
             }
 
-            // Let mergeGroupResults determine the group key automatically
-            // This handles complex GROUP BY expressions and aliases properly
-            $merged = $this->mergeGroupResults($live, $historical);
+            // Only group-merge when the query has GROUP BY (aggregate queries).
+            // Raw SELECT queries (e.g. get_recent) must preserve duplicate rows.
+            if (!empty($this->groupByClause)) {
+                $merged = $this->mergeGroupResults($live, $historical);
+            } else {
+                $merged = array_merge($live, $historical);
+            }
 
             // Re-sort merged results to honour the original ORDER BY.
             // mergeGroupResults() sums counthits but loses sort order.
