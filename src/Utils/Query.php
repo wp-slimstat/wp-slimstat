@@ -1021,6 +1021,92 @@ class Query
     }
 
     /**
+     * Re-sort merged results to honour the original ORDER BY clause.
+     *
+     * After mergeGroupResults() sums counts from historical + live partitions,
+     * the relative ordering may no longer match the SQL ORDER BY (e.g. a row
+     * whose counthits grew after summing should move up).  This method parses
+     * the stored orderClause and applies an equivalent PHP usort().
+     *
+     * Only fields that exist as keys in the result rows are used for sorting;
+     * SQL expressions (MAX(dt), REPLACE(…), etc.) are silently skipped because
+     * they don't appear as array keys after $wpdb->get_results().
+     *
+     * @param array $results Merged result rows (associative arrays).
+     *
+     * @return array Re-sorted rows.
+     */
+    protected function sortMergedResults(array $results): array
+    {
+        if (empty($this->orderClause) || empty($results)) {
+            return $results;
+        }
+
+        // Strip "ORDER BY " prefix → "counthits DESC, resource ASC"
+        $orderStr = preg_replace('/^ORDER\s+BY\s+/i', '', $this->orderClause);
+        $parts    = array_map('trim', explode(',', $orderStr));
+
+        // Determine which fields actually exist in the result rows.
+        $availableKeys = array_keys($results[0]);
+
+        $sortFields = [];
+        foreach ($parts as $part) {
+            if (preg_match('/^(.+?)\s+(ASC|DESC)$/i', $part, $m)) {
+                $field = $m[1];
+                $dir   = strtoupper($m[2]);
+
+                // Resolve SQL aggregate functions to their result-set alias.
+                // e.g. MAX(dt) → dt (from "MAX(dt) AS dt" in the SELECT).
+                $resolvedField = $field;
+                if (!in_array($field, $availableKeys, true) && preg_match('/^(?:MAX|MIN|COUNT|SUM|AVG)\((\w+)\)$/i', $field, $aggMatch)) {
+                    $resolvedField = $aggMatch[1];
+                }
+
+                if (in_array($resolvedField, $availableKeys, true)) {
+                    $sortFields[] = ['field' => $resolvedField, 'dir' => $dir];
+                }
+            }
+        }
+
+        if (empty($sortFields)) {
+            return $results;
+        }
+
+        usort($results, static function ($a, $b) use ($sortFields) {
+            foreach ($sortFields as $sf) {
+                $field = $sf['field'];
+                $valA  = $a[$field] ?? null;
+                $valB  = $b[$field] ?? null;
+
+                // NULLs sort last regardless of direction.
+                if (null === $valA && null === $valB) {
+                    continue;
+                }
+                if (null === $valA) {
+                    return 1;
+                }
+                if (null === $valB) {
+                    return -1;
+                }
+
+                if (is_numeric($valA) && is_numeric($valB)) {
+                    $cmp = ((float) $valA <=> (float) $valB);
+                } else {
+                    $cmp = strcmp((string) $valA, (string) $valB);
+                }
+
+                if (0 !== $cmp) {
+                    return ('DESC' === $sf['dir']) ? -$cmp : $cmp;
+                }
+            }
+
+            return 0;
+        });
+
+        return $results;
+    }
+
+    /**
      * Helper: Extract date ranges from WHERE clauses
      *
      * @return array Array of extracted date ranges with keys from, to, clauseIdx, and valueIdx
@@ -1383,12 +1469,32 @@ class Query
             $baseValues = $baseValuesToPrepare;
             array_splice($baseValues, $dtIdx, 2);
 
+            // Remove OFFSET from sub-queries: each partition is smaller
+            // than the full date range, so applying the original OFFSET to
+            // each one independently can skip past all rows in that
+            // partition.  Instead, fetch without OFFSET and apply it after
+            // merging.
+            $parsedOffset = 0;
+            $parsedLimit  = 0;
+            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $this->limitClause, $m)) {
+                $parsedLimit  = intval($m[1]);
+                $parsedOffset = intval($m[2]);
+            } elseif (preg_match('/LIMIT\s+(\d+)/i', $this->limitClause, $m)) {
+                $parsedLimit = intval($m[1]);
+            }
+            // Sub-queries fetch up to offset+limit rows (no OFFSET) so we
+            // have enough data to slice after merging.
+            $subLimit = $parsedOffset + $parsedLimit;
+
             // Clone for historical
             $histQuery                  = clone $this;
             $histQuery->whereClauses    = $baseWhereClauses;
             $histQuery->valuesToPrepare = $baseValues;
             $histQuery->whereDate('dt', ['from' => $histFrom, 'to' => $histTo]);
             $histQuery->allowCaching(true, $this->cacheExpiration);
+            if ($subLimit > 0) {
+                $histQuery->limit($subLimit);
+            }
             try {
                 $historical = $histQuery->getAll();
             } catch (Exception $e) {
@@ -1401,6 +1507,9 @@ class Query
             $liveQuery->valuesToPrepare = $baseValues;
             $liveQuery->whereDate('dt', ['from' => $liveFrom, 'to' => $liveTo], true);
             $liveQuery->allowCaching(false, 0);
+            if ($subLimit > 0) {
+                $liveQuery->limit($subLimit);
+            }
             try {
                 $live = $liveQuery->getAll();
             } catch (Exception $e) {
@@ -1411,11 +1520,28 @@ class Query
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $live);
             }
 
-            // Let mergeGroupResults determine the group key automatically
-            // This handles complex GROUP BY expressions and aliases properly
-            $merged = $this->mergeGroupResults($live, $historical);
+            // Only group-merge when the query has GROUP BY (aggregate queries).
+            // Raw SELECT queries (e.g. get_recent) must preserve duplicate rows.
+            if (!empty($this->groupByClause)) {
+                $merged = $this->mergeGroupResults($live, $historical);
+            } else {
+                $merged = array_merge($live, $historical);
+            }
+
+            // Re-sort merged results to honour the original ORDER BY.
+            // mergeGroupResults() sums counthits but loses sort order.
+            $merged = $this->sortMergedResults($merged);
+
             if (is_array($merged)) {
                 $dtList = array_map(fn ($row) => $row['dt'] ?? null, $merged);
+            }
+
+            // Apply the original OFFSET+LIMIT after merging.
+            // Check $parsedLimit (not $parsedOffset) so "top" reports
+            // (which use LIMIT without OFFSET) also get capped after the
+            // two partitions are merged and re-sorted.
+            if ($parsedLimit > 0 && is_array($merged)) {
+                $merged = array_slice($merged, $parsedOffset, $parsedLimit);
             }
 
             return $merged;

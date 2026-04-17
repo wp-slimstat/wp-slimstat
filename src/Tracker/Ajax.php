@@ -2,10 +2,33 @@
 
 namespace SlimStat\Tracker;
 
+use SlimStat\Services\Browscap;
 use SlimStat\Utils\Consent;
 
 class Ajax
 {
+    /**
+     * Validate click position as strict "x,y" format with 1-5 digit coordinates.
+     *
+     * Rejects any value that does not match after whitespace trimming.
+     * No character stripping — tampered payloads are rejected outright
+     * so GDPR exports never contain repaired/synthetic coordinates.
+     *
+     * @param mixed $raw Raw position value from client.
+     * @return string Validated "x,y" or empty string if invalid.
+     */
+    public static function sanitizePosition($raw): string
+    {
+        if (!is_string($raw)) {
+            return '';
+        }
+        $position = trim($raw);
+        if ($position !== '' && !preg_match('/^\d{1,5},\d{1,5}$/', $position)) {
+            return '';
+        }
+        return $position;
+    }
+
     /**
      * Handle AJAX tracking request with exit (for admin-ajax.php).
      * This wrapper calls process() and exits with the result.
@@ -110,6 +133,17 @@ class Ajax
         \wp_slimstat::set_stat($stat);
 
         if (!empty($data_js['id'])) {
+            // Defense-in-depth: check bot status even for follow-up AJAX events.
+            // The initial pageview (id=empty) goes through Processor::process() which
+            // has the full bot check, but follow-up events skip Processor entirely.
+            // This ensures bots executing JS are still blocked on updates. See #291.
+            if ('on' == \wp_slimstat::$settings['ignore_bots']) {
+                $browser = Browscap::get_browser();
+                if (1 == $browser['browser_type']) {
+                    return Utils::logError(313);
+                }
+            }
+
             $data_js['id'] = Utils::getValueWithoutChecksum($data_js['id']);
             if (false === $data_js['id']) {
                 return Utils::logError(101);
@@ -283,16 +317,11 @@ class Ajax
 
                 $id = Storage::updateRow($stat);
             } else {
-                // Security: Validate and sanitize event data
-                $position = !empty($data_js['pos']) ? $data_js['pos'] : '';
-                // Security: Validate position format (alphanumeric, dash, underscore only)
-                $position = preg_replace('/[^a-zA-Z0-9\-_]/', '', $position);
-                // Security: Limit position length
-                if (strlen($position) > 32) {
-                    $position = substr($position, 0, 32);
-                }
+                // Security: Validate and sanitize event position (x,y coordinates)
+                $position = self::sanitizePosition($data_js['pos'] ?? '');
 
                 $event_info = [
+                    // Defense-in-depth: sanitizePosition already guarantees digit-comma-digit
                     'position' => sanitize_text_field($position),
                     'id'       => $stat['id'],
                     'dt'       => \wp_slimstat::date_i18n('U'),

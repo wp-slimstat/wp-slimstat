@@ -39,8 +39,12 @@ if (!defined('SLIMSTAT_ANALYTICS_DIR')) {
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
+        /** @var string */
+        public static string $upload_dir = '/tmp/fake-browscap';
+
         /** @var array<string,mixed> */
         public static array $settings = [
+            'enable_browscap'          => 'off',
             'anonymous_tracking'       => 'off',
             'gdpr_enabled'             => 'off',   // GDPR off → tracking always allowed
             'javascript_mode'          => 'off',

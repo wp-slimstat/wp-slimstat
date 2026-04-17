@@ -37,6 +37,15 @@ body {
   margin: 0 5px !important;
 }
 
+.slimstat-count-pct {
+}
+
+.slimstat-pct {
+  padding-left: 5px;
+  color: #5f6368;
+  font-size: 0.95em;
+}
+
 body.index-php {
   .slimstat-tooltip-bar-wrap {
     margin: 0 5px !important;
@@ -741,8 +750,29 @@ body {
   height: 240px;
   margin: 0 !important;
   overflow: auto;
+
+  // #156 — native scroll: contain wheel chaining and reserve scrollbar gutter
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   padding: 0 !important;
   margin-bottom: 45px !important;
+
+  // #156 — make the scrollbar actually visible (replaces SlimScroll)
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.55);
+  }
 }
 
 .wrap-slimstat .postbox.tall .inside {
@@ -784,6 +814,10 @@ body {
 
 [id^="slim_"] p span {
   float: right;
+}
+
+[id^="slim_"] p span.refresh-countdown {
+  float: none;
 }
 
 [id^="slim_"] p span.pageview-screenres {
@@ -996,7 +1030,8 @@ body {
 }
 
 
-.closed .slimScrollDiv {
+// #156 — was `.closed .slimScrollDiv` before native-scroll migration
+.wrap-slimstat .postbox.closed .inside {
   height: 0 !important;
 }
 
@@ -1149,10 +1184,7 @@ body {
   float: right;
 }
 
-.rtl .slimScrollBar {
-  left: 2px !important;
-  right: inherit !important;
-}
+// #156 — `.rtl .slimScrollBar` removed; native scrollbars are direction-aware
 
 .rtl [id^="slim_"] p.pagination a {
   float: left;
@@ -1160,6 +1192,10 @@ body {
 
 .rtl [id^="slim_"] p span {
   float: left;
+}
+
+.rtl [id^="slim_"] p span.refresh-countdown {
+  float: none;
 }
 
 .rtl .qtip-content {
@@ -3378,7 +3414,8 @@ x:-o-prefocus {
         margin-left: 0.5%;
       }
 
-      .slimScrollDiv {
+      // #156 — was nested under `.slimScrollDiv` before native-scroll migration
+      .inside {
         .slimstat-tooltip-trigger.corner {
           display: inline-block;
           float: none;
@@ -3590,7 +3627,8 @@ x:-o-prefocus {
     border-radius: 6px;
   }
 
-  .slimScrollDiv {
+  // #156 — was nested under `.slimScrollDiv` before native-scroll migration
+  .inside {
     p {
       padding: 10px 25px;
 

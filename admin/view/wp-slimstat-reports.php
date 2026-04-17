@@ -142,11 +142,13 @@ class wp_slimstat_reports
                 'title'         => __('Currently Online', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'             => 'recent',
+                    'type'             => 'top',
                     'columns'          => 'ip',
                     'where'            => '(dt_out > ' . (date_i18n('U') - 300) . ') OR (dt > ' . (date_i18n('U') - 300) . ')',
+                    'order_by'         => 'MAX(dt) DESC',
+                    'more_select'      => 'MAX(dt) AS dt',
                     'use_date_filters' => false,
-                    'raw'              => ['wp_slimstat_db', 'get_recent'],
+                    'raw'              => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview2', 'dashboard'],
@@ -400,9 +402,11 @@ class wp_slimstat_reports
                 'title'         => __('Recent Countries', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'country',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'country',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -411,9 +415,11 @@ class wp_slimstat_reports
                 'title'         => __('Recent Viewport Sizes', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'resolution',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'resolution',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -422,9 +428,11 @@ class wp_slimstat_reports
                 'title'         => __('Recent Operating Systems', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'platform',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'platform',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -433,9 +441,11 @@ class wp_slimstat_reports
                 'title'         => __('Recent Browsers', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'browser, browser_version',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'browser, browser_version',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -444,9 +454,11 @@ class wp_slimstat_reports
                 'title'         => __('Recent Languages', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'language',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'language',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -481,10 +493,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Users', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'username',
-                    'where'   => 'notes LIKE "%user:%"',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'username',
+                    'where'       => 'notes LIKE "%user:%"',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview3'],
@@ -577,9 +591,13 @@ class wp_slimstat_reports
                 'title'         => __('Recent Outbound Links', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'outbound_resource',
-                    'raw'     => ['wp_slimstat_db', 'get_recent_outbound'],
+                    'type'        => 'top',
+                    'columns'     => 'outbound_resource',
+                    'where'       => "outbound_resource IS NOT NULL AND outbound_resource != ''",
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'            => ['wp_slimstat_db', 'get_top_outbound'],
+                    'sort_outbound'  => 'dt',
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
@@ -589,11 +607,13 @@ class wp_slimstat_reports
                 'title'         => __('Recent Posts', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'      => 'recent',
-                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
-                    'as_column' => 'resource',
-                    'where'     => 'content_type = "post"',
-                    'raw'       => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column'   => 'resource',
+                    'where'       => 'content_type = "post"',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -615,10 +635,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Pages Not Found', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'resource',
-                    'where'   => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'resource',
+                    'where'       => '(resource LIKE "[404]%" OR content_type LIKE "%404%")',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -657,7 +679,6 @@ class wp_slimstat_reports
                     'columns'  => 'resource',
                     'where'    => 'content_type = "download"',
                     'raw'      => ['wp_slimstat_db', 'get_top'],
-                    'criteria' => 'swap',
                 ],
                 'classes'   => ['large'],
                 'locations' => ['slimview4'],
@@ -679,10 +700,11 @@ class wp_slimstat_reports
                 'title'         => __('Top Posts', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'top',
-                    'columns' => 'resource',
-                    'where'   => 'content_type = "post"',
-                    'raw'     => ['wp_slimstat_db', 'get_top'],
+                    'type'      => 'top',
+                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column' => 'resource',
+                    'where'     => 'content_type = "post"',
+                    'raw'       => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4'],
@@ -716,11 +738,13 @@ class wp_slimstat_reports
                 'title'         => __('Recent Categories', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'      => 'recent',
-                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
-                    'as_column' => 'resource',
-                    'where'     => '(content_type = "category")',
-                    'raw'       => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column'   => 'resource',
+                    'where'       => '(content_type = "category")',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -729,11 +753,13 @@ class wp_slimstat_reports
                 'title'         => __('Recent Tags', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'      => 'recent',
-                    'columns'   => 'TRIM( TRAILING "/" FROM resource )',
-                    'as_column' => 'resource',
-                    'where'     => '(content_type = "tag")',
-                    'raw'       => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'TRIM( TRAILING "/" FROM resource )',
+                    'as_column'   => 'resource',
+                    'where'       => '(content_type = "tag")',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['inactive'],
@@ -777,10 +803,12 @@ class wp_slimstat_reports
                 'title'         => __('Recent Downloads', 'wp-slimstat'),
                 'callback'      => [self::class, 'raw_results_to_html'],
                 'callback_args' => [
-                    'type'    => 'recent',
-                    'columns' => 'resource',
-                    'where'   => 'content_type = "download"',
-                    'raw'     => ['wp_slimstat_db', 'get_recent'],
+                    'type'        => 'top',
+                    'columns'     => 'resource',
+                    'where'       => 'content_type = "download"',
+                    'order_by'    => 'MAX(dt) DESC',
+                    'more_select' => 'MAX(dt) AS dt',
+                    'raw'         => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['large'],
                 'locations' => ['inactive'],
@@ -792,7 +820,6 @@ class wp_slimstat_reports
                     'type'     => 'top',
                     'columns'  => 'outbound_resource',
                     'raw'      => ['wp_slimstat_db', 'get_top_outbound'],
-                    'criteria' => 'swap',
                 ],
                 'classes'   => ['normal'],
                 'locations' => ['slimview4', 'dashboard'],
@@ -1021,6 +1048,17 @@ class wp_slimstat_reports
         echo '</div></div>';
     }
 
+    private static function get_clamped_start($total_results, $results_per_page)
+    {
+        $results_per_page = max(1, intval($results_per_page));
+        $start = intval(wp_slimstat_db::$filters_normalized['misc']['start_from']);
+        if ($total_results > 0 && $start >= $total_results) {
+            $start = max(0, $total_results - $results_per_page);
+            $start = intval(floor($start / $results_per_page) * $results_per_page);
+        }
+        return max(0, $start);
+    }
+
     public static function report_pagination($_count_page_results = 0, $_count_all_results = 0, $_show_refresh_countdown = false, $_results_per_page = -1)
     {
         if (!is_admin()) {
@@ -1029,7 +1067,9 @@ class wp_slimstat_reports
 
         $_results_per_page = ($_results_per_page < 0) ? wp_slimstat::$settings['rows_to_show'] : $_results_per_page;
 
-        $endpoint           = min($_count_all_results, wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page);
+        $effective_start = self::get_clamped_start($_count_all_results, $_results_per_page);
+
+        $endpoint           = min($_count_all_results, $effective_start + $_results_per_page);
         $pagination_buttons = '';
         $direction_prev     = is_rtl() ? 'right' : 'left';
         $direction_next     = is_rtl() ? 'left' : 'right';
@@ -1042,24 +1082,62 @@ class wp_slimstat_reports
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
         if ($endpoint < $_count_all_results && $_count_page_results > 0) {
-            $startpoint = wp_slimstat_db::$filters_normalized['misc']['start_from'] + $_results_per_page;
+            $startpoint = $effective_start + $_results_per_page;
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_next . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
-        if (wp_slimstat_db::$filters_normalized['misc']['start_from'] > 0) {
-            $startpoint = (wp_slimstat_db::$filters_normalized['misc']['start_from'] > $_results_per_page) ? wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page : 0;
+        if ($effective_start > 0) {
+            $startpoint = ($effective_start > $_results_per_page) ? $effective_start - $_results_per_page : 0;
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals ' . $startpoint) . '"></a> ';
         }
-        if (wp_slimstat_db::$filters_normalized['misc']['start_from'] - $_results_per_page > 0) {
+        if ($effective_start - $_results_per_page > 0) {
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
         }
 
-        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n(wp_slimstat_db::$filters_normalized['misc']['start_from'] + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
-            $pagination .= ' [' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]';
+            $pagination .= ' <span class="refresh-countdown">[' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]</span>';
         }
 
         return $pagination . ($pagination_buttons . '</p>');
+    }
+
+    /**
+     * Returns the total result count for pagination display.
+     *
+     * For type=recent reports, get_recent() uses LIMIT+OFFSET so
+     * count($all_results) shrinks on later pages. We use count_records()
+     * for the true total, but cap it to limit_results because get_recent()
+     * can only access that many rows via SQL. The existing "200+" suffix
+     * in report_pagination() signals when more rows exist beyond the cap.
+     *
+     * For type=top reports, SQL fetches the full set (no OFFSET) and
+     * count($all_results) is already stable.
+     *
+     * Reports may set 'total_callback' to a callable that returns the
+     * true total for expanded result sets (e.g. get_recent_outbound
+     * explodes ;;;-delimited rows).
+     */
+    private static function get_report_total_count($_args, $all_results)
+    {
+        // Report-specific total override (e.g. expanded outbound links)
+        if (!empty($_args['total_callback']) && is_callable($_args['total_callback'])) {
+            $limit = intval(wp_slimstat::$settings['limit_results']);
+            return min(call_user_func($_args['total_callback']), $limit);
+        }
+
+        if (!empty($_args['type']) && $_args['type'] === 'recent') {
+            $use_date_filters = $_args['use_date_filters'] ?? true;
+            $true_total = wp_slimstat_db::count_records(
+                'id',
+                !empty($_args['where']) ? $_args['where'] : '',
+                $use_date_filters,
+                $_args['where_params'] ?? []
+            );
+            $limit = intval(wp_slimstat::$settings['limit_results']);
+            return min($true_total, $limit);
+        }
+        return count($all_results);
     }
 
     public static function callback_wrapper()
@@ -1128,9 +1206,15 @@ class wp_slimstat_reports
                 echo '</p>';
             }
         } else {
+            // SQL-paginated reports (type=recent) already applied OFFSET in
+            // the query — slice from 0. PHP-paginated reports (type=top) fetch
+            // all rows up to limit_results — slice from start_from.
+            $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+                ? 0
+                : self::get_clamped_start(count($all_results), wp_slimstat::$settings['rows_to_show']);
             $results = array_slice(
                 $all_results,
-                0,
+                $start_from,
                 wp_slimstat::$settings['rows_to_show']
             );
 
@@ -1399,12 +1483,10 @@ class wp_slimstat_reports
                     $element_value        = "<a class='slimstat-filter-link' href='" . self::fs_url($_args['columns'] . ' ' . $_args['filter_op'] . ' ' . $encoded_column_value) . sprintf("'>%s</a>", $element_value);
                 }
 
-                if (!empty($_args['type']) && 'recent' == $_args['type']) {
-                    if (is_array($results[$i]) && isset($results[$i]['dt'])) {
-                        $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
-                    } else {
-                        // No date available, just show details if any
-                    }
+                // Show last-seen timestamp when dt is available in the result
+                // (both type=recent raw rows and type=top with more_select=MAX(dt) AS dt)
+                if (is_array($results[$i]) && isset($results[$i]['dt']) && $results[$i]['dt'] > 0) {
+                    $row_details = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true) . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {
@@ -1412,13 +1494,7 @@ class wp_slimstat_reports
                     $counthits        = number_format_i18n($results[$i]['counthits']);
                     $percentage_value = number_format_i18n((float)$percentage_value, 2);
 
-                    if ((!empty($_args['criteria']) && 'swap' == $_args['criteria']) || 'on' == wp_slimstat::$settings['show_hits']) {
-                        $percentage  = ' <span>' . $counthits . '</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . (('outbound_resource' != $_args['columns']) ? $percentage_value . '%' . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details : '');
-                    } else {
-                        $percentage  = ' <span>' . $percentage_value . '%</span>';
-                        $row_details = __('Hits', 'wp-slimstat') . ': ' . $counthits . ('' === $row_details || '0' === $row_details ? '' : '<br>') . $row_details;
-                    }
+                    $percentage = ' <span class="slimstat-count-pct">' . $counthits . '<span class="slimstat-pct">(' . $percentage_value . '%)</span></span>';
                 }
 
                 // Some columns require a special post-treatment
@@ -1446,13 +1522,9 @@ class wp_slimstat_reports
                     $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);
                 }
 
-                $bar              = '';
-                $strip_percentage = trim(strip_tags($percentage));
-                if (false !== strpos($strip_percentage, '%')) {
-                    $strip_percentage = str_replace('%', '', $strip_percentage);
-                }
-                if (!empty($strip_percentage)) {
-                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . $strip_percentage . '%"></span></span>';
+                $bar = '';
+                if (!empty($percentage_value)) {
+                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . str_replace('%', '', $percentage_value) . '%"></span></span>';
                 }
                 $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
@@ -1467,7 +1539,7 @@ class wp_slimstat_reports
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '</div>';
             }
-            echo self::report_pagination($count_page_results, count($all_results));
+            echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '<div>';
             }
@@ -1502,9 +1574,12 @@ class wp_slimstat_reports
     {
         $all_results = call_user_func($_args['raw'], $_args);
 
+        $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+            ? 0
+            : self::get_clamped_start(count($all_results), wp_slimstat::$settings['rows_to_show']);
         $results = array_slice(
             $all_results,
-            0,
+            $start_from,
             wp_slimstat::$settings['rows_to_show']
         );
 
@@ -1543,7 +1618,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, count($all_results));
+        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }
@@ -1559,9 +1634,12 @@ class wp_slimstat_reports
 
         $results = [];
         if (is_array($all_results) && count($all_results)) {
+            $start_from = (!empty($_args['type']) && $_args['type'] === 'recent')
+                ? 0
+                : self::get_clamped_start(count($all_results), wp_slimstat::$settings['rows_to_show']);
             $results = array_slice(
                 $all_results,
-                0,
+                $start_from,
                 wp_slimstat::$settings['rows_to_show']
             );
         }
@@ -1608,7 +1686,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, count($all_results));
+        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }

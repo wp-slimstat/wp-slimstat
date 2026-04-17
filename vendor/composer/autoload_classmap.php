@@ -487,6 +487,7 @@ return array(
     'SlimStat\\Migration\\Migrations\\CreateDtOutIndex' => $baseDir . '/src/Migration/Migrations/CreateDtOutIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateDtPlatformIndex' => $baseDir . '/src/Migration/Migrations/CreateDtPlatformIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateDtScreenIndex' => $baseDir . '/src/Migration/Migrations/CreateDtScreenIndex.php',
+    'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => $baseDir . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
     'SlimStat\\Modules\\Chart' => $baseDir . '/src/Modules/Chart.php',
     'SlimStat\\Providers\\IPHashProvider' => $baseDir . '/src/Providers/IPHashProvider.php',
     'SlimStat\\Providers\\RestApiManager' => $baseDir . '/src/Providers/RestApiManager.php',

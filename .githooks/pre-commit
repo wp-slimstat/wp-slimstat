@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+#
+# wp-slimstat pre-commit gate.
+# Runs `php -l` (syntax lint) on every staged PHP file.
+# Fast, dependency-free, catches syntax errors before they land.
+# /simplify is enforced via CLAUDE.md (shell hooks cannot call Claude skills).
+#
+set -euo pipefail
+
+echo "→ running fast gate before commit (wp-slimstat)"
+
+staged_php="$(git diff --cached --name-only --diff-filter=ACMR -z | tr '\0' '\n' | grep -E '\.php$' || true)"
+
+if [ -z "$staged_php" ]; then
+  echo "  no PHP changes, gate skipped"
+  exit 0
+fi
+
+fail=0
+while IFS= read -r file; do
+  [ -z "$file" ] && continue
+  if ! php -l "$file" > /dev/null 2>&1; then
+    echo "  ✗ syntax error in $file"
+    php -l "$file" || true
+    fail=1
+  fi
+done <<< "$staged_php"
+
+if [ "$fail" -ne 0 ]; then
+  echo "  gate failed — commit rejected"
+  exit 1
+fi
+
+echo "  ✓ all staged PHP files pass php -l"
+exit 0

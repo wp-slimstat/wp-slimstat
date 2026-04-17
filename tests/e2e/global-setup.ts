@@ -7,7 +7,7 @@ import { chromium, FullConfig } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { BASE_URL } from './helpers/env';
+import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
 import { installAllTestMuPlugins, installCptMuPlugin } from './helpers/setup';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,14 +54,11 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
-  // Login as admin — override via WP_ADMIN_USER / WP_ADMIN_PASS env vars.
-  // CI default: admin / password (wp-env). Local default: parhumm / testpass123.
-  const adminUser = process.env.WP_ADMIN_USER ?? 'parhumm';
-  const adminPass = process.env.WP_ADMIN_PASS ?? 'testpass123';
+  // Login as admin — credentials from helpers/env.ts (single source of truth).
   await loginAndSave(
     baseURL,
-    adminUser,
-    adminPass,
+    ADMIN_USER,
+    ADMIN_PASS,
     path.join(AUTH_DIR, 'admin.json')
   );
 

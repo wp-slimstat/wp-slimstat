@@ -985,14 +985,12 @@ class wp_slimstat_db
         // GROUP BY
         $query->groupBy($_args['group_by']);
 
-        // ORDER BY
-        $query->orderBy('counthits DESC');
+        // ORDER BY — tie-breaker on group key for deterministic pagination
+        $query->orderBy('counthits DESC, ' . $_args['group_by'] . ' ASC');
 
-        // LIMIT
-        $start_from = intval(self::$filters_normalized['misc']['start_from']);
-        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
-        $page = ($start_from / $limit_results) + 1;
-        $query->perPage($page, $limit_results);
+        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by()
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1159,14 +1157,18 @@ class wp_slimstat_db
 
     public static function get_recent_outbound()
     {
-        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''");
+        $mixed_outbound_resources = self::get_recent('outbound_resource', "outbound_resource IS NOT NULL AND outbound_resource != ''", '', true, '', 'dt, dt_out');
         $clean_outbound_resources = [];
 
         foreach ($mixed_outbound_resources as $a_mixed_resource) {
+            // Prefer dt_out (actual outbound click time) over dt (pageview creation time)
+            $row_dt = isset($a_mixed_resource['dt_out']) && intval($a_mixed_resource['dt_out']) > 0
+                ? intval($a_mixed_resource['dt_out'])
+                : (isset($a_mixed_resource['dt']) ? intval($a_mixed_resource['dt']) : 0);
             $exploded_resources = explode(';;;', $a_mixed_resource['outbound_resource'] ?? '');
             foreach ($exploded_resources as $a_exploded_resource) {
                 if ($a_exploded_resource !== '') {
-                    $clean_outbound_resources[] = $a_exploded_resource;
+                    $clean_outbound_resources[] = ['url' => $a_exploded_resource, 'dt' => $row_dt];
                 }
             }
         }
@@ -1176,6 +1178,9 @@ class wp_slimstat_db
 
     public static function get_top($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '')
     {
+        $_order_by    = 'counthits DESC';
+        $_more_select = '';
+
         // This function can be passed individual arguments, or an array of arguments
         if (is_array($_column)) {
             $where_params = !empty($_column['where_params']) ? $_column['where_params'] : [];
@@ -1192,6 +1197,8 @@ class wp_slimstat_db
             $_having           = empty($_column['having']) ? '' : $_column['having'];
             $_use_date_filters = isset($_column['use_date_filters']) ? (bool)$_column['use_date_filters'] : true;
             $_as_column        = empty($_column['as_column']) ? '' : $_column['as_column'];
+            $_order_by         = empty($_column['order_by']) ? 'counthits DESC' : $_column['order_by'];
+            $_more_select      = empty($_column['more_select']) ? '' : $_column['more_select'];
             $_column           = $_column['columns'];
         }
 
@@ -1204,7 +1211,11 @@ class wp_slimstat_db
         }
 
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::select([$_column, 'COUNT(*) AS counthits'])->from($table);
+        $select_cols = [$_column, 'COUNT(*) AS counthits'];
+        if (!empty($_more_select)) {
+            $select_cols[] = $_more_select;
+        }
+        $query = Query::select($select_cols)->from($table);
 
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
@@ -1232,14 +1243,18 @@ class wp_slimstat_db
 			$query->havingRaw($_having);
 		}
 
-        // ORDER BY
-        $query->orderBy('counthits DESC');
+        // ORDER BY — append group key as tie-breaker for deterministic
+        // pagination when many rows share the primary sort value.
+        $order_with_tiebreak = $_order_by;
+        if (false === stripos($_order_by, $group_by_column)) {
+            $order_with_tiebreak .= ', ' . $group_by_column . ' ASC';
+        }
+        $query->orderBy($order_with_tiebreak);
 
-        // LIMIT
-        $start_from = intval(self::$filters_normalized['misc']['start_from']);
-        $limit_results = intval(self::$filters_normalized['misc']['limit_results']);
-        $page = ($start_from / $limit_results) + 1;
-        $query->perPage($page, $limit_results);
+        // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
+        // handles page slicing via array_slice in the rendering callbacks.
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit);
 
         $query->allowCaching(true);
         return $query->getAll();
@@ -1273,7 +1288,7 @@ class wp_slimstat_db
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
             ->orderBy('counthits DESC')
-            ->perPage((intval(self::$filters_normalized['misc']['start_from']) / max(1, intval(self::$filters_normalized['misc']['limit_results']))) + 1, self::$filters_normalized['misc']['limit_results']);
+            ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])));
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
@@ -1297,20 +1312,62 @@ class wp_slimstat_db
 
         $query->groupBy('te.notes')->orderBy('counthits DESC');
 
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $query->limit($limit);
+
         self::maybe_enable_query_cache($query);
         return $query->getAll();
     }
 
-    public static function get_top_outbound()
+    public static function get_top_outbound($_args = [])
     {
-        $clean_outbound_resources = array_count_values(self::get_recent_outbound());
-        arsort($clean_outbound_resources);
+        $sort_by = 'counthits';
+        if (is_array($_args) && !empty($_args['sort_outbound'])) {
+            $sort_by = $_args['sort_outbound'];
+        }
+
+        // Zero out start_from before fetching raw data — get_recent_outbound()
+        // calls get_recent() which applies SQL OFFSET. We need the full
+        // (un-offset) result set for correct aggregation; PHP-side pagination
+        // in the rendering callback handles page slicing.
+        $saved_start = self::$filters_normalized['misc']['start_from'];
+        self::$filters_normalized['misc']['start_from'] = 0;
+        try {
+            $raw_outbound = self::get_recent_outbound();
+        } finally {
+            self::$filters_normalized['misc']['start_from'] = $saved_start;
+        }
+
+        // Aggregate: count hits and track max dt per unique URL
+        $aggregated = [];
+        foreach ($raw_outbound as $item) {
+            $url = $item['url'];
+            if (!isset($aggregated[$url])) {
+                $aggregated[$url] = ['counthits' => 0, 'dt' => 0];
+            }
+            $aggregated[$url]['counthits']++;
+            if ($item['dt'] > $aggregated[$url]['dt']) {
+                $aggregated[$url]['dt'] = $item['dt'];
+            }
+        }
+
+        // Sort: 'dt' for Recent panel, 'counthits' (default) for Top panel
+        if ($sort_by === 'dt') {
+            uasort($aggregated, static function ($a, $b) {
+                return $b['dt'] <=> $a['dt'];
+            });
+        } else {
+            uasort($aggregated, static function ($a, $b) {
+                return $b['counthits'] <=> $a['counthits'] ?: $b['dt'] <=> $a['dt'];
+            });
+        }
 
         $sorted_outbound_resources = [];
-        foreach ($clean_outbound_resources as $a_resource => $a_count) {
+        foreach ($aggregated as $url => $data) {
             $sorted_outbound_resources[] = [
-                'outbound_resource' => $a_resource,
-                'counthits'         => $a_count,
+                'outbound_resource' => $url,
+                'counthits'         => $data['counthits'],
+                'dt'                => $data['dt'],
             ];
         }
 
@@ -1369,47 +1426,59 @@ class wp_slimstat_db
         $total_human_visits = wp_slimstat_db::count_records('visit_id', 'visit_id > 0 AND browser_type <> 1');
         $results            = [];
 
-        $count_results         = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', '	GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) >= 0 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 30');
-        $average_time          = 30 * $count_results;
-        $results[0]['metric']  = __('0 - 30 seconds', 'wp-slimstat');
-        $results[0]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[0]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', '	GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) >= 0 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 30');
+        $average_time              = 30 * $count_results;
+        $results[0]['metric']      = __('0 - 30 seconds', 'wp-slimstat');
+        $results[0]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[0]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[0]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 30 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 60');
-        $average_time += 60 * $count_results;
-        $results[1]['metric']  = __('31 - 60 seconds', 'wp-slimstat');
-        $results[1]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[1]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 30 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 60');
+        $average_time             += 60 * $count_results;
+        $results[1]['metric']      = __('31 - 60 seconds', 'wp-slimstat');
+        $results[1]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[1]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[1]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 60 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 180');
-        $average_time += 180 * $count_results;
-        $results[2]['metric']  = __('1 - 3 minutes', 'wp-slimstat');
-        $results[2]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[2]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 60 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 180');
+        $average_time             += 180 * $count_results;
+        $results[2]['metric']      = __('1 - 3 minutes', 'wp-slimstat');
+        $results[2]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[2]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[2]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 180 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 300');
-        $average_time += 300 * $count_results;
-        $results[3]['metric']  = __('3 - 5 minutes', 'wp-slimstat');
-        $results[3]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[3]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 180 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 300');
+        $average_time             += 300 * $count_results;
+        $results[3]['metric']      = __('3 - 5 minutes', 'wp-slimstat');
+        $results[3]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[3]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[3]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 300 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 420');
-        $average_time += 420 * $count_results;
-        $results[4]['metric']  = __('5 - 7 minutes', 'wp-slimstat');
-        $results[4]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[4]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 300 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 420');
+        $average_time             += 420 * $count_results;
+        $results[4]['metric']      = __('5 - 7 minutes', 'wp-slimstat');
+        $results[4]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[4]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[4]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 420 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 600');
-        $average_time += 600 * $count_results;
-        $results[5]['metric']  = __('7 - 10 minutes', 'wp-slimstat');
-        $results[5]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[5]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 420 AND GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) <= 600');
+        $average_time             += 600 * $count_results;
+        $results[5]['metric']      = __('7 - 10 minutes', 'wp-slimstat');
+        $results[5]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[5]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[5]['counthits']   = $count_results;
 
-        $count_results = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 600');
-        $average_time += 900 * $count_results;
-        $results[6]['metric']  = __('More than 10 minutes', 'wp-slimstat');
-        $results[6]['value']   = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
-        $results[6]['details'] = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $count_results             = wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'GREATEST( MAX( dt ), MAX( dt_out ) ) - MIN( dt ) > 600');
+        $average_time             += 900 * $count_results;
+        $results[6]['metric']      = __('More than 10 minutes', 'wp-slimstat');
+        $results[6]['value']       = (($total_human_visits > 0) ? number_format_i18n((100 * $count_results / $total_human_visits), 2) : 0) . '%';
+        $results[6]['details']     = __('Hits', 'wp-slimstat') . (': ' . $count_results);
+        $results[6]['counthits']   = $count_results;
+
+        // Sort time buckets by most hits first
+        usort($results, static function ($a, $b) {
+            return ($b['counthits'] ?? 0) <=> ($a['counthits'] ?? 0);
+        });
 
         if ($total_human_visits > 0) {
             $average_time /= $total_human_visits;
@@ -1418,9 +1487,12 @@ class wp_slimstat_db
             $average_time = '0:00';
         }
 
-        $results[7]['metric']  = __('Average Visit Duration', 'wp-slimstat');
-        $results[7]['value']   = $average_time;
-        $results[7]['details'] = '';
+        // Average row always at the bottom
+        $results[]  = [
+            'metric'  => __('Average Visit Duration', 'wp-slimstat'),
+            'value'   => $average_time,
+            'details' => '',
+        ];
 
         return $results;
     }
