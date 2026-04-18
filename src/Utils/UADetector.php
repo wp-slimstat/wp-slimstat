@@ -9,16 +9,7 @@ class UADetector
     //		1: crawler
     //		2: mobile
 
-    /**
-     * Generic bot detection regex — shared with Browscap::apply_bot_safety_net().
-     *
-     * Extended in ticket #14843 v2 with vendor-specific tokens for bare-name bots
-     * that don't expose a URL or conventional bot keyword: Mediapartners-Google,
-     * Google-InspectionTool, Google-Site-Verification (via verif-family), Google
-     * Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety, DuplexWeb-Google,
-     * BingPreview, YandexDirect, YandexFavicons, WhatsApp preview fetcher,
-     * SkypeUriPreview, anthropic-ai, cohere-ai.
-     */
+    /** Generic bot detection regex — shared with Browscap::apply_bot_safety_net(). */
     public const BOT_GENERIC_REGEX = '#(robot|bot[\s\-_\/\)]|bot$|blog|checker|crawl|feed|fetcher|libwww|[^\.e]link\s?|parser|reader|spider|verif(?:ier|ication|y)|href|https?\://|.+(?:\@|\s?at\s?)[a-z0-9_\-]+(?:\.|\s?dot\s?)|www[0-9]?\.[a-z0-9_\-]+\..+|\/.+\.(s?html?|aspx?|php5?|cgi)|mediapartners|inspectiontool|googleother|googleagent|google-safety|duplexweb|google\sfavicon|yandex(?:direct|favicons)|anthropic-ai|cohere-ai|bingpreview|whatsapp\/|skypeuripreview)#i';
 
     public static function get_browser($_user_agent = '')

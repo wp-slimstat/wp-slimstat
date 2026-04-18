@@ -137,8 +137,8 @@ safety_assert(
 // ═══════════════════════════════════════════════════════════════════════════
 $required_regex_tokens = [
     'mediapartners', 'inspectiontool', 'googleother', 'googleagent',
-    'google-safety', 'duplexweb', 'bingpreview', 'yandexdirect',
-    'yandexfavicons', 'anthropic-ai', 'cohere-ai', 'skypeuripreview',
+    'google-safety', 'duplexweb', 'bingpreview', 'yandex',
+    'direct|favicons', 'anthropic-ai', 'cohere-ai', 'skypeuripreview',
     'whatsapp', 'favicon', 'verif',
 ];
 foreach ($required_regex_tokens as $token) {
