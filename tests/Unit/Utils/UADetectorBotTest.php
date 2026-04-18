@@ -119,7 +119,7 @@ class UADetectorBotTest extends WpSlimstatTestCase
         $this->assertSame(1, $browser['browser_type'], "{$label} must be browser_type=1");
     }
 
-    public function vendorBotProvider(): array
+    public static function vendorBotProvider(): array
     {
         return [
             'Mediapartners-Google'          => ['Mediapartners-Google', 'Mediapartners-Google'],
@@ -155,7 +155,7 @@ class UADetectorBotTest extends WpSlimstatTestCase
         $this->assertNotSame(1, $browser['browser_type'], "{$label} must NOT be browser_type=1");
     }
 
-    public function realBrowserProvider(): array
+    public static function realBrowserProvider(): array
     {
         return [
             'Edge'            => ['Real Edge', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0'],
