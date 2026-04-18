@@ -71,10 +71,10 @@ class Browscap
             $browser['browser_version'] = $browser_version['browser_version'];
         }
 
-        // Safety net: detect bots by UA keywords when Browscap did not flag as crawler.
-        // Catches Chrome-based crawlers (Googlebot, Bingbot) that Browscap may
-        // identify as regular browsers without setting crawler=true. See #291.
-        if (0 === (int) $browser['browser_type']) {
+        // Safety net: re-check any non-crawler type (desktop/mobile/touch) against
+        // BOT_GENERIC_REGEX. Browscap misclassifies Chrome-based Googlebot mobile
+        // UAs as type=2 because Android/Mobile signals match before the bot suffix.
+        if (1 !== (int) $browser['browser_type']) {
             $browser = self::apply_bot_safety_net($browser);
         }
 
