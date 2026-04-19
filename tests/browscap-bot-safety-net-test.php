@@ -129,12 +129,26 @@ safety_assert(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TEST 11: BOT_GENERIC_REGEX must include the 16 new keywords (#14843 v2)
+// TEST 11: BOT_GENERIC_REGEX must include the 15 vendor-group keywords (#14843 v2)
 // Closes gaps for: Mediapartners-Google, Google-InspectionTool, Google-Site-
 // Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety,
-// DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp,
+// DuplexWeb-Google, BingPreview, YandexDirect/YandexFavicons, WhatsApp,
 // SkypeUriPreview, anthropic-ai, cohere-ai.
+//
+// The assertion runs against only the BOT_GENERIC_REGEX constant value — not
+// the whole UADetector.php source — to avoid false positives from tokens that
+// might appear in unrelated comments or identifiers elsewhere in the file.
 // ═══════════════════════════════════════════════════════════════════════════
+safety_assert(
+    (bool) preg_match(
+        "/public\\s+const\\s+BOT_GENERIC_REGEX\\s*=\\s*'([^']+)'/",
+        $uadetector_src,
+        $regex_match
+    ),
+    'TEST 11: BOT_GENERIC_REGEX constant must be parseable from UADetector.php'
+);
+$bot_regex_value = $regex_match[1] ?? '';
+
 $required_regex_tokens = [
     'mediapartners', 'inspectiontool', 'googleother', 'googleagent',
     'google-safety', 'duplexweb', 'bingpreview', 'yandex',
@@ -143,7 +157,7 @@ $required_regex_tokens = [
 ];
 foreach ($required_regex_tokens as $token) {
     safety_assert(
-        false !== stripos($uadetector_src, $token),
+        false !== stripos($bot_regex_value, $token),
         "TEST 11: BOT_GENERIC_REGEX must contain '{$token}' keyword"
     );
 }
