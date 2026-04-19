@@ -250,10 +250,18 @@
 }
 
 .slimstat-gf-empty__body {
-    margin: 0 auto var(--ss-space-5);
+    margin: 0 auto var(--ss-space-3);
     max-width: 480px;
     color: var(--ss-text-secondary);
     font-size: var(--ss-text-base);
+}
+
+.slimstat-gf-empty__note {
+    margin: 0 auto var(--ss-space-5);
+    max-width: 480px;
+    color: var(--ss-text-tertiary);
+    font-size: var(--ss-text-sm);
+    font-style: italic;
 }
 
 /* ------- Upsell + hint ------- */
@@ -355,6 +363,34 @@
     font-style: italic;
 }
 
+.slimstat-gf-summary--success {
+    color: var(--ss-success-fg);
+    background: var(--ss-success-bg);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    font-weight: 600;
+}
+
+.slimstat-gf-summary--success .slimstat-gf-summary__glyph {
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-summary--warn {
+    margin-inline-start: var(--ss-space-2);
+    color: var(--ss-danger-fg);
+    background: var(--ss-warning-bg);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+}
+
 .slimstat-gf-funnel-panel__actions {
     margin-inline-start: auto;
     display: flex;
@@ -419,6 +455,23 @@
     color: var(--ss-danger-fg);
     padding: var(--ss-space-1) 0 var(--ss-space-2);
     font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-step__unreachable {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    margin-top: var(--ss-space-1);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-warning-bg);
+    color: var(--ss-danger-fg);
+    font-size: var(--ss-text-xs);
+    font-weight: 600;
+}
+
+.slimstat-gf-step--unreachable .slimstat-gf-step__name {
+    color: var(--ss-danger-fg);
 }
 
 /* Locked state (Free) */
@@ -758,13 +811,40 @@
 
 .slimstat-gf-step-row {
     display: grid;
-    grid-template-columns: auto minmax(120px, 1fr) minmax(110px, 140px) minmax(110px, 140px) minmax(120px, 1fr) auto;
+    grid-template-columns: auto auto minmax(120px, 1fr) minmax(110px, 140px) minmax(110px, 140px) minmax(120px, 1fr) auto auto auto;
     gap: var(--ss-space-2);
     align-items: center;
     padding: var(--ss-space-2) var(--ss-space-3);
     border: 1px solid var(--ss-border);
     border-radius: var(--ss-radius-sm);
     background: var(--ss-surface-tint);
+    transition: transform var(--ss-duration-fast) var(--ss-easing),
+                background-color var(--ss-duration-fast) var(--ss-easing),
+                box-shadow var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-gf-step-row.is-dragging {
+    opacity: 0.5;
+    background: var(--ss-hover);
+}
+
+.slimstat-gf-step-row.is-drag-over {
+    box-shadow: 0 -2px 0 var(--ss-brand-500);
+}
+
+.slimstat-gf-step-row__handle {
+    cursor: grab;
+    background: transparent;
+    border: none;
+    color: var(--ss-text-tertiary);
+    font-size: var(--ss-text-lg);
+    padding: var(--ss-space-1);
+    line-height: 1;
+    user-select: none;
+}
+
+.slimstat-gf-step-row__handle:active {
+    cursor: grabbing;
 }
 
 .slimstat-gf-step-row__num {
@@ -772,6 +852,33 @@
     font-weight: 600;
     color: var(--ss-text-secondary);
     min-width: 40px;
+}
+
+.slimstat-gf-step-row__test {
+    font-size: var(--ss-text-sm);
+    color: var(--ss-info-fg);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: var(--ss-space-1) var(--ss-space-2);
+    border-radius: var(--ss-radius-2xs);
+}
+
+.slimstat-gf-step-row__test:hover {
+    background: var(--ss-hover);
+}
+
+.slimstat-gf-step-row__test-result {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+    text-align: start;
+}
+
+.slimstat-gf-step-row__test-result.is-loading {
+    color: var(--ss-text-disabled);
+    font-style: italic;
 }
 
 .slimstat-gf-step-row__remove {

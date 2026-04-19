@@ -403,4 +403,81 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
 
         $this->assertSame('nonce_invalid', $die->outcome());
     }
+
+    public function test_load_funnel_data_exposes_unreachable_count_in_summary(): void
+    {
+        $this->setFunnels([
+            ['id' => 9, 'name' => 'Broken', 'steps' => $this->validFunnelSteps(3)],
+        ]);
+        $this->stubWpSlimstatDb([
+            ['name' => 'Step 1', 'visitors' => 100, 'pct' => 100, 'dropoff' => 0,  'unreachable' => false],
+            ['name' => 'Step 2', 'visitors' => 0,   'pct' => 0,   'dropoff' => 100, 'unreachable' => true],
+            ['name' => 'Step 3', 'visitors' => 0,   'pct' => 0,   'dropoff' => 0,  'unreachable' => false],
+        ]);
+        $_POST = ['security' => 'x', 'funnel_id' => '9'];
+
+        $die = $this->callHandler('ajax_load_funnel_data');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertSame(1, $die->payload['summary']['unreachable_count']);
+        $this->assertTrue($die->payload['steps'][1]['unreachable']);
+    }
+
+    // ---- ajax_test_funnel_step -----------------------------------------
+
+    public function test_test_funnel_step_returns_visitor_count(): void
+    {
+        $this->stubWpSlimstatDb([]);
+        // Ensure the class alias exists so the handler's include_once no-ops.
+        \WpSlimstat\Tests\Integration\FakeWpSlimstatDb::$getGoalResults = ['uniques' => 42, 'total' => 100, 'cr' => 50];
+        $_POST = [
+            'security'  => 'x',
+            'name'      => 'Cart',
+            'dimension' => 'resource',
+            'operator'  => 'contains',
+            'value'     => '/cart',
+            'active'    => 1,
+        ];
+
+        $die = $this->callHandler('ajax_test_funnel_step');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertSame(42, $die->payload['visitors']);
+    }
+
+    public function test_test_funnel_step_rejects_invalid_step(): void
+    {
+        $_POST = ['security' => 'x']; // missing name/dimension/operator
+
+        $die = $this->callHandler('ajax_test_funnel_step');
+
+        $this->assertSame('error', $die->outcome());
+        $this->assertStringContainsString('required', $die->payload['message']);
+    }
+
+    public function test_test_funnel_step_rejects_without_view_capability(): void
+    {
+        $this->capability = false;
+        $_POST = [
+            'security'  => 'x',
+            'name'      => 'Step',
+            'dimension' => 'resource',
+            'operator'  => 'contains',
+            'value'     => '/x',
+        ];
+
+        $die = $this->callHandler('ajax_test_funnel_step');
+
+        $this->assertSame('error', $die->outcome());
+    }
+
+    public function test_test_funnel_step_rejects_when_nonce_invalid(): void
+    {
+        $this->nonceValid = false;
+        $_POST = ['security' => 'x', 'name' => 'X', 'dimension' => 'resource', 'operator' => 'equals'];
+
+        $die = $this->callHandler('ajax_test_funnel_step');
+
+        $this->assertSame('nonce_invalid', $die->outcome());
+    }
 }

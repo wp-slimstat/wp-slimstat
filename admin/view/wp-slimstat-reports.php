@@ -1794,7 +1794,7 @@ class wp_slimstat_reports
 
         // Compute the SSR funnel data (first funnel only — others lazy-load via AJAX).
         $active_funnel_steps   = [];
-        $active_funnel_summary = ['step_count' => 0, 'total_cr' => null];
+        $active_funnel_summary = ['step_count' => 0, 'total_cr' => null, 'unreachable_count' => 0];
         if (!empty($funnels)) {
             $active_funnel_steps = wp_slimstat_db::get_funnel_results($funnels[0]);
             $step_one_visitors   = (int) ($active_funnel_steps[0]['visitors'] ?? 0);
@@ -1804,9 +1804,16 @@ class wp_slimstat_reports
                     ? $active_funnel_steps[count($active_funnel_steps) - 1]['pct']
                     : 100;
             }
+            $unreachable_count = 0;
+            foreach ($active_funnel_steps as $step) {
+                if (!empty($step['unreachable'])) {
+                    $unreachable_count++;
+                }
+            }
             $active_funnel_summary = [
-                'step_count' => count($active_funnel_steps),
-                'total_cr'   => $total_cr,
+                'step_count'        => count($active_funnel_steps),
+                'total_cr'          => $total_cr,
+                'unreachable_count' => $unreachable_count,
             ];
         }
 

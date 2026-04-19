@@ -1794,7 +1794,7 @@ class wp_slimstat_db
             $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
 
             if (empty($step_where)) {
-                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0];
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 $use_temp = false;
                 wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
                 continue;
@@ -1805,7 +1805,7 @@ class wp_slimstat_db
             if ($step_index > 0 && $use_temp) {
                 $fp_filter = sprintf(' AND %s IN (SELECT vid FROM %s)', $visitor_id, $temp_read);
             } elseif ($step_index > 0 && !$use_temp) {
-                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0];
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 continue;
             }
 
@@ -1841,11 +1841,17 @@ class wp_slimstat_db
             $prev_count = ($step_index > 0 && !empty($results[$step_index - 1])) ? $results[$step_index - 1]['visitors'] : $visitor_count;
             $dropoff    = $prev_count - $visitor_count;
 
+            // A step is "unreachable" when the previous step had visitors but none
+            // carried through — usually a rule typo, not a real drop-off. UI renders
+            // a distinct marker so it doesn't look like healthy attrition.
+            $unreachable = ($step_index > 0 && $visitor_count === 0 && $prev_count > 0);
+
             $results[] = [
-                'name'     => $step['name'],
-                'visitors' => $visitor_count,
-                'pct'      => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
-                'dropoff'  => max(0, $dropoff),
+                'name'        => $step['name'],
+                'visitors'    => $visitor_count,
+                'pct'         => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                'dropoff'     => max(0, $dropoff),
+                'unreachable' => $unreachable,
             ];
         }
 

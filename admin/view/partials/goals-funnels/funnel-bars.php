@@ -21,17 +21,18 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
 ?>
 <ol class="slimstat-gf-steps" role="list">
     <?php foreach ($steps as $index => $step) :
-        $visitors = (int) ($step['visitors'] ?? 0);
-        $pct      = (float) ($step['pct'] ?? 0);
-        $dropoff  = (int) ($step['dropoff'] ?? 0);
-        $width    = $step_one_visitors > 0 ? max(2, (int) round(($visitors / $step_one_visitors) * 100)) : 0;
-        $step_num = $index + 1;
+        $visitors    = (int) ($step['visitors'] ?? 0);
+        $pct         = (float) ($step['pct'] ?? 0);
+        $dropoff     = (int) ($step['dropoff'] ?? 0);
+        $unreachable = !empty($step['unreachable']);
+        $width       = $step_one_visitors > 0 ? max(2, (int) round(($visitors / $step_one_visitors) * 100)) : 0;
+        $step_num    = $index + 1;
         $dropoff_pct = 0;
         if ($index > 0 && !empty($steps[$index - 1]['visitors'])) {
             $dropoff_pct = round(($dropoff / max(1, (int) $steps[$index - 1]['visitors'])) * 100, 1);
         }
         ?>
-        <li class="slimstat-gf-step" data-step="<?php echo esc_attr((string) $step_num); ?>">
+        <li class="slimstat-gf-step<?php echo $unreachable ? ' slimstat-gf-step--unreachable' : ''; ?>" data-step="<?php echo esc_attr((string) $step_num); ?>">
             <div class="slimstat-gf-step__head">
                 <span class="slimstat-gf-step__name"><?php echo esc_html($step['name'] ?? ''); ?></span>
                 <span class="slimstat-gf-step__count">
@@ -54,7 +55,12 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
                          number_format_i18n($visitors)
                      )); ?>"></div>
             </div>
-            <?php if ($index > 0 && $dropoff > 0) : ?>
+            <?php if ($unreachable) : ?>
+                <div class="slimstat-gf-step__unreachable">
+                    <span aria-hidden="true">⚠</span>
+                    <?php esc_html_e('Step unreachable · event not seen in range', 'wp-slimstat'); ?>
+                </div>
+            <?php elseif ($index > 0 && $dropoff > 0) : ?>
                 <div class="slimstat-gf-step__dropoff">
                     <?php echo esc_html(sprintf(
                         /* translators: 1: visitors dropped, 2: drop-off percentage */

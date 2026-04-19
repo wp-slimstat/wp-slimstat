@@ -48,11 +48,18 @@ if (!defined('ABSPATH')) {
             <span class="slimstat-gf-field__hint"><?php esc_html_e('Funnels need between 2 and 5 steps.', 'wp-slimstat'); ?></span>
             <span class="slimstat-gf-builder__spacer"></span>
             <button type="button" class="button" data-action="close-funnel-builder"><?php esc_html_e('Cancel', 'wp-slimstat'); ?></button>
-            <button type="button" class="button button-primary" data-action="save-funnel"><?php esc_html_e('Save funnel', 'wp-slimstat'); ?></button>
+            <button type="button" class="button button-primary" data-action="save-funnel">
+                <span data-role="save-create"><?php esc_html_e('Save funnel', 'wp-slimstat'); ?></span>
+                <span data-role="save-edit" hidden><?php esc_html_e('Save changes', 'wp-slimstat'); ?></span>
+            </button>
         </footer>
 
         <template data-role="step-template">
-            <div class="slimstat-gf-step-row" data-step-row="">
+            <div class="slimstat-gf-step-row" data-step-row="" draggable="true">
+                <button type="button"
+                        class="slimstat-gf-step-row__handle"
+                        data-action="drag-step"
+                        aria-label="<?php esc_attr_e('Reorder step', 'wp-slimstat'); ?>">⋮⋮</button>
                 <span class="slimstat-gf-step-row__num" data-role="step-num"></span>
                 <input type="text"
                        data-role="step-name"
@@ -74,6 +81,12 @@ if (!defined('ABSPATH')) {
                        data-role="step-value"
                        class="regular-text"
                        placeholder="<?php esc_attr_e('Value', 'wp-slimstat'); ?>">
+                <button type="button"
+                        class="button-link slimstat-gf-step-row__test"
+                        data-action="test-step">
+                    <?php esc_html_e('Test', 'wp-slimstat'); ?>
+                </button>
+                <span class="slimstat-gf-step-row__test-result" data-role="test-result" aria-live="polite"></span>
                 <button type="button"
                         class="button-link slimstat-gf-step-row__remove"
                         data-action="remove-funnel-step"

@@ -233,6 +233,128 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-confirm-sheet')).toHaveCount(0);
     });
 
+    // ─── Round 2: auto-suggest on value field ────────────────────
+
+    test('auto-suggest-goal-drawer: changing dimension fires slimstat_get_filter_options', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        const req = page.waitForRequest(r =>
+            r.url().includes('admin-ajax.php') &&
+            r.method() === 'POST' &&
+            (r.postData() || '').includes('action=slimstat_get_filter_options')
+        );
+        await page.selectOption('[data-role="goal-dimension"]', 'country');
+        const request = await req;
+        expect(request.postData()).toContain('dimension=country');
+    });
+
+    test('auto-suggest-event-notes-maps-to-notes: dimension=event_notes posts dimension=notes', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        const req = page.waitForRequest(r =>
+            r.url().includes('admin-ajax.php') &&
+            r.method() === 'POST' &&
+            (r.postData() || '').includes('action=slimstat_get_filter_options')
+        );
+        await page.selectOption('[data-role="goal-dimension"]', 'event_notes');
+        const request = await req;
+        expect(request.postData()).toContain('dimension=notes');
+    });
+
+    test('auto-suggest-is-empty-disables-value: operator is_empty disables the value input', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        await page.selectOption('[data-role="goal-operator"]', 'is_empty');
+        await expect(page.locator('[data-role="goal-value"]')).toBeDisabled();
+
+        await page.selectOption('[data-role="goal-operator"]', 'contains');
+        await expect(page.locator('[data-role="goal-value"]')).toBeEnabled();
+    });
+
+    // ─── Round 2: funnel builder affordances ─────────────────────
+
+    test('funnel-test-step-populates-count: Test button fires slimstat_test_funnel_step', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const firstRow = page.locator('.slimstat-gf-step-row').nth(0);
+        await firstRow.locator('[data-role="step-name"]').fill('Home');
+        await firstRow.locator('[data-role="step-value"]').fill('/');
+
+        const req = page.waitForRequest(r =>
+            r.url().includes('admin-ajax.php') &&
+            r.method() === 'POST' &&
+            (r.postData() || '').includes('action=slimstat_test_funnel_step')
+        );
+        await firstRow.locator('[data-action="test-step"]').click();
+        await req;
+        // Result span should render something (either a count or "—").
+        await expect(firstRow.locator('[data-role="test-result"]')).not.toHaveText('');
+    });
+
+    // ─── Round 2: prototype copy regression ──────────────────────
+
+    test('copy-prototype-strings: marquee empty-state copy matches the prototype', async ({ page }) => {
+        await forceLimits(1, 0, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        // Goals hero subtitle.
+        await expect(page.locator('.slimstat-gf-goals .slimstat-gf-card__subtitle'))
+            .toContainText('A Goal is one question you ask of your traffic');
+
+        // Goals empty state.
+        await expect(page.locator('[data-role="goals-empty"] .slimstat-gf-empty__title'))
+            .toHaveText('Measure what matters');
+        await expect(page.locator('[data-role="goals-empty"] .slimstat-gf-cta'))
+            .toContainText('Add your first goal');
+
+        // Funnels locked preview headline.
+        await expect(page.locator('.slimstat-gf-funnel-lock__overlay h3'))
+            .toContainText('See where visitors drop off, step by step');
+
+        // Funnels subtitle.
+        await expect(page.locator('.slimstat-gf-funnels .slimstat-gf-card__subtitle'))
+            .toContainText('String 2–5 goals into a journey');
+    });
+
+    test('copy-prototype-templates: template cards use prototype labels', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        const templates = page.locator('.slimstat-gf-template-card__title');
+        await expect(templates.nth(0)).toContainText('E-commerce checkout');
+        await expect(templates.nth(1)).toContainText('SaaS signup');
+        await expect(templates.nth(2)).toContainText('Blog engagement');
+        await expect(templates.nth(3)).toContainText('Blank funnel');
+    });
+
+    test('copy-confirm-sheet-keep-labels: confirm sheet uses Keep + Delete wording', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedGoals([{ name: 'To Delete', dimension: 'resource', operator: 'equals', value: '/x', active: true }]);
+        await gotoSlimview6(page);
+
+        await page.click('[data-action="delete-goal"]');
+        await expect(page.locator('#slimstat-gf-confirm-sheet.is-open')).toBeVisible();
+        await expect(page.locator('[data-role="confirm-title"]')).toContainText('Delete goal?');
+        await expect(page.locator('[data-role="confirm-cancel"]')).toHaveText('Keep goal');
+        await expect(page.locator('[data-role="confirm-destructive"]')).toHaveText('Delete goal');
+    });
+
     // ─── Legacy CSS var preservation (visual regression guard) ───
 
     test('legacy-css-vars: datepicker --slimstat-* tokens keep their original values', async ({ page }) => {

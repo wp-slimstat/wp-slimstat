@@ -40,7 +40,7 @@
             ]
         },
         content: {
-            name: 'Content engagement',
+            name: 'Blog engagement',
             steps: [
                 { name: 'Landing',       dimension: 'resource', operator: 'contains', value: '/' },
                 { name: 'Article',       dimension: 'resource', operator: 'contains', value: '/blog' },
@@ -97,15 +97,20 @@
     var $confirmSheet = $('#slimstat-gf-confirm-sheet');
     var confirmHandler = null;
 
-    function openConfirmSheet(title, body, destructiveLabel, onConfirm) {
+    function openConfirmSheet(opts) {
         if (!$confirmSheet.length) return;
-        $confirmSheet.find('#slimstat-gf-confirm-title').text(title);
-        $confirmSheet.find('[data-role="confirm-body"]').text(body);
-        $confirmSheet.find('[data-action="confirm-destructive"]').text(destructiveLabel || 'Delete');
+        opts = opts || {};
+        $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || 'Delete this?');
+        $confirmSheet.find('[data-role="confirm-body"]').text(opts.body || '');
+        $confirmSheet.find('[data-role="confirm-warning"]').text(
+            opts.warning || 'Historical data stays — only the definition is removed. You can always rebuild it.'
+        );
+        $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || 'Cancel');
+        $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || 'Delete');
         $confirmSheet.addClass('is-open').attr('aria-hidden', 'false');
-        confirmHandler = onConfirm;
+        confirmHandler = opts.onConfirm || null;
         setTimeout(function () {
-            $confirmSheet.find('[data-action="confirm-destructive"]').trigger('focus');
+            $confirmSheet.find('[data-role="confirm-destructive"]').trigger('focus');
         }, 0);
     }
 
@@ -131,9 +136,12 @@
     function openGoalDrawer(mode, goal) {
         if (!$goalDrawer.length) return;
         goal = goal || { id: '', name: '', dimension: 'resource', operator: 'contains', value: '', active: true };
+        var isEdit = (mode === 'edit');
 
-        $goalDrawer.find('[data-role="title-create"]').prop('hidden', mode === 'edit');
-        $goalDrawer.find('[data-role="title-edit"]').prop('hidden', mode !== 'edit');
+        $goalDrawer.find('[data-role="title-create"]').prop('hidden', isEdit);
+        $goalDrawer.find('[data-role="title-edit"]').prop('hidden', !isEdit);
+        $goalDrawer.find('[data-role="save-create"]').prop('hidden', isEdit);
+        $goalDrawer.find('[data-role="save-edit"]').prop('hidden', !isEdit);
 
         $goalDrawer.find('[data-role="goal-id"]').val(goal.id || '');
         $goalDrawer.find('[data-role="goal-name"]').val(goal.name || '');
@@ -144,12 +152,18 @@
         $goalDrawer.find('[data-role="drawer-error"]').attr('hidden', true).text('');
 
         $goalDrawer.addClass('is-open').attr('aria-hidden', 'false');
+        initAutoSuggest(
+            $goalDrawer.find('[data-role="goal-value"]')[0],
+            $goalDrawer.find('[data-role="goal-dimension"]').val(),
+            $goalDrawer.find('[data-role="goal-operator"]').val()
+        );
         setTimeout(function () {
             $goalDrawer.find('[data-role="goal-name"]').trigger('focus');
         }, 0);
     }
 
     function closeGoalDrawer() {
+        destroyAutoSuggest($goalDrawer.find('[data-role="goal-value"]')[0]);
         $goalDrawer.removeClass('is-open').attr('aria-hidden', 'true');
     }
 
@@ -201,11 +215,13 @@
         var $btn = $(this);
         var goalId = $btn.data('goal-id');
         var goalName = $btn.data('goal-name') || '';
-        openConfirmSheet(
-            'Delete goal?',
-            'The goal "' + goalName + '" will be removed. Historical data is not affected.',
-            'Delete goal',
-            function () {
+        openConfirmSheet({
+            title:            'Delete goal?',
+            body:             goalName ? 'Delete "' + goalName + '"?' : 'Delete this goal?',
+            warning:          'Historical data stays — only the goal definition is removed. You can always rebuild it.',
+            cancelLabel:      'Keep goal',
+            destructiveLabel: 'Delete goal',
+            onConfirm: function () {
                 post({
                     action:   'slimstat_delete_goal',
                     security: nonce,
@@ -217,7 +233,7 @@
                     window.alert(msg);
                 });
             }
-        );
+        });
     });
 
     // ============================================================
@@ -255,11 +271,15 @@
     function openFunnelBuilder(mode, funnel, templateKey) {
         if (!$builder.length) return;
         funnel = funnel || null;
+        var isEdit = (mode === 'edit');
 
-        $builder.find('[data-role="title-create"]').prop('hidden', mode === 'edit');
-        $builder.find('[data-role="title-edit"]').prop('hidden', mode !== 'edit');
+        $builder.find('[data-role="title-create"]').prop('hidden', isEdit);
+        $builder.find('[data-role="title-edit"]').prop('hidden', !isEdit);
+        $builder.find('[data-role="save-create"]').prop('hidden', isEdit);
+        $builder.find('[data-role="save-edit"]').prop('hidden', !isEdit);
         $builder.find('[data-role="builder-error"]').attr('hidden', true).text('');
 
+        destroyStepRowsAutoSuggest();
         $stepsContainer.empty();
 
         var steps;
@@ -291,6 +311,7 @@
             if ($row) $stepsContainer.append($row);
         });
         renumberSteps();
+        initStepRowsAutoSuggest();
 
         $builder.addClass('is-open').attr('aria-hidden', 'false');
         setTimeout(function () {
@@ -299,7 +320,25 @@
     }
 
     function closeFunnelBuilder() {
+        destroyStepRowsAutoSuggest();
         $builder.removeClass('is-open').attr('aria-hidden', 'true');
+    }
+
+    function initStepRowsAutoSuggest() {
+        $stepsContainer.find('.slimstat-gf-step-row').each(function () {
+            var $row = $(this);
+            initAutoSuggest(
+                $row.find('[data-role="step-value"]')[0],
+                $row.find('[data-role="step-dimension"]').val(),
+                $row.find('[data-role="step-operator"]').val()
+            );
+        });
+    }
+
+    function destroyStepRowsAutoSuggest() {
+        $stepsContainer.find('.slimstat-gf-step-row').each(function () {
+            destroyAutoSuggest($(this).find('[data-role="step-value"]')[0]);
+        });
     }
 
     $body.on('click', '[data-action="open-funnel-builder"]', function () {
@@ -321,12 +360,19 @@
         var $row = renderStepRow(count, null);
         if ($row) $stepsContainer.append($row);
         renumberSteps();
+        initAutoSuggest(
+            $row.find('[data-role="step-value"]')[0],
+            $row.find('[data-role="step-dimension"]').val(),
+            $row.find('[data-role="step-operator"]').val()
+        );
     });
 
     $body.on('click', '[data-action="remove-funnel-step"]', function () {
         var count = $stepsContainer.find('.slimstat-gf-step-row').length;
         if (count <= 2) return;
-        $(this).closest('.slimstat-gf-step-row').remove();
+        var $row = $(this).closest('.slimstat-gf-step-row');
+        destroyAutoSuggest($row.find('[data-role="step-value"]')[0]);
+        $row.remove();
         renumberSteps();
     });
 
@@ -379,11 +425,13 @@
         var $btn = $(this);
         var funnelId = $btn.data('funnel-id');
         var funnelName = $btn.data('funnel-name') || '';
-        openConfirmSheet(
-            'Delete funnel?',
-            'The funnel "' + funnelName + '" will be removed. Historical data is not affected.',
-            'Delete funnel',
-            function () {
+        openConfirmSheet({
+            title:            'Delete funnel?',
+            body:             funnelName ? 'Delete "' + funnelName + '"?' : 'Delete this funnel?',
+            warning:          'Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.',
+            cancelLabel:      'Keep funnel',
+            destructiveLabel: 'Delete funnel',
+            onConfirm: function () {
                 post({
                     action:    'slimstat_delete_funnel',
                     security:  nonce,
@@ -395,7 +443,7 @@
                     window.alert(msg);
                 });
             }
-        );
+        });
     });
 
     // ============================================================
@@ -416,11 +464,13 @@
             var visitors = Number(step.visitors) || 0;
             var pct = Number(step.pct) || 0;
             var dropoff = Number(step.dropoff) || 0;
+            var unreachable = !!step.unreachable;
             var width = stepOne > 0 ? Math.max(2, Math.round((visitors / stepOne) * 100)) : 0;
             var stepNum = i + 1;
             var pctLabel = (Math.round(pct * 10) / 10);
+            var stepCls = unreachable ? 'slimstat-gf-step slimstat-gf-step--unreachable' : 'slimstat-gf-step';
 
-            html += '<li class="slimstat-gf-step" data-step="' + stepNum + '">';
+            html += '<li class="' + stepCls + '" data-step="' + stepNum + '">';
             html += '<div class="slimstat-gf-step__head">';
             html += '<span class="slimstat-gf-step__name">' + escHtml(step.name || '') + '</span>';
             html += '<span class="slimstat-gf-step__count">';
@@ -432,7 +482,9 @@
             html += ' role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '"';
             html += ' aria-label="' + escHtml(step.name || '') + ': ' + formatNumber(visitors) + ' visitors"></div>';
             html += '</div>';
-            if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
+            if (unreachable) {
+                html += '<div class="slimstat-gf-step__unreachable"><span aria-hidden="true">⚠</span> Step unreachable · event not seen in range</div>';
+            } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
                 var dropoffPct = prev > 0 ? Math.round((dropoff / prev) * 1000) / 10 : 0;
                 html += '<div class="slimstat-gf-step__dropoff">↓ ' + formatNumber(dropoff);
@@ -446,11 +498,28 @@
 
     function renderFunnelSummary(summary) {
         if (!summary || summary.total_cr === null || summary.total_cr === undefined) {
-            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">No matching visitors in this date range.</span>';
+            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">No visitors matched in this date range</span>';
         }
         var cr = Number(summary.total_cr);
         var crLabel = (cr === Math.round(cr)) ? String(cr) : cr.toFixed(1);
-        return '<span class="slimstat-gf-summary">' + summary.step_count + '-step funnel · ' + crLabel + '% conversion rate</span>';
+        var stepCount = Number(summary.step_count) || 0;
+        var unreachable = Number(summary.unreachable_count) || 0;
+        var isHealthy100 = (cr === 100 && unreachable === 0 && stepCount > 1);
+
+        var mainHtml;
+        if (isHealthy100) {
+            mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success">' +
+                '<span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span> ' +
+                'Healthy pass-through · ' + stepCount + '-step funnel</span>';
+        } else {
+            mainHtml = '<span class="slimstat-gf-summary">' + stepCount + '-step funnel · ' + crLabel + '% conversion rate</span>';
+        }
+
+        if (unreachable > 0) {
+            var label = unreachable === 1 ? 'step unreachable' : 'steps unreachable';
+            mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + unreachable + ' ' + label + '</span>';
+        }
+        return mainHtml;
     }
 
     // Per-funnel in-flight tracker. Clicking the same tab twice while the first
@@ -496,6 +565,225 @@
         }).always(function () {
             delete funnelInflight[funnelId];
         });
+    });
+
+    // ============================================================
+    //  Auto-suggest on value fields (reuses existing SlimStatSearchableSelect)
+    // ============================================================
+    //
+    // Populates the value field with historical options for the selected
+    // dimension via the existing `slimstat_get_filter_options` AJAX endpoint.
+    // Transplanted from commit fec65cc3 — adapted to the 5.5.0 [data-role] hooks.
+
+    var _suggestInflight = {};   // keyed by input DOM node (via data-gf-id)
+    var _suggestCache    = {};   // per-dimension cache
+    var _suggestIdSeq    = 0;
+
+    function inputId(inputEl) {
+        if (!inputEl) return null;
+        if (!inputEl.__gfId) {
+            inputEl.__gfId = 'gf-in-' + (++_suggestIdSeq);
+        }
+        return inputEl.__gfId;
+    }
+
+    function destroyAutoSuggest(inputEl) {
+        if (!inputEl) return;
+        var id = inputId(inputEl);
+        if (_suggestInflight[id] && typeof _suggestInflight[id].abort === 'function') {
+            _suggestInflight[id].abort();
+            delete _suggestInflight[id];
+        }
+        if (inputEl._slimstatSearchable && typeof inputEl._slimstatSearchable.destroy === 'function') {
+            inputEl._slimstatSearchable.destroy();
+            inputEl._slimstatSearchable = null;
+        }
+    }
+
+    function syncValueDisabledByOperator($value, operator) {
+        var isEmptyOp = (operator === 'is_empty' || operator === 'is_not_empty');
+        if (isEmptyOp) {
+            $value.prop('disabled', true).attr('title', 'Not applicable for this operator').val('');
+        } else {
+            $value.prop('disabled', false).removeAttr('title');
+        }
+        return !isEmptyOp;
+    }
+
+    function initAutoSuggest(inputEl, dimension, operator) {
+        if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
+
+        destroyAutoSuggest(inputEl);
+
+        var $input = $(inputEl);
+        if (!syncValueDisabledByOperator($input, operator)) return;
+        if (!dimension) return;
+
+        var ajaxDimension = (dimension === 'event_notes') ? 'notes' : dimension;
+
+        if (_suggestCache[ajaxDimension]) {
+            buildSuggestWidget(inputEl, _suggestCache[ajaxDimension]);
+            return;
+        }
+
+        var id = inputId(inputEl);
+        var timeRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
+            ? window.SlimStatGetTimeRangeForAjax() : {};
+
+        _suggestInflight[id] = $.post(ajaxUrl, {
+            action:          'slimstat_get_filter_options',
+            dimension:       ajaxDimension,
+            security:        $('#meta-box-order-nonce').val(),
+            time_range_type: timeRange.type || '',
+            time_range_from: timeRange.from || '',
+            time_range_to:   timeRange.to   || ''
+        }).done(function (response) {
+            if (response && response.success && response.data) {
+                _suggestCache[ajaxDimension] = response.data;
+                buildSuggestWidget(inputEl, response.data);
+            }
+        }).always(function () {
+            delete _suggestInflight[id];
+        });
+    }
+
+    function buildSuggestWidget(inputEl, options) {
+        if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
+        var instance = new window.SlimStatSearchableSelect(inputEl, {
+            placeholder:       'Select or type a value…',
+            searchPlaceholder: 'Search or type…',
+            noResultsText:     'No matches',
+            loadingText:       'Loading…'
+        });
+        instance.setOptions(options || []);
+        inputEl._slimstatSearchable = instance;
+    }
+
+    // Goal drawer: dimension change → re-init suggest.
+    $body.on('change', '#slimstat-gf-goal-drawer [data-role="goal-dimension"]', function () {
+        initAutoSuggest(
+            $goalDrawer.find('[data-role="goal-value"]')[0],
+            $(this).val(),
+            $goalDrawer.find('[data-role="goal-operator"]').val()
+        );
+    });
+
+    // Goal drawer: operator change → maybe disable value.
+    $body.on('change', '#slimstat-gf-goal-drawer [data-role="goal-operator"]', function () {
+        syncValueDisabledByOperator(
+            $goalDrawer.find('[data-role="goal-value"]'),
+            $(this).val()
+        );
+    });
+
+    // Funnel builder: per-row dimension change → re-init that row's suggest.
+    $body.on('change', '.slimstat-gf-step-row [data-role="step-dimension"]', function () {
+        var $row = $(this).closest('.slimstat-gf-step-row');
+        initAutoSuggest(
+            $row.find('[data-role="step-value"]')[0],
+            $(this).val(),
+            $row.find('[data-role="step-operator"]').val()
+        );
+    });
+
+    // Funnel builder: per-row operator change.
+    $body.on('change', '.slimstat-gf-step-row [data-role="step-operator"]', function () {
+        var $row = $(this).closest('.slimstat-gf-step-row');
+        syncValueDisabledByOperator(
+            $row.find('[data-role="step-value"]'),
+            $(this).val()
+        );
+    });
+
+    // ============================================================
+    //  Per-step "Test" preview
+    // ============================================================
+
+    var _testInflight = {};
+
+    $body.on('click', '[data-action="test-step"]', function () {
+        var $btn = $(this);
+        var $row = $btn.closest('.slimstat-gf-step-row');
+        var $result = $row.find('[data-role="test-result"]');
+        var rowId = inputId($row[0]);
+
+        var step = {
+            name:      $row.find('[data-role="step-name"]').val() || 'Step',
+            dimension: $row.find('[data-role="step-dimension"]').val(),
+            operator:  $row.find('[data-role="step-operator"]').val(),
+            value:     $row.find('[data-role="step-value"]').val(),
+            active:    1
+        };
+
+        if (_testInflight[rowId] && typeof _testInflight[rowId].abort === 'function') {
+            _testInflight[rowId].abort();
+        }
+        $result.addClass('is-loading').text('Testing…');
+
+        _testInflight[rowId] = $.post(ajaxUrl, $.extend({
+            action:   'slimstat_test_funnel_step',
+            security: nonce
+        }, step)).done(function (response) {
+            if (response && response.success && response.data) {
+                var count = Number(response.data.visitors) || 0;
+                $result.removeClass('is-loading').text(formatNumber(count) + ' match' + (count === 1 ? '' : 'es'));
+            } else {
+                $result.removeClass('is-loading').text('—');
+            }
+        }).fail(function (_jqXHR, textStatus) {
+            if (textStatus === 'abort') return;
+            $result.removeClass('is-loading').text('—');
+        }).always(function () {
+            delete _testInflight[rowId];
+        });
+    });
+
+    // ============================================================
+    //  Drag-reorder steps (HTML5 DnD, no external lib)
+    // ============================================================
+
+    var _dragFrom = null;
+
+    $body.on('dragstart', '.slimstat-gf-step-row', function (e) {
+        _dragFrom = this;
+        $(this).addClass('is-dragging');
+        var dt = e.originalEvent && e.originalEvent.dataTransfer;
+        if (dt) {
+            dt.effectAllowed = 'move';
+            try { dt.setData('text/plain', $(this).attr('data-step-row') || ''); } catch (_e) {}
+        }
+    });
+
+    $body.on('dragend', '.slimstat-gf-step-row', function () {
+        $(this).removeClass('is-dragging');
+        $stepsContainer.find('.is-drag-over').removeClass('is-drag-over');
+        _dragFrom = null;
+    });
+
+    $body.on('dragover', '.slimstat-gf-step-row', function (e) {
+        if (!_dragFrom || _dragFrom === this) return;
+        e.preventDefault();
+        var dt = e.originalEvent && e.originalEvent.dataTransfer;
+        if (dt) dt.dropEffect = 'move';
+        $stepsContainer.find('.is-drag-over').removeClass('is-drag-over');
+        $(this).addClass('is-drag-over');
+    });
+
+    $body.on('drop', '.slimstat-gf-step-row', function (e) {
+        if (!_dragFrom || _dragFrom === this) return;
+        e.preventDefault();
+        var target = this;
+        var fromIdx = $(_dragFrom).index();
+        var toIdx   = $(target).index();
+        if (fromIdx < toIdx) {
+            $(target).after(_dragFrom);
+        } else {
+            $(target).before(_dragFrom);
+        }
+        $stepsContainer.find('.is-drag-over').removeClass('is-drag-over');
+        $(_dragFrom).removeClass('is-dragging');
+        _dragFrom = null;
+        renumberSteps();
     });
 
     // ============================================================

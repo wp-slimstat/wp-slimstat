@@ -36,7 +36,7 @@ $show_add_cta  = !$at_max;
     <header class="slimstat-gf-card__head">
         <div class="slimstat-gf-card__heading">
             <h2 class="slimstat-gf-card__title"><?php esc_html_e('Goals', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('Did visitors reach the pages and actions you care about?', 'wp-slimstat'); ?></p>
+            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('A Goal is one question you ask of your traffic.', 'wp-slimstat'); ?></p>
         </div>
         <div class="slimstat-gf-card__actions">
             <span class="slimstat-gf-pill"
@@ -55,7 +55,7 @@ $show_add_cta  = !$at_max;
                         class="button button-primary slimstat-gf-cta"
                         data-action="open-goal-drawer"
                         data-mode="create">
-                    <?php esc_html_e('Add Goal', 'wp-slimstat'); ?>
+                    <?php esc_html_e('+ Add Goal', 'wp-slimstat'); ?>
                 </button>
             <?php endif; ?>
         </div>
@@ -63,15 +63,18 @@ $show_add_cta  = !$at_max;
 
     <?php if (empty($goals)) : ?>
         <div class="slimstat-gf-empty" data-role="goals-empty">
-            <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Track your first conversion', 'wp-slimstat'); ?></h3>
+            <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Measure what matters', 'wp-slimstat'); ?></h3>
             <p class="slimstat-gf-empty__body">
-                <?php esc_html_e('A goal is a single rule — a page URL, event, or dimension — that SlimStat evaluates retroactively against every past visit.', 'wp-slimstat'); ?>
+                <?php esc_html_e('Get started with conversion tracking. Track signup, checkout, and pricing views at the same time — plus funnels for drop-off analysis.', 'wp-slimstat'); ?>
+            </p>
+            <p class="slimstat-gf-empty__note">
+                <?php esc_html_e('Retroactive — each goal evaluates your full history, no warm-up needed.', 'wp-slimstat'); ?>
             </p>
             <button type="button"
                     class="button button-primary slimstat-gf-cta"
                     data-action="open-goal-drawer"
                     data-mode="create">
-                <?php esc_html_e('Create your first goal', 'wp-slimstat'); ?>
+                <?php esc_html_e('+ Add your first goal', 'wp-slimstat'); ?>
             </button>
         </div>
     <?php else : ?>
@@ -96,7 +99,10 @@ $show_add_cta  = !$at_max;
                         <h3 class="slimstat-gf-goal__name">
                             <?php echo esc_html($goal['name'] ?? ''); ?>
                             <?php if (!$goal_active) : ?>
-                                <span class="slimstat-gf-pill slimstat-gf-pill--paused"><?php esc_html_e('Paused', 'wp-slimstat'); ?></span>
+                                <span class="slimstat-gf-pill slimstat-gf-pill--paused"
+                                      title="<?php esc_attr_e('Paused goals don\'t count against the limit', 'wp-slimstat'); ?>">
+                                    <?php esc_html_e('Paused', 'wp-slimstat'); ?>
+                                </span>
                             <?php endif; ?>
                         </h3>
                         <div class="slimstat-gf-goal__rule">
@@ -146,11 +152,11 @@ $show_add_cta  = !$at_max;
 
     <?php if ($show_upsell) : ?>
         <div class="slimstat-gf-upsell" role="note">
-            <strong><?php esc_html_e('You\'ve reached the free plan\'s 1-goal limit.', 'wp-slimstat'); ?></strong>
+            <strong><?php esc_html_e('You\'ve hit the Free limit — 1 of 1 goals used.', 'wp-slimstat'); ?></strong>
             <?php echo wp_kses(
                 sprintf(
                     /* translators: %s is a link */
-                    __('Upgrade to Pro for up to 5 goals. %s', 'wp-slimstat'),
+                    __('%s to track up to 5 goals and unlock 3 drop-off funnels.', 'wp-slimstat'),
                     '<a href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=goals" target="_blank" rel="noopener noreferrer">' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</a>'
                 ),
                 ['a' => ['href' => [], 'target' => [], 'rel' => []]]
@@ -159,8 +165,8 @@ $show_add_cta  = !$at_max;
     <?php elseif ($at_max && $is_pro) : ?>
         <p class="slimstat-gf-hint">
             <?php echo esc_html(sprintf(
-                /* translators: %d is the max number of goals */
-                __('%d of %d used — delete one to add another.', 'wp-slimstat'),
+                /* translators: 1: active goals, 2: max goals */
+                __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                 $active_count,
                 $max_goals
             )); ?>

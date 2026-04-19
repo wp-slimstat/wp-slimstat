@@ -31,7 +31,7 @@ if ($locked) :
     <header class="slimstat-gf-card__head">
         <div class="slimstat-gf-card__heading">
             <h2 class="slimstat-gf-card__title"><?php esc_html_e('Funnels', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('Where do visitors drop off on the way to your goal?', 'wp-slimstat'); ?></p>
+            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat'); ?></p>
         </div>
     </header>
     <div class="slimstat-gf-funnel-lock">
@@ -45,8 +45,8 @@ if ($locked) :
             </div>
         </div>
         <div class="slimstat-gf-funnel-lock__overlay">
-            <h3><?php esc_html_e('Visualize every step of the journey', 'wp-slimstat'); ?></h3>
-            <p><?php esc_html_e('Build 2–5 step conversion funnels with step-by-step drop-off analysis. Available in SlimStat Pro.', 'wp-slimstat'); ?></p>
+            <h3><?php esc_html_e('See where visitors drop off, step by step.', 'wp-slimstat'); ?></h3>
+            <p><?php esc_html_e('Unlock drop-off analysis. Build 2–5 step conversion funnels with per-step drop-off in SlimStat Pro.', 'wp-slimstat'); ?></p>
             <a class="button button-primary slimstat-gf-cta"
                href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel"
                target="_blank"
@@ -67,7 +67,7 @@ $show_add_cta = !$at_max;
     <header class="slimstat-gf-card__head">
         <div class="slimstat-gf-card__heading">
             <h2 class="slimstat-gf-card__title"><?php esc_html_e('Funnels', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('Where do visitors drop off on the way to your goal?', 'wp-slimstat'); ?></p>
+            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat'); ?></p>
         </div>
         <div class="slimstat-gf-card__actions">
             <span class="slimstat-gf-pill"
@@ -86,7 +86,7 @@ $show_add_cta = !$at_max;
                         class="button button-primary slimstat-gf-cta"
                         data-action="open-funnel-builder"
                         data-mode="create">
-                    <?php esc_html_e('Add Funnel', 'wp-slimstat'); ?>
+                    <?php esc_html_e('+ Add Funnel', 'wp-slimstat'); ?>
                 </button>
             <?php endif; ?>
         </div>
@@ -94,8 +94,8 @@ $show_add_cta = !$at_max;
 
     <?php if (0 === $funnel_count) : ?>
         <div class="slimstat-gf-empty" data-role="funnels-empty">
-            <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start with a template', 'wp-slimstat'); ?></h3>
-            <p class="slimstat-gf-empty__body"><?php esc_html_e('Pick a common funnel shape, or build your own from scratch.', 'wp-slimstat'); ?></p>
+            <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
+            <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill dimensions and operators — you just fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
             <div class="slimstat-gf-template-picker" role="list">
                 <button type="button"
                         class="slimstat-gf-template-card"
@@ -121,7 +121,7 @@ $show_add_cta = !$at_max;
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="content">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Content engagement', 'wp-slimstat'); ?></span>
+                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Blog engagement', 'wp-slimstat'); ?></span>
                     <span class="slimstat-gf-template-card__body"><?php esc_html_e('Landing → Article → Sign-up', 'wp-slimstat'); ?></span>
                 </button>
                 <button type="button"
@@ -130,7 +130,7 @@ $show_add_cta = !$at_max;
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="blank">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Start from scratch', 'wp-slimstat'); ?></span>
+                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('+ Blank funnel', 'wp-slimstat'); ?></span>
                     <span class="slimstat-gf-template-card__body"><?php esc_html_e('Define 2–5 custom steps.', 'wp-slimstat'); ?></span>
                 </button>
             </div>
@@ -211,8 +211,8 @@ $show_add_cta = !$at_max;
         <?php if ($at_max) : ?>
             <p class="slimstat-gf-hint">
                 <?php echo esc_html(sprintf(
-                    /* translators: %d is the max number of funnels */
-                    __('%d of %d used — delete one to add another.', 'wp-slimstat'),
+                    /* translators: 1: configured funnels, 2: max funnels */
+                    __('%1$d of %2$d used · at limit', 'wp-slimstat'),
                     $funnel_count,
                     $max_funnels
                 )); ?>

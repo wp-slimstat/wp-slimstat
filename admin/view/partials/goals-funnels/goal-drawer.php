@@ -67,10 +67,8 @@ if (!defined('ABSPATH')) {
         <div class="slimstat-gf-field slimstat-gf-field--toggle">
             <span class="slimstat-gf-field__label"><?php esc_html_e('Paused', 'wp-slimstat'); ?></span>
             <span class="slimstat-gf-toggle">
-                <?php // Hidden companion posts active=0 when checkbox unchecked. ?>
-                <input type="hidden" name="active" value="1" data-role="goal-active-hidden">
                 <input type="checkbox" name="goal_paused" value="1" data-role="goal-paused">
-                <span class="slimstat-gf-field__hint"><?php esc_html_e('Paused goals are preserved but don\'t count against the plan limit.', 'wp-slimstat'); ?></span>
+                <span class="slimstat-gf-field__hint"><?php esc_html_e('Paused goals don\'t count against the limit.', 'wp-slimstat'); ?></span>
             </span>
         </div>
 
@@ -78,7 +76,10 @@ if (!defined('ABSPATH')) {
 
         <footer class="slimstat-gf-drawer__foot">
             <button type="button" class="button" data-action="close-goal-drawer"><?php esc_html_e('Cancel', 'wp-slimstat'); ?></button>
-            <button type="button" class="button button-primary" data-action="save-goal"><?php esc_html_e('Save goal', 'wp-slimstat'); ?></button>
+            <button type="button" class="button button-primary" data-action="save-goal">
+                <span data-role="save-create"><?php esc_html_e('Add', 'wp-slimstat'); ?></span>
+                <span data-role="save-edit" hidden><?php esc_html_e('Save changes', 'wp-slimstat'); ?></span>
+            </button>
         </footer>
     </form>
 </aside>

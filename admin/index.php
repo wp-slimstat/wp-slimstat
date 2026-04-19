@@ -284,6 +284,7 @@ class wp_slimstat_admin
                 'slimstat_save_funnel'           => 'ajax_save_funnel',
                 'slimstat_delete_funnel'         => 'ajax_delete_funnel',
                 'slimstat_load_funnel_data'      => 'ajax_load_funnel_data',
+                'slimstat_test_funnel_step'      => 'ajax_test_funnel_step',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -1978,13 +1979,53 @@ class wp_slimstat_admin
                 : 100;
         }
 
+        $unreachable_count = 0;
+        foreach ($step_results as $step) {
+            if (!empty($step['unreachable'])) {
+                $unreachable_count++;
+            }
+        }
+
         wp_send_json_success([
             'funnel_id' => $funnel_id,
             'steps'     => $step_results,
             'summary'   => [
-                'step_count' => count($step_results),
-                'total_cr'   => $total_cr,
+                'step_count'        => count($step_results),
+                'total_cr'          => $total_cr,
+                'unreachable_count' => $unreachable_count,
             ],
+        ]);
+    }
+
+    /**
+     * AJAX: Return the unique-visitor count for a single funnel step rule.
+     * Powers the builder's per-step "Test" affordance. A single step IS the
+     * same shape as a goal, so we forward to get_goal_results().
+     *
+     * @since 5.5.0
+     */
+    public static function ajax_test_funnel_step()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        $step = self::sanitize_goal($_POST);
+        if (!$step) {
+            wp_send_json_error(['message' => __('Step is missing required fields', 'wp-slimstat')]);
+        }
+
+        if (!class_exists('wp_slimstat_db')) {
+            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
+        }
+
+        $data = wp_slimstat_db::get_goal_results($step);
+
+        wp_send_json_success([
+            'visitors' => (int) ($data['uniques'] ?? 0),
+            'total'    => (int) ($data['total'] ?? 0),
         ]);
     }
 
