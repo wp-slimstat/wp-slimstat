@@ -1,3 +1,33 @@
+= 5.5.0 - 2026-04-19 =
+
+**Goals & Funnels redesign (slimview6)**
+
+- Modern card layout with hero strip, usage pills (`N of MAX used`), and a side drawer for goal create/edit.
+- Funnels now use a pill-segmented tab bar when you have more than one, and an overlay builder with drag-reorderable steps.
+- Destructive actions (delete goal, delete funnel) now go through a consistent confirm sheet. `window.confirm` is gone.
+- Four funnel templates at the empty state: **E-commerce checkout**, **SaaS signup**, **Content engagement**, **Start from scratch**.
+- Goals gain a **Paused** toggle. Paused goals are preserved but don't count against the plan limit ([admin/index.php:1685](admin/index.php#L1685) fix).
+- Lazy-load for inactive funnel tabs via a new `slimstat_load_funnel_data` AJAX handler — only the active funnel runs its SQL on page load.
+- Single canonical Pro label: "Upgrade to Pro" (replaces the previous mix of "Unlock SlimStat Pro" and "Upgrade to Premium" on this view).
+- Funnel bars use the brand red ramp instead of indigo; honors `prefers-reduced-motion`; RTL mirrored.
+
+**Fixes**
+
+- Funnels with zero visitors in the date range now show "No matching visitors in this date range" instead of a fake 100% conversion rate.
+- WP Dashboard widget no longer leaks the inline "Add Goal" form — `is_widget=true` is now passed through `add_dashboard_widgets` for `slim_p9_01` / `slim_p9_02`.
+- Goals & Funnels CSS/JS only enqueue on screens that actually render those reports — including when dragged into other report groups via the Customizer.
+
+**Internals**
+
+- Design tokens split into `admin/assets/css/tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their exact existing values to keep the datepicker and GDPR banner visually unchanged.
+- New partials under `admin/view/partials/goals-funnels/`: `goals-card.php`, `funnels-card.php`, `goal-drawer.php`, `funnel-builder.php`, `confirm-sheet.php`, `funnel-summary.php`, `funnel-bars.php`.
+- `show_goals()` / `show_funnels()` branch on `is_widget`: widget/shortcode/email/CSV paths render the legacy compact markup untouched; admin mode renders the new partials.
+
+**Tests**
+
+- New PHPUnit `Integration` suite (`tests/Integration/`, Brain Monkey + Mockery, dedicated `tests/bootstrap-integration.php`). 29 tests pin: AJAX handlers (save/delete goal + funnel, new `ajax_load_funnel_data`), nonce + capability negatives, paused-limit round-trip, cache-version invalidation, legacy CSS alias preservation.
+- New Playwright E2E spec (`tests/e2e/goals-funnels.spec.ts`) + helpers (`tests/e2e/helpers/goals-funnels.ts`) covering Free/Pro × empty/has-data marquee states, goal drawer create, confirm-sheet destructive action, 2-step funnel creation, and dashboard-widget leak guard.
+
 = 5.4.12 - 2026-04-18 =
 
 **Bot detection hardening**
