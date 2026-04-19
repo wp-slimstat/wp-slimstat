@@ -1,3 +1,16 @@
+= 5.4.12 - 2026-04-18 =
+
+**Bot detection hardening**
+
+- Chrome-based mobile Googlebot and Bingbot are now correctly blocked when Browscap classifies them as mobile devices ([#14843](https://wp-slimstat.com/), [#291](https://github.com/wp-slimstat/wp-slimstat/issues/291)). The bot-detection safety net previously only re-checked desktop-classified UAs (`browser_type === 0`); it now re-checks every non-crawler type (desktop, mobile, touch) so Android/Chrome-suffixed crawler UAs no longer slip through.
+- Google-InspectionTool mobile UA is now detected as a crawler on both client and server tracking modes.
+- `BOT_GENERIC_REGEX` extended with 15 new vendor-specific tokens to catch bare-name bots that expose neither a URL nor a conventional `bot`/`crawl`/`spider` keyword: Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner (new March 2026), Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai.
+
+**Tests**
+
+- 40-cell local real-production matrix (10 UAs × 2 tracking modes × 2 branches) verified every bot blocked on the fix branch with zero regressions on real browsers.
+- Unit tests converted to static `@dataProvider` methods for PHPUnit 10/11 compatibility.
+
 = 5.4.11 - 2026-04-17 =
 
 **Report fixes**
