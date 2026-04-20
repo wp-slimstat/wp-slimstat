@@ -1797,6 +1797,10 @@ class wp_slimstat_db
         $use_temp    = false;
         $preflight   = false;
 
+        // Each temp table row carries (vid, t) — the visitor identifier and the
+        // MIN(dt) at which they qualified for the preceding step. The JOIN on
+        // step N+ enforces `new_row.dt > r.t` so out-of-order matches (visitor
+        // hit step N before step N-1) don't count as converted.
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event   = ($step['dimension'] === 'event_notes');
             $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
@@ -1808,24 +1812,34 @@ class wp_slimstat_db
                 continue;
             }
 
-            // For step 2+, filter by previous step's visitors from READ table
-            $fp_filter = '';
-            if ($step_index > 0 && $use_temp) {
-                $fp_filter = sprintf(' AND %s IN (SELECT vid FROM %s)', $visitor_id, $temp_read);
-            } elseif ($step_index > 0 && !$use_temp) {
+            if ($step_index > 0 && !$use_temp) {
+                // Previous step already returned zero — every downstream step
+                // is unreachable, no point hitting SQL.
                 $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
                 continue;
             }
 
-            if ($is_event) {
+            // Event steps use te.dt (the event's own timestamp) as the ordering
+            // time. Pageview steps use t1.dt.
+            $dt_expr = $is_event ? 'te.dt' : 't1.dt';
+
+            // Base FROM clause — joined for event steps, plain for pageview steps.
+            $from_sql = $is_event
+                ? sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats)
+                : sprintf('%s t1', $table_stats);
+
+            if ($step_index === 0) {
+                // Step 1: per-visitor MIN(dt) within the date window.
                 $select_sql = sprintf(
-                    "SELECT DISTINCT %s as vid FROM %s te INNER JOIN %s t1 ON te.id = t1.id WHERE %s AND %s%s",
-                    $visitor_id, $table_events, $table_stats, $step_where, $date_where, $fp_filter
+                    "SELECT %s AS vid, MIN(%s) AS t FROM %s WHERE %s AND %s GROUP BY vid",
+                    $visitor_id, $dt_expr, $from_sql, $step_where, $date_where
                 );
             } else {
+                // Step N>1: JOIN temp_read and require the new row's dt strictly
+                // after the stored timestamp for the same visitor.
                 $select_sql = sprintf(
-                    "SELECT DISTINCT %s as vid FROM %s t1 WHERE %s AND %s%s",
-                    $visitor_id, $table_stats, $step_where, $date_where, $fp_filter
+                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s > r.t GROUP BY vid",
+                    $visitor_id, $dt_expr, $from_sql, $temp_read, $visitor_id, $step_where, $date_where, $dt_expr
                 );
             }
 
@@ -1837,16 +1851,16 @@ class wp_slimstat_db
             }
 
             // Create the per-step temp table once, then count from it — avoids
-            // running the DISTINCT subquery twice for the same step.
+            // running the grouped subquery twice for the same step.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
-            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, KEY(vid)) AS $select_sql");
+            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
             $visitor_count = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $temp_write"));
 
             if ($step_index === 0) {
                 $step1_count = $visitor_count;
             }
 
-            // Swap: drop old READ, rename WRITE → READ for next iteration
+            // Swap: drop old READ, rename WRITE → READ for next iteration.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
             wp_slimstat::$wpdb->query("ALTER TABLE $temp_write RENAME TO $temp_read");
             $use_temp = ($visitor_count > 0);
@@ -1855,8 +1869,7 @@ class wp_slimstat_db
             $dropoff    = $prev_count - $visitor_count;
 
             // A step is "unreachable" when the previous step had visitors but none
-            // carried through — usually a rule typo, not a real drop-off. UI renders
-            // a distinct marker so it doesn't look like healthy attrition.
+            // carried through — usually a rule typo or an impossible ordering.
             $unreachable = ($step_index > 0 && $visitor_count === 0 && $prev_count > 0);
 
             $results[] = [
