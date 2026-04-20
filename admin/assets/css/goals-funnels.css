@@ -21,16 +21,25 @@
 
 /*
  * Un-clip the legacy postbox wrapper for modern cards.
- * Overrides the [id*="slim_p"] .postbox .inside rule in slimstat.css that caps
- * every SlimStat report at 24em with overflow: auto. Goals + Funnels cards
- * render fixed-size lists (max 5 goals, max 3 funnels) and paginated panels,
- * so they never need an internal scroll. Mirrors the chart-canvas override
- * pattern at slimstat.css:195.
+ *
+ * SlimStat forces fixed heights on every report's inner box:
+ *   [id^="slim_"] .inside               { height: 240px; overflow: auto; … } (admin.scss:749)
+ *   .wrap-slimstat .postbox.tall .inside { height: 465px }                    (admin.scss:778)
+ *
+ * That's right for dense-stat reports with long scrollable lists, but the
+ * modern Goals & Funnels cards render fixed-size content (max 5 goals, max 3
+ * funnels, paginated tabs) and must grow to fit. Without this override:
+ *   - Goals (postbox.tall)         → stuck at 465px → whitespace below card.
+ *   - Funnels (postbox.extralarge) → clipped at 240px with internal scrollbar.
+ *
+ * !important is required: the source uses it on siblings (margin/padding) and
+ * we need this to beat both competing rules regardless of load order.
  */
 .postbox:has(> .inside > .slimstat-gf-card) > .inside,
 .postbox:has(> .inside > * > .slimstat-gf-card) > .inside {
-    max-height: none;
-    overflow: visible;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 .slimstat-gf-card {
