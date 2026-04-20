@@ -19,6 +19,20 @@
    1. Modern admin layer — cards, pills, grids
    ============================================================ */
 
+/*
+ * Un-clip the legacy postbox wrapper for modern cards.
+ * Overrides the [id*="slim_p"] .postbox .inside rule in slimstat.css that caps
+ * every SlimStat report at 24em with overflow: auto. Goals + Funnels cards
+ * render fixed-size lists (max 5 goals, max 3 funnels) and paginated panels,
+ * so they never need an internal scroll. Mirrors the chart-canvas override
+ * pattern at slimstat.css:195.
+ */
+.postbox:has(> .inside > .slimstat-gf-card) > .inside,
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside {
+    max-height: none;
+    overflow: visible;
+}
+
 .slimstat-gf-card {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
