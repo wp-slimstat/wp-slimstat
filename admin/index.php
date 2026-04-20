@@ -1103,7 +1103,20 @@ class wp_slimstat_admin
 
         // Goals & Funnels AJAX handlers — gated to screens that actually render those reports.
         if (self::needs_goals_funnels_assets()) {
-            wp_enqueue_script('slimstat-goals-funnels', plugins_url('/admin/assets/js/goals-funnels.js', __DIR__), ['jquery', 'slimstat_admin'], SLIMSTAT_ANALYTICS_VERSION, true);
+            wp_enqueue_script(
+                'slimstat-goals-funnels',
+                plugins_url('/admin/assets/js/goals-funnels.js', __DIR__),
+                ['jquery', 'slimstat_admin', 'wp-i18n'],
+                SLIMSTAT_ANALYTICS_VERSION,
+                true
+            );
+            if (function_exists('wp_set_script_translations')) {
+                wp_set_script_translations(
+                    'slimstat-goals-funnels',
+                    'wp-slimstat',
+                    plugin_dir_path(__DIR__) . 'languages'
+                );
+            }
         }
     }
 

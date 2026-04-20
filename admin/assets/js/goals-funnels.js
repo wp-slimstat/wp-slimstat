@@ -21,30 +21,46 @@
     var ajaxUrl = SlimStatAdminParams.ajax_url;
     var nonce   = SlimStatAdminParams.goals_nonce;
 
+    // wp.i18n is a declared script dependency; fallback object keeps the module
+    // working if it ever loads out-of-order (e.g., Customize preview).
+    var _i18n = (window.wp && window.wp.i18n) ? window.wp.i18n : {
+        __: function (s) { return s; },
+        _n: function (s, p, n) { return n === 1 ? s : p; },
+        sprintf: function () {
+            var args = arguments, i = 0;
+            return String(args[0]).replace(/%(?:(\d+)\$)?[ds]/g, function (_m, pos) {
+                return args[pos ? parseInt(pos, 10) : ++i];
+            });
+        }
+    };
+    function __(str)                { return _i18n.__(str, 'wp-slimstat'); }
+    function _n(single, plural, n)  { return _i18n._n(single, plural, n, 'wp-slimstat'); }
+    var sprintf = _i18n.sprintf;
+
     var FUNNEL_TEMPLATES = {
         ecommerce: {
-            name: 'E-commerce checkout',
+            name: __('E-commerce checkout'),
             steps: [
-                { name: 'View product',  dimension: 'resource', operator: 'contains', value: '/product' },
-                { name: 'Cart',          dimension: 'resource', operator: 'contains', value: '/cart' },
-                { name: 'Checkout',      dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: 'Thank-you',     dimension: 'resource', operator: 'contains', value: '/thank-you' }
+                { name: __('View product'), dimension: 'resource', operator: 'contains', value: '/product' },
+                { name: __('Cart'),         dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout'),     dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Thank-you'),    dimension: 'resource', operator: 'contains', value: '/thank-you' }
             ]
         },
         saas: {
-            name: 'SaaS signup',
+            name: __('SaaS signup'),
             steps: [
-                { name: 'Pricing',       dimension: 'resource', operator: 'contains', value: '/pricing' },
-                { name: 'Trial start',   dimension: 'resource', operator: 'contains', value: '/trial' },
-                { name: 'Activation',    dimension: 'resource', operator: 'contains', value: '/onboarding' }
+                { name: __('Pricing'),      dimension: 'resource', operator: 'contains', value: '/pricing' },
+                { name: __('Trial start'),  dimension: 'resource', operator: 'contains', value: '/trial' },
+                { name: __('Activation'),   dimension: 'resource', operator: 'contains', value: '/onboarding' }
             ]
         },
         content: {
-            name: 'Blog engagement',
+            name: __('Blog engagement'),
             steps: [
-                { name: 'Landing',       dimension: 'resource', operator: 'contains', value: '/' },
-                { name: 'Article',       dimension: 'resource', operator: 'contains', value: '/blog' },
-                { name: 'Signup',        dimension: 'resource', operator: 'contains', value: '/signup' }
+                { name: __('Landing'),      dimension: 'resource', operator: 'contains', value: '/' },
+                { name: __('Article'),      dimension: 'resource', operator: 'contains', value: '/blog' },
+                { name: __('Signup'),       dimension: 'resource', operator: 'contains', value: '/signup' }
             ]
         },
         blank: {
@@ -82,11 +98,11 @@
             if (response && response.success) {
                 if (onSuccess) onSuccess(response.data || {});
             } else {
-                var msg = (response && response.data && response.data.message) || 'Request failed.';
+                var msg = (response && response.data && response.data.message) || __('Request failed.');
                 if (onError) onError(msg); else window.alert(msg);
             }
         }).fail(function () {
-            if (onError) onError('Network error.'); else window.alert('Network error.');
+            if (onError) onError(__('Network error.')); else window.alert(__('Network error.'));
         });
     }
 
@@ -100,13 +116,13 @@
     function openConfirmSheet(opts) {
         if (!$confirmSheet.length) return;
         opts = opts || {};
-        $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || 'Delete this?');
+        $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || __('Delete this?'));
         $confirmSheet.find('[data-role="confirm-body"]').text(opts.body || '');
         $confirmSheet.find('[data-role="confirm-warning"]').text(
-            opts.warning || 'Historical data stays — only the definition is removed. You can always rebuild it.'
+            opts.warning || __('Historical data stays — only the definition is removed. You can always rebuild it.')
         );
-        $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || 'Cancel');
-        $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || 'Delete');
+        $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel'));
+        $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete'));
         $confirmSheet.addClass('is-open').attr('aria-hidden', 'false');
         confirmHandler = opts.onConfirm || null;
         setTimeout(function () {
@@ -183,7 +199,7 @@
         var $err = $goalDrawer.find('[data-role="drawer-error"]');
         var name = $goalDrawer.find('[data-role="goal-name"]').val();
         if (!name || !String(name).trim()) {
-            $err.text('Goal name is required.').attr('hidden', false);
+            $err.text(__('Goal name is required.')).attr('hidden', false);
             return;
         }
 
@@ -216,11 +232,14 @@
         var goalId = $btn.data('goal-id');
         var goalName = $btn.data('goal-name') || '';
         openConfirmSheet({
-            title:            'Delete goal?',
-            body:             goalName ? 'Delete "' + goalName + '"?' : 'Delete this goal?',
-            warning:          'Historical data stays — only the goal definition is removed. You can always rebuild it.',
-            cancelLabel:      'Keep goal',
-            destructiveLabel: 'Delete goal',
+            title:            __('Delete goal?'),
+            body:             goalName
+                /* translators: %s is the goal name */
+                ? sprintf(__('Delete "%s"?'), goalName)
+                : __('Delete this goal?'),
+            warning:          __('Historical data stays — only the goal definition is removed. You can always rebuild it.'),
+            cancelLabel:      __('Keep goal'),
+            destructiveLabel: __('Delete goal'),
             onConfirm: function () {
                 post({
                     action:   'slimstat_delete_goal',
@@ -249,7 +268,8 @@
         var tpl = $stepTemplate[0] ? $stepTemplate[0].content.cloneNode(true) : null;
         if (!tpl) return null;
         var $row = $(tpl).find('[data-step-row]').attr('data-step-row', index);
-        $row.find('[data-role="step-num"]').text('Step ' + (index + 1));
+        /* translators: %d is the step number (1–5) */
+        $row.find('[data-role="step-num"]').text(sprintf(__('Step %d'), index + 1));
         $row.find('[data-role="step-name"]').val(step.name || '');
         $row.find('[data-role="step-dimension"]').val(step.dimension || 'resource');
         $row.find('[data-role="step-operator"]').val(step.operator || 'contains');
@@ -261,7 +281,7 @@
     function renumberSteps() {
         $stepsContainer.find('.slimstat-gf-step-row').each(function (idx) {
             $(this).attr('data-step-row', idx);
-            $(this).find('[data-role="step-num"]').text('Step ' + (idx + 1));
+            $(this).find('[data-role="step-num"]').text(sprintf(__('Step %d'), idx + 1));
         });
         var count = $stepsContainer.find('.slimstat-gf-step-row').length;
         $builder.find('.slimstat-gf-builder__add-step').prop('disabled', count >= 5);
@@ -380,7 +400,7 @@
         var $err = $builder.find('[data-role="builder-error"]');
         var funnelName = $builder.find('[data-role="funnel-name"]').val();
         if (!funnelName || !String(funnelName).trim()) {
-            $err.text('Funnel name is required.').attr('hidden', false);
+            $err.text(__('Funnel name is required.')).attr('hidden', false);
             return;
         }
 
@@ -397,7 +417,7 @@
         });
 
         if (steps.length < 2 || steps.length > 5) {
-            $err.text('Funnels need between 2 and 5 steps.').attr('hidden', false);
+            $err.text(__('Funnels need between 2 and 5 steps.')).attr('hidden', false);
             return;
         }
 
@@ -426,11 +446,14 @@
         var funnelId = $btn.data('funnel-id');
         var funnelName = $btn.data('funnel-name') || '';
         openConfirmSheet({
-            title:            'Delete funnel?',
-            body:             funnelName ? 'Delete "' + funnelName + '"?' : 'Delete this funnel?',
-            warning:          'Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.',
-            cancelLabel:      'Keep funnel',
-            destructiveLabel: 'Delete funnel',
+            title:            __('Delete funnel?'),
+            body:             funnelName
+                /* translators: %s is the funnel name */
+                ? sprintf(__('Delete "%s"?'), funnelName)
+                : __('Delete this funnel?'),
+            warning:          __('Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.'),
+            cancelLabel:      __('Keep funnel'),
+            destructiveLabel: __('Delete funnel'),
             onConfirm: function () {
                 post({
                     action:    'slimstat_delete_funnel',
@@ -454,7 +477,7 @@
         var html = '';
 
         if (!steps || !steps.length) {
-            return '<p class="slimstat-gf-empty__body">No data yet for this funnel.</p>';
+            return '<p class="slimstat-gf-empty__body">' + escHtml(__('No data yet for this funnel.')) + '</p>';
         }
 
         var stepOne = steps[0] && steps[0].visitors ? Number(steps[0].visitors) : 0;
@@ -480,15 +503,19 @@
             html += '<div class="slimstat-gf-step__track" role="presentation">';
             html += '<div class="slimstat-gf-step__fill" data-step="' + stepNum + '" style="width:' + width + '%;"';
             html += ' role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '"';
-            html += ' aria-label="' + escHtml(step.name || '') + ': ' + formatNumber(visitors) + ' visitors"></div>';
+            /* translators: 1: step name, 2: visitor count */
+            var ariaLabel = sprintf(__('%1$s: %2$s visitors'), step.name || '', formatNumber(visitors));
+            html += ' aria-label="' + escHtml(ariaLabel) + '"></div>';
             html += '</div>';
             if (unreachable) {
-                html += '<div class="slimstat-gf-step__unreachable"><span aria-hidden="true">⚠</span> Step unreachable · event not seen in range</div>';
+                html += '<div class="slimstat-gf-step__unreachable"><span aria-hidden="true">⚠</span> ' +
+                    escHtml(__('Step unreachable · event not seen in range')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
                 var dropoffPct = prev > 0 ? Math.round((dropoff / prev) * 1000) / 10 : 0;
-                html += '<div class="slimstat-gf-step__dropoff">↓ ' + formatNumber(dropoff);
-                html += ' dropped (' + dropoffPct + '%)</div>';
+                /* translators: 1: visitors dropped, 2: drop-off percentage */
+                var dropLine = sprintf(__('↓ %1$s dropped (%2$s%%)'), formatNumber(dropoff), dropoffPct);
+                html += '<div class="slimstat-gf-step__dropoff">' + escHtml(dropLine) + '</div>';
             }
             html += '</li>';
         }
@@ -498,7 +525,8 @@
 
     function renderFunnelSummary(summary) {
         if (!summary || summary.total_cr === null || summary.total_cr === undefined) {
-            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">No visitors matched in this date range</span>';
+            return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">' +
+                escHtml(__('No visitors matched in this date range')) + '</span>';
         }
         var cr = Number(summary.total_cr);
         var crLabel = (cr === Math.round(cr)) ? String(cr) : cr.toFixed(1);
@@ -508,16 +536,20 @@
 
         var mainHtml;
         if (isHealthy100) {
+            /* translators: %d is the step count */
             mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success">' +
                 '<span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span> ' +
-                'Healthy pass-through · ' + stepCount + '-step funnel</span>';
+                escHtml(sprintf(__('Healthy pass-through · %d-step funnel'), stepCount)) + '</span>';
         } else {
-            mainHtml = '<span class="slimstat-gf-summary">' + stepCount + '-step funnel · ' + crLabel + '% conversion rate</span>';
+            /* translators: 1: number of steps, 2: conversion rate */
+            mainHtml = '<span class="slimstat-gf-summary">' +
+                escHtml(sprintf(__('%1$d-step funnel · %2$s%% conversion rate'), stepCount, crLabel)) + '</span>';
         }
 
         if (unreachable > 0) {
-            var label = unreachable === 1 ? 'step unreachable' : 'steps unreachable';
-            mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + unreachable + ' ' + label + '</span>';
+            /* translators: %d is the number of unreachable steps */
+            var label = sprintf(_n('%d step unreachable', '%d steps unreachable', unreachable), unreachable);
+            mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + escHtml(label) + '</span>';
         }
         return mainHtml;
     }
@@ -603,7 +635,7 @@
     function syncValueDisabledByOperator($value, operator) {
         var isEmptyOp = (operator === 'is_empty' || operator === 'is_not_empty');
         if (isEmptyOp) {
-            $value.prop('disabled', true).attr('title', 'Not applicable for this operator').val('');
+            $value.prop('disabled', true).attr('title', __('Not applicable for this operator')).val('');
         } else {
             $value.prop('disabled', false).removeAttr('title');
         }
@@ -650,10 +682,10 @@
     function buildSuggestWidget(inputEl, options) {
         if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
         var instance = new window.SlimStatSearchableSelect(inputEl, {
-            placeholder:       'Select or type a value…',
-            searchPlaceholder: 'Search or type…',
-            noResultsText:     'No matches',
-            loadingText:       'Loading…'
+            placeholder:       __('Select or type a value…'),
+            searchPlaceholder: __('Search or type…'),
+            noResultsText:     __('No matches'),
+            loadingText:       __('Loading…')
         });
         instance.setOptions(options || []);
         inputEl._slimstatSearchable = instance;
@@ -708,7 +740,7 @@
         var rowId = inputId($row[0]);
 
         var step = {
-            name:      $row.find('[data-role="step-name"]').val() || 'Step',
+            name:      $row.find('[data-role="step-name"]').val() || __('Step'),
             dimension: $row.find('[data-role="step-dimension"]').val(),
             operator:  $row.find('[data-role="step-operator"]').val(),
             value:     $row.find('[data-role="step-value"]').val(),
@@ -718,7 +750,7 @@
         if (_testInflight[rowId] && typeof _testInflight[rowId].abort === 'function') {
             _testInflight[rowId].abort();
         }
-        $result.addClass('is-loading').text('Testing…');
+        $result.addClass('is-loading').text(__('Testing…'));
 
         _testInflight[rowId] = $.post(ajaxUrl, $.extend({
             action:   'slimstat_test_funnel_step',
@@ -726,7 +758,10 @@
         }, step)).done(function (response) {
             if (response && response.success && response.data) {
                 var count = Number(response.data.visitors) || 0;
-                $result.removeClass('is-loading').text(formatNumber(count) + ' match' + (count === 1 ? '' : 'es'));
+                /* translators: %s is a localized visitor count */
+                $result.removeClass('is-loading').text(
+                    sprintf(_n('%s match', '%s matches', count), formatNumber(count))
+                );
             } else {
                 $result.removeClass('is-loading').text('—');
             }

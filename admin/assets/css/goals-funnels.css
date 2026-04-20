@@ -784,24 +784,23 @@
     font-size: var(--ss-text-sm);
 }
 
-/* Funnel builder */
+/* Funnel builder — right-side drawer, wider than the goal drawer to fit the step grid. */
 
 .slimstat-gf-builder__panel {
     position: absolute;
-    top: 5%;
-    inset-inline: auto;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(100% - var(--ss-space-6), 760px);
-    max-height: 90vh;
-    overflow-y: auto;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: var(--ss-builder-width);
     background: var(--ss-surface);
-    padding: var(--ss-space-5);
-    border-radius: var(--ss-radius-lg);
-    box-shadow: var(--ss-shadow-modal);
+    padding: var(--ss-space-5) var(--ss-space-5) var(--ss-space-10);
+    box-shadow: var(--ss-shadow-drawer);
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: var(--ss-space-4);
+    animation: slimstat-gf-drawer-in var(--ss-duration-base) var(--ss-easing-out) both;
 }
 
 .slimstat-gf-builder__steps {
@@ -963,7 +962,9 @@
 }
 
 [dir="rtl"] .slimstat-gf-drawer__panel,
-.rtl .slimstat-gf-drawer__panel {
+.rtl .slimstat-gf-drawer__panel,
+[dir="rtl"] .slimstat-gf-builder__panel,
+.rtl .slimstat-gf-builder__panel {
     box-shadow: 8px 0 24px rgba(15, 23, 42, 0.08);
     animation: slimstat-gf-drawer-in-rtl var(--ss-duration-base) var(--ss-easing-out) both;
 }
