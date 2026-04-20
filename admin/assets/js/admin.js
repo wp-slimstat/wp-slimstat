@@ -511,6 +511,9 @@ jQuery(function () {
             this.isOpen = false;
             this.filteredOptions = [];
             this.allOptions = [];
+            // Latched on the first setOptions() call so a later server-side
+            // search can clear back to the "like first open" list.
+            this.initialOptions = null;
 
             this.init();
         }
@@ -589,6 +592,12 @@ jQuery(function () {
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.addEventListener("input", (e) => {
                 const term = e.target.value;
+                // When the user clears a server-search term back below the 2-char
+                // threshold, put the pre-fetched list back so the dropdown returns
+                // to the "like first open" state instead of staying narrowed.
+                if (this.options.serverSearchAction && term.trim().length < 2) {
+                    this.restoreInitialOptions();
+                }
                 // When a server-side search will fire for this keystroke, skip the
                 // client-side filter — its result will be replaced once the AJAX
                 // response lands, and the flash of an intermediate list is jarring.
@@ -634,6 +643,12 @@ jQuery(function () {
                     icon: opt.icon || null,
                 };
             });
+            // Latch on the first call — the dimension-change handler passes the
+            // pre-fetched 500-item list, and later server-search replacements
+            // must not overwrite it so the user can clear back to this state.
+            if (this.initialOptions === null) {
+                this.initialOptions = this.allOptions.slice();
+            }
             this.filteredOptions = [...this.allOptions];
             this.renderOptions();
         }
@@ -803,6 +818,12 @@ jQuery(function () {
             return (searchTerm || "").trim().length >= 2;
         }
 
+        restoreInitialOptions() {
+            if (!this.initialOptions) return;
+            if (this.allOptions === this.initialOptions) return;
+            this.allOptions = this.initialOptions.slice();
+        }
+
         scheduleServerSearch(searchTerm) {
             if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return;
             if (this.isDisabled()) return;
@@ -959,6 +980,7 @@ jQuery(function () {
             this.allOptions = null;
             this.filteredOptions = null;
             this.selectedOption = null;
+            this.initialOptions = null;
         }
     }
 

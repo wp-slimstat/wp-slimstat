@@ -239,6 +239,34 @@ test.describe('Access Log filter UI — #298 typed-value regression', () => {
     await expect(noResults).toContainText(/Apply/i);
   });
 
+  test('clearing the search after a server fetch restores the initial list', async ({ page }) => {
+    await seedDistinctIps(501);
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      waitUntil: 'networkidle',
+    });
+
+    await page.selectOption('#slimstat-filter-name', 'ip');
+    await page.waitForSelector('.slimstat-searchable-select');
+    await page.click('.slimstat-select-display');
+
+    // Capture the initial dropdown state (the 500-row DISTINCT slice).
+    const initialCount = await page.locator('.slimstat-select-options .slimstat-select-option').count();
+    expect(initialCount).toBeGreaterThan(1);
+
+    // Trigger a server search for the late IP (not in the initial slice).
+    await page.fill('.slimstat-select-search input', '255.');
+    await expect(
+      page.locator('.slimstat-select-options .slimstat-select-option .slimstat-option-label', { hasText: '255.' }).first(),
+    ).toBeVisible({ timeout: 3000 });
+    const narrowedCount = await page.locator('.slimstat-select-options .slimstat-select-option').count();
+    expect(narrowedCount).toBeLessThan(initialCount);
+
+    // Clear the search — the dropdown should return to the initial list.
+    await page.fill('.slimstat-select-search input', '');
+    const restoredCount = await page.locator('.slimstat-select-options .slimstat-select-option').count();
+    expect(restoredCount).toBe(initialCount);
+  });
+
   test('is_empty operator leaves the sync handler inert (readonly guard)', async ({ page }) => {
     await seedDistinctIps(10);
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
