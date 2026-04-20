@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace WpSlimstat\Tests\Integration;
 
+use Brain\Monkey\Functions;
+use Mockery;
+
 /**
  * Cache invalidation contract for Goals & Funnels.
  *
  * Pins: clear_goals_cache() bumps slimstat_goals_cache_ver to a monotonically
- * increasing timestamp, and all four CRUD handlers call it. The on-disk cache
- * key format (slimstat_goal_<id>_<md5>, 5 min TTL) is tested indirectly via
- * production consumers — this file only guards the version-bump contract.
+ * increasing timestamp, all four CRUD handlers call it, and it GCs orphaned
+ * transient rows when no external object cache is present.
  *
  * See the 5.5.0 redesign notes for the cache-version invalidation contract.
  */
@@ -62,5 +64,51 @@ class GoalsFunnelsCacheTest extends IntegrationTestCase
         }
 
         $this->assertGreaterThan(7, (int) $this->optionStore['slimstat_goals_cache_ver']);
+    }
+
+    public function test_clear_goals_cache_gcs_stale_transients_without_ext_cache(): void
+    {
+        Functions\when('wp_using_ext_object_cache')->justReturn(false);
+
+        $wpdb = Mockery::mock('stdClass');
+        $wpdb->options = 'wp_options';
+        $wpdb->shouldReceive('esc_like')->andReturnUsing(static fn($s) => addcslashes($s, '_%\\'));
+        $wpdb->shouldReceive('prepare')->andReturnUsing(static function () {
+            $args = func_get_args();
+            return vsprintf(str_replace('%s', "'%s'", $args[0]), array_slice($args, 1));
+        });
+        $wpdb->shouldReceive('query')
+            ->once()
+            ->withArgs(function ($sql) {
+                // esc_like escapes underscores, so the emitted LIKE patterns carry \_.
+                return str_contains($sql, 'DELETE FROM wp_options')
+                    && str_contains($sql, 'slimstat\_goal\_')
+                    && str_contains($sql, 'timeout\_slimstat\_goal\_')
+                    && str_contains($sql, 'slimstat\_funnel\_')
+                    && str_contains($sql, 'timeout\_slimstat\_funnel\_');
+            })
+            ->andReturn(1);
+
+        $GLOBALS['wpdb'] = $wpdb;
+
+        $ref = new \ReflectionMethod('wp_slimstat_admin', 'clear_goals_cache');
+        $ref->invoke(null);
+
+        unset($GLOBALS['wpdb']);
+    }
+
+    public function test_clear_goals_cache_skips_gc_when_ext_cache_active(): void
+    {
+        Functions\when('wp_using_ext_object_cache')->justReturn(true);
+
+        $wpdb = Mockery::mock('stdClass');
+        $wpdb->options = 'wp_options';
+        $wpdb->shouldNotReceive('query'); // GC must not fire
+        $GLOBALS['wpdb'] = $wpdb;
+
+        $ref = new \ReflectionMethod('wp_slimstat_admin', 'clear_goals_cache');
+        $ref->invoke(null);
+
+        unset($GLOBALS['wpdb']);
     }
 }

@@ -1694,10 +1694,37 @@ class wp_slimstat_admin
     /**
      * Invalidates all goal/funnel/visitor caches by incrementing version.
      * Works with both wp_options and external object cache (Redis/Memcached).
+     *
+     * When no persistent object cache is present, orphaned version-keyed
+     * transient rows in wp_options aren't cleaned up until WordPress's
+     * `delete_expired_transients` cron fires (every 12h). We GC them here
+     * so frequently-edited installs don't accumulate hundreds of rows.
      */
     private static function clear_goals_cache()
     {
         update_option('slimstat_goals_cache_ver', time(), false);
+
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            return;
+        }
+
+        global $wpdb;
+        if (!$wpdb) {
+            return;
+        }
+
+        $like_goal         = $wpdb->esc_like('_transient_slimstat_goal_')           . '%';
+        $like_goal_timeout = $wpdb->esc_like('_transient_timeout_slimstat_goal_')   . '%';
+        $like_funnel       = $wpdb->esc_like('_transient_slimstat_funnel_')         . '%';
+        $like_funnel_t     = $wpdb->esc_like('_transient_timeout_slimstat_funnel_') . '%';
+
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+            $like_goal,
+            $like_goal_timeout,
+            $like_funnel,
+            $like_funnel_t
+        ));
     }
 
     /**
@@ -2016,6 +2043,11 @@ class wp_slimstat_admin
         if (!$step) {
             wp_send_json_error(['message' => __('Step is missing required fields', 'wp-slimstat')]);
         }
+
+        // Force a stable id derived from the rule so repeat Test-clicks on the
+        // same rule hit the get_goal_results() transient. sanitize_goal() default
+        // id is microtime-based (unique per call), which defeats caching here.
+        $step['id'] = crc32($step['dimension'] . '|' . $step['operator'] . '|' . (string) $step['value']);
 
         if (!class_exists('wp_slimstat_db')) {
             include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';

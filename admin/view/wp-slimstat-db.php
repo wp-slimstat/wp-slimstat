@@ -1760,8 +1760,11 @@ class wp_slimstat_db
      * Get funnel results: visitors at each step with drop-off.
      * Uses iterative PHP approach for MySQL 5.6 compatibility.
      *
+     * Cached for 5 minutes via a version-keyed transient, invalidated by
+     * wp_slimstat_admin::clear_goals_cache() on any goal/funnel CRUD.
+     *
      * @param array $funnel Funnel definition with steps array.
-     * @return array Array of step results: name, visitors, pct, dropoff.
+     * @return array Array of step results: name, visitors, pct, dropoff, unreachable.
      */
     public static function get_funnel_results($funnel)
     {
@@ -1769,10 +1772,18 @@ class wp_slimstat_db
             return [];
         }
 
+        $date_where = self::get_combined_where('', '*', true, 't1');
+        $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key  = 'slimstat_funnel_' . (isset($funnel['id']) ? $funnel['id'] : md5(serialize($funnel['steps'])))
+                      . '_' . md5($date_where . $cache_ver);
+        $cached     = get_transient($cache_key);
+        if (false !== $cached) {
+            return $cached;
+        }
+
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
         $visitor_id   = self::visitor_id_expr('t1');
-        $date_where   = self::get_combined_where('', '*', true, 't1');
 
         // Two-table swap pattern: READ holds previous step's visitors,
         // WRITE receives current step's results. After each step, WRITE
@@ -1784,10 +1795,7 @@ class wp_slimstat_db
         $results     = [];
         $step1_count = 0;
         $use_temp    = false;
-
-        // Safety cleanup from any prior incomplete run
-        wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
-        wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+        $preflight   = false;
 
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event   = ($step['dimension'] === 'event_notes');
@@ -1821,17 +1829,22 @@ class wp_slimstat_db
                 );
             }
 
-            // Count visitors for this step
-            $count_sql     = "SELECT COUNT(*) FROM ($select_sql) AS step_visitors";
-            $visitor_count = intval(wp_slimstat::$wpdb->get_var($count_sql));
+            // Lazy preflight: only drop stale temps on the first step that actually runs SQL.
+            if (!$preflight) {
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                $preflight = true;
+            }
+
+            // Create the per-step temp table once, then count from it — avoids
+            // running the DISTINCT subquery twice for the same step.
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, KEY(vid)) AS $select_sql");
+            $visitor_count = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $temp_write"));
 
             if ($step_index === 0) {
                 $step1_count = $visitor_count;
             }
-
-            // Write current step's visitors to WRITE table (READ stays alive for the query)
-            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
-            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, KEY(vid)) AS $select_sql");
 
             // Swap: drop old READ, rename WRITE → READ for next iteration
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
@@ -1855,9 +1868,12 @@ class wp_slimstat_db
             ];
         }
 
-        // Cleanup
-        wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
-        wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+        if ($preflight) {
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+        }
+
+        set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
 
         return $results;
     }
