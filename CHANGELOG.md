@@ -1,3 +1,15 @@
+= 5.4.13 - 2026-04-20 =
+
+**Access Log filter fixes**
+
+- The Access Log filter dropdown now accepts pasted and typed values that aren't in the visible list ([#298](https://github.com/wp-slimstat/wp-slimstat/issues/298)). Previously, the dropdown pre-fetched up to 500 distinct values for the selected column and rejected anything not in that slice — so on busy sites, pasting an IP that was clearly visible in the Access Log returned "No matching options found" and the filter couldn't be applied. "Starts with" failed the same way. The widget now syncs the typed text straight into the form value, and the "no match" message tells you to click Apply to filter by the typed value.
+- The endpoint gains an optional `search` parameter backed by a prepared `LIKE` query (left-anchored for IP-like columns, substring for notes/user_agent/etc.), so the dropdown can surface matching values from the full column history instead of only the 500-row lexicographic slice. The JS debounces 250 ms, cancels in-flight requests on new keystrokes, and discards stale responses.
+- Dropdown responses are now cached by a composite key (blog, DB host, capability gate, hour-bucketed time range, effective limit, search) with a 5-minute TTL for current ranges and 1-hour TTL for historical ranges. Repeat dropdown opens no longer repeat the DISTINCT query. `uninstall.php` sweeps the new transients.
+
+**Tests**
+
+- New Playwright spec `filter-ip-beyond-500-limit.spec.ts` covers the 500-row cap characterization, server-side search (left-anchored for `ip`, substring for `user_agent`), LIKE metacharacter safety, no-match affordance, `is_empty` readonly guard, and cache TTL behavior.
+
 = 5.4.12 - 2026-04-18 =
 
 **Bot detection hardening**

@@ -499,6 +499,7 @@ jQuery(function () {
                 placeholder: __("Select value...", "wp-slimstat"),
                 searchPlaceholder: __("Search...", "wp-slimstat"),
                 noResultsText: __("No results found", "wp-slimstat"),
+                noMatchesText: __("No matches — click Apply to filter by this value.", "wp-slimstat"),
                 loadingText: __("Loading...", "wp-slimstat"),
                 allowClear: true,
                 ...options,
@@ -587,7 +588,19 @@ jQuery(function () {
             // Search input
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.addEventListener("input", (e) => {
-                this.filterOptions(e.target.value);
+                const term = e.target.value;
+                // When a server-side search will fire for this keystroke, skip the
+                // client-side filter — its result will be replaced once the AJAX
+                // response lands, and the flash of an intermediate list is jarring.
+                if (!this.willServerSearch(term)) {
+                    this.filterOptions(term);
+                }
+                this.syncTypedValue(term);
+                this.scheduleServerSearch(term);
+            });
+
+            searchInput.addEventListener("blur", () => {
+                this.dispatchChange();
             });
 
             searchInput.addEventListener("keydown", (e) => {
@@ -655,7 +668,13 @@ jQuery(function () {
                 // Create no results element safely to prevent XSS
                 const noResultsDiv = document.createElement("div");
                 noResultsDiv.className = "slimstat-select-no-results";
-                noResultsDiv.textContent = this.options.noResultsText;
+                noResultsDiv.setAttribute("data-testid", "slimstat-no-results");
+                const searchInputEl = this.searchContainer.querySelector("input");
+                const userHasTyped = searchInputEl && searchInputEl.value.trim().length > 0;
+                const hasData = this.allOptions.length > 0;
+                noResultsDiv.textContent = (userHasTyped && hasData)
+                    ? this.options.noMatchesText
+                    : this.options.noResultsText;
                 this.optionsContainer.appendChild(noResultsDiv);
                 return;
             }
@@ -754,6 +773,106 @@ jQuery(function () {
             this.element.dispatchEvent(changeEvent);
         }
 
+        isDisabled() {
+            // is_empty / is_not_empty operators mark the value field inert.
+            return this.element.readOnly || this.selectWrapper.style.pointerEvents === "none";
+        }
+
+        syncTypedValue(value) {
+            if (this.isDisabled()) return;
+            this.element.value = value;
+        }
+
+        dispatchChange() {
+            const changeEvent = new Event("change", { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+        }
+
+        updateDisplayFromValue(value) {
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = "";
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = value;
+            textElement.appendChild(labelSpan);
+            this.display.classList.remove("slimstat-placeholder");
+        }
+
+        willServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return false;
+            if (this.isDisabled()) return false;
+            return (searchTerm || "").trim().length >= 2;
+        }
+
+        scheduleServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return;
+            if (this.isDisabled()) return;
+
+            const term = (searchTerm || "").trim();
+
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
+            // Under 2 chars: fall back to legacy full DISTINCT from the initial fetch.
+            if (term.length < 2) return;
+
+            this._searchDebounce = setTimeout(() => {
+                this.runServerSearch(term);
+            }, 250);
+        }
+
+        runServerSearch(term) {
+            const hasAbort = typeof AbortController !== "undefined";
+            this._searchAbort = hasAbort ? new AbortController() : null;
+            const signal = this._searchAbort ? this._searchAbort.signal : null;
+            const timeRange = this.options.serverSearchTimeRange || { type: "last_28_days", from: "", to: "" };
+
+            jQuery.ajax({
+                method: "POST",
+                url: (typeof ajaxurl !== "undefined") ? ajaxurl : "",
+                data: {
+                    action: this.options.serverSearchAction,
+                    dimension: this.options.serverSearchDimension,
+                    security: this.options.serverSearchNonce || "",
+                    time_range_type: timeRange.type,
+                    time_range_from: timeRange.from,
+                    time_range_to: timeRange.to,
+                    search: term
+                },
+                dataType: "json",
+                timeout: 15000,
+                xhr: function () {
+                    const xhr = jQuery.ajaxSettings.xhr();
+                    if (signal) {
+                        signal.addEventListener("abort", () => {
+                            try { xhr.abort(); } catch (e) { /* no-op */ }
+                        });
+                    }
+                    return xhr;
+                }
+            })
+                .done((response) => {
+                    // Discard stale responses if the user has kept typing.
+                    const searchInputEl = this.searchContainer.querySelector("input");
+                    const currentTerm = searchInputEl ? searchInputEl.value.trim() : "";
+                    if (currentTerm !== term) {
+                        return;
+                    }
+                    if (response && response.success && Array.isArray(response.data)) {
+                        this.setOptions(response.data);
+                    }
+                })
+                .fail(() => {
+                    // On network failure fall back silently to existing client list.
+                });
+        }
+
         getValue() {
             return this.selectedValue;
         }
@@ -799,32 +918,47 @@ jQuery(function () {
             // Clear search
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.value = "";
+
+            // If the user typed a value but didn't click an option, reflect it
+            // in the closed display so they see their input committed.
+            if (!this.selectedOption && this.element.value) {
+                this.updateDisplayFromValue(this.element.value);
+            }
         }
 
         destroy() {
-            // Close dropdown if open
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
             if (this.isOpen) {
                 this.close();
             }
 
             // Safely remove wrapper and restore original element
             if (this.wrapper && this.element) {
-                // Move element back to its original position before wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
                 }
 
-                // Show original element
                 this.element.style.display = "";
-
-                // Clear value
                 this.element.value = "";
 
-                // Remove wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.removeChild(this.wrapper);
                 }
             }
+
+            // Drop references so GC can reclaim the option list + DOM subtree
+            // even if an external holder retains the instance.
+            this.allOptions = null;
+            this.filteredOptions = null;
+            this.selectedOption = null;
         }
     }
 
@@ -937,7 +1071,12 @@ jQuery(function () {
                             placeholder: __('Select value...', 'wp-slimstat'),
                             searchPlaceholder: __('Search options...', 'wp-slimstat'),
                             noResultsText: noResultsText,
-                            loadingText: __('Loading options...', 'wp-slimstat')
+                            noMatchesText: __('No matches — click Apply to filter by this value.', 'wp-slimstat'),
+                            loadingText: __('Loading options...', 'wp-slimstat'),
+                            serverSearchAction: 'slimstat_get_filter_options',
+                            serverSearchDimension: dimension,
+                            serverSearchNonce: jQuery("#meta-box-order-nonce").val(),
+                            serverSearchTimeRange: timeRangeData
                         });
 
                         // Set the options from the AJAX response (empty array if no data)
