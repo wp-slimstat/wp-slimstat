@@ -60,6 +60,18 @@ function slimstat_uninstall($_wpdb = '', $_options = [])
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
 
+    // Sweep filter-options transients left behind by the dropdown cache.
+    $transient_like = $GLOBALS['wpdb']->esc_like('_transient_slimstat_fopts_') . '%';
+    $timeout_like   = $GLOBALS['wpdb']->esc_like('_transient_timeout_slimstat_fopts_') . '%';
+    $GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare(
+        "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+        $transient_like,
+        $timeout_like
+    ));
+    if (function_exists('wp_cache_delete_group')) {
+        wp_cache_delete_group('slimstat_filter_options');
+    }
+
     // Remove scheduled autopurge events
     wp_clear_scheduled_hook('wp_slimstat_purge');
     wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
