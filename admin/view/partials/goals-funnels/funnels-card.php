@@ -96,10 +96,11 @@ $show_add_cta = !$at_max;
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
             <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill dimensions and operators — you just fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
-            <div class="slimstat-gf-template-picker" role="list">
+            <div class="slimstat-gf-template-picker"
+                 role="group"
+                 aria-label="<?php esc_attr_e('Funnel templates', 'wp-slimstat'); ?>">
                 <button type="button"
                         class="slimstat-gf-template-card"
-                        role="listitem"
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="ecommerce">
@@ -108,7 +109,6 @@ $show_add_cta = !$at_max;
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card"
-                        role="listitem"
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="saas">
@@ -117,7 +117,6 @@ $show_add_cta = !$at_max;
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card"
-                        role="listitem"
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="content">
@@ -126,7 +125,6 @@ $show_add_cta = !$at_max;
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card slimstat-gf-template-card--scratch"
-                        role="listitem"
                         data-action="open-funnel-builder"
                         data-mode="create"
                         data-template="blank">

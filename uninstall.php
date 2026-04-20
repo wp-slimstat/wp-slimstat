@@ -56,6 +56,19 @@ function slimstat_uninstall($_wpdb = '', $_options = [])
     delete_option('slimstat_filters');
     delete_option('slimstat_tracker_error');
 
+    // Goals & Funnels (5.5.0+): admin-configured records + cache-version key.
+    delete_option('slimstat_goals');
+    delete_option('slimstat_funnels');
+    delete_option('slimstat_goals_cache_ver');
+
+    // Goals & Funnels (5.5.0+): per-goal/per-funnel transients accumulated
+    // between cache-version bumps. Safe to DELETE with LIKE here because
+    // uninstall runs once and isn't racing other requests.
+    $GLOBALS['wpdb']->query(sprintf(
+        "DELETE FROM %soptions WHERE option_name LIKE '\\_transient\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_funnel\\_%%'",
+        $GLOBALS['wpdb']->prefix
+    ));
+
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));

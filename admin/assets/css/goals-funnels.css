@@ -1010,7 +1010,7 @@
 .slimstat-goals-table th,
 .slimstat-goals-table td {
     padding: 8px 12px;
-    text-align: left;
+    text-align: start;
     border-bottom: 1px solid var(--ss-border);
 }
 
@@ -1077,10 +1077,7 @@
 
 .slimstat-funnel-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;

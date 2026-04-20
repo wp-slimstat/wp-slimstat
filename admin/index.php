@@ -935,19 +935,21 @@ class wp_slimstat_admin
      */
     public static function needs_goals_funnels_assets()
     {
+        // Only memoize `true` — a `false` answer is provisional until the reports
+        // registry has loaded. Caching `false` too early (e.g. during
+        // admin_enqueue_scripts on index.php, before wp_slimstat_reports::init()
+        // runs) would cause the dashboard widget path to miss its own assets.
         static $memo = null;
-        if ($memo !== null) {
-            return $memo;
+        if ($memo === true) {
+            return true;
         }
 
         if (!empty($_GET['page']) && 'slimview6' === $_GET['page']) {
             return $memo = true;
         }
 
-        // Reports registry is conditionally loaded; if absent, this hook fires on
-        // an unrelated admin page (e.g. edit.php) and we have no work to do.
         if (!class_exists('wp_slimstat_reports', false)) {
-            return $memo = false;
+            return false;
         }
 
         $pagenow = $GLOBALS['pagenow'] ?? '';
@@ -968,7 +970,7 @@ class wp_slimstat_admin
             }
         }
 
-        return $memo = false;
+        return false;
     }
 
     /**
@@ -1715,7 +1717,9 @@ class wp_slimstat_admin
      */
     private static function clear_goals_cache()
     {
-        update_option('slimstat_goals_cache_ver', time(), false);
+        // Sub-second precision avoids collisions when two saves land in the
+        // same second (time() granularity was causing cache-miss no-ops).
+        update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
 
         if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
             return;
@@ -1788,9 +1792,16 @@ class wp_slimstat_admin
 
     /**
      * Sanitizes and validates a goal definition array.
+     *
+     * Accepts raw slashed input (callers hand through `$_POST` directly) and
+     * runs wp_unslash() before the per-field sanitizers so admin-entered values
+     * containing quotes or backslashes round-trip correctly.
      */
     private static function sanitize_goal($raw)
     {
+        if (!is_array($raw)) {
+            return false;
+        }
         $raw        = wp_unslash($raw);
         $dimensions = self::get_goal_dimensions();
         $operators  = self::get_goal_operators();
@@ -1840,20 +1851,27 @@ class wp_slimstat_admin
             }
         }
 
-        if (!$found) {
-            // Count only active goals against the limit so paused goals genuinely free a slot.
-            $active_count = count(array_filter($goals, function ($g) {
-                return !empty($g['active']);
-            }));
+        // Count active goals in the state that *would* result from this save.
+        // For updates, $goals already reflects the incoming edit; for creates,
+        // append hypothetically for the check only. This catches the bypass
+        // where activating a previously-paused goal on update slipped past the
+        // limit because the old guard only ran on creates.
+        $post_save = $found ? $goals : array_merge($goals, [$goal]);
+        $active_count = count(array_filter($post_save, function ($g) {
+            return !empty($g['active']);
+        }));
 
-            if ($active_count >= $max_goals) {
-                wp_send_json_error([
-                    'message' => sprintf(
-                        __('Goal limit reached (%d). Upgrade to Pro for more goals.', 'wp-slimstat'),
-                        $max_goals
-                    ),
-                ]);
-            }
+        if ($active_count > $max_goals) {
+            wp_send_json_error([
+                'message' => sprintf(
+                    /* translators: %d is the max goal count for the tier */
+                    __('Goal limit reached (%d). Upgrade to Pro for more goals.', 'wp-slimstat'),
+                    $max_goals
+                ),
+            ]);
+        }
+
+        if (!$found) {
             $goals[] = $goal;
         }
 
@@ -1873,15 +1891,23 @@ class wp_slimstat_admin
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
         }
 
-        $goal_id = intval($_POST['goal_id']);
-        $goals   = get_option('slimstat_goals', []);
-        $goals   = array_values(array_filter($goals, function ($g) use ($goal_id) {
-            return $g['id'] !== $goal_id;
+        $goal_id = isset($_POST['goal_id']) ? intval(wp_unslash($_POST['goal_id'])) : 0;
+        if ($goal_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid goal id', 'wp-slimstat')]);
+        }
+
+        $goals    = get_option('slimstat_goals', []);
+        $filtered = array_values(array_filter($goals, function ($g) use ($goal_id) {
+            return isset($g['id']) && (int) $g['id'] !== $goal_id;
         }));
 
-        update_option('slimstat_goals', $goals, false);
+        if (count($filtered) === count($goals)) {
+            wp_send_json_error(['message' => __('Goal not found', 'wp-slimstat')], 404);
+        }
+
+        update_option('slimstat_goals', $filtered, false);
         self::clear_goals_cache();
-        wp_send_json_success(['goals' => $goals]);
+        wp_send_json_success(['goals' => $filtered]);
     }
 
     /**
@@ -1914,9 +1940,10 @@ class wp_slimstat_admin
             $steps[] = $step;
         }
 
+        $raw_funnel_name = isset($_POST['funnel_name']) ? wp_unslash((string) $_POST['funnel_name']) : '';
         $funnel = [
-            'id'    => !empty($_POST['funnel_id']) ? intval($_POST['funnel_id']) : intval(microtime(true) * 10000),
-            'name'  => !empty($_POST['funnel_name']) ? sanitize_text_field($_POST['funnel_name']) : '',
+            'id'    => !empty($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : intval(microtime(true) * 10000),
+            'name'  => sanitize_text_field($raw_funnel_name),
             'steps' => $steps,
         ];
 
@@ -1964,15 +1991,23 @@ class wp_slimstat_admin
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
         }
 
-        $funnel_id = intval($_POST['funnel_id']);
-        $funnels   = get_option('slimstat_funnels', []);
-        $funnels   = array_values(array_filter($funnels, function ($f) use ($funnel_id) {
-            return $f['id'] !== $funnel_id;
+        $funnel_id = isset($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
+        if ($funnel_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid funnel id', 'wp-slimstat')]);
+        }
+
+        $funnels  = get_option('slimstat_funnels', []);
+        $filtered = array_values(array_filter($funnels, function ($f) use ($funnel_id) {
+            return isset($f['id']) && (int) $f['id'] !== $funnel_id;
         }));
 
-        update_option('slimstat_funnels', $funnels, false);
+        if (count($filtered) === count($funnels)) {
+            wp_send_json_error(['message' => __('Funnel not found', 'wp-slimstat')], 404);
+        }
+
+        update_option('slimstat_funnels', $filtered, false);
         self::clear_goals_cache();
-        wp_send_json_success(['funnels' => $funnels]);
+        wp_send_json_success(['funnels' => $filtered]);
     }
 
     /**

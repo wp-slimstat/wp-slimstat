@@ -55,7 +55,11 @@ if (!defined('ABSPATH')) {
         </footer>
 
         <template data-role="step-template">
-            <div class="slimstat-gf-step-row" data-step-row="" draggable="true">
+            <div class="slimstat-gf-step-row"
+                 data-step-row=""
+                 draggable="true"
+                 role="group"
+                 aria-label="<?php esc_attr_e('Funnel step', 'wp-slimstat'); ?>">
                 <button type="button"
                         class="slimstat-gf-step-row__handle"
                         data-action="drag-step"
@@ -64,13 +68,16 @@ if (!defined('ABSPATH')) {
                 <input type="text"
                        data-role="step-name"
                        class="regular-text"
-                       placeholder="<?php esc_attr_e('Step name', 'wp-slimstat'); ?>">
-                <select data-role="step-dimension">
+                       placeholder="<?php esc_attr_e('Step name', 'wp-slimstat'); ?>"
+                       aria-label="<?php esc_attr_e('Step name', 'wp-slimstat'); ?>">
+                <select data-role="step-dimension"
+                        aria-label="<?php esc_attr_e('Step dimension', 'wp-slimstat'); ?>">
                     <?php foreach ($dimensions as $key => $label) : ?>
                         <option value="<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></option>
                     <?php endforeach; ?>
                 </select>
-                <select data-role="step-operator">
+                <select data-role="step-operator"
+                        aria-label="<?php esc_attr_e('Step operator', 'wp-slimstat'); ?>">
                     <?php foreach ($operators as $op) :
                         $op_label = $operator_labels[$op] ?? $op;
                         ?>
@@ -80,10 +87,12 @@ if (!defined('ABSPATH')) {
                 <input type="text"
                        data-role="step-value"
                        class="regular-text"
-                       placeholder="<?php esc_attr_e('Value', 'wp-slimstat'); ?>">
+                       placeholder="<?php esc_attr_e('Value', 'wp-slimstat'); ?>"
+                       aria-label="<?php esc_attr_e('Step value', 'wp-slimstat'); ?>">
                 <button type="button"
                         class="button-link slimstat-gf-step-row__test"
-                        data-action="test-step">
+                        data-action="test-step"
+                        aria-label="<?php esc_attr_e('Test this step', 'wp-slimstat'); ?>">
                     <?php esc_html_e('Test', 'wp-slimstat'); ?>
                 </button>
                 <span class="slimstat-gf-step-row__test-result" data-role="test-result" aria-live="polite"></span>

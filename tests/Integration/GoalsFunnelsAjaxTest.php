@@ -321,6 +321,22 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
     private function stubWpSlimstatDb(array $stepResults): void
     {
         if (class_exists('wp_slimstat_db', false)) {
+            // If the real wp_slimstat_db has been loaded by an earlier test in the
+            // same process, our alias was never installed — the handler would hit
+            // the real DB (no test double). Fail loudly instead of letting tests
+            // silently become order-dependent.
+            if (!class_exists(FakeWpSlimstatDb::class, false)
+                || !is_subclass_of('wp_slimstat_db', FakeWpSlimstatDb::class)
+                   && \get_parent_class('wp_slimstat_db') !== FakeWpSlimstatDb::class) {
+                // Accept aliased fakes. Reflection for alias names isn't reliable,
+                // so the cheapest guard is: verify our fake is exposing get_funnel_results.
+                if (!method_exists('wp_slimstat_db', 'get_funnel_results')
+                    || (new \ReflectionClass('wp_slimstat_db'))->getFileName() !== (new \ReflectionClass(FakeWpSlimstatDb::class))->getFileName()) {
+                    throw new \RuntimeException(
+                        'The real wp_slimstat_db is already loaded; stubWpSlimstatDb() cannot intercept it. Run this test in isolation.'
+                    );
+                }
+            }
             FakeWpSlimstatDb::$next = $stepResults;
             return;
         }

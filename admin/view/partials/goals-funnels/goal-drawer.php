@@ -65,10 +65,19 @@ if (!defined('ABSPATH')) {
         </label>
 
         <div class="slimstat-gf-field slimstat-gf-field--toggle">
-            <span class="slimstat-gf-field__label"><?php esc_html_e('Paused', 'wp-slimstat'); ?></span>
+            <label class="slimstat-gf-field__label slimstat-gf-toggle-label" for="slimstat-gf-goal-paused">
+                <?php esc_html_e('Paused', 'wp-slimstat'); ?>
+            </label>
             <span class="slimstat-gf-toggle">
-                <input type="checkbox" name="goal_paused" value="1" data-role="goal-paused">
-                <span class="slimstat-gf-field__hint"><?php esc_html_e('Paused goals don\'t count against the limit.', 'wp-slimstat'); ?></span>
+                <input type="checkbox"
+                       id="slimstat-gf-goal-paused"
+                       name="goal_paused"
+                       value="1"
+                       data-role="goal-paused"
+                       aria-describedby="slimstat-gf-goal-paused-hint">
+                <span id="slimstat-gf-goal-paused-hint" class="slimstat-gf-field__hint">
+                    <?php esc_html_e('Paused goals don\'t count against the limit.', 'wp-slimstat'); ?>
+                </span>
             </span>
         </div>
 
