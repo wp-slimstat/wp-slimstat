@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.12
+Stable tag: 5.4.13
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.13 - 2026-04-22 =
+* Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
+
 = 5.4.12 - 2026-04-18 =
 * Fix: Chrome-based mobile Googlebot and Bingbot now correctly blocked when Browscap classifies them as mobile devices (#14843)
 * Fix: Google-InspectionTool mobile is now detected as a crawler

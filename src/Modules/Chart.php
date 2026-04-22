@@ -290,10 +290,20 @@ class Chart
         // Build WHERE clause from active filters (excluding time filters)
         $filterWhere = $this->buildFilterWhere();
 
-        // Add chart-specific WHERE clause if provided
+        // Add chart-specific WHERE clause if provided.
+        // SECURITY: $args['chart_data']['where'] arrives via $_POST in the AJAX
+        // path (ajaxFetchChartData) and is later inlined into raw SQL through
+        // Query::whereRaw() with no parameter binding. To prevent SQL injection
+        // (Patchstack disclosure, CVSS 8.5), require the supplied clause to
+        // match — after whitespace normalization — one of the WHERE strings
+        // declared by a report registered in wp_slimstat_reports::$reports.
         if (!empty($args['chart_data']['where'])) {
-            $chartWhere = $args['chart_data']['where'];
-            $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $chartWhere : $chartWhere;
+            $normalized = self::normalizeSqlWhitespace((string) $args['chart_data']['where']);
+            $allowed    = self::getAllowedWhereClauses();
+            if (!isset($allowed[$normalized])) {
+                throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+            }
+            $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $normalized : $normalized;
         }
 
         // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
@@ -505,6 +515,60 @@ class Chart
 
         // If none of the patterns match, reject the expression
         throw new \Exception(__('Invalid SQL expression in chart data. Only whitelisted aggregate functions on valid columns are allowed.', 'wp-slimstat'));
+    }
+
+    /**
+     * Allowlist of legitimate chart `where` clauses harvested from every report
+     * registered in wp_slimstat_reports::$reports (including those added by
+     * third-party Pro addons via the `slimstat_reports_info` filter).
+     *
+     * Rebuilt per request because dynamic clauses (home_url(), date_i18n(...))
+     * are evaluated at init() time.
+     *
+     * @return array<string,bool> normalized-clause => true
+     */
+    private static function getAllowedWhereClauses(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        if (!class_exists('\wp_slimstat_reports')) {
+            $reportsFile = SLIMSTAT_DIR . '/admin/view/wp-slimstat-reports.php';
+            if (file_exists($reportsFile)) {
+                include_once $reportsFile;
+            }
+        }
+        if (!class_exists('\wp_slimstat_reports')) {
+            // Don't cache the failure — let a later call retry once the file
+            // has had a chance to load (e.g. via a downstream filter).
+            return [];
+        }
+
+        \wp_slimstat_reports::init();
+
+        $cache = [];
+        foreach ((array) \wp_slimstat_reports::$reports as $report) {
+            if (empty($report['callback_args']['chart_data']['where'])) {
+                continue;
+            }
+            $normalized = self::normalizeSqlWhitespace($report['callback_args']['chart_data']['where']);
+            if ($normalized !== '') {
+                $cache[$normalized] = true;
+            }
+        }
+
+        return $cache;
+    }
+
+    /**
+     * Both sides of the `where` allowlist comparison must run through the
+     * same whitespace normalization for the equality check to be sound.
+     */
+    private static function normalizeSqlWhitespace(string $sql): string
+    {
+        return trim(preg_replace('/\s+/', ' ', $sql));
     }
 
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array

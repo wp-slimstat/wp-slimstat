@@ -1,3 +1,9 @@
+= 5.4.13 - 2026-04-22 =
+
+**Security**
+
+- Authenticated SQL injection in the chart AJAX endpoint (`wp_ajax_slimstat_fetch_chart_data`) is now blocked. `chart_data.where` is validated against the registered report definitions before being inlined into the SQL query — only WHERE clauses declared by trusted reports (and by Pro addons that register reports via the `slimstat_reports_info` filter) are accepted. Reported via Patchstack (CVSS 8.5, High). The `data1` / `data2` allowlist introduced in PR #232 already covered the aggregate-expression vector; this release closes the parallel `where` vector.
+
 = 5.4.12 - 2026-04-18 =
 
 **Bot detection hardening**
