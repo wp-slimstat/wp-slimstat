@@ -298,7 +298,15 @@ class Chart
         // match — after whitespace normalization — one of the WHERE strings
         // declared by a report registered in wp_slimstat_reports::$reports.
         if (!empty($args['chart_data']['where'])) {
-            $normalized = self::normalizeSqlWhitespace((string) $args['chart_data']['where']);
+            // Reject non-string input before normalization. Chart.php does not
+            // declare(strict_types=1), so casting an array (E_WARNING) or an
+            // object without __toString (fatal Error → 500) would otherwise
+            // produce noisy logs or crash the AJAX handler instead of the
+            // generic security rejection below.
+            if (!is_string($args['chart_data']['where'])) {
+                throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
+            }
+            $normalized = self::normalizeSqlWhitespace($args['chart_data']['where']);
             $allowed    = self::getAllowedWhereClauses();
             if (!isset($allowed[$normalized])) {
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
