@@ -15,7 +15,7 @@
  *   5. No `where` provided (slim_p1_01-style report)  → success: true
  *   6. Empty `where` string                           → success: true (early return)
  *
- * Source: Patchstack disclosure 2026-04 / fix shipped 5.4.13.
+ * Source: Patchstack disclosure 2026-04 / fix shipped 5.4.12.
  */
 import { test, expect } from '@playwright/test';
 import {

@@ -530,7 +530,7 @@ class Chart
     private static function getAllowedWhereClauses(): array
     {
         static $cache = null;
-        if ($cache !== null) {
+        if (null !== $cache) {
             return $cache;
         }
 
@@ -550,11 +550,15 @@ class Chart
 
         $cache = [];
         foreach ((array) \wp_slimstat_reports::$reports as $report) {
-            if (empty($report['callback_args']['chart_data']['where'])) {
+            $where = $report['callback_args']['chart_data']['where'] ?? null;
+            // Skip non-string values defensively — a third-party report could
+            // register an array/object/null; normalizeSqlWhitespace is typed
+            // for string and Chart.php does not declare(strict_types=1).
+            if (!is_string($where) || '' === $where) {
                 continue;
             }
-            $normalized = self::normalizeSqlWhitespace($report['callback_args']['chart_data']['where']);
-            if ($normalized !== '') {
+            $normalized = self::normalizeSqlWhitespace($where);
+            if ('' !== $normalized) {
                 $cache[$normalized] = true;
             }
         }
