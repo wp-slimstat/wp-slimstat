@@ -338,10 +338,12 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await gotoSlimview6(page);
 
         const templates = page.locator('.slimstat-gf-template-card__title');
-        await expect(templates.nth(0)).toContainText('Store checkout');
-        await expect(templates.nth(1)).toContainText('Store browse to purchase');
-        await expect(templates.nth(2)).toContainText('Lead form submission');
-        await expect(templates.nth(3)).toContainText('Blank funnel');
+        await expect(templates.nth(0)).toContainText('WooCommerce purchase');
+        await expect(templates.nth(1)).toContainText('Checkout completion');
+        await expect(templates.nth(2)).toContainText('Landing to contact');
+        await expect(templates.nth(3)).toContainText('Homepage to pricing to checkout');
+        await expect(templates.nth(4)).toContainText('Landing to thank-you');
+        await expect(templates.nth(5)).toContainText('Blank funnel');
     });
 
     test('copy-confirm-sheet-keep-labels: confirm sheet uses Keep + Delete wording', async ({ page }) => {

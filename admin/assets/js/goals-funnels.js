@@ -37,38 +37,65 @@
     function _n(single, plural, n)  { return _i18n._n(single, plural, n, 'wp-slimstat'); }
     var sprintf = _i18n.sprintf;
 
-    // Defaults derived from a WordPress-ecosystem audit of dominant plugins
-    // and their canonical permalinks (see jaan-to/outputs/research/21-data-
-    // funnel-templates-wordpress-archetypes-final.md). WooCommerce gets two
-    // slots because it powers ~8% of all sites with unusually stable default
-    // page URLs. The lead-form template is a starter for brochureware /
-    // agency / consultant sites where the success URL varies — users will
-    // likely tweak the value field.
+    // Defaults derived from a WordPress-ecosystem audit of dominant plugins,
+    // their canonical permalinks, and default-redirect behaviour
+    // (jaan-to/outputs/research/22-funnel_templates_report.md). Two structural
+    // findings drove the set:
+    // 1. Form plugins (CF7, WPForms Lite, Fluent Forms, Gravity Forms,
+    //    Forminator, Elementor Forms) do NOT redirect to a thank-you page
+    //    by default. Most service sites stop on the contact page itself, so
+    //    `landing_to_contact` ends there intentionally. The longer
+    //    `landing_to_thanks` template is for sites that HAVE configured a
+    //    redirect (donation, membership, custom form thank-you).
+    // 2. WooCommerce powers ~20–21% of all WP sites with the most stable
+    //    default URL set in the ecosystem. It earns the top two slots:
+    //    `woocommerce_purchase` (full funnel) and `checkout_completion`
+    //    (cart → confirm only — answers the most-asked SMB store question).
     var FUNNEL_TEMPLATES = {
-        store_checkout: {
-            name: __('Store checkout'),
+        woocommerce_purchase: {
+            name: __('WooCommerce purchase'),
             steps: [
-                { name: __('Shop'),           dimension: 'resource', operator: 'contains', value: '/shop' },
-                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
-                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received/' }
-            ]
-        },
-        store_browse_to_purchase: {
-            name: __('Store browse to purchase'),
-            steps: [
-                { name: __('Shop'),           dimension: 'resource', operator: 'contains', value: '/shop' },
                 { name: __('Product'),        dimension: 'resource', operator: 'contains', value: '/product/' },
                 { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
                 { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received/' }
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
             ]
         },
-        lead_form: {
-            name: __('Lead form submission'),
+        checkout_completion: {
+            name: __('Checkout completion'),
             steps: [
-                { name: __('Service page'),   dimension: 'resource', operator: 'contains', value: '/services' },
-                { name: __('Contact page'),   dimension: 'resource', operator: 'contains', value: '/contact' },
+                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
+            ]
+        },
+        landing_to_contact: {
+            // Ends at the contact page on purpose — most WP form plugins
+            // do not redirect to a thank-you page by default.
+            // Step 1 uses `equals /` (homepage only) — `contains /` would
+            // match every URL and inflate the step-1 visitor count.
+            name: __('Landing to contact'),
+            steps: [
+                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Contact page'),   dimension: 'resource', operator: 'contains', value: '/contact' }
+            ]
+        },
+        pricing_to_checkout: {
+            name: __('Homepage to pricing to checkout'),
+            steps: [
+                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Pricing'),        dimension: 'resource', operator: 'contains', value: '/pricing' },
+                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' }
+            ]
+        },
+        landing_to_thanks: {
+            // For sites that HAVE configured a thank-you redirect (custom
+            // form plugin behaviour, GiveWP /donation-confirmation/, or a
+            // MemberPress /thank-you/). Users will edit all three steps.
+            name: __('Landing to thank-you (advanced)'),
+            steps: [
+                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Form page'),      dimension: 'resource', operator: 'contains', value: '/contact' },
                 { name: __('Thank-you page'), dimension: 'resource', operator: 'contains', value: '/thank-you' }
             ]
         },

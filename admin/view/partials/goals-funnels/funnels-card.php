@@ -63,41 +63,57 @@ $at_max = $funnel_count >= $max_funnels;
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
             <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill dimensions and operators — you just fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
+            <?php
+            // Each entry's `data-template` key must match a FUNNEL_TEMPLATES
+            // entry in admin/assets/js/goals-funnels.js. Strings are wrapped
+            // in __() inline so the WP i18n extractor still finds them.
+            $template_cards = [
+                [
+                    'key'   => 'woocommerce_purchase',
+                    'title' => __('WooCommerce purchase', 'wp-slimstat'),
+                    'body'  => __('Product → Cart → Checkout → Order received', 'wp-slimstat'),
+                ],
+                [
+                    'key'   => 'checkout_completion',
+                    'title' => __('Checkout completion', 'wp-slimstat'),
+                    'body'  => __('Cart → Checkout → Order received', 'wp-slimstat'),
+                ],
+                [
+                    'key'   => 'landing_to_contact',
+                    'title' => __('Landing to contact', 'wp-slimstat'),
+                    'body'  => __('Landing → Contact (most form plugins don\'t redirect to thank-you)', 'wp-slimstat'),
+                ],
+                [
+                    'key'   => 'pricing_to_checkout',
+                    'title' => __('Homepage to pricing to checkout', 'wp-slimstat'),
+                    'body'  => __('Homepage → Pricing → Checkout', 'wp-slimstat'),
+                ],
+                [
+                    'key'   => 'landing_to_thanks',
+                    'title' => __('Landing to thank-you (advanced)', 'wp-slimstat'),
+                    'body'  => __('Landing → Form → Thank-you (only if you redirect after submit)', 'wp-slimstat'),
+                ],
+                [
+                    'key'      => 'blank',
+                    'title'    => __('+ Blank funnel', 'wp-slimstat'),
+                    'body'     => __('Define 2–5 custom steps.', 'wp-slimstat'),
+                    'modifier' => 'slimstat-gf-template-card--scratch',
+                ],
+            ];
+            ?>
             <div class="slimstat-gf-template-picker"
                  role="group"
                  aria-label="<?php esc_attr_e('Funnel templates', 'wp-slimstat'); ?>">
-                <button type="button"
-                        class="slimstat-gf-template-card"
-                        data-action="open-funnel-builder"
-                        data-mode="create"
-                        data-template="store_checkout">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Store checkout', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Shop → Cart → Checkout → Order received', 'wp-slimstat'); ?></span>
-                </button>
-                <button type="button"
-                        class="slimstat-gf-template-card"
-                        data-action="open-funnel-builder"
-                        data-mode="create"
-                        data-template="store_browse_to_purchase">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Store browse to purchase', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Shop → Product → Cart → Checkout → Order received', 'wp-slimstat'); ?></span>
-                </button>
-                <button type="button"
-                        class="slimstat-gf-template-card"
-                        data-action="open-funnel-builder"
-                        data-mode="create"
-                        data-template="lead_form">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Lead form submission', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Service page → Contact → Thank-you', 'wp-slimstat'); ?></span>
-                </button>
-                <button type="button"
-                        class="slimstat-gf-template-card slimstat-gf-template-card--scratch"
-                        data-action="open-funnel-builder"
-                        data-mode="create"
-                        data-template="blank">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('+ Blank funnel', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Define 2–5 custom steps.', 'wp-slimstat'); ?></span>
-                </button>
+                <?php foreach ($template_cards as $card) : ?>
+                    <button type="button"
+                            class="slimstat-gf-template-card<?php echo empty($card['modifier']) ? '' : ' ' . esc_attr($card['modifier']); ?>"
+                            data-action="open-funnel-builder"
+                            data-mode="create"
+                            data-template="<?php echo esc_attr($card['key']); ?>">
+                        <span class="slimstat-gf-template-card__title"><?php echo esc_html($card['title']); ?></span>
+                        <span class="slimstat-gf-template-card__body"><?php echo esc_html($card['body']); ?></span>
+                    </button>
+                <?php endforeach; ?>
             </div>
         </div>
     <?php else : ?>
