@@ -70,25 +70,25 @@ $at_max = $funnel_count >= $max_funnels;
                         class="slimstat-gf-template-card"
                         data-action="open-funnel-builder"
                         data-mode="create"
-                        data-template="ecommerce">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('E-commerce checkout', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('View product → Cart → Checkout → Thank-you', 'wp-slimstat'); ?></span>
+                        data-template="store_checkout">
+                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Store checkout', 'wp-slimstat'); ?></span>
+                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Shop → Cart → Checkout → Order received', 'wp-slimstat'); ?></span>
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card"
                         data-action="open-funnel-builder"
                         data-mode="create"
-                        data-template="saas">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('SaaS signup', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Pricing → Trial → Activation', 'wp-slimstat'); ?></span>
+                        data-template="store_browse_to_purchase">
+                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Store browse to purchase', 'wp-slimstat'); ?></span>
+                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Shop → Product → Cart → Checkout → Order received', 'wp-slimstat'); ?></span>
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card"
                         data-action="open-funnel-builder"
                         data-mode="create"
-                        data-template="content">
-                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Blog engagement', 'wp-slimstat'); ?></span>
-                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Landing → Article → Sign-up', 'wp-slimstat'); ?></span>
+                        data-template="lead_form">
+                    <span class="slimstat-gf-template-card__title"><?php esc_html_e('Lead form submission', 'wp-slimstat'); ?></span>
+                    <span class="slimstat-gf-template-card__body"><?php esc_html_e('Service page → Contact → Thank-you', 'wp-slimstat'); ?></span>
                 </button>
                 <button type="button"
                         class="slimstat-gf-template-card slimstat-gf-template-card--scratch"

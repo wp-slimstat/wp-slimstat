@@ -338,9 +338,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await gotoSlimview6(page);
 
         const templates = page.locator('.slimstat-gf-template-card__title');
-        await expect(templates.nth(0)).toContainText('E-commerce checkout');
-        await expect(templates.nth(1)).toContainText('SaaS signup');
-        await expect(templates.nth(2)).toContainText('Blog engagement');
+        await expect(templates.nth(0)).toContainText('Store checkout');
+        await expect(templates.nth(1)).toContainText('Store browse to purchase');
+        await expect(templates.nth(2)).toContainText('Lead form submission');
         await expect(templates.nth(3)).toContainText('Blank funnel');
     });
 

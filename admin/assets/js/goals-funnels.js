@@ -37,30 +37,39 @@
     function _n(single, plural, n)  { return _i18n._n(single, plural, n, 'wp-slimstat'); }
     var sprintf = _i18n.sprintf;
 
+    // Defaults derived from a WordPress-ecosystem audit of dominant plugins
+    // and their canonical permalinks (see jaan-to/outputs/research/21-data-
+    // funnel-templates-wordpress-archetypes-final.md). WooCommerce gets two
+    // slots because it powers ~8% of all sites with unusually stable default
+    // page URLs. The lead-form template is a starter for brochureware /
+    // agency / consultant sites where the success URL varies — users will
+    // likely tweak the value field.
     var FUNNEL_TEMPLATES = {
-        ecommerce: {
-            name: __('E-commerce checkout'),
+        store_checkout: {
+            name: __('Store checkout'),
             steps: [
-                { name: __('View product'), dimension: 'resource', operator: 'contains', value: '/product' },
-                { name: __('Cart'),         dimension: 'resource', operator: 'contains', value: '/cart' },
-                { name: __('Checkout'),     dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: __('Thank-you'),    dimension: 'resource', operator: 'contains', value: '/thank-you' }
+                { name: __('Shop'),           dimension: 'resource', operator: 'contains', value: '/shop' },
+                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received/' }
             ]
         },
-        saas: {
-            name: __('SaaS signup'),
+        store_browse_to_purchase: {
+            name: __('Store browse to purchase'),
             steps: [
-                { name: __('Pricing'),      dimension: 'resource', operator: 'contains', value: '/pricing' },
-                { name: __('Trial start'),  dimension: 'resource', operator: 'contains', value: '/trial' },
-                { name: __('Activation'),   dimension: 'resource', operator: 'contains', value: '/onboarding' }
+                { name: __('Shop'),           dimension: 'resource', operator: 'contains', value: '/shop' },
+                { name: __('Product'),        dimension: 'resource', operator: 'contains', value: '/product/' },
+                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received/' }
             ]
         },
-        content: {
-            name: __('Blog engagement'),
+        lead_form: {
+            name: __('Lead form submission'),
             steps: [
-                { name: __('Landing'),      dimension: 'resource', operator: 'contains', value: '/' },
-                { name: __('Article'),      dimension: 'resource', operator: 'contains', value: '/blog' },
-                { name: __('Signup'),       dimension: 'resource', operator: 'contains', value: '/signup' }
+                { name: __('Service page'),   dimension: 'resource', operator: 'contains', value: '/services' },
+                { name: __('Contact page'),   dimension: 'resource', operator: 'contains', value: '/contact' },
+                { name: __('Thank-you page'), dimension: 'resource', operator: 'contains', value: '/thank-you' }
             ]
         },
         blank: {
