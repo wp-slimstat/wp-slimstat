@@ -51,9 +51,10 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await forceLimits(1, 0, WP_CONTENT);
         await gotoSlimview6(page);
 
-        // Goals hero + empty teach card.
-        await expect(page.locator('.slimstat-gf-goals .slimstat-gf-card__title')).toHaveText(/Goals/);
-        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('0 of 1');
+        // Goals hero + empty teach card. Title is the postbox <h3>; usage pill
+        // and CTA were moved into the postbox header (.slimstat-header-buttons).
+        await expect(page.locator('#slim_p9_01 > h3')).toContainText('Goals');
+        await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('0 of 1');
         await expect(page.locator('[data-role="goals-empty"]')).toBeVisible();
 
         // Funnels: locked preview, brand CTA, no Add button.
@@ -313,8 +314,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await forceLimits(1, 0, WP_CONTENT);
         await gotoSlimview6(page);
 
-        // Goals hero subtitle.
-        await expect(page.locator('.slimstat-gf-goals .slimstat-gf-card__subtitle'))
+        // Goals hero subtitle (now under postbox <h3>, not inside the card).
+        await expect(page.locator('#slim_p9_01 .slimstat-gf-postbox-subtitle'))
             .toContainText('A Goal is one question you ask of your traffic');
 
         // Goals empty state.
@@ -327,8 +328,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-funnel-lock__overlay h3'))
             .toContainText('See where visitors drop off, step by step');
 
-        // Funnels subtitle.
-        await expect(page.locator('.slimstat-gf-funnels .slimstat-gf-card__subtitle'))
+        // Funnels subtitle (now under postbox <h3>, not inside the card).
+        await expect(page.locator('#slim_p9_02 .slimstat-gf-postbox-subtitle'))
             .toContainText('String 2–5 goals into a journey');
     });
 

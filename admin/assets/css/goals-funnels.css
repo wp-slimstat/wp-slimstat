@@ -51,39 +51,25 @@
     font-family: var(--ss-font-modern);
 }
 
-.slimstat-gf-card__head {
-    display: flex;
-    align-items: center;
-    gap: var(--ss-space-4);
-    justify-content: space-between;
-    flex-wrap: wrap;
-    margin-bottom: var(--ss-space-5);
-}
+/* Card heading + actions formerly lived inside .slimstat-gf-card__head — now
+   surfaced inside the postbox header itself (subtitle directly under the <h3>,
+   pill + CTA inside .slimstat-header-buttons). See:
+   - wp_slimstat_admin::inject_goals_funnels_header_subtitle()
+   - wp_slimstat_admin::inject_goals_funnels_header_actions() */
 
-.slimstat-gf-card__heading {
-    flex: 1 1 auto;
-    min-width: 260px;
-}
-
-.slimstat-gf-card__title {
-    margin: 0 0 var(--ss-space-1);
-    font-size: var(--ss-text-xl);
-    font-weight: 600;
-    color: var(--ss-text-primary);
-    line-height: 1.2;
-}
-
-.slimstat-gf-card__subtitle {
-    margin: 0;
+.slimstat-gf-postbox-subtitle {
+    margin: var(--ss-space-1) 0 var(--ss-space-2);
     font-size: var(--ss-text-base);
+    font-weight: normal;
     color: var(--ss-text-secondary);
+    line-height: 1.4;
 }
 
-.slimstat-gf-card__actions {
-    display: flex;
+#slim_p9_01 .slimstat-header-buttons,
+#slim_p9_02 .slimstat-header-buttons {
+    display: inline-flex;
     align-items: center;
-    gap: var(--ss-space-3);
-    flex: 0 0 auto;
+    gap: var(--ss-space-2);
 }
 
 .slimstat-gf-pill {

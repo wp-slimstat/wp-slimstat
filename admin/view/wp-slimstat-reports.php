@@ -1056,6 +1056,9 @@ class wp_slimstat_reports
             $header_buttons = '<div class="slimstat-header-buttons">' . $header_buttons . '</div>';
 
             $widget_title = '<h3>' . esc_html(self::$reports[$_report_id]['title']) . $header_tooltip . '</h3>';
+
+            // Allow third-party code to inject content directly under the <h3> (e.g. a subtitle).
+            $widget_title .= apply_filters('slimstat_report_header_after_title', '', $_report_id);
         }
 
         $bar_color = (empty(self::$reports[$_report_id]['color'])) ? '#EFF6FF' : self::$reports[$_report_id]['color'];
@@ -1688,6 +1691,134 @@ class wp_slimstat_reports
     }
 
     /**
+     * Shared state for the Goals card — consumed by both the goals-card partial
+     * and the postbox-header filter callbacks so both surfaces show the same
+     * usage counts / CTA state without recomputing.
+     *
+     * Memoised per request.
+     *
+     * @return array{goals:array, active_count:int, max_goals:int, is_pro:bool, at_max:bool, show_add_cta:bool, show_upsell:bool}
+     */
+    public static function get_goals_card_state(): array
+    {
+        static $cached = null;
+        if (null !== $cached) {
+            return $cached;
+        }
+
+        $goals        = get_option('slimstat_goals', []);
+        $max_goals    = (int) apply_filters('slimstat_max_goals', 1);
+        $active_count = count(array_filter($goals, function ($g) {
+            return !empty($g['active']);
+        }));
+        $is_pro       = class_exists('wp_slimstat') && wp_slimstat::pro_is_installed();
+        $at_max       = $active_count >= $max_goals;
+
+        $cached = [
+            'goals'        => $goals,
+            'active_count' => $active_count,
+            'max_goals'    => $max_goals,
+            'is_pro'       => $is_pro,
+            'at_max'       => $at_max,
+            'show_add_cta' => !$at_max,
+            'show_upsell'  => $at_max && !$is_pro,
+        ];
+        return $cached;
+    }
+
+    /**
+     * Shared state for the Funnels card — see get_goals_card_state() for the
+     * shared-with-postbox-header rationale.
+     *
+     * @return array{funnels:array, funnel_count:int, max_funnels:int, is_pro:bool, locked:bool, at_max:bool, show_add_cta:bool}
+     */
+    public static function get_funnels_card_state(): array
+    {
+        static $cached = null;
+        if (null !== $cached) {
+            return $cached;
+        }
+
+        $max_funnels  = (int) apply_filters('slimstat_max_funnels', 0);
+        $is_pro       = $max_funnels > 0;
+        $funnels      = $is_pro ? get_option('slimstat_funnels', []) : [];
+        $funnel_count = is_array($funnels) ? count($funnels) : 0;
+        $locked       = !$is_pro;
+        $at_max       = $funnel_count >= $max_funnels;
+
+        $cached = [
+            'funnels'      => $funnels,
+            'funnel_count' => $funnel_count,
+            'max_funnels'  => $max_funnels,
+            'is_pro'       => $is_pro,
+            'locked'       => $locked,
+            'at_max'       => $at_max,
+            'show_add_cta' => !$locked && !$at_max,
+        ];
+        return $cached;
+    }
+
+    /**
+     * Builds the "N of M used" usage pill plus an optional "+ Add" primary
+     * button. Shared between the Goals and Funnels postbox-header injections.
+     */
+    private static function render_pill_and_cta(int $used, int $max, string $cta_action, string $cta_label, bool $show_cta): string
+    {
+        $html  = '<span class="slimstat-gf-pill" data-role="usage"';
+        $html .= ' data-active="' . esc_attr((string) $used) . '"';
+        $html .= ' data-max="' . esc_attr((string) $max) . '">';
+        $html .= esc_html(sprintf(
+            /* translators: 1: used count, 2: maximum count */
+            __('%1$d of %2$d used', 'wp-slimstat'),
+            $used,
+            $max
+        ));
+        $html .= '</span>';
+
+        if ($show_cta) {
+            $html .= '<button type="button" class="button button-primary slimstat-gf-cta"';
+            $html .= ' data-action="' . esc_attr($cta_action) . '" data-mode="create">';
+            $html .= esc_html($cta_label);
+            $html .= '</button>';
+        }
+        return $html;
+    }
+
+    /**
+     * Goals usage pill + "+ Add Goal" CTA for the postbox-header injection.
+     */
+    public static function render_goals_card_actions(): string
+    {
+        $state = self::get_goals_card_state();
+        return self::render_pill_and_cta(
+            $state['active_count'],
+            $state['max_goals'],
+            'open-goal-drawer',
+            __('+ Add Goal', 'wp-slimstat'),
+            $state['show_add_cta']
+        );
+    }
+
+    /**
+     * Funnels usage pill + "+ Add Funnel" CTA for the postbox-header injection.
+     * Empty for the Free / locked branch (no actions on locked).
+     */
+    public static function render_funnels_card_actions(): string
+    {
+        $state = self::get_funnels_card_state();
+        if ($state['locked']) {
+            return '';
+        }
+        return self::render_pill_and_cta(
+            $state['funnel_count'],
+            $state['max_funnels'],
+            'open-funnel-builder',
+            __('+ Add Funnel', 'wp-slimstat'),
+            $state['show_add_cta']
+        );
+    }
+
+    /**
      * Renders the Goals report.
      *
      * - When $_args['is_widget'] is true (shortcode, dashboard widget, email
@@ -1697,13 +1828,10 @@ class wp_slimstat_reports
      */
     public static function show_goals($_args = [])
     {
-        $goals      = get_option('slimstat_goals', []);
-        $max_goals  = (int) apply_filters('slimstat_max_goals', 1);
-        $is_widget  = !empty($_args['is_widget']);
-        $dimensions = wp_slimstat_admin::get_goal_dimensions();
-        $operators  = wp_slimstat_admin::get_goal_operators();
+        $is_widget = !empty($_args['is_widget']);
 
         if ($is_widget) {
+            $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -1711,14 +1839,17 @@ class wp_slimstat_reports
             return;
         }
 
-        $active_count = count(array_filter($goals, function ($g) {
-            return !empty($g['active']);
-        }));
+        // Pull shared state (also consumed by the postbox-header filter callbacks).
+        $state        = self::get_goals_card_state();
+        $goals        = $state['goals'];
+        $max_goals    = $state['max_goals'];
+        $active_count = $state['active_count'];
+        $is_pro       = $state['is_pro'];
 
+        $dimensions      = wp_slimstat_admin::get_goal_dimensions();
+        $operators       = wp_slimstat_admin::get_goal_operators();
         $operator_labels = wp_slimstat_admin::get_goal_operator_labels();
-
-        $is_pro         = class_exists('wp_slimstat') && wp_slimstat::pro_is_installed();
-        $consent_notice = function_exists('wp_has_consent')
+        $consent_notice  = function_exists('wp_has_consent')
             ? __('Goal data reflects visitors who provided statistics consent.', 'wp-slimstat')
             : '';
 
@@ -1774,12 +1905,12 @@ class wp_slimstat_reports
      */
     public static function show_funnels($_args = [])
     {
-        $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
-        $is_widget   = !empty($_args['is_widget']);
-        $is_pro      = $max_funnels > 0;
-        $funnels     = $is_pro ? get_option('slimstat_funnels', []) : [];
+        $is_widget = !empty($_args['is_widget']);
 
         if ($is_widget) {
+            $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
+            $is_pro      = $max_funnels > 0;
+            $funnels     = $is_pro ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($is_pro, $funnels);
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -1787,10 +1918,11 @@ class wp_slimstat_reports
             return;
         }
 
-        $dimensions = wp_slimstat_admin::get_goal_dimensions();
-        $operators  = wp_slimstat_admin::get_goal_operators();
-
-        $operator_labels = wp_slimstat_admin::get_goal_operator_labels();
+        // Pull shared state (also consumed by the postbox-header filter callbacks).
+        $state       = self::get_funnels_card_state();
+        $funnels     = $state['funnels'];
+        $max_funnels = $state['max_funnels'];
+        $is_pro      = $state['is_pro'];
 
         // Compute the SSR funnel data (first funnel only — others lazy-load via AJAX).
         $active_funnel_steps   = [];

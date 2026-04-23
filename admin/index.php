@@ -396,6 +396,8 @@ class wp_slimstat_admin
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
+        self::register_goals_funnels_header_hooks();
+
         // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
         foreach (self::get_index_definitions() as $def) {
             if ('yes' === get_option($def['option'])) {
@@ -3068,6 +3070,50 @@ class wp_slimstat_admin
         }
         $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
         return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+    }
+
+    /**
+     * Goals & Funnels: surface the usage pill + CTA inside the postbox header
+     * (left of the refresh / lock-export icons), and the subtitle directly under
+     * the <h3>. Card partials no longer render this chrome themselves.
+     */
+    public static function register_goals_funnels_header_hooks(): void
+    {
+        add_filter('slimstat_report_header_buttons', [self::class, 'inject_goals_funnels_header_actions'], 20, 2);
+        add_filter('slimstat_report_header_after_title', [self::class, 'inject_goals_funnels_header_subtitle'], 10, 2);
+    }
+
+    /**
+     * Prepends the Goals/Funnels usage pill + "+ Add" CTA into the
+     * .slimstat-header-buttons container so they sit on the LEFT side.
+     * Empty for the Free locked Funnels branch (render helper returns '').
+     */
+    public static function inject_goals_funnels_header_actions($_header_buttons = '', $_report_id = '')
+    {
+        if ('slim_p9_01' === $_report_id) {
+            $actions = \wp_slimstat_reports::render_goals_card_actions();
+            return $actions . $_header_buttons;
+        }
+        if ('slim_p9_02' === $_report_id) {
+            $actions = \wp_slimstat_reports::render_funnels_card_actions();
+            return $actions . $_header_buttons;
+        }
+        return $_header_buttons;
+    }
+
+    /**
+     * Renders the Goals/Funnels card subtitle directly under the postbox <h3>.
+     * Strings match the previous in-card markup so existing translations carry over.
+     */
+    public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
+    {
+        if ('slim_p9_01' === $_report_id) {
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A Goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
+        }
+        if ('slim_p9_02' === $_report_id) {
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat') . '</p>';
+        }
+        return $_html;
     }
 
     public static function add_header()

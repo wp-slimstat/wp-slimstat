@@ -28,39 +28,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$at_max        = $active_count >= $max_goals;
-$show_upsell   = $at_max && !$is_pro;
-$show_add_cta  = !$at_max;
+// Heading (title + subtitle) and actions (usage pill + Add CTA) now live in the
+// postbox header — see wp_slimstat_admin::register_goals_funnels_header_hooks()
+// hooks on slimstat_report_header_after_title + slimstat_report_header_buttons.
+$at_max      = $active_count >= $max_goals;
+$show_upsell = $at_max && !$is_pro;
 ?>
 <section class="slimstat-gf-card slimstat-gf-goals" data-component="goals">
-    <header class="slimstat-gf-card__head">
-        <div class="slimstat-gf-card__heading">
-            <h2 class="slimstat-gf-card__title"><?php esc_html_e('Goals', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('A Goal is one question you ask of your traffic.', 'wp-slimstat'); ?></p>
-        </div>
-        <div class="slimstat-gf-card__actions">
-            <span class="slimstat-gf-pill"
-                  data-role="usage"
-                  data-active="<?php echo esc_attr((string) $active_count); ?>"
-                  data-max="<?php echo esc_attr((string) $max_goals); ?>">
-                <?php echo esc_html(sprintf(
-                    /* translators: 1: used goals, 2: maximum goals */
-                    __('%1$d of %2$d used', 'wp-slimstat'),
-                    $active_count,
-                    $max_goals
-                )); ?>
-            </span>
-            <?php if ($show_add_cta) : ?>
-                <button type="button"
-                        class="button button-primary slimstat-gf-cta"
-                        data-action="open-goal-drawer"
-                        data-mode="create">
-                    <?php esc_html_e('+ Add Goal', 'wp-slimstat'); ?>
-                </button>
-            <?php endif; ?>
-        </div>
-    </header>
-
     <?php if (empty($goals)) : ?>
         <div class="slimstat-gf-empty" data-role="goals-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Measure what matters', 'wp-slimstat'); ?></h3>

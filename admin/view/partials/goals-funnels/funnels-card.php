@@ -25,15 +25,11 @@ if (!defined('ABSPATH')) {
 $funnel_count = is_array($funnels) ? count($funnels) : 0;
 $locked       = $max_funnels <= 0; // Free tier — never rendered via this partial for Pro
 
+// Heading (title + subtitle) and actions (usage pill + Add CTA) now live in the
+// postbox header — see wp_slimstat_admin::register_goals_funnels_header_hooks().
 if ($locked) :
 ?>
 <section class="slimstat-gf-card slimstat-gf-funnels slimstat-gf-funnels--locked" data-component="funnels" aria-label="<?php esc_attr_e('Funnels — Pro feature preview', 'wp-slimstat'); ?>">
-    <header class="slimstat-gf-card__head">
-        <div class="slimstat-gf-card__heading">
-            <h2 class="slimstat-gf-card__title"><?php esc_html_e('Funnels', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat'); ?></p>
-        </div>
-    </header>
     <div class="slimstat-gf-funnel-lock">
         <div class="slimstat-gf-funnel-mock" aria-hidden="true">
             <div class="slimstat-gf-funnel-bars">
@@ -60,38 +56,9 @@ if ($locked) :
     return;
 endif;
 
-$at_max       = $funnel_count >= $max_funnels;
-$show_add_cta = !$at_max;
+$at_max = $funnel_count >= $max_funnels;
 ?>
 <section class="slimstat-gf-card slimstat-gf-funnels" data-component="funnels">
-    <header class="slimstat-gf-card__head">
-        <div class="slimstat-gf-card__heading">
-            <h2 class="slimstat-gf-card__title"><?php esc_html_e('Funnels', 'wp-slimstat'); ?></h2>
-            <p class="slimstat-gf-card__subtitle"><?php esc_html_e('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat'); ?></p>
-        </div>
-        <div class="slimstat-gf-card__actions">
-            <span class="slimstat-gf-pill"
-                  data-role="usage"
-                  data-active="<?php echo esc_attr((string) $funnel_count); ?>"
-                  data-max="<?php echo esc_attr((string) $max_funnels); ?>">
-                <?php echo esc_html(sprintf(
-                    /* translators: 1: used funnels, 2: maximum funnels */
-                    __('%1$d of %2$d used', 'wp-slimstat'),
-                    $funnel_count,
-                    $max_funnels
-                )); ?>
-            </span>
-            <?php if ($show_add_cta) : ?>
-                <button type="button"
-                        class="button button-primary slimstat-gf-cta"
-                        data-action="open-funnel-builder"
-                        data-mode="create">
-                    <?php esc_html_e('+ Add Funnel', 'wp-slimstat'); ?>
-                </button>
-            <?php endif; ?>
-        </div>
-    </header>
-
     <?php if (0 === $funnel_count) : ?>
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
