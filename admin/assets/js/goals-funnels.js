@@ -858,6 +858,90 @@
     });
 
     // ============================================================
+    //  Site analyzer — "Analyze my site" + "Re-analyze" handlers.
+    //  The card itself is server-rendered; this just swaps states
+    //  on demand. The "Use this …" buttons inside the result list
+    //  reuse the existing open-goal-drawer / open-funnel-builder
+    //  handlers via data-goal / data-funnel attributes — zero new
+    //  JS for click-to-instantiate.
+    // ============================================================
+
+    var _analyzeInflight = null;
+    var _reAnalyzeBlockedUntil = 0;
+
+    function showAnalyzerLoading($card, isLoading) {
+        $card.find('[data-role="suggestions-loading"]').prop('hidden', !isLoading);
+        $card.find('[data-action="analyze-site"]').prop('disabled', isLoading);
+    }
+
+    function renderAnalyzerResult() {
+        // The server has already cached the fresh result. Reload reuses the
+        // existing PHP render path so JS doesn't have to duplicate the
+        // partial's three-state markup. Trade-off: loses any in-progress
+        // drawer state — acceptable for an explicit user-initiated action.
+        window.location.reload();
+    }
+
+    $body.on('click', '[data-action="analyze-site"]', function () {
+        var $btn = $(this);
+        var $card = $btn.closest('.slimstat-gf-suggestions');
+        if (!$card.length) return;
+
+        var force = !!$btn.data('force');
+
+        // Re-analyze debounce: prevent rapid re-firing.
+        if (force) {
+            var now = Date.now();
+            if (now < _reAnalyzeBlockedUntil) return;
+            _reAnalyzeBlockedUntil = now + 5000;
+        }
+
+        // Cancel any in-flight request from a prior click.
+        if (_analyzeInflight) {
+            try { _analyzeInflight.abort(); } catch (e) { /* no-op */ }
+            _analyzeInflight = null;
+        }
+
+        showAnalyzerLoading($card, true);
+
+        var thisRequest = $.ajax({
+            method: 'POST',
+            url:    ajaxUrl,
+            data: {
+                action:   'slimstat_analyze_site',
+                security: nonce,
+                force:    force ? '1' : ''
+            },
+            dataType: 'json',
+            timeout: 15000
+        });
+        _analyzeInflight = thisRequest;
+
+        thisRequest.done(function (response) {
+            if (response && response.success) {
+                renderAnalyzerResult();
+            } else {
+                var msg = (response && response.data && response.data.message) || __('Analysis failed.');
+                window.alert(msg);
+                showAnalyzerLoading($card, false);
+            }
+        }).fail(function (jqXHR, textStatus) {
+            showAnalyzerLoading($card, false);
+            if (textStatus === 'abort') return; // user-initiated cancel
+            var msg = (textStatus === 'timeout')
+                ? __('Analysis is taking longer than expected. Try shortening the date range or reducing data volume.')
+                : __('Network error while analyzing site.');
+            window.alert(msg);
+        }).always(function () {
+            // Compare-and-swap: only null the slot if it's still ours, so a
+            // stale completion doesn't clobber a newer in-flight request.
+            if (_analyzeInflight === thisRequest) {
+                _analyzeInflight = null;
+            }
+        });
+    });
+
+    // ============================================================
     //  Keyboard — Esc closes, Enter in sheet confirms
     // ============================================================
 

@@ -127,6 +127,10 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         Functions\when('get_transient')->justReturn(false);
         Functions\when('set_transient')->justReturn(true);
         Functions\when('delete_transient')->justReturn(true);
+
+        // WP helpers various tests need; cheap to stub once globally.
+        Functions\when('human_time_diff')->justReturn('a moment');
+        Functions\when('get_current_blog_id')->justReturn(1);
     }
 
     protected function setGoals(array $goals): void

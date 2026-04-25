@@ -917,6 +917,14 @@ class wp_slimstat_reports
             ],
 
             // Goals & Funnels reports
+            'slim_p9_00' => [
+                'title'         => __('Suggested for your site', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_suggestions'],
+                'callback_args' => [],
+                'classes'       => ['full-width'],
+                'locations'     => ['slimview6'],
+                'tooltip'       => __('Scan your visit data and surface goals & funnels tailored to your site. Reads the last 30 days. Nothing leaves your server.', 'wp-slimstat'),
+            ],
             'slim_p9_01' => [
                 'title'         => __('Goals', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_goals'],
@@ -1816,6 +1824,46 @@ class wp_slimstat_reports
             __('+ Add Funnel', 'wp-slimstat'),
             $state['show_add_cta']
         );
+    }
+
+    /**
+     * Renders the "Suggested for your site" card on slimview6. Empty state
+     * shows a single Analyze CTA; result state renders cached suggestions
+     * with one-click "Use this …" buttons that reuse the existing goal
+     * drawer / funnel builder via data-goal / data-funnel attributes.
+     *
+     * Skips entirely in widget/shortcode/email contexts — suggestions only
+     * make sense in the admin builder UI.
+     */
+    public static function show_suggestions($_args = [])
+    {
+        if (!empty($_args['is_widget'])) {
+            return;
+        }
+
+        if (!class_exists('wp_slimstat_site_analyzer')) {
+            include_once __DIR__ . '/wp-slimstat-site-analyzer.php';
+        }
+
+        // Read cached result only — never trigger the SQL on page render.
+        // Empty/no-results/results state is chosen from the cache; the
+        // Analyze button is the only path that runs the detection query.
+        $cached = wp_slimstat_site_analyzer::get_cached_analysis();
+        $has_cache = null !== $cached;
+
+        $analyzed_at = $has_cache ? (int) ($cached['analyzed_at'] ?? 0) : 0;
+        $suggestions = $has_cache && is_array($cached['suggestions'] ?? null) ? $cached['suggestions'] : [];
+        $range_days  = $has_cache ? (int) ($cached['range_days'] ?? 30) : 30;
+
+        $is_pro     = class_exists('wp_slimstat') && wp_slimstat::pro_is_installed();
+        $max_goals  = (int) apply_filters('slimstat_max_goals', 1);
+        $goals      = get_option('slimstat_goals', []);
+        $active_goal_count = is_array($goals) ? count(array_filter($goals, function ($g) {
+            return !empty($g['active']);
+        })) : 0;
+        $goal_at_limit = $active_goal_count >= $max_goals;
+
+        include __DIR__ . '/partials/goals-funnels/suggestions-card.php';
     }
 
     /**

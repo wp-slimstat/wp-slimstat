@@ -285,6 +285,7 @@ class wp_slimstat_admin
                 'slimstat_delete_funnel'         => 'ajax_delete_funnel',
                 'slimstat_load_funnel_data'      => 'ajax_load_funnel_data',
                 'slimstat_test_funnel_step'      => 'ajax_test_funnel_step',
+                'slimstat_analyze_site'          => 'ajax_analyze_site',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -397,6 +398,11 @@ class wp_slimstat_admin
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
 
         self::register_goals_funnels_header_hooks();
+
+        // Third-party plugin activate/deactivate (e.g. WooCommerce, GiveWP, EDD)
+        // changes which suggestions the analyzer should produce — bust its cache.
+        add_action('activated_plugin',   [self::class, 'invalidate_site_analysis_cache']);
+        add_action('deactivated_plugin', [self::class, 'invalidate_site_analysis_cache']);
 
         // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
         foreach (self::get_index_definitions() as $def) {
@@ -1723,6 +1729,11 @@ class wp_slimstat_admin
         // same second (time() granularity was causing cache-miss no-ops).
         update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
 
+        // Goal/funnel saves can match (and therefore dedup) a suggestion the
+        // analyzer would emit — invalidate site-analysis cache from the same
+        // single entry point.
+        self::invalidate_site_analysis_cache();
+
         if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
             return;
         }
@@ -2109,6 +2120,49 @@ class wp_slimstat_admin
             'visitors' => (int) ($data['uniques'] ?? 0),
             'total'    => (int) ($data['total'] ?? 0),
         ]);
+    }
+
+    /**
+     * AJAX entry-point for the "Analyze my site" button on slimview6.
+     * Returns a list of goal/funnel suggestions tailored to the user's data
+     * (active plugins + recent visit patterns). Backed by a 24h transient
+     * keyed on a microtime-versioned key so cache invalidation is
+     * backend-agnostic (Redis/Memcached safe).
+     */
+    public static function ajax_analyze_site()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
+        if (!class_exists('wp_slimstat_site_analyzer')) {
+            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-site-analyzer.php';
+        }
+
+        // The button always runs a fresh detection. The Re-analyze variant
+        // first invalidates the cache so a 24h-old result doesn't stick.
+        $force = isset($_POST['force']) && '1' === (string) $_POST['force'];
+        if ($force) {
+            wp_slimstat_site_analyzer::invalidate_cache();
+        }
+        $result = wp_slimstat_site_analyzer::run_analysis();
+
+        wp_send_json_success($result);
+    }
+
+    /**
+     * Bridge that other code paths (third-party plugin activate/deactivate,
+     * goal/funnel save) call to invalidate the analyzer cache. Routed through
+     * the analyzer class so the cache-key constant has a single source of truth.
+     */
+    public static function invalidate_site_analysis_cache()
+    {
+        if (!class_exists('wp_slimstat_site_analyzer')) {
+            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-site-analyzer.php';
+        }
+        wp_slimstat_site_analyzer::invalidate_cache();
     }
 
     // END: Goals & Funnels CRUD

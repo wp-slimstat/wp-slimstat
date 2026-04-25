@@ -1133,3 +1133,182 @@
     min-width: 2px;
     transition: width 0.3s ease;
 }
+
+/* ============================================================
+   Suggestions card (slim_p9_00)
+   Renders above the goals card on slimview6. Three states via
+   data-state="empty|no-results|results" on the .slimstat-gf-suggestions
+   wrapper (server-rendered).
+   ============================================================ */
+
+.slimstat-gf-suggestions {
+    /* Inherits .slimstat-gf-card padding/background; just adds a subtle
+       accent so suggestions read as guidance, not regular content. */
+    border-left: 3px solid var(--ss-brand-500);
+}
+
+.slimstat-gf-suggestions__empty {
+    text-align: center;
+    padding: var(--ss-space-4) var(--ss-space-3);
+}
+
+.slimstat-gf-suggestions__empty-icon {
+    font-size: 32px;
+    margin-bottom: var(--ss-space-2);
+}
+
+.slimstat-gf-suggestions__empty-title {
+    margin: 0 0 var(--ss-space-2);
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-suggestions__empty-body {
+    margin: 0 auto var(--ss-space-3);
+    max-width: 56ch;
+    color: var(--ss-text-secondary);
+    line-height: 1.5;
+}
+
+.slimstat-gf-suggestions__disclosure {
+    margin: var(--ss-space-2) 0 0;
+    font-size: var(--ss-text-sm);
+    color: var(--ss-text-tertiary);
+}
+
+.slimstat-gf-suggestions__no-results {
+    text-align: center;
+    padding: var(--ss-space-3);
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-gf-suggestions__head {
+    margin-bottom: var(--ss-space-3);
+}
+
+.slimstat-gf-suggestions__meta {
+    margin: 0;
+    font-size: var(--ss-text-sm);
+    color: var(--ss-text-tertiary);
+}
+
+.slimstat-gf-suggestions__re-analyze {
+    /* Use button-link styling already defined by core admin.css; the
+       inline color override here just matches our token system. */
+    color: var(--ss-brand-500);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+}
+
+.slimstat-gf-suggestions__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--ss-space-3);
+}
+
+.slimstat-gf-suggestion {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ss-space-3);
+    padding: var(--ss-space-3) var(--ss-space-4);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    background: var(--ss-surface);
+}
+
+.slimstat-gf-suggestion__body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.slimstat-gf-suggestion__title {
+    margin: 0 0 var(--ss-space-1);
+    font-size: var(--ss-text-md);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-suggestion__icon {
+    font-size: 1.1em;
+}
+
+.slimstat-gf-suggestion__kind {
+    /* Tiny pill that differentiates goal vs funnel at a glance. */
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-hover);
+    color: var(--ss-text-tertiary);
+    font-size: var(--ss-text-xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.slimstat-gf-suggestion__rationale {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    line-height: 1.4;
+}
+
+.slimstat-gf-suggestion__actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--ss-space-1);
+}
+
+.slimstat-gf-suggestion__limit-note {
+    margin: 0;
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-tertiary);
+    max-width: 28ch;
+    text-align: right;
+    line-height: 1.4;
+}
+
+.slimstat-gf-suggestions__loading {
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    margin-top: var(--ss-space-3);
+    padding: var(--ss-space-2);
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-suggestions__loading-text {
+    /* Spinner is a 16x16 element; pull the text up to align baseline. */
+    line-height: 20px;
+}
+
+/* ----- Responsive: stack the suggestion row vertically below 700px ----- */
+@media (max-width: 700px) {
+    .slimstat-gf-suggestion {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .slimstat-gf-suggestion__actions {
+        align-items: stretch;
+    }
+    .slimstat-gf-suggestion__limit-note {
+        text-align: left;
+        max-width: none;
+    }
+    .slimstat-gf-cta {
+        /* Ensure tap target ≥ 44px for mobile. */
+        min-height: 44px;
+    }
+}
