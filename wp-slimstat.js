@@ -714,7 +714,21 @@ var SlimStat = (function () {
             var url = endpoints[method];
             if (!url) return trySend(i + 1);
             if (useBeacon && navigator.sendBeacon && i === 0) {
-                // Beacon is fire-and-forget; we assume success for queue processing
+                // Never use fire-and-forget transport when we still need a tracking ID
+                // from the first successful response. Beacon only tells us payload was queued,
+                // not that the server accepted it; treating that as success can create a silent
+                // failure in cached/proxied environments.
+                if (requiresIdResponse) {
+                    return sendXHR(
+                        url,
+                        function () {
+                            trySend(i + 1);
+                        },
+                        { useNonce: params.is_logged_in === "1" }
+                    );
+                }
+
+                // For non-ID updates (follow-up events), beacon is acceptable best-effort.
                 var ok = navigator.sendBeacon(url, payload);
                 if (ok) {
                     debugRecord(method, url, 0, "beacon", null, null);
