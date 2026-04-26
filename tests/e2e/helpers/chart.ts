@@ -8,7 +8,34 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPool } from './setup';
-import { WP_ROOT } from './env';
+import { WP_ROOT, BASE_URL } from './env';
+
+// ─── HTTP-driven AJAX helpers (used by browser-context specs) ───────────────
+
+/**
+ * Fixed past UTC range used by chart AJAX specs. Picked so existing rows
+ * (or their absence) don't influence allowlist/validation outcomes.
+ *   start: 2026-02-01 00:00 UTC
+ *   end:   2026-03-31 23:59 UTC
+ */
+export const CHART_TEST_RANGE = { start: 1738368000, end: 1743379199 } as const;
+
+/**
+ * Obtain a `slimstat_chart_nonce` via the nonce-helper MU plugin.
+ * Caller must have installed `nonce-helper-mu-plugin.php` in beforeAll.
+ * Auth context is the test runner's WP session (admin, per harness).
+ */
+export async function getChartNonce(page: import('@playwright/test').Page): Promise<string> {
+  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
+    form: { action: 'test_create_nonce', nonce_action: 'slimstat_chart_nonce' },
+  });
+  if (!res.ok()) throw new Error(`test_create_nonce failed: HTTP ${res.status()}`);
+  const body = await res.json();
+  if (!body?.success || !body?.data?.nonce) {
+    throw new Error(`test_create_nonce returned unexpected body: ${JSON.stringify(body)}`);
+  }
+  return body.data.nonce;
+}
 
 // ─── WP-CLI chart AJAX simulation ───────────────────────────────────────────
 
