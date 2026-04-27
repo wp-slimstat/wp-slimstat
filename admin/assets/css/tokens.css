@@ -1,0 +1,138 @@
+/*
+ * WP SlimStat design tokens.
+ *
+ * Source of truth for the modern admin layer. Used by goals-funnels.css and any
+ * future component that adopts the layer. All colors, radii, shadows, spacing
+ * and motion values for new CSS reference --ss-* tokens exclusively.
+ *
+ * LEGACY ALIASES (--slimstat-*, --gdpr-*) are preserved at their exact existing
+ * values so the datepicker (admin/assets/css/daterangepicker/slimstat-datepicker-styles.css)
+ * and GDPR banner (assets/css/gdpr-banner.css) keep their current appearance.
+ * Do NOT "unify" those values with the modern brand palette — regression risk.
+ *
+ * @since 5.5.0
+ */
+
+:root {
+    /* ─── Color — brand ramp (funnel bars, hero accent, primary CTAs) ─── */
+    --ss-brand-900: #b31033;
+    --ss-brand-700: #dc3232;   /* legacy-compatible with --slimstat-primary */
+    --ss-brand-500: #e8294c;   /* primary accent */
+    --ss-brand-300: #ff6b7d;
+    --ss-brand-200: #ffa3ad;
+    --ss-brand-100: #ffd7dc;
+
+    /* ─── Color — neutrals / text ─── */
+    --ss-text-primary: #0f172a;
+    --ss-text-strong: #111827;
+    --ss-text-body: #202224;
+    --ss-text-muted: #56585a;
+    --ss-text-secondary: #646970;
+    --ss-text-tertiary: #676e74;
+    --ss-text-meta: #64748b;
+    --ss-text-disabled: #9ba1a6;
+    --ss-text-placeholder: #94a3b8;
+
+    /* ─── Color — surfaces ─── */
+    --ss-surface: #ffffff;
+    --ss-surface-tint: #f6f7f7;
+    --ss-surface-raised: #ffffff;
+    --ss-page-bg: #f0f0f1;
+    --ss-hover: #e2e8f0;
+    --ss-hover-soft: #e6e7eb;
+    --ss-overlay: rgba(255, 255, 255, 0.85);
+
+    /* ─── Color — dividers ─── */
+    --ss-border: #e2e4e7;
+    --ss-border-soft: #ebebeb;
+    --ss-border-tooltip: #e0e0e0;
+
+    /* ─── Color — semantic ─── */
+    --ss-success-fg: #18A456;
+    --ss-success-bg: #18A4561A;
+
+    --ss-warning-fg: #dba617;
+    --ss-warning-bg: #fff8e5;
+
+    --ss-danger-fg: #b32d2e;
+    --ss-danger-fg-hover: #a00;
+    --ss-danger-bg: #E72929;
+    --ss-danger-bg-strong: #FF3A3A;
+
+    --ss-info-fg: #2271b1;
+
+    /* ─── Radii ─── */
+    --ss-radius-pill: 999px;
+    --ss-radius-lg: 18px;
+    --ss-radius-md: 12px;
+    --ss-radius-sm: 8px;
+    --ss-radius-xs: 6px;
+    --ss-radius-2xs: 4px;
+
+    /* ─── Spacing (8px base) ─── */
+    --ss-space-0: 0;
+    --ss-space-1: 4px;
+    --ss-space-2: 8px;
+    --ss-space-3: 12px;
+    --ss-space-4: 16px;
+    --ss-space-5: 20px;
+    --ss-space-6: 24px;
+    --ss-space-7: 28px;
+    --ss-space-8: 32px;
+    --ss-space-10: 40px;
+
+    /* ─── Shadows ─── */
+    --ss-shadow-card: 0 1px 4px rgba(60, 60, 90, 0.04);
+    --ss-shadow-raised: 0 2px 8px rgba(60, 60, 90, 0.10);
+    --ss-shadow-drawer: -8px 0 24px rgba(15, 23, 42, 0.08);
+    --ss-shadow-modal: 0 12px 32px rgba(15, 23, 42, 0.18);
+
+    /* ─── Motion ─── */
+    --ss-duration-fast: 0.15s;
+    --ss-duration-base: 0.25s;
+    --ss-duration-slow: 0.4s;
+    --ss-easing: ease;
+    --ss-easing-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ─── Typography ─── */
+    --ss-font-modern: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --ss-font-brand: "Open Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --ss-font-num: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+    --ss-text-xs: 11px;
+    --ss-text-sm: 12px;
+    --ss-text-base: 13px;
+    --ss-text-md: 14px;
+    --ss-text-lg: 16px;
+    --ss-text-xl: 20px;
+    --ss-text-2xl: 24px;
+
+    /* ─── Layout — drawer / sheet ─── */
+    --ss-drawer-width: 420px;
+    --ss-builder-width: 720px;
+    --ss-sheet-max-width: 480px;
+
+    /* ================================================================= */
+    /* LEGACY ALIASES — must preserve exact values. Do NOT refactor.      */
+    /* Consumers: admin/assets/css/daterangepicker/slimstat-datepicker-styles.css */
+    /*            assets/css/gdpr-banner.css                              */
+    /* ================================================================= */
+    --slimstat-primary: #dc3232;
+    --slimstat-primary-hover: #b32d2e;
+    --slimstat-border: #ddd;
+    --slimstat-background: #fff;
+    --slimstat-text: #333;
+    --slimstat-light-bg: #f8f8f8;
+
+    --gdpr-border: #dee2e6;
+    --gdpr-shadow: rgba(0, 0, 0, 0.1);
+    --gdpr-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --ss-duration-fast: 0s;
+        --ss-duration-base: 0s;
+        --ss-duration-slow: 0s;
+    }
+}

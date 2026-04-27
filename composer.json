@@ -76,9 +76,11 @@
     "test:browscap-filesystem": "php tests/browscap-wp-filesystem-test.php",
     "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
     "test:browscap-bot-safety": "php tests/browscap-bot-safety-net-test.php",
-    "test:unit": "phpunit --configuration phpunit.xml.dist",
+    "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
+    "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
     "test:all": [
       "@test:unit",
+      "@test:integration",
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
