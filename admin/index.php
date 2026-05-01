@@ -15,6 +15,16 @@ class wp_slimstat_admin
     public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
+    /**
+     * Dimensions for which the filter-options search uses unanchored LIKE
+     * (%needle%) instead of the default left-anchored prefix match. These are
+     * either multi-token fields (notes, category) or free-form strings where
+     * users naturally search fragments (user_agent, outbound_resource URLs).
+     */
+    private const FILTER_SEARCH_SUBSTRING_DIMENSIONS = [
+        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent',
+    ];
+
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -2089,6 +2099,36 @@ class wp_slimstat_admin
         // Get distinct non-empty values
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
 
+        // Optional server-side search (layer 2 of #298). Only applies to varchar
+        // columns — searching numeric dimensions falls back to the legacy DISTINCT.
+        $search_raw = $_POST['search'] ?? '';
+        $search = '';
+        if (is_string($search_raw)) {
+            $search = trim(sanitize_text_field($search_raw));
+            if (strlen($search) < 2 || strlen($search) > 64) {
+                $search = '';
+            }
+        }
+        if ($column_type !== 'varchar') {
+            $search = '';
+        }
+
+        // Cache lookup (layer 3 of #298). Key must account for anything that
+        // changes the result set: blog, DB host (External DB addon), capability
+        // gate, dimension, hour-bucketed time range, effective limit, and search.
+        $cache_key = self::build_filter_options_cache_key(
+            $dimension,
+            $time_start,
+            $time_end,
+            $search,
+            $limit
+        );
+        $cached = self::filter_options_cache_get($cache_key);
+        if (is_array($cached)) {
+            wp_send_json_success($cached);
+            exit();
+        }
+
         // Build SQL query directly to avoid Query class interference with global filters
         $where_clauses = [];
 
@@ -2105,6 +2145,15 @@ class wp_slimstat_admin
             // Exclude NULLs and zeros for numeric columns
             $where_clauses[] = $safe_dimension . ' IS NOT NULL';
             $where_clauses[] = $safe_dimension . ' <> 0';
+        }
+
+        // Append LIKE filter when a server-side search term was supplied.
+        if ($search !== '') {
+            $escaped = wp_slimstat::$wpdb->esc_like($search);
+            $like_pattern = in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true)
+                ? '%' . $escaped . '%'
+                : $escaped . '%';
+            $where_clauses[] = wp_slimstat::$wpdb->prepare($safe_dimension . ' LIKE %s', $like_pattern);
         }
 
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
@@ -2165,6 +2214,19 @@ class wp_slimstat_admin
                 }
             }
             $results = $expanded;
+        }
+
+        // After splitting multi-value rows, re-filter split segments by the
+        // server-side search term so the caller gets only matching segments,
+        // not every segment from rows where any sibling matched.
+        if ($search !== '' && (isset($multi_value_separators[$dimension]) || $dimension === 'notes')) {
+            $has_mb       = function_exists('mb_strtolower');
+            $needle       = $has_mb ? mb_strtolower($search) : strtolower($search);
+            $is_substring = in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true);
+            $results = array_values(array_filter($results, function ($row) use ($needle, $is_substring, $has_mb) {
+                $haystack = $has_mb ? mb_strtolower($row['value']) : strtolower($row['value']);
+                return $is_substring ? (strpos($haystack, $needle) !== false) : (strpos($haystack, $needle) === 0);
+            }));
         }
 
         // Cap expanded results to prevent explosion from splitting
@@ -2230,8 +2292,83 @@ class wp_slimstat_admin
             }
         }
 
+        self::filter_options_cache_set(
+            $cache_key,
+            $options,
+            self::filter_options_cache_ttl($time_end)
+        );
+
         wp_send_json_success($options);
         exit();
+    }
+
+    /**
+     * Composite cache key for get_filter_options(). Must include every variable
+     * that changes the result set: blog (multisite), DB host (External DB addon
+     * can point to another DB), capability gate (per-role visibility), dimension,
+     * hour-bucketed time range (increases hit rate for rolling windows), the
+     * effective limit (respects third-party `slimstat_filter_options_limit`
+     * consumers), and the search term.
+     */
+    private static function build_filter_options_cache_key(
+        string $dimension,
+        ?int $time_start,
+        ?int $time_end,
+        string $search,
+        int $limit
+    ): string {
+        $blog_id = function_exists('get_current_blog_id') ? (int) get_current_blog_id() : 0;
+        $dbhost  = '';
+        if (isset(wp_slimstat::$wpdb) && is_object(wp_slimstat::$wpdb) && isset(wp_slimstat::$wpdb->dbhost)) {
+            $dbhost = (string) wp_slimstat::$wpdb->dbhost;
+        }
+        $dbhost_hash = substr(md5($dbhost), 0, 8);
+        $can_view        = (string) (wp_slimstat::$settings['can_view'] ?? '');
+        $capability      = (string) (wp_slimstat::$settings['capability_can_view'] ?? '');
+        $capability_hash = substr(md5($capability . '|' . $can_view), 0, 8);
+        $ts_start_bucket = $time_start ? (int) floor((int) $time_start / 3600) : 0;
+        $ts_end_bucket   = $time_end ? (int) floor((int) $time_end / 3600) : 0;
+        $search_hash     = $search === '' ? '' : substr(md5($search), 0, 8);
+        return sprintf(
+            'fopts_%d_%s_%s_%s_%d_%d_%d_%s',
+            $blog_id,
+            $dbhost_hash,
+            $capability_hash,
+            $dimension,
+            $ts_start_bucket,
+            $ts_end_bucket,
+            $limit,
+            $search_hash
+        );
+    }
+
+    private static function filter_options_cache_ttl(?int $time_end): int
+    {
+        // Historical data (range ends > 1h ago) never changes — cache it longer.
+        if ($time_end && (int) $time_end < (time() - 3600)) {
+            return 3600;
+        }
+        return 300;
+    }
+
+    private static function filter_options_cache_get(string $key)
+    {
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            $found = false;
+            $data  = wp_cache_get($key, 'slimstat_filter_options', false, $found);
+            return $found ? $data : null;
+        }
+        $data = get_transient('slimstat_' . $key);
+        return $data === false ? null : $data;
+    }
+
+    private static function filter_options_cache_set(string $key, $data, int $ttl): void
+    {
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            wp_cache_set($key, $data, 'slimstat_filter_options', $ttl);
+            return;
+        }
+        set_transient('slimstat_' . $key, $data, $ttl);
     }
 
     // END: get_filter_options
