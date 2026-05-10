@@ -2096,7 +2096,9 @@ class wp_slimstat_reports
     public static function inline_help($_text = '', $_echo = true)
     {
         if (is_admin() && !empty($_text)) {
-            $wrapped_text = sprintf("<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>%s</span></span>", $_text);
+            // CVE-2026-7634: defang attacker-controlled $_text. wp_kses_post preserves
+            // the formatting tags existing tooltips rely on.
+            $wrapped_text = sprintf("<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>%s</span></span>", wp_kses_post($_text));
         } else {
             $wrapped_text = '';
         }

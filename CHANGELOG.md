@@ -1,5 +1,9 @@
 = 5.4.12 - 2026-04-18 =
 
+**Security**
+
+- Patched unauthenticated stored XSS via the `User-Agent` header ([CVE-2026-7634](https://nvd.nist.gov/vuln/detail/CVE-2026-7634), CVSS 7.2). `Storage::updateRow()` now mirrors `insertRow()`'s `sanitize_text_field()`/`sanitize_url()` loop so a redirect (`Processor::updateContentType`) or AJAX follow-up (`Ajax::process` navigation/outbound/event branches) can no longer overwrite the inserted row with raw HTML. The User-Agent header is also sanitized on capture in `Browscap::_get_user_agent()`, and `wp_slimstat_reports::inline_help()` defangs unsafe HTML via `wp_kses_post()` before rendering — defense in depth across capture, storage, and output. Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence. Required `show_complete_user_agent_tooltip` to be enabled (off by default) for the stored payload to render in the admin Browsers report.
+
 **Bot detection hardening**
 
 - Chrome-based mobile Googlebot and Bingbot are now correctly blocked when Browscap classifies them as mobile devices ([#14843](https://wp-slimstat.com/), [#291](https://github.com/wp-slimstat/wp-slimstat/issues/291)). The bot-detection safety net previously only re-checked desktop-classified UAs (`browser_type === 0`); it now re-checks every non-crawler type (desktop, mobile, touch) so Android/Chrome-suffixed crawler UAs no longer slip through.

@@ -31,6 +31,19 @@ class Storage
 		$id = abs(intval($data['id']));
 		unset($data['id']);
 
+		// CVE-2026-7634: mirror insertRow()'s sanitization so an UPDATE cannot
+		// overwrite the row with raw HTML. Run before array_filter so values that
+		// sanitize to '' get dropped along with originals.
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$data[$key] = array_map('sanitize_text_field', $value);
+			} elseif ('resource' === $key || 'outbound_resource' === $key) {
+				$data[$key] = sanitize_url($value);
+			} else {
+				$data[$key] = sanitize_text_field($value);
+			}
+		}
+
 		$data = array_filter($data);
 
 		$table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
