@@ -311,9 +311,10 @@ class Chart
             if (!isset($allowed[$normalized])) {
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
             }
-            // Wrap: allowlisted clauses may contain a top-level OR, which
-            // would otherwise rebind and drop the preceding AND filters.
-            $wrapped     = '(' . $normalized . ')';
+            $canonical   = $allowed[$normalized]; // splice trusted text, never the user-derived $normalized
+            // Wrap: allowlisted clauses may contain a top-level OR that would
+            // otherwise rebind and drop the preceding AND filters.
+            $wrapped     = '(' . $canonical . ')';
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
@@ -536,7 +537,7 @@ class Chart
      * Rebuilt per request because dynamic clauses (home_url(), date_i18n(...))
      * are evaluated at init() time.
      *
-     * @return array<string,bool> normalized-clause => true
+     * @return array<string,string> normalized-clause => canonical clause text
      */
     private static function getAllowedWhereClauses(): array
     {
@@ -570,7 +571,7 @@ class Chart
             }
             $normalized = self::normalizeSqlWhitespace($where);
             if ('' !== $normalized) {
-                $cache[$normalized] = true;
+                $cache[$normalized] = $where;
             }
         }
 
