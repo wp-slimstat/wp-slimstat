@@ -287,4 +287,64 @@ assert_contains('&lt;b&gt;bold&lt;/b&gt;', $html, 'Notes must be HTML-escaped');
 $html = render_column('fingerprint', "test\x00<script>xss</script>");
 assert_not_contains('<script>xss</script>', $html, 'Null byte must not bypass escaping');
 
+// ─── CVE-2026-7634: Browsers report user_agent tooltip XSS ──────────
+
+function render_browser_row(string $user_agent, string $tooltip_setting): string
+{
+    wp_slimstat::$settings['show_complete_user_agent_tooltip'] = $tooltip_setting;
+
+    $test_data = [
+        [
+            'browser'         => 'Chrome',
+            'browser_version' => '120',
+            'user_agent'      => $user_agent,
+            'counthits'       => 1,
+        ],
+    ];
+
+    ob_start();
+    wp_slimstat_reports::raw_results_to_html([
+        'columns'   => 'browser',
+        'type'      => 'top',
+        'raw'       => make_data_callback($test_data),
+        'where'     => '',
+        'filter_op' => 'equals',
+    ]);
+    return ob_get_clean();
+}
+
+// Test 14: Malicious user_agent rendered with tooltip ON has script-like markup defanged.
+$html = render_browser_row('Mozilla/5.0 <img src=x onerror=alert(/XSS_94821/)>', 'on');
+assert_not_contains('onerror=', $html, 'onerror attribute must be stripped from rendered tooltip');
+assert_contains('Mozilla/5.0', $html, 'Benign UA prefix still rendered');
+
+// Test 15: <script> in user_agent is removed from rendered tooltip (wp_kses_post strips script).
+$html = render_browser_row('<script>alert(1)</script>UA', 'on');
+assert_not_contains('<script>alert(1)</script>', $html, 'script tag must be stripped from tooltip');
+
+// Test 16: Tooltip-OFF baseline — no tooltip span emitted, gating still works.
+$html = render_browser_row('Mozilla/5.0', 'off');
+assert_not_contains('slimstat-tooltip-content', $html, 'No tooltip span when setting is off');
+
+// Test 17: inline_help() preserves legitimate HTML used in existing tooltips (regression guard).
+$rendered = wp_slimstat_reports::inline_help('<strong>Tip:</strong> read the <a href="/docs">docs</a>', false);
+assert_contains('<strong>', $rendered, 'wp_kses_post preserves <strong> in tooltip text');
+assert_contains('</strong>', $rendered, 'wp_kses_post preserves </strong>');
+assert_contains('<a href="/docs">', $rendered, 'wp_kses_post preserves safe <a href> tags');
+
+// Test 18: inline_help() strips event-handler attributes.
+$rendered = wp_slimstat_reports::inline_help('<img src=x onerror=alert(1)>', false);
+assert_not_contains('onerror', $rendered, 'wp_kses_post strips onerror handler');
+
+// Test 19: inline_help() strips <script> tags entirely.
+$rendered = wp_slimstat_reports::inline_help('<script>alert(1)</script>after', false);
+assert_not_contains('<script', $rendered, 'wp_kses_post strips <script> tags');
+
+// Test 20: inline_help() preserves common formatting tags used in report tooltips (<em>, <br>, <p>, <span class>).
+$rendered = wp_slimstat_reports::inline_help('<em>note</em><br><p><span class="x">hi</span></p>', false);
+assert_contains('<em>', $rendered, 'wp_kses_post preserves <em>');
+assert_contains('<br', $rendered, 'wp_kses_post preserves <br>');
+assert_contains('<p>', $rendered, 'wp_kses_post preserves <p>');
+assert_contains('<span class="x">', $rendered, 'wp_kses_post preserves <span class>');
+
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

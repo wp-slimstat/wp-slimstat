@@ -266,17 +266,23 @@ class Browscap
 
     protected static function _get_user_agent()
     {
-
-        $user_agent = (empty($_SERVER['HTTP_USER_AGENT']) ? '' : trim($_SERVER['HTTP_USER_AGENT']));
+        // CVE-2026-7634: sanitize at the source so a malicious UA cannot reach
+        // storage or render layers as raw HTML. Mirrors the pattern used in
+        // Session.php and IPHashProvider.php. Bot/crawler regex matching downstream
+        // (UADetector::BOT_GENERIC_REGEX, BrowscapPHP) operates on alphanumerics
+        // and punctuation that sanitize_text_field preserves.
+        $user_agent = empty($_SERVER['HTTP_USER_AGENT'])
+            ? ''
+            : trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])));
         $real_user_agent = '';
         if (!empty($_SERVER['HTTP_X_DEVICE_USER_AGENT'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_DEVICE_USER_AGENT']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_DEVICE_USER_AGENT'])));
         } elseif (!empty($_SERVER['HTTP_X_ORIGINAL_USER_AGENT'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_ORIGINAL_USER_AGENT']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_ORIGINAL_USER_AGENT'])));
         } elseif (!empty($_SERVER['HTTP_X_MOBILE_UA'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_MOBILE_UA']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_MOBILE_UA'])));
         } elseif (!empty($_SERVER['HTTP_X_OPERAMINI_PHONE_UA'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_OPERAMINI_PHONE_UA']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_OPERAMINI_PHONE_UA'])));
         }
 
         if ('' !== $real_user_agent && '0' !== $real_user_agent && (strlen($real_user_agent) >= 5 || ('' === $user_agent || '0' === $user_agent))) {
