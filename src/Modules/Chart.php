@@ -311,7 +311,10 @@ class Chart
             if (!isset($allowed[$normalized])) {
                 throw new \Exception(__('Invalid chart filter expression.', 'wp-slimstat'));
             }
-            $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $normalized : $normalized;
+            // Wrap: allowlisted clauses may contain a top-level OR, which
+            // would otherwise rebind and drop the preceding AND filters.
+            $wrapped     = '(' . $normalized . ')';
+            $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
         // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
