@@ -315,6 +315,7 @@ function render_browser_row(string $user_agent, string $tooltip_setting): string
 
 // Test 14: Malicious user_agent rendered with tooltip ON has script-like markup defanged.
 $html = render_browser_row('Mozilla/5.0 <img src=x onerror=alert(/XSS_94821/)>', 'on');
+assert_contains('slimstat-tooltip-content', $html, 'Tooltip container is emitted when setting is on');
 assert_not_contains('onerror=', $html, 'onerror attribute must be stripped from rendered tooltip');
 assert_contains('Mozilla/5.0', $html, 'Benign UA prefix still rendered');
 

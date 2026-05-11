@@ -240,6 +240,7 @@ namespace {
     // performed for this field. This is stricter (and safer) than pre-fix.
     assert_true(empty(\SlimStat\Utils\FakeQueryRecorder::$setRawParams['outbound_resource'] ?? []), 'javascript: outbound_resource must not reach setRaw');
     assert_true(!array_key_exists('outbound_resource', \SlimStat\Utils\FakeQueryRecorder::$setClauses), 'javascript: outbound_resource must not appear in SET');
+    assert_same(0, \SlimStat\Utils\FakeQueryRecorder::$executeCalls, 'no SQL is executed when the only update field is sanitized away');
 
     // ─── Test 5b: outbound_resource — valid URL still flows through setRaw ─
 
