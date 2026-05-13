@@ -1,3 +1,21 @@
+= 5.4.12 - 2026-05-13 =
+
+**Security**
+
+- Authenticated SQL injection in the chart AJAX endpoint (`wp_ajax_slimstat_fetch_chart_data`) is now blocked. `chart_data.where` is validated against the registered report definitions before being inlined into the SQL query — only WHERE clauses declared by trusted reports (and by Pro addons that register reports via the `slimstat_reports_info` filter) are accepted. Reported via Patchstack (CVSS 8.5, High). The `data1` / `data2` allowlist introduced in PR #232 already covered the aggregate-expression vector; this release closes the parallel `where` vector.
+- Patched unauthenticated stored XSS via the `User-Agent` header ([CVE-2026-7634](https://nvd.nist.gov/vuln/detail/CVE-2026-7634), CVSS 7.2). `Storage::updateRow()` now mirrors `insertRow()`'s `sanitize_text_field()`/`sanitize_url()` loop so a redirect (`Processor::updateContentType`) or AJAX follow-up (`Ajax::process` navigation/outbound/event branches) can no longer overwrite the inserted row with raw HTML. The User-Agent header is also sanitized on capture in `Browscap::_get_user_agent()`, and `wp_slimstat_reports::inline_help()` defangs unsafe HTML via `wp_kses_post()` before rendering — defense in depth across capture, storage, and output. Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence. Required `show_complete_user_agent_tooltip` to be enabled (off by default) for the stored payload to render in the admin Browsers report.
+
+**Bot detection hardening**
+
+- Chrome-based mobile Googlebot and Bingbot are now correctly blocked when Browscap classifies them as mobile devices (#14843, [#291](https://github.com/wp-slimstat/wp-slimstat/issues/291)). The bot-detection safety net previously only re-checked desktop-classified UAs (`browser_type === 0`); it now re-checks every non-crawler type (desktop, mobile, touch) so Android/Chrome-suffixed crawler UAs no longer slip through.
+- Google-InspectionTool mobile UA is now detected as a crawler on both client and server tracking modes.
+- `BOT_GENERIC_REGEX` extended with 15 new vendor-specific tokens to catch bare-name bots that expose neither a URL nor a conventional `bot`/`crawl`/`spider` keyword: Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner (new March 2026), Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai.
+
+**Tests**
+
+- 40-cell local real-production matrix (10 UAs × 2 tracking modes × 2 branches) verified every bot blocked on the fix branch with zero regressions on real browsers.
+- Unit tests converted to static `@dataProvider` methods for PHPUnit 10/11 compatibility.
+
 = 5.4.11 - 2026-04-17 =
 
 **Report fixes**

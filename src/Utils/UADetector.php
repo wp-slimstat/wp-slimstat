@@ -10,7 +10,7 @@ class UADetector
     //		2: mobile
 
     /** Generic bot detection regex — shared with Browscap::apply_bot_safety_net(). */
-    public const BOT_GENERIC_REGEX = '#(robot|bot[\s\-_\/\)]|bot$|blog|checker|crawl|feed|fetcher|libwww|[^\.e]link\s?|parser|reader|spider|verifier|href|https?\://|.+(?:\@|\s?at\s?)[a-z0-9_\-]+(?:\.|\s?dot\s?)|www[0-9]?\.[a-z0-9_\-]+\..+|\/.+\.(s?html?|aspx?|php5?|cgi))#i';
+    public const BOT_GENERIC_REGEX = '#(robot|bot[\s\-_\/\)]|bot$|blog|checker|crawl|feed|fetcher|libwww|[^\.e]link\s?|parser|reader|spider|verif(?:ier|ication|y)|href|https?\://|.+(?:\@|\s?at\s?)[a-z0-9_\-]+(?:\.|\s?dot\s?)|www[0-9]?\.[a-z0-9_\-]+\..+|\/.+\.(s?html?|aspx?|php5?|cgi)|mediapartners|inspectiontool|googleother|googleagent|google-safety|duplexweb|google\sfavicon|yandex(?:direct|favicons)|anthropic-ai|cohere-ai|bingpreview|whatsapp\/|skypeuripreview)#i';
 
     public static function get_browser($_user_agent = '')
     {

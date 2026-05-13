@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Tested up to: 6.9.4
-Stable tag: 5.4.11
+Stable tag: 5.4.12
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,13 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.12 - 2026-05-13 =
+* Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
+* Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.
+* Fix: Chrome-based mobile Googlebot and Bingbot now correctly blocked when Browscap classifies them as mobile devices (#14843)
+* Fix: Google-InspectionTool mobile is now detected as a crawler
+* Improvement: Bot detection regex extended with 15 new vendor tokens — Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai
+
 = 5.4.11 - 2026-04-17 =
 * Fix: Access Log pagination no longer drops the user's selected custom date range
 * Fix: Auto Refresh setting in Settings → Reports is now honored

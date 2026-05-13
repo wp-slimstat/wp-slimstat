@@ -76,6 +76,7 @@
     "test:browscap-filesystem": "php tests/browscap-wp-filesystem-test.php",
     "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
     "test:browscap-bot-safety": "php tests/browscap-bot-safety-net-test.php",
+    "test:storage-update-sanitize": "php tests/storage-update-sanitization-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
@@ -98,7 +99,8 @@
       "@test:browscap-isolation",
       "@test:browscap-filesystem",
       "@test:dnt-gdpr",
-      "@test:browscap-bot-safety"
+      "@test:browscap-bot-safety",
+      "@test:storage-update-sanitize"
     ]
   }
 }

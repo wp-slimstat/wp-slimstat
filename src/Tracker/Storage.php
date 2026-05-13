@@ -31,15 +31,30 @@ class Storage
 		$id = abs(intval($data['id']));
 		unset($data['id']);
 
+		// CVE-2026-7634: mirror insertRow()'s sanitization so an UPDATE cannot
+		// overwrite the row with raw HTML. Run before array_filter so values that
+		// sanitize to '' get dropped along with originals.
+		foreach ($data as $key => $value) {
+			if (is_array($value)) {
+				$data[$key] = array_map('sanitize_text_field', $value);
+			} elseif ('resource' === $key || 'outbound_resource' === $key) {
+				$data[$key] = sanitize_url($value);
+			} else {
+				$data[$key] = sanitize_text_field($value);
+			}
+		}
+
 		$data = array_filter($data);
 
 		$table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$query = Query::update($table_name)->ignore()->where('id', '=', $id);
+		$hasUpdates = false;
 
 		if (!empty($data['notes']) && is_array($data['notes'])) {
 			$notes_to_append = '[' . implode('][', $data['notes']) . ']';
 			$query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
 			unset($data['notes']);
+			$hasUpdates = true;
 		}
 
 		if (!empty($data['outbound_resource'])) {
@@ -50,10 +65,18 @@ class Storage
 				[$url, $url, $url]
 			);
 			unset($data['outbound_resource']);
+			$hasUpdates = true;
 		}
 
 		if ($data !== []) {
 			$query->set($data);
+			$hasUpdates = true;
+		}
+
+		// If sanitization stripped every field there is nothing to write — skip
+		// the execute() to avoid emitting `UPDATE ... SET  WHERE id=X` (invalid SQL).
+		if (!$hasUpdates) {
+			return $id;
 		}
 
 		$query->execute();

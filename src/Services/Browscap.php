@@ -71,10 +71,10 @@ class Browscap
             $browser['browser_version'] = $browser_version['browser_version'];
         }
 
-        // Safety net: detect bots by UA keywords when Browscap did not flag as crawler.
-        // Catches Chrome-based crawlers (Googlebot, Bingbot) that Browscap may
-        // identify as regular browsers without setting crawler=true. See #291.
-        if (0 === (int) $browser['browser_type']) {
+        // Safety net: re-check any non-crawler type (desktop/mobile/touch) against
+        // BOT_GENERIC_REGEX. Browscap misclassifies Chrome-based Googlebot mobile
+        // UAs as type=2 because Android/Mobile signals match before the bot suffix.
+        if (1 !== (int) $browser['browser_type']) {
             $browser = self::apply_bot_safety_net($browser);
         }
 
@@ -266,17 +266,23 @@ class Browscap
 
     protected static function _get_user_agent()
     {
-
-        $user_agent = (empty($_SERVER['HTTP_USER_AGENT']) ? '' : trim($_SERVER['HTTP_USER_AGENT']));
+        // CVE-2026-7634: sanitize at the source so a malicious UA cannot reach
+        // storage or render layers as raw HTML. Mirrors the pattern used in
+        // Session.php and IPHashProvider.php. Bot/crawler regex matching downstream
+        // (UADetector::BOT_GENERIC_REGEX, BrowscapPHP) operates on alphanumerics
+        // and punctuation that sanitize_text_field preserves.
+        $user_agent = empty($_SERVER['HTTP_USER_AGENT'])
+            ? ''
+            : trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])));
         $real_user_agent = '';
         if (!empty($_SERVER['HTTP_X_DEVICE_USER_AGENT'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_DEVICE_USER_AGENT']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_DEVICE_USER_AGENT'])));
         } elseif (!empty($_SERVER['HTTP_X_ORIGINAL_USER_AGENT'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_ORIGINAL_USER_AGENT']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_ORIGINAL_USER_AGENT'])));
         } elseif (!empty($_SERVER['HTTP_X_MOBILE_UA'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_MOBILE_UA']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_MOBILE_UA'])));
         } elseif (!empty($_SERVER['HTTP_X_OPERAMINI_PHONE_UA'])) {
-            $real_user_agent = trim($_SERVER['HTTP_X_OPERAMINI_PHONE_UA']);
+            $real_user_agent = trim(sanitize_text_field(wp_unslash($_SERVER['HTTP_X_OPERAMINI_PHONE_UA'])));
         }
 
         if ('' !== $real_user_agent && '0' !== $real_user_agent && (strlen($real_user_agent) >= 5 || ('' === $user_agent || '0' === $user_agent))) {

@@ -75,11 +75,18 @@ safety_assert(
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
-// TEST 6: Safety net must only run when browser_type is 0
+// TEST 6: Safety net gate must run for any non-crawler type (#14843 v2).
+// Previously only fired on type=0 — mobile bot UAs (type=2) slipped through.
+// The gate must be `1 !== (int) $browser['browser_type']` so types 0, 2, 3
+// all re-run the UA keyword check.
 // ═══════════════════════════════════════════════════════════════════════════
 safety_assert(
-    (bool) preg_match('/0\s*===.*browser_type.*apply_bot_safety_net/s', $browscap_src),
-    'TEST 6: Safety net call must be guarded by browser_type === 0 check'
+    (bool) preg_match('/1\s*!==.*browser_type.*apply_bot_safety_net/s', $browscap_src),
+    'TEST 6: Safety net call must be guarded by `1 !== (int) browser_type` (not `0 ===`)'
+);
+safety_assert(
+    false === strpos($browscap_src, "0 === (int) \$browser['browser_type']"),
+    'TEST 6b: Safety net must not use the old `0 === (int) browser_type` gate'
 );
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -120,5 +127,39 @@ safety_assert(
     false !== strpos($ajax_src, "ignore_bots") && false !== strpos($ajax_src, 'Browscap::get_browser'),
     'TEST 10: Ajax.php must check ignore_bots via Browscap::get_browser() for follow-up events'
 );
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TEST 11: BOT_GENERIC_REGEX must include the 15 vendor-group keywords (#14843 v2)
+// Closes gaps for: Mediapartners-Google, Google-InspectionTool, Google-Site-
+// Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety,
+// DuplexWeb-Google, BingPreview, YandexDirect/YandexFavicons, WhatsApp,
+// SkypeUriPreview, anthropic-ai, cohere-ai.
+//
+// The assertion runs against only the BOT_GENERIC_REGEX constant value — not
+// the whole UADetector.php source — to avoid false positives from tokens that
+// might appear in unrelated comments or identifiers elsewhere in the file.
+// ═══════════════════════════════════════════════════════════════════════════
+safety_assert(
+    (bool) preg_match(
+        "/public\\s+const\\s+BOT_GENERIC_REGEX\\s*=\\s*'([^']+)'/",
+        $uadetector_src,
+        $regex_match
+    ),
+    'TEST 11: BOT_GENERIC_REGEX constant must be parseable from UADetector.php'
+);
+$bot_regex_value = $regex_match[1] ?? '';
+
+$required_regex_tokens = [
+    'mediapartners', 'inspectiontool', 'googleother', 'googleagent',
+    'google-safety', 'duplexweb', 'bingpreview', 'yandex',
+    'direct|favicons', 'anthropic-ai', 'cohere-ai', 'skypeuripreview',
+    'whatsapp', 'favicon', 'verif',
+];
+foreach ($required_regex_tokens as $token) {
+    safety_assert(
+        false !== stripos($bot_regex_value, $token),
+        "TEST 11: BOT_GENERIC_REGEX must contain '{$token}' keyword"
+    );
+}
 
 echo "All {$assertions} assertions passed in browscap-bot-safety-net-test.php\n";
