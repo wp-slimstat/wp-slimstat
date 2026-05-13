@@ -75,7 +75,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.12 - 2026-05-11 =
+= 5.4.12 - 2026-05-13 =
 * Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
 * Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.
 * Fix: Chrome-based mobile Googlebot and Bingbot now correctly blocked when Browscap classifies them as mobile devices (#14843)
