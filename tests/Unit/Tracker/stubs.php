@@ -79,6 +79,11 @@ if (!class_exists('wp_slimstat')) {
         /** @var array<string,mixed> */
         private static array $_data_js = [];
 
+        public static function log($message, string $level = 'info'): void
+        {
+            // Test no-op — production gates on WP_DEBUG, not relevant for unit tests.
+        }
+
         public static function get_stat(): array
         {
             return self::$_stat;
