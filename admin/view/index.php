@@ -112,6 +112,24 @@ if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browsca
     wp_slimstat_admin::show_message(sprintf(__("Install our <a href='%s' class='noslimstat'>Browscap Library</a> to identify your visitors' browser and operating system.", 'wp-slimstat'), self::$config_url . '2#wp-slimstat-third-party-libraries'), 'warning', 'browscap');
 }
 
+// Browscap relies on Flysystem's LocalFilesystemAdapter, which constructs
+// FinfoMimeTypeDetector unconditionally. Without ext-fileinfo the tracker
+// REST endpoint returns HTTP 500 on every hit (#303). Warn the admin when
+// Browscap is enabled but the extension is missing.
+if ('on' == wp_slimstat::$settings['enable_browscap'] && !extension_loaded('fileinfo') && 'on' == wp_slimstat::$settings['notice_browscap_fileinfo']) {
+    wp_slimstat_admin::show_message(
+        sprintf(
+            __("Slimstat's Browscap browser-detection library requires the PHP %1\$sfileinfo%2\$s extension, which is not enabled on your server. Browser detection has been safely disabled to keep tracking working — ask your host to enable %1\$sfileinfo%2\$s, or %3\$sturn off the Browscap Library%4\$s in the settings to hide this notice.", 'wp-slimstat'),
+            '<code>',
+            '</code>',
+            "<a href='" . esc_url(self::$config_url . '2#wp-slimstat-third-party-libraries') . "' class='noslimstat'>",
+            '</a>'
+        ),
+        'warning',
+        'browscap_fileinfo'
+    );
+}
+
 // Path to wp-content folder, used to detect caching plugins via advanced-cache.php
 if (file_exists(dirname(plugin_dir_path(__FILE__), 4) . '/advanced-cache.php') && 'on' == wp_slimstat::$settings['notice_caching'] && (empty(wp_slimstat::$settings['javascript_mode']) || 'on' != wp_slimstat::$settings['javascript_mode'])) {
     wp_slimstat_admin::show_message(sprintf(__("A caching plugin might be enabled on your website. Please <a href='%s' target='_blank' class='noslimstat'>make sure to configure</a> Slimstat Analytics accordingly, to get accurate information.", 'wp-slimstat'), 'https://wp-slimstat.com/resources/i-am-using-w3-total-cache-or-wp-super-cache-hypercache-etc-and-it-looks-like-slimstat-is-not-tra'), 'warning', 'caching');

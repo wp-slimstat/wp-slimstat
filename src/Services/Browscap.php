@@ -60,7 +60,7 @@ class Browscap
             return $cached;
         }
 
-        if ('on' == wp_slimstat::$settings['enable_browscap'] && PHP_VERSION_ID >= 70400) {
+        if ('on' == wp_slimstat::$settings['enable_browscap'] && PHP_VERSION_ID >= 70400 && extension_loaded('fileinfo')) {
             $browser = self::get_browser_from_browscap($browser, wp_slimstat::$upload_dir . '/browscap-cache-master/');
         }
 
@@ -115,6 +115,12 @@ class Browscap
 
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {
+        // Flysystem's LocalFilesystemAdapter eagerly constructs FinfoMimeTypeDetector,
+        // which calls `new finfo(...)` and fatals on hosts without ext-fileinfo (#303).
+        if (!extension_loaded('fileinfo')) {
+            return $_browser;
+        }
+
         try {
             $file_cache = new LocalFilesystemAdapter($_cache_path);
             $filesystem = new Filesystem($file_cache);
@@ -124,7 +130,8 @@ class Browscap
             $logger        = new NullLogger();
             $browscap      = new \SlimStat\Dependencies\BrowscapPHP\Browscap($cache, $logger);
             $search_object = $browscap->getBrowser();
-        } catch (Exception $exception) {
+        } catch (\Throwable $exception) {
+            \wp_slimstat::log('Browscap path failed: ' . $exception->getMessage(), 'error');
             $search_object = '';
         }
 
