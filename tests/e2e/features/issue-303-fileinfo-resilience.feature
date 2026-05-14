@@ -51,10 +51,20 @@ Feature: Tracker resilience when the PHP fileinfo extension is missing
     And the recorded row's "browser" column is populated by Browscap (when the cache is installed)
     And no admin notice about fileinfo is rendered
 
-  Scenario: bdd-throwable-catch-protects-against-other-errors
+  Scenario: bdd-throwable-catch-protects-against-other-errors-debug-on
     Given the host's PHP build DOES have the "fileinfo" extension loaded
     And the bundled Browscap cache is corrupted or unreachable
+    And the WordPress constant WP_DEBUG is set to true
     When a frontend visitor loads any public page
     Then the tracker REST endpoint returns HTTP 200
     And the wider \Throwable catch in get_browser_from_browscap() degrades to UADetector instead of fataling
-    And a single error_log line is written for diagnosability
+    And a single "[WP SLIMSTAT] [ERROR]:" line is written to wp-content/debug.log for diagnosability
+
+  Scenario: bdd-throwable-catch-protects-against-other-errors-debug-off
+    Given the host's PHP build DOES have the "fileinfo" extension loaded
+    And the bundled Browscap cache is corrupted or unreachable
+    And the WordPress constant WP_DEBUG is set to false or undefined
+    When a frontend visitor loads any public page
+    Then the tracker REST endpoint returns HTTP 200
+    And the wider \Throwable catch in get_browser_from_browscap() degrades to UADetector instead of fataling
+    But no error_log line is written, because wp_slimstat::log() is gated on WP_DEBUG to prevent production log floods
