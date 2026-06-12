@@ -888,7 +888,7 @@ class wp_slimstat_admin
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
         $current_screen = get_current_screen();
-        if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
+        if ($current_screen && false !== strpos((string) ($current_screen->id ?? ''), 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
             wp_enqueue_script('jquery-ui-sortable');
@@ -903,7 +903,7 @@ class wp_slimstat_admin
         $should_load_datepicker = false;
         if (isset($_GET['page'])) {
             $page = sanitize_text_field($_GET['page']);
-            if (str_contains($page, 'slim') && !str_contains($page, 'setting')) {
+            if (false !== strpos($page, 'slim') && false === strpos($page, 'setting')) {
                 $should_load_datepicker = true;
             }
         }

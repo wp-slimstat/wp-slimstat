@@ -77,9 +77,11 @@
     "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
     "test:browscap-bot-safety": "php tests/browscap-bot-safety-net-test.php",
     "test:storage-update-sanitize": "php tests/storage-update-sanitization-test.php",
+    "test:php74-compat": "php tests/php74-no-php80-functions-test.php",
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
       "@test:unit",
+      "@test:php74-compat",
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
