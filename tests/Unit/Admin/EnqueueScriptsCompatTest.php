@@ -17,6 +17,11 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
  */
 class EnqueueScriptsCompatTest extends WpSlimstatTestCase
 {
+    /**
+     * Data provider for the screen-id gate at admin/index.php:891.
+     *
+     * @return array<string,array{0:mixed,1:bool}> Map of label → [screen_id, expected match].
+     */
     public static function screenIdProvider(): array
     {
         return [
@@ -28,15 +33,29 @@ class EnqueueScriptsCompatTest extends WpSlimstatTestCase
         ];
     }
 
-    /** @dataProvider screenIdProvider */
+    /**
+     * Verifies the screen-id gate at admin/index.php:891 matches str_contains semantics.
+     *
+     * @dataProvider screenIdProvider
+     *
+     * @param mixed $screen_id      The simulated WP_Screen->id value (string|null).
+     * @param bool  $expected_match Whether the post-fix conditional must evaluate true.
+     *
+     * @return void
+     */
     public function test_screen_gate_matches_str_contains_semantics($screen_id, bool $expected_match): void
     {
-        $current_screen = $screen_id !== null ? (object) ['id' => $screen_id] : null;
+        $current_screen = null !== $screen_id ? (object) ['id' => $screen_id] : null;
         $matched = $current_screen && false !== strpos((string) ($current_screen->id ?? ''), 'slim');
 
-        $this->assertSame($expected_match, $matched, "Screen gate mismatch for screen_id=" . var_export($screen_id, true));
+        $this->assertSame($expected_match, $matched, 'Screen gate mismatch for screen_id=' . var_export($screen_id, true));
     }
 
+    /**
+     * Data provider for the datepicker gate at admin/index.php:906.
+     *
+     * @return array<string,array{0:string,1:bool}> Map of label → [page query value, expected match].
+     */
     public static function pageQueryProvider(): array
     {
         return [
@@ -49,7 +68,16 @@ class EnqueueScriptsCompatTest extends WpSlimstatTestCase
         ];
     }
 
-    /** @dataProvider pageQueryProvider */
+    /**
+     * Verifies the datepicker gate at admin/index.php:906 matches the original semantics.
+     *
+     * @dataProvider pageQueryProvider
+     *
+     * @param string $page           The simulated $_GET['page'] value.
+     * @param bool   $expected_match Whether the post-fix conditional must evaluate true.
+     *
+     * @return void
+     */
     public function test_datepicker_gate_matches_str_contains_semantics(string $page, bool $expected_match): void
     {
         $matched = false !== strpos($page, 'slim') && false === strpos($page, 'setting');

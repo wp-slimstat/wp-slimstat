@@ -23,7 +23,7 @@ test.describe('Issue #303 follow-up — PHP 7.4 wp-admin loads (str_contains reg
 
   test.afterEach(() => {
     const log = readDebugLog();
-    expect(log, 'debug.log must not contain `Class "finfo" not found` nor `Call to undefined function str_contains`')
+    expect(log, 'debug.log must not contain `Call to undefined function str_contains`')
       .not.toMatch(/Call to undefined function str_contains/);
     expect(log, 'debug.log must not contain any PHP Fatal from wp-slimstat path')
       .not.toMatch(/PHP Fatal error[\s\S]{0,500}wp-slimstat/);

@@ -1,5 +1,24 @@
 <?php
 /**
+ * SlimStat Analytics — PHP 7.4 source-level regression test.
+ *
+ * @package wp-slimstat
+ * @license GPL-2.0-or-later
+ *
+ * Copyright (C) 2026 VeronaLabs <info@veronalabs.com>
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License, version 2, as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+ * for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <https://www.gnu.org/licenses/>.
+ *
  * Source-level regression: PHP 8.0+ functions must not appear in own code.
  *
  * Until v5.4.14, admin/index.php called str_contains() (PHP 8.0+) without
@@ -41,22 +60,22 @@ $paths = [
 $files = [];
 foreach ($paths as $path) {
     if (is_file($path)) {
-        if (substr($path, -4) === '.php') $files[] = $path;
+        if ('.php' === substr($path, -4)) $files[] = $path;
         continue;
     }
     if (!is_dir($path)) continue;
     // Prune src/Dependencies/ at descent — saves walking ~500 scoped vendor files.
     $directory = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
     $filtered  = new RecursiveCallbackFilterIterator($directory, function ($file) use ($deps_prefix) {
-        return strpos($file->getPathname(), $deps_prefix . DIRECTORY_SEPARATOR) !== 0;
+        return 0 !== strpos($file->getPathname(), $deps_prefix . DIRECTORY_SEPARATOR);
     });
     foreach (new RecursiveIteratorIterator($filtered) as $file) {
-        if (substr($file->getPathname(), -4) === '.php') $files[] = $file->getPathname();
+        if ('.php' === substr($file->getPathname(), -4)) $files[] = $file->getPathname();
     }
 }
 sort($files);
 
-if (count($files) === 0) {
+if (0 === count($files)) {
     fwrite(STDERR, "FAIL: scanner found zero own-code .php files\n");
     exit(1);
 }
@@ -64,7 +83,7 @@ if (count($files) === 0) {
 $violations = [];
 foreach ($files as $file) {
     $contents = file_get_contents($file);
-    if ($contents === false) continue;
+    if (false === $contents) continue;
     foreach ($forbidden_functions as $fn) {
         $pattern = '/(?<![>:$\\\\])\b' . preg_quote($fn, '/') . '\s*\(/';
         if (!preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE)) continue;
@@ -72,9 +91,9 @@ foreach ($files as $file) {
             $line_no = substr_count($contents, "\n", 0, $offset) + 1;
             $line    = strtok(substr($contents, $offset), "\n");
             $prev    = $line_no > 1 ? explode("\n", substr($contents, 0, $offset))[$line_no - 2] : '';
-            if (strpos($prev, $allow_marker) !== false) continue;
+            if (false !== strpos($prev, $allow_marker)) continue;
             $stripped = ltrim($line);
-            if (strpos($stripped, '//') === 0 || strpos($stripped, '*') === 0) continue;
+            if (0 === strpos($stripped, '//') || 0 === strpos($stripped, '*')) continue;
             $rel = substr($file, strlen($plugin_root) + 1);
             $violations[] = sprintf('%s:%d  → %s(...)  %s', $rel, $line_no, $fn, trim($line));
         }
