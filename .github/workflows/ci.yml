@@ -34,6 +34,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
+        # 8.1 stays in Tier 3 nightly only — promoting to fast surfaced an
+        # unrelated pre-existing test failure (TrackerTest::test_dtr_pton…
+        # `inet_pton` returns '00000000' on 8.1, not ''). Tracked separately.
         php: ["7.4", "8.2"]
 
     steps:
@@ -254,7 +257,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ["7.4", "8.0", "8.1", "8.2", "8.3"]
+        # Full range: 7.4 (declared minimum) through 8.5 (current stable).
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
 
     steps:
       - name: Checkout
