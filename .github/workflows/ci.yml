@@ -86,10 +86,11 @@ jobs:
           fi
           echo "No syntax errors found."
 
-      - name: Source-level PHP 7.4 compatibility regression test
-        # Greps own code for PHP 8.0+ stdlib calls with no polyfill load.
-        # Vanilla PHP — covers the 7.4 lane where PHPUnit 10.5 cannot run.
-        run: composer test:php74-compat
+      - name: Source-level regression tests
+        # Vanilla PHP — runs on the 7.4 lane where PHPUnit 10.5 cannot.
+        # Covers: PHP 8.0+ stdlib calls without polyfill (php74-compat),
+        # and implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0).
+        run: composer test:source-level
 
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)

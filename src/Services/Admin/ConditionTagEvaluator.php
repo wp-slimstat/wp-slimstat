@@ -249,7 +249,7 @@ class ConditionTagEvaluator
 	 * @param string|null $version Optional version number for version-related checks.
 	 * @return bool True if the condition is met, false otherwise.
 	 */
-	public static function checkConditions($tag, $version = null)
+	public static function checkConditions($tag, ?string $version = null)
 	{
 		if (\strpos($tag, 'is-version-') === 0) {
 			$versionNumber = \substr($tag, \strlen('is-version-'));

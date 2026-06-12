@@ -31,7 +31,7 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 			return null;
 		}
 
-		$get = function ($key, $filter = null) use ($server) {
+		$get = function ($key, ?string $filter = null) use ($server) {
 			$k = strtolower($key);
 			if (!isset($server[$k])) {
 				return null;

@@ -358,7 +358,7 @@ class DateRangeHelper
     /**
      * Format date range for display
      */
-    public static function format_date_range($start_timestamp, $end_timestamp, $preset = null)
+    public static function format_date_range($start_timestamp, $end_timestamp, ?string $preset = null)
     {
         // If we have a preset, use the localized string for it
         if ($preset && $preset !== 'custom') {
