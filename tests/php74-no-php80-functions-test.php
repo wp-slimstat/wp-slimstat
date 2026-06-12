@@ -19,33 +19,53 @@
  * You should have received a copy of the GNU General Public License along
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  *
- * Source-level regression: PHP 8.0+ functions must not appear in own code.
+ * Source-level regression: PHP 8.0+ stdlib functions in own code.
  *
- * Until v5.4.14, admin/index.php called str_contains() (PHP 8.0+) without
- * a polyfill load, fataling every wp-admin page on real PHP 7.4 hosts. The
- * gap: PHPUnit 10.5 requires PHP >= 8.1 so CI's 7.4 lane was lint-only, and
- * php -l does not verify function existence. This vanilla-PHP test runs on
- * the 7.4 lane and greps own code for PHP 8.0+ stdlib functions with no
- * polyfill.
+ * As of v5.4.17 the Mozart-scoped Symfony/Polyfill/Php80 bootstrap is loaded
+ * from wp-slimstat.php, so the 7 PHP 8.0 stdlib functions it polyfills are
+ * safe to use in own code. This test:
  *
- * To allow a specific call site (e.g. behind a polyfill load), add the
- * marker /​* php-polyfill: ok *​/ on the comment line immediately above.
+ *   1. ASSERTS the polyfill bootstrap is still required from wp-slimstat.php
+ *      (if a future commit removes that require, str_contains et al. would
+ *      again fatal on PHP 7.4 — the bug that produced v5.4.14's wp-admin
+ *      crash).
+ *   2. SCANS own code for PHP 8.1+ stdlib functions that the bundled polyfill
+ *      does NOT cover (e.g. array_is_list, enum_exists, str_decrement). Adding
+ *      one of these without an explicit polyfill load would fatal on PHP 7.4.
+ *
+ * To allow a specific call site behind a different polyfill, add the marker
+ * /​* php-polyfill: ok *​/ on the comment line immediately above.
  */
 
 declare(strict_types=1);
 
 $plugin_root = dirname(__DIR__);
 
-// PHP 8.0+ stdlib functions with no PHP 7.4 fallback. Scoped to 8.0 (the
-// version mismatch that produced the fatal). Add later-version functions
-// here when they appear in own code, not preemptively.
+// ── 1. Polyfill bootstrap MUST be required from wp-slimstat.php ──────────────
+$boot = file_get_contents($plugin_root . '/wp-slimstat.php');
+if (false === $boot) {
+    fwrite(STDERR, "FAIL: cannot read wp-slimstat.php\n");
+    exit(1);
+}
+if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/Polyfill/Php80/bootstrap\.php[\'"]#', $boot)) {
+    fwrite(STDERR, "FAIL: wp-slimstat.php must `require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';`\n");
+    fwrite(STDERR, "      Without it, str_contains/str_starts_with/etc. fatal on PHP 7.4.\n");
+    exit(1);
+}
+
+// ── 2. Scan own code for stdlib functions NOT covered by the bundled polyfill ─
+
+// Symfony/Polyfill/Php80 covers these 7 (verified in
+// src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php). They are safe to use
+// in own code, so they are NOT in $forbidden_functions.
+$polyfilled = ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
+
+// PHP 8.1+ stdlib functions with no PHP 7.4 fallback in the bundled polyfill.
+// Add later-version functions here as the language evolves.
 $forbidden_functions = [
-    'str_contains',
-    'str_starts_with',
-    'str_ends_with',
-    'fdiv',
-    'get_debug_type',
-    'preg_last_error_msg',
+    'array_is_list',     // PHP 8.1
+    'enum_exists',       // PHP 8.1
+    'never_returns',     // sentinel (not a real fn) — keep list non-empty so the loop runs
 ];
 
 $allow_marker = 'php-polyfill: ok';
@@ -101,10 +121,11 @@ foreach ($files as $file) {
 }
 
 if ($violations) {
-    fwrite(STDERR, "FAIL: PHP 8.0+ functions found in own code (would fatal on PHP 7.4):\n");
+    fwrite(STDERR, "FAIL: PHP 8.1+ stdlib functions found in own code (no polyfill, fatals on PHP 7.4):\n");
     foreach ($violations as $v) fwrite(STDERR, "  - {$v}\n");
-    fwrite(STDERR, "\nTo allow a specific call site, add /* php-polyfill: ok */ on the line above.\n");
+    fwrite(STDERR, "\nFix: rewrite to a PHP 7.4-compatible equivalent, OR add /* php-polyfill: ok */ on the line above if you've separately loaded a polyfill.\n");
+    fwrite(STDERR, "Note: PHP 8.0 stdlib (" . implode(', ', $polyfilled) . ") IS polyfilled — safe to use.\n");
     exit(1);
 }
 
-echo "OK: scanned " . count($files) . " own-code files, no PHP 8.0+ stdlib calls found\n";
+echo "OK: polyfill bootstrap loaded; scanned " . count($files) . " own-code files, no un-polyfilled PHP 8.1+ stdlib calls found\n";

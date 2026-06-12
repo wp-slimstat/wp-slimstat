@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.4.16
+ * Version: 5.4.17
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,13 +20,19 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.4.16');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.4.17');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
+
+// Load the Mozart-scoped Symfony/Polyfill/Php80 so own code can use PHP 8.0+
+// stdlib functions (str_contains, str_starts_with, fdiv, get_debug_type, …)
+// on PHP 7.4 hosts. The bootstrap short-circuits on PHP_VERSION_ID >= 80000.
+// Skipping this load on PHP 7.4 is what produced the v5.4.14 wp-admin fatal.
+require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';
 
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';
