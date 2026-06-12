@@ -4,8 +4,9 @@ Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
+Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.12
+Stable tag: 5.4.13
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +76,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.13 - 2026-05-14 =
+* Fix: Tracker REST endpoint no longer returns HTTP 500 on servers without the PHP `fileinfo` extension. The Browscap path now preflight-checks `extension_loaded('fileinfo')` and catches `\Throwable` instead of `\Exception`, so a missing extension degrades to UADetector instead of fataling. An admin notice surfaces the misconfiguration with a link to disable Browscap. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303))
+
 = 5.4.12 - 2026-05-13 =
 * Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
 * Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.

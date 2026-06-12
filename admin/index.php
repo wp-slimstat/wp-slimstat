@@ -255,10 +255,11 @@ class wp_slimstat_admin
         // AJAX Handlers
         if (defined('DOING_AJAX') && DOING_AJAX) {
             $ajax_actions = [
-                'slimstat_notice_latest_news'    => 'notices_handler',
-                'slimstat_notice_geolite'        => 'notices_handler',
-                'slimstat_notice_browscap'       => 'notices_handler',
-                'slimstat_notice_caching'        => 'notices_handler',
+                'slimstat_notice_latest_news'       => 'notices_handler',
+                'slimstat_notice_geolite'           => 'notices_handler',
+                'slimstat_notice_browscap'          => 'notices_handler',
+                'slimstat_notice_browscap_fileinfo' => 'notices_handler',
+                'slimstat_notice_caching'           => 'notices_handler',
                 'slimstat_manage_filters'        => 'manage_filters',
                 'slimstat_delete_pageview'       => 'delete_pageview',
                 'slimstat_update_geoip_database' => 'update_geoip_database',

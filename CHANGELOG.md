@@ -1,3 +1,9 @@
+= 5.4.13 - 2026-05-14 =
+
+**Tracker hardening**
+
+- The tracker REST endpoint (`POST /wp-json/slimstat/v1/hit` and `admin-ajax.php?action=slimstat_track`) no longer returns HTTP 500 on servers without the PHP `fileinfo` extension. `Services\Browscap::get_browser_from_browscap()` constructs Flysystem's `LocalFilesystemAdapter`, which in turn instantiates `FinfoMimeTypeDetector` (`new finfo(...)`) — on hosts where `fileinfo` is absent (common after PHP 7.4 → 8.x rebuilds on managed hosts, CloudLinux Alt-PHP, minimal PHP builds) this throws `\Error`, which the surrounding `catch (\Exception)` did not catch. Fix: preflight `extension_loaded('fileinfo')` at both the `enable_browscap` entry gate and inside the method itself, and widen the inner catch to `\Throwable` (matching the existing pattern in `admin/view/index.php` for the geolite block); failures are reported via the structured `wp_slimstat::log()` helper, which is gated on `WP_DEBUG` to avoid log floods on misconfigured production sites. Tracking continues to work via the built-in UADetector fallback. An admin notice now warns when Browscap is enabled but the extension is unavailable, with a one-click dismiss handled by `slimstat_notice_browscap_fileinfo`. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303))
+
 = 5.4.12 - 2026-05-13 =
 
 **Security**
