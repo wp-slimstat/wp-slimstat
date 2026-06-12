@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.14
+Stable tag: 5.4.15
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.15 - 2026-05-14 =
+* Fix: 6 implicit-nullable parameter signatures (`Type $x = null` → `?Type $x = null`) silenced — `LogException`, `Query::hasWhereClause`, `DateRangeHelper::format_date_range`, `ConditionTagEvaluator::checkConditions`, `CloudflareGeolocationProvider` closure, `Session::setTrackingCookie`. Stops PHP 8.1+ `debug.log` deprecation noise from own code and prepares for PHP 9.0 (where the deprecation becomes fatal). New `composer test:implicit-nullable` regression test catches future regressions.
+
 = 5.4.14 - 2026-05-14 =
 * Fix: WordPress admin no longer fatals on PHP 7.4 (`Call to undefined function str_contains()` in admin asset enqueue). The Symfony Polyfill/Php80 bootstrap that ships in the bundled vendor was never autoloaded — replaced both call sites with `strpos() !== false`. Surfaced by an exhaustive PHP 7.4–8.5 compatibility audit. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303) follow-up)
 

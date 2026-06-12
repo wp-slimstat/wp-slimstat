@@ -1,3 +1,9 @@
+= 5.4.15 - 2026-05-14 =
+
+**PHP 8.1+ deprecation cleanup**
+
+- Tightened 6 own-code parameter signatures (`Type $x = null` → `?Type $x = null`) to silence PHP 8.1+ implicit-nullable `E_DEPRECATED` notices (fatal in PHP 9.0): `LogException::__construct`, `Query::hasWhereClause`, `DateRangeHelper::format_date_range`, `ConditionTagEvaluator::checkConditions`, the `CloudflareGeolocationProvider` internal closure, and `Session::setTrackingCookie`. Tightened only the null-default param in each case — `Session::setTrackingCookie($value)` deliberately stays untyped so `ConsentChangeRestController` (under `strict_types=1`, passing `int` from `Session::getVisitId(): int`) continues to type-check. Three other sites (`Request::get/post/request($default)`, `AbstractGeoIPProvider::getOption($default)`, `AbstractReport::get_postbox_option($default)`) are intentionally left as untyped `$default = null` — PHP does not deprecate untyped null defaults. Backstopped by `composer test:implicit-nullable` (vanilla PHP grep) on every push. Audit follow-up.
+
 = 5.4.14 - 2026-05-14 =
 
 **PHP 7.4 admin fatal**
