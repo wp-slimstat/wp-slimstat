@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.16
+Stable tag: 5.4.17
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.17 - 2026-05-14 =
+* Internal: The bundled Symfony/Polyfill/Php80 bootstrap is now loaded from `wp-slimstat.php`, so own code can use PHP 8.0+ stdlib functions (`str_contains`, `str_starts_with`, `fdiv`, `get_debug_type`, etc.) on PHP 7.4 hosts. No behavior change for end users. Source-level test now asserts the polyfill is loaded and still flags PHP 8.1+ stdlib functions that the bundled polyfill does not cover.
+
 = 5.4.16 - 2026-05-14 =
 * Fix: Tracker IP binarization no longer emits 8 phantom zero bits when called with an invalid IP on PHP 8.1+. `Tracker::_dtr_pton()` was missing the initialization its `Utils::dtrPton()` sibling already had. PHP 8.1 is now re-promoted to the CI Tier 1 fast lane.
 

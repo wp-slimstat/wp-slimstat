@@ -1,3 +1,9 @@
+= 5.4.17 - 2026-05-14 =
+
+**Symfony/Polyfill/Php80 autoloaded**
+
+- The Mozart-scoped `Symfony/Polyfill/Php80` bootstrap (`src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php`) is now loaded from `wp-slimstat.php` immediately after the Composer autoloader. Own code can use the 7 PHP 8.0 stdlib functions it covers — `str_contains`, `str_starts_with`, `str_ends_with`, `fdiv`, `get_debug_type`, `get_resource_id`, `preg_last_error_msg` — on PHP 7.4 hosts. On PHP 8.0+ the bootstrap short-circuits to native (`if (PHP_VERSION_ID >= 80000) return;`), so there is zero per-request cost on supported PHP. End-user behavior is unchanged; this is a developer-contract change closing the "skipping this load is what produced v5.4.14's wp-admin fatal" gap. `tests/php74-no-php80-functions-test.php` now asserts the bootstrap require remains in place (defensive regression guard) and still flags PHP 8.1+ stdlib functions the bundled polyfill does not cover (`array_is_list`, `enum_exists`, etc.). Post-merge audit follow-up #4.
+
 = 5.4.16 - 2026-05-14 =
 
 **PHP 8.1 tracker IP binarization fix**
