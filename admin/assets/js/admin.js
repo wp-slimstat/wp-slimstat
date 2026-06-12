@@ -618,12 +618,15 @@ jQuery(function () {
                 }
             });
 
-            // Click outside to close
-            document.addEventListener("click", (e) => {
+            // Click outside to close. Store the bound handler so destroy() can
+            // remove it — otherwise each dimension change leaks an instance whose
+            // closure pins the wrapper + option list (see destroy()).
+            this._onDocumentClick = (e) => {
                 if (!this.wrapper.contains(e.target)) {
                     this.close();
                 }
-            });
+            };
+            document.addEventListener("click", this._onDocumentClick);
 
             // Prevent dropdown from closing when clicking inside
             this.dropdown.addEventListener("click", (e) => {
@@ -795,6 +798,11 @@ jQuery(function () {
 
         syncTypedValue(value) {
             if (this.isDisabled()) return;
+            // Typing over a prior selection invalidates it, so close() reflects the
+            // typed value instead of the stale selected label.
+            if (this.selectedOption && this.selectedOption.value !== value) {
+                this.selectedOption = null;
+            }
             this.element.value = value;
         }
 
@@ -959,6 +967,13 @@ jQuery(function () {
 
             if (this.isOpen) {
                 this.close();
+            }
+
+            // Remove the document-level click listener so the instance (and the
+            // wrapper/option list its closure references) can be garbage-collected.
+            if (this._onDocumentClick) {
+                document.removeEventListener("click", this._onDocumentClick);
+                this._onDocumentClick = null;
             }
 
             // Safely remove wrapper and restore original element

@@ -972,7 +972,9 @@ class wp_slimstat_admin
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
             // Shared with the filter form-builder so value-less operators (is_empty/
             // is_not_empty) are never treated as a "remove filter" signal. See #305.
-            'valueless_operators' => wp_slimstat_db::$valueless_operators,
+            // Guarded: this method also runs on the Dashboard-widget path, where
+            // wp_slimstat_db may not be included — fall back to the literal list.
+            'valueless_operators' => class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'],
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
