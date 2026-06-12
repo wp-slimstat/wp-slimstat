@@ -1126,8 +1126,11 @@ jQuery(function () {
         var operator = this.value;
         var $textInput = jQuery("#slimstat-filter-value");
 
-        if (operator == "is_empty" || operator == "is_not_empty") {
-            $textInput.attr("readonly", "readonly");
+        var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
+        if (valueless.indexOf(operator) !== -1) {
+            // Clear any stale typed value so it cannot leak into the filter URL — the
+            // SQL builder ignores the value for these operators anyway. See #305.
+            $textInput.attr("readonly", "readonly").val("");
 
             // Disable searchable select if it exists
             if (searchableSelectInstance) {
@@ -2026,9 +2029,12 @@ var SlimStatAdmin = {
 
         // Manipulate the existing list of filters (hidden input fields), if we don't want to delete them
         if (typeof delete_existing_filters == "undefined" || !delete_existing_filters) {
+            var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
             for (i in clean_filters) {
-                // If value is empty (length is 1, meaning that it just has the operator but no value), delete corresponding input field
-                if (clean_filters[i].trim().split(" ").length == 1) {
+                var parts = clean_filters[i].trim().split(" ");
+                // A single token means operator-only with no value. Drop it UNLESS the
+                // operator is value-less by design (is_empty/is_not_empty). See #305.
+                if (parts.length === 1 && valueless.indexOf(parts[0]) === -1) {
                     jQuery('input[name="' + i + '"]').remove();
                 } else if (jQuery('input[name="' + i + '"]').length > 0) {
                     jQuery('input[name="' + i + '"]').attr("value", clean_filters[i]);

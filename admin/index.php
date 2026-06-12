@@ -970,6 +970,9 @@ class wp_slimstat_admin
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
             'page_location'     => self::$page_location,
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+            // Shared with the filter form-builder so value-less operators (is_empty/
+            // is_not_empty) are never treated as a "remove filter" signal. See #305.
+            'valueless_operators' => wp_slimstat_db::$valueless_operators,
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
     }
