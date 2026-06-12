@@ -34,10 +34,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # 8.1 stays in Tier 3 nightly only — promoting to fast surfaced an
-        # unrelated pre-existing test failure (TrackerTest::test_dtr_pton…
-        # `inet_pton` returns '00000000' on 8.1, not ''). Tracked separately.
-        php: ["7.4", "8.2"]
+        # 8.1 promoted so implicit-nullable E_DEPRECATED regressions surface
+        # during PR review, not 24h later in nightly.
+        php: ["7.4", "8.1", "8.2"]
 
     steps:
       - name: Checkout
