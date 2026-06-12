@@ -30,6 +30,46 @@ class Ajax
     }
 
     /**
+     * Validate and sanitize a base64url-encoded referer from the JS tracker payload.
+     *
+     * @internal Extracted from handle() (#306) to provide a unit-testable seam.
+     *
+     * Uses sanitize_text_field rather than sanitize_url so app-scheme referers such as
+     * `android-app://com.google.android.googlequicksearchbox/` (Google Discover) survive:
+     * sanitize_url strips any scheme absent from wp_allowed_protocols(), emptying the value.
+     * The host-format check below and the scheme allowlist in Processor::process() (which
+     * permits http/https/android-app and drops everything else as an XSS attempt) remain the
+     * security boundary.
+     *
+     * @param mixed $rawEncoded Raw base64url ref value from the client payload.
+     * @return string|false Sanitized referer (possibly empty), or false when the referer is
+     *                      malformed and the whole request must be rejected.
+     */
+    public static function sanitizeReferer($rawEncoded)
+    {
+        $referer    = Utils::base64UrlDecode($rawEncoded);
+        $parsed_ref = parse_url($referer ?: '');
+
+        // Security: Validate referer format
+        if (false === $parsed_ref) {
+            return false;
+        }
+
+        // Security: Validate host (if present) - allow external domains for referer,
+        // but validate the host format to prevent injection.
+        if (!empty($parsed_ref['host']) && !preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $parsed_ref['host'])) {
+            return false;
+        }
+
+        // Security: Limit referer length to prevent DoS
+        if (strlen($referer) > 2048) {
+            $referer = substr($referer, 0, 2048);
+        }
+
+        return sanitize_text_field($referer);
+    }
+
+    /**
      * Handle AJAX tracking request with exit (for admin-ajax.php).
      * This wrapper calls process() and exits with the result.
      */
@@ -102,31 +142,12 @@ class Ajax
         // Security: Validate and sanitize referer URL
         $stat['referer'] = '';
         if (!empty($data_js['ref'])) {
-            $referer = Utils::base64UrlDecode($data_js['ref']);
-            $parsed_ref = parse_url($referer ?: '');
-
-            // Security: Validate referer format
-            if (false === $parsed_ref) {
+            $referer = self::sanitizeReferer($data_js['ref']);
+            if (false === $referer) {
                 // Invalid referer format - reject request
                 return Utils::logError(201);
             }
-
-            // Security: Validate host (if present) - allow external domains for referer
-            // Referer can be from external sites, but we should validate the format
-            if (!empty($parsed_ref['host'])) {
-                // Validate host format (prevent injection)
-                if (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $parsed_ref['host'])) {
-                    // Invalid host format - reject request
-                    return Utils::logError(201);
-                }
-            }
-
-            // Security: Limit referer length to prevent DoS
-            if (strlen($referer) > 2048) {
-                $referer = substr($referer, 0, 2048);
-            }
-
-            $stat['referer'] = sanitize_url($referer);
+            $stat['referer'] = $referer;
         }
 
         // Update stat after referer processing

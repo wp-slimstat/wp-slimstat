@@ -185,7 +185,10 @@ class Processor
         }
 
         if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
-            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
+            // sanitize_text_field (not sanitize_url) so app-scheme referers like
+            // android-app://com.google.android.googlequicksearchbox/ (Google Discover) survive;
+            // the scheme allowlist below drops anything outside http/https/android-app as XSS. See #306.
+            $stat['referer'] = sanitize_text_field(wp_unslash($_SERVER['HTTP_REFERER']));
         }
 
 

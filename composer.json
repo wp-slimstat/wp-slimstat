@@ -77,6 +77,7 @@
     "test:dnt-gdpr": "php tests/dnt-gdpr-independence-test.php",
     "test:browscap-bot-safety": "php tests/browscap-bot-safety-net-test.php",
     "test:storage-update-sanitize": "php tests/storage-update-sanitization-test.php",
+    "test:referer-android-app": "php tests/referer-android-app-storage-test.php",
     "test:php74-compat": "php tests/php74-no-php80-functions-test.php",
     "test:implicit-nullable": "php tests/php-implicit-nullable-test.php",
     "test:ci-matrix-coverage": "php tests/ci-matrix-coverage-test.php",
@@ -111,7 +112,8 @@
       "@test:browscap-filesystem",
       "@test:dnt-gdpr",
       "@test:browscap-bot-safety",
-      "@test:storage-update-sanitize"
+      "@test:storage-update-sanitize",
+      "@test:referer-android-app"
     ]
   }
 }
