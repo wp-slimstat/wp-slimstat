@@ -162,11 +162,46 @@ class TrackerTest extends WpSlimstatTestCase
     /** @test */
     public function test_dtr_pton_returns_empty_string_for_invalid_ip(): void
     {
-        // The production code accesses $unpacked before it is assigned when
-        // neither IPv4 nor IPv6 branch fires.  Suppress the resulting PHP
-        // notice/warning so PHPUnit does not flag this test as warned.
-        $result = @\SlimStat\Tracker\Tracker::_dtr_pton('not-an-ip');
+        // Pre-fix: undefined $unpacked → null → on PHP 8.1+ str_split(null)
+        // returned [''] and ord('')+decbin(0)+str_pad yielded '00000000'.
+        // Post-fix: explicit init lets the condition short-circuit cleanly.
+        $result = \SlimStat\Tracker\Tracker::_dtr_pton('not-an-ip');
         $this->assertSame('', $result);
+    }
+
+    /** @test */
+    public function test_dtr_pton_returns_32_bit_binary_for_valid_ipv4(): void
+    {
+        $result = \SlimStat\Tracker\Tracker::_dtr_pton('192.168.1.1');
+        $this->assertSame(32, strlen($result), 'IPv4 must produce 32-bit binary string');
+        $this->assertMatchesRegularExpression('/^[01]+$/', $result);
+        $this->assertSame('11000000101010000000000100000001', $result);
+    }
+
+    /** @test */
+    public function test_dtr_pton_returns_128_bit_binary_for_valid_ipv6(): void
+    {
+        if (!defined('AF_INET6')) {
+            $this->markTestSkipped('AF_INET6 not available on this build');
+        }
+        $result = \SlimStat\Tracker\Tracker::_dtr_pton('::1');
+        $this->assertSame(128, strlen($result), 'IPv6 must produce 128-bit binary string');
+        $this->assertMatchesRegularExpression('/^[01]+$/', $result);
+        $this->assertSame(str_repeat('0', 127) . '1', $result, '::1 is 127 zero bits + 1');
+    }
+
+    /** @test */
+    public function test_dtr_pton_returns_empty_string_for_empty_input(): void
+    {
+        $result = \SlimStat\Tracker\Tracker::_dtr_pton('');
+        $this->assertSame('', $result, 'Empty input must produce empty result, not 8 phantom zero bits');
+    }
+
+    /** @test */
+    public function test_dtr_pton_returns_empty_string_for_null_input(): void
+    {
+        $result = \SlimStat\Tracker\Tracker::_dtr_pton(null);
+        $this->assertSame('', $result, 'Null input must produce empty result');
     }
 
     /** @test */

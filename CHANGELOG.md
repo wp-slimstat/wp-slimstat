@@ -1,3 +1,9 @@
+= 5.4.16 - 2026-05-14 =
+
+**PHP 8.1 tracker IP binarization fix**
+
+- `Tracker::_dtr_pton()` returns `''` for invalid IPs on PHP 8.1+ as documented. Previously, the missing `$unpacked = false;` initialization let an invalid input fall through to `str_split(null)` which produces `['']` on PHP 8.1+ (a single empty-char element). `ord('') + decbin(0) + str_pad(8)` then yielded a phantom `'00000000'` — 8 fake zero bits being silently mixed into IP filter comparisons. The sibling `Utils::dtrPton()` already had the right initialization (`src/Tracker/Utils.php:219`); this fix copies the same one-line guard into `Tracker::_dtr_pton()`. Surfaced by the v5.4.15 CI matrix expansion (which initially promoted 8.1 to Tier 1 fast, then reverted when this test failed). With the fix, PHP 8.1 is re-promoted to Tier 1 fast in this release — implicit-nullable regressions now surface on PR review, not 24h later in nightly.
+
 = 5.4.15 - 2026-05-14 =
 
 **PHP 8.1+ deprecation cleanup**

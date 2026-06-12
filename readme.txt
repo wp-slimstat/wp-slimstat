@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.15
+Stable tag: 5.4.16
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.16 - 2026-05-14 =
+* Fix: Tracker IP binarization no longer emits 8 phantom zero bits when called with an invalid IP on PHP 8.1+. `Tracker::_dtr_pton()` was missing the initialization its `Utils::dtrPton()` sibling already had. PHP 8.1 is now re-promoted to the CI Tier 1 fast lane.
+
 = 5.4.15 - 2026-05-14 =
 * Fix: 6 implicit-nullable parameter signatures (`Type $x = null` → `?Type $x = null`) silenced — `LogException`, `Query::hasWhereClause`, `DateRangeHelper::format_date_range`, `ConditionTagEvaluator::checkConditions`, `CloudflareGeolocationProvider` closure, `Session::setTrackingCookie`. Stops PHP 8.1+ `debug.log` deprecation noise from own code and prepares for PHP 9.0 (where the deprecation becomes fatal). New `composer test:implicit-nullable` regression test catches future regressions.
 
