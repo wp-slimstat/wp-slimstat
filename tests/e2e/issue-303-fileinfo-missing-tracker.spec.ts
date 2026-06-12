@@ -16,8 +16,6 @@
  *   stays clean, admin notice surfaces in /wp-admin.
  */
 import { test, expect } from '@playwright/test';
-import * as fs from 'fs';
-import * as path from 'path';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -31,19 +29,10 @@ import {
   waitForTrackerId,
   getPool,
   closeDb,
+  readDebugLog,
+  truncateDebugLog,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
-import { WP_ROOT } from './helpers/env';
-
-const DEBUG_LOG = path.join(WP_ROOT, 'wp-content', 'debug.log');
-
-function readDebugLog(): string {
-  return fs.existsSync(DEBUG_LOG) ? fs.readFileSync(DEBUG_LOG, 'utf8') : '';
-}
-
-function truncateDebugLog(): void {
-  if (fs.existsSync(DEBUG_LOG)) fs.writeFileSync(DEBUG_LOG, '', 'utf8');
-}
 
 test.describe('Issue #303 — Browscap fileinfo-missing tracker resilience', () => {
   test.setTimeout(60_000);

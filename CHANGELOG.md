@@ -1,3 +1,9 @@
+= 5.4.14 - 2026-05-14 =
+
+**PHP 7.4 admin fatal**
+
+- WordPress admin no longer fatals on PHP 7.4 hosts. `wp_slimstat_admin::wp_slimstat_enqueue_scripts()` (hooked to `admin_enqueue_scripts`, fires on every admin page) was calling `str_contains()` (PHP 8.0+) at `admin/index.php:891, 906` with no polyfill load — every wp-admin request on real 7.4 died with `Call to undefined function str_contains()`. Replaced both call sites with `false !== strpos()`. New source-level regression test (`tests/php74-no-php80-functions-test.php`, also wired into `composer test:php74-compat` and the CI 7.4 lane) greps own code for PHP 8.0+ stdlib calls on every push. Surfaced by an exhaustive 7.4-through-8.5 compatibility audit. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303) follow-up)
+
 = 5.4.13 - 2026-05-14 =
 
 **Tracker hardening**

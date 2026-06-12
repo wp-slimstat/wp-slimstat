@@ -160,6 +160,18 @@ export function readAjaxLog(): AjaxLogEntry[] {
   return raw.split('\n').filter(Boolean).map((line) => JSON.parse(line));
 }
 
+// ─── wp-content/debug.log helpers ──────────────────────────────────
+
+const DEBUG_LOG = path.join(WP_CONTENT, 'debug.log');
+
+export function readDebugLog(): string {
+  return fs.existsSync(DEBUG_LOG) ? fs.readFileSync(DEBUG_LOG, 'utf8') : '';
+}
+
+export function truncateDebugLog(): void {
+  if (fs.existsSync(DEBUG_LOG)) fs.writeFileSync(DEBUG_LOG, '', 'utf8');
+}
+
 // ─── MySQL helper ──────────────────────────────────────────────────
 
 let pool: mysql.Pool | null = null;

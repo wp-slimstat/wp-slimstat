@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.13
+Stable tag: 5.4.14
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,6 +76,9 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
+= 5.4.14 - 2026-05-14 =
+* Fix: WordPress admin no longer fatals on PHP 7.4 (`Call to undefined function str_contains()` in admin asset enqueue). The Symfony Polyfill/Php80 bootstrap that ships in the bundled vendor was never autoloaded — replaced both call sites with `strpos() !== false`. Surfaced by an exhaustive PHP 7.4–8.5 compatibility audit. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303) follow-up)
+
 = 5.4.13 - 2026-05-14 =
 * Fix: Tracker REST endpoint no longer returns HTTP 500 on servers without the PHP `fileinfo` extension. The Browscap path now preflight-checks `extension_loaded('fileinfo')` and catches `\Throwable` instead of `\Exception`, so a missing extension degrades to UADetector instead of fataling. An admin notice surfaces the misconfiguration with a link to disable Browscap. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303))
 
