@@ -1,32 +1,21 @@
-= 5.4.17 - 2026-05-14 =
+= 5.5.0 - Unreleased =
 
-**Symfony/Polyfill/Php80 autoloaded**
+**Compatibility & stability**
 
-- The Mozart-scoped `Symfony/Polyfill/Php80` bootstrap (`src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php`) is now loaded from `wp-slimstat.php` immediately after the Composer autoloader. Own code can use the 7 PHP 8.0 stdlib functions it covers — `str_contains`, `str_starts_with`, `str_ends_with`, `fdiv`, `get_debug_type`, `get_resource_id`, `preg_last_error_msg` — on PHP 7.4 hosts. On PHP 8.0+ the bootstrap short-circuits to native (`if (PHP_VERSION_ID >= 80000) return;`), so there is zero per-request cost on supported PHP. End-user behavior is unchanged; this is a developer-contract change closing the "skipping this load is what produced v5.4.14's wp-admin fatal" gap. `tests/php74-no-php80-functions-test.php` now asserts the bootstrap require remains in place (defensive regression guard) and still flags PHP 8.1+ stdlib functions the bundled polyfill does not cover (`array_is_list`, `enum_exists`, etc.). Post-merge audit follow-up #4.
+- Fixed: WordPress admin no longer crashes on PHP 7.4 hosts. Some admin pages were calling a function that only exists in PHP 8.0 and newer, which broke wp-admin entirely. Replaced with a compatible alternative.
+- Fixed: Visit tracking no longer fails with a 500 error on hosts that don't have the optional PHP `fileinfo` extension (common on managed and minimal PHP builds). When the extension is missing, the plugin now falls back to its built-in browser detector and shows a dismissible admin notice so you can ask your host to enable the extension or turn off the Browscap library.
+- Fixed: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits when the tracker was handed an invalid IP, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
 
-= 5.4.16 - 2026-05-14 =
+**PHP 8.1+ readiness**
 
-**PHP 8.1 tracker IP binarization fix**
+- Cleaned up six internal function signatures so they no longer trigger PHP 8.1+ deprecation warnings in your `debug.log`. These warnings would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+- Added a compatibility shim so modern PHP idioms (like `str_contains`) work the same on older PHP 7.4 hosts. No behavior change for end users.
 
-- `Tracker::_dtr_pton()` returns `''` for invalid IPs on PHP 8.1+ as documented. Previously, the missing `$unpacked = false;` initialization let an invalid input fall through to `str_split(null)` which produces `['']` on PHP 8.1+ (a single empty-char element). `ord('') + decbin(0) + str_pad(8)` then yielded a phantom `'00000000'` — 8 fake zero bits being silently mixed into IP filter comparisons. The sibling `Utils::dtrPton()` already had the right initialization (`src/Tracker/Utils.php:219`); this fix copies the same one-line guard into `Tracker::_dtr_pton()`. Surfaced by the v5.4.15 CI matrix expansion (which initially promoted 8.1 to Tier 1 fast, then reverted when this test failed). With the fix, PHP 8.1 is re-promoted to Tier 1 fast in this release — implicit-nullable regressions now surface on PR review, not 24h later in nightly.
+**Quality & developer experience**
 
-= 5.4.15 - 2026-05-14 =
-
-**PHP 8.1+ deprecation cleanup**
-
-- Tightened 6 own-code parameter signatures (`Type $x = null` → `?Type $x = null`) to silence PHP 8.1+ implicit-nullable `E_DEPRECATED` notices (fatal in PHP 9.0): `LogException::__construct`, `Query::hasWhereClause`, `DateRangeHelper::format_date_range`, `ConditionTagEvaluator::checkConditions`, the `CloudflareGeolocationProvider` internal closure, and `Session::setTrackingCookie`. Tightened only the null-default param in each case — `Session::setTrackingCookie($value)` deliberately stays untyped so `ConsentChangeRestController` (under `strict_types=1`, passing `int` from `Session::getVisitId(): int`) continues to type-check. Three other sites (`Request::get/post/request($default)`, `AbstractGeoIPProvider::getOption($default)`, `AbstractReport::get_postbox_option($default)`) are intentionally left as untyped `$default = null` — PHP does not deprecate untyped null defaults. Backstopped by `composer test:implicit-nullable` (vanilla PHP grep) on every push. Audit follow-up.
-
-= 5.4.14 - 2026-05-14 =
-
-**PHP 7.4 admin fatal**
-
-- WordPress admin no longer fatals on PHP 7.4 hosts. `wp_slimstat_admin::wp_slimstat_enqueue_scripts()` (hooked to `admin_enqueue_scripts`, fires on every admin page) was calling `str_contains()` (PHP 8.0+) at `admin/index.php:891, 906` with no polyfill load — every wp-admin request on real 7.4 died with `Call to undefined function str_contains()`. Replaced both call sites with `false !== strpos()`. New source-level regression test (`tests/php74-no-php80-functions-test.php`, also wired into `composer test:php74-compat` and the CI 7.4 lane) greps own code for PHP 8.0+ stdlib calls on every push. Surfaced by an exhaustive 7.4-through-8.5 compatibility audit. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303) follow-up)
-
-= 5.4.13 - 2026-05-14 =
-
-**Tracker hardening**
-
-- The tracker REST endpoint (`POST /wp-json/slimstat/v1/hit` and `admin-ajax.php?action=slimstat_track`) no longer returns HTTP 500 on servers without the PHP `fileinfo` extension. `Services\Browscap::get_browser_from_browscap()` constructs Flysystem's `LocalFilesystemAdapter`, which in turn instantiates `FinfoMimeTypeDetector` (`new finfo(...)`) — on hosts where `fileinfo` is absent (common after PHP 7.4 → 8.x rebuilds on managed hosts, CloudLinux Alt-PHP, minimal PHP builds) this throws `\Error`, which the surrounding `catch (\Exception)` did not catch. Fix: preflight `extension_loaded('fileinfo')` at both the `enable_browscap` entry gate and inside the method itself, and widen the inner catch to `\Throwable` (matching the existing pattern in `admin/view/index.php` for the geolite block); failures are reported via the structured `wp_slimstat::log()` helper, which is gated on `WP_DEBUG` to avoid log floods on misconfigured production sites. Tracking continues to work via the built-in UADetector fallback. An admin notice now warns when Browscap is enabled but the extension is unavailable, with a one-click dismiss handled by `slimstat_notice_browscap_fileinfo`. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303))
+- Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3). The PHP 7.4 lane now runs real tests on every change instead of just lint checks — which is what caught the bugs above before they could ship.
+- New regression guards make sure the same class of compatibility issues can't sneak back in.
+- Added a `CONTRIBUTING.md` documenting the test suite for contributors, plus a few small style cleanups in the tests themselves.
 
 = 5.4.12 - 2026-05-13 =
 

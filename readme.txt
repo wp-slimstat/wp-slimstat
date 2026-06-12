@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 6.9.4
-Stable tag: 5.4.17
+Stable tag: 5.5.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,20 +76,12 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.4.17 - 2026-05-14 =
-* Internal: The bundled Symfony/Polyfill/Php80 bootstrap is now loaded from `wp-slimstat.php`, so own code can use PHP 8.0+ stdlib functions (`str_contains`, `str_starts_with`, `fdiv`, `get_debug_type`, etc.) on PHP 7.4 hosts. No behavior change for end users. Source-level test now asserts the polyfill is loaded and still flags PHP 8.1+ stdlib functions that the bundled polyfill does not cover.
-
-= 5.4.16 - 2026-05-14 =
-* Fix: Tracker IP binarization no longer emits 8 phantom zero bits when called with an invalid IP on PHP 8.1+. `Tracker::_dtr_pton()` was missing the initialization its `Utils::dtrPton()` sibling already had. PHP 8.1 is now re-promoted to the CI Tier 1 fast lane.
-
-= 5.4.15 - 2026-05-14 =
-* Fix: 6 implicit-nullable parameter signatures (`Type $x = null` → `?Type $x = null`) silenced — `LogException`, `Query::hasWhereClause`, `DateRangeHelper::format_date_range`, `ConditionTagEvaluator::checkConditions`, `CloudflareGeolocationProvider` closure, `Session::setTrackingCookie`. Stops PHP 8.1+ `debug.log` deprecation noise from own code and prepares for PHP 9.0 (where the deprecation becomes fatal). New `composer test:implicit-nullable` regression test catches future regressions.
-
-= 5.4.14 - 2026-05-14 =
-* Fix: WordPress admin no longer fatals on PHP 7.4 (`Call to undefined function str_contains()` in admin asset enqueue). The Symfony Polyfill/Php80 bootstrap that ships in the bundled vendor was never autoloaded — replaced both call sites with `strpos() !== false`. Surfaced by an exhaustive PHP 7.4–8.5 compatibility audit. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303) follow-up)
-
-= 5.4.13 - 2026-05-14 =
-* Fix: Tracker REST endpoint no longer returns HTTP 500 on servers without the PHP `fileinfo` extension. The Browscap path now preflight-checks `extension_loaded('fileinfo')` and catches `\Throwable` instead of `\Exception`, so a missing extension degrades to UADetector instead of fataling. An admin notice surfaces the misconfiguration with a link to disable Browscap. ([#303](https://github.com/wp-slimstat/wp-slimstat/issues/303))
+= 5.5.0 - Unreleased =
+* Fix: WordPress admin no longer crashes on PHP 7.4 hosts (an admin page was calling a function that only exists in PHP 8.0+).
+* Fix: Visit tracking no longer returns a 500 error on hosts without the optional PHP `fileinfo` extension. The plugin falls back to its built-in browser detector and shows a dismissible admin notice.
+* Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
+* PHP 8.1+ readiness: cleaned up six internal function signatures so they no longer trigger deprecation warnings in `debug.log`. These would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3). The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
 
 = 5.4.12 - 2026-05-13 =
 * Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
