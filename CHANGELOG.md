@@ -1,5 +1,11 @@
 = 5.5.0 - Unreleased =
 
+**Filters & traffic sources**
+
+- Fixed: Google Discover and other Android/iOS app traffic is recorded again. Since 5.4.0, referrers that start with `android-app://` (such as `com.google.android.googlequicksearchbox` from Google Discover) were silently dropped, so that traffic showed up as "direct" with no source. The tracker now preserves app-scheme referrers while still blocking unsafe ones. ([#306](https://github.com/wp-slimstat/wp-slimstat/issues/306))
+- Fixed: The "is empty" and "is not empty" report filters work again. Since 5.4.0 they were silently ignored — the filter chip appeared but every row was still shown — and the filter was lost when you paginated, refreshed, or changed the date range. They now apply on the first click and survive in-session navigation. ([#305](https://github.com/wp-slimstat/wp-slimstat/issues/305))
+- Fixed: The Access Log filter dropdown now accepts pasted or typed values that aren't in the visible list. Previously, on busy sites, a value clearly visible in the log (for example a specific IP) could return "No matching options found" and the filter couldn't be applied. The dropdown now searches the full column history and lets you apply the value you typed. ([#298](https://github.com/wp-slimstat/wp-slimstat/issues/298))
+
 **Compatibility & stability**
 
 - Fixed: WordPress admin no longer crashes on PHP 7.4 hosts. Some admin pages were calling a function that only exists in PHP 8.0 and newer, which broke wp-admin entirely. Replaced with a compatible alternative.
