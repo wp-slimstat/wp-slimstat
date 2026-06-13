@@ -31,7 +31,9 @@ let wpConfigBackup: string | null = null;
 export function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
   if (wpConfigBackup === null) wpConfigBackup = content;
-  if (content.includes(line)) return; // already set
+  // Match the exact injected form (line + newline) so the guard can't false-match
+  // a partial substring, and stays symmetric with removeWpConfigLine(). Idempotent.
+  if (content.includes(line + '\n')) return; // already set
   const marker = "/* That's all, stop editing!";
   const idx = content.indexOf(marker);
   if (idx === -1) throw new Error('Cannot find stop-editing marker in wp-config.php');
