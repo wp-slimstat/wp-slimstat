@@ -34,12 +34,16 @@ class Ajax
      *
      * @internal Extracted from handle() (#306) to provide a unit-testable seam.
      *
-     * Uses sanitize_text_field rather than sanitize_url so app-scheme referers such as
-     * `android-app://com.google.android.googlequicksearchbox/` (Google Discover) survive:
-     * sanitize_url strips any scheme absent from wp_allowed_protocols(), emptying the value.
-     * The host-format check below and the scheme allowlist in Processor::process() (which
-     * permits http/https/android-app and drops everything else as an XSS attempt) remain the
-     * security boundary.
+     * Uses sanitize_url() with `android-app` added to the allow-list
+     * (Processor::REFERER_ALLOWED_SCHEMES) rather than the default wp_allowed_protocols():
+     *   - app-scheme referers such as `android-app://com.google.android.googlequicksearchbox/`
+     *     (Google Discover) survive — the original #306 bug was the default list emptying them;
+     *   - disallowed schemes (javascript:, data:) are emptied here, at the boundary, so they can
+     *     never reach storage even on the follow-up-event path that skips Processor::process();
+     *   - unlike sanitize_text_field, percent-encoded query octets (%XX) are preserved, so
+     *     getSearchTerms() can still decode non-Latin / spaced search terms downstream.
+     * The host-format check below and the post-storage scheme check in Processor::process()
+     * remain as defense in depth.
      *
      * @param mixed $rawEncoded Raw base64url ref value from the client payload.
      * @return string|false Sanitized referer (possibly empty), or false when the referer is
@@ -66,7 +70,7 @@ class Ajax
             $referer = substr($referer, 0, 2048);
         }
 
-        return sanitize_text_field($referer);
+        return sanitize_url($referer, Processor::REFERER_ALLOWED_SCHEMES);
     }
 
     /**

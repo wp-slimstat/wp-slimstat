@@ -7,97 +7,127 @@ use Brain\Monkey\Functions;
 use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 /**
- * Regression tests for #306 — android-app:// (Google Discover) referers were
- * silently dropped because Ajax::handle() ran the referer through sanitize_url(),
- * which strips any scheme not in wp_allowed_protocols().
+ * Tests for Ajax::sanitizeReferer() — the seam extracted from handle() for #306.
  *
- * Ajax::sanitizeReferer() is the seam extracted from handle() lines 102-130. It
- * now uses sanitize_text_field(), preserving app-scheme referers while the host
- * regex and the Processor scheme allowlist remain the security boundary.
+ * The referer is sanitized with sanitize_url() using an extended protocols
+ * allow-list (Processor::REFERER_ALLOWED_SCHEMES = http/https/android-app):
+ *   - #306: `android-app://…` (Google Discover) survives — it is on the allow-list;
+ *   - #306 follow-up: percent-encoded query octets (%XX) are preserved so
+ *     getSearchTerms() can still decode non-Latin / spaced terms downstream
+ *     (sanitize_text_field would have stripped them);
+ *   - L1: disallowed schemes (javascript:, data:, ios-app:, ftp:) are emptied at
+ *     this boundary, so they cannot reach storage even on the follow-up-event path
+ *     that skips Processor::process()'s post-storage scheme check.
+ *
+ * The host-format regex and the 2048-char cap are the seam's own guards and are
+ * exercised here too.
  */
 class AjaxRefererSanitizationTest extends WpSlimstatTestCase
 {
-    /** base64url-encode using the same scheme as Tracker::_base64_url_encode(). */
+    /** base64url-encode using the same scheme as Tracker::base64UrlEncode(). */
     private static function encode(string $url): string
     {
         return strtr(base64_encode($url), '+/=', '._-');
     }
 
-    /** @test */
-    public function test_preserves_android_app_referer(): void
+    /**
+     * Model WordPress sanitize_url(): drop any scheme not in $protocols, otherwise
+     * return the URL unchanged (esc_url preserves %XX query octets). Tags are
+     * already stripped upstream by Utils::base64UrlDecode().
+     */
+    private function stubSanitizeUrl(): void
     {
-        // sanitize_text_field must be used (passthrough for a clean string);
-        // sanitize_url must never be called for the referer.
-        Functions\expect('sanitize_text_field')->once()->andReturnUsing(static fn($v) => $v);
-        Functions\expect('sanitize_url')->never();
-
-        $url    = 'android-app://com.google.android.googlequicksearchbox/';
-        $result = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url));
-
-        $this->assertSame($url, $result);
+        Functions\when('sanitize_url')->alias(static function ($url, $protocols = null) {
+            $allowed = $protocols ?: ['http', 'https'];
+            $scheme  = strtolower((string) parse_url((string) $url, PHP_URL_SCHEME));
+            if ($scheme !== '' && !in_array($scheme, $allowed, true)) {
+                return '';
+            }
+            return (string) $url;
+        });
     }
 
     /** @test */
-    public function test_preserves_ios_app_referer(): void
+    public function test_preserves_android_app_referer(): void
     {
-        Functions\expect('sanitize_text_field')->once()->andReturnUsing(static fn($v) => $v);
-        Functions\expect('sanitize_url')->never();
+        $this->stubSanitizeUrl();
+        // sanitize_text_field must NOT be used for the referer anymore.
+        Functions\expect('sanitize_text_field')->never();
 
-        $url    = 'ios-app://com.google.ios.app/';
-        $result = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url));
-
-        $this->assertSame($url, $result);
+        $url = 'android-app://com.google.android.googlequicksearchbox/';
+        $this->assertSame($url, \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url)));
     }
 
     /** @test */
     public function test_preserves_http_referer_baseline(): void
     {
-        Functions\expect('sanitize_text_field')->once()->andReturnUsing(static fn($v) => $v);
-        Functions\expect('sanitize_url')->never();
+        $this->stubSanitizeUrl();
 
-        $url    = 'https://example.com/page?q=1';
+        $url = 'https://example.com/page?q=1';
+        $this->assertSame($url, \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url)));
+    }
+
+    /**
+     * #306 follow-up regression guard: percent-encoded query octets must survive,
+     * or non-Latin / spaced search terms are lost in getSearchTerms(). This is the
+     * exact case sanitize_text_field would have corrupted.
+     *
+     * @test
+     */
+    public function test_preserves_percent_encoded_query_octets(): void
+    {
+        $this->stubSanitizeUrl();
+
+        $url    = 'https://yandex.ru/search/?text=%D0%BF%D1%80%D0%B8%D0%B2%D0%B5%D1%82&lr=1';
         $result = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url));
 
+        $this->assertStringContainsString('%D0%BF', $result, 'percent-encoded octets must be preserved');
         $this->assertSame($url, $result);
     }
 
-    /** @test */
-    public function test_strips_script_tags_from_referer(): void
+    /**
+     * L1: a disallowed scheme is emptied at the sanitizer (not merely flagged later
+     * by Processor), covering the follow-up-event path that bypasses Processor.
+     *
+     * @test
+     * @dataProvider disallowedSchemeProvider
+     */
+    public function test_drops_disallowed_scheme_referer(string $url): void
     {
-        // Tags are stripped by base64UrlDecode (strip_tags) before sanitize_text_field;
-        // here we additionally model sanitize_text_field stripping any residual markup.
-        Functions\expect('sanitize_text_field')->once()->andReturnUsing(
-            static fn($v) => trim(preg_replace('/<[^>]*>/', '', (string) $v))
-        );
+        $this->stubSanitizeUrl();
 
-        $payload = 'android-app://attacker/<script>alert(1)</script>';
-        $result  = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($payload));
+        $this->assertSame('', \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url)));
+    }
 
-        $this->assertIsString($result);
-        $this->assertStringNotContainsString('<script>', $result);
-        $this->assertStringStartsWith('android-app://attacker/', $result);
+    public static function disallowedSchemeProvider(): array
+    {
+        return [
+            'javascript' => ['javascript:alert(document.cookie)//'],
+            'data'       => ['data:text/plain,hi'],
+            // ios-app is NOT on the allow-list — it is dropped end-to-end, unlike
+            // android-app. (A prior test wrongly asserted ios-app passthrough.)
+            'ios-app'    => ['ios-app://com.google.ios.app/'],
+            'ftp'        => ['ftp://files.example.com/x'],
+        ];
     }
 
     /** @test */
     public function test_rejects_invalid_host(): void
     {
-        // sanitize_text_field must never be reached when the host fails validation.
-        Functions\expect('sanitize_text_field')->never();
+        // Host-format failure returns false BEFORE the sanitizer runs.
+        Functions\expect('sanitize_url')->never();
 
         // Underscores are not valid in the host-format regex.
-        $result = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode('http://bad_host!!/path'));
-
-        $this->assertFalse($result);
+        $this->assertFalse(\SlimStat\Tracker\Ajax::sanitizeReferer(self::encode('http://bad_host!!/path')));
     }
 
     /** @test */
     public function test_truncates_referer_above_2048(): void
     {
-        Functions\expect('sanitize_text_field')->once()->andReturnUsing(static fn($v) => $v);
+        $this->stubSanitizeUrl();
 
-        $longPath = str_repeat('a', 4096);
-        $url      = 'https://example.com/' . $longPath;
-        $result   = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url));
+        $url    = 'https://example.com/' . str_repeat('a', 4096);
+        $result = \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url));
 
         $this->assertIsString($result);
         $this->assertSame(2048, strlen($result));

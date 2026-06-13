@@ -42,6 +42,9 @@ if (!class_exists('wp_slimstat')) {
         /** @var string */
         public static string $upload_dir = '/tmp/fake-browscap';
 
+        /** @var object|null Stand-in for the WP $wpdb handle (set by tests that need it). */
+        public static $wpdb = null;
+
         /** @var array<string,mixed> */
         public static array $settings = [
             'enable_browscap'          => 'off',

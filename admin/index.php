@@ -2155,10 +2155,7 @@ class wp_slimstat_admin
 
         // Append LIKE filter when a server-side search term was supplied.
         if ($search !== '') {
-            $escaped = wp_slimstat::$wpdb->esc_like($search);
-            $like_pattern = in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true)
-                ? '%' . $escaped . '%'
-                : $escaped . '%';
+            $like_pattern    = self::build_filter_search_like($dimension, $search);
             $where_clauses[] = wp_slimstat::$wpdb->prepare($safe_dimension . ' LIKE %s', $like_pattern);
         }
 
@@ -2228,7 +2225,7 @@ class wp_slimstat_admin
         if ($search !== '' && (isset($multi_value_separators[$dimension]) || $dimension === 'notes')) {
             $has_mb       = function_exists('mb_strtolower');
             $needle       = $has_mb ? mb_strtolower($search) : strtolower($search);
-            $is_substring = in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true);
+            $is_substring = self::filter_search_is_substring($dimension);
             $results = array_values(array_filter($results, function ($row) use ($needle, $is_substring, $has_mb) {
                 $haystack = $has_mb ? mb_strtolower($row['value']) : strtolower($row['value']);
                 return $is_substring ? (strpos($haystack, $needle) !== false) : (strpos($haystack, $needle) === 0);
@@ -2306,6 +2303,28 @@ class wp_slimstat_admin
 
         wp_send_json_success($options);
         exit();
+    }
+
+    /**
+     * Whether the server-side filter search uses an unanchored (%needle%) LIKE for
+     * this dimension instead of the default left-anchored prefix (needle%). Single
+     * source of truth for the search-anchor decision (#298), shared by the SQL LIKE
+     * builder and the post-split segment re-filter.
+     */
+    private static function filter_search_is_substring(string $dimension): bool
+    {
+        return in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true);
+    }
+
+    /**
+     * Build the escaped, anchored LIKE pattern for a server-side filter search (#298).
+     * The needle is run through wpdb::esc_like so SQL LIKE metacharacters (% _) are
+     * matched literally; the caller still passes the result through wpdb::prepare.
+     */
+    private static function build_filter_search_like(string $dimension, string $search): string
+    {
+        $escaped = wp_slimstat::$wpdb->esc_like($search);
+        return self::filter_search_is_substring($dimension) ? '%' . $escaped . '%' : $escaped . '%';
     }
 
     /**

@@ -16,6 +16,15 @@ class wp_slimstat_db
     // list never drifts between callsites. See #305.
     public static $valueless_operators = ['is_empty', 'is_not_empty'];
 
+    // parse_filters() switch keys that map to the date/misc buckets rather than a data
+    // column. A value-less operator (is_empty/is_not_empty) is meaningless for these and
+    // must not reach the switch without a value — those branches dereference $a_filter[3]
+    // and would emit an "Undefined array key 3" warning on a crafted request. See #305.
+    private const NON_COLUMN_FILTER_KEYS = [
+        'strtotime', 'minute', 'hour', 'day', 'month', 'year',
+        'interval', 'interval_hours', 'interval_minutes', 'limit_results', 'start_from',
+    ];
+
     public static $filters_normalized = [];
 
     // Structure that maps filters to SQL information (table names, clauses, lookup tables, etc)
@@ -632,8 +641,13 @@ class wp_slimstat_db
 
                 // Preserve "malformed (no value) → drop" semantics for value-bearing
                 // operators now that the regex no longer requires a value. Value-less
-                // operators (is_empty/is_not_empty) are explicitly allowed through. See #305.
-                if (!isset($a_filter[3]) && !in_array($a_filter[2], self::$valueless_operators, true)) {
+                // operators (is_empty/is_not_empty) are explicitly allowed through — but
+                // only for real data columns: a value-less op aimed at a date/misc switch
+                // key (strtotime, minute, …) would dereference the absent $a_filter[3]
+                // below, so drop it here too. See #305.
+                if (!isset($a_filter[3])
+                    && (!in_array($a_filter[2], self::$valueless_operators, true)
+                        || in_array($a_filter[1], self::NON_COLUMN_FILTER_KEYS, true))) {
                     continue;
                 }
 

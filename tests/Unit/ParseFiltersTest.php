@@ -200,4 +200,36 @@ class ParseFiltersTest extends WpSlimstatTestCase
         $this->assertSame(['is_not_empty', ''], $fn['columns']['email']);
         $this->assertSame(['contains', 'Chrome'], $fn['columns']['browser']);
     }
+
+    // ── Group 7: value-less op on a date/special key must not warn ───
+    // Regression guard for the relaxed-regex side effect: a crafted value-less
+    // operator aimed at a date switch key (e.g. fs[minute]=is_empty) used to fall
+    // into `case 'minute':` and dereference the absent $a_filter[3], emitting an
+    // "Undefined array key 3" warning. PHPUnit converts that warning to a failure,
+    // so simply not warning IS the assertion; we also assert the filter is dropped.
+
+    /** @test */
+    public function test_value_less_op_on_date_column_is_dropped_without_warning(): void
+    {
+        $fn = \wp_slimstat_db::parse_filters('minute is_empty');
+        $this->assertArrayNotHasKey('minute', $fn['date'], 'value-less op on a date key must not create a date entry');
+        $this->assertArrayNotHasKey('minute', $fn['columns'], 'value-less op on a date key must not create a column entry');
+    }
+
+    /** @test */
+    public function test_value_less_op_on_date_column_with_trailing_space_is_dropped(): void
+    {
+        $fn = \wp_slimstat_db::parse_filters('minute is_not_empty ');
+        $this->assertArrayNotHasKey('minute', $fn['date']);
+        $this->assertArrayNotHasKey('minute', $fn['columns']);
+    }
+
+    /** @test */
+    public function test_value_bearing_date_filter_still_parses_after_regex_relaxation(): void
+    {
+        // The relaxed regex must keep parsing value-bearing date filters; pins the
+        // multi-value-capable third group for the date branch.
+        $fn = \wp_slimstat_db::parse_filters('minute equals 30');
+        $this->assertSame(30, $fn['date']['minute']);
+    }
 }
