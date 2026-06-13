@@ -35,11 +35,13 @@ if (false === $src) {
     exit(1);
 }
 
-// Extract the `w` whitelist array literal: in_array($w, [ ... ])
-if (!preg_match('/in_array\(\$w,\s*\[(.*?)\]\)\)/s', $src, $m)) {
-    fwrite(STDERR, "FAIL: could not locate the in_array(\$w, [...]) whitelist\n");
+// Locate the exact in_array() call that guards $w and capture its literal array
+// argument (the columns are string literals, so the first ']' closes the array).
+if (!preg_match('/in_array\(\$w,\s*\[(.*?)\]\s*,\s*true\s*\)/s', $src, $m)) {
+    fwrite(STDERR, "FAIL: could not locate a strict in_array(\$w, [...], true) guard\n");
     exit(1);
 }
+$guard = $m[0];
 preg_match_all("/'([^']+)'/", $m[1], $tokens);
 $whitelist = $tokens[1];
 
@@ -61,13 +63,17 @@ foreach ($switchColumns as $col) {
     check(in_array($col, $whitelist, true), "switch-case column '{$col}' must be whitelisted");
 }
 
-// (c) the SQL boundary: the guard must stay an exact-match in_array, never a
-//     loosened strpos/preg_match over $w (which would allow arbitrary columns
-//     into raw SQL).
+// (c) the SQL boundary: get_recent()/get_top() interpolate the column into raw
+//     SQL, so the guard captured above MUST be a strict, exact-match in_array
+//     over a literal array (type-juggling-proof) — not a loosened strpos/regex.
+//     We assert against the captured $guard scope, not "in_array anywhere".
 check(
-    !preg_match('/(?:strpos|preg_match|preg_split)\([^)]*\$w\b/', $src)
-        || (bool) preg_match('/in_array\(\$w,/', $src),
-    'the `w` guard must remain an exact-match in_array, not a loosened match'
+    (bool) preg_match('/^in_array\(\$w,\s*\[/', $guard) && false !== strpos($guard, '], true)'),
+    'the `w` guard must be a strict in_array($w, [...], true) over a literal array'
+);
+check(
+    !preg_match('/(?:strpos|preg_match|preg_split)\s*\([^)]*\$w\b/', $src),
+    'the `w` value must not be fed to a loosened strpos/preg_* before the in_array guard'
 );
 
 if ($failures > 0) {

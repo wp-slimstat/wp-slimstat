@@ -53,16 +53,38 @@ export const MYSQL_CONFIG = {
  * the database named "local"; CI / wp-env / Playground use throwaway DBs
  * (e.g. "wordpress"). Call this before opening any test DB pool.
  *
- * Override only with ALLOW_LIVE_DB=1, and only against a disposable copy.
+ * The gate (unless overridden) requires BOTH a local host AND a disposable
+ * database name. Configure via:
+ *   - ALLOW_LIVE_DB=1            — bypass entirely (use only against a copy you own)
+ *   - E2E_ALLOWED_DB_HOSTS       — comma-separated safe hosts (default localhost,127.0.0.1)
+ *   - E2E_ALLOWED_DB_PATTERN     — regex of disposable DB names (default below)
  */
 export function assertSafeTestDatabase(): void {
   if (process.env.ALLOW_LIVE_DB === '1') return;
-  if (MYSQL_CONFIG.database === 'local') {
+  // CI runs against an ephemeral wp-env/Docker database destroyed after the job.
+  if (process.env.CI === 'true') return;
+
+  const cfg = MYSQL_CONFIG as { database: string; host?: string; socketPath?: string };
+  const db = cfg.database;
+  // A unix socket is local by definition; otherwise the TCP host must be local.
+  const host = cfg.socketPath ? 'socket' : String(cfg.host ?? '');
+  const allowedHosts = (process.env.E2E_ALLOWED_DB_HOSTS ?? 'localhost,127.0.0.1')
+    .split(',')
+    .map((h) => h.trim());
+  const hostSafe = host === 'socket' || allowedHosts.includes(host);
+
+  // wp-env / Playground default the DB name to "wordpress"; the rest are common
+  // throwaway prefixes. The live Local site's "local" is intentionally excluded.
+  const dbPattern = process.env.E2E_ALLOWED_DB_PATTERN
+    ? new RegExp(process.env.E2E_ALLOWED_DB_PATTERN)
+    : /^(wordpress|tests?[-_]|test$|playground|wp[-_]?env|sandbox)/i;
+
+  if (!hostSafe || !dbPattern.test(db)) {
     throw new Error(
-      'E2E data-safety guard: refusing to run against the live "local" database — these ' +
-        'tests TRUNCATE wp_slim_stats / wp_slim_events and would wipe real analytics. ' +
+      `E2E data-safety guard: refusing to run against database "${db}" on host "${host}" — ` +
+        'these tests TRUNCATE wp_slim_stats / wp_slim_events and would wipe real analytics. ' +
         'Run against wp-env or `npm run test:e2e:playground` (throwaway DBs), or set ' +
-        'ALLOW_LIVE_DB=1 if "local" here is a disposable copy you control.'
+        'ALLOW_LIVE_DB=1 if this is a disposable copy you control.'
     );
   }
 }
