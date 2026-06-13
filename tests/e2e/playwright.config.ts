@@ -25,6 +25,9 @@ export default defineConfig({
   ],
   use: {
     baseURL: BASE_URL,
+    // LocalWP serves a self-signed cert Chromium rejects. Gated by PW_IGNORE_HTTPS
+    // so it is a no-op in CI (which uses plain HTTP / a trusted cert).
+    ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

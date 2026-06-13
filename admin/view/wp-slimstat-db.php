@@ -11,6 +11,20 @@ class wp_slimstat_db
 
     public static $operator_names = [];
 
+    // Operators that take no value by design (is_empty/is_not_empty). Shared with
+    // parse_filters(), fs_url(), and the JS layer (via SlimStatAdminParams) so the
+    // list never drifts between callsites. See #305.
+    public static $valueless_operators = ['is_empty', 'is_not_empty'];
+
+    // parse_filters() switch keys that map to the date/misc buckets rather than a data
+    // column. A value-less operator (is_empty/is_not_empty) is meaningless for these and
+    // must not reach the switch without a value — those branches dereference $a_filter[3]
+    // and would emit an "Undefined array key 3" warning on a crafted request. See #305.
+    private const NON_COLUMN_FILTER_KEYS = [
+        'strtotime', 'minute', 'hour', 'day', 'month', 'year',
+        'interval', 'interval_hours', 'interval_minutes', 'limit_results', 'start_from',
+    ];
+
     public static $filters_normalized = [];
 
     // Structure that maps filters to SQL information (table names, clauses, lookup tables, etc)
@@ -616,9 +630,24 @@ class wp_slimstat_db
             $matches = explode('&&&', $_filters_raw);
 
             foreach ($matches as $a_match) {
-                preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
+                // Third group AND its leading separator are optional so value-less
+                // operators survive a URL round-trip (sanitize_text_field() trims the
+                // trailing space the form-builder appends). See #305.
+                preg_match('/([^\s]+)\s([^\s]+)(?:\s(.+))?/', urldecode($a_match), $a_filter);
 
                 if ([] === $a_filter || ((!array_key_exists($a_filter[1], self::$all_columns_names) || false !== strpos($a_filter[1], 'no_filter')) && false === strpos($a_filter[1], 'addon_'))) {
+                    continue;
+                }
+
+                // Preserve "malformed (no value) → drop" semantics for value-bearing
+                // operators now that the regex no longer requires a value. Value-less
+                // operators (is_empty/is_not_empty) are explicitly allowed through — but
+                // only for real data columns: a value-less op aimed at a date/misc switch
+                // key (strtotime, minute, …) would dereference the absent $a_filter[3]
+                // below, so drop it here too. See #305.
+                if (!isset($a_filter[3])
+                    && (!in_array($a_filter[2], self::$valueless_operators, true)
+                        || in_array($a_filter[1], self::NON_COLUMN_FILTER_KEYS, true))) {
                     continue;
                 }
 
@@ -697,10 +726,15 @@ class wp_slimstat_db
                         // no break here: if value IS numeric, go to the default parser here below
 
                     default:
+                        $filter_op    = $a_filter[2];
                         $filter_value = isset($a_filter[3]) ? str_replace('\\', '', htmlspecialchars_decode($a_filter[3])) : '';
-                        // Only add filter if value is not empty (ignore filters without values)
-                        if (trim($filter_value) !== '') {
-                            $filters_parsed['columns'][$a_filter[1]] = [$a_filter[2], $filter_value];
+                        if (in_array($filter_op, self::$valueless_operators, true)) {
+                            // Value-less by design — store an empty value, scrubbing any stale
+                            // UI value the SQL builder would ignore anyway. See #305.
+                            $filters_parsed['columns'][$a_filter[1]] = [$filter_op, ''];
+                        } elseif (trim($filter_value) !== '') {
+                            // Ignore value-bearing filters submitted without a value.
+                            $filters_parsed['columns'][$a_filter[1]] = [$filter_op, $filter_value];
                         }
                         break;
                 }
