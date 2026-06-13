@@ -96,6 +96,37 @@ jobs:
         run: composer test:source-level
 
 ##############################################################################
+# PHPStan — static analysis (baseline-gated), every push / PR
+##############################################################################
+  phpstan:
+    name: "Static analysis · PHPStan"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+
+      - name: Install Composer dependencies (with dev — PHPStan + WP stubs)
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        run: composer dump-autoload --no-interaction
+
+      - name: Run PHPStan (level 5, target 7.4, baseline-gated)
+        # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
+        # findings are parked in phpstan-baseline.neon — this lane fails only on
+        # NEW errors. Ratchet the baseline down over time; never grow it.
+        run: composer phpstan
+
+##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
 # Runs on: push or PR targeting main or development branches only
 ##############################################################################

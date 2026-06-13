@@ -78,3 +78,6 @@ package-lock.json
 
 # PHPUnit
 .phpunit.result.cache
+
+# PHPStan local override (the committed config is phpstan.neon.dist)
+phpstan.neon
