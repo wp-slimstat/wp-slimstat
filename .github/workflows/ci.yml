@@ -311,16 +311,25 @@ jobs:
           echo "Floor guard: no fatals/own-code deprecations in debug.log."
 
       - name: Run E2E tests
-        # continue-on-error: many E2E tests assume local dev fixtures (tracking
-        # data, custom users) that don't exist in a fresh wp-env. These are
-        # pre-existing failures, not regressions. Report results, don't block.
+        # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
+        # matrix lanes run only the @compat-tagged compat specs via --grep, so
+        # PRs stay within budget (the lane is the CI job, not the filename).
+        # continue-on-error stays until the new lanes are reliably green; then
+        # remove it to make 6.4 + 7.0 blocking (interior lanes stay nightly).
+        # Many existing E2E tests assume local dev fixtures absent in fresh
+        # wp-env — pre-existing failures, not regressions.
         continue-on-error: true
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
-        run: npm run test:e2e
+        run: |
+          if [ "${WP_VERSION}" = "6.4" ]; then
+            npm run test:e2e
+          else
+            npm run test:e2e -- --grep "@compat"
+          fi
 
       - name: Upload Playwright report
         if: always()
