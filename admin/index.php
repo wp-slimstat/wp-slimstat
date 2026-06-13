@@ -1115,6 +1115,13 @@ class wp_slimstat_admin
             // Guarded: this method also runs on the Dashboard-widget path, where
             // wp_slimstat_db may not be included — fall back to the literal list.
             'valueless_operators' => class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'],
+            // WP-locale number separators so JS-rendered (lazily-loaded) funnel tabs
+            // match the server's number_format_i18n() output instead of the browser
+            // locale's toLocaleString().
+            'number_format'       => [
+                'decimal_point' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['decimal_point'] ?? '.') : '.',
+                'thousands_sep' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['thousands_sep'] ?? ',') : ',',
+            ],
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 

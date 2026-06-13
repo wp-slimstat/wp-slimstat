@@ -123,10 +123,27 @@
             .replace(/'/g, '&#39;');
     }
 
-    // Mirrors number_format_i18n for the common case; server-rendered numbers
-    // remain authoritative, this only runs for lazy-loaded funnel tabs.
+    // WP-locale separators (localized from $wp_locale) so JS-rendered numbers on
+    // lazily-loaded funnel tabs match the server's number_format_i18n() output
+    // rather than the browser locale's toLocaleString(). Falls back to en_US-ish.
+    var _numFmt = (SlimStatAdminParams.number_format && typeof SlimStatAdminParams.number_format === 'object')
+        ? SlimStatAdminParams.number_format
+        : { decimal_point: '.', thousands_sep: ',' };
+
+    // Integer counts: group thousands with the locale separator. Mirrors
+    // number_format_i18n($n) (0 decimals).
     function formatNumber(n) {
-        return (Number(n) || 0).toLocaleString();
+        var int = Math.round(Number(n) || 0);
+        var sign = int < 0 ? '-' : '';
+        return sign + String(Math.abs(int)).replace(/\B(?=(\d{3})+(?!\d))/g, _numFmt.thousands_sep);
+    }
+
+    // Percentages/decimals: render with the locale decimal separator, trimming a
+    // trailing ".0". Mirrors number_format_i18n($pct, 1) without forcing a decimal.
+    function formatPercent(n) {
+        var rounded = Math.round((Number(n) || 0) * 10) / 10;
+        var str = (rounded === Math.round(rounded)) ? String(rounded) : rounded.toFixed(1);
+        return str.replace('.', _numFmt.decimal_point);
     }
 
     function post(data, onSuccess, onError) {
@@ -160,6 +177,7 @@
         $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel'));
         $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete'));
         $confirmSheet.addClass('is-open').attr('aria-hidden', 'false');
+        onDialogOpen();
         confirmHandler = opts.onConfirm || null;
         setTimeout(function () {
             $confirmSheet.find('[data-role="confirm-destructive"]').trigger('focus');
@@ -169,6 +187,7 @@
     function closeConfirmSheet() {
         $confirmSheet.removeClass('is-open').attr('aria-hidden', 'true');
         confirmHandler = null;
+        onDialogClose();
     }
 
     $body.on('click', '[data-action="close-confirm-sheet"]', closeConfirmSheet);
@@ -204,6 +223,7 @@
         $goalDrawer.find('[data-role="drawer-error"]').attr('hidden', true).text('');
 
         $goalDrawer.addClass('is-open').attr('aria-hidden', 'false');
+        onDialogOpen();
         initAutoSuggest(
             $goalDrawer.find('[data-role="goal-value"]')[0],
             $goalDrawer.find('[data-role="goal-dimension"]').val(),
@@ -217,6 +237,7 @@
     function closeGoalDrawer() {
         destroyAutoSuggest($goalDrawer.find('[data-role="goal-value"]')[0]);
         $goalDrawer.removeClass('is-open').attr('aria-hidden', 'true');
+        onDialogClose();
     }
 
     $body.on('click', '[data-action="open-goal-drawer"]', function () {
@@ -370,6 +391,7 @@
         initStepRowsAutoSuggest();
 
         $builder.addClass('is-open').attr('aria-hidden', 'false');
+        onDialogOpen();
         setTimeout(function () {
             $builder.find('[data-role="funnel-name"]').trigger('focus');
         }, 0);
@@ -378,6 +400,7 @@
     function closeFunnelBuilder() {
         destroyStepRowsAutoSuggest();
         $builder.removeClass('is-open').attr('aria-hidden', 'true');
+        onDialogClose();
     }
 
     function initStepRowsAutoSuggest() {
@@ -526,7 +549,7 @@
             var unreachable = !!step.unreachable;
             var width = stepOne > 0 ? Math.max(2, Math.round((visitors / stepOne) * 100)) : 0;
             var stepNum = i + 1;
-            var pctLabel = (Math.round(pct * 10) / 10);
+            var pctLabel = formatPercent(pct);
             var stepCls = unreachable ? 'slimstat-gf-step slimstat-gf-step--unreachable' : 'slimstat-gf-step';
 
             html += '<li class="' + stepCls + '" data-step="' + stepNum + '">';
@@ -534,7 +557,7 @@
             html += '<span class="slimstat-gf-step__name">' + escHtml(step.name || '') + '</span>';
             html += '<span class="slimstat-gf-step__count">';
             html += formatNumber(visitors);
-            html += ' <span class="slimstat-gf-step__pct">(' + escHtml(String(pctLabel)) + '%)</span>';
+            html += ' <span class="slimstat-gf-step__pct">(' + escHtml(pctLabel) + '%)</span>';
             html += '</span></div>';
             html += '<div class="slimstat-gf-step__track" role="presentation">';
             html += '<div class="slimstat-gf-step__fill" data-step="' + stepNum + '" style="width:' + width + '%;"';
@@ -548,7 +571,7 @@
                     escHtml(__('Step unreachable · event not seen in range')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
-                var dropoffPct = prev > 0 ? Math.round((dropoff / prev) * 1000) / 10 : 0;
+                var dropoffPct = prev > 0 ? formatPercent((dropoff / prev) * 100) : formatPercent(0);
                 /* translators: 1: visitors dropped, 2: drop-off percentage */
                 var dropLine = sprintf(__('↓ %1$s dropped (%2$s%%)'), formatNumber(dropoff), dropoffPct);
                 html += '<div class="slimstat-gf-step__dropoff">' + escHtml(dropLine) + '</div>';
@@ -565,7 +588,7 @@
                 escHtml(__('No visitors matched in this date range')) + '</span>';
         }
         var cr = Number(summary.total_cr);
-        var crLabel = (cr === Math.round(cr)) ? String(cr) : cr.toFixed(1);
+        var crLabel = formatPercent(cr);
         var stepCount = Number(summary.step_count) || 0;
         var unreachable = Number(summary.unreachable_count) || 0;
         var isHealthy100 = (cr === 100 && unreachable === 0 && stepCount > 1);
@@ -857,15 +880,106 @@
         renumberSteps();
     });
 
+    // Keyboard alternative to drag-reorder (HTML5 DnD is pointer-only). The drag
+    // handle is focusable; ArrowUp/ArrowDown move the step one position and keep
+    // focus on the handle, reusing the same DOM-move + renumberSteps() path.
+    // WCAG 2.1.1 (Keyboard).
+    $body.on('keydown', '[data-action="drag-step"]', function (e) {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        e.preventDefault();
+        var $row  = $(this).closest('.slimstat-gf-step-row');
+        var $rows = $stepsContainer.find('.slimstat-gf-step-row');
+        var idx   = $rows.index($row);
+        var target = idx + (e.key === 'ArrowUp' ? -1 : 1);
+        if (target < 0 || target >= $rows.length) return;
+
+        if (e.key === 'ArrowUp') {
+            $row.insertBefore($rows.eq(target));
+        } else {
+            $row.insertAfter($rows.eq(target));
+        }
+        renumberSteps();
+
+        // Announce the new position (the steps-container is aria-live="polite", and
+        // the handle label carries the position for re-focus) and keep focus.
+        var $handle = $row.find('[data-action="drag-step"]');
+        /* translators: 1: new step position, 2: total steps */
+        $handle.attr('aria-label', sprintf(__('Reorder step, position %1$d of %2$d'), target + 1, $rows.length));
+        $handle.trigger('focus');
+    });
+
     // ============================================================
-    //  Keyboard — Esc closes, Enter in sheet confirms
+    //  Modal focus management — trap, restore, background inert
+    // ============================================================
+    //
+    // The Goals & Funnels dialogs are printed via admin_footer, OUTSIDE #wpwrap,
+    // so inerting #wpwrap disables the background page without ever touching the
+    // dialogs themselves (WCAG 2.4.3 / modal dialog pattern).
+
+    var $pageWrap = $('#wpwrap');
+    var _dialogOpener = null;
+
+    function focusableIn($dialog) {
+        return $dialog
+            .find('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')
+            .filter(':visible');
+    }
+
+    function topOpenDialog() {
+        if ($confirmSheet.hasClass('is-open')) return $confirmSheet;
+        if ($goalDrawer.hasClass('is-open'))   return $goalDrawer;
+        if ($builder.hasClass('is-open'))      return $builder;
+        return null;
+    }
+
+    function onDialogOpen() {
+        // Remember the trigger so focus can return to it on close.
+        _dialogOpener = document.activeElement;
+        if ($pageWrap.length) {
+            $pageWrap.attr('aria-hidden', 'true').prop('inert', true);
+        }
+    }
+
+    function onDialogClose() {
+        // Release the page only once every dialog is closed (defensive — they
+        // don't normally stack).
+        if (topOpenDialog()) return;
+        if ($pageWrap.length) {
+            $pageWrap.removeAttr('aria-hidden').prop('inert', false);
+        }
+        if (_dialogOpener && typeof _dialogOpener.focus === 'function') {
+            _dialogOpener.focus();
+        }
+        _dialogOpener = null;
+    }
+
+    // ============================================================
+    //  Keyboard — Esc closes, Tab is trapped inside the open dialog
     // ============================================================
 
     $(document).on('keydown', function (e) {
+        var $dialog = topOpenDialog();
+        if (!$dialog) return;
+
         if (e.key === 'Escape') {
             if ($confirmSheet.hasClass('is-open')) closeConfirmSheet();
             else if ($goalDrawer.hasClass('is-open')) closeGoalDrawer();
             else if ($builder.hasClass('is-open')) closeFunnelBuilder();
+            return;
+        }
+
+        if (e.key === 'Tab') {
+            var $f = focusableIn($dialog);
+            if (!$f.length) { e.preventDefault(); return; }
+            var first  = $f[0];
+            var last   = $f[$f.length - 1];
+            var active = document.activeElement;
+            var inside = $dialog[0].contains(active);
+            if (e.shiftKey) {
+                if (!inside || active === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (!inside || active === last) { e.preventDefault(); first.focus(); }
+            }
         }
     });
 

@@ -620,6 +620,16 @@
     to   { background-position: -200% 0; }
 }
 
+/* The shimmer is an infinite loop with a hardcoded duration, so it bypasses the
+   token-based reduced-motion strategy (which only zeroes the --ss-duration-*
+   tokens). Stop it outright for users who asked for reduced motion. WCAG 2.3.3. */
+@media (prefers-reduced-motion: reduce) {
+    .slimstat-gf-skeleton__row,
+    .slimstat-gf-skeleton-text {
+        animation: none;
+    }
+}
+
 /* ============================================================
    2. Drawer + builder + confirm-sheet
    ============================================================ */
