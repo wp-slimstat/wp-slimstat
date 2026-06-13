@@ -7,7 +7,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as mysql from 'mysql2/promise';
 import { serialize as phpSerialize, unserialize as phpUnserialize } from 'php-serialize';
-import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL } from './env';
+import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL, assertSafeTestDatabase } from './env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,6 +192,7 @@ let pool: mysql.Pool | null = null;
 
 export function getPool(): mysql.Pool {
   if (!pool) {
+    assertSafeTestDatabase(); // refuse to open a pool against the live "local" DB
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;

@@ -45,3 +45,24 @@ export const MYSQL_CONFIG = {
   waitForConnections: true,
   connectionLimit: 5,
 };
+
+/**
+ * Data-safety guard. The E2E suite runs destructive operations
+ * (TRUNCATE wp_slim_stats / wp_slim_events, option mutation), so it must never
+ * connect to a real site's database. The Local by Flywheel dev site here uses
+ * the database named "local"; CI / wp-env / Playground use throwaway DBs
+ * (e.g. "wordpress"). Call this before opening any test DB pool.
+ *
+ * Override only with ALLOW_LIVE_DB=1, and only against a disposable copy.
+ */
+export function assertSafeTestDatabase(): void {
+  if (process.env.ALLOW_LIVE_DB === '1') return;
+  if (MYSQL_CONFIG.database === 'local') {
+    throw new Error(
+      'E2E data-safety guard: refusing to run against the live "local" database — these ' +
+        'tests TRUNCATE wp_slim_stats / wp_slim_events and would wipe real analytics. ' +
+        'Run against wp-env or `npm run test:e2e:playground` (throwaway DBs), or set ' +
+        'ALLOW_LIVE_DB=1 if "local" here is a disposable copy you control.'
+    );
+  }
+}
