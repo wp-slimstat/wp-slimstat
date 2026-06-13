@@ -75,6 +75,19 @@ if (isset($_args['echo']) && false === $_args['echo']) {
 $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
 $delete_row              = '';
 
+// #281: inline color-code legend on the full Access Log view. Previously only
+// available in the report header tooltip; hidden in the compact dashboard widget.
+// Reuses the existing little-color-box / is-* classes (styled in admin.css).
+if (!$is_dashboard) {
+    echo '<p class="slimstat-access-log-legend">'
+        . '<span class="little-color-box is-search-engine"></span> ' . esc_html__('From search result page', 'wp-slimstat')
+        . ' <span class="little-color-box is-known-visitor"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat')
+        . ' <span class="little-color-box is-known-user"></span> ' . esc_html__('WP User', 'wp-slimstat')
+        . ' <span class="little-color-box is-direct"></span> ' . esc_html__('Other Human', 'wp-slimstat')
+        . ' <span class="little-color-box"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat')
+        . '</p>';
+}
+
 // Loop through the results
 for ($i = 0; $i < $count_page_results; $i++) {
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
@@ -305,25 +318,17 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Login / Logout Event
         $login_logout = '';
-        if ($results[$i]['notes'] && false !== strpos($results[$i]['notes'], 'loggedin:')) {
-            $exploded_notes = explode(';', $results[$i]['notes']);
+        // Notes are stored bracket-delimited ([loggedin:user][...]); older rows may
+        // use ';'. Split on either delimiter, strip the surrounding [ ], and keep
+        // everything after the tag so usernames containing ':' still render cleanly.
+        if ($results[$i]['notes'] && (false !== strpos($results[$i]['notes'], 'loggedin:') || false !== strpos($results[$i]['notes'], 'loggedout:'))) {
+            $exploded_notes = preg_split('/\]\[|;/', trim($results[$i]['notes'], '[]'));
             foreach ($exploded_notes as $a_note) {
-                if (false === strpos($a_note, 'loggedin:')) {
-                    continue;
+                if (0 === strpos($a_note, 'loggedin:')) {
+                    $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . esc_html(substr($a_note, strlen('loggedin:')));
+                } elseif (0 === strpos($a_note, 'loggedout:')) {
+                    $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . esc_html(substr($a_note, strlen('loggedout:')));
                 }
-
-                $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedin:', '', $a_note));
-            }
-        }
-
-        if ($results[$i]['notes'] && false !== strpos($results[$i]['notes'], 'loggedout:')) {
-            $exploded_notes = explode(';', $results[$i]['notes']);
-            foreach ($exploded_notes as $a_note) {
-                if (false === strpos($a_note, 'loggedout:')) {
-                    continue;
-                }
-
-                $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedout:', '', $a_note));
             }
         }
     } else {

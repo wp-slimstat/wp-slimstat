@@ -1515,8 +1515,10 @@ class wp_slimstat_db
         });
 
         if ($total_human_visits > 0) {
-            $average_time /= $total_human_visits;
-            $average_time = date('m:s', intval($average_time));
+            $average_time = intval($average_time / $total_human_visits);
+            // gmdate (not date) so the elapsed-seconds value isn't shifted by the
+            // site timezone; 'i:s' = minutes:seconds ('m' was the month token).
+            $average_time = gmdate($average_time >= 3600 ? 'H:i:s' : 'i:s', $average_time);
         } else {
             $average_time = '0:00';
         }

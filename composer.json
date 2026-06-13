@@ -93,6 +93,10 @@
     "test:wp70-tested-up-to": "php tests/wp70-tested-up-to-test.php",
     "test:dead-symfony-removed": "php tests/dead-symfony-removed-test.php",
     "test:jquery4-shorthand": "php tests/jquery4-own-code-shorthand-scan-test.php",
+    "test:loginnote-bracket-parse": "php tests/loginnote-bracket-parse-test.php",
+    "test:shortcode-w-whitelist": "php tests/shortcode-w-whitelist-test.php",
+    "test:avg-duration-format": "php tests/avg-duration-format-test.php",
+    "test:admin-ui-render-guards": "php tests/admin-ui-render-guards-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -107,7 +111,11 @@
       "@test:wp-removed-core-fns",
       "@test:wp70-tested-up-to",
       "@test:dead-symfony-removed",
-      "@test:jquery4-shorthand"
+      "@test:jquery4-shorthand",
+      "@test:loginnote-bracket-parse",
+      "@test:shortcode-w-whitelist",
+      "@test:avg-duration-format",
+      "@test:admin-ui-render-guards"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
