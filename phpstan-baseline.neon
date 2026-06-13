@@ -883,24 +883,6 @@ parameters:
 			path: src/ralouphie/getallheaders/getallheaders.php
 
 		-
-			message: '#^PHPDoc tag @param for parameter \$args with type mixed is not subtype of native type mixed\.$#'
-			identifier: parameter.phpDocType
-			count: 1
-			path: src/symfony/deprecation-contracts/function.php
-
-		-
-			message: '#^Parameter \#2 \$args of function vsprintf expects array\<bool\|float\|int\|string\|null\>, list\<mixed\> given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/symfony/deprecation-contracts/function.php
-
-		-
-			message: '#^Parameter \$args of function trigger_deprecation\(\) has invalid type mixed\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/symfony/deprecation-contracts/function.php
-
-		-
 			message: '#^Variable \$has_required_migrations might not be defined\.$#'
 			identifier: variable.undefined
 			count: 1
