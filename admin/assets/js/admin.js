@@ -798,9 +798,13 @@ jQuery(function () {
 
         syncTypedValue(value) {
             if (this.isDisabled()) return;
-            // Typing over a prior selection invalidates it, so close() reflects the
-            // typed value instead of the stale selected label.
+            // Typing over a prior selection invalidates it. Clear the full selected
+            // state so close() reflects the typed value (not the stale label),
+            // getValue() returns the typed value, and the dropdown stops highlighting
+            // the old option.
             if (this.selectedOption && this.selectedOption.value !== value) {
+                this.selectedValue = "";
+                this.selectedText = "";
                 this.selectedOption = null;
             }
             this.element.value = value;
