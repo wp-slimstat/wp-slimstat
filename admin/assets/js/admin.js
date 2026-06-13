@@ -1289,7 +1289,7 @@ jQuery(function () {
 
         SlimStatAdmin.add_url_filters_to_form(url, typeof jQuery(this).attr("data-reset-filters") != "undefined", jQuery(this).hasClass("slimstat-filter-temp"));
 
-        jQuery("#slimstat-filters-form").submit();
+        jQuery("#slimstat-filters-form").trigger("submit");
 
         // Remove any temporary filters set here above
         jQuery(".slimstat-temp-filter").remove();
