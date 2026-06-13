@@ -92,6 +92,7 @@
     "test:wp-removed-core-fns": "php tests/wp-removed-core-fns-scan-test.php",
     "test:wp70-tested-up-to": "php tests/wp70-tested-up-to-test.php",
     "test:dead-symfony-removed": "php tests/dead-symfony-removed-test.php",
+    "test:jquery4-shorthand": "php tests/jquery4-own-code-shorthand-scan-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -105,7 +106,8 @@
       "@test:php-forward",
       "@test:wp-removed-core-fns",
       "@test:wp70-tested-up-to",
-      "@test:dead-symfony-removed"
+      "@test:dead-symfony-removed",
+      "@test:jquery4-shorthand"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [

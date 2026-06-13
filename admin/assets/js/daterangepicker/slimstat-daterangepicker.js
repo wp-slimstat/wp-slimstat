@@ -578,7 +578,7 @@ jQuery(document).ready(function($) {
                         break;
                     case 'Enter':
                         e.preventDefault();
-                        $(this).click();
+                        $(this).trigger("click");
                         break;
                     case 'Escape':
                         e.preventDefault();
