@@ -61,19 +61,20 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on 7.4 AND 8.0 (lint + source-level
+        # only on those lanes; the source-level scanners are vendor-independent).
         # mozart post-install hook requires a global mozart binary which is not
         # available in CI — skip the hook with --no-scripts; the autoloader is
         # still generated via the next step.
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run PHPUnit unit tests
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:unit
 
       - name: PHP syntax lint (src/)
@@ -377,11 +378,11 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run full PHPUnit suite
@@ -389,7 +390,7 @@ jobs:
         # Individual scripts may exit non-zero on CI if they depend on a live DB
         # or environment; run phpunit directly for the nightly matrix gate.
         # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:unit
 
       # ── k6 performance tests ─────────────────────────────────────────────

@@ -14,6 +14,11 @@ includes:
 parameters:
     level: 5
     phpVersion: 70400          # analyze against the 7.4 floor
+    # The baseline is a ceiling, not an exact set: CI's real composer autoloader
+    # resolves scoped src/Dependencies classes that are "unknown" in a local
+    # throwaway analysis, so some baseline entries legitimately don't recur in
+    # CI. Tolerate those (don't fail on unmatched ignores); still fail on NEW errors.
+    reportUnmatchedIgnoredErrors: false
     paths:
         - wp-slimstat.php
         - admin
