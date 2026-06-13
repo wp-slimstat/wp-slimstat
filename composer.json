@@ -91,6 +91,7 @@
     "test:php-forward": "php tests/php82-84-forward-scan-test.php",
     "test:wp-removed-core-fns": "php tests/wp-removed-core-fns-scan-test.php",
     "test:wp70-tested-up-to": "php tests/wp70-tested-up-to-test.php",
+    "test:dead-symfony-removed": "php tests/dead-symfony-removed-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -103,7 +104,8 @@
       "@test:php80-syntax",
       "@test:php-forward",
       "@test:wp-removed-core-fns",
-      "@test:wp70-tested-up-to"
+      "@test:wp70-tested-up-to",
+      "@test:dead-symfony-removed"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
