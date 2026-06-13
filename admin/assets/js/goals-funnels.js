@@ -909,14 +909,15 @@
     });
 
     // ============================================================
-    //  Modal focus management — trap, restore, background inert
+    //  Modal focus management — trap + restore
     // ============================================================
     //
-    // The Goals & Funnels dialogs are printed via admin_footer, OUTSIDE #wpwrap,
-    // so inerting #wpwrap disables the background page without ever touching the
-    // dialogs themselves (WCAG 2.4.3 / modal dialog pattern).
+    // The dialogs carry role="dialog" aria-modal="true" (in the partials); combined
+    // with the Tab trap below and focus-restore on close, that is a screen-reader
+    // -correct modal (WCAG 2.4.3). We deliberately do NOT inert a page container:
+    // the dialogs are printed via admin_footer, which fires INSIDE #wpwrap, so
+    // inerting #wpwrap (or #wpcontent) would disable the dialog itself.
 
-    var $pageWrap = $('#wpwrap');
     var _dialogOpener = null;
 
     function focusableIn($dialog) {
@@ -935,18 +936,12 @@
     function onDialogOpen() {
         // Remember the trigger so focus can return to it on close.
         _dialogOpener = document.activeElement;
-        if ($pageWrap.length) {
-            $pageWrap.attr('aria-hidden', 'true').prop('inert', true);
-        }
     }
 
     function onDialogClose() {
-        // Release the page only once every dialog is closed (defensive — they
-        // don't normally stack).
+        // Restore focus only once every dialog is closed (defensive — they don't
+        // normally stack).
         if (topOpenDialog()) return;
-        if ($pageWrap.length) {
-            $pageWrap.removeAttr('aria-hidden').prop('inert', false);
-        }
         if (_dialogOpener && typeof _dialogOpener.focus === 'function') {
             _dialogOpener.focus();
         }

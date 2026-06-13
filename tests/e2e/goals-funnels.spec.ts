@@ -92,16 +92,17 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
     // ─── State: Pro × empty ─────────────────────────────────────
 
-    test('pro-empty: goals teach card + funnels template picker with 4 choices', async ({ page }) => {
+    test('pro-empty: goals teach card + funnels template picker with 6 choices', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
         await gotoSlimview6(page);
 
         await expect(page.locator('[data-role="goals-empty"]')).toBeVisible();
 
-        // Funnels empty → template picker visible.
+        // Funnels empty → template picker visible. The partial renders 6 template
+        // cards (5 prefab funnels + Blank); see the copy-prototype-templates test.
         await expect(page.locator('[data-role="funnels-empty"]')).toBeVisible();
         const templates = page.locator('.slimstat-gf-template-card');
-        await expect(templates).toHaveCount(4);
+        await expect(templates).toHaveCount(6);
     });
 
     // ─── State: Pro × has-data ─────────────────────────────────
@@ -356,6 +357,147 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('[data-role="confirm-title"]')).toContainText('Delete goal?');
         await expect(page.locator('[data-role="confirm-cancel"]')).toHaveText('Keep goal');
         await expect(page.locator('[data-role="confirm-destructive"]')).toHaveText('Delete goal');
+    });
+
+    // ─── Goal edit via drawer ───────────────────────────────────
+
+    test('goal-edit: drawer opens prefilled, rename round-trips, count unchanged', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedGoals([{ name: 'Before Edit', dimension: 'resource', operator: 'contains', value: '/p', active: true }]);
+        await gotoSlimview6(page);
+
+        await page.click('.slimstat-gf-goal [data-action="open-goal-drawer"][data-mode="edit"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        // Drawer is prefilled from the goal's data-goal JSON.
+        await expect(page.locator('[data-role="goal-name"]')).toHaveValue('Before Edit');
+
+        await page.fill('[data-role="goal-name"]', 'After Edit');
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-goal"]'),
+        ]);
+
+        await expect(page.locator('.slimstat-gf-goal__name')).toContainText('After Edit');
+        // Edit must not create a second goal.
+        await expect(page.locator('.slimstat-gf-goal')).toHaveCount(1);
+    });
+
+    // ─── Funnel delete + edit (Pro) ─────────────────────────────
+
+    test('funnel-delete: destructive action uses the confirm sheet and removes the funnel', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedFunnels([{ name: 'Doomed Funnel', steps: [
+            { name: 'A', dimension: 'resource', operator: 'contains', value: '/a' },
+            { name: 'B', dimension: 'resource', operator: 'contains', value: '/b' },
+        ]}]);
+        await gotoSlimview6(page);
+
+        let nativeConfirmInvoked = false;
+        page.on('dialog', async (dialog) => { nativeConfirmInvoked = true; await dialog.dismiss(); });
+
+        await page.click('[data-action="delete-funnel"]');
+        await expect(page.locator('#slimstat-gf-confirm-sheet.is-open')).toBeVisible();
+        await expect(page.locator('[data-role="confirm-title"]')).toContainText('Delete funnel?');
+        expect(nativeConfirmInvoked).toBe(false);
+
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="confirm-destructive"]'),
+        ]);
+        await expect(page.locator('.slimstat-gf-funnel-panel')).toHaveCount(0);
+    });
+
+    test('funnel-edit: builder opens prefilled, rename round-trips, count unchanged', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedFunnels([{ name: 'Old Funnel Name', steps: [
+            { name: 'A', dimension: 'resource', operator: 'contains', value: '/a' },
+            { name: 'B', dimension: 'resource', operator: 'contains', value: '/b' },
+        ]}]);
+        await gotoSlimview6(page);
+
+        await page.click('[data-action="open-funnel-builder"][data-mode="edit"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+        await expect(page.locator('[data-role="funnel-name"]')).toHaveValue('Old Funnel Name');
+        await expect(page.locator('.slimstat-gf-step-row')).toHaveCount(2);
+
+        await page.fill('[data-role="funnel-name"]', 'New Funnel Name');
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-funnel"]'),
+        ]);
+
+        // Exactly one funnel remains (edit updated in place, didn't create a copy).
+        await expect(page.locator('.slimstat-gf-funnel-panel__name')).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-funnel-panel__name')).toContainText('New Funnel Name');
+    });
+
+    // ─── Modal accessibility: focus trap, Escape, focus restore ──
+
+    test('a11y-modal: drawer is aria-modal, traps Tab, Escape closes and restores focus', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        const opener = page.locator('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await opener.focus();
+        await opener.press('Enter');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        // Declared modal + initial focus moved into the dialog.
+        await expect(page.locator('#slimstat-gf-goal-drawer')).toHaveAttribute('aria-modal', 'true');
+        await expect(page.locator('[data-role="goal-name"]')).toBeFocused();
+
+        // Tab cycling stays inside the dialog — after several Tabs the active
+        // element is still a descendant of the drawer.
+        for (let i = 0; i < 12; i++) {
+            await page.keyboard.press('Tab');
+            const insideDrawer = await page.evaluate(() => {
+                const drawer = document.querySelector('#slimstat-gf-goal-drawer');
+                return !!drawer && drawer.contains(document.activeElement);
+            });
+            expect(insideDrawer).toBe(true);
+        }
+
+        // Escape closes the dialog and returns focus to the opener.
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toHaveCount(0);
+        await expect(opener).toBeFocused();
+    });
+
+    // ─── Keyboard step reorder (WCAG 2.1.1) ─────────────────────
+
+    test('a11y-keyboard-reorder: ArrowDown on the drag handle moves a funnel step', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const rows = page.locator('.slimstat-gf-step-row');
+        await rows.nth(0).locator('[data-role="step-name"]').fill('First');
+        await rows.nth(1).locator('[data-role="step-name"]').fill('Second');
+
+        // Move row 1 down with the keyboard; the order must swap.
+        const handle = rows.nth(0).locator('[data-action="drag-step"]');
+        await handle.focus();
+        await handle.press('ArrowDown');
+
+        await expect(rows.nth(0).locator('[data-role="step-name"]')).toHaveValue('Second');
+        await expect(rows.nth(1).locator('[data-role="step-name"]')).toHaveValue('First');
+        // Step numbers are renumbered after the move.
+        await expect(rows.nth(0).locator('[data-role="step-num"]')).toContainText('1');
+    });
+
+    // ─── Consent surface (GDPR) ─────────────────────────────────
+
+    test('consent-notice: the goals card surfaces the consent notice (WP Consent API)', async ({ page }) => {
+        // Requires the WP Consent API (wp-consent-api) active so wp_has_consent()
+        // exists — it ships in this workspace and gates the notice text.
+        await forceLimits(1, 0, WP_CONTENT);
+        await seedGoals([{ name: 'Tracked Goal', dimension: 'resource', operator: 'contains', value: '/g', active: true }]);
+        await gotoSlimview6(page);
+
+        await expect(page.locator('.slimstat-gf-consent'))
+            .toContainText('visitors who provided statistics consent');
     });
 
     // ─── Legacy CSS var preservation (visual regression guard) ───

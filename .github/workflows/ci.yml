@@ -77,6 +77,13 @@ jobs:
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:unit
 
+      - name: Run PHPUnit integration tests
+        # Integration suite (Goals & Funnels AJAX/cache/ordering) uses a separate
+        # bootstrap so Brain Monkey owns the WP function stubs. Same PHPUnit-capable
+        # lanes as the unit suite (PHP 8.1+).
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
+        run: composer test:integration
+
       - name: PHP syntax lint (src/)
         # Lint plugin source only — skip src/Dependencies/ which contains
         # Mozart-scoped vendor files that may use PHP 8.0+ syntax.

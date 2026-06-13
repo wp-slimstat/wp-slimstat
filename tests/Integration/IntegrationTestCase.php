@@ -26,6 +26,12 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
         $this->optionStore  = [];
         $this->filterValues = [];
         $_POST              = [];
+        // Reset FakeWpSlimstatDb's mutable statics so a value set by one test can't
+        // bleed into the next (these were flagged as order-dependent in the audit).
+        if (class_exists(FakeWpSlimstatDb::class, false)) {
+            FakeWpSlimstatDb::$next           = [];
+            FakeWpSlimstatDb::$getGoalResults = ['uniques' => 0, 'total' => 0, 'cr' => 0];
+        }
         parent::tearDown();
     }
 
