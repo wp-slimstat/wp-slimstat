@@ -8,6 +8,7 @@
 
 **Compatibility & stability**
 
+- Removed: The admin "Feedback" widget (powered by feedbackbird.io) has been removed. It loaded a script from a third-party CDN and sent your email address, PHP version, and active-plugin list off-site with no opt-out. SlimStat no longer makes this external call.
 - Fixed: WordPress admin no longer crashes on PHP 7.4 hosts. Some admin pages were calling a function that only exists in PHP 8.0 and newer, which broke wp-admin entirely. Replaced with a compatible alternative.
 - Fixed: Visit tracking no longer fails with a 500 error on hosts that don't have the optional PHP `fileinfo` extension (common on managed and minimal PHP builds). When the extension is missing, the plugin now falls back to its built-in browser detector and shows a dismissible admin notice so you can ask your host to enable the extension or turn off the Browscap library.
 - Fixed: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits when the tracker was handed an invalid IP, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.

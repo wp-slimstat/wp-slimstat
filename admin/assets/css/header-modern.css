@@ -227,32 +227,7 @@
     letter-spacing: 0.01em;
 }
 
-#contextual-help-link-wrap,
-#feedbackbird-widget-button,
-#feedbackbird-widget-button-wrapper,
-.feedbackbird-widget-button,
-.feedbackbird-widget-button *,
-[data-feedbackbird-button],
-[data-feedbackbird-launch],
-[data-feedbackbird-launcher],
-[id*="feedbackbird"],
-.feedbackbird-floating-button,
-.feedbackbird-launcher,
-.feedbackbird-widget-app,
-[class*="feedbackbird"] button,
-[class*="feedbackbird"] a,
-[data-feedbackbird-open] {
-    display: none !important;
-}
-
-#wp-admin-bar-feedbackbird,
-#wp-admin-bar-feedbackbird * {
-    display: none !important;
-}
-
-iframe[src*="feedbackbird"],
-iframe[id*="feedbackbird"],
-[class*="feedbackbird"] iframe {
+#contextual-help-link-wrap {
     display: none !important;
 }
 
