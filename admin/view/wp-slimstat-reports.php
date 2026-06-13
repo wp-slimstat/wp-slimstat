@@ -1431,6 +1431,9 @@ class wp_slimstat_reports
                                 $element_value .= get_avatar($element_custom_value->ID, 18);
                                 $element_value .= esc_html($results[$i]['username']);
                                 $element_value .= '</a>';
+                                // #273: add a direct link to the admin user profile (the link
+                                // above goes to the public author archive).
+                                $element_value .= self::get_edit_profile_link($element_custom_value->ID);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                                 $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . sprintf("' class=\"avatar avatar-16 photo\" alt='Unknown'>%s (", esc_html($results[$i]['username'])) . __('Unknown', 'wp-slimstat') . ')</a>';
@@ -1457,6 +1460,8 @@ class wp_slimstat_reports
                                 $element_value .= get_avatar($author_id, 18);
                                 $element_value .= esc_html($author ? (empty($author->display_name) ? $author->user_login : $author->display_name) : $author_username);
                                 $element_value .= '</a>';
+                                // #273: additive admin-profile link, capability-guarded.
+                                $element_value .= self::get_edit_profile_link($author_id);
                             } else {
                                 $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                                 $element_value = "<a href=\"#\" class='slimstat-author-link'><img src='" . esc_url($image_url) . "' class=\"avatar avatar-16 photo\" alt='Unknown'>" . esc_html($author_username) . ' (' . __('Unknown', 'wp-slimstat') . ')</a>';
@@ -1897,6 +1902,20 @@ class wp_slimstat_reports
         if (defined('DOING_AJAX') && DOING_AJAX) {
             die();
         }
+    }
+
+    /**
+     * Build the additive "edit user profile" link for an Access Log author cell (#273).
+     * Returns '' when the current user cannot edit the target — get_edit_user_link()
+     * returns '' in that case, so the link is silently skipped.
+     */
+    public static function get_edit_profile_link($_user_id)
+    {
+        $edit_link = get_edit_user_link($_user_id);
+        if (!$edit_link) {
+            return '';
+        }
+        return " <a href='" . esc_url($edit_link) . "' class='slimstat-author-profile-link slimstat-tooltip-trigger' title='" . esc_attr__('Edit user profile', 'wp-slimstat') . "'><i class='slimstat-font-edit'></i></a>";
     }
 
     public static function get_search_terms_info($_searchterms = '', $_referer = '', $_serp_only = false)

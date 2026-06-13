@@ -6,6 +6,15 @@
 - Fixed: The "is empty" and "is not empty" report filters work again. Since 5.4.0 they were silently ignored — the filter chip appeared but every row was still shown — and the filter was lost when you paginated, refreshed, or changed the date range. They now apply on the first click and survive in-session navigation. ([#305](https://github.com/wp-slimstat/wp-slimstat/issues/305))
 - Fixed: The Access Log filter dropdown now accepts pasted or typed values that aren't in the visible list. Previously, on busy sites, a value clearly visible in the log (for example a specific IP) could return "No matching options found" and the filter couldn't be applied. The dropdown now searches the full column history and lets you apply the value you typed. ([#298](https://github.com/wp-slimstat/wp-slimstat/issues/298))
 
+**Reports & admin UI**
+
+- Fixed: In the Real-Time view, "User Logged In / Logged Out" entries show the username cleanly again. Some logins were displaying with stray brackets (e.g. `[jane]`) or leaking unrelated note data because of a change to how login notes are stored; usernames that contain a colon now render correctly too.
+- Fixed: Stats shortcodes can display the Country, Browser, Platform and Language columns again, and the `w="*"` (all columns) shortcut works. These were valid columns but were silently rejected and returned an empty result. ([#277](https://github.com/wp-slimstat/wp-slimstat/issues/277))
+- Fixed: The "Average Visit Duration" figure is correct again. It was formatted with a month number instead of minutes — for example 10 minutes showed as "01:00" — and now shows minutes:seconds (and hours for long sessions) properly. ([#78](https://github.com/wp-slimstat/wp-slimstat/issues/78))
+- Added: Access Log author rows now include a direct link to the user's WordPress profile, alongside the existing link to their posts. The link only appears for users you have permission to edit. ([#273](https://github.com/wp-slimstat/wp-slimstat/issues/273))
+- Added: The Settings page now shows when the GeoIP database was last downloaded (or "Never" if it hasn't been downloaded yet). ([#77](https://github.com/wp-slimstat/wp-slimstat/issues/77))
+- Added: The Access Log now shows its color-code legend inline on the page instead of only inside a hover tooltip. ([#281](https://github.com/wp-slimstat/wp-slimstat/issues/281))
+
 **Compatibility & stability**
 
 - Removed: The admin "Feedback" widget (powered by feedbackbird.io) has been removed. It loaded a script from a third-party CDN and sent your email address, PHP version, and active-plugin list off-site with no opt-out. SlimStat no longer makes this external call.
