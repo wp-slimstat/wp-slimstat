@@ -1833,7 +1833,7 @@ class wp_slimstat_reports
         if ($is_widget) {
             $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
-            if (defined('DOING_AJAX') && DOING_AJAX) {
+            if (wp_doing_ajax()) {
                 die();
             }
             return;
@@ -1855,7 +1855,7 @@ class wp_slimstat_reports
 
         include __DIR__ . '/partials/goals-funnels/goals-card.php';
 
-        if (defined('DOING_AJAX') && DOING_AJAX) {
+        if (wp_doing_ajax()) {
             die();
         }
     }
@@ -1912,7 +1912,7 @@ class wp_slimstat_reports
             $is_pro      = $max_funnels > 0;
             $funnels     = $is_pro ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($is_pro, $funnels);
-            if (defined('DOING_AJAX') && DOING_AJAX) {
+            if (wp_doing_ajax()) {
                 die();
             }
             return;
@@ -1951,7 +1951,7 @@ class wp_slimstat_reports
 
         include __DIR__ . '/partials/goals-funnels/funnels-card.php';
 
-        if (defined('DOING_AJAX') && DOING_AJAX) {
+        if (wp_doing_ajax()) {
             die();
         }
     }
