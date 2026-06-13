@@ -34,9 +34,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # 8.1 promoted so implicit-nullable E_DEPRECATED regressions surface
-        # during PR review, not 24h later in nightly.
-        php: ["7.4", "8.1", "8.2"]
+        # Every supported PHP gets a PR-blocking lane: 8.0 (loose-comparison
+        # regression), 8.3/8.4 (deprecation surface) promoted from nightly so
+        # they no longer land 24h late. 8.5 stays nightly (forward ceiling).
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
 
     steps:
       - name: Checkout
@@ -99,7 +100,7 @@ jobs:
 # Runs on: push or PR targeting main or development branches only
 ##############################################################################
   standard:
-    name: "Tier 2 · standard · E2E"
+    name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
     runs-on: ubuntu-latest
     if: >
       github.event_name != 'schedule' &&
@@ -110,8 +111,26 @@ jobs:
           (github.base_ref == 'main' || github.base_ref == 'development'))
       )
 
+    strategy:
+      # One WP lane failing must not cancel the others.
+      fail-fast: false
+      matrix:
+        # WordPress floor→current, each paired with a PHP its core supports
+        # (5.6/5.9/6.0 can't cleanly boot PHP 8.2). 6.4 is the committed-baseline
+        # lane — its override omits core/phpVersion so .wp-env.json values stand.
+        include:
+          - { wp: "5.6", php: "7.4" }
+          - { wp: "5.9", php: "7.4" }
+          - { wp: "6.0", php: "7.4" }
+          - { wp: "6.4", php: "7.4" }
+          - { wp: "6.6", php: "8.2" }
+          - { wp: "6.9", php: "8.2" }
+          - { wp: "7.0", php: "8.2" }
+
     env:
       TEST_BASE_URL: http://localhost:8889
+      WP_VERSION: ${{ matrix.wp }}
+      WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
     steps:
       - name: Checkout
@@ -136,12 +155,28 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Create wp-env override (CI — no sibling plugins)
-        # .wp-env.json references ../wp-slimstat-pro, ../cookie-law-info, and
-        # ../wp-consent-api which don't exist in CI. Override to use only the
-        # current plugin. .wp-env.override.json is gitignored and safe to create.
+      - name: Create wp-env override (CI — pin WP core + PHP per lane)
+        # The committed .wp-env.json stays at core 6.4 / php 7.4; this gitignored
+        # override injects the per-lane WP core + runtime PHP. Siblings
+        # (../wp-slimstat-pro, ../cookie-law-info, ../wp-consent-api) aren't
+        # checked out in CI, so plugins is "." only — consent E2E specs self-skip
+        # (logged below) and run locally against the full plugin set.
+        # printf (not heredoc) avoids YAML block-scalar indentation pitfalls.
         run: |
-          echo '{"plugins": ["."]}' > .wp-env.override.json
+          WP_REF="${WP_VERSION}"
+          if [ "${WP_VERSION}" != "6.4" ] && ! git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" | grep -q .; then
+            echo "::warning::WordPress tag ${WP_VERSION} not found — falling back to trunk"
+            WP_REF="trunk"
+          fi
+          if [ "${WP_VERSION}" = "6.4" ]; then
+            printf '{"plugins":["."]}\n' > .wp-env.override.json
+          elif [ "${WP_VERSION}" = "5.6" ]; then
+            # Floor lane: enable debug.log so the floor fatal/deprecation guard has a log to read.
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."],"config":{"WP_DEBUG":true,"WP_DEBUG_LOG":true}}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+          else
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."]}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+          fi
+          echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
 
       - name: Clear stale Docker Hub credentials
         # GitHub Actions runners may ship with stale Docker auth config that
@@ -168,6 +203,15 @@ jobs:
           '
           echo "--- Verifying tables ---"
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
+      - name: Log consent-plugin status
+        # cookie-law-info / wp-consent-api are not checked out in CI, so consent
+        # E2E specs self-skip via their active_plugins guard (they run locally
+        # against the full plugin set). Log active plugins so the skip is visible
+        # and can't masquerade as a pass.
+        run: |
+          echo "Active plugins on the WP ${WP_VERSION} lane:"
+          npx wp-env run tests-cli -- wp plugin list --status=active --field=name || true
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
@@ -220,6 +264,20 @@ jobs:
           echo "MYSQL_USER=root" >> $GITHUB_ENV
           echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
           echo "MYSQL_DATABASE=$DB_NAME" >> $GITHUB_ENV
+
+      - name: Floor fatal/deprecation guard (debug.log)
+        # On the floor lanes, fail fast if the tracker or admin load emitted a
+        # polyfill-miss fatal or an own-code deprecation. WP_ROOT is set by the
+        # previous step; the 5.6 override enabled WP_DEBUG_LOG so the log exists.
+        if: ${{ matrix.wp == '5.6' || matrix.php == '7.4' }}
+        run: |
+          LOG="$WP_ROOT/wp-content/debug.log"
+          if [ -f "$LOG" ] && grep -E "PHP Fatal error|Call to undefined function str_|PHP Deprecated:.*wp-slimstat" "$LOG"; then
+            echo "::error::Floor fatal/deprecation detected on WP ${WP_VERSION} / PHP ${WP_ENV_PHP_VERSION}"
+            cat "$LOG"
+            exit 1
+          fi
+          echo "Floor guard: no fatals/own-code deprecations in debug.log."
 
       - name: Run E2E tests
         # continue-on-error: many E2E tests assume local dev fixtures (tracking

@@ -64,6 +64,9 @@ test-results/
 tests/e2e/.auth/
 tests/e2e/playwright-report/
 tests/e2e/run-artifacts/
+# wp-env per-lane override emitted by CI (and local matrix runs); the committed
+# .wp-env.json stays the 6.4 baseline.
+.wp-env.override.json
 # Bun
 bun.lock
 
