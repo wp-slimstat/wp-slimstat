@@ -12,6 +12,15 @@ use SlimStat\Utils\Consent;
 class Processor
 {
     /**
+     * Schemes accepted for the stored referer. Anything else is treated as an XSS
+     * attempt and dropped. Used both as the protocols allow-list for sanitize_url()
+     * at ingestion (Ajax::sanitizeReferer + the HTTP_REFERER fallback below) and by
+     * the post-storage scheme check in process(), so the list never drifts. `android-app`
+     * is included so Google Discover / Android-app referers survive. See #306.
+     */
+    public const REFERER_ALLOWED_SCHEMES = ['http', 'https', 'android-app'];
+
+    /**
      * Check if the current WordPress user should be excluded from tracking.
      *
      * Uses wp_get_current_user() defensively to ensure the user object is fully
@@ -185,7 +194,12 @@ class Processor
         }
 
         if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
-            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']));
+            // sanitize_url() with android-app added to the allow-list: app-scheme referers
+            // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
+            // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike
+            // sanitize_text_field — percent-encoded query octets are preserved so getSearchTerms()
+            // below can still decode non-Latin / spaced search terms. See #306.
+            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']), self::REFERER_ALLOWED_SCHEMES);
         }
 
 
@@ -196,7 +210,7 @@ class Processor
                 return Utils::logError(201);
             }
 
-            if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), ['http', 'https', 'android-app'])) {
+            if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), self::REFERER_ALLOWED_SCHEMES)) {
                 $stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
                 unset($stat['referer']);
             }

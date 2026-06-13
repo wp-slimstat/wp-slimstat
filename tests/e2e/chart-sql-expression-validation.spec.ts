@@ -25,29 +25,12 @@ import {
   uninstallMuPluginByName,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/**
- * Obtain the chart nonce via the nonce-helper AJAX endpoint.
- * More reliable than page-scraping slimstat_chart_vars.nonce.
- */
-async function getChartNonce(page: import('@playwright/test').Page): Promise<string> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'test_create_nonce', nonce_action: 'slimstat_chart_nonce' },
-  });
-  if (!res.ok()) throw new Error(`test_create_nonce failed: HTTP ${res.status()}`);
-  const body = await res.json();
-  if (!body?.success || !body?.data?.nonce) {
-    throw new Error(`test_create_nonce returned unexpected body: ${JSON.stringify(body)}`);
-  }
-  return body.data.nonce;
-}
+import { CHART_TEST_RANGE, getChartNonce } from './helpers/chart';
 
 /**
  * Call slimstat_fetch_chart_data AJAX with a custom data1 expression.
- * Uses a fixed past range (2026-02-01 → 2026-03-31) — no DB rows needed
- * because validateSqlExpression() runs before the SQL query.
+ * Uses a fixed past range — no DB rows needed because
+ * validateSqlExpression() runs before the SQL query.
  */
 async function callChartWithExpression(
   page: import('@playwright/test').Page,
@@ -55,8 +38,7 @@ async function callChartWithExpression(
   data1Expression: string
 ): Promise<{ status: number; body: any }> {
   const args = JSON.stringify({
-    start: 1738368000, // 2026-02-01 00:00 UTC
-    end:   1743379199, // 2026-03-31 23:59 UTC
+    ...CHART_TEST_RANGE,
     chart_data: {
       data1: data1Expression,
       data2: 'COUNT( DISTINCT ip )',

@@ -28,6 +28,12 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Load the Mozart-scoped Symfony/Polyfill/Php80 so own code can use PHP 8.0+
+// stdlib functions (str_contains, str_starts_with, fdiv, get_debug_type, …)
+// on PHP 7.4 hosts. The bootstrap short-circuits on PHP_VERSION_ID >= 80000.
+// Skipping this load on PHP 7.4 is what produced the v5.4.14 wp-admin fatal.
+require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';
+
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';
 
@@ -1230,10 +1236,11 @@ class wp_slimstat
 
             // Notices
             // -----------------------------------------------------------------------
-            'notice_latest_news' => 'on',
-            'notice_browscap'    => 'on',
-            'notice_geolite'     => 'on',
-            'notice_caching'     => 'on',
+            'notice_latest_news'       => 'on',
+            'notice_browscap'          => 'on',
+            'notice_browscap_fileinfo' => 'on',
+            'notice_geolite'           => 'on',
+            'notice_caching'           => 'on',
 
             // Network-wide Settings
             'locked_options' => '',

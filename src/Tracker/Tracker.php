@@ -425,6 +425,13 @@ class Tracker
 
     public static function _dtr_pton($_ip)
     {
+        // Initialize before the conditional branches. Without this, an invalid
+        // IP leaves $unpacked undefined; on PHP 8.1+ the downstream
+        // `str_split($unpacked[1])` evaluates to `['']` (one empty char) which
+        // ord/decbin/str_pad converts to '00000000' — leaking 8 bogus zero
+        // bits instead of returning an empty string. Mirrors the explicit
+        // init at Utils.php:219.
+        $unpacked = false;
         if (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
             $unpacked = unpack('A4', inet_pton($_ip));
         } elseif (filter_var($_ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && defined('AF_INET6')) {

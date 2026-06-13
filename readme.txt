@@ -4,7 +4,8 @@ Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
-Tested up to: 6.9.4
+Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
+Tested up to: 7.0
 Stable tag: 5.5.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -75,7 +76,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.5.0 - 2026-04-19 =
+= 5.5.0 - Unreleased =
 * Feature: Redesigned Goals & Funnels page (slimview6) — modern card layout, pill-segmented funnel tabs, side drawer for goal create/edit, overlay builder for funnels, and a destructive-action confirm sheet replacing native browser prompts.
 * Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
 * Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
@@ -89,8 +90,18 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 * Improvement: Brand red ramp replaces indigo for funnel bars; supports `prefers-reduced-motion` and full RTL mirroring.
 * Refactor: `show_goals()` / `show_funnels()` branch on `is_widget` and include new partials (`admin/view/partials/goals-funnels/*.php`) in admin mode; widget/shortcode/email/CSV paths preserved unchanged.
 * Tests: New PHPUnit Integration suite covers all AJAX handlers (save/delete goal+funnel, new `ajax_load_funnel_data`), cache-version invalidation, paused-limit behavior, and the legacy CSS alias preservation.
+* Fix: WordPress admin no longer crashes on PHP 7.4 hosts (an admin page was calling a function that only exists in PHP 8.0+).
+* Fix: Visit tracking no longer returns a 500 error on hosts without the optional PHP `fileinfo` extension. The plugin falls back to its built-in browser detector and shows a dismissible admin notice.
+* Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
+* PHP 8.1+ readiness: cleaned up six internal function signatures so they no longer trigger deprecation warnings in `debug.log`. These would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+* Fix: On PHP 8.0+, clearing the Posts-list pageviews-column interval no longer shows an empty day count — it falls back to 28 days as it did on PHP 7.
+* Tested up to WordPress 7.0; removed an obsolete WordPress-3.3 version check.
+* PHP 8.0/8.3/8.4 readiness: prepared the admin JavaScript for jQuery 4.0 (no behavior change today) and removed a stray, never-loaded bundled file.
+* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3) and to boot the full WordPress 5.6–7.0 matrix end-to-end; added PHPStan static analysis. The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
 
-= 5.4.12 - 2026-04-18 =
+= 5.4.12 - 2026-05-13 =
+* Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
+* Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.
 * Fix: Chrome-based mobile Googlebot and Bingbot now correctly blocked when Browscap classifies them as mobile devices (#14843)
 * Fix: Google-InspectionTool mobile is now detected as a crawler
 * Improvement: Bot detection regex extended with 15 new vendor tokens — Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner, Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai

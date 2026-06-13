@@ -2339,7 +2339,7 @@ class wp_slimstat_reports
                     continue;
                 }
 
-                $a_filter_value_no_slashes = ('is_empty' == $a_filter_details[0] || 'is_not_empty' == $a_filter_details[0]) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
+                $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
                 $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
@@ -2380,8 +2380,13 @@ class wp_slimstat_reports
         if (!empty($_filters_string)) {
             $matches = explode('&&&', $_filters_string);
             foreach ($matches as $a_match) {
-                preg_match('/([^\s]+)\s([^\s]+)\s(.+)?/', urldecode($a_match), $a_filter);
-                if (!empty($a_filter[1]) && (!isset($a_filter[3]) || trim($a_filter[3]) === '')) {
+                // Keep this regex aligned with wp_slimstat_db::parse_filters() (#305).
+                preg_match('/([^\s]+)\s([^\s]+)(?:\s(.+))?/', urldecode($a_match), $a_filter);
+                // "operator present, value absent" is a removal signal — EXCEPT for
+                // value-less operators (is_empty/is_not_empty), which are real filters. See #305.
+                if (!empty($a_filter[1])
+                    && (!isset($a_filter[3]) || trim($a_filter[3]) === '')
+                    && !in_array($a_filter[2] ?? '', wp_slimstat_db::$valueless_operators, true)) {
                     $filters_to_remove[$a_filter[1]] = $a_filter[2];
                 }
             }
@@ -2494,7 +2499,9 @@ class wp_slimstat_reports
     public static function inline_help($_text = '', $_echo = true)
     {
         if (is_admin() && !empty($_text)) {
-            $wrapped_text = sprintf("<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>%s</span></span>", $_text);
+            // CVE-2026-7634: defang attacker-controlled $_text. wp_kses_post preserves
+            // the formatting tags existing tooltips rely on.
+            $wrapped_text = sprintf("<span class='dashicons dashicons-editor-help slimstat-tooltip-trigger corner'><span class='slimstat-tooltip-content'>%s</span></span>", wp_kses_post($_text));
         } else {
             $wrapped_text = '';
         }

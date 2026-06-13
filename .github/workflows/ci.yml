@@ -34,7 +34,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: ["7.4", "8.2"]
+        # Every supported PHP gets a PR-blocking lane: 8.0 (loose-comparison
+        # regression), 8.3/8.4 (deprecation surface) promoted from nightly so
+        # they no longer land 24h late. 8.5 stays nightly (forward ceiling).
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3", "8.4"]
 
     steps:
       - name: Checkout
@@ -58,19 +61,20 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
+        # PHPUnit 10.5 requires PHP ^8.1 — skip on 7.4 AND 8.0 (lint + source-level
+        # only on those lanes; the source-level scanners are vendor-independent).
         # mozart post-install hook requires a global mozart binary which is not
         # available in CI — skip the hook with --no-scripts; the autoloader is
         # still generated via the next step.
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run PHPUnit unit tests
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:unit
 
       - name: PHP syntax lint (src/)
@@ -86,12 +90,49 @@ jobs:
           fi
           echo "No syntax errors found."
 
+      - name: Source-level regression tests
+        # Vanilla PHP — runs on the 7.4 lane where PHPUnit 10.5 cannot.
+        # Covers: PHP 8.0+ stdlib calls without polyfill (php74-compat),
+        # and implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0).
+        run: composer test:source-level
+
+##############################################################################
+# PHPStan — static analysis (baseline-gated), every push / PR
+##############################################################################
+  phpstan:
+    name: "Static analysis · PHPStan"
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, dom, curl, json
+          coverage: none
+
+      - name: Install Composer dependencies (with dev — PHPStan + WP stubs)
+        run: composer install --no-interaction --no-progress --no-scripts
+
+      - name: Dump autoload (without mozart)
+        run: composer dump-autoload --no-interaction
+
+      - name: Run PHPStan (level 5, target 7.4, baseline-gated)
+        # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
+        # findings are parked in phpstan-baseline.neon — this lane fails only on
+        # NEW errors. Ratchet the baseline down over time; never grow it.
+        run: composer phpstan
+
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
 # Runs on: push or PR targeting main or development branches only
 ##############################################################################
   standard:
-    name: "Tier 2 · standard · E2E"
+    name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
     runs-on: ubuntu-latest
     if: >
       github.event_name != 'schedule' &&
@@ -102,8 +143,26 @@ jobs:
           (github.base_ref == 'main' || github.base_ref == 'development'))
       )
 
+    strategy:
+      # One WP lane failing must not cancel the others.
+      fail-fast: false
+      matrix:
+        # WordPress floor→current, each paired with a PHP its core supports
+        # (5.6/5.9/6.0 can't cleanly boot PHP 8.2). 6.4 is the committed-baseline
+        # lane — its override omits core/phpVersion so .wp-env.json values stand.
+        include:
+          - { wp: "5.6", php: "7.4" }
+          - { wp: "5.9", php: "7.4" }
+          - { wp: "6.0", php: "7.4" }
+          - { wp: "6.4", php: "7.4" }
+          - { wp: "6.6", php: "8.2" }
+          - { wp: "6.9", php: "8.2" }
+          - { wp: "7.0", php: "8.2" }
+
     env:
       TEST_BASE_URL: http://localhost:8889
+      WP_VERSION: ${{ matrix.wp }}
+      WP_ENV_PHP_VERSION: ${{ matrix.php }}
 
     steps:
       - name: Checkout
@@ -128,12 +187,28 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
-      - name: Create wp-env override (CI — no sibling plugins)
-        # .wp-env.json references ../wp-slimstat-pro, ../cookie-law-info, and
-        # ../wp-consent-api which don't exist in CI. Override to use only the
-        # current plugin. .wp-env.override.json is gitignored and safe to create.
+      - name: Create wp-env override (CI — pin WP core + PHP per lane)
+        # The committed .wp-env.json stays at core 6.4 / php 7.4; this gitignored
+        # override injects the per-lane WP core + runtime PHP. Siblings
+        # (../wp-slimstat-pro, ../cookie-law-info, ../wp-consent-api) aren't
+        # checked out in CI, so plugins is "." only — consent E2E specs self-skip
+        # (logged below) and run locally against the full plugin set.
+        # printf (not heredoc) avoids YAML block-scalar indentation pitfalls.
         run: |
-          echo '{"plugins": ["."]}' > .wp-env.override.json
+          WP_REF="${WP_VERSION}"
+          if [ "${WP_VERSION}" != "6.4" ] && ! git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" | grep -q .; then
+            echo "::warning::WordPress tag ${WP_VERSION} not found — falling back to trunk"
+            WP_REF="trunk"
+          fi
+          if [ "${WP_VERSION}" = "6.4" ]; then
+            printf '{"plugins":["."]}\n' > .wp-env.override.json
+          elif [ "${WP_VERSION}" = "5.6" ]; then
+            # Floor lane: enable debug.log so the floor fatal/deprecation guard has a log to read.
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."],"config":{"WP_DEBUG":true,"WP_DEBUG_LOG":true}}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+          else
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."]}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+          fi
+          echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
 
       - name: Clear stale Docker Hub credentials
         # GitHub Actions runners may ship with stale Docker auth config that
@@ -160,6 +235,15 @@ jobs:
           '
           echo "--- Verifying tables ---"
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
+      - name: Log consent-plugin status
+        # cookie-law-info / wp-consent-api are not checked out in CI, so consent
+        # E2E specs self-skip via their active_plugins guard (they run locally
+        # against the full plugin set). Log active plugins so the skip is visible
+        # and can't masquerade as a pass.
+        run: |
+          echo "Active plugins on the WP ${WP_VERSION} lane:"
+          npx wp-env run tests-cli -- wp plugin list --status=active --field=name || true
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
@@ -213,17 +297,42 @@ jobs:
           echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
           echo "MYSQL_DATABASE=$DB_NAME" >> $GITHUB_ENV
 
+      - name: Floor fatal/deprecation guard (debug.log)
+        # On the floor lanes, fail fast if the tracker or admin load emitted a
+        # polyfill-miss fatal or an own-code deprecation. WP_ROOT is set by the
+        # previous step; the 5.6 override enabled WP_DEBUG_LOG so the log exists.
+        # Only the 5.6 floor lane enables WP_DEBUG_LOG in its override, so the
+        # log only exists there; running this elsewhere is a no-op.
+        if: ${{ matrix.wp == '5.6' }}
+        run: |
+          LOG="$WP_ROOT/wp-content/debug.log"
+          if [ -f "$LOG" ] && grep -E "PHP Fatal error|Call to undefined function str_|PHP Deprecated:.*wp-slimstat" "$LOG"; then
+            echo "::error::Floor fatal/deprecation detected on WP ${WP_VERSION} / PHP ${WP_ENV_PHP_VERSION}"
+            cat "$LOG"
+            exit 1
+          fi
+          echo "Floor guard: no fatals/own-code deprecations in debug.log."
+
       - name: Run E2E tests
-        # continue-on-error: many E2E tests assume local dev fixtures (tracking
-        # data, custom users) that don't exist in a fresh wp-env. These are
-        # pre-existing failures, not regressions. Report results, don't block.
+        # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
+        # matrix lanes run only the @compat-tagged compat specs via --grep, so
+        # PRs stay within budget (the lane is the CI job, not the filename).
+        # continue-on-error stays until the new lanes are reliably green; then
+        # remove it to make 6.4 + 7.0 blocking (interior lanes stay nightly).
+        # Many existing E2E tests assume local dev fixtures absent in fresh
+        # wp-env — pre-existing failures, not regressions.
         continue-on-error: true
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
-        run: npm run test:e2e
+        run: |
+          if [ "${WP_VERSION}" = "6.4" ]; then
+            npm run test:e2e
+          else
+            npm run test:e2e -- --grep "@compat"
+          fi
 
       - name: Upload Playwright report
         if: always()
@@ -248,7 +357,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ["7.4", "8.0", "8.1", "8.2", "8.3"]
+        # Full range: 7.4 (declared minimum) through 8.5 (current stable).
+        php: ["7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
 
     steps:
       - name: Checkout
@@ -270,11 +380,11 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer dump-autoload --no-interaction
 
       - name: Run full PHPUnit suite
@@ -282,7 +392,7 @@ jobs:
         # Individual scripts may exit non-zero on CI if they depend on a live DB
         # or environment; run phpunit directly for the nightly matrix gate.
         # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
-        if: ${{ matrix.php != '7.4' }}
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:unit
 
       # ── k6 performance tests ─────────────────────────────────────────────

@@ -30,6 +30,62 @@ class Ajax
     }
 
     /**
+     * Validate and sanitize a base64url-encoded referer from the JS tracker payload.
+     *
+     * @internal Extracted from handle() (#306) to provide a unit-testable seam.
+     *
+     * Uses sanitize_url() with `android-app` added to the allow-list
+     * (Processor::REFERER_ALLOWED_SCHEMES) rather than the default wp_allowed_protocols():
+     *   - app-scheme referers such as `android-app://com.google.android.googlequicksearchbox/`
+     *     (Google Discover) survive — the original #306 bug was the default list emptying them;
+     *   - disallowed schemes (javascript:, data:) are emptied here, at the boundary, so they can
+     *     never reach storage even on the follow-up-event path that skips Processor::process();
+     *   - unlike sanitize_text_field, percent-encoded query octets (%XX) are preserved, so
+     *     getSearchTerms() can still decode non-Latin / spaced search terms downstream.
+     * The host-format check below and the post-storage scheme check in Processor::process()
+     * remain as defense in depth.
+     *
+     * @param mixed $rawEncoded Raw base64url ref value from the client payload.
+     * @return string|false Sanitized referer (possibly empty), or false when the referer is
+     *                      malformed and the whole request must be rejected.
+     */
+    public static function sanitizeReferer($rawEncoded)
+    {
+        $referer    = Utils::base64UrlDecode($rawEncoded);
+        $parsed_ref = parse_url($referer ?: '');
+
+        // Security: Validate referer format
+        if (false === $parsed_ref) {
+            return false;
+        }
+
+        // Security: Validate host (if present) - allow external domains for referer,
+        // but validate the host format to prevent injection. Accept either a DNS
+        // hostname or a bracketed IPv6 literal (parse_url keeps the brackets, e.g.
+        // "[2001:db8::1]"); otherwise a valid IPv6 referer would fail the check and
+        // drop the entire hit. filter_var validates the IPv6 structure (same
+        // FILTER_FLAG_IPV6 pattern Utils uses) and runs only when the host is not a
+        // plain hostname.
+        if (!empty($parsed_ref['host'])) {
+            $host        = $parsed_ref['host'];
+            $is_hostname = (bool) preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $host);
+            $is_ipv6     = !$is_hostname
+                && $host[0] === '[' && substr($host, -1) === ']'
+                && false !== filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+            if (!$is_hostname && !$is_ipv6) {
+                return false;
+            }
+        }
+
+        // Security: Limit referer length to prevent DoS
+        if (strlen($referer) > 2048) {
+            $referer = substr($referer, 0, 2048);
+        }
+
+        return sanitize_url($referer, Processor::REFERER_ALLOWED_SCHEMES);
+    }
+
+    /**
      * Handle AJAX tracking request with exit (for admin-ajax.php).
      * This wrapper calls process() and exits with the result.
      */
@@ -102,31 +158,12 @@ class Ajax
         // Security: Validate and sanitize referer URL
         $stat['referer'] = '';
         if (!empty($data_js['ref'])) {
-            $referer = Utils::base64UrlDecode($data_js['ref']);
-            $parsed_ref = parse_url($referer ?: '');
-
-            // Security: Validate referer format
-            if (false === $parsed_ref) {
+            $referer = self::sanitizeReferer($data_js['ref']);
+            if (false === $referer) {
                 // Invalid referer format - reject request
                 return Utils::logError(201);
             }
-
-            // Security: Validate host (if present) - allow external domains for referer
-            // Referer can be from external sites, but we should validate the format
-            if (!empty($parsed_ref['host'])) {
-                // Validate host format (prevent injection)
-                if (!preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $parsed_ref['host'])) {
-                    // Invalid host format - reject request
-                    return Utils::logError(201);
-                }
-            }
-
-            // Security: Limit referer length to prevent DoS
-            if (strlen($referer) > 2048) {
-                $referer = substr($referer, 0, 2048);
-            }
-
-            $stat['referer'] = sanitize_url($referer);
+            $stat['referer'] = $referer;
         }
 
         // Update stat after referer processing

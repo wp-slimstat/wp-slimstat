@@ -499,6 +499,7 @@ jQuery(function () {
                 placeholder: __("Select value...", "wp-slimstat"),
                 searchPlaceholder: __("Search...", "wp-slimstat"),
                 noResultsText: __("No results found", "wp-slimstat"),
+                noMatchesText: __("No matches — click Apply to filter by this value.", "wp-slimstat"),
                 loadingText: __("Loading...", "wp-slimstat"),
                 allowClear: true,
                 ...options,
@@ -510,6 +511,9 @@ jQuery(function () {
             this.isOpen = false;
             this.filteredOptions = [];
             this.allOptions = [];
+            // Latched on the first setOptions() call so a later server-side
+            // search can clear back to the "like first open" list.
+            this.initialOptions = null;
 
             this.init();
         }
@@ -587,7 +591,25 @@ jQuery(function () {
             // Search input
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.addEventListener("input", (e) => {
-                this.filterOptions(e.target.value);
+                const term = e.target.value;
+                // When the user clears a server-search term back below the 2-char
+                // threshold, put the pre-fetched list back so the dropdown returns
+                // to the "like first open" state instead of staying narrowed.
+                if (this.options.serverSearchAction && term.trim().length < 2) {
+                    this.restoreInitialOptions();
+                }
+                // When a server-side search will fire for this keystroke, skip the
+                // client-side filter — its result will be replaced once the AJAX
+                // response lands, and the flash of an intermediate list is jarring.
+                if (!this.willServerSearch(term)) {
+                    this.filterOptions(term);
+                }
+                this.syncTypedValue(term);
+                this.scheduleServerSearch(term);
+            });
+
+            searchInput.addEventListener("blur", () => {
+                this.dispatchChange();
             });
 
             searchInput.addEventListener("keydown", (e) => {
@@ -596,12 +618,15 @@ jQuery(function () {
                 }
             });
 
-            // Click outside to close
-            document.addEventListener("click", (e) => {
+            // Click outside to close. Store the bound handler so destroy() can
+            // remove it — otherwise each dimension change leaks an instance whose
+            // closure pins the wrapper + option list (see destroy()).
+            this._onDocumentClick = (e) => {
                 if (!this.wrapper.contains(e.target)) {
                     this.close();
                 }
-            });
+            };
+            document.addEventListener("click", this._onDocumentClick);
 
             // Prevent dropdown from closing when clicking inside
             this.dropdown.addEventListener("click", (e) => {
@@ -621,6 +646,12 @@ jQuery(function () {
                     icon: opt.icon || null,
                 };
             });
+            // Latch on the first call — the dimension-change handler passes the
+            // pre-fetched 500-item list, and later server-search replacements
+            // must not overwrite it so the user can clear back to this state.
+            if (this.initialOptions === null) {
+                this.initialOptions = this.allOptions.slice();
+            }
             this.filteredOptions = [...this.allOptions];
             this.renderOptions();
         }
@@ -655,7 +686,18 @@ jQuery(function () {
                 // Create no results element safely to prevent XSS
                 const noResultsDiv = document.createElement("div");
                 noResultsDiv.className = "slimstat-select-no-results";
-                noResultsDiv.textContent = this.options.noResultsText;
+                noResultsDiv.setAttribute("data-testid", "slimstat-no-results");
+                const searchInputEl = this.searchContainer.querySelector("input");
+                const userHasTyped = searchInputEl && searchInputEl.value.trim().length > 0;
+                const hasData = this.allOptions.length > 0;
+                // On server-search dropdowns the user can apply a value that isn't in
+                // the list, so keep inviting "click Apply" whenever they've typed — even
+                // after a server search returns no matches and empties allOptions
+                // (otherwise the hint silently reverts to the generic no-results text). See #298.
+                const acceptsTypedValue = !!this.options.serverSearchAction;
+                noResultsDiv.textContent = (userHasTyped && (hasData || acceptsTypedValue))
+                    ? this.options.noMatchesText
+                    : this.options.noResultsText;
                 this.optionsContainer.appendChild(noResultsDiv);
                 return;
             }
@@ -754,6 +796,121 @@ jQuery(function () {
             this.element.dispatchEvent(changeEvent);
         }
 
+        isDisabled() {
+            // is_empty / is_not_empty operators mark the value field inert.
+            return this.element.readOnly || this.selectWrapper.style.pointerEvents === "none";
+        }
+
+        syncTypedValue(value) {
+            if (this.isDisabled()) return;
+            // Typing over a prior selection invalidates it. Clear the full selected
+            // state so close() reflects the typed value (not the stale label),
+            // getValue() returns the typed value, and the dropdown stops highlighting
+            // the old option.
+            if (this.selectedOption && this.selectedOption.value !== value) {
+                this.selectedValue = "";
+                this.selectedText = "";
+                this.selectedOption = null;
+            }
+            this.element.value = value;
+        }
+
+        dispatchChange() {
+            const changeEvent = new Event("change", { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+        }
+
+        updateDisplayFromValue(value) {
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = "";
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = value;
+            textElement.appendChild(labelSpan);
+            this.display.classList.remove("slimstat-placeholder");
+        }
+
+        willServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return false;
+            if (this.isDisabled()) return false;
+            return (searchTerm || "").trim().length >= 2;
+        }
+
+        restoreInitialOptions() {
+            if (!this.initialOptions) return;
+            if (this.allOptions === this.initialOptions) return;
+            this.allOptions = this.initialOptions.slice();
+        }
+
+        scheduleServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return;
+            if (this.isDisabled()) return;
+
+            const term = (searchTerm || "").trim();
+
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
+            // Under 2 chars: fall back to legacy full DISTINCT from the initial fetch.
+            if (term.length < 2) return;
+
+            this._searchDebounce = setTimeout(() => {
+                this.runServerSearch(term);
+            }, 250);
+        }
+
+        runServerSearch(term) {
+            const hasAbort = typeof AbortController !== "undefined";
+            this._searchAbort = hasAbort ? new AbortController() : null;
+            const signal = this._searchAbort ? this._searchAbort.signal : null;
+            const timeRange = this.options.serverSearchTimeRange || { type: "last_28_days", from: "", to: "" };
+
+            jQuery.ajax({
+                method: "POST",
+                url: (typeof ajaxurl !== "undefined") ? ajaxurl : "",
+                data: {
+                    action: this.options.serverSearchAction,
+                    dimension: this.options.serverSearchDimension,
+                    security: this.options.serverSearchNonce || "",
+                    time_range_type: timeRange.type,
+                    time_range_from: timeRange.from,
+                    time_range_to: timeRange.to,
+                    search: term
+                },
+                dataType: "json",
+                timeout: 15000,
+                xhr: function () {
+                    const xhr = jQuery.ajaxSettings.xhr();
+                    if (signal) {
+                        signal.addEventListener("abort", () => {
+                            try { xhr.abort(); } catch (e) { /* no-op */ }
+                        });
+                    }
+                    return xhr;
+                }
+            })
+                .done((response) => {
+                    // Discard stale responses if the user has kept typing.
+                    const searchInputEl = this.searchContainer.querySelector("input");
+                    const currentTerm = searchInputEl ? searchInputEl.value.trim() : "";
+                    if (currentTerm !== term) {
+                        return;
+                    }
+                    if (response && response.success && Array.isArray(response.data)) {
+                        this.setOptions(response.data);
+                    }
+                })
+                .fail(() => {
+                    // On network failure fall back silently to existing client list.
+                });
+        }
+
         getValue() {
             return this.selectedValue;
         }
@@ -799,32 +956,55 @@ jQuery(function () {
             // Clear search
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.value = "";
+
+            // If the user typed a value but didn't click an option, reflect it
+            // in the closed display so they see their input committed.
+            if (!this.selectedOption && this.element.value) {
+                this.updateDisplayFromValue(this.element.value);
+            }
         }
 
         destroy() {
-            // Close dropdown if open
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
             if (this.isOpen) {
                 this.close();
             }
 
+            // Remove the document-level click listener so the instance (and the
+            // wrapper/option list its closure references) can be garbage-collected.
+            if (this._onDocumentClick) {
+                document.removeEventListener("click", this._onDocumentClick);
+                this._onDocumentClick = null;
+            }
+
             // Safely remove wrapper and restore original element
             if (this.wrapper && this.element) {
-                // Move element back to its original position before wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
                 }
 
-                // Show original element
                 this.element.style.display = "";
-
-                // Clear value
                 this.element.value = "";
 
-                // Remove wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.removeChild(this.wrapper);
                 }
             }
+
+            // Drop references so GC can reclaim the option list + DOM subtree
+            // even if an external holder retains the instance.
+            this.allOptions = null;
+            this.filteredOptions = null;
+            this.selectedOption = null;
+            this.initialOptions = null;
         }
     }
 
@@ -943,7 +1123,12 @@ jQuery(function () {
                             placeholder: __('Select value...', 'wp-slimstat'),
                             searchPlaceholder: __('Search options...', 'wp-slimstat'),
                             noResultsText: noResultsText,
-                            loadingText: __('Loading options...', 'wp-slimstat')
+                            noMatchesText: __('No matches — click Apply to filter by this value.', 'wp-slimstat'),
+                            loadingText: __('Loading options...', 'wp-slimstat'),
+                            serverSearchAction: 'slimstat_get_filter_options',
+                            serverSearchDimension: dimension,
+                            serverSearchNonce: jQuery("#meta-box-order-nonce").val(),
+                            serverSearchTimeRange: timeRangeData
                         });
 
                         // Set the options from the AJAX response (empty array if no data)
@@ -971,8 +1156,11 @@ jQuery(function () {
         var operator = this.value;
         var $textInput = jQuery("#slimstat-filter-value");
 
-        if (operator == "is_empty" || operator == "is_not_empty") {
-            $textInput.attr("readonly", "readonly");
+        var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
+        if (valueless.indexOf(operator) !== -1) {
+            // Clear any stale typed value so it cannot leak into the filter URL — the
+            // SQL builder ignores the value for these operators anyway. See #305.
+            $textInput.attr("readonly", "readonly").val("");
 
             // Disable searchable select if it exists
             if (searchableSelectInstance) {
@@ -1107,7 +1295,7 @@ jQuery(function () {
 
         SlimStatAdmin.add_url_filters_to_form(url, typeof jQuery(this).attr("data-reset-filters") != "undefined", jQuery(this).hasClass("slimstat-filter-temp"));
 
-        jQuery("#slimstat-filters-form").submit();
+        jQuery("#slimstat-filters-form").trigger("submit");
 
         // Remove any temporary filters set here above
         jQuery(".slimstat-temp-filter").remove();
@@ -1871,9 +2059,12 @@ var SlimStatAdmin = {
 
         // Manipulate the existing list of filters (hidden input fields), if we don't want to delete them
         if (typeof delete_existing_filters == "undefined" || !delete_existing_filters) {
+            var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
             for (i in clean_filters) {
-                // If value is empty (length is 1, meaning that it just has the operator but no value), delete corresponding input field
-                if (clean_filters[i].trim().split(" ").length == 1) {
+                var parts = clean_filters[i].trim().split(" ");
+                // A single token means operator-only with no value. Drop it UNLESS the
+                // operator is value-less by design (is_empty/is_not_empty). See #305.
+                if (parts.length === 1 && valueless.indexOf(parts[0]) === -1) {
                     jQuery('input[name="' + i + '"]').remove();
                 } else if (jQuery('input[name="' + i + '"]').length > 0) {
                     jQuery('input[name="' + i + '"]').attr("value", clean_filters[i]);

@@ -42,6 +42,9 @@ if (!class_exists('wp_slimstat')) {
         /** @var string */
         public static string $upload_dir = '/tmp/fake-browscap';
 
+        /** @var object|null Stand-in for the WP $wpdb handle (set by tests that need it). */
+        public static $wpdb = null;
+
         /** @var array<string,mixed> */
         public static array $settings = [
             'enable_browscap'          => 'off',
@@ -78,6 +81,11 @@ if (!class_exists('wp_slimstat')) {
 
         /** @var array<string,mixed> */
         private static array $_data_js = [];
+
+        public static function log($message, string $level = 'info'): void
+        {
+            // Test no-op — production gates on WP_DEBUG, not relevant for unit tests.
+        }
 
         public static function get_stat(): array
         {

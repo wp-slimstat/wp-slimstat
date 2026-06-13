@@ -1,4 +1,4 @@
-= 5.5.0 - 2026-04-19 =
+= 5.5.0 - Unreleased =
 
 **Goals & Funnels redesign (slimview6)**
 
@@ -28,11 +28,46 @@
 - New PHPUnit `Integration` suite (`tests/Integration/`, Brain Monkey + Mockery, dedicated `tests/bootstrap-integration.php`). 29 tests pin: AJAX handlers (save/delete goal + funnel, new `ajax_load_funnel_data`), nonce + capability negatives, paused-limit round-trip, cache-version invalidation, legacy CSS alias preservation.
 - New Playwright E2E spec (`tests/e2e/goals-funnels.spec.ts`) + helpers (`tests/e2e/helpers/goals-funnels.ts`) covering Free/Pro × empty/has-data marquee states, goal drawer create, confirm-sheet destructive action, 2-step funnel creation, and dashboard-widget leak guard.
 
-= 5.4.12 - 2026-04-18 =
+**Filters & traffic sources**
+
+- Fixed: Google Discover and other Android/iOS app traffic is recorded again. Since 5.4.0, referrers that start with `android-app://` (such as `com.google.android.googlequicksearchbox` from Google Discover) were silently dropped, so that traffic showed up as "direct" with no source. The tracker now preserves app-scheme referrers while still blocking unsafe ones. ([#306](https://github.com/wp-slimstat/wp-slimstat/issues/306))
+- Fixed: The "is empty" and "is not empty" report filters work again. Since 5.4.0 they were silently ignored — the filter chip appeared but every row was still shown — and the filter was lost when you paginated, refreshed, or changed the date range. They now apply on the first click and survive in-session navigation. ([#305](https://github.com/wp-slimstat/wp-slimstat/issues/305))
+- Fixed: The Access Log filter dropdown now accepts pasted or typed values that aren't in the visible list. Previously, on busy sites, a value clearly visible in the log (for example a specific IP) could return "No matching options found" and the filter couldn't be applied. The dropdown now searches the full column history and lets you apply the value you typed. ([#298](https://github.com/wp-slimstat/wp-slimstat/issues/298))
+
+**Compatibility & stability**
+
+- Removed: The admin "Feedback" widget (powered by feedbackbird.io) has been removed. It loaded a script from a third-party CDN and sent your email address, PHP version, and active-plugin list off-site with no opt-out. SlimStat no longer makes this external call.
+- Fixed: WordPress admin no longer crashes on PHP 7.4 hosts. Some admin pages were calling a function that only exists in PHP 8.0 and newer, which broke wp-admin entirely. Replaced with a compatible alternative.
+- Fixed: Visit tracking no longer fails with a 500 error on hosts that don't have the optional PHP `fileinfo` extension (common on managed and minimal PHP builds). When the extension is missing, the plugin now falls back to its built-in browser detector and shows a dismissible admin notice so you can ask your host to enable the extension or turn off the Browscap library.
+- Fixed: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits when the tracker was handed an invalid IP, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
+- Fixed: On PHP 8.0 and newer, clearing the Posts-list "pageviews in the last N days" interval no longer rendered an empty day count in the column header — it now falls back to 28 days exactly as it always did on PHP 7 (a PHP 8.0 comparison-semantics change had broken the fallback).
+- Tested up to WordPress 7.0. Removed an obsolete WordPress-3.3 version check that read an internal global directly.
+
+**PHP 8.1+ readiness**
+
+- Cleaned up six internal function signatures so they no longer trigger PHP 8.1+ deprecation warnings in your `debug.log`. These warnings would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+- Added a compatibility shim so modern PHP idioms (like `str_contains`) work the same on older PHP 7.4 hosts. No behavior change for end users.
+
+**Quality & developer experience**
+
+- Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3). The PHP 7.4 lane now runs real tests on every change instead of just lint checks — which is what caught the bugs above before they could ship.
+- New regression guards make sure the same class of compatibility issues can't sneak back in.
+- Added a `CONTRIBUTING.md` documenting the test suite for contributors, plus a few small style cleanups in the tests themselves.
+- CI now boots the full WordPress version matrix (5.6 → 7.0) end-to-end on every relevant change, instead of testing a single version, so version-specific regressions surface before release. PHP 8.0/8.3/8.4 are now also blocking lanes (were nightly-only).
+- Added PHPStan static analysis to catch type and null-safety issues before they ship.
+- Migrated the admin JavaScript off the jQuery event shorthands that jQuery 4.0 removes (no behavior change on today's jQuery). The bundled third-party libraries remain shimmed by jQuery Migrate.
+- Removed a stray, never-loaded bundled Symfony helper file.
+
+= 5.4.12 - 2026-05-13 =
+
+**Security**
+
+- Authenticated SQL injection in the chart AJAX endpoint (`wp_ajax_slimstat_fetch_chart_data`) is now blocked. `chart_data.where` is validated against the registered report definitions before being inlined into the SQL query — only WHERE clauses declared by trusted reports (and by Pro addons that register reports via the `slimstat_reports_info` filter) are accepted. Reported via Patchstack (CVSS 8.5, High). The `data1` / `data2` allowlist introduced in PR #232 already covered the aggregate-expression vector; this release closes the parallel `where` vector.
+- Patched unauthenticated stored XSS via the `User-Agent` header ([CVE-2026-7634](https://nvd.nist.gov/vuln/detail/CVE-2026-7634), CVSS 7.2). `Storage::updateRow()` now mirrors `insertRow()`'s `sanitize_text_field()`/`sanitize_url()` loop so a redirect (`Processor::updateContentType`) or AJAX follow-up (`Ajax::process` navigation/outbound/event branches) can no longer overwrite the inserted row with raw HTML. The User-Agent header is also sanitized on capture in `Browscap::_get_user_agent()`, and `wp_slimstat_reports::inline_help()` defangs unsafe HTML via `wp_kses_post()` before rendering — defense in depth across capture, storage, and output. Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence. Required `show_complete_user_agent_tooltip` to be enabled (off by default) for the stored payload to render in the admin Browsers report.
 
 **Bot detection hardening**
 
-- Chrome-based mobile Googlebot and Bingbot are now correctly blocked when Browscap classifies them as mobile devices ([#14843](https://wp-slimstat.com/), [#291](https://github.com/wp-slimstat/wp-slimstat/issues/291)). The bot-detection safety net previously only re-checked desktop-classified UAs (`browser_type === 0`); it now re-checks every non-crawler type (desktop, mobile, touch) so Android/Chrome-suffixed crawler UAs no longer slip through.
+- Chrome-based mobile Googlebot and Bingbot are now correctly blocked when Browscap classifies them as mobile devices (#14843, [#291](https://github.com/wp-slimstat/wp-slimstat/issues/291)). The bot-detection safety net previously only re-checked desktop-classified UAs (`browser_type === 0`); it now re-checks every non-crawler type (desktop, mobile, touch) so Android/Chrome-suffixed crawler UAs no longer slip through.
 - Google-InspectionTool mobile UA is now detected as a crawler on both client and server tracking modes.
 - `BOT_GENERIC_REGEX` extended with 15 new vendor-specific tokens to catch bare-name bots that expose neither a URL nor a conventional `bot`/`crawl`/`spider` keyword: Mediapartners-Google, Google-InspectionTool, Google-Site-Verification, Google Favicon, GoogleOther, GoogleAgent-Mariner (new March 2026), Google-Safety, DuplexWeb-Google, BingPreview, YandexDirect, YandexFavicons, WhatsApp preview, SkypeUriPreview, anthropic-ai, cohere-ai.
 
