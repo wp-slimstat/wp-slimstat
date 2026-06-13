@@ -11,7 +11,7 @@
 declare(strict_types=1);
 
 $plugin_root = dirname(__DIR__);
-$expected    = '6.9.4'; // Phase 6: bump to '7.0' together with readme.txt.
+$expected    = '7.0'; // Two-segment per the wp.org parser; bumped with readme.txt in Phase 6.
 
 $readme = file_get_contents($plugin_root . '/readme.txt');
 if (false === $readme) { fwrite(STDERR, "FAIL: cannot read readme.txt\n"); exit(1); }
