@@ -48,7 +48,7 @@ foreach ($files as $file) {
     $contents = file_get_contents($file);
     if (false === $contents) continue;
     foreach ($removed_fns as $fn) {
-        $pattern = '/(?<![\w>$])' . preg_quote($fn, '/') . '\s*\(/';
+        $pattern = '/(?<![:\w>$])' . preg_quote($fn, '/') . '\s*\(/';
         if (!preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE)) continue;
         foreach ($matches[0] as [$match, $offset]) {
             $line_no = substr_count($contents, "\n", 0, $offset) + 1;

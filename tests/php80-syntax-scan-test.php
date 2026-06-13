@@ -34,11 +34,11 @@ sort($files);
 if (0 === count($files)) { fwrite(STDERR, "FAIL: scanner found zero own-code .php files\n"); exit(1); }
 
 $patterns = [
-    'match expression (8.0)'        => '/(?<![\w>$])match\s*\(/',
+    'match expression (8.0)'        => '/(?<![:\w>$])match\s*\(/',
     'enum declaration (8.1)'        => '/^\s*enum\s+[A-Z]\w*/m',
     'readonly property (8.1)'       => '/\breadonly\s+(?:public|protected|private|static|\$)|(?:public|protected|private)\s+readonly\b/',
     'nullsafe operator ?-> (8.0)'   => '/\?->/',
-    'each() removed in 8.0'         => '/(?<![\w>$])each\s*\(/',
+    'each() removed in 8.0'         => '/(?<![:\w>$])each\s*\(/',
     'create_function() removed 8.0' => '/\bcreate_function\s*\(/',
     'libxml_disable_entity_loader removed 8.0' => '/\blibxml_disable_entity_loader\s*\(/',
 ];

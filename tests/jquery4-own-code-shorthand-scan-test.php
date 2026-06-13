@@ -35,7 +35,10 @@ $targets = [
 $patterns = [
     '$(...).submit() event-shorthand trigger (removed in jQuery 4.0)' => '/(?:\$|jQuery)\([^)]*\)\.submit\(\s*\)/',
     '$(...).click() event-shorthand trigger (removed in jQuery 4.0)'  => '/(?:\$|jQuery)\([^)]*\)\.click\(\s*\)/',
-    '.click(handler) bind-shorthand (removed in jQuery 4.0)'          => '/\.click\(\s*function/',
+    // Bind-shorthand: any non-empty arg — inline function, arrow fn, or a handler
+    // reference (the empty-call trigger form is covered by the patterns above).
+    '.click(handler) bind-shorthand (removed in jQuery 4.0)'          => '/\.click\(\s*(?!\))/',
+    '.submit(handler) bind-shorthand (removed in jQuery 4.0)'         => '/\.submit\(\s*(?!\))/',
 ];
 
 $violations = [];

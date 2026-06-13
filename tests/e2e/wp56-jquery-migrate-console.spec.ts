@@ -59,8 +59,11 @@ test.describe('JQMIGRATE watchdog — own-code is jQuery-4.0 clean @compat', () 
       if (await form.count()) {
         await page.evaluate(() => {
           const f = document.querySelector('#slimstat-filters-form');
-          if (f && (window as any).jQuery) (window as any).jQuery(f).trigger('submit');
-        }).catch(() => {});
+          // triggerHandler fires bound handlers WITHOUT the native submit/navigation,
+          // so the page stays put and JQMIGRATE warnings are captured. Errors surface
+          // (no .catch swallow) so a broken handler fails the test.
+          if (f && (window as any).jQuery) (window as any).jQuery(f).triggerHandler('submit');
+        });
       }
 
       const ownCodeWarnings = migrateWarnings.filter((w) =>
