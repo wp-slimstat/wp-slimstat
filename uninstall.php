@@ -61,11 +61,12 @@ function slimstat_uninstall($_wpdb = '', $_options = [])
     delete_option('slimstat_funnels');
     delete_option('slimstat_goals_cache_ver');
 
-    // Goals & Funnels (5.5.0+): per-goal/per-funnel transients accumulated
-    // between cache-version bumps. Safe to DELETE with LIKE here because
-    // uninstall runs once and isn't racing other requests.
+    // Goals & Funnels (5.5.0+): per-goal/per-funnel transients plus the
+    // unique-visitor denominator transients (slimstat_uv_*), accumulated between
+    // cache-version bumps. Safe to DELETE with LIKE here because uninstall runs
+    // once and isn't racing other requests.
     $GLOBALS['wpdb']->query(sprintf(
-        "DELETE FROM %soptions WHERE option_name LIKE '\\_transient\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_funnel\\_%%'",
+        "DELETE FROM %soptions WHERE option_name LIKE '\\_transient\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_uv\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_uv\\_%%'",
         $GLOBALS['wpdb']->prefix
     ));
 

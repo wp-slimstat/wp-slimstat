@@ -169,6 +169,36 @@ class QueryBuilderTest extends WpSlimstatTestCase
     }
 
     /**
+     * BUG GUARD (M1, query layer) — build_goal_where() must drop a value-bearing
+     * operator that has an empty value, because get_single_where_clause() would
+     * otherwise return an unprepared fragment containing a literal "%s" placeholder
+     * (it skips prepare() when the value is empty), which breaks the funnel/goal SQL.
+     *
+     * @test
+     */
+    public function test_build_goal_where_drops_empty_value_for_value_bearing_operator(): void
+    {
+        $build = new \ReflectionMethod(\wp_slimstat_db::class, 'build_goal_where');
+        $build->setAccessible(true);
+
+        // Value-bearing operator + empty value → no clause (no unbound %s reaches SQL).
+        $this->assertSame(
+            '',
+            $build->invoke(null, ['dimension' => 'resource', 'operator' => 'equals', 'value' => ''], 't1')
+        );
+
+        // A real value still yields a prepared clause with no leftover placeholder.
+        $real = $build->invoke(null, ['dimension' => 'resource', 'operator' => 'equals', 'value' => '/pricing'], 't1');
+        $this->assertStringNotContainsString('%s', $real, 'A prepared clause must not contain a raw %s placeholder');
+        $this->assertStringContainsString("'/pricing'", $real);
+
+        // A valueless operator (is_empty) is still allowed with no value.
+        $valueless = $build->invoke(null, ['dimension' => 'resource', 'operator' => 'is_empty', 'value' => ''], 't1');
+        $this->assertNotSame('', $valueless);
+        $this->assertStringNotContainsString('%s', $valueless);
+    }
+
+    /**
      * @test
      */
     public function test_single_where_contains_uses_like(): void

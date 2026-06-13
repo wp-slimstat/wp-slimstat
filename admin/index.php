@@ -1749,13 +1749,22 @@ class wp_slimstat_admin
         $like_goal_timeout = $wpdb->esc_like('_transient_timeout_slimstat_goal_')   . '%';
         $like_funnel       = $wpdb->esc_like('_transient_slimstat_funnel_')         . '%';
         $like_funnel_t     = $wpdb->esc_like('_transient_timeout_slimstat_funnel_') . '%';
+        // Unique-visitor denominator transients (CR math) — version-keyed since 5.5.0
+        // so they accumulate one row per date range; sweep them here too.
+        $like_uv           = $wpdb->esc_like('_transient_slimstat_uv_')             . '%';
+        $like_uv_timeout   = $wpdb->esc_like('_transient_timeout_slimstat_uv_')     . '%';
 
+        // LIMIT 1000 mirrors update_tables_and_options()'s bounded transient sweep so
+        // an install with many accumulated rows doesn't run an unbounded synchronous
+        // DELETE on an admin save.
         $wpdb->query($wpdb->prepare(
-            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s",
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s LIMIT 1000",
             $like_goal,
             $like_goal_timeout,
             $like_funnel,
-            $like_funnel_t
+            $like_funnel_t,
+            $like_uv,
+            $like_uv_timeout
         ));
     }
 
@@ -1822,7 +1831,11 @@ class wp_slimstat_admin
         $operators  = self::get_goal_operators();
 
         $goal = [
-            'id'        => !empty($raw['id']) ? intval($raw['id']) : intval(microtime(true) * 10000),
+            // A provided id is honoured only so callers can match an existing
+            // record for update; new records get a server-assigned id via
+            // next_record_id() (never a client value, never microtime — which
+            // collides on sub-ms saves and overflows on 32-bit PHP).
+            'id'        => !empty($raw['id']) ? intval($raw['id']) : 0,
             'name'      => !empty($raw['name']) ? sanitize_text_field($raw['name']) : '',
             'dimension' => !empty($raw['dimension']) && isset($dimensions[$raw['dimension']]) ? $raw['dimension'] : '',
             'operator'  => !empty($raw['operator']) && in_array($raw['operator'], $operators, true) ? $raw['operator'] : '',
@@ -1834,7 +1847,33 @@ class wp_slimstat_admin
             return false;
         }
 
+        // A value-bearing operator must carry a non-empty value; otherwise the
+        // query builder emits an unbound "%s" placeholder that breaks the SQL and
+        // silently reports 0. Only the valueless operators may omit a value — sourced
+        // from the shared wp_slimstat_db list (guarded; the db class may not be loaded
+        // yet on the save path) so it never drifts. See #305.
+        $valueless = class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'];
+        if ('' === $goal['value'] && !in_array($goal['operator'], $valueless, true)) {
+            return false;
+        }
+
         return $goal;
+    }
+
+    /**
+     * Returns a collision-free id for a new goal/funnel record: max existing id + 1.
+     * Replaces the old microtime()-based id (which collided on sub-millisecond
+     * saves and overflowed to 0 on 32-bit PHP), and is never client-supplied.
+     */
+    private static function next_record_id(array $records)
+    {
+        $max = 0;
+        foreach ($records as $record) {
+            if (isset($record['id']) && (int) $record['id'] > $max) {
+                $max = (int) $record['id'];
+            }
+        }
+        return $max + 1;
     }
 
     /**
@@ -1856,14 +1895,32 @@ class wp_slimstat_admin
         $goals     = get_option('slimstat_goals', []);
         $max_goals = apply_filters('slimstat_max_goals', 1);
 
-        // Check if updating existing goal
+        // Update only when a client-supplied id matches an existing goal; anything
+        // else is a create. New records get a server-assigned id (next_record_id)
+        // so a client can't force a collision/overwrite by sending an arbitrary id.
+        // NOTE: this read-modify-write of the slimstat_goals option assumes a single
+        // editor — concurrent admin saves can still last-writer-win (acceptable for
+        // an admin-only, low-frequency setting).
         $found = false;
-        foreach ($goals as $i => $existing) {
-            if ($existing['id'] === $goal['id']) {
-                $goals[$i] = $goal;
-                $found = true;
-                break;
+        if (!empty($goal['id'])) {
+            foreach ($goals as $i => $existing) {
+                if ((int) $existing['id'] === (int) $goal['id']) {
+                    $goals[$i] = $goal;
+                    $found = true;
+                    break;
+                }
             }
+        }
+
+        if (!$found) {
+            // Hard cap on total stored goals (active + paused). Paused goals don't
+            // count against the active-tier limit below, so without this they could
+            // grow the slimstat_goals option without bound.
+            $hard_cap = (int) apply_filters('slimstat_goals_hard_cap', 50);
+            if (count($goals) >= $hard_cap) {
+                wp_send_json_error(['message' => __('Too many goals stored. Delete unused goals before adding more.', 'wp-slimstat')]);
+            }
+            $goal['id'] = self::next_record_id($goals);
         }
 
         // Count active goals in the state that *would* result from this save.
@@ -1956,8 +2013,11 @@ class wp_slimstat_admin
         }
 
         $raw_funnel_name = isset($_POST['funnel_name']) ? wp_unslash((string) $_POST['funnel_name']) : '';
+        $incoming_id     = !empty($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
         $funnel = [
-            'id'    => !empty($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : intval(microtime(true) * 10000),
+            // Provisional id; reassigned with a server-side value for creates below
+            // (never microtime — it collides on sub-ms saves / overflows on 32-bit).
+            'id'    => $incoming_id,
             'name'  => sanitize_text_field($raw_funnel_name),
             'steps' => $steps,
         ];
@@ -1968,13 +2028,15 @@ class wp_slimstat_admin
 
         $funnels = get_option('slimstat_funnels', []);
 
-        // Check if updating existing funnel
+        // Update only when a client-supplied id matches an existing funnel; else create.
         $found = false;
-        foreach ($funnels as $i => $existing) {
-            if ($existing['id'] === $funnel['id']) {
-                $funnels[$i] = $funnel;
-                $found = true;
-                break;
+        if ($incoming_id > 0) {
+            foreach ($funnels as $i => $existing) {
+                if ((int) $existing['id'] === $incoming_id) {
+                    $funnels[$i] = $funnel;
+                    $found = true;
+                    break;
+                }
             }
         }
 
@@ -1987,6 +2049,7 @@ class wp_slimstat_admin
                     ),
                 ]);
             }
+            $funnel['id'] = self::next_record_id($funnels);
             $funnels[] = $funnel;
         }
 
@@ -2098,8 +2161,11 @@ class wp_slimstat_admin
     {
         check_ajax_referer('slimstat_goals_nonce', 'security');
 
-        if (!self::check_ajax_view_capability()) {
-            return;
+        // Builder-only action: it runs an arbitrary admin-supplied rule (including
+        // REGEXP) against slim_stats and each distinct rule misses the cache, so it
+        // is gated on the admin capability rather than the broader view capability.
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')], 403);
         }
 
         $step = self::sanitize_goal($_POST);

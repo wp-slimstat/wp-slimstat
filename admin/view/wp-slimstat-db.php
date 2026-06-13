@@ -1639,6 +1639,16 @@ class wp_slimstat_db
     {
         $dimension = $goal['dimension'];
 
+        // Defense-in-depth: a value-bearing operator with an empty value makes
+        // get_single_where_clause() return an unprepared fragment that still
+        // contains a literal "%s" placeholder (it skips prepare() when the value
+        // is empty). sanitize_goal() already rejects this at save time, but guard
+        // the query layer too so such a clause can never reach $wpdb->query().
+        // Only the valueless operators (is_empty / is_not_empty) may run without a value.
+        if ('' === (string) $goal['value'] && !in_array($goal['operator'], self::$valueless_operators, true)) {
+            return '';
+        }
+
         // Event-based goals query the events table notes column
         if ($dimension === 'event_notes') {
             $dimension = 'notes';
@@ -1747,7 +1757,10 @@ class wp_slimstat_db
 
         $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $date_where  = self::get_combined_where('', '*', true, 't1');
-        $cache_key   = 'slimstat_uv_' . md5($date_where);
+        // Version-key like the goal/funnel transients so a CRUD cache bump (which
+        // also runs the GC in clear_goals_cache()) rotates this denominator too.
+        $cache_ver   = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key   = 'slimstat_uv_' . md5($date_where . $cache_ver);
         $cached      = get_transient($cache_key);
 
         if (false !== $cached) {
@@ -1832,11 +1845,16 @@ class wp_slimstat_db
         $step1_count = 0;
         $use_temp    = false;
         $preflight   = false;
+        $had_error   = false;
 
         // Each temp table row carries (vid, t) — the visitor identifier and the
         // MIN(dt) at which they qualified for the preceding step. The JOIN on
-        // step N+ enforces `new_row.dt > r.t` so out-of-order matches (visitor
-        // hit step N before step N-1) don't count as converted.
+        // step N+ enforces `new_row.dt >= r.t` so out-of-order matches (visitor
+        // hit step N before step N-1) don't count as converted. We use `>=`
+        // (not `>`) because dt has one-second granularity: two genuinely ordered
+        // steps that land in the same second (fast SPA navigation, a pageview
+        // immediately followed by an event row) must still count. Distinct step
+        // rules keep the same physical row from satisfying two steps at once.
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event   = ($step['dimension'] === 'event_notes');
             $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
@@ -1871,10 +1889,11 @@ class wp_slimstat_db
                     $visitor_id, $dt_expr, $from_sql, $step_where, $date_where
                 );
             } else {
-                // Step N>1: JOIN temp_read and require the new row's dt strictly
-                // after the stored timestamp for the same visitor.
+                // Step N>1: JOIN temp_read and require the new row's dt at or
+                // after the stored timestamp for the same visitor (see ordering
+                // note above for why `>=` rather than `>`).
                 $select_sql = sprintf(
-                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s > r.t GROUP BY vid",
+                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s >= r.t GROUP BY vid",
                     $visitor_id, $dt_expr, $from_sql, $temp_read, $visitor_id, $step_where, $date_where, $dt_expr
                 );
             }
@@ -1889,7 +1908,27 @@ class wp_slimstat_db
             // Create the per-step temp table once, then count from it — avoids
             // running the grouped subquery twice for the same step.
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
-            wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
+            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
+
+            // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
+            // truncation, missing CREATE TEMPORARY privilege, deadlock), the
+            // write table does not exist. Proceeding would COUNT a missing table
+            // (→ 0), then DROP the previous valid READ and RENAME a missing WRITE,
+            // silently zeroing this and every downstream step and presenting a
+            // corrupt funnel as real data. Bail with the steps gathered so far,
+            // flag this step as errored, and don't cache the partial result so a
+            // transient failure self-heals on the next request.
+            if (false === $created) {
+                if ('on' == wp_slimstat::$settings['show_sql_debug'] && !empty(wp_slimstat::$wpdb->last_error)) {
+                    self::$debug_message .= sprintf("<p class='debug'>Funnel step query failed: %s</p>", esc_html(wp_slimstat::$wpdb->last_error));
+                }
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
+                $had_error = true;
+                break;
+            }
+
             $visitor_count = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $temp_write"));
 
             if ($step_index === 0) {
@@ -1922,7 +1961,11 @@ class wp_slimstat_db
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
         }
 
-        set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
+        // Don't cache a funnel whose query errored — let it recompute next time
+        // in case the failure was transient (deadlock) or the rule was fixed.
+        if (!$had_error) {
+            set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
+        }
 
         return $results;
     }

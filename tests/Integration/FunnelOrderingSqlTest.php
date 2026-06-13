@@ -67,17 +67,19 @@ class FunnelOrderingSqlTest extends TestCase
     public function test_step_two_plus_joins_temp_read_and_enforces_time_ordering(): void
     {
         // Step N>1 must JOIN temp_read on visitor id and require the new row's
-        // dt to be strictly greater than the stored timestamp. Without this
-        // constraint, the query would fall back to a set intersection (the bug).
+        // dt to be at or after the stored timestamp. We use `>=` (not `>`) so two
+        // genuinely ordered steps that land in the same one-second dt bucket still
+        // count; without any time constraint the query would fall back to a set
+        // intersection (the original bug).
         $this->assertStringContainsString(
             'INNER JOIN %s r ON r.vid = %s',
             $this->body,
             'Step N>1 must JOIN the temp_read table on visitor id (format-string form)'
         );
         $this->assertStringContainsString(
-            '%s > r.t',
+            '%s >= r.t',
             $this->body,
-            'Step N>1 must compare the current dt against r.t from temp_read (format-string form)'
+            'Step N>1 must compare the current dt against r.t from temp_read (>= for same-second ordering)'
         );
     }
 

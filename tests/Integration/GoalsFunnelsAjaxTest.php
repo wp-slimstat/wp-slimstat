@@ -130,6 +130,86 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $this->assertCount(2, $this->optionStore['slimstat_goals']);
     }
 
+    /**
+     * BUG GUARD (M1) — a value-bearing operator saved with an empty value used to
+     * pass sanitize_goal(), then produce an unprepared "%s" placeholder in the SQL
+     * (a broken query that silently reported 0). It must now be rejected at save.
+     */
+    public function test_save_goal_rejects_value_bearing_operator_with_empty_value(): void
+    {
+        $this->setMaxGoals(1);
+        $_POST = array_merge(self::VALID_GOAL_POST, ['operator' => 'equals', 'value' => '']);
+
+        $die = $this->callHandler('ajax_save_goal');
+
+        $this->assertSame('error', $die->outcome());
+        $this->assertStringContainsString('Invalid goal definition', $die->payload['message']);
+        $this->assertArrayNotHasKey('slimstat_goals', $this->optionStore);
+    }
+
+    /** A valueless operator (is_empty) is still allowed to save with no value. */
+    public function test_save_goal_allows_valueless_operator_with_empty_value(): void
+    {
+        $this->setMaxGoals(1);
+        $_POST = array_merge(self::VALID_GOAL_POST, ['operator' => 'is_empty', 'value' => '']);
+
+        $die = $this->callHandler('ajax_save_goal');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertCount(1, $this->optionStore['slimstat_goals']);
+    }
+
+    /**
+     * BUG GUARD (A3) — new goals get a server-assigned id; a client-supplied id
+     * that matches no existing goal must be ignored (can't force a collision/overwrite).
+     */
+    public function test_save_goal_assigns_server_id_and_ignores_client_id_for_new_record(): void
+    {
+        $this->setMaxGoals(1);
+        $_POST = array_merge(self::VALID_GOAL_POST, ['id' => 999999]);
+
+        $die = $this->callHandler('ajax_save_goal');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertSame(1, $this->optionStore['slimstat_goals'][0]['id'], 'New goal must get a server id, not the client-sent 999999');
+    }
+
+    /** BUG GUARD (A3) — sequential creates get distinct ids (no microtime collision). */
+    public function test_save_goal_assigns_sequential_unique_ids(): void
+    {
+        $this->setMaxGoals(5);
+
+        $_POST = array_merge(self::VALID_GOAL_POST, ['name' => 'First']);
+        $this->callHandler('ajax_save_goal');
+        $_POST = array_merge(self::VALID_GOAL_POST, ['name' => 'Second']);
+        $this->callHandler('ajax_save_goal');
+
+        $ids = array_column($this->optionStore['slimstat_goals'], 'id');
+        $this->assertSame($ids, array_unique($ids), 'Goal ids must be unique');
+        $this->assertSame([1, 2], $ids);
+    }
+
+    /**
+     * BUG GUARD (A4) — paused goals don't count against the active-tier limit, so a
+     * hard cap on total stored goals prevents unbounded growth of the option.
+     */
+    public function test_save_goal_rejects_when_hard_cap_reached(): void
+    {
+        $this->setMaxGoals(1);
+        $this->filterValues['slimstat_goals_hard_cap'] = 2;
+        $this->setGoals([
+            ['id' => 1, 'name' => 'P1', 'dimension' => 'resource', 'operator' => 'equals', 'value' => '/1', 'active' => false],
+            ['id' => 2, 'name' => 'P2', 'dimension' => 'resource', 'operator' => 'equals', 'value' => '/2', 'active' => false],
+        ]);
+        $_POST = self::VALID_GOAL_POST;
+
+        $die = $this->callHandler('ajax_save_goal');
+
+        $this->assertSame('error', $die->outcome());
+        $this->assertStringContainsString('Too many goals stored', $die->payload['message']);
+        $this->assertCount(2, $this->optionStore['slimstat_goals']);
+    }
+
     public function test_save_goal_invalidates_cache_version(): void
     {
         $this->optionStore['slimstat_goals_cache_ver'] = '0';
@@ -297,6 +377,45 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $this->assertCount(1, $this->optionStore['slimstat_funnels']);
         $this->assertSame('Renamed', $this->optionStore['slimstat_funnels'][0]['name']);
         $this->assertCount(3, $this->optionStore['slimstat_funnels'][0]['steps']);
+    }
+
+    /**
+     * BUG GUARD (A3) — new funnels get a server-assigned id; a client-supplied id
+     * matching no existing funnel must be ignored (no microtime, no forced collision).
+     */
+    public function test_save_funnel_assigns_server_id_and_ignores_client_id_for_new_record(): void
+    {
+        $this->setMaxFunnels(3);
+        $_POST = [
+            'security'    => 'x',
+            'funnel_id'   => 999999,
+            'funnel_name' => 'New',
+            'steps'       => $this->validFunnelSteps(2),
+        ];
+
+        $die = $this->callHandler('ajax_save_funnel');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertSame(1, $this->optionStore['slimstat_funnels'][0]['id'], 'New funnel must get a server id, not the client-sent 999999');
+    }
+
+    /** BUG GUARD (M1) — a funnel step with a value-bearing operator + empty value is rejected. */
+    public function test_save_funnel_rejects_step_with_value_bearing_operator_empty_value(): void
+    {
+        $this->setMaxFunnels(3);
+        $steps = $this->validFunnelSteps(2);
+        $steps[1]['operator'] = 'equals';
+        $steps[1]['value']    = '';
+        $_POST = [
+            'security'    => 'x',
+            'funnel_name' => 'Broken',
+            'steps'       => $steps,
+        ];
+
+        $die = $this->callHandler('ajax_save_funnel');
+
+        $this->assertSame('error', $die->outcome());
+        $this->assertStringContainsString('Invalid step definition', $die->payload['message']);
     }
 
     // ---- ajax_delete_funnel --------------------------------------------
@@ -471,7 +590,12 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $this->assertStringContainsString('required', $die->payload['message']);
     }
 
-    public function test_test_funnel_step_rejects_without_view_capability(): void
+    /**
+     * BUG GUARD (A9) — the live "Test step" affordance runs an arbitrary admin rule
+     * (incl. REGEXP) against slim_stats, so it requires the admin capability rather
+     * than the broader view capability.
+     */
+    public function test_test_funnel_step_rejects_without_admin_capability(): void
     {
         $this->capability = false;
         $_POST = [
@@ -485,6 +609,7 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $die = $this->callHandler('ajax_test_funnel_step');
 
         $this->assertSame('error', $die->outcome());
+        $this->assertStringContainsString('Insufficient', $die->payload['message']);
     }
 
     public function test_test_funnel_step_rejects_when_nonce_invalid(): void
