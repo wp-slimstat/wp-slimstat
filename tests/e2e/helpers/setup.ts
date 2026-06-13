@@ -49,6 +49,18 @@ export function restoreWpConfig(): void {
   }
 }
 
+/**
+ * Remove a specific injected line from wp-config.php (idempotent). Unlike
+ * restoreWpConfig() this does not rely on the in-memory backup, so it works from
+ * global teardown, which runs in a separate process from the injector.
+ */
+export function removeWpConfigLine(line: string): void {
+  const content = fs.readFileSync(WP_CONFIG, 'utf8');
+  const withNewline = line + '\n';
+  if (!content.includes(withNewline)) return;
+  fs.writeFileSync(WP_CONFIG, content.replace(withNewline, ''), 'utf8');
+}
+
 // ─── MU-Plugin manifest ───────────────────────────────────────────
 
 interface MuPluginEntry { sourceFile: string; deployedFile: string; }
@@ -286,6 +298,23 @@ export async function setProviderDisabled(): Promise<void> {
 const CRON_SHIM_SRC = path.join(__dirname, 'cron-frontend-shim-mu-plugin.php');
 const CRON_SHIM_DEST = path.join(MU_PLUGINS, 'cron-frontend-shim-mu-plugin.php');
 const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
+
+/**
+ * Enable the SLIMSTAT_E2E_TESTING constant that all test-only mu-plugins (nonce
+ * helper, header injector, option mutator, …) are gated on. Called once in global
+ * setup so every spec — including endpoint specs that POST straight to admin-ajax
+ * (filter-ip-beyond-500-limit, filter-multivalue-columns) — gets a working
+ * test_create_nonce. Per-spec installers also call injectWpConfigLine() and find
+ * the line already present (idempotent).
+ */
+export function enableE2eTesting(): void {
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+/** Remove the SLIMSTAT_E2E_TESTING constant (global teardown). */
+export function disableE2eTesting(): void {
+  removeWpConfigLine(E2E_TESTING_LINE);
+}
 
 export function installCronFrontendShim(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });

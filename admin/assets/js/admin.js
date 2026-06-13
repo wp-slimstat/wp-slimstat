@@ -690,7 +690,12 @@ jQuery(function () {
                 const searchInputEl = this.searchContainer.querySelector("input");
                 const userHasTyped = searchInputEl && searchInputEl.value.trim().length > 0;
                 const hasData = this.allOptions.length > 0;
-                noResultsDiv.textContent = (userHasTyped && hasData)
+                // On server-search dropdowns the user can apply a value that isn't in
+                // the list, so keep inviting "click Apply" whenever they've typed — even
+                // after a server search returns no matches and empties allOptions
+                // (otherwise the hint silently reverts to the generic no-results text). See #298.
+                const acceptsTypedValue = !!this.options.serverSearchAction;
+                noResultsDiv.textContent = (userHasTyped && (hasData || acceptsTypedValue))
                     ? this.options.noMatchesText
                     : this.options.noResultsText;
                 this.optionsContainer.appendChild(noResultsDiv);

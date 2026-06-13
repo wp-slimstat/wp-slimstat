@@ -8,7 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
-import { installAllTestMuPlugins, installCptMuPlugin } from './helpers/setup';
+import { installAllTestMuPlugins, installCptMuPlugin, enableE2eTesting } from './helpers/setup';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +30,8 @@ async function loginAndSave(
   if (isAuthFresh(statePath)) return; // reuse cached auth
 
   const browser = await chromium.launch();
-  const context = await browser.newContext({ baseURL });
+  // ignoreHTTPSErrors gated by PW_IGNORE_HTTPS (LocalWP self-signed cert); no-op in CI.
+  const context = await browser.newContext({ baseURL, ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1' });
   const page = await context.newPage();
 
   await page.goto('/wp-login.php');
@@ -51,6 +52,13 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // that the next spec expects to be present.
   installAllTestMuPlugins();
   installCptMuPlugin();
+
+  // Enable the SLIMSTAT_E2E_TESTING constant the test mu-plugins are gated on, for
+  // the whole run, so endpoint specs that POST directly to admin-ajax get a working
+  // test_create_nonce. Settle past LocalWP's opcache revalidate window (~2s) so PHP
+  // sees the define before the first test; harmless in CI (runs well before tests).
+  enableE2eTesting();
+  await new Promise((r) => setTimeout(r, 2500));
 
   fs.mkdirSync(AUTH_DIR, { recursive: true });
 
