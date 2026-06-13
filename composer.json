@@ -85,13 +85,21 @@
     "test:dtr-pton-init": "php tests/dtr-pton-init-test.php",
     "test:loose-comparison-scan": "php tests/loose-comparison-scan-test.php",
     "test:wp-version-guard": "php tests/wp70-wp-version-guard-test.php",
+    "test:php80-syntax": "php tests/php80-syntax-scan-test.php",
+    "test:php-forward": "php tests/php82-84-forward-scan-test.php",
+    "test:wp-removed-core-fns": "php tests/wp-removed-core-fns-scan-test.php",
+    "test:wp70-tested-up-to": "php tests/wp70-tested-up-to-test.php",
     "test:source-level": [
       "@test:php74-compat",
       "@test:implicit-nullable",
       "@test:ci-matrix-coverage",
       "@test:dtr-pton-init",
       "@test:loose-comparison-scan",
-      "@test:wp-version-guard"
+      "@test:wp-version-guard",
+      "@test:php80-syntax",
+      "@test:php-forward",
+      "@test:wp-removed-core-fns",
+      "@test:wp70-tested-up-to"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [
