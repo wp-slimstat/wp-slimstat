@@ -83,11 +83,15 @@
     "test:implicit-nullable": "php tests/php-implicit-nullable-test.php",
     "test:ci-matrix-coverage": "php tests/ci-matrix-coverage-test.php",
     "test:dtr-pton-init": "php tests/dtr-pton-init-test.php",
+    "test:loose-comparison-scan": "php tests/loose-comparison-scan-test.php",
+    "test:wp-version-guard": "php tests/wp70-wp-version-guard-test.php",
     "test:source-level": [
       "@test:php74-compat",
       "@test:implicit-nullable",
       "@test:ci-matrix-coverage",
-      "@test:dtr-pton-init"
+      "@test:dtr-pton-init",
+      "@test:loose-comparison-scan",
+      "@test:wp-version-guard"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist",
     "test:all": [

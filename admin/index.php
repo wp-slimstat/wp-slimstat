@@ -1473,7 +1473,7 @@ class wp_slimstat_admin
      */
     public static function add_column_header($_columns = [])
     {
-        if (0 == wp_slimstat::$settings['posts_column_day_interval']) {
+        if (empty(wp_slimstat::$settings['posts_column_day_interval'])) {
             wp_slimstat::$settings['posts_column_day_interval'] = 28;
         }
 
@@ -2477,11 +2477,6 @@ class wp_slimstat_admin
      */
     public static function contextual_help()
     {
-        // This contextual help is only available to those using WP 3.3 or newer
-        if (empty($GLOBALS['wp_version']) || version_compare($GLOBALS['wp_version'], '3.3', '<')) {
-            return true;
-        }
-
         $screen = get_current_screen();
 
         $screen->add_help_tab(
