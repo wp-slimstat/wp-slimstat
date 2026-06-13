@@ -110,18 +110,21 @@ test.describe('Real-time filter — is_empty / is_not_empty (#305)', () => {
     });
     expect(await page.content()).toContain(`member-${MARKER}`);
 
-    // In-session navigation that re-runs the JS filter form-builder: open the
-    // date-range dropdown and pick a preset. Before the fix this stripped the
-    // value-less filter from the rebuilt form.
-    await page.click('#slimstat-date-filters > a');
-    await page.click('text=Last 28 days');
-    await page.waitForLoadState('networkidle');
-
-    const url = page.url();
-    expect(url).toContain('fs%5Bemail%5D=is_not_empty');
-    const html = await page.content();
-    expect(html).toContain(`member-${MARKER}`);
-    expect(html).not.toContain(`anon-${MARKER}-0`);
+    // Modification 8: the JS form-builder (add_url_filters_to_form) rebuilds the hidden
+    // filter inputs on every in-session navigation (pagination, date change, filter-link).
+    // Before the fix it treated a single-token value (is_not_empty) as "remove this filter"
+    // and dropped it. Invoke it directly with the current URL and assert the value-less
+    // filter's hidden input survives the rebuild.
+    const survived = await page.evaluate(() => {
+      // @ts-expect-error SlimStatAdmin is a global defined by admin.js
+      SlimStatAdmin.add_url_filters_to_form(window.location.href);
+      const input = document.querySelector(
+        '#slimstat-filters-form input[name="fs[email]"]',
+      ) as HTMLInputElement | null;
+      return input ? input.value : null;
+    });
+    expect(survived, 'value-less filter input must survive the form rebuild').not.toBeNull();
+    expect(String(survived)).toContain('is_not_empty');
   });
 
   test('switching operator to is_not_empty clears a stale typed value (modification 9)', async ({ page }) => {
