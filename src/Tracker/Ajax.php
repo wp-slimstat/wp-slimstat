@@ -60,9 +60,21 @@ class Ajax
         }
 
         // Security: Validate host (if present) - allow external domains for referer,
-        // but validate the host format to prevent injection.
-        if (!empty($parsed_ref['host']) && !preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $parsed_ref['host'])) {
-            return false;
+        // but validate the host format to prevent injection. Accept either a DNS
+        // hostname or a bracketed IPv6 literal (parse_url keeps the brackets, e.g.
+        // "[2001:db8::1]"); otherwise a valid IPv6 referer would fail the check and
+        // drop the entire hit. filter_var validates the IPv6 structure (same
+        // FILTER_FLAG_IPV6 pattern Utils uses) and runs only when the host is not a
+        // plain hostname.
+        if (!empty($parsed_ref['host'])) {
+            $host        = $parsed_ref['host'];
+            $is_hostname = (bool) preg_match('/^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/', $host);
+            $is_ipv6     = !$is_hostname
+                && $host[0] === '[' && substr($host, -1) === ']'
+                && false !== filter_var(substr($host, 1, -1), FILTER_VALIDATE_IP, FILTER_FLAG_IPV6);
+            if (!$is_hostname && !$is_ipv6) {
+                return false;
+            }
         }
 
         // Security: Limit referer length to prevent DoS

@@ -111,6 +111,20 @@ class AjaxRefererSanitizationTest extends WpSlimstatTestCase
         ];
     }
 
+    /**
+     * #315 review: a bracketed IPv6-literal host (parse_url keeps the brackets) must
+     * be accepted, not rejected — rejection returns false and drops the whole hit.
+     *
+     * @test
+     */
+    public function test_accepts_bracketed_ipv6_host(): void
+    {
+        $this->stubSanitizeUrl();
+
+        $url = 'https://[2001:db8::1]/page?q=1';
+        $this->assertSame($url, \SlimStat\Tracker\Ajax::sanitizeReferer(self::encode($url)));
+    }
+
     /** @test */
     public function test_rejects_invalid_host(): void
     {
