@@ -125,6 +125,16 @@ $show_upsell = $at_max && !$is_pro;
     <?php endif; ?>
 
     <?php if ($show_upsell) : ?>
+        <?php
+        /*
+         * The advertised "5 goals / 3 funnels" below are intentionally coupled to
+         * GoalsFunnelAddon::max_goals() (5) and ::max_funnels() (3) in the Pro
+         * plugin. They are independent literals (Pro isn't active here, so the real
+         * values can't be read), so a Pro tier change MUST update this copy too.
+         * Kept in sync deliberately, not incidentally. See wp-slimstat-pro
+         * src/Addon/Addons/GoalsFunnelAddon.php.
+         */
+        ?>
         <div class="slimstat-gf-upsell" role="note">
             <strong><?php esc_html_e('You\'ve hit the Free limit — 1 of 1 goals used.', 'wp-slimstat'); ?></strong>
             <?php echo wp_kses(

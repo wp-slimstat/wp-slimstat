@@ -1716,7 +1716,12 @@ class wp_slimstat_reports
         $active_count = count(array_filter($goals, function ($g) {
             return !empty($g['active']);
         }));
-        $is_pro       = class_exists('wp_slimstat') && wp_slimstat::pro_is_installed();
+        // Derive Pro from the capability the feature actually depends on — the
+        // raised goal limit — rather than pro_is_installed(). This matches the
+        // funnels card's ($max_funnels > 0) signal, so both cards stay consistent
+        // even if Pro is active but GoalsFunnelAddon didn't boot (older Pro build,
+        // a dropped $provides entry, a partial container failure).
+        $is_pro       = $max_goals > 1;
         $at_max       = $active_count >= $max_goals;
 
         $cached = [
