@@ -494,6 +494,33 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(secondPanel).toHaveAttribute('data-loaded', 'true');
     });
 
+    // ─── See templates after a funnel exists (#7) ────────────────
+
+    test('see-templates-reveal: prefab templates stay reachable after a funnel exists', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedFunnels([{ name: 'Existing', steps: [
+            { name: 'A', dimension: 'resource', operator: 'contains', value: '/' },
+            { name: 'B', dimension: 'resource', operator: 'contains', value: '/x' },
+        ]}]);
+        await gotoSlimview6(page);
+
+        // The reveal is collapsed by default; clicking it shows the same 6 cards.
+        const panel = page.locator('[data-role="funnels-templates-panel"]');
+        await expect(panel).toBeHidden();
+        const toggle = page.locator('[data-action="toggle-funnel-templates"]');
+        await expect(toggle).toBeVisible();
+
+        await toggle.click();
+        await expect(panel).toBeVisible();
+        await expect(panel.locator('.slimstat-gf-template-card')).toHaveCount(6);
+        await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+        // A revealed card opens the builder, so users can build another funnel
+        // from a template instead of always starting from scratch.
+        await panel.locator('[data-template="woocommerce_purchase"]').click();
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+    });
+
     // ─── Round 2: prototype copy regression ──────────────────────
 
     test('copy-prototype-strings: marquee empty-state copy matches the prototype', async ({ page }) => {

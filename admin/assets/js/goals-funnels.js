@@ -481,6 +481,25 @@
 
     $body.on('click', '[data-action="close-funnel-builder"]', closeFunnelBuilder);
 
+    // "See templates" — reveal/hide the prefab template gallery once funnels
+    // already exist (the cards used to disappear after the first funnel). The
+    // existing open-funnel-builder handler wires the revealed cards. (#7)
+    $body.on('click', '[data-action="toggle-funnel-templates"]', function () {
+        var $btn   = $(this);
+        var $panel = $btn.siblings('[data-role="funnels-templates-panel"]');
+        if (!$panel.length) return;
+        var willShow = $panel.attr('hidden') != null;
+        if (willShow) {
+            $panel.removeAttr('hidden');
+            $btn.attr('aria-expanded', 'true').text(__('Hide templates'));
+            var $firstCard = $panel.find('.slimstat-gf-template-card').first();
+            if ($firstCard.length) $firstCard.trigger('focus');
+        } else {
+            $panel.attr('hidden', 'hidden');
+            $btn.attr('aria-expanded', 'false').text(__('See templates'));
+        }
+    });
+
     $body.on('click', '[data-action="add-funnel-step"]', function () {
         var count = $stepsContainer.find('.slimstat-gf-step-row').length;
         if (count >= 5) return;

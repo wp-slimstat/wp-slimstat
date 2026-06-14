@@ -58,64 +58,51 @@ if ($locked) :
 endif;
 
 $at_max = $funnel_count >= $max_funnels;
+
+// Template cards — shared by the empty state and the "See templates" reveal that
+// keeps templates reachable after the first funnel exists (#7). Each `key` must
+// match a FUNNEL_TEMPLATES entry in admin/assets/js/goals-funnels.js. Strings
+// are wrapped in __() inline so the WP i18n extractor still finds them.
+$template_cards = [
+    [
+        'key'   => 'woocommerce_purchase',
+        'title' => __('WooCommerce purchase', 'wp-slimstat'),
+        'body'  => __('Product → Cart → Checkout → Order received', 'wp-slimstat'),
+    ],
+    [
+        'key'   => 'checkout_completion',
+        'title' => __('Checkout completion', 'wp-slimstat'),
+        'body'  => __('Cart → Checkout → Order received', 'wp-slimstat'),
+    ],
+    [
+        'key'   => 'landing_to_contact',
+        'title' => __('Landing to contact', 'wp-slimstat'),
+        'body'  => __('Landing → Contact (most form plugins don\'t redirect to thank-you)', 'wp-slimstat'),
+    ],
+    [
+        'key'   => 'pricing_to_checkout',
+        'title' => __('Homepage to pricing to checkout', 'wp-slimstat'),
+        'body'  => __('Homepage → Pricing → Checkout', 'wp-slimstat'),
+    ],
+    [
+        'key'   => 'landing_to_thanks',
+        'title' => __('Landing to thank-you (advanced)', 'wp-slimstat'),
+        'body'  => __('Landing → Form → Thank-you (only if you redirect after submit)', 'wp-slimstat'),
+    ],
+    [
+        'key'      => 'blank',
+        'title'    => __('+ Blank funnel', 'wp-slimstat'),
+        'body'     => __('Define 2 to 5 custom steps.', 'wp-slimstat'),
+        'modifier' => 'slimstat-gf-template-card--scratch',
+    ],
+];
 ?>
 <section class="slimstat-gf-card slimstat-gf-funnels" data-component="funnels">
     <?php if (0 === $funnel_count) : ?>
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
             <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill the dimension and operator. You fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
-            <?php
-            // Each entry's `data-template` key must match a FUNNEL_TEMPLATES
-            // entry in admin/assets/js/goals-funnels.js. Strings are wrapped
-            // in __() inline so the WP i18n extractor still finds them.
-            $template_cards = [
-                [
-                    'key'   => 'woocommerce_purchase',
-                    'title' => __('WooCommerce purchase', 'wp-slimstat'),
-                    'body'  => __('Product → Cart → Checkout → Order received', 'wp-slimstat'),
-                ],
-                [
-                    'key'   => 'checkout_completion',
-                    'title' => __('Checkout completion', 'wp-slimstat'),
-                    'body'  => __('Cart → Checkout → Order received', 'wp-slimstat'),
-                ],
-                [
-                    'key'   => 'landing_to_contact',
-                    'title' => __('Landing to contact', 'wp-slimstat'),
-                    'body'  => __('Landing → Contact (most form plugins don\'t redirect to thank-you)', 'wp-slimstat'),
-                ],
-                [
-                    'key'   => 'pricing_to_checkout',
-                    'title' => __('Homepage to pricing to checkout', 'wp-slimstat'),
-                    'body'  => __('Homepage → Pricing → Checkout', 'wp-slimstat'),
-                ],
-                [
-                    'key'   => 'landing_to_thanks',
-                    'title' => __('Landing to thank-you (advanced)', 'wp-slimstat'),
-                    'body'  => __('Landing → Form → Thank-you (only if you redirect after submit)', 'wp-slimstat'),
-                ],
-                [
-                    'key'      => 'blank',
-                    'title'    => __('+ Blank funnel', 'wp-slimstat'),
-                    'body'     => __('Define 2 to 5 custom steps.', 'wp-slimstat'),
-                    'modifier' => 'slimstat-gf-template-card--scratch',
-                ],
-            ];
-            ?>
-            <div class="slimstat-gf-template-picker"
-                 role="group"
-                 aria-label="<?php esc_attr_e('Funnel templates', 'wp-slimstat'); ?>">
-                <?php foreach ($template_cards as $card) : ?>
-                    <button type="button"
-                            class="slimstat-gf-template-card<?php echo empty($card['modifier']) ? '' : ' ' . esc_attr($card['modifier']); ?>"
-                            data-action="open-funnel-builder"
-                            data-mode="create"
-                            data-template="<?php echo esc_attr($card['key']); ?>">
-                        <span class="slimstat-gf-template-card__title"><?php echo esc_html($card['title']); ?></span>
-                        <span class="slimstat-gf-template-card__body"><?php echo esc_html($card['body']); ?></span>
-                    </button>
-                <?php endforeach; ?>
-            </div>
+            <?php include __DIR__ . '/funnel-template-picker.php'; ?>
         </div>
     <?php else : ?>
         <?php if ($funnel_count > 1) : ?>
@@ -199,6 +186,22 @@ $at_max = $funnel_count >= $max_funnels;
                     $max_funnels
                 )); ?>
             </p>
+        <?php else : ?>
+            <?php /* "See templates" keeps the prefab gallery reachable after the
+                     first funnel exists (it used to vanish). Gated on !$at_max so
+                     we never offer a template the user can't save. (#7) */ ?>
+            <div class="slimstat-gf-templates-reveal" data-role="funnels-templates">
+                <button type="button"
+                        class="button-link slimstat-gf-see-templates"
+                        data-action="toggle-funnel-templates"
+                        aria-expanded="false"
+                        aria-controls="slimstat-gf-template-picker">
+                    <?php esc_html_e('See templates', 'wp-slimstat'); ?>
+                </button>
+                <div class="slimstat-gf-templates-reveal__panel" data-role="funnels-templates-panel" hidden>
+                    <?php include __DIR__ . '/funnel-template-picker.php'; ?>
+                </div>
+            </div>
         <?php endif; ?>
     <?php endif; ?>
 </section>
