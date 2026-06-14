@@ -58,6 +58,7 @@
     --ss-danger-fg-hover: #a00;
     --ss-danger-bg: #E72929;
     --ss-danger-bg-strong: #FF3A3A;
+    --ss-danger-bg-soft: #fcebea;   /* light danger tint for error surfaces */
 
     --ss-info-fg: #2271b1;
 

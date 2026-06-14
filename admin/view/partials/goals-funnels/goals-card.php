@@ -99,8 +99,8 @@ $show_upsell = $at_max && !$is_pro;
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n($total)); ?></span>
                         </div>
                         <div class="slimstat-gf-metric">
-                            <span class="slimstat-gf-metric__label"><?php esc_html_e('CR', 'wp-slimstat'); ?></span>
-                            <span class="slimstat-gf-metric__value"><?php echo esc_html((string) $cr); ?>%</span>
+                            <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Conversion rate: unique visitors who matched this goal, divided by all unique visitors in this date range.', 'wp-slimstat'); ?>"><?php esc_html_e('CR', 'wp-slimstat'); ?></span>
+                            <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n((float) $cr, ((float) $cr == (int) $cr) ? 0 : 1)); ?>%</span>
                         </div>
                     </div>
                     <div class="slimstat-gf-goal__actions">
@@ -136,7 +136,7 @@ $show_upsell = $at_max && !$is_pro;
          */
         ?>
         <div class="slimstat-gf-upsell" role="note">
-            <strong><?php esc_html_e('You\'ve hit the Free limit — 1 of 1 goals used.', 'wp-slimstat'); ?></strong>
+            <strong><?php esc_html_e('Free plans include one goal.', 'wp-slimstat'); ?></strong>
             <?php echo wp_kses(
                 sprintf(
                     /* translators: %s is a link */

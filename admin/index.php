@@ -3302,7 +3302,7 @@ class wp_slimstat_admin
             return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A Goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
         }
         if ('slim_p9_02' === $_report_id) {
-            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2–5 goals into a journey. A funnel shows you the conversion rate and exact drop-off at every stage.', 'wp-slimstat') . '</p>';
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
         }
         return $_html;
     }

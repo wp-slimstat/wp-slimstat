@@ -312,7 +312,8 @@
     margin: var(--ss-space-4) 0 0;
     padding: var(--ss-space-3) var(--ss-space-4);
     background: var(--ss-warning-bg);
-    border-inline-start: 4px solid var(--ss-warning-fg);
+    /* Full 1px border + tint, not a colored side-stripe (impeccable ban, FN-5). */
+    border: 1px solid var(--ss-warning-fg);
     border-radius: var(--ss-radius-sm);
     font-size: var(--ss-text-base);
     color: var(--ss-text-body);
@@ -844,8 +845,10 @@
 .slimstat-gf-builder__error {
     margin: 0;
     padding: var(--ss-space-2) var(--ss-space-3);
-    background: var(--ss-warning-bg);
-    border-inline-start: 3px solid var(--ss-danger-fg);
+    /* Full 1px border + a danger-tinted surface (was a danger side-stripe over a
+       warning-yellow background — a banned stripe and a semantic mismatch). FN-5. */
+    background: var(--ss-danger-bg-soft);
+    border: 1px solid var(--ss-danger-fg);
     border-radius: var(--ss-radius-sm);
     color: var(--ss-danger-fg);
     font-size: var(--ss-text-sm);
