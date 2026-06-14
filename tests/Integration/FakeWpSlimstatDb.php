@@ -17,6 +17,16 @@ final class FakeWpSlimstatDb
     // shared list once the class (aliased to this fake) is loaded in-process.
     public static array $valueless_operators = ['is_empty', 'is_not_empty'];
 
+    // ensure_goals_db_initialized() (admin/index.php) calls init() and then pins
+    // the date window on this shared array, so the fake must expose both for the
+    // funnel Test + lazy-load AJAX handlers to run without a live DB. (#6/#8)
+    public static array $filters_normalized = [];
+
+    public static function init($_filters = ''): void
+    {
+        // No-op double — the real init() hydrates $columns_names + filters.
+    }
+
     public static function get_funnel_results(array $funnel): array
     {
         return self::$next;

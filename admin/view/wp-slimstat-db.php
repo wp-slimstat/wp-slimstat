@@ -1637,7 +1637,17 @@ class wp_slimstat_db
      */
     private static function build_goal_where($goal, $alias = '')
     {
-        $dimension = $goal['dimension'];
+        // Read keys defensively: legacy/malformed stored goals or funnel steps
+        // may be missing a field, and the report render path must not emit
+        // undefined-array-key notices. A missing dimension/operator yields no
+        // clause (preserving the empty-where -> 0-results contract). (#6)
+        $dimension = (string) ($goal['dimension'] ?? '');
+        $operator  = (string) ($goal['operator'] ?? '');
+        $value     = (string) ($goal['value'] ?? '');
+
+        if ('' === $dimension || '' === $operator) {
+            return '';
+        }
 
         // Defense-in-depth: a value-bearing operator with an empty value makes
         // get_single_where_clause() return an unprepared fragment that still
@@ -1645,7 +1655,7 @@ class wp_slimstat_db
         // is empty). sanitize_goal() already rejects this at save time, but guard
         // the query layer too so such a clause can never reach $wpdb->query().
         // Only the valueless operators (is_empty / is_not_empty) may run without a value.
-        if ('' === (string) $goal['value'] && !in_array($goal['operator'], self::$valueless_operators, true)) {
+        if ('' === $value && !in_array($operator, self::$valueless_operators, true)) {
             return '';
         }
 
@@ -1657,7 +1667,7 @@ class wp_slimstat_db
             }
         }
 
-        return self::get_single_where_clause($dimension, $goal['operator'], $goal['value'], $alias);
+        return self::get_single_where_clause($dimension, $operator, $value, $alias);
     }
 
     /**

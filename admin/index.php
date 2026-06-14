@@ -2132,9 +2132,11 @@ class wp_slimstat_admin
             wp_send_json_error(['message' => __('Funnel not found', 'wp-slimstat')], 404);
         }
 
-        if (!class_exists('wp_slimstat_db')) {
-            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
-        }
+        // Hydrate the DB layer (columns + the on-screen date range). This AJAX
+        // action isn't covered by the admin bootstrap's init(), so without it the
+        // date filter collapses to `dt BETWEEN 0 AND 0` and every step returns 0 —
+        // which is why only the first, server-rendered funnel showed data. (#8)
+        self::ensure_goals_db_initialized();
 
         $step_results = wp_slimstat_db::get_funnel_results($funnel);
 
@@ -2194,9 +2196,11 @@ class wp_slimstat_admin
         // id is microtime-based (unique per call), which defeats caching here.
         $step['id'] = crc32($step['dimension'] . '|' . $step['operator'] . '|' . (string) $step['value']);
 
-        if (!class_exists('wp_slimstat_db')) {
-            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
-        }
+        // Same as ajax_load_funnel_data: initialize the DB layer + date range so
+        // the rule is tested against the selected window instead of
+        // `dt BETWEEN 0 AND 0` (which returned "0 matches" for pages that clearly
+        // exist, e.g. /contact). (#6)
+        self::ensure_goals_db_initialized();
 
         $data = wp_slimstat_db::get_goal_results($step);
 
@@ -2204,6 +2208,76 @@ class wp_slimstat_admin
             'visitors' => (int) ($data['uniques'] ?? 0),
             'total'    => (int) ($data['total'] ?? 0),
         ]);
+    }
+
+    /**
+     * Resolve the report date-picker's POSTed window into [start, end] Unix
+     * timestamps. Shared by get_filter_options() and ensure_goals_db_initialized()
+     * so autosuggest, the funnel-step Test, and funnel lazy-load all read the
+     * same range. Falls back to the last 28 days when nothing valid is supplied.
+     *
+     * @return array{0:?int,1:?int} [start, end] timestamps (null when unresolved).
+     */
+    private static function resolve_requested_date_range()
+    {
+        $type = sanitize_text_field(wp_unslash($_POST['time_range_type'] ?? 'last_28_days'));
+        $from = sanitize_text_field(wp_unslash($_POST['time_range_from'] ?? ''));
+        $to   = sanitize_text_field(wp_unslash($_POST['time_range_to'] ?? ''));
+
+        $start = null;
+        $end   = null;
+        if ('custom' === $type && '' !== $from && '' !== $to) {
+            $start = strtotime($from);
+            $end   = strtotime($to . ' 23:59:59');
+        } else {
+            $range = DateRangeHelper::get_range_by_preset($type);
+            if ($range) {
+                $start = $range['start'];
+                $end   = $range['end'];
+            }
+        }
+
+        // Fallback to last 28 days when no valid range was supplied/parsed.
+        if (empty($start) || empty($end)) {
+            $range = DateRangeHelper::get_range_by_preset('last_28_days');
+            if ($range) {
+                $start = $range['start'];
+                $end   = $range['end'];
+            }
+        }
+
+        return [$start ? (int) $start : null, $end ? (int) $end : null];
+    }
+
+    /**
+     * Hydrate wp_slimstat_db for the goals/funnels Test + lazy-load AJAX actions.
+     *
+     * These actions are NOT covered by the admin bootstrap that normally calls
+     * wp_slimstat_db::init() (only slimview pages + slimstat_load_report are —
+     * see the $is_slimstat_ajax guard). Without init(), $columns_names and
+     * $filters_normalized['utime'] stay empty, so get_combined_where() builds
+     * `dt BETWEEN 0 AND 0` (matching nothing) and emits undefined-array-key
+     * notices. We init() to populate columns + defaults, then pin the date
+     * window to the report's selected range (mirrors get_filter_options). (#6/#8)
+     */
+    private static function ensure_goals_db_initialized()
+    {
+        if (!class_exists('wp_slimstat_db')) {
+            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
+        }
+
+        list($start, $end) = self::resolve_requested_date_range();
+
+        // init() populates $columns_names/$operator_names plus a default
+        // $filters_normalized; then pin utime to the requested range.
+        wp_slimstat_db::init();
+        if (!isset(wp_slimstat_db::$filters_normalized['utime']) || !is_array(wp_slimstat_db::$filters_normalized['utime'])) {
+            wp_slimstat_db::$filters_normalized['utime'] = [];
+        }
+        if (!empty($start) && !empty($end)) {
+            wp_slimstat_db::$filters_normalized['utime']['start'] = (int) $start;
+            wp_slimstat_db::$filters_normalized['utime']['end']   = (int) $end;
+        }
     }
 
     // END: Goals & Funnels CRUD
@@ -2696,36 +2770,9 @@ class wp_slimstat_admin
             return;
         }
 
-        // Get time range parameters from AJAX request
-        $time_range_type = sanitize_text_field($_POST['time_range_type'] ?? 'last_28_days');
-        $time_range_from = sanitize_text_field($_POST['time_range_from'] ?? '');
-        $time_range_to = sanitize_text_field($_POST['time_range_to'] ?? '');
-
-        // Calculate time range timestamps
-        $time_start = null;
-        $time_end = null;
-
-        if ($time_range_type === 'custom' && !empty($time_range_from) && !empty($time_range_to)) {
-            // Custom date range
-            $time_start = strtotime($time_range_from);
-            $time_end = strtotime($time_range_to . ' 23:59:59');
-        } else {
-            // Preset date range
-            $preset_range = DateRangeHelper::get_range_by_preset($time_range_type);
-            if ($preset_range) {
-                $time_start = $preset_range['start'];
-                $time_end = $preset_range['end'];
-            }
-        }
-
-        // Fallback to last 28 days if no valid time range
-        if (empty($time_start) || empty($time_end)) {
-            $preset_range = DateRangeHelper::get_range_by_preset('last_28_days');
-            if ($preset_range) {
-                $time_start = $preset_range['start'];
-                $time_end = $preset_range['end'];
-            }
-        }
+        // Resolve the report date picker's window (shared with the goals/funnels
+        // AJAX handlers so autosuggest, Test, and lazy-load all read one range).
+        list($time_start, $time_end) = self::resolve_requested_date_range();
 
         // Get distinct values for this dimension via SlimStat\Utils\Query abstraction
         $table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';

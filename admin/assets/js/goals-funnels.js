@@ -711,10 +711,18 @@
         }
         $panel.attr('data-loaded', 'pending');
 
+        // Send the on-screen date range so the funnel is computed for the window
+        // the user is viewing (the backend otherwise can't know it). (#8)
+        var loadRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
+            ? window.SlimStatGetTimeRangeForAjax() : {};
+
         funnelInflight[funnelId] = post({
-            action:    'slimstat_load_funnel_data',
-            security:  nonce,
-            funnel_id: funnelId
+            action:          'slimstat_load_funnel_data',
+            security:        nonce,
+            funnel_id:       funnelId,
+            time_range_type: loadRange.type || '',
+            time_range_from: loadRange.from || '',
+            time_range_to:   loadRange.to   || ''
         }, function (data) {
             if (!$panel.hasClass('is-active')) return;
             $panel.attr('data-loaded', 'true');
@@ -907,9 +915,16 @@
         }
         $result.addClass('is-loading').text(__('Testing…'));
 
+        // Test against the report's selected date range, not a server default. (#6)
+        var testRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
+            ? window.SlimStatGetTimeRangeForAjax() : {};
+
         _testInflight[rowId] = $.post(ajaxUrl, $.extend({
-            action:   'slimstat_test_funnel_step',
-            security: nonce
+            action:          'slimstat_test_funnel_step',
+            security:        nonce,
+            time_range_type: testRange.type || '',
+            time_range_from: testRange.from || '',
+            time_range_to:   testRange.to   || ''
         }, step)).done(function (response) {
             if (response && response.success && response.data) {
                 var count = Number(response.data.visitors) || 0;

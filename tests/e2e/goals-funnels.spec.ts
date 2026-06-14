@@ -442,6 +442,58 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(firstRow.locator('[data-role="test-result"]')).not.toHaveText('');
     });
 
+    // ─── AJAX date-range + multi-funnel data (#6, #8) ────────────
+
+    test('funnel-test-step-sends-date-range: Test request carries the on-screen range (#6)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const firstRow = page.locator('.slimstat-gf-step-row').nth(0);
+        await firstRow.locator('[data-role="step-value"]').fill('/');
+
+        const req = page.waitForRequest(r =>
+            r.url().includes('admin-ajax.php') &&
+            (r.postData() || '').includes('action=slimstat_test_funnel_step')
+        );
+        await firstRow.locator('[data-action="test-step"]').click();
+        const postData = (await req).postData() || '';
+        // Without this the backend defaults the window and historically collapsed
+        // it to dt BETWEEN 0 AND 0 → "0 matches" for pages that exist.
+        expect(postData).toContain('time_range_type');
+    });
+
+    test('funnel-tab-lazy-load-populates: 2nd funnel tab fetches data for the selected range (#8)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedFunnels([
+            { name: 'First Funnel', steps: [
+                { name: 'A', dimension: 'resource', operator: 'contains', value: '/' },
+                { name: 'B', dimension: 'resource', operator: 'contains', value: '/' },
+            ]},
+            { name: 'Second Funnel', steps: [
+                { name: 'A', dimension: 'resource', operator: 'contains', value: '/' },
+                { name: 'B', dimension: 'resource', operator: 'contains', value: '/' },
+            ]},
+        ]);
+        await gotoSlimview6(page);
+
+        // The 2nd tab starts unloaded; clicking it must fetch via
+        // slimstat_load_funnel_data WITH the date range, then mark itself loaded.
+        const secondTab = page.locator('.slimstat-gf-tab').nth(1);
+        const req = page.waitForRequest(r =>
+            r.url().includes('admin-ajax.php') &&
+            (r.postData() || '').includes('action=slimstat_load_funnel_data')
+        );
+        await secondTab.click();
+        const postData = (await req).postData() || '';
+        expect(postData).toContain('time_range_type');
+
+        const secondPanel = page.locator('.slimstat-gf-funnel-panel').nth(1);
+        await expect(secondPanel).toHaveAttribute('data-loaded', 'true');
+    });
+
     // ─── Round 2: prototype copy regression ──────────────────────
 
     test('copy-prototype-strings: marquee empty-state copy matches the prototype', async ({ page }) => {
