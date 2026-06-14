@@ -96,6 +96,42 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
     });
 
+    // ─── Paused goals: tier behavior (#11) ───────────────────────
+
+    test('paused-free-hidden: Free shows only the active goal, paused goals are hidden', async ({ page }) => {
+        await forceLimits(1, 0, WP_CONTENT);
+        await seedGoals([
+            { name: 'Active One',  dimension: 'resource', operator: 'contains', value: '/a', active: true },
+            { name: 'Paused One',  dimension: 'resource', operator: 'contains', value: '/p', active: false },
+        ]);
+        await gotoSlimview6(page);
+
+        const goals = page.locator('.slimstat-gf-goal');
+        await expect(goals).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-goal__name')).toContainText('Active One');
+        await expect(page.locator('body')).not.toContainText('Paused One');
+        // Usage pill still reflects the true active count.
+        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
+    });
+
+    test('paused-pro-placeholder: Pro keeps paused goals but shows a placeholder, not metrics', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedGoals([
+            { name: 'Active Goal', dimension: 'resource', operator: 'contains', value: '/a', active: true },
+            { name: 'Paused Goal', dimension: 'resource', operator: 'contains', value: '/p', active: false },
+        ]);
+        await gotoSlimview6(page);
+
+        // Both goals visible on Pro.
+        await expect(page.locator('.slimstat-gf-goal')).toHaveCount(2);
+        const pausedGoal = page.locator('.slimstat-gf-goal[data-active="false"]');
+        await expect(pausedGoal).toHaveCount(1);
+        await expect(pausedGoal.locator('.slimstat-gf-pill--paused')).toBeVisible();
+        // Paused goal shows the placeholder, not a live metrics block.
+        await expect(pausedGoal.locator('.slimstat-gf-goal__nomatch')).toContainText('Paused');
+        await expect(pausedGoal.locator('.slimstat-gf-goal__metrics')).toHaveCount(0);
+    });
+
     // ─── State: Pro × empty ─────────────────────────────────────
 
     test('pro-empty: goals teach card + funnels template picker with 6 choices', async ({ page }) => {

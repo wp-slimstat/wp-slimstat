@@ -1750,9 +1750,13 @@ class wp_slimstat_reports
 
         $goals        = get_option('slimstat_goals', []);
         $max_goals    = (int) apply_filters('slimstat_max_goals', 1);
-        $active_count = count(array_filter($goals, function ($g) {
+        // Active goals computed once: the count drives the "N of M used" pill, and
+        // on Free they are the only goals shown (paused goals must neither appear
+        // nor run queries). Pro keeps all goals so paused ones stay visible. (#11)
+        $active_goals = array_values(array_filter($goals, function ($g) {
             return !empty($g['active']);
         }));
+        $active_count = count($active_goals);
         // Derive Pro from the capability the feature actually depends on — the
         // raised goal limit — rather than pro_is_installed(). This matches the
         // funnels card's ($max_funnels > 0) signal, so both cards stay consistent
@@ -1761,8 +1765,13 @@ class wp_slimstat_reports
         $is_pro       = $max_goals > 1;
         $at_max       = $active_count >= $max_goals;
 
+        // Free shows only the active goals; Pro keeps all (paused stay visible with
+        // their badge). $active_count above is from the full list so "N of M used"
+        // stays accurate regardless of what's shown. (#11)
+        $visible_goals = $is_pro ? $goals : $active_goals;
+
         $cached = [
-            'goals'        => $goals,
+            'goals'        => $visible_goals,
             'active_count' => $active_count,
             'max_goals'    => $max_goals,
             'is_pro'       => $is_pro,
