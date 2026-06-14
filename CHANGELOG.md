@@ -17,6 +17,19 @@
 - WP Dashboard widget no longer leaks the inline "Add Goal" form — `is_widget=true` is now passed through `add_dashboard_widgets` for `slim_p9_01` / `slim_p9_02`.
 - Goals & Funnels CSS/JS only enqueue on screens that actually render those reports — including when dragged into other report groups via the Customizer.
 
+**Fixes (QA pass)**
+
+- The **Value** field keeps its saved value when you edit a goal or funnel step (it no longer blanks the moment suggestions load), and you can type any custom value — it is searched per dimension in the selected date range and saved as-is.
+- A goal or funnel step can no longer be saved with an empty value for an operator that needs one; a clear inline message points at the field instead of a generic failure.
+- **Goal unique visitors / conversion rate** now count visitors without a browser fingerprint (bots, consent-limited sessions, older rows) the same way funnels do, so segments like "Country = gb" no longer report 0 unique visitors. Goal caches are flushed on upgrade so corrected numbers appear immediately. (Goal uniques will rise for some goals.)
+- The funnel-step **Test** returns real match counts with no PHP/database warnings, and **every** funnel now populates — not just the first: the Test and funnel lazy-load now run against the report's selected date range instead of an empty window.
+- Goal and funnel results are computed once per request and reused, removing the duplicate `COUNT(*)`/unique queries on the Goals & Funnels page.
+- The WooCommerce **purchase** and **checkout completion** templates point at WooCommerce's real `/checkout/order-received` thank-you page.
+- A **See templates** control keeps the funnel template gallery reachable after the first funnel is created.
+- A zero-conversion funnel step now reads "No visitors reached this step in the selected date range" (neutral) instead of an alarming "event hasn't fired yet" warning, with matching non-error styling.
+- **CSV export** for Goals and Funnels now contains meaningful columns (Goal/Funnel, uniques, totals, conversion rate, step, visitors, drop-off, date range) instead of a single `Percentage` column of `0.0000`.
+- On the **Free** plan, paused goals are hidden and no longer run background queries; on **Pro** they stay visible with a "Paused" badge and a placeholder instead of live metrics.
+
 **Internals**
 
 - Design tokens split into `admin/assets/css/tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their exact existing values to keep the datepicker and GDPR banner visually unchanged.
