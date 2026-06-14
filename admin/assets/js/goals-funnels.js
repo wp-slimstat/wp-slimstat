@@ -319,6 +319,14 @@
     var $builder = $('#slimstat-gf-funnel-builder');
     var $stepsContainer = $builder.find('[data-role="steps-container"]');
     var $stepTemplate = $builder.find('[data-role="step-template"]');
+    var $builderLive = $builder.find('[data-role="builder-live"]');
+
+    // Scoped polite live region for step add/remove/reorder. Announcing concrete,
+    // one-line messages here keeps screen readers from re-reading the whole steps
+    // container on every renumber (the container is no longer aria-live). FN-12.
+    function announceBuilder(message) {
+        $builderLive.text(message);
+    }
 
     function renderStepRow(index, step) {
         step = step || { name: '', dimension: 'resource', operator: 'contains', value: '' };
@@ -439,6 +447,8 @@
         var $row = renderStepRow(count, null);
         if ($row) $stepsContainer.append($row);
         renumberSteps();
+        /* translators: %d is the new step number */
+        announceBuilder(sprintf(__('Step %d added'), $stepsContainer.find('.slimstat-gf-step-row').length));
         initAutoSuggest(
             $row.find('[data-role="step-value"]')[0],
             $row.find('[data-role="step-dimension"]').val(),
@@ -453,6 +463,8 @@
         destroyAutoSuggest($row.find('[data-role="step-value"]')[0]);
         $row.remove();
         renumberSteps();
+        /* translators: %d is the number of steps remaining */
+        announceBuilder(sprintf(__('Step removed, %d steps remaining'), $stepsContainer.find('.slimstat-gf-step-row').length));
     });
 
     $body.on('click', '[data-action="save-funnel"]', function () {
@@ -907,11 +919,13 @@
         }
         renumberSteps();
 
-        // Announce the new position (the steps-container is aria-live="polite", and
-        // the handle label carries the position for re-focus) and keep focus.
+        // Announce the new position via the scoped live region, keep the position
+        // on the handle label for re-focus context, and retain focus.
         var $handle = $row.find('[data-action="drag-step"]');
         /* translators: 1: new step position, 2: total steps */
-        $handle.attr('aria-label', sprintf(__('Reorder step, position %1$d of %2$d'), target + 1, $rows.length));
+        var posLabel = sprintf(__('Reorder step, position %1$d of %2$d'), target + 1, $rows.length);
+        $handle.attr('aria-label', posLabel);
+        announceBuilder(posLabel);
         $handle.trigger('focus');
     });
 

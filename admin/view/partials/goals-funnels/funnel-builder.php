@@ -27,17 +27,21 @@ if (!defined('ABSPATH')) {
                 <span data-role="title-create"><?php esc_html_e('Add funnel', 'wp-slimstat'); ?></span>
                 <span data-role="title-edit" hidden><?php esc_html_e('Edit funnel', 'wp-slimstat'); ?></span>
             </h2>
-            <button type="button" class="slimstat-gf-builder__close" data-action="close-funnel-builder" aria-label="<?php esc_attr_e('Close builder', 'wp-slimstat'); ?>">×</button>
+            <button type="button" class="slimstat-gf-builder__close" data-action="close-funnel-builder" aria-label="<?php esc_attr_e('Close builder', 'wp-slimstat'); ?>"><span aria-hidden="true">×</span></button>
         </header>
 
         <input type="hidden" name="funnel_id" value="" data-role="funnel-id">
 
         <label class="slimstat-gf-field">
-            <span class="slimstat-gf-field__label"><?php esc_html_e('Funnel name', 'wp-slimstat'); ?></span>
-            <input type="text" name="funnel_name" data-role="funnel-name" class="regular-text" required placeholder="<?php esc_attr_e('e.g. Checkout', 'wp-slimstat'); ?>">
+            <span class="slimstat-gf-field__label"><?php esc_html_e('Funnel name', 'wp-slimstat'); ?> <span class="slimstat-gf-required" aria-hidden="true">*</span></span>
+            <input type="text" name="funnel_name" data-role="funnel-name" class="regular-text" required aria-required="true" placeholder="<?php esc_attr_e('e.g. Checkout', 'wp-slimstat'); ?>">
         </label>
 
-        <div class="slimstat-gf-builder__steps" data-role="steps-container" aria-live="polite"></div>
+        <?php /* Step add/remove/reorder are announced via the scoped live region
+                 below — a container-level aria-live floods SR users on every
+                 renumber (FN-12). */ ?>
+        <div class="slimstat-gf-builder__steps" data-role="steps-container"></div>
+        <span class="screen-reader-text" data-role="builder-live" aria-live="polite"></span>
 
         <p class="slimstat-gf-builder__error" data-role="builder-error" hidden role="alert"></p>
 
@@ -63,7 +67,7 @@ if (!defined('ABSPATH')) {
                 <button type="button"
                         class="slimstat-gf-step-row__handle"
                         data-action="drag-step"
-                        aria-label="<?php esc_attr_e('Reorder step', 'wp-slimstat'); ?>">⋮⋮</button>
+                        aria-label="<?php esc_attr_e('Reorder step', 'wp-slimstat'); ?>"><span aria-hidden="true">⋮⋮</span></button>
                 <span class="slimstat-gf-step-row__num" data-role="step-num"></span>
                 <input type="text"
                        data-role="step-name"
@@ -99,7 +103,7 @@ if (!defined('ABSPATH')) {
                 <button type="button"
                         class="button-link slimstat-gf-step-row__remove"
                         data-action="remove-funnel-step"
-                        aria-label="<?php esc_attr_e('Remove step', 'wp-slimstat'); ?>">×</button>
+                        aria-label="<?php esc_attr_e('Remove step', 'wp-slimstat'); ?>"><span aria-hidden="true">×</span></button>
             </div>
         </template>
     </form>

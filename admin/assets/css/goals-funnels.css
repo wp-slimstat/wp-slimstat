@@ -148,7 +148,7 @@
 
 .slimstat-gf-goal:hover,
 .slimstat-gf-goal:focus-within {
-    border-color: var(--ss-brand-500);
+    border-color: var(--ss-focus);
     background: var(--ss-surface-tint);
 }
 
@@ -239,11 +239,16 @@
 .slimstat-gf-goal-delete,
 .slimstat-gf-funnel-edit,
 .slimstat-gf-funnel-delete {
+    /* Comfortable click/tap target (toward the 44px WP/GDPR-banner reference)
+       so adjacent Edit/Delete aren't mis-tapped (FN-8, WCAG 2.5.5/2.5.8). */
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
     font-size: var(--ss-text-sm);
     cursor: pointer;
     background: transparent;
     border: none;
-    padding: var(--ss-space-1) var(--ss-space-2);
+    padding: var(--ss-space-1) var(--ss-space-3);
     border-radius: var(--ss-radius-2xs);
     transition: color var(--ss-duration-fast) var(--ss-easing),
                 background-color var(--ss-duration-fast) var(--ss-easing);
@@ -366,7 +371,7 @@
 }
 
 .slimstat-gf-tab:focus-visible {
-    outline: 2px solid var(--ss-brand-500);
+    outline: 2px solid var(--ss-focus);
     outline-offset: 2px;
 }
 
@@ -591,11 +596,14 @@
                 transform var(--ss-duration-base) var(--ss-easing);
 }
 
-.slimstat-gf-template-card:hover,
-.slimstat-gf-template-card:focus-visible {
+.slimstat-gf-template-card:hover {
     border-color: var(--ss-brand-500);
     transform: translateY(-1px);
-    outline: none;
+}
+
+.slimstat-gf-template-card:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
 }
 
 .slimstat-gf-template-card__title {
@@ -735,8 +743,15 @@
     background: transparent;
     border: none;
     font-size: 22px;
+    line-height: 1;
     cursor: pointer;
     color: var(--ss-text-secondary);
+    /* 44px square hit target for the icon-glyph button (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
     padding: var(--ss-space-1) var(--ss-space-2);
     border-radius: var(--ss-radius-sm);
 }
@@ -757,6 +772,12 @@
     font-size: var(--ss-text-sm);
     font-weight: 600;
     color: var(--ss-text-body);
+}
+
+/* Visible required marker (paired with aria-required on the input) so "required"
+   isn't communicated by color/validation alone (FN-12, WCAG 3.3.2). */
+.slimstat-gf-required {
+    color: var(--ss-danger-fg);
 }
 
 .slimstat-gf-field__hint {
@@ -782,9 +803,9 @@
 .slimstat-gf-field select:focus,
 .slimstat-gf-step-row input[type="text"]:focus,
 .slimstat-gf-step-row select:focus {
-    outline: 2px solid var(--ss-brand-500);
+    outline: 2px solid var(--ss-focus);
     outline-offset: 1px;
-    border-color: var(--ss-brand-500);
+    border-color: var(--ss-focus);
 }
 
 .slimstat-gf-field--toggle {
@@ -883,9 +904,15 @@
     border: none;
     color: var(--ss-text-tertiary);
     font-size: var(--ss-text-lg);
-    padding: var(--ss-space-1);
     line-height: 1;
     user-select: none;
+    /* Comfortable target in the dense builder row (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    padding: var(--ss-space-1);
 }
 
 .slimstat-gf-step-row__handle:active {
@@ -933,6 +960,12 @@
     border: none;
     font-size: 18px;
     line-height: 1;
+    /* Comfortable target in the dense builder row (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
 }
 
 /* Confirm sheet */
@@ -1018,6 +1051,37 @@
 @keyframes slimstat-gf-drawer-in-rtl {
     from { transform: translateX(-8%); opacity: 0.6; }
     to   { transform: translateX(0);   opacity: 1; }
+}
+
+/* ─── Responsive (FN-4) ───
+   WP admin collapses its own chrome at 782px; the modern cards otherwise
+   overflow on narrow admin columns / tablets / RTL (WCAG 1.4.10 Reflow).
+   Placed after the base layout rules so it wins the cascade at equal specificity.
+   Stacks the goal rows, the 9-column funnel-builder step rows, and the
+   postbox-header actions below this width. */
+@media (max-width: 782px) {
+    .slimstat-gf-goal {
+        grid-template-columns: 1fr;
+        gap: var(--ss-space-3);
+    }
+
+    .slimstat-gf-goal__metrics {
+        flex-wrap: wrap;
+    }
+
+    .slimstat-gf-step-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* The header actions float right via admin.css; drop the float so the
+       pill + CTA wrap full-width under the title instead of colliding. */
+    #slim_p9_01 .slimstat-header-buttons,
+    #slim_p9_02 .slimstat-header-buttons {
+        float: none;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
 }
 
 /* ============================================================

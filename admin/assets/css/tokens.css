@@ -61,6 +61,10 @@
 
     --ss-info-fg: #2271b1;
 
+    /* Focus ring — WordPress-native blue, never the brand magenta (which reads
+       as an error state and ignores the admin color scheme). */
+    --ss-focus: var(--ss-info-fg);
+
     /* ─── Color — funnel data-viz ───
        Magnitude (bar length) is encoded by width, not color: every bar uses one
        calm neutral fill so a healthy step never reads as an alarm. Status is

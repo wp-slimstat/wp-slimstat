@@ -29,14 +29,14 @@ if (!defined('ABSPATH')) {
                 <span data-role="title-create"><?php esc_html_e('Add goal', 'wp-slimstat'); ?></span>
                 <span data-role="title-edit" hidden><?php esc_html_e('Edit goal', 'wp-slimstat'); ?></span>
             </h2>
-            <button type="button" class="slimstat-gf-drawer__close" data-action="close-goal-drawer" aria-label="<?php esc_attr_e('Close drawer', 'wp-slimstat'); ?>">×</button>
+            <button type="button" class="slimstat-gf-drawer__close" data-action="close-goal-drawer" aria-label="<?php esc_attr_e('Close drawer', 'wp-slimstat'); ?>"><span aria-hidden="true">×</span></button>
         </header>
 
         <input type="hidden" name="goal_id" value="" data-role="goal-id">
 
         <label class="slimstat-gf-field">
-            <span class="slimstat-gf-field__label"><?php esc_html_e('Name', 'wp-slimstat'); ?></span>
-            <input type="text" name="goal_name" data-role="goal-name" class="regular-text" required>
+            <span class="slimstat-gf-field__label"><?php esc_html_e('Name', 'wp-slimstat'); ?> <span class="slimstat-gf-required" aria-hidden="true">*</span></span>
+            <input type="text" name="goal_name" data-role="goal-name" class="regular-text" required aria-required="true">
         </label>
 
         <label class="slimstat-gf-field">
