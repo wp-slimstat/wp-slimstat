@@ -33,11 +33,11 @@ if ($locked) :
     <div class="slimstat-gf-funnel-lock">
         <div class="slimstat-gf-funnel-mock" aria-hidden="true">
             <div class="slimstat-gf-funnel-bars">
-                <div class="slimstat-gf-funnel-bar" data-step="1" style="width:100%;"></div>
-                <div class="slimstat-gf-funnel-bar" data-step="2" style="width:72%;"></div>
-                <div class="slimstat-gf-funnel-bar" data-step="3" style="width:48%;"></div>
-                <div class="slimstat-gf-funnel-bar" data-step="4" style="width:28%;"></div>
-                <div class="slimstat-gf-funnel-bar" data-step="5" style="width:12%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:100%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:72%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:48%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:28%;"></div>
+                <div class="slimstat-gf-funnel-bar" style="width:12%;"></div>
             </div>
         </div>
         <div class="slimstat-gf-funnel-lock__overlay">

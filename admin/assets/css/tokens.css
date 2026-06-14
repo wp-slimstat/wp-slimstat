@@ -61,6 +61,13 @@
 
     --ss-info-fg: #2271b1;
 
+    /* ─── Color — funnel data-viz ───
+       Magnitude (bar length) is encoded by width, not color: every bar uses one
+       calm neutral fill so a healthy step never reads as an alarm. Status is
+       carried by the ⚠/↓ text + the muted "zero/unreachable" fill below. */
+    --ss-funnel-bar: #51606e;            /* neutral slate, ≥3:1 on --ss-surface-tint track */
+    --ss-funnel-bar-zero: var(--ss-text-disabled); /* muted fill for 0% / unreachable steps */
+
     /* ─── Radii ─── */
     --ss-radius-pill: 999px;
     --ss-radius-lg: 18px;

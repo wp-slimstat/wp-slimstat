@@ -560,15 +560,16 @@
             html += ' <span class="slimstat-gf-step__pct">(' + escHtml(pctLabel) + '%)</span>';
             html += '</span></div>';
             html += '<div class="slimstat-gf-step__track" role="presentation">';
-            html += '<div class="slimstat-gf-step__fill" data-step="' + stepNum + '" style="width:' + width + '%;"';
+            html += '<div class="slimstat-gf-step__fill"' + (visitors === 0 ? ' data-zero' : '') + ' style="width:' + width + '%;"';
             html += ' role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '"';
+            html += ' aria-valuetext="' + escHtml(pctLabel + '%') + '"';
             /* translators: 1: step name, 2: visitor count */
             var ariaLabel = sprintf(__('%1$s: %2$s visitors'), step.name || '', formatNumber(visitors));
             html += ' aria-label="' + escHtml(ariaLabel) + '"></div>';
             html += '</div>';
             if (unreachable) {
                 html += '<div class="slimstat-gf-step__unreachable"><span aria-hidden="true">⚠</span> ' +
-                    escHtml(__('Step unreachable · event not seen in range')) + '</div>';
+                    escHtml(__('No data in this range · this step\'s event hasn\'t fired yet')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
                 var dropoffPct = prev > 0 ? formatPercent((dropoff / prev) * 100) : formatPercent(0);
@@ -599,6 +600,12 @@
             mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success">' +
                 '<span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span> ' +
                 escHtml(sprintf(__('Healthy pass-through · %d-step funnel'), stepCount)) + '</span>';
+        } else if (unreachable > 0) {
+            /* A step has no data yet — the overall rate isn't a real measurement.
+               Mirror funnel-summary.php: say "pending", not a misleading 0.0%. */
+            /* translators: %d is the step count */
+            mainHtml = '<span class="slimstat-gf-summary">' +
+                escHtml(sprintf(__('%d-step funnel · Conversion rate pending'), stepCount)) + '</span>';
         } else {
             /* translators: 1: number of steps, 2: conversion rate */
             mainHtml = '<span class="slimstat-gf-summary">' +
@@ -606,8 +613,8 @@
         }
 
         if (unreachable > 0) {
-            /* translators: %d is the number of unreachable steps */
-            var label = sprintf(_n('%d step unreachable', '%d steps unreachable', unreachable), unreachable);
+            /* translators: %d is the number of steps with no data yet */
+            var label = sprintf(_n('%d step has no data yet', '%d steps have no data yet', unreachable), unreachable);
             mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + escHtml(label) + '</span>';
         }
         return mainHtml;

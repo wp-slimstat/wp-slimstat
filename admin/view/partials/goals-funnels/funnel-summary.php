@@ -33,6 +33,17 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
             $step_count
         )); ?>
     </span>
+<?php elseif ($unreachable_count > 0) : ?>
+    <?php /* A step has no data yet, so the overall rate isn't a real measurement —
+             say "pending" instead of a misleading "0.0%". The warn chip below
+             explains why. */ ?>
+    <span class="slimstat-gf-summary">
+        <?php echo esc_html(sprintf(
+            /* translators: %d is the step count */
+            __('%d-step funnel · Conversion rate pending', 'wp-slimstat'),
+            $step_count
+        )); ?>
+    </span>
 <?php else : ?>
     <span class="slimstat-gf-summary">
         <?php echo esc_html(sprintf(
@@ -46,8 +57,8 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
 <?php if ($unreachable_count > 0) : ?>
     <span class="slimstat-gf-summary slimstat-gf-summary--warn">
         <?php echo esc_html(sprintf(
-            /* translators: %d is the number of unreachable steps */
-            _n('%d step unreachable', '%d steps unreachable', $unreachable_count, 'wp-slimstat'),
+            /* translators: %d is the number of steps with no data yet */
+            _n('%d step has no data yet', '%d steps have no data yet', $unreachable_count, 'wp-slimstat'),
             $unreachable_count
         )); ?>
     </span>

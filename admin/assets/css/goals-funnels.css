@@ -447,17 +447,20 @@
 .slimstat-gf-step__fill {
     height: 100%;
     border-radius: var(--ss-radius-sm);
-    min-width: 2px;
+    min-width: 6px;
     transition: width var(--ss-duration-slow) var(--ss-easing-out);
-    background: var(--ss-brand-500);
+    /* Single neutral fill: bar length encodes magnitude, color does not encode
+       status. Zero/unreachable steps get the muted fill below; drop-off uses the
+       ⚠/↓ text, so a healthy step never reads as an alarm. */
+    background: var(--ss-funnel-bar);
 }
 
-/* Brand ramp across steps */
-.slimstat-gf-step__fill[data-step="1"] { background: var(--ss-brand-900); }
-.slimstat-gf-step__fill[data-step="2"] { background: var(--ss-brand-500); }
-.slimstat-gf-step__fill[data-step="3"] { background: var(--ss-brand-300); }
-.slimstat-gf-step__fill[data-step="4"] { background: var(--ss-brand-200); }
-.slimstat-gf-step__fill[data-step="5"] { background: var(--ss-brand-100); }
+/* Zero-visitor / unreachable steps get a muted fill so an empty bar reads as
+   "almost nothing here", without painting a healthy step red. */
+.slimstat-gf-step__fill[data-zero],
+.slimstat-gf-step--unreachable .slimstat-gf-step__fill {
+    background: var(--ss-funnel-bar-zero);
+}
 
 .slimstat-gf-step__dropoff {
     font-size: var(--ss-text-xs);
@@ -508,13 +511,9 @@
 .slimstat-gf-funnel-bar {
     height: 26px;
     border-radius: var(--ss-radius-sm);
+    /* Decorative preview bars share the single neutral funnel fill. */
+    background: var(--ss-funnel-bar);
 }
-
-.slimstat-gf-funnel-bar[data-step="1"] { background: var(--ss-brand-900); }
-.slimstat-gf-funnel-bar[data-step="2"] { background: var(--ss-brand-500); }
-.slimstat-gf-funnel-bar[data-step="3"] { background: var(--ss-brand-300); }
-.slimstat-gf-funnel-bar[data-step="4"] { background: var(--ss-brand-200); }
-.slimstat-gf-funnel-bar[data-step="5"] { background: var(--ss-brand-100); }
 
 .slimstat-gf-funnel-lock__overlay {
     position: absolute;

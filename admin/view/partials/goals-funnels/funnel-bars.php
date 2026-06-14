@@ -27,6 +27,9 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
         $unreachable = !empty($step['unreachable']);
         $width       = $step_one_visitors > 0 ? max(2, (int) round(($visitors / $step_one_visitors) * 100)) : 0;
         $step_num    = $index + 1;
+        // One formatted percentage, reused by the visible label and aria-valuetext
+        // so the two can never drift (mirrors $pctLabel in goals-funnels.js).
+        $pct_label   = number_format_i18n($pct, ((float) $pct == (int) $pct) ? 0 : 1);
         $dropoff_pct = 0;
         if ($index > 0 && !empty($steps[$index - 1]['visitors'])) {
             $dropoff_pct = round(($dropoff / max(1, (int) $steps[$index - 1]['visitors'])) * 100, 1);
@@ -37,17 +40,18 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
                 <span class="slimstat-gf-step__name"><?php echo esc_html($step['name'] ?? ''); ?></span>
                 <span class="slimstat-gf-step__count">
                     <?php echo esc_html(number_format_i18n($visitors)); ?>
-                    <span class="slimstat-gf-step__pct">(<?php echo esc_html(number_format_i18n($pct, ((float) $pct == (int) $pct) ? 0 : 1)); ?>%)</span>
+                    <span class="slimstat-gf-step__pct">(<?php echo esc_html($pct_label); ?>%)</span>
                 </span>
             </div>
             <div class="slimstat-gf-step__track" role="presentation">
                 <div class="slimstat-gf-step__fill"
-                     data-step="<?php echo esc_attr((string) $step_num); ?>"
+                     <?php echo 0 === $visitors ? 'data-zero' : ''; ?>
                      style="width:<?php echo esc_attr((string) $width); ?>%;"
                      role="progressbar"
                      aria-valuemin="0"
                      aria-valuemax="100"
                      aria-valuenow="<?php echo esc_attr((string) (int) $pct); ?>"
+                     aria-valuetext="<?php echo esc_attr($pct_label . '%'); ?>"
                      aria-label="<?php echo esc_attr(sprintf(
                          /* translators: 1: step name, 2: visitors */
                          __('%1$s: %2$s visitors', 'wp-slimstat'),
@@ -58,7 +62,7 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
             <?php if ($unreachable) : ?>
                 <div class="slimstat-gf-step__unreachable">
                     <span aria-hidden="true">⚠</span>
-                    <?php esc_html_e('Step unreachable · event not seen in range', 'wp-slimstat'); ?>
+                    <?php esc_html_e('No data in this range · this step\'s event hasn\'t fired yet', 'wp-slimstat'); ?>
                 </div>
             <?php elseif ($index > 0 && $dropoff > 0) : ?>
                 <div class="slimstat-gf-step__dropoff">
