@@ -924,6 +924,11 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'goal_name',
                     'raw'     => ['wp_slimstat_db', 'get_goals_raw'],
+                    // The Free "Export" upgrade link only makes sense once there's
+                    // something to export — no goals defined → nothing to offer.
+                    'exportable' => function () {
+                        return !empty(self::get_goals_card_state()['goals']);
+                    },
                 ],
                 'classes'   => ['full-width', 'tall'],
                 'locations' => ['slimview6'],
@@ -936,6 +941,11 @@ class wp_slimstat_reports
                     'type'    => 'top',
                     'columns' => 'funnel_step',
                     'raw'     => ['wp_slimstat_db', 'get_funnels_raw'],
+                    // Funnels are locked in Free (no data), so the Free "Export"
+                    // upgrade link is never appropriate here — it's bait.
+                    'exportable' => function () {
+                        return !empty(self::get_funnels_card_state()['funnels']);
+                    },
                 ],
                 'classes'   => ['full-width', 'extralarge'],
                 'locations' => ['slimview6'],
@@ -1730,7 +1740,10 @@ class wp_slimstat_reports
             'max_goals'    => $max_goals,
             'is_pro'       => $is_pro,
             'at_max'       => $at_max,
-            'show_add_cta' => !$at_max,
+            // Header "+ Add Goal" shows only once at least one goal exists; the
+            // empty state owns the single primary CTA ("+ Add your first goal"),
+            // so the two never compete (FN-3).
+            'show_add_cta' => !$at_max && !empty($goals),
             'show_upsell'  => $at_max && !$is_pro,
         ];
         return $cached;
@@ -1763,7 +1776,10 @@ class wp_slimstat_reports
             'is_pro'       => $is_pro,
             'locked'       => $locked,
             'at_max'       => $at_max,
-            'show_add_cta' => !$locked && !$at_max,
+            // Header "+ Add Funnel" shows only once at least one funnel exists; the
+            // empty state's template picker (incl. "Blank funnel") owns the create
+            // action, so the header CTA doesn't duplicate it (FN-3).
+            'show_add_cta' => !$locked && !$at_max && $funnel_count > 0,
         ];
         return $cached;
     }

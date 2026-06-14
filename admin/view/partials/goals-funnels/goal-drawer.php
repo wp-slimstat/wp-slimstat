@@ -86,7 +86,7 @@ if (!defined('ABSPATH')) {
         <footer class="slimstat-gf-drawer__foot">
             <button type="button" class="button" data-action="close-goal-drawer"><?php esc_html_e('Cancel', 'wp-slimstat'); ?></button>
             <button type="button" class="button button-primary" data-action="save-goal">
-                <span data-role="save-create"><?php esc_html_e('Add', 'wp-slimstat'); ?></span>
+                <span data-role="save-create"><?php esc_html_e('Add goal', 'wp-slimstat'); ?></span>
                 <span data-role="save-edit" hidden><?php esc_html_e('Save changes', 'wp-slimstat'); ?></span>
             </button>
         </footer>

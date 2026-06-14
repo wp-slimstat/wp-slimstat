@@ -57,6 +57,12 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('0 of 1');
         await expect(page.locator('[data-role="goals-empty"]')).toBeVisible();
 
+        // FN-3: the empty state owns the single primary CTA — the header
+        // "+ Add Goal" is suppressed until a goal exists, so there is exactly
+        // one primary CTA in the goals card (the centered "+ Add your first goal").
+        await expect(page.locator('#slim_p9_01 .slimstat-gf-cta')).toHaveCount(1);
+        await expect(page.locator('#slim_p9_01 .slimstat-gf-empty .slimstat-gf-cta')).toHaveCount(1);
+
         // Funnels: locked preview, brand CTA, no Add button.
         await expect(page.locator('.slimstat-gf-funnels--locked')).toBeVisible();
         const funnelCtas = page.locator('.slimstat-gf-funnels .slimstat-gf-cta');
@@ -103,6 +109,10 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('[data-role="funnels-empty"]')).toBeVisible();
         const templates = page.locator('.slimstat-gf-template-card');
         await expect(templates).toHaveCount(6);
+
+        // FN-3: the template picker (incl. "Blank funnel") owns the create action,
+        // so the header "+ Add Funnel" CTA is suppressed in the empty state.
+        await expect(page.locator('#slim_p9_02 .slimstat-gf-cta')).toHaveCount(0);
     });
 
     // ─── State: Pro × has-data ─────────────────────────────────

@@ -3243,8 +3243,21 @@ class wp_slimstat_admin
         }
 
         // Define which reports get this new functionality
-        if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
+        $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
+        if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
             return $_header_buttons;
+        }
+
+        // A report may declare itself non-exportable (a bool or a presence probe).
+        // Don't offer an "Export" upgrade link where there's nothing to export —
+        // a download-styled control that only routes to pricing is bait (FN-7/FN-17).
+        if (array_key_exists('exportable', $callback_args)) {
+            $exportable = is_callable($callback_args['exportable'])
+                ? (bool) call_user_func($callback_args['exportable'])
+                : (bool) $callback_args['exportable'];
+            if (!$exportable) {
+                return $_header_buttons;
+            }
         }
         $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
         return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;

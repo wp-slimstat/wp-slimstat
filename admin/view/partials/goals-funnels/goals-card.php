@@ -39,10 +39,10 @@ $show_upsell = $at_max && !$is_pro;
         <div class="slimstat-gf-empty" data-role="goals-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Measure what matters', 'wp-slimstat'); ?></h3>
             <p class="slimstat-gf-empty__body">
-                <?php esc_html_e('Get started with conversion tracking. Track signup, checkout, and pricing views at the same time — plus funnels for drop-off analysis.', 'wp-slimstat'); ?>
+                <?php esc_html_e('Track a conversion like a signup, checkout, or pricing view. Each goal is one question you ask of your traffic.', 'wp-slimstat'); ?>
             </p>
             <p class="slimstat-gf-empty__note">
-                <?php esc_html_e('Retroactive — each goal evaluates your full history, no warm-up needed.', 'wp-slimstat'); ?>
+                <?php esc_html_e('Goals are retroactive: each one measures your full visit history, with no warm-up period.', 'wp-slimstat'); ?>
             </p>
             <button type="button"
                     class="button button-primary slimstat-gf-cta"

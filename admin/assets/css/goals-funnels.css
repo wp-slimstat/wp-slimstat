@@ -42,6 +42,34 @@
     overflow: visible !important;
 }
 
+/* The admin.css `.postbox h3/p` rules bleed into the modern cards — a white band
+   + padding behind the empty-state title and #eee divider lines under card
+   paragraphs (FN-10). Neutralize the bleed and re-assert the modern spacing at
+   id specificity so those rules can't win. */
+#slim_p9_01 .slimstat-gf-card h3,
+#slim_p9_02 .slimstat-gf-card h3,
+#slim_p9_01 .slimstat-gf-card p,
+#slim_p9_02 .slimstat-gf-card p {
+    background: transparent;
+    border-bottom: 0;
+    padding: 0;
+}
+
+#slim_p9_01 .slimstat-gf-empty__title,
+#slim_p9_02 .slimstat-gf-empty__title {
+    margin: 0 0 var(--ss-space-2);
+}
+
+#slim_p9_01 .slimstat-gf-empty__body,
+#slim_p9_02 .slimstat-gf-empty__body {
+    margin: 0 auto var(--ss-space-3);
+}
+
+#slim_p9_01 .slimstat-gf-empty__note,
+#slim_p9_02 .slimstat-gf-empty__note {
+    margin: 0 auto var(--ss-space-5);
+}
+
 .slimstat-gf-card {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
