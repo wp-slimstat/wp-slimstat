@@ -1738,7 +1738,19 @@ class wp_slimstat_db
         $filters_where = self::get_combined_where('', '*', true, 't1');
         $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
         $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
-        $result        = get_transient($cache_key);
+
+        // Per-request memo keyed by the result-determining signature (criteria +
+        // filters + cache version), NOT the goal id — so several goals with the
+        // same criteria run the COUNT/unique queries once per request instead of
+        // once each, and a re-render reuses the result. Removes the duplicate
+        // COUNT(*)/unique queries Query Monitor reported. (#12)
+        static $request_memo = [];
+        $memo_key = md5($goal_where . '|' . $filters_where . '|' . $cache_ver);
+        if (array_key_exists($memo_key, $request_memo)) {
+            return $request_memo[$memo_key];
+        }
+
+        $result = get_transient($cache_key);
 
         if (false === $result) {
             $where_combined = $goal_where . ' AND ' . $filters_where;
@@ -1762,6 +1774,7 @@ class wp_slimstat_db
             set_transient($cache_key, $result, 5 * MINUTE_IN_SECONDS);
         }
 
+        $request_memo[$memo_key] = $result;
         return $result;
     }
 
@@ -1850,8 +1863,17 @@ class wp_slimstat_db
         $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
         $cache_key  = 'slimstat_funnel_' . (isset($funnel['id']) ? $funnel['id'] : md5(serialize($funnel['steps'])))
                       . '_' . md5($date_where . $cache_ver);
-        $cached     = get_transient($cache_key);
+
+        // Per-request memo: a funnel rendered (or re-rendered) twice in one
+        // request reuses its result instead of rebuilding temp tables again. (#12)
+        static $request_memo = [];
+        if (array_key_exists($cache_key, $request_memo)) {
+            return $request_memo[$cache_key];
+        }
+
+        $cached = get_transient($cache_key);
         if (false !== $cached) {
+            $request_memo[$cache_key] = $cached;
             return $cached;
         }
 
@@ -1863,6 +1885,9 @@ class wp_slimstat_db
         // WRITE receives current step's results. After each step, WRITE
         // is renamed to READ. This avoids the self-referencing temp table
         // bug where DROP + CREATE AS SELECT ... IN (SELECT vid FROM same_table) fails.
+        // Fixed names are safe: TEMPORARY tables are session-scoped, a connection
+        // serves one request at a time, and the preflight DROP IF EXISTS clears
+        // any stale leftovers — so no cross-call/connection collision can occur.
         $temp_read  = $GLOBALS['wpdb']->prefix . 'slim_funnel_read';
         $temp_write = $GLOBALS['wpdb']->prefix . 'slim_funnel_write';
 
@@ -1992,6 +2017,9 @@ class wp_slimstat_db
             set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
         }
 
+        // Memo for the rest of THIS request even on error (the transient is
+        // skipped above, so the next request still recomputes and self-heals).
+        $request_memo[$cache_key] = $results;
         return $results;
     }
 
