@@ -80,7 +80,7 @@ class GoalsFunnelsVizTest extends TestCase
     {
         $php = file_get_contents($this->partialPath('funnel-summary.php'));
         $this->assertStringContainsString('Conversion rate pending', $php, 'FN-2 pending copy missing');
-        $this->assertStringContainsString('has no data yet', $php, 'Warn chip must use plain-language "no data yet"');
+        $this->assertStringContainsString('had no visitors in range', $php, 'Warn chip must use neutral plain-language copy (#9)');
         $this->assertStringNotContainsString('step unreachable', $php, 'Old "step unreachable" jargon must be gone');
     }
 
@@ -88,7 +88,7 @@ class GoalsFunnelsVizTest extends TestCase
     {
         $js = file_get_contents($this->jsPath());
         $this->assertStringContainsString('Conversion rate pending', $js, 'JS mirror missing FN-2 pending copy');
-        $this->assertStringContainsString('has no data yet', $js, 'JS mirror warn chip copy out of sync');
+        $this->assertStringContainsString('had no visitors in range', $js, 'JS mirror warn chip copy out of sync (#9)');
     }
 
     // ── FN-1: funnel bars expose magnitude vs status without color-only ──
@@ -98,7 +98,7 @@ class GoalsFunnelsVizTest extends TestCase
         $php = file_get_contents($this->partialPath('funnel-bars.php'));
         $this->assertStringContainsString('data-zero', $php, 'Empty bars must be flagged for the muted fill (not red)');
         $this->assertStringContainsString('aria-valuetext', $php, 'Exact percentage must be exposed to AT via aria-valuetext');
-        $this->assertStringContainsString('fired yet', $php, 'Unreachable copy must be plain-language');
+        $this->assertStringContainsString('No visitors reached this step', $php, 'Unreachable copy must be neutral plain-language (#9)');
         $this->assertStringNotContainsString('Step unreachable · event not seen in range', $php, 'Old unreachable jargon must be gone');
     }
 

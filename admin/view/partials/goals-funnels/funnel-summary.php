@@ -57,8 +57,8 @@ $is_healthy_100    = ($total_cr !== null && (float) $total_cr === 100.0 && $unre
 <?php if ($unreachable_count > 0) : ?>
     <span class="slimstat-gf-summary slimstat-gf-summary--warn">
         <?php echo esc_html(sprintf(
-            /* translators: %d is the number of steps with no data yet */
-            _n('%d step has no data yet', '%d steps have no data yet', $unreachable_count, 'wp-slimstat'),
+            /* translators: %d is the number of steps with no visitors in range */
+            _n('%d step had no visitors in range', '%d steps had no visitors in range', $unreachable_count, 'wp-slimstat'),
             $unreachable_count
         )); ?>
     </span>

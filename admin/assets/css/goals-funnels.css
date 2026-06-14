@@ -451,16 +451,18 @@
 }
 
 .slimstat-gf-summary--warn {
+    /* Neutral informational chip — zero steps are a valid outcome, not an
+       error, so this no longer uses danger/warning colors. (#9) */
     margin-inline-start: var(--ss-space-2);
-    color: var(--ss-danger-fg);
-    background: var(--ss-warning-bg);
+    color: var(--ss-text-secondary);
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
     padding: var(--ss-space-1) var(--ss-space-3);
     border-radius: var(--ss-radius-pill);
     display: inline-flex;
     align-items: center;
     gap: var(--ss-space-1);
     font-size: var(--ss-text-sm);
-    font-weight: 600;
 }
 
 .slimstat-gf-funnel-panel__actions {
@@ -533,20 +535,21 @@
 }
 
 .slimstat-gf-step__unreachable {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ss-space-1);
+    /* A zero step is a valid outcome, not an error — neutral tone, not danger.
+       The ⚠ glyph was removed in #9, so the inline-flex/gap that spaced it is
+       no longer needed. */
+    display: inline-block;
     margin-top: var(--ss-space-1);
     padding: var(--ss-space-1) var(--ss-space-3);
     border-radius: var(--ss-radius-sm);
-    background: var(--ss-warning-bg);
-    color: var(--ss-danger-fg);
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    color: var(--ss-text-secondary);
     font-size: var(--ss-text-xs);
-    font-weight: 600;
 }
 
 .slimstat-gf-step--unreachable .slimstat-gf-step__name {
-    color: var(--ss-danger-fg);
+    color: var(--ss-text-secondary);
 }
 
 /* Locked state (Free) */

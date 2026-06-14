@@ -60,9 +60,11 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
                      )); ?>"></div>
             </div>
             <?php if ($unreachable) : ?>
+                <?php /* A zero step after a non-zero one is a valid outcome (no
+                         conversions in this window/order), not an error — keep the
+                         message neutral and drop the warning glyph. (#9) */ ?>
                 <div class="slimstat-gf-step__unreachable">
-                    <span aria-hidden="true">⚠</span>
-                    <?php esc_html_e('No data in this range · this step\'s event hasn\'t fired yet', 'wp-slimstat'); ?>
+                    <?php esc_html_e('No visitors reached this step in the selected date range', 'wp-slimstat'); ?>
                 </div>
             <?php elseif ($index > 0 && $dropoff > 0) : ?>
                 <div class="slimstat-gf-step__dropoff">

@@ -631,8 +631,9 @@
             html += ' aria-label="' + escHtml(ariaLabel) + '"></div>';
             html += '</div>';
             if (unreachable) {
-                html += '<div class="slimstat-gf-step__unreachable"><span aria-hidden="true">⚠</span> ' +
-                    escHtml(__('No data in this range · this step\'s event hasn\'t fired yet')) + '</div>';
+                // Keep this string identical to funnel-bars.php (SSR) — anti-drift. (#9)
+                html += '<div class="slimstat-gf-step__unreachable">' +
+                    escHtml(__('No visitors reached this step in the selected date range')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
                 var dropoffPct = prev > 0 ? formatPercent((dropoff / prev) * 100) : formatPercent(0);
@@ -676,8 +677,8 @@
         }
 
         if (unreachable > 0) {
-            /* translators: %d is the number of steps with no data yet */
-            var label = sprintf(_n('%d step has no data yet', '%d steps have no data yet', unreachable), unreachable);
+            /* translators: %d is the number of steps with no visitors in range */
+            var label = sprintf(_n('%d step had no visitors in range', '%d steps had no visitors in range', unreachable), unreachable);
             mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + escHtml(label) + '</span>';
         }
         return mainHtml;
