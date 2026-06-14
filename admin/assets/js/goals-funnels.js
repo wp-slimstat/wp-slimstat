@@ -21,6 +21,30 @@
     var ajaxUrl = SlimStatAdminParams.ajax_url;
     var nonce   = SlimStatAdminParams.goals_nonce;
 
+    // Single source of truth for operators that take no value — mirrors the
+    // server's wp_slimstat_db::$valueless_operators (localized in
+    // SlimStatAdminParams) so the value-required check and the disable logic
+    // never drift from the server contract. (#2)
+    var VALUELESS_OPERATORS = (SlimStatAdminParams.valueless_operators && SlimStatAdminParams.valueless_operators.length)
+        ? SlimStatAdminParams.valueless_operators
+        : ['is_empty', 'is_not_empty'];
+    function isValuelessOperator(op) {
+        return VALUELESS_OPERATORS.indexOf(op) !== -1;
+    }
+
+    // Focus the visible value control on a validation error. Once the autosuggest
+    // widget mounts it hides the raw input (display:none) and shows its own
+    // display, so focusing the input is a no-op — open the widget (which focuses
+    // its search box) when present, else fall back to the bare input. (#2)
+    function focusValueField($value) {
+        var inst = $value[0] && $value[0]._slimstatSearchable;
+        if (inst && typeof inst.open === 'function') {
+            inst.open();
+        } else {
+            $value.trigger('focus');
+        }
+    }
+
     // wp.i18n is a declared script dependency; fallback object keeps the module
     // working if it ever loads out-of-order (e.g., Customize preview).
     var _i18n = (window.wp && window.wp.i18n) ? window.wp.i18n : {
@@ -260,6 +284,18 @@
             return;
         }
 
+        // A value-bearing operator needs a value — otherwise the server rejects
+        // the save with a generic banner, or (historically) an empty value was
+        // read as "match anything". Mirror the server contract client-side. (#2)
+        var $value   = $goalDrawer.find('[data-role="goal-value"]');
+        var operator = $goalDrawer.find('[data-role="goal-operator"]').val();
+        var value    = $value.val();
+        if (!isValuelessOperator(operator) && (!value || !String(value).trim())) {
+            $err.text(__('Value is required for this operator.')).attr('hidden', false);
+            focusValueField($value);
+            return;
+        }
+
         var paused = $goalDrawer.find('[data-role="goal-paused"]').is(':checked');
         var data = {
             action:    'slimstat_save_goal',
@@ -267,8 +303,8 @@
             id:        $goalDrawer.find('[data-role="goal-id"]').val(),
             name:      name,
             dimension: $goalDrawer.find('[data-role="goal-dimension"]').val(),
-            operator:  $goalDrawer.find('[data-role="goal-operator"]').val(),
-            value:     $goalDrawer.find('[data-role="goal-value"]').val(),
+            operator:  operator,
+            value:     value,
             active:    paused ? 0 : 1
         };
 
@@ -476,16 +512,31 @@
         }
 
         var steps = [];
-        $stepsContainer.find('.slimstat-gf-step-row').each(function () {
-            var $row = $(this);
+        var invalidStep = null; // first step missing a required value
+        $stepsContainer.find('.slimstat-gf-step-row').each(function (idx) {
+            var $row     = $(this);
+            var $value   = $row.find('[data-role="step-value"]');
+            var operator = $row.find('[data-role="step-operator"]').val();
+            var value    = $value.val();
+            if (invalidStep === null && !isValuelessOperator(operator) && (!value || !String(value).trim())) {
+                invalidStep = { index: idx, $value: $value };
+            }
             steps.push({
                 name:      $row.find('[data-role="step-name"]').val(),
                 dimension: $row.find('[data-role="step-dimension"]').val(),
-                operator:  $row.find('[data-role="step-operator"]').val(),
-                value:     $row.find('[data-role="step-value"]').val(),
+                operator:  operator,
+                value:     value,
                 active:    1
             });
         });
+
+        // A value-bearing step operator needs a value — flag the first offending
+        // step by number so the user knows which row to fix. (#2)
+        if (invalidStep !== null) {
+            $err.text(sprintf(__('Step %d needs a value for its operator.'), invalidStep.index + 1)).attr('hidden', false);
+            focusValueField(invalidStep.$value);
+            return;
+        }
 
         if (steps.length < 2 || steps.length > 5) {
             $err.text(__('Funnels need between 2 and 5 steps.')).attr('hidden', false);
@@ -711,7 +762,7 @@
     }
 
     function syncValueDisabledByOperator($value, operator) {
-        var isEmptyOp = (operator === 'is_empty' || operator === 'is_not_empty');
+        var isEmptyOp = isValuelessOperator(operator);
         if (isEmptyOp) {
             $value.prop('disabled', true).attr('title', __('Not applicable for this operator')).val('');
         } else {

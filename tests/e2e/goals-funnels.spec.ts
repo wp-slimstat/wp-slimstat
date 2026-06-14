@@ -367,6 +367,57 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
             .toContainText('Type any value and save');
     });
 
+    // ─── Value-required validation (#2) ──────────────────────────
+
+    test('validation-goal-value-required: value-bearing operator + empty value is blocked', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        await page.fill('[data-role="goal-name"]', 'No Value Goal');
+        await page.selectOption('[data-role="goal-operator"]', 'contains');
+
+        await page.click('[data-action="save-goal"]');
+
+        // Inline error and the drawer stays open (no navigation, nothing saved).
+        await expect(page.locator('[data-role="drawer-error"]')).toContainText('Value is required');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+    });
+
+    test('validation-goal-valueless-ok: is_empty operator saves with no value', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        await page.fill('[data-role="goal-name"]', 'Empty Ref Goal');
+        await page.selectOption('[data-role="goal-operator"]', 'is_empty');
+
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-goal"]'),
+        ]);
+        await expect(page.locator('.slimstat-gf-goal__name')).toContainText('Empty Ref Goal');
+    });
+
+    test('validation-funnel-step-value-required: empty step value names the offending step', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+        await page.fill('[data-role="funnel-name"]', 'Bad Funnel');
+
+        const rows = page.locator('.slimstat-gf-step-row');
+        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
+        // Leave step 2's value empty, then save.
+        await page.click('[data-action="save-funnel"]');
+
+        await expect(page.locator('[data-role="builder-error"]')).toContainText('Step 2 needs a value');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+    });
+
     // ─── Round 2: funnel builder affordances ─────────────────────
 
     test('funnel-test-step-populates-count: Test button fires slimstat_test_funnel_step', async ({ page }) => {
