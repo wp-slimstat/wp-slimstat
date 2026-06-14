@@ -932,6 +932,9 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['full-width', 'tall'],
                 'locations' => ['slimview6'],
+                // Always render on the dedicated Goals & Funnels page, regardless
+                // of any saved layout that moved a copy elsewhere.
+                'pinned'    => true,
                 'tooltip'   => __('Track conversions for custom goals you define. Goals are evaluated retroactively against existing data.', 'wp-slimstat'),
             ],
             'slim_p9_02' => [
@@ -949,6 +952,8 @@ class wp_slimstat_reports
                 ],
                 'classes'   => ['full-width', 'extralarge'],
                 'locations' => ['slimview6'],
+                // Always render on the dedicated Goals & Funnels page (see above).
+                'pinned'    => true,
                 'tooltip'   => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
             ],
         ];
@@ -984,6 +989,28 @@ class wp_slimstat_reports
                 }
                 self::$user_reports[$a_location] = explode(',', $a_report_list);
             }
+        }
+
+        // Pinned reports must always appear in their default location(s), even if
+        // the user dragged a copy to another screen. The merge above only places
+        // reports the user hasn't placed anywhere, so without this a report pinned
+        // to a dedicated page (Goals/Funnels on slimview6) would silently vanish
+        // from that page the moment it was added to, say, the dashboard — leaving
+        // the dedicated page empty. See impeccable report "report-placement quirk".
+        $pinned_reports = array_keys(array_filter(self::$reports, static function ($a_report) {
+            return !empty($a_report['pinned']);
+        }));
+        if (!empty($pinned_reports)) {
+            // Fold pinned reports back in, but keep registry order so they land in
+            // their natural position (e.g. Goals before Funnels) rather than being
+            // appended after the reports the user hasn't placed.
+            $to_place      = array_merge($merge_reports, $pinned_reports);
+            $merge_reports = array_values(array_filter(
+                array_keys(self::$reports),
+                static function ($a_report_id) use ($to_place) {
+                    return in_array($a_report_id, $to_place, true);
+                }
+            ));
         }
 
         foreach ($merge_reports as $a_report_id) {

@@ -1098,20 +1098,21 @@
 /* ─── Responsive (FN-4) ───
    WP admin collapses its own chrome at 782px; the modern cards otherwise
    overflow on narrow admin columns / tablets / RTL (WCAG 1.4.10 Reflow).
-   Placed after the base layout rules so it wins the cascade at equal specificity.
-   Stacks the goal rows, the 9-column funnel-builder step rows, and the
-   postbox-header actions below this width. */
+   Each override is scoped under its container (.slimstat-gf-goals / .slimstat-gf-builder)
+   or the postbox id, so it beats the base rule by SPECIFICITY (0,2,0 vs 0,1,0) —
+   it does not depend on this block's position in the file. Stacks the goal rows,
+   the 9-column funnel-builder step rows, and the postbox-header actions. */
 @media (max-width: 782px) {
-    .slimstat-gf-goal {
+    .slimstat-gf-goals .slimstat-gf-goal {
         grid-template-columns: 1fr;
         gap: var(--ss-space-3);
     }
 
-    .slimstat-gf-goal__metrics {
+    .slimstat-gf-goals .slimstat-gf-goal__metrics {
         flex-wrap: wrap;
     }
 
-    .slimstat-gf-step-row {
+    .slimstat-gf-builder .slimstat-gf-step-row {
         grid-template-columns: 1fr;
     }
 

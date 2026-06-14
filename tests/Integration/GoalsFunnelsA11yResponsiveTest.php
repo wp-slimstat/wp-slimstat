@@ -42,9 +42,21 @@ class GoalsFunnelsA11yResponsiveTest extends TestCase
         $css = file_get_contents($this->cssPath());
         $this->assertSame(1, preg_match('/@media \(max-width:\s*782px\)/', $css, $m, PREG_OFFSET_CAPTURE), 'Missing 782px breakpoint (FN-4)');
         // Within the breakpoint the goal row and step row collapse to one column.
+        // The overrides MUST be container-scoped (.slimstat-gf-goals / .slimstat-gf-builder)
+        // so they beat the base rules by specificity (0,2,0 > 0,1,0) rather than by
+        // source order — otherwise a CSS reorder silently re-breaks the reflow
+        // (the cascade bug this guard exists to catch).
         $block = substr($css, $m[0][1], 700);
-        $this->assertMatchesRegularExpression('/\.slimstat-gf-goal\s*\{[^}]*grid-template-columns:\s*1fr/', $block);
-        $this->assertMatchesRegularExpression('/\.slimstat-gf-step-row\s*\{[^}]*grid-template-columns:\s*1fr/', $block);
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-goals\s+\.slimstat-gf-goal\s*\{[^}]*grid-template-columns:\s*1fr/',
+            $block,
+            'Goal-row reflow must be container-scoped to win by specificity, not source order (FN-4)'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-builder\s+\.slimstat-gf-step-row\s*\{[^}]*grid-template-columns:\s*1fr/',
+            $block,
+            'Step-row reflow must be container-scoped to win by specificity, not source order (FN-4)'
+        );
     }
 
     // ── FN-8: comfortable touch targets + aria-hidden glyphs ──
