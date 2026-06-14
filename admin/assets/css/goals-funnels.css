@@ -746,7 +746,9 @@
     width: 100%;
     max-width: var(--ss-drawer-width);
     background: var(--ss-surface);
-    padding: var(--ss-space-5) var(--ss-space-5) var(--ss-space-10);
+    /* Top clears the fixed WP admin bar so the title isn't jammed under it;
+       bottom padding is 0 because the footer is a sticky bar (see __foot). */
+    padding: calc(var(--wp-admin--admin-bar--height, 32px) + var(--ss-space-4)) var(--ss-space-5) 0;
     box-shadow: var(--ss-shadow-drawer);
     overflow-y: auto;
     display: flex;
@@ -829,14 +831,42 @@
 .slimstat-gf-field select,
 .slimstat-gf-step-row input[type="text"],
 .slimstat-gf-step-row select {
+    box-sizing: border-box;
     width: 100%;
+    /* Cap only the stacked drawer fields; step-row controls are sized by the grid. */
     max-width: 420px;
+    min-height: 36px;
     padding: var(--ss-space-2) var(--ss-space-3);
     border: 1px solid var(--ss-border);
     border-radius: var(--ss-radius-sm);
     font-size: var(--ss-text-md);
+    line-height: 1.4;
     color: var(--ss-text-primary);
     background: var(--ss-surface);
+}
+
+/* Step-row controls fill their grid column (the 420px cap is for stacked fields). */
+.slimstat-gf-step-row input[type="text"],
+.slimstat-gf-step-row select {
+    max-width: none;
+}
+
+/* Give native selects a consistent chevron so they read as dropdowns and line up
+   with the value field (the OS-rendered open list itself can't be CSS-styled). */
+.slimstat-gf-field select,
+.slimstat-gf-step-row select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: calc(var(--ss-space-3) + 14px);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23646970' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--ss-space-2) center;
+    background-size: 12px 12px;
+}
+
+[dir="rtl"] .slimstat-gf-field select,
+[dir="rtl"] .slimstat-gf-step-row select {
+    background-position: left var(--ss-space-2) center;
 }
 
 .slimstat-gf-field input[type="text"]:focus,
@@ -867,8 +897,17 @@
     display: flex;
     align-items: center;
     gap: var(--ss-space-2);
+    /* Pin the actions to the bottom of the panel and keep them there while the
+       body scrolls, so Save/Cancel are always visible no matter how tall the
+       content gets (the old margin-top:auto pushed them below the fold). The
+       negative inline margin + matching padding lets the bar's surface + top
+       border span the panel's full width. */
     margin-top: auto;
-    padding-top: var(--ss-space-3);
+    position: sticky;
+    bottom: 0;
+    background: var(--ss-surface);
+    margin-inline: calc(-1 * var(--ss-space-5));
+    padding: var(--ss-space-3) var(--ss-space-5) var(--ss-space-4);
     border-top: 1px solid var(--ss-border);
 }
 
@@ -903,7 +942,8 @@
     width: 100%;
     max-width: var(--ss-builder-width);
     background: var(--ss-surface);
-    padding: var(--ss-space-5) var(--ss-space-5) var(--ss-space-10);
+    /* See drawer panel: clear the admin bar; footer provides bottom spacing. */
+    padding: calc(var(--wp-admin--admin-bar--height, 32px) + var(--ss-space-4)) var(--ss-space-5) 0;
     box-shadow: var(--ss-shadow-drawer);
     overflow-y: auto;
     display: flex;
@@ -919,7 +959,9 @@
 
 .slimstat-gf-step-row {
     display: grid;
-    grid-template-columns: auto auto minmax(120px, 1fr) minmax(110px, 140px) minmax(110px, 140px) minmax(120px, 1fr) auto auto auto;
+    /* handle · num · name · dimension · operator · value · test · result · remove
+       Name/value get comfortable room so labels like "Order received" don't clip. */
+    grid-template-columns: auto auto minmax(150px, 1.2fr) minmax(130px, 160px) minmax(120px, 150px) minmax(150px, 1.4fr) auto auto auto;
     gap: var(--ss-space-2);
     align-items: center;
     padding: var(--ss-space-2) var(--ss-space-3);
