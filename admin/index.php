@@ -90,6 +90,9 @@ class wp_slimstat_admin
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Goals & Funnels', 'wp-slimstat'),
+                // Optional page-intro lead: any screen that declares one gets a
+                // framing H1 (from 'title') + this lead above its report boxes.
+                'lead'            => __('Define the conversions that matter, then string them into funnels to see where visitors drop off.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
             ],

@@ -1820,7 +1820,7 @@ class wp_slimstat_reports
             $state['active_count'],
             $state['max_goals'],
             'open-goal-drawer',
-            __('+ Add Goal', 'wp-slimstat'),
+            __('+ Add goal', 'wp-slimstat'),
             $state['show_add_cta']
         );
     }
@@ -1839,7 +1839,7 @@ class wp_slimstat_reports
             $state['funnel_count'],
             $state['max_funnels'],
             'open-funnel-builder',
-            __('+ Add Funnel', 'wp-slimstat'),
+            __('+ Add funnel', 'wp-slimstat'),
             $state['show_add_cta']
         );
     }

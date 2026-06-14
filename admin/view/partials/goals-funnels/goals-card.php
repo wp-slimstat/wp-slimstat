@@ -89,6 +89,11 @@ $show_upsell = $at_max && !$is_pro;
                             </span>
                         </div>
                     </div>
+                    <?php if (0 === $uniques && 0 === $total) : ?>
+                        <?php /* Distinguish "active, no matches yet" from a broken
+                                 rule — three zeros read as an error (FN-15). */ ?>
+                        <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('No matches in this date range yet', 'wp-slimstat'); ?></p>
+                    <?php else : ?>
                     <div class="slimstat-gf-goal__metrics">
                         <div class="slimstat-gf-metric">
                             <span class="slimstat-gf-metric__label"><?php esc_html_e('Uniques', 'wp-slimstat'); ?></span>
@@ -103,6 +108,7 @@ $show_upsell = $at_max && !$is_pro;
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n((float) $cr, ((float) $cr == (int) $cr) ? 0 : 1)); ?>%</span>
                         </div>
                     </div>
+                    <?php endif; ?>
                     <div class="slimstat-gf-goal__actions">
                         <button type="button"
                                 class="button-link slimstat-gf-goal-edit"

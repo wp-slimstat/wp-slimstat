@@ -29,7 +29,7 @@ $locked       = $max_funnels <= 0; // Free tier — never rendered via this part
 // postbox header — see wp_slimstat_admin::register_goals_funnels_header_hooks().
 if ($locked) :
 ?>
-<section class="slimstat-gf-card slimstat-gf-funnels slimstat-gf-funnels--locked" data-component="funnels" aria-label="<?php esc_attr_e('Funnels — Pro feature preview', 'wp-slimstat'); ?>">
+<section class="slimstat-gf-card slimstat-gf-funnels slimstat-gf-funnels--locked" data-component="funnels" aria-label="<?php esc_attr_e('Funnels: Pro feature preview', 'wp-slimstat'); ?>">
     <div class="slimstat-gf-funnel-lock">
         <div class="slimstat-gf-funnel-mock" aria-hidden="true">
             <div class="slimstat-gf-funnel-bars">
@@ -41,8 +41,9 @@ if ($locked) :
             </div>
         </div>
         <div class="slimstat-gf-funnel-lock__overlay">
+            <p class="slimstat-gf-funnel-lock__caption"><?php esc_html_e('Example funnel', 'wp-slimstat'); ?></p>
             <h3><?php esc_html_e('See where visitors drop off, step by step.', 'wp-slimstat'); ?></h3>
-            <p><?php esc_html_e('Unlock drop-off analysis. Build 2–5 step conversion funnels with per-step drop-off in SlimStat Pro.', 'wp-slimstat'); ?></p>
+            <p><?php esc_html_e('Build 2 to 5 step funnels and see exactly where visitors drop off at each stage. Available in SlimStat Pro.', 'wp-slimstat'); ?></p>
             <a class="button button-primary slimstat-gf-cta"
                href="https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=funnel"
                target="_blank"
@@ -62,7 +63,7 @@ $at_max = $funnel_count >= $max_funnels;
     <?php if (0 === $funnel_count) : ?>
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
-            <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill dimensions and operators — you just fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
+            <p class="slimstat-gf-empty__body"><?php esc_html_e('Templates pre-fill the dimension and operator. You fill in the URLs or events that match your site.', 'wp-slimstat'); ?></p>
             <?php
             // Each entry's `data-template` key must match a FUNNEL_TEMPLATES
             // entry in admin/assets/js/goals-funnels.js. Strings are wrapped
@@ -96,7 +97,7 @@ $at_max = $funnel_count >= $max_funnels;
                 [
                     'key'      => 'blank',
                     'title'    => __('+ Blank funnel', 'wp-slimstat'),
-                    'body'     => __('Define 2–5 custom steps.', 'wp-slimstat'),
+                    'body'     => __('Define 2 to 5 custom steps.', 'wp-slimstat'),
                     'modifier' => 'slimstat-gf-template-card--scratch',
                 ],
             ];

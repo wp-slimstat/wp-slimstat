@@ -760,7 +760,7 @@
     function buildSuggestWidget(inputEl, options) {
         if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
         var instance = new window.SlimStatSearchableSelect(inputEl, {
-            placeholder:       __('Select or type a value…'),
+            placeholder:       __('Type or pick a value'),
             searchPlaceholder: __('Search or type…'),
             noResultsText:     __('No matches'),
             loadingText:       __('Loading…')

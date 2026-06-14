@@ -70,6 +70,26 @@
     margin: 0 auto var(--ss-space-5);
 }
 
+/* Page-level framing above the two postboxes (FN-13). WP-native, not a hero. */
+.slimstat-gf-pageintro {
+    margin: var(--ss-space-4) 0 var(--ss-space-5);
+    font-family: var(--ss-font-modern);
+}
+
+.slimstat-gf-pageintro__title {
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    font-size: var(--ss-text-xl);
+    font-weight: 700;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-pageintro__lead {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-base);
+}
+
 .slimstat-gf-card {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
@@ -331,8 +351,17 @@
 
 .slimstat-gf-consent {
     margin-top: var(--ss-space-3);
-    color: var(--ss-text-tertiary);
-    font-size: var(--ss-text-xs);
+    /* Privacy/compliance note — readable, not buried 11px italic (FN-16). */
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    font-style: normal;
+}
+
+/* "Active, no matches yet" hint in place of 0/0/0% metrics (FN-15). */
+.slimstat-gf-goal__nomatch {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
 }
 
 /* ------- Funnel tabs + panel ------- */
@@ -573,6 +602,16 @@
     max-width: 420px;
 }
 
+/* Small label so the blurred bars read as illustrative, not real data (FN-20). */
+.slimstat-gf-funnel-lock__caption {
+    margin: 0 0 var(--ss-space-2);
+    font-size: var(--ss-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ss-text-tertiary);
+}
+
 /* Template picker */
 
 .slimstat-gf-template-picker {
@@ -690,7 +729,7 @@
 .slimstat-gf-sheet__backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: var(--ss-overlay-scrim);
     animation: slimstat-gf-fade-in var(--ss-duration-base) var(--ss-easing-out) both;
 }
 
@@ -1047,7 +1086,7 @@
 .rtl .slimstat-gf-drawer__panel,
 [dir="rtl"] .slimstat-gf-builder__panel,
 .rtl .slimstat-gf-builder__panel {
-    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.08);
+    box-shadow: var(--ss-shadow-drawer-rtl);
     animation: slimstat-gf-drawer-in-rtl var(--ss-duration-base) var(--ss-easing-out) both;
 }
 

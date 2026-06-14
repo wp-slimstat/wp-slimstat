@@ -41,6 +41,7 @@
     --ss-hover: #e2e8f0;
     --ss-hover-soft: #e6e7eb;
     --ss-overlay: rgba(255, 255, 255, 0.85);
+    --ss-overlay-scrim: rgba(15, 23, 42, 0.45);   /* dialog backdrop dim */
 
     /* ─── Color — dividers ─── */
     --ss-border: #e2e4e7;
@@ -97,6 +98,7 @@
     --ss-shadow-card: 0 1px 4px rgba(60, 60, 90, 0.04);
     --ss-shadow-raised: 0 2px 8px rgba(60, 60, 90, 0.10);
     --ss-shadow-drawer: -8px 0 24px rgba(15, 23, 42, 0.08);
+    --ss-shadow-drawer-rtl: 8px 0 24px rgba(15, 23, 42, 0.08);   /* mirror for RTL */
     --ss-shadow-modal: 0 12px 32px rgba(15, 23, 42, 0.18);
 
     /* ─── Motion ─── */

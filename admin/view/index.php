@@ -141,6 +141,20 @@ if (!empty($filters_html)) {
 }
 ?>
 
+        <?php
+        // Lightweight page framing so a screen's report boxes read as one feature,
+        // not adjacent boxes (FN-13). Any screen that declares a 'lead' in its
+        // $screens_info registry entry gets an H1 (from 'title') + lead; today
+        // only Goals & Funnels does. Title pulled from the registry so it can't
+        // drift from the menu label (cf. layout.php).
+        $current_screen_info = wp_slimstat_admin::$screens_info[wp_slimstat_admin::$current_screen] ?? [];
+        if (!empty($current_screen_info['lead'])) : ?>
+            <div class="slimstat-gf-pageintro">
+                <h1 class="slimstat-gf-pageintro__title"><?php echo esc_html($current_screen_info['title']); ?></h1>
+                <p class="slimstat-gf-pageintro__lead"><?php echo esc_html($current_screen_info['lead']); ?></p>
+            </div>
+        <?php endif; ?>
+
         <div class="meta-box-sortables">
             <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>"/></form><?php
 
