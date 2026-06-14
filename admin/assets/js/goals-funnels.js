@@ -82,7 +82,10 @@
                 { name: __('Product'),        dimension: 'resource', operator: 'contains', value: '/product/' },
                 { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
                 { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
+                // WooCommerce nests the thank-you page under checkout:
+                // /checkout/order-received/{id}/?key=... — 'contains' still matches
+                // the {id}/query-string suffix. (#5)
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/checkout/order-received' }
             ]
         },
         checkout_completion: {
@@ -90,7 +93,8 @@
             steps: [
                 { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
                 { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
+                // WooCommerce's thank-you page is nested under checkout. (#5)
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/checkout/order-received' }
             ]
         },
         landing_to_contact: {
