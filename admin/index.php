@@ -833,6 +833,12 @@ class wp_slimstat_admin
             "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%' LIMIT 1000"
         );
 
+        // Rotate the goals/funnels cache version on upgrade so pre-fix cached
+        // results (e.g. goal "uniques" that excluded NULL-fingerprint visitors)
+        // are recomputed immediately rather than lingering for the 5–15 min
+        // transient TTL after the uniques identity changed. (#3)
+        update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
+
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';

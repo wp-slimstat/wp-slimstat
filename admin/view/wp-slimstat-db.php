@@ -1661,31 +1661,12 @@ class wp_slimstat_db
     }
 
     /**
-     * Counts distinct non-NULL fingerprints using subquery decomposition.
-     * 50-68x faster than COUNT(DISTINCT fingerprint) on large tables.
-     *
-     * @param string $from_clause  SQL FROM + JOIN (e.g., "wp_slim_stats t1" or "wp_slim_events te INNER JOIN wp_slim_stats t1 ON te.id = t1.id")
-     * @param string $where_clause SQL WHERE conditions (already prepared).
-     * @return int
-     */
-    private static function count_unique_fingerprints($from_clause, $where_clause)
-    {
-        return intval(wp_slimstat::$wpdb->get_var(sprintf(
-            "SELECT COUNT(*) FROM (SELECT DISTINCT t1.fingerprint FROM %s WHERE %s AND t1.fingerprint IS NOT NULL) AS uv",
-            $from_clause,
-            $where_clause
-        )));
-    }
-
-    /**
-     * Visitor identifier expression that handles NULL fingerprints.
-     * Used only in SELECT/INSERT for temp table population (not in WHERE clauses).
-     *
-     * Note: Goals use fingerprint-only counting (via count_unique_fingerprints) for
-     * index-friendly queries. Funnels use this COALESCE expression in SELECT to populate
-     * temp tables, which is safe since COALESCE only appears in SELECT output, not WHERE.
-     * This means goals may slightly undercount visitors without fingerprints (~5%), while
-     * funnels include all visitors. This is an intentional performance trade-off.
+     * Visitor identifier expression that handles NULL fingerprints:
+     * COALESCE(fingerprint, 'v_'+visit_id, 'ip_'+ip). Used both to populate the
+     * funnel temp tables (SELECT/INSERT) and, via count_unique_visitors(), to
+     * count distinct goal visitors — so goals and funnels share one identity and
+     * neither silently drops visitors that lack a fingerprint. The expression is
+     * only ever used in SELECT output, never in a WHERE clause.
      */
     private static function visitor_id_expr($alias = '')
     {
@@ -1696,6 +1677,35 @@ class wp_slimstat_db
             $prefix,
             $prefix
         );
+    }
+
+    /**
+     * Counts distinct visitors using the NULL-safe visitor identity
+     * (COALESCE(fingerprint, visit_id, ip)) that funnels already use, so a
+     * segment dominated by NULL-fingerprint rows — bots/crawlers,
+     * consent-limited sessions, or rows recorded before the fingerprint feature
+     * shipped — is no longer silently dropped (the symptom: "Country" goals
+     * showing a correct Total but 0 Uniques). Goal uniques now agree with funnel
+     * step-1 counts for the same rule.
+     *
+     * No "fingerprint IS NOT NULL" filter is needed because the COALESCE
+     * expression is never NULL. Keeps the subquery-decomposition form (SELECT
+     * COUNT(*) FROM (SELECT DISTINCT ...)) for the documented speedup over
+     * COUNT(DISTINCT). (#3)
+     *
+     * @param string $from_clause  SQL FROM + JOIN.
+     * @param string $where_clause SQL WHERE conditions (already prepared).
+     * @param string $alias        Table alias the visitor columns live on.
+     * @return int
+     */
+    private static function count_unique_visitors($from_clause, $where_clause, $alias = 't1')
+    {
+        return intval(wp_slimstat::$wpdb->get_var(sprintf(
+            "SELECT COUNT(*) FROM (SELECT DISTINCT %s AS vid FROM %s WHERE %s) AS uv",
+            self::visitor_id_expr($alias),
+            $from_clause,
+            $where_clause
+        )));
     }
 
     /**
@@ -1730,7 +1740,10 @@ class wp_slimstat_db
             }
 
             $total   = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $from WHERE $where_combined"));
-            $uniques = self::count_unique_fingerprints($from, $where_combined);
+            // NULL-safe distinct-visitor count (COALESCE id) so segments full of
+            // NULL-fingerprint rows aren't reported as 0 uniques, and goal uniques
+            // match funnel step-1 counts for the same rule. (#3)
+            $uniques = self::count_unique_visitors($from, $where_combined);
 
             $total_visitors = self::get_total_unique_visitors();
             $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
@@ -1768,7 +1781,9 @@ class wp_slimstat_db
             return $request_cache;
         }
 
-        $request_cache = self::count_unique_fingerprints(
+        // Same NULL-safe visitor identity as the goal numerator (count_unique_visitors)
+        // so the conversion-rate denominator and numerator stay consistent. (#3)
+        $request_cache = self::count_unique_visitors(
             sprintf('%s t1', $table_stats),
             $date_where
         );
