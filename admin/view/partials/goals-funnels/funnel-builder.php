@@ -43,6 +43,12 @@ if (!defined('ABSPATH')) {
         <div class="slimstat-gf-builder__steps" data-role="steps-container"></div>
         <span class="screen-reader-text" data-role="builder-live" aria-live="polite"></span>
 
+        <?php /* Shared value-field hint (one line, not per-row, to keep the compact
+                 step layout readable). Mirrors the goal drawer's value hint. (#1) */ ?>
+        <p class="slimstat-gf-field__hint slimstat-gf-builder__value-hint">
+            <?php esc_html_e('Step suggestions come from data in the selected date range. Don\'t see a value? Type any value and save.', 'wp-slimstat'); ?>
+        </p>
+
         <p class="slimstat-gf-builder__error" data-role="builder-error" hidden role="alert"></p>
 
         <footer class="slimstat-gf-builder__foot">

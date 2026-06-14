@@ -521,6 +521,27 @@ jQuery(function () {
         init() {
             this.createWrapper();
             this.bindEvents();
+            // Seed the display + selected state from any value the host input
+            // already carries (edit mode / template prefill). Without this a
+            // freshly-built widget always shows the placeholder even though the
+            // input holds a saved value, so the value appears to vanish. Custom
+            // values that aren't in the (possibly not-yet-loaded) option list are
+            // kept as typed text; setOptions() highlights them if a match arrives. (#4)
+            this.seedFromInputValue();
+        }
+
+        seedFromInputValue() {
+            const v = this.element ? this.element.value : "";
+            if (v === "" || v == null) {
+                return;
+            }
+            this.selectedValue = v;
+            this.selectedText = v;
+            // Leave selectedOption null until the options load — keeps a custom
+            // value valid (syncTypedValue/getValue semantics) and lets setOptions()
+            // promote it to a real option if one matches.
+            this.selectedOption = null;
+            this.updateDisplayFromValue(v);
         }
 
         createWrapper() {
@@ -651,6 +672,21 @@ jQuery(function () {
             // must not overwrite it so the user can clear back to this state.
             if (this.initialOptions === null) {
                 this.initialOptions = this.allOptions.slice();
+            }
+            // Reconcile a pre-seeded/typed value with the freshly-loaded options:
+            // highlight a matching option, but never clear a custom value that
+            // isn't in the list (it stays selectable + saveable). This makes the
+            // async option load non-destructive to the displayed value. (#4)
+            if (this.element && this.element.value !== "" && this.element.value != null) {
+                const match = this.allOptions.find((o) => o.value === this.element.value);
+                if (match) {
+                    this.selectedOption = match;
+                    this.selectedValue = match.value;
+                    this.selectedText = match.label;
+                } else if (!this.selectedValue) {
+                    this.selectedValue = this.element.value;
+                    this.selectedText = this.element.value;
+                }
             }
             this.filteredOptions = [...this.allOptions];
             this.renderOptions();
@@ -992,6 +1028,12 @@ jQuery(function () {
                 }
 
                 this.element.style.display = "";
+                // Load-bearing: blanking the value lets the filter page reset the
+                // field when the dimension changes (it destroys + rebuilds the
+                // widget). Callers that must KEEP the value across a rebuild
+                // (e.g. the goals/funnels modals on edit) capture it before
+                // destroy() and restore it before the next mount. Don't make this
+                // conditional here without auditing those callers. (#4)
                 this.element.value = "";
 
                 if (this.wrapper.parentNode) {

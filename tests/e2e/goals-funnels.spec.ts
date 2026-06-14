@@ -295,6 +295,78 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('[data-role="goal-value"]')).toBeEnabled();
     });
 
+    // ─── Value-field display + custom values (#1, #4) ────────────
+
+    test('value-display-template: template values render in the combobox, not the placeholder', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="woocommerce_purchase"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const rows = page.locator('.slimstat-gf-step-row');
+        await expect(rows).toHaveCount(4);
+
+        // The combobox display must show the prefilled value (it used to revert to
+        // the placeholder once the suggestion AJAX resolved — the #4 regression).
+        await expect(rows.nth(0).locator('.slimstat-select-text')).toHaveText('/product/');
+        await expect(rows.nth(0).locator('.slimstat-select-display'))
+            .not.toHaveClass(/slimstat-placeholder/);
+        // The hidden input still carries the value for save.
+        await expect(rows.nth(0).locator('[data-role="step-value"]')).toHaveValue('/product/');
+        // Last step targets the WooCommerce order-received page (path refined in #5).
+        await expect(rows.nth(3).locator('[data-role="step-value"]')).toHaveValue(/order-received/);
+    });
+
+    test('value-display-goal-edit: editing a goal shows the saved value (not the placeholder)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await seedGoals([{ name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);
+        await gotoSlimview6(page);
+
+        await page.click('.slimstat-gf-goal [data-action="open-goal-drawer"][data-mode="edit"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('/pricing');
+        // Display survives the async suggestion load (#4).
+        await expect(page.locator('#slimstat-gf-goal-drawer .slimstat-select-text')).toHaveText('/pricing');
+        await expect(page.locator('#slimstat-gf-goal-drawer .slimstat-select-display'))
+            .not.toHaveClass(/slimstat-placeholder/);
+    });
+
+    test('value-custom-typed-saves: a custom value not in the suggestions is saved (#1.2)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        await page.fill('[data-role="goal-name"]', 'Custom Value Goal');
+
+        // Type a value through the combobox search; syncTypedValue commits it to
+        // the hidden input even though it is not in the suggestion list.
+        const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
+        await wrap.locator('.slimstat-select-display').click();
+        await wrap.locator('.slimstat-select-search input').fill('/totally-custom-xyz');
+        await page.locator('[data-role="goal-name"]').click(); // blur to commit
+        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('/totally-custom-xyz');
+
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-goal"]'),
+        ]);
+
+        // The saved custom value round-trips into the rendered rule chip.
+        await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('/totally-custom-xyz');
+    });
+
+    test('value-hint-copy: drawer + builder explain date-range suggestions and custom values', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer #slimstat-gf-goal-value-hint'))
+            .toContainText('Type any value and save');
+    });
+
     // ─── Round 2: funnel builder affordances ─────────────────────
 
     test('funnel-test-step-populates-count: Test button fires slimstat_test_funnel_step', async ({ page }) => {

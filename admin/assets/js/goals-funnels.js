@@ -723,16 +723,29 @@
     function initAutoSuggest(inputEl, dimension, operator) {
         if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
 
+        // destroyAutoSuggest() -> widget.destroy() blanks inputEl.value. Capture
+        // it first so an edited/template-prefilled value survives the rebuild and
+        // the new widget can seed its display from it (otherwise the Value field
+        // goes blank the moment the suggest widget mounts). (#4)
+        var preserved = inputEl.value;
+
         destroyAutoSuggest(inputEl);
 
         var $input = $(inputEl);
+        // For valueless operators this disables + clears the field on purpose; do
+        // not restore the preserved value in that case.
         if (!syncValueDisabledByOperator($input, operator)) return;
         if (!dimension) return;
+
+        // Restore the value before the widget mounts so seedFromInputValue() shows it.
+        if (preserved !== '' && preserved != null) {
+            inputEl.value = preserved;
+        }
 
         var ajaxDimension = (dimension === 'event_notes') ? 'notes' : dimension;
 
         if (_suggestCache[ajaxDimension]) {
-            buildSuggestWidget(inputEl, _suggestCache[ajaxDimension]);
+            buildSuggestWidget(inputEl, _suggestCache[ajaxDimension], ajaxDimension);
             return;
         }
 
@@ -750,20 +763,32 @@
         }).done(function (response) {
             if (response && response.success && response.data) {
                 _suggestCache[ajaxDimension] = response.data;
-                buildSuggestWidget(inputEl, response.data);
+                buildSuggestWidget(inputEl, response.data, ajaxDimension);
             }
         }).always(function () {
             delete _suggestInflight[id];
         });
     }
 
-    function buildSuggestWidget(inputEl, options) {
+    function buildSuggestWidget(inputEl, options, ajaxDimension) {
         if (!inputEl || typeof window.SlimStatSearchableSelect === 'undefined') return;
+        var timeRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
+            ? window.SlimStatGetTimeRangeForAjax() : {};
         var instance = new window.SlimStatSearchableSelect(inputEl, {
             placeholder:       __('Type or pick a value'),
             searchPlaceholder: __('Search or type…'),
+            // No "Apply" button here (unlike the filter bar) — a typed value is
+            // saved as-is, so invite the user to type any value. (#1.1/#1.2)
+            noMatchesText:     __('No matches — type any value to use it.'),
             noResultsText:     __('No matches'),
-            loadingText:       __('Loading…')
+            loadingText:       __('Loading…'),
+            // Wire server-side search so typed custom values are looked up per
+            // dimension within the selected date range. Custom values still save
+            // because syncTypedValue() commits typed text to the hidden input. (#1)
+            serverSearchAction:    'slimstat_get_filter_options',
+            serverSearchDimension: ajaxDimension,
+            serverSearchNonce:     $('#meta-box-order-nonce').val(),
+            serverSearchTimeRange: timeRange
         });
         instance.setOptions(options || []);
         inputEl._slimstatSearchable = instance;
