@@ -1624,4 +1624,433 @@ class wp_slimstat_db
 
         return $results;
     }
+
+    // ---- Goals & Funnels Query Methods ---- //
+
+    /**
+     * Returns a prepared SQL WHERE fragment for a single goal/step condition.
+     * Uses the existing get_single_where_clause() which returns an already-prepared string.
+     *
+     * @param array  $goal   Goal definition with dimension, operator, value keys.
+     * @param string $alias  Table alias (e.g., 't1' or 'te').
+     * @return string Prepared SQL WHERE fragment (e.g., "t1.resource = '/shop/'").
+     */
+    private static function build_goal_where($goal, $alias = '')
+    {
+        // Read keys defensively: legacy/malformed stored goals or funnel steps
+        // may be missing a field, and the report render path must not emit
+        // undefined-array-key notices. A missing dimension/operator yields no
+        // clause (preserving the empty-where -> 0-results contract). (#6)
+        $dimension = (string) ($goal['dimension'] ?? '');
+        $operator  = (string) ($goal['operator'] ?? '');
+        $value     = (string) ($goal['value'] ?? '');
+
+        if ('' === $dimension || '' === $operator) {
+            return '';
+        }
+
+        // Defense-in-depth: a value-bearing operator with an empty value makes
+        // get_single_where_clause() return an unprepared fragment that still
+        // contains a literal "%s" placeholder (it skips prepare() when the value
+        // is empty). sanitize_goal() already rejects this at save time, but guard
+        // the query layer too so such a clause can never reach $wpdb->query().
+        // Only the valueless operators (is_empty / is_not_empty) may run without a value.
+        if ('' === $value && !in_array($operator, self::$valueless_operators, true)) {
+            return '';
+        }
+
+        // Event-based goals query the events table notes column
+        if ($dimension === 'event_notes') {
+            $dimension = 'notes';
+            if (empty($alias)) {
+                $alias = 'te';
+            }
+        }
+
+        return self::get_single_where_clause($dimension, $operator, $value, $alias);
+    }
+
+    /**
+     * Visitor identifier expression that handles NULL fingerprints:
+     * COALESCE(fingerprint, 'v_'+visit_id, 'ip_'+ip). Used both to populate the
+     * funnel temp tables (SELECT/INSERT) and, via count_unique_visitors(), to
+     * count distinct goal visitors — so goals and funnels share one identity and
+     * neither silently drops visitors that lack a fingerprint. The expression is
+     * only ever used in SELECT output, never in a WHERE clause.
+     */
+    private static function visitor_id_expr($alias = '')
+    {
+        $prefix = !empty($alias) ? $alias . '.' : '';
+        return sprintf(
+            "COALESCE(%sfingerprint, CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
+            $prefix,
+            $prefix,
+            $prefix
+        );
+    }
+
+    /**
+     * Counts distinct visitors using the NULL-safe visitor identity
+     * (COALESCE(fingerprint, visit_id, ip)) that funnels already use, so a
+     * segment dominated by NULL-fingerprint rows — bots/crawlers,
+     * consent-limited sessions, or rows recorded before the fingerprint feature
+     * shipped — is no longer silently dropped (the symptom: "Country" goals
+     * showing a correct Total but 0 Uniques). Goal uniques now agree with funnel
+     * step-1 counts for the same rule.
+     *
+     * No "fingerprint IS NOT NULL" filter is needed because the COALESCE
+     * expression is never NULL. Keeps the subquery-decomposition form (SELECT
+     * COUNT(*) FROM (SELECT DISTINCT ...)) for the documented speedup over
+     * COUNT(DISTINCT). (#3)
+     *
+     * @param string $from_clause  SQL FROM + JOIN.
+     * @param string $where_clause SQL WHERE conditions (already prepared).
+     * @param string $alias        Table alias the visitor columns live on.
+     * @return int
+     */
+    private static function count_unique_visitors($from_clause, $where_clause, $alias = 't1')
+    {
+        return intval(wp_slimstat::$wpdb->get_var(sprintf(
+            "SELECT COUNT(*) FROM (SELECT DISTINCT %s AS vid FROM %s WHERE %s) AS uv",
+            self::visitor_id_expr($alias),
+            $from_clause,
+            $where_clause
+        )));
+    }
+
+    /**
+     * Get results for a single goal: total hits, unique visitors, conversion rate.
+     *
+     * @param array $goal Goal definition.
+     * @return array ['total' => int, 'uniques' => int, 'cr' => float]
+     */
+    public static function get_goal_results($goal)
+    {
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $is_event     = ($goal['dimension'] === 'event_notes');
+
+        $goal_where = self::build_goal_where($goal, $is_event ? 'te' : 't1');
+        if (empty($goal_where)) {
+            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
+        }
+
+        $filters_where = self::get_combined_where('', '*', true, 't1');
+        $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
+
+        // Per-request memo keyed by the result-determining signature (criteria +
+        // filters + cache version), NOT the goal id — so several goals with the
+        // same criteria run the COUNT/unique queries once per request instead of
+        // once each, and a re-render reuses the result. Removes the duplicate
+        // COUNT(*)/unique queries Query Monitor reported. (#12)
+        static $request_memo = [];
+        $memo_key = md5($goal_where . '|' . $filters_where . '|' . $cache_ver);
+        if (array_key_exists($memo_key, $request_memo)) {
+            return $request_memo[$memo_key];
+        }
+
+        $result = get_transient($cache_key);
+
+        if (false === $result) {
+            $where_combined = $goal_where . ' AND ' . $filters_where;
+
+            if ($is_event) {
+                $from = sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats);
+            } else {
+                $from = sprintf('%s t1', $table_stats);
+            }
+
+            $total   = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $from WHERE $where_combined"));
+            // NULL-safe distinct-visitor count (COALESCE id) so segments full of
+            // NULL-fingerprint rows aren't reported as 0 uniques, and goal uniques
+            // match funnel step-1 counts for the same rule. (#3)
+            $uniques = self::count_unique_visitors($from, $where_combined);
+
+            $total_visitors = self::get_total_unique_visitors();
+            $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
+
+            $result = ['total' => $total, 'uniques' => $uniques, 'cr' => $cr];
+            set_transient($cache_key, $result, 5 * MINUTE_IN_SECONDS);
+        }
+
+        $request_memo[$memo_key] = $result;
+        return $result;
+    }
+
+    /**
+     * Get total unique visitors in the current date range.
+     * Cached as transient (15 min TTL) + in-request static var.
+     *
+     * @return int
+     */
+    private static function get_total_unique_visitors()
+    {
+        static $request_cache = null;
+        if ($request_cache !== null) {
+            return $request_cache;
+        }
+
+        $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $date_where  = self::get_combined_where('', '*', true, 't1');
+        // Version-key like the goal/funnel transients so a CRUD cache bump (which
+        // also runs the GC in clear_goals_cache()) rotates this denominator too.
+        $cache_ver   = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key   = 'slimstat_uv_' . md5($date_where . $cache_ver);
+        $cached      = get_transient($cache_key);
+
+        if (false !== $cached) {
+            $request_cache = intval($cached);
+            return $request_cache;
+        }
+
+        // Same NULL-safe visitor identity as the goal numerator (count_unique_visitors)
+        // so the conversion-rate denominator and numerator stay consistent. (#3)
+        $request_cache = self::count_unique_visitors(
+            sprintf('%s t1', $table_stats),
+            $date_where
+        );
+
+        set_transient($cache_key, $request_cache, 15 * MINUTE_IN_SECONDS);
+        return $request_cache;
+    }
+
+    /**
+     * Get raw goal results as flat array (for Export CSV / Email Reports).
+     * Accepts standard $_args array like get_top().
+     *
+     * @param array $_args Callback args from report definition.
+     * @return array Array of associative arrays with goal_name, uniques, total, cr keys.
+     */
+    public static function get_goals_raw($_args = [])
+    {
+        $goals   = get_option('slimstat_goals', []);
+        $results = [];
+
+        foreach ($goals as $goal) {
+            if (empty($goal['active']) || empty($goal['name']) || empty($goal['dimension'])) {
+                continue;
+            }
+            $data      = self::get_goal_results($goal);
+            $results[] = [
+                'goal_name' => $goal['name'],
+                'uniques'   => $data['uniques'],
+                'total'     => $data['total'],
+                'cr'        => $data['cr'] . '%',
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get funnel results: visitors at each step with drop-off.
+     * Uses iterative PHP approach for MySQL 5.6 compatibility.
+     *
+     * Cached for 5 minutes via a version-keyed transient, invalidated by
+     * wp_slimstat_admin::clear_goals_cache() on any goal/funnel CRUD.
+     *
+     * @param array $funnel Funnel definition with steps array.
+     * @return array Array of step results: name, visitors, pct, dropoff, unreachable.
+     */
+    public static function get_funnel_results($funnel)
+    {
+        if (empty($funnel['steps']) || count($funnel['steps']) < 2) {
+            return [];
+        }
+
+        $date_where = self::get_combined_where('', '*', true, 't1');
+        $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
+        $cache_key  = 'slimstat_funnel_' . (isset($funnel['id']) ? $funnel['id'] : md5(serialize($funnel['steps'])))
+                      . '_' . md5($date_where . $cache_ver);
+
+        // Per-request memo: a funnel rendered (or re-rendered) twice in one
+        // request reuses its result instead of rebuilding temp tables again. (#12)
+        static $request_memo = [];
+        if (array_key_exists($cache_key, $request_memo)) {
+            return $request_memo[$cache_key];
+        }
+
+        $cached = get_transient($cache_key);
+        if (false !== $cached) {
+            $request_memo[$cache_key] = $cached;
+            return $cached;
+        }
+
+        $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
+        $visitor_id   = self::visitor_id_expr('t1');
+
+        // Two-table swap pattern: READ holds previous step's visitors,
+        // WRITE receives current step's results. After each step, WRITE
+        // is renamed to READ. This avoids the self-referencing temp table
+        // bug where DROP + CREATE AS SELECT ... IN (SELECT vid FROM same_table) fails.
+        // Fixed names are safe: TEMPORARY tables are session-scoped, a connection
+        // serves one request at a time, and the preflight DROP IF EXISTS clears
+        // any stale leftovers — so no cross-call/connection collision can occur.
+        $temp_read  = $GLOBALS['wpdb']->prefix . 'slim_funnel_read';
+        $temp_write = $GLOBALS['wpdb']->prefix . 'slim_funnel_write';
+
+        $results     = [];
+        $step1_count = 0;
+        $use_temp    = false;
+        $preflight   = false;
+        $had_error   = false;
+
+        // Each temp table row carries (vid, t) — the visitor identifier and the
+        // MIN(dt) at which they qualified for the preceding step. The JOIN on
+        // step N+ enforces `new_row.dt >= r.t` so out-of-order matches (visitor
+        // hit step N before step N-1) don't count as converted. We use `>=`
+        // (not `>`) because dt has one-second granularity: two genuinely ordered
+        // steps that land in the same second (fast SPA navigation, a pageview
+        // immediately followed by an event row) must still count. Distinct step
+        // rules keep the same physical row from satisfying two steps at once.
+        foreach ($funnel['steps'] as $step_index => $step) {
+            $is_event   = ($step['dimension'] === 'event_notes');
+            $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
+
+            if (empty($step_where)) {
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
+                $use_temp = false;
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                continue;
+            }
+
+            if ($step_index > 0 && !$use_temp) {
+                // Previous step already returned zero — every downstream step
+                // is unreachable, no point hitting SQL.
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
+                continue;
+            }
+
+            // Event steps use te.dt (the event's own timestamp) as the ordering
+            // time. Pageview steps use t1.dt.
+            $dt_expr = $is_event ? 'te.dt' : 't1.dt';
+
+            // Base FROM clause — joined for event steps, plain for pageview steps.
+            $from_sql = $is_event
+                ? sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats)
+                : sprintf('%s t1', $table_stats);
+
+            if ($step_index === 0) {
+                // Step 1: per-visitor MIN(dt) within the date window.
+                $select_sql = sprintf(
+                    "SELECT %s AS vid, MIN(%s) AS t FROM %s WHERE %s AND %s GROUP BY vid",
+                    $visitor_id, $dt_expr, $from_sql, $step_where, $date_where
+                );
+            } else {
+                // Step N>1: JOIN temp_read and require the new row's dt at or
+                // after the stored timestamp for the same visitor (see ordering
+                // note above for why `>=` rather than `>`).
+                $select_sql = sprintf(
+                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s >= r.t GROUP BY vid",
+                    $visitor_id, $dt_expr, $from_sql, $temp_read, $visitor_id, $step_where, $date_where, $dt_expr
+                );
+            }
+
+            // Lazy preflight: only drop stale temps on the first step that actually runs SQL.
+            if (!$preflight) {
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                $preflight = true;
+            }
+
+            // Create the per-step temp table once, then count from it — avoids
+            // running the grouped subquery twice for the same step.
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
+
+            // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
+            // truncation, missing CREATE TEMPORARY privilege, deadlock), the
+            // write table does not exist. Proceeding would COUNT a missing table
+            // (→ 0), then DROP the previous valid READ and RENAME a missing WRITE,
+            // silently zeroing this and every downstream step and presenting a
+            // corrupt funnel as real data. Bail with the steps gathered so far,
+            // flag this step as errored, and don't cache the partial result so a
+            // transient failure self-heals on the next request.
+            if (false === $created) {
+                if ('on' == wp_slimstat::$settings['show_sql_debug'] && !empty(wp_slimstat::$wpdb->last_error)) {
+                    self::$debug_message .= sprintf("<p class='debug'>Funnel step query failed: %s</p>", esc_html(wp_slimstat::$wpdb->last_error));
+                }
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+                wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+                $results[] = ['name' => $step['name'], 'visitors' => 0, 'pct' => 0, 'dropoff' => 0, 'unreachable' => false];
+                $had_error = true;
+                break;
+            }
+
+            $visitor_count = intval(wp_slimstat::$wpdb->get_var("SELECT COUNT(*) FROM $temp_write"));
+
+            if ($step_index === 0) {
+                $step1_count = $visitor_count;
+            }
+
+            // Swap: drop old READ, rename WRITE → READ for next iteration.
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            wp_slimstat::$wpdb->query("ALTER TABLE $temp_write RENAME TO $temp_read");
+            $use_temp = ($visitor_count > 0);
+
+            $prev_count = ($step_index > 0 && !empty($results[$step_index - 1])) ? $results[$step_index - 1]['visitors'] : $visitor_count;
+            $dropoff    = $prev_count - $visitor_count;
+
+            // A step is "unreachable" when the previous step had visitors but none
+            // carried through — usually a rule typo or an impossible ordering.
+            $unreachable = ($step_index > 0 && $visitor_count === 0 && $prev_count > 0);
+
+            $results[] = [
+                'name'        => $step['name'],
+                'visitors'    => $visitor_count,
+                'pct'         => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                'dropoff'     => max(0, $dropoff),
+                'unreachable' => $unreachable,
+            ];
+        }
+
+        if ($preflight) {
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_read");
+            wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
+        }
+
+        // Don't cache a funnel whose query errored — let it recompute next time
+        // in case the failure was transient (deadlock) or the rule was fixed.
+        if (!$had_error) {
+            set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
+        }
+
+        // Memo for the rest of THIS request even on error (the transient is
+        // skipped above, so the next request still recomputes and self-heals).
+        $request_memo[$cache_key] = $results;
+        return $results;
+    }
+
+    /**
+     * Get raw funnel results as flat array (for Export CSV / Email Reports).
+     *
+     * @param array $_args Callback args from report definition.
+     * @return array Flat rows with funnel_name, step_name, step_order, visitors, pct, dropoff.
+     */
+    public static function get_funnels_raw($_args = [])
+    {
+        $funnels = get_option('slimstat_funnels', []);
+        $results = [];
+
+        foreach ($funnels as $funnel) {
+            if (empty($funnel['name']) || empty($funnel['steps'])) {
+                continue;
+            }
+            $step_results = self::get_funnel_results($funnel);
+            foreach ($step_results as $i => $step) {
+                $results[] = [
+                    'funnel_name' => $funnel['name'],
+                    'step_name'   => $step['name'],
+                    'step_order'  => $i + 1,
+                    'visitors'    => $step['visitors'],
+                    'pct'         => $step['pct'] . '%',
+                    'dropoff'     => $step['dropoff'],
+                ];
+            }
+        }
+
+        return $results;
+    }
 }

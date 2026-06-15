@@ -58,6 +58,12 @@
       "composer dump-autoload"
     ],
     "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative",
+    "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes",
+    "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",
+    "i18n": [
+      "@i18n:pot",
+      "@i18n:json"
+    ],
     "test:license-tags": "php tests/license-tag-gating-test.php",
     "test:geoip-resolver": "php tests/resolve-geolocation-provider-test.php",
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",
@@ -97,6 +103,7 @@
     "test:shortcode-w-whitelist": "php tests/shortcode-w-whitelist-test.php",
     "test:avg-duration-format": "php tests/avg-duration-format-test.php",
     "test:admin-ui-render-guards": "php tests/admin-ui-render-guards-test.php",
+    "test:goals-free-limit": "php tests/goals-free-active-limit-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -115,11 +122,14 @@
       "@test:loginnote-bracket-parse",
       "@test:shortcode-w-whitelist",
       "@test:avg-duration-format",
-      "@test:admin-ui-render-guards"
+      "@test:admin-ui-render-guards",
+      "@test:goals-free-limit"
     ],
-    "test:unit": "phpunit --configuration phpunit.xml.dist",
+    "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
+    "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
     "test:all": [
       "@test:unit",
+      "@test:integration",
       "@test:source-level",
       "@test:license-tags",
       "@test:geoip-resolver",

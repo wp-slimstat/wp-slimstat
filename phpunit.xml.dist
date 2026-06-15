@@ -8,6 +8,12 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
         </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
+            <exclude>tests/Integration/IntegrationTestCase.php</exclude>
+            <exclude>tests/Integration/WpAjaxDie.php</exclude>
+            <exclude>tests/Integration/FakeWpSlimstatDb.php</exclude>
+        </testsuite>
     </testsuites>
     <php>
         <ini name="display_errors" value="1"/>

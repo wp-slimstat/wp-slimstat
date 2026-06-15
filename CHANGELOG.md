@@ -1,5 +1,11 @@
 = 5.5.0 - Unreleased =
 
+**New: Goals & Funnels**
+
+- **Goals** — track a conversion such as a signup, checkout, or pricing-page view, with its unique visitors, total conversions, and conversion rate (retroactive over your full visit history).
+- **Funnels** — chain 2 to 5 steps into a journey and see exactly where visitors drop off at each stage (SlimStat Pro).
+- **Funnel templates** — start from a ready-made funnel (WooCommerce purchase, checkout completion, landing to contact, and more) instead of building every step by hand.
+
 **Filters & traffic sources**
 
 - Fixed: Google Discover and other Android/iOS app traffic is recorded again. Since 5.4.0, referrers that start with `android-app://` (such as `com.google.android.googlequicksearchbox` from Google Discover) were silently dropped, so that traffic showed up as "direct" with no source. The tracker now preserves app-scheme referrers while still blocking unsafe ones. ([#306](https://github.com/wp-slimstat/wp-slimstat/issues/306))

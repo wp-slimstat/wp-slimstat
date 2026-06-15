@@ -77,6 +77,19 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 
 == Changelog ==
 = 5.5.0 - Unreleased =
+* Feature: Redesigned Goals & Funnels page (slimview6) — modern card layout, pill-segmented funnel tabs, side drawer for goal create/edit, overlay builder for funnels, and a destructive-action confirm sheet replacing native browser prompts.
+* Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
+* Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
+* Feature: New AJAX endpoint `slimstat_load_funnel_data` lazy-loads step data for inactive funnel tabs, reducing the initial SQL load on multi-funnel pages.
+* Fix: `ajax_save_goal` now counts only active goals against the `slimstat_max_goals` limit — pausing a goal now genuinely frees a slot.
+* Fix: Funnels with no matching visitors in the selected date range now render "No matching visitors in this date range" instead of a misleading 100% conversion rate.
+* Fix: Dashboard widget no longer leaks the inline "Add Goal" form — widget context now passes `is_widget=true` as designed.
+* Improvement: CSS custom properties split into `tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their existing values — datepicker and GDPR banner unaffected.
+* Improvement: Goals & Funnels CSS/JS now enqueue only on screens that actually render `slim_p9_01` / `slim_p9_02`, honoring the Customizer's drag-between-screens feature.
+* Improvement: Single canonical "Upgrade to Pro" label on this view (replacing previous mix of "Unlock SlimStat Pro" and "Upgrade to Premium").
+* Improvement: Brand red ramp replaces indigo for funnel bars; supports `prefers-reduced-motion` and full RTL mirroring.
+* Refactor: `show_goals()` / `show_funnels()` branch on `is_widget` and include new partials (`admin/view/partials/goals-funnels/*.php`) in admin mode; widget/shortcode/email/CSV paths preserved unchanged.
+* Tests: New PHPUnit Integration suite covers all AJAX handlers (save/delete goal+funnel, new `ajax_load_funnel_data`), cache-version invalidation, paused-limit behavior, and the legacy CSS alias preservation.
 * Fix: WordPress admin no longer crashes on PHP 7.4 hosts (an admin page was calling a function that only exists in PHP 8.0+).
 * Fix: Visit tracking no longer returns a 500 error on hosts without the optional PHP `fileinfo` extension. The plugin falls back to its built-in browser detector and shows a dismissible admin notice.
 * Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
