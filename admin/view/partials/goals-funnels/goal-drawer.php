@@ -60,7 +60,7 @@ if (!defined('ABSPATH')) {
         </label>
 
         <label class="slimstat-gf-field" data-role="value-field">
-            <span class="slimstat-gf-field__label"><?php esc_html_e('Value', 'wp-slimstat'); ?></span>
+            <span class="slimstat-gf-field__label"><?php esc_html_e('Value', 'wp-slimstat'); ?> <span class="slimstat-gf-required" data-role="value-required" aria-hidden="true">*</span></span>
             <input type="text" name="goal_value" data-role="goal-value" class="regular-text" placeholder="<?php esc_attr_e('e.g. /pricing', 'wp-slimstat'); ?>" aria-describedby="slimstat-gf-goal-value-hint">
             <span id="slimstat-gf-goal-value-hint" class="slimstat-gf-field__hint">
                 <?php esc_html_e('Suggestions come from data in the selected date range. Don\'t see it? Type any value and save.', 'wp-slimstat'); ?>

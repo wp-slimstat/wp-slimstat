@@ -105,6 +105,27 @@ $template_cards = [
             <?php include __DIR__ . '/funnel-template-picker.php'; ?>
         </div>
     <?php else : ?>
+        <?php /* "See templates" keeps the prefab gallery reachable after the first
+                 funnel exists (it used to vanish). Placed top-right, beside the
+                 header "+ Add Funnel". Gated on !$at_max so we never offer a
+                 template that can't be saved. (#7) */ ?>
+        <?php if (!$at_max) : ?>
+            <div class="slimstat-gf-templates-reveal" data-role="funnels-templates">
+                <div class="slimstat-gf-templates-reveal__bar">
+                    <button type="button"
+                            class="button-link slimstat-gf-see-templates"
+                            data-action="toggle-funnel-templates"
+                            aria-expanded="false"
+                            aria-controls="slimstat-gf-templates-panel">
+                        <?php esc_html_e('See templates', 'wp-slimstat'); ?>
+                    </button>
+                </div>
+                <div class="slimstat-gf-templates-reveal__panel" id="slimstat-gf-templates-panel" data-role="funnels-templates-panel" hidden>
+                    <?php include __DIR__ . '/funnel-template-picker.php'; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <?php if ($funnel_count > 1) : ?>
             <div class="slimstat-gf-tabs" role="tablist" aria-label="<?php esc_attr_e('Configured funnels', 'wp-slimstat'); ?>">
                 <?php foreach ($funnels as $idx => $f) :
@@ -186,22 +207,6 @@ $template_cards = [
                     $max_funnels
                 )); ?>
             </p>
-        <?php else : ?>
-            <?php /* "See templates" keeps the prefab gallery reachable after the
-                     first funnel exists (it used to vanish). Gated on !$at_max so
-                     we never offer a template the user can't save. (#7) */ ?>
-            <div class="slimstat-gf-templates-reveal" data-role="funnels-templates">
-                <button type="button"
-                        class="button-link slimstat-gf-see-templates"
-                        data-action="toggle-funnel-templates"
-                        aria-expanded="false"
-                        aria-controls="slimstat-gf-template-picker">
-                    <?php esc_html_e('See templates', 'wp-slimstat'); ?>
-                </button>
-                <div class="slimstat-gf-templates-reveal__panel" data-role="funnels-templates-panel" hidden>
-                    <?php include __DIR__ . '/funnel-template-picker.php'; ?>
-                </div>
-            </div>
         <?php endif; ?>
     <?php endif; ?>
 </section>

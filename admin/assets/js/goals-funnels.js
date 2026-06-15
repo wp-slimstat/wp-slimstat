@@ -486,7 +486,7 @@
     // existing open-funnel-builder handler wires the revealed cards. (#7)
     $body.on('click', '[data-action="toggle-funnel-templates"]', function () {
         var $btn   = $(this);
-        var $panel = $btn.siblings('[data-role="funnels-templates-panel"]');
+        var $panel = $btn.closest('[data-role="funnels-templates"]').find('[data-role="funnels-templates-panel"]');
         if (!$panel.length) return;
         var willShow = $panel.attr('hidden') != null;
         if (willShow) {
@@ -800,6 +800,10 @@
         } else {
             $value.prop('disabled', false).removeAttr('title');
         }
+        // Toggle the Value field's required marker (where present — the goal drawer)
+        // so the asterisk matches when a value is actually required. No-op for funnel
+        // step rows, which have no per-row label marker. (#2)
+        $value.closest('.slimstat-gf-field').find('[data-role="value-required"]').css('display', isEmptyOp ? 'none' : '');
         return !isEmptyOp;
     }
 
@@ -950,8 +954,11 @@
             time_range_to:   testRange.to   || ''
         }, step)).done(function (response) {
             if (response && response.success && response.data) {
-                var count = Number(response.data.visitors) || 0;
-                /* translators: %s is a localized visitor count */
+                // Show TOTAL matching pageviews — "matches" means how many records
+                // this rule hits, which is the sanity check the Test answers (not
+                // the deduplicated visitor count the funnel later computes).
+                var count = Number(response.data.total) || 0;
+                /* translators: %s is a localized match count */
                 $result.removeClass('is-loading').text(
                     sprintf(_n('%s match', '%s matches', count), formatNumber(count))
                 );

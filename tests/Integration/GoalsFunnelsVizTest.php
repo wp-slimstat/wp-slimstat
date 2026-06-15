@@ -30,27 +30,41 @@ class GoalsFunnelsVizTest extends TestCase
         $this->assertStringContainsString('--ss-funnel-bar-zero:', $tokens, 'Muted zero/unreachable token missing');
     }
 
-    public function test_step_fill_uses_neutral_token_not_brand_ramp(): void
+    public function test_step_fill_colorized_with_brand_live_only(): void
     {
         $css = file_get_contents($this->cssPath());
 
+        // Live steps are colorized with the brand red ramp (brand identity, not an
+        // alarm); the final (conversion) step deepens so the eye lands on the goal.
+        // Both gated on :not([data-zero]) so an EMPTY bar is never painted live.
         $this->assertMatchesRegularExpression(
-            '/\.slimstat-gf-step__fill\s*\{[^}]*background:\s*var\(--ss-funnel-bar\)/s',
+            '/\.slimstat-gf-step__fill:not\(\[data-zero\]\)\s*\{[^}]*background:\s*var\(--ss-brand-500\)/s',
             $css,
-            'Step fill must use the neutral --ss-funnel-bar magnitude token'
+            'Live funnel bars must be colorized with the brand ramp'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-step:last-child\s+\.slimstat-gf-step__fill:not\(\[data-zero\]\)\s*\{[^}]*var\(--ss-brand-700\)/s',
+            $css,
+            'The conversion (final) step must deepen its brand'
         );
 
-        // The per-step brand ramp must be gone — a healthy 100% step must not
-        // render as alarm-red (real bars and the locked mock both).
+        // No hardcoded per-step-number ramp (position via :last-child + :not, not
+        // a brittle [data-step="N"] list).
         $this->assertDoesNotMatchRegularExpression(
             '/\.slimstat-gf-step__fill\[data-step="\d"\]/',
             $css,
-            'Per-step brand ramp on funnel bars must be removed (FN-1)'
+            'No hardcoded per-step-number brand ramp on funnel bars'
         );
-        $this->assertDoesNotMatchRegularExpression(
-            '/\.slimstat-gf-funnel-bar\[data-step="\d"\]/',
+    }
+
+    public function test_conversion_total_is_emphasized(): void
+    {
+        $css = file_get_contents($this->cssPath());
+        // The final step's total is the funnel's headline number — bold it.
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-step:last-child\s+\.slimstat-gf-step__count\s*\{[^}]*font-weight:\s*700/s',
             $css,
-            'Per-step brand ramp on mock bars must be removed (FN-1)'
+            'Conversion (final step) total must be bolded'
         );
     }
 

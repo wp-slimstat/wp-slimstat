@@ -249,6 +249,13 @@
     color: var(--ss-text-primary);
 }
 
+/* CR is the headline conversion metric on a goal — give it the most weight and
+   the brand color so it reads first among Uniques / Total / CR. */
+.slimstat-gf-metric--cr .slimstat-gf-metric__value {
+    font-weight: 700;
+    color: var(--ss-brand-700);
+}
+
 .slimstat-gf-goal__actions {
     display: flex;
     gap: var(--ss-space-3);
@@ -514,17 +521,35 @@
     border-radius: var(--ss-radius-sm);
     min-width: 6px;
     transition: width var(--ss-duration-slow) var(--ss-easing-out);
-    /* Single neutral fill: bar length encodes magnitude, color does not encode
-       status. Zero/unreachable steps get the muted fill below; drop-off uses the
-       ⚠/↓ text, so a healthy step never reads as an alarm. */
-    background: var(--ss-funnel-bar);
+    /* Fallback fill (muted): only ever visible on zero/unreachable bars, since
+       the brand colorize rules below are gated on :not([data-zero]). Bar LENGTH
+       still encodes magnitude; brand color carries the funnel's identity. */
+    background: var(--ss-funnel-bar-zero);
 }
 
-/* Zero-visitor / unreachable steps get a muted fill so an empty bar reads as
+/* Colorize: live steps use the brand red ramp instead of neutral slate. Gated on
+   :not([data-zero]) so an empty bar is never painted with the live color. */
+.slimstat-gf-step__fill:not([data-zero]) {
+    background: var(--ss-brand-500);
+}
+
+/* The final step is the conversion — deepen its brand so the eye is drawn down
+   the funnel and lands on the goal (pairs with the bolded conversion total). */
+.slimstat-gf-step:last-child .slimstat-gf-step__fill:not([data-zero]) {
+    background: var(--ss-brand-700);
+}
+
+/* Zero-visitor / unreachable steps keep a muted fill so an empty bar reads as
    "almost nothing here", without painting a healthy step red. */
 .slimstat-gf-step__fill[data-zero],
 .slimstat-gf-step--unreachable .slimstat-gf-step__fill {
     background: var(--ss-funnel-bar-zero);
+}
+
+/* Conversion emphasis: the final step's total is the funnel's headline number. */
+.slimstat-gf-step:last-child .slimstat-gf-step__count {
+    font-weight: 700;
+    color: var(--ss-text-primary);
 }
 
 .slimstat-gf-step__dropoff {
@@ -613,6 +638,59 @@
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--ss-text-tertiary);
+}
+
+/* "See templates" reveal — keeps the prefab gallery reachable once funnels exist
+   (#7). Sits top-right of the funnels card, beside the header "+ Add Funnel".
+   The toggle is a neutral secondary action so it never competes with the primary
+   red CTA (Product register: brand accent is reserved for the primary action). */
+.slimstat-gf-templates-reveal {
+    margin-bottom: var(--ss-space-5);
+}
+
+.slimstat-gf-templates-reveal__bar {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Scoped under the reveal so these win over WordPress's `.wp-core-ui .button-link`
+   (same specificity, but plugin CSS loads after core). */
+.slimstat-gf-templates-reveal .slimstat-gf-see-templates {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-surface);
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    line-height: 1.6;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color var(--ss-duration-fast) var(--ss-easing-out),
+                color var(--ss-duration-fast) var(--ss-easing-out);
+}
+
+.slimstat-gf-templates-reveal .slimstat-gf-see-templates:hover,
+.slimstat-gf-templates-reveal .slimstat-gf-see-templates:focus-visible {
+    border-color: var(--ss-brand-500);
+    color: var(--ss-brand-700);
+}
+
+.slimstat-gf-templates-reveal__panel {
+    margin-top: var(--ss-space-4);
+    padding: var(--ss-space-4) var(--ss-space-4) var(--ss-space-5);
+    background: var(--ss-surface-tint);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+}
+
+/* The shared picker carries a top margin for the empty state; the panel padding
+   owns the spacing here, so reset it inside the reveal. */
+.slimstat-gf-templates-reveal__panel .slimstat-gf-template-picker {
+    margin-top: 0;
 }
 
 /* Template picker */
