@@ -1,4 +1,4 @@
-= 5.5.0 - Unreleased =
+= 5.5.0 - 2026-06-15 =
 
 **New: Goals & Funnels**
 

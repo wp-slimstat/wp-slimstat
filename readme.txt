@@ -76,7 +76,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** - Plenty of options to customize the plugin's behavior
 
 == Changelog ==
-= 5.5.0 - Unreleased =
+= 5.5.0 - 2026-06-15 =
 * Feature: Redesigned Goals & Funnels page (slimview6) — modern card layout, pill-segmented funnel tabs, side drawer for goal create/edit, overlay builder for funnels, and a destructive-action confirm sheet replacing native browser prompts.
 * Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
 * Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
