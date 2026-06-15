@@ -9,16 +9,18 @@ use PHPUnit\Framework\TestCase;
 /**
  * Guards the paused-goal tier behavior (#11).
  *
- * Free advertises "one active goal", yet paused goals used to remain visible AND
- * keep running live queries on the Free goals card. The fix:
- *  - get_goals_card_state() returns only ACTIVE goals on Free (mirrors the
- *    funnels gate); Pro keeps all goals, with the usage pill still derived from
- *    the full active count.
+ * Free advertises "one active goal". The card now:
+ *  - SHOWS every goal on both tiers ($visible_goals = $goals); paused goals stay
+ *    visible (with their badge) rather than being hidden on Free.
+ *  - On Free, auto-pauses all but the newest active goal via
+ *    pause_excess_free_goals() and persists it — so the "one active goal"
+ *    contract holds in storage even after a Pro→Free downgrade left several
+ *    active. The usage pill counts active goals only.
  *  - goals-card.php skips get_goal_results() for a paused goal and shows a
- *    "Paused — not being measured" placeholder (so Pro paused goals don't run
- *    needless per-goal COUNT queries either).
+ *    "Paused — not being measured" placeholder instead of numbers.
  *
- * Source-shape guards (no DB); rendered behavior is covered by the e2e spec.
+ * Source-shape guards (no DB). The auto-pause logic is exercised directly by
+ * tests/goals-free-active-limit-test.php; rendered behavior by the e2e spec.
  */
 class GoalsFunnelsPausedGoalsTest extends TestCase
 {
@@ -32,25 +34,46 @@ class GoalsFunnelsPausedGoalsTest extends TestCase
         return (string) file_get_contents(dirname(__DIR__, 2) . '/admin/view/partials/goals-funnels/goals-card.php');
     }
 
-    public function test_free_tier_goal_state_hides_paused_goals(): void
+    public function test_free_tier_shows_all_goals_and_auto_pauses_excess(): void
     {
         $php = $this->reports();
-        // Active goals are filtered once, then Free ($is_pro false) is shown only
-        // those while Pro keeps the full list.
-        $this->assertMatchesRegularExpression(
-            '/\$active_goals\s*=\s*array_values\(\s*array_filter\(/',
+        // Both tiers expose the full goals list now (paused goals stay visible).
+        $this->assertStringContainsString(
+            '$visible_goals = $goals;',
             $php,
-            'get_goals_card_state must compute the active-goals list'
+            'get_goals_card_state must show all goals (paused ones stay visible)'
         );
+        // On Free, excess active goals are auto-paused and the change persisted.
         $this->assertMatchesRegularExpression(
-            '/\$visible_goals\s*=\s*\$is_pro\s*\?\s*\$goals\s*:\s*\$active_goals/',
+            '/if\s*\(\s*!\$is_pro\s*\)\s*\{[\s\S]{0,300}self::pause_excess_free_goals\(/',
             $php,
-            'get_goals_card_state must show only active goals on Free'
+            'Free must auto-pause excess active goals via the helper'
+        );
+        $this->assertStringContainsString(
+            "update_option('slimstat_goals', \$normalized)",
+            $php,
+            'the auto-pause result must be persisted'
         );
         $this->assertMatchesRegularExpression(
             "/'goals'\s*=>\s*\\\$visible_goals/",
             $php,
-            "Card state must expose the gated \$visible_goals as 'goals'"
+            "Card state must expose \$visible_goals as 'goals'"
+        );
+    }
+
+    public function test_pause_helper_keeps_newest_active_by_id(): void
+    {
+        $php = $this->reports();
+        $this->assertStringContainsString(
+            'public static function pause_excess_free_goals(array $goals, int $max_goals)',
+            $php,
+            'pause_excess_free_goals helper must exist'
+        );
+        // Keeps the newest (highest-id) active goals, pauses the rest.
+        $this->assertMatchesRegularExpression(
+            '/arsort\(\$active\)[\s\S]{0,200}array_slice\(\s*array_keys\(\$active\)/',
+            $php,
+            'helper must keep the newest (highest-id) active goals'
         );
     }
 

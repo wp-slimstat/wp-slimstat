@@ -60,10 +60,9 @@ $show_upsell = $at_max && !$is_pro;
                 $dim_label     = $dimensions[$dim_key] ?? $dim_key;
                 $op_label      = $operator_labels[$op_key] ?? $op_key;
                 $value_display = (string) ($goal['value'] ?? '');
-                // Paused goals don't run queries: Free never receives them (gated in
-                // get_goals_card_state), and for Pro we show a paused placeholder
-                // instead of live metrics, sparing a COUNT/unique query per paused
-                // goal on every render. (#11)
+                // Paused goals don't run queries: both tiers now list them, but a
+                // paused goal shows a placeholder instead of live metrics, sparing a
+                // COUNT/unique query per paused goal on every render. (#11)
                 $results       = $goal_active ? wp_slimstat_db::get_goal_results($goal) : ['uniques' => 0, 'total' => 0, 'cr' => 0];
                 $uniques       = (int) ($results['uniques'] ?? 0);
                 $total         = (int) ($results['total'] ?? 0);
@@ -94,8 +93,9 @@ $show_upsell = $at_max && !$is_pro;
                         </div>
                     </div>
                     <?php if (!$goal_active) : ?>
-                        <?php /* Pro: paused goals are retained but not measured —
-                                 show that plainly instead of running queries. (#11) */ ?>
+                        <?php /* Paused goals are retained but not measured (both
+                                 tiers) — show that plainly instead of numbers. On
+                                 Free, all but the newest goal are auto-paused. (#11) */ ?>
                         <p class="slimstat-gf-goal__nomatch"><?php esc_html_e('Paused — not being measured', 'wp-slimstat'); ?></p>
                     <?php elseif (0 === $uniques && 0 === $total) : ?>
                         <?php /* Distinguish "active, no matches yet" from a broken

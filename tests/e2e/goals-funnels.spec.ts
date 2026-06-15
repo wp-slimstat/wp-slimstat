@@ -98,19 +98,45 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
     // ─── Paused goals: tier behavior (#11) ───────────────────────
 
-    test('paused-free-hidden: Free shows only the active goal, paused goals are hidden', async ({ page }) => {
+    test('paused-free-visible: Free shows paused goals too, with their numbers hidden', async ({ page }) => {
         await forceLimits(1, 0, WP_CONTENT);
         await seedGoals([
-            { name: 'Active One',  dimension: 'resource', operator: 'contains', value: '/a', active: true },
-            { name: 'Paused One',  dimension: 'resource', operator: 'contains', value: '/p', active: false },
+            { id: 1, name: 'Active One', dimension: 'resource', operator: 'contains', value: '/a', active: true },
+            { id: 2, name: 'Paused One', dimension: 'resource', operator: 'contains', value: '/p', active: false },
         ]);
         await gotoSlimview6(page);
 
-        const goals = page.locator('.slimstat-gf-goal');
-        await expect(goals).toHaveCount(1);
-        await expect(page.locator('.slimstat-gf-goal__name')).toContainText('Active One');
-        await expect(page.locator('body')).not.toContainText('Paused One');
-        // Usage pill still reflects the true active count.
+        // Both goals are visible now — paused goals are no longer hidden on Free.
+        await expect(page.locator('.slimstat-gf-goal')).toHaveCount(2);
+        await expect(page.locator('body')).toContainText('Paused One');
+
+        // The paused goal carries its badge + a "Paused" placeholder instead of numbers.
+        const pausedGoal = page.locator('.slimstat-gf-goal[data-active="false"]');
+        await expect(pausedGoal).toHaveCount(1);
+        await expect(pausedGoal.locator('.slimstat-gf-pill--paused')).toBeVisible();
+        await expect(pausedGoal.locator('.slimstat-gf-goal__nomatch')).toContainText('Paused');
+        await expect(pausedGoal.locator('.slimstat-gf-goal__metrics')).toHaveCount(0);
+
+        // Usage pill counts active goals only.
+        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
+    });
+
+    test('free-autopause-excess: Free auto-pauses all but the newest active goal', async ({ page }) => {
+        await forceLimits(1, 0, WP_CONTENT);
+        // Two active goals on Free (e.g. left over from a Pro→Free downgrade).
+        await seedGoals([
+            { id: 1, name: 'Older Active', dimension: 'resource', operator: 'contains', value: '/old', active: true },
+            { id: 2, name: 'Newer Active', dimension: 'resource', operator: 'contains', value: '/new', active: true },
+        ]);
+        await gotoSlimview6(page);
+
+        // Both stay listed, but exactly one is active — the newest (highest id).
+        await expect(page.locator('.slimstat-gf-goal')).toHaveCount(2);
+        await expect(page.locator('.slimstat-gf-goal[data-active="true"]')).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-goal[data-active="false"]')).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-goal[data-active="true"] .slimstat-gf-goal__name'))
+            .toContainText('Newer Active');
+        // Pill reflects the enforced single active goal.
         await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
     });
 

@@ -1737,7 +1737,10 @@ class wp_slimstat_reports
      * and the postbox-header filter callbacks so both surfaces show the same
      * usage counts / CTA state without recomputing.
      *
-     * Memoised per request.
+     * Memoised per request. On Free, this performs a one-shot lazy persist: if
+     * more goals are active than the tier allows (e.g. after a Pro→Free
+     * downgrade), it pauses the excess and writes slimstat_goals once. Not a pure
+     * accessor for that reason; idempotent after the first normalizing render.
      *
      * @return array{goals:array, active_count:int, max_goals:int, is_pro:bool, at_max:bool, show_add_cta:bool, show_upsell:bool}
      */
@@ -1748,27 +1751,37 @@ class wp_slimstat_reports
             return $cached;
         }
 
-        $goals        = get_option('slimstat_goals', []);
-        $max_goals    = (int) apply_filters('slimstat_max_goals', 1);
-        // Active goals computed once: the count drives the "N of M used" pill, and
-        // on Free they are the only goals shown (paused goals must neither appear
-        // nor run queries). Pro keeps all goals so paused ones stay visible. (#11)
-        $active_goals = array_values(array_filter($goals, function ($g) {
-            return !empty($g['active']);
-        }));
-        $active_count = count($active_goals);
+        $goals     = get_option('slimstat_goals', []);
+        $max_goals = (int) apply_filters('slimstat_max_goals', 1);
         // Derive Pro from the capability the feature actually depends on — the
         // raised goal limit — rather than pro_is_installed(). This matches the
         // funnels card's ($max_funnels > 0) signal, so both cards stay consistent
         // even if Pro is active but GoalsFunnelAddon didn't boot (older Pro build,
         // a dropped $provides entry, a partial container failure).
-        $is_pro       = $max_goals > 1;
-        $at_max       = $active_count >= $max_goals;
+        $is_pro    = $max_goals > 1;
 
-        // Free shows only the active goals; Pro keeps all (paused stay visible with
-        // their badge). $active_count above is from the full list so "N of M used"
-        // stays accurate regardless of what's shown. (#11)
-        $visible_goals = $is_pro ? $goals : $active_goals;
+        // Free allows only $max_goals active goals. If more are active (e.g. a
+        // Pro→Free downgrade left several active), auto-pause all but the newest
+        // and persist, so the "one active goal" contract holds in storage. Paused
+        // goals stay listed (shown without their numbers) and reactivate on
+        // upgrade. Idempotent — writes only when it actually pauses something. (#11)
+        if (!$is_pro) {
+            $normalized = self::pause_excess_free_goals($goals, $max_goals);
+            if ($normalized !== $goals) {
+                update_option('slimstat_goals', $normalized);
+                $goals = $normalized;
+            }
+        }
+
+        // The "N of M used" pill counts ACTIVE goals only, so it stays accurate.
+        // Both tiers now show ALL goals: paused ones stay visible with their badge
+        // and a "Paused — not being measured" placeholder instead of numbers
+        // (goals-card.php). (#11)
+        $active_count  = count(array_filter($goals, function ($g) {
+            return !empty($g['active']);
+        }));
+        $at_max        = $active_count >= $max_goals;
+        $visible_goals = $goals;
 
         $cached = [
             'goals'        => $visible_goals,
@@ -1783,6 +1796,41 @@ class wp_slimstat_reports
             'show_upsell'  => $at_max && !$is_pro,
         ];
         return $cached;
+    }
+
+    /**
+     * Enforce the Free-tier active-goal limit by pausing the oldest excess goals.
+     *
+     * Keeps the newest $max_goals active goals (highest id = most recently
+     * created) active and flips the rest to active=false. Pure (no I/O) so the
+     * caller decides when to persist; returns the goals unchanged when already
+     * within the limit. A goal with no id sorts oldest (legacy records).
+     *
+     * @param array $goals     The stored goals list.
+     * @param int   $max_goals Maximum number of active goals allowed.
+     * @return array The goals with any excess active goals paused.
+     */
+    public static function pause_excess_free_goals(array $goals, int $max_goals): array
+    {
+        $limit  = max(0, $max_goals);
+        $active = [];
+        foreach ($goals as $i => $g) {
+            if (!empty($g['active'])) {
+                $active[$i] = isset($g['id']) ? (int) $g['id'] : 0;
+            }
+        }
+        if (count($active) <= $limit) {
+            return $goals;
+        }
+
+        arsort($active); // newest (highest id) first
+        $keep = array_slice(array_keys($active), 0, $limit);
+        foreach (array_keys($active) as $i) {
+            if (!in_array($i, $keep, true)) {
+                $goals[$i]['active'] = false;
+            }
+        }
+        return $goals;
     }
 
     /**
