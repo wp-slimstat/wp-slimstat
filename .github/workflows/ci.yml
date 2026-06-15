@@ -189,10 +189,47 @@ jobs:
 
       - name: Install npm dependencies
         # package-lock.json is gitignored; use npm install instead of npm ci.
-        run: npm install --no-progress
+        # Transient registry blips (ECONNRESET/ETIMEDOUT/EAI_AGAIN/socket hang up)
+        # must not fail the job: retry up to 3x with backoff. Loop is set -e safe
+        # (attempt guarded by `if`; final failure exits 1). --no-audit/--no-fund
+        # only cut noise. fetch-retry config layers npm's own internal retries.
+        run: |
+          npm config set fetch-retries 3
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 60000
+          npm config set fetch-timeout 120000
+          n=0
+          until [ "$n" -ge 3 ]; do
+            n=$((n + 1))
+            if npm install --no-progress --no-audit --no-fund; then
+              exit 0
+            fi
+            if [ "$n" -lt 3 ]; then
+              echo "::warning::npm install failed (attempt ${n}/3) — likely a transient network error; retrying in $((n * 15))s"
+              sleep $((n * 15))
+            fi
+          done
+          echo "::error::npm install failed after 3 attempts"
+          exit 1
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # Browser binaries + apt deps are fetched over the network; a transient
+        # blip must not fail the job. Retry up to 3x with backoff. Loop is set -e
+        # safe (attempt guarded by `if`; final failure exits 1).
+        run: |
+          n=0
+          until [ "$n" -ge 3 ]; do
+            n=$((n + 1))
+            if npx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            if [ "$n" -lt 3 ]; then
+              echo "::warning::playwright install failed (attempt ${n}/3) — likely a transient network error; retrying in $((n * 15))s"
+              sleep $((n * 15))
+            fi
+          done
+          echo "::error::playwright install failed after 3 attempts"
+          exit 1
 
       - name: Create wp-env override (CI — pin WP core + PHP per lane)
         # The committed .wp-env.json stays at core 6.4 / php 7.4; this gitignored
@@ -345,7 +382,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          # upload-artifact@v4 requires a unique name per run — all 7 matrix lanes
+          # sharing "playwright-report" caused HTTP 409 conflicts. Scope by lane.
+          name: playwright-report-wp${{ matrix.wp }}-php${{ matrix.php }}
           path: tests/e2e/playwright-report/
           retention-days: 7
 
@@ -432,7 +471,27 @@ jobs:
 
       - name: Install npm dependencies
         if: ${{ matrix.php == '8.2' }}
-        run: npm install --no-progress
+        # Retry transient registry blips (ECONNRESET/ETIMEDOUT/EAI_AGAIN/socket
+        # hang up) up to 3x with backoff. Loop is set -e safe (attempt guarded by
+        # `if`; final failure exits 1). --no-audit/--no-fund only cut noise.
+        run: |
+          npm config set fetch-retries 3
+          npm config set fetch-retry-mintimeout 10000
+          npm config set fetch-retry-maxtimeout 60000
+          npm config set fetch-timeout 120000
+          n=0
+          until [ "$n" -ge 3 ]; do
+            n=$((n + 1))
+            if npm install --no-progress --no-audit --no-fund; then
+              exit 0
+            fi
+            if [ "$n" -lt 3 ]; then
+              echo "::warning::npm install failed (attempt ${n}/3) — likely a transient network error; retrying in $((n * 15))s"
+              sleep $((n * 15))
+            fi
+          done
+          echo "::error::npm install failed after 3 attempts"
+          exit 1
 
       - name: Clear stale Docker Hub credentials
         if: ${{ matrix.php == '8.2' }}
