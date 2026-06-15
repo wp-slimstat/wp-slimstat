@@ -57,8 +57,13 @@
             });
         }
     };
-    function __(str)                { return _i18n.__(str, 'wp-slimstat'); }
-    function _n(single, plural, n)  { return _i18n._n(single, plural, n, 'wp-slimstat'); }
+    // Bind the real wp.i18n functions (or the fallback) directly, and pass the
+    // 'wp-slimstat' text domain at every call site below. `wp i18n make-pot` only
+    // extracts JS strings from calls with a literal domain argument; a single-arg
+    // wrapper hides them from extraction, so they never reach the .pot and never
+    // get translated. Keep the domain on every __()/_n() call.
+    var __      = _i18n.__;
+    var _n      = _i18n._n;
     var sprintf = _i18n.sprintf;
 
     // Defaults derived from a WordPress-ecosystem audit of dominant plugins,
@@ -77,11 +82,11 @@
     //    (cart → confirm only — answers the most-asked SMB store question).
     var FUNNEL_TEMPLATES = {
         woocommerce_purchase: {
-            name: __('WooCommerce purchase'),
+            name: __('WooCommerce purchase', 'wp-slimstat'),
             steps: [
-                { name: __('Product'),        dimension: 'resource', operator: 'contains', value: '/product/' },
-                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
-                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Product', 'wp-slimstat'),        dimension: 'resource', operator: 'contains', value: '/product/' },
+                { name: __('Cart', 'wp-slimstat'),           dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout', 'wp-slimstat'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
                 // WooCommerce's thank-you page is the `order-received` endpoint
                 // nested under checkout: /checkout/order-received/{id}/?key=...
                 // We match the endpoint segment alone (`/order-received`) rather
@@ -90,17 +95,17 @@
                 // the checkout PAGE slug is localized or renamed (e.g. /kasse/,
                 // /panier/), which the /checkout-prefixed value would miss.
                 // Verified against WooCommerce core + docs — see research #21. (#5)
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
+                { name: __('Order received', 'wp-slimstat'), dimension: 'resource', operator: 'contains', value: '/order-received' }
             ]
         },
         checkout_completion: {
-            name: __('Checkout completion'),
+            name: __('Checkout completion', 'wp-slimstat'),
             steps: [
-                { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
-                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
+                { name: __('Cart', 'wp-slimstat'),           dimension: 'resource', operator: 'contains', value: '/cart' },
+                { name: __('Checkout', 'wp-slimstat'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
                 // Match the `order-received` endpoint segment alone so it survives
                 // a localized/renamed checkout page slug — see research #21. (#5)
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
+                { name: __('Order received', 'wp-slimstat'), dimension: 'resource', operator: 'contains', value: '/order-received' }
             ]
         },
         landing_to_contact: {
@@ -108,29 +113,29 @@
             // do not redirect to a thank-you page by default.
             // Step 1 uses `equals /` (homepage only) — `contains /` would
             // match every URL and inflate the step-1 visitor count.
-            name: __('Landing to contact'),
+            name: __('Landing to contact', 'wp-slimstat'),
             steps: [
-                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
-                { name: __('Contact page'),   dimension: 'resource', operator: 'contains', value: '/contact' }
+                { name: __('Homepage', 'wp-slimstat'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Contact page', 'wp-slimstat'),   dimension: 'resource', operator: 'contains', value: '/contact' }
             ]
         },
         pricing_to_checkout: {
-            name: __('Homepage to pricing to checkout'),
+            name: __('Homepage to pricing to checkout', 'wp-slimstat'),
             steps: [
-                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
-                { name: __('Pricing'),        dimension: 'resource', operator: 'contains', value: '/pricing' },
-                { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' }
+                { name: __('Homepage', 'wp-slimstat'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Pricing', 'wp-slimstat'),        dimension: 'resource', operator: 'contains', value: '/pricing' },
+                { name: __('Checkout', 'wp-slimstat'),       dimension: 'resource', operator: 'contains', value: '/checkout' }
             ]
         },
         landing_to_thanks: {
             // For sites that HAVE configured a thank-you redirect (custom
             // form plugin behaviour, GiveWP /donation-confirmation/, or a
             // MemberPress /thank-you/). Users will edit all three steps.
-            name: __('Landing to thank-you (advanced)'),
+            name: __('Landing to thank-you (advanced)', 'wp-slimstat'),
             steps: [
-                { name: __('Homepage'),       dimension: 'resource', operator: 'equals',   value: '/' },
-                { name: __('Form page'),      dimension: 'resource', operator: 'contains', value: '/contact' },
-                { name: __('Thank-you page'), dimension: 'resource', operator: 'contains', value: '/thank-you' }
+                { name: __('Homepage', 'wp-slimstat'),       dimension: 'resource', operator: 'equals',   value: '/' },
+                { name: __('Form page', 'wp-slimstat'),      dimension: 'resource', operator: 'contains', value: '/contact' },
+                { name: __('Thank-you page', 'wp-slimstat'), dimension: 'resource', operator: 'contains', value: '/thank-you' }
             ]
         },
         blank: {
@@ -185,11 +190,11 @@
             if (response && response.success) {
                 if (onSuccess) onSuccess(response.data || {});
             } else {
-                var msg = (response && response.data && response.data.message) || __('Request failed.');
+                var msg = (response && response.data && response.data.message) || __('Request failed.', 'wp-slimstat');
                 if (onError) onError(msg); else window.alert(msg);
             }
         }).fail(function () {
-            if (onError) onError(__('Network error.')); else window.alert(__('Network error.'));
+            if (onError) onError(__('Network error.', 'wp-slimstat')); else window.alert(__('Network error.', 'wp-slimstat'));
         });
     }
 
@@ -203,13 +208,13 @@
     function openConfirmSheet(opts) {
         if (!$confirmSheet.length) return;
         opts = opts || {};
-        $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || __('Delete this?'));
+        $confirmSheet.find('[data-role="confirm-title"]').text(opts.title || __('Delete this?', 'wp-slimstat'));
         $confirmSheet.find('[data-role="confirm-body"]').text(opts.body || '');
         $confirmSheet.find('[data-role="confirm-warning"]').text(
-            opts.warning || __('Historical data stays — only the definition is removed. You can always rebuild it.')
+            opts.warning || __('Historical data stays — only the definition is removed. You can always rebuild it.', 'wp-slimstat')
         );
-        $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel'));
-        $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete'));
+        $confirmSheet.find('[data-role="confirm-cancel"]').text(opts.cancelLabel || __('Cancel', 'wp-slimstat'));
+        $confirmSheet.find('[data-role="confirm-destructive"]').text(opts.destructiveLabel || __('Delete', 'wp-slimstat'));
         $confirmSheet.addClass('is-open').attr('aria-hidden', 'false');
         onDialogOpen();
         confirmHandler = opts.onConfirm || null;
@@ -290,7 +295,7 @@
         var $err = $goalDrawer.find('[data-role="drawer-error"]');
         var name = $goalDrawer.find('[data-role="goal-name"]').val();
         if (!name || !String(name).trim()) {
-            $err.text(__('Goal name is required.')).attr('hidden', false);
+            $err.text(__('Goal name is required.', 'wp-slimstat')).attr('hidden', false);
             return;
         }
 
@@ -301,7 +306,7 @@
         var operator = $goalDrawer.find('[data-role="goal-operator"]').val();
         var value    = $value.val();
         if (!isValuelessOperator(operator) && (!value || !String(value).trim())) {
-            $err.text(__('Value is required for this operator.')).attr('hidden', false);
+            $err.text(__('Value is required for this operator.', 'wp-slimstat')).attr('hidden', false);
             focusValueField($value);
             return;
         }
@@ -335,14 +340,14 @@
         var goalId = $btn.data('goal-id');
         var goalName = $btn.data('goal-name') || '';
         openConfirmSheet({
-            title:            __('Delete goal?'),
+            title:            __('Delete goal?', 'wp-slimstat'),
             body:             goalName
                 /* translators: %s is the goal name */
-                ? sprintf(__('Delete "%s"?'), goalName)
-                : __('Delete this goal?'),
-            warning:          __('Historical data stays — only the goal definition is removed. You can always rebuild it.'),
-            cancelLabel:      __('Keep goal'),
-            destructiveLabel: __('Delete goal'),
+                ? sprintf(__('Delete "%s"?', 'wp-slimstat'), goalName)
+                : __('Delete this goal?', 'wp-slimstat'),
+            warning:          __('Historical data stays — only the goal definition is removed. You can always rebuild it.', 'wp-slimstat'),
+            cancelLabel:      __('Keep goal', 'wp-slimstat'),
+            destructiveLabel: __('Delete goal', 'wp-slimstat'),
             onConfirm: function () {
                 post({
                     action:   'slimstat_delete_goal',
@@ -380,7 +385,7 @@
         if (!tpl) return null;
         var $row = $(tpl).find('[data-step-row]').attr('data-step-row', index);
         /* translators: %d is the step number (1–5) */
-        $row.find('[data-role="step-num"]').text(sprintf(__('Step %d'), index + 1));
+        $row.find('[data-role="step-num"]').text(sprintf(__('Step %d', 'wp-slimstat'), index + 1));
         $row.find('[data-role="step-name"]').val(step.name || '');
         $row.find('[data-role="step-dimension"]').val(step.dimension || 'resource');
         $row.find('[data-role="step-operator"]').val(step.operator || 'contains');
@@ -392,7 +397,7 @@
     function renumberSteps() {
         $stepsContainer.find('.slimstat-gf-step-row').each(function (idx) {
             $(this).attr('data-step-row', idx);
-            $(this).find('[data-role="step-num"]').text(sprintf(__('Step %d'), idx + 1));
+            $(this).find('[data-role="step-num"]').text(sprintf(__('Step %d', 'wp-slimstat'), idx + 1));
         });
         var count = $stepsContainer.find('.slimstat-gf-step-row').length;
         $builder.find('.slimstat-gf-builder__add-step').prop('disabled', count >= 5);
@@ -501,12 +506,12 @@
         var willShow = $panel.attr('hidden') != null;
         if (willShow) {
             $panel.removeAttr('hidden');
-            $btn.attr('aria-expanded', 'true').text(__('Hide templates'));
+            $btn.attr('aria-expanded', 'true').text(__('Hide templates', 'wp-slimstat'));
             var $firstCard = $panel.find('.slimstat-gf-template-card').first();
             if ($firstCard.length) $firstCard.trigger('focus');
         } else {
             $panel.attr('hidden', 'hidden');
-            $btn.attr('aria-expanded', 'false').text(__('See templates'));
+            $btn.attr('aria-expanded', 'false').text(__('See templates', 'wp-slimstat'));
         }
     });
 
@@ -517,7 +522,7 @@
         if ($row) $stepsContainer.append($row);
         renumberSteps();
         /* translators: %d is the new step number */
-        announceBuilder(sprintf(__('Step %d added'), $stepsContainer.find('.slimstat-gf-step-row').length));
+        announceBuilder(sprintf(__('Step %d added', 'wp-slimstat'), $stepsContainer.find('.slimstat-gf-step-row').length));
         initAutoSuggest(
             $row.find('[data-role="step-value"]')[0],
             $row.find('[data-role="step-dimension"]').val(),
@@ -533,14 +538,14 @@
         $row.remove();
         renumberSteps();
         /* translators: %d is the number of steps remaining */
-        announceBuilder(sprintf(__('Step removed, %d steps remaining'), $stepsContainer.find('.slimstat-gf-step-row').length));
+        announceBuilder(sprintf(__('Step removed, %d steps remaining', 'wp-slimstat'), $stepsContainer.find('.slimstat-gf-step-row').length));
     });
 
     $body.on('click', '[data-action="save-funnel"]', function () {
         var $err = $builder.find('[data-role="builder-error"]');
         var funnelName = $builder.find('[data-role="funnel-name"]').val();
         if (!funnelName || !String(funnelName).trim()) {
-            $err.text(__('Funnel name is required.')).attr('hidden', false);
+            $err.text(__('Funnel name is required.', 'wp-slimstat')).attr('hidden', false);
             return;
         }
 
@@ -566,13 +571,13 @@
         // A value-bearing step operator needs a value — flag the first offending
         // step by number so the user knows which row to fix. (#2)
         if (invalidStep !== null) {
-            $err.text(sprintf(__('Step %d needs a value for its operator.'), invalidStep.index + 1)).attr('hidden', false);
+            $err.text(sprintf(__('Step %d needs a value for its operator.', 'wp-slimstat'), invalidStep.index + 1)).attr('hidden', false);
             focusValueField(invalidStep.$value);
             return;
         }
 
         if (steps.length < 2 || steps.length > 5) {
-            $err.text(__('Funnels need between 2 and 5 steps.')).attr('hidden', false);
+            $err.text(__('Funnels need between 2 and 5 steps.', 'wp-slimstat')).attr('hidden', false);
             return;
         }
 
@@ -601,14 +606,14 @@
         var funnelId = $btn.data('funnel-id');
         var funnelName = $btn.data('funnel-name') || '';
         openConfirmSheet({
-            title:            __('Delete funnel?'),
+            title:            __('Delete funnel?', 'wp-slimstat'),
             body:             funnelName
                 /* translators: %s is the funnel name */
-                ? sprintf(__('Delete "%s"?'), funnelName)
-                : __('Delete this funnel?'),
-            warning:          __('Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.'),
-            cancelLabel:      __('Keep funnel'),
-            destructiveLabel: __('Delete funnel'),
+                ? sprintf(__('Delete "%s"?', 'wp-slimstat'), funnelName)
+                : __('Delete this funnel?', 'wp-slimstat'),
+            warning:          __('Historical data stays — only the funnel definition is removed. You can always rebuild it from the same goals.', 'wp-slimstat'),
+            cancelLabel:      __('Keep funnel', 'wp-slimstat'),
+            destructiveLabel: __('Delete funnel', 'wp-slimstat'),
             onConfirm: function () {
                 post({
                     action:    'slimstat_delete_funnel',
@@ -632,7 +637,7 @@
         var html = '';
 
         if (!steps || !steps.length) {
-            return '<p class="slimstat-gf-empty__body">' + escHtml(__('No data yet for this funnel.')) + '</p>';
+            return '<p class="slimstat-gf-empty__body">' + escHtml(__('No data yet for this funnel.', 'wp-slimstat')) + '</p>';
         }
 
         var stepOne = steps[0] && steps[0].visitors ? Number(steps[0].visitors) : 0;
@@ -660,18 +665,18 @@
             html += ' role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '"';
             html += ' aria-valuetext="' + escHtml(pctLabel + '%') + '"';
             /* translators: 1: step name, 2: visitor count */
-            var ariaLabel = sprintf(__('%1$s: %2$s visitors'), step.name || '', formatNumber(visitors));
+            var ariaLabel = sprintf(__('%1$s: %2$s visitors', 'wp-slimstat'), step.name || '', formatNumber(visitors));
             html += ' aria-label="' + escHtml(ariaLabel) + '"></div>';
             html += '</div>';
             if (unreachable) {
                 // Keep this string identical to funnel-bars.php (SSR) — anti-drift. (#9)
                 html += '<div class="slimstat-gf-step__unreachable">' +
-                    escHtml(__('No visitors reached this step in the selected date range')) + '</div>';
+                    escHtml(__('No visitors reached this step in the selected date range', 'wp-slimstat')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
                 var dropoffPct = prev > 0 ? formatPercent((dropoff / prev) * 100) : formatPercent(0);
                 /* translators: 1: visitors dropped, 2: drop-off percentage */
-                var dropLine = sprintf(__('↓ %1$s dropped (%2$s%%)'), formatNumber(dropoff), dropoffPct);
+                var dropLine = sprintf(__('↓ %1$s dropped (%2$s%%)', 'wp-slimstat'), formatNumber(dropoff), dropoffPct);
                 html += '<div class="slimstat-gf-step__dropoff">' + escHtml(dropLine) + '</div>';
             }
             html += '</li>';
@@ -683,7 +688,7 @@
     function renderFunnelSummary(summary) {
         if (!summary || summary.total_cr === null || summary.total_cr === undefined) {
             return '<span class="slimstat-gf-summary slimstat-gf-summary--empty">' +
-                escHtml(__('No visitors matched in this date range')) + '</span>';
+                escHtml(__('No visitors matched in this date range', 'wp-slimstat')) + '</span>';
         }
         var cr = Number(summary.total_cr);
         var crLabel = formatPercent(cr);
@@ -696,22 +701,22 @@
             /* translators: %d is the step count */
             mainHtml = '<span class="slimstat-gf-summary slimstat-gf-summary--success">' +
                 '<span class="slimstat-gf-summary__glyph" aria-hidden="true">✓</span> ' +
-                escHtml(sprintf(__('Healthy pass-through · %d-step funnel'), stepCount)) + '</span>';
+                escHtml(sprintf(__('Healthy pass-through · %d-step funnel', 'wp-slimstat'), stepCount)) + '</span>';
         } else if (unreachable > 0) {
             /* A step has no data yet — the overall rate isn't a real measurement.
                Mirror funnel-summary.php: say "pending", not a misleading 0.0%. */
             /* translators: %d is the step count */
             mainHtml = '<span class="slimstat-gf-summary">' +
-                escHtml(sprintf(__('%d-step funnel · Conversion rate pending'), stepCount)) + '</span>';
+                escHtml(sprintf(__('%d-step funnel · Conversion rate pending', 'wp-slimstat'), stepCount)) + '</span>';
         } else {
             /* translators: 1: number of steps, 2: conversion rate */
             mainHtml = '<span class="slimstat-gf-summary">' +
-                escHtml(sprintf(__('%1$d-step funnel · %2$s%% conversion rate'), stepCount, crLabel)) + '</span>';
+                escHtml(sprintf(__('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'), stepCount, crLabel)) + '</span>';
         }
 
         if (unreachable > 0) {
             /* translators: %d is the number of steps with no visitors in range */
-            var label = sprintf(_n('%d step had no visitors in range', '%d steps had no visitors in range', unreachable), unreachable);
+            var label = sprintf(_n('%d step had no visitors in range', '%d steps had no visitors in range', unreachable, 'wp-slimstat'), unreachable);
             mainHtml += '<span class="slimstat-gf-summary slimstat-gf-summary--warn">' + escHtml(label) + '</span>';
         }
         return mainHtml;
@@ -806,7 +811,7 @@
     function syncValueDisabledByOperator($value, operator) {
         var isEmptyOp = isValuelessOperator(operator);
         if (isEmptyOp) {
-            $value.prop('disabled', true).attr('title', __('Not applicable for this operator')).val('');
+            $value.prop('disabled', true).attr('title', __('Not applicable for this operator', 'wp-slimstat')).val('');
         } else {
             $value.prop('disabled', false).removeAttr('title');
         }
@@ -872,13 +877,13 @@
         var timeRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
             ? window.SlimStatGetTimeRangeForAjax() : {};
         var instance = new window.SlimStatSearchableSelect(inputEl, {
-            placeholder:       __('Type or pick a value'),
-            searchPlaceholder: __('Search or type…'),
+            placeholder:       __('Type or pick a value', 'wp-slimstat'),
+            searchPlaceholder: __('Search or type…', 'wp-slimstat'),
             // No "Apply" button here (unlike the filter bar) — a typed value is
             // saved as-is, so invite the user to type any value. (#1.1/#1.2)
-            noMatchesText:     __('No matches — type any value to use it.'),
-            noResultsText:     __('No matches'),
-            loadingText:       __('Loading…'),
+            noMatchesText:     __('No matches — type any value to use it.', 'wp-slimstat'),
+            noResultsText:     __('No matches', 'wp-slimstat'),
+            loadingText:       __('Loading…', 'wp-slimstat'),
             // Wire server-side search so typed custom values are looked up per
             // dimension within the selected date range. Custom values still save
             // because syncTypedValue() commits typed text to the hidden input. (#1)
@@ -940,7 +945,7 @@
         var rowId = inputId($row[0]);
 
         var step = {
-            name:      $row.find('[data-role="step-name"]').val() || __('Step'),
+            name:      $row.find('[data-role="step-name"]').val() || __('Step', 'wp-slimstat'),
             dimension: $row.find('[data-role="step-dimension"]').val(),
             operator:  $row.find('[data-role="step-operator"]').val(),
             value:     $row.find('[data-role="step-value"]').val(),
@@ -950,7 +955,7 @@
         if (_testInflight[rowId] && typeof _testInflight[rowId].abort === 'function') {
             _testInflight[rowId].abort();
         }
-        $result.addClass('is-loading').text(__('Testing…'));
+        $result.addClass('is-loading').text(__('Testing…', 'wp-slimstat'));
 
         // Test against the report's selected date range, not a server default. (#6)
         var testRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
@@ -970,7 +975,7 @@
                 var count = Number(response.data.total) || 0;
                 /* translators: %s is a localized match count */
                 $result.removeClass('is-loading').text(
-                    sprintf(_n('%s match', '%s matches', count), formatNumber(count))
+                    sprintf(_n('%s match', '%s matches', count, 'wp-slimstat'), formatNumber(count))
                 );
             } else {
                 $result.removeClass('is-loading').text('—');
@@ -1055,7 +1060,7 @@
         // on the handle label for re-focus context, and retain focus.
         var $handle = $row.find('[data-action="drag-step"]');
         /* translators: 1: new step position, 2: total steps */
-        var posLabel = sprintf(__('Reorder step, position %1$d of %2$d'), target + 1, $rows.length);
+        var posLabel = sprintf(__('Reorder step, position %1$d of %2$d', 'wp-slimstat'), target + 1, $rows.length);
         $handle.attr('aria-label', posLabel);
         announceBuilder(posLabel);
         $handle.trigger('focus');

@@ -1094,7 +1094,11 @@ class wp_slimstat_admin
             wp_localize_script('slimstat-custom-datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
+        // wp-i18n dependency + script translations so admin.js's __() strings
+        // (combobox labels, etc.) load their JSON translations at runtime. Without
+        // this, the strings are extracted into the .pot but never translated.
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'wp-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+        self::set_slimstat_script_translations('slimstat_admin');
 
         // Enqueue notification assets if notifications are enabled
         if (wp_slimstat::$settings['display_notifications'] == 'on') {
@@ -1143,17 +1147,23 @@ class wp_slimstat_admin
                 SLIMSTAT_ANALYTICS_VERSION,
                 true
             );
-            if (function_exists('wp_set_script_translations')) {
-                wp_set_script_translations(
-                    'slimstat-goals-funnels',
-                    'wp-slimstat',
-                    plugin_dir_path(__DIR__) . 'languages'
-                );
-            }
+            self::set_slimstat_script_translations('slimstat-goals-funnels');
         }
     }
 
     // END: wp_slimstat_enqueue_scripts
+
+    /**
+     * Registers JS translations for one of our scripts so its wp.i18n strings
+     * load their JSON language pack at runtime. Shared by every enqueued script
+     * that carries translatable strings (admin.js, goals-funnels.js).
+     */
+    private static function set_slimstat_script_translations(string $handle): void
+    {
+        if (function_exists('wp_set_script_translations')) {
+            wp_set_script_translations($handle, 'wp-slimstat', plugin_dir_path(__DIR__) . 'languages');
+        }
+    }
 
     /**
      * Adds a new entry in the admin menu, to view the stats

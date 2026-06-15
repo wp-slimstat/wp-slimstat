@@ -58,6 +58,12 @@
       "composer dump-autoload"
     ],
     "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative",
+    "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes",
+    "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",
+    "i18n": [
+      "@i18n:pot",
+      "@i18n:json"
+    ],
     "test:license-tags": "php tests/license-tag-gating-test.php",
     "test:geoip-resolver": "php tests/resolve-geolocation-provider-test.php",
     "test:geoservice": "php tests/geoservice-provider-resolution-test.php",

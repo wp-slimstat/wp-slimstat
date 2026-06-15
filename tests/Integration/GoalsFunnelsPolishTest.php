@@ -105,7 +105,7 @@ class GoalsFunnelsPolishTest extends TestCase
     public function test_value_placeholder_leads_with_action(): void
     {
         $js = file_get_contents($this->jsPath());
-        $this->assertStringContainsString("__('Type or pick a value')", $js, 'Value placeholder should lead with the action (FN-14)');
+        $this->assertStringContainsString("__('Type or pick a value', 'wp-slimstat')", $js, 'Value placeholder should lead with the action (FN-14) and carry the text domain');
     }
 
     // ── paths ──
