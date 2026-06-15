@@ -1,45 +1,10 @@
 = 5.5.0 - Unreleased =
 
-**Goals & Funnels redesign (slimview6)**
+**New: Goals & Funnels**
 
-- Modern card layout with hero strip, usage pills (`N of MAX used`), and a side drawer for goal create/edit.
-- Funnels now use a pill-segmented tab bar when you have more than one, and an overlay builder with drag-reorderable steps.
-- Destructive actions (delete goal, delete funnel) now go through a consistent confirm sheet. `window.confirm` is gone.
-- Four funnel templates at the empty state: **E-commerce checkout**, **SaaS signup**, **Content engagement**, **Start from scratch**.
-- Goals gain a **Paused** toggle. Paused goals are preserved but don't count against the plan limit ([admin/index.php:1685](admin/index.php#L1685) fix).
-- Lazy-load for inactive funnel tabs via a new `slimstat_load_funnel_data` AJAX handler — only the active funnel runs its SQL on page load.
-- Single canonical Pro label: "Upgrade to Pro" (replaces the previous mix of "Unlock SlimStat Pro" and "Upgrade to Premium" on this view).
-- Funnel bars use the brand red ramp instead of indigo; honors `prefers-reduced-motion`; RTL mirrored.
-
-**Fixes**
-
-- Funnels with zero visitors in the date range now show "No matching visitors in this date range" instead of a fake 100% conversion rate.
-- WP Dashboard widget no longer leaks the inline "Add Goal" form — `is_widget=true` is now passed through `add_dashboard_widgets` for `slim_p9_01` / `slim_p9_02`.
-- Goals & Funnels CSS/JS only enqueue on screens that actually render those reports — including when dragged into other report groups via the Customizer.
-
-**Fixes (QA pass)**
-
-- The **Value** field keeps its saved value when you edit a goal or funnel step (it no longer blanks the moment suggestions load), and you can type any custom value — it is searched per dimension in the selected date range and saved as-is.
-- A goal or funnel step can no longer be saved with an empty value for an operator that needs one; a clear inline message points at the field instead of a generic failure.
-- **Goal unique visitors / conversion rate** now count visitors without a browser fingerprint (bots, consent-limited sessions, older rows) the same way funnels do, so segments like "Country = gb" no longer report 0 unique visitors. Goal caches are flushed on upgrade so corrected numbers appear immediately. (Goal uniques will rise for some goals.)
-- The funnel-step **Test** returns real match counts with no PHP/database warnings, and **every** funnel now populates — not just the first: the Test and funnel lazy-load now run against the report's selected date range instead of an empty window.
-- Goal and funnel results are computed once per request and reused, removing the duplicate `COUNT(*)`/unique queries on the Goals & Funnels page.
-- The WooCommerce **purchase** and **checkout completion** templates point at WooCommerce's real `/checkout/order-received` thank-you page.
-- A **See templates** control keeps the funnel template gallery reachable after the first funnel is created.
-- A zero-conversion funnel step now reads "No visitors reached this step in the selected date range" (neutral) instead of an alarming "event hasn't fired yet" warning, with matching non-error styling.
-- **CSV export** for Goals and Funnels now contains meaningful columns (Goal/Funnel, uniques, totals, conversion rate, step, visitors, drop-off, date range) instead of a single `Percentage` column of `0.0000`.
-- On the **Free** plan, paused goals are hidden and no longer run background queries; on **Pro** they stay visible with a "Paused" badge and a placeholder instead of live metrics.
-
-**Internals**
-
-- Design tokens split into `admin/assets/css/tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their exact existing values to keep the datepicker and GDPR banner visually unchanged.
-- New partials under `admin/view/partials/goals-funnels/`: `goals-card.php`, `funnels-card.php`, `goal-drawer.php`, `funnel-builder.php`, `confirm-sheet.php`, `funnel-summary.php`, `funnel-bars.php`.
-- `show_goals()` / `show_funnels()` branch on `is_widget`: widget/shortcode/email/CSV paths render the legacy compact markup untouched; admin mode renders the new partials.
-
-**Tests**
-
-- New PHPUnit `Integration` suite (`tests/Integration/`, Brain Monkey + Mockery, dedicated `tests/bootstrap-integration.php`). 29 tests pin: AJAX handlers (save/delete goal + funnel, new `ajax_load_funnel_data`), nonce + capability negatives, paused-limit round-trip, cache-version invalidation, legacy CSS alias preservation.
-- New Playwright E2E spec (`tests/e2e/goals-funnels.spec.ts`) + helpers (`tests/e2e/helpers/goals-funnels.ts`) covering Free/Pro × empty/has-data marquee states, goal drawer create, confirm-sheet destructive action, 2-step funnel creation, and dashboard-widget leak guard.
+- **Goals** — track a conversion such as a signup, checkout, or pricing-page view, with its unique visitors, total conversions, and conversion rate (retroactive over your full visit history).
+- **Funnels** — chain 2 to 5 steps into a journey and see exactly where visitors drop off at each stage (SlimStat Pro).
+- **Funnel templates** — start from a ready-made funnel (WooCommerce purchase, checkout completion, landing to contact, and more) instead of building every step by hand.
 
 **Filters & traffic sources**
 
