@@ -82,10 +82,15 @@
                 { name: __('Product'),        dimension: 'resource', operator: 'contains', value: '/product/' },
                 { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
                 { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                // WooCommerce nests the thank-you page under checkout:
-                // /checkout/order-received/{id}/?key=... — 'contains' still matches
-                // the {id}/query-string suffix. (#5)
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/checkout/order-received' }
+                // WooCommerce's thank-you page is the `order-received` endpoint
+                // nested under checkout: /checkout/order-received/{id}/?key=...
+                // We match the endpoint segment alone (`/order-received`) rather
+                // than `/checkout/order-received`: WooCommerce does not translate
+                // the endpoint slug (no _x() in core), so this still matches when
+                // the checkout PAGE slug is localized or renamed (e.g. /kasse/,
+                // /panier/), which the /checkout-prefixed value would miss.
+                // Verified against WooCommerce core + docs — see research #21. (#5)
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
             ]
         },
         checkout_completion: {
@@ -93,8 +98,9 @@
             steps: [
                 { name: __('Cart'),           dimension: 'resource', operator: 'contains', value: '/cart' },
                 { name: __('Checkout'),       dimension: 'resource', operator: 'contains', value: '/checkout' },
-                // WooCommerce's thank-you page is nested under checkout. (#5)
-                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/checkout/order-received' }
+                // Match the `order-received` endpoint segment alone so it survives
+                // a localized/renamed checkout page slug — see research #21. (#5)
+                { name: __('Order received'), dimension: 'resource', operator: 'contains', value: '/order-received' }
             ]
         },
         landing_to_contact: {

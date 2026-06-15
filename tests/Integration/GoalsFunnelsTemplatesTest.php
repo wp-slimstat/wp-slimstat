@@ -13,8 +13,9 @@ use PHPUnit\Framework\TestCase;
  * the human-readable cards live in PHP ($template_cards in funnels-card.php).
  * The card's data-template key must map 1:1 to a JS template, or clicking a card
  * opens the blank fallback instead of the advertised steps — the symptom the
- * issue screenshots showed. Also pins the corrected WooCommerce order-received
- * path (/checkout/order-received, WooCommerce's nested default).
+ * issue screenshots showed. Also pins the WooCommerce order-received match to
+ * the endpoint segment (/order-received), which survives a localized/renamed
+ * checkout page slug — see research #21.
  */
 class GoalsFunnelsTemplatesTest extends TestCase
 {
@@ -66,18 +67,24 @@ class GoalsFunnelsTemplatesTest extends TestCase
         }
     }
 
-    public function test_woocommerce_order_received_uses_nested_checkout_path(): void
+    public function test_woocommerce_order_received_matches_endpoint_segment(): void
     {
-        // WooCommerce's default thank-you URL is /checkout/order-received/{id}/...
-        $this->assertStringContainsString(
+        // WooCommerce's thank-you URL is the `order-received` endpoint nested under
+        // the checkout page: /checkout/order-received/{id}/?key=... We match the
+        // endpoint segment alone (`/order-received`) because WooCommerce does not
+        // translate that slug, so it survives a localized/renamed checkout page
+        // slug (e.g. /kasse/order-received/) that a /checkout-prefixed value would
+        // miss. Verified against WooCommerce core + docs — research #21.
+        $this->assertSame(
+            2,
+            substr_count($this->js, "value: '/order-received'"),
+            'Both WooCommerce templates (purchase + checkout_completion) must match the /order-received endpoint segment'
+        );
+        // The /checkout-prefixed value is retired (breaks on localized checkout slugs).
+        $this->assertStringNotContainsString(
             "value: '/checkout/order-received'",
             $this->js,
-            'WooCommerce template Order received step must target the nested /checkout/order-received path'
-        );
-        $this->assertStringNotContainsString(
-            "value: '/order-received'",
-            $this->js,
-            'Bare /order-received (wrong path) must be retired'
+            'The checkout-prefixed order-received path must be retired (fails on localized/renamed checkout slugs)'
         );
     }
 }
