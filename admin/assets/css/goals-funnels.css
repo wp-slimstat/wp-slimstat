@@ -143,6 +143,22 @@
     font-weight: 600;
 }
 
+/* "See templates" toggle — a neutral secondary action beside the primary red
+   "+ Add funnel" CTA. Reuses WordPress's `.button` for matching height/reset, then
+   softens to a pill and reserves the brand accent for hover/focus so it never
+   competes with the primary CTA. Id-scoped to win over `.wp-core-ui .button`
+   without a specificity fight. (#7) */
+#slim_p9_02 .slimstat-gf-see-templates {
+    border-radius: var(--ss-radius-pill);
+    font-weight: 600;
+}
+
+#slim_p9_02 .slimstat-gf-see-templates:hover,
+#slim_p9_02 .slimstat-gf-see-templates:focus-visible {
+    border-color: var(--ss-brand-500);
+    color: var(--ss-brand-700);
+}
+
 /* ------- Goals list ------- */
 
 .slimstat-gf-goal-list {
@@ -641,46 +657,13 @@
 }
 
 /* "See templates" reveal — keeps the prefab gallery reachable once funnels exist
-   (#7). Sits top-right of the funnels card, beside the header "+ Add Funnel".
-   The toggle is a neutral secondary action so it never competes with the primary
-   red CTA (Product register: brand accent is reserved for the primary action). */
-.slimstat-gf-templates-reveal {
-    margin-bottom: var(--ss-space-5);
-}
-
-.slimstat-gf-templates-reveal__bar {
-    display: flex;
-    justify-content: flex-end;
-}
-
-/* Scoped under the reveal so these win over WordPress's `.wp-core-ui .button-link`
-   (same specificity, but plugin CSS loads after core). */
-.slimstat-gf-templates-reveal .slimstat-gf-see-templates {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--ss-space-1);
-    padding: var(--ss-space-1) var(--ss-space-3);
-    border: 1px solid var(--ss-border);
-    border-radius: var(--ss-radius-pill);
-    background: var(--ss-surface);
-    color: var(--ss-text-secondary);
-    font-size: var(--ss-text-sm);
-    font-weight: 600;
-    line-height: 1.6;
-    cursor: pointer;
-    text-decoration: none;
-    transition: border-color var(--ss-duration-fast) var(--ss-easing-out),
-                color var(--ss-duration-fast) var(--ss-easing-out);
-}
-
-.slimstat-gf-templates-reveal .slimstat-gf-see-templates:hover,
-.slimstat-gf-templates-reveal .slimstat-gf-see-templates:focus-visible {
-    border-color: var(--ss-brand-500);
-    color: var(--ss-brand-700);
-}
-
+   (#7). The toggle button lives in the postbox header beside "+ Add funnel"
+   (see `.slimstat-gf-see-templates` in the header-actions block above); this is
+   the panel it reveals, sitting at the top of the funnels card body. Spacing
+   lives on the panel itself, so a collapsed (hidden) panel leaves no phantom gap. */
 .slimstat-gf-templates-reveal__panel {
     margin-top: var(--ss-space-4);
+    margin-bottom: var(--ss-space-5);
     padding: var(--ss-space-4) var(--ss-space-4) var(--ss-space-5);
     background: var(--ss-surface-tint);
     border: 1px solid var(--ss-border);

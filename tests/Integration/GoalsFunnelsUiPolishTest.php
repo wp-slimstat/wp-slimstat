@@ -48,23 +48,52 @@ class GoalsFunnelsUiPolishTest extends TestCase
         );
     }
 
-    public function test_see_templates_reveal_is_styled(): void
+    public function test_see_templates_toggle_lives_in_the_header_beside_the_cta(): void
+    {
+        $reports = (string) file_get_contents($this->root() . '/admin/view/wp-slimstat-reports.php');
+        // The toggle is built into the funnels postbox-header actions, beside the
+        // "+ Add funnel" CTA (render_funnels_card_actions' secondary slot), and
+        // controls the in-card panel by id.
+        $this->assertMatchesRegularExpression(
+            '/render_funnels_card_actions.*?slimstat-gf-see-templates.*?data-action="toggle-funnel-templates".*?aria-controls="slimstat-gf-templates-panel"/s',
+            $reports,
+            'See-templates toggle must render in the funnels header actions, controlling the panel by id'
+        );
+        // The JS resolves the panel by aria-controls id (button is now outside the
+        // card subtree, so the old .closest() ancestor lookup would miss it).
+        $this->assertStringContainsString(
+            "var panelId = \$btn.attr('aria-controls')",
+            $this->js(),
+            'Toggle must resolve its panel by aria-controls id, not a DOM-ancestor lookup'
+        );
+    }
+
+    public function test_see_templates_panel_is_styled_and_wired(): void
     {
         $css = $this->css();
+        // Header toggle: neutral secondary; brand accent reserved for hover/focus
+        // so it never competes with the primary red CTA.
         $this->assertMatchesRegularExpression(
-            '/\.slimstat-gf-templates-reveal\s+\.slimstat-gf-see-templates\s*\{[^}]*border:\s*1px solid/s',
+            '/#slim_p9_02 \.slimstat-gf-see-templates:hover[^{]*:focus-visible\s*\{[^}]*var\(--ss-brand-500\)/s',
             $css,
-            'See-templates toggle must be a bordered secondary control (wins over .wp-core-ui .button-link)'
+            'See-templates toggle must reveal the brand accent only on hover/focus'
         );
+        // The revealed panel stays a tinted, contained region in the card body.
         $this->assertMatchesRegularExpression(
             '/\.slimstat-gf-templates-reveal__panel\s*\{[^}]*background:\s*var\(--ss-surface-tint\)/s',
             $css,
             'Reveal panel must be a tinted, contained region'
         );
         $this->assertStringContainsString(
-            'justify-content: flex-end',
+            'id="slimstat-gf-templates-panel"',
+            $this->partial('funnels-card.php'),
+            'Panel must carry the aria-controls target id'
+        );
+        // The obsolete in-card right-aligned toggle bar must be gone.
+        $this->assertStringNotContainsString(
+            'slimstat-gf-templates-reveal__bar',
             $css,
-            'Toggle bar must right-align the See-templates button (beside the header CTA)'
+            'Obsolete in-card toggle bar must be removed'
         );
     }
 

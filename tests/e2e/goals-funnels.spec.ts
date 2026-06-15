@@ -546,6 +546,14 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         const toggle = page.locator('[data-action="toggle-funnel-templates"]');
         await expect(toggle).toBeVisible();
 
+        // The toggle now lives in the postbox header, right beside "+ Add funnel".
+        await expect(
+            page.locator('#slim_p9_02 .slimstat-header-buttons [data-action="toggle-funnel-templates"]')
+        ).toBeVisible();
+        await expect(
+            page.locator('#slim_p9_02 .slimstat-header-buttons .slimstat-gf-cta')
+        ).toBeVisible();
+
         await toggle.click();
         await expect(panel).toBeVisible();
         await expect(panel.locator('.slimstat-gf-template-card')).toHaveCount(6);

@@ -483,10 +483,14 @@
 
     // "See templates" — reveal/hide the prefab template gallery once funnels
     // already exist (the cards used to disappear after the first funnel). The
-    // existing open-funnel-builder handler wires the revealed cards. (#7)
+    // toggle button lives in the postbox header beside "+ Add funnel", so it
+    // resolves its panel by aria-controls id rather than a DOM-ancestor lookup
+    // (the panel sits in the card body, a separate subtree). The existing
+    // open-funnel-builder handler wires the revealed cards. (#7)
     $body.on('click', '[data-action="toggle-funnel-templates"]', function () {
-        var $btn   = $(this);
-        var $panel = $btn.closest('[data-role="funnels-templates"]').find('[data-role="funnels-templates-panel"]');
+        var $btn    = $(this);
+        var panelId = $btn.attr('aria-controls');
+        var $panel  = $(document.getElementById(panelId));
         if (!$panel.length) return;
         var willShow = $panel.attr('hidden') != null;
         if (willShow) {

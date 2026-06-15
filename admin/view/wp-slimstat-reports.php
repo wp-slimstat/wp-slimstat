@@ -1824,7 +1824,7 @@ class wp_slimstat_reports
      * Builds the "N of M used" usage pill plus an optional "+ Add" primary
      * button. Shared between the Goals and Funnels postbox-header injections.
      */
-    private static function render_pill_and_cta(int $used, int $max, string $cta_action, string $cta_label, bool $show_cta): string
+    private static function render_pill_and_cta(int $used, int $max, string $cta_action, string $cta_label, bool $show_cta, string $secondary_html = ''): string
     {
         $html  = '<span class="slimstat-gf-pill" data-role="usage"';
         $html .= ' data-active="' . esc_attr((string) $used) . '"';
@@ -1836,6 +1836,10 @@ class wp_slimstat_reports
             $max
         ));
         $html .= '</span>';
+
+        // Optional secondary action between the usage pill and the primary CTA
+        // (Funnels uses it for the "See templates" toggle beside "+ Add funnel").
+        $html .= $secondary_html;
 
         if ($show_cta) {
             $html .= '<button type="button" class="button button-primary slimstat-gf-cta"';
@@ -1871,12 +1875,25 @@ class wp_slimstat_reports
         if ($state['locked']) {
             return '';
         }
+        // "See templates" reveals the in-card template picker (#7). Shown under the
+        // same condition as the "+ Add funnel" CTA (at least one funnel exists and
+        // we're below the limit) and placed right beside it via the secondary slot.
+        // The panel it toggles lives in funnels-card.php, wired by aria-controls.
+        $see_templates = '';
+        if ($state['show_add_cta']) {
+            $see_templates = '<button type="button" class="button slimstat-gf-see-templates"'
+                . ' data-action="toggle-funnel-templates" aria-expanded="false"'
+                . ' aria-controls="slimstat-gf-templates-panel">'
+                . esc_html__('See templates', 'wp-slimstat')
+                . '</button>';
+        }
         return self::render_pill_and_cta(
             $state['funnel_count'],
             $state['max_funnels'],
             'open-funnel-builder',
             __('+ Add funnel', 'wp-slimstat'),
-            $state['show_add_cta']
+            $state['show_add_cta'],
+            $see_templates
         );
     }
 

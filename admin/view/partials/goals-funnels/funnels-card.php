@@ -106,20 +106,12 @@ $template_cards = [
         </div>
     <?php else : ?>
         <?php /* "See templates" keeps the prefab gallery reachable after the first
-                 funnel exists (it used to vanish). Placed top-right, beside the
-                 header "+ Add Funnel". Gated on !$at_max so we never offer a
-                 template that can't be saved. (#7) */ ?>
+                 funnel exists (it used to vanish). The toggle button lives in the
+                 postbox header beside "+ Add funnel" (render_funnels_card_actions);
+                 this is the panel it reveals, wired by aria-controls. Gated on
+                 !$at_max so we never offer a template that can't be saved. (#7) */ ?>
         <?php if (!$at_max) : ?>
             <div class="slimstat-gf-templates-reveal" data-role="funnels-templates">
-                <div class="slimstat-gf-templates-reveal__bar">
-                    <button type="button"
-                            class="button-link slimstat-gf-see-templates"
-                            data-action="toggle-funnel-templates"
-                            aria-expanded="false"
-                            aria-controls="slimstat-gf-templates-panel">
-                        <?php esc_html_e('See templates', 'wp-slimstat'); ?>
-                    </button>
-                </div>
                 <div class="slimstat-gf-templates-reveal__panel" id="slimstat-gf-templates-panel" data-role="funnels-templates-panel" hidden>
                     <?php include __DIR__ . '/funnel-template-picker.php'; ?>
                 </div>
