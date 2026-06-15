@@ -1094,10 +1094,15 @@ class wp_slimstat_admin
             wp_localize_script('slimstat-custom-datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
 
-        // wp-i18n dependency + script translations so admin.js's __() strings
+        // Shared wp.i18n accessor (window.wpSlimstatI18n) for every admin script
+        // that carries translatable strings. Depends on wp-i18n; the scripts below
+        // depend on this handle so the accessor is defined before they run.
+        wp_enqueue_script('slimstat-i18n', plugins_url('/admin/assets/js/i18n.js', __DIR__), ['wp-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+
+        // slimstat-i18n dependency + script translations so admin.js's __() strings
         // (combobox labels, etc.) load their JSON translations at runtime. Without
         // this, the strings are extracted into the .pot but never translated.
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'wp-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
         self::set_slimstat_script_translations('slimstat_admin');
 
         // Enqueue notification assets if notifications are enabled
@@ -1143,7 +1148,7 @@ class wp_slimstat_admin
             wp_enqueue_script(
                 'slimstat-goals-funnels',
                 plugins_url('/admin/assets/js/goals-funnels.js', __DIR__),
-                ['jquery', 'slimstat_admin', 'wp-i18n'],
+                ['jquery', 'slimstat_admin', 'slimstat-i18n'],
                 SLIMSTAT_ANALYTICS_VERSION,
                 true
             );

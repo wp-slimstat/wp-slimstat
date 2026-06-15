@@ -45,23 +45,12 @@
         }
     }
 
-    // wp.i18n is a declared script dependency; fallback object keeps the module
-    // working if it ever loads out-of-order (e.g., Customize preview).
-    var _i18n = (window.wp && window.wp.i18n) ? window.wp.i18n : {
-        __: function (s) { return s; },
-        _n: function (s, p, n) { return n === 1 ? s : p; },
-        sprintf: function () {
-            var args = arguments, i = 0;
-            return String(args[0]).replace(/%(?:(\d+)\$)?[ds]/g, function (_m, pos) {
-                return args[pos ? parseInt(pos, 10) : ++i];
-            });
-        }
-    };
-    // Bind the real wp.i18n functions (or the fallback) directly, and pass the
-    // 'wp-slimstat' text domain at every call site below. `wp i18n make-pot` only
-    // extracts JS strings from calls with a literal domain argument; a single-arg
-    // wrapper hides them from extraction, so they never reach the .pot and never
-    // get translated. Keep the domain on every __()/_n() call.
+    // Shared wp.i18n accessor (admin/assets/js/i18n.js, the 'slimstat-i18n'
+    // script dependency). Every __()/_n() call below passes the 'wp-slimstat'
+    // text domain: `wp i18n make-pot` only extracts JS strings from calls with a
+    // literal domain argument, so a single-arg wrapper would hide them from the
+    // .pot and they'd never get translated. Keep the domain on every call.
+    var _i18n   = window.wpSlimstatI18n;
     var __      = _i18n.__;
     var _n      = _i18n._n;
     var sprintf = _i18n.sprintf;

@@ -485,8 +485,9 @@ jQuery(function () {
     //
 
     // Custom Searchable Select Component
-    // Make all texts translatable using wp.i18n if available, with fallbacks
-    const __ = typeof window.wp !== "undefined" && wp.i18n && typeof wp.i18n.__ === "function" ? wp.i18n.__ : (s) => s;
+    // Translatable via the shared accessor (admin/assets/js/i18n.js, the
+    // 'slimstat-i18n' dependency). Call sites pass the 'wp-slimstat' domain.
+    const __ = window.wpSlimstatI18n.__;
     class SlimStatSearchableSelect {
         constructor(element, options = {}) {
             // Validate element exists

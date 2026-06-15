@@ -73,4 +73,36 @@ class JsI18nDomainScanTest extends TestCase
             . implode("\n", $offenders)
         );
     }
+
+    public function test_scripts_share_one_i18n_accessor(): void
+    {
+        $root = dirname(__DIR__, 2);
+
+        // The shared module defines the accessor once...
+        $this->assertStringContainsString(
+            'window.wpSlimstatI18n',
+            (string) file_get_contents($root . '/admin/assets/js/i18n.js'),
+            'i18n.js must define the shared window.wpSlimstatI18n accessor'
+        );
+
+        // ...and both consumer scripts read it instead of re-rolling their own
+        // wp.i18n binding + fallback.
+        foreach (['admin.js', 'goals-funnels.js'] as $script) {
+            $this->assertStringContainsString(
+                'window.wpSlimstatI18n',
+                (string) file_get_contents($root . '/admin/assets/js/' . $script),
+                $script . ' must read the shared accessor, not re-roll its own wp.i18n binding'
+            );
+        }
+
+        // Enqueue wiring: slimstat-i18n is registered and is a dependency of both
+        // consumer scripts (handle once + two deps = at least three references).
+        $idx = (string) file_get_contents($root . '/admin/index.php');
+        $this->assertStringContainsString("wp_enqueue_script('slimstat-i18n'", $idx, 'slimstat-i18n must be enqueued');
+        $this->assertGreaterThanOrEqual(
+            3,
+            substr_count($idx, "'slimstat-i18n'"),
+            'slimstat-i18n must be the handle plus a dependency of slimstat_admin and slimstat-goals-funnels'
+        );
+    }
 }
