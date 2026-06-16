@@ -20,9 +20,12 @@ class wp_slimstat_admin
      * (%needle%) instead of the default left-anchored prefix match. These are
      * either multi-token fields (notes, category) or free-form strings where
      * users naturally search fragments (user_agent, outbound_resource URLs).
+     * resource + referer are URL-like for the same reason: a user searching a
+     * path fragment ("pricing") shouldn't have to type the leading slash to
+     * match "/pricing/" — the prefix anchor made that fail. (#18)
      */
     private const FILTER_SEARCH_SUBSTRING_DIMENSIONS = [
-        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent',
+        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer',
     ];
 
     protected static $data_for_column = [

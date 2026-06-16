@@ -69,7 +69,9 @@ class FilterOptionsSearchTest extends WpSlimstatTestCase
     /** @test */
     public function test_substring_dimensions_use_unanchored_like(): void
     {
-        foreach (['notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent'] as $dim) {
+        // resource + referer are URL-like: users naturally search a fragment
+        // ("pricing") without the leading slash, so they search substring too (#18).
+        foreach (['notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer'] as $dim) {
             $this->assertTrue(self::call('filter_search_is_substring', $dim), "$dim should use %needle% substring search");
         }
     }
@@ -77,7 +79,7 @@ class FilterOptionsSearchTest extends WpSlimstatTestCase
     /** @test */
     public function test_other_dimensions_use_left_anchored_prefix(): void
     {
-        foreach (['ip', 'browser', 'resource', 'referer', 'country'] as $dim) {
+        foreach (['ip', 'browser', 'country'] as $dim) {
             $this->assertFalse(self::call('filter_search_is_substring', $dim), "$dim should use left-anchored prefix search");
         }
     }
