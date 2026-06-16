@@ -1732,7 +1732,7 @@ class wp_slimstat_db
 
         $goal_where = self::build_goal_where($goal, $is_event ? 'te' : 't1');
         if (empty($goal_where)) {
-            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
+            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0, 'total_visitors' => 0];
         }
 
         $filters_where = self::get_combined_where('', '*', true, 't1');
@@ -1770,7 +1770,9 @@ class wp_slimstat_db
             $total_visitors = self::get_total_unique_visitors();
             $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
 
-            $result = ['total' => $total, 'uniques' => $uniques, 'cr' => $cr];
+            // total_visitors is the CR denominator — returned so the card can show
+            // "N of M uniques" and make the percentage legible without re-querying. (#13)
+            $result = ['total' => $total, 'uniques' => $uniques, 'cr' => $cr, 'total_visitors' => $total_visitors];
             set_transient($cache_key, $result, 5 * MINUTE_IN_SECONDS);
         }
 

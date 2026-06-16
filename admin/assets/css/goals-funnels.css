@@ -265,11 +265,20 @@
     color: var(--ss-text-primary);
 }
 
-/* CR is the headline conversion metric on a goal — give it the most weight and
-   the brand color so it reads first among Uniques / Total / CR. */
+/* CR is the headline conversion metric on a goal — keep the most weight so it
+   still reads first among Uniques / Total / CR. Emphasis is by weight, NOT color:
+   brand-red read as an error/warning on a low rate, so CR uses the normal text
+   color (inherited from .slimstat-gf-metric__value) like the other metrics. (#13) */
 .slimstat-gf-metric--cr .slimstat-gf-metric__value {
     font-weight: 700;
-    color: var(--ss-brand-700);
+}
+
+/* The CR denominator ("N of M uniques") shown under the percentage so the rate is
+   legible — without it, "0.1%" gives no sense of the base it's measured against. (#13) */
+.slimstat-gf-metric__sub {
+    margin-top: 2px;
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-tertiary);
 }
 
 .slimstat-gf-goal__actions {

@@ -34,17 +34,50 @@ class GoalsFunnelsUiPolishTest extends TestCase
         return (string) file_get_contents($this->root() . '/admin/view/partials/goals-funnels/' . $f);
     }
 
-    public function test_goal_cr_is_emphasized(): void
+    public function test_goal_cr_is_emphasized_by_weight_not_red(): void
     {
         $this->assertStringContainsString(
             'slimstat-gf-metric--cr',
             $this->partial('goals-card.php'),
             'The CR metric must carry the --cr modifier'
         );
+        // CR keeps the heaviest weight so it still reads first among the metrics…
         $this->assertMatchesRegularExpression(
-            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*font-weight:\s*700[^}]*var\(--ss-brand-700\)/s',
+            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*font-weight:\s*700[^}]*\}/s',
             $this->css(),
-            'CR value must be bolded and brand-colored'
+            'CR value must stay bold'
+        );
+        // …but NOT in brand red — it read as an error/warning on a low rate. (#13)
+        $this->assertDoesNotMatchRegularExpression(
+            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*var\(--ss-brand-700\)/s',
+            $this->css(),
+            'CR value must no longer use brand red'
+        );
+    }
+
+    public function test_goal_card_shows_cr_denominator(): void
+    {
+        $card = $this->partial('goals-card.php');
+        // The card surfaces the denominator so "0.1%" is legible. (#13)
+        $this->assertStringContainsString(
+            'total_visitors',
+            $card,
+            'goals-card must read the CR denominator'
+        );
+        $this->assertStringContainsString(
+            'of %2$s uniques',
+            $card,
+            'goals-card must render the "N of M uniques" denominator line'
+        );
+        $this->assertStringContainsString(
+            'slimstat-gf-metric__sub',
+            $card,
+            'denominator must use the metric sub-line element'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-metric__sub\s*\{/s',
+            $this->css(),
+            'metric sub-line must be styled'
         );
     }
 
