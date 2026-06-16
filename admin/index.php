@@ -2924,12 +2924,16 @@ class wp_slimstat_admin
 
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
+        // Rank matches by relevance (exact, then prefix, then contains) so the LIMIT
+        // keeps and orders the values the user actually typed first. (#21)
+        $order_sql = self::build_filter_search_order($safe_dimension, $search);
+
         $sql = sprintf(
-            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
+            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s LIMIT %d',
             $safe_dimension,
             $table_name,
             $where_sql,
-            $safe_dimension,
+            $order_sql,
             $limit
         );
 
@@ -3088,6 +3092,29 @@ class wp_slimstat_admin
     {
         $escaped = wp_slimstat::$wpdb->esc_like($search);
         return self::filter_search_is_substring($dimension) ? '%' . $escaped . '%' : $escaped . '%';
+    }
+
+    /**
+     * Build the ORDER BY expression for a server-side filter search so matches rank
+     * by relevance: exact first, then left-anchored prefix, then any other (substring)
+     * match, alphabetical within each tier. Without this, ORDER BY column-only +
+     * LIMIT could truncate or bury the exact/prefix values a user typed behind
+     * incidental contains-matches (e.g. "/pricing" surfacing unrelated paths instead
+     * of /pricing, /pricing/, /pricing?utm…). The column name is already validated
+     * against the allowed-columns whitelist by the caller; the term is bound via
+     * prepare(). (#21)
+     */
+    private static function build_filter_search_order(string $safe_dimension, string $search): string
+    {
+        if ($search === '') {
+            return $safe_dimension . ' ASC';
+        }
+        $prefix_like = wp_slimstat::$wpdb->esc_like($search) . '%';
+        return wp_slimstat::$wpdb->prepare(
+            'CASE WHEN ' . $safe_dimension . ' = %s THEN 0 WHEN ' . $safe_dimension . ' LIKE %s THEN 1 ELSE 2 END, ' . $safe_dimension . ' ASC',
+            $search,
+            $prefix_like
+        );
     }
 
     /**

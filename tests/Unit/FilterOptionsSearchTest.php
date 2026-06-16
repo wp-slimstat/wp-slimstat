@@ -45,6 +45,16 @@ class FilterOptionsSearchTest extends WpSlimstatTestCase
         $wpdb->shouldReceive('esc_like')->andReturnUsing(
             static fn(string $text): string => addcslashes($text, '_%\\')
         );
+        // prepare models WP wpdb::prepare just enough to assert the built clause:
+        // replace each %s placeholder, in order, with the single-quoted argument.
+        $wpdb->shouldReceive('prepare')->andReturnUsing(
+            static function (string $query, ...$args): string {
+                foreach ($args as $arg) {
+                    $query = preg_replace('/%s/', "'" . addslashes((string) $arg) . "'", $query, 1);
+                }
+                return $query;
+            }
+        );
         $wpdb->dbhost = 'localhost';
         \wp_slimstat::$wpdb = $wpdb;
     }
@@ -97,6 +107,27 @@ class FilterOptionsSearchTest extends WpSlimstatTestCase
     public function test_substring_like_pattern_wraps_and_escapes(): void
     {
         $this->assertSame('%Mozilla\_5%', self::call('build_filter_search_like', 'user_agent', 'Mozilla_5'));
+    }
+
+    // ── Result ranking: exact > prefix > contains (#21) ──────────────
+
+    /** @test */
+    public function test_search_order_ranks_exact_then_prefix_then_contains(): void
+    {
+        // A substring search must still rank the exact value first, then prefix
+        // matches, then incidental contains-matches — so "/pricing" surfaces
+        // /pricing, /pricing/, /pricing?utm… ahead of unrelated paths. (#21)
+        $order = self::call('build_filter_search_order', 'resource', '/pricing');
+        $this->assertStringContainsString("CASE WHEN resource = '/pricing' THEN 0", $order, 'exact match must rank first');
+        $this->assertStringContainsString("WHEN resource LIKE '/pricing%' THEN 1", $order, 'prefix match must rank second');
+        $this->assertStringContainsString('ELSE 2 END', $order, 'everything else (contains) ranks last');
+        $this->assertStringEndsWith('resource ASC', $order, 'ties broken alphabetically');
+    }
+
+    /** @test */
+    public function test_search_order_without_term_is_plain_alphabetical(): void
+    {
+        $this->assertSame('resource ASC', self::call('build_filter_search_order', 'resource', ''));
     }
 
     // ── Cache key composition ────────────────────────────────────────
