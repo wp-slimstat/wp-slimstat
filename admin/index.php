@@ -448,6 +448,30 @@ class wp_slimstat_admin
         if (!wp_slimstat::pro_is_installed()) {
             echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
         }
+        // The time-limited "New" badge on the Goals & Funnels item renders in the
+        // global sidebar, so its style must load on every admin page (not just
+        // slimview6). Tiny, so always emit it. (#20)
+        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} </style>';
+    }
+
+    /**
+     * "New" badge HTML for the Goals & Funnels sidebar item, shown for 15 days
+     * after the feature became available on this site, then it disappears.
+     * Returns '' once the window elapses. The window is anchored the first time
+     * the menu builds after this version ships, so existing installs start their
+     * countdown then. (#20)
+     */
+    private static function goals_funnels_new_badge()
+    {
+        $since = (int) get_option('slimstat_goals_funnels_since', 0);
+        if ($since <= 0) {
+            $since = time();
+            update_option('slimstat_goals_funnels_since', $since);
+        }
+        if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
+            return '';
+        }
+        return ' <span class="slimstat-gf-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
     }
 
     /**
@@ -1248,10 +1272,16 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
+                // Sidebar label may carry the time-limited "New" badge; the page
+                // title (browser tab) stays plain. (#20)
+                $menu_label = $a_screen_info['title'];
+                if ('slimview6' === $a_screen_id) {
+                    $menu_label .= self::goals_funnels_new_badge();
+                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
-                    $a_screen_info['title'],
+                    $menu_label,
                     $minimum_capability,
                     $a_screen_id,
                     $a_screen_info['callback']

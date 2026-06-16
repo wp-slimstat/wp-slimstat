@@ -722,6 +722,28 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
     });
 
+    test('menu-new-badge: Goals & Funnels shows a time-limited "New" badge (#20)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        const { getPool } = await import('./helpers/setup');
+        const badge = '#adminmenu a[href*="page=slimview6"] .slimstat-gf-new-badge';
+
+        // Fresh: clear the anchor so the first menu build starts the 15-day window now.
+        await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_goals_funnels_since'");
+        await gotoSlimview6(page);
+        await expect(page.locator(badge)).toBeVisible();
+        await expect(page.locator(badge)).toContainText('New');
+
+        // Past the 15-day window: the badge is gone.
+        const sixteenDaysAgo = Math.floor(Date.now() / 1000) - 16 * 24 * 60 * 60;
+        await getPool().execute(
+            "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_goals_funnels_since', ?, 'yes') " +
+            "ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+            [String(sixteenDaysAgo)],
+        );
+        await gotoSlimview6(page);
+        await expect(page.locator(badge)).toHaveCount(0);
+    });
+
     // ─── Round 2: prototype copy regression ──────────────────────
 
     test('copy-prototype-strings: marquee empty-state copy matches the prototype', async ({ page }) => {
