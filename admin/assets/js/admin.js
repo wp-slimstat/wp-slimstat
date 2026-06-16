@@ -637,6 +637,15 @@ jQuery(function () {
             searchInput.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") {
                     this.close();
+                } else if (e.key === "Enter") {
+                    // Commit the typed value immediately instead of forcing a
+                    // click-outside. The value is already in the hidden input via
+                    // syncTypedValue(); close() reflects it in the display, and we
+                    // dispatch change ourselves because Enter doesn't blur. (#14)
+                    // preventDefault stops Enter from submitting the enclosing form.
+                    e.preventDefault();
+                    this.close();
+                    this.dispatchChange();
                 }
             });
 

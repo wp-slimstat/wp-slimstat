@@ -420,6 +420,36 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('/totally-custom-xyz');
     });
 
+    test('value-custom-typed-enter-commits: pressing Enter commits a custom value without click-out (#14)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        await page.fill('[data-role="goal-name"]', 'Enter Commit Goal');
+
+        const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
+        await wrap.locator('.slimstat-select-display').click();
+        const search = wrap.locator('.slimstat-select-search input');
+        await search.fill('https://metricet.com');
+        // Commit via Enter only — no click-outside. (#14)
+        await search.press('Enter');
+
+        // Dropdown closes and the display reflects the typed value immediately,
+        // and the page must NOT have navigated (Enter must not submit the form).
+        await expect(wrap.locator('.slimstat-select-dropdown')).toBeHidden();
+        await expect(wrap.locator('.slimstat-select-text')).toHaveText('https://metricet.com');
+        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('https://metricet.com');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        // The committed value still round-trips on save.
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-goal"]'),
+        ]);
+        await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('https://metricet.com');
+    });
+
     test('value-hint-copy: drawer + builder explain date-range suggestions and custom values', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
         await gotoSlimview6(page);
