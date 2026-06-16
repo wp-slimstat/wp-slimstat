@@ -61,7 +61,8 @@ class GoalsFunnelsNewBadgeTest extends IntegrationTestCase
     {
         // Wiring guard: the badge is appended only to the slimview6 sidebar label
         // (not to its page title), and the badge style is emitted globally.
-        $admin = (string) file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
+        $admin = file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
+        $this->assertNotFalse($admin, 'Could not read admin/index.php');
         $this->assertMatchesRegularExpression(
             "/'slimview6'\s*===\s*\\\$a_screen_id\s*\)\s*\{\s*\\\$menu_label\s*\.=\s*self::goals_funnels_new_badge\(\);/s",
             $admin,
