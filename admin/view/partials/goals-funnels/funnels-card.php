@@ -90,10 +90,14 @@ $template_cards = [
         'body'  => __('Landing → Form → Thank-you (only if you redirect after submit)', 'wp-slimstat'),
     ],
     [
+        // The "build from scratch" entry is the primary call to action, not a
+        // prefab template — render it as a solid blue button (like the Goals
+        // empty-state CTA) instead of a muted dashed card, while keeping it in
+        // the template grid. (#15)
         'key'      => 'blank',
-        'title'    => __('+ Blank funnel', 'wp-slimstat'),
-        'body'     => __('Define 2 to 5 custom steps.', 'wp-slimstat'),
-        'modifier' => 'slimstat-gf-template-card--scratch',
+        'title'    => __('+ Add funnel', 'wp-slimstat'),
+        'body'     => '',
+        'modifier' => 'slimstat-gf-template-card--cta',
     ],
 ];
 ?>

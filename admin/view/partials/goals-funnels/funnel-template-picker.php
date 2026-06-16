@@ -28,7 +28,9 @@ if (!defined('ABSPATH')) {
                 data-mode="create"
                 data-template="<?php echo esc_attr($card['key']); ?>">
             <span class="slimstat-gf-template-card__title"><?php echo esc_html($card['title']); ?></span>
-            <span class="slimstat-gf-template-card__body"><?php echo esc_html($card['body']); ?></span>
+            <?php if ('' !== (string) ($card['body'] ?? '')) : ?>
+                <span class="slimstat-gf-template-card__body"><?php echo esc_html($card['body']); ?></span>
+            <?php endif; ?>
         </button>
     <?php endforeach; ?>
 </div>

@@ -177,6 +177,27 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_02 .slimstat-gf-cta')).toHaveCount(0);
     });
 
+    test('funnel-empty-cta: empty funnels show a blue "+ Add funnel" CTA beside the templates (#15)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        const empty = page.locator('[data-role="funnels-empty"]');
+        await expect(empty).toBeVisible();
+
+        // The "build from scratch" entry is now a prominent blue CTA, not a gray card.
+        const cta = empty.locator('.slimstat-gf-template-card--cta[data-template="blank"]');
+        await expect(cta).toBeVisible();
+        await expect(cta).toContainText('Add funnel');
+
+        // The 5 prefab templates remain (6 entries total: 5 templates + the CTA).
+        await expect(empty.locator('.slimstat-gf-template-card')).toHaveCount(6);
+        await expect(empty.locator('.slimstat-gf-template-card:not(.slimstat-gf-template-card--cta)')).toHaveCount(5);
+
+        // Clicking it opens the builder (blank funnel).
+        await cta.click();
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+    });
+
     // ─── State: Pro × has-data ─────────────────────────────────
 
     test('pro-has-data: 2 goals + 2 funnels render with pill tabs and usage counts', async ({ page }) => {
@@ -736,7 +757,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(templates.nth(2)).toContainText('Landing to contact');
         await expect(templates.nth(3)).toContainText('Homepage to pricing to checkout');
         await expect(templates.nth(4)).toContainText('Landing to thank-you');
-        await expect(templates.nth(5)).toContainText('Blank funnel');
+        // The 6th entry is the primary "+ Add funnel" CTA (the old gray "Blank
+        // funnel" card), now a blue button in the grid. (#15)
+        await expect(templates.nth(5)).toContainText('Add funnel');
     });
 
     test('copy-confirm-sheet-keep-labels: confirm sheet uses Keep + Delete wording', async ({ page }) => {

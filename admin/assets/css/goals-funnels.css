@@ -730,9 +730,25 @@
     color: var(--ss-text-secondary);
 }
 
-.slimstat-gf-template-card--scratch {
-    background: var(--ss-surface-tint);
-    border-style: dashed;
+/* The "+ Add funnel" entry is the primary call to action, not a prefab template,
+   so it reads as a solid blue button (matching the Goals empty-state CTA) while
+   still sitting in the template grid. Uses the WP admin accent so it respects the
+   user's color scheme; the grid stretches it to the height of the prefab cards. (#15) */
+.slimstat-gf-template-card--cta {
+    background: var(--wp-admin-theme-color, #2271b1);
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.slimstat-gf-template-card--cta .slimstat-gf-template-card__title {
+    color: #fff;
+}
+
+.slimstat-gf-template-card--cta:hover {
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    filter: brightness(0.94);
 }
 
 /* Skeleton (lazy tabs) */
