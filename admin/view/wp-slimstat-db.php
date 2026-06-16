@@ -1846,6 +1846,30 @@ class wp_slimstat_db
     }
 
     /**
+     * Reduce a funnel's steps to the fields that actually determine the query
+     * result — dimension, operator, value, in order — so two funnels with the
+     * same rules (ignoring id, name and per-step labels) hash to the same cache
+     * signature and therefore return identical numbers. Order is significant:
+     * A->B->C is a different journey than C->B->A, so steps are NOT sorted. The
+     * fields mirror exactly what build_goal_where() reads, so a shared signature
+     * guarantees a shared WHERE clause — never a wrong-result collision. (#19)
+     *
+     * @param array $steps
+     * @return array<int,array{dimension:string,operator:string,value:string}>
+     */
+    private static function normalize_funnel_steps($steps)
+    {
+        return array_map(
+            static fn($step) => [
+                'dimension' => (string) ($step['dimension'] ?? ''),
+                'operator'  => (string) ($step['operator'] ?? ''),
+                'value'     => (string) ($step['value'] ?? ''),
+            ],
+            array_values((array) $steps)
+        );
+    }
+
+    /**
      * Get funnel results: visitors at each step with drop-off.
      * Uses iterative PHP approach for MySQL 5.6 compatibility.
      *
@@ -1863,7 +1887,12 @@ class wp_slimstat_db
 
         $date_where = self::get_combined_where('', '*', true, 't1');
         $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
-        $cache_key  = 'slimstat_funnel_' . (isset($funnel['id']) ? $funnel['id'] : md5(serialize($funnel['steps'])))
+        // Key by the normalized step signature, NOT the funnel id: two funnels with
+        // identical rules MUST return identical numbers, so they share one transient
+        // + per-request memo entry. This also lets a server-rendered funnel and its
+        // AJAX-loaded twin reuse the same result for the same date window — the gap
+        // that let "two identical funnels" disagree. Mirrors get_goal_results(). (#19)
+        $cache_key  = 'slimstat_funnel_' . md5(serialize(self::normalize_funnel_steps($funnel['steps'])))
                       . '_' . md5($date_where . $cache_ver);
 
         // Per-request memo: a funnel rendered (or re-rendered) twice in one

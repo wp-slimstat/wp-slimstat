@@ -209,6 +209,38 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-tab.is-active')).toHaveCount(1);
     });
 
+    test('funnel-identical-configs-match: two funnels with the same steps show identical numbers (#19)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        const steps = [
+            { name: 'Home',    dimension: 'resource', operator: 'contains', value: '/' },
+            { name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing' },
+        ];
+        // Identical step rules, different funnel + step names — they MUST agree.
+        await seedFunnels([
+            { name: 'Funnel A', steps },
+            { name: 'Funnel B', steps: steps.map(s => ({ ...s, name: `${s.name} (B)` })) },
+        ]);
+        await gotoSlimview6(page);
+
+        // Funnel A is the active, server-rendered panel.
+        const panelA = page.locator('.slimstat-gf-funnel-panel[data-funnel-index="0"]');
+        await expect(panelA).toBeVisible();
+        await expect(panelA.locator('.slimstat-gf-step__count').first()).toBeVisible();
+        const countsA = (await panelA.locator('.slimstat-gf-step__count').allInnerTexts())
+            .map(s => s.replace(/\s+/g, ' ').trim());
+
+        // Funnel B loads via AJAX on tab switch; wait for its bars to render.
+        await page.locator('.slimstat-gf-tab[data-funnel-index="1"]').click();
+        const panelB = page.locator('.slimstat-gf-funnel-panel[data-funnel-index="1"]');
+        await expect(panelB).toBeVisible();
+        await expect(panelB.locator('.slimstat-gf-step__count')).toHaveCount(countsA.length);
+        const countsB = (await panelB.locator('.slimstat-gf-step__count').allInnerTexts())
+            .map(s => s.replace(/\s+/g, ' ').trim());
+
+        // The #19 contract: identical configs → identical per-step counts/percentages.
+        expect(countsB).toEqual(countsA);
+    });
+
     // ─── Goal create via drawer ─────────────────────────────────
 
     test('goal-create: drawer opens, form submits, new goal renders', async ({ page }) => {

@@ -54,4 +54,39 @@ class GoalsFunnelsPerfTest extends TestCase
         $this->assertStringContainsString('static $request_memo', $body, 'get_funnel_results must memoize within the request');
         $this->assertMatchesRegularExpression('/array_key_exists\(\s*\$cache_key/', $body, 'Funnel memo must key on the cache key');
     }
+
+    public function test_funnel_cache_key_is_step_signature_not_id(): void
+    {
+        // Two funnels with identical steps MUST return identical numbers, so the
+        // cache key (transient + per-request memo) is derived from the normalized
+        // step signature, NOT the funnel id. Keying on the id split identical-config
+        // funnels into separate entries that could diverge (a server-rendered funnel
+        // vs its AJAX-loaded twin). (#19)
+        $body = $this->methodBody('get_funnel_results');
+        $this->assertStringContainsString(
+            "normalize_funnel_steps(\$funnel['steps'])",
+            $body,
+            'Funnel cache key must derive from the normalized step signature'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            "/\\\$cache_key\\s*=\\s*'slimstat_funnel_'\\s*\\.\\s*\\(isset\\(\\\$funnel\\['id'\\]\\)/",
+            $body,
+            'Funnel cache key must no longer be derived from the funnel id'
+        );
+    }
+
+    public function test_normalize_funnel_steps_is_result_determining_and_ordered(): void
+    {
+        $body = $this->methodBody('normalize_funnel_steps');
+        // Captures exactly the fields build_goal_where() reads, so a shared
+        // signature guarantees a shared WHERE clause (no wrong-result collision).
+        $this->assertStringContainsString("'dimension'", $body);
+        $this->assertStringContainsString("'operator'", $body);
+        $this->assertStringContainsString("'value'", $body);
+        // Ignores the per-step label — two funnels differing only by step names
+        // are the same funnel for results purposes.
+        $this->assertStringNotContainsString("'name'", $body, 'normalize must ignore the step label');
+        // Step order is significant (A->B->C is not C->B->A), so steps are not sorted.
+        $this->assertStringNotContainsString('sort(', $body, 'funnel steps must not be reordered');
+    }
 }
