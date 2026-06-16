@@ -380,6 +380,35 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(rows.nth(3).locator('[data-role="step-value"]')).toHaveValue(/order-received/);
     });
 
+    test('funnel-test-button-persists: Test stays on every step after the value combobox mounts (#16)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const rows = page.locator('.slimstat-gf-step-row');
+        await expect(rows).toHaveCount(2);
+        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
+        await rows.nth(1).locator('[data-role="step-value"]').fill('/pricing');
+
+        // Wait for the value comboboxes to mount (autosuggest replaces the plain
+        // input with .slimstat-searchable-select once the options AJAX resolves).
+        await expect(rows.nth(0).locator('.slimstat-searchable-select')).toBeVisible();
+        await expect(rows.nth(1).locator('.slimstat-searchable-select')).toBeVisible();
+
+        // The Test control must stay visible on EVERY step after the combobox mounts
+        // — it used to get clipped off the row until a reload. (#16)
+        await expect(rows.nth(0).locator('[data-action="test-step"]')).toBeVisible();
+        await expect(rows.nth(1).locator('[data-action="test-step"]')).toBeVisible();
+
+        // Testing one step keeps the result and leaves every Test control in place.
+        await rows.nth(0).locator('[data-action="test-step"]').click();
+        await expect(rows.nth(0).locator('[data-role="test-result"]')).not.toBeEmpty();
+        await expect(rows.nth(0).locator('[data-action="test-step"]')).toBeVisible();
+        await expect(rows.nth(1).locator('[data-action="test-step"]')).toBeVisible();
+    });
+
     test('value-display-goal-edit: editing a goal shows the saved value (not the placeholder)', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
         await seedGoals([{ name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);

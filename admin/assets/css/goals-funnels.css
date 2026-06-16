@@ -915,6 +915,21 @@
     max-width: none;
 }
 
+/* When suggestions mount, the plain value input is replaced by the shared
+   SlimStatSearchableSelect combobox, whose base style fixes the inner wrapper at
+   180px + a right margin. Inside this grid that forced the value track wider than
+   its share, pushed the row past the panel edge, and clipped the Test / result /
+   remove columns (they vanished until a reload). Scope the combobox to fill and
+   shrink with its grid track instead — the filter bar keeps the 180px default. (#16) */
+.slimstat-gf-step-row .slimstat-searchable-select {
+    min-width: 0;
+}
+
+.slimstat-gf-step-row .slimstat-searchable-select .slimstat-select-wrapper {
+    width: 100%;
+    margin-right: 0;
+}
+
 /* Give native selects a consistent chevron so they read as dropdowns and line up
    with the value field (the OS-rendered open list itself can't be CSS-styled). */
 .slimstat-gf-field select,
