@@ -1013,6 +1013,9 @@ class wp_slimstat_admin
 
         $printed         = true;
         $dimensions      = self::get_goal_dimensions();
+        // Funnel steps offer only action-oriented dimensions; goals keep the full
+        // list (a "Country = gb" goal is legitimate). (#17)
+        $funnel_step_dimensions = self::get_funnel_step_dimensions();
         $operators       = self::get_goal_operators();
         $operator_labels = self::get_goal_operator_labels();
 
@@ -1822,6 +1825,21 @@ class wp_slimstat_admin
     }
 
     /**
+     * Dimensions allowed for FUNNEL STEPS — a subset of get_goal_dimensions()
+     * restricted to action/journey-oriented entities. Attribute dimensions
+     * (Country, Browser, Operating System, Referer, Username) describe WHO a
+     * visitor is, not what they DID, so they make no sense as a funnel step
+     * ("Homepage → Chrome → Checkout") and stay reserved for goals. Sliced from
+     * get_goal_dimensions() via array_intersect_key so labels + order never
+     * drift from the canonical list. (#17)
+     */
+    public static function get_funnel_step_dimensions()
+    {
+        $allowed = ['resource', 'content_type', 'content_id', 'searchterms', 'event_notes'];
+        return array_intersect_key(self::get_goal_dimensions(), array_flip($allowed));
+    }
+
+    /**
      * Returns validated goal operators.
      */
     public static function get_goal_operators()
@@ -1855,13 +1873,16 @@ class wp_slimstat_admin
      * runs wp_unslash() before the per-field sanitizers so admin-entered values
      * containing quotes or backslashes round-trip correctly.
      */
-    private static function sanitize_goal($raw)
+    private static function sanitize_goal($raw, $is_funnel_step = false)
     {
         if (!is_array($raw)) {
             return false;
         }
         $raw        = wp_unslash($raw);
-        $dimensions = self::get_goal_dimensions();
+        // Funnel steps accept only action-oriented dimensions; goals accept all.
+        // Validating server-side keeps an attribute dimension from being POSTed
+        // past the (already-restricted) builder dropdown. (#17)
+        $dimensions = $is_funnel_step ? self::get_funnel_step_dimensions() : self::get_goal_dimensions();
         $operators  = self::get_goal_operators();
 
         $goal = [
@@ -2039,7 +2060,7 @@ class wp_slimstat_admin
 
         $steps = [];
         foreach ($raw_steps as $raw_step) {
-            $step = self::sanitize_goal($raw_step);
+            $step = self::sanitize_goal($raw_step, true);
             if (!$step) {
                 wp_send_json_error(['message' => __('Invalid step definition', 'wp-slimstat')]);
             }
@@ -2204,7 +2225,7 @@ class wp_slimstat_admin
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')], 403);
         }
 
-        $step = self::sanitize_goal($_POST);
+        $step = self::sanitize_goal($_POST, true);
         if (!$step) {
             wp_send_json_error(['message' => __('Step is missing required fields', 'wp-slimstat')]);
         }

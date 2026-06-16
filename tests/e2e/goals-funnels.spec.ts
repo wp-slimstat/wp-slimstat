@@ -312,6 +312,25 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-funnels [data-role="usage"]')).toContainText('1 of 3');
     });
 
+    test('funnel-step-dimensions-action-only: builder step dropdown omits attribute dimensions (#17)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const optionValues = await page.locator('.slimstat-gf-step-row').first()
+            .locator('[data-role="step-dimension"] option')
+            .evaluateAll(opts => opts.map(o => (o as HTMLOptionElement).value));
+
+        // Exactly the 5 action-oriented dimensions, in canonical order.
+        expect(optionValues).toEqual(['resource', 'content_type', 'content_id', 'searchterms', 'event_notes']);
+        // Attribute dimensions (who the visitor is) must not be offered as steps.
+        for (const attr of ['country', 'browser', 'platform', 'referer', 'username']) {
+            expect(optionValues).not.toContain(attr);
+        }
+    });
+
     // ─── Downstream: dashboard widget renders no drawer/builder/confirm-sheet ──
 
     test('downstream-widget: WP dashboard does not mount the drawer/builder/confirm-sheet DOM', async ({ page }) => {
