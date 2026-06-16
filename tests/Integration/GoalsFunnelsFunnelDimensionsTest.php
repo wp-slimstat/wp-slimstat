@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WpSlimstat\Tests\Integration;
 
+use Brain\Monkey\Functions;
+
 /**
  * Funnel steps are restricted to action-oriented dimensions (Page URL, Content
  * Type, Content ID, Search Terms, Event). Attribute dimensions (Country, Browser,
@@ -14,6 +16,16 @@ namespace WpSlimstat\Tests\Integration;
  */
 class GoalsFunnelsFunnelDimensionsTest extends IntegrationTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // The save success path calls clear_goals_cache(), which calls
+        // wp_using_ext_object_cache() behind a function_exists() guard. Once an
+        // earlier test in the run Patchwork-defines that function, the guard passes
+        // here too, so stub it (true => skip the transient GC, which needs no wpdb).
+        Functions\when('wp_using_ext_object_cache')->justReturn(true);
+    }
+
     public function test_funnel_step_dimensions_are_the_action_oriented_subset(): void
     {
         $dims = \wp_slimstat_admin::get_funnel_step_dimensions();
