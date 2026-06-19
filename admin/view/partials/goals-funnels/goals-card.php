@@ -107,11 +107,11 @@ $show_upsell = $at_max && !$is_pro;
                     <?php else : ?>
                     <div class="slimstat-gf-goal__metrics">
                         <div class="slimstat-gf-metric">
-                            <span class="slimstat-gf-metric__label"><?php esc_html_e('Uniques', 'wp-slimstat'); ?></span>
+                            <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Unique visitors who matched this goal at least once.', 'wp-slimstat'); ?>"><?php esc_html_e('Uniques', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n($uniques)); ?></span>
                         </div>
                         <div class="slimstat-gf-metric">
-                            <span class="slimstat-gf-metric__label"><?php esc_html_e('Total', 'wp-slimstat'); ?></span>
+                            <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Matching pageviews. A single visitor can match several times, so Total is usually higher than Uniques.', 'wp-slimstat'); ?>"><?php esc_html_e('Total', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n($total)); ?></span>
                         </div>
                         <div class="slimstat-gf-metric slimstat-gf-metric--cr">

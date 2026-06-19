@@ -9,7 +9,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Guards the goals/funnels UI polish pass (impeccable): conversion-rate emphasis,
  * the "See templates" reveal styling + top placement, the Value required-asterisk,
- * and the funnel-step Test reporting total matches. Source-shape guards (no DB);
+ * and the funnel-step Test reporting unique visitors + metric-unit tooltips (#1, #3).
+ * Source-shape guards (no DB);
  * rendered behaviour is covered by tests/e2e/goals-funnels.spec.ts.
  */
 class GoalsFunnelsUiPolishTest extends TestCase
@@ -156,18 +157,36 @@ class GoalsFunnelsUiPolishTest extends TestCase
         );
     }
 
-    public function test_funnel_step_test_reports_total_matches(): void
+    public function test_funnel_step_test_reports_unique_visitors(): void
     {
+        // The Test must preview UNIQUE VISITORS — the same unit the funnel step
+        // counts — so "Test: 995" matches the funnel instead of showing raw
+        // pageviews (5,556). The server returns both; the UI reads `visitors`. (#1, #3)
         $js = $this->js();
         $this->assertStringContainsString(
-            'response.data.total',
-            $js,
-            'Funnel-step Test must report TOTAL matches'
-        );
-        $this->assertStringNotContainsString(
             'Number(response.data.visitors)',
             $js,
-            'Funnel-step Test must no longer report the deduplicated visitor count'
+            'Funnel-step Test must display the unique-visitor count'
         );
+        $this->assertStringNotContainsString(
+            'Number(response.data.total)',
+            $js,
+            'Funnel-step Test must no longer display raw pageviews'
+        );
+        $this->assertMatchesRegularExpression(
+            "/_n\(\s*'%s unique visitor',\s*'%s unique visitors'/",
+            $js,
+            'Test result copy must say "unique visitor(s)"'
+        );
+    }
+
+    public function test_goal_metric_units_are_labeled(): void
+    {
+        // The pageviews-vs-unique-visitors distinction is explained inline so a Total
+        // that climbs faster than Uniques reads as expected, not a bug. (#3)
+        $card = $this->partial('goals-card.php');
+        $this->assertStringContainsString('Unique visitors who matched this goal', $card, 'Uniques label needs a clarifying tooltip');
+        $this->assertStringContainsString('Matching pageviews.', $card, 'Total label needs a clarifying tooltip');
+        $this->assertStringContainsString('Unique visitors who reached this step', $this->partial('funnel-bars.php'), 'Funnel step count needs a unique-visitors tooltip');
     }
 }

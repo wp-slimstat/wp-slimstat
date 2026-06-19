@@ -645,7 +645,8 @@
             html += '<li class="' + stepCls + '" data-step="' + stepNum + '">';
             html += '<div class="slimstat-gf-step__head">';
             html += '<span class="slimstat-gf-step__name">' + escHtml(step.name || '') + '</span>';
-            html += '<span class="slimstat-gf-step__count">';
+            // Keep title identical to funnel-bars.php (SSR) — anti-drift.
+            html += '<span class="slimstat-gf-step__count" title="' + escHtml(__('Unique visitors who reached this step', 'wp-slimstat')) + '">';
             html += formatNumber(visitors);
             html += ' <span class="slimstat-gf-step__pct">(' + escHtml(pctLabel) + '%)</span>';
             html += '</span></div>';
@@ -958,13 +959,13 @@
             time_range_to:   testRange.to   || ''
         }, step)).done(function (response) {
             if (response && response.success && response.data) {
-                // Show TOTAL matching pageviews — "matches" means how many records
-                // this rule hits, which is the sanity check the Test answers (not
-                // the deduplicated visitor count the funnel later computes).
-                var count = Number(response.data.total) || 0;
-                /* translators: %s is a localized match count */
+                // Show UNIQUE VISITORS — the same unit the funnel step counts — so the
+                // Test previews "how many visitors this step will show", not raw
+                // pageviews (which read far higher and confused QA). (#1, #3)
+                var count = Number(response.data.visitors) || 0;
+                /* translators: %s is a localized unique-visitor count */
                 $result.removeClass('is-loading').text(
-                    sprintf(_n('%s match', '%s matches', count, 'wp-slimstat'), formatNumber(count))
+                    sprintf(_n('%s unique visitor', '%s unique visitors', count, 'wp-slimstat'), formatNumber(count))
                 );
             } else {
                 $result.removeClass('is-loading').text('—');

@@ -277,6 +277,61 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(countsB).toEqual(countsA);
     });
 
+    // ─── Counting transparency: units (#1, #3) ──────────────────
+
+    test('funnel-test-step-reports-unique-visitors: Test result is in visitors, not "matches" (#1, #3)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await clearStatsTable();
+        // One visitor, three pageviews of /pricing → unique visitors (1) < pageviews (3).
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(100) },
+        ]);
+        await gotoSlimview6(page);
+
+        // Open the builder from a template so step rows are pre-filled (no combobox typing).
+        await page.locator('.slimstat-gf-template-card[data-template="pricing_to_checkout"]').click();
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        // Test the first step; the result is worded in unique visitors now, never "matches".
+        const firstRow = page.locator('.slimstat-gf-step-row').first();
+        await firstRow.locator('[data-action="test-step"]').click();
+        const result = firstRow.locator('[data-role="test-result"]');
+        await expect(result).toContainText(/unique visitor/i);
+        await expect(result).not.toContainText(/match/i);
+    });
+
+    test('goal-metric-units: Total (pageviews) exceeds Uniques (visitors) and both carry tooltips (#3)', async ({ page }) => {
+        await forceLimits(1, 0, WP_CONTENT);
+        await clearStatsTable();
+        // 2 distinct visitors, 4 matching pageviews → Uniques 2, Total 4.
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(400) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-2', dt: ago(100) },
+        ]);
+        await seedGoals([{ name: 'Pricing View', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);
+        await gotoSlimview6(page);
+
+        const goalCard = page.locator('.slimstat-gf-goal').first();
+        await expect(goalCard).toBeVisible();
+
+        // Tooltips explain the units (the #3 confusion).
+        await expect(page.locator('.slimstat-gf-metric__label[title*="Unique visitors who matched"]')).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-metric__label[title*="Matching pageviews"]')).toHaveCount(1);
+
+        // Values: Uniques then Total then CR%. Total (pageviews) must exceed Uniques (visitors).
+        const values = (await goalCard.locator('.slimstat-gf-metric__value').allInnerTexts())
+            .map(s => parseInt(s.replace(/[^\d]/g, ''), 10));
+        expect(values[0]).toBe(2);                 // Uniques
+        expect(values[1]).toBe(4);                 // Total
+        expect(values[1]).toBeGreaterThan(values[0]);
+    });
+
     // ─── Goal create via drawer ─────────────────────────────────
 
     test('goal-create: drawer opens, form submits, new goal renders', async ({ page }) => {

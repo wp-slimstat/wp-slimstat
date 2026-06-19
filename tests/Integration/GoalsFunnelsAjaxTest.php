@@ -486,6 +486,28 @@ class GoalsFunnelsAjaxTest extends IntegrationTestCase
         $this->assertSame(34.0, $die->payload['summary']['total_cr']);
     }
 
+    public function test_test_funnel_step_returns_unique_visitor_count(): void
+    {
+        // The builder Test must preview UNIQUE VISITORS (the unit the funnel step
+        // counts), not raw pageviews — that mismatch (5,556 vs 995) confused QA. The
+        // server returns both; `visitors` is what the UI shows. (#1, #3)
+        $this->stubWpSlimstatDb([]);
+        FakeWpSlimstatDb::$getGoalResults = ['uniques' => 995, 'total' => 5556, 'cr' => 17.9];
+        $_POST = [
+            'security'  => 'x',
+            'name'      => 'Pricing',
+            'dimension' => 'resource',
+            'operator'  => 'contains',
+            'value'     => '/pricing',
+        ];
+
+        $die = $this->callHandler('ajax_test_funnel_step');
+
+        $this->assertSame('success', $die->outcome());
+        $this->assertSame(995, $die->payload['visitors'], 'Test previews unique visitors (the funnel unit)');
+        $this->assertSame(5556, $die->payload['total'], 'total stays in the payload for the server contract');
+    }
+
     public function test_load_funnel_data_returns_null_cr_when_step_one_empty(): void
     {
         $this->setFunnels([
