@@ -1384,8 +1384,8 @@ class wp_slimstat_reports
                             $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
                             $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         }
-                        $row_details .= __('Code', 'wp-slimstat') . (': ' . $country);
-                        $element_value .= wp_slimstat_i18n::get_string('c-' . $country);
+                        $row_details .= __('Code', 'wp-slimstat') . ': ' . esc_html($country);
+                        $element_value .= esc_html(wp_slimstat_i18n::get_string('c-' . $country));
                         break;
 
                     case 'id':
@@ -2372,13 +2372,11 @@ class wp_slimstat_reports
                         <div class="country-bar">
                             <div class="country-flag-container">
                                 <?php
-                    if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg'))) {
-                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
-                    } else {
-                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
-                    }
+                    $flag_rel  = '/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg';
+                    $image_url = realpath(SLIMSTAT_ANALYTICS_DIR . $flag_rel)
+                        ? SLIMSTAT_ANALYTICS_URL . $flag_rel
+                        : SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
                         ?>
                             </div>
                             <strong><?php echo esc_html($country['name']) ?></strong>

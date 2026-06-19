@@ -348,4 +348,32 @@ assert_contains('<br', $rendered, 'wp_kses_post preserves <br>');
 assert_contains('<p>', $rendered, 'wp_kses_post preserves <p>');
 assert_contains('<span class="x">', $rendered, 'wp_kses_post preserves <span class>');
 
+// ─── Country column escaping (CF-IPCountry stored-XSS, runtime) #5 ──
+// The 'country' column case in raw_results_to_html() echoes the visitor country
+// (which can come from the attacker-controlled CF-IPCountry header) into a flag
+// alt, the row-details tooltip, and the country-name label. Drive it like Tests
+// 1-13 and assert no live attribute survives. A raw quote would form `"onclick=`;
+// escaped, it becomes `&quot;onclick=`.
+$html = render_column('country', '"onclick=alert(1)');
+assert_not_contains('"onclick=', $html, 'Country value must not yield a live onclick (raw quote+handler) in rendered HTML');
+assert_contains('&quot;onclick=', $html, 'Country quote must be entity-escaped in the rendered country column');
+
+// ─── Country flag sinks not reachable via render_column() (#5) ──────
+// The Audience world-map flag (wp-slimstat-reports.php) and the access-log flag
+// (right-now.php) are emitted by separate render paths render_column() can't drive
+// under SHORTINIT, so guard them by source shape. The runtime DOM proof for these
+// lives in tests/e2e/cf-ipcountry-xss.spec.ts.
+$reports_src  = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php'));
+$rightnow_src = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/right-now.php'));
+
+// Sink 1 — Audience world-map flag alt.
+assert_contains("esc_attr(\$country['code'])", $reports_src, 'World-map flag alt must wrap $country[code] in esc_attr()');
+assert_not_contains("alt=\"' . \$country['code'] . '\"", $reports_src, 'World-map flag alt must not echo $country[code] unescaped');
+
+// Sink 2 — access-log country flag (href esc_url; src + title esc_attr).
+assert_contains("esc_url(wp_slimstat_reports::fs_url('country equals", $rightnow_src, 'Access-log country href must be esc_url()-wrapped');
+assert_contains("esc_attr(\$results[ \$i ][ 'country' ])", $rightnow_src, 'Access-log flag src country arg must be esc_attr()');
+assert_contains("esc_attr(wp_slimstat_i18n::get_string('c-' . \$results[\$i]['country']))", $rightnow_src, 'Access-log flag title must be esc_attr()');
+assert_not_contains("\$plugin_url, \$results[ \$i ][ 'country' ]", $rightnow_src, 'Access-log flag src must no longer pass the raw country into sprintf');
+
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";
