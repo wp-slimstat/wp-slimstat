@@ -14,6 +14,9 @@
  * Loads the REAL provider class (not a copy) so the shipped validation is tested.
  *
  * Run: php tests/cloudflare-geolocation-country-validation-test.php
+ *
+ * @package WpSlimstat
+ * @license GPL-2.0-or-later
  */
 
 declare(strict_types=1);

@@ -3106,7 +3106,7 @@ class wp_slimstat_admin
      */
     private static function build_filter_search_order(string $safe_dimension, string $search): string
     {
-        if ($search === '') {
+        if ('' === $search) {
             return $safe_dimension . ' ASC';
         }
         $prefix_like = wp_slimstat::$wpdb->esc_like($search) . '%';
