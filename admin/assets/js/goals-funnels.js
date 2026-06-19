@@ -717,10 +717,16 @@
     // stale markup over a newer view.
     var funnelInflight = {};
 
+    // Remembers the funnel tab the user is viewing so a postbox "refresh" (which
+    // re-renders the box with funnel[0] active and the rest as skeletons) can restore
+    // it instead of bouncing the user to the first funnel. (#2)
+    var lastActiveFunnelIndex = null;
+
     $body.on('click', '.slimstat-gf-tab', function () {
         var $tab = $(this);
         var funnelId = $tab.data('funnel-id');
         var funnelIndex = String($tab.data('funnel-index'));
+        lastActiveFunnelIndex = funnelIndex;
 
         $tab.siblings('.slimstat-gf-tab').removeClass('is-active').attr('aria-selected', 'false');
         $tab.addClass('is-active').attr('aria-selected', 'true');
@@ -763,6 +769,35 @@
         }).always(function () {
             delete funnelInflight[funnelId];
         });
+    });
+
+    // The legacy postbox "refresh" control swaps the Funnels box .inside via an
+    // in-place AJAX re-render. The card comes back with funnel[0] active and every
+    // other funnel as an unloaded skeleton, and the page-load tab auto-load does not
+    // re-run — so a user reading funnel 2 who clicks refresh is bounced to funnel 1
+    // with their funnel blank ("refresh didn't update my funnel", #2). Watch the box
+    // and, once it re-renders, re-select the remembered tab — which reuses the lazy
+    // load above to repaint it. Guarded so it only acts when the active tab was reset
+    // away from the user's selection (never on funnel[0], the default). Goals (no
+    // tabs) already refreshes every row, so only the Funnels box needs this.
+    $(function () {
+        var box = document.getElementById('slim_p9_02');
+        if (!box || typeof MutationObserver === 'undefined') {
+            return;
+        }
+        var restoring = false;
+        new MutationObserver(function () {
+            if (restoring || lastActiveFunnelIndex === null || lastActiveFunnelIndex === '0') {
+                return;
+            }
+            var $tab = $(box).find('.slimstat-gf-tab[data-funnel-index="' + lastActiveFunnelIndex + '"]');
+            if (!$tab.length || $tab.hasClass('is-active')) {
+                return;
+            }
+            restoring = true;
+            $tab.trigger('click');
+            window.setTimeout(function () { restoring = false; }, 0);
+        }).observe(box, { childList: true, subtree: true });
     });
 
     // ============================================================

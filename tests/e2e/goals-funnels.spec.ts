@@ -332,6 +332,47 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         expect(values[1]).toBeGreaterThan(values[0]);
     });
 
+    // ─── Funnels refresh keeps the viewed funnel (#2) ────────────
+
+    test('funnels-refresh-keeps-active-tab: refresh restores the viewed funnel, not funnel 1 (#2)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await clearStatsTable();
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/',         fingerprint: 'v1', dt: ago(500) },
+            { resource: '/pricing',  fingerprint: 'v1', dt: ago(400) },
+            { resource: '/checkout', fingerprint: 'v1', dt: ago(300) },
+            { resource: '/pricing',  fingerprint: 'v2', dt: ago(200) },
+        ]);
+        await seedFunnels([
+            { name: 'Funnel A', steps: [
+                { name: 'Home',    dimension: 'resource', operator: 'contains', value: '/' },
+                { name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing' },
+            ] },
+            { name: 'Funnel B', steps: [
+                { name: 'Pricing',  dimension: 'resource', operator: 'contains', value: '/pricing' },
+                { name: 'Checkout', dimension: 'resource', operator: 'contains', value: '/checkout' },
+            ] },
+        ]);
+        await gotoSlimview6(page);
+
+        // View the SECOND funnel (lazy-loads on tab click).
+        await page.locator('#slim_p9_02 .slimstat-gf-tab[data-funnel-index="1"]').click();
+        const panelB = page.locator('#slim_p9_02 .slimstat-gf-funnel-panel[data-funnel-index="1"]');
+        await expect(panelB.locator('.slimstat-gf-step__count').first()).toBeVisible();
+
+        // The postbox refresh re-renders the box with funnel 1 active + others as
+        // skeletons. Without the fix the user is bounced off funnel 2; with it the
+        // viewed tab is restored and repainted (the lazy-load runs again). (#2)
+        await page.locator('#slim_p9_02 a.refresh').click();
+
+        await expect(page.locator('#slim_p9_02 .slimstat-gf-tab.is-active'))
+            .toHaveAttribute('data-funnel-index', '1', { timeout: 10_000 });
+        await expect(panelB).toHaveClass(/is-active/);
+        await expect(panelB.locator('.slimstat-gf-skeleton')).toHaveCount(0);
+        await expect(panelB.locator('.slimstat-gf-step__count').first()).toBeVisible();
+    });
+
     // ─── Goal create via drawer ─────────────────────────────────
 
     test('goal-create: drawer opens, form submits, new goal renders', async ({ page }) => {
