@@ -58,21 +58,33 @@ class GoalsFunnelsPerfTest extends TestCase
     public function test_funnel_cache_key_is_step_signature_not_id(): void
     {
         // Two funnels with identical steps MUST return identical numbers, so the
-        // cache key (transient + per-request memo) is derived from the normalized
-        // step signature, NOT the funnel id. Keying on the id split identical-config
-        // funnels into separate entries that could diverge (a server-rendered funnel
-        // vs its AJAX-loaded twin). (#19)
-        $body = $this->methodBody('get_funnel_results');
-        $this->assertStringContainsString(
-            "normalize_funnel_steps(\$funnel['steps'])",
-            $body,
-            'Funnel cache key must derive from the normalized step signature'
-        );
+        // cache key is derived from the normalized step signature, NOT the funnel id.
+        // The derivation now lives in the funnel_cache_key() helper. (#19)
+        $caller = $this->methodBody('get_funnel_results');
+        $this->assertStringContainsString('self::funnel_cache_key(', $caller, 'get_funnel_results must build its key via funnel_cache_key()');
+        $this->assertStringContainsString("\$funnel['steps']", $caller, 'funnel_cache_key must be fed the step rules');
         $this->assertDoesNotMatchRegularExpression(
             "/\\\$cache_key\\s*=\\s*'slimstat_funnel_'\\s*\\.\\s*\\(isset\\(\\\$funnel\\['id'\\]\\)/",
-            $body,
-            'Funnel cache key must no longer be derived from the funnel id'
+            $caller,
+            'Funnel cache key must not be derived from the funnel id'
         );
+
+        $helper = $this->methodBody('funnel_cache_key');
+        $this->assertStringContainsString('normalize_funnel_steps($steps)', $helper, 'funnel_cache_key must derive from the normalized step signature');
+    }
+
+    public function test_funnel_cache_key_buckets_the_date_range(): void
+    {
+        // Residual #1 bug: the key hashed the rendered $date_where SQL, whose live
+        // "end = now" has second precision — so a server-rendered funnel and its
+        // AJAX-loaded twin (computed seconds apart) missed each other's transient and
+        // recomputed against live traffic (995 vs 991). The key now hour-buckets the
+        // window so identical funnels in the same hour share one entry. (#1)
+        $caller = $this->methodBody('get_funnel_results');
+        $this->assertStringNotContainsString('md5($date_where . $cache_ver)', $caller, 'Cache key must no longer hash the raw $date_where SQL');
+
+        $helper = $this->methodBody('funnel_cache_key');
+        $this->assertMatchesRegularExpression('/floor\(\s*\(int\)\s*\$range_end\s*\/\s*3600\s*\)/', $helper, 'funnel_cache_key must hour-bucket the window end');
     }
 
     public function test_normalize_funnel_steps_is_result_determining_and_ordered(): void

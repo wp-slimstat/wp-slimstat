@@ -15,10 +15,11 @@ import { test, expect, Page } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
-import { closeDb } from './helpers/setup';
+import { closeDb, clearStatsTable } from './helpers/setup';
 import {
     seedGoals,
     seedFunnels,
+    seedStats,
     clearAll,
     forceLimits,
     restoreDefaultLimits,
@@ -230,8 +231,22 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-tab.is-active')).toHaveCount(1);
     });
 
-    test('funnel-identical-configs-match: two funnels with the same steps show identical numbers (#19)', async ({ page }) => {
+    test('funnel-identical-configs-match: two funnels with the same steps show identical numbers (#19, #1)', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
+
+        // Seed real pageviews so the funnel has NON-ZERO counts: 3 visitors hit '/',
+        // 2 of them continue to '/pricing'. Without data the assertion below would
+        // trivially pass on 0 == 0 and miss the SSR-vs-AJAX cache-key drift (#1).
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await clearStatsTable();
+        await seedStats([
+            { resource: '/',        fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(240) },
+            { resource: '/',        fingerprint: 'visitor-2', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-2', dt: ago(160) },
+            { resource: '/',        fingerprint: 'visitor-3', dt: ago(120) },
+        ]);
+
         const steps = [
             { name: 'Home',    dimension: 'resource', operator: 'contains', value: '/' },
             { name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing' },
