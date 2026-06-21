@@ -67,6 +67,9 @@ $show_upsell = $at_max && !$is_pro;
                 $uniques       = (int) ($results['uniques'] ?? 0);
                 $total         = (int) ($results['total'] ?? 0);
                 $cr            = $results['cr'] ?? 0;
+                // CR denominator: all unique visitors in range. ?? 0 tolerates a
+                // stale pre-#13 transient that lacks the key (the line just hides). (#13)
+                $total_visitors = (int) ($results['total_visitors'] ?? 0);
                 $goal_id_attr  = esc_attr((string) ($goal['id'] ?? ''));
                 ?>
                 <li class="slimstat-gf-goal"
@@ -104,16 +107,26 @@ $show_upsell = $at_max && !$is_pro;
                     <?php else : ?>
                     <div class="slimstat-gf-goal__metrics">
                         <div class="slimstat-gf-metric">
-                            <span class="slimstat-gf-metric__label"><?php esc_html_e('Uniques', 'wp-slimstat'); ?></span>
+                            <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Unique visitors who matched this goal at least once.', 'wp-slimstat'); ?>"><?php esc_html_e('Uniques', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n($uniques)); ?></span>
                         </div>
                         <div class="slimstat-gf-metric">
-                            <span class="slimstat-gf-metric__label"><?php esc_html_e('Total', 'wp-slimstat'); ?></span>
+                            <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Matching pageviews. A single visitor can match several times, so Total is usually higher than Uniques.', 'wp-slimstat'); ?>"><?php esc_html_e('Total', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n($total)); ?></span>
                         </div>
                         <div class="slimstat-gf-metric slimstat-gf-metric--cr">
                             <span class="slimstat-gf-metric__label" title="<?php esc_attr_e('Conversion rate: unique visitors who matched this goal, divided by all unique visitors in this date range.', 'wp-slimstat'); ?>"><?php esc_html_e('CR', 'wp-slimstat'); ?></span>
                             <span class="slimstat-gf-metric__value"><?php echo esc_html(number_format_i18n((float) $cr, ((float) $cr == (int) $cr) ? 0 : 1)); ?>%</span>
+                            <?php if ($total_visitors > 0) : ?>
+                                <span class="slimstat-gf-metric__sub">
+                                    <?php echo esc_html(sprintf(
+                                        /* translators: 1: unique visitors who matched the goal, 2: all unique visitors in the date range */
+                                        __('%1$s of %2$s uniques', 'wp-slimstat'),
+                                        number_format_i18n($uniques),
+                                        number_format_i18n($total_visitors)
+                                    )); ?>
+                                </span>
+                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endif; ?>

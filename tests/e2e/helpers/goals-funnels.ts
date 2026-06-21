@@ -7,6 +7,7 @@
  */
 import { serialize as phpSerialize } from 'php-serialize';
 import { getPool } from './setup';
+import { assertSafeTestDatabase } from './env';
 
 export interface Goal {
     id?: number;
@@ -74,6 +75,37 @@ export async function seedFunnels(funnels: Funnel[]): Promise<void> {
     }));
     await upsertOption('slimstat_funnels', normalized);
     await upsertOption('slimstat_goals_cache_ver', String(Date.now()));
+}
+
+export interface StatRow {
+    resource: string;
+    /** Distinct value → distinct unique visitor (COALESCE(fingerprint, v_visit_id, ip_ip)). */
+    fingerprint?: string;
+    ip?: string;
+    country?: string;
+    /** Unix seconds; defaults to now. Earlier steps need an earlier/equal dt. */
+    dt?: number;
+}
+
+/**
+ * Insert raw pageview rows into wp_slim_stats so funnel/goal counts are non-zero
+ * (otherwise an "identical funnels match" assertion trivially passes on 0 == 0).
+ * Guarded by assertSafeTestDatabase() — this writes to the stats table and must
+ * never run against a real site DB.
+ */
+export async function seedStats(rows: StatRow[]): Promise<void> {
+    assertSafeTestDatabase();
+    if (rows.length === 0) {
+        return;
+    }
+    const pool = getPool();
+    const now = Math.floor(Date.now() / 1000);
+    for (const r of rows) {
+        await pool.execute(
+            'INSERT INTO wp_slim_stats (resource, fingerprint, ip, country, dt, visit_id) VALUES (?, ?, ?, ?, ?, 0)',
+            [r.resource, r.fingerprint ?? null, r.ip ?? '127.0.0.1', r.country ?? null, r.dt ?? now],
+        );
+    }
 }
 
 export async function clearGoals(): Promise<void> {

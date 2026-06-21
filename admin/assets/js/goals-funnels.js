@@ -645,7 +645,8 @@
             html += '<li class="' + stepCls + '" data-step="' + stepNum + '">';
             html += '<div class="slimstat-gf-step__head">';
             html += '<span class="slimstat-gf-step__name">' + escHtml(step.name || '') + '</span>';
-            html += '<span class="slimstat-gf-step__count">';
+            // Keep title identical to funnel-bars.php (SSR) — anti-drift.
+            html += '<span class="slimstat-gf-step__count" title="' + escHtml(__('Unique visitors who reached this step', 'wp-slimstat')) + '">';
             html += formatNumber(visitors);
             html += ' <span class="slimstat-gf-step__pct">(' + escHtml(pctLabel) + '%)</span>';
             html += '</span></div>';
@@ -716,10 +717,28 @@
     // stale markup over a newer view.
     var funnelInflight = {};
 
+    // Remembers the funnel tab the user is viewing so a postbox "refresh" (which
+    // re-renders the box with funnel[0] active and the rest as skeletons) can restore
+    // it instead of bouncing the user to the first funnel. (#2)
+    var lastActiveFunnelIndex = null;
+
+    // The exact [start,end] window the server-rendered funnel resolved, exposed as
+    // data attributes on the funnels card. Posting these back pins the AJAX funnel +
+    // Test to the IDENTICAL window, so identical funnels share one cached result
+    // instead of re-resolving the preset in a different timezone and disagreeing. (#1)
+    function pinnedRange() {
+        var el = document.querySelector('.slimstat-gf-funnels[data-gf-range-start]');
+        if (!el) return {};
+        var start = parseInt(el.getAttribute('data-gf-range-start'), 10) || 0;
+        var end   = parseInt(el.getAttribute('data-gf-range-end'), 10) || 0;
+        return (start > 0 && end > 0) ? { gf_utime_start: start, gf_utime_end: end } : {};
+    }
+
     $body.on('click', '.slimstat-gf-tab', function () {
         var $tab = $(this);
         var funnelId = $tab.data('funnel-id');
         var funnelIndex = String($tab.data('funnel-index'));
+        lastActiveFunnelIndex = funnelIndex;
 
         $tab.siblings('.slimstat-gf-tab').removeClass('is-active').attr('aria-selected', 'false');
         $tab.addClass('is-active').attr('aria-selected', 'true');
@@ -743,14 +762,14 @@
         var loadRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
             ? window.SlimStatGetTimeRangeForAjax() : {};
 
-        funnelInflight[funnelId] = post({
+        funnelInflight[funnelId] = post($.extend({
             action:          'slimstat_load_funnel_data',
             security:        nonce,
             funnel_id:       funnelId,
             time_range_type: loadRange.type || '',
             time_range_from: loadRange.from || '',
             time_range_to:   loadRange.to   || ''
-        }, function (data) {
+        }, pinnedRange()), function (data) {
             if (!$panel.hasClass('is-active')) return;
             $panel.attr('data-loaded', 'true');
             $panel.find('.slimstat-gf-funnel-panel__meta').html(renderFunnelSummary(data.summary));
@@ -762,6 +781,35 @@
         }).always(function () {
             delete funnelInflight[funnelId];
         });
+    });
+
+    // The legacy postbox "refresh" control swaps the Funnels box .inside via an
+    // in-place AJAX re-render. The card comes back with funnel[0] active and every
+    // other funnel as an unloaded skeleton, and the page-load tab auto-load does not
+    // re-run — so a user reading funnel 2 who clicks refresh is bounced to funnel 1
+    // with their funnel blank ("refresh didn't update my funnel", #2). Watch the box
+    // and, once it re-renders, re-select the remembered tab — which reuses the lazy
+    // load above to repaint it. Guarded so it only acts when the active tab was reset
+    // away from the user's selection (never on funnel[0], the default). Goals (no
+    // tabs) already refreshes every row, so only the Funnels box needs this.
+    $(function () {
+        var box = document.getElementById('slim_p9_02');
+        if (!box || typeof MutationObserver === 'undefined') {
+            return;
+        }
+        var restoring = false;
+        new MutationObserver(function () {
+            if (restoring || lastActiveFunnelIndex === null || lastActiveFunnelIndex === '0') {
+                return;
+            }
+            var $tab = $(box).find('.slimstat-gf-tab[data-funnel-index="' + lastActiveFunnelIndex + '"]');
+            if (!$tab.length || $tab.hasClass('is-active')) {
+                return;
+            }
+            restoring = true;
+            $tab.trigger('click');
+            window.setTimeout(function () { restoring = false; }, 0);
+        }).observe(box, { childList: true, subtree: true });
     });
 
     // ============================================================
@@ -956,15 +1004,15 @@
             time_range_type: testRange.type || '',
             time_range_from: testRange.from || '',
             time_range_to:   testRange.to   || ''
-        }, step)).done(function (response) {
+        }, pinnedRange(), step)).done(function (response) {
             if (response && response.success && response.data) {
-                // Show TOTAL matching pageviews — "matches" means how many records
-                // this rule hits, which is the sanity check the Test answers (not
-                // the deduplicated visitor count the funnel later computes).
-                var count = Number(response.data.total) || 0;
-                /* translators: %s is a localized match count */
+                // Show UNIQUE VISITORS — the same unit the funnel step counts — so the
+                // Test previews "how many visitors this step will show", not raw
+                // pageviews (which read far higher and confused QA). (#1, #3)
+                var count = Number(response.data.visitors) || 0;
+                /* translators: %s is a localized unique-visitor count */
                 $result.removeClass('is-loading').text(
-                    sprintf(_n('%s match', '%s matches', count, 'wp-slimstat'), formatNumber(count))
+                    sprintf(_n('%s unique visitor', '%s unique visitors', count, 'wp-slimstat'), formatNumber(count))
                 );
             } else {
                 $result.removeClass('is-loading').text('—');

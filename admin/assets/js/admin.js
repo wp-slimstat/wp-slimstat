@@ -620,12 +620,12 @@ jQuery(function () {
                 if (this.options.serverSearchAction && term.trim().length < 2) {
                     this.restoreInitialOptions();
                 }
-                // When a server-side search will fire for this keystroke, skip the
-                // client-side filter — its result will be replaced once the AJAX
-                // response lands, and the flash of an intermediate list is jarring.
-                if (!this.willServerSearch(term)) {
-                    this.filterOptions(term);
-                }
+                // Always filter the currently-loaded options immediately, ranked, so
+                // the dropdown narrows to relevant matches on every keystroke. The
+                // server search (when it fires) then refines/extends this set; it must
+                // not leave the FULL unfiltered list showing during the AJAX wait —
+                // that hid the real "/pricing" matches behind unrelated values. (#21)
+                this.filterOptions(term);
                 this.syncTypedValue(term);
                 this.scheduleServerSearch(term);
             });
@@ -637,6 +637,15 @@ jQuery(function () {
             searchInput.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") {
                     this.close();
+                } else if (e.key === "Enter") {
+                    // Commit the typed value immediately instead of forcing a
+                    // click-outside. The value is already in the hidden input via
+                    // syncTypedValue(); close() reflects it in the display, and we
+                    // dispatch change ourselves because Enter doesn't blur. (#14)
+                    // preventDefault stops Enter from submitting the enclosing form.
+                    e.preventDefault();
+                    this.close();
+                    this.dispatchChange();
                 }
             });
 
@@ -710,10 +719,28 @@ jQuery(function () {
             if (!term) {
                 this.filteredOptions = [...this.allOptions];
             } else {
-                this.filteredOptions = this.allOptions.filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term));
+                // Keep substring matches, but rank them so exact and prefix matches
+                // surface first — searching "/pricing" must show /pricing, /pricing/,
+                // /pricing?utm… ahead of incidental contains-matches, never below
+                // unrelated values. Tiers: 0 exact, 1 prefix, 2 contains. (#21)
+                this.filteredOptions = this.allOptions
+                    .filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term))
+                    .map((option, index) => ({ option, index, rank: this.matchRank(option, term) }))
+                    .sort((a, b) => (a.rank - b.rank) || (a.index - b.index)) // stable within a tier
+                    .map((entry) => entry.option);
             }
 
             this.renderOptions();
+        }
+
+        // Relevance tier for a term match: 0 exact, 1 prefix, 2 contains. Lower
+        // sorts first. Compares both the option's value and its display label. (#21)
+        matchRank(option, term) {
+            const value = (option.value || "").toLowerCase();
+            const label = (option.label || "").toLowerCase();
+            if (value === term || label === term) return 0;
+            if (value.startsWith(term) || label.startsWith(term)) return 1;
+            return 2;
         }
 
         renderOptions() {

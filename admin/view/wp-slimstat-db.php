@@ -1732,11 +1732,16 @@ class wp_slimstat_db
 
         $goal_where = self::build_goal_where($goal, $is_event ? 'te' : 't1');
         if (empty($goal_where)) {
-            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0];
+            return ['total' => 0, 'uniques' => 0, 'cr' => 0.0, 'total_visitors' => 0];
         }
 
         $filters_where = self::get_combined_where('', '*', true, 't1');
         $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
+        // NOTE: keyed per goal id, so it embeds the live range end (second precision)
+        // and shares funnels' SSR/AJAX drift. Left as-is — a goal shows one number per
+        // id, so it never produces the "two identical things disagree" symptom #1 fixed
+        // for funnels. If a goal-number flicker is ever reported, route this through a
+        // shared range-bucket helper (see funnel_cache_key).
         $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
 
         // Per-request memo keyed by the result-determining signature (criteria +
@@ -1770,7 +1775,9 @@ class wp_slimstat_db
             $total_visitors = self::get_total_unique_visitors();
             $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
 
-            $result = ['total' => $total, 'uniques' => $uniques, 'cr' => $cr];
+            // total_visitors is the CR denominator — returned so the card can show
+            // "N of M uniques" and make the percentage legible without re-querying. (#13)
+            $result = ['total' => $total, 'uniques' => $uniques, 'cr' => $cr, 'total_visitors' => $total_visitors];
             set_transient($cache_key, $result, 5 * MINUTE_IN_SECONDS);
         }
 
@@ -1796,6 +1803,9 @@ class wp_slimstat_db
         // Version-key like the goal/funnel transients so a CRUD cache bump (which
         // also runs the GC in clear_goals_cache()) rotates this denominator too.
         $cache_ver   = get_option('slimstat_goals_cache_ver', '0');
+        // NOTE: like the goal key, this embeds the live range end and shares funnels'
+        // SSR/AJAX drift; left funnel-scoped on purpose (#1). Route through a shared
+        // range-bucket helper if this denominator ever needs the same fix.
         $cache_key   = 'slimstat_uv_' . md5($date_where . $cache_ver);
         $cached      = get_transient($cache_key);
 
@@ -1844,6 +1854,55 @@ class wp_slimstat_db
     }
 
     /**
+     * Reduce a funnel's steps to the fields that actually determine the query
+     * result — dimension, operator, value, in order — so two funnels with the
+     * same rules (ignoring id, name and per-step labels) hash to the same cache
+     * signature and therefore return identical numbers. Order is significant:
+     * A->B->C is a different journey than C->B->A, so steps are NOT sorted. The
+     * fields mirror exactly what build_goal_where() reads, so a shared signature
+     * guarantees a shared WHERE clause — never a wrong-result collision. (#19)
+     *
+     * @param array $steps
+     * @return array<int,array{dimension:string,operator:string,value:string}>
+     */
+    private static function normalize_funnel_steps($steps)
+    {
+        return array_map(
+            static fn($step) => [
+                'dimension' => (string) ($step['dimension'] ?? ''),
+                'operator'  => (string) ($step['operator'] ?? ''),
+                'value'     => (string) ($step['value'] ?? ''),
+            ],
+            array_values((array) $steps)
+        );
+    }
+
+    /**
+     * Build the funnel-result cache key: normalized step signature + the date
+     * window bucketed to the hour + cache version. Bucketing the end (which is
+     * "now" for a live range, set with second precision) to the hour absorbs the
+     * sub-hour drift between a server-rendered funnel and its AJAX-loaded twin, so
+     * two identical funnels share one transient and return identical numbers. (#1)
+     * (A render pair straddling an hour boundary can still miss — a rare, ~few-second
+     * window that self-heals on the next render; acceptable given the 5-min TTL.)
+     *
+     * @param array      $steps
+     * @param int        $range_start utime range start (seconds)
+     * @param int        $range_end   utime range end (seconds)
+     * @param int|string $cache_ver
+     * @return string
+     */
+    private static function funnel_cache_key($steps, $range_start, $range_end, $cache_ver)
+    {
+        // 3600 = bucket the window end to the hour (mirrors the hour-bucketing in
+        // wp_slimstat_admin::build_filter_options_cache_key()).
+        $range = (int) $range_start . ':' . (int) floor((int) $range_end / 3600);
+
+        return 'slimstat_funnel_' . md5(serialize(self::normalize_funnel_steps($steps)))
+            . '_' . md5($range . '|' . $cache_ver);
+    }
+
+    /**
      * Get funnel results: visitors at each step with drop-off.
      * Uses iterative PHP approach for MySQL 5.6 compatibility.
      *
@@ -1859,10 +1918,17 @@ class wp_slimstat_db
             return [];
         }
 
-        $date_where = self::get_combined_where('', '*', true, 't1');
-        $cache_ver  = get_option('slimstat_goals_cache_ver', '0');
-        $cache_key  = 'slimstat_funnel_' . (isset($funnel['id']) ? $funnel['id'] : md5(serialize($funnel['steps'])))
-                      . '_' . md5($date_where . $cache_ver);
+        $cache_ver = get_option('slimstat_goals_cache_ver', '0');
+        // Deterministic key: normalized step signature + hour-bucketed date window
+        // (NOT the funnel id, NOT the raw $date_where SQL) — so two identical funnels,
+        // and a server-rendered funnel + its AJAX twin, share one transient. See
+        // funnel_cache_key(). (#1, builds on #19)
+        $cache_key = self::funnel_cache_key(
+            $funnel['steps'],
+            (int) (self::$filters_normalized['utime']['start'] ?? 0),
+            (int) (self::$filters_normalized['utime']['end'] ?? 0),
+            $cache_ver
+        );
 
         // Per-request memo: a funnel rendered (or re-rendered) twice in one
         // request reuses its result instead of rebuilding temp tables again. (#12)
@@ -1876,6 +1942,10 @@ class wp_slimstat_db
             $request_memo[$cache_key] = $cached;
             return $cached;
         }
+
+        // Built only after the cache miss — it drives the step queries below, not the
+        // cache key, so a memo/transient hit skips this get_combined_where() work.
+        $date_where = self::get_combined_where('', '*', true, 't1');
 
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';

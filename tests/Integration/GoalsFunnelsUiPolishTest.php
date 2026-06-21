@@ -9,7 +9,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Guards the goals/funnels UI polish pass (impeccable): conversion-rate emphasis,
  * the "See templates" reveal styling + top placement, the Value required-asterisk,
- * and the funnel-step Test reporting total matches. Source-shape guards (no DB);
+ * and the funnel-step Test reporting unique visitors + metric-unit tooltips (#1, #3).
+ * Source-shape guards (no DB);
  * rendered behaviour is covered by tests/e2e/goals-funnels.spec.ts.
  */
 class GoalsFunnelsUiPolishTest extends TestCase
@@ -34,17 +35,50 @@ class GoalsFunnelsUiPolishTest extends TestCase
         return (string) file_get_contents($this->root() . '/admin/view/partials/goals-funnels/' . $f);
     }
 
-    public function test_goal_cr_is_emphasized(): void
+    public function test_goal_cr_is_emphasized_by_weight_not_red(): void
     {
         $this->assertStringContainsString(
             'slimstat-gf-metric--cr',
             $this->partial('goals-card.php'),
             'The CR metric must carry the --cr modifier'
         );
+        // CR keeps the heaviest weight so it still reads first among the metrics…
         $this->assertMatchesRegularExpression(
-            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*font-weight:\s*700[^}]*var\(--ss-brand-700\)/s',
+            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*font-weight:\s*700[^}]*\}/s',
             $this->css(),
-            'CR value must be bolded and brand-colored'
+            'CR value must stay bold'
+        );
+        // …but NOT in brand red — it read as an error/warning on a low rate. (#13)
+        $this->assertDoesNotMatchRegularExpression(
+            '/\.slimstat-gf-metric--cr\s+\.slimstat-gf-metric__value\s*\{[^}]*var\(--ss-brand-700\)/s',
+            $this->css(),
+            'CR value must no longer use brand red'
+        );
+    }
+
+    public function test_goal_card_shows_cr_denominator(): void
+    {
+        $card = $this->partial('goals-card.php');
+        // The card surfaces the denominator so "0.1%" is legible. (#13)
+        $this->assertStringContainsString(
+            'total_visitors',
+            $card,
+            'goals-card must read the CR denominator'
+        );
+        $this->assertStringContainsString(
+            'of %2$s uniques',
+            $card,
+            'goals-card must render the "N of M uniques" denominator line'
+        );
+        $this->assertStringContainsString(
+            'slimstat-gf-metric__sub',
+            $card,
+            'denominator must use the metric sub-line element'
+        );
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-metric__sub\s*\{/s',
+            $this->css(),
+            'metric sub-line must be styled'
         );
     }
 
@@ -123,18 +157,36 @@ class GoalsFunnelsUiPolishTest extends TestCase
         );
     }
 
-    public function test_funnel_step_test_reports_total_matches(): void
+    public function test_funnel_step_test_reports_unique_visitors(): void
     {
+        // The Test must preview UNIQUE VISITORS — the same unit the funnel step
+        // counts — so "Test: 995" matches the funnel instead of showing raw
+        // pageviews (5,556). The server returns both; the UI reads `visitors`. (#1, #3)
         $js = $this->js();
         $this->assertStringContainsString(
-            'response.data.total',
-            $js,
-            'Funnel-step Test must report TOTAL matches'
-        );
-        $this->assertStringNotContainsString(
             'Number(response.data.visitors)',
             $js,
-            'Funnel-step Test must no longer report the deduplicated visitor count'
+            'Funnel-step Test must display the unique-visitor count'
         );
+        $this->assertStringNotContainsString(
+            'Number(response.data.total)',
+            $js,
+            'Funnel-step Test must no longer display raw pageviews'
+        );
+        $this->assertMatchesRegularExpression(
+            "/_n\(\s*'%s unique visitor',\s*'%s unique visitors'/",
+            $js,
+            'Test result copy must say "unique visitor(s)"'
+        );
+    }
+
+    public function test_goal_metric_units_are_labeled(): void
+    {
+        // The pageviews-vs-unique-visitors distinction is explained inline so a Total
+        // that climbs faster than Uniques reads as expected, not a bug. (#3)
+        $card = $this->partial('goals-card.php');
+        $this->assertStringContainsString('Unique visitors who matched this goal', $card, 'Uniques label needs a clarifying tooltip');
+        $this->assertStringContainsString('Matching pageviews.', $card, 'Total label needs a clarifying tooltip');
+        $this->assertStringContainsString('Unique visitors who reached this step', $this->partial('funnel-bars.php'), 'Funnel step count needs a unique-visitors tooltip');
     }
 }

@@ -106,6 +106,37 @@ class GoalsFunnelsEmptyStateTest extends TestCase
         );
     }
 
+    // ── #15: the funnels "build from scratch" entry is the blue CTA, not a gray card ──
+
+    public function test_funnel_blank_entry_is_the_primary_cta(): void
+    {
+        $php = file_get_contents($this->partialPath('funnels-card.php'));
+        // The blank/scratch funnel entry is now the "+ Add funnel" CTA carrying the
+        // --cta modifier; the muted dashed --scratch card is gone. (#15)
+        $this->assertMatchesRegularExpression(
+            "/'key'\s*=>\s*'blank'[\s\S]{0,200}'\+ Add funnel'/",
+            $php,
+            'The blank funnel entry must be titled "+ Add funnel"'
+        );
+        $this->assertStringContainsString('slimstat-gf-template-card--cta', $php, 'Blank entry must carry the --cta modifier');
+        $this->assertStringNotContainsString('slimstat-gf-template-card--scratch', $php, 'The muted --scratch card must be gone');
+
+        // Still keyed "blank" so the existing open-funnel-builder routing is intact.
+        $this->assertMatchesRegularExpression("/'key'\s*=>\s*'blank'/", $php);
+    }
+
+    public function test_funnel_cta_card_is_styled_as_a_primary_button(): void
+    {
+        $css = file_get_contents($this->cssPath());
+        // The CTA reads as a solid (WP admin accent) button, not the tinted card.
+        $this->assertMatchesRegularExpression(
+            '/\.slimstat-gf-template-card--cta\s*\{[^}]*var\(--wp-admin-theme-color/s',
+            $css,
+            'The --cta card must use the WP admin accent as its background'
+        );
+        $this->assertStringNotContainsString('slimstat-gf-template-card--scratch', $css, 'Obsolete --scratch style must be removed');
+    }
+
     // ── paths ──
 
     private function reportsPath(): string

@@ -20,9 +20,12 @@ class wp_slimstat_admin
      * (%needle%) instead of the default left-anchored prefix match. These are
      * either multi-token fields (notes, category) or free-form strings where
      * users naturally search fragments (user_agent, outbound_resource URLs).
+     * resource + referer are URL-like for the same reason: a user searching a
+     * path fragment ("pricing") shouldn't have to type the leading slash to
+     * match "/pricing/" — the prefix anchor made that fail. (#18)
      */
     private const FILTER_SEARCH_SUBSTRING_DIMENSIONS = [
-        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent',
+        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer',
     ];
 
     protected static $data_for_column = [
@@ -445,6 +448,30 @@ class wp_slimstat_admin
         if (!wp_slimstat::pro_is_installed()) {
             echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
         }
+        // The time-limited "New" badge on the Goals & Funnels item renders in the
+        // global sidebar, so its style must load on every admin page (not just
+        // slimview6). Tiny, so always emit it. (#20)
+        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} </style>';
+    }
+
+    /**
+     * "New" badge HTML for the Goals & Funnels sidebar item, shown for 15 days
+     * after the feature became available on this site, then it disappears.
+     * Returns '' once the window elapses. The window is anchored the first time
+     * the menu builds after this version ships, so existing installs start their
+     * countdown then. (#20)
+     */
+    private static function goals_funnels_new_badge()
+    {
+        $since = (int) get_option('slimstat_goals_funnels_since', 0);
+        if ($since <= 0) {
+            $since = time();
+            update_option('slimstat_goals_funnels_since', $since);
+        }
+        if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
+            return '';
+        }
+        return ' <span class="slimstat-gf-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
     }
 
     /**
@@ -1010,6 +1037,9 @@ class wp_slimstat_admin
 
         $printed         = true;
         $dimensions      = self::get_goal_dimensions();
+        // Funnel steps offer only action-oriented dimensions; goals keep the full
+        // list (a "Country = gb" goal is legitimate). (#17)
+        $funnel_step_dimensions = self::get_funnel_step_dimensions();
         $operators       = self::get_goal_operators();
         $operator_labels = self::get_goal_operator_labels();
 
@@ -1242,10 +1272,16 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
+                // Sidebar label may carry the time-limited "New" badge; the page
+                // title (browser tab) stays plain. (#20)
+                $menu_label = $a_screen_info['title'];
+                if ('slimview6' === $a_screen_id) {
+                    $menu_label .= self::goals_funnels_new_badge();
+                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
-                    $a_screen_info['title'],
+                    $menu_label,
                     $minimum_capability,
                     $a_screen_id,
                     $a_screen_info['callback']
@@ -1819,6 +1855,21 @@ class wp_slimstat_admin
     }
 
     /**
+     * Dimensions allowed for FUNNEL STEPS — a subset of get_goal_dimensions()
+     * restricted to action/journey-oriented entities. Attribute dimensions
+     * (Country, Browser, Operating System, Referer, Username) describe WHO a
+     * visitor is, not what they DID, so they make no sense as a funnel step
+     * ("Homepage → Chrome → Checkout") and stay reserved for goals. Sliced from
+     * get_goal_dimensions() via array_intersect_key so labels + order never
+     * drift from the canonical list. (#17)
+     */
+    public static function get_funnel_step_dimensions()
+    {
+        $allowed = ['resource', 'content_type', 'content_id', 'searchterms', 'event_notes'];
+        return array_intersect_key(self::get_goal_dimensions(), array_flip($allowed));
+    }
+
+    /**
      * Returns validated goal operators.
      */
     public static function get_goal_operators()
@@ -1852,13 +1903,16 @@ class wp_slimstat_admin
      * runs wp_unslash() before the per-field sanitizers so admin-entered values
      * containing quotes or backslashes round-trip correctly.
      */
-    private static function sanitize_goal($raw)
+    private static function sanitize_goal($raw, $is_funnel_step = false)
     {
         if (!is_array($raw)) {
             return false;
         }
         $raw        = wp_unslash($raw);
-        $dimensions = self::get_goal_dimensions();
+        // Funnel steps accept only action-oriented dimensions; goals accept all.
+        // Validating server-side keeps an attribute dimension from being POSTed
+        // past the (already-restricted) builder dropdown. (#17)
+        $dimensions = $is_funnel_step ? self::get_funnel_step_dimensions() : self::get_goal_dimensions();
         $operators  = self::get_goal_operators();
 
         $goal = [
@@ -2036,7 +2090,7 @@ class wp_slimstat_admin
 
         $steps = [];
         foreach ($raw_steps as $raw_step) {
-            $step = self::sanitize_goal($raw_step);
+            $step = self::sanitize_goal($raw_step, true);
             if (!$step) {
                 wp_send_json_error(['message' => __('Invalid step definition', 'wp-slimstat')]);
             }
@@ -2201,7 +2255,7 @@ class wp_slimstat_admin
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')], 403);
         }
 
-        $step = self::sanitize_goal($_POST);
+        $step = self::sanitize_goal($_POST, true);
         if (!$step) {
             wp_send_json_error(['message' => __('Step is missing required fields', 'wp-slimstat')]);
         }
@@ -2261,7 +2315,15 @@ class wp_slimstat_admin
             }
         }
 
-        return [$start ? (int) $start : null, $end ? (int) $end : null];
+        // Clamp the end to "now", mirroring the SSR funnel render (wp-slimstat-db.php:852):
+        // presets return "today 23:59:59" (a future time), so without this the active
+        // (SSR) funnel queries [start..now] while an AJAX-loaded twin queries
+        // [start..23:59:59]. That gives different counts AND different cache-key hour
+        // buckets, so two identical funnels disagree. Clamping makes every goals/funnels
+        // AJAX window end at the same "now" as the SSR render. A custom past range is
+        // unaffected (its end is already < now). (#1)
+        $now = (int) date_i18n('U');
+        return [$start ? (int) $start : null, $end ? min((int) $end, $now) : null];
     }
 
     /**
@@ -2281,7 +2343,19 @@ class wp_slimstat_admin
             include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
         }
 
-        list($start, $end) = self::resolve_requested_date_range();
+        // Prefer the exact window the server-rendered funnel already used, posted back
+        // as gf_utime_start/end. Reusing it verbatim makes the AJAX funnel/Test query
+        // the IDENTICAL [start,end] (and funnel cache key) as the SSR render, so two
+        // identical funnels share one result instead of re-resolving the preset in the
+        // site timezone while the SSR path used legacy UTC day boundaries. (#1)
+        $pinned_start = isset($_POST['gf_utime_start']) ? (int) $_POST['gf_utime_start'] : 0;
+        $pinned_end   = isset($_POST['gf_utime_end']) ? (int) $_POST['gf_utime_end'] : 0;
+        if ($pinned_start > 0 && $pinned_end > 0) {
+            $start = $pinned_start;
+            $end   = $pinned_end;
+        } else {
+            list($start, $end) = self::resolve_requested_date_range();
+        }
 
         // init() populates $columns_names/$operator_names plus a default
         // $filters_normalized; then pin utime to the requested range.
@@ -2870,12 +2944,16 @@ class wp_slimstat_admin
 
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
+        // Rank matches by relevance (exact, then prefix, then contains) so the LIMIT
+        // keeps and orders the values the user actually typed first. (#21)
+        $order_sql = self::build_filter_search_order($safe_dimension, $search);
+
         $sql = sprintf(
-            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
+            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s LIMIT %d',
             $safe_dimension,
             $table_name,
             $where_sql,
-            $safe_dimension,
+            $order_sql,
             $limit
         );
 
@@ -3034,6 +3112,29 @@ class wp_slimstat_admin
     {
         $escaped = wp_slimstat::$wpdb->esc_like($search);
         return self::filter_search_is_substring($dimension) ? '%' . $escaped . '%' : $escaped . '%';
+    }
+
+    /**
+     * Build the ORDER BY expression for a server-side filter search so matches rank
+     * by relevance: exact first, then left-anchored prefix, then any other (substring)
+     * match, alphabetical within each tier. Without this, ORDER BY column-only +
+     * LIMIT could truncate or bury the exact/prefix values a user typed behind
+     * incidental contains-matches (e.g. "/pricing" surfacing unrelated paths instead
+     * of /pricing, /pricing/, /pricing?utm…). The column name is already validated
+     * against the allowed-columns whitelist by the caller; the term is bound via
+     * prepare(). (#21)
+     */
+    private static function build_filter_search_order(string $safe_dimension, string $search): string
+    {
+        if ('' === $search) {
+            return $safe_dimension . ' ASC';
+        }
+        $prefix_like = wp_slimstat::$wpdb->esc_like($search) . '%';
+        return wp_slimstat::$wpdb->prepare(
+            'CASE WHEN ' . $safe_dimension . ' = %s THEN 0 WHEN ' . $safe_dimension . ' LIKE %s THEN 1 ELSE 2 END, ' . $safe_dimension . ' ASC',
+            $search,
+            $prefix_like
+        );
     }
 
     /**

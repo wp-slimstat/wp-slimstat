@@ -6,11 +6,11 @@
  * and clones the step-template for each step row.
  *
  * Caller-scope variables:
- *   array $dimensions       — key => label
- *   array $operators        — list of keys
- *   array $operator_labels  — key => label
+ *   array $funnel_step_dimensions — key => label (action-oriented subset; #17)
+ *   array $operators              — list of keys
+ *   array $operator_labels        — key => label
  *
- * @var array $dimensions
+ * @var array $funnel_step_dimensions
  * @var array $operators
  * @var array $operator_labels
  */
@@ -82,7 +82,7 @@ if (!defined('ABSPATH')) {
                        aria-label="<?php esc_attr_e('Step name', 'wp-slimstat'); ?>">
                 <select data-role="step-dimension"
                         aria-label="<?php esc_attr_e('Step dimension', 'wp-slimstat'); ?>">
-                    <?php foreach ($dimensions as $key => $label) : ?>
+                    <?php foreach ($funnel_step_dimensions as $key => $label) : ?>
                         <option value="<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></option>
                     <?php endforeach; ?>
                 </select>

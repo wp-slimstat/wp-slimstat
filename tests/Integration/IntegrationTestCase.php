@@ -88,6 +88,9 @@ abstract class IntegrationTestCase extends WpSlimstatTestCase
             'esc_url'             => static fn($v) => $v,
             'number_format_i18n'  => static fn($n) => number_format((float) $n),
             'wp_has_consent'      => static fn() => true,
+            // 'U' returns the current epoch (used by resolve_requested_date_range()'s
+            // end clamp); other formats fall through to PHP date().
+            'date_i18n'           => static fn($format, $timestamp = null) => 'U' === $format ? (string) time() : date($format, $timestamp ?? time()),
         ]);
 
         // Nonce check: default to valid; tests that assert rejection flip $this->nonceValid.

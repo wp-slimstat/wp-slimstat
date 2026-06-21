@@ -78,6 +78,18 @@ class GoalUniqueVisitorsSqlTest extends TestCase
         );
     }
 
+    public function test_goal_results_returns_cr_denominator(): void
+    {
+        // get_goal_results must hand the card the CR denominator (total visitors in
+        // range) so it can show "N of M uniques" and make the percentage legible. (#13)
+        $body = $this->methodBody('get_goal_results');
+        $this->assertStringContainsString(
+            "'total_visitors'",
+            $body,
+            'get_goal_results must return total_visitors (the CR denominator)'
+        );
+    }
+
     public function test_total_unique_visitors_denominator_uses_same_identity(): void
     {
         // Numerator (goal uniques) and denominator (total uniques for CR) must

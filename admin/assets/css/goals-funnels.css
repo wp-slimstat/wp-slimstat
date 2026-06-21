@@ -265,11 +265,20 @@
     color: var(--ss-text-primary);
 }
 
-/* CR is the headline conversion metric on a goal — give it the most weight and
-   the brand color so it reads first among Uniques / Total / CR. */
+/* CR is the headline conversion metric on a goal — keep the most weight so it
+   still reads first among Uniques / Total / CR. Emphasis is by weight, NOT color:
+   brand-red read as an error/warning on a low rate, so CR uses the normal text
+   color (inherited from .slimstat-gf-metric__value) like the other metrics. (#13) */
 .slimstat-gf-metric--cr .slimstat-gf-metric__value {
     font-weight: 700;
-    color: var(--ss-brand-700);
+}
+
+/* The CR denominator ("N of M uniques") shown under the percentage so the rate is
+   legible — without it, "0.1%" gives no sense of the base it's measured against. (#13) */
+.slimstat-gf-metric__sub {
+    margin-top: 2px;
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-tertiary);
 }
 
 .slimstat-gf-goal__actions {
@@ -721,9 +730,25 @@
     color: var(--ss-text-secondary);
 }
 
-.slimstat-gf-template-card--scratch {
-    background: var(--ss-surface-tint);
-    border-style: dashed;
+/* The "+ Add funnel" entry is the primary call to action, not a prefab template,
+   so it reads as a solid blue button (matching the Goals empty-state CTA) while
+   still sitting in the template grid. Uses the WP admin accent so it respects the
+   user's color scheme; the grid stretches it to the height of the prefab cards. (#15) */
+.slimstat-gf-template-card--cta {
+    background: var(--wp-admin-theme-color, #2271b1);
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.slimstat-gf-template-card--cta .slimstat-gf-template-card__title {
+    color: #fff;
+}
+
+.slimstat-gf-template-card--cta:hover {
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    filter: brightness(0.94);
 }
 
 /* Skeleton (lazy tabs) */
@@ -913,6 +938,21 @@
 .slimstat-gf-step-row input[type="text"],
 .slimstat-gf-step-row select {
     max-width: none;
+}
+
+/* When suggestions mount, the plain value input is replaced by the shared
+   SlimStatSearchableSelect combobox, whose base style fixes the inner wrapper at
+   180px + a right margin. Inside this grid that forced the value track wider than
+   its share, pushed the row past the panel edge, and clipped the Test / result /
+   remove columns (they vanished until a reload). Scope the combobox to fill and
+   shrink with its grid track instead — the filter bar keeps the 180px default. (#16) */
+.slimstat-gf-step-row .slimstat-searchable-select {
+    min-width: 0;
+}
+
+.slimstat-gf-step-row .slimstat-searchable-select .slimstat-select-wrapper {
+    width: 100%;
+    margin-right: 0;
 }
 
 /* Give native selects a consistent chevron so they read as dropdowns and line up

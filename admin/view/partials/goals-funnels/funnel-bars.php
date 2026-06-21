@@ -38,7 +38,7 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
         <li class="slimstat-gf-step<?php echo $unreachable ? ' slimstat-gf-step--unreachable' : ''; ?>" data-step="<?php echo esc_attr((string) $step_num); ?>">
             <div class="slimstat-gf-step__head">
                 <span class="slimstat-gf-step__name"><?php echo esc_html($step['name'] ?? ''); ?></span>
-                <span class="slimstat-gf-step__count">
+                <span class="slimstat-gf-step__count" title="<?php esc_attr_e('Unique visitors who reached this step', 'wp-slimstat'); ?>">
                     <?php echo esc_html(number_format_i18n($visitors)); ?>
                     <span class="slimstat-gf-step__pct">(<?php echo esc_html($pct_label); ?>%)</span>
                 </span>

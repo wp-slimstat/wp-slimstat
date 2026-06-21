@@ -15,10 +15,11 @@ import { test, expect, Page } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
-import { closeDb } from './helpers/setup';
+import { closeDb, clearStatsTable } from './helpers/setup';
 import {
     seedGoals,
     seedFunnels,
+    seedStats,
     clearAll,
     forceLimits,
     restoreDefaultLimits,
@@ -177,6 +178,27 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slim_p9_02 .slimstat-gf-cta')).toHaveCount(0);
     });
 
+    test('funnel-empty-cta: empty funnels show a blue "+ Add funnel" CTA beside the templates (#15)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        const empty = page.locator('[data-role="funnels-empty"]');
+        await expect(empty).toBeVisible();
+
+        // The "build from scratch" entry is now a prominent blue CTA, not a gray card.
+        const cta = empty.locator('.slimstat-gf-template-card--cta[data-template="blank"]');
+        await expect(cta).toBeVisible();
+        await expect(cta).toContainText('Add funnel');
+
+        // The 5 prefab templates remain (6 entries total: 5 templates + the CTA).
+        await expect(empty.locator('.slimstat-gf-template-card')).toHaveCount(6);
+        await expect(empty.locator('.slimstat-gf-template-card:not(.slimstat-gf-template-card--cta)')).toHaveCount(5);
+
+        // Clicking it opens the builder (blank funnel).
+        await cta.click();
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+    });
+
     // ─── State: Pro × has-data ─────────────────────────────────
 
     test('pro-has-data: 2 goals + 2 funnels render with pill tabs and usage counts', async ({ page }) => {
@@ -207,6 +229,153 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-tabs')).toBeVisible();
         await expect(page.locator('.slimstat-gf-tab')).toHaveCount(2);
         await expect(page.locator('.slimstat-gf-tab.is-active')).toHaveCount(1);
+    });
+
+    test('funnel-identical-configs-match: two funnels with the same steps show identical numbers (#19, #1)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+
+        // Seed real pageviews so the funnel has NON-ZERO counts: 3 visitors hit '/',
+        // 2 of them continue to '/pricing'. Without data the assertion below would
+        // trivially pass on 0 == 0 and miss the SSR-vs-AJAX drift (#1).
+        // The LAST row is dated in the future (still "today"): the SSR funnel clamps
+        // its window end to now and excludes it, but an unclamped AJAX twin would query
+        // up to 23:59:59 and include it — so before the clamp fix the two funnels would
+        // disagree (4 vs 3). After the fix both clamp to now and agree. (#1)
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await clearStatsTable();
+        await seedStats([
+            { resource: '/',        fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(240) },
+            { resource: '/',        fingerprint: 'visitor-2', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-2', dt: ago(160) },
+            { resource: '/',        fingerprint: 'visitor-3', dt: ago(120) },
+            { resource: '/',        fingerprint: 'visitor-future', dt: ago(-3600) },
+        ]);
+
+        const steps = [
+            { name: 'Home',    dimension: 'resource', operator: 'contains', value: '/' },
+            { name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing' },
+        ];
+        // Identical step rules, different funnel + step names — they MUST agree.
+        await seedFunnels([
+            { name: 'Funnel A', steps },
+            { name: 'Funnel B', steps: steps.map(s => ({ ...s, name: `${s.name} (B)` })) },
+        ]);
+        await gotoSlimview6(page);
+
+        // Funnel A is the active, server-rendered panel.
+        const panelA = page.locator('.slimstat-gf-funnel-panel[data-funnel-index="0"]');
+        await expect(panelA).toBeVisible();
+        await expect(panelA.locator('.slimstat-gf-step__count').first()).toBeVisible();
+        const countsA = (await panelA.locator('.slimstat-gf-step__count').allInnerTexts())
+            .map(s => s.replace(/\s+/g, ' ').trim());
+
+        // Funnel B loads via AJAX on tab switch; wait for its bars to render.
+        await page.locator('.slimstat-gf-tab[data-funnel-index="1"]').click();
+        const panelB = page.locator('.slimstat-gf-funnel-panel[data-funnel-index="1"]');
+        await expect(panelB).toBeVisible();
+        await expect(panelB.locator('.slimstat-gf-step__count')).toHaveCount(countsA.length);
+        const countsB = (await panelB.locator('.slimstat-gf-step__count').allInnerTexts())
+            .map(s => s.replace(/\s+/g, ' ').trim());
+
+        // The #19 contract: identical configs → identical per-step counts/percentages.
+        expect(countsB).toEqual(countsA);
+    });
+
+    // ─── Counting transparency: units (#1, #3) ──────────────────
+
+    test('funnel-test-step-reports-unique-visitors: Test result is in visitors, not "matches" (#1, #3)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await clearStatsTable();
+        // One visitor, three pageviews of /pricing → unique visitors (1) < pageviews (3).
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(100) },
+        ]);
+        await gotoSlimview6(page);
+
+        // Open the builder from a template so step rows are pre-filled (no combobox typing).
+        await page.locator('.slimstat-gf-template-card[data-template="pricing_to_checkout"]').click();
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        // Test the first step; the result is worded in unique visitors now, never "matches".
+        const firstRow = page.locator('.slimstat-gf-step-row').first();
+        await firstRow.locator('[data-action="test-step"]').click();
+        const result = firstRow.locator('[data-role="test-result"]');
+        await expect(result).toContainText(/unique visitor/i);
+        await expect(result).not.toContainText(/match/i);
+    });
+
+    test('goal-metric-units: Total (pageviews) exceeds Uniques (visitors) and both carry tooltips (#3)', async ({ page }) => {
+        await forceLimits(1, 0, WP_CONTENT);
+        await clearStatsTable();
+        // 2 distinct visitors, 4 matching pageviews → Uniques 2, Total 4.
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(400) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(300) },
+            { resource: '/pricing', fingerprint: 'visitor-1', dt: ago(200) },
+            { resource: '/pricing', fingerprint: 'visitor-2', dt: ago(100) },
+        ]);
+        await seedGoals([{ name: 'Pricing View', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);
+        await gotoSlimview6(page);
+
+        const goalCard = page.locator('.slimstat-gf-goal').first();
+        await expect(goalCard).toBeVisible();
+
+        // Tooltips explain the units (the #3 confusion).
+        await expect(page.locator('.slimstat-gf-metric__label[title*="Unique visitors who matched"]')).toHaveCount(1);
+        await expect(page.locator('.slimstat-gf-metric__label[title*="Matching pageviews"]')).toHaveCount(1);
+
+        // Values: Uniques then Total then CR%. Total (pageviews) must exceed Uniques (visitors).
+        const values = (await goalCard.locator('.slimstat-gf-metric__value').allInnerTexts())
+            .map(s => parseInt(s.replace(/[^\d]/g, ''), 10));
+        expect(values[0]).toBe(2);                 // Uniques
+        expect(values[1]).toBe(4);                 // Total
+        expect(values[1]).toBeGreaterThan(values[0]);
+    });
+
+    // ─── Funnels refresh keeps the viewed funnel (#2) ────────────
+
+    test('funnels-refresh-keeps-active-tab: refresh restores the viewed funnel, not funnel 1 (#2)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await clearStatsTable();
+        const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
+        await seedStats([
+            { resource: '/',         fingerprint: 'v1', dt: ago(500) },
+            { resource: '/pricing',  fingerprint: 'v1', dt: ago(400) },
+            { resource: '/checkout', fingerprint: 'v1', dt: ago(300) },
+            { resource: '/pricing',  fingerprint: 'v2', dt: ago(200) },
+        ]);
+        await seedFunnels([
+            { name: 'Funnel A', steps: [
+                { name: 'Home',    dimension: 'resource', operator: 'contains', value: '/' },
+                { name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing' },
+            ] },
+            { name: 'Funnel B', steps: [
+                { name: 'Pricing',  dimension: 'resource', operator: 'contains', value: '/pricing' },
+                { name: 'Checkout', dimension: 'resource', operator: 'contains', value: '/checkout' },
+            ] },
+        ]);
+        await gotoSlimview6(page);
+
+        // View the SECOND funnel (lazy-loads on tab click).
+        await page.locator('#slim_p9_02 .slimstat-gf-tab[data-funnel-index="1"]').click();
+        const panelB = page.locator('#slim_p9_02 .slimstat-gf-funnel-panel[data-funnel-index="1"]');
+        await expect(panelB.locator('.slimstat-gf-step__count').first()).toBeVisible();
+
+        // The postbox refresh re-renders the box with funnel 1 active + others as
+        // skeletons. Without the fix the user is bounced off funnel 2; with it the
+        // viewed tab is restored and repainted (the lazy-load runs again). (#2)
+        await page.locator('#slim_p9_02 a.refresh').click();
+
+        await expect(page.locator('#slim_p9_02 .slimstat-gf-tab.is-active'))
+            .toHaveAttribute('data-funnel-index', '1', { timeout: 10_000 });
+        await expect(panelB).toHaveClass(/is-active/);
+        await expect(panelB.locator('.slimstat-gf-skeleton')).toHaveCount(0);
+        await expect(panelB.locator('.slimstat-gf-step__count').first()).toBeVisible();
     });
 
     // ─── Goal create via drawer ─────────────────────────────────
@@ -278,6 +447,25 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         await expect(page.locator('.slimstat-gf-funnel-panel__name')).toContainText('E2E Funnel');
         await expect(page.locator('.slimstat-gf-funnels [data-role="usage"]')).toContainText('1 of 3');
+    });
+
+    test('funnel-step-dimensions-action-only: builder step dropdown omits attribute dimensions (#17)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const optionValues = await page.locator('.slimstat-gf-step-row').first()
+            .locator('[data-role="step-dimension"] option')
+            .evaluateAll(opts => opts.map(o => (o as HTMLOptionElement).value));
+
+        // Exactly the 5 action-oriented dimensions, in canonical order.
+        expect(optionValues).toEqual(['resource', 'content_type', 'content_id', 'searchterms', 'event_notes']);
+        // Attribute dimensions (who the visitor is) must not be offered as steps.
+        for (const attr of ['country', 'browser', 'platform', 'referer', 'username']) {
+            expect(optionValues).not.toContain(attr);
+        }
     });
 
     // ─── Downstream: dashboard widget renders no drawer/builder/confirm-sheet ──
@@ -380,6 +568,35 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(rows.nth(3).locator('[data-role="step-value"]')).toHaveValue(/order-received/);
     });
 
+    test('funnel-test-button-persists: Test stays on every step after the value combobox mounts (#16)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-template="blank"]');
+        await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
+
+        const rows = page.locator('.slimstat-gf-step-row');
+        await expect(rows).toHaveCount(2);
+        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
+        await rows.nth(1).locator('[data-role="step-value"]').fill('/pricing');
+
+        // Wait for the value comboboxes to mount (autosuggest replaces the plain
+        // input with .slimstat-searchable-select once the options AJAX resolves).
+        await expect(rows.nth(0).locator('.slimstat-searchable-select')).toBeVisible();
+        await expect(rows.nth(1).locator('.slimstat-searchable-select')).toBeVisible();
+
+        // The Test control must stay visible on EVERY step after the combobox mounts
+        // — it used to get clipped off the row until a reload. (#16)
+        await expect(rows.nth(0).locator('[data-action="test-step"]')).toBeVisible();
+        await expect(rows.nth(1).locator('[data-action="test-step"]')).toBeVisible();
+
+        // Testing one step keeps the result and leaves every Test control in place.
+        await rows.nth(0).locator('[data-action="test-step"]').click();
+        await expect(rows.nth(0).locator('[data-role="test-result"]')).not.toBeEmpty();
+        await expect(rows.nth(0).locator('[data-action="test-step"]')).toBeVisible();
+        await expect(rows.nth(1).locator('[data-action="test-step"]')).toBeVisible();
+    });
+
     test('value-display-goal-edit: editing a goal shows the saved value (not the placeholder)', async ({ page }) => {
         await forceLimits(5, 3, WP_CONTENT);
         await seedGoals([{ name: 'Pricing', dimension: 'resource', operator: 'contains', value: '/pricing', active: true }]);
@@ -418,6 +635,36 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // The saved custom value round-trips into the rendered rule chip.
         await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('/totally-custom-xyz');
+    });
+
+    test('value-custom-typed-enter-commits: pressing Enter commits a custom value without click-out (#14)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        await gotoSlimview6(page);
+
+        await page.click('[data-role="goals-empty"] [data-action="open-goal-drawer"]');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+        await page.fill('[data-role="goal-name"]', 'Enter Commit Goal');
+
+        const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
+        await wrap.locator('.slimstat-select-display').click();
+        const search = wrap.locator('.slimstat-select-search input');
+        await search.fill('https://metricet.com');
+        // Commit via Enter only — no click-outside. (#14)
+        await search.press('Enter');
+
+        // Dropdown closes and the display reflects the typed value immediately,
+        // and the page must NOT have navigated (Enter must not submit the form).
+        await expect(wrap.locator('.slimstat-select-dropdown')).toBeHidden();
+        await expect(wrap.locator('.slimstat-select-text')).toHaveText('https://metricet.com');
+        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('https://metricet.com');
+        await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
+
+        // The committed value still round-trips on save.
+        await Promise.all([
+            page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
+            page.click('[data-action="save-goal"]'),
+        ]);
+        await expect(page.locator('.slimstat-gf-rule-chip code')).toContainText('https://metricet.com');
     });
 
     test('value-hint-copy: drawer + builder explain date-range suggestions and custom values', async ({ page }) => {
@@ -591,6 +838,35 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
     });
 
+    test('menu-new-badge: Goals & Funnels shows a time-limited "New" badge (#20)', async ({ page }) => {
+        await forceLimits(5, 3, WP_CONTENT);
+        const { getPool } = await import('./helpers/setup');
+        const badge = '#adminmenu a[href*="page=slimview6"] .slimstat-gf-new-badge';
+        const clearAnchor = () =>
+            getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_goals_funnels_since'");
+
+        try {
+            // Fresh: clear the anchor so the first menu build starts the 15-day window now.
+            await clearAnchor();
+            await gotoSlimview6(page);
+            await expect(page.locator(badge)).toBeVisible();
+            await expect(page.locator(badge)).toContainText('New');
+
+            // Past the 15-day window: the badge is gone.
+            const sixteenDaysAgo = Math.floor(Date.now() / 1000) - 16 * 24 * 60 * 60;
+            await getPool().execute(
+                "INSERT INTO wp_options (option_name, option_value, autoload) VALUES ('slimstat_goals_funnels_since', ?, 'yes') " +
+                "ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+                [String(sixteenDaysAgo)],
+            );
+            await gotoSlimview6(page);
+            await expect(page.locator(badge)).toHaveCount(0);
+        } finally {
+            // Restore: never leak the anchor option into later tests, even on failure.
+            await clearAnchor();
+        }
+    });
+
     // ─── Round 2: prototype copy regression ──────────────────────
 
     test('copy-prototype-strings: marquee empty-state copy matches the prototype', async ({ page }) => {
@@ -626,7 +902,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(templates.nth(2)).toContainText('Landing to contact');
         await expect(templates.nth(3)).toContainText('Homepage to pricing to checkout');
         await expect(templates.nth(4)).toContainText('Landing to thank-you');
-        await expect(templates.nth(5)).toContainText('Blank funnel');
+        // The 6th entry is the primary "+ Add funnel" CTA (the old gray "Blank
+        // funnel" card), now a blue button in the grid. (#15)
+        await expect(templates.nth(5)).toContainText('Add funnel');
     });
 
     test('copy-confirm-sheet-keep-labels: confirm sheet uses Keep + Delete wording', async ({ page }) => {

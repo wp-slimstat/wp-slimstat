@@ -1375,17 +1375,19 @@ class wp_slimstat_reports
 
                     case 'country':
                         $country = $results[$i]['country'] ?? '';
-                        $flag_rel  = '/admin/assets/images/flags/' . strtolower($country) . '.svg';
-                        $flag_path = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
-                        if (is_readable($flag_path)) {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
-                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
-                        } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
-                        }
-                        $row_details .= __('Code', 'wp-slimstat') . (': ' . $country);
-                        $element_value .= wp_slimstat_i18n::get_string('c-' . $country);
+                        // Only a well-formed 2-char code becomes a flag lookup; anything
+                        // else (legacy/poisoned data) falls back to the unknown flag rather
+                        // than building a filesystem path + URL out of stored text. The
+                        // src is esc_url()'d as defense-in-depth. (CWE-79 / -22 hardening)
+                        $flag_rel  = preg_match('/^[a-z0-9]{2}$/i', (string) $country)
+                            ? '/admin/assets/images/flags/' . strtolower($country) . '.svg'
+                            : '';
+                        $image_url = ('' !== $flag_rel && is_readable(SLIMSTAT_ANALYTICS_DIR . $flag_rel))
+                            ? SLIMSTAT_ANALYTICS_URL . $flag_rel
+                            : SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                        $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
+                        $row_details .= __('Code', 'wp-slimstat') . ': ' . esc_html($country);
+                        $element_value .= esc_html(wp_slimstat_i18n::get_string('c-' . $country));
                         break;
 
                     case 'id':
@@ -1398,22 +1400,26 @@ class wp_slimstat_reports
                         break;
 
                     case 'language':
-                        $language_parts     = explode('-', $results[$i][$_args['columns']]);
+                        // The language is the visitor-supplied Accept-Language value, so
+                        // validate the region subtag to 2 alphanumerics before it becomes a
+                        // flag path, esc_url() the src, and escape every echoed copy of the
+                        // raw value (alt / row code / name) — same hardening as 'country'.
+                        $lang_value         = (string) ($results[$i][$_args['columns']] ?? '');
+                        $language_parts     = explode('-', $lang_value);
                         $last_language_part = end($language_parts);
-                        if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg'))) {
-                            $flag_rel      = '/admin/assets/images/flags/' . $last_language_part . '.svg';
-                            $flag_path     = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
-                            if (is_readable($flag_path)) {
-                                $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
-                                $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($last_language_part) . '" />';
-                            }
+                        $flag_rel           = preg_match('/^[a-z0-9]{2}$/i', (string) $last_language_part)
+                            ? '/admin/assets/images/flags/' . $last_language_part . '.svg'
+                            : '';
+                        if ('' !== $flag_rel && is_readable(SLIMSTAT_ANALYTICS_DIR . $flag_rel)) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
+                            $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($last_language_part) . '" />';
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                            $element_value = '<img class="slimstat-browser-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($lang_value) . '" />';
                         }
 
-                        $row_details = __('Code', 'wp-slimstat') . (': ' . $results[$i][$_args[ 'columns' ]]);
-                        $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
+                        $row_details = __('Code', 'wp-slimstat') . ': ' . esc_html($lang_value);
+                        $element_value .= esc_html(wp_slimstat_i18n::get_string('l-' . $lang_value));
                         break;
 
                     case 'platform':
@@ -2076,6 +2082,14 @@ class wp_slimstat_reports
             ];
         }
 
+        // Pin the exact window this SSR render resolved so the AJAX funnel/Test reuse
+        // the SAME [start,end] (and cache key) verbatim, instead of re-resolving the
+        // preset through DateRangeHelper in the site timezone while this path used the
+        // legacy UTC day boundaries. Without this, an active funnel and its AJAX-loaded
+        // twin land on different windows/keys and disagree by the tz offset. (#1)
+        $gf_range_start = (int) (wp_slimstat_db::$filters_normalized['utime']['start'] ?? 0);
+        $gf_range_end   = (int) (wp_slimstat_db::$filters_normalized['utime']['end'] ?? 0);
+
         include __DIR__ . '/partials/goals-funnels/funnels-card.php';
 
         if (wp_doing_ajax()) {
@@ -2372,13 +2386,11 @@ class wp_slimstat_reports
                         <div class="country-bar">
                             <div class="country-flag-container">
                                 <?php
-                    if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg'))) {
-                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
-                    } else {
-                        $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
-                    }
+                    $flag_rel  = '/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg';
+                    $image_url = realpath(SLIMSTAT_ANALYTICS_DIR . $flag_rel)
+                        ? SLIMSTAT_ANALYTICS_URL . $flag_rel
+                        : SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
                         ?>
                             </div>
                             <strong><?php echo esc_html($country['name']) ?></strong>
