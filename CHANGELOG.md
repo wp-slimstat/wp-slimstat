@@ -6,6 +6,10 @@
 - **Funnels** — chain 2 to 5 steps into a journey and see exactly where visitors drop off at each stage (SlimStat Pro).
 - **Funnel templates** — start from a ready-made funnel (WooCommerce purchase, checkout completion, landing to contact, and more) instead of building every step by hand.
 
+**Security**
+
+- Fixed a stored cross-site scripting (XSS) issue on sites using the **Cloudflare** geolocation provider: a crafted `CF-IPCountry` request header could be saved as a visitor's country and run script when an administrator opened the Audience or Access Log report. The country is now validated to a two-letter code before it is stored, and country and language values are escaped everywhere they are rendered into report flag images and links. Reported via WPScan.
+
 **Filters & traffic sources**
 
 - Fixed: Google Discover and other Android/iOS app traffic is recorded again. Since 5.4.0, referrers that start with `android-app://` (such as `com.google.android.googlequicksearchbox` from Google Discover) were silently dropped, so that traffic showed up as "direct" with no source. The tracker now preserves app-scheme referrers while still blocking unsafe ones. ([#306](https://github.com/wp-slimstat/wp-slimstat/issues/306))
