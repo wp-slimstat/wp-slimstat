@@ -382,4 +382,11 @@ assert_not_contains("\$plugin_url, \$results[ \$i ][ 'country' ]", $rightnow_src
 assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$country)", $reports_src, 'Country column flag must validate the code before the flag path lookup');
 assert_contains("src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'Country column flag src must be esc_url()-wrapped');
 
+// Sink 4 — language COLUMN flag (raw_results_to_html): the visitor-supplied
+// Accept-Language subtag is validated before the flag path, and every echoed copy
+// (alt / row code / name) is escaped, like the country column.
+assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)", $reports_src, 'Language flag must validate the subtag before the flag path lookup');
+assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
+assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
+
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

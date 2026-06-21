@@ -1400,22 +1400,26 @@ class wp_slimstat_reports
                         break;
 
                     case 'language':
-                        $language_parts     = explode('-', $results[$i][$_args['columns']]);
+                        // The language is the visitor-supplied Accept-Language value, so
+                        // validate the region subtag to 2 alphanumerics before it becomes a
+                        // flag path, esc_url() the src, and escape every echoed copy of the
+                        // raw value (alt / row code / name) — same hardening as 'country'.
+                        $lang_value         = (string) ($results[$i][$_args['columns']] ?? '');
+                        $language_parts     = explode('-', $lang_value);
                         $last_language_part = end($language_parts);
-                        if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . $last_language_part . '.svg'))) {
-                            $flag_rel      = '/admin/assets/images/flags/' . $last_language_part . '.svg';
-                            $flag_path     = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
-                            if (is_readable($flag_path)) {
-                                $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
-                                $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($last_language_part) . '" />';
-                            }
+                        $flag_rel           = preg_match('/^[a-z0-9]{2}$/i', (string) $last_language_part)
+                            ? '/admin/assets/images/flags/' . $last_language_part . '.svg'
+                            : '';
+                        if ('' !== $flag_rel && is_readable(SLIMSTAT_ANALYTICS_DIR . $flag_rel)) {
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
+                            $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($last_language_part) . '" />';
                         } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-browser-icon" src="' . $image_url . '" width="16" height="16" alt="' . $results[$i][$_args['columns']] . '" />';
+                            $image_url     = SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                            $element_value = '<img class="slimstat-browser-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($lang_value) . '" />';
                         }
 
-                        $row_details = __('Code', 'wp-slimstat') . (': ' . $results[$i][$_args[ 'columns' ]]);
-                        $element_value .= wp_slimstat_i18n::get_string('l-' . $results[$i][$_args['columns']]);
+                        $row_details = __('Code', 'wp-slimstat') . ': ' . esc_html($lang_value);
+                        $element_value .= esc_html(wp_slimstat_i18n::get_string('l-' . $lang_value));
                         break;
 
                     case 'platform':
