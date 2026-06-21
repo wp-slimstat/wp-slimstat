@@ -376,4 +376,10 @@ assert_contains("esc_attr(\$results[ \$i ][ 'country' ])", $rightnow_src, 'Acces
 assert_contains("esc_attr(wp_slimstat_i18n::get_string('c-' . \$results[\$i]['country']))", $rightnow_src, 'Access-log flag title must be esc_attr()');
 assert_not_contains("\$plugin_url, \$results[ \$i ][ 'country' ]", $rightnow_src, 'Access-log flag src must no longer pass the raw country into sprintf');
 
+// Sink 3 — country COLUMN flag (raw_results_to_html): the stored code is validated
+// to 2 alphanumerics before becoming a filesystem path, and the resulting src is
+// esc_url()'d (defense-in-depth for legacy/poisoned rows).
+assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$country)", $reports_src, 'Country column flag must validate the code before the flag path lookup');
+assert_contains("src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'Country column flag src must be esc_url()-wrapped');
+
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

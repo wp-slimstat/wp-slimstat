@@ -1375,15 +1375,17 @@ class wp_slimstat_reports
 
                     case 'country':
                         $country = $results[$i]['country'] ?? '';
-                        $flag_rel  = '/admin/assets/images/flags/' . strtolower($country) . '.svg';
-                        $flag_path = SLIMSTAT_ANALYTICS_DIR . $flag_rel;
-                        if (is_readable($flag_path)) {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . $flag_rel;
-                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
-                        } else {
-                            $image_url     = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                            $element_value = '<img class="slimstat-flag-icon" src="' . $image_url . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
-                        }
+                        // Only a well-formed 2-char code becomes a flag lookup; anything
+                        // else (legacy/poisoned data) falls back to the unknown flag rather
+                        // than building a filesystem path + URL out of stored text. The
+                        // src is esc_url()'d as defense-in-depth. (CWE-79 / -22 hardening)
+                        $flag_rel  = preg_match('/^[a-z0-9]{2}$/i', (string) $country)
+                            ? '/admin/assets/images/flags/' . strtolower($country) . '.svg'
+                            : '';
+                        $image_url = ('' !== $flag_rel && is_readable(SLIMSTAT_ANALYTICS_DIR . $flag_rel))
+                            ? SLIMSTAT_ANALYTICS_URL . $flag_rel
+                            : SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
+                        $element_value = '<img class="slimstat-flag-icon" src="' . esc_url($image_url) . '" width="16" height="16" alt="' . esc_attr($country) . '" />';
                         $row_details .= __('Code', 'wp-slimstat') . ': ' . esc_html($country);
                         $element_value .= esc_html(wp_slimstat_i18n::get_string('c-' . $country));
                         break;
