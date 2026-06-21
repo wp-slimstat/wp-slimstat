@@ -105,6 +105,7 @@
     "test:avg-duration-format": "php tests/avg-duration-format-test.php",
     "test:admin-ui-render-guards": "php tests/admin-ui-render-guards-test.php",
     "test:goals-free-limit": "php tests/goals-free-active-limit-test.php",
+    "test:goals-indexes-migration": "php tests/goals-funnels-index-migration-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -124,7 +125,8 @@
       "@test:shortcode-w-whitelist",
       "@test:avg-duration-format",
       "@test:admin-ui-render-guards",
-      "@test:goals-free-limit"
+      "@test:goals-free-limit",
+      "@test:goals-indexes-migration"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

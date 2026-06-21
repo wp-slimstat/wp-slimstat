@@ -836,22 +836,35 @@ class wp_slimstat_admin
         }
 
         // --- Goals & Funnels composite indexes for query performance ---
+        // These three indexes are also registered as AbstractIndexMigration classes
+        // (Create{Goal,Funnel}QueriesIndex / CreateEventsNotesDtIndex in
+        // src/Migration/MigrationService.php) which provide the retry UI; keep the
+        // index name + columns here in sync with those classes.
         if (empty(wp_slimstat::$settings['goals_indexes'])) {
             $goal_indexes = [
                 ['table' => 'slim_stats',  'name' => 'idx_goal_queries',   'sql' => 'ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20))'],
                 ['table' => 'slim_stats',  'name' => 'idx_funnel_queries', 'sql' => 'ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191))'],
                 ['table' => 'slim_events', 'name' => 'idx_events_notes_dt', 'sql' => 'ADD INDEX idx_events_notes_dt (dt, notes(64))'],
             ];
+            $goal_indexes_built = true;
             foreach ($goal_indexes as $idx) {
                 $table = $GLOBALS['wpdb']->prefix . $idx['table'];
                 $exists = wp_slimstat::$wpdb->get_results(
                     wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $idx['name'])
                 );
                 if (empty($exists)) {
-                    wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}");
+                    // ALTER can time out on very large tables. Track the result so we
+                    // only mark this complete once every index is present; a failure
+                    // leaves goals_indexes unset so the modern migration system
+                    // (MigrationService) surfaces a one-click retry notice. (#318)
+                    if (false === wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}")) {
+                        $goal_indexes_built = false;
+                    }
                 }
             }
-            wp_slimstat::$settings['goals_indexes'] = 'on';
+            if ($goal_indexes_built) {
+                wp_slimstat::$settings['goals_indexes'] = 'on';
+            }
         }
 
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
