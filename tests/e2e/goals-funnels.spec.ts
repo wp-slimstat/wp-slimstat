@@ -236,7 +236,11 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Seed real pageviews so the funnel has NON-ZERO counts: 3 visitors hit '/',
         // 2 of them continue to '/pricing'. Without data the assertion below would
-        // trivially pass on 0 == 0 and miss the SSR-vs-AJAX cache-key drift (#1).
+        // trivially pass on 0 == 0 and miss the SSR-vs-AJAX drift (#1).
+        // The LAST row is dated in the future (still "today"): the SSR funnel clamps
+        // its window end to now and excludes it, but an unclamped AJAX twin would query
+        // up to 23:59:59 and include it — so before the clamp fix the two funnels would
+        // disagree (4 vs 3). After the fix both clamp to now and agree. (#1)
         const ago = (s: number) => Math.floor(Date.now() / 1000) - s;
         await clearStatsTable();
         await seedStats([
@@ -245,6 +249,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
             { resource: '/',        fingerprint: 'visitor-2', dt: ago(200) },
             { resource: '/pricing', fingerprint: 'visitor-2', dt: ago(160) },
             { resource: '/',        fingerprint: 'visitor-3', dt: ago(120) },
+            { resource: '/',        fingerprint: 'visitor-future', dt: ago(-3600) },
         ]);
 
         const steps = [

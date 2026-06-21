@@ -2315,7 +2315,15 @@ class wp_slimstat_admin
             }
         }
 
-        return [$start ? (int) $start : null, $end ? (int) $end : null];
+        // Clamp the end to "now", mirroring the SSR funnel render (wp-slimstat-db.php:852):
+        // presets return "today 23:59:59" (a future time), so without this the active
+        // (SSR) funnel queries [start..now] while an AJAX-loaded twin queries
+        // [start..23:59:59]. That gives different counts AND different cache-key hour
+        // buckets, so two identical funnels disagree. Clamping makes every goals/funnels
+        // AJAX window end at the same "now" as the SSR render. A custom past range is
+        // unaffected (its end is already < now). (#1)
+        $now = (int) date_i18n('U');
+        return [$start ? (int) $start : null, $end ? min((int) $end, $now) : null];
     }
 
     /**
@@ -2335,7 +2343,19 @@ class wp_slimstat_admin
             include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
         }
 
-        list($start, $end) = self::resolve_requested_date_range();
+        // Prefer the exact window the server-rendered funnel already used, posted back
+        // as gf_utime_start/end. Reusing it verbatim makes the AJAX funnel/Test query
+        // the IDENTICAL [start,end] (and funnel cache key) as the SSR render, so two
+        // identical funnels share one result instead of re-resolving the preset in the
+        // site timezone while the SSR path used legacy UTC day boundaries. (#1)
+        $pinned_start = isset($_POST['gf_utime_start']) ? (int) $_POST['gf_utime_start'] : 0;
+        $pinned_end   = isset($_POST['gf_utime_end']) ? (int) $_POST['gf_utime_end'] : 0;
+        if ($pinned_start > 0 && $pinned_end > 0) {
+            $start = $pinned_start;
+            $end   = $pinned_end;
+        } else {
+            list($start, $end) = self::resolve_requested_date_range();
+        }
 
         // init() populates $columns_names/$operator_names plus a default
         // $filters_normalized; then pin utime to the requested range.

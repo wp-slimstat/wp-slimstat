@@ -722,6 +722,18 @@
     // it instead of bouncing the user to the first funnel. (#2)
     var lastActiveFunnelIndex = null;
 
+    // The exact [start,end] window the server-rendered funnel resolved, exposed as
+    // data attributes on the funnels card. Posting these back pins the AJAX funnel +
+    // Test to the IDENTICAL window, so identical funnels share one cached result
+    // instead of re-resolving the preset in a different timezone and disagreeing. (#1)
+    function pinnedRange() {
+        var el = document.querySelector('.slimstat-gf-funnels[data-gf-range-start]');
+        if (!el) return {};
+        var start = parseInt(el.getAttribute('data-gf-range-start'), 10) || 0;
+        var end   = parseInt(el.getAttribute('data-gf-range-end'), 10) || 0;
+        return (start > 0 && end > 0) ? { gf_utime_start: start, gf_utime_end: end } : {};
+    }
+
     $body.on('click', '.slimstat-gf-tab', function () {
         var $tab = $(this);
         var funnelId = $tab.data('funnel-id');
@@ -750,14 +762,14 @@
         var loadRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
             ? window.SlimStatGetTimeRangeForAjax() : {};
 
-        funnelInflight[funnelId] = post({
+        funnelInflight[funnelId] = post($.extend({
             action:          'slimstat_load_funnel_data',
             security:        nonce,
             funnel_id:       funnelId,
             time_range_type: loadRange.type || '',
             time_range_from: loadRange.from || '',
             time_range_to:   loadRange.to   || ''
-        }, function (data) {
+        }, pinnedRange()), function (data) {
             if (!$panel.hasClass('is-active')) return;
             $panel.attr('data-loaded', 'true');
             $panel.find('.slimstat-gf-funnel-panel__meta').html(renderFunnelSummary(data.summary));
@@ -992,7 +1004,7 @@
             time_range_type: testRange.type || '',
             time_range_from: testRange.from || '',
             time_range_to:   testRange.to   || ''
-        }, step)).done(function (response) {
+        }, pinnedRange(), step)).done(function (response) {
             if (response && response.success && response.data) {
                 // Show UNIQUE VISITORS — the same unit the funnel step counts — so the
                 // Test previews "how many visitors this step will show", not raw

@@ -2076,6 +2076,14 @@ class wp_slimstat_reports
             ];
         }
 
+        // Pin the exact window this SSR render resolved so the AJAX funnel/Test reuse
+        // the SAME [start,end] (and cache key) verbatim, instead of re-resolving the
+        // preset through DateRangeHelper in the site timezone while this path used the
+        // legacy UTC day boundaries. Without this, an active funnel and its AJAX-loaded
+        // twin land on different windows/keys and disagree by the tz offset. (#1)
+        $gf_range_start = (int) (wp_slimstat_db::$filters_normalized['utime']['start'] ?? 0);
+        $gf_range_end   = (int) (wp_slimstat_db::$filters_normalized['utime']['end'] ?? 0);
+
         include __DIR__ . '/partials/goals-funnels/funnels-card.php';
 
         if (wp_doing_ajax()) {

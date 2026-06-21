@@ -10,12 +10,16 @@
  *   bool   $is_pro               — from wp_slimstat::pro_is_installed()
  *   array  $active_funnel_steps  — precomputed StepResult[] for funnels[0]
  *   array  $active_funnel_summary — ['step_count' => int, 'total_cr' => int|null]
+ *   int    $gf_range_start        — SSR-resolved window start (utime), pinned to AJAX (#1)
+ *   int    $gf_range_end          — SSR-resolved window end (utime), pinned to AJAX (#1)
  *
  * @var array  $funnels
  * @var int    $max_funnels
  * @var bool   $is_pro
  * @var array  $active_funnel_steps
  * @var array  $active_funnel_summary
+ * @var int    $gf_range_start
+ * @var int    $gf_range_end
  */
 
 if (!defined('ABSPATH')) {
@@ -101,7 +105,9 @@ $template_cards = [
     ],
 ];
 ?>
-<section class="slimstat-gf-card slimstat-gf-funnels" data-component="funnels">
+<section class="slimstat-gf-card slimstat-gf-funnels" data-component="funnels"
+         data-gf-range-start="<?php echo esc_attr((string) ($gf_range_start ?? 0)); ?>"
+         data-gf-range-end="<?php echo esc_attr((string) ($gf_range_end ?? 0)); ?>">
     <?php if (0 === $funnel_count) : ?>
         <div class="slimstat-gf-empty" data-role="funnels-empty">
             <h3 class="slimstat-gf-empty__title"><?php esc_html_e('Start from a template, or build from scratch', 'wp-slimstat'); ?></h3>
