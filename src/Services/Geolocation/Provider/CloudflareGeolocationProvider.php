@@ -61,6 +61,12 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 
         // Normalize values
         $country = $country ? strtoupper(trim($country)) : null;
+        // Defense in depth: only accept a valid ISO 3166-1 alpha-2 country code.
+        // Any other value (including header content with quotes or markup) is discarded
+        // so it can never reach the reports as stored data.
+        if (null !== $country && !preg_match('/^[A-Z]{2}$/', $country)) {
+            $country = null;
+        }
         if ('XX' === $country || '' === $country) {
             $country = null;
         }

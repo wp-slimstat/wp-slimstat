@@ -1849,10 +1849,10 @@ class wp_slimstat_reports
                                 <?php
                     if (realpath(SLIMSTAT_ANALYTICS_DIR . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg'))) {
                         $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/flags/' . strtolower((string)($country['code'] ?? '')) . '.svg');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                        echo '<img class="country-flag" src="' . esc_url($image_url) . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
                     } else {
                         $image_url = SLIMSTAT_ANALYTICS_URL . ('/admin/assets/images/unk.png');
-                        echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . $country['code'] . '" />';
+                        echo '<img class="country-flag" src="' . esc_url($image_url) . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
                     }
                         ?>
                             </div>
