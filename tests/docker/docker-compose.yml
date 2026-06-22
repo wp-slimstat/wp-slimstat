@@ -1,0 +1,37 @@
+# tests/docker/docker-compose.yml — one cell (db + wp). Invoked per cell with a
+# unique COMPOSE_PROJECT_NAME and env-driven ports/paths so cells never collide.
+# Required env: PHP_VERSION, HTTP_PORT, DB_PORT, CELL_WP_DIR.
+services:
+  db:
+    image: mysql:8.0
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --max_allowed_packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wordpress
+    ports:
+      - "127.0.0.1:${DB_PORT}:3306"
+    tmpfs:
+      - /var/lib/mysql            # ephemeral DB → fast + auto-clean per cell
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+
+  wp:
+    build:
+      context: .
+      dockerfile: Dockerfile.wp
+      args:
+        PHP_VERSION: "${PHP_VERSION}"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${HTTP_PORT}:80"
+    volumes:
+      # The WP install lives on the host so the host-side Playwright suite can
+      # read/write wp-config.php + wp-content/mu-plugins. WP_ROOT points here.
+      - "${CELL_WP_DIR}:/var/www/html"
