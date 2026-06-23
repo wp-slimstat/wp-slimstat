@@ -13,10 +13,11 @@ License URI: https://www.gnu.org/licenses/gpl-2.0.html
 The leading web analytics plugin for WordPress
 
 == Description ==
-Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
+Understand exactly what your visitors do: track returning customers and registered users, monitor JavaScript events, detect intrusions, and analyze your email campaigns — all without giving up their privacy. Thousands of WordPress sites are already using it.
 
 = Main Features =
 * **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
+* **Goals & Funnels**: turn traffic into answers — define a goal to measure a conversion (a WooCommerce sale, a signup, a key pageview) and see uniques, totals, and conversion rate, or chain steps into a funnel to spot exactly where visitors drop off. One goal is free; up to five goals and full funnels are unlocked via Pro.
 * **Admin Bar Stats**: view real-time site stats directly from the WordPress admin bar — online visitors, pageviews, and top pages at a glance.
 * **Shortcodes**: display reports in widgets or directly in posts and pages.
 * **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
@@ -74,10 +75,11 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 7. **Customize widgets** - Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
 8. **WordPress Dashboard** - Add and display custom reports like Traffic Sources directly on your WordPress dashboard!
 9. **Settings** - Plenty of options to customize the plugin's behavior
+10. **Goals & Funnels** - Define the conversions that drive revenue and watch each step of your WooCommerce checkout or signup funnel to see exactly where visitors drop off
 
 == Changelog ==
 = 5.5.0 - 2026-06-15 =
-* Feature: Redesigned Goals & Funnels page (slimview6) — modern card layout, pill-segmented funnel tabs, side drawer for goal create/edit, overlay builder for funnels, and a destructive-action confirm sheet replacing native browser prompts.
+* Feature: New Goals & Funnels page (slimview6) — define goals and funnels in a modern card layout with pill-segmented funnel tabs, a side drawer for goal create/edit, an overlay builder for funnels, and a destructive-action confirm sheet instead of native browser prompts.
 * Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
 * Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
 * Feature: New AJAX endpoint `slimstat_load_funnel_data` lazy-loads step data for inactive funnel tabs, reducing the initial SQL load on multi-funnel pages.
