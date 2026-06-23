@@ -118,12 +118,21 @@ export async function pinReportToDashboard(
     boxId: string,
     login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
 ): Promise<void> {
+    const metaKey = 'meta-box-order_admin_page_slimlayout';
     const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;
-    await getPool().execute(
+    const pool = getPool();
+    // wp_usermeta has no unique key on (user_id, meta_key), so an upsert would
+    // pile up duplicate rows. Delete any existing layout rows for this user,
+    // then insert one — get_user_option() then resolves to exactly our value.
+    await pool.execute(
+        'DELETE um FROM wp_usermeta um JOIN wp_users u ON u.ID = um.user_id ' +
+        'WHERE u.user_login = ? AND um.meta_key = ?',
+        [login, metaKey],
+    );
+    await pool.execute(
         'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) ' +
-        "SELECT ID, 'meta-box-order_admin_page_slimlayout', ? FROM wp_users WHERE user_login = ? LIMIT 1 " +
-        'ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)',
-        [value, login],
+        'SELECT ID, ?, ? FROM wp_users WHERE user_login = ? LIMIT 1',
+        [metaKey, value, login],
     );
 }
 
