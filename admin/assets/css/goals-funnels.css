@@ -48,6 +48,13 @@
     overflow: visible !important;
 }
 
+/* Comfortable internal padding for the compact dashboard widgets — their content
+   would otherwise sit flush against the postbox edges. */
+.postbox:has(> .inside > .slimstat-funnel-widget) > .inside,
+.postbox:has(> .inside > .slimstat-goals-table) > .inside {
+    padding: var(--ss-space-3) var(--ss-space-4) var(--ss-space-4);
+}
+
 /* The admin.css `.postbox h3/p` rules bleed into the modern cards — a white band
    + padding behind the empty-state title and #eee divider lines under card
    paragraphs (FN-10). Neutralize the bleed and re-assert the modern spacing at
@@ -1397,13 +1404,29 @@
    treatment using the same design tokens. */
 .slimstat-funnel-wtabs {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: var(--ss-space-1);
     padding: var(--ss-space-1);
     background: var(--ss-surface-tint);
     border-radius: var(--ss-radius-lg);
     margin-bottom: var(--ss-space-4);
+    /* Many / long funnels: keep the tabs on ONE line and scroll horizontally
+       rather than wrapping into ragged rows. The pill clipped at the right edge
+       cues that more funnels exist; a thin scrollbar reinforces it. */
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.slimstat-funnel-wtabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+.slimstat-funnel-wtabs::-webkit-scrollbar-thumb {
+    background: var(--ss-border);
+    border-radius: var(--ss-radius-pill);
 }
 
 .slimstat-funnel-wtab {
@@ -1419,10 +1442,10 @@
     font-weight: 600;
     color: var(--ss-text-secondary);
     cursor: pointer;
-    /* Long funnel names would otherwise wrap mid-phrase and stretch the strip
-       into ragged rows; cap each tab and ellipsize (the active funnel's full
-       name still shows in the panel heading below). */
-    max-width: 14em;
+    /* Never shrink below content; the strip scrolls instead. Cap very long names
+       with an ellipsis (full name in the title + the panel heading below). */
+    flex: 0 0 auto;
+    max-width: 16em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

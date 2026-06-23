@@ -106,4 +106,37 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
     await expect(widget.locator('.slimstat-funnel-chart')).toHaveCount(1);
     await expect(widget).toContainText('Solo flow');
   });
+
+  test('many + long funnels: tabs stay on one row and scroll (no wrap) in a narrow widget', async ({ page }) => {
+    await seedFunnels([
+      { name: 'Landing to contact', steps: [STEP('Home', '/'), STEP('Contact', '/contact')] },
+      { name: 'Landing to thank-you page', steps: [STEP('Home', '/'), STEP('Thanks', '/thank-you')] },
+      { name: 'Checkout completion', steps: [STEP('Cart', '/cart'), STEP('Checkout', '/checkout')] },
+      { name: 'Homepage to pricing to checkout flow', steps: [STEP('Home', '/'), STEP('Pricing', '/pricing')] },
+    ]);
+
+    await openDashboard(page);
+    // Replicate a narrow 2-column dashboard widget so the tabs overflow.
+    await page.addStyleTag({ content: '#slim_p9_02{max-width:400px !important}' });
+
+    const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
+    await expect(widget).toBeVisible({ timeout: 30_000 });
+    await expect(widget.locator('.slimstat-funnel-wtab')).toHaveCount(4);
+
+    // All tabs share one row (no wrap)…
+    const rowCount = await widget
+      .locator('.slimstat-funnel-wtab')
+      .evaluateAll((els) => new Set(els.map((e) => (e as HTMLElement).offsetTop)).size);
+    expect(rowCount).toBe(1);
+
+    // …and the strip is horizontally scrollable when they overflow.
+    const scrollable = await widget
+      .locator('.slimstat-funnel-wtabs')
+      .evaluate((e) => e.scrollWidth > e.clientWidth + 1);
+    expect(scrollable).toBe(true);
+
+    // Switching still works for a tab reached by scrolling.
+    await widget.locator('.slimstat-funnel-wtab[data-funnel-index="3"]').click();
+    await expect(widget.locator('.slimstat-funnel-chart[data-funnel-index="3"]')).toBeVisible();
+  });
 });

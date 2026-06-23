@@ -164,6 +164,11 @@ foreach (['gap: 4px', 'height: 28px', 'min-width: 2px', 'transition: width 0.3s'
     fwc_assert(strpos($barsBlock, $tight) === false, "cramped value removed: {$tight}", $failures);
 }
 fwc_assert(strpos($css, '.slimstat-funnel-wtab') !== false && strpos($css, '.slimstat-funnel-wtab:focus-visible') !== false, 'the compact tab strip is styled with a focus-visible ring', $failures);
+// Many/long funnels: the strip scrolls horizontally on one line, never wraps.
+$wtabsPos   = strpos($css, '.slimstat-funnel-wtabs');
+$wtabsBlock = $wtabsPos !== false ? substr($css, $wtabsPos, 700) : '';
+fwc_assert(strpos($wtabsBlock, 'flex-wrap: nowrap') !== false, 'the tab strip never wraps (flex-wrap: nowrap)', $failures);
+fwc_assert(strpos($wtabsBlock, 'overflow-x: auto') !== false, 'the tab strip scrolls horizontally when funnels overflow (overflow-x: auto)', $failures);
 fwc_assert((bool) preg_match('/\.slimstat-goals-table th,\s*\.slimstat-goals-table td\s*\{[^}]*padding: var\(--ss-space-2\) var\(--ss-space-3\)/', $css), 'goals table cells use token padding, not 8px 12px', $failures);
 
 // --- regression: the sole-first-funnel render is gone from the source ---
