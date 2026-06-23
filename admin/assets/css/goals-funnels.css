@@ -1279,13 +1279,14 @@
    ============================================================ */
 
 .slimstat-goals-table {
-    margin: 0 0 15px;
+    margin: 0 0 var(--ss-space-4);
     border-collapse: collapse;
+    width: 100%;
 }
 
 .slimstat-goals-table th,
 .slimstat-goals-table td {
-    padding: 8px 12px;
+    padding: var(--ss-space-2) var(--ss-space-3);
     text-align: start;
     border-bottom: 1px solid var(--ss-border);
 }
@@ -1294,6 +1295,7 @@
     font-weight: 600;
     font-size: var(--ss-text-sm);
     text-transform: uppercase;
+    letter-spacing: 0.04em;
     color: var(--ss-text-secondary);
 }
 
@@ -1380,28 +1382,76 @@
 .slimstat-funnel-summary {
     color: var(--ss-text-secondary);
     font-size: var(--ss-text-base);
-    margin: 0 0 15px;
+    margin: 0 0 var(--ss-space-4);
+}
+
+/* Compact-widget funnel tabs (dashboard / shortcode). Unique classes — distinct
+   from the main page's .slimstat-gf-tab — so the two delegated tab handlers
+   never collide on the dashboard (which loads both). Mirrors the main pill-tab
+   treatment using the same design tokens. */
+.slimstat-funnel-wtabs {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: var(--ss-space-1);
+    padding: var(--ss-space-1);
+    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-pill);
+    margin-bottom: var(--ss-space-4);
+}
+
+.slimstat-funnel-wtab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    /* Match the main pill-tab hit target (.slimstat-gf-tab) so the two strips,
+       which render side-by-side on the dashboard, are the same size. */
+    padding: var(--ss-space-2) var(--ss-space-4);
+    border-radius: var(--ss-radius-pill);
+    font: inherit;
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+    cursor: pointer;
+    transition: background-color var(--ss-duration-fast) var(--ss-easing),
+                color var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-funnel-wtab:hover {
+    color: var(--ss-text-primary);
+}
+
+.slimstat-funnel-wtab.is-active {
+    background: var(--ss-surface);
+    color: var(--ss-brand-500);
+    box-shadow: var(--ss-shadow-card);
+}
+
+.slimstat-funnel-wtab:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
+}
+
+/* No-JS / email / CSV: every funnel panel renders stacked, so separate them. */
+.slimstat-funnel-widget .slimstat-funnel-chart + .slimstat-funnel-chart {
+    margin-top: var(--ss-space-5);
 }
 
 .slimstat-funnel-bars {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-}
-
-.slimstat-funnel-step {
-    margin-bottom: 2px;
+    gap: var(--ss-space-3);
 }
 
 .slimstat-funnel-step-label {
     display: flex;
     justify-content: space-between;
     font-size: var(--ss-text-base);
-    margin-bottom: 3px;
+    margin-bottom: var(--ss-space-1);
 }
 
 .slimstat-funnel-step-label .step-name {
-    font-weight: 500;
+    font-weight: 600;
+    color: var(--ss-text-body);
 }
 
 .slimstat-funnel-step-label .step-count {
@@ -1410,16 +1460,23 @@
 }
 
 .slimstat-funnel-bar-track {
-    height: 28px;
+    height: 32px;
     background: var(--ss-surface-tint);
-    border-radius: 4px;
+    border-radius: var(--ss-radius-sm);
     overflow: hidden;
 }
 
 .slimstat-funnel-bar-fill {
     height: 100%;
+    /* Magnitude is bar LENGTH; a zero/unreachable step keeps the muted fill so
+       it never reads as a healthy brand-red step (mirrors .slimstat-gf-step__fill,
+       FN-1). The brand color only paints steps with visitors. */
+    background: var(--ss-funnel-bar-zero);
+    border-radius: var(--ss-radius-sm);
+    min-width: 6px;
+    transition: width var(--ss-duration-slow) var(--ss-easing-out);
+}
+
+.slimstat-funnel-bar-fill:not([data-zero]) {
     background: var(--ss-brand-500);
-    border-radius: 4px;
-    min-width: 2px;
-    transition: width 0.3s ease;
 }

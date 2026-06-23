@@ -116,6 +116,38 @@ fwc_assert(strpos($locked, 'slimstat-funnel--locked') !== false, 'free tier stil
 $empty = $render(true, []);
 fwc_assert(strpos($empty, 'nodata') !== false, 'pro + no funnels still shows the empty state', $failures);
 
+// --- polish: a zero-visitor / unreachable step keeps the muted fill (data-zero) ---
+// First step must be non-zero or the renderer shows the "no visitors" summary and
+// skips bars entirely; a later step dropping to 0 is the realistic drop-off case.
+wp_slimstat_db::$result = [
+    ['name' => 'Home',    'visitors' => 100, 'pct' => 100],
+    ['name' => 'Pricing', 'visitors' => 0,   'pct' => 0],
+];
+$zeroHtml = $render(true, [$two[0]]);
+fwc_assert(substr_count($zeroHtml, 'slimstat-funnel-bar-fill" data-zero') === 1, 'a zero-visitor step renders the fill with data-zero (muted, not brand)', $failures);
+fwc_assert(substr_count($zeroHtml, 'class="slimstat-funnel-bar-fill" style=') === 1, 'the non-zero step fill has no data-zero (brand color)', $failures);
+wp_slimstat_db::$result = [ // restore for any later assertions
+    ['name' => 'Home',    'visitors' => 200, 'pct' => 100],
+    ['name' => 'Pricing', 'visitors' => 34,  'pct' => 17.0],
+];
+
+// --- styling de-cramp + tab strip (goals-funnels.css uses tokens, no tight values) ---
+$css = (string) file_get_contents($plugin_root . '/admin/assets/css/goals-funnels.css');
+// Isolate the legacy compact block (from .slimstat-funnel-bars onward) so the
+// "no tight values" scan can't be fooled by unrelated rules elsewhere.
+$barsPos   = strpos($css, '.slimstat-funnel-bars');
+$barsBlock = $barsPos !== false ? substr($css, $barsPos) : '';
+fwc_assert($barsBlock !== '' && strpos($barsBlock, 'gap: var(--ss-space-3)') !== false, 'funnel bars use token gap (--ss-space-3), not 4px', $failures);
+fwc_assert($barsBlock !== '' && strpos($barsBlock, 'height: 32px') !== false, 'funnel bar track is 32px (matches main page), not 28px', $failures);
+fwc_assert($barsBlock !== '' && strpos($barsBlock, 'min-width: 6px') !== false, 'funnel bar fill min-width is 6px, not 2px', $failures);
+fwc_assert($barsBlock !== '' && strpos($barsBlock, 'transition: width var(--ss-duration-slow)') !== false, 'funnel bar transition uses the slow duration token, not 0.3s', $failures);
+fwc_assert($barsBlock !== '' && preg_match('/\.slimstat-funnel-bar-fill:not\(\[data-zero\]\)\s*\{[^}]*--ss-brand-500/', $barsBlock) === 1, 'only non-zero fills get the brand color (zero-state parity with main page)', $failures);
+foreach (['gap: 4px', 'height: 28px', 'min-width: 2px', 'transition: width 0.3s'] as $tight) {
+    fwc_assert(strpos($barsBlock, $tight) === false, "cramped value removed: {$tight}", $failures);
+}
+fwc_assert(strpos($css, '.slimstat-funnel-wtab') !== false && strpos($css, '.slimstat-funnel-wtab:focus-visible') !== false, 'the compact tab strip is styled with a focus-visible ring', $failures);
+fwc_assert((bool) preg_match('/\.slimstat-goals-table th,\s*\.slimstat-goals-table td\s*\{[^}]*padding: var\(--ss-space-2\) var\(--ss-space-3\)/', $css), 'goals table cells use token padding, not 8px 12px', $failures);
+
 // --- regression: the sole-first-funnel render is gone from the source ---
 $reports = (string) file_get_contents($plugin_root . '/admin/view/wp-slimstat-reports.php');
 fwc_assert(preg_match('/\$funnel\s*=\s*\$funnels\[0\]\s*;/', $reports) === 0, 'show_funnels_compact no longer hard-renders only $funnels[0]', $failures);

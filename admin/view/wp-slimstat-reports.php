@@ -2172,13 +2172,16 @@ class wp_slimstat_reports
                 echo '<div class="slimstat-funnel-bars">';
                 foreach ($step_results as $step) {
                     $width = $step1 > 0 ? (int) round(($step['visitors'] / $step1) * 100) : 0;
+                    // A zero-visitor or unreachable step keeps the muted fill (no
+                    // brand color), so an empty bar never reads as a healthy step.
+                    $zero = empty($step['visitors']) || !empty($step['unreachable']);
                     echo '<div class="slimstat-funnel-step">';
                     echo '<div class="slimstat-funnel-step-label">';
                     echo '<span class="step-name">' . esc_html($step['name']) . '</span>';
                     echo '<span class="step-count">' . esc_html(number_format_i18n($step['visitors'])) . ' (' . esc_html((string) $step['pct']) . '%)</span>';
                     echo '</div>';
                     echo '<div class="slimstat-funnel-bar-track">';
-                    echo '<div class="slimstat-funnel-bar-fill" style="width:' . (int) $width . '%;"></div>';
+                    echo '<div class="slimstat-funnel-bar-fill"' . ($zero ? ' data-zero' : '') . ' style="width:' . (int) $width . '%;"></div>';
                     echo '</div></div>';
                 }
                 echo '</div>';

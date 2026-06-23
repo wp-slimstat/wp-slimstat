@@ -91,6 +91,30 @@ class FunnelsWidgetMultiTest extends IntegrationTestCase
         $this->assertStringNotContainsString('slimstat-funnel-wtab', $html);
     }
 
+    public function test_tab_strip_is_accessible_and_zero_steps_are_muted(): void
+    {
+        $this->setMaxFunnels(3);
+        $this->setFunnels([
+            ['id' => 1, 'name' => 'Drop',  'steps' => [['name' => 'A'], ['name' => 'B']]],
+            ['id' => 2, 'name' => 'Other', 'steps' => [['name' => 'A'], ['name' => 'B']]],
+        ]);
+        // Step 1 has visitors, step 2 drops to zero — the realistic drop-off case.
+        FakeWpSlimstatDb::$next = [
+            ['name' => 'A', 'visitors' => 100, 'pct' => 100],
+            ['name' => 'B', 'visitors' => 0,   'pct' => 0],
+        ];
+
+        $html = $this->renderWidget();
+
+        // Tab strip a11y (matches the main page's roles).
+        $this->assertStringContainsString('role="tablist"', $html);
+        $this->assertStringContainsString('role="tab"', $html);
+        $this->assertStringContainsString('aria-selected="true"', $html);
+        $this->assertStringContainsString('role="tabpanel"', $html);
+        // The zero step is muted (data-zero), the populated step is not.
+        $this->assertStringContainsString('slimstat-funnel-bar-fill" data-zero', $html);
+    }
+
     public function test_free_tier_shows_locked_upsell_not_funnels(): void
     {
         $this->setMaxFunnels(0); // Free

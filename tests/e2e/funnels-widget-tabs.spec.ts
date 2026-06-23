@@ -70,6 +70,31 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
     await expect(widget.locator('.slimstat-funnel-wtab[data-funnel-index="1"]')).toHaveClass(/is-active/);
   });
 
+  test('de-cramped: bar track and tab strip render at the polished sizes', async ({ page }) => {
+    await seedFunnels([
+      { name: 'A flow', steps: [STEP('Home', '/'), STEP('Pricing', '/pricing')] },
+      { name: 'B flow', steps: [STEP('Home', '/'), STEP('Trial', '/trial')] },
+    ]);
+
+    await openDashboard(page);
+    const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
+    await expect(widget).toBeVisible({ timeout: 30_000 });
+
+    // Funnel bar track is the de-cramped 32px (was 28px) — matches the main page.
+    const trackH = await widget
+      .locator('.slimstat-funnel-chart[data-funnel-index="0"] .slimstat-funnel-bar-track')
+      .first()
+      .evaluate((el) => getComputedStyle(el).height);
+    expect(trackH).toBe('32px');
+
+    // The tab strip is a pill (rounded), not a default browser button row.
+    const radius = await widget
+      .locator('.slimstat-funnel-wtab.is-active')
+      .first()
+      .evaluate((el) => getComputedStyle(el).borderTopLeftRadius);
+    expect(parseFloat(radius)).toBeGreaterThan(8); // pill radius, not square
+  });
+
   test('single funnel renders no tab strip (just the one panel)', async ({ page }) => {
     await seedFunnels([{ name: 'Solo flow', steps: [STEP('Home', '/'), STEP('Pricing', '/pricing')] }]);
 
