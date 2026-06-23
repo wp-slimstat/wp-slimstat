@@ -108,6 +108,25 @@ export async function seedStats(rows: StatRow[]): Promise<void> {
     }
 }
 
+/**
+ * Pin a SlimStat report box (e.g. 'slim_p9_01' goals, 'slim_p9_02' funnels) into
+ * the admin user's WP-dashboard layout, so its widget renders on wp-admin/index.php.
+ * Builds the PHP-serialized meta value from the id length to avoid hand-counted
+ * `s:N:` mismatches.
+ */
+export async function pinReportToDashboard(
+    boxId: string,
+    login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
+): Promise<void> {
+    const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;
+    await getPool().execute(
+        'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) ' +
+        "SELECT ID, 'meta-box-order_admin_page_slimlayout', ? FROM wp_users WHERE user_login = ? LIMIT 1 " +
+        'ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)',
+        [value, login],
+    );
+}
+
 export async function clearGoals(): Promise<void> {
     await deleteOption('slimstat_goals');
     await deleteOption('slimstat_goals_cache_ver');

@@ -107,6 +107,7 @@
     "test:goals-free-limit": "php tests/goals-free-active-limit-test.php",
     "test:goals-indexes-migration": "php tests/goals-funnels-index-migration-test.php",
     "test:access-log-author-link": "php tests/access-log-author-edit-link-test.php",
+    "test:funnels-widget-compact": "php tests/funnels-widget-compact-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -128,7 +129,8 @@
       "@test:admin-ui-render-guards",
       "@test:goals-free-limit",
       "@test:goals-indexes-migration",
-      "@test:access-log-author-link"
+      "@test:access-log-author-link",
+      "@test:funnels-widget-compact"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

@@ -1,0 +1,84 @@
+/**
+ * E2E (Fix 2): the dashboard Funnels widget shows EVERY funnel with switchable
+ * tabs — not just the first.
+ *
+ * Before the fix, show_funnels_compact() rendered only $funnels[0], so a site
+ * with multiple funnels saw one in the dashboard widget with no way to switch.
+ * Now it renders one .slimstat-funnel-chart panel per funnel inside
+ * .slimstat-funnel-widget, with a .slimstat-funnel-wtab tab strip (a class
+ * distinct from the main page's .slimstat-gf-tab so the handlers never collide).
+ *
+ * The exact markup + data-source contract is covered by the PHP unit/integration
+ * tests; this verifies the rendered dashboard behaviour: all funnels present,
+ * one panel visible at a time, tab clicks switch panels.
+ */
+import { test, expect, Page } from '@playwright/test';
+import { BASE_URL, WP_ROOT } from './helpers/env';
+import * as path from 'path';
+import { closeDb } from './helpers/setup';
+import { seedFunnels, clearAll, forceLimits, restoreDefaultLimits, pinReportToDashboard } from './helpers/goals-funnels';
+
+const WP_CONTENT = path.join(WP_ROOT, 'wp-content');
+const STEP = (name: string, value: string) => ({ name, dimension: 'resource', operator: 'contains', value });
+
+async function openDashboard(page: Page): Promise<void> {
+  await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
+}
+
+test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () => {
+  test.setTimeout(60_000);
+
+  test.beforeEach(async () => {
+    await clearAll();
+    await forceLimits(5, 3, WP_CONTENT); // Pro: funnels unlocked
+    await pinReportToDashboard('slim_p9_02');
+  });
+
+  test.afterAll(async () => {
+    await restoreDefaultLimits(WP_CONTENT);
+    await clearAll();
+    await closeDb();
+  });
+
+  test('widget renders one tab + panel per funnel and switches on click', async ({ page }) => {
+    await seedFunnels([
+      { name: 'Checkout flow', steps: [STEP('Home', '/'), STEP('Pricing', '/pricing')] },
+      { name: 'Signup flow', steps: [STEP('Home', '/'), STEP('Trial', '/trial')] },
+    ]);
+
+    await openDashboard(page);
+
+    const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
+    await expect(widget).toBeVisible({ timeout: 30_000 });
+
+    // Both funnels get a tab and a panel; the main-page tab class is NOT reused.
+    await expect(widget.locator('.slimstat-funnel-wtab')).toHaveCount(2);
+    await expect(widget.locator('.slimstat-gf-tab')).toHaveCount(0);
+    await expect(widget.locator('.slimstat-funnel-chart')).toHaveCount(2);
+
+    const panel0 = widget.locator('.slimstat-funnel-chart[data-funnel-index="0"]');
+    const panel1 = widget.locator('.slimstat-funnel-chart[data-funnel-index="1"]');
+
+    // JS-enhanced: first panel visible, the rest hidden.
+    await expect(panel0).toBeVisible();
+    await expect(panel1).toBeHidden();
+
+    // Switch to the second funnel.
+    await widget.locator('.slimstat-funnel-wtab[data-funnel-index="1"]').click();
+    await expect(panel1).toBeVisible();
+    await expect(panel0).toBeHidden();
+    await expect(widget.locator('.slimstat-funnel-wtab[data-funnel-index="1"]')).toHaveClass(/is-active/);
+  });
+
+  test('single funnel renders no tab strip (just the one panel)', async ({ page }) => {
+    await seedFunnels([{ name: 'Solo flow', steps: [STEP('Home', '/'), STEP('Pricing', '/pricing')] }]);
+
+    await openDashboard(page);
+
+    const widget = page.locator('#slim_p9_02 .slimstat-funnel-widget');
+    await expect(widget).toBeVisible({ timeout: 30_000 });
+    await expect(widget.locator('.slimstat-funnel-wtab')).toHaveCount(0);
+    await expect(widget.locator('.slimstat-funnel-chart')).toHaveCount(1);
+    await expect(widget).toContainText('Solo flow');
+  });
+});

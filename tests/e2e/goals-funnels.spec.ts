@@ -23,6 +23,7 @@ import {
     clearAll,
     forceLimits,
     restoreDefaultLimits,
+    pinReportToDashboard,
 } from './helpers/goals-funnels';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -475,16 +476,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await seedGoals([{ name: 'Pinned', dimension: 'resource', operator: 'contains', value: '/x', active: true }]);
 
         // Force the goals widget into the dashboard layout via user meta.
-        const { getPool } = await import('./helpers/setup');
-        await getPool().execute(
-            "INSERT INTO wp_usermeta (user_id, meta_key, meta_value) " +
-            "SELECT ID, 'meta-box-order_admin_page_slimlayout', ? FROM wp_users WHERE user_login = ? LIMIT 1 " +
-            "ON DUPLICATE KEY UPDATE meta_value = VALUES(meta_value)",
-            [
-                'a:1:{s:9:"dashboard";s:10:"slim_p9_01";}',
-                process.env.WP_ADMIN_USER ?? 'parhumm',
-            ],
-        );
+        await pinReportToDashboard('slim_p9_01');
 
         await page.goto(`${BASE_URL}/wp-admin/index.php`, { waitUntil: 'domcontentloaded' });
 

@@ -783,6 +783,32 @@
         });
     });
 
+    // ── Compact Funnels widget (dashboard / shortcode) tab switching ──
+    // The compact widget (show_funnels_compact) renders every funnel as a
+    // visible .slimstat-funnel-chart panel inside .slimstat-funnel-widget, plus
+    // a .slimstat-funnel-wtab tab strip when there is more than one. All data is
+    // server-rendered, so switching is pure show/hide — no AJAX. The class is
+    // distinct from the main page's .slimstat-gf-tab so the two handlers never
+    // collide on a screen (e.g. the dashboard) that loads this script.
+    $('.slimstat-funnel-widget').each(function () {
+        var $widget = $(this);
+        // Only collapse to a single visible panel when there's a tab strip;
+        // otherwise (no-JS / single funnel) leave the stacked panels as-is.
+        if (!$widget.find('.slimstat-funnel-wtab').length) return;
+        var $panels = $widget.find('.slimstat-funnel-chart');
+        $panels.attr('hidden', true);
+        $panels.filter('[data-funnel-index="0"]').removeAttr('hidden');
+    });
+    $body.on('click', '.slimstat-funnel-wtab', function () {
+        var $tab = $(this);
+        var idx  = String($tab.data('funnel-index'));
+        var $widget = $tab.closest('.slimstat-funnel-widget');
+        $widget.find('.slimstat-funnel-wtab').removeClass('is-active').attr('aria-selected', 'false');
+        $tab.addClass('is-active').attr('aria-selected', 'true');
+        $widget.find('.slimstat-funnel-chart').attr('hidden', true);
+        $widget.find('.slimstat-funnel-chart[data-funnel-index="' + idx + '"]').removeAttr('hidden');
+    });
+
     // The legacy postbox "refresh" control swaps the Funnels box .inside via an
     // in-place AJAX re-render. The card comes back with funnel[0] active and every
     // other funnel as an unloaded skeleton, and the page-load tab auto-load does not
