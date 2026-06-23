@@ -104,7 +104,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 10. **Goals & Funnels** — Define the conversions that drive revenue and watch each step of your WooCommerce checkout or signup funnel to see exactly where visitors drop off.
 
 == Changelog ==
-= 5.5.0 - 2026-06-15 =
+= 5.5.0 - 2026-06-24 =
 * Feature: New Goals & Funnels page (slimview6) — define goals and funnels in a modern card layout with pill-segmented funnel tabs, a side drawer for goal create/edit, an overlay builder for funnels, and a destructive-action confirm sheet instead of native browser prompts.
 * Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
 * Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.

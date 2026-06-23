@@ -366,9 +366,14 @@ assert_contains('&quot;onclick=', $html, 'Country quote must be entity-escaped i
 $reports_src  = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php'));
 $rightnow_src = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/right-now.php'));
 
-// Sink 1 — Audience world-map flag alt.
+// Sink 1 — Audience world-map flag (alt + src). The stored code is validated to
+// 2 alphanumerics upstream and the flag path is realpath()-gated; the src is also
+// esc_url()'d so "escaped everywhere they are rendered into flag images" holds for
+// this sink too (defense-in-depth for legacy/poisoned rows).
 assert_contains("esc_attr(\$country['code'])", $reports_src, 'World-map flag alt must wrap $country[code] in esc_attr()');
 assert_not_contains("alt=\"' . \$country['code'] . '\"", $reports_src, 'World-map flag alt must not echo $country[code] unescaped');
+assert_contains("class=\"country-flag\" src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'World-map flag src must be esc_url()-wrapped');
+assert_not_contains("class=\"country-flag\" src=\"' . \$image_url . '\"", $reports_src, 'World-map flag src must not echo $image_url unescaped');
 
 // Sink 2 — access-log country flag (href esc_url; src + title esc_attr).
 assert_contains("esc_url(wp_slimstat_reports::fs_url('country equals", $rightnow_src, 'Access-log country href must be esc_url()-wrapped');

@@ -2435,7 +2435,7 @@ class wp_slimstat_reports
                     $image_url = realpath(SLIMSTAT_ANALYTICS_DIR . $flag_rel)
                         ? SLIMSTAT_ANALYTICS_URL . $flag_rel
                         : SLIMSTAT_ANALYTICS_URL . '/admin/assets/images/unk.png';
-                    echo '<img class="country-flag" src="' . $image_url . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
+                    echo '<img class="country-flag" src="' . esc_url($image_url) . '" width="32" height="32" alt="' . esc_attr($country['code']) . '" />';
                         ?>
                             </div>
                             <strong><?php echo esc_html($country['name']) ?></strong>
