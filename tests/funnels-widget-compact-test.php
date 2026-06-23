@@ -48,6 +48,12 @@ if (!function_exists('esc_attr__')) {
         return $t;
     }
 }
+if (!function_exists('esc_attr')) {
+    function esc_attr($v)
+    {
+        return $v;
+    }
+}
 if (!function_exists('__')) {
     function __($t, $d = 'default')
     {
@@ -106,6 +112,13 @@ fwc_assert(substr_count($html, 'slimstat-funnel-wtab') >= 2, 'a unique-classed t
 fwc_assert(strpos($html, 'slimstat-gf-tab') === false, 'the widget does NOT reuse the main-page .slimstat-gf-tab class (no handler collision)', $failures);
 fwc_assert(strpos($html, 'Checkout') !== false && strpos($html, 'Signup') !== false, 'both funnel names appear', $failures);
 fwc_assert(strpos($html, 'role="tablist"') !== false && strpos($html, 'role="tab"') !== false, 'tab strip carries tablist/tab roles (a11y)', $failures);
+fwc_assert(
+    strpos($html, 'aria-controls="slimstat-funnel-wpanel-') !== false
+        && strpos($html, 'aria-labelledby="slimstat-funnel-wtab-') !== false,
+    'tabs and panels are linked via aria-controls / aria-labelledby',
+    $failures
+);
+fwc_assert(strpos($html, 'title="Checkout"') !== false, 'tab carries a title attr (full name for the ellipsized label)', $failures);
 // No-JS graceful: panels are not hidden server-side (JS hides inactive on load).
 fwc_assert(strpos($html, '<div class="slimstat-funnel-chart" data-funnel-index="1"') !== false
     && !preg_match('/data-funnel-index="1"[^>]*hidden/', $html), 'inactive panel is visible by default (no-JS shows all funnels stacked)', $failures);

@@ -2152,6 +2152,7 @@ class wp_slimstat_reports
                     . ' class="slimstat-funnel-wtab' . ($active ? ' is-active' : '')
                     . '" role="tab" aria-selected="' . ($active ? 'true' : 'false')
                     . '" aria-controls="' . $panelId . '"'
+                    . ' title="' . esc_attr($f['name']) . '"'
                     . ' data-funnel-index="' . (int) $idx . '">'
                     . esc_html($f['name']) . '</button>';
             }

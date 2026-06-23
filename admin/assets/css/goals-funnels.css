@@ -1396,12 +1396,13 @@
    never collide on the dashboard (which loads both). Mirrors the main pill-tab
    treatment using the same design tokens. */
 .slimstat-funnel-wtabs {
-    display: inline-flex;
+    display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: var(--ss-space-1);
     padding: var(--ss-space-1);
     background: var(--ss-surface-tint);
-    border-radius: var(--ss-radius-pill);
+    border-radius: var(--ss-radius-lg);
     margin-bottom: var(--ss-space-4);
 }
 
@@ -1418,6 +1419,13 @@
     font-weight: 600;
     color: var(--ss-text-secondary);
     cursor: pointer;
+    /* Long funnel names would otherwise wrap mid-phrase and stretch the strip
+       into ragged rows; cap each tab and ellipsize (the active funnel's full
+       name still shows in the panel heading below). */
+    max-width: 14em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     transition: background-color var(--ss-duration-fast) var(--ss-easing),
                 color var(--ss-duration-fast) var(--ss-easing);
 }
