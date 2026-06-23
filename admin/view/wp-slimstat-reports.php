@@ -2148,10 +2148,10 @@ class wp_slimstat_reports
                 $active  = (0 === $idx);
                 $tabId   = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
                 $panelId = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
-                echo '<button type="button" id="' . $tabId . '"'
+                echo '<button type="button" id="' . esc_attr($tabId) . '"'
                     . ' class="slimstat-funnel-wtab' . ($active ? ' is-active' : '')
                     . '" role="tab" aria-selected="' . ($active ? 'true' : 'false')
-                    . '" aria-controls="' . $panelId . '"'
+                    . '" aria-controls="' . esc_attr($panelId) . '"'
                     . ' title="' . esc_attr($f['name']) . '"'
                     . ' data-funnel-index="' . (int) $idx . '">'
                     . esc_html($f['name']) . '</button>';
@@ -2169,7 +2169,7 @@ class wp_slimstat_reports
             if ($multi) {
                 $panelId     = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
                 $tabId       = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
-                $panel_attrs = ' role="tabpanel" id="' . $panelId . '" aria-labelledby="' . $tabId . '"';
+                $panel_attrs = ' role="tabpanel" id="' . esc_attr($panelId) . '" aria-labelledby="' . esc_attr($tabId) . '"';
             }
             echo '<div class="slimstat-funnel-chart" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
             echo '<h4>' . esc_html($funnel['name']) . '</h4>';

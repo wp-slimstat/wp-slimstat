@@ -135,8 +135,13 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
       .evaluate((e) => e.scrollWidth > e.clientWidth + 1);
     expect(scrollable).toBe(true);
 
-    // Switching still works for a tab reached by scrolling.
-    await widget.locator('.slimstat-funnel-wtab[data-funnel-index="3"]').click();
+    // Switching still works for a tab reached by scrolling — and actually
+    // changes state (panel 3 shown, panel 0 hidden, tab 3 marked active).
+    const tab3 = widget.locator('.slimstat-funnel-wtab[data-funnel-index="3"]');
+    await tab3.click();
     await expect(widget.locator('.slimstat-funnel-chart[data-funnel-index="3"]')).toBeVisible();
+    await expect(widget.locator('.slimstat-funnel-chart[data-funnel-index="0"]')).toBeHidden();
+    await expect(tab3).toHaveClass(/is-active/);
+    await expect(tab3).toHaveAttribute('aria-selected', 'true');
   });
 });
