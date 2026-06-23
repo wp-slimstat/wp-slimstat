@@ -2128,39 +2128,84 @@ class wp_slimstat_reports
             return;
         }
 
-        // Render first funnel only — widgets don't have tab UI.
-        $funnel       = $funnels[0];
-        $step_results = wp_slimstat_db::get_funnel_results($funnel);
-        $step1        = (int) ($step_results[0]['visitors'] ?? 0);
+        // Render every funnel. With more than one we emit a tab strip; the admin
+        // JS (goals-funnels.js) hides the inactive panels and switches on click.
+        // The tab class is intentionally distinct from the main page's
+        // .slimstat-gf-tab so the two delegated handlers never collide. Panels
+        // stay visible server-side, so no-JS consumers (email report / CSV) still
+        // see every funnel stacked instead of just the first.
+        $multi = count($funnels) > 1;
+        // Unique id base per widget render so the tab/panel ARIA ids don't collide
+        // when more than one compact widget renders on a page (e.g. two shortcodes).
+        static $widget_seq = 0;
+        $uid = ++$widget_seq;
 
-        echo '<div class="slimstat-funnel-chart">';
-        echo '<h4>' . esc_html($funnel['name']) . '</h4>';
+        echo '<div class="slimstat-funnel-widget">';
 
-        if ($step1 === 0) {
-            echo '<p class="slimstat-funnel-summary">' . esc_html__('No matching visitors in this date range.', 'wp-slimstat') . '</p>';
-        } elseif (!empty($step_results)) {
-            $total_cr = (count($step_results) > 1) ? $step_results[count($step_results) - 1]['pct'] : 100;
-            echo '<p class="slimstat-funnel-summary">';
-            echo esc_html(sprintf(
-                /* translators: 1: step count, 2: conversion rate */
-                __('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'),
-                count($step_results),
-                $total_cr
-            ));
-            echo '</p>';
-
-            echo '<div class="slimstat-funnel-bars">';
-            foreach ($step_results as $step) {
-                $width = $step1 > 0 ? (int) round(($step['visitors'] / $step1) * 100) : 0;
-                echo '<div class="slimstat-funnel-step">';
-                echo '<div class="slimstat-funnel-step-label">';
-                echo '<span class="step-name">' . esc_html($step['name']) . '</span>';
-                echo '<span class="step-count">' . esc_html(number_format_i18n($step['visitors'])) . ' (' . esc_html((string) $step['pct']) . '%)</span>';
-                echo '</div>';
-                echo '<div class="slimstat-funnel-bar-track">';
-                echo '<div class="slimstat-funnel-bar-fill" style="width:' . (int) $width . '%;"></div>';
-                echo '</div></div>';
+        if ($multi) {
+            echo '<div class="slimstat-funnel-wtabs" role="tablist" aria-label="' . esc_attr__('Configured funnels', 'wp-slimstat') . '">';
+            foreach ($funnels as $idx => $f) {
+                $active  = (0 === $idx);
+                $tabId   = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
+                $panelId = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
+                echo '<button type="button" id="' . esc_attr($tabId) . '"'
+                    . ' class="slimstat-funnel-wtab' . ($active ? ' is-active' : '')
+                    . '" role="tab" aria-selected="' . ($active ? 'true' : 'false')
+                    . '" aria-controls="' . esc_attr($panelId) . '"'
+                    . ' title="' . esc_attr($f['name']) . '"'
+                    . ' data-funnel-index="' . (int) $idx . '">'
+                    . esc_html($f['name']) . '</button>';
             }
+            echo '</div>';
+        }
+
+        foreach ($funnels as $idx => $funnel) {
+            $step_results = wp_slimstat_db::get_funnel_results($funnel);
+            $step1        = (int) ($step_results[0]['visitors'] ?? 0);
+
+            // A multi-funnel widget is a real tab interface; pair each panel with
+            // its tab. A lone panel gets no tab roles (there is no tab to pair).
+            $panel_attrs = '';
+            if ($multi) {
+                $panelId     = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
+                $tabId       = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
+                $panel_attrs = ' role="tabpanel" id="' . esc_attr($panelId) . '" aria-labelledby="' . esc_attr($tabId) . '"';
+            }
+            echo '<div class="slimstat-funnel-chart" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
+            echo '<h4>' . esc_html($funnel['name']) . '</h4>';
+
+            if ($step1 === 0) {
+                echo '<p class="slimstat-funnel-summary">' . esc_html__('No matching visitors in this date range.', 'wp-slimstat') . '</p>';
+            } elseif (!empty($step_results)) {
+                $step_count = count($step_results);
+                $total_cr   = ($step_count > 1) ? $step_results[$step_count - 1]['pct'] : 100;
+                echo '<p class="slimstat-funnel-summary">';
+                echo esc_html(sprintf(
+                    /* translators: 1: step count, 2: conversion rate */
+                    __('%1$d-step funnel · %2$s%% conversion rate', 'wp-slimstat'),
+                    $step_count,
+                    $total_cr
+                ));
+                echo '</p>';
+
+                echo '<div class="slimstat-funnel-bars">';
+                foreach ($step_results as $step) {
+                    $width = $step1 > 0 ? (int) round(($step['visitors'] / $step1) * 100) : 0;
+                    // A zero-visitor or unreachable step keeps the muted fill (no
+                    // brand color), so an empty bar never reads as a healthy step.
+                    $zero = empty($step['visitors']) || !empty($step['unreachable']);
+                    echo '<div class="slimstat-funnel-step">';
+                    echo '<div class="slimstat-funnel-step-label">';
+                    echo '<span class="step-name">' . esc_html($step['name']) . '</span>';
+                    echo '<span class="step-count">' . esc_html(number_format_i18n($step['visitors'])) . ' (' . esc_html((string) $step['pct']) . '%)</span>';
+                    echo '</div>';
+                    echo '<div class="slimstat-funnel-bar-track">';
+                    echo '<div class="slimstat-funnel-bar-fill"' . ($zero ? ' data-zero' : '') . ' style="width:' . (int) $width . '%;"></div>';
+                    echo '</div></div>';
+                }
+                echo '</div>';
+            }
+
             echo '</div>';
         }
 

@@ -108,6 +108,41 @@ export async function seedStats(rows: StatRow[]): Promise<void> {
     }
 }
 
+/**
+ * Pin a SlimStat report box (e.g. 'slim_p9_01' goals, 'slim_p9_02' funnels) into
+ * the admin user's WP-dashboard layout, so its widget renders on wp-admin/index.php.
+ * Builds the PHP-serialized meta value from the id length to avoid hand-counted
+ * `s:N:` mismatches.
+ */
+export async function pinReportToDashboard(
+    boxId: string,
+    login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
+): Promise<void> {
+    const metaKey = 'meta-box-order_admin_page_slimlayout';
+    const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;
+    const pool = getPool();
+    // wp_usermeta has no unique key on (user_id, meta_key), so an upsert would
+    // pile up duplicate rows. Delete any existing layout rows for this user,
+    // then insert one — get_user_option() then resolves to exactly our value.
+    await pool.execute(
+        'DELETE um FROM wp_usermeta um JOIN wp_users u ON u.ID = um.user_id ' +
+        'WHERE u.user_login = ? AND um.meta_key = ?',
+        [login, metaKey],
+    );
+    const [res] = await pool.execute(
+        'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) ' +
+        'SELECT ID, ?, ? FROM wp_users WHERE user_login = ? LIMIT 1',
+        [metaKey, value, login],
+    );
+    // INSERT…SELECT silently affects 0 rows if the login matches no user — fail
+    // here with a clear message instead of later on a confusing UI assertion.
+    if ((res as { affectedRows?: number }).affectedRows === 0) {
+        throw new Error(
+            `pinReportToDashboard: no WP user with login "${login}" — cannot place report "${boxId}" on the dashboard.`,
+        );
+    }
+}
+
 export async function clearGoals(): Promise<void> {
     await deleteOption('slimstat_goals');
     await deleteOption('slimstat_goals_cache_ver');

@@ -575,6 +575,24 @@ export async function seedPageviews(opts: {
 }
 
 /**
+ * Seed a single Access-Log pageview attributed to an existing WP user login
+ * (sets `username` + bracket-delimited `notes` so the author cell renders the
+ * known-user branch). Used by the #273 author-pencil specs.
+ */
+export async function seedAuthoredPageview(
+  login: string,
+  resource = '/e2e-authored',
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await getPool().query(
+    `INSERT INTO wp_slim_stats
+       (resource, dt, ip, visit_id, browser, platform, content_type, username, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [resource, now, '127.0.0.1', 1, 'Chrome', 'Windows', 'post', login, `[user:${login}]`],
+  );
+}
+
+/**
  * Subscribe to admin-ajax.php POST request bodies, optionally filtering by
  * an action or substring. Returns a `payloads` array that grows as matching
  * requests are observed, plus a `reset()` to clear it before a measurement
