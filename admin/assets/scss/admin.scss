@@ -905,6 +905,31 @@ body {
   color: #222;
 }
 
+/* Access Log colour legend: lay each swatch beside its label as one inline
+   group and override the global .little-color-box float:left, so the colour
+   sits next to the word it explains instead of stranding on the far side.
+   (Plain px — the --ss-* tokens aren't enqueued on the Access Log screen.) */
+.slimstat-access-log-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 8px 0;
+}
+
+.slimstat-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.slimstat-access-log-legend .little-color-box {
+  float: none;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
 [id^="slim_"] p.loading {
   text-align: center;
   width: 100%;

@@ -79,12 +79,15 @@ $delete_row              = '';
 // available in the report header tooltip; hidden in the compact dashboard widget.
 // Reuses the existing little-color-box / is-* classes (styled in admin.css).
 if (!$is_dashboard) {
+    // Each swatch is grouped with its label (and a hover tooltip) so the
+    // colour → meaning mapping is unambiguous — the swatch sits right next to
+    // the word it explains, instead of stranding apart from it. (#impeccable)
     echo '<p class="slimstat-access-log-legend">'
-        . '<span class="little-color-box is-search-engine"></span> ' . esc_html__('From search result page', 'wp-slimstat')
-        . ' <span class="little-color-box is-known-visitor"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat')
-        . ' <span class="little-color-box is-known-user"></span> ' . esc_html__('WP User', 'wp-slimstat')
-        . ' <span class="little-color-box is-direct"></span> ' . esc_html__('Other Human', 'wp-slimstat')
-        . ' <span class="little-color-box"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat')
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-search-engine" title="' . esc_attr__('From search result page', 'wp-slimstat') . '"></span> ' . esc_html__('From search result page', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has Left Comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WP User', 'wp-slimstat') . '"></span> ' . esc_html__('WP User', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other Human', 'wp-slimstat') . '"></span> ' . esc_html__('Other Human', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or Crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat') . '</span>'
         . '</p>';
 }
 

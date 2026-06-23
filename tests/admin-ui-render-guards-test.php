@@ -62,14 +62,35 @@ check(
     'C6: the display row must not write the geoip option'
 );
 
-// --- C8: inline color legend, non-dashboard only ----------------------------
-$rightnow = read_or_die('admin/view/right-now.php');
+// --- C8: inline color legend, non-dashboard only, with clear swatch↔label pairs
+$rightnow    = read_or_die('admin/view/right-now.php');
 check(false !== strpos($rightnow, 'slimstat-access-log-legend'), 'C8: inline legend block is rendered');
-check(false !== strpos($rightnow, 'little-color-box is-search-engine'), 'C8: legend reuses the existing little-color-box classes');
+$legendStart = strpos($rightnow, 'slimstat-access-log-legend');
+$legendEnd   = false !== $legendStart ? strpos($rightnow, '</p>', $legendStart) : false;
+$legendBlock = (false !== $legendStart && false !== $legendEnd) ? substr($rightnow, $legendStart, $legendEnd - $legendStart) : '';
+$gateWindow  = false !== $legendStart ? substr($rightnow, max(0, $legendStart - 300), 300) : '';
+check(false !== strpos($legendBlock, 'little-color-box'), 'C8: legend reuses the existing little-color-box swatches');
 check(
-    (bool) preg_match('/if\s*\(\s*!\$is_dashboard\s*\)\s*\{\s*echo\s+\'<p class="slimstat-access-log-legend"/', $rightnow),
+    (bool) preg_match('/if\s*\(\s*!\$is_dashboard\s*\)/', $gateWindow),
     'C8: legend is gated on !$is_dashboard (hidden in the compact widget)'
 );
+// All five categories and their swatch classes are present.
+foreach (['From search result page', 'Has Left Comments', 'WP User', 'Other Human', 'Bot or Crawler'] as $label) {
+    check(false !== strpos($legendBlock, $label), "C8: legend has the \"{$label}\" category");
+}
+foreach (['is-search-engine', 'is-known-visitor', 'is-known-user', 'is-direct'] as $cls) {
+    check(false !== strpos($legendBlock, $cls), "C8: legend swatch uses {$cls}");
+}
+// Clarity (#impeccable): each swatch is grouped with its label and carries a
+// hover tooltip, so the colour → meaning mapping is unambiguous.
+check(false !== strpos($legendBlock, 'slimstat-legend-item'), 'C8: swatches are grouped with labels via .slimstat-legend-item');
+check(false !== strpos($legendBlock, 'title='), 'C8: each swatch carries a tooltip title');
+
+// C8 CSS: the legend lays swatch+label inline (flex) and overrides the global
+// float:left so swatches sit next to their labels instead of stranding.
+$admincss = read_or_die('admin/assets/css/admin.css');
+check((bool) preg_match('/\.slimstat-access-log-legend[^{]*\{[^}]*display:\s*flex/', $admincss), 'C8: legend is laid out with flex');
+check((bool) preg_match('/\.slimstat-access-log-legend \.little-color-box\s*\{[^}]*float:\s*none/', $admincss), 'C8: legend swatches override float:left');
 
 if ($failures > 0) {
     fwrite(STDERR, "{$failures} check(s) failed in admin-ui-render-guards-test.php\n");
