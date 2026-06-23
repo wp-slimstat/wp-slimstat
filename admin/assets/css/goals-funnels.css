@@ -49,8 +49,12 @@
 }
 
 /* Comfortable internal padding for the compact dashboard widgets — their content
-   would otherwise sit flush against the postbox edges. */
-.postbox:has(> .inside > .slimstat-funnel-widget) > .inside,
+   would otherwise sit flush against the postbox edges. The Funnels widget pads
+   itself (.slimstat-funnel-widget below), so zero its postbox padding to avoid
+   doubling; the Goals table has no wrapper, so it's padded via .inside. */
+.postbox:has(> .inside > .slimstat-funnel-widget) > .inside {
+    padding: 0;
+}
 .postbox:has(> .inside > .slimstat-goals-table) > .inside {
     padding: var(--ss-space-3) var(--ss-space-4) var(--ss-space-4);
 }
@@ -1466,6 +1470,12 @@
 .slimstat-funnel-wtab:focus-visible {
     outline: 2px solid var(--ss-focus);
     outline-offset: 2px;
+}
+
+/* Internal padding so the widget content isn't flush against the postbox edges
+   (the postbox .inside padding is zeroed for this widget to avoid doubling). */
+.slimstat-funnel-widget {
+    padding: 15px;
 }
 
 /* No-JS / email / CSV: every funnel panel renders stacked, so separate them. */

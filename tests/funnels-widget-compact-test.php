@@ -169,6 +169,7 @@ $wtabsPos   = strpos($css, '.slimstat-funnel-wtabs');
 $wtabsBlock = $wtabsPos !== false ? substr($css, $wtabsPos, 700) : '';
 fwc_assert(strpos($wtabsBlock, 'flex-wrap: nowrap') !== false, 'the tab strip never wraps (flex-wrap: nowrap)', $failures);
 fwc_assert(strpos($wtabsBlock, 'overflow-x: auto') !== false, 'the tab strip scrolls horizontally when funnels overflow (overflow-x: auto)', $failures);
+fwc_assert((bool) preg_match('/\.slimstat-funnel-widget\s*\{[^}]*padding:\s*15px/', $css), 'the funnel widget has internal padding (not flush against the postbox edges)', $failures);
 fwc_assert((bool) preg_match('/\.slimstat-goals-table th,\s*\.slimstat-goals-table td\s*\{[^}]*padding: var\(--ss-space-2\) var\(--ss-space-3\)/', $css), 'goals table cells use token padding, not 8px 12px', $failures);
 
 // --- regression: the sole-first-funnel render is gone from the source ---
