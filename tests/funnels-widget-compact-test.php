@@ -82,6 +82,11 @@ require_once $plugin_root . '/admin/view/wp-slimstat-reports.php';
 
 $render = static function (bool $is_pro, array $funnels): string {
     $m = new ReflectionMethod('wp_slimstat_reports', 'show_funnels_compact');
+    // Required on PHP < 8.1 to invoke a private method; on 8.1+ it's a no-op and
+    // is deprecated in 8.5, so only call it where it's actually needed.
+    if (PHP_VERSION_ID < 80100) {
+        $m->setAccessible(true);
+    }
     ob_start();
     $m->invoke(null, $is_pro, $funnels);
     return (string) ob_get_clean();

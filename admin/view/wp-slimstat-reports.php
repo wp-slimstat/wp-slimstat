@@ -2134,15 +2134,25 @@ class wp_slimstat_reports
         // .slimstat-gf-tab so the two delegated handlers never collide. Panels
         // stay visible server-side, so no-JS consumers (email report / CSV) still
         // see every funnel stacked instead of just the first.
+        $multi = count($funnels) > 1;
+        // Unique id base per widget render so the tab/panel ARIA ids don't collide
+        // when more than one compact widget renders on a page (e.g. two shortcodes).
+        static $widget_seq = 0;
+        $uid = ++$widget_seq;
+
         echo '<div class="slimstat-funnel-widget">';
 
-        if (count($funnels) > 1) {
+        if ($multi) {
             echo '<div class="slimstat-funnel-wtabs" role="tablist" aria-label="' . esc_attr__('Configured funnels', 'wp-slimstat') . '">';
             foreach ($funnels as $idx => $f) {
-                $active = (0 === $idx);
-                echo '<button type="button" class="slimstat-funnel-wtab' . ($active ? ' is-active' : '')
+                $active  = (0 === $idx);
+                $tabId   = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
+                $panelId = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
+                echo '<button type="button" id="' . $tabId . '"'
+                    . ' class="slimstat-funnel-wtab' . ($active ? ' is-active' : '')
                     . '" role="tab" aria-selected="' . ($active ? 'true' : 'false')
-                    . '" data-funnel-index="' . (int) $idx . '">'
+                    . '" aria-controls="' . $panelId . '"'
+                    . ' data-funnel-index="' . (int) $idx . '">'
                     . esc_html($f['name']) . '</button>';
             }
             echo '</div>';
@@ -2152,7 +2162,15 @@ class wp_slimstat_reports
             $step_results = wp_slimstat_db::get_funnel_results($funnel);
             $step1        = (int) ($step_results[0]['visitors'] ?? 0);
 
-            echo '<div class="slimstat-funnel-chart" data-funnel-index="' . (int) $idx . '" role="tabpanel">';
+            // A multi-funnel widget is a real tab interface; pair each panel with
+            // its tab. A lone panel gets no tab roles (there is no tab to pair).
+            $panel_attrs = '';
+            if ($multi) {
+                $panelId     = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
+                $tabId       = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
+                $panel_attrs = ' role="tabpanel" id="' . $panelId . '" aria-labelledby="' . $tabId . '"';
+            }
+            echo '<div class="slimstat-funnel-chart" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
             echo '<h4>' . esc_html($funnel['name']) . '</h4>';
 
             if ($step1 === 0) {

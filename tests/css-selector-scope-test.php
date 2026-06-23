@@ -48,6 +48,29 @@ foreach ($leaky as $sel) {
     }
 }
 
+// Robust check: a leaky base can also leak when prefixed by another token
+// (e.g. `.rtl .form-table`, `body.rtl .ui-datepicker`) — those slip past the
+// bare-rule-start scan above. Parse every selector group and assert that any
+// individual selector targeting a leaky class also carries a SlimStat scope
+// (a .slimstat* / #slim* / .wrap-slimstat / .ui-dialog.slimstat ancestor).
+if (preg_match_all('/([^{}]+)\{/', $css, $groups)) {
+    foreach ($groups[1] as $selectorList) {
+        foreach (explode(',', $selectorList) as $oneSelector) {
+            $oneSelector = trim($oneSelector);
+            if ($oneSelector === '' || $oneSelector[0] === '@') {
+                continue; // skip @media / @font-face / etc.
+            }
+            foreach ($leaky as $needle) {
+                if (strpos($oneSelector, $needle) === false) {
+                    continue;
+                }
+                $scopedHere = (bool) preg_match('/\.slimstat|#slim|wrap-slimstat/i', $oneSelector);
+                css_assert($scopedHere, "leaky selector carries a SlimStat scope: \"{$oneSelector}\"", $failures);
+            }
+        }
+    }
+}
+
 // And the scoped forms must actually be present (proves the scoping shipped, not
 // that the selectors were simply deleted).
 $scoped = [

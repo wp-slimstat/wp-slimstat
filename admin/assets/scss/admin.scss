@@ -1206,11 +1206,14 @@ body.slimstat-admin-page {
   float: none;
 }
 
-.rtl .qtip-content {
+/* RTL variants of the qTip2 / form-table rules — scoped like their LTR
+   counterparts so they never restyle another plugin's qTip / settings table on
+   an RTL dashboard or post-list screen. */
+body.slimstat-admin-page.rtl .qtip-content {
   text-align: right;
 }
 
-.rtl .form-table td span.block-element {
+body.slimstat-admin-page.rtl .form-table td span.block-element {
   padding: 0 0 0 30px;
 }
 
@@ -1296,15 +1299,17 @@ body.slimstat-admin-page {
   margin: 0 0 10px 10px;
 }
 
-.rtl .ui-datepicker .ui-datepicker-buttonpane button {
+/* RTL datepicker overrides — scoped like the LTR datepicker block so they never
+   restyle another plugin's jQuery UI datepicker on an RTL admin screen. */
+body.slimstat-admin-page.rtl .ui-datepicker .ui-datepicker-buttonpane button {
   float: left;
 }
 
-.rtl .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
+body.slimstat-admin-page.rtl .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
   float: right;
 }
 
-.rtl .ui-datepicker-multi .ui-datepicker-group {
+body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   float: right;
 }
 

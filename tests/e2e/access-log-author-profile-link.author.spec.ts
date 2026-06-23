@@ -27,7 +27,10 @@ test.describe('Access Log author pencil — negative (author role) — #273', ()
     await snapshotSlimstatOptions();
   });
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({}, testInfo) => {
+    // The admin project also matches *author*.spec.ts; skip here (before any DB
+    // mutation) so clearStatsTable()/seed only run for the author project.
+    test.skip(testInfo.project.name !== 'author', 'author-project only');
     await clearStatsTable();
     // Attribute the row to the administrator: an author cannot edit the admin.
     await seedAuthoredPageview(ADMIN_USER, '/e2e-author-pencil-neg');
@@ -38,9 +41,8 @@ test.describe('Access Log author pencil — negative (author role) — #273', ()
     await closeDb();
   });
 
-  test('author sees no profile-edit pencil for a user it cannot edit', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'author', 'author-project only');
-
+  test('author sees no profile-edit pencil for a user it cannot edit', async ({ page }) => {
+    // beforeEach already skips this on non-author projects.
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'domcontentloaded' });
 
     // If the author role can't reach the SlimStat report at all, that's also a

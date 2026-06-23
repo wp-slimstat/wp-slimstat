@@ -64,7 +64,7 @@ class FunnelsWidgetMultiTest extends IntegrationTestCase
         $html = $this->renderWidget();
 
         $this->assertSame(2, substr_count($html, 'class="slimstat-funnel-chart"'), 'Both funnels must render a panel.');
-        $this->assertSame(2, substr_count($html, '<button type="button" class="slimstat-funnel-wtab'), 'Both funnels must get a tab button.');
+        $this->assertSame(2, substr_count($html, 'role="tab"'), 'Both funnels must get a tab button (role="tab").');
         $this->assertStringContainsString('Checkout flow', $html);
         $this->assertStringContainsString('Signup flow', $html);
         $this->assertStringNotContainsString('slimstat-gf-tab', $html, 'Widget must not reuse the main-page tab class.');

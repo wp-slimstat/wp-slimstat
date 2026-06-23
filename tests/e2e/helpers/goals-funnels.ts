@@ -129,11 +129,18 @@ export async function pinReportToDashboard(
         'WHERE u.user_login = ? AND um.meta_key = ?',
         [login, metaKey],
     );
-    await pool.execute(
+    const [res] = await pool.execute(
         'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) ' +
         'SELECT ID, ?, ? FROM wp_users WHERE user_login = ? LIMIT 1',
         [metaKey, value, login],
     );
+    // INSERT…SELECT silently affects 0 rows if the login matches no user — fail
+    // here with a clear message instead of later on a confusing UI assertion.
+    if ((res as { affectedRows?: number }).affectedRows === 0) {
+        throw new Error(
+            `pinReportToDashboard: no WP user with login "${login}" — cannot place report "${boxId}" on the dashboard.`,
+        );
+    }
 }
 
 export async function clearGoals(): Promise<void> {
