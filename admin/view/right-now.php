@@ -155,15 +155,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
         if (empty($results[$i]['username'])) {
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])) . "'>" . esc_html($host_by_ip) . "</a>";
         } else {
+            // Resolve the WP user once and reuse it for the display name, avatar,
+            // and the profile-edit pencil (avoids a second get_user_by() lookup
+            // per row when show_display_name is on).
+            $user              = get_user_by('login', $results[$i]['username']);
             $display_user_name = $results[$i]['username'];
-            if ('on' == wp_slimstat::$settings['show_display_name'] && false !== strpos($results[$i]['notes'], 'user:')) {
-                $display_real_name = get_user_by('login', $results[$i]['username']);
-                if (is_object($display_real_name)) {
-                    $display_user_name = $display_real_name->display_name;
-                }
+            if ($user && 'on' == wp_slimstat::$settings['show_display_name'] && false !== strpos($results[$i]['notes'], 'user:')) {
+                $display_user_name = $user->display_name;
             }
 
-            $user       = get_user_by('login', $results[$i]['username']);
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username'])) . "'>";
             if ($user) {
                 $ip_address .= get_avatar($user->ID, 16);
@@ -172,6 +172,14 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $ip_address .= ' ' . esc_html($display_user_name) . '</a>';
+            // #273: the Access Log author cell links to the user's admin profile,
+            // capability-guarded (get_edit_profile_link() returns '' when the
+            // current user can't edit this user). Only for resolved WP users —
+            // never guests/unknown logins. raw_results_to_html() already does this
+            // for the standard reports table; the Access Log renders here instead.
+            if ($user) {
+                $ip_address .= wp_slimstat_reports::get_edit_profile_link($user->ID);
+            }
             $display_ip_value = $results[$i]['ip'];
             if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
                 $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
