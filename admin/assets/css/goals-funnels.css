@@ -36,7 +36,13 @@
  * we need this to beat both competing rules regardless of load order.
  */
 .postbox:has(> .inside > .slimstat-gf-card) > .inside,
-.postbox:has(> .inside > * > .slimstat-gf-card) > .inside {
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside,
+/* The compact dashboard widget (funnel tabs / goals table) is taller than the
+   legacy fixed-height postbox (admin.css clamps slim_p9_0x .inside to ~281px);
+   let it size to content like the modern cards so the de-cramped bars + tab
+   strip aren't clipped. */
+.postbox:has(> .inside > .slimstat-funnel-widget) > .inside,
+.postbox:has(> .inside > .slimstat-goals-table) > .inside {
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
