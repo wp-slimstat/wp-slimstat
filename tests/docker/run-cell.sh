@@ -17,9 +17,12 @@ STRICT_DEPRECATIONS="${_env_strict:-${STRICT_DEPRECATIONS:-0}}"
 # independent of sibling plugins (consent CMPs, WooCommerce) or seeded fixtures
 # that a bare Free+Pro container lacks. Other specs run too, but only count as
 # informational (their failures are environment, not plugin regressions).
-# CORE_SPECS comes from matrix.env (the single edit point). Fallback if unset.
-: "${CORE_SPECS:=}"
-[ "${#CORE_SPECS[@]}" -gt 0 ] 2>/dev/null || CORE_SPECS=(issue-php74-admin-load.spec.ts feedbackbird-removed.spec.ts analytics-correctness-invariants.spec.ts)
+# CORE_SPECS comes from matrix.env (the single edit point). Fall back only if it
+# wasn't declared as a non-empty array (declare -p fails when unset, so the
+# `||` short-circuits before ${#...[@]} under set -u; an empty array → length 0).
+if ! declare -p CORE_SPECS >/dev/null 2>&1 || [ "${#CORE_SPECS[@]}" -eq 0 ]; then
+  CORE_SPECS=(issue-php74-admin-load.spec.ts feedbackbird-removed.spec.ts analytics-correctness-invariants.spec.ts)
+fi
 
 CELL="php${PHP}-wp${WP}"
 CELL_DIR="$WORK_ROOT/cells/$CELL"

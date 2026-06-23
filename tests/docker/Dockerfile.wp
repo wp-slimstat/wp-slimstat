@@ -45,10 +45,14 @@ RUN set -eux; \
     a2enmod rewrite; \
     sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
 
-# WP-CLI (runs as --allow-root inside the container).
+# WP-CLI (runs as --allow-root inside the container), verified against its
+# published SHA-512 so a tampered download fails the build.
 RUN set -eux; \
-    curl -fsSL -o /usr/local/bin/wp \
-      https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar; \
+    base=https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar; \
+    curl -fsSL -o /usr/local/bin/wp        "$base/wp-cli.phar"; \
+    curl -fsSL -o /tmp/wp-cli.sha512       "$base/wp-cli.phar.sha512"; \
+    echo "$(cat /tmp/wp-cli.sha512)  /usr/local/bin/wp" | sha512sum -c -; \
+    rm -f /tmp/wp-cli.sha512; \
     chmod +x /usr/local/bin/wp
 
 # Fail the build loudly if a required extension is missing on this PHP minor.
