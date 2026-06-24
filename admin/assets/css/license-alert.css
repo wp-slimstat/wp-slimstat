@@ -1,0 +1,153 @@
+/*
+ * SlimStat Pro license activation alert.
+ *
+ * Rendered by SlimStat\Services\Admin\LicenseAlert on SlimStat admin screens
+ * when Pro is installed but the license is missing/inactive/expired. Restrained,
+ * WordPress-native: a full-bordered panel (NOT the core notice side-stripe), a
+ * brand-tinted lock disc, and a single brand primary CTA. Warning hue is used as
+ * an accent only, never as body text. Tokens come from tokens.css with literal
+ * fallbacks so the panel renders correctly even on screens that do not load the
+ * token sheet.
+ *
+ * @since 5.5.0
+ */
+
+.slimstat-license-notice {
+	display: flex;
+	gap: var(--ss-space-4, 16px);
+	align-items: flex-start;
+	margin: 16px 0;
+	padding: var(--ss-space-5, 20px) var(--ss-space-6, 24px);
+	background: var(--ss-surface, #fff);
+	/* Full border overrides WordPress core's notice-warning left side-stripe. */
+	border: 1px solid var(--ss-border, #e2e4e7);
+	border-left-width: 1px;
+	border-inline-start-width: 1px;
+	border-radius: var(--ss-radius-md, 12px);
+	box-shadow: var(--ss-shadow-card, 0 1px 4px rgba(60, 60, 90, 0.04));
+}
+
+/* Leading lock disc — brand tint, decorative. */
+.slimstat-license-notice__icon {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: var(--ss-radius-pill, 999px);
+	background: var(--ss-brand-100, #ffd7dc);
+	color: var(--ss-brand-700, #dc3232);
+}
+
+.slimstat-license-notice__icon .dashicons {
+	width: 24px;
+	height: 24px;
+	font-size: 24px;
+}
+
+.slimstat-license-notice__body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.slimstat-license-notice__title {
+	margin: 0 0 6px;
+	padding: 0;
+	font-size: var(--ss-text-lg, 16px);
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--ss-text-strong, #111827);
+}
+
+.slimstat-license-notice__text {
+	margin: 0 0 14px;
+	max-width: 70ch;
+	font-size: var(--ss-text-md, 14px);
+	line-height: 1.5;
+	color: var(--ss-text-body, #202224);
+}
+
+.slimstat-license-notice__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ss-space-4, 16px);
+	margin-bottom: 10px;
+}
+
+/* Brand primary CTA — higher specificity than .wp-core-ui .button-primary. */
+.slimstat-license-notice .slimstat-license-notice__cta.button-primary {
+	display: inline-flex;
+	align-items: center;
+	min-height: 36px;
+	padding: 0 18px;
+	border-radius: var(--ss-radius-xs, 6px);
+	background: var(--ss-brand-500, #e8294c);
+	border-color: var(--ss-brand-700, #dc3232);
+	box-shadow: none;
+	color: #fff;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.slimstat-license-notice .slimstat-license-notice__cta.button-primary:hover,
+.slimstat-license-notice .slimstat-license-notice__cta.button-primary:focus {
+	background: var(--ss-brand-700, #dc3232);
+	border-color: var(--ss-brand-900, #b31033);
+	color: #fff;
+}
+
+.slimstat-license-notice__link {
+	font-size: var(--ss-text-md, 14px);
+	color: var(--ss-info-fg, #2271b1);
+	text-decoration: underline;
+}
+
+.slimstat-license-notice__meta {
+	margin: 0 0 4px;
+	font-size: var(--ss-text-base, 13px);
+	color: var(--ss-text-muted, #56585a);
+}
+
+.slimstat-license-notice__coupon {
+	display: inline-block;
+	padding: 2px 8px;
+	border: 1px solid var(--ss-border, #e2e4e7);
+	border-radius: var(--ss-radius-2xs, 4px);
+	background: var(--ss-surface-tint, #f6f7f7);
+	font-family: Menlo, Consolas, monospace;
+	font-weight: 600;
+	color: var(--ss-text-strong, #111827);
+	user-select: all;
+}
+
+.slimstat-license-notice__support {
+	margin: 0;
+	font-size: var(--ss-text-base, 13px);
+	color: var(--ss-text-muted, #56585a);
+}
+
+/* Keyboard focus visibility — WordPress-native blue, never brand magenta. */
+.slimstat-license-notice a:focus-visible {
+	outline: 2px solid var(--ss-focus, #2271b1);
+	outline-offset: 2px;
+}
+
+/* Subtle entrance, suppressed under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+	.slimstat-license-notice {
+		animation: slimstat-license-notice-in var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.4, 0, 0.2, 1));
+	}
+}
+
+@keyframes slimstat-license-notice-in {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 600px) {
+	.slimstat-license-notice {
+		flex-direction: column;
+	}
+}

@@ -1,0 +1,77 @@
+<?php
+/**
+ * Pro license activation alert.
+ *
+ * Rendered by SlimStat\Services\Admin\LicenseAlert on SlimStat admin screens
+ * when Pro is installed but the license is missing, inactive or expired.
+ *
+ * @var string $state 'no-key' (finish setup) or 'inactive' (reactivate).
+ */
+
+if (!defined('ABSPATH')) {
+	exit;
+}
+
+$slimstat_la_state = (isset($state) && 'no-key' === $state) ? 'no-key' : 'inactive';
+
+$slimstat_la_utm = [
+	'utm_source'   => 'wp-slimstat',
+	'utm_medium'   => 'license-alert',
+	'utm_campaign' => 'reactivate',
+	'utm_content'  => ('no-key' === $slimstat_la_state) ? 'state-a' : 'state-b',
+];
+
+$slimstat_la_pricing_url     = add_query_arg($slimstat_la_utm, 'https://wp-slimstat.com/pricing/');
+$slimstat_la_account_url     = add_query_arg($slimstat_la_utm, 'https://wp-slimstat.com/my-account/');
+$slimstat_la_license_tab_url = admin_url('admin.php?page=slimconfig&tab=8');
+$slimstat_la_support_email   = 'support@wp-slimstat.com';
+$slimstat_la_coupon          = 'REACTIVATE';
+
+if ('no-key' === $slimstat_la_state) {
+	$slimstat_la_heading   = __('SlimStat Pro features need a license', 'wp-slimstat');
+	$slimstat_la_body      = __('You are running SlimStat Pro, but no license key is set, so Pro reports and addons are paused. Add a key to switch them back on. Your tracking and existing data keep working in the meantime.', 'wp-slimstat');
+	$slimstat_la_primary   = __('Get SlimStat Pro', 'wp-slimstat');
+	$slimstat_la_secondary = __('I already have a key', 'wp-slimstat');
+} else {
+	$slimstat_la_heading   = __('SlimStat Pro features are turned off', 'wp-slimstat');
+	$slimstat_la_body      = __('Your license is inactive or expired, so Pro reports and addons are paused. Reactivate it to turn them back on. Your tracking and existing data are unaffected.', 'wp-slimstat');
+	$slimstat_la_primary   = __('Reactivate your license', 'wp-slimstat');
+	$slimstat_la_secondary = __('Find your license key', 'wp-slimstat');
+}
+?>
+<div class="notice slimstat-notice notice-warning slimstat-license-notice" role="region" aria-label="<?php esc_attr_e('SlimStat Pro license', 'wp-slimstat'); ?>">
+	<div class="slimstat-license-notice__icon" aria-hidden="true">
+		<span class="dashicons dashicons-lock"></span>
+	</div>
+	<div class="slimstat-license-notice__body">
+		<h2 class="slimstat-license-notice__title"><?php echo esc_html($slimstat_la_heading); ?></h2>
+		<p class="slimstat-license-notice__text"><?php echo esc_html($slimstat_la_body); ?></p>
+
+		<div class="slimstat-license-notice__actions">
+			<a class="button button-primary slimstat-license-notice__cta" href="<?php echo esc_url($slimstat_la_pricing_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_primary); ?></a>
+			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_account_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_secondary); ?></a>
+			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_license_tab_url); ?>"><?php esc_html_e('Enter your license key', 'wp-slimstat'); ?></a>
+		</div>
+
+		<p class="slimstat-license-notice__meta">
+			<?php
+			printf(
+				/* translators: %s: discount coupon code, shown as a code chip. */
+				esc_html__('New or renewing? Use code %s at checkout.', 'wp-slimstat'),
+				'<code class="slimstat-license-notice__coupon">' . esc_html($slimstat_la_coupon) . '</code>'
+			);
+			?>
+		</p>
+
+		<p class="slimstat-license-notice__support">
+			<?php
+			$slimstat_la_support_link = '<a href="' . esc_url('mailto:' . antispambot($slimstat_la_support_email)) . '">' . esc_html(antispambot($slimstat_la_support_email)) . '</a>';
+			printf(
+				/* translators: %s: support email address link. */
+				esc_html__('Have a valid key but cannot find it? Email %s.', 'wp-slimstat'),
+				$slimstat_la_support_link
+			);
+			?>
+		</p>
+	</div>
+</div>
