@@ -58,12 +58,24 @@ if ('no-key' === $slimstat_la_state) {
 
 		<p class="slimstat-license-alert__meta">
 			<?php
-			printf(
-				/* translators: %s: discount coupon code, shown as a code chip. */
-				esc_html__('New or renewing? Use code %s at checkout.', 'wp-slimstat'),
-				'<code class="slimstat-license-alert__coupon">' . esc_html($slimstat_la_coupon) . '</code>'
+			$slimstat_la_copy_aria = sprintf(
+				/* translators: %s: coupon code */
+				__('Copy coupon code %s to the clipboard', 'wp-slimstat'),
+				$slimstat_la_coupon
 			);
+			$slimstat_la_coupon_btn =
+				'<button type="button" class="slimstat-license-alert__coupon"'
+				. ' data-slimstat-copy="' . esc_attr($slimstat_la_coupon) . '"'
+				. ' data-copied-label="' . esc_attr__('Copied to clipboard', 'wp-slimstat') . '"'
+				. ' aria-label="' . esc_attr($slimstat_la_copy_aria) . '">'
+				. '<span class="slimstat-license-alert__coupon-code">' . esc_html($slimstat_la_coupon) . '</span>'
+				. '<span class="slimstat-license-alert__coupon-icon slimstat-license-alert__coupon-icon--copy dashicons dashicons-clipboard" aria-hidden="true"></span>'
+				. '<span class="slimstat-license-alert__coupon-icon slimstat-license-alert__coupon-icon--done dashicons dashicons-yes" aria-hidden="true"></span>'
+				. '</button>';
+			/* translators: %s: discount coupon code, shown as a click-to-copy chip. */
+			printf(esc_html__('New or renewing? Use code %s at checkout.', 'wp-slimstat'), $slimstat_la_coupon_btn);
 			?>
+			<span class="screen-reader-text" aria-live="polite" data-slimstat-copy-live></span>
 		</p>
 
 		<p class="slimstat-license-alert__support">

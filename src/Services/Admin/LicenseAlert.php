@@ -56,6 +56,15 @@ class LicenseAlert
 			['dashicons', 'wp-slimstat-tokens'],
 			SLIMSTAT_ANALYTICS_VERSION
 		);
+
+		// Tiny dependency-free script for the one-click coupon copy.
+		\wp_enqueue_script(
+			self::HANDLE,
+			\plugins_url('/admin/assets/js/license-alert.js', SLIMSTAT_FILE),
+			[],
+			SLIMSTAT_ANALYTICS_VERSION,
+			true
+		);
 	}
 
 	/**

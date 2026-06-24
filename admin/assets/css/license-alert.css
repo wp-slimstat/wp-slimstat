@@ -124,16 +124,67 @@
 	color: var(--ss-text-muted, #56585a);
 }
 
+/* Click-to-copy coupon chip — one helpful tap, not a nag. */
 .slimstat-license-alert__coupon {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin: 0 2px;
 	padding: 2px 8px;
 	border: 1px solid var(--ss-border, #e2e4e7);
 	border-radius: var(--ss-radius-2xs, 4px);
 	background: var(--ss-surface-tint, #f6f7f7);
 	font-family: Menlo, Consolas, monospace;
+	font-size: var(--ss-text-base, 13px);
 	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: baseline;
 	color: var(--ss-text-strong, #111827);
-	user-select: all;
+	cursor: pointer;
+	transition:
+		transform var(--ss-duration-fast, 0.15s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1)),
+		border-color var(--ss-duration-fast, 0.15s) ease,
+		color var(--ss-duration-fast, 0.15s) ease,
+		background var(--ss-duration-fast, 0.15s) ease;
+}
+
+.slimstat-license-alert__coupon:hover {
+	transform: translateY(-1px);
+	border-color: var(--ss-brand-300, #ff6b7d);
+	background: var(--ss-surface, #fff);
+}
+
+.slimstat-license-alert__coupon:active {
+	transform: translateY(0);
+}
+
+.slimstat-license-alert__coupon-icon {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: var(--ss-text-muted, #56585a);
+}
+
+.slimstat-license-alert__coupon-icon--done {
+	display: none;
+}
+
+/* Copied: a calm success confirmation — green chip, glyph flips to a check. */
+.slimstat-license-alert__coupon.is-copied {
+	border-color: var(--ss-success-fg, #18A456);
+	color: var(--ss-success-fg, #18A456);
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon {
+	color: var(--ss-success-fg, #18A456);
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon--copy {
+	display: none;
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon--done {
+	display: inline-block;
 }
 
 .slimstat-license-alert__support {
@@ -153,11 +204,22 @@
 	.slimstat-license-alert {
 		animation: slimstat-license-alert-in var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.4, 0, 0.2, 1));
 	}
+
+	/* A small, satisfying pop the moment the code is copied. */
+	.slimstat-license-alert__coupon.is-copied {
+		animation: slimstat-license-alert-pop var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1));
+	}
 }
 
 @keyframes slimstat-license-alert-in {
 	from { opacity: 0; transform: translateY(-4px); }
 	to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slimstat-license-alert-pop {
+	0%   { transform: scale(1); }
+	45%  { transform: scale(1.06); }
+	100% { transform: scale(1); }
 }
 
 /* Stack at WordPress's own admin touch breakpoint so the banner reflows in step
