@@ -1,0 +1,207 @@
+/**
+ * Goals & Funnels E2E helpers.
+ *
+ * The feature uses dedicated wp_options rows (slimstat_goals, slimstat_funnels)
+ * rather than the main slimstat_options blob, so these live alongside
+ * setup.ts's setSlimstatOption but operate on different keys.
+ */
+import { serialize as phpSerialize } from 'php-serialize';
+import { getPool } from './setup';
+import { assertSafeTestDatabase } from './env';
+
+export interface Goal {
+    id?: number;
+    name: string;
+    dimension: string;
+    operator: string;
+    value: string;
+    active?: boolean;
+}
+
+export interface FunnelStep {
+    name: string;
+    dimension: string;
+    operator: string;
+    value: string;
+    active?: boolean;
+}
+
+export interface Funnel {
+    id?: number;
+    name: string;
+    steps: FunnelStep[];
+}
+
+async function upsertOption(name: string, value: any): Promise<void> {
+    const serialized = phpSerialize(value);
+    const pool = getPool();
+    await pool.execute(
+        "INSERT INTO wp_options (option_name, option_value, autoload) VALUES (?, ?, 'no') " +
+        "ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)",
+        [name, serialized]
+    );
+}
+
+async function deleteOption(name: string): Promise<void> {
+    const pool = getPool();
+    await pool.execute('DELETE FROM wp_options WHERE option_name = ?', [name]);
+}
+
+export async function seedGoals(goals: Goal[]): Promise<void> {
+    const normalized = goals.map((g, i) => ({
+        id:        g.id ?? (Date.now() * 10 + i),
+        name:      g.name,
+        dimension: g.dimension,
+        operator:  g.operator,
+        value:     g.value,
+        active:    g.active ?? true,
+    }));
+    await upsertOption('slimstat_goals', normalized);
+    await upsertOption('slimstat_goals_cache_ver', String(Date.now()));
+}
+
+export async function seedFunnels(funnels: Funnel[]): Promise<void> {
+    const normalized = funnels.map((f, i) => ({
+        id:    f.id ?? (Date.now() * 10 + i),
+        name:  f.name,
+        steps: f.steps.map(s => ({
+            name:      s.name,
+            dimension: s.dimension,
+            operator:  s.operator,
+            value:     s.value,
+            active:    s.active ?? true,
+            id:        Math.floor(Math.random() * 1_000_000),
+        })),
+    }));
+    await upsertOption('slimstat_funnels', normalized);
+    await upsertOption('slimstat_goals_cache_ver', String(Date.now()));
+}
+
+export interface StatRow {
+    resource: string;
+    /** Distinct value → distinct unique visitor (COALESCE(fingerprint, v_visit_id, ip_ip)). */
+    fingerprint?: string;
+    ip?: string;
+    country?: string;
+    /** Browser column — lets a test exercise the global "browser equals X" filter. */
+    browser?: string;
+    /** Unix seconds; defaults to now. Earlier steps need an earlier/equal dt. */
+    dt?: number;
+}
+
+/**
+ * Insert raw pageview rows into wp_slim_stats so funnel/goal counts are non-zero
+ * (otherwise an "identical funnels match" assertion trivially passes on 0 == 0).
+ * Columns are built per-row so optional dimensions (e.g. browser) only appear when
+ * provided — preserving the previous default-only shape for existing callers.
+ * Guarded by assertSafeTestDatabase() — this writes to the stats table and must
+ * never run against a real site DB.
+ */
+export async function seedStats(rows: StatRow[]): Promise<void> {
+    assertSafeTestDatabase();
+    if (rows.length === 0) {
+        return;
+    }
+    const pool = getPool();
+    const now = Math.floor(Date.now() / 1000);
+    for (const r of rows) {
+        const row: Record<string, string | number | null> = {
+            resource:    r.resource,
+            fingerprint: r.fingerprint ?? null,
+            ip:          r.ip ?? '127.0.0.1',
+            country:     r.country ?? null,
+            dt:          r.dt ?? now,
+            visit_id:    0,
+        };
+        if (r.browser !== undefined) {
+            row.browser = r.browser;
+        }
+        const cols = Object.keys(row);
+        const placeholders = cols.map(() => '?').join(', ');
+        await pool.execute(
+            `INSERT INTO wp_slim_stats (${cols.join(', ')}) VALUES (${placeholders})`,
+            Object.values(row),
+        );
+    }
+}
+
+/**
+ * Pin a SlimStat report box (e.g. 'slim_p9_01' goals, 'slim_p9_02' funnels) into
+ * the admin user's WP-dashboard layout, so its widget renders on wp-admin/index.php.
+ * Builds the PHP-serialized meta value from the id length to avoid hand-counted
+ * `s:N:` mismatches.
+ */
+export async function pinReportToDashboard(
+    boxId: string,
+    login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
+): Promise<void> {
+    const metaKey = 'meta-box-order_admin_page_slimlayout';
+    const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;
+    const pool = getPool();
+    // wp_usermeta has no unique key on (user_id, meta_key), so an upsert would
+    // pile up duplicate rows. Delete any existing layout rows for this user,
+    // then insert one — get_user_option() then resolves to exactly our value.
+    await pool.execute(
+        'DELETE um FROM wp_usermeta um JOIN wp_users u ON u.ID = um.user_id ' +
+        'WHERE u.user_login = ? AND um.meta_key = ?',
+        [login, metaKey],
+    );
+    const [res] = await pool.execute(
+        'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) ' +
+        'SELECT ID, ?, ? FROM wp_users WHERE user_login = ? LIMIT 1',
+        [metaKey, value, login],
+    );
+    // INSERT…SELECT silently affects 0 rows if the login matches no user — fail
+    // here with a clear message instead of later on a confusing UI assertion.
+    if ((res as { affectedRows?: number }).affectedRows === 0) {
+        throw new Error(
+            `pinReportToDashboard: no WP user with login "${login}" — cannot place report "${boxId}" on the dashboard.`,
+        );
+    }
+}
+
+export async function clearGoals(): Promise<void> {
+    await deleteOption('slimstat_goals');
+    await deleteOption('slimstat_goals_cache_ver');
+}
+
+export async function clearFunnels(): Promise<void> {
+    await deleteOption('slimstat_funnels');
+}
+
+export async function clearAll(): Promise<void> {
+    const pool = getPool();
+    await pool.execute(
+        'DELETE FROM wp_options WHERE option_name IN (?, ?, ?)',
+        ['slimstat_goals', 'slimstat_funnels', 'slimstat_goals_cache_ver']
+    );
+}
+
+/**
+ * Toggle Pro via a forced filter mu-plugin. Pass maxGoals=0/maxFunnels=0 to
+ * simulate Free tier; maxGoals=5/maxFunnels=3 to simulate Pro.
+ */
+export async function forceLimits(maxGoals: number, maxFunnels: number, wpContentDir: string): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+    const muPlugin = path.join(wpContentDir, 'mu-plugins', 'slimstat-goals-funnels-e2e-limits.php');
+    const contents = `<?php
+/*
+ * Plugin Name: SlimStat Goals & Funnels — E2E Limit Forcer (test harness)
+ * Description: Forces slimstat_max_goals / slimstat_max_funnels for E2E tests.
+ */
+add_filter('slimstat_max_goals',   static fn() => ${maxGoals});
+add_filter('slimstat_max_funnels', static fn() => ${maxFunnels});
+`;
+    fs.mkdirSync(path.dirname(muPlugin), { recursive: true });
+    fs.writeFileSync(muPlugin, contents, 'utf8');
+}
+
+export async function restoreDefaultLimits(wpContentDir: string): Promise<void> {
+    const fs = await import('fs');
+    const path = await import('path');
+    const muPlugin = path.join(wpContentDir, 'mu-plugins', 'slimstat-goals-funnels-e2e-limits.php');
+    if (fs.existsSync(muPlugin)) {
+        fs.unlinkSync(muPlugin);
+    }
+}

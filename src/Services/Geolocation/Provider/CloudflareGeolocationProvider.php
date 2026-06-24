@@ -31,7 +31,7 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 			return null;
 		}
 
-		$get = function ($key, $filter = null) use ($server) {
+		$get = function ($key, ?string $filter = null) use ($server) {
 			$k = strtolower($key);
 			if (!isset($server[$k])) {
 				return null;
@@ -61,7 +61,13 @@ class CloudflareGeolocationProvider implements GeoServiceProviderInterface
 
         // Normalize values
         $country = $country ? strtoupper(trim($country)) : null;
-        if ('XX' === $country || '' === $country) {
+        // CF-IPCountry is attacker-controlled and sanitize_text_field() does not
+        // strip quotes, so a value like `"onload="…` could be stored and later
+        // echoed into an admin report image attribute (stored XSS). A real code is
+        // exactly two alphanumerics — ISO 3166-1 alpha-2 plus Cloudflare's special
+        // T1/A1/A2 (Tor/anon-proxy/satellite) codes. Reject anything else (and the
+        // 'XX' unknown placeholder) so no quote-bearing value is ever persisted.
+        if (null === $country || 'XX' === $country || !preg_match('/^[A-Z0-9]{2}$/', $country)) {
             $country = null;
         }
 

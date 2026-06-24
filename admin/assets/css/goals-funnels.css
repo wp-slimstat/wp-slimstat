@@ -1,0 +1,1529 @@
+/*
+ * WP SlimStat — Goals & Funnels (slimview6)
+ *
+ * Structure:
+ *   1. Modern admin layer (.slimstat-gf-*) — token-driven.
+ *   2. Drawer, builder, confirm sheet — shared DOM fragments.
+ *   3. RTL overrides.
+ *   4. LEGACY widget/shortcode/email classes (.slimstat-goals-table,
+ *      .slimstat-goal-form, .slimstat-funnel-mock-*, etc.) — preserved untouched
+ *      for the existing widget / shortcode / email / CSV consumer paths.
+ *
+ * Tokens: see admin/assets/css/tokens.css (enqueued as a dependency).
+ * Reduced motion: tokens.css zeros --ss-duration-* under prefers-reduced-motion.
+ *
+ * @since 5.5.0
+ */
+
+/* ============================================================
+   1. Modern admin layer — cards, pills, grids
+   ============================================================ */
+
+/*
+ * Un-clip the legacy postbox wrapper for modern cards.
+ *
+ * SlimStat forces fixed heights on every report's inner box:
+ *   [id^="slim_"] .inside               { height: 240px; overflow: auto; … } (admin.scss:749)
+ *   .wrap-slimstat .postbox.tall .inside { height: 465px }                    (admin.scss:778)
+ *
+ * That's right for dense-stat reports with long scrollable lists, but the
+ * modern Goals & Funnels cards render fixed-size content (max 5 goals, max 3
+ * funnels, paginated tabs) and must grow to fit. Without this override:
+ *   - Goals (postbox.tall)         → stuck at 465px → whitespace below card.
+ *   - Funnels (postbox.extralarge) → clipped at 240px with internal scrollbar.
+ *
+ * !important is required: the source uses it on siblings (margin/padding) and
+ * we need this to beat both competing rules regardless of load order.
+ */
+.postbox:has(> .inside > .slimstat-gf-card) > .inside,
+.postbox:has(> .inside > * > .slimstat-gf-card) > .inside,
+/* The compact dashboard widget (funnel tabs / goals table) is taller than the
+   legacy fixed-height postbox (admin.css clamps slim_p9_0x .inside to ~281px);
+   let it size to content like the modern cards so the de-cramped bars + tab
+   strip aren't clipped. */
+.postbox:has(> .inside > .slimstat-funnel-widget) > .inside,
+.postbox:has(> .inside > .slimstat-goals-table) > .inside {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+}
+
+/* Comfortable internal padding for the compact dashboard widgets — their content
+   would otherwise sit flush against the postbox edges. The Funnels widget pads
+   itself (.slimstat-funnel-widget below), so zero its postbox padding to avoid
+   doubling; the Goals table has no wrapper, so it's padded via .inside. */
+.postbox:has(> .inside > .slimstat-funnel-widget) > .inside {
+    padding: 0;
+}
+.postbox:has(> .inside > .slimstat-goals-table) > .inside {
+    padding: var(--ss-space-3) var(--ss-space-4) var(--ss-space-4);
+}
+
+/* The admin.css `.postbox h3/p` rules bleed into the modern cards — a white band
+   + padding behind the empty-state title and #eee divider lines under card
+   paragraphs (FN-10). Neutralize the bleed and re-assert the modern spacing at
+   id specificity so those rules can't win. */
+#slim_p9_01 .slimstat-gf-card h3,
+#slim_p9_02 .slimstat-gf-card h3,
+#slim_p9_01 .slimstat-gf-card p,
+#slim_p9_02 .slimstat-gf-card p {
+    background: transparent;
+    border-bottom: 0;
+    padding: 0;
+}
+
+#slim_p9_01 .slimstat-gf-empty__title,
+#slim_p9_02 .slimstat-gf-empty__title {
+    margin: 0 0 var(--ss-space-2);
+}
+
+#slim_p9_01 .slimstat-gf-empty__body,
+#slim_p9_02 .slimstat-gf-empty__body {
+    margin: 0 auto var(--ss-space-3);
+}
+
+#slim_p9_01 .slimstat-gf-empty__note,
+#slim_p9_02 .slimstat-gf-empty__note {
+    margin: 0 auto var(--ss-space-5);
+}
+
+/* Page-level framing above the two postboxes (FN-13). WP-native, not a hero. */
+.slimstat-gf-pageintro {
+    margin: var(--ss-space-4) 0 var(--ss-space-5);
+    font-family: var(--ss-font-modern);
+}
+
+.slimstat-gf-pageintro__title {
+    margin: 0 0 var(--ss-space-1);
+    padding: 0;
+    font-size: var(--ss-text-xl);
+    font-weight: 700;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-pageintro__lead {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-base);
+}
+
+.slimstat-gf-card {
+    background: var(--ss-surface);
+    border-radius: var(--ss-radius-lg);
+    padding: var(--ss-space-6) var(--ss-space-7);
+    margin: 0 0 var(--ss-space-6);
+    box-shadow: var(--ss-shadow-card);
+    font-family: var(--ss-font-modern);
+}
+
+/* Card heading + actions formerly lived inside .slimstat-gf-card__head — now
+   surfaced inside the postbox header itself (subtitle directly under the <h3>,
+   pill + CTA inside .slimstat-header-buttons). See:
+   - wp_slimstat_admin::inject_goals_funnels_header_subtitle()
+   - wp_slimstat_admin::inject_goals_funnels_header_actions() */
+
+.slimstat-gf-postbox-subtitle {
+    margin: var(--ss-space-1) 0 var(--ss-space-2);
+    font-size: var(--ss-text-base);
+    font-weight: normal;
+    color: var(--ss-text-secondary);
+    line-height: 1.4;
+}
+
+#slim_p9_01 .slimstat-header-buttons,
+#slim_p9_02 .slimstat-header-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-hover);
+    color: var(--ss-text-body);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-pill--paused {
+    margin-inline-start: var(--ss-space-2);
+    background: var(--ss-warning-bg);
+    color: var(--ss-warning-fg);
+}
+
+.slimstat-gf-cta {
+    font-weight: 600;
+}
+
+/* "See templates" toggle — a neutral secondary action beside the primary red
+   "+ Add funnel" CTA. Reuses WordPress's `.button` for matching height/reset, then
+   softens to a pill and reserves the brand accent for hover/focus so it never
+   competes with the primary CTA. Id-scoped to win over `.wp-core-ui .button`
+   without a specificity fight. (#7) */
+#slim_p9_02 .slimstat-gf-see-templates {
+    border-radius: var(--ss-radius-pill);
+    font-weight: 600;
+}
+
+#slim_p9_02 .slimstat-gf-see-templates:hover,
+#slim_p9_02 .slimstat-gf-see-templates:focus-visible {
+    border-color: var(--ss-brand-500);
+    color: var(--ss-brand-700);
+}
+
+/* ------- Goals list ------- */
+
+.slimstat-gf-goal-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--ss-space-3);
+}
+
+.slimstat-gf-goal {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--ss-space-4);
+    padding: var(--ss-space-4) var(--ss-space-5);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    background: var(--ss-surface);
+    transition: border-color var(--ss-duration-base) var(--ss-easing),
+                background-color var(--ss-duration-base) var(--ss-easing);
+}
+
+.slimstat-gf-goal:hover,
+.slimstat-gf-goal:focus-within {
+    border-color: var(--ss-focus);
+    background: var(--ss-surface-tint);
+}
+
+.slimstat-gf-goal[data-active="false"] {
+    opacity: 0.7;
+}
+
+.slimstat-gf-goal__head {
+    min-width: 0;
+}
+
+.slimstat-gf-goal__name {
+    margin: 0 0 var(--ss-space-1);
+    font-size: var(--ss-text-md);
+    font-weight: 600;
+    color: var(--ss-text-strong);
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-goal__rule {
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-rule-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    background: var(--ss-surface-tint);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-gf-rule-chip strong {
+    color: var(--ss-text-body);
+    font-weight: 600;
+}
+
+.slimstat-gf-rule-chip em {
+    font-style: normal;
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-gf-rule-chip code {
+    background: var(--ss-surface);
+    padding: 0 var(--ss-space-1);
+    border-radius: var(--ss-radius-2xs);
+    font-size: var(--ss-text-sm);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-goal__metrics {
+    display: flex;
+    gap: var(--ss-space-5);
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-metric {
+    display: flex;
+    flex-direction: column;
+    text-align: end;
+    min-width: 60px;
+}
+
+.slimstat-gf-metric__label {
+    font-size: var(--ss-text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ss-text-tertiary);
+}
+
+.slimstat-gf-metric__value {
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+    color: var(--ss-text-primary);
+}
+
+/* CR is the headline conversion metric on a goal — keep the most weight so it
+   still reads first among Uniques / Total / CR. Emphasis is by weight, NOT color:
+   brand-red read as an error/warning on a low rate, so CR uses the normal text
+   color (inherited from .slimstat-gf-metric__value) like the other metrics. (#13) */
+.slimstat-gf-metric--cr .slimstat-gf-metric__value {
+    font-weight: 700;
+}
+
+/* The CR denominator ("N of M uniques") shown under the percentage so the rate is
+   legible — without it, "0.1%" gives no sense of the base it's measured against. (#13) */
+.slimstat-gf-metric__sub {
+    margin-top: 2px;
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-tertiary);
+}
+
+.slimstat-gf-goal__actions {
+    display: flex;
+    gap: var(--ss-space-3);
+    align-items: center;
+}
+
+.slimstat-gf-goal-edit,
+.slimstat-gf-goal-delete,
+.slimstat-gf-funnel-edit,
+.slimstat-gf-funnel-delete {
+    /* Comfortable click/tap target (toward the 44px WP/GDPR-banner reference)
+       so adjacent Edit/Delete aren't mis-tapped (FN-8, WCAG 2.5.5/2.5.8). */
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    font-size: var(--ss-text-sm);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-2xs);
+    transition: color var(--ss-duration-fast) var(--ss-easing),
+                background-color var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-gf-goal-edit,
+.slimstat-gf-funnel-edit {
+    color: var(--ss-info-fg);
+}
+
+.slimstat-gf-goal-edit:hover,
+.slimstat-gf-funnel-edit:hover {
+    background: var(--ss-hover);
+}
+
+.slimstat-gf-goal-delete,
+.slimstat-gf-funnel-delete {
+    color: var(--ss-danger-fg);
+}
+
+.slimstat-gf-goal-delete:hover,
+.slimstat-gf-funnel-delete:hover {
+    color: var(--ss-danger-fg-hover);
+    background: var(--ss-hover-soft);
+}
+
+/* ------- Empty state ------- */
+
+.slimstat-gf-empty {
+    text-align: center;
+    padding: var(--ss-space-8) var(--ss-space-5);
+    background: var(--ss-surface-tint);
+    border: 1px dashed var(--ss-border);
+    border-radius: var(--ss-radius-md);
+}
+
+.slimstat-gf-empty__title {
+    margin: 0 0 var(--ss-space-2);
+    font-size: var(--ss-text-lg);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-empty__body {
+    margin: 0 auto var(--ss-space-3);
+    max-width: 480px;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-base);
+}
+
+.slimstat-gf-empty__note {
+    margin: 0 auto var(--ss-space-5);
+    max-width: 480px;
+    color: var(--ss-text-tertiary);
+    font-size: var(--ss-text-sm);
+    font-style: italic;
+}
+
+/* ------- Upsell + hint ------- */
+
+.slimstat-gf-upsell {
+    margin: var(--ss-space-4) 0 0;
+    padding: var(--ss-space-3) var(--ss-space-4);
+    background: var(--ss-warning-bg);
+    /* Full 1px border + tint, not a colored side-stripe (impeccable ban, FN-5). */
+    border: 1px solid var(--ss-warning-fg);
+    border-radius: var(--ss-radius-sm);
+    font-size: var(--ss-text-base);
+    color: var(--ss-text-body);
+}
+
+.slimstat-gf-upsell a {
+    font-weight: 600;
+}
+
+.slimstat-gf-hint {
+    margin: var(--ss-space-4) 0 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-consent {
+    margin-top: var(--ss-space-3);
+    /* Privacy/compliance note — readable, not buried 11px italic (FN-16). */
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    font-style: normal;
+}
+
+/* "Active, no matches yet" hint in place of 0/0/0% metrics (FN-15). */
+.slimstat-gf-goal__nomatch {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
+/* ------- Funnel tabs + panel ------- */
+
+.slimstat-gf-tabs {
+    display: inline-flex;
+    gap: var(--ss-space-1);
+    padding: var(--ss-space-1);
+    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-pill);
+    margin-bottom: var(--ss-space-4);
+}
+
+.slimstat-gf-tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: var(--ss-space-2) var(--ss-space-4);
+    border-radius: var(--ss-radius-pill);
+    font: inherit;
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+    cursor: pointer;
+    transition: background-color var(--ss-duration-fast) var(--ss-easing),
+                color var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-gf-tab:hover {
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-tab.is-active {
+    background: var(--ss-surface);
+    color: var(--ss-brand-500);
+    box-shadow: var(--ss-shadow-card);
+}
+
+.slimstat-gf-tab:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
+}
+
+.slimstat-gf-funnel-panel {
+    margin-top: var(--ss-space-4);
+}
+
+.slimstat-gf-funnel-panel__head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--ss-space-4);
+    flex-wrap: wrap;
+    margin-bottom: var(--ss-space-4);
+}
+
+.slimstat-gf-funnel-panel__name {
+    margin: 0;
+    font-size: var(--ss-text-lg);
+    font-weight: 600;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-summary {
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-summary--empty {
+    color: var(--ss-text-tertiary);
+    font-style: italic;
+}
+
+.slimstat-gf-summary--success {
+    color: var(--ss-success-fg);
+    background: var(--ss-success-bg);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    font-weight: 600;
+}
+
+.slimstat-gf-summary--success .slimstat-gf-summary__glyph {
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-summary--warn {
+    /* Neutral informational chip — zero steps are a valid outcome, not an
+       error, so this no longer uses danger/warning colors. (#9) */
+    margin-inline-start: var(--ss-space-2);
+    color: var(--ss-text-secondary);
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-pill);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-1);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-funnel-panel__actions {
+    margin-inline-start: auto;
+    display: flex;
+    gap: var(--ss-space-3);
+}
+
+/* ------- Funnel steps + bars ------- */
+
+.slimstat-gf-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--ss-space-3);
+}
+
+.slimstat-gf-step__head {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--ss-text-sm);
+    margin-bottom: var(--ss-space-1);
+}
+
+.slimstat-gf-step__name {
+    font-weight: 600;
+    color: var(--ss-text-body);
+}
+
+.slimstat-gf-step__count {
+    color: var(--ss-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-step__pct {
+    margin-inline-start: var(--ss-space-1);
+}
+
+.slimstat-gf-step__track {
+    height: 32px;
+    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-sm);
+    overflow: hidden;
+}
+
+.slimstat-gf-step__fill {
+    height: 100%;
+    border-radius: var(--ss-radius-sm);
+    min-width: 6px;
+    transition: width var(--ss-duration-slow) var(--ss-easing-out);
+    /* Fallback fill (muted): only ever visible on zero/unreachable bars, since
+       the brand colorize rules below are gated on :not([data-zero]). Bar LENGTH
+       still encodes magnitude; brand color carries the funnel's identity. */
+    background: var(--ss-funnel-bar-zero);
+}
+
+/* Colorize: live steps use the brand red ramp instead of neutral slate. Gated on
+   :not([data-zero]) so an empty bar is never painted with the live color. */
+.slimstat-gf-step__fill:not([data-zero]) {
+    background: var(--ss-brand-500);
+}
+
+/* The final step is the conversion — deepen its brand so the eye is drawn down
+   the funnel and lands on the goal (pairs with the bolded conversion total). */
+.slimstat-gf-step:last-child .slimstat-gf-step__fill:not([data-zero]) {
+    background: var(--ss-brand-700);
+}
+
+/* Zero-visitor / unreachable steps keep a muted fill so an empty bar reads as
+   "almost nothing here", without painting a healthy step red. */
+.slimstat-gf-step__fill[data-zero],
+.slimstat-gf-step--unreachable .slimstat-gf-step__fill {
+    background: var(--ss-funnel-bar-zero);
+}
+
+/* Conversion emphasis: the final step's total is the funnel's headline number. */
+.slimstat-gf-step:last-child .slimstat-gf-step__count {
+    font-weight: 700;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-step__dropoff {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-danger-fg);
+    padding: var(--ss-space-1) 0 var(--ss-space-2);
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-gf-step__unreachable {
+    /* A zero step is a valid outcome, not an error — neutral tone, not danger.
+       The ⚠ glyph was removed in #9, so the inline-flex/gap that spaced it is
+       no longer needed. */
+    display: inline-block;
+    margin-top: var(--ss-space-1);
+    padding: var(--ss-space-1) var(--ss-space-3);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-xs);
+}
+
+.slimstat-gf-step--unreachable .slimstat-gf-step__name {
+    color: var(--ss-text-secondary);
+}
+
+/* Locked state (Free) */
+
+.slimstat-gf-funnels--locked .slimstat-gf-funnel-lock {
+    position: relative;
+    min-height: 280px;
+    overflow: hidden;
+    border-radius: var(--ss-radius-md);
+    background: var(--ss-surface-tint);
+    padding: var(--ss-space-6);
+}
+
+.slimstat-gf-funnel-mock {
+    filter: blur(4px);
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.slimstat-gf-funnel-bars {
+    display: grid;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-funnel-bar {
+    height: 26px;
+    border-radius: var(--ss-radius-sm);
+    /* Decorative preview bars share the single neutral funnel fill. */
+    background: var(--ss-funnel-bar);
+}
+
+.slimstat-gf-funnel-lock__overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--ss-space-6);
+    background: var(--ss-overlay);
+}
+
+.slimstat-gf-funnel-lock__overlay h3 {
+    margin: 0 0 var(--ss-space-2);
+    font-size: var(--ss-text-xl);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-funnel-lock__overlay p {
+    margin: 0 0 var(--ss-space-4);
+    color: var(--ss-text-secondary);
+    max-width: 420px;
+}
+
+/* Small label so the blurred bars read as illustrative, not real data (FN-20). */
+.slimstat-gf-funnel-lock__caption {
+    margin: 0 0 var(--ss-space-2);
+    font-size: var(--ss-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ss-text-tertiary);
+}
+
+/* "See templates" reveal — keeps the prefab gallery reachable once funnels exist
+   (#7). The toggle button lives in the postbox header beside "+ Add funnel"
+   (see `.slimstat-gf-see-templates` in the header-actions block above); this is
+   the panel it reveals, sitting at the top of the funnels card body. Spacing
+   lives on the panel itself, so a collapsed (hidden) panel leaves no phantom gap. */
+.slimstat-gf-templates-reveal__panel {
+    margin-top: var(--ss-space-4);
+    margin-bottom: var(--ss-space-5);
+    padding: var(--ss-space-4) var(--ss-space-4) var(--ss-space-5);
+    background: var(--ss-surface-tint);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+}
+
+/* The shared picker carries a top margin for the empty state; the panel padding
+   owns the spacing here, so reset it inside the reveal. */
+.slimstat-gf-templates-reveal__panel .slimstat-gf-template-picker {
+    margin-top: 0;
+}
+
+/* Template picker */
+
+.slimstat-gf-template-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--ss-space-3);
+    margin-top: var(--ss-space-4);
+}
+
+.slimstat-gf-template-card {
+    appearance: none;
+    text-align: start;
+    padding: var(--ss-space-4);
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-1);
+    transition: border-color var(--ss-duration-base) var(--ss-easing),
+                transform var(--ss-duration-base) var(--ss-easing);
+}
+
+.slimstat-gf-template-card:hover {
+    border-color: var(--ss-brand-500);
+    transform: translateY(-1px);
+}
+
+.slimstat-gf-template-card:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
+}
+
+.slimstat-gf-template-card__title {
+    font-size: var(--ss-text-md);
+    font-weight: 600;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-template-card__body {
+    font-size: var(--ss-text-sm);
+    color: var(--ss-text-secondary);
+}
+
+/* The "+ Add funnel" entry is the primary call to action, not a prefab template,
+   so it reads as a solid blue button (matching the Goals empty-state CTA) while
+   still sitting in the template grid. Uses the WP admin accent so it respects the
+   user's color scheme; the grid stretches it to the height of the prefab cards. (#15) */
+.slimstat-gf-template-card--cta {
+    background: var(--wp-admin-theme-color, #2271b1);
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.slimstat-gf-template-card--cta .slimstat-gf-template-card__title {
+    color: #fff;
+}
+
+.slimstat-gf-template-card--cta:hover {
+    border-color: var(--wp-admin-theme-color, #2271b1);
+    filter: brightness(0.94);
+}
+
+/* Skeleton (lazy tabs) */
+
+.slimstat-gf-skeleton {
+    display: grid;
+    gap: var(--ss-space-3);
+    padding: var(--ss-space-3) 0;
+}
+
+.slimstat-gf-skeleton__row,
+.slimstat-gf-skeleton-text {
+    height: 14px;
+    background: linear-gradient(90deg, var(--ss-surface-tint) 0%, var(--ss-hover) 50%, var(--ss-surface-tint) 100%);
+    background-size: 200% 100%;
+    border-radius: var(--ss-radius-sm);
+    animation: slimstat-gf-shimmer 1.4s linear infinite;
+}
+
+.slimstat-gf-skeleton__row:nth-child(1) { width: 100%; height: 32px; }
+.slimstat-gf-skeleton__row:nth-child(2) { width: 72%; height: 32px; }
+.slimstat-gf-skeleton__row:nth-child(3) { width: 48%; height: 32px; }
+
+.slimstat-gf-skeleton-text {
+    display: inline-block;
+    width: 240px;
+    height: 14px;
+    vertical-align: middle;
+}
+
+@keyframes slimstat-gf-shimmer {
+    from { background-position: 200% 0; }
+    to   { background-position: -200% 0; }
+}
+
+/* The shimmer is an infinite loop with a hardcoded duration, so it bypasses the
+   token-based reduced-motion strategy (which only zeroes the --ss-duration-*
+   tokens). Stop it outright for users who asked for reduced motion. WCAG 2.3.3. */
+@media (prefers-reduced-motion: reduce) {
+    .slimstat-gf-skeleton__row,
+    .slimstat-gf-skeleton-text {
+        animation: none;
+    }
+}
+
+/* ============================================================
+   2. Drawer + builder + confirm-sheet
+   ============================================================ */
+
+.slimstat-gf-drawer,
+.slimstat-gf-builder,
+.slimstat-gf-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    display: none;
+}
+
+.slimstat-gf-drawer.is-open,
+.slimstat-gf-builder.is-open,
+.slimstat-gf-sheet.is-open {
+    display: block;
+}
+
+.slimstat-gf-drawer__backdrop,
+.slimstat-gf-builder__backdrop,
+.slimstat-gf-sheet__backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--ss-overlay-scrim);
+    animation: slimstat-gf-fade-in var(--ss-duration-base) var(--ss-easing-out) both;
+}
+
+@keyframes slimstat-gf-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.slimstat-gf-drawer__panel {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: var(--ss-drawer-width);
+    background: var(--ss-surface);
+    /* Top clears the fixed WP admin bar so the title isn't jammed under it;
+       bottom padding is 0 because the footer is a sticky bar (see __foot). */
+    padding: calc(var(--wp-admin--admin-bar--height, 32px) + var(--ss-space-4)) var(--ss-space-5) 0;
+    box-shadow: var(--ss-shadow-drawer);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-4);
+    animation: slimstat-gf-drawer-in var(--ss-duration-base) var(--ss-easing-out) both;
+}
+
+@keyframes slimstat-gf-drawer-in {
+    from { transform: translateX(8%); opacity: 0.6; }
+    to   { transform: translateX(0);   opacity: 1; }
+}
+
+.slimstat-gf-drawer__head,
+.slimstat-gf-builder__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ss-space-3);
+    border-bottom: 1px solid var(--ss-border);
+    padding-bottom: var(--ss-space-3);
+}
+
+.slimstat-gf-drawer__title,
+.slimstat-gf-builder__title {
+    margin: 0;
+    font-size: var(--ss-text-xl);
+    font-weight: 600;
+}
+
+.slimstat-gf-drawer__close,
+.slimstat-gf-builder__close {
+    appearance: none;
+    background: transparent;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--ss-text-secondary);
+    /* 44px square hit target for the icon-glyph button (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--ss-space-1) var(--ss-space-2);
+    border-radius: var(--ss-radius-sm);
+}
+
+.slimstat-gf-drawer__close:hover,
+.slimstat-gf-builder__close:hover {
+    background: var(--ss-hover);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-1);
+}
+
+.slimstat-gf-field__label {
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-body);
+}
+
+/* Visible required marker (paired with aria-required on the input) so "required"
+   isn't communicated by color/validation alone (FN-12, WCAG 3.3.2). */
+.slimstat-gf-required {
+    color: var(--ss-danger-fg);
+}
+
+.slimstat-gf-field__hint {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-tertiary);
+}
+
+.slimstat-gf-field input[type="text"],
+.slimstat-gf-field select,
+.slimstat-gf-step-row input[type="text"],
+.slimstat-gf-step-row select {
+    box-sizing: border-box;
+    width: 100%;
+    /* Cap only the stacked drawer fields; step-row controls are sized by the grid. */
+    max-width: 420px;
+    min-height: 36px;
+    padding: var(--ss-space-2) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    font-size: var(--ss-text-md);
+    line-height: 1.4;
+    color: var(--ss-text-primary);
+    background: var(--ss-surface);
+}
+
+/* Step-row controls fill their grid column (the 420px cap is for stacked fields). */
+.slimstat-gf-step-row input[type="text"],
+.slimstat-gf-step-row select {
+    max-width: none;
+}
+
+/* When suggestions mount, the plain value input is replaced by the shared
+   SlimStatSearchableSelect combobox, whose base style fixes the inner wrapper at
+   180px + a right margin. Inside this grid that forced the value track wider than
+   its share, pushed the row past the panel edge, and clipped the Test / result /
+   remove columns (they vanished until a reload). Scope the combobox to fill and
+   shrink with its grid track instead — the filter bar keeps the 180px default. (#16) */
+.slimstat-gf-step-row .slimstat-searchable-select {
+    min-width: 0;
+}
+
+.slimstat-gf-step-row .slimstat-searchable-select .slimstat-select-wrapper {
+    width: 100%;
+    margin-right: 0;
+}
+
+/* Give native selects a consistent chevron so they read as dropdowns and line up
+   with the value field (the OS-rendered open list itself can't be CSS-styled). */
+.slimstat-gf-field select,
+.slimstat-gf-step-row select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-inline-end: calc(var(--ss-space-3) + 14px);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23646970' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--ss-space-2) center;
+    background-size: 12px 12px;
+}
+
+[dir="rtl"] .slimstat-gf-field select,
+[dir="rtl"] .slimstat-gf-step-row select {
+    background-position: left var(--ss-space-2) center;
+}
+
+.slimstat-gf-field input[type="text"]:focus,
+.slimstat-gf-field select:focus,
+.slimstat-gf-step-row input[type="text"]:focus,
+.slimstat-gf-step-row select:focus {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 1px;
+    border-color: var(--ss-focus);
+}
+
+.slimstat-gf-field--toggle {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--ss-space-3);
+}
+
+.slimstat-gf-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-drawer__foot,
+.slimstat-gf-builder__foot {
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    /* Pin the actions to the bottom of the panel and keep them there while the
+       body scrolls, so Save/Cancel are always visible no matter how tall the
+       content gets (the old margin-top:auto pushed them below the fold). The
+       negative inline margin + matching padding lets the bar's surface + top
+       border span the panel's full width. */
+    margin-top: auto;
+    position: sticky;
+    bottom: 0;
+    background: var(--ss-surface);
+    margin-inline: calc(-1 * var(--ss-space-5));
+    padding: var(--ss-space-3) var(--ss-space-5) var(--ss-space-4);
+    border-top: 1px solid var(--ss-border);
+}
+
+.slimstat-gf-builder__foot {
+    flex-wrap: wrap;
+}
+
+.slimstat-gf-builder__spacer {
+    flex: 1;
+}
+
+.slimstat-gf-drawer__error,
+.slimstat-gf-builder__error {
+    margin: 0;
+    padding: var(--ss-space-2) var(--ss-space-3);
+    /* Full 1px border + a danger-tinted surface (was a danger side-stripe over a
+       warning-yellow background — a banned stripe and a semantic mismatch). FN-5. */
+    background: var(--ss-danger-bg-soft);
+    border: 1px solid var(--ss-danger-fg);
+    border-radius: var(--ss-radius-sm);
+    color: var(--ss-danger-fg);
+    font-size: var(--ss-text-sm);
+}
+
+/* Funnel builder — right-side drawer, wider than the goal drawer to fit the step grid. */
+
+.slimstat-gf-builder__panel {
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: var(--ss-builder-width);
+    background: var(--ss-surface);
+    /* See drawer panel: clear the admin bar; footer provides bottom spacing. */
+    padding: calc(var(--wp-admin--admin-bar--height, 32px) + var(--ss-space-4)) var(--ss-space-5) 0;
+    box-shadow: var(--ss-shadow-drawer);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-4);
+    animation: slimstat-gf-drawer-in var(--ss-duration-base) var(--ss-easing-out) both;
+}
+
+.slimstat-gf-builder__steps {
+    display: grid;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-gf-step-row {
+    display: grid;
+    /* handle · num · name · dimension · operator · value · test · result · remove
+       Name/value get comfortable room so labels like "Order received" don't clip. */
+    grid-template-columns: auto auto minmax(150px, 1.2fr) minmax(130px, 160px) minmax(120px, 150px) minmax(150px, 1.4fr) auto auto auto;
+    gap: var(--ss-space-2);
+    align-items: center;
+    padding: var(--ss-space-2) var(--ss-space-3);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-surface-tint);
+    transition: transform var(--ss-duration-fast) var(--ss-easing),
+                background-color var(--ss-duration-fast) var(--ss-easing),
+                box-shadow var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-gf-step-row.is-dragging {
+    opacity: 0.5;
+    background: var(--ss-hover);
+}
+
+.slimstat-gf-step-row.is-drag-over {
+    box-shadow: 0 -2px 0 var(--ss-brand-500);
+}
+
+.slimstat-gf-step-row__handle {
+    cursor: grab;
+    background: transparent;
+    border: none;
+    color: var(--ss-text-tertiary);
+    font-size: var(--ss-text-lg);
+    line-height: 1;
+    user-select: none;
+    /* Comfortable target in the dense builder row (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+    padding: var(--ss-space-1);
+}
+
+.slimstat-gf-step-row__handle:active {
+    cursor: grabbing;
+}
+
+.slimstat-gf-step-row__num {
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+    min-width: 40px;
+}
+
+.slimstat-gf-step-row__test {
+    font-size: var(--ss-text-sm);
+    color: var(--ss-info-fg);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    padding: var(--ss-space-1) var(--ss-space-2);
+    border-radius: var(--ss-radius-2xs);
+}
+
+.slimstat-gf-step-row__test:hover {
+    background: var(--ss-hover);
+}
+
+.slimstat-gf-step-row__test-result {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-secondary);
+    font-variant-numeric: tabular-nums;
+    min-width: 70px;
+    text-align: start;
+}
+
+.slimstat-gf-step-row__test-result.is-loading {
+    color: var(--ss-text-disabled);
+    font-style: italic;
+}
+
+.slimstat-gf-step-row__remove {
+    color: var(--ss-danger-fg);
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    line-height: 1;
+    /* Comfortable target in the dense builder row (FN-8). */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    min-height: 36px;
+}
+
+/* Confirm sheet */
+
+.slimstat-gf-sheet__panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(100% - var(--ss-space-6), var(--ss-sheet-max-width));
+    background: var(--ss-surface);
+    padding: var(--ss-space-6);
+    border-radius: var(--ss-radius-lg);
+    box-shadow: var(--ss-shadow-modal);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-4);
+    animation: slimstat-gf-sheet-in var(--ss-duration-base) var(--ss-easing-out) both;
+}
+
+@keyframes slimstat-gf-sheet-in {
+    from { transform: translate(-50%, -48%); opacity: 0; }
+    to   { transform: translate(-50%, -50%); opacity: 1; }
+}
+
+.slimstat-gf-sheet__title {
+    margin: 0;
+    font-size: var(--ss-text-xl);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-gf-sheet__body {
+    margin: 0;
+    color: var(--ss-text-body);
+}
+
+.slimstat-gf-sheet__warning {
+    margin: 0;
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-gf-sheet__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--ss-space-2);
+    margin-top: var(--ss-space-2);
+}
+
+.slimstat-gf-sheet__destructive {
+    background: var(--ss-danger-fg) !important;
+    border-color: var(--ss-danger-fg) !important;
+}
+
+.slimstat-gf-sheet__destructive:hover {
+    background: var(--ss-danger-fg-hover) !important;
+    border-color: var(--ss-danger-fg-hover) !important;
+}
+
+/* ============================================================
+   3. RTL overrides
+   ============================================================ */
+
+[dir="rtl"] .slimstat-gf-metric,
+.rtl .slimstat-gf-metric {
+    text-align: start;
+}
+
+[dir="rtl"] .slimstat-gf-funnel-panel__actions,
+.rtl .slimstat-gf-funnel-panel__actions {
+    margin-inline-start: 0;
+    margin-inline-end: auto;
+}
+
+[dir="rtl"] .slimstat-gf-drawer__panel,
+.rtl .slimstat-gf-drawer__panel,
+[dir="rtl"] .slimstat-gf-builder__panel,
+.rtl .slimstat-gf-builder__panel {
+    box-shadow: var(--ss-shadow-drawer-rtl);
+    animation: slimstat-gf-drawer-in-rtl var(--ss-duration-base) var(--ss-easing-out) both;
+}
+
+@keyframes slimstat-gf-drawer-in-rtl {
+    from { transform: translateX(-8%); opacity: 0.6; }
+    to   { transform: translateX(0);   opacity: 1; }
+}
+
+/* ─── Responsive (FN-4) ───
+   WP admin collapses its own chrome at 782px; the modern cards otherwise
+   overflow on narrow admin columns / tablets / RTL (WCAG 1.4.10 Reflow).
+   Each override is scoped under its container (.slimstat-gf-goals / .slimstat-gf-builder)
+   or the postbox id, so it beats the base rule by SPECIFICITY (0,2,0 vs 0,1,0) —
+   it does not depend on this block's position in the file. Stacks the goal rows,
+   the 9-column funnel-builder step rows, and the postbox-header actions. */
+@media (max-width: 782px) {
+    .slimstat-gf-goals .slimstat-gf-goal {
+        grid-template-columns: 1fr;
+        gap: var(--ss-space-3);
+    }
+
+    .slimstat-gf-goals .slimstat-gf-goal__metrics {
+        flex-wrap: wrap;
+    }
+
+    .slimstat-gf-builder .slimstat-gf-step-row {
+        grid-template-columns: 1fr;
+    }
+
+    /* The header actions float right via admin.css; drop the float so the
+       pill + CTA wrap full-width under the title instead of colliding. */
+    #slim_p9_01 .slimstat-header-buttons,
+    #slim_p9_02 .slimstat-header-buttons {
+        float: none;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+}
+
+/* ============================================================
+   4. LEGACY widget / shortcode / email styles — DO NOT REMOVE.
+      Consumers: dashboard widget, [slim_p9_01], [slim_p9_02], email report, CSV fallback.
+   ============================================================ */
+
+.slimstat-goals-table {
+    margin: 0 0 var(--ss-space-4);
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.slimstat-goals-table th,
+.slimstat-goals-table td {
+    padding: var(--ss-space-2) var(--ss-space-3);
+    text-align: start;
+    border-bottom: 1px solid var(--ss-border);
+}
+
+.slimstat-goals-table th {
+    font-weight: 600;
+    font-size: var(--ss-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-goals-table td:nth-child(2),
+.slimstat-goals-table td:nth-child(3),
+.slimstat-goals-table td:nth-child(4),
+.slimstat-goals-table th:nth-child(2),
+.slimstat-goals-table th:nth-child(3),
+.slimstat-goals-table th:nth-child(4) {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-consent-notice {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-secondary);
+    margin: 5px 0;
+}
+
+.slimstat-funnel--locked {
+    position: relative;
+    min-height: 280px;
+}
+
+.slimstat-funnel-promo {
+    position: relative;
+}
+
+.slimstat-funnel-mock {
+    filter: blur(4px);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.slimstat-funnel-mock-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    height: 200px;
+    padding: 20px;
+}
+
+.slimstat-funnel-mock-step {
+    flex: 1;
+    text-align: center;
+}
+
+.slimstat-funnel-mock-bar {
+    background: var(--ss-brand-500);
+    border-radius: 4px 4px 0 0;
+}
+
+.slimstat-funnel-mock-label {
+    padding: 8px 0;
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-funnel-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    text-align: center;
+    z-index: 2;
+}
+
+.slimstat-funnel-overlay h3 {
+    margin: 0 0 8px;
+    font-size: var(--ss-text-lg);
+}
+
+.slimstat-funnel-overlay p {
+    margin: 0 0 15px;
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-funnel-chart h4 {
+    margin: 0 0 5px;
+}
+
+.slimstat-funnel-summary {
+    color: var(--ss-text-secondary);
+    font-size: var(--ss-text-base);
+    margin: 0 0 var(--ss-space-4);
+}
+
+/* Compact-widget funnel tabs (dashboard / shortcode). Unique classes — distinct
+   from the main page's .slimstat-gf-tab — so the two delegated tab handlers
+   never collide on the dashboard (which loads both). Mirrors the main pill-tab
+   treatment using the same design tokens. */
+.slimstat-funnel-wtabs {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: var(--ss-space-1);
+    padding: var(--ss-space-1);
+    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-lg);
+    margin-bottom: var(--ss-space-4);
+    /* Many / long funnels: keep the tabs on ONE line and scroll horizontally
+       rather than wrapping into ragged rows. The pill clipped at the right edge
+       cues that more funnels exist; a thin scrollbar reinforces it. */
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.slimstat-funnel-wtabs::-webkit-scrollbar {
+    height: 6px;
+}
+
+.slimstat-funnel-wtabs::-webkit-scrollbar-thumb {
+    background: var(--ss-border);
+    border-radius: var(--ss-radius-pill);
+}
+
+.slimstat-funnel-wtab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    /* Match the main pill-tab hit target (.slimstat-gf-tab) so the two strips,
+       which render side-by-side on the dashboard, are the same size. */
+    padding: var(--ss-space-2) var(--ss-space-4);
+    border-radius: var(--ss-radius-pill);
+    font: inherit;
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+    cursor: pointer;
+    /* Never shrink below content; the strip scrolls instead. Cap very long names
+       with an ellipsis (full name in the title + the panel heading below). */
+    flex: 0 0 auto;
+    max-width: 16em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background-color var(--ss-duration-fast) var(--ss-easing),
+                color var(--ss-duration-fast) var(--ss-easing);
+}
+
+.slimstat-funnel-wtab:hover {
+    color: var(--ss-text-primary);
+}
+
+.slimstat-funnel-wtab.is-active {
+    background: var(--ss-surface);
+    color: var(--ss-brand-500);
+    box-shadow: var(--ss-shadow-card);
+}
+
+.slimstat-funnel-wtab:focus-visible {
+    outline: 2px solid var(--ss-focus);
+    outline-offset: 2px;
+}
+
+/* Internal padding so the widget content isn't flush against the postbox edges
+   (the postbox .inside padding is zeroed for this widget to avoid doubling). */
+.slimstat-funnel-widget {
+    padding: 15px;
+}
+
+/* No-JS / email / CSV: every funnel panel renders stacked, so separate them. */
+.slimstat-funnel-widget .slimstat-funnel-chart + .slimstat-funnel-chart {
+    margin-top: var(--ss-space-5);
+}
+
+.slimstat-funnel-bars {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-3);
+}
+
+.slimstat-funnel-step-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--ss-text-base);
+    margin-bottom: var(--ss-space-1);
+}
+
+.slimstat-funnel-step-label .step-name {
+    font-weight: 600;
+    color: var(--ss-text-body);
+}
+
+.slimstat-funnel-step-label .step-count {
+    color: var(--ss-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.slimstat-funnel-bar-track {
+    height: 32px;
+    background: var(--ss-surface-tint);
+    border-radius: var(--ss-radius-sm);
+    overflow: hidden;
+}
+
+.slimstat-funnel-bar-fill {
+    height: 100%;
+    /* Magnitude is bar LENGTH; a zero/unreachable step keeps the muted fill so
+       it never reads as a healthy brand-red step (mirrors .slimstat-gf-step__fill,
+       FN-1). The brand color only paints steps with visitors. */
+    background: var(--ss-funnel-bar-zero);
+    border-radius: var(--ss-radius-sm);
+    min-width: 6px;
+    transition: width var(--ss-duration-slow) var(--ss-easing-out);
+}
+
+.slimstat-funnel-bar-fill:not([data-zero]) {
+    background: var(--ss-brand-500);
+}

@@ -348,4 +348,50 @@ assert_contains('<br', $rendered, 'wp_kses_post preserves <br>');
 assert_contains('<p>', $rendered, 'wp_kses_post preserves <p>');
 assert_contains('<span class="x">', $rendered, 'wp_kses_post preserves <span class>');
 
+// ─── Country column escaping (CF-IPCountry stored-XSS, runtime) #5 ──
+// The 'country' column case in raw_results_to_html() echoes the visitor country
+// (which can come from the attacker-controlled CF-IPCountry header) into a flag
+// alt, the row-details tooltip, and the country-name label. Drive it like Tests
+// 1-13 and assert no live attribute survives. A raw quote would form `"onclick=`;
+// escaped, it becomes `&quot;onclick=`.
+$html = render_column('country', '"onclick=alert(1)');
+assert_not_contains('"onclick=', $html, 'Country value must not yield a live onclick (raw quote+handler) in rendered HTML');
+assert_contains('&quot;onclick=', $html, 'Country quote must be entity-escaped in the rendered country column');
+
+// ─── Country flag sinks not reachable via render_column() (#5) ──────
+// The Audience world-map flag (wp-slimstat-reports.php) and the access-log flag
+// (right-now.php) are emitted by separate render paths render_column() can't drive
+// under SHORTINIT, so guard them by source shape. The runtime DOM proof for these
+// lives in tests/e2e/cf-ipcountry-xss.spec.ts.
+$reports_src  = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php'));
+$rightnow_src = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/right-now.php'));
+
+// Sink 1 — Audience world-map flag (alt + src). The stored code is validated to
+// 2 alphanumerics upstream and the flag path is realpath()-gated; the src is also
+// esc_url()'d so "escaped everywhere they are rendered into flag images" holds for
+// this sink too (defense-in-depth for legacy/poisoned rows).
+assert_contains("esc_attr(\$country['code'])", $reports_src, 'World-map flag alt must wrap $country[code] in esc_attr()');
+assert_not_contains("alt=\"' . \$country['code'] . '\"", $reports_src, 'World-map flag alt must not echo $country[code] unescaped');
+assert_contains("class=\"country-flag\" src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'World-map flag src must be esc_url()-wrapped');
+assert_not_contains("class=\"country-flag\" src=\"' . \$image_url . '\"", $reports_src, 'World-map flag src must not echo $image_url unescaped');
+
+// Sink 2 — access-log country flag (href esc_url; src + title esc_attr).
+assert_contains("esc_url(wp_slimstat_reports::fs_url('country equals", $rightnow_src, 'Access-log country href must be esc_url()-wrapped');
+assert_contains("esc_attr(\$results[ \$i ][ 'country' ])", $rightnow_src, 'Access-log flag src country arg must be esc_attr()');
+assert_contains("esc_attr(wp_slimstat_i18n::get_string('c-' . \$results[\$i]['country']))", $rightnow_src, 'Access-log flag title must be esc_attr()');
+assert_not_contains("\$plugin_url, \$results[ \$i ][ 'country' ]", $rightnow_src, 'Access-log flag src must no longer pass the raw country into sprintf');
+
+// Sink 3 — country COLUMN flag (raw_results_to_html): the stored code is validated
+// to 2 alphanumerics before becoming a filesystem path, and the resulting src is
+// esc_url()'d (defense-in-depth for legacy/poisoned rows).
+assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$country)", $reports_src, 'Country column flag must validate the code before the flag path lookup');
+assert_contains("src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'Country column flag src must be esc_url()-wrapped');
+
+// Sink 4 — language COLUMN flag (raw_results_to_html): the visitor-supplied
+// Accept-Language subtag is validated before the flag path, and every echoed copy
+// (alt / row code / name) is escaped, like the country column.
+assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)", $reports_src, 'Language flag must validate the subtag before the flag path lookup');
+assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
+assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
+
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

@@ -1,0 +1,5 @@
+# Build artifacts + any stray run output should never be committed.
+build/
+cells/
+*.log
+matrix-summary.*

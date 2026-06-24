@@ -701,6 +701,17 @@ $settings = [
                 'after_input_field' => empty($last_geoip_error) ? __('So far so good.', 'wp-slimstat') : '<strong>[' . date_i18n(get_option('date_format'), $last_geoip_error['time'], true) . ' ' . date_i18n(get_option('time_format'), $last_geoip_error['time'], true) . '] ' . $last_geoip_error['error'] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-geoip-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>',
                 'description'       => __("The information here above is useful to troubleshoot issues with the GeoIP Database. <strong>Errors</strong> are returned when the GeoIP Database can't update or retrieve a visitor's location, indicating some malfunction.", 'wp-slimstat'),
             ],
+            'last_geoip_dl' => [
+                'title'             => __('GeoIP Database Updated', 'wp-slimstat'),
+                'type'              => 'plain-text',
+                // #77: surface the last successful GeoIP download. The option stores
+                // a unix timestamp (time()); guard the 0/never-downloaded default so
+                // it shows "Never" rather than the epoch (Jan 1 1970).
+                'after_input_field' => ($geoip_dl_ts = (int) get_option('slimstat_last_geoip_dl', 0)) > 0
+                    ? '<strong>' . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $geoip_dl_ts, true) . '</strong>'
+                    : __('Never', 'wp-slimstat'),
+                'description'       => __('When the GeoIP database was last downloaded or refreshed.', 'wp-slimstat'),
+            ],
             'show_sql_debug' => [
                 'title'       => __('SQL Debug', 'wp-slimstat'),
                 'type'        => 'toggle',

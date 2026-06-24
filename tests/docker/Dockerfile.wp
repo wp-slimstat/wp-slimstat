@@ -1,0 +1,65 @@
+# tests/docker/Dockerfile.wp — uniform WordPress runtime for any PHP version.
+# Built per cell: docker build --build-arg PHP_VERSION=8.3 ...
+# FROM php:<ver>-apache so we are not blocked on official `wordpress:` image tags.
+ARG PHP_VERSION=8.2
+FROM php:${PHP_VERSION}-apache
+
+# OS libs needed to build the PHP extensions WordPress + SlimStat require.
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+        libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+        libzip-dev libonig-dev libicu-dev \
+        default-mysql-client less unzip git curl ca-certificates; \
+    rm -rf /var/lib/apt/lists/*
+
+# PHP extensions. GD configured with freetype+jpeg (form works 7.4–8.4).
+# fileinfo is compiled-in on the official php images — asserted below.
+RUN set -eux; \
+    docker-php-ext-configure gd --with-freetype --with-jpeg; \
+    docker-php-ext-install -j"$(nproc)" mysqli gd zip exif intl opcache; \
+    docker-php-ext-enable opcache
+
+# Opcache: revalidate every request so host edits to wp-config.php / mu-plugins
+# (done by the E2E setup) are seen immediately. JIT off to avoid 8.x noise in
+# the deprecation scan.
+RUN { \
+      echo 'opcache.enable=1'; \
+      echo 'opcache.validate_timestamps=1'; \
+      echo 'opcache.revalidate_freq=0'; \
+      echo 'opcache.jit=off'; \
+      echo 'opcache.jit_buffer_size=0'; \
+    } > /usr/local/etc/php/conf.d/zz-qa-opcache.ini
+
+# PHP runtime: log everything so debug.log captures deprecations/fatals.
+RUN { \
+      echo 'display_errors=Off'; \
+      echo 'log_errors=On'; \
+      echo 'error_reporting=E_ALL'; \
+      echo 'memory_limit=512M'; \
+      echo 'max_execution_time=180'; \
+    } > /usr/local/etc/php/conf.d/zz-qa-php.ini
+
+# Apache: WordPress permalinks + REST tracking need mod_rewrite + AllowOverride.
+RUN set -eux; \
+    a2enmod rewrite; \
+    sed -ri 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
+# WP-CLI (runs as --allow-root inside the container), verified against its
+# published SHA-512 so a tampered download fails the build.
+RUN set -eux; \
+    base=https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar; \
+    curl -fsSL -o /usr/local/bin/wp        "$base/wp-cli.phar"; \
+    curl -fsSL -o /tmp/wp-cli.sha512       "$base/wp-cli.phar.sha512"; \
+    echo "$(cat /tmp/wp-cli.sha512)  /usr/local/bin/wp" | sha512sum -c -; \
+    rm -f /tmp/wp-cli.sha512; \
+    chmod +x /usr/local/bin/wp
+
+# Fail the build loudly if a required extension is missing on this PHP minor.
+# (opcache registers as "Zend OPcache", so check via extension_loaded, not `php -m` anchors.)
+RUN php -r '$req=["mysqli","gd","zip","exif","intl","fileinfo"]; \
+    foreach ($req as $e) { if (!extension_loaded($e)) { fwrite(STDERR, "MISSING EXT: $e\n"); exit(1); } } \
+    if (!extension_loaded("Zend OPcache")) { fwrite(STDERR, "MISSING EXT: opcache\n"); exit(1); } \
+    echo "all required extensions present\n";'
+
+WORKDIR /var/www/html

@@ -1,3 +1,54 @@
+= 5.5.0 - 2026-06-24 =
+
+**New: Goals & Funnels**
+
+- **Goals** — track a conversion such as a signup, checkout, or pricing-page view, with its unique visitors, total conversions, and conversion rate (retroactive over your full visit history).
+- **Funnels** — chain 2 to 5 steps into a journey and see exactly where visitors drop off at each stage (SlimStat Pro).
+- **Funnel templates** — start from a ready-made funnel (WooCommerce purchase, checkout completion, landing to contact, and more) instead of building every step by hand.
+
+**Security**
+
+- Fixed a stored cross-site scripting (XSS) issue on sites using the **Cloudflare** geolocation provider: a crafted `CF-IPCountry` request header could be saved as a visitor's country and run script when an administrator opened the Audience or Access Log report. The country is now validated to a two-letter code before it is stored, and country and language values are escaped everywhere they are rendered into report flag images and links. Reported via WPScan.
+
+**Filters & traffic sources**
+
+- Fixed: Google Discover and other Android/iOS app traffic is recorded again. Since 5.4.0, referrers that start with `android-app://` (such as `com.google.android.googlequicksearchbox` from Google Discover) were silently dropped, so that traffic showed up as "direct" with no source. The tracker now preserves app-scheme referrers while still blocking unsafe ones. ([#306](https://github.com/wp-slimstat/wp-slimstat/issues/306))
+- Fixed: The "is empty" and "is not empty" report filters work again. Since 5.4.0 they were silently ignored — the filter chip appeared but every row was still shown — and the filter was lost when you paginated, refreshed, or changed the date range. They now apply on the first click and survive in-session navigation. ([#305](https://github.com/wp-slimstat/wp-slimstat/issues/305))
+- Fixed: The Access Log filter dropdown now accepts pasted or typed values that aren't in the visible list. Previously, on busy sites, a value clearly visible in the log (for example a specific IP) could return "No matching options found" and the filter couldn't be applied. The dropdown now searches the full column history and lets you apply the value you typed. ([#298](https://github.com/wp-slimstat/wp-slimstat/issues/298))
+
+**Reports & admin UI**
+
+- Fixed: In the Real-Time view, "User Logged In / Logged Out" entries show the username cleanly again. Some logins were displaying with stray brackets (e.g. `[jane]`) or leaking unrelated note data because of a change to how login notes are stored; usernames that contain a colon now render correctly too.
+- Fixed: Stats shortcodes can display the Country, Browser, Platform and Language columns again, and the `w="*"` (all columns) shortcut works. These were valid columns but were silently rejected and returned an empty result. ([#277](https://github.com/wp-slimstat/wp-slimstat/issues/277))
+- Fixed: The "Average Visit Duration" figure is correct again. It was formatted with a month number instead of minutes — for example 10 minutes showed as "01:00" — and now shows minutes:seconds (and hours for long sessions) properly. ([#78](https://github.com/wp-slimstat/wp-slimstat/issues/78))
+- Added: Access Log author rows now include a direct link to the user's WordPress profile, alongside the existing link to their posts. The link only appears for users you have permission to edit. ([#273](https://github.com/wp-slimstat/wp-slimstat/issues/273))
+- Added: The Settings page now shows when the GeoIP database was last downloaded (or "Never" if it hasn't been downloaded yet). ([#77](https://github.com/wp-slimstat/wp-slimstat/issues/77))
+- Added: The Access Log now shows its color-code legend inline on the page instead of only inside a hover tooltip. ([#281](https://github.com/wp-slimstat/wp-slimstat/issues/281))
+
+**Compatibility & stability**
+
+- Removed: The admin "Feedback" widget (powered by feedbackbird.io) has been removed. It loaded a script from a third-party CDN and sent your email address, PHP version, and active-plugin list off-site with no opt-out. SlimStat no longer makes this external call.
+- Fixed: WordPress admin no longer crashes on PHP 7.4 hosts. Some admin pages were calling a function that only exists in PHP 8.0 and newer, which broke wp-admin entirely. Replaced with a compatible alternative.
+- Fixed: Visit tracking no longer fails with a 500 error on hosts that don't have the optional PHP `fileinfo` extension (common on managed and minimal PHP builds). When the extension is missing, the plugin now falls back to its built-in browser detector and shows a dismissible admin notice so you can ask your host to enable the extension or turn off the Browscap library.
+- Fixed: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits when the tracker was handed an invalid IP, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
+- Fixed: On PHP 8.0 and newer, clearing the Posts-list "pageviews in the last N days" interval no longer rendered an empty day count in the column header — it now falls back to 28 days exactly as it always did on PHP 7 (a PHP 8.0 comparison-semantics change had broken the fallback).
+- Tested up to WordPress 7.0. Removed an obsolete WordPress-3.3 version check that read an internal global directly.
+
+**PHP 8.1+ readiness**
+
+- Cleaned up six internal function signatures so they no longer trigger PHP 8.1+ deprecation warnings in your `debug.log`. These warnings would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+- Added a compatibility shim so modern PHP idioms (like `str_contains`) work the same on older PHP 7.4 hosts. No behavior change for end users.
+
+**Quality & developer experience**
+
+- Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3). The PHP 7.4 lane now runs real tests on every change instead of just lint checks — which is what caught the bugs above before they could ship.
+- New regression guards make sure the same class of compatibility issues can't sneak back in.
+- Added a `CONTRIBUTING.md` documenting the test suite for contributors, plus a few small style cleanups in the tests themselves.
+- CI now boots the full WordPress version matrix (5.6 → 7.0) end-to-end on every relevant change, instead of testing a single version, so version-specific regressions surface before release. PHP 8.0/8.3/8.4 are now also blocking lanes (were nightly-only).
+- Added PHPStan static analysis to catch type and null-safety issues before they ship.
+- Migrated the admin JavaScript off the jQuery event shorthands that jQuery 4.0 removes (no behavior change on today's jQuery). The bundled third-party libraries remain shimmed by jQuery Migrate.
+- Removed a stray, never-loaded bundled Symfony helper file.
+
 = 5.4.12 - 2026-05-13 =
 
 **Security**

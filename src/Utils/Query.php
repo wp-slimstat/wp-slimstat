@@ -1311,7 +1311,7 @@ class Query
      *
      * @return bool
      */
-    public function hasWhereClause($field, $operator = null)
+    public function hasWhereClause(string $field, ?string $operator = null)
     {
         foreach ($this->whereClauses as $clause) {
             if ($operator) {

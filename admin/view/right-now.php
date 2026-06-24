@@ -75,6 +75,22 @@ if (isset($_args['echo']) && false === $_args['echo']) {
 $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
 $delete_row              = '';
 
+// #281: inline color-code legend on the full Access Log view. Previously only
+// available in the report header tooltip; hidden in the compact dashboard widget.
+// Reuses the existing little-color-box / is-* classes (styled in admin.css).
+if (!$is_dashboard) {
+    // Each swatch is grouped with its label (and a hover tooltip) so the
+    // colour → meaning mapping is unambiguous — the swatch sits right next to
+    // the word it explains, instead of stranding apart from it. (#impeccable)
+    echo '<p class="slimstat-access-log-legend">'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-search-engine" title="' . esc_attr__('From search result page', 'wp-slimstat') . '"></span> ' . esc_html__('From search result page', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-visitor" title="' . esc_attr__('Has Left Comments', 'wp-slimstat') . '"></span> ' . esc_html__('Has Left Comments', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-known-user" title="' . esc_attr__('WP User', 'wp-slimstat') . '"></span> ' . esc_html__('WP User', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box is-direct" title="' . esc_attr__('Other Human', 'wp-slimstat') . '"></span> ' . esc_html__('Other Human', 'wp-slimstat') . '</span>'
+        . '<span class="slimstat-legend-item"><span class="little-color-box" title="' . esc_attr__('Bot or Crawler', 'wp-slimstat') . '"></span> ' . esc_html__('Bot or Crawler', 'wp-slimstat') . '</span>'
+        . '</p>';
+}
+
 // Loop through the results
 for ($i = 0; $i < $count_page_results; $i++) {
     $date_time = "<i class='spaced slimstat-font-clock slimstat-tooltip-trigger' title='" . __('Date and Time', 'wp-slimstat') . "'></i> " . date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $results[$i]['dt'], true);
@@ -88,7 +104,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Country
         if (!empty($results[$i]['country']) && 'xx' != $results[$i]['country']) {
-            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country']) . sprintf("'><img class='slimstat-tooltip-trigger' src='%s/assets/images/flags/%s.svg' width='16' height='16' title='", $plugin_url, $results[ $i ][ 'country' ]) . wp_slimstat_i18n::get_string('c-' . $results[$i]['country']) . "'></a>";
+            $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . esc_url(wp_slimstat_reports::fs_url('country equals ' . $results[$i]['country'])) . sprintf("'><img class='slimstat-tooltip-trigger' src='%s/assets/images/flags/%s.svg' width='16' height='16' title='", $plugin_url, esc_attr($results[ $i ][ 'country' ])) . esc_attr(wp_slimstat_i18n::get_string('c-' . $results[$i]['country'])) . "'></a>";
         } else {
             $country_filter = "<a class='slimstat-filter-link inline-icon' href='" . wp_slimstat_reports::fs_url('country is_empty #') . sprintf("'><img class='slimstat-tooltip-trigger' src='%s/assets/images/flags/xx.svg' width='16' height='16' title='", $plugin_url) . wp_slimstat_i18n::get_string('c-') . "'></a>";
         }
@@ -142,15 +158,15 @@ for ($i = 0; $i < $count_page_results; $i++) {
         if (empty($results[$i]['username'])) {
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('ip equals ' . $results[$i]['ip'])) . "'>" . esc_html($host_by_ip) . "</a>";
         } else {
+            // Resolve the WP user once and reuse it for the display name, avatar,
+            // and the profile-edit pencil (avoids a second get_user_by() lookup
+            // per row when show_display_name is on).
+            $user              = get_user_by('login', $results[$i]['username']);
             $display_user_name = $results[$i]['username'];
-            if ('on' == wp_slimstat::$settings['show_display_name'] && false !== strpos($results[$i]['notes'], 'user:')) {
-                $display_real_name = get_user_by('login', $results[$i]['username']);
-                if (is_object($display_real_name)) {
-                    $display_user_name = $display_real_name->display_name;
-                }
+            if ($user && 'on' == wp_slimstat::$settings['show_display_name'] && false !== strpos($results[$i]['notes'], 'user:')) {
+                $display_user_name = $user->display_name;
             }
 
-            $user       = get_user_by('login', $results[$i]['username']);
             $ip_address = "<a class='slimstat-filter-link' href='" . esc_url(wp_slimstat_reports::fs_url('username equals ' . $results[$i]['username'])) . "'>";
             if ($user) {
                 $ip_address .= get_avatar($user->ID, 16);
@@ -159,6 +175,14 @@ for ($i = 0; $i < $count_page_results; $i++) {
             }
 
             $ip_address .= ' ' . esc_html($display_user_name) . '</a>';
+            // #273: the Access Log author cell links to the user's admin profile,
+            // capability-guarded (get_edit_profile_link() returns '' when the
+            // current user can't edit this user). Only for resolved WP users —
+            // never guests/unknown logins. raw_results_to_html() already does this
+            // for the standard reports table; the Access Log renders here instead.
+            if ($user) {
+                $ip_address .= wp_slimstat_reports::get_edit_profile_link($user->ID);
+            }
             $display_ip_value = $results[$i]['ip'];
             if ('on' == (wp_slimstat::$settings['hash_ip'] ?? 'off')) {
                 $display_ip_value = substr($results[$i]['ip'], 0, 12) . '…';
@@ -305,25 +329,17 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
         // Login / Logout Event
         $login_logout = '';
-        if ($results[$i]['notes'] && false !== strpos($results[$i]['notes'], 'loggedin:')) {
-            $exploded_notes = explode(';', $results[$i]['notes']);
+        // Notes are stored bracket-delimited ([loggedin:user][...]); older rows may
+        // use ';'. Split on either delimiter, strip the surrounding [ ], and keep
+        // everything after the tag so usernames containing ':' still render cleanly.
+        if ($results[$i]['notes'] && (false !== strpos($results[$i]['notes'], 'loggedin:') || false !== strpos($results[$i]['notes'], 'loggedout:'))) {
+            $exploded_notes = preg_split('/\]\[|;/', trim($results[$i]['notes'], '[]'));
             foreach ($exploded_notes as $a_note) {
-                if (false === strpos($a_note, 'loggedin:')) {
-                    continue;
+                if (0 === strpos($a_note, 'loggedin:')) {
+                    $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . esc_html(substr($a_note, strlen('loggedin:')));
+                } elseif (0 === strpos($a_note, 'loggedout:')) {
+                    $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . esc_html(substr($a_note, strlen('loggedout:')));
                 }
-
-                $login_logout .= "<i class='slimstat-font-user-plus spaced slimstat-tooltip-trigger' title='" . __('User Logged In', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedin:', '', $a_note));
-            }
-        }
-
-        if ($results[$i]['notes'] && false !== strpos($results[$i]['notes'], 'loggedout:')) {
-            $exploded_notes = explode(';', $results[$i]['notes']);
-            foreach ($exploded_notes as $a_note) {
-                if (false === strpos($a_note, 'loggedout:')) {
-                    continue;
-                }
-
-                $login_logout .= "<i class='slimstat-font-user-times spaced slimstat-tooltip-trigger' title='" . __('User Logged Out', 'wp-slimstat') . "'></i> " . esc_html(str_replace('loggedout:', '', $a_note));
             }
         }
     } else {

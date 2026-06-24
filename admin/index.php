@@ -15,6 +15,19 @@ class wp_slimstat_admin
     public static $admin_notice    = '';
     public static $main_menu_slug = 'slimview1';
 
+    /**
+     * Dimensions for which the filter-options search uses unanchored LIKE
+     * (%needle%) instead of the default left-anchored prefix match. These are
+     * either multi-token fields (notes, category) or free-form strings where
+     * users naturally search fragments (user_agent, outbound_resource URLs).
+     * resource + referer are URL-like for the same reason: a user searching a
+     * path fragment ("pricing") shouldn't have to type the leading slash to
+     * match "/pricing/" — the prefix anchor made that fail. (#18)
+     */
+    private const FILTER_SEARCH_SUBSTRING_DIMENSIONS = [
+        'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer',
+    ];
+
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -73,6 +86,16 @@ class wp_slimstat_admin
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
                 'title'           => __('Traffic Sources', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_view'],
+            ],
+            'slimview6' => [
+                'is_report_group' => true,
+                'show_in_sidebar' => true,
+                'title'           => __('Goals & Funnels', 'wp-slimstat'),
+                // Optional page-intro lead: any screen that declares one gets a
+                // framing H1 (from 'title') + this lead above its report boxes.
+                'lead'            => __('Define the conversions that matter, then string them into funnels to see where visitors drop off.', 'wp-slimstat'),
                 'capability'      => 'can_view',
                 'callback'        => [self::class, 'wp_slimstat_include_view'],
             ],
@@ -185,6 +208,12 @@ class wp_slimstat_admin
             add_action('wp_enqueue_scripts', [self::class, 'enqueue_adminbar_styles']);
         }
 
+        // Inject the modern Goals & Funnels shared DOM fragments (confirm sheet,
+        // goal drawer, funnel builder) exactly once per admin page, and only on
+        // pages that actually render slim_p9_01 / slim_p9_02. The check here
+        // re-uses the same helper as the asset enqueue gate.
+        add_action('admin_footer', [self::class, 'print_goals_funnels_dom']);
+
         if (function_exists('is_network_admin') && !is_network_admin()) {
             // Add the appropriate entries to the admin menu, if this user can view/admin  Slimstat
             add_action('admin_menu', [self::class, 'add_menus']);
@@ -255,10 +284,11 @@ class wp_slimstat_admin
         // AJAX Handlers
         if (defined('DOING_AJAX') && DOING_AJAX) {
             $ajax_actions = [
-                'slimstat_notice_latest_news'    => 'notices_handler',
-                'slimstat_notice_geolite'        => 'notices_handler',
-                'slimstat_notice_browscap'       => 'notices_handler',
-                'slimstat_notice_caching'        => 'notices_handler',
+                'slimstat_notice_latest_news'       => 'notices_handler',
+                'slimstat_notice_geolite'           => 'notices_handler',
+                'slimstat_notice_browscap'          => 'notices_handler',
+                'slimstat_notice_browscap_fileinfo' => 'notices_handler',
+                'slimstat_notice_caching'           => 'notices_handler',
                 'slimstat_manage_filters'        => 'manage_filters',
                 'slimstat_delete_pageview'       => 'delete_pageview',
                 'slimstat_update_geoip_database' => 'update_geoip_database',
@@ -266,6 +296,12 @@ class wp_slimstat_admin
                 'slimstat_get_filter_options'    => 'get_filter_options',
                 'slimstat_get_online_visitors'   => 'get_online_visitors',
                 'slimstat_get_adminbar_stats'    => 'get_adminbar_stats',
+                'slimstat_save_goal'             => 'ajax_save_goal',
+                'slimstat_delete_goal'           => 'ajax_delete_goal',
+                'slimstat_save_funnel'           => 'ajax_save_funnel',
+                'slimstat_delete_funnel'         => 'ajax_delete_funnel',
+                'slimstat_load_funnel_data'      => 'ajax_load_funnel_data',
+                'slimstat_test_funnel_step'      => 'ajax_test_funnel_step',
             ];
             foreach ($ajax_actions as $action => $handler) {
                 add_action('wp_ajax_' . $action, [self::class, $handler]);
@@ -371,11 +407,10 @@ class wp_slimstat_admin
         // Add style to the admin menu
         add_action('admin_head', [self::class, 'styling_admin_menu']);
 
-        // Init feedback
-        self::initFeedback();
-
         // Add lock export button in report header
         add_filter('slimstat_report_header_buttons', fn ($_header_buttons, $_report_id) => self::add_lock_export_button($_header_buttons, $_report_id), 10, 2);
+
+        self::register_goals_funnels_header_hooks();
 
         // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
         foreach (self::get_index_definitions() as $def) {
@@ -413,6 +448,30 @@ class wp_slimstat_admin
         if (!wp_slimstat::pro_is_installed()) {
             echo '<style> a.wp-slimstat-upgrade-to-pro {background-color: #f22f46 !important;color: #fff !important;font-weight: 600 !important;} </style>';
         }
+        // The time-limited "New" badge on the Goals & Funnels item renders in the
+        // global sidebar, so its style must load on every admin page (not just
+        // slimview6). Tiny, so always emit it. (#20)
+        echo '<style> #adminmenu .slimstat-gf-new-badge {display:inline-block;margin-inline-start:6px;padding:0 6px;border-radius:9px;background:var(--wp-admin-theme-color,#2271b1);color:#fff;font-size:9px;font-weight:600;line-height:16px;text-transform:uppercase;letter-spacing:.03em;vertical-align:middle;} </style>';
+    }
+
+    /**
+     * "New" badge HTML for the Goals & Funnels sidebar item, shown for 15 days
+     * after the feature became available on this site, then it disappears.
+     * Returns '' once the window elapses. The window is anchored the first time
+     * the menu builds after this version ships, so existing installs start their
+     * countdown then. (#20)
+     */
+    private static function goals_funnels_new_badge()
+    {
+        $since = (int) get_option('slimstat_goals_funnels_since', 0);
+        if ($since <= 0) {
+            $since = time();
+            update_option('slimstat_goals_funnels_since', $since);
+        }
+        if ((time() - $since) >= (15 * DAY_IN_SECONDS)) {
+            return '';
+        }
+        return ' <span class="slimstat-gf-new-badge">' . esc_html__('New', 'wp-slimstat') . '</span>';
     }
 
     /**
@@ -776,11 +835,49 @@ class wp_slimstat_admin
             }
         }
 
+        // --- Goals & Funnels composite indexes for query performance ---
+        // These three indexes are also registered as AbstractIndexMigration classes
+        // (Create{Goal,Funnel}QueriesIndex / CreateEventsNotesDtIndex in
+        // src/Migration/MigrationService.php) which provide the retry UI; keep the
+        // index name + columns here in sync with those classes.
+        if (empty(wp_slimstat::$settings['goals_indexes'])) {
+            $goal_indexes = [
+                ['table' => 'slim_stats',  'name' => 'idx_goal_queries',   'sql' => 'ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20))'],
+                ['table' => 'slim_stats',  'name' => 'idx_funnel_queries', 'sql' => 'ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191))'],
+                ['table' => 'slim_events', 'name' => 'idx_events_notes_dt', 'sql' => 'ADD INDEX idx_events_notes_dt (dt, notes(64))'],
+            ];
+            $goal_indexes_built = true;
+            foreach ($goal_indexes as $idx) {
+                $table = $GLOBALS['wpdb']->prefix . $idx['table'];
+                $exists = wp_slimstat::$wpdb->get_results(
+                    wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $idx['name'])
+                );
+                if (empty($exists)) {
+                    // ALTER can time out on very large tables. Track the result so we
+                    // only mark this complete once every index is present; a failure
+                    // leaves goals_indexes unset so the modern migration system
+                    // (MigrationService) surfaces a one-click retry notice. (#318)
+                    if (false === wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}")) {
+                        $goal_indexes_built = false;
+                    }
+                }
+            }
+            if ($goal_indexes_built) {
+                wp_slimstat::$settings['goals_indexes'] = 'on';
+            }
+        }
+
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
         // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
         $GLOBALS['wpdb']->query(
             "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%' LIMIT 1000"
         );
+
+        // Rotate the goals/funnels cache version on upgrade so pre-fix cached
+        // results (e.g. goal "uniques" that excluded NULL-fingerprint visitors)
+        // are recomputed immediately rather than lingering for the 5–15 min
+        // transient TTL after the uniques identity changed. (#3)
+        update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
 
         // Now we can update the version stored in the database
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
@@ -815,6 +912,13 @@ class wp_slimstat_admin
             foreach (wp_slimstat_reports::$user_reports['dashboard'] as $a_report_id) {
                 if (empty(wp_slimstat_reports::$reports[$a_report_id])) {
                     continue;
+                }
+                // Force compact rendering on the WP Dashboard for goals/funnels so
+                // drawer/builder/confirm-sheet markup never mounts inside the widget.
+                // Mutation is kept local: we only re-bind the registry field when
+                // registering this specific widget, avoiding cross-request leaks.
+                if ('slim_p9_01' === $a_report_id || 'slim_p9_02' === $a_report_id) {
+                    wp_slimstat_reports::$reports[$a_report_id]['callback_args']['is_widget'] = true;
                 }
                 wp_add_dashboard_widget($a_report_id, wp_slimstat_reports::$reports[$a_report_id]['title'], ['wp_slimstat_reports', 'callback_wrapper']);
             }
@@ -856,9 +960,106 @@ class wp_slimstat_admin
 		);
 		wp_enqueue_style('wp-slimstat-header-modern');
 
+		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
+		// Honors slimlayout/Customize drag by inspecting the user's resolved report layout.
+		if (self::needs_goals_funnels_assets()) {
+			wp_register_style(
+				'wp-slimstat-tokens',
+				plugins_url('/admin/assets/css/tokens.css', __DIR__),
+				[],
+				SLIMSTAT_ANALYTICS_VERSION
+			);
+			wp_enqueue_style('wp-slimstat-tokens');
+
+			wp_register_style(
+				'wp-slimstat-goals-funnels',
+				plugins_url('/admin/assets/css/goals-funnels.css', __DIR__),
+				['wp-slimstat', 'wp-slimstat-tokens'],
+				SLIMSTAT_ANALYTICS_VERSION
+			);
+			wp_enqueue_style('wp-slimstat-goals-funnels');
+		}
+
         if (!empty(wp_slimstat::$settings['custom_css'])) {
             wp_add_inline_style('wp-slimstat', wp_slimstat::$settings['custom_css']);
         }
+    }
+
+    /**
+     * Returns true when the current admin context renders slim_p9_01 or slim_p9_02.
+     * Covers the direct slimview6 page, the WP dashboard, and screens that have
+     * Goals/Funnels dragged in via the Customizer.
+     *
+     * @since 5.5.0
+     */
+    public static function needs_goals_funnels_assets()
+    {
+        // Only memoize `true` — a `false` answer is provisional until the reports
+        // registry has loaded. Caching `false` too early (e.g. during
+        // admin_enqueue_scripts on index.php, before wp_slimstat_reports::init()
+        // runs) would cause the dashboard widget path to miss its own assets.
+        static $memo = null;
+        if ($memo === true) {
+            return true;
+        }
+
+        if (!empty($_GET['page']) && 'slimview6' === $_GET['page']) {
+            return $memo = true;
+        }
+
+        if (!class_exists('wp_slimstat_reports', false)) {
+            return false;
+        }
+
+        $pagenow = $GLOBALS['pagenow'] ?? '';
+        if ('index.php' === $pagenow) {
+            $dashboard_reports = wp_slimstat_reports::$user_reports['dashboard'] ?? [];
+            if (in_array('slim_p9_01', (array) $dashboard_reports, true)
+                || in_array('slim_p9_02', (array) $dashboard_reports, true)) {
+                return $memo = true;
+            }
+        }
+
+        $current = self::$current_screen;
+        if (!empty($current)) {
+            $reports_on_screen = wp_slimstat_reports::$user_reports[$current] ?? [];
+            if (in_array('slim_p9_01', (array) $reports_on_screen, true)
+                || in_array('slim_p9_02', (array) $reports_on_screen, true)) {
+                return $memo = true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Emits the Goals & Funnels shared DOM (confirm sheet, goal drawer, funnel
+     * builder) once per admin page, gated on the same helper as asset enqueue.
+     *
+     * @since 5.5.0
+     */
+    public static function print_goals_funnels_dom()
+    {
+        static $printed = false;
+        if ($printed) {
+            return;
+        }
+        if (!self::needs_goals_funnels_assets()) {
+            return;
+        }
+
+        $printed         = true;
+        $dimensions      = self::get_goal_dimensions();
+        // Funnel steps offer only action-oriented dimensions; goals keep the full
+        // list (a "Country = gb" goal is legitimate). (#17)
+        $funnel_step_dimensions = self::get_funnel_step_dimensions();
+        $operators       = self::get_goal_operators();
+        $operator_labels = self::get_goal_operator_labels();
+
+        $partials_dir = plugin_dir_path(__FILE__) . 'view/partials/goals-funnels/';
+        include $partials_dir . 'confirm-sheet.php';
+        include $partials_dir . 'goal-drawer.php';
+        include $partials_dir . 'funnel-builder.php';
     }
 
     // END: wp_slimstat_stylesheet
@@ -887,7 +1088,7 @@ class wp_slimstat_admin
     public static function wp_slimstat_enqueue_scripts($_hook = '')
     {
         $current_screen = get_current_screen();
-        if ($current_screen && str_contains($current_screen->id ?? '', 'slim')) {
+        if ($current_screen && false !== strpos((string) ($current_screen->id ?? ''), 'slim')) {
             wp_enqueue_script('dashboard');
             wp_enqueue_script('jquery-ui-datepicker');
             wp_enqueue_script('jquery-ui-sortable');
@@ -902,7 +1103,7 @@ class wp_slimstat_admin
         $should_load_datepicker = false;
         if (isset($_GET['page'])) {
             $page = sanitize_text_field($_GET['page']);
-            if (str_contains($page, 'slim') && !str_contains($page, 'setting')) {
+            if (false !== strpos($page, 'slim') && false === strpos($page, 'setting')) {
                 $should_load_datepicker = true;
             }
         }
@@ -936,7 +1137,16 @@ class wp_slimstat_admin
             wp_localize_script('slimstat-custom-datepicker', 'SlimStatDatePicker', $datepicker_params);
         }
 
-        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog'], SLIMSTAT_ANALYTICS_VERSION, true);
+        // Shared wp.i18n accessor (window.wpSlimstatI18n) for every admin script
+        // that carries translatable strings. Depends on wp-i18n; the scripts below
+        // depend on this handle so the accessor is defined before they run.
+        wp_enqueue_script('slimstat-i18n', plugins_url('/admin/assets/js/i18n.js', __DIR__), ['wp-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+
+        // slimstat-i18n dependency + script translations so admin.js's __() strings
+        // (combobox labels, etc.) load their JSON translations at runtime. Without
+        // this, the strings are extracted into the .pot but never translated.
+        wp_enqueue_script('slimstat_admin', plugins_url('/admin/assets/js/admin.js', __DIR__), ['jquery-ui-dialog', 'slimstat-i18n'], SLIMSTAT_ANALYTICS_VERSION, true);
+        self::set_slimstat_script_translations('slimstat_admin');
 
         // Enqueue notification assets if notifications are enabled
         if (wp_slimstat::$settings['display_notifications'] == 'on') {
@@ -959,11 +1169,54 @@ class wp_slimstat_admin
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
             'page_location'     => self::$page_location,
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
+            'goals_nonce'       => wp_create_nonce('slimstat_goals_nonce'),
+            'ajax_url'          => admin_url('admin-ajax.php'),
+            // Shared with the filter form-builder so value-less operators (is_empty/
+            // is_not_empty) are never treated as a "remove filter" signal. See #305.
+            // Guarded: this method also runs on the Dashboard-widget path, where
+            // wp_slimstat_db may not be included — fall back to the literal list.
+            'valueless_operators' => class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'],
+            // Canonical date/misc filter keys, shared with SlimStatGetFiltersForAjax() so it
+            // strips the same non-column keys when harvesting filters for a sub-report (#22).
+            'non_column_filter_keys' => class_exists('wp_slimstat_db')
+                ? wp_slimstat_db::NON_COLUMN_FILTER_KEYS
+                : ['strtotime', 'minute', 'hour', 'day', 'month', 'year', 'interval', 'interval_hours', 'interval_minutes', 'limit_results', 'start_from'],
+            // WP-locale number separators so JS-rendered (lazily-loaded) funnel tabs
+            // match the server's number_format_i18n() output instead of the browser
+            // locale's toLocaleString().
+            'number_format'       => [
+                'decimal_point' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['decimal_point'] ?? '.') : '.',
+                'thousands_sep' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['thousands_sep'] ?? ',') : ',',
+            ],
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
+
+        // Goals & Funnels AJAX handlers — gated to screens that actually render those reports.
+        if (self::needs_goals_funnels_assets()) {
+            wp_enqueue_script(
+                'slimstat-goals-funnels',
+                plugins_url('/admin/assets/js/goals-funnels.js', __DIR__),
+                ['jquery', 'slimstat_admin', 'slimstat-i18n'],
+                SLIMSTAT_ANALYTICS_VERSION,
+                true
+            );
+            self::set_slimstat_script_translations('slimstat-goals-funnels');
+        }
     }
 
     // END: wp_slimstat_enqueue_scripts
+
+    /**
+     * Registers JS translations for one of our scripts so its wp.i18n strings
+     * load their JSON language pack at runtime. Shared by every enqueued script
+     * that carries translatable strings (admin.js, goals-funnels.js).
+     */
+    private static function set_slimstat_script_translations(string $handle): void
+    {
+        if (function_exists('wp_set_script_translations')) {
+            wp_set_script_translations($handle, 'wp-slimstat', plugin_dir_path(__DIR__) . 'languages');
+        }
+    }
 
     /**
      * Adds a new entry in the admin menu, to view the stats
@@ -1037,10 +1290,16 @@ class wp_slimstat_admin
             }
 
             if ($a_screen_info['show_in_sidebar']) {
+                // Sidebar label may carry the time-limited "New" badge; the page
+                // title (browser tab) stays plain. (#20)
+                $menu_label = $a_screen_info['title'];
+                if ('slimview6' === $a_screen_id) {
+                    $menu_label .= self::goals_funnels_new_badge();
+                }
                 $new_entry[] = add_submenu_page(
                     $parent,
                     $a_screen_info['title'],
-                    $a_screen_info['title'],
+                    $menu_label,
                     $minimum_capability,
                     $a_screen_id,
                     $a_screen_info['callback']
@@ -1460,7 +1719,7 @@ class wp_slimstat_admin
      */
     public static function add_column_header($_columns = [])
     {
-        if (0 == wp_slimstat::$settings['posts_column_day_interval']) {
+        if (empty(wp_slimstat::$settings['posts_column_day_interval'])) {
             wp_slimstat::$settings['posts_column_day_interval'] = 28;
         }
 
@@ -1544,6 +1803,591 @@ class wp_slimstat_admin
     }
 
     // END: notices_handler
+
+    // ---- Goals & Funnels CRUD ---- //
+
+    /**
+     * Invalidates all goal/funnel/visitor caches by incrementing version.
+     * Works with both wp_options and external object cache (Redis/Memcached).
+     *
+     * When no persistent object cache is present, orphaned version-keyed
+     * transient rows in wp_options aren't cleaned up until WordPress's
+     * `delete_expired_transients` cron fires (every 12h). We GC them here
+     * so frequently-edited installs don't accumulate hundreds of rows.
+     */
+    private static function clear_goals_cache()
+    {
+        // Sub-second precision avoids collisions when two saves land in the
+        // same second (time() granularity was causing cache-miss no-ops).
+        update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
+
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            return;
+        }
+
+        global $wpdb;
+        if (!$wpdb) {
+            return;
+        }
+
+        $like_goal         = $wpdb->esc_like('_transient_slimstat_goal_')           . '%';
+        $like_goal_timeout = $wpdb->esc_like('_transient_timeout_slimstat_goal_')   . '%';
+        $like_funnel       = $wpdb->esc_like('_transient_slimstat_funnel_')         . '%';
+        $like_funnel_t     = $wpdb->esc_like('_transient_timeout_slimstat_funnel_') . '%';
+        // Unique-visitor denominator transients (CR math) — version-keyed since 5.5.0
+        // so they accumulate one row per date range; sweep them here too.
+        $like_uv           = $wpdb->esc_like('_transient_slimstat_uv_')             . '%';
+        $like_uv_timeout   = $wpdb->esc_like('_transient_timeout_slimstat_uv_')     . '%';
+
+        // LIMIT 1000 mirrors update_tables_and_options()'s bounded transient sweep so
+        // an install with many accumulated rows doesn't run an unbounded synchronous
+        // DELETE on an admin save.
+        $wpdb->query($wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s OR option_name LIKE %s LIMIT 1000",
+            $like_goal,
+            $like_goal_timeout,
+            $like_funnel,
+            $like_funnel_t,
+            $like_uv,
+            $like_uv_timeout
+        ));
+    }
+
+    /**
+     * Returns validated goal dimensions available for selection.
+     */
+    public static function get_goal_dimensions()
+    {
+        return [
+            'resource'      => __('Page URL', 'wp-slimstat'),
+            'content_type'  => __('Content Type', 'wp-slimstat'),
+            'content_id'    => __('Content ID', 'wp-slimstat'),
+            'searchterms'   => __('Search Terms', 'wp-slimstat'),
+            'country'       => __('Country', 'wp-slimstat'),
+            'browser'       => __('Browser', 'wp-slimstat'),
+            'platform'      => __('Operating System', 'wp-slimstat'),
+            'referer'       => __('Referer', 'wp-slimstat'),
+            'username'      => __('Username', 'wp-slimstat'),
+            'event_notes'   => __('Event', 'wp-slimstat'),
+        ];
+    }
+
+    /**
+     * Dimensions allowed for FUNNEL STEPS — a subset of get_goal_dimensions()
+     * restricted to action/journey-oriented entities. Attribute dimensions
+     * (Country, Browser, Operating System, Referer, Username) describe WHO a
+     * visitor is, not what they DID, so they make no sense as a funnel step
+     * ("Homepage → Chrome → Checkout") and stay reserved for goals. Sliced from
+     * get_goal_dimensions() via array_intersect_key so labels + order never
+     * drift from the canonical list. (#17)
+     */
+    public static function get_funnel_step_dimensions()
+    {
+        $allowed = ['resource', 'content_type', 'content_id', 'searchterms', 'event_notes'];
+        return array_intersect_key(self::get_goal_dimensions(), array_flip($allowed));
+    }
+
+    /**
+     * Returns validated goal operators.
+     */
+    public static function get_goal_operators()
+    {
+        return ['equals', 'is_not_equal_to', 'contains', 'does_not_contain', 'starts_with', 'ends_with', 'matches', 'is_empty', 'is_not_empty'];
+    }
+
+    /**
+     * Returns an operator-key => human-label map, sourced from wp_slimstat_db's
+     * canonical operator-names table. Falls back to the key when the DB class is
+     * not yet loaded (admin_footer hooks may fire before reports init in rare paths).
+     *
+     * @since 5.5.0
+     */
+    public static function get_goal_operator_labels()
+    {
+        $labels  = [];
+        $has_db  = class_exists('wp_slimstat_db');
+        foreach (self::get_goal_operators() as $op) {
+            $labels[$op] = ($has_db && !empty(wp_slimstat_db::$operator_names[$op]))
+                ? wp_slimstat_db::$operator_names[$op]
+                : $op;
+        }
+        return $labels;
+    }
+
+    /**
+     * Sanitizes and validates a goal definition array.
+     *
+     * Accepts raw slashed input (callers hand through `$_POST` directly) and
+     * runs wp_unslash() before the per-field sanitizers so admin-entered values
+     * containing quotes or backslashes round-trip correctly.
+     */
+    private static function sanitize_goal($raw, $is_funnel_step = false)
+    {
+        if (!is_array($raw)) {
+            return false;
+        }
+        $raw        = wp_unslash($raw);
+        // Funnel steps accept only action-oriented dimensions; goals accept all.
+        // Validating server-side keeps an attribute dimension from being POSTed
+        // past the (already-restricted) builder dropdown. (#17)
+        $dimensions = $is_funnel_step ? self::get_funnel_step_dimensions() : self::get_goal_dimensions();
+        $operators  = self::get_goal_operators();
+
+        $goal = [
+            // A provided id is honoured only so callers can match an existing
+            // record for update; new records get a server-assigned id via
+            // next_record_id() (never a client value, never microtime — which
+            // collides on sub-ms saves and overflows on 32-bit PHP).
+            'id'        => !empty($raw['id']) ? intval($raw['id']) : 0,
+            'name'      => !empty($raw['name']) ? sanitize_text_field($raw['name']) : '',
+            'dimension' => !empty($raw['dimension']) && isset($dimensions[$raw['dimension']]) ? $raw['dimension'] : '',
+            'operator'  => !empty($raw['operator']) && in_array($raw['operator'], $operators, true) ? $raw['operator'] : '',
+            'value'     => isset($raw['value']) ? sanitize_text_field($raw['value']) : '',
+            'active'    => isset($raw['active']) ? (bool) $raw['active'] : true,
+        ];
+
+        if (empty($goal['name']) || empty($goal['dimension']) || empty($goal['operator'])) {
+            return false;
+        }
+
+        // A value-bearing operator must carry a non-empty value; otherwise the
+        // query builder emits an unbound "%s" placeholder that breaks the SQL and
+        // silently reports 0. Only the valueless operators may omit a value — sourced
+        // from the shared wp_slimstat_db list (guarded; the db class may not be loaded
+        // yet on the save path) so it never drifts. See #305.
+        $valueless = class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'];
+        if ('' === $goal['value'] && !in_array($goal['operator'], $valueless, true)) {
+            return false;
+        }
+
+        return $goal;
+    }
+
+    /**
+     * Returns a collision-free id for a new goal/funnel record: max existing id + 1.
+     * Replaces the old microtime()-based id (which collided on sub-millisecond
+     * saves and overflowed to 0 on 32-bit PHP), and is never client-supplied.
+     */
+    private static function next_record_id(array $records)
+    {
+        $max = 0;
+        foreach ($records as $record) {
+            if (isset($record['id']) && (int) $record['id'] > $max) {
+                $max = (int) $record['id'];
+            }
+        }
+        return $max + 1;
+    }
+
+    /**
+     * AJAX: Save (create/update) a goal.
+     */
+    public static function ajax_save_goal()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
+        $goal = self::sanitize_goal($_POST);
+        if (!$goal) {
+            wp_send_json_error(['message' => __('Invalid goal definition', 'wp-slimstat')]);
+        }
+
+        $goals     = get_option('slimstat_goals', []);
+        $max_goals = apply_filters('slimstat_max_goals', 1);
+
+        // Update only when a client-supplied id matches an existing goal; anything
+        // else is a create. New records get a server-assigned id (next_record_id)
+        // so a client can't force a collision/overwrite by sending an arbitrary id.
+        // NOTE: this read-modify-write of the slimstat_goals option assumes a single
+        // editor — concurrent admin saves can still last-writer-win (acceptable for
+        // an admin-only, low-frequency setting).
+        $found = false;
+        if (!empty($goal['id'])) {
+            foreach ($goals as $i => $existing) {
+                if ((int) $existing['id'] === (int) $goal['id']) {
+                    $goals[$i] = $goal;
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$found) {
+            // Hard cap on total stored goals (active + paused). Paused goals don't
+            // count against the active-tier limit below, so without this they could
+            // grow the slimstat_goals option without bound.
+            $hard_cap = (int) apply_filters('slimstat_goals_hard_cap', 50);
+            if (count($goals) >= $hard_cap) {
+                wp_send_json_error(['message' => __('Too many goals stored. Delete unused goals before adding more.', 'wp-slimstat')]);
+            }
+            $goal['id'] = self::next_record_id($goals);
+        }
+
+        // Count active goals in the state that *would* result from this save.
+        // For updates, $goals already reflects the incoming edit; for creates,
+        // append hypothetically for the check only. This catches the bypass
+        // where activating a previously-paused goal on update slipped past the
+        // limit because the old guard only ran on creates.
+        $post_save = $found ? $goals : array_merge($goals, [$goal]);
+        $active_count = count(array_filter($post_save, function ($g) {
+            return !empty($g['active']);
+        }));
+
+        if ($active_count > $max_goals) {
+            wp_send_json_error([
+                'message' => sprintf(
+                    /* translators: %d is the max goal count for the tier */
+                    __('Goal limit reached (%d). Upgrade to Pro for more goals.', 'wp-slimstat'),
+                    $max_goals
+                ),
+            ]);
+        }
+
+        if (!$found) {
+            $goals[] = $goal;
+        }
+
+        update_option('slimstat_goals', $goals, false);
+        self::clear_goals_cache();
+        wp_send_json_success(['goals' => $goals]);
+    }
+
+    /**
+     * AJAX: Delete a goal by ID.
+     */
+    public static function ajax_delete_goal()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
+        $goal_id = isset($_POST['goal_id']) ? intval(wp_unslash($_POST['goal_id'])) : 0;
+        if ($goal_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid goal id', 'wp-slimstat')]);
+        }
+
+        $goals    = get_option('slimstat_goals', []);
+        $filtered = array_values(array_filter($goals, function ($g) use ($goal_id) {
+            return isset($g['id']) && (int) $g['id'] !== $goal_id;
+        }));
+
+        if (count($filtered) === count($goals)) {
+            wp_send_json_error(['message' => __('Goal not found', 'wp-slimstat')], 404);
+        }
+
+        update_option('slimstat_goals', $filtered, false);
+        self::clear_goals_cache();
+        wp_send_json_success(['goals' => $filtered]);
+    }
+
+    /**
+     * AJAX: Save (create/update) a funnel.
+     */
+    public static function ajax_save_funnel()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
+        $max_funnels = apply_filters('slimstat_max_funnels', 0);
+        if ($max_funnels <= 0) {
+            wp_send_json_error(['message' => __('Funnels require SlimStat Pro', 'wp-slimstat')]);
+        }
+
+        $raw_steps = isset($_POST['steps']) && is_array($_POST['steps']) ? $_POST['steps'] : [];
+        if (count($raw_steps) < 2 || count($raw_steps) > 5) {
+            wp_send_json_error(['message' => __('Funnels require 2-5 steps', 'wp-slimstat')]);
+        }
+
+        $steps = [];
+        foreach ($raw_steps as $raw_step) {
+            $step = self::sanitize_goal($raw_step, true);
+            if (!$step) {
+                wp_send_json_error(['message' => __('Invalid step definition', 'wp-slimstat')]);
+            }
+            $steps[] = $step;
+        }
+
+        $raw_funnel_name = isset($_POST['funnel_name']) ? wp_unslash((string) $_POST['funnel_name']) : '';
+        $incoming_id     = !empty($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
+        $funnel = [
+            // Provisional id; reassigned with a server-side value for creates below
+            // (never microtime — it collides on sub-ms saves / overflows on 32-bit).
+            'id'    => $incoming_id,
+            'name'  => sanitize_text_field($raw_funnel_name),
+            'steps' => $steps,
+        ];
+
+        if (empty($funnel['name'])) {
+            wp_send_json_error(['message' => __('Funnel name is required', 'wp-slimstat')]);
+        }
+
+        $funnels = get_option('slimstat_funnels', []);
+
+        // Update only when a client-supplied id matches an existing funnel; else create.
+        $found = false;
+        if ($incoming_id > 0) {
+            foreach ($funnels as $i => $existing) {
+                if ((int) $existing['id'] === $incoming_id) {
+                    $funnels[$i] = $funnel;
+                    $found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$found) {
+            if (count($funnels) >= $max_funnels) {
+                wp_send_json_error([
+                    'message' => sprintf(
+                        __('Funnel limit reached (%d).', 'wp-slimstat'),
+                        $max_funnels
+                    ),
+                ]);
+            }
+            $funnel['id'] = self::next_record_id($funnels);
+            $funnels[] = $funnel;
+        }
+
+        update_option('slimstat_funnels', $funnels, false);
+        self::clear_goals_cache();
+        wp_send_json_success(['funnels' => $funnels]);
+    }
+
+    /**
+     * AJAX: Delete a funnel by ID.
+     */
+    public static function ajax_delete_funnel()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
+        }
+
+        $funnel_id = isset($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
+        if ($funnel_id <= 0) {
+            wp_send_json_error(['message' => __('Invalid funnel id', 'wp-slimstat')]);
+        }
+
+        $funnels  = get_option('slimstat_funnels', []);
+        $filtered = array_values(array_filter($funnels, function ($f) use ($funnel_id) {
+            return isset($f['id']) && (int) $f['id'] !== $funnel_id;
+        }));
+
+        if (count($filtered) === count($funnels)) {
+            wp_send_json_error(['message' => __('Funnel not found', 'wp-slimstat')], 404);
+        }
+
+        update_option('slimstat_funnels', $filtered, false);
+        self::clear_goals_cache();
+        wp_send_json_success(['funnels' => $filtered]);
+    }
+
+    /**
+     * AJAX: Return per-step results + summary for a single funnel by id.
+     * Used by the funnel tab bar's lazy-load — inactive tabs fetch on click.
+     *
+     * @since 5.5.0
+     */
+    public static function ajax_load_funnel_data()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        if (!self::check_ajax_view_capability()) {
+            return;
+        }
+
+        $funnel_id = intval($_POST['funnel_id'] ?? 0);
+        $funnels   = get_option('slimstat_funnels', []);
+        $funnel    = null;
+        foreach ($funnels as $f) {
+            if (intval($f['id']) === $funnel_id) {
+                $funnel = $f;
+                break;
+            }
+        }
+
+        if (!$funnel) {
+            wp_send_json_error(['message' => __('Funnel not found', 'wp-slimstat')], 404);
+        }
+
+        // Hydrate the DB layer (columns + the on-screen date range). This AJAX
+        // action isn't covered by the admin bootstrap's init(), so without it the
+        // date filter collapses to `dt BETWEEN 0 AND 0` and every step returns 0 —
+        // which is why only the first, server-rendered funnel showed data. (#8)
+        self::ensure_goals_db_initialized();
+
+        $step_results = wp_slimstat_db::get_funnel_results($funnel);
+
+        // Summary: step count + total conversion rate (null when step 1 had no visitors,
+        // so the UI renders "No matching visitors" instead of a fake 100%).
+        $step_one_visitors = $step_results[0]['visitors'] ?? 0;
+        $total_cr          = null;
+        if ($step_one_visitors > 0) {
+            $total_cr = (count($step_results) > 1)
+                ? $step_results[count($step_results) - 1]['pct']
+                : 100;
+        }
+
+        $unreachable_count = 0;
+        foreach ($step_results as $step) {
+            if (!empty($step['unreachable'])) {
+                $unreachable_count++;
+            }
+        }
+
+        wp_send_json_success([
+            'funnel_id' => $funnel_id,
+            'steps'     => $step_results,
+            'summary'   => [
+                'step_count'        => count($step_results),
+                'total_cr'          => $total_cr,
+                'unreachable_count' => $unreachable_count,
+            ],
+        ]);
+    }
+
+    /**
+     * AJAX: Return the unique-visitor count for a single funnel step rule.
+     * Powers the builder's per-step "Test" affordance. A single step IS the
+     * same shape as a goal, so we forward to get_goal_results().
+     *
+     * @since 5.5.0
+     */
+    public static function ajax_test_funnel_step()
+    {
+        check_ajax_referer('slimstat_goals_nonce', 'security');
+
+        // Builder-only action: it runs an arbitrary admin-supplied rule (including
+        // REGEXP) against slim_stats and each distinct rule misses the cache, so it
+        // is gated on the admin capability rather than the broader view capability.
+        if (!current_user_can(wp_slimstat::$settings['capability_can_admin'])) {
+            wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')], 403);
+        }
+
+        $step = self::sanitize_goal($_POST, true);
+        if (!$step) {
+            wp_send_json_error(['message' => __('Step is missing required fields', 'wp-slimstat')]);
+        }
+
+        // Force a stable id derived from the rule so repeat Test-clicks on the
+        // same rule hit the get_goal_results() transient. sanitize_goal() default
+        // id is microtime-based (unique per call), which defeats caching here.
+        $step['id'] = crc32($step['dimension'] . '|' . $step['operator'] . '|' . (string) $step['value']);
+
+        // Same as ajax_load_funnel_data: initialize the DB layer + date range so
+        // the rule is tested against the selected window instead of
+        // `dt BETWEEN 0 AND 0` (which returned "0 matches" for pages that clearly
+        // exist, e.g. /contact). (#6)
+        self::ensure_goals_db_initialized();
+
+        $data = wp_slimstat_db::get_goal_results($step);
+
+        wp_send_json_success([
+            'visitors' => (int) ($data['uniques'] ?? 0),
+            'total'    => (int) ($data['total'] ?? 0),
+        ]);
+    }
+
+    /**
+     * Resolve the report date-picker's POSTed window into [start, end] Unix
+     * timestamps. Shared by get_filter_options() and ensure_goals_db_initialized()
+     * so autosuggest, the funnel-step Test, and funnel lazy-load all read the
+     * same range. Falls back to the last 28 days when nothing valid is supplied.
+     *
+     * @return array{0:?int,1:?int} [start, end] timestamps (null when unresolved).
+     */
+    private static function resolve_requested_date_range()
+    {
+        $type = sanitize_text_field(wp_unslash($_POST['time_range_type'] ?? 'last_28_days'));
+        $from = sanitize_text_field(wp_unslash($_POST['time_range_from'] ?? ''));
+        $to   = sanitize_text_field(wp_unslash($_POST['time_range_to'] ?? ''));
+
+        $start = null;
+        $end   = null;
+        if ('custom' === $type && '' !== $from && '' !== $to) {
+            $start = strtotime($from);
+            $end   = strtotime($to . ' 23:59:59');
+        } else {
+            $range = DateRangeHelper::get_range_by_preset($type);
+            if ($range) {
+                $start = $range['start'];
+                $end   = $range['end'];
+            }
+        }
+
+        // Fallback to last 28 days when no valid range was supplied/parsed.
+        if (empty($start) || empty($end)) {
+            $range = DateRangeHelper::get_range_by_preset('last_28_days');
+            if ($range) {
+                $start = $range['start'];
+                $end   = $range['end'];
+            }
+        }
+
+        // Clamp the end to "now", mirroring the SSR funnel render (wp-slimstat-db.php:852):
+        // presets return "today 23:59:59" (a future time), so without this the active
+        // (SSR) funnel queries [start..now] while an AJAX-loaded twin queries
+        // [start..23:59:59]. That gives different counts AND different cache-key hour
+        // buckets, so two identical funnels disagree. Clamping makes every goals/funnels
+        // AJAX window end at the same "now" as the SSR render. A custom past range is
+        // unaffected (its end is already < now). (#1)
+        $now = (int) date_i18n('U');
+        return [$start ? (int) $start : null, $end ? min((int) $end, $now) : null];
+    }
+
+    /**
+     * Hydrate wp_slimstat_db for the goals/funnels Test + lazy-load AJAX actions.
+     *
+     * These actions are NOT covered by the admin bootstrap that normally calls
+     * wp_slimstat_db::init() (only slimview pages + slimstat_load_report are —
+     * see the $is_slimstat_ajax guard). Without init(), $columns_names and
+     * $filters_normalized['utime'] stay empty, so get_combined_where() builds
+     * `dt BETWEEN 0 AND 0` (matching nothing) and emits undefined-array-key
+     * notices. We init() to populate columns + defaults, then pin the date
+     * window to the report's selected range (mirrors get_filter_options). (#6/#8)
+     */
+    private static function ensure_goals_db_initialized()
+    {
+        if (!class_exists('wp_slimstat_db')) {
+            include_once plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php';
+        }
+
+        // Prefer the exact window the server-rendered funnel already used, posted back
+        // as gf_utime_start/end. Reusing it verbatim makes the AJAX funnel/Test query
+        // the IDENTICAL [start,end] (and funnel cache key) as the SSR render, so two
+        // identical funnels share one result instead of re-resolving the preset in the
+        // site timezone while the SSR path used legacy UTC day boundaries. (#1)
+        $pinned_start = isset($_POST['gf_utime_start']) ? (int) $_POST['gf_utime_start'] : 0;
+        $pinned_end   = isset($_POST['gf_utime_end']) ? (int) $_POST['gf_utime_end'] : 0;
+        if ($pinned_start > 0 && $pinned_end > 0) {
+            $start = $pinned_start;
+            $end   = $pinned_end;
+        } else {
+            list($start, $end) = self::resolve_requested_date_range();
+        }
+
+        // init() populates $columns_names/$operator_names plus a default
+        // $filters_normalized; then pin utime to the requested range.
+        wp_slimstat_db::init();
+        if (!isset(wp_slimstat_db::$filters_normalized['utime']) || !is_array(wp_slimstat_db::$filters_normalized['utime'])) {
+            wp_slimstat_db::$filters_normalized['utime'] = [];
+        }
+        if (!empty($start) && !empty($end)) {
+            wp_slimstat_db::$filters_normalized['utime']['start'] = (int) $start;
+            wp_slimstat_db::$filters_normalized['utime']['end']   = (int) $end;
+        }
+    }
+
+    // END: Goals & Funnels CRUD
 
     /**
      * Deletes a given pageview from the database
@@ -2033,36 +2877,9 @@ class wp_slimstat_admin
             return;
         }
 
-        // Get time range parameters from AJAX request
-        $time_range_type = sanitize_text_field($_POST['time_range_type'] ?? 'last_28_days');
-        $time_range_from = sanitize_text_field($_POST['time_range_from'] ?? '');
-        $time_range_to = sanitize_text_field($_POST['time_range_to'] ?? '');
-
-        // Calculate time range timestamps
-        $time_start = null;
-        $time_end = null;
-
-        if ($time_range_type === 'custom' && !empty($time_range_from) && !empty($time_range_to)) {
-            // Custom date range
-            $time_start = strtotime($time_range_from);
-            $time_end = strtotime($time_range_to . ' 23:59:59');
-        } else {
-            // Preset date range
-            $preset_range = DateRangeHelper::get_range_by_preset($time_range_type);
-            if ($preset_range) {
-                $time_start = $preset_range['start'];
-                $time_end = $preset_range['end'];
-            }
-        }
-
-        // Fallback to last 28 days if no valid time range
-        if (empty($time_start) || empty($time_end)) {
-            $preset_range = DateRangeHelper::get_range_by_preset('last_28_days');
-            if ($preset_range) {
-                $time_start = $preset_range['start'];
-                $time_end = $preset_range['end'];
-            }
-        }
+        // Resolve the report date picker's window (shared with the goals/funnels
+        // AJAX handlers so autosuggest, Test, and lazy-load all read one range).
+        list($time_start, $time_end) = self::resolve_requested_date_range();
 
         // Get distinct values for this dimension via SlimStat\Utils\Query abstraction
         $table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
@@ -2089,6 +2906,36 @@ class wp_slimstat_admin
         // Get distinct non-empty values
         $column_type = wp_slimstat_db::$columns_names[$dimension][1];
 
+        // Optional server-side search (layer 2 of #298). Only applies to varchar
+        // columns — searching numeric dimensions falls back to the legacy DISTINCT.
+        $search_raw = $_POST['search'] ?? '';
+        $search = '';
+        if (is_string($search_raw)) {
+            $search = trim(sanitize_text_field($search_raw));
+            if (strlen($search) < 2 || strlen($search) > 64) {
+                $search = '';
+            }
+        }
+        if ($column_type !== 'varchar') {
+            $search = '';
+        }
+
+        // Cache lookup (layer 3 of #298). Key must account for anything that
+        // changes the result set: blog, DB host (External DB addon), capability
+        // gate, dimension, hour-bucketed time range, effective limit, and search.
+        $cache_key = self::build_filter_options_cache_key(
+            $dimension,
+            $time_start,
+            $time_end,
+            $search,
+            $limit
+        );
+        $cached = self::filter_options_cache_get($cache_key);
+        if (is_array($cached)) {
+            wp_send_json_success($cached);
+            exit();
+        }
+
         // Build SQL query directly to avoid Query class interference with global filters
         $where_clauses = [];
 
@@ -2107,14 +2954,24 @@ class wp_slimstat_admin
             $where_clauses[] = $safe_dimension . ' <> 0';
         }
 
+        // Append LIKE filter when a server-side search term was supplied.
+        if ($search !== '') {
+            $like_pattern    = self::build_filter_search_like($dimension, $search);
+            $where_clauses[] = wp_slimstat::$wpdb->prepare($safe_dimension . ' LIKE %s', $like_pattern);
+        }
+
         $where_sql = !empty($where_clauses) ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
+        // Rank matches by relevance (exact, then prefix, then contains) so the LIMIT
+        // keeps and orders the values the user actually typed first. (#21)
+        $order_sql = self::build_filter_search_order($safe_dimension, $search);
+
         $sql = sprintf(
-            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s ASC LIMIT %d',
+            'SELECT DISTINCT %s as value FROM %s %s ORDER BY %s LIMIT %d',
             $safe_dimension,
             $table_name,
             $where_sql,
-            $safe_dimension,
+            $order_sql,
             $limit
         );
 
@@ -2165,6 +3022,19 @@ class wp_slimstat_admin
                 }
             }
             $results = $expanded;
+        }
+
+        // After splitting multi-value rows, re-filter split segments by the
+        // server-side search term so the caller gets only matching segments,
+        // not every segment from rows where any sibling matched.
+        if ($search !== '' && (isset($multi_value_separators[$dimension]) || $dimension === 'notes')) {
+            $has_mb       = function_exists('mb_strtolower');
+            $needle       = $has_mb ? mb_strtolower($search) : strtolower($search);
+            $is_substring = self::filter_search_is_substring($dimension);
+            $results = array_values(array_filter($results, function ($row) use ($needle, $is_substring, $has_mb) {
+                $haystack = $has_mb ? mb_strtolower($row['value']) : strtolower($row['value']);
+                return $is_substring ? (strpos($haystack, $needle) !== false) : (strpos($haystack, $needle) === 0);
+            }));
         }
 
         // Cap expanded results to prevent explosion from splitting
@@ -2230,8 +3100,128 @@ class wp_slimstat_admin
             }
         }
 
+        self::filter_options_cache_set(
+            $cache_key,
+            $options,
+            self::filter_options_cache_ttl($time_end)
+        );
+
         wp_send_json_success($options);
         exit();
+    }
+
+    /**
+     * Whether the server-side filter search uses an unanchored (%needle%) LIKE for
+     * this dimension instead of the default left-anchored prefix (needle%). Single
+     * source of truth for the search-anchor decision (#298), shared by the SQL LIKE
+     * builder and the post-split segment re-filter.
+     */
+    private static function filter_search_is_substring(string $dimension): bool
+    {
+        return in_array($dimension, self::FILTER_SEARCH_SUBSTRING_DIMENSIONS, true);
+    }
+
+    /**
+     * Build the escaped, anchored LIKE pattern for a server-side filter search (#298).
+     * The needle is run through wpdb::esc_like so SQL LIKE metacharacters (% _) are
+     * matched literally; the caller still passes the result through wpdb::prepare.
+     */
+    private static function build_filter_search_like(string $dimension, string $search): string
+    {
+        $escaped = wp_slimstat::$wpdb->esc_like($search);
+        return self::filter_search_is_substring($dimension) ? '%' . $escaped . '%' : $escaped . '%';
+    }
+
+    /**
+     * Build the ORDER BY expression for a server-side filter search so matches rank
+     * by relevance: exact first, then left-anchored prefix, then any other (substring)
+     * match, alphabetical within each tier. Without this, ORDER BY column-only +
+     * LIMIT could truncate or bury the exact/prefix values a user typed behind
+     * incidental contains-matches (e.g. "/pricing" surfacing unrelated paths instead
+     * of /pricing, /pricing/, /pricing?utm…). The column name is already validated
+     * against the allowed-columns whitelist by the caller; the term is bound via
+     * prepare(). (#21)
+     */
+    private static function build_filter_search_order(string $safe_dimension, string $search): string
+    {
+        if ('' === $search) {
+            return $safe_dimension . ' ASC';
+        }
+        $prefix_like = wp_slimstat::$wpdb->esc_like($search) . '%';
+        return wp_slimstat::$wpdb->prepare(
+            'CASE WHEN ' . $safe_dimension . ' = %s THEN 0 WHEN ' . $safe_dimension . ' LIKE %s THEN 1 ELSE 2 END, ' . $safe_dimension . ' ASC',
+            $search,
+            $prefix_like
+        );
+    }
+
+    /**
+     * Composite cache key for get_filter_options(). Must include every variable
+     * that changes the result set: blog (multisite), DB host (External DB addon
+     * can point to another DB), capability gate (per-role visibility), dimension,
+     * hour-bucketed time range (increases hit rate for rolling windows), the
+     * effective limit (respects third-party `slimstat_filter_options_limit`
+     * consumers), and the search term.
+     */
+    private static function build_filter_options_cache_key(
+        string $dimension,
+        ?int $time_start,
+        ?int $time_end,
+        string $search,
+        int $limit
+    ): string {
+        $blog_id = function_exists('get_current_blog_id') ? (int) get_current_blog_id() : 0;
+        $dbhost  = '';
+        if (isset(wp_slimstat::$wpdb) && is_object(wp_slimstat::$wpdb) && isset(wp_slimstat::$wpdb->dbhost)) {
+            $dbhost = (string) wp_slimstat::$wpdb->dbhost;
+        }
+        $dbhost_hash = substr(md5($dbhost), 0, 8);
+        $can_view        = (string) (wp_slimstat::$settings['can_view'] ?? '');
+        $capability      = (string) (wp_slimstat::$settings['capability_can_view'] ?? '');
+        $capability_hash = substr(md5($capability . '|' . $can_view), 0, 8);
+        $ts_start_bucket = $time_start ? (int) floor((int) $time_start / 3600) : 0;
+        $ts_end_bucket   = $time_end ? (int) floor((int) $time_end / 3600) : 0;
+        $search_hash     = $search === '' ? '' : substr(md5($search), 0, 8);
+        return sprintf(
+            'fopts_%d_%s_%s_%s_%d_%d_%d_%s',
+            $blog_id,
+            $dbhost_hash,
+            $capability_hash,
+            $dimension,
+            $ts_start_bucket,
+            $ts_end_bucket,
+            $limit,
+            $search_hash
+        );
+    }
+
+    private static function filter_options_cache_ttl(?int $time_end): int
+    {
+        // Historical data (range ends > 1h ago) never changes — cache it longer.
+        if ($time_end && (int) $time_end < (time() - 3600)) {
+            return 3600;
+        }
+        return 300;
+    }
+
+    private static function filter_options_cache_get(string $key)
+    {
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            $found = false;
+            $data  = wp_cache_get($key, 'slimstat_filter_options', false, $found);
+            return $found ? $data : null;
+        }
+        $data = get_transient('slimstat_' . $key);
+        return $data === false ? null : $data;
+    }
+
+    private static function filter_options_cache_set(string $key, $data, int $ttl): void
+    {
+        if (function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache()) {
+            wp_cache_set($key, $data, 'slimstat_filter_options', $ttl);
+            return;
+        }
+        set_transient('slimstat_' . $key, $data, $ttl);
     }
 
     // END: get_filter_options
@@ -2318,11 +3308,6 @@ class wp_slimstat_admin
      */
     public static function contextual_help()
     {
-        // This contextual help is only available to those using WP 3.3 or newer
-        if (empty($GLOBALS['wp_version']) || version_compare($GLOBALS['wp_version'], '3.3', '<')) {
-            return true;
-        }
-
         $screen = get_current_screen();
 
         $screen->add_help_tab(
@@ -2405,55 +3390,6 @@ class wp_slimstat_admin
 
     // END: _create_table
 
-    /**
-     * Init FeedbackBird widget a third-party service to get feedbacks from users
-     *
-     * @url https://feedbackbird.io
-     */
-    private static function initFeedback()
-    {
-        add_action('admin_enqueue_scripts', function () {
-            $screen = get_current_screen();
-
-            if (stristr($screen->id, 'slimview')) {
-                wp_register_script('feedbackbird-widget', 'https://cdn.jsdelivr.net/gh/feedbackbird/assets@master/wp/app.js?uid=01H5FBKA9Z5M2VJWQXZSX4Q7MS', [], null, true);
-                add_filter('script_loader_tag', function ($tag, $handle) {
-                    if ('feedbackbird-widget' === $handle) {
-                        $tag = str_replace('<script ', '<script defer ', $tag);
-                    }
-                    return $tag;
-                }, 10, 2);
-                wp_enqueue_script('feedbackbird-widget');
-                wp_add_inline_script('feedbackbird-widget', sprintf('var feedbackBirdObject = %s;', wp_json_encode([
-                    'user_email' => function_exists('wp_get_current_user') ? esc_attr(wp_get_current_user()->user_email) : '',
-                    'platform'   => 'wordpress-admin',
-                    'config'     => [
-                        'color'         => '#e8294c',
-                        'button'        => __('Feedback', 'wp-sms'),
-                        'subtitle'      => __('Feel free to share your thoughts!', 'wp-sms'),
-                        'opening_style' => 'modal',
-                    ],
-                    'meta' => [
-                        'php_version'    => PHP_VERSION,
-                        'active_plugins' => array_map(fn ($plugin, $pluginPath) => [
-                            'name'    => $plugin['Name'],
-                            'version' => $plugin['Version'],
-                            'status'  => is_plugin_active($pluginPath) ? 'active' : 'deactivate',
-                        ], get_plugins(), array_keys(get_plugins())),
-                    ],
-                ])));
-
-                add_filter('script_loader_tag', function ($tag, $handle, $src) {
-                    if ('feedbackbird-widget' === $handle) {
-                        return preg_replace('/^<script /i', '<script type="module" crossorigin="crossorigin" ', $tag);
-                    }
-
-                    return $tag;
-                }, 10, 3);
-            }
-        });
-    }
-
     public static function get_template($template, $args = [], $return = false)
     {
         // Push Args - use EXTR_SKIP to prevent variable overwriting for security
@@ -2497,11 +3433,68 @@ class wp_slimstat_admin
         }
 
         // Define which reports get this new functionality
-        if (empty(\wp_slimstat_reports::$reports[$_report_id]['callback_args']) || !array_key_exists('raw', \wp_slimstat_reports::$reports[$_report_id]['callback_args'])) {
+        $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
+        if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
             return $_header_buttons;
+        }
+
+        // A report may declare itself non-exportable (a bool or a presence probe).
+        // Don't offer an "Export" upgrade link where there's nothing to export —
+        // a download-styled control that only routes to pricing is bait (FN-7/FN-17).
+        if (array_key_exists('exportable', $callback_args)) {
+            $exportable = is_callable($callback_args['exportable'])
+                ? (bool) call_user_func($callback_args['exportable'])
+                : (bool) $callback_args['exportable'];
+            if (!$exportable) {
+                return $_header_buttons;
+            }
         }
         $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
         return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+    }
+
+    /**
+     * Goals & Funnels: surface the usage pill + CTA inside the postbox header
+     * (left of the refresh / lock-export icons), and the subtitle directly under
+     * the <h3>. Card partials no longer render this chrome themselves.
+     */
+    public static function register_goals_funnels_header_hooks(): void
+    {
+        add_filter('slimstat_report_header_buttons', [self::class, 'inject_goals_funnels_header_actions'], 20, 2);
+        add_filter('slimstat_report_header_after_title', [self::class, 'inject_goals_funnels_header_subtitle'], 10, 2);
+    }
+
+    /**
+     * Prepends the Goals/Funnels usage pill + "+ Add" CTA into the
+     * .slimstat-header-buttons container so they sit on the LEFT side.
+     * Empty for the Free locked Funnels branch (render helper returns '').
+     */
+    public static function inject_goals_funnels_header_actions($_header_buttons = '', $_report_id = '')
+    {
+        if ('slim_p9_01' === $_report_id) {
+            $actions = \wp_slimstat_reports::render_goals_card_actions();
+            return $actions . $_header_buttons;
+        }
+        if ('slim_p9_02' === $_report_id) {
+            $actions = \wp_slimstat_reports::render_funnels_card_actions();
+            return $actions . $_header_buttons;
+        }
+        return $_header_buttons;
+    }
+
+    /**
+     * Renders the Goals/Funnels card subtitle directly under the postbox <h3>.
+     * Strings match the previous in-card markup so existing translations carry over.
+     */
+    public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
+    {
+        if ('slim_p9_01' === $_report_id) {
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A Goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
+        }
+        if ('slim_p9_02' === $_report_id) {
+            return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
+        }
+        return $_html;
     }
 
     public static function add_header()

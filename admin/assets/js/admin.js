@@ -485,8 +485,9 @@ jQuery(function () {
     //
 
     // Custom Searchable Select Component
-    // Make all texts translatable using wp.i18n if available, with fallbacks
-    const __ = typeof window.wp !== "undefined" && wp.i18n && typeof wp.i18n.__ === "function" ? wp.i18n.__ : (s) => s;
+    // Translatable via the shared accessor (admin/assets/js/i18n.js, the
+    // 'slimstat-i18n' dependency). Call sites pass the 'wp-slimstat' domain.
+    const __ = window.wpSlimstatI18n.__;
     class SlimStatSearchableSelect {
         constructor(element, options = {}) {
             // Validate element exists
@@ -499,6 +500,7 @@ jQuery(function () {
                 placeholder: __("Select value...", "wp-slimstat"),
                 searchPlaceholder: __("Search...", "wp-slimstat"),
                 noResultsText: __("No results found", "wp-slimstat"),
+                noMatchesText: __("No matches — click Apply to filter by this value.", "wp-slimstat"),
                 loadingText: __("Loading...", "wp-slimstat"),
                 allowClear: true,
                 ...options,
@@ -510,6 +512,9 @@ jQuery(function () {
             this.isOpen = false;
             this.filteredOptions = [];
             this.allOptions = [];
+            // Latched on the first setOptions() call so a later server-side
+            // search can clear back to the "like first open" list.
+            this.initialOptions = null;
 
             this.init();
         }
@@ -517,6 +522,27 @@ jQuery(function () {
         init() {
             this.createWrapper();
             this.bindEvents();
+            // Seed the display + selected state from any value the host input
+            // already carries (edit mode / template prefill). Without this a
+            // freshly-built widget always shows the placeholder even though the
+            // input holds a saved value, so the value appears to vanish. Custom
+            // values that aren't in the (possibly not-yet-loaded) option list are
+            // kept as typed text; setOptions() highlights them if a match arrives. (#4)
+            this.seedFromInputValue();
+        }
+
+        seedFromInputValue() {
+            const v = this.element ? this.element.value : "";
+            if (v === "" || v == null) {
+                return;
+            }
+            this.selectedValue = v;
+            this.selectedText = v;
+            // Leave selectedOption null until the options load — keeps a custom
+            // value valid (syncTypedValue/getValue semantics) and lets setOptions()
+            // promote it to a real option if one matches.
+            this.selectedOption = null;
+            this.updateDisplayFromValue(v);
         }
 
         createWrapper() {
@@ -587,21 +613,51 @@ jQuery(function () {
             // Search input
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.addEventListener("input", (e) => {
-                this.filterOptions(e.target.value);
+                const term = e.target.value;
+                // When the user clears a server-search term back below the 2-char
+                // threshold, put the pre-fetched list back so the dropdown returns
+                // to the "like first open" state instead of staying narrowed.
+                if (this.options.serverSearchAction && term.trim().length < 2) {
+                    this.restoreInitialOptions();
+                }
+                // Always filter the currently-loaded options immediately, ranked, so
+                // the dropdown narrows to relevant matches on every keystroke. The
+                // server search (when it fires) then refines/extends this set; it must
+                // not leave the FULL unfiltered list showing during the AJAX wait —
+                // that hid the real "/pricing" matches behind unrelated values. (#21)
+                this.filterOptions(term);
+                this.syncTypedValue(term);
+                this.scheduleServerSearch(term);
+            });
+
+            searchInput.addEventListener("blur", () => {
+                this.dispatchChange();
             });
 
             searchInput.addEventListener("keydown", (e) => {
                 if (e.key === "Escape") {
                     this.close();
+                } else if (e.key === "Enter") {
+                    // Commit the typed value immediately instead of forcing a
+                    // click-outside. The value is already in the hidden input via
+                    // syncTypedValue(); close() reflects it in the display, and we
+                    // dispatch change ourselves because Enter doesn't blur. (#14)
+                    // preventDefault stops Enter from submitting the enclosing form.
+                    e.preventDefault();
+                    this.close();
+                    this.dispatchChange();
                 }
             });
 
-            // Click outside to close
-            document.addEventListener("click", (e) => {
+            // Click outside to close. Store the bound handler so destroy() can
+            // remove it — otherwise each dimension change leaks an instance whose
+            // closure pins the wrapper + option list (see destroy()).
+            this._onDocumentClick = (e) => {
                 if (!this.wrapper.contains(e.target)) {
                     this.close();
                 }
-            });
+            };
+            document.addEventListener("click", this._onDocumentClick);
 
             // Prevent dropdown from closing when clicking inside
             this.dropdown.addEventListener("click", (e) => {
@@ -621,6 +677,27 @@ jQuery(function () {
                     icon: opt.icon || null,
                 };
             });
+            // Latch on the first call — the dimension-change handler passes the
+            // pre-fetched 500-item list, and later server-search replacements
+            // must not overwrite it so the user can clear back to this state.
+            if (this.initialOptions === null) {
+                this.initialOptions = this.allOptions.slice();
+            }
+            // Reconcile a pre-seeded/typed value with the freshly-loaded options:
+            // highlight a matching option, but never clear a custom value that
+            // isn't in the list (it stays selectable + saveable). This makes the
+            // async option load non-destructive to the displayed value. (#4)
+            if (this.element && this.element.value !== "" && this.element.value != null) {
+                const match = this.allOptions.find((o) => o.value === this.element.value);
+                if (match) {
+                    this.selectedOption = match;
+                    this.selectedValue = match.value;
+                    this.selectedText = match.label;
+                } else if (!this.selectedValue) {
+                    this.selectedValue = this.element.value;
+                    this.selectedText = this.element.value;
+                }
+            }
             this.filteredOptions = [...this.allOptions];
             this.renderOptions();
         }
@@ -642,10 +719,28 @@ jQuery(function () {
             if (!term) {
                 this.filteredOptions = [...this.allOptions];
             } else {
-                this.filteredOptions = this.allOptions.filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term));
+                // Keep substring matches, but rank them so exact and prefix matches
+                // surface first — searching "/pricing" must show /pricing, /pricing/,
+                // /pricing?utm… ahead of incidental contains-matches, never below
+                // unrelated values. Tiers: 0 exact, 1 prefix, 2 contains. (#21)
+                this.filteredOptions = this.allOptions
+                    .filter((option) => option.label.toLowerCase().includes(term) || option.value.toLowerCase().includes(term))
+                    .map((option, index) => ({ option, index, rank: this.matchRank(option, term) }))
+                    .sort((a, b) => (a.rank - b.rank) || (a.index - b.index)) // stable within a tier
+                    .map((entry) => entry.option);
             }
 
             this.renderOptions();
+        }
+
+        // Relevance tier for a term match: 0 exact, 1 prefix, 2 contains. Lower
+        // sorts first. Compares both the option's value and its display label. (#21)
+        matchRank(option, term) {
+            const value = (option.value || "").toLowerCase();
+            const label = (option.label || "").toLowerCase();
+            if (value === term || label === term) return 0;
+            if (value.startsWith(term) || label.startsWith(term)) return 1;
+            return 2;
         }
 
         renderOptions() {
@@ -655,7 +750,18 @@ jQuery(function () {
                 // Create no results element safely to prevent XSS
                 const noResultsDiv = document.createElement("div");
                 noResultsDiv.className = "slimstat-select-no-results";
-                noResultsDiv.textContent = this.options.noResultsText;
+                noResultsDiv.setAttribute("data-testid", "slimstat-no-results");
+                const searchInputEl = this.searchContainer.querySelector("input");
+                const userHasTyped = searchInputEl && searchInputEl.value.trim().length > 0;
+                const hasData = this.allOptions.length > 0;
+                // On server-search dropdowns the user can apply a value that isn't in
+                // the list, so keep inviting "click Apply" whenever they've typed — even
+                // after a server search returns no matches and empties allOptions
+                // (otherwise the hint silently reverts to the generic no-results text). See #298.
+                const acceptsTypedValue = !!this.options.serverSearchAction;
+                noResultsDiv.textContent = (userHasTyped && (hasData || acceptsTypedValue))
+                    ? this.options.noMatchesText
+                    : this.options.noResultsText;
                 this.optionsContainer.appendChild(noResultsDiv);
                 return;
             }
@@ -754,6 +860,121 @@ jQuery(function () {
             this.element.dispatchEvent(changeEvent);
         }
 
+        isDisabled() {
+            // is_empty / is_not_empty operators mark the value field inert.
+            return this.element.readOnly || this.selectWrapper.style.pointerEvents === "none";
+        }
+
+        syncTypedValue(value) {
+            if (this.isDisabled()) return;
+            // Typing over a prior selection invalidates it. Clear the full selected
+            // state so close() reflects the typed value (not the stale label),
+            // getValue() returns the typed value, and the dropdown stops highlighting
+            // the old option.
+            if (this.selectedOption && this.selectedOption.value !== value) {
+                this.selectedValue = "";
+                this.selectedText = "";
+                this.selectedOption = null;
+            }
+            this.element.value = value;
+        }
+
+        dispatchChange() {
+            const changeEvent = new Event("change", { bubbles: true });
+            this.element.dispatchEvent(changeEvent);
+        }
+
+        updateDisplayFromValue(value) {
+            const textElement = this.display.querySelector(".slimstat-select-text");
+            textElement.innerHTML = "";
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = value;
+            textElement.appendChild(labelSpan);
+            this.display.classList.remove("slimstat-placeholder");
+        }
+
+        willServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return false;
+            if (this.isDisabled()) return false;
+            return (searchTerm || "").trim().length >= 2;
+        }
+
+        restoreInitialOptions() {
+            if (!this.initialOptions) return;
+            if (this.allOptions === this.initialOptions) return;
+            this.allOptions = this.initialOptions.slice();
+        }
+
+        scheduleServerSearch(searchTerm) {
+            if (!this.options.serverSearchAction || !this.options.serverSearchDimension) return;
+            if (this.isDisabled()) return;
+
+            const term = (searchTerm || "").trim();
+
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
+            // Under 2 chars: fall back to legacy full DISTINCT from the initial fetch.
+            if (term.length < 2) return;
+
+            this._searchDebounce = setTimeout(() => {
+                this.runServerSearch(term);
+            }, 250);
+        }
+
+        runServerSearch(term) {
+            const hasAbort = typeof AbortController !== "undefined";
+            this._searchAbort = hasAbort ? new AbortController() : null;
+            const signal = this._searchAbort ? this._searchAbort.signal : null;
+            const timeRange = this.options.serverSearchTimeRange || { type: "last_28_days", from: "", to: "" };
+
+            jQuery.ajax({
+                method: "POST",
+                url: (typeof ajaxurl !== "undefined") ? ajaxurl : "",
+                data: {
+                    action: this.options.serverSearchAction,
+                    dimension: this.options.serverSearchDimension,
+                    security: this.options.serverSearchNonce || "",
+                    time_range_type: timeRange.type,
+                    time_range_from: timeRange.from,
+                    time_range_to: timeRange.to,
+                    search: term
+                },
+                dataType: "json",
+                timeout: 15000,
+                xhr: function () {
+                    const xhr = jQuery.ajaxSettings.xhr();
+                    if (signal) {
+                        signal.addEventListener("abort", () => {
+                            try { xhr.abort(); } catch (e) { /* no-op */ }
+                        });
+                    }
+                    return xhr;
+                }
+            })
+                .done((response) => {
+                    // Discard stale responses if the user has kept typing.
+                    const searchInputEl = this.searchContainer.querySelector("input");
+                    const currentTerm = searchInputEl ? searchInputEl.value.trim() : "";
+                    if (currentTerm !== term) {
+                        return;
+                    }
+                    if (response && response.success && Array.isArray(response.data)) {
+                        this.setOptions(response.data);
+                    }
+                })
+                .fail(() => {
+                    // On network failure fall back silently to existing client list.
+                });
+        }
+
         getValue() {
             return this.selectedValue;
         }
@@ -799,34 +1020,66 @@ jQuery(function () {
             // Clear search
             const searchInput = this.searchContainer.querySelector("input");
             searchInput.value = "";
+
+            // If the user typed a value but didn't click an option, reflect it
+            // in the closed display so they see their input committed.
+            if (!this.selectedOption && this.element.value) {
+                this.updateDisplayFromValue(this.element.value);
+            }
         }
 
         destroy() {
-            // Close dropdown if open
+            if (this._searchDebounce) {
+                clearTimeout(this._searchDebounce);
+                this._searchDebounce = null;
+            }
+            if (this._searchAbort) {
+                try { this._searchAbort.abort(); } catch (e) { /* no-op */ }
+                this._searchAbort = null;
+            }
+
             if (this.isOpen) {
                 this.close();
             }
 
+            // Remove the document-level click listener so the instance (and the
+            // wrapper/option list its closure references) can be garbage-collected.
+            if (this._onDocumentClick) {
+                document.removeEventListener("click", this._onDocumentClick);
+                this._onDocumentClick = null;
+            }
+
             // Safely remove wrapper and restore original element
             if (this.wrapper && this.element) {
-                // Move element back to its original position before wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.insertBefore(this.element, this.wrapper);
                 }
 
-                // Show original element
                 this.element.style.display = "";
-
-                // Clear value
+                // Load-bearing: blanking the value lets the filter page reset the
+                // field when the dimension changes (it destroys + rebuilds the
+                // widget). Callers that must KEEP the value across a rebuild
+                // (e.g. the goals/funnels modals on edit) capture it before
+                // destroy() and restore it before the next mount. Don't make this
+                // conditional here without auditing those callers. (#4)
                 this.element.value = "";
 
-                // Remove wrapper
                 if (this.wrapper.parentNode) {
                     this.wrapper.parentNode.removeChild(this.wrapper);
                 }
             }
+
+            // Drop references so GC can reclaim the option list + DOM subtree
+            // even if an external holder retains the instance.
+            this.allOptions = null;
+            this.filteredOptions = null;
+            this.selectedOption = null;
+            this.initialOptions = null;
         }
     }
+
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatSearchableSelect = SlimStatSearchableSelect;
 
     // Initialize searchable select instance
     let searchableSelectInstance = null;
@@ -877,6 +1130,43 @@ jQuery(function () {
 
         return timeRange;
     }
+
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatGetTimeRangeForAjax = getTimeRangeForAjax;
+
+    /**
+     * Collect the active global report filters (the hidden fs[...] inputs) for an
+     * AJAX request, mirroring how refresh_report() harvests them, so a sub-report
+     * loaded out-of-band (e.g. a lazily-loaded funnel tab) honors the same filters
+     * as the rest of the page. The DATE/window filters are stripped — callers that
+     * need the date pass it separately (the time_range and gf_utime params); funnels
+     * pin the window verbatim, so re-sending the date here would only risk a mismatch.
+     * Returns a plain object { "fs[browser]": "equals firefox", ... }.
+     */
+    function getFiltersForAjax() {
+        // Date + pagination/meta keys are sent via dedicated params, not as column
+        // filters. Source the skip-list from the server's canonical
+        // NON_COLUMN_FILTER_KEYS (localized) so it never drifts from parse_filters().
+        var nonColumn = SlimStatAdminParams.non_column_filter_keys || [
+            "strtotime", "minute", "hour", "day", "month", "year",
+            "interval", "interval_hours", "interval_minutes", "limit_results", "start_from"
+        ];
+        var skip = {};
+        for (var k = 0; k < nonColumn.length; k++) {
+            skip["fs[" + nonColumn[k] + "]"] = 1;
+        }
+        var out = {};
+        var inputs = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
+        for (var i in inputs) {
+            var name = inputs[i]["name"];
+            if (!name || skip[name]) continue;
+            out[name] = inputs[i]["value"];
+        }
+        return out;
+    }
+
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatGetFiltersForAjax = getFiltersForAjax;
 
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {
@@ -937,7 +1227,12 @@ jQuery(function () {
                             placeholder: __('Select value...', 'wp-slimstat'),
                             searchPlaceholder: __('Search options...', 'wp-slimstat'),
                             noResultsText: noResultsText,
-                            loadingText: __('Loading options...', 'wp-slimstat')
+                            noMatchesText: __('No matches — click Apply to filter by this value.', 'wp-slimstat'),
+                            loadingText: __('Loading options...', 'wp-slimstat'),
+                            serverSearchAction: 'slimstat_get_filter_options',
+                            serverSearchDimension: dimension,
+                            serverSearchNonce: jQuery("#meta-box-order-nonce").val(),
+                            serverSearchTimeRange: timeRangeData
                         });
 
                         // Set the options from the AJAX response (empty array if no data)
@@ -965,8 +1260,11 @@ jQuery(function () {
         var operator = this.value;
         var $textInput = jQuery("#slimstat-filter-value");
 
-        if (operator == "is_empty" || operator == "is_not_empty") {
-            $textInput.attr("readonly", "readonly");
+        var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
+        if (valueless.indexOf(operator) !== -1) {
+            // Clear any stale typed value so it cannot leak into the filter URL — the
+            // SQL builder ignores the value for these operators anyway. See #305.
+            $textInput.attr("readonly", "readonly").val("");
 
             // Disable searchable select if it exists
             if (searchableSelectInstance) {
@@ -1101,7 +1399,7 @@ jQuery(function () {
 
         SlimStatAdmin.add_url_filters_to_form(url, typeof jQuery(this).attr("data-reset-filters") != "undefined", jQuery(this).hasClass("slimstat-filter-temp"));
 
-        jQuery("#slimstat-filters-form").submit();
+        jQuery("#slimstat-filters-form").trigger("submit");
 
         // Remove any temporary filters set here above
         jQuery(".slimstat-temp-filter").remove();
@@ -1865,9 +2163,12 @@ var SlimStatAdmin = {
 
         // Manipulate the existing list of filters (hidden input fields), if we don't want to delete them
         if (typeof delete_existing_filters == "undefined" || !delete_existing_filters) {
+            var valueless = SlimStatAdminParams.valueless_operators || ["is_empty", "is_not_empty"];
             for (i in clean_filters) {
-                // If value is empty (length is 1, meaning that it just has the operator but no value), delete corresponding input field
-                if (clean_filters[i].trim().split(" ").length == 1) {
+                var parts = clean_filters[i].trim().split(" ");
+                // A single token means operator-only with no value. Drop it UNLESS the
+                // operator is value-less by design (is_empty/is_not_empty). See #305.
+                if (parts.length === 1 && valueless.indexOf(parts[0]) === -1) {
                     jQuery('input[name="' + i + '"]').remove();
                 } else if (jQuery('input[name="' + i + '"]').length > 0) {
                     jQuery('input[name="' + i + '"]').attr("value", clean_filters[i]);

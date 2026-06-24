@@ -4,39 +4,50 @@ Tags: analytics, statistics, tracking, reports, geolocation
 Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
-Tested up to: 6.9.4
-Stable tag: 5.4.12
+Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
+Tested up to: 7.0
+Stable tag: 5.5.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-The leading web analytics plugin for WordPress
+Real-time WordPress analytics that stay on your own server: pageviews, outbound links, WooCommerce funnels, all privacy-first and GDPR-ready.
 
 == Description ==
-Track returning customers and registered users, monitor Javascript events, detect intrusions, analyze email campaigns. Thousands of WordPress sites are already using it.
+Most analytics plugins quietly hand your visitors to someone else's cloud. SlimStat doesn't. Every pageview, click, and visitor lands in your own WordPress database and stays there: yours to read in real time, yours to purge whenever you want, never shipped off to Google or anyone else.
+
+See the whole story the moment it happens: who's on your site right now, where they are in the world, what they're reading, and which links they follow on the way out. Set a goal and watch it convert, or chain a few steps into a WooCommerce funnel and see exactly where people slip away. It's the depth you'd expect from a hosted analytics service, running entirely on your own terms.
+
+Best part: privacy isn't a setting you have to hunt for. Anonymized IPs, Do Not Track, a consent banner, and scheduled data cleanup are GDPR-ready from the first activation. Thousands of WordPress sites already trust SlimStat to keep their analytics honest, fast, and entirely their own.
 
 = Main Features =
-* **Real-Time Access Log**: measure server latency, track page events, keep an eye on your bounce rate and much more.
-* **Admin Bar Stats**: view real-time site stats directly from the WordPress admin bar — online visitors, pageviews, and top pages at a glance.
-* **Shortcodes**: display reports in widgets or directly in posts and pages.
-* **Customize Reports**: Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-* **GDPR**: fully compliant with GDPR European law. Integrates seamlessly with WP Consent API. Consent banner translatable with WPML and Polylang.
-* **Filters**: exclude users from statistics collection based on various criteria, including user roles, common robots, IP subnets, admin pages, country, etc.
-* **Export to Excel**: download your reports as CSV files, generate user heatmaps or get daily emails right in your mailbox (via Pro).
-* **Cache**: compatible with W3 Total Cache, WP SuperCache, CloudFlare and most caching plugins.
-* **Privacy**: hash IP addresses to protect your users' privacy.
-* **Geolocation**: identify your visitors by city and country, browser type and operating system (courtesy of [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org)).
-* **World Map**: see where your visitors are coming from, even on your mobile device (courtesy of [JQVMap](https://github.com/10bestdesign/jqvmap)).
+* **Real-time access log** — Your site's pulse, live. Watch each visit land the instant it happens: the page, the spot on the map, the search or link that sent them, how quickly your server replied, human or bot.
+* **Complete access log** — Every visit in one searchable table. Drill into the full history and break it down by date, country, browser, OS, referrer, search term, or content type to answer the questions the summary charts can't.
+* **Goals & funnels** — Turn raw traffic into answers. Define a goal to measure a conversion (a WooCommerce sale, a signup, a key pageview) and see uniques, totals, and conversion rate. Or chain steps into a funnel to spot exactly where visitors drop off. One goal is free; up to five goals and full funnels unlock with Pro.
+* **Outbound link report** — See which external links actually earn clicks. SlimStat records every outbound link your visitors follow, so you know what's sending traffic off your site and which partnerships pull their weight.
+* **Know your visitors** — Go past pageviews to the people behind them: returning readers, logged-in users, and a full audience breakdown by country, language, browser, OS, and screen size. (Pro's User Overview adds per-visitor journeys, time on site, and Gravatars.)
+* **Your data, your server** — No third-party cloud, no Google looking over your shoulder. Every byte lives in your WordPress database, and one-way IP hashing lets you count unique visitors without ever storing who they are.
+* **GDPR, sorted** — Anonymize or hash IPs, honor Do Not Track, auto-purge old records on a schedule, and drop in a translatable consent banner that snaps straight into the WP Consent API (WPML and Polylang welcome). Compliance by design, not an afterthought.
+* **Admin bar stats** — Keep an eye on the numbers without leaving your work. Online visitors, pageviews, and top pages sit one glance away in the WordPress admin bar, on every screen.
+* **Make every report yours** — Rearrange, add, or hide widgets across Real-Time, Overview, Audience, Site Analysis, and Traffic Sources until each screen shows exactly what you care about.
+* **Shortcodes** — Drop any report into a widget, post, or page with a single shortcode.
+* **Filters** — Decide who counts. Skip your own team, known bots, whole IP ranges, admin pages, or entire countries so your stats reflect real visitors, not noise.
+* **Geolocation** — Put a city and country to every visitor, plus their browser and operating system, powered by [MaxMind](https://www.maxmind.com/) and [Browscap](https://browscap.org).
+* **World map** — Watch your audience light up across the globe at a glance, even from your phone (map by [JQVMap](https://github.com/10bestdesign/jqvmap)).
+* **Export & email** — Download your reports as CSV files, generate user heatmaps, or get the day's numbers in your inbox each morning (heatmaps and email reports via Pro).
+* **Cache-friendly** — Plays nicely with W3 Total Cache, WP Super Cache, Cloudflare, and most caching plugins.
 
 = Pro Pack Features =
-* **Network Analytics**: Enable a network-wide view of your reports and settings.
-* **Email Reports**: Receive your reports directly in your mailbox with customizable column mappings and HTML tables.
-* **Export to Excel**: Download your reports as CSV files.
-* **Heatmap**: Display a heatmap layer of the most clicked areas on your website.
-* **User Overview**: Monitor your registered users by tracking their activities and time on site.
-* **User Avatars**: Gravatar integration in the User Overview report for quick visitor identification.
-* **MaxMind Integration**: Connect to MaxMind's Geolocation API to retrieve detailed information about your visitors.
-* **Custom DB**: Use an external database to store all the information about your visitors.
-* **Extended Overview**: Add custom columns to the User Overview widget and export file.
+Love the free plugin? Pro is for sites that live by their numbers. It adds the heavier tools without changing a thing about how SlimStat respects your data:
+
+* **Email reports** — Wake up to the numbers that matter. Schedule the reports you care about and have them land in your inbox as clean HTML tables, with the columns laid out your way.
+* **Heatmaps** — See exactly where visitors click, and where they don't, with a heatmap layer painted right over your live pages.
+* **User overview** — Follow individual registered users: what they viewed, how long they stayed, and how fast your server answered, with Gravatars to put a face to the visit.
+* **Extended overview** — Add your own columns to the User Overview report and export file, so it tracks exactly what your site cares about.
+* **More goals & funnels** — Up to five conversion goals and three full funnels, with ready-made templates for WooCommerce checkout, signups, and content engagement.
+* **Network analytics** — Run reports and settings across an entire multisite network from one place.
+* **MaxMind integration** — Connect MaxMind's geolocation API for richer, more precise detail on where your visitors come from.
+* **Custom database** — Store all your analytics in a separate, external database to keep your main WordPress DB lean.
+* **Export to Excel** — Download any report as a ready-to-share Excel file.
 
 = Requirements =
 * WordPress 5.6+
@@ -61,20 +72,62 @@ Having trouble with a bug? Please [create an issue](https://github.com/wp-slimst
 For security vulnerabilities, please report them through the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/wp-slimstat/vdp). The Patchstack team will validate, triage, and handle any security issues.
 
 == Frequently Asked Questions ==
+
+= Where is my analytics data stored? =
+In your own WordPress database, full stop. Core tracking makes no external calls, so your numbers never go to Google, to us, or to any third-party cloud.
+
+= How is this different from Google Analytics or Jetpack Stats? =
+Ownership and timing. Your data never leaves your server, and there's no sampling or 24-hour delay. You see visits the moment they happen and decide how long to keep them.
+
+= Will SlimStat slow down my site? =
+It's built to stay light. Choose client-side tracking for cached sites or server-side to catch every request, and SlimStat plays nicely with W3 Total Cache, WP Super Cache, Cloudflare, and the rest.
+
+= Is it really GDPR-ready out of the box? =
+Yes. IP anonymization and hashing, Do Not Track, a translatable consent banner, WP Consent API integration, and scheduled data purging are all built in, no extra plugins required.
+
+= Do I need the Pro version? =
+Not to get real value. The free plugin covers real-time tracking, dozens of reports, geolocation, and one conversion goal. Pro adds funnels, email reports, heatmaps, multisite, and more goals.
+
+= Where can I find more help? =
 An extensive knowledge base is available on our [website](https://www.wp-slimstat.com/).
 
 == Screenshots ==
-1. **Real-Time** - A real-time view of your visitors' whereabouts
-2. **Word Map** - Identify them by country, browser, and operating system in a snap.
-3. **Overview** - Your website traffic at a glance. Enjoy a simple, all-in-one dashboard to check your website stats quickly.
-4. **Audience** - See your visitors' full information
-5. **Site Analysis** - See top pages, categories, download and outbound links in an easy, simple view.
-6. **Traffic Sources** - See where your visitors are coming from, such as search engines, social media, or referral websites
-7. **Customize widgets** - Customize all pages—Real-time, Overview, Audience, Site Analysis, and Traffic Sources—to fit your needs easily!
-8. **WordPress Dashboard** - Add and display custom reports like Traffic Sources directly on your WordPress dashboard!
-9. **Settings** - Plenty of options to customize the plugin's behavior
+1. **Real-Time** — Your visitors, live as they browse: where they are, what they're reading, and what brought them in.
+2. **World Map** — Your audience across the globe, identified by country, browser, and operating system.
+3. **Overview** — Your whole site at a glance. One clean dashboard for the numbers you check every morning.
+4. **Audience** — The full picture of who's visiting: location, language, browser, device, and screen size.
+5. **Site Analysis** — Top pages, categories, downloads, and outbound links, all in one simple view.
+6. **Traffic Sources** — Exactly where your visitors come from: search engines, social, and referring sites.
+7. **Customize widgets** — Arrange each dashboard page around the reports you actually use.
+8. **WordPress Dashboard** — Pin the reports you love, like Traffic Sources, right to your WordPress dashboard.
+9. **Settings** — Plenty of room to shape how SlimStat tracks, stores, and shows your data.
+10. **Goals & Funnels** — Define the conversions that drive revenue and watch each step of your WooCommerce checkout or signup funnel to see exactly where visitors drop off.
 
 == Changelog ==
+= 5.5.0 - 2026-06-24 =
+* Feature: New Goals & Funnels page (slimview6) — define goals and funnels in a modern card layout with pill-segmented funnel tabs, a side drawer for goal create/edit, an overlay builder for funnels, and a destructive-action confirm sheet instead of native browser prompts.
+* Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).
+* Feature: Goals gain a "Paused" state via the drawer toggle — paused goals are preserved but do not count against the plan limit.
+* Feature: New AJAX endpoint `slimstat_load_funnel_data` lazy-loads step data for inactive funnel tabs, reducing the initial SQL load on multi-funnel pages.
+* Fix: `ajax_save_goal` now counts only active goals against the `slimstat_max_goals` limit — pausing a goal now genuinely frees a slot.
+* Fix: Funnels with no matching visitors in the selected date range now render "No matching visitors in this date range" instead of a misleading 100% conversion rate.
+* Fix: Dashboard widget no longer leaks the inline "Add Goal" form — widget context now passes `is_widget=true` as designed.
+* Improvement: CSS custom properties split into `tokens.css` (`--ss-*` namespace). Legacy `--slimstat-*` and `--gdpr-*` aliases preserved at their existing values — datepicker and GDPR banner unaffected.
+* Improvement: Goals & Funnels CSS/JS now enqueue only on screens that actually render `slim_p9_01` / `slim_p9_02`, honoring the Customizer's drag-between-screens feature.
+* Improvement: Single canonical "Upgrade to Pro" label on this view (replacing previous mix of "Unlock SlimStat Pro" and "Upgrade to Premium").
+* Improvement: Brand red ramp replaces indigo for funnel bars; supports `prefers-reduced-motion` and full RTL mirroring.
+* Refactor: `show_goals()` / `show_funnels()` branch on `is_widget` and include new partials (`admin/view/partials/goals-funnels/*.php`) in admin mode; widget/shortcode/email/CSV paths preserved unchanged.
+* Tests: New PHPUnit Integration suite covers all AJAX handlers (save/delete goal+funnel, new `ajax_load_funnel_data`), cache-version invalidation, paused-limit behavior, and the legacy CSS alias preservation.
+* Security: Fixed a stored XSS affecting sites using the Cloudflare geolocation provider — a crafted `CF-IPCountry` request header could be saved as a visitor's country and execute script when an administrator opened the Audience or Access Log report. The country is now validated to a two-letter code before storage, and country/language values are escaped wherever they render into report flag images and links. Reported via WPScan.
+* Fix: WordPress admin no longer crashes on PHP 7.4 hosts (an admin page was calling a function that only exists in PHP 8.0+).
+* Fix: Visit tracking no longer returns a 500 error on hosts without the optional PHP `fileinfo` extension. The plugin falls back to its built-in browser detector and shows a dismissible admin notice.
+* Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
+* PHP 8.1+ readiness: cleaned up six internal function signatures so they no longer trigger deprecation warnings in `debug.log`. These would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
+* Fix: On PHP 8.0+, clearing the Posts-list pageviews-column interval no longer shows an empty day count — it falls back to 28 days as it did on PHP 7.
+* Tested up to WordPress 7.0; removed an obsolete WordPress-3.3 version check.
+* PHP 8.0/8.3/8.4 readiness: prepared the admin JavaScript for jQuery 4.0 (no behavior change today) and removed a stray, never-loaded bundled file.
+* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3) and to boot the full WordPress 5.6–7.0 matrix end-to-end; added PHPStan static analysis. The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
+
 = 5.4.12 - 2026-05-13 =
 * Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
 * Security: Patch unauthenticated stored XSS via the User-Agent header (CVE-2026-7634). Storage::updateRow() now mirrors insertRow()'s sanitization, the User-Agent is sanitized at capture in Browscap, and admin tooltips are escaped via wp_kses_post(). Reported by Supakiad S. (m3ez) — E-CQURITY (Thailand) via Wordfence.

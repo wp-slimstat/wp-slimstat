@@ -56,9 +56,35 @@ function slimstat_uninstall($_wpdb = '', $_options = [])
     delete_option('slimstat_filters');
     delete_option('slimstat_tracker_error');
 
+    // Goals & Funnels (5.5.0+): admin-configured records + cache-version key.
+    delete_option('slimstat_goals');
+    delete_option('slimstat_funnels');
+    delete_option('slimstat_goals_cache_ver');
+
+    // Goals & Funnels (5.5.0+): per-goal/per-funnel transients plus the
+    // unique-visitor denominator transients (slimstat_uv_*), accumulated between
+    // cache-version bumps. Safe to DELETE with LIKE here because uninstall runs
+    // once and isn't racing other requests.
+    $GLOBALS['wpdb']->query(sprintf(
+        "DELETE FROM %soptions WHERE option_name LIKE '\\_transient\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_uv\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_uv\\_%%'",
+        $GLOBALS['wpdb']->prefix
+    ));
+
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
+
+    // Sweep filter-options transients left behind by the dropdown cache.
+    $transient_like = $GLOBALS['wpdb']->esc_like('_transient_slimstat_fopts_') . '%';
+    $timeout_like   = $GLOBALS['wpdb']->esc_like('_transient_timeout_slimstat_fopts_') . '%';
+    $GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare(
+        "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+        $transient_like,
+        $timeout_like
+    ));
+    if (function_exists('wp_cache_delete_group')) {
+        wp_cache_delete_group('slimstat_filter_options');
+    }
 
     // Remove scheduled autopurge events
     wp_clear_scheduled_hook('wp_slimstat_purge');

@@ -7,7 +7,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as mysql from 'mysql2/promise';
 import { serialize as phpSerialize, unserialize as phpUnserialize } from 'php-serialize';
-import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL } from './env';
+import { WP_ROOT, MYSQL_CONFIG, BASE_URL as ENV_BASE_URL, assertSafeTestDatabase } from './env';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +31,9 @@ let wpConfigBackup: string | null = null;
 export function injectWpConfigLine(line: string): void {
   const content = fs.readFileSync(WP_CONFIG, 'utf8');
   if (wpConfigBackup === null) wpConfigBackup = content;
-  if (content.includes(line)) return; // already set
+  // Match the exact injected form (line + newline) so the guard can't false-match
+  // a partial substring, and stays symmetric with removeWpConfigLine(). Idempotent.
+  if (content.includes(line + '\n')) return; // already set
   const marker = "/* That's all, stop editing!";
   const idx = content.indexOf(marker);
   if (idx === -1) throw new Error('Cannot find stop-editing marker in wp-config.php');
@@ -47,6 +49,18 @@ export function restoreWpConfig(): void {
     fs.writeFileSync(WP_CONFIG, wpConfigBackup, 'utf8');
     wpConfigBackup = null;
   }
+}
+
+/**
+ * Remove a specific injected line from wp-config.php (idempotent). Unlike
+ * restoreWpConfig() this does not rely on the in-memory backup, so it works from
+ * global teardown, which runs in a separate process from the injector.
+ */
+export function removeWpConfigLine(line: string): void {
+  const content = fs.readFileSync(WP_CONFIG, 'utf8');
+  const withNewline = line + '\n';
+  if (!content.includes(withNewline)) return;
+  fs.writeFileSync(WP_CONFIG, content.replace(withNewline, ''), 'utf8');
 }
 
 // ─── MU-Plugin manifest ───────────────────────────────────────────
@@ -69,6 +83,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
   { sourceFile: 'calendar-ext-simulator-mu-plugin.php', deployedFile: 'calendar-ext-simulator-mu-plugin.php' },
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
+  { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -159,12 +174,25 @@ export function readAjaxLog(): AjaxLogEntry[] {
   return raw.split('\n').filter(Boolean).map((line) => JSON.parse(line));
 }
 
+// ─── wp-content/debug.log helpers ──────────────────────────────────
+
+const DEBUG_LOG = path.join(WP_CONTENT, 'debug.log');
+
+export function readDebugLog(): string {
+  return fs.existsSync(DEBUG_LOG) ? fs.readFileSync(DEBUG_LOG, 'utf8') : '';
+}
+
+export function truncateDebugLog(): void {
+  if (fs.existsSync(DEBUG_LOG)) fs.writeFileSync(DEBUG_LOG, '', 'utf8');
+}
+
 // ─── MySQL helper ──────────────────────────────────────────────────
 
 let pool: mysql.Pool | null = null;
 
 export function getPool(): mysql.Pool {
   if (!pool) {
+    assertSafeTestDatabase(); // refuse to open a pool against the live "local" DB
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
@@ -273,6 +301,23 @@ export async function setProviderDisabled(): Promise<void> {
 const CRON_SHIM_SRC = path.join(__dirname, 'cron-frontend-shim-mu-plugin.php');
 const CRON_SHIM_DEST = path.join(MU_PLUGINS, 'cron-frontend-shim-mu-plugin.php');
 const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
+
+/**
+ * Enable the SLIMSTAT_E2E_TESTING constant that all test-only mu-plugins (nonce
+ * helper, header injector, option mutator, …) are gated on. Called once in global
+ * setup so every spec — including endpoint specs that POST straight to admin-ajax
+ * (filter-ip-beyond-500-limit, filter-multivalue-columns) — gets a working
+ * test_create_nonce. Per-spec installers also call injectWpConfigLine() and find
+ * the line already present (idempotent).
+ */
+export function enableE2eTesting(): void {
+  injectWpConfigLine(E2E_TESTING_LINE);
+}
+
+/** Remove the SLIMSTAT_E2E_TESTING constant (global teardown). */
+export function disableE2eTesting(): void {
+  removeWpConfigLine(E2E_TESTING_LINE);
+}
 
 export function installCronFrontendShim(): void {
   fs.mkdirSync(MU_PLUGINS, { recursive: true });
@@ -526,6 +571,24 @@ export async function seedPageviews(opts: {
        (resource, dt, ip, visit_id, browser, platform, content_type)
      VALUES ${placeholders.join(', ')}`,
     values,
+  );
+}
+
+/**
+ * Seed a single Access-Log pageview attributed to an existing WP user login
+ * (sets `username` + bracket-delimited `notes` so the author cell renders the
+ * known-user branch). Used by the #273 author-pencil specs.
+ */
+export async function seedAuthoredPageview(
+  login: string,
+  resource = '/e2e-authored',
+): Promise<void> {
+  const now = Math.floor(Date.now() / 1000);
+  await getPool().query(
+    `INSERT INTO wp_slim_stats
+       (resource, dt, ip, visit_id, browser, platform, content_type, username, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [resource, now, '127.0.0.1', 1, 'Chrome', 'Windows', 'post', login, `[user:${login}]`],
   );
 }
 

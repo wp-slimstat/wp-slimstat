@@ -1,0 +1,955 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Array has 2 duplicate keys with value ''enable_browscap'' \(''enable_browscap'', ''enable_browscap''\)\.$#'
+			identifier: array.duplicateKey
+			count: 1
+			path: admin/config/index.php
+
+		-
+			message: '#^Call to static method get_string\(\) on an unknown class wp_slimstat_i18n\.$#'
+			identifier: class.notFound
+			count: 1
+			path: admin/config/index.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''0'' and '' readonly'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: admin/config/index.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 4
+			path: admin/index.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_URL not found\.$#'
+			identifier: constant.notFound
+			count: 4
+			path: admin/index.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Parameter \#3 \$deps of function wp_register_style expects array\<string\>, false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Property WP_Screen\:\:\$id \(string\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 13
+			path: admin/index.php
+
+		-
+			message: '#^Variable \$args in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.variable
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Variable \$my_wpdb might not be defined\.$#'
+			identifier: variable.undefined
+			count: 11
+			path: admin/index.php
+
+		-
+			message: '#^Variable \$new_entry might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^Variable \$where_clauses in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: admin/index.php
+
+		-
+			message: '#^File ends with a trailing whitespace\. This may cause problems when running the code in the web browser\. Remove the closing \?\> mark or remove the whitespace\.$#'
+			identifier: whitespace.fileEnd
+			count: 1
+			path: admin/view/email-report.php
+
+		-
+			message: '#^Accessing self\:\:\$config_url outside of class scope\.$#'
+			identifier: outOfClass.self
+			count: 4
+			path: admin/view/index.php
+
+		-
+			message: '#^Call to static method get_string\(\) on an unknown class wp_slimstat_i18n\.$#'
+			identifier: class.notFound
+			count: 3
+			path: admin/view/right-now.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 2
+			path: admin/view/right-now.php
+
+		-
+			message: '#^Call to an undefined static method wp_slimstat_db\:\:toggle_date_i18n_filters\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 2
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Offset 1 on array\{string, array\{int, int\}\|string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Parameter \#2 \$now of function strtotime expects int, string given\.$#'
+			identifier: argument.type
+			count: 5
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Parameter \#3 \$conditions of method SlimStat\\Utils\\Query\:\:join\(\) expects array, string given\.$#'
+			identifier: argument.type
+			count: 2
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Static method wp_slimstat\:\:date_i18n\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 3
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between '''' and non\-empty\-string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and non\-falsy\-string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''0'' and non\-falsy\-string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between false and int will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: admin/view/wp-slimstat-db.php
+
+		-
+			message: '#^Binary operation "\-" between string and 300 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 6
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Call to static method get_string\(\) on an unknown class wp_slimstat_i18n\.$#'
+			identifier: class.notFound
+			count: 4
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 7
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_URL not found\.$#'
+			identifier: constant.notFound
+			count: 15
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 17
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Offset 2 on array\{0\: non\-falsy\-string, 1\: non\-empty\-string, 2\: non\-empty\-string, 3\?\: non\-empty\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Parameter \#1 \$args of function get_terms expects array\{taxonomy\?\: array\<string\>\|string, object_ids\?\: array\<int\>\|int, orderby\?\: string, order\?\: string, hide_empty\?\: bool\|int, include\?\: array\<int\>\|string, exclude\?\: array\<int\>\|string, exclude_tree\?\: array\<int\>\|string, \.\.\.\}, ''category'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Parameter \#1 \$args of function get_terms expects array\{taxonomy\?\: array\<string\>\|string, object_ids\?\: array\<int\>\|int, orderby\?\: string, order\?\: string, hide_empty\?\: bool\|int, include\?\: array\<int\>\|string, exclude\?\: array\<int\>\|string, exclude_tree\?\: array\<int\>\|string, \.\.\.\}, ''tag'' given\.$#'
+			identifier: argument.type
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Parameter \#1 \$args of function the_title_attribute expects array\{before\?\: string, after\?\: string, echo\?\: bool, post\?\: WP_Post\}, array\{post\: int\<1, max\>, echo\: false\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Parameter \#1 \$array_arg of function usort contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Parameter \#2 \$callback of function usort contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 2
+			path: admin/view/wp-slimstat-reports.php
+
+		-
+			message: '#^PHPDoc tag @throws with type SlimStat\\Components\\Exception is not subtype of Throwable$#'
+			identifier: throws.notThrowable
+			count: 1
+			path: src/Components/View.php
+
+		-
+			message: '#^Property SlimStat\\Helpers\\DataBuckets\:\:\$prevEnd is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Helpers/DataBuckets.php
+
+		-
+			message: '#^Class SlimStat\\Migration\\MigrationManager does not have a constructor and must be instantiated without any parameters\.$#'
+			identifier: new.noConstructor
+			count: 1
+			path: src/Migration/MigrationService.php
+
+		-
+			message: '#^Invalid type WP_Error to throw\.$#'
+			identifier: throw.notThrowable
+			count: 2
+			path: src/Modules/Chart.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: src/Providers/IPHashProvider.php
+
+		-
+			message: '#^Access to static property \$filters_normalized on an unknown class SlimStat\\Reports\\Abstracts\\wp_slimstat_db\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Reports/Abstracts/AbstractReport.php
+
+		-
+			message: '#^Binary operation "\-" between string and 300 results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: src/Reports/Abstracts/AbstractReport.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(SlimStat\\Reports\\Abstracts\\AbstractReport\) and ''get_renderer'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Reports/Abstracts/AbstractReport.php
+
+		-
+			message: '#^Instanceof between \$this\(SlimStat\\Reports\\Abstracts\\AbstractReport\) and SlimStat\\Reports\\Contracts\\RenderableInterface will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Reports/Abstracts/AbstractReport.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 2
+			path: src/Reports/Abstracts/ChartReport.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Reports/Abstracts/SummaryReport.php
+
+		-
+			message: '#^Access to static property \$filters_normalized on an unknown class SlimStat\\Reports\\Abstracts\\wp_slimstat_db\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Reports/Abstracts/TableReport.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Reports/Abstracts/TableReport.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''SlimStat\\\\Reports\\\\Types\\\\Analytics\\\\LiveAnalyticsReport'' and ''init_hooks'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Reports/Bootstrap.php
+
+		-
+			message: '#^Anonymous function has an unused use \$id\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/Reports/Registry/ReportFactory.php
+
+		-
+			message: '#^Call to an undefined method ReflectionType\:\:getName\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Reports/Registry/ReportFactory.php
+
+		-
+			message: '#^Trait SlimStat\\Reports\\Traits\\HasFilters is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Reports/Traits/HasFilters.php
+
+		-
+			message: '#^Trait SlimStat\\Reports\\Traits\\HasPagination is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Reports/Traits/HasPagination.php
+
+		-
+			message: '#^Call to an undefined static method wp_slimstat\:\:is_tracking_enabled\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Cannot access property \$countries_count on array\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Cannot access property \$pages_count on array\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Method SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport\:\:build_tooltip\(\) invoked with 3 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Method SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport\:\:get_30min_threshold\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: src/Reports/Types/Analytics/LiveAnalyticsReport.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 6
+			path: src/Services/Admin/Notification/NotificationActions.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with array\<mixed, mixed\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Call to method getBrowser\(\) on an unknown class SlimStat\\Dependencies\\BrowscapPHP\\Browscap\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Found usage of constant FS_METHOD\. Use get_filesystem_method\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\BrowscapPHP\\Browscap not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\League\\Flysystem\\Filesystem not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\League\\Flysystem\\Local\\LocalFilesystemAdapter not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\MatthiasMullie\\Scrapbook\\Adapters\\Flysystem not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\MatthiasMullie\\Scrapbook\\Psr16\\SimpleCache not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\Psr\\Log\\NullLogger not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Browscap.php
+
+		-
+			message: '#^Constant COOKIEPATH not found\.$#'
+			identifier: constant.notFound
+			count: 2
+			path: src/Services/GDPRService.php
+
+		-
+			message: '#^Call to method city\(\) on an unknown class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/GeoService.php
+
+		-
+			message: '#^Call to method country\(\) on an unknown class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/GeoService.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/GeoService.php
+
+		-
+			message: '#^Property SlimStat\\Services\\GeoService\:\:\$update is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/GeoService.php
+
+		-
+			message: '#^Variable \$_SERVER on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Services/Geolocation/Provider/CloudflareGeolocationProvider.php
+
+		-
+			message: '#^Call to method city\(\) on an unknown class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Services/Geolocation/Provider/DbIpProvider.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Services/Geolocation/Provider/DbIpProvider.php
+
+		-
+			message: '#^Call to method city\(\) on an unknown class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php
+
+		-
+			message: '#^Call to method country\(\) on an unknown class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php
+
+		-
+			message: '#^Instantiated class SlimStat\\Dependencies\\GeoIp2\\Database\\Reader not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php
+
+		-
+			message: '#^Left side of && is always false\.$#'
+			identifier: booleanAnd.leftAlwaysFalse
+			count: 2
+			path: src/Services/Geolocation/Provider/MaxmindGeoIPProvider.php
+
+		-
+			message: '#^Action callback returns bool\|void but should not return anything\.$#'
+			identifier: return.void
+			count: 2
+			path: src/Services/Privacy/ConsentHandler.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: src/Services/Privacy/ConsentHandler.php
+
+		-
+			message: '#^Call to an undefined method SlimStat\\Utils\\Query\:\:getResults\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Services/Privacy/DataExporter.php
+
+		-
+			message: '#^Constant COOKIEHASH not found\.$#'
+			identifier: constant.notFound
+			count: 5
+			path: src/Tracker/Ajax.php
+
+		-
+			message: '#^Regex pattern is invalid\: Unknown modifier ''\\'' in pattern\: \#\^\[/\\w\\\-\\\.~\!\*''\(\);\:@&\=\+\$,\?\#\\\[\\\]%%\]\*\$\#$#'
+			identifier: regexp.pattern
+			count: 1
+			path: src/Tracker/Ajax.php
+
+		-
+			message: '#^Cannot access property \$comment_author on array\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Cannot access property \$comment_author_email on array\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Cannot access property \$id on array\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Cannot access property \$notes on array\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Cannot access property \$visit_id on array\.$#'
+			identifier: property.nonObject
+			count: 3
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Constant COOKIEHASH not found\.$#'
+			identifier: constant.notFound
+			count: 5
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Constant DB_NAME not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Elseif condition is always false\.$#'
+			identifier: elseif.alwaysFalse
+			count: 2
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 2
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Variable \$update_data in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: src/Tracker/Processor.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 2
+			path: src/Tracker/Routing.php
+
+		-
+			message: '#^Constant COOKIEPATH not found\.$#'
+			identifier: constant.notFound
+			count: 2
+			path: src/Tracker/Session.php
+
+		-
+			message: '#^Constant COOKIEPATH not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: src/Tracker/Tracker.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: src/Tracker/Tracker.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Tracker/Tracker.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''\\\\wp_slimstat_i18n'' and ''init_dynamic_strings'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Tracker/Utils.php
+
+		-
+			message: '#^Constant SLIMSTAT_ANALYTICS_DIR not found\.$#'
+			identifier: constant.notFound
+			count: 1
+			path: src/Tracker/Utils.php
+
+		-
+			message: '#^Found usage of constant DOING_AJAX\. Use wp_doing_ajax\(\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: src/Tracker/Utils.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: src/Tracker/Utils.php
+
+		-
+			message: '#^Parameter \#4 \$autoload of function add_option expects bool\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tracker/VisitIdGenerator.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: src/Utils/Consent.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Caught class SlimStat\\Utils\\Exception not found\.$#'
+			identifier: class.notFound
+			count: 5
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Method SlimStat\\Utils\\Query\:\:canUseCacheForDateRange\(\) should return \$this\(SlimStat\\Utils\\Query\) but return statement is missing\.$#'
+			identifier: return.missing
+			count: 2
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Method SlimStat\\Utils\\Query\:\:delete\(\) should return static\(SlimStat\\Utils\\Query\) but returns SlimStat\\Utils\\Query\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Method SlimStat\\Utils\\Query\:\:generateCondition\(\) should return array\|false but returns null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Method SlimStat\\Utils\\Query\:\:select\(\) should return static\(SlimStat\\Utils\\Query\) but returns SlimStat\\Utils\\Query\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Method SlimStat\\Utils\\Query\:\:update\(\) should return static\(SlimStat\\Utils\\Query\) but returns SlimStat\\Utils\\Query\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^PHPDoc tag @return contains unresolvable type\.$#'
+			identifier: return.unresolvableType
+			count: 1
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Result of && is always true\.$#'
+			identifier: booleanAnd.alwaysTrue
+			count: 2
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and \(int\|false\) will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and int\|false will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: src/Utils/Query.php
+
+		-
+			message: '#^Comparison operation "\>" between 0\|false and 0 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset ''browser'' on array\{browser\: ''Default Browser'', browser_version\: '''', browser_type\: 0, platform\: ''unknown'', user_agent\: mixed\} in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, ''''\|''\-mu'', non\-falsy\-string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, non\-falsy\-string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 2
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, string, non\-empty\-string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 2 on array\{0\: non\-falsy\-string, 1\: non\-empty\-string, 2\: non\-falsy\-string, 3\?\: non\-falsy\-string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 2 on array\{non\-falsy\-string, non\-empty\-string, non\-empty\-string, string, string, non\-empty\-string\}\|array\{non\-falsy\-string, string, string, string, string, non\-falsy\-string, non\-empty\-string, string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 2 on array\{non\-falsy\-string, string, string, string, non\-falsy\-string, non\-empty\-string, string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 3 on array\{non\-falsy\-string, decimal\-int\-string, non\-falsy\-string, string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Offset 3 on array\{non\-falsy\-string, non\-falsy\-string, non\-empty\-string, string\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Result of && is always true\.$#'
+			identifier: booleanAnd.alwaysTrue
+			count: 8
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between '''' and non\-empty\-string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between '''' and non\-falsy\-string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''0'' and ''\-mu'' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''0'' and non\-falsy\-string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: src/Utils/UADetector.php
+
+		-
+			message: '#^PHPDoc tag @return contains unresolvable type\.$#'
+			identifier: return.unresolvableType
+			count: 1
+			path: src/ralouphie/getallheaders/getallheaders.php
+
+		-
+			message: '#^Variable \$has_required_migrations might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: src/view/migration-page.php
+
+		-
+			message: '#^Action callback returns string but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^Call to static method get_string\(\) on an unknown class wp_slimstat_i18n\.$#'
+			identifier: class.notFound
+			count: 3
+			path: wp-slimstat.php
+
+		-
+			message: '#^Default value of the parameter \#1 \$_args \(array\{\}\) of method slimstat_widget\:\:widget\(\) is incompatible with type array\{name\: string, id\: string, description\: string, class\: string, before_widget\: string, after_widget\: string, before_title\: string, after_title\: string, \.\.\.\}\.$#'
+			identifier: parameter.defaultValue
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^Found usage of constant UPLOADS\. Use wp_get_upload_dir\(\) or wp_upload_dir\(null, false\) instead\.$#'
+			identifier: phpstanWP.wpConstant.fetch
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^Function add_shortcode invoked with 3 parameters, 2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$args$#'
+			identifier: parameter.notFound
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$instance$#'
+			identifier: parameter.notFound
+			count: 2
+			path: wp-slimstat.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$new_instance$#'
+			identifier: parameter.notFound
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$old_instance$#'
+			identifier: parameter.notFound
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^Parameter \#3 \$deps of function wp_register_style expects array\<string\>, true given\.$#'
+			identifier: argument.type
+			count: 1
+			path: wp-slimstat.php
+
+		-
+			message: '#^Result of function register_widget \(void\) is used\.$#'
+			identifier: function.void
+			count: 1
+			path: wp-slimstat.php

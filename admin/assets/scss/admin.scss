@@ -905,6 +905,31 @@ body {
   color: #222;
 }
 
+/* Access Log colour legend: lay each swatch beside its label as one inline
+   group and override the global .little-color-box float:left, so the colour
+   sits next to the word it explains instead of stranding on the far side.
+   (Plain px — the --ss-* tokens aren't enqueued on the Access Log screen.) */
+.slimstat-access-log-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  margin: 8px 0;
+}
+
+.slimstat-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.slimstat-access-log-legend .little-color-box {
+  float: none;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
 [id^="slim_"] p.loading {
   text-align: center;
   width: 100%;
@@ -949,7 +974,9 @@ body {
 }
 
 /* Single Report: Modal Window */
-.ui-widget-overlay {
+/* Scoped: the modal backdrop only appears for SlimStat's own dialogs (on
+   body.slimstat-admin-page pages), so don't restyle other jQuery UI overlays. */
+body.slimstat-admin-page .ui-widget-overlay {
   background-color: #222;
   filter: alpha(opacity=60);
   height: 100%;
@@ -998,7 +1025,7 @@ body {
   font-family: slimstat;
 }
 
-.ui-dialog .ui-dialog-content {
+.ui-dialog.slimstat .ui-dialog-content {
   clear: both;
 }
 
@@ -1035,6 +1062,11 @@ body {
   height: 0 !important;
 }
 
+/* WP-standard admin classes (.nav-tab*, .form-table*, .CodeMirror) styled by
+   SlimStat — confined to its own pages so they never restyle another plugin's
+   settings tables/tabs on the dashboard or post-list screens (admin.css loads
+   there too, but those screens lack body.slimstat-admin-page). */
+body.slimstat-admin-page {
 .nav-tabs {
   margin: 20px 1px 0;
 }
@@ -1110,6 +1142,7 @@ body {
 .CodeMirror {
   height: auto !important;
 }
+} /* end body.slimstat-admin-page WP-standard-class scope */
 
 /* Add-ons Page */
 .wp-list-table.slimstat-addons {
@@ -1198,11 +1231,14 @@ body {
   float: none;
 }
 
-.rtl .qtip-content {
+/* RTL variants of the qTip2 / form-table rules — scoped like their LTR
+   counterparts so they never restyle another plugin's qTip / settings table on
+   an RTL dashboard or post-list screen. */
+body.slimstat-admin-page.rtl .qtip-content {
   text-align: right;
 }
 
-.rtl .form-table td span.block-element {
+body.slimstat-admin-page.rtl .form-table td span.block-element {
   padding: 0 0 0 30px;
 }
 
@@ -1288,15 +1324,17 @@ body {
   margin: 0 0 10px 10px;
 }
 
-.rtl .ui-datepicker .ui-datepicker-buttonpane button {
+/* RTL datepicker overrides — scoped like the LTR datepicker block so they never
+   restyle another plugin's jQuery UI datepicker on an RTL admin screen. */
+body.slimstat-admin-page.rtl .ui-datepicker .ui-datepicker-buttonpane button {
   float: left;
 }
 
-.rtl .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
+body.slimstat-admin-page.rtl .ui-datepicker .ui-datepicker-buttonpane button.ui-datepicker-current {
   float: right;
 }
 
-.rtl .ui-datepicker-multi .ui-datepicker-group {
+body.slimstat-admin-page.rtl .ui-datepicker-multi .ui-datepicker-group {
   float: right;
 }
 
@@ -1619,6 +1657,7 @@ body {
   }
 
   /* Settings */
+  body.slimstat-admin-page {
   .nav-tab {
     display: block;
     margin: 0;
@@ -1644,6 +1683,7 @@ body {
   .form-table #slimstat-filter-value {
     width: 100%;
   }
+  } /* end body.slimstat-admin-page settings scope */
 
   /* Add-on: WP SlimStat - User Overview */
   [id^="slim_"] .users .column-name {
@@ -2063,6 +2103,10 @@ body {
 }
 
 /* qTip2 v3.0.3 basic | https://qtip2.com */
+/* Scoped to slimstat admin pages: the bundled qTip2 styles must never restyle
+   another plugin's qTip on a shared screen (dashboard / post list). SlimStat
+   only renders tooltips on its own pages, which carry body.slimstat-admin-page. */
+body.slimstat-admin-page {
 .qtip {
   position: absolute;
   left: -28000px;
@@ -2259,8 +2303,13 @@ x:-o-prefocus {
   display: inline-block;
   visibility: visible;
 }
+} /* end body.slimstat-admin-page qTip2 scope */
 
 /*! jQuery UI - v1.10.3 | https://jqueryui.com */
+/* Scoped to slimstat admin pages: jQuery UI datepicker is common, so these
+   styles must not restyle another plugin's datepicker on a shared screen.
+   SlimStat's date filter only renders on its own (body.slimstat-admin-page) pages. */
+body.slimstat-admin-page {
 #ui-datepicker-div {
   display: none;
 }
@@ -2525,6 +2574,8 @@ x:-o-prefocus {
     border-left-width: 0;
   }
 }
+
+} /* end body.slimstat-admin-page jQuery UI datepicker scope */
 
 /*! bootstrap-switch - v3.3.4 | https://www.bootstrap-switch.org */
 .bootstrap-switch {

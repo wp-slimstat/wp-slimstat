@@ -138,7 +138,7 @@ class Session
 	 * @param bool   $force      Optional. Force setting the cookie even if consent checks fail.
 	 * @return bool True if cookie was set, false if not allowed
 	 */
-	public static function setTrackingCookie($value, $value_type = 'visit', $expires = null, bool $force = false)
+	public static function setTrackingCookie($value, $value_type = 'visit', ?int $expires = null, bool $force = false)
 	{
 		// Check if this is a consent upgrade request
 		$data_js = \wp_slimstat::get_data_js();
