@@ -762,6 +762,12 @@
         var loadRange = (typeof window.SlimStatGetTimeRangeForAjax === 'function')
             ? window.SlimStatGetTimeRangeForAjax() : {};
 
+        // Send the active global report filters too, so a lazily-loaded funnel tab
+        // honors the same filters as the server-rendered first funnel and as Goals.
+        // init() ingests these from $_REQUEST['fs'] on the AJAX side. (#22)
+        var loadFilters = (typeof window.SlimStatGetFiltersForAjax === 'function')
+            ? window.SlimStatGetFiltersForAjax() : {};
+
         funnelInflight[funnelId] = post($.extend({
             action:          'slimstat_load_funnel_data',
             security:        nonce,
@@ -769,7 +775,7 @@
             time_range_type: loadRange.type || '',
             time_range_from: loadRange.from || '',
             time_range_to:   loadRange.to   || ''
-        }, pinnedRange()), function (data) {
+        }, pinnedRange(), loadFilters), function (data) {
             if (!$panel.hasClass('is-active')) return;
             $panel.attr('data-loaded', 'true');
             $panel.find('.slimstat-gf-funnel-panel__meta').html(renderFunnelSummary(data.summary));

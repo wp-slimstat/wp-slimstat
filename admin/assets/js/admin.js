@@ -1134,6 +1134,40 @@ jQuery(function () {
     // Expose for use by other scripts (e.g., goals-funnels.js)
     window.SlimStatGetTimeRangeForAjax = getTimeRangeForAjax;
 
+    /**
+     * Collect the active global report filters (the hidden fs[...] inputs) for an
+     * AJAX request, mirroring how refresh_report() harvests them, so a sub-report
+     * loaded out-of-band (e.g. a lazily-loaded funnel tab) honors the same filters
+     * as the rest of the page. The DATE/window filters are stripped — callers that
+     * need the date pass it separately (the time_range and gf_utime params); funnels
+     * pin the window verbatim, so re-sending the date here would only risk a mismatch.
+     * Returns a plain object { "fs[browser]": "equals firefox", ... }.
+     */
+    function getFiltersForAjax() {
+        // Date + pagination/meta keys are sent via dedicated params, not as column
+        // filters. Source the skip-list from the server's canonical
+        // NON_COLUMN_FILTER_KEYS (localized) so it never drifts from parse_filters().
+        var nonColumn = SlimStatAdminParams.non_column_filter_keys || [
+            "strtotime", "minute", "hour", "day", "month", "year",
+            "interval", "interval_hours", "interval_minutes", "limit_results", "start_from"
+        ];
+        var skip = {};
+        for (var k = 0; k < nonColumn.length; k++) {
+            skip["fs[" + nonColumn[k] + "]"] = 1;
+        }
+        var out = {};
+        var inputs = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
+        for (var i in inputs) {
+            var name = inputs[i]["name"];
+            if (!name || skip[name]) continue;
+            out[name] = inputs[i]["value"];
+        }
+        return out;
+    }
+
+    // Expose for use by other scripts (e.g., goals-funnels.js)
+    window.SlimStatGetFiltersForAjax = getFiltersForAjax;
+
     // Handle dimension change to load filter options dynamically
     jQuery("#slimstat-filter-name").on("change", function () {
         var dimension = jQuery(this).val();

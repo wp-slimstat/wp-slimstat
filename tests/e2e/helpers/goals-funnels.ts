@@ -83,6 +83,8 @@ export interface StatRow {
     fingerprint?: string;
     ip?: string;
     country?: string;
+    /** Browser column — lets a test exercise the global "browser equals X" filter. */
+    browser?: string;
     /** Unix seconds; defaults to now. Earlier steps need an earlier/equal dt. */
     dt?: number;
 }
@@ -90,6 +92,8 @@ export interface StatRow {
 /**
  * Insert raw pageview rows into wp_slim_stats so funnel/goal counts are non-zero
  * (otherwise an "identical funnels match" assertion trivially passes on 0 == 0).
+ * Columns are built per-row so optional dimensions (e.g. browser) only appear when
+ * provided — preserving the previous default-only shape for existing callers.
  * Guarded by assertSafeTestDatabase() — this writes to the stats table and must
  * never run against a real site DB.
  */
@@ -101,9 +105,22 @@ export async function seedStats(rows: StatRow[]): Promise<void> {
     const pool = getPool();
     const now = Math.floor(Date.now() / 1000);
     for (const r of rows) {
+        const row: Record<string, string | number | null> = {
+            resource:    r.resource,
+            fingerprint: r.fingerprint ?? null,
+            ip:          r.ip ?? '127.0.0.1',
+            country:     r.country ?? null,
+            dt:          r.dt ?? now,
+            visit_id:    0,
+        };
+        if (r.browser !== undefined) {
+            row.browser = r.browser;
+        }
+        const cols = Object.keys(row);
+        const placeholders = cols.map(() => '?').join(', ');
         await pool.execute(
-            'INSERT INTO wp_slim_stats (resource, fingerprint, ip, country, dt, visit_id) VALUES (?, ?, ?, ?, ?, 0)',
-            [r.resource, r.fingerprint ?? null, r.ip ?? '127.0.0.1', r.country ?? null, r.dt ?? now],
+            `INSERT INTO wp_slim_stats (${cols.join(', ')}) VALUES (${placeholders})`,
+            Object.values(row),
         );
     }
 }
