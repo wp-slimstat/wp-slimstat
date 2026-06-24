@@ -12,7 +12,7 @@
  * @since 5.5.0
  */
 
-.slimstat-license-notice {
+.slimstat-license-alert {
 	display: flex;
 	gap: var(--ss-space-4, 16px);
 	align-items: flex-start;
@@ -27,14 +27,14 @@
 /* Beat WordPress core's .notice-warning left side-stripe regardless of stylesheet
    load order: .notice-warning is (0,1,0); this compound selector is (0,2,0), so
    the banned colored side-stripe can never reappear. */
-.slimstat-license-notice.notice-warning {
+.slimstat-license-alert.notice-warning {
 	border-color: var(--ss-border, #e2e4e7);
 	border-left-width: 1px;
 	border-inline-start-width: 1px;
 }
 
 /* Leading lock disc — brand tint, decorative. */
-.slimstat-license-notice__icon {
+.slimstat-license-alert__icon {
 	flex: 0 0 auto;
 	display: flex;
 	align-items: center;
@@ -46,18 +46,18 @@
 	color: var(--ss-brand-700, #dc3232);
 }
 
-.slimstat-license-notice__icon .dashicons {
+.slimstat-license-alert__icon .dashicons {
 	width: 24px;
 	height: 24px;
 	font-size: 24px;
 }
 
-.slimstat-license-notice__body {
+.slimstat-license-alert__body {
 	flex: 1 1 auto;
 	min-width: 0;
 }
 
-.slimstat-license-notice__title {
+.slimstat-license-alert__title {
 	margin: 0 0 6px;
 	padding: 0;
 	font-size: var(--ss-text-lg, 16px);
@@ -66,7 +66,7 @@
 	color: var(--ss-text-strong, #111827);
 }
 
-.slimstat-license-notice__text {
+.slimstat-license-alert__text {
 	margin: 0 0 14px;
 	max-width: 70ch;
 	font-size: var(--ss-text-md, 14px);
@@ -74,7 +74,7 @@
 	color: var(--ss-text-body, #202224);
 }
 
-.slimstat-license-notice__actions {
+.slimstat-license-alert__actions {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -86,7 +86,7 @@
    Resting uses brand-700 (white on #dc3232 = 4.62:1, WCAG AA) rather than the
    lighter brand-500 (4.33:1, fails); hover deepens to brand-900 (6.9:1). The
    44px height meets the touch target and never undercuts WP core's mobile 40px. */
-.slimstat-license-notice .slimstat-license-notice__cta.button-primary {
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary {
 	display: inline-flex;
 	align-items: center;
 	min-height: 44px;
@@ -100,8 +100,8 @@
 	text-decoration: none;
 }
 
-.slimstat-license-notice .slimstat-license-notice__cta.button-primary:hover,
-.slimstat-license-notice .slimstat-license-notice__cta.button-primary:focus {
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary:hover,
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary:focus {
 	background: var(--ss-brand-900, #b31033);
 	border-color: var(--ss-brand-900, #b31033);
 	color: #fff;
@@ -109,7 +109,7 @@
 
 /* Secondary/tertiary action links share the CTA's vertical rhythm and give a
    44px tappable box (they only appear inside the action row). */
-.slimstat-license-notice__link {
+.slimstat-license-alert__link {
 	display: inline-flex;
 	align-items: center;
 	min-height: 44px;
@@ -118,13 +118,13 @@
 	text-decoration: underline;
 }
 
-.slimstat-license-notice__meta {
+.slimstat-license-alert__meta {
 	margin: 0 0 4px;
 	font-size: var(--ss-text-base, 13px);
 	color: var(--ss-text-muted, #56585a);
 }
 
-.slimstat-license-notice__coupon {
+.slimstat-license-alert__coupon {
 	display: inline-block;
 	padding: 2px 8px;
 	border: 1px solid var(--ss-border, #e2e4e7);
@@ -136,26 +136,26 @@
 	user-select: all;
 }
 
-.slimstat-license-notice__support {
+.slimstat-license-alert__support {
 	margin: 0;
 	font-size: var(--ss-text-base, 13px);
 	color: var(--ss-text-muted, #56585a);
 }
 
 /* Keyboard focus visibility — WordPress-native blue, never brand magenta. */
-.slimstat-license-notice a:focus-visible {
+.slimstat-license-alert a:focus-visible {
 	outline: 2px solid var(--ss-focus, #2271b1);
 	outline-offset: 2px;
 }
 
 /* Subtle entrance, suppressed under reduced-motion. */
 @media (prefers-reduced-motion: no-preference) {
-	.slimstat-license-notice {
-		animation: slimstat-license-notice-in var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.4, 0, 0.2, 1));
+	.slimstat-license-alert {
+		animation: slimstat-license-alert-in var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.4, 0, 0.2, 1));
 	}
 }
 
-@keyframes slimstat-license-notice-in {
+@keyframes slimstat-license-alert-in {
 	from { opacity: 0; transform: translateY(-4px); }
 	to   { opacity: 1; transform: translateY(0); }
 }
@@ -163,14 +163,14 @@
 /* Stack at WordPress's own admin touch breakpoint so the banner reflows in step
    with the rest of wp-admin. */
 @media (max-width: 782px) {
-	.slimstat-license-notice {
+	.slimstat-license-alert {
 		flex-direction: column;
 	}
 }
 
 /* A persistent banner has no place on a printed report. */
 @media print {
-	.slimstat-license-notice {
+	.slimstat-license-alert {
 		display: none !important;
 	}
 }

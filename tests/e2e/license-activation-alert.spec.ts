@@ -25,7 +25,7 @@ import { BASE_URL } from './helpers/env';
 
 const SLIMSTAT_PAGE = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
 const DASHBOARD = `${BASE_URL}/wp-admin/index.php`;
-const BANNER = '.slimstat-license-notice';
+const BANNER = '.slimstat-license-alert';
 const OPTIONS_TABLE = `${process.env.WP_DB_PREFIX || 'wp_'}options`;
 
 async function proIsActive(): Promise<boolean> {
@@ -73,13 +73,13 @@ test.describe('Pro license activation alert', () => {
     await expect(banner).toBeVisible();
     // Exposed as an accessible, labelled region with a heading.
     await expect(page.getByRole('region', { name: /SlimStat Pro license/i })).toBeVisible();
-    await expect(banner.locator('h2.slimstat-license-notice__title')).toContainText('turned off');
+    await expect(banner.locator('h2.slimstat-license-alert__title')).toContainText('turned off');
     // Must carry the `slimstat-notice` class, or admin.css hides it on SlimStat pages.
     await expect(banner).toHaveClass(/\bslimstat-notice\b/);
-    await expect(banner.locator('.slimstat-license-notice__coupon')).toHaveText('REACTIVATE');
+    await expect(banner.locator('.slimstat-license-alert__coupon')).toHaveText('REACTIVATE');
 
     // Primary CTA opens pricing in a new tab with the license-alert UTM campaign.
-    const cta = banner.locator('.slimstat-license-notice__cta');
+    const cta = banner.locator('.slimstat-license-alert__cta');
     await expect(cta).toHaveAttribute('href', /pricing\/\?.*utm_medium=license-alert.*utm_content=state-b/);
     await expect(cta).toHaveAttribute('target', '_blank');
     await expect(cta).toHaveAttribute('rel', 'noopener noreferrer');
@@ -102,9 +102,9 @@ test.describe('Pro license activation alert', () => {
 
     const banner = page.locator(BANNER);
     await expect(banner).toBeVisible();
-    await expect(banner.locator('h2.slimstat-license-notice__title')).toContainText('need a license');
+    await expect(banner.locator('h2.slimstat-license-alert__title')).toContainText('need a license');
     // Same CTA + License-tab affordances as State B, tagged with the state-a UTM.
-    await expect(banner.locator('.slimstat-license-notice__cta'))
+    await expect(banner.locator('.slimstat-license-alert__cta'))
       .toHaveAttribute('href', /pricing\/\?.*utm_content=state-a/);
     await expect(banner.locator('a[href*="page=slimconfig"][href*="tab=8"]')).toBeVisible();
   });

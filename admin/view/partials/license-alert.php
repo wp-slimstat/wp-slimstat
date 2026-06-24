@@ -42,31 +42,31 @@ if ('no-key' === $slimstat_la_state) {
 	$slimstat_la_secondary = __('Find your license key', 'wp-slimstat');
 }
 ?>
-<div class="notice slimstat-notice notice-warning slimstat-license-notice" role="region" aria-label="<?php esc_attr_e('SlimStat Pro license', 'wp-slimstat'); ?>">
-	<div class="slimstat-license-notice__icon" aria-hidden="true">
+<div class="notice slimstat-notice notice-warning slimstat-license-alert" role="region" aria-label="<?php esc_attr_e('SlimStat Pro license', 'wp-slimstat'); ?>">
+	<div class="slimstat-license-alert__icon" aria-hidden="true">
 		<span class="dashicons dashicons-lock"></span>
 	</div>
-	<div class="slimstat-license-notice__body">
-		<h2 class="slimstat-license-notice__title"><?php echo esc_html($slimstat_la_heading); ?></h2>
-		<p class="slimstat-license-notice__text"><?php echo esc_html($slimstat_la_body); ?></p>
+	<div class="slimstat-license-alert__body">
+		<h2 class="slimstat-license-alert__title"><?php echo esc_html($slimstat_la_heading); ?></h2>
+		<p class="slimstat-license-alert__text"><?php echo esc_html($slimstat_la_body); ?></p>
 
-		<div class="slimstat-license-notice__actions">
-			<a class="button button-primary slimstat-license-notice__cta" href="<?php echo esc_url($slimstat_la_pricing_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_primary) . $slimstat_la_newtab; ?></a>
-			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_account_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_secondary) . $slimstat_la_newtab; ?></a>
-			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_license_tab_url); ?>"><?php esc_html_e('Enter your license key', 'wp-slimstat'); ?></a>
+		<div class="slimstat-license-alert__actions">
+			<a class="button button-primary slimstat-license-alert__cta" href="<?php echo esc_url($slimstat_la_pricing_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_primary) . $slimstat_la_newtab; ?></a>
+			<a class="slimstat-license-alert__link" href="<?php echo esc_url($slimstat_la_account_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_secondary) . $slimstat_la_newtab; ?></a>
+			<a class="slimstat-license-alert__link" href="<?php echo esc_url($slimstat_la_license_tab_url); ?>"><?php esc_html_e('Enter your license key', 'wp-slimstat'); ?></a>
 		</div>
 
-		<p class="slimstat-license-notice__meta">
+		<p class="slimstat-license-alert__meta">
 			<?php
 			printf(
 				/* translators: %s: discount coupon code, shown as a code chip. */
 				esc_html__('New or renewing? Use code %s at checkout.', 'wp-slimstat'),
-				'<code class="slimstat-license-notice__coupon">' . esc_html($slimstat_la_coupon) . '</code>'
+				'<code class="slimstat-license-alert__coupon">' . esc_html($slimstat_la_coupon) . '</code>'
 			);
 			?>
 		</p>
 
-		<p class="slimstat-license-notice__support">
+		<p class="slimstat-license-alert__support">
 			<?php
 			$slimstat_la_support_link = '<a href="' . esc_url('mailto:' . antispambot($slimstat_la_support_email)) . '">' . esc_html(antispambot($slimstat_la_support_email)) . '</a>';
 			printf(
