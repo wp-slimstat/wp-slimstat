@@ -105,7 +105,7 @@ class LicenseAlert
 		}
 
 		$screen = \function_exists('get_current_screen') ? \get_current_screen() : null;
-		if ($screen && isset($screen->id)) {
+		if ($screen instanceof \WP_Screen && '' !== $screen->id) {
 			foreach (['slimview', 'slimconfig', 'slimlayout', 'slimpro', 'slimstat'] as $pattern) {
 				if (false !== \strpos($screen->id, $pattern)) {
 					return true;

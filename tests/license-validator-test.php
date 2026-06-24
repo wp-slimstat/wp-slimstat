@@ -73,15 +73,16 @@ namespace {
 	}
 	function get_site_option($k, $d = false)
 	{
-		return $d;
+		return $GLOBALS['lv_network_options'][$k] ?? $d;
 	}
 	function update_site_option($k, $v)
 	{
+		$GLOBALS['lv_network_options'][$k] = $v;
 		return true;
 	}
 	function is_multisite()
 	{
-		return false;
+		return !empty($GLOBALS['lv_multisite']);
 	}
 
 	class wp_slimstat
@@ -147,6 +148,18 @@ namespace {
 	$GLOBALS['lv_response']                     = new WP_Error();
 	LicenseValidator::maybeRevalidate();
 	lv_check($GLOBALS['lv_options']['slimstat_options']['slimstat_pro_license_status'] === true, 'unknown verdict keeps status=true (never downgrades a valid customer)');
+
+	// Multisite: when the license lives in the NETWORK option, the write targets
+	// the network store (not the per-site option).
+	$GLOBALS['lv_multisite']       = true;
+	$GLOBALS['lv_network_options'] = ['slimstat_options' => ['slimstat_pro_license_key' => 'k', 'slimstat_pro_license_status' => false]];
+	$GLOBALS['lv_options']         = ['slimstat_options' => []]; // per-site store has no license
+	wp_slimstat::$settings         = ['slimstat_pro_license_key' => 'k', 'slimstat_pro_license_status' => false, 'slimstat_pro_license_last_verified_at' => 0];
+	$GLOBALS['lv_response']         = ['response' => ['code' => 200], 'body' => $body(200)];
+	LicenseValidator::maybeRevalidate();
+	lv_check(($GLOBALS['lv_network_options']['slimstat_options']['slimstat_pro_license_status'] ?? null) === true, 'multisite: valid verdict writes status=true to the network option store');
+	lv_check(empty($GLOBALS['lv_options']['slimstat_options']['slimstat_pro_license_status']), 'multisite: the per-site option is not written when the license lives in the network store');
+	$GLOBALS['lv_multisite'] = false;
 
 	if ($failures > 0) {
 		fwrite(STDERR, "{$failures} check(s) failed in license-validator-test.php\n");

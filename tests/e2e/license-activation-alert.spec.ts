@@ -26,10 +26,11 @@ import { BASE_URL } from './helpers/env';
 const SLIMSTAT_PAGE = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
 const DASHBOARD = `${BASE_URL}/wp-admin/index.php`;
 const BANNER = '.slimstat-license-notice';
+const OPTIONS_TABLE = `${process.env.WP_DB_PREFIX || 'wp_'}options`;
 
 async function proIsActive(): Promise<boolean> {
   const [rows] = (await getPool().execute(
-    "SELECT option_value FROM wp_options WHERE option_name = 'active_plugins'",
+    `SELECT option_value FROM ${OPTIONS_TABLE} WHERE option_name = 'active_plugins'`,
   )) as any;
   if (!rows.length) return false;
   const active = phpUnserialize(rows[0].option_value);
@@ -70,6 +71,8 @@ test.describe('Pro license activation alert', () => {
 
     const banner = page.locator(BANNER);
     await expect(banner).toBeVisible();
+    // Must carry the `slimstat-notice` class, or admin.css hides it on SlimStat pages.
+    await expect(banner).toHaveClass(/\bslimstat-notice\b/);
     await expect(banner).toContainText('turned off');
     await expect(banner.locator('.slimstat-license-notice__coupon')).toHaveText('REACTIVATE');
 
