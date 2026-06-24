@@ -20,7 +20,9 @@ class wp_slimstat_db
     // column. A value-less operator (is_empty/is_not_empty) is meaningless for these and
     // must not reach the switch without a value — those branches dereference $a_filter[3]
     // and would emit an "Undefined array key 3" warning on a crafted request. See #305.
-    private const NON_COLUMN_FILTER_KEYS = [
+    // Public + shared with the JS layer (via SlimStatAdminParams) so SlimStatGetFiltersForAjax()
+    // strips the same date/misc keys when harvesting column filters for a sub-report. (#22)
+    public const NON_COLUMN_FILTER_KEYS = [
         'strtotime', 'minute', 'hour', 'day', 'month', 'year',
         'interval', 'interval_hours', 'interval_minutes', 'limit_results', 'start_from',
     ];
@@ -1878,28 +1880,56 @@ class wp_slimstat_db
     }
 
     /**
+     * Signature of the active global column filters, for the funnel cache key.
+     *
+     * Derived from the NORMALIZED filter array ([col => [operator, value]]), NOT
+     * from get_combined_where()'s SQL: that SQL is run through $wpdb->prepare(),
+     * whose per-request placeholder salt would make the signature unstable and
+     * re-split a server-rendered funnel from its AJAX-loaded twin (the very #1
+     * symptom). Serializing the normalized array is request-stable by construction
+     * and mirrors normalize_funnel_steps(). An empty/absent filter set hashes to a
+     * fixed baseline so an unfiltered render is a stable key. (#22)
+     *
+     * @return string
+     */
+    private static function funnel_filters_signature()
+    {
+        return md5(serialize(self::$filters_normalized['columns'] ?? []));
+    }
+
+    /**
      * Build the funnel-result cache key: normalized step signature + the date
-     * window bucketed to the hour + cache version. Bucketing the end (which is
-     * "now" for a live range, set with second precision) to the hour absorbs the
-     * sub-hour drift between a server-rendered funnel and its AJAX-loaded twin, so
-     * two identical funnels share one transient and return identical numbers. (#1)
+     * window bucketed to the hour + the active column-filter signature + cache
+     * version. Bucketing the end (which is "now" for a live range, set with second
+     * precision) to the hour absorbs the sub-hour drift between a server-rendered
+     * funnel and its AJAX-loaded twin, so two identical funnels share one transient
+     * and return identical numbers. (#1)
      * (A render pair straddling an hour boundary can still miss — a rare, ~few-second
      * window that self-heals on the next render; acceptable given the 5-min TTL.)
+     *
+     * $filters_sig folds the active global filters into the key so toggling a report
+     * filter (e.g. "browser equals X") yields a new key instead of serving the stale
+     * unfiltered transient — the funnel equivalent of how Goals key on the filter
+     * WHERE. The date is intentionally NOT in $filters_sig (it lives in $range,
+     * hour-bucketed); only the COLUMN filters are, so the SSR/AJAX drift fix stands.
+     * The sig folds into the trailing md5 so the "slimstat_funnel_" prefix that
+     * clear_goals_cache() sweeps with a LIKE is preserved. (#22)
      *
      * @param array      $steps
      * @param int        $range_start utime range start (seconds)
      * @param int        $range_end   utime range end (seconds)
+     * @param string     $filters_sig column-filter signature (funnel_filters_signature())
      * @param int|string $cache_ver
      * @return string
      */
-    private static function funnel_cache_key($steps, $range_start, $range_end, $cache_ver)
+    private static function funnel_cache_key($steps, $range_start, $range_end, $filters_sig, $cache_ver)
     {
         // 3600 = bucket the window end to the hour (mirrors the hour-bucketing in
         // wp_slimstat_admin::build_filter_options_cache_key()).
         $range = (int) $range_start . ':' . (int) floor((int) $range_end / 3600);
 
         return 'slimstat_funnel_' . md5(serialize(self::normalize_funnel_steps($steps)))
-            . '_' . md5($range . '|' . $cache_ver);
+            . '_' . md5($range . '|' . $filters_sig . '|' . $cache_ver);
     }
 
     /**
@@ -1919,14 +1949,17 @@ class wp_slimstat_db
         }
 
         $cache_ver = get_option('slimstat_goals_cache_ver', '0');
-        // Deterministic key: normalized step signature + hour-bucketed date window
-        // (NOT the funnel id, NOT the raw $date_where SQL) — so two identical funnels,
-        // and a server-rendered funnel + its AJAX twin, share one transient. See
-        // funnel_cache_key(). (#1, builds on #19)
+        // Deterministic key: normalized step signature + hour-bucketed date window +
+        // active column-filter signature (NOT the funnel id, NOT the raw $date_where
+        // SQL) — so two identical funnels, and a server-rendered funnel + its AJAX
+        // twin, share one transient, while a change to the global report filters
+        // rotates the key instead of serving a stale unfiltered result. See
+        // funnel_cache_key() / funnel_filters_signature(). (#1, #22, builds on #19)
         $cache_key = self::funnel_cache_key(
             $funnel['steps'],
             (int) (self::$filters_normalized['utime']['start'] ?? 0),
             (int) (self::$filters_normalized['utime']['end'] ?? 0),
+            self::funnel_filters_signature(),
             $cache_ver
         );
 

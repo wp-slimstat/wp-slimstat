@@ -1176,6 +1176,11 @@ class wp_slimstat_admin
             // Guarded: this method also runs on the Dashboard-widget path, where
             // wp_slimstat_db may not be included — fall back to the literal list.
             'valueless_operators' => class_exists('wp_slimstat_db') ? wp_slimstat_db::$valueless_operators : ['is_empty', 'is_not_empty'],
+            // Canonical date/misc filter keys, shared with SlimStatGetFiltersForAjax() so it
+            // strips the same non-column keys when harvesting filters for a sub-report (#22).
+            'non_column_filter_keys' => class_exists('wp_slimstat_db')
+                ? wp_slimstat_db::NON_COLUMN_FILTER_KEYS
+                : ['strtotime', 'minute', 'hour', 'day', 'month', 'year', 'interval', 'interval_hours', 'interval_minutes', 'limit_results', 'start_from'],
             // WP-locale number separators so JS-rendered (lazily-loaded) funnel tabs
             // match the server's number_format_i18n() output instead of the browser
             // locale's toLocaleString().
