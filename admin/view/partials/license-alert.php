@@ -27,6 +27,9 @@ $slimstat_la_license_tab_url = admin_url('admin.php?page=slimconfig&tab=8');
 $slimstat_la_support_email   = 'support@wp-slimstat.com';
 $slimstat_la_coupon          = 'REACTIVATE';
 
+// Visually-hidden cue appended to links that open a new tab.
+$slimstat_la_newtab = '<span class="screen-reader-text">' . esc_html__(' (opens in a new tab)', 'wp-slimstat') . '</span>';
+
 if ('no-key' === $slimstat_la_state) {
 	$slimstat_la_heading   = __('SlimStat Pro features need a license', 'wp-slimstat');
 	$slimstat_la_body      = __('You are running SlimStat Pro, but no license key is set, so Pro reports and addons are paused. Add a key to switch them back on. Your tracking and existing data keep working in the meantime.', 'wp-slimstat');
@@ -48,8 +51,8 @@ if ('no-key' === $slimstat_la_state) {
 		<p class="slimstat-license-notice__text"><?php echo esc_html($slimstat_la_body); ?></p>
 
 		<div class="slimstat-license-notice__actions">
-			<a class="button button-primary slimstat-license-notice__cta" href="<?php echo esc_url($slimstat_la_pricing_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_primary); ?></a>
-			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_account_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_secondary); ?></a>
+			<a class="button button-primary slimstat-license-notice__cta" href="<?php echo esc_url($slimstat_la_pricing_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_primary) . $slimstat_la_newtab; ?></a>
+			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_account_url); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html($slimstat_la_secondary) . $slimstat_la_newtab; ?></a>
 			<a class="slimstat-license-notice__link" href="<?php echo esc_url($slimstat_la_license_tab_url); ?>"><?php esc_html_e('Enter your license key', 'wp-slimstat'); ?></a>
 		</div>
 

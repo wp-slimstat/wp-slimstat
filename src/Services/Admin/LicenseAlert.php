@@ -40,10 +40,20 @@ class LicenseAlert
 			return;
 		}
 
+		// Register the design tokens so the banner is genuinely token-driven on
+		// every SlimStat screen (not just the ones that already enqueue tokens.css);
+		// re-registering an existing handle is a no-op.
+		\wp_register_style(
+			'wp-slimstat-tokens',
+			\plugins_url('/admin/assets/css/tokens.css', SLIMSTAT_FILE),
+			[],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+
 		\wp_enqueue_style(
 			self::HANDLE,
 			\plugins_url('/admin/assets/css/license-alert.css', SLIMSTAT_FILE),
-			['dashicons'],
+			['dashicons', 'wp-slimstat-tokens'],
 			SLIMSTAT_ANALYTICS_VERSION
 		);
 	}

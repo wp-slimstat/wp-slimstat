@@ -71,29 +71,42 @@ test.describe('Pro license activation alert', () => {
 
     const banner = page.locator(BANNER);
     await expect(banner).toBeVisible();
+    // Exposed as an accessible, labelled region with a heading.
+    await expect(page.getByRole('region', { name: /SlimStat Pro license/i })).toBeVisible();
+    await expect(banner.locator('h2.slimstat-license-notice__title')).toContainText('turned off');
     // Must carry the `slimstat-notice` class, or admin.css hides it on SlimStat pages.
     await expect(banner).toHaveClass(/\bslimstat-notice\b/);
-    await expect(banner).toContainText('turned off');
     await expect(banner.locator('.slimstat-license-notice__coupon')).toHaveText('REACTIVATE');
 
-    // Primary CTA opens pricing with the license-alert UTM campaign.
+    // Primary CTA opens pricing in a new tab with the license-alert UTM campaign.
     const cta = banner.locator('.slimstat-license-notice__cta');
-    await expect(cta).toHaveAttribute('href', /pricing\/\?.*utm_medium=license-alert/);
+    await expect(cta).toHaveAttribute('href', /pricing\/\?.*utm_medium=license-alert.*utm_content=state-b/);
+    await expect(cta).toHaveAttribute('target', '_blank');
     await expect(cta).toHaveAttribute('rel', 'noopener noreferrer');
 
-    // A direct path to enter the key in the License settings tab.
-    await expect(
-      banner.locator('a[href*="page=slimconfig"][href*="tab=8"]'),
-    ).toBeVisible();
+    // Retrieve-key (My Account) link and the direct License-tab link.
+    await expect(banner.locator('a[href*="my-account"]')).toHaveAttribute('href', /utm_medium=license-alert/);
+    await expect(banner.locator('a[href*="page=slimconfig"][href*="tab=8"]')).toBeVisible();
+
+    // Support mailto (antispambot entity-encoding decodes to plain text in the DOM).
+    await expect(banner.locator('a[href^="mailto:"]')).toHaveAttribute('href', 'mailto:support@wp-slimstat.com');
+
+    // The primary action is keyboard-reachable.
+    await cta.focus();
+    await expect(cta).toBeFocused();
   });
 
-  test('State A (no key): banner asks to add a license', async ({ page }) => {
+  test('State A (no key): banner asks to add a license, with the same affordances', async ({ page }) => {
     await setLicense(page, '', false);
     await page.goto(SLIMSTAT_PAGE);
 
     const banner = page.locator(BANNER);
     await expect(banner).toBeVisible();
-    await expect(banner).toContainText('need a license');
+    await expect(banner.locator('h2.slimstat-license-notice__title')).toContainText('need a license');
+    // Same CTA + License-tab affordances as State B, tagged with the state-a UTM.
+    await expect(banner.locator('.slimstat-license-notice__cta'))
+      .toHaveAttribute('href', /pricing\/\?.*utm_content=state-a/);
+    await expect(banner.locator('a[href*="page=slimconfig"][href*="tab=8"]')).toBeVisible();
   });
 
   test('Valid license: no banner', async ({ page }) => {
@@ -106,5 +119,27 @@ test.describe('Pro license activation alert', () => {
     await setLicense(page, 'TESTKEY-E2E', false);
     await page.goto(DASHBOARD);
     await expect(page.locator(BANNER)).toHaveCount(0);
+  });
+
+  test('Banner honors prefers-reduced-motion (no entrance animation)', async ({ page }) => {
+    await setLicense(page, 'TESTKEY-E2E', false);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(SLIMSTAT_PAGE);
+    const animationName = await page
+      .locator(BANNER)
+      .evaluate((el) => getComputedStyle(el).animationName);
+    expect(animationName).toBe('none');
+  });
+
+  test('Banner is RTL-safe (no thick logical side-stripe)', async ({ page }) => {
+    await setLicense(page, 'TESTKEY-E2E', false);
+    await page.goto(SLIMSTAT_PAGE);
+    await page.evaluate(() => {
+      document.documentElement.dir = 'rtl';
+    });
+    const startWidth = await page
+      .locator(BANNER)
+      .evaluate((el) => getComputedStyle(el).borderInlineStartWidth);
+    expect(startWidth).toBe('1px');
   });
 });

@@ -19,12 +19,18 @@
 	margin: 16px 0;
 	padding: var(--ss-space-5, 20px) var(--ss-space-6, 24px);
 	background: var(--ss-surface, #fff);
-	/* Full border overrides WordPress core's notice-warning left side-stripe. */
 	border: 1px solid var(--ss-border, #e2e4e7);
-	border-left-width: 1px;
-	border-inline-start-width: 1px;
 	border-radius: var(--ss-radius-md, 12px);
 	box-shadow: var(--ss-shadow-card, 0 1px 4px rgba(60, 60, 90, 0.04));
+}
+
+/* Beat WordPress core's .notice-warning left side-stripe regardless of stylesheet
+   load order: .notice-warning is (0,1,0); this compound selector is (0,2,0), so
+   the banned colored side-stripe can never reappear. */
+.slimstat-license-notice.notice-warning {
+	border-color: var(--ss-border, #e2e4e7);
+	border-left-width: 1px;
+	border-inline-start-width: 1px;
 }
 
 /* Leading lock disc — brand tint, decorative. */
@@ -76,14 +82,17 @@
 	margin-bottom: 10px;
 }
 
-/* Brand primary CTA — higher specificity than .wp-core-ui .button-primary. */
+/* Brand primary CTA — higher specificity than .wp-core-ui .button-primary.
+   Resting uses brand-700 (white on #dc3232 = 4.62:1, WCAG AA) rather than the
+   lighter brand-500 (4.33:1, fails); hover deepens to brand-900 (6.9:1). The
+   44px height meets the touch target and never undercuts WP core's mobile 40px. */
 .slimstat-license-notice .slimstat-license-notice__cta.button-primary {
 	display: inline-flex;
 	align-items: center;
-	min-height: 36px;
+	min-height: 44px;
 	padding: 0 18px;
 	border-radius: var(--ss-radius-xs, 6px);
-	background: var(--ss-brand-500, #e8294c);
+	background: var(--ss-brand-700, #dc3232);
 	border-color: var(--ss-brand-700, #dc3232);
 	box-shadow: none;
 	color: #fff;
@@ -93,12 +102,17 @@
 
 .slimstat-license-notice .slimstat-license-notice__cta.button-primary:hover,
 .slimstat-license-notice .slimstat-license-notice__cta.button-primary:focus {
-	background: var(--ss-brand-700, #dc3232);
+	background: var(--ss-brand-900, #b31033);
 	border-color: var(--ss-brand-900, #b31033);
 	color: #fff;
 }
 
+/* Secondary/tertiary action links share the CTA's vertical rhythm and give a
+   44px tappable box (they only appear inside the action row). */
 .slimstat-license-notice__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
 	font-size: var(--ss-text-md, 14px);
 	color: var(--ss-info-fg, #2271b1);
 	text-decoration: underline;
@@ -146,8 +160,17 @@
 	to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 600px) {
+/* Stack at WordPress's own admin touch breakpoint so the banner reflows in step
+   with the rest of wp-admin. */
+@media (max-width: 782px) {
 	.slimstat-license-notice {
 		flex-direction: column;
+	}
+}
+
+/* A persistent banner has no place on a printed report. */
+@media print {
+	.slimstat-license-notice {
+		display: none !important;
 	}
 }
