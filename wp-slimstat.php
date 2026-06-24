@@ -1749,14 +1749,33 @@ class wp_slimstat
      * Returns true only when Pro is installed, a license key is present, and the
      * stored license status is valid. This is the contract the Pro plugin calls
      * from its addon gate and the free plugin uses to drive enforcement and the
-     * activation alert. Delegates to ConditionTagEvaluator so the license-state
-     * logic lives in exactly one place.
+     * activation alert. Delegates to ConditionTagEvaluator for the in-memory
+     * (single-site) check so the license-state logic lives in one place.
+     *
+     * On a network-activated multisite the license may live in the NETWORK option,
+     * which a per-site request's self::$settings does not include — so when the
+     * in-memory check is negative, fall back to the network store (matching the
+     * store resolution used by LicenseValidator and the Pro addon gate). Single
+     * site is unaffected: is_multisite() short-circuits the fallback.
      *
      * @return bool
      */
     public static function pro_license_is_valid()
     {
-        return \SlimStat\Services\Admin\ConditionTagEvaluator::isLicenseActive();
+        if (\SlimStat\Services\Admin\ConditionTagEvaluator::isLicenseActive()) {
+            return true;
+        }
+
+        if (self::pro_is_installed() && is_multisite()) {
+            $network = get_site_option('slimstat_options', []);
+            if (is_array($network)
+                && !empty($network['slimstat_pro_license_key'])
+                && !empty($network['slimstat_pro_license_status'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
