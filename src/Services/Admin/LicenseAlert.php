@@ -53,8 +53,9 @@ class LicenseAlert
 	}
 
 	/**
-	 * Persist the view state. Re-reads the option fresh and writes only the two
-	 * view keys, so a concurrent settings edit is never clobbered.
+	 * Persist the view state. Re-reads the option fresh from the store that
+	 * rendered the banner (site or network) and writes only the view key, so a
+	 * concurrent settings edit is never clobbered.
 	 *
 	 * @return void
 	 */
@@ -71,12 +72,24 @@ class LicenseAlert
 			\wp_send_json_error();
 		}
 
-		$options = \get_option('slimstat_options', []);
+		// Write back to the same store that rendered the banner. The JS echoes the
+		// scope resolved at enqueue; network scope is honoured only for users who
+		// can manage network options, so a site admin can't touch the network store.
+		$network = isset($_POST['scope'])
+			&& 'network' === $_POST['scope']
+			&& \current_user_can('manage_network_options');
+
+		$options = $network ? \get_site_option('slimstat_options', []) : \get_option('slimstat_options', []);
 		if (!\is_array($options)) {
 			$options = [];
 		}
 		$options[self::VIEW_KEY] = $view;
-		\wp_slimstat::update_option('slimstat_options', $options);
+
+		if ($network) {
+			\update_site_option('slimstat_options', $options);
+		} else {
+			\update_option('slimstat_options', $options);
+		}
 
 		// Keep the in-memory copy consistent for the rest of this request.
 		\wp_slimstat::$settings[self::VIEW_KEY] = $view;
@@ -125,6 +138,10 @@ class LicenseAlert
 			'ajaxUrl' => \admin_url('admin-ajax.php'),
 			'action'  => self::AJAX_ACTION,
 			'nonce'   => \wp_create_nonce(self::AJAX_ACTION),
+			// Tell the save handler which store rendered the banner, so a minimize
+			// on a network-admin screen persists to the network option (admin-ajax
+			// can't infer this — is_network_admin() is always false there).
+			'scope'   => \wp_slimstat::settings_use_network_store() ? 'network' : 'site',
 		]);
 	}
 

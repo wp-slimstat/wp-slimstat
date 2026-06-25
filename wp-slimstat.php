@@ -226,7 +226,7 @@ class wp_slimstat
         \SlimStat\Providers\RestApiManager::run();
 
         // Load all the settings
-        if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
+        if (self::settings_use_network_store()) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
             self::$settings = get_option('slimstat_options', []);
@@ -1288,6 +1288,21 @@ class wp_slimstat
         }
     }
     // end update_option
+
+    /**
+     * Whether self::$settings was loaded from the network option store for this
+     * request (network-admin screens other than slimview). Single source of truth
+     * for init()'s read branch and any code that must write back to the same store
+     * (e.g. admin-ajax handlers, where is_network_admin() is always false).
+     *
+     * @return bool
+     */
+    public static function settings_use_network_store()
+    {
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+
+        return is_network_admin() && (empty($page) || false === strpos($page, 'slimview'));
+    }
 
     /**
      * Attach a script to every page to track visitors' screen resolution and other browser-based information

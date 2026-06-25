@@ -20,10 +20,12 @@
 		ta.style.top = '-9999px';
 		document.body.appendChild(ta);
 		ta.select();
+		var copied = false;
 		try {
-			document.execCommand('copy');
+			copied = document.execCommand('copy');
 		} catch (e) {}
 		document.body.removeChild(ta);
+		return copied;
 	}
 
 	function confirmCopied(button) {
@@ -55,6 +57,10 @@
 		body.append('action', cfg.action);
 		body.append('nonce', cfg.nonce);
 		body.append('view', view);
+		// Persist into the same store the banner was rendered from (site vs network).
+		if (cfg.scope) {
+			body.append('scope', cfg.scope);
+		}
 		window
 			.fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
 			.catch(function () {});
@@ -93,12 +99,13 @@
 					confirmCopied(button);
 				},
 				function () {
-					fallbackCopy(text);
-					confirmCopied(button);
+					// Only announce success if the textarea fallback truly copied.
+					if (fallbackCopy(text)) {
+						confirmCopied(button);
+					}
 				}
 			);
-		} else {
-			fallbackCopy(text);
+		} else if (fallbackCopy(text)) {
 			confirmCopied(button);
 		}
 	});
