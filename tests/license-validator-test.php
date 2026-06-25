@@ -112,7 +112,19 @@ namespace {
 	lv_check(LicenseValidator::remoteVerify('k') === 'unknown', 'HTTP 5xx → unknown');
 
 	$GLOBALS['lv_response'] = ['response' => ['code' => 200], 'body' => 'not-json'];
-	lv_check(LicenseValidator::remoteVerify('k') === 'unknown', 'unparseable body → unknown');
+	lv_check(LicenseValidator::remoteVerify('k') === 'valid', 'HTTP 200 + unparseable body → valid (HTTP code decides)');
+
+	$GLOBALS['lv_response'] = ['response' => ['code' => 200], 'body' => json_encode(['ok' => true])];
+	lv_check(LicenseValidator::remoteVerify('k') === 'valid', 'HTTP 200 + body without status → valid (HTTP code decides)');
+
+	// Regression: a 404 for an unknown key, whose body carries no top-level
+	// status (here nested under `data`, the WP_Error shape), used to be "unknown"
+	// so the daily check never downgraded a revoked key.
+	$GLOBALS['lv_response'] = ['response' => ['code' => 404], 'body' => json_encode(['code' => 'not_found', 'data' => ['status' => 404]])];
+	lv_check(LicenseValidator::remoteVerify('k') === 'invalid', 'HTTP 404 + nested data.status → invalid');
+
+	$GLOBALS['lv_response'] = ['response' => ['code' => 404], 'body' => ''];
+	lv_check(LicenseValidator::remoteVerify('k') === 'invalid', 'HTTP 404 + empty body → invalid (HTTP code decides)');
 
 	// --- maybeRevalidate() ---
 	// No key → no external call.

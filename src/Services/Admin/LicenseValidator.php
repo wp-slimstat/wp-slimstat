@@ -61,12 +61,18 @@ class LicenseValidator
 	/**
 	 * Query the remote endpoint and classify the result.
 	 *
-	 * Only a parseable, deliberate server verdict changes a license's status:
-	 *  - valid:   HTTP < 500 with a parseable body whose status is 200
-	 *  - invalid: HTTP < 500 with a parseable body whose status is a client
-	 *             error (the server explicitly says the key is invalid/expired)
-	 *  - unknown: WP_Error, timeout, 5xx, empty/unparseable body, or any
-	 *             ambiguous response — never downgrades a valid customer
+	 * Only a deliberate server verdict changes a license's status:
+	 *  - valid:   HTTP 200 (or a body status of 200)
+	 *  - invalid: HTTP 4xx — e.g. a 404 for a key the server does not recognise,
+	 *             or 401/403/410 for one it rejects — or a body status of 4xx
+	 *  - unknown: WP_Error, timeout, 5xx, or any ambiguous response — never
+	 *             downgrades a valid customer
+	 *
+	 * The HTTP status code is the primary signal; a verdict echoed in the body
+	 * ({status:...} or, for WP_Error-shaped errors, {data:{status:...}}) is
+	 * honoured when present, otherwise the HTTP code decides. Reading only the
+	 * body status used to misfile a 404 (whose body has no top-level status) as
+	 * "unknown", so a revoked key was never downgraded by the daily check.
 	 *
 	 * @param string $key
 	 * @return string 'valid'|'invalid'|'unknown'
@@ -93,20 +99,25 @@ class LicenseValidator
 			return 'unknown';
 		}
 
-		$body = \json_decode((string) \wp_remote_retrieve_body($response));
-		if (!\is_object($body) || !isset($body->status)) {
-			return 'unknown';
+		// Prefer an explicit verdict echoed in the body, else trust the HTTP code.
+		$verdict = $code;
+		$body    = \json_decode((string) \wp_remote_retrieve_body($response));
+		if (\is_object($body)) {
+			if (isset($body->status) && \is_numeric($body->status)) {
+				$verdict = (int) $body->status;
+			} elseif (isset($body->data->status) && \is_numeric($body->data->status)) {
+				$verdict = (int) $body->data->status;
+			}
 		}
 
-		$status = (int) $body->status;
-		if (200 === $status) {
+		if (200 === $verdict) {
 			return 'valid';
 		}
 
-		// A deliberate client-error verdict (e.g. 401/403/410) means the key is
-		// genuinely invalid or expired. Anything else stays "unknown" so a quirky
-		// response can never silently disable a paying customer.
-		if ($status >= 400 && $status < 500) {
+		// A client-error verdict (404 unknown key, 401/403/410 rejected/expired)
+		// means the key is genuinely invalid. Anything else stays "unknown" so a
+		// quirky response can never silently disable a paying customer.
+		if ($verdict >= 400 && $verdict < 500) {
 			return 'invalid';
 		}
 
