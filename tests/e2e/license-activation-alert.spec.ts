@@ -24,6 +24,7 @@ import {
 import { BASE_URL } from './helpers/env';
 
 const SLIMSTAT_PAGE = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
+const LICENSE_TAB = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=8`;
 const DASHBOARD = `${BASE_URL}/wp-admin/index.php`;
 const BANNER = '.slimstat-license-alert';
 const OPTIONS_TABLE = `${process.env.WP_DB_PREFIX || 'wp_'}options`;
@@ -164,5 +165,30 @@ test.describe('Pro license activation alert', () => {
     await banner.locator('[data-slimstat-alert-toggle]').click();
     await expect(banner).not.toHaveClass(/\bis-minimized\b/);
     await expect(banner.locator('.slimstat-license-alert__text')).toBeVisible();
+  });
+
+  test('License tab: the status badge updates on save, without a manual refresh', async ({ page }) => {
+    // Regression: the settings page builds its fields (including the Pro license
+    // badge) before the save runs, so the badge used to render one save behind
+    // and only corrected itself after a reload. The save flow now re-applies the
+    // on-page filter, so the badge must reflect the saved state in the same
+    // response.
+    //
+    // Driven network-free: start from a present-but-rejected key ("Inactive"),
+    // then clear the key and save. An empty key skips the remote validation, so
+    // the resolved state is the deterministic "Not activated" — no live endpoint.
+    const BADGE = '.slimstat-license-badge';
+    await setLicense(page, 'DEADBEEF-NOT-A-REAL-KEY', false);
+    await page.goto(LICENSE_TAB);
+    await expect(page.locator(BADGE)).toHaveClass(/\bis-inactive\b/);
+
+    await page.fill('input[name="options[slimstat_pro_license_key]"]', '');
+    await page.locator('#slimstat-options-8').evaluate((form) => (form as HTMLFormElement).requestSubmit());
+
+    // Same response, no reload: the "saved" notice confirms the POST landed and
+    // the badge has already flipped to the calm neutral state.
+    await expect(page.getByText(/your new settings have been saved/i)).toBeVisible();
+    await expect(page.locator(BADGE)).toHaveClass(/\bis-neutral\b/);
+    await expect(page.locator(BADGE)).toContainText(/Not activated/i);
   });
 });

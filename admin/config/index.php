@@ -943,6 +943,14 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         // Save the new values in the database
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
 
+        // The page fields were built from pre-save settings (above), so any field
+        // whose content derives from a value this save changed — e.g. the Pro
+        // license badge, rewritten during slimstat_save_options — would lag one
+        // save behind and only correct on the next load. Re-apply the filter so
+        // the form reflects the saved state now. The builders assign by key, so
+        // re-applying is idempotent.
+        $settings = apply_filters('slimstat_options_on_page', $settings);
+
         // Register GDPR banner strings for WPML/Polylang translation
         $gdpr_translatable = [
             'opt_out_message'          => wp_slimstat::$settings['opt_out_message'] ?? '',
