@@ -181,18 +181,25 @@ test.describe('Pro license activation alert', () => {
     await setLicense(page, 'VALID-LOOKING-KEY', true);
     await page.goto(LICENSE_TAB);
     await expect(page.locator(BADGE)).toHaveClass(/\bis-active\b/);
+    // A valid license shows no activation banner, even on the License tab.
+    await expect(page.locator(BANNER)).toHaveCount(0);
 
     await page.fill('input[name="options[slimstat_pro_license_key]"]', '');
     await page.locator('#slimstat-options-8').evaluate((form) => (form as HTMLFormElement).requestSubmit());
 
-    // Same response, no reload: the badge has already flipped to neutral.
+    // Same response, no reload: the badge has already flipped to neutral...
     await expect(page.getByText(/your new settings have been saved/i)).toBeVisible();
     await expect(page.locator(BADGE)).toHaveClass(/\bis-neutral\b/);
     await expect(page.locator(BADGE)).toContainText(/Not activated/i);
+    // ...and the activation banner has appeared in the SAME response. The Pro
+    // admin_init preflight resolves the cleared license before admin_notices
+    // renders, so the banner no longer lags one save behind.
+    await expect(page.locator(BANNER)).toBeVisible();
 
     // And it stays neutral after a real reload (the status was persisted false,
     // not just re-rendered).
     await page.reload();
     await expect(page.locator(BADGE)).toHaveClass(/\bis-neutral\b/);
+    await expect(page.locator(BANNER)).toBeVisible();
   });
 });
