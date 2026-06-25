@@ -1,6 +1,7 @@
 /**
- * SlimStat Pro license activation alert — copy the coupon code to the clipboard
- * in one click, with a brief, accessible "copied" confirmation.
+ * SlimStat Pro license activation alert — minimize/expand the banner (persisted
+ * server-side) and copy the coupon code to the clipboard in one click, with a
+ * brief, accessible "copied" confirmation.
  *
  * Vanilla, dependency-free. Falls back to a hidden-textarea copy where the async
  * Clipboard API is unavailable, and degrades to plain selection if both fail
@@ -76,17 +77,6 @@
 				toggle.setAttribute('aria-label', label);
 			}
 			persistView(minimized ? 'min' : 'full');
-			return;
-		}
-
-		// Dismiss (snoozed server-side).
-		var dismiss = event.target.closest('[data-slimstat-alert-dismiss]');
-		if (dismiss) {
-			var alert = dismiss.closest('.slimstat-license-alert');
-			if (alert && alert.parentNode) {
-				alert.parentNode.removeChild(alert);
-			}
-			persistView('dismissed');
 			return;
 		}
 

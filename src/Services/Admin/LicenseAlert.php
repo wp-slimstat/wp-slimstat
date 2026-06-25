@@ -7,19 +7,18 @@ namespace SlimStat\Services\Admin;
  * assets, only on SlimStat screens for capable users when Pro is installed but
  * unlicensed. It self-clears the moment the license becomes valid.
  *
- * The admin can minimize it to a compact bar (persists, fully reversible) or
- * dismiss it. Because it explains why Pro features are paused, "dismiss" is a
- * snooze (see SNOOZE) rather than a permanent hide, so the message cannot be
- * lost forever. The view state lives in slimstat_options.
+ * The admin can minimize it to a compact bar (persists, fully reversible). It
+ * has no dismiss action on purpose: because it explains why Pro features are
+ * paused, the only way to clear it for good is to fix the license, at which
+ * point it self-clears. The view state lives in slimstat_options.
  */
 class LicenseAlert
 {
 	/** Asset handle (shared by the stylesheet and the script registries). */
 	private const HANDLE = 'wp-slimstat-license-alert';
 
-	/** slimstat_options keys for the per-site view state. */
-	private const VIEW_KEY    = 'license_alert_view';
-	private const DISMISS_KEY = 'license_alert_dismissed_at';
+	/** slimstat_options key for the per-site view state. */
+	private const VIEW_KEY = 'license_alert_view';
 
 	/** AJAX action + nonce name for persisting the view state. */
 	private const AJAX_ACTION = 'slimstat_license_alert_view';
@@ -42,26 +41,15 @@ class LicenseAlert
 	}
 
 	/**
-	 * Seconds a "dismiss" hides the banner before it returns. A week balances
-	 * "let me get on with my work" against not silently burying the reason Pro
-	 * features are off.
-	 *
-	 * @return int
-	 */
-	private static function snooze()
-	{
-		return 7 * DAY_IN_SECONDS;
-	}
-
-	/**
-	 * Current view state: 'full' (default), 'min' (collapsed) or 'dismissed'.
+	 * Current view state: 'full' (default) or 'min' (collapsed). Any other stored
+	 * value (e.g. a legacy 'dismissed') falls back to 'full' so the banner shows.
 	 *
 	 * @return string
 	 */
 	private static function view()
 	{
 		$view = \wp_slimstat::$settings[self::VIEW_KEY] ?? 'full';
-		return \in_array($view, ['full', 'min', 'dismissed'], true) ? $view : 'full';
+		return \in_array($view, ['full', 'min'], true) ? $view : 'full';
 	}
 
 	/**
@@ -79,7 +67,7 @@ class LicenseAlert
 		}
 
 		$view = isset($_POST['view']) ? \sanitize_key(\wp_unslash($_POST['view'])) : '';
-		if (!\in_array($view, ['full', 'min', 'dismissed'], true)) {
+		if (!\in_array($view, ['full', 'min'], true)) {
 			\wp_send_json_error();
 		}
 
@@ -88,16 +76,10 @@ class LicenseAlert
 			$options = [];
 		}
 		$options[self::VIEW_KEY] = $view;
-		if ('dismissed' === $view) {
-			$options[self::DISMISS_KEY] = \time();
-		}
 		\wp_slimstat::update_option('slimstat_options', $options);
 
 		// Keep the in-memory copy consistent for the rest of this request.
 		\wp_slimstat::$settings[self::VIEW_KEY] = $view;
-		if ('dismissed' === $view) {
-			\wp_slimstat::$settings[self::DISMISS_KEY] = $options[self::DISMISS_KEY];
-		}
 
 		\wp_send_json_success();
 	}
@@ -130,7 +112,7 @@ class LicenseAlert
 			SLIMSTAT_ANALYTICS_VERSION
 		);
 
-		// Tiny dependency-free script for copy-to-clipboard + minimize/dismiss.
+		// Tiny dependency-free script for copy-to-clipboard + minimize/expand.
 		\wp_enqueue_script(
 			self::HANDLE,
 			\plugins_url('/admin/assets/js/license-alert.js', SLIMSTAT_FILE),
@@ -187,14 +169,6 @@ class LicenseAlert
 
 		if (!\wp_slimstat::pro_is_installed() || \wp_slimstat::pro_license_is_valid()) {
 			return self::$show = false;
-		}
-
-		// Honour an active "dismiss" snooze. A minimized banner still shows (small).
-		if ('dismissed' === self::view()) {
-			$at = (int) (\wp_slimstat::$settings[self::DISMISS_KEY] ?? 0);
-			if ($at > 0 && (\time() - $at) < self::snooze()) {
-				return self::$show = false;
-			}
 		}
 
 		return self::$show = true;

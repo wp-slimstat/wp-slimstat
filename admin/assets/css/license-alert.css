@@ -25,7 +25,7 @@
 	box-shadow: var(--ss-shadow-card, 0 1px 4px rgba(60, 60, 90, 0.04));
 }
 
-/* Minimize / dismiss controls, pinned to the top-inline-end corner. */
+/* Minimize / expand control, pinned to the top-inline-end corner. */
 .slimstat-license-alert__controls {
 	position: absolute;
 	top: 10px;
@@ -128,8 +128,8 @@
 .slimstat-license-alert__title {
 	margin: 0 0 6px;
 	padding: 0;
-	/* Keep the heading clear of the top-end controls. */
-	padding-inline-end: 70px;
+	/* Keep the heading clear of the single top-end control. */
+	padding-inline-end: 44px;
 	font-size: var(--ss-text-lg, 16px);
 	font-weight: 600;
 	line-height: 1.3;

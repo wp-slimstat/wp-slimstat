@@ -143,26 +143,26 @@ test.describe('Pro license activation alert', () => {
     expect(startWidth).toBe('1px');
   });
 
-  test('Banner can be minimized, expanded, and dismissed (persists)', async ({ page }) => {
+  test('Banner can be minimized and expanded, with no dismiss action', async ({ page }) => {
     await setLicense(page, 'TESTKEY-E2E', false);
     await page.goto(SLIMSTAT_PAGE);
     const banner = page.locator(BANNER);
     await expect(banner).toBeVisible();
 
-    // Minimize → compact bar, body text hidden.
+    // There is no close/dismiss control: the banner explains why Pro is off and
+    // only clears when the license is fixed. Minimize is the sole affordance.
+    await expect(banner.locator('[data-slimstat-alert-dismiss]')).toHaveCount(0);
+
+    // Minimize → compact bar, body text hidden, persists across a reload.
     await banner.locator('[data-slimstat-alert-toggle]').click();
     await expect(banner).toHaveClass(/\bis-minimized\b/);
     await expect(banner.locator('.slimstat-license-alert__text')).toBeHidden();
+    await page.reload();
+    await expect(page.locator(BANNER)).toHaveClass(/\bis-minimized\b/);
 
-    // Expand → restored.
+    // Expand → restored, and the banner is never removed from the page.
     await banner.locator('[data-slimstat-alert-toggle]').click();
     await expect(banner).not.toHaveClass(/\bis-minimized\b/);
     await expect(banner.locator('.slimstat-license-alert__text')).toBeVisible();
-
-    // Dismiss → removed, and stays gone after reload (snoozed server-side).
-    await banner.locator('[data-slimstat-alert-dismiss]').click();
-    await expect(banner).toHaveCount(0);
-    await page.reload();
-    await expect(page.locator(BANNER)).toHaveCount(0);
   });
 });
