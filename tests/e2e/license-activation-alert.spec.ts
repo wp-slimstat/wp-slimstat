@@ -142,4 +142,27 @@ test.describe('Pro license activation alert', () => {
       .evaluate((el) => getComputedStyle(el).borderInlineStartWidth);
     expect(startWidth).toBe('1px');
   });
+
+  test('Banner can be minimized, expanded, and dismissed (persists)', async ({ page }) => {
+    await setLicense(page, 'TESTKEY-E2E', false);
+    await page.goto(SLIMSTAT_PAGE);
+    const banner = page.locator(BANNER);
+    await expect(banner).toBeVisible();
+
+    // Minimize → compact bar, body text hidden.
+    await banner.locator('[data-slimstat-alert-toggle]').click();
+    await expect(banner).toHaveClass(/\bis-minimized\b/);
+    await expect(banner.locator('.slimstat-license-alert__text')).toBeHidden();
+
+    // Expand → restored.
+    await banner.locator('[data-slimstat-alert-toggle]').click();
+    await expect(banner).not.toHaveClass(/\bis-minimized\b/);
+    await expect(banner.locator('.slimstat-license-alert__text')).toBeVisible();
+
+    // Dismiss → removed, and stays gone after reload (snoozed server-side).
+    await banner.locator('[data-slimstat-alert-dismiss]').click();
+    await expect(banner).toHaveCount(0);
+    await page.reload();
+    await expect(page.locator(BANNER)).toHaveCount(0);
+  });
 });

@@ -45,7 +45,52 @@
 		}, 1600);
 	}
 
+	function persistView(view) {
+		var cfg = window.SlimStatLicenseAlert;
+		if (!cfg || !cfg.ajaxUrl) {
+			return;
+		}
+		var body = new URLSearchParams();
+		body.append('action', cfg.action);
+		body.append('nonce', cfg.nonce);
+		body.append('view', view);
+		window
+			.fetch(cfg.ajaxUrl, { method: 'POST', credentials: 'same-origin', body: body })
+			.catch(function () {});
+	}
+
 	document.addEventListener('click', function (event) {
+		// Minimize / expand.
+		var toggle = event.target.closest('[data-slimstat-alert-toggle]');
+		if (toggle) {
+			var panel = toggle.closest('.slimstat-license-alert');
+			if (!panel) {
+				return;
+			}
+			var minimized = panel.classList.toggle('is-minimized');
+			toggle.setAttribute('aria-expanded', minimized ? 'false' : 'true');
+			var label = minimized
+				? toggle.getAttribute('data-label-expand')
+				: toggle.getAttribute('data-label-minimize');
+			if (label) {
+				toggle.setAttribute('aria-label', label);
+			}
+			persistView(minimized ? 'min' : 'full');
+			return;
+		}
+
+		// Dismiss (snoozed server-side).
+		var dismiss = event.target.closest('[data-slimstat-alert-dismiss]');
+		if (dismiss) {
+			var alert = dismiss.closest('.slimstat-license-alert');
+			if (alert && alert.parentNode) {
+				alert.parentNode.removeChild(alert);
+			}
+			persistView('dismissed');
+			return;
+		}
+
+		// Copy the coupon code.
 		var button = event.target.closest('[data-slimstat-copy]');
 		if (!button) {
 			return;

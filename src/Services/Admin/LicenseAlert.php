@@ -4,22 +4,33 @@ namespace SlimStat\Services\Admin;
 
 /**
  * Renders the Pro license activation alert in the WordPress admin and loads its
- * stylesheet, only on SlimStat screens for capable users when Pro is installed
- * but unlicensed. Persistent (non-dismissible) because it explains why Pro
- * features are paused; it self-clears the moment the license becomes valid.
+ * assets, only on SlimStat screens for capable users when Pro is installed but
+ * unlicensed. It self-clears the moment the license becomes valid.
+ *
+ * The admin can minimize it to a compact bar (persists, fully reversible) or
+ * dismiss it. Because it explains why Pro features are paused, "dismiss" is a
+ * snooze (see SNOOZE) rather than a permanent hide, so the message cannot be
+ * lost forever. The view state lives in slimstat_options.
  */
 class LicenseAlert
 {
-	/** Stylesheet handle. */
+	/** Asset handle (shared by the stylesheet and the script registries). */
 	private const HANDLE = 'wp-slimstat-license-alert';
+
+	/** slimstat_options keys for the per-site view state. */
+	private const VIEW_KEY    = 'license_alert_view';
+	private const DISMISS_KEY = 'license_alert_dismissed_at';
+
+	/** AJAX action + nonce name for persisting the view state. */
+	private const AJAX_ACTION = 'slimstat_license_alert_view';
 
 	/** Memoised shouldShow() result for the current request. */
 	private static $show = null;
 
 	/**
-	 * Register the admin hooks. Both callbacks re-check the same guard, so this
-	 * is safe to call on every request; it no-ops outside the admin and on
-	 * non-SlimStat screens.
+	 * Register the admin hooks. The enqueue/render callbacks re-check the same
+	 * guard, so this is safe to call on every request; it no-ops outside the admin
+	 * and on non-SlimStat screens. The AJAX handler persists the view state.
 	 *
 	 * @return void
 	 */
@@ -27,6 +38,68 @@ class LicenseAlert
 	{
 		\add_action('admin_enqueue_scripts', [self::class, 'enqueue']);
 		\add_action('admin_notices', [self::class, 'render']);
+		\add_action('wp_ajax_' . self::AJAX_ACTION, [self::class, 'ajaxSaveView']);
+	}
+
+	/**
+	 * Seconds a "dismiss" hides the banner before it returns. A week balances
+	 * "let me get on with my work" against not silently burying the reason Pro
+	 * features are off.
+	 *
+	 * @return int
+	 */
+	private static function snooze()
+	{
+		return 7 * DAY_IN_SECONDS;
+	}
+
+	/**
+	 * Current view state: 'full' (default), 'min' (collapsed) or 'dismissed'.
+	 *
+	 * @return string
+	 */
+	private static function view()
+	{
+		$view = \wp_slimstat::$settings[self::VIEW_KEY] ?? 'full';
+		return \in_array($view, ['full', 'min', 'dismissed'], true) ? $view : 'full';
+	}
+
+	/**
+	 * Persist the view state. Re-reads the option fresh and writes only the two
+	 * view keys, so a concurrent settings edit is never clobbered.
+	 *
+	 * @return void
+	 */
+	public static function ajaxSaveView()
+	{
+		\check_ajax_referer(self::AJAX_ACTION, 'nonce');
+
+		if (!\current_user_can('manage_options')) {
+			\wp_send_json_error();
+		}
+
+		$view = isset($_POST['view']) ? \sanitize_key(\wp_unslash($_POST['view'])) : '';
+		if (!\in_array($view, ['full', 'min', 'dismissed'], true)) {
+			\wp_send_json_error();
+		}
+
+		$options = \get_option('slimstat_options', []);
+		if (!\is_array($options)) {
+			$options = [];
+		}
+		$options[self::VIEW_KEY] = $view;
+		if ('dismissed' === $view) {
+			$options[self::DISMISS_KEY] = \time();
+		}
+		\wp_slimstat::update_option('slimstat_options', $options);
+
+		// Keep the in-memory copy consistent for the rest of this request.
+		\wp_slimstat::$settings[self::VIEW_KEY] = $view;
+		if ('dismissed' === $view) {
+			\wp_slimstat::$settings[self::DISMISS_KEY] = $options[self::DISMISS_KEY];
+		}
+
+		\wp_send_json_success();
 	}
 
 	/**
@@ -57,7 +130,7 @@ class LicenseAlert
 			SLIMSTAT_ANALYTICS_VERSION
 		);
 
-		// Tiny dependency-free script for the one-click coupon copy.
+		// Tiny dependency-free script for copy-to-clipboard + minimize/dismiss.
 		\wp_enqueue_script(
 			self::HANDLE,
 			\plugins_url('/admin/assets/js/license-alert.js', SLIMSTAT_FILE),
@@ -65,6 +138,12 @@ class LicenseAlert
 			SLIMSTAT_ANALYTICS_VERSION,
 			true
 		);
+
+		\wp_localize_script(self::HANDLE, 'SlimStatLicenseAlert', [
+			'ajaxUrl' => \admin_url('admin-ajax.php'),
+			'action'  => self::AJAX_ACTION,
+			'nonce'   => \wp_create_nonce(self::AJAX_ACTION),
+		]);
 	}
 
 	/**
@@ -79,8 +158,9 @@ class LicenseAlert
 		}
 
 		// State A: no key entered yet (finish setup). State B: key present but
-		// inactive/expired (reactivate). The partial reads $state.
-		$state = ConditionTagEvaluator::hasNoLicense() ? 'no-key' : 'inactive';
+		// inactive/expired (reactivate). The partial reads $state and $minimized.
+		$state     = ConditionTagEvaluator::hasNoLicense() ? 'no-key' : 'inactive';
+		$minimized = ('min' === self::view());
 
 		include \plugin_dir_path(SLIMSTAT_FILE) . 'admin/view/partials/license-alert.php';
 	}
@@ -105,7 +185,19 @@ class LicenseAlert
 			return self::$show = false;
 		}
 
-		return self::$show = (\wp_slimstat::pro_is_installed() && !\wp_slimstat::pro_license_is_valid());
+		if (!\wp_slimstat::pro_is_installed() || \wp_slimstat::pro_license_is_valid()) {
+			return self::$show = false;
+		}
+
+		// Honour an active "dismiss" snooze. A minimized banner still shows (small).
+		if ('dismissed' === self::view()) {
+			$at = (int) (\wp_slimstat::$settings[self::DISMISS_KEY] ?? 0);
+			if ($at > 0 && (\time() - $at) < self::snooze()) {
+				return self::$show = false;
+			}
+		}
+
+		return self::$show = true;
 	}
 
 	/**

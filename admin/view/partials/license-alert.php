@@ -41,8 +41,17 @@ if ('no-key' === $slimstat_la_state) {
 	$slimstat_la_primary   = __('Reactivate your license', 'wp-slimstat');
 	$slimstat_la_secondary = __('Find your license key', 'wp-slimstat');
 }
+$slimstat_la_minimized = !empty($minimized);
 ?>
-<div class="notice slimstat-notice notice-warning slimstat-license-alert" role="region" aria-label="<?php esc_attr_e('SlimStat Pro license', 'wp-slimstat'); ?>">
+<div class="notice slimstat-notice notice-warning slimstat-license-alert<?php echo $slimstat_la_minimized ? ' is-minimized' : ''; ?>" role="region" aria-label="<?php esc_attr_e('SlimStat Pro license', 'wp-slimstat'); ?>">
+	<div class="slimstat-license-alert__controls">
+		<button type="button" class="slimstat-license-alert__control slimstat-license-alert__minimize" data-slimstat-alert-toggle aria-expanded="<?php echo $slimstat_la_minimized ? 'false' : 'true'; ?>" data-label-minimize="<?php esc_attr_e('Minimize this notice', 'wp-slimstat'); ?>" data-label-expand="<?php esc_attr_e('Expand this notice', 'wp-slimstat'); ?>" aria-label="<?php echo $slimstat_la_minimized ? esc_attr__('Expand this notice', 'wp-slimstat') : esc_attr__('Minimize this notice', 'wp-slimstat'); ?>">
+			<span class="dashicons dashicons-arrow-up-alt2" aria-hidden="true"></span>
+		</button>
+		<button type="button" class="slimstat-license-alert__control slimstat-license-alert__dismiss" data-slimstat-alert-dismiss aria-label="<?php esc_attr_e('Dismiss this notice', 'wp-slimstat'); ?>">
+			<span class="dashicons dashicons-no-alt" aria-hidden="true"></span>
+		</button>
+	</div>
 	<div class="slimstat-license-alert__icon" aria-hidden="true">
 		<span class="dashicons dashicons-lock"></span>
 	</div>

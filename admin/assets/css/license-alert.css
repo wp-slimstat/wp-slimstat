@@ -13,6 +13,7 @@
  */
 
 .slimstat-license-alert {
+	position: relative;
 	display: flex;
 	gap: var(--ss-space-4, 16px);
 	align-items: flex-start;
@@ -22,6 +23,73 @@
 	border: 1px solid var(--ss-border, #e2e4e7);
 	border-radius: var(--ss-radius-md, 12px);
 	box-shadow: var(--ss-shadow-card, 0 1px 4px rgba(60, 60, 90, 0.04));
+}
+
+/* Minimize / dismiss controls, pinned to the top-inline-end corner. */
+.slimstat-license-alert__controls {
+	position: absolute;
+	top: 10px;
+	inset-inline-end: 10px;
+	display: flex;
+	gap: 2px;
+}
+
+.slimstat-license-alert__control {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: var(--ss-radius-xs, 6px);
+	background: transparent;
+	color: var(--ss-text-muted, #56585a);
+	cursor: pointer;
+	transition: background var(--ss-duration-fast, 0.15s) ease, color var(--ss-duration-fast, 0.15s) ease;
+}
+
+.slimstat-license-alert__control:hover {
+	background: var(--ss-surface-tint, #f6f7f7);
+	color: var(--ss-text-strong, #111827);
+}
+
+.slimstat-license-alert__control:focus-visible {
+	outline: 2px solid var(--ss-focus, #2271b1);
+	outline-offset: 1px;
+}
+
+.slimstat-license-alert__control .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	transition: transform var(--ss-duration-fast, 0.15s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+/* Minimized: collapse to a compact one-line bar — keep the icon, title and
+   controls, drop everything else. The chevron flips to point down (= expand). */
+.slimstat-license-alert.is-minimized {
+	/* Stay a compact row even below the 782px stacking breakpoint. */
+	flex-direction: row;
+	align-items: center;
+	padding-top: var(--ss-space-3, 12px);
+	padding-bottom: var(--ss-space-3, 12px);
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__text,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__actions,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__meta,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__support {
+	display: none;
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__title {
+	margin: 0;
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__minimize .dashicons {
+	transform: rotate(180deg);
 }
 
 /* Beat WordPress core's .notice-warning left side-stripe regardless of stylesheet
@@ -60,6 +128,8 @@
 .slimstat-license-alert__title {
 	margin: 0 0 6px;
 	padding: 0;
+	/* Keep the heading clear of the top-end controls. */
+	padding-inline-end: 70px;
 	font-size: var(--ss-text-lg, 16px);
 	font-weight: 600;
 	line-height: 1.3;
