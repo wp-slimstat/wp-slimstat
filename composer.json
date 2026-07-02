@@ -4,7 +4,8 @@
   "homepage": "https://wp-slimstat.com/",
   "license": "MIT",
   "config": {
-    "platform-check": false
+    "platform-check": false,
+    "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e"
   },
   "repositories": [
     {
@@ -57,7 +58,7 @@
       "~/.composer/vendor/bin/mozart compose",
       "composer dump-autoload"
     ],
-    "build:autoload": "composer dump-autoload --no-dev --classmap-authoritative",
+    "build:autoload": "composer dump-autoload --no-dev -o",
     "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes",
     "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",
     "i18n": [
@@ -109,6 +110,8 @@
     "test:access-log-author-link": "php tests/access-log-author-edit-link-test.php",
     "test:funnels-widget-compact": "php tests/funnels-widget-compact-test.php",
     "test:css-selector-scope": "php tests/css-selector-scope-test.php",
+    "test:classmap-completeness": "php tests/classmap-completeness-test.php",
+    "test:gdpr-banner-theme-mode": "php tests/gdpr-banner-theme-mode-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -132,7 +135,9 @@
       "@test:goals-indexes-migration",
       "@test:access-log-author-link",
       "@test:funnels-widget-compact",
-      "@test:css-selector-scope"
+      "@test:css-selector-scope",
+      "@test:classmap-completeness",
+      "@test:gdpr-banner-theme-mode"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
