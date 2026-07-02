@@ -1,3 +1,9 @@
+= 5.5.1 - Unreleased =
+
+**Compatibility & stability**
+
+- Fixed: Deleting the SlimStat plugin no longer erases your analytics by default. Your stats, settings, and stored data are removed only if you explicitly turned on "Delete Data on Uninstall" (Settings → Maintenance). Previously, on a normal install that had never touched that option, deleting the plugin dropped all SlimStat tables and settings.
+
 = 5.5.0 - 2026-06-24 =
 
 **New: Goals & Funnels**

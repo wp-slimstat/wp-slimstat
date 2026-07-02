@@ -7,8 +7,9 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 
 $slimstat_options = get_option('slimstat_options', []);
 
-if (isset($slimstat_options['delete_data_on_uninstall']) && 'on' != $slimstat_options['delete_data_on_uninstall']) {
-    // Do not delete db data and settings
+// Delete data only when the user explicitly opted in (Settings → Maintenance →
+// "Delete Data on Uninstall"); an absent/any-non-'on' value keeps all data.
+if ('on' !== ($slimstat_options['delete_data_on_uninstall'] ?? 'no')) {
     return;
 }
 

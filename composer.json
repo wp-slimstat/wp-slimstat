@@ -109,6 +109,7 @@
     "test:access-log-author-link": "php tests/access-log-author-edit-link-test.php",
     "test:funnels-widget-compact": "php tests/funnels-widget-compact-test.php",
     "test:css-selector-scope": "php tests/css-selector-scope-test.php",
+    "test:uninstall-data-safety": "php tests/uninstall-data-safety-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -132,7 +133,8 @@
       "@test:goals-indexes-migration",
       "@test:access-log-author-link",
       "@test:funnels-widget-compact",
-      "@test:css-selector-scope"
+      "@test:css-selector-scope",
+      "@test:uninstall-data-safety"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
