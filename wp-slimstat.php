@@ -844,26 +844,40 @@ class wp_slimstat
 
     public static function init_plugin()
     {
-        // Fail-soft: these unconditional every-request calls autoload src classes.
-        // A class-load failure must degrade a sub-feature, not white-screen every
-        // page and the wp-login screen (issue #325).
+        // Fail-soft (issue #325): each of these unconditional every-request calls
+        // autoloads a src class. Isolate them per step so one class-load failure
+        // degrades only that sub-feature instead of skipping the rest and, worse,
+        // white-screening every page and the wp-login screen.
+
+        // Include our browser detector library.
         try {
-            // Include our browser detector library
             \SlimStat\Services\Browscap::init();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: Browscap init failed: ' . $e->getMessage(), 'error');
+        }
 
-            // Make sure the upload directory is exist and is protected.
+        // Make sure the upload directory exists and is protected.
+        try {
             self::create_upload_directory();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: upload directory setup failed: ' . $e->getMessage(), 'error');
+        }
 
-            // Ensure daily salt exists for IP hashing (GDPR compliance)
-            // This runs on every page load but only generates if missing
+        // Ensure the daily salt exists for IP hashing (GDPR compliance). Runs on
+        // every page load but only generates if missing.
+        try {
             \SlimStat\Providers\IPHashProvider::generateDailySalt();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: daily IP-hash salt generation failed: ' . $e->getMessage(), 'error');
+        }
 
-            // Initialize adblock bypass functionality
+        // Initialize adblock bypass functionality.
+        try {
             \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
             add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
             add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
         } catch (\Throwable $e) {
-            self::log('SlimStat: init_plugin failed to fully initialize: ' . $e->getMessage(), 'error');
+            self::log('SlimStat: adblock-bypass setup failed: ' . $e->getMessage(), 'error');
         }
     }
 
