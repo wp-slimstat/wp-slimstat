@@ -21,28 +21,46 @@
 
 declare(strict_types=1);
 
-$plugin_root   = dirname(__DIR__);
-$src_dir       = $plugin_root . '/src';
-$deps_prefix   = $src_dir . '/Dependencies';
-$classmap_file = $plugin_root . '/vendor/composer/autoload_classmap.php';
-
-if (!is_file($classmap_file)) {
-    fwrite(STDERR, "FAIL: classmap not found at vendor/composer/autoload_classmap.php\n");
-    exit(1);
+/**
+ * Read a repo file as it is COMMITTED (what ships to wp.org via SVN), not the
+ * working-tree copy. CI restores a cached vendor/ over the checkout, so the
+ * working-tree autoload_* files can be stale/sparse at test time; the committed
+ * blob is what actually ships and is what this gate must validate. Falls back to
+ * the working-tree file when git is unavailable (e.g. an exported tarball).
+ */
+function slimstat_committed_source(string $root, string $rel): string
+{
+    $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg('HEAD:' . $rel) . ' 2>/dev/null');
+    if (is_string($out) && $out !== '') {
+        return $out;
+    }
+    $path = $root . '/' . $rel;
+    return is_file($path) ? (string) file_get_contents($path) : '';
 }
 
-// `require` returns the array WITHOUT registering the autoloader or loading classes.
-$classmap = require $classmap_file;
+$plugin_root = dirname(__DIR__);
+$src_dir     = $plugin_root . '/src';
+$deps_prefix = $src_dir . '/Dependencies';
+
+// --- load the committed classmap array (keys = FQCNs; the file paths are unused) ---
+$classmap_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_classmap.php');
+if ($classmap_src === '') {
+    fwrite(STDERR, "FAIL: could not read the committed vendor/composer/autoload_classmap.php\n");
+    exit(1);
+}
+$classmap_tmp = tempnam(sys_get_temp_dir(), 'slimcm');
+file_put_contents($classmap_tmp, $classmap_src);
+$classmap = require $classmap_tmp; // returns the array; defines no classes
+@unlink($classmap_tmp);
 if (!is_array($classmap)) {
     fwrite(STDERR, "FAIL: autoload_classmap.php did not return an array\n");
     exit(1);
 }
 
-// --- guard: the shipped loader must NOT be classmap-authoritative ---
+// --- guard: the committed loader must NOT be classmap-authoritative ---
 // Authoritative mode disables the PSR-4 filesystem fallback, so a single missing
 // classmap entry becomes a fatal on every request (issue #325). Keep the fallback.
-$autoload_real = $plugin_root . '/vendor/composer/autoload_real.php';
-$real_src      = is_file($autoload_real) ? (string) file_get_contents($autoload_real) : '';
+$real_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_real.php');
 if (strpos($real_src, 'setClassMapAuthoritative(true)') !== false) {
     fwrite(STDERR, "FAIL: vendor/composer/autoload_real.php enables setClassMapAuthoritative(true).\n");
     fwrite(STDERR, "That removes the PSR-4 filesystem fallback and makes any missing class a site-wide fatal (issue #325).\n");

@@ -112,6 +112,7 @@
     "test:css-selector-scope": "php tests/css-selector-scope-test.php",
     "test:classmap-completeness": "php tests/classmap-completeness-test.php",
     "test:gdpr-banner-theme-mode": "php tests/gdpr-banner-theme-mode-test.php",
+    "test:rest-api-fail-soft": "php tests/rest-api-fail-soft-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -137,7 +138,8 @@
       "@test:funnels-widget-compact",
       "@test:css-selector-scope",
       "@test:classmap-completeness",
-      "@test:gdpr-banner-theme-mode"
+      "@test:gdpr-banner-theme-mode",
+      "@test:rest-api-fail-soft"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
