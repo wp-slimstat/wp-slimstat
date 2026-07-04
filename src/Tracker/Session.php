@@ -39,8 +39,7 @@ class Session
 			$integrationKey = Consent::getIntegrationKey();
 
 			if ('slimstat_banner' === $integrationKey) {
-				$gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
-				$hasCmpConsent = $gdpr_service->hasConsent();
+				$hasCmpConsent = Consent::bannerHasConsentSafe(\wp_slimstat::$settings);
 			} elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {
 				$wpConsentCategory = (string) (\wp_slimstat::$settings['consent_level_integration'] ?? 'statistics');
 				try {

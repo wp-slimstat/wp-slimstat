@@ -1391,20 +1391,30 @@ class wp_slimstat
 		$params['use_slimstat_banner'] = ('on' === $params['gdpr_enabled'] && 'on' === (self::$settings['use_slimstat_banner'] ?? 'off')) ? 'on' : 'off';
 
 		if ('on' === $params['use_slimstat_banner']) {
-			// Set GDPR consent endpoint based on tracking method
-			if ('rest' === $method) {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
-			} elseif ('ajax' === $method) {
-				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
-			} elseif ('adblock_bypass' === $method) {
-				$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
-			} else {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			// Fail-soft (issue #325): GDPRService may be unloadable. Reading its
+			// cookie-name constant here runs on wp_enqueue_scripts AND
+			// login_enqueue_scripts, so an uncaught error would white-screen the
+			// front page and lock the admin out of wp-login. Degrade the banner
+			// for this request instead of fatally aborting the enqueue.
+			try {
+				// Set GDPR consent endpoint based on tracking method
+				if ('rest' === $method) {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				} elseif ('ajax' === $method) {
+					$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+				} elseif ('adblock_bypass' === $method) {
+					$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
+				} else {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				}
+				$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+				$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
+				$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+				$params['gdpr_consent_method'] = $method;
+			} catch (\Throwable $e) {
+				self::log('SlimStat: GDPR banner params unavailable, disabling banner this request: ' . $e->getMessage(), 'error');
+				$params['use_slimstat_banner'] = 'off';
 			}
-			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
-			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
-			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
-			$params['gdpr_consent_method'] = $method;
 		}
 
         if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
