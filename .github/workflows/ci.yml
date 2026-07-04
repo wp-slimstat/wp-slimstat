@@ -71,7 +71,7 @@ jobs:
 
       - name: Dump autoload (without mozart)
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer dump-autoload --no-interaction
+        run: composer dump-autoload -o --no-interaction
 
       - name: Run PHPUnit unit tests
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
@@ -126,7 +126,7 @@ jobs:
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        run: composer dump-autoload --no-interaction
+        run: composer dump-autoload -o --no-interaction
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
         # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
@@ -431,7 +431,7 @@ jobs:
 
       - name: Dump autoload (without mozart)
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer dump-autoload --no-interaction
+        run: composer dump-autoload -o --no-interaction
 
       - name: Run full PHPUnit suite
         # composer test:all runs phpunit + all standalone PHP test scripts.

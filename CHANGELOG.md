@@ -1,3 +1,9 @@
+= 5.5.1 - Unreleased =
+
+**Compatibility & stability**
+
+- Fixed: A rare plugin-loading problem could take down your whole site and lock you out of wp-admin with a blank white screen ("critical error"). If a plugin file no longer matched its build index — for example after an interrupted update, a manually uploaded copy, or stale server caching — SlimStat could stop every page, including the login screen, from loading. The plugin now recovers gracefully: it falls back to loading files directly, and if one part still can't load it disables just that feature instead of crashing the site. A build-time safety check was also added so an incomplete package can't be released. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
+
 = 5.5.0 - 2026-06-24 =
 
 **New: Goals & Funnels**
