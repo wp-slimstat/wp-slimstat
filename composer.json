@@ -113,6 +113,7 @@
     "test:classmap-completeness": "php tests/classmap-completeness-test.php",
     "test:gdpr-banner-theme-mode": "php tests/gdpr-banner-theme-mode-test.php",
     "test:rest-api-fail-soft": "php tests/rest-api-fail-soft-test.php",
+    "test:uninstall-data-safety": "php tests/uninstall-data-safety-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -139,7 +140,8 @@
       "@test:css-selector-scope",
       "@test:classmap-completeness",
       "@test:gdpr-banner-theme-mode",
-      "@test:rest-api-fail-soft"
+      "@test:rest-api-fail-soft",
+      "@test:uninstall-data-safety"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
