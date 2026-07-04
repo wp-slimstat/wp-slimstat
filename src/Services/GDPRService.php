@@ -240,8 +240,8 @@ class GDPRService
 			esc_html($denyText)
 		);
 
-        $theme_mode = $this->settings['gdpr_theme_mode'] ?? 'auto';
-        $classes    = in_array( $theme_mode, ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $theme_mode ) . '-mode' : '';
+		$theme_mode = $this->settings['gdpr_theme_mode'] ?? 'auto';
+		$classes    = in_array( $theme_mode, ['dark', 'light'], true ) ? ' gdpr-' . esc_attr( $theme_mode ) . '-mode' : '';
 
 		return sprintf(
 			'<div id="slimstat-gdpr-banner" class="slimstat-gdpr-banner%s">
