@@ -66,8 +66,7 @@ class IPHashProvider
             // Check CMP consent only if integration is configured
             if (!empty($integrationKey)) {
                 if ('slimstat_banner' === $integrationKey) {
-                    $gdpr_service = new \SlimStat\Services\GDPRService(\wp_slimstat::$settings);
-                    if ($gdpr_service->hasConsent()) {
+                    if (Consent::bannerHasConsentSafe(\wp_slimstat::$settings)) {
                         $hasCmpConsentButNoCookie = true;
                     }
                     } elseif ('wp_consent_api' === $integrationKey && function_exists('wp_has_consent')) {

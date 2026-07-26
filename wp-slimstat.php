@@ -223,7 +223,12 @@ class wp_slimstat
      */
     public static function init()
     {
-        \SlimStat\Providers\RestApiManager::run();
+        // Fail-soft: a class-load failure here must not white-screen every request (issue #325).
+        try {
+            \SlimStat\Providers\RestApiManager::run();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: REST API manager failed to initialize: ' . $e->getMessage(), 'error');
+        }
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
@@ -462,7 +467,11 @@ class wp_slimstat
         add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
 
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
-        \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
+        try {
+            \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: consent AJAX handler registration failed: ' . $e->getMessage(), 'error');
+        }
 
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
@@ -835,20 +844,41 @@ class wp_slimstat
 
     public static function init_plugin()
     {
-        // Include our browser detector library
-        \SlimStat\Services\Browscap::init();
+        // Fail-soft (issue #325): each of these unconditional every-request calls
+        // autoloads a src class. Isolate them per step so one class-load failure
+        // degrades only that sub-feature instead of skipping the rest and, worse,
+        // white-screening every page and the wp-login screen.
 
-        // Make sure the upload directory is exist and is protected.
-        self::create_upload_directory();
+        // Include our browser detector library.
+        try {
+            \SlimStat\Services\Browscap::init();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: Browscap init failed: ' . $e->getMessage(), 'error');
+        }
 
-        // Ensure daily salt exists for IP hashing (GDPR compliance)
-        // This runs on every page load but only generates if missing
-        \SlimStat\Providers\IPHashProvider::generateDailySalt();
+        // Make sure the upload directory exists and is protected.
+        try {
+            self::create_upload_directory();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: upload directory setup failed: ' . $e->getMessage(), 'error');
+        }
 
-        // Initialize adblock bypass functionality
-        \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
-        add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
-        add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
+        // Ensure the daily salt exists for IP hashing (GDPR compliance). Runs on
+        // every page load but only generates if missing.
+        try {
+            \SlimStat\Providers\IPHashProvider::generateDailySalt();
+        } catch (\Throwable $e) {
+            self::log('SlimStat: daily IP-hash salt generation failed: ' . $e->getMessage(), 'error');
+        }
+
+        // Initialize adblock bypass functionality.
+        try {
+            \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
+            add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
+            add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
+        } catch (\Throwable $e) {
+            self::log('SlimStat: adblock-bypass setup failed: ' . $e->getMessage(), 'error');
+        }
     }
 
     /**
@@ -1361,20 +1391,30 @@ class wp_slimstat
 		$params['use_slimstat_banner'] = ('on' === $params['gdpr_enabled'] && 'on' === (self::$settings['use_slimstat_banner'] ?? 'off')) ? 'on' : 'off';
 
 		if ('on' === $params['use_slimstat_banner']) {
-			// Set GDPR consent endpoint based on tracking method
-			if ('rest' === $method) {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
-			} elseif ('ajax' === $method) {
-				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
-			} elseif ('adblock_bypass' === $method) {
-				$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
-			} else {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			// Fail-soft (issue #325): GDPRService may be unloadable. Reading its
+			// cookie-name constant here runs on wp_enqueue_scripts AND
+			// login_enqueue_scripts, so an uncaught error would white-screen the
+			// front page and lock the admin out of wp-login. Degrade the banner
+			// for this request instead of fatally aborting the enqueue.
+			try {
+				// Set GDPR consent endpoint based on tracking method
+				if ('rest' === $method) {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				} elseif ('ajax' === $method) {
+					$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+				} elseif ('adblock_bypass' === $method) {
+					$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
+				} else {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				}
+				$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+				$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
+				$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+				$params['gdpr_consent_method'] = $method;
+			} catch (\Throwable $e) {
+				self::log('SlimStat: GDPR banner params unavailable, disabling banner this request: ' . $e->getMessage(), 'error');
+				$params['use_slimstat_banner'] = 'off';
 			}
-			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
-			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
-			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
-			$params['gdpr_consent_method'] = $method;
 		}
 
         if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
@@ -1463,14 +1503,20 @@ class wp_slimstat
 			return;
 		}
 
-		$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
-		$banner_html  = $gdpr_service->getBannerHtml();
+		// Fail-soft: this also runs on login_footer, so a render failure must not
+		// white-screen the wp-login page and lock the admin out (issue #325).
+		try {
+			$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
+			$banner_html  = $gdpr_service->getBannerHtml();
 
-		if ('' === $banner_html) {
-			return;
+			if ('' === $banner_html) {
+				return;
+			}
+
+			echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
+		} catch (\Throwable $e) {
+			self::log('SlimStat: GDPR banner render failed: ' . $e->getMessage(), 'error');
 		}
-
-		echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
 	}
 
     public static function add_defer_to_script_tag($_tag, $_handle)
