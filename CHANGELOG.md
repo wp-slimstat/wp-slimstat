@@ -1,9 +1,18 @@
-= 5.5.1 - Unreleased =
+= 5.5.1 - 2026-07-26 =
 
 **Compatibility & stability**
 
 - Fixed: A rare plugin-loading problem could take down your whole site and lock you out of wp-admin with a blank white screen ("critical error"). If a plugin file no longer matched its build index — for example after an interrupted update, a manually uploaded copy, or stale server caching — SlimStat could stop every page, including the login screen, from loading. The plugin now recovers gracefully: it falls back to loading files directly, and if one part still can't load it disables just that feature instead of crashing the site. A build-time safety check was also added so an incomplete package can't be released. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
-- Fixed: Deleting the SlimStat plugin no longer erases your analytics by default. Your stats, settings, and stored data are removed only if you explicitly turned on "Delete Data on Uninstall" (Settings → Maintenance). Previously, on a normal install that had never touched that option, deleting the plugin dropped all SlimStat tables and settings.
+  - Note: if your host caches PHP files aggressively (opcache), a blank screen may persist until that cache is flushed — the cached copy of the old loader has to expire first.
+- Fixed: Deleting the SlimStat plugin no longer erases your analytics by default. Your stats, settings, and stored data are removed only if you explicitly turned on "Delete Data on Uninstall" (Settings → Maintenance). Previously, on a normal install that had never touched that option, deleting the plugin dropped all SlimStat tables and settings. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
+  - If you *want* your data removed on uninstall, enable that option before deleting the plugin, or use Settings → Maintenance → Delete Records.
+- Fixed: SlimStat's downloaded geolocation database and browser-detection cache are now always removed when you delete the plugin, even when you keep your analytics. They are regenerable lookup files, and on a default install they could otherwise strand roughly 100 MB in `wp-content/uploads` forever.
+- Fixed: The daily IP-hash salt task is now cleared when the plugin is deactivated or deleted. It was scheduled but never removed, so it kept firing against an inactive plugin.
+- Added: When a feature has to shut itself down to keep your site up, administrators now see exactly what stopped working, instead of the failure being silently swallowed unless `WP_DEBUG` was switched on.
+
+**Documentation**
+
+- Fixed: The plugin description said uninstalling permanently deletes all your stats. That has not been true since this release — it now explains that data is kept by default, and how to opt into deletion. The "Delete Data on Uninstall" setting description was rewritten to state what both the on and off positions do.
 
 = 5.5.0 - 2026-06-24 =
 

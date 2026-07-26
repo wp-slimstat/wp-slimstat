@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.5.0
+ * Version: 5.5.1
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.5.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '5.5.1');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -227,7 +227,7 @@ class wp_slimstat
         try {
             \SlimStat\Providers\RestApiManager::run();
         } catch (\Throwable $e) {
-            self::log('SlimStat: REST API manager failed to initialize: ' . $e->getMessage(), 'error');
+            self::record_degradation('rest_api', $e);
         }
 
         // Load all the settings
@@ -470,7 +470,7 @@ class wp_slimstat
         try {
             \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
         } catch (\Throwable $e) {
-            self::log('SlimStat: consent AJAX handler registration failed: ' . $e->getMessage(), 'error');
+            self::record_degradation('consent_ajax', $e);
         }
 
         // Hook a DB clean-up routine to the daily cronjob
@@ -565,6 +565,111 @@ class wp_slimstat
         // Log when debug is enabled
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
+        }
+    }
+
+    /**
+     * Option holding the fail-soft degradations recorded since the last healthy pass.
+     *
+     * Shape: [ '<step>' => [ 'message' => string, 'time' => int ], ... ]
+     */
+    const DEGRADATION_OPTION = 'slimstat_degradations';
+
+    /** Re-write a still-failing step at most this often, to bound wp_options writes. */
+    const DEGRADATION_REFRESH = 3600;
+
+    /**
+     * Forget a degradation that has not recurred for this long.
+     *
+     * A still-broken step re-stamps its record every DEGRADATION_REFRESH, so a
+     * record older than a few multiples of that means the failure stopped happening
+     * and the notice should clear itself. This is the ONLY healing rule, deliberately:
+     * an in-process "this step succeeded" flag cannot heal `gdpr_banner` or
+     * `gdpr_banner_render`, which run on front-end and wp-login requests — a
+     * different PHP process from the wp-admin one that would read the flag.
+     */
+    const DEGRADATION_TTL = 10800; // 3 hours
+
+    /**
+     * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
+     *
+     * self::log() only writes when WP_DEBUG is on, so on a normal production site
+     * a swallowed \Throwable left no trace anywhere: the plugin looked healthy while
+     * a sub-feature was dead. This persists a bounded record that
+     * wp_slimstat_admin::show_degradation_notice() surfaces to administrators.
+     *
+     * Only touches the database when the recorded message actually changes, so a
+     * persistently broken install does not add a wp_options write to every request.
+     *
+     * @param string     $step Stable machine key for the guarded step, e.g. 'browscap'.
+     * @param \Throwable $e    The swallowed error.
+     * @return void
+     */
+    public static function record_degradation($step, $e)
+    {
+        $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
+
+        $message = substr($message, 0, 200);
+        $now     = time();
+        $stored  = self::get_degradations();
+
+        // Same failure, recorded recently → nothing new to say, skip the write.
+        if (isset($stored[$step]['message'], $stored[$step]['time'])
+            && $stored[$step]['message'] === $message
+            && ($now - (int) $stored[$step]['time']) < self::DEGRADATION_REFRESH
+        ) {
+            return;
+        }
+
+        $stored[$step] = ['message' => $message, 'time' => $now];
+        update_option(self::DEGRADATION_OPTION, $stored);
+    }
+
+    /**
+     * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
+     * filtered out here so a healed failure stops being reported immediately, even
+     * before reconcile_degradations() prunes the stored option.
+     *
+     * @return array<string,array>
+     */
+    public static function get_degradations()
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored)) {
+            return [];
+        }
+
+        $cutoff = time() - self::DEGRADATION_TTL;
+        return array_filter($stored, static function ($record) use ($cutoff) {
+            return isset($record['time']) && (int) $record['time'] >= $cutoff;
+        });
+    }
+
+    /**
+     * Drop stored degradations that have aged out, so the option does not linger in
+     * `alloptions` forever on a site that was broken once and then fixed.
+     *
+     * Hooked on admin_init (and not during ajax), so front-end requests pay nothing.
+     *
+     * @return void
+     */
+    public static function reconcile_degradations()
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored) || !$stored) {
+            return;
+        }
+
+        $remaining = self::get_degradations();
+        if (count($remaining) === count($stored)) {
+            return;
+        }
+
+        if ($remaining) {
+            update_option(self::DEGRADATION_OPTION, $remaining);
+        } else {
+            delete_option(self::DEGRADATION_OPTION);
         }
     }
 
@@ -853,14 +958,14 @@ class wp_slimstat
         try {
             \SlimStat\Services\Browscap::init();
         } catch (\Throwable $e) {
-            self::log('SlimStat: Browscap init failed: ' . $e->getMessage(), 'error');
+            self::record_degradation('browscap', $e);
         }
 
         // Make sure the upload directory exists and is protected.
         try {
             self::create_upload_directory();
         } catch (\Throwable $e) {
-            self::log('SlimStat: upload directory setup failed: ' . $e->getMessage(), 'error');
+            self::record_degradation('upload_directory', $e);
         }
 
         // Ensure the daily salt exists for IP hashing (GDPR compliance). Runs on
@@ -868,7 +973,7 @@ class wp_slimstat
         try {
             \SlimStat\Providers\IPHashProvider::generateDailySalt();
         } catch (\Throwable $e) {
-            self::log('SlimStat: daily IP-hash salt generation failed: ' . $e->getMessage(), 'error');
+            self::record_degradation('ip_hash_salt', $e);
         }
 
         // Initialize adblock bypass functionality.
@@ -877,7 +982,7 @@ class wp_slimstat
             add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
             add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
         } catch (\Throwable $e) {
-            self::log('SlimStat: adblock-bypass setup failed: ' . $e->getMessage(), 'error');
+            self::record_degradation('adblock_bypass', $e);
         }
     }
 
@@ -1412,7 +1517,7 @@ class wp_slimstat
 				$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
 				$params['gdpr_consent_method'] = $method;
 			} catch (\Throwable $e) {
-				self::log('SlimStat: GDPR banner params unavailable, disabling banner this request: ' . $e->getMessage(), 'error');
+				self::record_degradation('gdpr_banner', $e);
 				$params['use_slimstat_banner'] = 'off';
 			}
 		}
@@ -1515,7 +1620,7 @@ class wp_slimstat
 
 			echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
 		} catch (\Throwable $e) {
-			self::log('SlimStat: GDPR banner render failed: ' . $e->getMessage(), 'error');
+			self::record_degradation('gdpr_banner_render', $e);
 		}
 	}
 

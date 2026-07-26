@@ -59,7 +59,7 @@ class RestApiManager
             try {
                 $controllers[] = $factory();
             } catch (\Throwable $e) {
-                \wp_slimstat::log('SlimStat: a core REST controller failed to load: ' . $e->getMessage(), 'error');
+                \wp_slimstat::record_degradation('rest_controller', $e);
             }
         }
 
@@ -95,7 +95,7 @@ class RestApiManager
             try {
                 $controller->register_routes();
             } catch (\Throwable $e) {
-                \wp_slimstat::log('SlimStat: REST route registration failed for ' . get_class($controller) . ': ' . $e->getMessage(), 'error');
+                \wp_slimstat::record_degradation('rest_routes', $e);
             }
         }
     }

@@ -1,12 +1,22 @@
 <?php
 /**
- * Regression: uninstall.php must only delete data when the user explicitly opted
- * in via "Delete Data on Uninstall".
+ * Regression: uninstall.php must only delete collected analytics when the user
+ * explicitly opted in via "Delete Data on Uninstall".
  *
  * The option has no default, so on a normal install the key is absent. The old
  * gate `isset(key) && 'on' != key` was false for an absent key, so it fell
  * through and DROPped every table + deleted every option + removed the uploads
  * dir. This test proves an absent key now RETAINS data, and that 'on' still deletes.
+ *
+ * It also pins the second half of the contract: cron entries and the REGENERABLE
+ * browscap cache are cleaned up on EVERY uninstall, opt-in or not, because they are
+ * scheduler bookkeeping and a rebuildable cache rather than the analytics the opt-in
+ * protects — leaving them orphans wp-cron entries and strands disk space forever.
+ *
+ * The GeoIP database is deliberately NOT in that set: on hosts without ext-phar the
+ * plugin cannot download it and instructs users to upload the .mmdb by hand, so
+ * removing it on the keep-my-data path would destroy a file the plugin cannot
+ * replace. It goes only on the explicit opt-in path.
  *
  * uninstall.php declares a top-level function, so it can't be required twice in
  * one process. The driver spawns one child PHP process per case.
@@ -24,9 +34,19 @@ if ($case !== false && $case !== '') {
 
     $GLOBALS['__deleted_options'] = [];
     $GLOBALS['__fs_deletes']      = 0;
-    $GLOBALS['__options']         = $case === 'on'
-        ? ['delete_data_on_uninstall' => 'on']
-        : []; // key deliberately absent
+    $GLOBALS['__fs_deleted']      = [];
+    $GLOBALS['__cleared_hooks']   = [];
+
+    // 'on'     → explicit opt-in
+    // 'no'     → what the Maintenance-tab toggle actually writes when switched off
+    // 'absent' → a normal install that never saved that tab (the #327 population)
+    if ($case === 'on') {
+        $GLOBALS['__options'] = ['delete_data_on_uninstall' => 'on'];
+    } elseif ($case === 'no') {
+        $GLOBALS['__options'] = ['delete_data_on_uninstall' => 'no'];
+    } else {
+        $GLOBALS['__options'] = [];
+    }
 
     // A $wpdb double that records every query(); also serves as the custom-db
     // fallback target ($GLOBALS['wpdb']).
@@ -50,7 +70,10 @@ if ($case !== false && $case !== '') {
         return true;
     }
     function is_multisite() { return false; }
-    function wp_clear_scheduled_hook($hook) {}
+    function wp_clear_scheduled_hook($hook)
+    {
+        $GLOBALS['__cleared_hooks'][] = $hook;
+    }
     function wp_upload_dir()
     {
         return ['basedir' => sys_get_temp_dir() . '/wp-slimstat-test-uploads'];
@@ -61,6 +84,7 @@ if ($case !== false && $case !== '') {
             public function delete($file, $recursive = false, $type = false)
             {
                 $GLOBALS['__fs_deletes']++;
+                $GLOBALS['__fs_deleted'][] = $file;
                 return true;
             }
         };
@@ -76,10 +100,12 @@ if ($case !== false && $case !== '') {
         }
     }
     echo json_encode([
-        'queries'   => count($GLOBALS['wpdb']->queries),
-        'drops'     => $drops,
-        'deleted'   => $GLOBALS['__deleted_options'],
-        'fsDeletes' => $GLOBALS['__fs_deletes'],
+        'queries'      => count($GLOBALS['wpdb']->queries),
+        'drops'        => $drops,
+        'deleted'      => $GLOBALS['__deleted_options'],
+        'fsDeletes'    => $GLOBALS['__fs_deletes'],
+        'fsDeleted'    => $GLOBALS['__fs_deleted'],
+        'clearedHooks' => $GLOBALS['__cleared_hooks'],
     ]);
     exit(0);
 }
@@ -111,14 +137,17 @@ function assert_true($cond, $message)
 
 function run_case($case)
 {
-    // Set the selector in the parent; the child inherits it via proc_open's
-    // default (null) environment.
-    putenv("SLIMSTAT_UNINSTALL_CASE={$case}");
+    // Pass the selector explicitly rather than relying on putenv() leaking into
+    // proc_open's default (null) environment — that inheritance is not guaranteed
+    // across platforms/SAPIs, and a child that silently ran the wrong case would
+    // make every assertion below vacuous.
     $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
     $proc        = proc_open(
         escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__),
         $descriptors,
-        $pipes
+        $pipes,
+        null,
+        ['SLIMSTAT_UNINSTALL_CASE' => $case] + $_ENV
     );
     if (!is_resource($proc)) {
         fail("could not spawn child for case '{$case}'");
@@ -136,17 +165,39 @@ function run_case($case)
     return $result;
 }
 
-// Case 1 — opt-out key ABSENT (fresh install): nothing may be deleted.
-$absent = run_case('absent');
-assert_same(0, $absent['queries'], 'no DB queries at all when the key is absent');
-assert_same([], $absent['deleted'], 'no options deleted when the key is absent');
-assert_same(0, $absent['fsDeletes'], 'uploads dir not deleted when the key is absent');
+// The cron hooks themselves are pinned statically by cron-hook-cleanup-test.php;
+// here we only prove the clearing path is REACHED on each of the three routes.
 
-// Case 2 — explicit opt-in: deletion proceeds as before.
+// Cases 1 & 2 — no opt-in. `absent` is the #327 population (never saved the
+// Maintenance tab); `no` is what the toggle actually writes when switched off.
+// Neither may touch collected analytics, but both must still clean up artifacts.
+foreach (['absent', 'no'] as $case) {
+    $result = run_case($case);
+    assert_same(0, $result['queries'], "no DB queries at all when the key is '{$case}'");
+    assert_same([], $result['deleted'], "no options deleted when the key is '{$case}'");
+    assert_true($result['clearedHooks'] !== [], "cron hooks cleared when the key is '{$case}'");
+
+    // Exactly one filesystem delete, and it must be the browscap cache — NOT the
+    // parent directory, which also holds a hand-uploaded GeoIP database.
+    assert_same(1, $result['fsDeletes'], "one artifact removed when the key is '{$case}'");
+    assert_true(
+        substr((string) $result['fsDeleted'][0], -22) === '/browscap-cache-master',
+        "only the browscap cache is removed when the key is '{$case}', got: " . $result['fsDeleted'][0]
+    );
+}
+
+// Case 3 — explicit opt-in: deletion proceeds as before, whole directory included.
 $on = run_case('on');
 assert_true($on['drops'] >= 7, 'DROP TABLE runs when delete_data_on_uninstall is on');
 assert_true(in_array('slimstat_options', $on['deleted'], true), 'slimstat_options deleted when opted in');
+assert_true(in_array('slimstat_degradations', $on['deleted'], true), 'slimstat_degradations deleted when opted in');
+assert_true(in_array('slimstat_daily_salt', $on['deleted'], true), 'the IP-hash salt is deleted when opted in');
 assert_same(1, $on['fsDeletes'], 'uploads dir deleted when opted in');
+assert_true(
+    substr((string) $on['fsDeleted'][0], -12) === '/wp-slimstat',
+    'the whole uploads dir is removed when opted in, got: ' . $on['fsDeleted'][0]
+);
+assert_true($on['clearedHooks'] !== [], 'cron hooks cleared when opted in');
 
-fwrite(STDOUT, "OK: {$assertions} assertions passed (uninstall deletes only on explicit opt-in)\n");
+fwrite(STDOUT, "OK: {$assertions} assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)\n");
 exit(0);

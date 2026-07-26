@@ -59,11 +59,14 @@ function apply_filters($hook, $value = null)
     }
     return $value;
 }
-// RestApiManager's fail-soft catch calls \wp_slimstat::log().
+// RestApiManager's fail-soft catches call \wp_slimstat::record_degradation().
 class wp_slimstat
 {
-    public static function log($message, $level = 'info')
+    public static $degradations = [];
+
+    public static function record_degradation($step, $e)
     {
+        self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
     }
 }
 
@@ -79,7 +82,12 @@ try {
 
 $count = count($GLOBALS['__slim_registered']);
 if ($count >= 5) {
-    fwrite(STDOUT, "OK: {$count} core REST routes registered despite a throwing controller (issue #325)\n");
+    // The swallowed failure must also be RECORDED, not silently discarded.
+    if (!isset(wp_slimstat::$degradations['rest_routes'])) {
+        fwrite(STDERR, "FAIL: the throwing controller was swallowed without recording a degradation\n");
+        exit(1);
+    }
+    fwrite(STDOUT, "OK: {$count} core REST routes registered despite a throwing controller, and the failure was recorded (issue #325)\n");
     exit(0);
 }
 fwrite(STDERR, "FAIL: only {$count} route(s) registered — a throwing controller aborted the loop\n");

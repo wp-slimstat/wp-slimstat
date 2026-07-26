@@ -419,7 +419,14 @@ class Query
      *
      * @param string       $table      The table to join.
      * @param string|array $on         The join condition. Can be an array with two fields to join on, or a string with a condition.
-     * @param array        $conditions An array of conditions to join on. Each condition is an array with three elements: field, operator, value.
+     * @param array|string $conditions Extra conditions to AND into the join, each a
+     *                                 [field, operator, value] triple. For backward
+     *                                 compatibility this may instead be a STRING: the
+     *                                 right-hand field of a two-string `$on = $conditions`
+     *                                 join. Both report queries in
+     *                                 admin/view/wp-slimstat-db.php use the string form,
+     *                                 so the branch at the bottom of this method is live —
+     *                                 do not "simplify" it away as unreachable.
      * @param string       $joinType   The type of join. Can be INNER, LEFT, or RIGHT. Defaults to INNER.
      *
      * @return $this

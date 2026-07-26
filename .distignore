@@ -1,6 +1,7 @@
 # Directories
 /.wordpress-org
 /.git
+/.githooks
 /.github
 /node_modules
 /tests
@@ -24,8 +25,12 @@ package.json
 package-lock.json
 bun.lock
 phpunit.xml.dist
+phpstan.neon.dist
+phpstan-baseline.neon
+.phpunit.result.cache
 .wp-env.json
 .wp-env.override.json
+.DS_Store
 
 # Dev-only directories not needed in release
 /packages
@@ -43,6 +48,7 @@ phpunit.xml.dist
 
 # Docs (wp.org uses readme.txt)
 CHANGELOG.md
+CONTRIBUTING.md
 README.md
 LICENSE
 security.md

@@ -748,7 +748,7 @@ $settings = [
             'delete_data_on_uninstall' => [
                 'title'       => __('Delete Data on Uninstall', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Delete all settings and slimstat on plugin uninstall. Warning! If you enable this feature, all slimstat and plugin settings will be permanently deleted from the database.', 'wp-slimstat'),
+                'description' => __('<strong>Off (default):</strong> deleting the plugin keeps all your analytics and settings, so reinstalling restores everything. <strong>On:</strong> deleting the plugin <strong>permanently</strong> erases every Slimstat table, all collected visits and all plugin settings. This cannot be undone — turn it on only if you really want the data gone.', 'wp-slimstat'),
             ],
         ],
     ],

@@ -428,6 +428,15 @@ class wp_slimstat_admin
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
 
+        // Surface fail-soft degradations (issue #325) and retire stale ones.
+        // admin-ajax.php also fires admin_init, but never renders admin_notices, so
+        // reconciling there would add a wp_options read to every heartbeat and
+        // autosave for nothing.
+        if (!wp_doing_ajax()) {
+            add_action('admin_init', ['wp_slimstat', 'reconcile_degradations'], 99);
+            add_action('admin_notices', ['wp_slimstat_admin', 'show_degradation_notice']);
+        }
+
         // Initialize notification system
         if (class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationManager')) {
             new \SlimStat\Services\Admin\Notification\NotificationManager();
@@ -475,12 +484,16 @@ class wp_slimstat_admin
     }
 
     /**
-     * Clears the purge cron job
+     * Clears every cron job this plugin schedules.
+     *
+     * The hook list lives in src/cron-hooks.php so this and uninstall.php cannot
+     * drift apart — see the note there.
      */
     public static function deactivate()
     {
-        wp_clear_scheduled_hook('wp_slimstat_purge');
-        wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
+        foreach (require SLIMSTAT_DIR . '/src/cron-hooks.php' as $hook) {
+            wp_clear_scheduled_hook($hook);
+        }
     }
 
     /**
@@ -3581,6 +3594,59 @@ class wp_slimstat_admin
                 self::ajax_ensure_index($action, $def['name'], $def['columns'], $def['option']);
             });
         }
+    }
+
+    /**
+     * Warn administrators when a SlimStat sub-feature is running degraded.
+     *
+     * The fail-soft guards added for issue #325 stop a class-load failure from
+     * white-screening the site, but they used to leave no trace outside WP_DEBUG —
+     * so a dead tracker or missing consent banner could go unnoticed for months.
+     * wp_slimstat::record_degradation() persists what broke; this surfaces it.
+     */
+    public static function show_degradation_notice()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $degradations = wp_slimstat::get_degradations();
+        if (!$degradations) {
+            return;
+        }
+
+        // Human-readable name per guarded step; unknown keys fall back to the key.
+        $labels = [
+            'browscap'           => __('Browser detection library', 'wp-slimstat'),
+            'upload_directory'   => __('Upload directory setup', 'wp-slimstat'),
+            'ip_hash_salt'       => __('Daily IP-hash salt (privacy)', 'wp-slimstat'),
+            'adblock_bypass'     => __('Ad-blocker bypass tracking', 'wp-slimstat'),
+            'rest_api'           => __('REST API tracking endpoints', 'wp-slimstat'),
+            'consent_ajax'       => __('Consent AJAX handlers', 'wp-slimstat'),
+            'gdpr_banner'          => __('GDPR consent banner setup', 'wp-slimstat'),
+            'gdpr_banner_render'   => __('GDPR consent banner display', 'wp-slimstat'),
+            'rest_controller'      => __('REST tracking controller', 'wp-slimstat'),
+            'rest_routes'          => __('REST route registration', 'wp-slimstat'),
+            'banner_consent_check' => __('Consent banner status check', 'wp-slimstat'),
+        ];
+
+        $items = '';
+        foreach ($degradations as $step => $record) {
+            $label   = $labels[$step] ?? $step;
+            $message = isset($record['message']) ? (string) $record['message'] : '';
+            $items .= sprintf(
+                '<li><strong>%s</strong><br><code>%s</code></li>',
+                esc_html($label),
+                esc_html($message)
+            );
+        }
+
+        self::show_message(
+            '<strong>' . esc_html__('Slimstat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
+            esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
+            '<ul class="ul-disc">' . $items . '</ul>',
+            'error'
+        );
     }
 
     public static function show_indexes_notice()

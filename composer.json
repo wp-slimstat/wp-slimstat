@@ -115,6 +115,8 @@
     "test:rest-api-fail-soft": "php tests/rest-api-fail-soft-test.php",
     "test:gdpr-service-fail-soft": "php tests/gdpr-service-fail-soft-test.php",
     "test:uninstall-data-safety": "php tests/uninstall-data-safety-test.php",
+    "test:cron-hook-cleanup": "php tests/cron-hook-cleanup-test.php",
+    "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -143,7 +145,9 @@
       "@test:gdpr-banner-theme-mode",
       "@test:rest-api-fail-soft",
       "@test:gdpr-service-fail-soft",
-      "@test:uninstall-data-safety"
+      "@test:uninstall-data-safety",
+      "@test:cron-hook-cleanup",
+      "@test:failsoft-visibility"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

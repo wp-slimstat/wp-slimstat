@@ -131,7 +131,7 @@ class Consent
 		try {
 			return (new \SlimStat\Services\GDPRService($settings))->hasConsent();
 		} catch (\Throwable $e) {
-			\wp_slimstat::log('SlimStat: banner consent check failed (GDPRService unavailable): ' . $e->getMessage(), 'error');
+			\wp_slimstat::record_degradation('banner_consent_check', $e);
 			return false;
 		}
 	}

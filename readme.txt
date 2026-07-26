@@ -6,7 +6,7 @@ Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
 Tested up to: 7.0
-Stable tag: 5.5.0
+Stable tag: 5.5.1
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,7 +64,9 @@ Love the free plugin? Pro is for sites that live by their numbers. It adds the h
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
 == Please note ==
-* If you decide to uninstall Slimstat Analytics, all the stats will be **PERMANENTLY** deleted from your database. Make sure to setup a database backup (wp_slim_*) to avoid losing your data.
+* **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
+* If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, or use **Settings → Maintenance → Delete Records** at any time. Deleting the plugin on its own will not clear the database.
+* Slimstat's downloaded geolocation database and browser-detection cache (in `wp-content/uploads/wp-slimstat`) are always removed on uninstall — they are regenerable lookup files, not your analytics.
 
 = Report Bugs =
 Having trouble with a bug? Please [create an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new) on GitHub. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is exclusively for bug reports; other inquiries will be closed.
@@ -103,7 +105,20 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 9. **Settings** — Plenty of room to shape how SlimStat tracks, stores, and shows your data.
 10. **Goals & Funnels** — Define the conversions that drive revenue and watch each step of your WooCommerce checkout or signup funnel to see exactly where visitors drop off.
 
+== Upgrade Notice ==
+
+= 5.5.1 =
+Deleting the plugin no longer erases your analytics. Data is now kept by default and removed only if you enabled Settings → Maintenance → "Delete Data on Uninstall" first. Also fixes a rare blank-screen/admin-lockout on plugin load.
+
 == Changelog ==
+= 5.5.1 - 2026-07-26 =
+* Fix: A rare plugin-loading problem could white-screen the entire site and lock administrators out of wp-admin. When a plugin file no longer matched its build index — after an interrupted update, a manually uploaded copy, or stale server caching — every page including wp-login stopped loading. The plugin now falls back to loading files directly, and disables only the affected feature if one part still cannot load. A build-time check prevents shipping an incomplete package. If your host caches PHP aggressively, flush its opcache should a blank screen persist after updating. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
+* Fix: Deleting the plugin no longer erases your analytics by default. Stats, settings and stored data are removed only when "Delete Data on Uninstall" (Settings → Maintenance) was explicitly enabled. Previously a normal install that had never opened that tab lost every SlimStat table on deletion. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
+* Fix: The downloaded geolocation database and browser-detection cache are now always removed on uninstall, even when your analytics are kept — they are regenerable lookup files that could otherwise strand around 100 MB in `wp-content/uploads`.
+* Fix: The daily IP-hash salt cron task is now cleared on deactivation and uninstall; it was scheduled but never removed.
+* Improvement: When a feature shuts itself down to keep the site running, administrators now see a notice naming what failed, instead of it being silently swallowed unless `WP_DEBUG` was on.
+* Docs: The plugin description no longer claims uninstalling permanently deletes your stats, and the "Delete Data on Uninstall" setting now explains what both positions do.
+
 = 5.5.0 - 2026-06-24 =
 * Feature: New Goals & Funnels page (slimview6) — define goals and funnels in a modern card layout with pill-segmented funnel tabs, a side drawer for goal create/edit, an overlay builder for funnels, and a destructive-action confirm sheet instead of native browser prompts.
 * Feature: Funnels now support 4 conversion templates (E-commerce checkout, SaaS signup, Content engagement, Start from scratch).

@@ -69,11 +69,14 @@ class wp_slimstat
 {
     public static $settings = [];
     public static $is_programmatic_tracking = false;
-    public static $logged = [];
+    public static $degradations = [];
 
-    public static function log($message, $level = 'info')
+    // Mirrors the real signature. The production version also PERSISTS the record
+    // (see wp_slimstat::record_degradation) so the failure is visible without
+    // WP_DEBUG; here we only need to prove the guard reaches it without throwing.
+    public static function record_degradation($step, $e)
     {
-        self::$logged[] = $message;
+        self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
     }
 }
 
@@ -111,11 +114,12 @@ if (!method_exists('SlimStat\\Utils\\Consent', 'bannerHasConsentSafe')) {
     } catch (\Throwable $e) {
         fail_('bannerHasConsentSafe() threw instead of failing soft: ' . $e->getMessage());
     }
-    // It must also log a diagnostic (only surfaced when WP_DEBUG, but log() is always called).
-    if (!empty(wp_slimstat::$logged)) {
-        pass_('bannerHasConsentSafe() logs a SlimStat diagnostic on failure');
+    // It must record a PERSISTED degradation, not just a WP_DEBUG-gated log line —
+    // otherwise a broken consent path is invisible on a production site.
+    if (isset(wp_slimstat::$degradations['banner_consent_check'])) {
+        pass_('bannerHasConsentSafe() records a persisted degradation on failure');
     } else {
-        fail_('bannerHasConsentSafe() did not log a diagnostic on failure');
+        fail_('bannerHasConsentSafe() did not record a degradation on failure');
     }
 }
 

@@ -34,6 +34,18 @@ function slimstat_committed_source(string $root, string $rel): string
     if (is_string($out) && $out !== '') {
         return $out;
     }
+
+    // Falling back to the working tree is only safe when git genuinely is not
+    // available (an exported tarball). If git IS available the empty result means
+    // the blob is missing — failing loudly beats passing vacuously, which is what
+    // happens on hosts where shell_exec is disabled.
+    $git_works = @shell_exec('git --version 2>/dev/null');
+    if (is_string($git_works) && strpos($git_works, 'git version') === 0) {
+        fwrite(STDERR, "FAIL: git is available but `git show HEAD:{$rel}` returned nothing.\n");
+        fwrite(STDERR, "The committed blob is what ships to wp.org — refusing to validate the working tree instead.\n");
+        exit(1);
+    }
+
     $path = $root . '/' . $rel;
     return is_file($path) ? (string) file_get_contents($path) : '';
 }
@@ -42,13 +54,16 @@ $plugin_root = dirname(__DIR__);
 $src_dir     = $plugin_root . '/src';
 $deps_prefix = $src_dir . '/Dependencies';
 
-// --- load the committed classmap array (keys = FQCNs; the file paths are unused) ---
+// --- load the committed classmap array (FQCN => absolute path; both are used) ---
 $classmap_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_classmap.php');
 if ($classmap_src === '') {
     fwrite(STDERR, "FAIL: could not read the committed vendor/composer/autoload_classmap.php\n");
     exit(1);
 }
-$classmap_tmp = tempnam(sys_get_temp_dir(), 'slimcm');
+// Write the copy INSIDE vendor/composer/ — the classmap header computes
+// `$baseDir = dirname(dirname(__DIR__))`, so anywhere else (a system temp dir)
+// resolves every path to garbage and the returned values become unusable.
+$classmap_tmp = $plugin_root . '/vendor/composer/.slimstat-classmap-test.php';
 file_put_contents($classmap_tmp, $classmap_src);
 $classmap = require $classmap_tmp; // returns the array; defines no classes
 @unlink($classmap_tmp);
@@ -177,4 +192,41 @@ if ($missing) {
     exit(1);
 }
 
-echo "OK: {$checked} declared SlimStat classes are all present in the committed classmap\n";
+// --- reverse pass: every first-party classmap entry must point at a real file ---
+// The PSR-4 fallback does NOT rescue this: ClassLoader::findFile() returns the
+// classmap hit before it ever consults the filesystem prefixes, so a stale entry
+// left behind by a moved/renamed file is an include() warning and an undefined
+// class — even with authoritative mode off.
+$dangling = [];
+foreach ($classmap as $fqcn => $path) {
+    if (strpos($fqcn, 'SlimStat\\') !== 0 || strpos($fqcn, 'SlimStat\\Dependencies\\') === 0) {
+        continue;
+    }
+    if (!is_file($path)) {
+        $dangling[] = sprintf('%s  ->  %s', $fqcn, $path);
+    }
+}
+
+if ($dangling) {
+    fwrite(STDERR, "FAIL: committed classmap entries pointing at files that do not exist:\n");
+    foreach ($dangling as $d) {
+        fwrite(STDERR, "  - {$d}\n");
+    }
+    fwrite(STDERR, "\nThe classmap short-circuits before PSR-4, so these fatal even with the fallback in place.\n");
+    fwrite(STDERR, "Fix: regenerate with `composer run build:autoload` and commit vendor/composer/autoload_*.php.\n");
+    exit(1);
+}
+
+// --- guard: the committed loader must not eagerly require a dev `files` list ---
+// A dev-flavoured dump adds an autoload_files.php + $filesToLoad loop that requires
+// packages excluded from the wp.org package by .distignore — that combination has
+// shipped and fatalled more than once.
+if (strpos($real_src, '$filesToLoad') !== false || strpos($real_src, 'autoload_files.php') !== false) {
+    fwrite(STDERR, "FAIL: vendor/composer/autoload_real.php eagerly loads a `files` list.\n");
+    fwrite(STDERR, "That is a dev-flavoured dump; it requires packages .distignore strips from the release.\n");
+    fwrite(STDERR, "Fix: rebuild with `composer run build:autoload` (uses --no-dev) and commit.\n");
+    exit(1);
+}
+
+echo "OK: {$checked} declared SlimStat classes are all present in the committed classmap, "
+    . "all first-party entries resolve, loader is non-authoritative with no eager file list\n";
