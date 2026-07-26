@@ -30,20 +30,34 @@ declare(strict_types=1);
  */
 function slimstat_committed_source(string $root, string $rel): string
 {
-    $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg('HEAD:' . $rel) . ' 2>/dev/null');
-    if (is_string($out) && '' !== $out) {
-        return $out;
-    }
+    // Presence of .git — a directory normally, a FILE when the repo is a submodule
+    // or a linked worktree — is what decides whether a committed blob even exists to
+    // read. If it does and we cannot read it, this gate is broken and must say so;
+    // silently validating the working tree instead would let a bad artifact ship
+    // while still printing OK. The working-tree fallback is legitimate only for a
+    // source export (wp.org SVN, `git archive`), which carries no .git at all.
+    $has_repo = file_exists($root . '/.git');
 
-    // Falling back to the working tree is only safe when git genuinely is not
-    // available (an exported tarball). If git IS available the empty result means
-    // the blob is missing — failing loudly beats passing vacuously, which is what
-    // happens on hosts where shell_exec is disabled.
-    $git_works = @shell_exec('git --version 2>/dev/null');
-    if (is_string($git_works) && strpos($git_works, 'git version') === 0) {
-        fwrite(STDERR, "FAIL: git is available but `git show HEAD:{$rel}` returned nothing.\n");
-        fwrite(STDERR, "The committed blob is what ships to wp.org — refusing to validate the working tree instead.\n");
+    $bail = static function (string $why) use ($rel, $has_repo) {
+        if (!$has_repo) {
+            return;
+        }
+        fwrite(STDERR, "FAIL: cannot read the committed blob for {$rel} ({$why}).\n");
+        fwrite(STDERR, "That blob is what ships to wp.org — refusing to validate the working tree instead,\n");
+        fwrite(STDERR, "because doing so would pass this gate without checking what actually gets released.\n");
         exit(1);
+    };
+
+    // Disabled via disable_functions on hardened hosts. Checking rather than calling
+    // keeps this a clear failure instead of an "undefined function" fatal on PHP 8.
+    if (!function_exists('shell_exec')) {
+        $bail('shell_exec is disabled');
+    } else {
+        $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg('HEAD:' . $rel) . ' 2>/dev/null');
+        if (is_string($out) && '' !== $out) {
+            return $out;
+        }
+        $bail('the git binary is unavailable, or the path is not committed');
     }
 
     $path = $root . '/' . $rel;
@@ -238,5 +252,34 @@ if (strpos($real_src, '$filesToLoad') !== false || strpos($real_src, 'autoload_f
     exit(1);
 }
 
+// --- self-check: this gate must FAIL, not pass, when it cannot see the blob ---
+// The worst failure mode for a build gate is a green run that checked nothing. Re-run
+// ourselves with git removed from PATH and require a non-zero exit. The child sets the
+// env guard so it does not recurse.
+if (false === getenv('SLIMSTAT_CLASSMAP_SELFCHECK') && $has_repo_for_selfcheck = file_exists($plugin_root . '/.git')) {
+    $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+    $child       = proc_open(
+        escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__),
+        $descriptors,
+        $pipes,
+        null,
+        ['SLIMSTAT_CLASSMAP_SELFCHECK' => '1', 'PATH' => '/nonexistent'] + $_ENV
+    );
+
+    if (is_resource($child)) {
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        if (0 === proc_close($child)) {
+            fwrite(STDERR, "FAIL: with git unavailable this gate still exited 0.\n");
+            fwrite(STDERR, "It would validate the working tree instead of the committed blob and report success —\n");
+            fwrite(STDERR, "a green run that checked nothing. slimstat_committed_source() must bail out instead.\n");
+            exit(1);
+        }
+    }
+}
+
 echo "OK: {$checked} declared SlimStat classes are all present in the committed classmap, "
-    . "all first-party entries resolve, loader is non-authoritative with no eager file list\n";
+    . "all first-party entries resolve, loader is non-authoritative with no eager file list "
+    . "(and the gate fails closed when the blob is unreadable)\n";
