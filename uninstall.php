@@ -107,8 +107,23 @@ function slimstat_uninstall_artifacts($delete_data = false)
         $upload_dir = apply_filters('slimstat_maxmind_path', $upload_dir);
     }
 
-    WP_Filesystem();
+    // WP_Filesystem() lives in wp-admin/includes/file.php, which is NOT loaded on
+    // every uninstall path (WP-CLI's `wp plugin uninstall` does not bootstrap the
+    // admin includes). Calling it unguarded would fatal — and this block now runs on
+    // EVERY uninstall, not just the opt-in one, so the blast radius is every user.
+    // Mirrors the guard in src/Services/Browscap.php.
+    if (!function_exists('WP_Filesystem')) {
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+    }
+
+    if (!WP_Filesystem()) {
+        return; // No usable filesystem transport (e.g. FTP credentials needed).
+    }
+
     global $wp_filesystem;
+    if (!$wp_filesystem) {
+        return;
+    }
 
     if ($delete_data) {
         $wp_filesystem->delete($upload_dir, true, 'd');

@@ -199,5 +199,18 @@ assert_true(
 );
 assert_true($on['clearedHooks'] !== [], 'cron hooks cleared when opted in');
 
+// The harness defines its own WP_Filesystem(), so it cannot exercise the case where
+// WordPress has not loaded the File API. Pin the guard at source level instead — the
+// same approach browscap-wp-filesystem-test.php takes for the identical hazard.
+$uninstall_src = (string) file_get_contents(dirname(__DIR__) . '/uninstall.php');
+assert_true(
+    strpos($uninstall_src, "require_once ABSPATH . 'wp-admin/includes/file.php'") !== false,
+    'uninstall.php loads the WP File API before calling WP_Filesystem() (WP-CLI does not preload it)'
+);
+assert_true(
+    strpos($uninstall_src, 'if (!WP_Filesystem())') !== false,
+    'uninstall.php bails out when WP_Filesystem() cannot initialise, instead of calling delete() on null'
+);
+
 fwrite(STDOUT, "OK: {$assertions} assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)\n");
 exit(0);

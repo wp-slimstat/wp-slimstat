@@ -65,11 +65,12 @@ Love the free plugin? Pro is for sites that live by their numbers. It adds the h
 
 == Please note ==
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
-* If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, or use **Settings → Maintenance → Delete Records** at any time. Deleting the plugin on its own will not clear the database.
-* Slimstat's downloaded geolocation database and browser-detection cache (in `wp-content/uploads/wp-slimstat`) are always removed on uninstall — they are regenerable lookup files, not your analytics.
+* If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
+* **Delete Records** (Settings → Maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
+* Slimstat's browser-detection cache (in `wp-content/uploads/wp-slimstat`) is always removed on uninstall — it is a rebuildable cache, not your analytics. The geolocation database there is removed only if you opted into full deletion, because some hosts require it to be uploaded by hand.
 
 = Report Bugs =
-Having trouble with a bug? Please [create an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new) on GitHub. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is exclusively for bug reports; other inquiries will be closed.
+Found a bug, or want to suggest a feature? Please [open an issue](https://github.com/wp-slimstat/wp-slimstat/issues/new/choose) on GitHub and pick the matching form. Kindly note that [GitHub](https://github.com/wp-slimstat/wp-slimstat) is for bug reports and feature requests only — support questions belong in the WordPress.org support forum and will be closed there.
 
 For security vulnerabilities, please report them through the [Patchstack Vulnerability Disclosure Program](https://patchstack.com/database/wordpress/plugin/wp-slimstat/vdp). The Patchstack team will validate, triage, and handle any security issues.
 
@@ -112,9 +113,9 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 
 == Changelog ==
 = 5.5.1 - 2026-07-26 =
-* Fix: A rare plugin-loading problem could white-screen the entire site and lock administrators out of wp-admin. When a plugin file no longer matched its build index — after an interrupted update, a manually uploaded copy, or stale server caching — every page including wp-login stopped loading. The plugin now falls back to loading files directly, and disables only the affected feature if one part still cannot load. A build-time check prevents shipping an incomplete package. If your host caches PHP aggressively, flush its opcache should a blank screen persist after updating. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
+* Fix: A rare plugin-loading problem could white-screen the entire site and lock administrators out of wp-admin. When a plugin file no longer matched its build index — after an interrupted update, a manually uploaded copy, or stale server caching — every page including wp-login stopped loading. The plugin now falls back to loading files directly, and disables only the affected feature if one part still cannot load. A build-time check prevents shipping an incomplete package. If your host caches PHP aggressively, flush its opcache if a blank screen persists after updating. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
 * Fix: Deleting the plugin no longer erases your analytics by default. Stats, settings and stored data are removed only when "Delete Data on Uninstall" (Settings → Maintenance) was explicitly enabled. Previously a normal install that had never opened that tab lost every SlimStat table on deletion. ([#327](https://github.com/wp-slimstat/wp-slimstat/issues/327))
-* Fix: The downloaded geolocation database and browser-detection cache are now always removed on uninstall, even when your analytics are kept — they are regenerable lookup files that could otherwise strand around 100 MB in `wp-content/uploads`.
+* Fix: The browser-detection cache is now always removed on uninstall, even when your analytics are kept — it is a rebuildable cache that could otherwise sit in `wp-content/uploads` indefinitely. The geolocation database is removed only when you opted into full data deletion, since on hosts without the PHP `phar` extension it must be uploaded by hand and cannot be re-downloaded.
 * Fix: The daily IP-hash salt cron task is now cleared on deactivation and uninstall; it was scheduled but never removed.
 * Improvement: When a feature shuts itself down to keep the site running, administrators now see a notice naming what failed, instead of it being silently swallowed unless `WP_DEBUG` was on.
 * Docs: The plugin description no longer claims uninstalling permanently deletes your stats, and the "Delete Data on Uninstall" setting now explains what both positions do.

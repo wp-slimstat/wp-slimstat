@@ -31,7 +31,7 @@ declare(strict_types=1);
 function slimstat_committed_source(string $root, string $rel): string
 {
     $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg('HEAD:' . $rel) . ' 2>/dev/null');
-    if (is_string($out) && $out !== '') {
+    if (is_string($out) && '' !== $out) {
         return $out;
     }
 
@@ -56,7 +56,7 @@ $deps_prefix = $src_dir . '/Dependencies';
 
 // --- load the committed classmap array (FQCN => absolute path; both are used) ---
 $classmap_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_classmap.php');
-if ($classmap_src === '') {
+if ('' === $classmap_src) {
     fwrite(STDERR, "FAIL: could not read the committed vendor/composer/autoload_classmap.php\n");
     exit(1);
 }
@@ -65,6 +65,16 @@ if ($classmap_src === '') {
 // resolves every path to garbage and the returned values become unusable.
 $classmap_tmp = $plugin_root . '/vendor/composer/.slimstat-classmap-test.php';
 file_put_contents($classmap_tmp, $classmap_src);
+
+// The copy lands inside the repo, so a fatal in the require below (a malformed
+// committed blob — exactly what this gate exists to catch) must not leave it behind
+// for someone to commit by accident.
+register_shutdown_function(static function () use ($classmap_tmp) {
+    if (is_file($classmap_tmp)) {
+        @unlink($classmap_tmp);
+    }
+});
+
 $classmap = require $classmap_tmp; // returns the array; defines no classes
 @unlink($classmap_tmp);
 if (!is_array($classmap)) {
@@ -103,7 +113,7 @@ $declared = [];
 
 foreach ($files as $file) {
     $contents = file_get_contents($file);
-    if ($contents === false) {
+    if (false === $contents) {
         continue;
     }
     $tokens    = token_get_all($contents); // lexer only, never TOKEN_PARSE
@@ -117,14 +127,14 @@ foreach ($files as $file) {
         }
 
         // namespace declaration → remember the current namespace
-        if ($tok[0] === T_NAMESPACE) {
+        if (T_NAMESPACE === $tok[0]) {
             $ns = '';
             for ($j = $i + 1; $j < $count; $j++) {
                 $t = $tokens[$j];
-                if ($t === ';' || $t === '{') {
+                if (';' === $t || '{' === $t) {
                     break;
                 }
-                if (is_array($t) && $t[0] !== T_WHITESPACE) {
+                if (is_array($t) && T_WHITESPACE !== $t[0]) {
                     $ns .= $t[1];
                 }
             }
@@ -141,7 +151,7 @@ foreach ($files as $file) {
 
         // skip `Foo::class`
         $prev = $i > 0 ? $tokens[$i - 1] : null;
-        if (is_array($prev) && $prev[0] === T_DOUBLE_COLON) {
+        if (is_array($prev) && T_DOUBLE_COLON === $prev[0]) {
             continue;
         }
 
@@ -150,15 +160,15 @@ foreach ($files as $file) {
         $name = null;
         for ($j = $i + 1; $j < $count; $j++) {
             $t = $tokens[$j];
-            if (is_array($t) && $t[0] === T_WHITESPACE) {
+            if (is_array($t) && T_WHITESPACE === $t[0]) {
                 continue;
             }
-            if (is_array($t) && $t[0] === T_STRING) {
+            if (is_array($t) && T_STRING === $t[0]) {
                 $name = $t[1];
             }
             break;
         }
-        if ($name === null) {
+        if (null === $name) {
             continue;
         }
 
