@@ -50,21 +50,9 @@ if ($fingerprint['server']['buffer_pool_bytes'] < $fingerprint['data']['bytes_to
 }
 echo "\n";
 
-if (!class_exists('wp_slimstat_reports')) {
-    require_once SLIMSTAT_ANALYTICS_DIR . 'admin/view/wp-slimstat-reports.php';
-}
+require_once __DIR__ . '/reports-bootstrap.php';
 
-// Reports are capability-gated inside callback_wrapper(); without a user every
-// cell would render nothing and report a flattering zero.
-if (!is_user_logged_in()) {
-    $admins = get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID']);
-    if ($admins) {
-        wp_set_current_user((int) $admins[0]);
-    }
-}
-
-wp_slimstat_reports::init();
-$reports = wp_slimstat_reports::$reports;
+$reports = slimstat_bench_bootstrap_reports();
 
 /** One global-status counter read. */
 $status = static function (wpdb $db): array {

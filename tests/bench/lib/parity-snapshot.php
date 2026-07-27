@@ -82,27 +82,30 @@ $fixed      = sprintf('day equals %d&&&month equals %d&&&year equals %d&&&interv
 // particular row surviving: browser_type is always present and low-cardinality.
 $filter = 'browser_type equals 0';
 
+// The straddling window spans today's 00:00, which is what triggers
+// Query::getAll()'s split into a cacheable historical half and an uncached live
+// half.
+//
+// Its end CANNOT be pinned. init_filters() clamps any end at or after today to
+// now(), regardless of the hour/minute filters — measured: asking for a window
+// ending at today 00:00:59 still produced one ending at the current second. So
+// these cells necessarily see different data on every run, and parity-compare
+// treats their values as informational. Strict value parity is enforced by the
+// historical cells above, which are anchored safely in the past.
+$straddling = 'interval equals -30';
+
 $all_cells = [
     'historical-unfiltered' => $fixed,
     'historical-filtered'   => $fixed . '&&&' . $filter,
-    'straddling-unfiltered' => 'interval equals -30',
-    'straddling-filtered'   => 'interval equals -30&&&' . $filter,
+    'straddling-unfiltered' => $straddling,
+    'straddling-filtered'   => $straddling . '&&&' . $filter,
 ];
 
 $wanted = isset($args[1]) && $args[1] !== ''
     ? array_intersect_key($all_cells, array_flip(array_map('trim', explode(',', (string) $args[1]))))
     : $all_cells;
 
-if (!class_exists('wp_slimstat_reports')) {
-    require_once SLIMSTAT_ANALYTICS_DIR . 'admin/view/wp-slimstat-reports.php';
-}
-
-if (!is_user_logged_in()) {
-    $admins = get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID']);
-    if ($admins) {
-        wp_set_current_user((int) $admins[0]);
-    }
-}
+require_once __DIR__ . '/reports-bootstrap.php';
 
 /**
  * Strip everything that legitimately differs between two runs of identical code.
@@ -147,8 +150,7 @@ $extract_numbers = static function (string $html): array {
     return array_slice($m[1], 0, 200);
 };
 
-wp_slimstat_reports::init();
-$reports = wp_slimstat_reports::$reports;
+$reports = slimstat_bench_bootstrap_reports();
 
 $snapshot = [
     'captured_at'      => time(),

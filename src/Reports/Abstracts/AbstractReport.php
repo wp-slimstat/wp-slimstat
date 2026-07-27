@@ -343,9 +343,15 @@ abstract class AbstractReport implements ReportInterface, RenderableInterface {
 			$renderer = $this->get_renderer();
 
 			if ( ! empty( $renderer ) && file_exists( SLIMSTAT_DIR . '/views/reports/' . $renderer . '.php' ) ) {
+				// `data` is deliberately NOT passed. Every renderer reads it from
+				// $args['data'] (views/reports/live-analytics.php:16 assigns
+				// `$data = $args['data'] ?? []` immediately), so injecting it
+				// separately computed get_data() a second time and discarded the
+				// result. Where get_callback_args() itself returns get_data() —
+				// as Live Analytics does — that made one render execute the whole
+				// data gather three times.
 				\SlimStat\Components\View::load( 'reports/' . $renderer, [
 					'args' => $this->get_callback_args(),
-					'data' => $this->get_data(),
 				] );
 				return;
 			}

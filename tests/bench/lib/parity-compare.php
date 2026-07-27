@@ -61,11 +61,14 @@ foreach (array_keys($after['cells'] ?? []) as $cell) {
         $straddling_present = true;
     }
 }
-if ($straddling_present && ($before['captured_day'] ?? null) !== ($after['captured_day'] ?? null)) {
-    $blockers[] = sprintf('straddling cells were captured on different local days (%s vs %s) — '
-        . 'their window ends at "now" and is not comparable across a midnight',
-        $before['captured_day'] ?? '?', $after['captured_day'] ?? '?');
-}
+// A warning, not a blocker. It used to abort the whole comparison, but straddling
+// values are no longer compared at all, so a midnight crossing cannot produce a
+// wrong straddling answer — while the historical cells remain perfectly valid.
+// Refusing to report them would have been the harness withholding a good result.
+$day_warning = ($straddling_present && ($before['captured_day'] ?? null) !== ($after['captured_day'] ?? null))
+    ? sprintf('snapshots span a local midnight (%s vs %s); straddling cells are render-only anyway',
+        $before['captured_day'] ?? '?', $after['captured_day'] ?? '?')
+    : '';
 
 if ($blockers !== []) {
     echo "not comparable:\n";
@@ -155,13 +158,18 @@ foreach ($after['cells'] as $cell => $reports) {
             continue;
         }
 
-        // Straddling cells end at now() by definition — that is what exercises
-        // Query::getAll()'s split-merge path — so on a dataset with rows near or
-        // after the present, their counts move with the clock. Their values are
-        // therefore informational; strict value parity is enforced by their
-        // historical twins, which are anchored safely in the past. Structure
-        // must still hold, since a markup change there is not time-dependent.
-        if (strpos($cell, 'straddling') === 0 && $was['bytes'] === $now['bytes']) {
+        // Straddling cells end at now() and that end cannot be pinned —
+        // init_filters() clamps any end at or after today to the current second
+        // regardless of the hour/minute filters (measured). They exist to
+        // exercise Query::getAll()'s split-merge path, so they assert "still
+        // renders" and nothing more: their row CONTENT changes as the window
+        // slides, not merely their values, so byte length is data here too.
+        // Recent Events was observed listing entirely different rows between two
+        // runs for exactly this reason.
+        //
+        // Strict value parity lives in the historical cells, which are anchored
+        // safely in the past.
+        if (strpos($cell, 'straddling') === 0) {
             $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
             continue;
         }
@@ -174,6 +182,10 @@ foreach ($after['cells'] as $cell => $reports) {
             'bytes'   => [$was['bytes'], $now['bytes']],
         ];
     }
+}
+
+if ($day_warning !== '') {
+    printf("WARNING: %s\n", $day_warning);
 }
 
 printf("compared %d report/cell snapshots across %d cells\n\n", $compared, count($after['cells']));

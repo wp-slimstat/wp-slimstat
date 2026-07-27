@@ -80,21 +80,9 @@ foreach ([$stats_table, $events_table] as $table) {
 echo "\n";
 
 // ── Render every registered report ─────────────────────────────────────────
-if (!class_exists('wp_slimstat_reports')) {
-    require_once SLIMSTAT_ANALYTICS_DIR . 'admin/view/wp-slimstat-reports.php';
-}
+require_once dirname(__DIR__, 2) . '/bench/lib/reports-bootstrap.php';
 
-// Reports are capability-gated inside callback_wrapper(); without a user the
-// gate would render nothing and pass vacuously.
-if (!is_user_logged_in()) {
-    $admins = get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID']);
-    if ($admins) {
-        wp_set_current_user((int) $admins[0]);
-    }
-}
-
-wp_slimstat_reports::init();
-$reports = wp_slimstat_reports::$reports;
+$reports = slimstat_bench_bootstrap_reports();
 printf("rendering %d registered reports\n", count($reports));
 
 // A spread of ranges: a plan that is fine over 1 day can still scan over 90.
