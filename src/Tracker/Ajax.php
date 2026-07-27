@@ -7,6 +7,95 @@ use SlimStat\Utils\Consent;
 
 class Ajax
 {
+    /** Requests one client may make inside RATE_LIMIT_WINDOW before being refused. */
+    private const RATE_LIMIT_HITS = 10;
+
+    /** Length of the rate-limiting window, in seconds. */
+    private const RATE_LIMIT_WINDOW = 5;
+
+    /** Object-cache group for the counters. Kept out of 'default' so a flush is targeted. */
+    private const RATE_LIMIT_GROUP = 'slimstat_rl';
+
+    /**
+     * Whether this client has exceeded the tracking rate limit.
+     *
+     * The counter lives in the object cache, never in the options table. It used to be
+     * a transient with a five-second TTL, which is shorter than the gap between most
+     * visitors' hits — so the timeout row was normally expired, WordPress deleted both
+     * rows and re-inserted them, and the measured cost was 2 to 4 `wp_options` writes
+     * on *every tracked hit*. That is several times the write work of storing the
+     * pageview, spent to save roughly six queries on the rare request it refuses. (D29)
+     *
+     * Without a persistent object cache there is nowhere free to keep a cross-request
+     * counter, so the limiter stands down rather than charging every site a write per
+     * hit for a counter it cannot afford. Two things make that the right trade rather
+     * than a silent loss of protection:
+     *
+     *   - by the time this runs, the request has already paid for the full WordPress
+     *     bootstrap, so refusing it saves a fraction of its cost. A cap that matters
+     *     belongs at the edge, ahead of PHP;
+     *   - `slimstat_rate_limit_enabled` lets a site turn it back on regardless.
+     *
+     * The counter is keyed on the raw REMOTE_ADDR, unchanged. Behind a CDN or a NAT
+     * gateway that is one bucket for everyone behind it, which is a real limitation —
+     * `slimstat_rate_limit_key` exists so such a site can supply the client address it
+     * trusts. Resolving forwarded headers here by default would let anyone evade the
+     * limit by varying a header, which is a worse trade than the one it fixes.
+     *
+     * @param string $ip Client address, already validated by the caller.
+     * @return bool True when the request should be refused.
+     */
+    /**
+     * Whether rate limiting is in effect on this site.
+     *
+     * Exposed so the Tracker Health endpoint can report it: a protection that turns
+     * itself off according to the hosting environment is one a site owner has to be
+     * able to see.
+     *
+     * @param string $ip Client address, when the decision is being made for a request.
+     * @return bool
+     */
+    public static function isRateLimitingActive(string $ip = ''): bool
+    {
+        /**
+         * Filters whether tracking requests are rate limited at all.
+         *
+         * @param bool   $enabled Defaults to true only when a persistent object cache
+         *                        can hold the counter without a database write.
+         * @param string $ip      Client address, or '' when queried for reporting.
+         */
+        // function_exists guarded like every other wp_using_ext_object_cache() call in
+        // the plugin: the tracker can run before the full object-cache API is loaded.
+        $has_persistent_cache = function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache();
+
+        return (bool) apply_filters('slimstat_rate_limit_enabled', $has_persistent_cache, $ip);
+    }
+
+    public static function isRateLimited(string $ip): bool
+    {
+        if (!self::isRateLimitingActive($ip)) {
+            return false;
+        }
+
+        /**
+         * Filters the identity a rate-limit budget is tracked against.
+         *
+         * @param string $ip Client address as seen by PHP.
+         */
+        $key = 'rl_' . md5((string) apply_filters('slimstat_rate_limit_key', $ip));
+
+        $hits = wp_cache_incr($key, 1, self::RATE_LIMIT_GROUP);
+        if (false === $hits) {
+            // No counter yet, or the window just expired. `add` rather than `set` so
+            // two concurrent requests cannot each reset the other's window; the loser
+            // undercounts by one, which a rate limiter can afford.
+            wp_cache_add($key, 1, self::RATE_LIMIT_GROUP, self::RATE_LIMIT_WINDOW);
+            $hits = 1;
+        }
+
+        return $hits > self::RATE_LIMIT_HITS;
+    }
+
     /**
      * Validate click position as strict "x,y" format with 1-5 digit coordinates.
      *
@@ -105,19 +194,15 @@ class Ajax
      */
     public static function process()
     {
-        $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
-        if (!empty($remote_ip)) {
-            $key        = 'slimstat_rl_' . md5($remote_ip);
-            $hits_in_5s = (int) get_transient($key);
-            if ($hits_in_5s >= 10) {
-                return Utils::logError(429);
-            }
-
-            set_transient($key, $hits_in_5s + 1, 5);
-        }
-
+        // Tracking-disabled is checked first: it is an array read, so a site with
+        // tracking off short-circuits without touching the object cache at all.
         if ('on' != \wp_slimstat::$settings['is_tracking']) {
             return Utils::logError(204);
+        }
+
+        $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+        if (!empty($remote_ip) && self::isRateLimited($remote_ip)) {
+            return Utils::logError(429);
         }
 
         $id = 0;

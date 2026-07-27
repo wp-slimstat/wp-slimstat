@@ -773,12 +773,12 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         switch ($_GET['action']) {
             case 'reset-tracker-error':
                 $settings[6]['rows']['last_tracker_error']['after_input_field'] = __('So far so good.', 'wp-slimstat');
-                wp_slimstat::update_option('slimstat_tracker_error', []);
+                \SlimStat\Tracker\Utils::clearDiagnostic('slimstat_tracker_error');
                 break;
 
             case 'reset-geoip-error':
                 $settings[6]['rows']['last_geoip_error']['after_input_field'] = __('So far so good.', 'wp-slimstat');
-                wp_slimstat::update_option('slimstat_geoip_error', []);
+                \SlimStat\Tracker\Utils::clearDiagnostic('slimstat_geoip_error');
                 break;
 
             case 'reset-settings':

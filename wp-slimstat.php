@@ -1386,11 +1386,21 @@ class wp_slimstat
 
     /**
      * Saves a given option in the database
+     *
+     * @param string    $_key      Option name.
+     * @param mixed     $_value    Option value.
+     * @param bool|null $_autoload Whether to autoload. `null` leaves the decision to
+     *                             WordPress, which autoloads anything new — fine for
+     *                             settings read on every request, wrong for anything
+     *                             only an admin screen reads, because each write of an
+     *                             autoloaded option invalidates the whole `alloptions`
+     *                             cache. Network options have no autoload column, so
+     *                             the flag is meaningless there and is not passed on.
      */
-    public static function update_option($_key = '', $_value = '')
+    public static function update_option($_key = '', $_value = '', $_autoload = null)
     {
         if (!is_network_admin()) {
-            update_option($_key, $_value);
+            update_option($_key, $_value, $_autoload);
         } else {
             update_site_option($_key, $_value);
         }

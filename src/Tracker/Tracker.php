@@ -369,12 +369,16 @@ class Tracker
         return $_stat;
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::logError().
+     *
+     * Kept as a delegate rather than deleted because it is public and may be reachable
+     * from an add-on. It used to carry its own copy of the write, which meant one call
+     * would bypass the throttle and record a diagnostic on every occurrence. (D30)
+     */
     public static function _log_error($_error_code = 0)
     {
-        \wp_slimstat::update_option('slimstat_tracker_error', [$_error_code, \wp_slimstat::date_i18n('U')]);
-        $stat = \wp_slimstat::get_stat();
-        do_action('slimstat_track_exit_' . abs($_error_code), $stat);
-        return -$_error_code;
+        return Utils::logError($_error_code);
     }
 
     public static function _get_value_with_checksum($_value = 0)

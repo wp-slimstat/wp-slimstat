@@ -760,8 +760,8 @@ class Processor
             }
         }
 
-        // Clear stale DB error detail on successful insert
-        \wp_slimstat::update_option('slimstat_tracker_error_detail', '');
+        // Clear stale DB error detail on successful insert.
+        Utils::clearErrorDetail();
 
         // Update stat after getting ID
         \wp_slimstat::set_stat($stat);

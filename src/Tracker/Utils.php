@@ -7,26 +7,114 @@ use SlimStat\Utils\Query;
 
 class Utils
 {
+	/**
+	 * How often an unchanged diagnostic refreshes its stored timestamp, in seconds.
+	 *
+	 * These records answer two questions: *what* went wrong, and *when* it last
+	 * happened. The code is what support acts on, and it is written the instant it
+	 * changes. The timestamp only has to separate "still happening" from "long over",
+	 * so it is refreshed at most this often.
+	 *
+	 * Refreshing it per occurrence is what made these options a per-request write:
+	 * the second ticks over, `update_option()`'s unchanged-value short-circuit stops
+	 * firing, and every rejected hit writes `wp_options`. On a bot-exposed site that
+	 * is roughly a quarter of all traffic. (D30)
+	 *
+	 * @var int
+	 */
+	private const DIAGNOSTIC_REFRESH = 900;
+
+	/**
+	 * Autoload policy for the diagnostic options.
+	 *
+	 * `null` leaves the decision to WordPress, which autoloads them — and that is the
+	 * measured right answer, against first instinct. These four records total ~240
+	 * bytes in an `alloptions` blob that a tracked hit loads anyway, so reading them
+	 * costs nothing while they are autoloaded, and one non-autoloaded read is a
+	 * dedicated `SELECT` on a path the tracker takes on every rejected hit.
+	 *
+	 * De-autoloading was aimed at the `alloptions` invalidation each write causes. The
+	 * throttle above already removes almost all of those writes — at most one per code
+	 * per DIAGNOSTIC_REFRESH — so the invalidation is no longer worth paying a query
+	 * per hit to avoid. Fixing the write frequency was the fix; moving the rows was
+	 * treating the symptom, and it made the hot path slower. Measured both ways with
+	 * tests/bench/hit-cost.sh. (D30)
+	 *
+	 * @var bool|null
+	 */
+	private const DIAGNOSTIC_AUTOLOAD = null;
+
+	/**
+	 * Whether a diagnostic whose identity has not changed is due a fresh timestamp.
+	 *
+	 * Debug mode always refreshes, so support sees a live reproduction rather than a
+	 * record that could be a quarter of an hour old.
+	 *
+	 * @param mixed $storedTime Timestamp currently on record.
+	 * @param int   $now        Reading of the SAME clock that wrote it. These records
+	 *                          do not agree on one: the tracker options carry
+	 *                          date_i18n('U'), which is current_time('timestamp') and
+	 *                          so includes the site's GMT offset, while the GeoIP
+	 *                          option carries a plain UTC time() written from a dozen
+	 *                          call sites. Mixing them would measure the offset
+	 *                          instead of the elapsed interval.
+	 * @return bool
+	 */
+	private static function diagnosticIsStale($storedTime, int $now): bool
+	{
+		if (self::isDebugMode()) {
+			return true;
+		}
+
+		return ($now - (int) $storedTime) >= self::DIAGNOSTIC_REFRESH;
+	}
+
+	/**
+	 * Record an `[identity, timestamp]` diagnostic, unless it says nothing new.
+	 *
+	 * The single mechanism behind every tracker diagnostic record, so that "only write
+	 * when the condition actually changes" is implemented once. Callers outside the
+	 * tracker — notably the Pro external-database add-on, whose failure path runs on
+	 * *every* request through the `slimstat_custom_wpdb` filter — must come through
+	 * here rather than carrying their own copy of the write.
+	 *
+	 * @param string     $option   Option name.
+	 * @param int|string $identity The thing that must change to be worth recording:
+	 *                             an error code for the tracker, a message for the
+	 *                             database add-on.
+	 * @return bool Whether the record was written.
+	 */
+	public static function recordDiagnostic(string $option, $identity): bool
+	{
+		$stored = \get_option($option, []);
+		// One clock reading, used for both the staleness comparison and the stored
+		// value, so "compared against the same clock that wrote it" is structural.
+		$now = (int) \wp_slimstat::date_i18n('U');
+
+		// Compared as strings so an int code and a string message go through the same
+		// path without a loose comparison.
+		$same = !empty($stored[0]) && (string) $stored[0] === (string) $identity;
+
+		if ($same && !self::diagnosticIsStale($stored[1] ?? 0, $now)) {
+			return false;
+		}
+
+		\wp_slimstat::update_option($option, [$identity, (string) $now], self::DIAGNOSTIC_AUTOLOAD);
+		return true;
+	}
+
 	public static function logError($errorCode = 0)
 	{
-		// Throttle 3xx exclusion codes: only write if error code changed.
-		// These fire on every bot/excluded request — writing each time would
-		// cause DB write storms on high-traffic sites.
-		if ($errorCode >= 300 && $errorCode < 400) {
-			$stored = \get_option('slimstat_tracker_error', []);
-			$sameCode = !empty($stored[0]) && (int) $stored[0] === $errorCode;
-			// In debug mode, always refresh timestamp so support sees a fresh reproduction
-			if ($sameCode && !self::isDebugMode()) {
-				do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
-				return -$errorCode;
-			}
+		// Only write when there is something new to say. This used to cover the 3xx
+		// exclusion band alone, which left the codes that repeat hardest — 429 from
+		// the rate limiter, 500 from a failing insert — writing on every occurrence.
+		//
+		// Code 200 means the insert itself failed, and Processor has just written the
+		// database error into the detail — clearing it there would throw that away.
+		if (self::recordDiagnostic('slimstat_tracker_error', (int) $errorCode) && 200 !== (int) $errorCode) {
+			self::clearErrorDetail();
 		}
 
-		if (200 !== (int) $errorCode) {
-			\wp_slimstat::update_option('slimstat_tracker_error_detail', '');
-		}
-
-		\wp_slimstat::update_option('slimstat_tracker_error', [$errorCode, \wp_slimstat::date_i18n('U')]);
 		do_action('slimstat_track_exit_' . abs($errorCode), \wp_slimstat::get_stat());
 		return -$errorCode;
 	}
@@ -39,14 +127,7 @@ class Utils
 	 */
 	public static function logWarning(int $warningCode): void
 	{
-		$stored = \get_option('slimstat_tracker_warning', []);
-		$sameCode = !empty($stored[0]) && (int) $stored[0] === $warningCode;
-		if ($sameCode && !self::isDebugMode()) {
-			do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
-			return;
-		}
-
-		\wp_slimstat::update_option('slimstat_tracker_warning', [$warningCode, \wp_slimstat::date_i18n('U')]);
+		self::recordDiagnostic('slimstat_tracker_warning', $warningCode);
 		do_action('slimstat_track_warning_' . abs($warningCode), \wp_slimstat::get_stat());
 	}
 
@@ -58,16 +139,48 @@ class Utils
 	 */
 	public static function logGeoIpError(string $message): void
 	{
-		$stored = \get_option('slimstat_geoip_error', []);
+		$stored      = \get_option('slimstat_geoip_error', []);
 		$sameMessage = !empty($stored['error']) && $stored['error'] === $message;
-		if ($sameMessage && !self::isDebugMode()) {
+		// A plain UTC clock here, not date_i18n('U'): a dozen call sites across the
+		// GeoIP providers write this record with time(), so the stored value has to
+		// stay comparable with theirs.
+		$now = time();
+
+		if ($sameMessage && !self::diagnosticIsStale($stored['time'] ?? 0, $now)) {
 			return;
 		}
 
 		\wp_slimstat::update_option('slimstat_geoip_error', [
-			'time'  => time(),
+			'time'  => $now,
 			'error' => sanitize_text_field($message),
-		]);
+		], self::DIAGNOSTIC_AUTOLOAD);
+	}
+
+	/**
+	 * Wipe a `[code, timestamp]` diagnostic record.
+	 *
+	 * @param string $option Tracker error, warning, or GeoIP error option name.
+	 * @return void
+	 */
+	public static function clearDiagnostic(string $option): void
+	{
+		\wp_slimstat::update_option($option, [], self::DIAGNOSTIC_AUTOLOAD);
+	}
+
+	/**
+	 * Drop any stale database-error detail left by a failed insert.
+	 *
+	 * Separate from clearDiagnostic() because the detail is a plain string everywhere
+	 * it is read, not the `[code, timestamp]` array the other records use — writing
+	 * `[]` here would hand the config screen and the health endpoint the wrong type.
+	 *
+	 * @return void
+	 */
+	public static function clearErrorDetail(): void
+	{
+		if ('' !== (string) \get_option('slimstat_tracker_error_detail', '')) {
+			\wp_slimstat::update_option('slimstat_tracker_error_detail', '', self::DIAGNOSTIC_AUTOLOAD);
+		}
 	}
 
 	/**

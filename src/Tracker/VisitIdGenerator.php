@@ -23,13 +23,6 @@ class VisitIdGenerator
     public const OPTION_NAME = 'slimstat_visit_id_counter';
 
     /**
-     * Avoid repeat existence checks during the same request.
-     *
-     * @var bool
-     */
-    private static $counter_verified = false;
-
-    /**
      * Generate the next visit ID atomically.
      *
      * The counter row is created once and then incremented with a single
@@ -40,13 +33,34 @@ class VisitIdGenerator
      */
     public static function generateNextVisitId(): int
     {
-        self::ensureCounterExists();
+        $created  = false;
+        $visit_id = self::runAtomicIncrement($created);
 
-        $visit_id = self::runAtomicIncrement();
+        // The increment tells us whether the counter already existed, so nothing needs to
+        // look it up first. That lookup used to run unconditionally — a
+        // `SELECT COUNT(*) FROM wp_options` on every single tracked hit, to answer a
+        // question the very next statement answers for free.
+        //
+        // It cannot simply be dropped: a counter created from nothing starts at 1, and
+        // reissuing visit ID 1 on a site that already holds millions would attach a new
+        // visitor to an existing visit's history. So when the row turns out to be new,
+        // reseed past everything stored and take a fresh number. Once per install.
+        //
+        // Both signals are required. `rows_affected` alone is not a safe "inserted" flag:
+        // a connection opened with CLIENT_FOUND_ROWS (wpdb passes MYSQL_CLIENT_FLAGS
+        // straight through) reports *matched* rows, so an ON DUPLICATE KEY UPDATE also
+        // returns 1 — and this branch would then fire on every hit, reseeding the counter
+        // and turning one query into six. A genuine insert stores LAST_INSERT_ID(1) and so
+        // always yields exactly 1; an update yields option_value + 1.
+        if (1 === $visit_id && $created) {
+            self::resetCounter(self::getInitialCounterValue());
+            $visit_id = self::runAtomicIncrement();
+        }
 
         if ($visit_id <= 0) {
-            self::$counter_verified = false;
-            self::ensureCounterExists();
+            // The statement failed outright. Seeding is idempotent — add_option() no-ops
+            // when the row is already there — so it doubles as the repair path.
+            self::initializeCounter();
             $visit_id = self::runAtomicIncrement();
         }
 
@@ -58,36 +72,10 @@ class VisitIdGenerator
     }
 
     /**
-     * Ensure the counter option exists in the database.
-     *
-     * If it doesn't exist, initialize it with the current maximum visit_id.
-     *
-     * @return void
-     */
-    public static function ensureCounterExists(): void
-    {
-        if (self::$counter_verified) {
-            return;
-        }
-
-        global $wpdb;
-
-        $exists = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",
-            self::OPTION_NAME
-        ));
-
-        if (0 === (int) $exists) {
-            self::initializeCounter();
-        }
-
-        self::$counter_verified = true;
-    }
-
-    /**
      * Initialize the counter with the current maximum visit_id from the stats table.
      *
-     * This should be called on plugin activation/upgrade to set the initial counter value.
+     * Called on plugin activation, and as the repair path when an increment fails.
+     * Idempotent: an existing row is left alone and its current value returned.
      *
      * @return int The initialized counter value
      */
@@ -100,8 +88,6 @@ class VisitIdGenerator
         if (! $added) {
             return (int) get_option(self::OPTION_NAME, $initial_value);
         }
-
-        self::$counter_verified = true;
 
         return $initial_value;
     }
@@ -169,15 +155,23 @@ class VisitIdGenerator
      */
     public static function resetCounter(int $value): bool
     {
-        return update_option(self::OPTION_NAME, max($value, 0));
+        return update_option(self::OPTION_NAME, max($value, 0), false);
     }
 
     /**
      * Run the atomic increment query and return the incremented value.
      *
+     * @param-out bool $created
+     *
+     * @param bool|null $created Set to true when the statement created the counter row
+     *                           rather than bumping it, as reported by the affected-row
+     *                           count: 1 for an insert, 2 for an update that changed the
+     *                           row (0 if it changed nothing, which cannot happen here
+     *                           because the value always moves). See generateNextVisitId()
+     *                           for why this signal is corroborated rather than trusted.
      * @return int The incremented visit ID, or 0 on failure
      */
-    private static function runAtomicIncrement(): int
+    private static function runAtomicIncrement(?bool &$created = null): int
     {
         global $wpdb;
 
@@ -189,6 +183,8 @@ class VisitIdGenerator
             1,
             'no'
         ));
+
+        $created = (1 === (int) $wpdb->rows_affected);
 
         if (false === $result) {
             return 0;
