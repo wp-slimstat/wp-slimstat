@@ -119,7 +119,13 @@ if $RUN_PERF; then
   echo ""
   echo -e "${YELLOW}=== Running k6 Load Test ===${NC}"
   cd "$PLUGIN_DIR"
-  k6 run tests/perf/geoip-load.js || K6_EXIT=$?
+  # The k6 scripts require these explicitly — they no longer carry dev-machine
+  # defaults, because a silent fallback is how CI measured nothing for weeks
+  # (see tests/perf/lib/env.js). Override from the caller's environment.
+  BASE_URL="${BASE_URL:-http://localhost:10003}" \
+  WP_USER="${WP_USER:-admin}" \
+  WP_PASS="${WP_PASS:-admin}" \
+    k6 run tests/perf/geoip-load.js || K6_EXIT=$?
 
   if [[ $K6_EXIT -eq 0 ]]; then
     echo -e "${GREEN}k6 load test PASSED${NC}"

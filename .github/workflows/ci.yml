@@ -497,6 +497,24 @@ jobs:
         if: ${{ matrix.php == '8.2' }}
         run: docker logout docker.io 2>/dev/null || true
 
+      # The committed .wp-env.json pins phpVersion 7.4, which broke this lane in
+      # two ways: PHPUnit 10.5 (installed above, needed by test:unit) registers
+      # Framework/Assert/Functions.php through Composer's files-autoload, which
+      # vendor/autoload.php require()s at boot — and its union types are a parse
+      # error on 7.4, so the container never came up. That cost 10 consecutive
+      # nightly runs (2026-07-18 → 07-27). It also meant a job labelled "PHP 8.2"
+      # was measuring a 7.4 runtime.
+      #
+      # Pinning the runtime to the lane's PHP fixes both at the root, and reuses
+      # the override pattern Tier 2 already established above. plugins is "."
+      # only because the siblings in .wp-env.json aren't checked out in CI.
+      # Enforced by tests/perf-gate-integrity-test.php.
+      - name: Create wp-env override (CI — pin runtime PHP to this lane)
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          printf '{"phpVersion":"%s","plugins":["."]}\n' "${{ matrix.php }}" > .wp-env.override.json
+          echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
+
       - name: Start wp-env (for k6 target)
         if: ${{ matrix.php == '8.2' }}
         run: npx wp-env start
@@ -505,30 +523,25 @@ jobs:
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
         env:
-          # k6 thresholds enforced inside tests/perf/geoip-load.js:
-          #   p(95) < 200   (200 ms)
-          #   p(99) < 500   (500 ms)
-          #   error_rate  < 0.005  (0.5 %)
-          #   db_write_p95 < 20    (20 ms) — requires custom trend metric in the script
-          K6_BASE_URL: http://localhost:8889
+          # k6 reads __ENV.<NAME> verbatim — the variable MUST be named BASE_URL.
+          # It was previously exported as K6_BASE_URL, which no script reads, so
+          # every run silently targeted the scripts' old dev-laptop default.
+          BASE_URL: http://localhost:8889
+          WP_USER: admin
+          WP_PASS: password
         run: npm run test:perf
 
-      # ── EXPLAIN gate (placeholder) ───────────────────────────────────────
-      # TODO: implement a custom script (or k6 extension) that:
-      #   1. Captures SHOW STATUS / slow-query log during k6 run.
-      #   2. Re-runs suspect queries with EXPLAIN.
-      #   3. Fails this step if any row shows access_type=ALL on a table whose
-      #      row count (SHOW TABLE STATUS) exceeds 100,000.
-      # Scaffold below runs a no-op until the script is written.
+      # ── EXPLAIN gate ─────────────────────────────────────────────────────
+      # Seeds the configured row threshold, captures every SlimStat query via
+      # the slimstat_custom_wpdb filter, runs EXPLAIN on each, and fails on
+      # access_type=ALL against a table over EXPLAIN_ROW_THRESHOLD rows.
+      # See tests/perf/explain-gate.sh. Enforced by
+      # tests/perf-gate-integrity-test.php (must not become a no-op again).
       - name: EXPLAIN gate — full-table-scan check
         if: ${{ matrix.php == '8.2' }}
-        run: |
-          echo "[TODO] EXPLAIN gate not yet implemented."
-          echo "       Add a script at tests/perf/explain-gate.sh that:"
-          echo "         1. Extracts queries logged during k6 run."
-          echo "         2. Runs EXPLAIN on each query against the wp-env DB."
-          echo "         3. Fails (exit 1) if access_type=ALL on table row_count > 100000."
-          exit 0
+        env:
+          EXPLAIN_ROW_THRESHOLD: "100000"
+        run: bash tests/perf/explain-gate.sh
 
       - name: Stop wp-env
         if: ${{ matrix.php == '8.2' && always() }}
