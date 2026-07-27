@@ -1,6 +1,6 @@
 <?php
 /**
- * Guards wp_slimstat_db::funnel_filters_signature() — the column-filter component
+ * Guards wp_slimstat_db::filters_signature() — the column-filter component
  * of the funnel cache key.
  *
  * The signature MUST be derived from the NORMALIZED filter array
@@ -18,7 +18,7 @@ declare(strict_types=1);
 
 namespace WpSlimstat\Tests\Unit;
 
-class FunnelFiltersSignatureTest extends WpSlimstatTestCase
+class FiltersSignatureTest extends WpSlimstatTestCase
 {
     protected function setUp(): void
     {
@@ -37,7 +37,7 @@ class FunnelFiltersSignatureTest extends WpSlimstatTestCase
 
     private static function sig(): string
     {
-        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'funnel_filters_signature');
+        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'filters_signature');
         $m->setAccessible(true);
         return $m->invoke(null);
     }

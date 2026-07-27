@@ -1737,22 +1737,22 @@ class wp_slimstat_db
             return ['total' => 0, 'uniques' => 0, 'cr' => 0.0, 'total_visitors' => 0];
         }
 
-        $filters_where = self::get_combined_where('', '*', true, 't1');
-        $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
-        // NOTE: keyed per goal id, so it embeds the live range end (second precision)
-        // and shares funnels' SSR/AJAX drift. Left as-is — a goal shows one number per
-        // id, so it never produces the "two identical things disagree" symptom #1 fixed
-        // for funnels. If a goal-number flicker is ever reported, route this through a
-        // shared range-bucket helper (see funnel_cache_key).
-        $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
+        $cache_ver = get_option('slimstat_goals_cache_ver', '0');
+        // Built from the normalized filters and a bucketed range — see
+        // results_cache_key(). The old key hashed get_combined_where()'s SQL, which
+        // moved every second and every request. (D33)
+        $cache_key = self::results_cache_key('goal', (string) $goal['id'], $cache_ver);
 
         // Per-request memo keyed by the result-determining signature (criteria +
         // filters + cache version), NOT the goal id — so several goals with the
         // same criteria run the COUNT/unique queries once per request instead of
         // once each, and a re-render reuses the result. Removes the duplicate
         // COUNT(*)/unique queries Query Monitor reported. (#12)
+        //
+        // Keyed on filters_signature() rather than the rendered WHERE so that WHERE
+        // does not have to be built before the memo and transient are consulted.
         static $request_memo = [];
-        $memo_key = md5($goal_where . '|' . $filters_where . '|' . $cache_ver);
+        $memo_key = md5($goal_where . '|' . self::filters_signature() . '|' . $cache_key);
         if (array_key_exists($memo_key, $request_memo)) {
             return $request_memo[$memo_key];
         }
@@ -1760,6 +1760,10 @@ class wp_slimstat_db
         $result = get_transient($cache_key);
 
         if (false === $result) {
+            // Built only after the cache miss — it drives the queries below, not the
+            // key, so a memo or transient hit skips this get_combined_where() work
+            // entirely — the shape get_funnel_results() already uses.
+            $filters_where  = self::get_combined_where('', '*', true, 't1');
             $where_combined = $goal_where . ' AND ' . $filters_where;
 
             if ($is_event) {
@@ -1800,16 +1804,14 @@ class wp_slimstat_db
             return $request_cache;
         }
 
-        $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $date_where  = self::get_combined_where('', '*', true, 't1');
         // Version-key like the goal/funnel transients so a CRUD cache bump (which
         // also runs the GC in clear_goals_cache()) rotates this denominator too.
-        $cache_ver   = get_option('slimstat_goals_cache_ver', '0');
-        // NOTE: like the goal key, this embeds the live range end and shares funnels'
-        // SSR/AJAX drift; left funnel-scoped on purpose (#1). Route through a shared
-        // range-bucket helper if this denominator ever needs the same fix.
-        $cache_key   = 'slimstat_uv_' . md5($date_where . $cache_ver);
-        $cached      = get_transient($cache_key);
+        $cache_ver = get_option('slimstat_goals_cache_ver', '0');
+        // Same shared builder as goals and funnels — this denominator is the single
+        // most expensive statement on the goals screen, and it was recomputed on every
+        // render for the same reason. (D37)
+        $cache_key = self::results_cache_key('uv', '', $cache_ver);
+        $cached    = get_transient($cache_key);
 
         if (false !== $cached) {
             $request_cache = intval($cached);
@@ -1818,9 +1820,10 @@ class wp_slimstat_db
 
         // Same NULL-safe visitor identity as the goal numerator (count_unique_visitors)
         // so the conversion-rate denominator and numerator stay consistent. (#3)
+        // The WHERE is built only past the cache check — it drives the query, not the key.
         $request_cache = self::count_unique_visitors(
-            sprintf('%s t1', $table_stats),
-            $date_where
+            sprintf('%s t1', $GLOBALS['wpdb']->prefix . 'slim_stats'),
+            self::get_combined_where('', '*', true, 't1')
         );
 
         set_transient($cache_key, $request_cache, 15 * MINUTE_IN_SECONDS);
@@ -1880,7 +1883,8 @@ class wp_slimstat_db
     }
 
     /**
-     * Signature of the active global column filters, for the funnel cache key.
+     * Signature of the active global column filters, for the goal / funnel / uv
+     * cache keys.
      *
      * Derived from the NORMALIZED filter array ([col => [operator, value]]), NOT
      * from get_combined_where()'s SQL: that SQL is run through $wpdb->prepare(),
@@ -1892,44 +1896,90 @@ class wp_slimstat_db
      *
      * @return string
      */
-    private static function funnel_filters_signature()
+    private static function filters_signature()
     {
         return md5(serialize(self::$filters_normalized['columns'] ?? []));
     }
 
     /**
-     * Build the funnel-result cache key: normalized step signature + the date
-     * window bucketed to the hour + the active column-filter signature + cache
-     * version. Bucketing the end (which is "now" for a live range, set with second
-     * precision) to the hour absorbs the sub-hour drift between a server-rendered
-     * funnel and its AJAX-loaded twin, so two identical funnels share one transient
-     * and return identical numbers. (#1)
-     * (A render pair straddling an hour boundary can still miss — a rare, ~few-second
-     * window that self-heals on the next render; acceptable given the 5-min TTL.)
+     * Bucket size for the live end of a cached date range, in seconds.
      *
-     * $filters_sig folds the active global filters into the key so toggling a report
-     * filter (e.g. "browser equals X") yields a new key instead of serving the stale
-     * unfiltered transient — the funnel equivalent of how Goals key on the filter
-     * WHERE. The date is intentionally NOT in $filters_sig (it lives in $range,
-     * hour-bucketed); only the COLUMN filters are, so the SSR/AJAX drift fix stands.
-     * The sig folds into the trailing md5 so the "slimstat_funnel_" prefix that
-     * clear_goals_cache() sweeps with a LIKE is preserved. (#22)
+     * Mirrors the hour-bucketing in wp_slimstat_admin::build_filter_options_cache_key().
+     * A plain literal rather than HOUR_IN_SECONDS so this class stays loadable without
+     * WordPress, which the cache-key test relies on.
+     */
+    const CACHE_RANGE_BUCKET_SECONDS = 3600;
+
+    /**
+     * Build the cache key for a goals/funnels result set.
+     *
+     * One builder for all three kinds of cached result, because they share one hazard:
+     * the date range's END is "now" for any live range, set with second precision by
+     * init_filters(). A key that embeds it changes on every request, so a 5- or
+     * 15-minute transient is written, never read back, and left to expire. Funnels
+     * bucketed the end to the hour to fix that; goals and the unique-visitor
+     * denominator did not, and each ran their queries uncached on every render while
+     * writing two dead wp_options rows apiece. (D33, D37)
+     *
+     * Bucketing trades key churn for bounded staleness, and the bound still comes from
+     * the transient's own TTL: within a bucket the key is stable, so the value
+     * refreshes on the TTL as intended rather than never being reused at all. The cost
+     * is that a render pair straddling a bucket boundary does not share a key and
+     * misses once — a rare, few-second window that self-heals on the next render, and
+     * a far better trade than a key that never changes and serves a stale window
+     * indefinitely.
+     *
+     * The range and the filter signature are read here rather than passed in, so a
+     * caller cannot pair one request's filters with another's window. The signature
+     * comes from the NORMALIZED filter array, never from get_combined_where()'s SQL:
+     * that SQL is run through $wpdb->prepare(), which wraps LIKE values in a
+     * placeholder salt regenerated per request —
+     *
+     *     t1.browser LIKE '{d71290c0…}Chrome{d71290c0…}'
+     *     t1.browser LIKE '{677774e4…}Chrome{677774e4…}'   <- same filter, next request
+     *
+     * so any "contains" filter would move the key every request even with the range
+     * bucketed. That is a second, independent reason the goal key could never hit.
+     *
+     * The `slimstat_<prefix>_` shape is load-bearing: clear_goals_cache() and
+     * uninstall.php both sweep these rows by LIKE prefix, and a key outside it would
+     * accumulate forever.
+     *
+     * @param string     $prefix    Result type: goal, funnel, uv.
+     * @param string     $scope     What distinguishes one result of that type from
+     *                              another (goal id, funnel step signature); '' when
+     *                              the type has a single result per filter set.
+     * @param int|string $cache_ver slimstat_goals_cache_ver, bumped by any CRUD.
+     * @return string
+     */
+    private static function results_cache_key($prefix, $scope, $cache_ver)
+    {
+        $start = (int) (self::$filters_normalized['utime']['start'] ?? 0);
+        $end   = (int) (self::$filters_normalized['utime']['end'] ?? 0);
+        $range = $start . ':' . (int) floor($end / self::CACHE_RANGE_BUCKET_SECONDS);
+
+        return 'slimstat_' . $prefix . '_' . ('' === $scope ? '' : $scope . '_')
+            . md5($range . '|' . self::filters_signature() . '|' . $cache_ver);
+    }
+
+    /**
+     * Scope a funnel's cache key to its RULES rather than its id, so two funnels with
+     * identical steps share one entry and can never disagree. (#1, #19)
+     *
+     * Everything else about the key — the bucketed window, the filter signature, the
+     * cache version, the swept prefix — lives in results_cache_key().
      *
      * @param array      $steps
-     * @param int        $range_start utime range start (seconds)
-     * @param int        $range_end   utime range end (seconds)
-     * @param string     $filters_sig column-filter signature (funnel_filters_signature())
      * @param int|string $cache_ver
      * @return string
      */
-    private static function funnel_cache_key($steps, $range_start, $range_end, $filters_sig, $cache_ver)
+    private static function funnel_cache_key($steps, $cache_ver)
     {
-        // 3600 = bucket the window end to the hour (mirrors the hour-bucketing in
-        // wp_slimstat_admin::build_filter_options_cache_key()).
-        $range = (int) $range_start . ':' . (int) floor((int) $range_end / 3600);
-
-        return 'slimstat_funnel_' . md5(serialize(self::normalize_funnel_steps($steps)))
-            . '_' . md5($range . '|' . $filters_sig . '|' . $cache_ver);
+        return self::results_cache_key(
+            'funnel',
+            md5(serialize(self::normalize_funnel_steps($steps))),
+            $cache_ver
+        );
     }
 
     /**
@@ -1949,19 +1999,11 @@ class wp_slimstat_db
         }
 
         $cache_ver = get_option('slimstat_goals_cache_ver', '0');
-        // Deterministic key: normalized step signature + hour-bucketed date window +
-        // active column-filter signature (NOT the funnel id, NOT the raw $date_where
-        // SQL) — so two identical funnels, and a server-rendered funnel + its AJAX
-        // twin, share one transient, while a change to the global report filters
-        // rotates the key instead of serving a stale unfiltered result. See
-        // funnel_cache_key() / funnel_filters_signature(). (#1, #22, builds on #19)
-        $cache_key = self::funnel_cache_key(
-            $funnel['steps'],
-            (int) (self::$filters_normalized['utime']['start'] ?? 0),
-            (int) (self::$filters_normalized['utime']['end'] ?? 0),
-            self::funnel_filters_signature(),
-            $cache_ver
-        );
+        // Keyed on the normalized step signature, not the funnel id, so two identical
+        // funnels — and a server-rendered funnel plus its AJAX twin — share one
+        // transient. See results_cache_key() for the window and filter handling.
+        // (#1, #22, builds on #19)
+        $cache_key = self::funnel_cache_key($funnel['steps'], $cache_ver);
 
         // Per-request memo: a funnel rendered (or re-rendered) twice in one
         // request reuses its result instead of rebuilding temp tables again. (#12)
