@@ -48,8 +48,11 @@ if (($before['stats_rows'] ?? null) !== ($after['stats_rows'] ?? null)) {
     $blockers[] = sprintf('row count differs (%s vs %s) — the data moved under the comparison',
         number_format((int) ($before['stats_rows'] ?? 0)), number_format((int) ($after['stats_rows'] ?? 0)));
 }
-if (($before['anchor_dt'] ?? null) !== ($after['anchor_dt'] ?? null)) {
-    $blockers[] = 'anchor timestamp differs — the fixed window is not the same window';
+// Compared at day granularity, which is the granularity the filter is built at.
+// Comparing the raw timestamp rejected two snapshots taken a minute apart.
+if (($before['anchor_date'] ?? null) !== ($after['anchor_date'] ?? null)) {
+    $blockers[] = sprintf('anchor date differs (%s vs %s) — the fixed window is not the same window',
+        $before['anchor_date'] ?? '?', $after['anchor_date'] ?? '?');
 }
 
 $straddling_present = false;
@@ -139,9 +142,26 @@ foreach ($after['cells'] as $cell => $reports) {
             }
         }
 
-        // A declared live report may move its values, but its structure must
-        // hold — a byte-length change there is still a real difference.
-        if (isset($time_dependent[$report_id]) && $was['bytes'] === $now['bytes']) {
+        // A report declared time-dependent is checked for "still renders" ONLY.
+        // Not even its byte length is asserted: Currently Online was observed
+        // losing its single live visitor between two snapshots, which removes a
+        // table row and changes the length. A live report can legitimately gain
+        // and lose rows, so length is not structure for these — it is data.
+        //
+        // This is the weakest check in the harness, which is why the list above
+        // is short, justified per entry, and printed on every run.
+        if (isset($time_dependent[$report_id])) {
+            $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
+            continue;
+        }
+
+        // Straddling cells end at now() by definition — that is what exercises
+        // Query::getAll()'s split-merge path — so on a dataset with rows near or
+        // after the present, their counts move with the clock. Their values are
+        // therefore informational; strict value parity is enforced by their
+        // historical twins, which are anchored safely in the past. Structure
+        // must still hold, since a markup change there is not time-dependent.
+        if (strpos($cell, 'straddling') === 0 && $was['bytes'] === $now['bytes']) {
             $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
             continue;
         }

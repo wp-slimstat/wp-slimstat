@@ -1401,71 +1401,17 @@ class wp_slimstat_admin
             return;
         }
 
-        $wpdb = wp_slimstat::$wpdb;
-        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
-        $today_start = mktime(0, 0, 0);
-        $yesterday_start = $today_start - 86400;
-        $yesterday_end = $today_start - 1;
+        // This runs on every logged-in FRONTEND pageview, so it reads from the
+        // shared 60-second cache rather than querying. See adminbar_today_stats().
+        $today_stats         = self::adminbar_today_stats();
+        $sessions_today      = $today_stats['sessions'];
+        $views_today         = $today_stats['views'];
+        $sessions_yesterday  = $today_stats['sessions_yesterday'];
+        $views_yesterday     = $today_stats['views_yesterday'];
+        $referrals_today     = $today_stats['referrals'];
+        $referrals_yesterday = $today_stats['referrals_yesterday'];
 
-        // Sessions Today (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
-            $today_start
-        ));
-
-        // Views Today (pageviews)
-        $views_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt >= %d",
-            $today_start
-        ));
-
-        // Yesterday's sessions (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
-            $yesterday_start, $yesterday_end
-        ));
-
-        // Yesterday's views
-        $views_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d",
-            $yesterday_start, $yesterday_end
-        ));
-
-        // Referrals Today (external referrers only)
-        $site_host = parse_url(home_url(), PHP_URL_HOST);
-        $referrals_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $today_start, '%' . $wpdb->esc_like($site_host) . '%'
-        ));
-
-        // Referrals Yesterday
-        $referrals_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $yesterday_start, $yesterday_end, '%' . $wpdb->esc_like($site_host) . '%'
-        ));
-
-        // Online Users — same 30-minute window query as header.php
-        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
-        $window_minutes = 30;
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
-
-        $online_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM (
-                SELECT visit_id, MAX(
-                    CASE
-                        WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
-                        ELSE dt
-                    END
-                ) AS last_activity
-                FROM {$table}
-                WHERE visit_id > 0
-                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
-                GROUP BY visit_id
-                HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions",
-            $window_start, $window_start, $window_start
-        ));
-        $online_count = max(0, $online_count);
+        $online_count = self::query_online_count();
 
         // Determine premium status early (needed for chart data)
         $is_pro = wp_slimstat::pro_is_installed();
@@ -2558,8 +2504,108 @@ class wp_slimstat_admin
     }
 
     /**
+     * Today/yesterday figures for the admin bar, behind a 60-second transient.
+     *
+     * The single source of truth for both the render path (add_menu_to_adminbar,
+     * which runs on every logged-in FRONTEND pageview via admin_bar_menu) and the
+     * AJAX refresh (get_adminbar_stats).
+     *
+     * The render path used to compute these itself with six separate queries,
+     * including two unindexable `referer NOT LIKE '%host%'` scans — 886,726 rows
+     * read per frontend request on a 443k-row table, paid by every logged-in
+     * visitor on every page of the site. It also derived midnight from
+     * mktime(0,0,0) (server timezone) while this path uses current_time() (site
+     * timezone), so the two disagreed about when "today" began on any site whose
+     * WordPress timezone differs from its server's.
+     *
+     * Two conditional-aggregate queries at most once a minute, shared.
+     *
+     * @since 5.6.0
+     * @return array{sessions:int,sessions_yesterday:int,views:int,views_yesterday:int,referrals:int,referrals_yesterday:int}
+     */
+    private static function adminbar_today_stats()
+    {
+        $transient_key = 'slimstat_adminbar_today_' . get_current_blog_id();
+        $today_stats   = get_transient($transient_key);
+
+        if (is_array($today_stats)) {
+            return $today_stats;
+        }
+
+        $wpdb  = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
+
+        $today_start     = strtotime('today', current_time('timestamp'));
+        $yesterday_start = $today_start - DAY_IN_SECONDS;
+        $yesterday_end   = $today_start - 1;
+        $site_host       = parse_url(home_url(), PHP_URL_HOST);
+        $referer_like    = '%' . $wpdb->esc_like((string) $site_host) . '%';
+
+        // Sessions + views: 1 query instead of 4, using conditional aggregates.
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
+                COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
+                SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
+                SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
+            FROM {$table}
+            WHERE dt >= %d",
+            $today_start,
+            $yesterday_start, $yesterday_end,
+            $today_start,
+            $yesterday_start, $yesterday_end,
+            $yesterday_start
+        ));
+
+        // Referrals: 1 query instead of 2 — and skipped entirely without Pro.
+        // Both consumers discard these on free installs (the render path
+        // substitutes placeholder literals behind a blur, the AJAX path only
+        // emits them inside an is_pro branch), so on a free site this was an
+        // unindexable `referer NOT LIKE '%host%'` scan running every minute and
+        // throwing the result away.
+        $ref_row = null;
+        if (wp_slimstat::pro_is_installed()) {
+            $ref_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
+                FROM {$table}
+                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start,
+                $referer_like
+            ));
+        }
+
+        $today_stats = [
+            'sessions'            => (int) ($row->sessions_today ?? 0),
+            'sessions_yesterday'  => (int) ($row->sessions_yesterday ?? 0),
+            'views'               => (int) ($row->views_today ?? 0),
+            'views_yesterday'     => (int) ($row->views_yesterday ?? 0),
+            'referrals'           => (int) ($ref_row->referrals_today ?? 0),
+            'referrals_yesterday' => (int) ($ref_row->referrals_yesterday ?? 0),
+        ];
+
+        // Align expiry to the next minute boundary, so the cache turns over in
+        // step with the minute-granular chart rather than drifting against it.
+        set_transient($transient_key, $today_stats, max(60 - (current_time('timestamp') % 60), 1));
+
+        return $today_stats;
+    }
+
+    /**
      * Get online visitors count (30-minute window, session-spanning).
      * Shared by get_online_visitors() and get_adminbar_stats().
+     *
+     * Deliberately uncached: it is the one adminbar figure presented as live.
+     * It is NOT cheap, despite appearances — a derived-table GROUP BY over
+     * visit_id with a post-aggregation HAVING, filtered by an OR spanning `dt`
+     * and `dt_out`, which needs an index_merge to avoid a scan and cannot get
+     * one on installs where the lazy `idx_dt_out` migration has not run. The
+     * value is already minute-quantised, so caching it for the remainder of the
+     * current minute would be sound; that is a deliberate follow-up, not an
+     * oversight.
      *
      * @since 5.4.3
      * @return int
@@ -2624,66 +2670,13 @@ class wp_slimstat_admin
             return;
         }
 
-        $wpdb = wp_slimstat::$wpdb;
-        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $is_pro = wp_slimstat::pro_is_installed();
 
-        // --- Online count (always fresh — fast indexed query) ---
+        // --- Online count (uncached: it is the one figure labelled realtime) ---
         $online_count = self::query_online_count();
 
         // --- Today stats (transient-cached, 60s TTL) ---
-        $blog_id = get_current_blog_id();
-        $transient_key = 'slimstat_adminbar_today_' . $blog_id;
-        $today_stats = get_transient($transient_key);
-
-        if (false === $today_stats) {
-            $today_start = strtotime('today', current_time('timestamp'));
-            $yesterday_start = $today_start - DAY_IN_SECONDS;
-            $yesterday_end = $today_start - 1;
-            $site_host = parse_url(home_url(), PHP_URL_HOST);
-            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
-
-            // Sessions + views: 2 queries instead of 4 using conditional aggregates
-            $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT
-                    COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
-                    COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
-                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
-                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
-                FROM {$table}
-                WHERE dt >= %d",
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $yesterday_start
-            ));
-
-            // Referrals: 1 query with conditional aggregates
-            $ref_row = $wpdb->get_row($wpdb->prepare(
-                "SELECT
-                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
-                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
-                FROM {$table}
-                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $yesterday_start,
-                $referer_like
-            ));
-
-            $today_stats = [
-                'sessions'             => (int) ($row->sessions_today ?? 0),
-                'sessions_yesterday'   => (int) ($row->sessions_yesterday ?? 0),
-                'views'                => (int) ($row->views_today ?? 0),
-                'views_yesterday'      => (int) ($row->views_yesterday ?? 0),
-                'referrals'            => (int) ($ref_row->referrals_today ?? 0),
-                'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
-            ];
-
-            $ttl = max(60 - (current_time('timestamp') % 60), 1); // align to next minute boundary
-            set_transient($transient_key, $today_stats, $ttl);
-        }
+        $today_stats = self::adminbar_today_stats();
 
         // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---
         $chart_data = null;

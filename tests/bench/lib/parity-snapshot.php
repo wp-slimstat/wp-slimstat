@@ -50,17 +50,31 @@ if (!class_exists('wp_slimstat')) {
 $db = wp_slimstat::$wpdb instanceof wpdb ? wp_slimstat::$wpdb : $GLOBALS['wpdb'];
 
 // A fixed window inside the dataset, so historical cells are reproducible
-// regardless of when the snapshot runs. Anchored to the newest row rather than
-// to today, so it keeps working as data ages.
-$anchor = (int) $db->get_var("SELECT MAX(dt) FROM `{$db->prefix}slim_stats`");
-if ($anchor <= 0) {
+// regardless of when the snapshot runs.
+//
+// Anchored two days BEFORE now, not at MAX(dt), and this is load-bearing:
+// init_filters() clamps every window's end to now(), and real datasets contain
+// future-dated rows (this one runs a day ahead of the wall clock). Anchoring on
+// MAX(dt) therefore produced a window whose end crept forward in real time,
+// pulling those future rows in a few at a time — 158 reports "changed" between
+// two runs of identical code, purely from the clock advancing.
+//
+// Ending the window two days back puts it entirely in the past, where nothing
+// can drift into it.
+$max_dt = (int) $db->get_var("SELECT MAX(dt) FROM `{$db->prefix}slim_stats`");
+if ($max_dt <= 0) {
     echo "ERROR: no rows in slim_stats — nothing to snapshot\n";
     echo "VERDICT: ERROR\n";
     return;
 }
-$anchor_day = gmdate('j', $anchor);
-$anchor_mon = gmdate('n', $anchor);
-$anchor_yr  = gmdate('Y', $anchor);
+// Quantised to the day it lands in: only the day/month/year are used to build
+// the filter, so carrying a to-the-second value would make two snapshots taken
+// a minute apart look like different windows.
+$anchor      = min($max_dt, time()) - (2 * DAY_IN_SECONDS);
+$anchor_day  = gmdate('j', $anchor);
+$anchor_mon  = gmdate('n', $anchor);
+$anchor_yr   = gmdate('Y', $anchor);
+$anchor_date = gmdate('Y-m-d', $anchor);
 $fixed      = sprintf('day equals %d&&&month equals %d&&&year equals %d&&&interval equals -30',
     $anchor_day, $anchor_mon, $anchor_yr);
 
@@ -141,7 +155,7 @@ $snapshot = [
     'captured_day'     => wp_date('Y-m-d'),
     'timezone'         => wp_timezone_string(),
     'fingerprint_hash' => slimstat_bench_fingerprint_hash(slimstat_bench_fingerprint($db)),
-    'anchor_dt'        => $anchor,
+    'anchor_date'      => $anchor_date,
     'stats_rows'       => (int) $db->get_var("SELECT COUNT(*) FROM `{$db->prefix}slim_stats`"),
     'cells'            => [],
 ];
