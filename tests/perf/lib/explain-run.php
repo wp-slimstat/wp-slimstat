@@ -53,54 +53,23 @@ $events_table = $raw_wpdb->prefix . 'slim_events';
 
 // ── Seed ───────────────────────────────────────────────────────────────────
 // A plan is only meaningful on a table big enough that the optimiser stops
-// preferring a scan for trivial cardinality. Seeded here rather than through a
-// WP-CLI command so the gate has no dependency outside this directory.
-$current = (int) $raw_wpdb->get_var("SELECT COUNT(*) FROM `{$stats_table}`");
-if ($current < $seed_rows) {
-    $need = $seed_rows - $current;
-    printf("seeding %s rows into %s (have %s, want %s)\n",
-        number_format($need), $stats_table, number_format($current), number_format($seed_rows));
+// preferring a scan for trivial cardinality.
+// Uses the shared seeder so the gate measures the same distributions the
+// benchmark matrix does — a plan is only as honest as the data under it.
+require_once dirname(__DIR__, 2) . '/bench/lib/seeder.php';
 
-    $resources = [];
-    for ($i = 0; $i < 500; $i++) {
-        $resources[] = '/page-' . $i . '/';
-    }
-    $browsers  = ['Chrome', 'Firefox', 'Safari', 'Edge', 'Googlebot'];
-    $platforms = ['Win32', 'MacIntel', 'Linux', 'iPhone', 'Android'];
-    $countries = ['us', 'gb', 'de', 'fr', 'nl', 'ir', 'in', 'br'];
-    $now       = time();
-
-    $raw_wpdb->query('SET autocommit = 0');
-    $batch = 2000;
-    for ($done = 0; $done < $need; $done += $batch) {
-        $rows = [];
-        $n    = (int) min($batch, $need - $done);
-        for ($i = 0; $i < $n; $i++) {
-            // Zipf-ish resource skew so a few URLs dominate, as in real traffic.
-            $r  = $resources[(int) floor(abs(sin($done + $i)) ** 3 * (count($resources) - 1))];
-            $dt = $now - random_int(0, 365 * DAY_IN_SECONDS);
-            $rows[] = $raw_wpdb->prepare(
-                '(%s,%s,%s,%s,%s,%d,%d,%d,%d,%d)',
-                '10.' . random_int(0, 255) . '.' . random_int(0, 255) . '.' . random_int(0, 255),
-                $r,
-                $browsers[array_rand($browsers)],
-                $platforms[array_rand($platforms)],
-                $countries[array_rand($countries)],
-                random_int(1, max(1, (int) ($seed_rows / 2))),
-                $dt,
-                0,
-                random_int(0, 1),
-                random_int(1000, 9999)
-            );
+try {
+    (new SlimStat_Bench_Seeder($raw_wpdb))->seedTo(
+        $seed_rows,
+        365,
+        static function (string $line): void {
+            echo $line . "\n";
         }
-        $raw_wpdb->query(
-            "INSERT INTO `{$stats_table}` (ip, resource, browser, platform, country, visit_id, dt, dt_out, browser_type, content_id) VALUES "
-            . implode(',', $rows)
-        );
-    }
-    $raw_wpdb->query('COMMIT');
-    $raw_wpdb->query('SET autocommit = 1');
-    $raw_wpdb->query("ANALYZE TABLE `{$stats_table}`");
+    );
+} catch (\Throwable $e) {
+    echo 'ERROR: seeding failed — ' . $e->getMessage() . "\n";
+    echo "VERDICT: ERROR\n";
+    return;
 }
 
 $row_counts = [];
