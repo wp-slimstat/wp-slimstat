@@ -316,7 +316,7 @@ class wp_slimstat_db
 
                 // This condition could be empty if it's related to a custom column
                 if (!empty($new_clause)) {
-                    $_where .= ' AND ' . $new_clause;
+                    $_where = sprintf('(%s) AND %s', $_where, $new_clause);
                 }
             }
 
@@ -331,7 +331,10 @@ class wp_slimstat_db
         }
 
         if (!empty($_where) && ('' !== $time_range_condition && '0' !== $time_range_condition)) {
-            $_where = sprintf('%s AND %s', $_where, $time_range_condition);
+            // Parenthesise the caller's clause. SQL binds AND tighter than OR, so
+            // `A OR B` + ` AND range` silently becomes `A OR (B AND range)` — a filter
+            // that applies to half the condition. (D62)
+            $_where = sprintf('(%s) AND %s', $_where, $time_range_condition);
         } else {
             $_where = trim(sprintf('%s %s', $_where, $time_range_condition));
         }
@@ -346,7 +349,10 @@ class wp_slimstat_db
             $filter_not_empty = $column_with_alias . ' ' . (('varchar' == self::$columns_names[$_column][1]) ? 'IS NOT NULL' : '<> 0');
 
             if (false === strpos($_where, $filter_empty) && false === strpos($_where, $filter_not_empty)) {
-                $_where = sprintf('%s AND %s', $filter_not_empty, $_where);
+                // Same reason as above, and it matters more here: with the caller's
+                // clause on the RIGHT of the AND, `col IS NOT NULL AND A OR B` groups as
+                // `(col IS NOT NULL AND A) OR B`, so B escapes the filter entirely.
+                $_where = sprintf('%s AND (%s)', $filter_not_empty, $_where);
             }
         }
 
@@ -1301,7 +1307,10 @@ class wp_slimstat_db
         if (is_array($_column)) {
             $_where               = empty($_column['where']) ? '' : $_column['where'];
             $_having              = empty($_column['having']) ? '' : $_column['having'];
-            $_use_date_filters    = empty($_column['use_date_filters']) ? true : $_column['use_date_filters'];
+            // isset(), not empty(): `empty()` reads a declared `false` as "not set" and
+            // flips it back to true, which is exactly the value a report would be
+            // declaring on purpose. Matches get_top()'s reading of the same key. (D62)
+            $_use_date_filters    = isset($_column['use_date_filters']) ? (bool) $_column['use_date_filters'] : true;
             $_as_column           = empty($_column['as_column']) ? '' : $_column['as_column'];
             $_outer_select_column = empty($_column['outer_select_column']) ? '' : $_column['outer_select_column'];
             $_aggr_function       = empty($_column['aggr_function']) ? '' : $_column['aggr_function'];

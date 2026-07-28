@@ -130,6 +130,7 @@
     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
     "test:bundle-matches-source": "php tests/bundle-matches-source-test.php",
     "test:chart-query-budget": "php tests/chart-query-budget-test.php",
+    "test:report-date-filter-scope": "php tests/report-date-filter-scope-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -173,7 +174,8 @@
       "@test:cron-hook-cleanup",
       "@test:failsoft-visibility",
       "@test:bundle-matches-source",
-      "@test:chart-query-budget"
+      "@test:chart-query-budget",
+      "@test:report-date-filter-scope"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

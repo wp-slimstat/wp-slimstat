@@ -1234,7 +1234,22 @@ class wp_slimstat_reports
         wp_slimstat_db::$debug_message = '';
         $where_params                  = $_args['where_params'] ?? null;
         if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
-            $_args['where'] = call_user_func([$_args['raw'][0], 'get_combined_where'], $_args['where'], '', true, '', $where_params);
+            // Honour what the report declared. This was a hardcoded `true`, so a report
+            // asking for no date filter got one welded into its WHERE string here —
+            // before get_top(), which does honour the flag, ever saw it. The two
+            // "Currently Online" widgets declare it for a reason: "who is here right
+            // now" is not a question about the range being browsed, and with the filter
+            // applied the users one reported nobody online while somebody was. (D62)
+            $use_date_filters = $_args['use_date_filters'] ?? true;
+
+            $_args['where'] = call_user_func(
+                [$_args['raw'][0], 'get_combined_where'],
+                $_args['where'],
+                '',
+                $use_date_filters,
+                '',
+                $where_params
+            );
         }
 
         $all_results = call_user_func($_args['raw'], $_args);
