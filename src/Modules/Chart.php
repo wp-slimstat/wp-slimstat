@@ -23,6 +23,22 @@ class Chart
 
     private const CHART_TYPES = ['line', 'bar'];
 
+    /**
+     * How coarsely the end of a today-inclusive window is quantised, and how long the
+     * resulting cache entry lives.
+     *
+     * Deliberately one number for both jobs: the bucket makes the key stable long
+     * enough to be hit, the TTL bounds staleness at one bucket. Two constants could
+     * drift into a cache that is written and never read.
+     *
+     * 60s matches the once-a-minute cadence `adminbar-realtime.js` refreshes at, so a
+     * chart is never more out of date than the figures printed beside it.
+     *
+     * @see \wp_slimstat_db::CACHE_RANGE_BUCKET_SECONDS for the same technique applied
+     *      to the goal and funnel transients (D33).
+     */
+    private const CACHE_LIVE_BUCKET_SECONDS = 60;
+
     private array $args = [];
 
     private array $data = [];
@@ -196,22 +212,49 @@ class Chart
 
     private function fetchChartData(array $args): array
     {
+        // Quantise the live end BEFORE anything else reads $args, so the WHERE and the
+        // current-vs-previous CASE describe the same window. The end is otherwise `now`
+        // to the second and the cache key derives from the generated SQL, so the key
+        // moved every render and the cache could never be hit — the same defect as the
+        // goal transients (D33). Enabling caching without this achieves nothing. Cost:
+        // the last <60s of today is ignored, well inside the hourly granularity.
+        //
+        // Not routed through Query::processDateRange(), which already splits a
+        // today-inclusive range into a cached historical half and a live half. Four
+        // reasons, recorded because "just use the builder" is the obvious cleanup and
+        // it would silently break the coarse granularities:
+        //   1. getSplitDateRanges() matches ONE contiguous `dt BETWEEN`; this predicate
+        //      is current OR previous in a single clause.
+        //   2. $end is also inlined into the SELECT list's CASE label, so splitting the
+        //      WHERE alone still leaves a key that moves every second.
+        //   3. mergeGroupResults() sums 'counthits', not v1/v2, and for WEEK/MONTH/YEAR
+        //      the bucket containing today appears in BOTH halves — it would keep one
+        //      and discard the other's counts.
+        //   4. getAll() takes the split path whenever it matches, regardless of whether
+        //      caching is on, so this would apply even with the cache disabled.
+        $todayStart = strtotime(date('Y-m-d 00:00:00'));
+        $isLive     = ($args['end'] >= $todayStart);
+
+        if ($isLive) {
+            $args['end'] = (int) (floor($args['end'] / self::CACHE_LIVE_BUCKET_SECONDS) * self::CACHE_LIVE_BUCKET_SECONDS);
+        }
+
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
 
-        // Allow caching only if both current and previous ranges end before today
-        $todayStart     = strtotime(date('Y-m-d 00:00:00'));
-        $canCacheRanges = ($args['end'] < $todayStart && $prevArgs['end'] < $todayStart);
+        // Historical windows are immutable, so they keep the long TTL. Live ones expire
+        // with their bucket: a stale entry must never outlive the window it describes.
+        $expiration = $isLive ? self::CACHE_LIVE_BUCKET_SECONDS : DAY_IN_SECONDS;
 
         $rowsQuery   = $sqlInfo['query'];
         $totalsQuery = $sqlInfo['totalsQuery'];
 
         if ($rowsQuery instanceof Query) {
-            $rowsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+            $rowsQuery->allowCaching(true, $expiration);
         }
 
         if ($totalsQuery instanceof Query) {
-            $totalsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+            $totalsQuery->allowCaching(true, $expiration);
         }
 
         $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
@@ -273,7 +316,6 @@ class Chart
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
-        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         
@@ -318,12 +360,12 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
-        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
-        // The sign appears inverted vs DataBuckets.php — this is INTENTIONAL:
-        // FROM_UNIXTIME(dt) returns server-local time, but CONVERT_TZ source '+00:00'
-        // declares it as UTC. The "inverted" sign cancels the implicit timezone shift,
-        // producing actual UTC. DataBuckets then applies the correct offset for display.
-        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
+        // One probe per request, shared with DataBuckets, which asks the same question
+        // of the same connection. The sign below is INVERTED relative to it, and that
+        // is INTENTIONAL: FROM_UNIXTIME(dt) returns server-local time while CONVERT_TZ
+        // declares its source as UTC, so the inversion cancels the implicit shift and
+        // produces actual UTC. DataBuckets then applies the offset for display.
+        $totalOffsetSeconds = DataBuckets::serverTimezoneOffset();
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
