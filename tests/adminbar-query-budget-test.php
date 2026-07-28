@@ -135,6 +135,90 @@ if ($online_raw === '') {
         . 'in separate functions, or the AJAX path cannot ask for a fresh value if it ever needs one';
 }
 
+// ── 2c. One definition of "can this user see the admin bar menu" ────────────
+//
+// There were three, and they disagreed. add_menu_to_adminbar() computed a capability
+// including an is_network_admin() branch; check_ajax_view_capability() computed the same
+// thing without that branch; and enqueue_adminbar_styles() did not check at all — so a
+// logged-in subscriber downloaded admin-bar-modal.css (14,843 bytes) and
+// adminbar-realtime.js (6,893 bytes), paid a wp_create_nonce(), and then polled
+// admin-ajax.php every minute forever, for a menu that never rendered. The JS guards
+// only on its localize blob existing, not on the menu being in the DOM.
+//
+// The capability is fully known at enqueue time, so this is the same shape as D45.
+$gate = slimstat_function_body($source, 'can_view_stats');
+
+if ($gate === '') {
+    $failures[] = 'can_view_stats() not found — the capability check must live in one '
+        . 'place that the enqueue, the render and the AJAX handler all consult';
+} else {
+    foreach ([
+        'enqueue_adminbar_styles'   => 'assets are enqueued for users who cannot see the menu',
+        'add_menu_to_adminbar'      => 'the render path has its own copy of the capability logic',
+        'check_ajax_view_capability' => 'the AJAX handler has its own copy, and it omitted the '
+            . 'is_network_admin() branch the render path had',
+    ] as $fn => $why) {
+        $body = slimstat_function_body($source, $fn);
+        if ($body === '') {
+            $failures[] = "{$fn}() not found";
+            continue;
+        }
+        if (!preg_match('/can_view_stats\s*\(/', $body)) {
+            $failures[] = "{$fn}() does not consult can_view_stats() — {$why}";
+        }
+    }
+
+    // The capability itself is computed once, in its own function, because the admin
+    // menu needs the string while everything else needs only the yes/no. Both halves of
+    // the condition must live there, or the network-admin case can diverge again.
+    $capability = slimstat_function_body($source, 'stats_view_capability');
+    if ($capability === '') {
+        $failures[] = 'stats_view_capability() not found — can_view_stats() must derive from '
+            . 'one capability computation that add_menus() can also read';
+    } else {
+        if (!preg_match('/is_network_admin\s*\(/', $capability)) {
+            $failures[] = 'stats_view_capability() drops the is_network_admin() branch that '
+                . 'add_menu_to_adminbar() carried — network admins would lose the menu';
+        }
+        if (!preg_match('/capability_can_view/', $capability)) {
+            $failures[] = 'stats_view_capability() ignores the capability_can_view setting';
+        }
+    }
+
+    // And nobody may compute it inline again. Six call sites did, and only two of them
+    // carried the network branch.
+    //
+    // Anchored on `capability_can_view` rather than on the `$minimum_capability = 'read'`
+    // idiom: add_menus() legitimately computes a PER-SCREEN capability with the same
+    // variable name and the same opening line, and folding that into this one would be
+    // wrong. The global setting is what identifies this particular question.
+    $capability_body = $capability ?? '';
+    $outside = 0;
+    foreach (explode("\n", $source) as $line) {
+        if (strpos($line, 'capability_can_view') !== false && strpos($capability_body, trim($line)) === false) {
+            $outside++;
+        }
+    }
+    if ($outside > 1) {
+        // One legitimate reader remains: the settings screen that renders the value.
+        $failures[] = $outside . ' site(s) outside stats_view_capability() read '
+            . 'capability_can_view — the view capability must be computed in one place';
+    }
+}
+
+// Nothing may be enqueued, and no nonce minted, before the gate is consulted.
+$enqueue = slimstat_function_body($source, 'enqueue_adminbar_styles');
+if ($enqueue !== '' && preg_match('/can_view_stats\s*\(/', $enqueue)) {
+    $gate_pos  = strpos($enqueue, 'can_view_stats');
+    foreach (['wp_enqueue_style', 'wp_enqueue_script', 'wp_localize_script', 'wp_create_nonce'] as $call) {
+        $pos = strpos($enqueue, $call);
+        if ($pos !== false && $pos < $gate_pos) {
+            $failures[] = "enqueue_adminbar_styles() calls {$call}() before consulting "
+                . 'can_view_stats()';
+        }
+    }
+}
+
 // ── 3. One definition of "today" ────────────────────────────────────────────
 // mktime(0,0,0) is the server's midnight; current_time() is the site's. Using
 // both produced two different day boundaries for the same numbers.

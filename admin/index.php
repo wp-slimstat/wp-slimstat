@@ -904,13 +904,7 @@ class wp_slimstat_admin
 
     public static function add_dashboard_widgets()
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
@@ -1238,13 +1232,7 @@ class wp_slimstat_admin
     {
         global $submenu;
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (is_network_admin()) {
-            $minimum_capability = 'manage_network';
-        } elseif (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
+        $minimum_capability = self::stats_view_capability();
 
         // Find the first available location (screens with no reports assigned to them are hidden from the nav)
 		$parent = '';
@@ -1346,9 +1334,71 @@ class wp_slimstat_admin
     /**
      * Enqueue admin bar modal styles globally (admin + frontend)
      */
+    /**
+     * Whether the current user may see SlimStat's stats.
+     *
+     * One predicate for a question that had three answers: add_menu_to_adminbar()
+     * computed a capability including the network-admin branch, check_ajax_view_capability()
+     * computed the same thing without it, and enqueue_adminbar_styles() did not ask at
+     * all — so a logged-in subscriber downloaded admin-bar-modal.css (14.8 KB) and
+     * adminbar-realtime.js (6.9 KB), paid a wp_create_nonce(), and then polled
+     * admin-ajax.php every minute forever for a menu that never rendered. The JS guards
+     * only on its localize blob being present, not on the menu existing in the DOM.
+     *
+     * Six call sites computed this inline — the admin bar, the dashboard widget, the
+     * admin menu and three AJAX handlers — and only two of them carried the
+     * network-admin branch. Adding it everywhere is a no-op for the AJAX and dashboard
+     * paths: admin-ajax.php is not a network-admin screen, so is_network_admin() is
+     * false there either way.
+     *
+     * @since 5.6.0
+     * @return bool
+     */
+    private static function can_view_stats()
+    {
+        return current_user_can(self::stats_view_capability());
+    }
+
+    /**
+     * The capability a user needs to see SlimStat's stats.
+     *
+     * The admin menu needs the capability itself (add_menu_page() takes one); the admin
+     * bar, its assets and the AJAX handler need only the yes/no. Four byte-identical
+     * copies of this computation existed, and they had already drifted — the AJAX one
+     * omitted the network-admin branch.
+     *
+     * @since 5.6.0
+     * @return string
+     */
+    private static function stats_view_capability()
+    {
+        // Guarded like the plugin's other is_network_admin() call: this predicate is now
+        // consulted from wp_enqueue_scripts on the front end, and the AJAX handlers,
+        // where the admin-context helpers are not guaranteed to be loaded. Without the
+        // guard the funnel AJAX endpoints fatal.
+        if (function_exists('is_network_admin') && is_network_admin()) {
+            return 'manage_network';
+        }
+
+        // A whitelisted user gets the minimum capability instead of the configured one.
+
+        $whitelisted = false !== strpos(
+            (string) wp_slimstat::$settings['can_view'],
+            (string) ($GLOBALS['current_user']->user_login ?? '')
+        );
+
+        if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            return wp_slimstat::$settings['capability_can_view'];
+        }
+
+        return 'read';
+    }
+
     public static function enqueue_adminbar_styles()
     {
-        if (is_admin_bar_showing()) {
+        // Gated on the same capability the menu itself is: these assets exist only to
+        // style and refresh that menu, and the answer is already known here.
+        if (is_admin_bar_showing() && self::can_view_stats()) {
             wp_enqueue_style(
                 'slimstat-adminbar',
                 plugins_url('/admin/assets/css/admin-bar-modal.css', __DIR__),
@@ -1389,15 +1439,7 @@ class wp_slimstat_admin
      */
     public static function add_menu_to_adminbar()
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (is_network_admin()) {
-            $minimum_capability = 'manage_network';
-        } elseif (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
@@ -2402,13 +2444,7 @@ class wp_slimstat_admin
     {
         check_ajax_referer('meta-box-order', 'security');
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
@@ -2490,12 +2526,9 @@ class wp_slimstat_admin
      */
     private static function check_ajax_view_capability()
     {
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        // Same predicate the menu and its assets use — this carried its own copy, which
+        // had already drifted (it omitted the network-admin branch).
+        if (!self::can_view_stats()) {
             wp_send_json_error(['message' => esc_html__('Insufficient permissions', 'wp-slimstat')], 403);
             return false;
         }
@@ -2854,13 +2887,7 @@ class wp_slimstat_admin
     {
         check_ajax_referer('meta-box-order', 'security');
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             wp_send_json_error('Insufficient permissions');
             return;
         }
