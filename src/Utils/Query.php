@@ -1205,6 +1205,21 @@ class Query
     }
 
     /**
+     * Whether the query matches at least one row.
+     *
+     * Bounded to a single row, so the cost does not grow with the number of matches.
+     * Given its own terminal because the shape people reach for instead is
+     * `COUNT(...) > 0`, which has to visit every match before it can answer — the
+     * defect this exists to make hard to reintroduce. (D43)
+     *
+     * @return bool
+     */
+    public function exists(): bool
+    {
+        return null !== $this->limit(1)->getVar();
+    }
+
+    /**
      * Execute the query and return a single value from the first row
      *
      * This is a shortcut for `getAll()[0][0]`

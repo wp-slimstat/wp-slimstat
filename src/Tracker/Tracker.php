@@ -405,26 +405,17 @@ class Tracker
         return false;
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::isNewVisitor().
+     *
+     * Kept as a delegate rather than deleted because the Tracker::_* surface is public
+     * back-compat for add-ons. It carried its own copy of the lookup, so it kept the
+     * unbounded `COUNT(id)` — and the two implementations had already silently
+     * diverged. (D43)
+     */
     public static function _is_new_visitor($_fingerprint = '')
     {
-        if ('on' == (\wp_slimstat::$settings['hash_ip'] ?? 'off')) {
-            return false;
-        }
-
-        if ('on' == \wp_slimstat::$settings['anonymize_ip']) {
-            return false;
-        }
-
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $_fingerprint);
-        $today = date('Y-m-d');
-        $stat = \wp_slimstat::get_stat();
-        if (!empty($stat['dt']) && date('Y-m-d', $stat['dt']) < $today) {
-            $query->allowCaching(true);
-        }
-
-        $count_fingerprint = $query->getVar();
-        return 0 == $count_fingerprint;
+        return Utils::isNewVisitor($_fingerprint);
     }
 
     public static function _dtr_pton($_ip)

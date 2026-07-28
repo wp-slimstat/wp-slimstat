@@ -311,16 +311,20 @@ class Utils
 			return false;
 		}
 
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::select('COUNT(id) as cnt')->from($table)->where('fingerprint', '=', $fingerprint);
-        $today = date('Y-m-d');
-        $stat = \wp_slimstat::get_stat();
-        if (!empty($stat['dt']) && is_numeric($stat['dt']) && $stat['dt'] > 0 && date('Y-m-d', $stat['dt']) < $today) {
-            $query->allowCaching(true);
-        }
+		// An existence probe, so the cost cannot grow with a visitor's history. This
+		// counted every row the visitor had ever generated in order to learn whether
+		// they had generated any, on every follow-up event. (D43)
+		//
+		// Not cached, deliberately: the builder's cache key hashes the prepared SQL,
+		// which carries the fingerprint, so caching this wrote two wp_options rows per
+		// distinct visitor from the tracking path — measured at 5 queries on a miss to
+		// avoid a single 0.06 ms index lookup.
+		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-		$countFingerprint = $query->getVar();
-		return 0 == $countFingerprint;
+		return !Query::select('id')
+			->from($table)
+			->where('fingerprint', '=', $fingerprint)
+			->exists();
 	}
 
 	public static function dtrPton($ip)
