@@ -1841,11 +1841,19 @@ class wp_slimstat_db
     {
         $goals   = get_option('slimstat_goals', []);
         $results = [];
+        // Bounded by the tier maximum, as the widget renderer is. This runs on the
+        // email-report cron, where an over-limit option (a Pro-to-free downgrade, an
+        // import) would otherwise compute an aggregate per stored goal. (D14)
+        $remaining = (int) apply_filters('slimstat_max_goals', 1);
 
         foreach ($goals as $goal) {
             if (empty($goal['active']) || empty($goal['name']) || empty($goal['dimension'])) {
                 continue;
             }
+            if ($remaining <= 0) {
+                break;
+            }
+            $remaining--;
             $data      = self::get_goal_results($goal);
             $results[] = [
                 'goal_name' => $goal['name'],
@@ -2176,8 +2184,17 @@ class wp_slimstat_db
      */
     public static function get_funnels_raw($_args = [])
     {
-        $funnels = get_option('slimstat_funnels', []);
-        $results = [];
+        // Gated on the tier, like show_funnels() — this one was not, so a site that had
+        // been Pro and moved to free still built every stored funnel's temp-table chain
+        // on the email-report cron, for funnels the tier says do not exist. Bounded for
+        // the same reason the widget is: however many the option happens to hold. (D40)
+        $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
+        if ($max_funnels <= 0) {
+            return [];
+        }
+
+        $funnels   = array_slice(get_option('slimstat_funnels', []), 0, $max_funnels);
+        $results   = [];
 
         foreach ($funnels as $funnel) {
             if (empty($funnel['name']) || empty($funnel['steps'])) {
