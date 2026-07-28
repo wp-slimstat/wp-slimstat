@@ -121,18 +121,37 @@ class DataEraser
 		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
 
+		$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
+		$stats_archive_table  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+		$archive_exists       = (bool) $GLOBALS['wpdb']->get_var(
+			$GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $events_archive_table)
+		);
+
 		// Delete events by joining with stats table to filter by email
 		// Get IDs first, then delete (safer than direct join delete)
-		$event_ids = $GLOBALS['wpdb']->get_col(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT e.id FROM {$events_table} e
+		//
+		// The archived pair is searched as well as the live one. An event is attributable
+		// to a person only through its parent pageview, so once retention moves a pageview
+		// into the archive its events are reachable ONLY via the archived parent — looking
+		// in the live tables alone would leave that person's notes, event descriptions and
+		// click positions in the archive forever. This mattered from the moment archiving
+		// began working: before that the archive tables were always empty. (D1)
+		$id_sql = "SELECT e.id FROM {$events_table} e
 				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s
-				LIMIT %d OFFSET %d",
-				$email_address,
-				$number,
-				$offset
-			)
+				WHERE s.email = %s";
+
+		if ($archive_exists) {
+			$id_sql .= " UNION SELECT a.id FROM {$events_archive_table} a
+				INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
+				WHERE sa.email = %s";
+		}
+
+		$id_args = $archive_exists
+			? [$email_address, $email_address, $number, $offset]
+			: [$email_address, $number, $offset];
+
+		$event_ids = $GLOBALS['wpdb']->get_col(
+			$GLOBALS['wpdb']->prepare($id_sql . ' LIMIT %d OFFSET %d', ...$id_args)
 		);
 
 		if (!empty($event_ids)) {
@@ -152,15 +171,6 @@ class DataEraser
 				);
 			}
 
-			// Also check archive table
-			$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-			$archive_exists = $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SHOW TABLES LIKE %s",
-					$events_archive_table
-				)
-			);
-
 			if ($archive_exists) {
 				$deleted_archive = $GLOBALS['wpdb']->query(
 					$GLOBALS['wpdb']->prepare(
@@ -179,8 +189,12 @@ class DataEraser
 			}
 		}
 
-		// Check if there are more pages
-		$remaining = $GLOBALS['wpdb']->get_var(
+		// Check if there are more pages.
+		//
+		// Counted across the archive too. Reporting done=true while archived events for
+		// this person remain would stop WordPress calling back, and the erasure request
+		// would be marked complete with the data still there.
+		$remaining = (int) $GLOBALS['wpdb']->get_var(
 			$GLOBALS['wpdb']->prepare(
 				"SELECT COUNT(*) FROM {$events_table} e
 				INNER JOIN {$stats_table} s ON e.id = s.id
@@ -189,7 +203,18 @@ class DataEraser
 			)
 		);
 
-		$done = ($remaining == 0);
+		if ($archive_exists) {
+			$remaining += (int) $GLOBALS['wpdb']->get_var(
+				$GLOBALS['wpdb']->prepare(
+					"SELECT COUNT(*) FROM {$events_archive_table} a
+					INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
+					WHERE sa.email = %s",
+					$email_address
+				)
+			);
+		}
+
+		$done = (0 === $remaining);
 
 		return [
 			'items_removed'  => $items_removed,
@@ -271,14 +296,18 @@ class DataEraser
 	 */
 	public static function registerErasers($erasers)
 	{
-		$erasers['slimstat-pageviews'] = [
-			'eraser_friendly_name' => __('SlimStat Pageviews', 'wp-slimstat'),
-			'callback'             => [self::class, 'erasePageviews'],
-		];
-
+		// Events BEFORE pageviews. An event carries no email of its own — it can only be
+		// attributed to a person through its parent pageview — so erasing the pageviews
+		// first leaves the events unidentifiable and therefore unerasable. Same
+		// children-before-parents rule the retention purge has to follow. (D1)
 		$erasers['slimstat-events'] = [
 			'eraser_friendly_name' => __('SlimStat Events', 'wp-slimstat'),
 			'callback'             => [self::class, 'eraseEvents'],
+		];
+
+		$erasers['slimstat-pageviews'] = [
+			'eraser_friendly_name' => __('SlimStat Pageviews', 'wp-slimstat'),
+			'callback'             => [self::class, 'erasePageviews'],
 		];
 
 		return $erasers;

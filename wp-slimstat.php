@@ -601,8 +601,10 @@ class wp_slimstat
      * Only touches the database when the recorded message actually changes, so a
      * persistently broken install does not add a wp_options write to every request.
      *
-     * @param string     $step Stable machine key for the guarded step, e.g. 'browscap'.
-     * @param \Throwable $e    The swallowed error.
+     * @param string             $step Stable machine key for the guarded step, e.g. 'browscap'.
+     * @param \Throwable|string  $e    The swallowed error, or a description of a failure that
+     *                                 produced no exception — a query that returned false, or
+     *                                 a precondition that was not met.
      * @return void
      */
     public static function record_degradation($step, $e)
@@ -1697,36 +1699,159 @@ class wp_slimstat
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';
         $table_events_archive = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
 
-        // Copy entries to the archive table, if needed
-        if ('no' != self::$settings['auto_purge_delete']) {
-            // Use Query builder for INSERT INTO ... SELECT ... with prepared statements
-            $insert_sql   = self::$wpdb->prepare(
-                "INSERT INTO {$table_stats_archive} (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM {$table_stats} WHERE dt < %d",
-                $days_ago
-            );
-            $is_copy_done = self::$wpdb->query($insert_sql);
-            if (false !== $is_copy_done) {
-                \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-            }
-            $insert_sql_events = self::$wpdb->prepare(
-                "INSERT INTO {$table_events_archive} (type, event_description, notes, position, id, dt) SELECT type, event_description, notes, position, id, dt FROM {$table_events} WHERE dt < %d",
-                $days_ago
-            );
-            $is_copy_done      = self::$wpdb->query($insert_sql_events);
-            if (false !== $is_copy_done) {
-                \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
-            }
-        } else {
-            // Delete old entries
-            \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-            \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
+        // Nothing to purge is the overwhelmingly common case: retention defaults to 420
+        // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
+        // to continue into four full InnoDB table rebuilds regardless. (D1)
+        $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
+            || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+
+        if (!$has_work) {
+            return;
         }
 
-        // Optimize tables (keep as direct queries)
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats_archive);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_events_archive);
+        $archive = ('no' != self::$settings['auto_purge_delete']);
+
+        // ── Events first. This ordering is the whole defect. ────────────────────────
+        //
+        // {prefix}slim_events.id is a FOREIGN KEY into {prefix}slim_stats(id) ON DELETE
+        // CASCADE, created by this plugin. Deleting the parent pageviews first destroyed
+        // the event rows before the archive INSERT below could copy them — measured at
+        // 102,573 of 102,573 events lost at a 30-day cutoff, because an event is stamped
+        // with its parent's id when the pageview is recorded and so is never older than
+        // its parent.
+        //
+        // Selection keys off the PARENT's dt as well as the event's own, because the
+        // cascade keys off the parent: an event still inside the retention window whose
+        // parent has aged out was being destroyed without ever being eligible to archive.
+        $event_where = 'e.dt < %d OR s.dt < %d';
+
+        if ($archive) {
+            // Before trusting INSERT IGNORE, make sure nothing is standing on our keys.
+            //
+            // IGNORE cannot tell "this row is already archived" (the replay case, which is
+            // exactly what it is here for) from "a DIFFERENT row already owns this primary
+            // key" — and it reports the second as a silent no-op. Deleting afterwards would
+            // then destroy live rows that were never archived: data loss where the old code
+            // merely stopped working, which is the one direction a data-safety fix must not
+            // move.
+            //
+            // Reachable in the wild. DELETE does not reset AUTO_INCREMENT, but MariaDB and
+            // MySQL 5.7 re-derive it as MAX(id)+1 on restart, so an admin who uses "Delete
+            // Records" and later reboots gets fresh rows numbered from 1, colliding with
+            // whatever is already archived.
+            //
+            // The comparison is a discriminator, not a full row equality test: matching on
+            // the parent, the timestamp and the payload is enough to tell a replayed copy
+            // of the same event from a different event that merely reuses its number.
+            if (self::$wpdb->get_var(self::$wpdb->prepare(
+                "SELECT 1 FROM {$table_events} e
+                 INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
+                 LEFT JOIN {$table_stats} s ON s.id = e.id
+                 WHERE ({$event_where})
+                   AND NOT (a.id <=> e.id AND a.dt <=> e.dt AND a.notes <=> e.notes)
+                 LIMIT 1",
+                $days_ago,
+                $days_ago
+            ))) {
+                self::record_degradation(
+                    'purge (archiving events)',
+                    'the events archive already holds different rows under the primary keys about to be '
+                        . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
+                        . 'after records were cleared.'
+                );
+                return;
+            }
+
+            // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
+            // archiving and deleting is replayable: the next run re-copies the same rows
+            // and MySQL ignores the ones already there. Without event_id there is no key to
+            // dedupe on and the retry would duplicate every archived event instead.
+            if (false === self::$wpdb->query(self::$wpdb->prepare(
+                "INSERT IGNORE INTO {$table_events_archive} (event_id, type, event_description, notes, position, id, dt)
+                 SELECT e.event_id, e.type, e.event_description, e.notes, e.position, e.id, e.dt
+                 FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id
+                 WHERE {$event_where}",
+                $days_ago,
+                $days_ago
+            ))) {
+                // Fail closed. If the events could not be archived — missing table, schema
+                // drift, anything — do not touch the pageviews, because deleting them
+                // cascades the events away with no copy anywhere.
+                self::record_degradation('purge (archiving events)', self::$wpdb->last_error);
+                return;
+            }
+        }
+
+        // Delete the events explicitly rather than leaning on the cascade, so the set
+        // removed is exactly the set archived, and so the behaviour is the same on an
+        // install whose tables are MyISAM and silently ignore the foreign key.
+        if (false === self::$wpdb->query(self::$wpdb->prepare(
+            "DELETE e FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id WHERE {$event_where}",
+            $days_ago,
+            $days_ago
+        ))) {
+            self::record_degradation('purge (deleting events)', self::$wpdb->last_error);
+            return;
+        }
+
+        // ── Then the pageviews ──────────────────────────────────────────────────────
+        if ($archive) {
+            // Same collision guard as for events, on the pageviews' own primary key.
+            if (self::$wpdb->get_var(self::$wpdb->prepare(
+                "SELECT 1 FROM {$table_stats} s
+                 INNER JOIN {$table_stats_archive} a ON a.id = s.id
+                 WHERE s.dt < %d
+                   AND NOT (a.dt <=> s.dt AND a.ip <=> s.ip AND a.resource <=> s.resource)
+                 LIMIT 1",
+                $days_ago
+            ))) {
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    'the pageview archive already holds different rows under the primary keys about to '
+                        . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
+                        . 'reset after records were cleared.'
+                );
+                return;
+            }
+
+            if (false === self::$wpdb->query(self::$wpdb->prepare(
+                "INSERT IGNORE INTO {$table_stats_archive} (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM {$table_stats} WHERE dt < %d",
+                $days_ago
+            ))) {
+                self::record_degradation('purge (archiving pageviews)', self::$wpdb->last_error);
+                return;
+            }
+
+        }
+
+        $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
+
+        if (false === $rows_removed) {
+            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error);
+            return;
+        }
+
+        // OPTIMIZE TABLE on InnoDB is a full table rebuild, and its cost tracks table SIZE
+        // rather than rows removed — back-to-back runs on a freshly rebuilt, unfragmented
+        // table cost the same as the first. It also takes an exclusive metadata lock at its
+        // boundaries, so tracking INSERTs queue behind it whenever a report query is open.
+        // Worth paying only after a purge actually freed space, and rarely.
+        //
+        // The archive tables are gone from the list: they are append-only and never
+        // fragment, so rebuilding them was pure cost forever.
+        //
+        // Stored as a non-autoloaded option rather than a transient, because a transient is
+        // evictable and it would fail in the wrong direction: past its retention horizon a
+        // site removes rows on every tick, so an evicted flag restores exactly the
+        // twice-daily rebuild this exists to stop, on the largest sites. Stamped BEFORE the
+        // rebuild so a crash cannot retry it every 12 hours.
+        $last_optimized = (int) get_option('slimstat_purge_optimized_at', 0);
+
+        if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
+            self::update_option('slimstat_purge_optimized_at', self::now(), false);
+            self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+        }
     }
 
     public static function wp_slimstat_update_geoip_database()
