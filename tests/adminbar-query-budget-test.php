@@ -89,6 +89,52 @@ if ($shared === '') {
     }
 }
 
+// ── 2b. The online count is cached too ──────────────────────────────────────
+//
+// It was left uncached on purpose when the rest of the adminbar was fixed, because it
+// is the one figure labelled "right now". Measured since: with 30 minutes of live
+// traffic (3,000 pageviews over 600 visits) it reads 8,685 rows and takes 4.1 ms — and
+// it ran on every admin render for every logged-in user, plus a per-minute AJAX poll.
+//
+// The figure already counts activity over a 30-minute window, so a value up to a minute
+// old is a small change to how true it is. Signed off 2026-07-28.
+$online_raw    = slimstat_function_body($source, 'query_online_count');
+$online_cached = slimstat_function_body($source, 'online_count');
+
+if ($online_cached === '') {
+    $failures[] = 'online_count() not found — the cached wrapper the render path and the AJAX '
+        . 'path should both read from';
+} else {
+    if (!preg_match('/(get_transient|wp_cache_get)\s*\(/', $online_cached)) {
+        $failures[] = 'online_count() never reads a cache — caching is the whole point';
+    }
+    if (!preg_match('/(set_transient|wp_cache_set)\s*\(/', $online_cached)) {
+        $failures[] = 'online_count() never writes a cache';
+    }
+    // A count of 0 is a legitimate answer, and the commonest one on a quiet site. If the
+    // hit check treats it as a miss, the cache never serves anything on exactly the
+    // installs where it would otherwise be free — the same shape as the goal transients
+    // that could never be read back (D33).
+    if (!preg_match('/false\s*!==\s*\$\w+|\$\w+\s*!==\s*false/', $online_cached)) {
+        $failures[] = 'online_count() does not test its cache hit strictly against false — a '
+            . 'legitimate count of 0 would read as a miss and recompute on every render';
+    }
+    // The raw query must stay behind the wrapper: a caller reaching past it puts the
+    // 8,685-row scan back on whichever path it is called from.
+    foreach (['add_menu_to_adminbar' => $render, 'get_adminbar_stats' => $ajax] as $name => $body) {
+        if ($body !== '' && preg_match('/query_online_count\s*\(/', $body)) {
+            $failures[] = "{$name}() calls query_online_count() directly, bypassing the cache";
+        }
+    }
+}
+
+if ($online_raw === '') {
+    $failures[] = 'query_online_count() not found — the raw query the wrapper should guard';
+} elseif (preg_match('/(get_transient|set_transient)\s*\(/', $online_raw)) {
+    $failures[] = 'query_online_count() caches internally — the raw query and its cache belong '
+        . 'in separate functions, or the AJAX path cannot ask for a fresh value if it ever needs one';
+}
+
 // ── 3. One definition of "today" ────────────────────────────────────────────
 // mktime(0,0,0) is the server's midnight; current_time() is the site's. Using
 // both produced two different day boundaries for the same numbers.

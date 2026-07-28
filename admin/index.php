@@ -1411,7 +1411,7 @@ class wp_slimstat_admin
         $referrals_today     = $today_stats['referrals'];
         $referrals_yesterday = $today_stats['referrals_yesterday'];
 
-        $online_count = self::query_online_count();
+        $online_count = self::online_count();
 
         // Determine premium status early (needed for chart data)
         $is_pro = wp_slimstat::pro_is_installed();
@@ -2595,17 +2595,48 @@ class wp_slimstat_admin
     }
 
     /**
-     * Get online visitors count (30-minute window, session-spanning).
-     * Shared by get_online_visitors() and get_adminbar_stats().
+     * Visitors currently online, cached for the remainder of the current minute.
      *
-     * Deliberately uncached: it is the one adminbar figure presented as live.
-     * It is NOT cheap, despite appearances — a derived-table GROUP BY over
-     * visit_id with a post-aggregation HAVING, filtered by an OR spanning `dt`
-     * and `dt_out`, which needs an index_merge to avoid a scan and cannot get
-     * one on installs where the lazy `idx_dt_out` migration has not run. The
-     * value is already minute-quantised, so caching it for the remainder of the
-     * current minute would be sound; that is a deliberate follow-up, not an
-     * oversight.
+     * Left uncached when the rest of the admin bar was fixed, on the grounds that it is
+     * the one figure labelled "right now" — but it ran on every admin render for every
+     * logged-in user, on top of the per-minute poll, and it is not cheap on a busy site.
+     * The figure already counts activity over a 30-minute window, so being up to a
+     * minute behind is a small change to how true it is. Signed off 2026-07-28; the
+     * measurements live in tests/adminbar-query-budget-test.php.
+     *
+     * Expiry is aligned to the minute boundary for the same reason adminbar_today_stats()
+     * aligns its own: adminbar-realtime.js refreshes at :00 of each wall-clock minute, so
+     * a flat 60-second TTL seeded mid-minute would still be live at the next poll and this
+     * figure would sit a minute behind the chart beside it.
+     *
+     * @since 5.6.0
+     * @return int
+     */
+    private static function online_count()
+    {
+        $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id();
+        $cached        = get_transient($transient_key);
+
+        // Strict check: a legitimate count of 0 must not read as a cache miss, or an
+        // idle site recomputes on every single render — the case this exists to fix.
+        if (false !== $cached) {
+            return (int) $cached;
+        }
+
+        $count = self::query_online_count();
+        set_transient($transient_key, $count, max(60 - (current_time('timestamp') % 60), 1));
+
+        return $count;
+    }
+
+    /**
+     * The uncached query behind online_count().
+     *
+     * Kept separate so the cache cannot become part of the query's contract, and so the
+     * two are independently testable. A derived-table GROUP BY over visit_id with a
+     * post-aggregation HAVING, filtered by an OR spanning `dt` and `dt_out` — it needs an
+     * index_merge to avoid a scan, and cannot get one on installs where the lazy
+     * `idx_dt_out` migration has not run.
      *
      * @since 5.4.3
      * @return int
@@ -2647,7 +2678,7 @@ class wp_slimstat_admin
             return;
         }
 
-        $online_visitors = self::query_online_count();
+        $online_visitors = self::online_count();
 
         wp_send_json_success([
             'count' => $online_visitors,
@@ -2672,8 +2703,8 @@ class wp_slimstat_admin
 
         $is_pro = wp_slimstat::pro_is_installed();
 
-        // --- Online count (uncached: it is the one figure labelled realtime) ---
-        $online_count = self::query_online_count();
+        // --- Online count (cached for the current minute; see online_count()) ---
+        $online_count = self::online_count();
 
         // --- Today stats (transient-cached, 60s TTL) ---
         $today_stats = self::adminbar_today_stats();

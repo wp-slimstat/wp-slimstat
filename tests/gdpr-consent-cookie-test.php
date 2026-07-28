@@ -329,7 +329,7 @@ use SlimStat\Services\GDPRService;
 $_setcookie_calls = [];
 unset($_COOKIE['slimstat_gdpr_consent']);
 
-$service = new GDPRService(['use_slimstat_banner' => 'on']);
+$service = new GDPRService(['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on']);
 $service->setConsent('accepted');
 
 assert_same(1, count($_setcookie_calls), 'setConsent should call setcookie once');
@@ -341,20 +341,20 @@ assert_same('accepted', $_setcookie_calls[0]['value'], 'setConsent should set ac
 // ─── Test 2: hasConsentDecision returns true when cookie set ─────
 
 $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
-$service = new GDPRService(['use_slimstat_banner' => 'on']);
+$service = new GDPRService(['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on']);
 assert_true($service->hasConsentDecision(), 'hasConsentDecision should return true when cookie is set');
 
 // ─── Test 3: hasConsentDecision returns false when no cookie ─────
 
 unset($_COOKIE['slimstat_gdpr_consent']);
-$service = new GDPRService(['use_slimstat_banner' => 'on']);
+$service = new GDPRService(['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on']);
 assert_false($service->hasConsentDecision(), 'hasConsentDecision should return false when cookie not set');
 
 // ─── Test 4: getBannerHtml returns empty when consent exists ─────
 
 $_COOKIE['slimstat_gdpr_consent'] = 'accepted';
 $service = new GDPRService([
-    'use_slimstat_banner' => 'on',
+    'gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on',
     'opt_out_message'     => 'Test message',
     'gdpr_theme_mode'     => '',
 ]);
@@ -364,6 +364,7 @@ assert_same('', $service->getBannerHtml(), 'getBannerHtml should return empty st
 
 unset($_COOKIE['slimstat_gdpr_consent']);
 $service = new GDPRService([
+    'gdpr_enabled'              => 'on',
     'use_slimstat_banner'       => 'on',
     'opt_out_message'           => 'Test message',
     'gdpr_accept_button_text'   => 'Accept',
@@ -389,7 +390,7 @@ require_once __DIR__ . '/../src/Services/Privacy/ConsentHandler.php';
 
 $_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
 $request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'bad_nonce_123']);
@@ -403,7 +404,7 @@ assert_same(403, $result->get_error_data()['status'], 'handle_consent should ret
 
 $_stub_user_id     = 1; // logged-in
 $_stub_nonce_valid = false;
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
 $request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'expired_nonce']);
@@ -417,7 +418,7 @@ assert_same('rest_forbidden', $result->get_error_code(), 'handle_consent should 
 $_stub_user_id     = 1; // logged-in
 $_stub_nonce_valid = true;
 $_setcookie_calls = [];
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
 $request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => 'valid_nonce']);
@@ -431,7 +432,7 @@ assert_true($result->data['success'] ?? false, 'handle_consent response should i
 
 $_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 $controller = new \SlimStat\Controllers\Rest\GDPRBannerRestController();
 $request = new \WP_REST_Request('POST', '/slimstat/v1/gdpr/consent', ['consent' => 'accepted', 'nonce' => '']);
@@ -444,7 +445,7 @@ assert_same('rest_forbidden', $result->get_error_code(), 'empty nonce from cache
 
 $_stub_user_id     = 0; // anonymous
 $_stub_nonce_valid = false;
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 // In non-JSON mode, handleBannerConsent returns false when nonce fails
 $nonce_result = \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, [
@@ -458,7 +459,7 @@ assert_false($nonce_result, 'handleBannerConsent should return false when nonce 
 $_stub_user_id     = 1; // logged-in
 $_stub_nonce_valid = true;
 $_setcookie_calls = [];
-\wp_slimstat::$settings = ['use_slimstat_banner' => 'on'];
+\wp_slimstat::$settings = ['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on'];
 
 $consent_result = \SlimStat\Services\Privacy\ConsentHandler::handleBannerConsent(false, [
     'nonce'   => 'valid_nonce',

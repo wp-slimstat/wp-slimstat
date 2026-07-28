@@ -1589,10 +1589,48 @@ class wp_slimstat
 	 *
 	 * @return void
 	 */
+	/**
+	 * The request's GDPRService.
+	 *
+	 * Memoized because an undecided visitor's request builds one for the stylesheet
+	 * decision and another for the markup, and both answer the same question. Safe to
+	 * reuse: every mutable input is read from $_COOKIE at call time, not captured here.
+	 *
+	 * @return \SlimStat\Services\GDPRService
+	 */
+	private static function gdpr_service()
+	{
+		static $service = null;
+
+		if (null === $service) {
+			$service = new \SlimStat\Services\GDPRService(self::$settings);
+		}
+
+		return $service;
+	}
+
 	public static function enqueue_gdpr_assets()
 	{
 		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
 			return;
+		}
+
+		// Only when the banner will actually appear. This stylesheet is 14.8 KB and
+		// render-blocking, and it used to load for every visitor on every page — including
+		// everyone who had already accepted or denied, for whom getBannerHtml() emits
+		// nothing at all. (D45)
+		//
+		// Fail OPEN: this runs on login_enqueue_scripts as well, and the same fail-soft
+		// rule as render_gdpr_banner() applies (issue #325) — an exception here must not
+		// take down wp-login.php. When consent state cannot be determined the stylesheet
+		// is enqueued, because the cost of guessing wrong that way is one unused file,
+		// while the other way is an unstyled consent banner.
+		try {
+			if (!self::gdpr_service()->shouldRenderBanner()) {
+				return;
+			}
+		} catch (\Throwable $e) {
+			self::record_degradation('gdpr_banner_assets', $e);
 		}
 
 		wp_enqueue_style(
@@ -1621,8 +1659,7 @@ class wp_slimstat
 		// Fail-soft: this also runs on login_footer, so a render failure must not
 		// white-screen the wp-login page and lock the admin out (issue #325).
 		try {
-			$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
-			$banner_html  = $gdpr_service->getBannerHtml();
+			$banner_html = self::gdpr_service()->getBannerHtml();
 
 			if ('' === $banner_html) {
 				return;

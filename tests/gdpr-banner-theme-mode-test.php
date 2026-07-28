@@ -75,7 +75,7 @@ if (!function_exists('apply_filters'))      { function apply_filters($hook, $val
 require_once __DIR__ . '/../src/Services/GDPRService.php';
 
 // Case 1 — theme mode ABSENT: no warning (enforced by the handler), no theme class.
-$service = new \SlimStat\Services\GDPRService(['use_slimstat_banner' => 'on']);
+$service = new \SlimStat\Services\GDPRService(['gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on']);
 $html    = $service->getBannerHtml();
 
 assert_true($html !== '', 'banner renders when no consent decision has been made');
@@ -85,7 +85,7 @@ assert_not_contains('gdpr-light-mode', $html, 'no theme class when gdpr_theme_mo
 
 // Case 2 — theme mode set: the positive path still emits the theme class.
 $serviceDark = new \SlimStat\Services\GDPRService([
-    'use_slimstat_banner' => 'on',
+    'gdpr_enabled' => 'on', 'use_slimstat_banner' => 'on',
     'gdpr_theme_mode'     => 'dark',
 ]);
 $htmlDark = $serviceDark->getBannerHtml();
