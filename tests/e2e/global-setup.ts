@@ -40,6 +40,24 @@ async function loginAndSave(
   await page.click('#wp-submit');
   await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
 
+  // Never bake the tracker's offline queue into the saved auth state.
+  //
+  // SlimStat buffers an interaction into localStorage when it fires before a
+  // pageview id exists, and replays it on the next page load. Captured here, that
+  // queue is restored by EVERY spec that uses this storageState, and each one
+  // silently gains a phantom interaction attached to its own pageview — observed
+  // as a stray {"type":"submit"} event appearing in unrelated tests, which is
+  // indistinguishable from a real double-count and corrupts any spec that counts
+  // events. It survives for the 30-minute auth cache window, so it also comes and
+  // goes on its own, which is worse.
+  await page.evaluate(() => {
+    try {
+      window.localStorage.removeItem('slimstat_offline_queue');
+    } catch {
+      /* localStorage unavailable — nothing cached to clear */
+    }
+  });
+
   await context.storageState({ path: statePath });
   await browser.close();
 }

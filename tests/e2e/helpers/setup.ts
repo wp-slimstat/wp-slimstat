@@ -713,23 +713,82 @@ export async function waitForTrackerId(page: import('@playwright/test').Page): P
 // ─── Event row helpers ───────────────────────────────────────────
 
 /**
- * Poll wp_slim_events for a row matching the given stat id.
- * Returns the first match or null on timeout.
+ * Append an anchor whose click is tracked but does not navigate.
+ *
+ * The capture-phase preventDefault stops navigation without stopping propagation,
+ * so SlimStat's body-level click delegation still fires exactly as it would for a
+ * real visitor — which using an href the browser refuses to follow would not.
+ */
+export async function injectTrackedLink(
+  page: import('@playwright/test').Page,
+  opts: { id: string; href: string; className?: string; text?: string },
+): Promise<void> {
+  await page.evaluate(
+    ({ id, href, className, text }) => {
+      const a = document.createElement('a');
+      a.id = id;
+      a.href = href;
+      if (className) a.className = className;
+      // Never empty: an anchor with no text has no box, so Playwright correctly
+      // refuses to click it and the test times out on an invisible element.
+      a.textContent = text;
+      document.body.appendChild(a);
+      a.addEventListener('click', (e) => e.preventDefault(), { capture: true });
+    },
+    { id: opts.id, href: opts.href, className: opts.className ?? '', text: opts.text || opts.id },
+  );
+}
+
+export type EventRow = {
+  event_id: number;
+  id: number;
+  position: string | null;
+  notes: string | null;
+  dt: number;
+};
+
+/** Every wp_slim_events row for a pageview, oldest first. */
+async function getEventRows(statId: number): Promise<EventRow[]> {
+  const [rows] = await getPool().execute(
+    'SELECT event_id, id, position, notes, dt FROM wp_slim_events WHERE id = ? ORDER BY event_id ASC',
+    [statId],
+  ) as any;
+  return rows;
+}
+
+/**
+ * Poll until a pageview has at least `count` event rows, then return them all.
+ *
+ * Returning the whole set matters: a caller that only ever sees the first row
+ * cannot tell "one user action recorded once" from "one user action recorded
+ * twice", and the click and submit delegations can both fire for a single click
+ * on a submit button. Returns whatever it has at the deadline, so callers assert
+ * on a shortfall or an excess rather than on a timeout.
+ */
+export async function waitForEventRows(
+  statId: number,
+  count = 1,
+  timeoutMs = 20_000,
+): Promise<EventRow[]> {
+  const deadline = Date.now() + timeoutMs;
+  let rows = await getEventRows(statId);
+  while (rows.length < count && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 250));
+    rows = await getEventRows(statId);
+  }
+  return rows;
+}
+
+/**
+ * Poll wp_slim_events for the newest row matching the given stat id.
+ * Returns null on timeout.
  */
 export async function waitForEventRow(
   statId: number,
   timeoutMs = 20_000,
-): Promise<{ id: number; position: string | null; notes: string | null; dt: number } | null> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const [rows] = await getPool().execute(
-      'SELECT id, position, notes, dt FROM wp_slim_events WHERE id = ? ORDER BY event_id DESC LIMIT 1',
-      [statId],
-    ) as any;
-    if (rows.length > 0) return rows[0];
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  return null;
+): Promise<EventRow | null> {
+  const rows = await waitForEventRows(statId, 1, timeoutMs);
+  return rows.length ? rows[rows.length - 1] : null;
 }
 
 /**

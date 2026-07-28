@@ -24,7 +24,7 @@
     "@wp-playground/cli": "^3.1.13",
     "breakpoint-sass": "^2.7.1",
     "concurrently": "^8.2.0",
-    "esbuild": "^0.25.8",
+    "esbuild": "0.25.12",
     "mysql2": "^3.19.1",
     "node-sass": "^9.0.0",
     "php-serialize": "^5.1.3",
