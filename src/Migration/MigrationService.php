@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SlimStat\Migration;
 
 use SlimStat\Migration\Admin\MigrationAdmin;
+use SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4;
 use SlimStat\Migration\Migrations\CreateCountryDtIndex;
 use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
 use SlimStat\Migration\Migrations\CreateDtOutIndex;
@@ -46,6 +47,7 @@ class MigrationService
             $manager->register(new CreateFunnelQueriesIndex($wpdb));
             $manager->register(new CreateEventsNotesDtIndex($wpdb));
             $manager->register(new RecoverCorruptedHeatmapPositions($wpdb));
+            $manager->register(new ConvertTablesToUtf8mb4($wpdb));
 
             $admin = new MigrationAdmin($manager);
             $admin->hooks();

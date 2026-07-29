@@ -482,6 +482,7 @@ return array(
     'SlimStat\\Migration\\MigrationInterface' => $baseDir . '/src/Migration/MigrationInterface.php',
     'SlimStat\\Migration\\MigrationManager' => $baseDir . '/src/Migration/MigrationManager.php',
     'SlimStat\\Migration\\MigrationService' => $baseDir . '/src/Migration/MigrationService.php',
+    'SlimStat\\Migration\\Migrations\\ConvertTablesToUtf8mb4' => $baseDir . '/src/Migration/Migrations/ConvertTablesToUtf8mb4.php',
     'SlimStat\\Migration\\Migrations\\CreateCountryDtIndex' => $baseDir . '/src/Migration/Migrations/CreateCountryDtIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateDtBrowserIndex' => $baseDir . '/src/Migration/Migrations/CreateDtBrowserIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateDtOutIndex' => $baseDir . '/src/Migration/Migrations/CreateDtOutIndex.php',
