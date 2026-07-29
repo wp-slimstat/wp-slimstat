@@ -1711,6 +1711,11 @@ class wp_slimstat
 
         $archive = ('no' != self::$settings['auto_purge_delete']);
 
+        // Both archives' column lists, and the collision guard built from them, live on
+        // \SlimStat\Utils\PurgeArchive so the INSERT and the guard cannot drift apart.
+        $event_columns = \SlimStat\Utils\PurgeArchive::EVENT_COLUMNS;
+        $stats_columns = \SlimStat\Utils\PurgeArchive::STATS_COLUMNS;
+
         // ── Events first. This ordering is the whole defect. ────────────────────────
         //
         // {prefix}slim_events.id is a FOREIGN KEY into {prefix}slim_stats(id) ON DELETE
@@ -1740,15 +1745,17 @@ class wp_slimstat
             // Records" and later reboots gets fresh rows numbered from 1, colliding with
             // whatever is already archived.
             //
-            // The comparison is a discriminator, not a full row equality test: matching on
-            // the parent, the timestamp and the payload is enough to tell a replayed copy
-            // of the same event from a different event that merely reuses its number.
+            // The comparison covers every column the INSERT below copies. Anything narrower
+            // has false negatives, and a false negative here is worse than the bug being
+            // fixed: the row is dropped by IGNORE and then deleted, with nothing recorded.
+            $events_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($event_columns, 'event_id', 'e');
+
             if (self::$wpdb->get_var(self::$wpdb->prepare(
                 "SELECT 1 FROM {$table_events} e
                  INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
                  LEFT JOIN {$table_stats} s ON s.id = e.id
                  WHERE ({$event_where})
-                   AND NOT (a.id <=> e.id AND a.dt <=> e.dt AND a.notes <=> e.notes)
+                   AND NOT ({$events_are_replays})
                  LIMIT 1",
                 $days_ago,
                 $days_ago
@@ -1767,8 +1774,8 @@ class wp_slimstat
             // and MySQL ignores the ones already there. Without event_id there is no key to
             // dedupe on and the retry would duplicate every archived event instead.
             if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_events_archive} (event_id, type, event_description, notes, position, id, dt)
-                 SELECT e.event_id, e.type, e.event_description, e.notes, e.position, e.id, e.dt
+                "INSERT IGNORE INTO {$table_events_archive} (" . implode(', ', $event_columns) . ")
+                 SELECT e." . implode(', e.', $event_columns) . "
                  FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id
                  WHERE {$event_where}",
                 $days_ago,
@@ -1796,12 +1803,15 @@ class wp_slimstat
 
         // ── Then the pageviews ──────────────────────────────────────────────────────
         if ($archive) {
-            // Same collision guard as for events, on the pageviews' own primary key.
+            // Same collision guard as for events, on the pageviews' own primary key, and
+            // over the same 33 columns the INSERT below copies.
+            $stats_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($stats_columns, 'id', 's');
+
             if (self::$wpdb->get_var(self::$wpdb->prepare(
                 "SELECT 1 FROM {$table_stats} s
                  INNER JOIN {$table_stats_archive} a ON a.id = s.id
                  WHERE s.dt < %d
-                   AND NOT (a.dt <=> s.dt AND a.ip <=> s.ip AND a.resource <=> s.resource)
+                   AND NOT ({$stats_are_replays})
                  LIMIT 1",
                 $days_ago
             ))) {
@@ -1815,7 +1825,8 @@ class wp_slimstat
             }
 
             if (false === self::$wpdb->query(self::$wpdb->prepare(
-                "INSERT IGNORE INTO {$table_stats_archive} (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM {$table_stats} WHERE dt < %d",
+                "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
+                 SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
                 $days_ago
             ))) {
                 self::record_degradation('purge (archiving pageviews)', self::$wpdb->last_error);

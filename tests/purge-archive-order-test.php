@@ -96,11 +96,8 @@ if (!preg_match('/INSERT\s+IGNORE\s+INTO/i', $purge)) {
         . 'duplicate primary key, the guard skips the DELETE, and retention stops working '
         . 'permanently and silently';
 }
-if (!preg_match('/\(\s*event_id\s*,/', $purge)) {
-    $failures[] = 'the events archive INSERT does not carry event_id — without the primary '
-        . 'key there is nothing for INSERT IGNORE to dedupe on, so a repeated run silently '
-        . 'duplicates every archived event';
-}
+// That the list carries event_id, and that the INSERT is generated from it, are pinned by
+// §2c below and by tests/Unit/PurgeArchiveCollisionGuardTest.php against the real constant.
 
 // ── 2b. A key collision must stop the purge, not delete through it ──────────
 //
@@ -111,7 +108,7 @@ if (!preg_match('/\(\s*event_id\s*,/', $purge)) {
 // MAX(id)+1 on restart, so clearing records and later rebooting hands out ids from 1
 // again. Proven on scratch tables: without this guard, rows the admin asked to ARCHIVE
 // were deleted and never copied — data loss where the old code merely stopped working.
-if (!preg_match('/<=>/', $purge)) {
+if (!preg_match('/PurgeArchive::sameRow\(/', $purge)) {
     $failures[] = 'nothing compares the rows about to be archived against what the archive '
         . 'already holds under those keys — INSERT IGNORE will silently skip a colliding row '
         . 'and the DELETE will then destroy the live copy';
@@ -119,6 +116,117 @@ if (!preg_match('/<=>/', $purge)) {
 if (!preg_match('/record_degradation/', $purge)) {
     $failures[] = 'the purge can abandon a run without recording a degradation — retention '
         . 'would stop silently and the tables would simply keep growing';
+}
+
+// ── 2c. The guard is wired to the same column lists the INSERT copies ───────
+//
+// A guard narrower than the INSERT it protects has false negatives, and every one of them
+// is a live row that INSERT IGNORE silently declined to copy and the DELETE then destroyed.
+// Measured: an archive row agreeing with the live row on only (id, dt, notes) passed a
+// three-column discriminator, live events went 1 -> 0, the archive kept the stale payload,
+// and nothing was recorded in slimstat_degradations.
+//
+// The guard's own behaviour — every copied column compared, only the join key skipped,
+// NULL-safe — is pinned directly in tests/Unit/PurgeArchiveCollisionGuardTest.php against
+// the real builder. What can only be checked here is the WIRING: that both statements are
+// generated from one shared column list, so they cannot drift apart again.
+$guardTargets = [
+    ['$table_events_archive', 'EVENT_COLUMNS', 'event_id', 'events'],
+    ['$table_stats_archive', 'STATS_COLUMNS', 'id', 'pageviews'],
+];
+
+foreach ($guardTargets as [$archiveVar, $constant, $joinKey, $label]) {
+    $quoted = preg_quote($archiveVar, '/');
+
+    if (!preg_match(
+        '/INSERT\s+IGNORE\s+INTO\s+\{?' . $quoted . '\}?\s*\(\s*"\s*\.\s*implode\(/s',
+        $purge,
+        $ins,
+        PREG_OFFSET_CAPTURE
+    )) {
+        $failures[] = "the {$label} archive INSERT does not build its column list by imploding "
+            . 'a shared list — a hand-written list is free to drift from the guard, and the '
+            . 'guard is what stops the DELETE removing rows IGNORE never copied';
+        continue;
+    }
+
+    $before = substr($purge, 0, $ins[0][1]);
+
+    if (!preg_match('/PurgeArchive::' . $constant . '/', $before)) {
+        $failures[] = "the {$label} columns do not come from PurgeArchive::{$constant}";
+    }
+    if (!preg_match('/PurgeArchive::sameRow\([^,]+,\s*\'' . $joinKey . '\'/', $before)) {
+        $failures[] = "the {$label} archive INSERT is not preceded by a PurgeArchive::sameRow() "
+            . "collision guard joined on '{$joinKey}'";
+    }
+}
+
+// Nothing may hand-roll a comparison chain beside the shared builder: that is exactly how
+// the three-column discriminator got here, and in review it looks like a working guard.
+if (preg_match('/<=>/', $purge)) {
+    $failures[] = 'the purge contains a literal <=> comparison — collision guards must come '
+        . 'from PurgeArchive::sameRow(), which compares every column the INSERT copies';
+}
+
+// ── 2d. The archived column lists still match the tables the installer creates ──
+//
+// The unit test proves every listed column is compared, but it takes the list as given —
+// so a column dropped from the list is invisible to it, and a column ADDED to the schema
+// is invisible to both. Either way the archive quietly stops carrying that column while
+// the purge goes on deleting the live rows. Compare against the CREATE TABLE the installer
+// actually issues, which is the only in-repo statement of the real shape.
+// Read as source, not via the autoloader: these scans run on PHP-only CI lanes with no
+// WordPress and no vendor tree, and PurgeArchive.php exits unless ABSPATH is defined.
+$installer   = file_get_contents($plugin_root . '/admin/index.php');
+$archiveSrc  = file_get_contents($plugin_root . '/src/Utils/PurgeArchive.php');
+
+$constColumns = static function (string $name) use ($archiveSrc): array {
+    if ($archiveSrc === false || !preg_match('/const\s+' . $name . '\s*=\s*\[(.*?)\];/s', $archiveSrc, $m)) {
+        return [];
+    }
+    preg_match_all("/'([a-z_]+)'/", $m[1], $cols);
+    return $cols[1];
+};
+
+$schemaColumns = static function (string $sql): array {
+    // Column definitions only: "name TYPE ...", stopping at the keys and constraints.
+    preg_match_all('/^\s*([a-z_]+)\s+(?:INT|BIGINT|SMALLINT|TINYINT|VARCHAR|CHAR|TEXT|DATETIME)\b/im', $sql, $m);
+    return $m[1];
+};
+
+$schemaTargets = [
+    ['/\$stats_table_sql\s*=\s*"(.*?)";/s', 'STATS_COLUMNS', 'slim_stats'],
+    ['/\$events_table_sql\s*=\s*"(.*?)";/s', 'EVENT_COLUMNS', 'slim_events'],
+];
+
+foreach ($schemaTargets as [$pattern, $constant, $table]) {
+    if ($installer === false || !preg_match($pattern, $installer, $sql)) {
+        $failures[] = "could not find the {$table} CREATE TABLE in admin/index.php — "
+            . 're-anchor this assertion rather than deleting it';
+        continue;
+    }
+
+    $inSchema = $schemaColumns($sql[1]);
+    $declared = $constColumns($constant);
+
+    if ($declared === []) {
+        $failures[] = "PurgeArchive::{$constant} not found in src/Utils/PurgeArchive.php";
+        continue;
+    }
+
+    $unarchived = array_values(array_diff($inSchema, $declared));
+    $phantom    = array_values(array_diff($declared, $inSchema));
+
+    if ($unarchived !== []) {
+        $failures[] = "{$table} has column(s) " . implode(', ', $unarchived) . ' that '
+            . "PurgeArchive::{$constant} does not archive — the purge would delete those rows "
+            . 'while the archive silently drops that column';
+    }
+    if ($phantom !== []) {
+        $failures[] = "PurgeArchive::{$constant} names " . implode(', ', $phantom) . ' which '
+            . "{$table} does not have — the archive INSERT would fail outright and, because "
+            . 'the purge fails closed, retention would stop';
+    }
 }
 
 // ── 3. The parent DELETE only runs if the events were safely dealt with ─────
