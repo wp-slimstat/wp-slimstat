@@ -61,11 +61,22 @@ foreach (array_keys($after['cells'] ?? []) as $cell) {
         $straddling_present = true;
     }
 }
-// A warning, not a blocker. It used to abort the whole comparison, but straddling
-// values are no longer compared at all, so a midnight crossing cannot produce a
-// wrong straddling answer — while the historical cells remain perfectly valid.
-// Refusing to report them would have been the harness withholding a good result.
-$day_warning = ($straddling_present && ($before['captured_day'] ?? null) !== ($after['captured_day'] ?? null))
+// Were both snapshots taken against the SAME pinned straddling window?
+//
+// Bucketing alone is not enough: two runs can both use a 3600 s bucket and still land
+// either side of a boundary, which would compare two genuinely different windows and report
+// every difference as a regression. So match on the resolved window end, not the bucket
+// size. Snapshots taken before this field existed report 0 and stay render-only.
+$before_end = (int) ($before['live_window_end'] ?? 0);
+$after_end  = (int) ($after['live_window_end'] ?? 0);
+$straddling_pinned = $before_end > 0 && $before_end === $after_end;
+
+// A warning, not a blocker. It used to abort the whole comparison. Straddling values are
+// compared only when the window above is pinned, and a pinned window cannot span a midnight
+// without the ends differing — so a midnight crossing still cannot produce a wrong
+// straddling answer, while the historical cells remain perfectly valid. Refusing to report
+// them would have been the harness withholding a good result.
+$day_warning = ($straddling_present && !$straddling_pinned && ($before['captured_day'] ?? null) !== ($after['captured_day'] ?? null))
     ? sprintf('snapshots span a local midnight (%s vs %s); straddling cells are render-only anyway',
         $before['captured_day'] ?? '?', $after['captured_day'] ?? '?')
     : '';
@@ -169,7 +180,13 @@ foreach ($after['cells'] as $cell => $reports) {
         //
         // Strict value parity lives in the historical cells, which are anchored
         // safely in the past.
-        if (strpos($cell, 'straddling') === 0) {
+        // ...unless both snapshots provably describe the SAME window. Since the clamp
+        // became bucketable, the snapshotter pins its straddling window and records the
+        // resolved end. When both runs recorded the same non-zero end they saw identical
+        // data, so there is nothing time-dependent left to excuse and these cells are
+        // compared like any other — which is the whole point, because they are the only
+        // cells that reach Query::getAll()'s split-merge path.
+        if (strpos($cell, 'straddling') === 0 && !$straddling_pinned) {
             $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
             continue;
         }

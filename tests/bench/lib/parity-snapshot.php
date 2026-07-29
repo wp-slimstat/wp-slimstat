@@ -86,12 +86,27 @@ $filter = 'browser_type equals 0';
 // Query::getAll()'s split into a cacheable historical half and an uncached live
 // half.
 //
-// Its end CANNOT be pinned. init_filters() clamps any end at or after today to
-// now(), regardless of the hour/minute filters — measured: asking for a window
-// ending at today 00:00:59 still produced one ending at the current second. So
-// these cells necessarily see different data on every run, and parity-compare
-// treats their values as informational. Strict value parity is enforced by the
-// historical cells above, which are anchored safely in the past.
+// Its end USED to be unpinnable: init_filters() clamped any end at or after today
+// to now(), regardless of the hour/minute filters — measured, asking for a window
+// ending at today 00:00:59 still produced one ending at the current second. That
+// is why parity-compare treats these cells' values as informational, and it is a
+// real blind spot: these are the only cells that reach the split-merge path, so
+// the oracle exercised that path and then declined to look at the result.
+//
+// The clamp now runs through wp_slimstat_db::live_window_end(), which can round
+// down to a bucket. Pin it here so a straddling window is stable for the length of
+// the bucket and two snapshots taken minutes apart describe the SAME window.
+//
+// This changes nothing for sites: the filter ships at 0 and this is the only
+// caller that sets it. Override with SLIMSTAT_PARITY_BUCKET=0 to reproduce the
+// old unpinned behaviour.
+$parity_bucket = (int) (getenv('SLIMSTAT_PARITY_BUCKET') ?: 3600);
+if ($parity_bucket >= 2) {
+    add_filter('slimstat_live_window_bucket_seconds', static function () use ($parity_bucket) {
+        return $parity_bucket;
+    });
+}
+
 $straddling = 'interval equals -30';
 
 $all_cells = [
@@ -159,6 +174,12 @@ $snapshot = [
     'fingerprint_hash' => slimstat_bench_fingerprint_hash(slimstat_bench_fingerprint($db)),
     'anchor_date'      => $anchor_date,
     'stats_rows'       => (int) $db->get_var("SELECT COUNT(*) FROM `{$db->prefix}slim_stats`"),
+    'live_bucket'      => $parity_bucket,
+    // The window end the straddling cells actually ran with. Two snapshots may both use a
+    // 3600 s bucket and still land in DIFFERENT buckets if they were taken either side of a
+    // boundary, so the comparator matches on this resolved value rather than on the bucket
+    // size. 0 when unpinned.
+    'live_window_end'  => 0,
     'cells'            => [],
 ];
 
@@ -169,6 +190,10 @@ foreach ($wanted as $cell => $filters) {
             continue;
         }
         wp_slimstat_db::init($filters);
+
+        if (strpos($cell, 'straddling') === 0) {
+            $snapshot['live_window_end'] = (int) wp_slimstat_db::$filters_normalized['utime']['end'];
+        }
 
         $html  = '';
         $error = null;
