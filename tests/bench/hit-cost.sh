@@ -19,7 +19,15 @@
 # shapes are paced under the cap; `burst` deliberately exceeds it. (That every client
 # behind one CDN or NAT egress shares a bucket the same way is defect D29.)
 #
-# Requires an otherwise idle site.
+# CONSENT: every request carries `slimstat_gdpr_consent=accepted`. Without it, a site with
+# `gdpr_enabled` on refuses every shape at Processor.php:95 with -301 before any tracking
+# work happens, and all three tables below then describe the consent-rejection path while
+# looking exactly like a successful run. An independent re-measurement found this had
+# happened. Override with SLIMSTAT_BENCH_CONSENT= to measure the refusal path deliberately.
+#
+# Requires an otherwise idle site. Note that "otherwise idle" is an assumption this script
+# cannot check: the query and write COUNTS are deterministic enough to survive a contended
+# box, but the p50 column is not — treat it as indicative only unless the host is quiesced.
 set -euo pipefail
 
 BASE_URL="${1:-${BASE_URL:-}}"
@@ -55,12 +63,15 @@ RES="$(b64url "$BASE_URL/bench-page/")"
 REPLIES="$WP_CONTENT/uploads/slimstat-bench/replies.txt"
 rm -f "$REPLIES"
 
+CONSENT="${SLIMSTAT_BENCH_CONSENT-slimstat_gdpr_consent=accepted}"
+
 fire() { # label body pace [user-agent]
   local label="$1" body="$2" pace="$3" ua="${4:-Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36}"
   for ((i = 0; i < ITER; i++)); do
     local reply
     reply="$(curl -sk -X POST -H 'Content-Type: application/json' \
-      -H "X-Slimstat-Bench: $label" -H "User-Agent: $ua" -d "$body" "$HIT" || echo 'CURL-FAIL')"
+      -H "X-Slimstat-Bench: $label" -H "User-Agent: $ua" \
+      ${CONSENT:+-H "Cookie: $CONSENT"} -d "$body" "$HIT" || echo 'CURL-FAIL')"
     printf '%s\t%s\n' "$label" "$reply" >> "$REPLIES"
     # Written as an `if`, not `[[ … ]] && sleep`: a bare test as the last statement
     # of a function returns its own exit status, so the unpaced shape returned 1 and
@@ -79,6 +90,24 @@ fire burst    "{\"res\":\"$RES\"}" 0
 echo
 echo "== tracker replies (stored = <id>.<hash>, refused = -<code>)"
 sort "$REPLIES" | uniq -c | sed 's/^/   /'
+
+# Refuse to print a results table for a run that never reached the tracking path. -301 is
+# "no consent"; if the `pageview` shape never stored anything, every number below would
+# describe the rejection path while looking like a normal result. This is not hypothetical:
+# it is how one round of these measurements was taken before anyone noticed.
+STORED="$(awk -F'\t' '$1 == "pageview" && $2 !~ /^-/' "$REPLIES" | wc -l | tr -d ' ')"
+if [[ "$STORED" -eq 0 ]]; then
+  echo >&2
+  echo "ERROR: not one 'pageview' hit was stored — this run measured a rejection path." >&2
+  if grep -q -- '-301' "$REPLIES"; then
+    echo "  Replies are -301: consent enforcement (gdpr_enabled) refused every hit." >&2
+    echo "  The consent cookie is sent by default; SLIMSTAT_BENCH_CONSENT is currently '${CONSENT:-<empty>}'." >&2
+  else
+    echo "  See the reply tally above for the refusal code." >&2
+  fi
+  echo "VERDICT: ERROR"
+  exit 1
+fi
 
 if [[ ! -f "$LOG" ]]; then
   echo "ERROR: no ledger written — is $MU_DIR/slimstat-bench-qlog.php loaded?" >&2
