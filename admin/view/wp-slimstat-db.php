@@ -833,7 +833,7 @@ class wp_slimstat_db
 
             // If end is in the future and the level of granularity is hours, set it to now
             if (!empty($fn['date']['interval_hours']) && $fn['utime']['end'] > date_i18n('U')) {
-                $fn['utime']['end'] = intval(date_i18n('U'));
+                $fn['utime']['end'] = self::live_window_end();
             }
 
             // Add 1 second to account for the time difference between midnight and 23:59:59
@@ -858,7 +858,7 @@ class wp_slimstat_db
 
         // If end is in the future, set it to now
         if ($fn['utime']['end'] > date_i18n('U')) {
-            $fn['utime']['end'] = intval(date_i18n('U'));
+            $fn['utime']['end'] = self::live_window_end();
         }
 
         // Turn the date_i18n filters back on
@@ -868,6 +868,73 @@ class wp_slimstat_db
         $fn = apply_filters('slimstat_db_filters_normalized', $fn, $_filters_raw);
 
         return $fn;
+    }
+
+    /**
+     * The end of a window that reaches the present: "now", optionally rounded DOWN to a
+     * bucket. Named for what it returns rather than "now", because with a bucket set it is
+     * deliberately not now — it can be up to one bucket earlier.
+     *
+     * Every window reaching the present is clamped through here, and unbucketed the clamp
+     * lands on the current SECOND. That timestamp travels into the SQL, and the query cache
+     * keys on a hash of the SQL, so an identical report rendered twice a second apart
+     * produces two different keys and neither is ever read again. Measured over real admin
+     * renders of slimview2, steady state:
+     *
+     *     unbucketed (the default)   25 queries/render, 11 dead wp_options rows/render
+     *     bucketed to 1 hour         20 queries/render,  6 dead wp_options rows/render
+     *
+     * 724 such `_transient_wp_slimstat_query_*` rows had accumulated on this install. The
+     * residual 6 are Live Analytics statements carrying their own `time()`, out of reach
+     * from here.
+     *
+     * It also makes the window unpinnable, which is why the parity oracle declares its
+     * midnight-straddling cells "render-only" and never compares their values — and those
+     * are precisely the cells that exercise Query::getAll()'s split-merge path. The oracle
+     * exercises that path and then declines to look at the result. A bucket makes those
+     * cells comparable.
+     *
+     * **Ships inert.** The filter defaults to 0 because a bucket changes a number the user
+     * reads: a report ending "now" ends at the bucket boundary instead, excluding up to one
+     * bucket of the most recent traffic. Turning it on by default is a product decision and
+     * belongs with the other default changes, not here. Note the precedent cuts both ways —
+     * `Chart.php` already ships a 60-second bucket on its own query args, enabled, and
+     * `self::CACHE_RANGE_BUCKET_SECONDS` buckets this same value to an hour for the
+     * goal/funnel/UV cache keys, also unconditionally.
+     *
+     * Those siblings are independent of this filter and stay that way: setting a bucket here
+     * does not change `results_cache_key()`'s hard 3600, nor the literal 3600 in
+     * `wp_slimstat_admin::build_filter_options_cache_key()`, nor Chart's 60. A caller that
+     * sets a bucket not divisible by 60 will have Chart re-round the already-rounded value.
+     *
+     * **Call-site constraint:** this uses plain `date_i18n('U')` rather than
+     * `wp_slimstat::now()`, which is correct only because both call sites sit inside
+     * `init_filters()`'s `toggle_date_i18n_filters(false)` bracket, where the filters this
+     * would otherwise be exposed to are already off. Do not call this from outside that
+     * bracket without revisiting that.
+     *
+     * @since 5.6.0
+     * @return int
+     */
+    public static function live_window_end()
+    {
+        $now = intval(date_i18n('U'));
+
+        /**
+         * Round "now" down to a multiple of this many seconds when clamping a live window.
+         *
+         * 0 or 1 disables bucketing entirely, which is the shipped default and a no-op.
+         *
+         * @since 5.6.0
+         * @param int $seconds Bucket size in seconds. Default 0 (no bucketing).
+         */
+        $bucket = (int) apply_filters('slimstat_live_window_bucket_seconds', 0);
+
+        if ($bucket < 2) {
+            return $now;
+        }
+
+        return intdiv($now, $bucket) * $bucket;
     }
 
     // The following methods retrieve the information from the database
