@@ -508,7 +508,6 @@ return array(
     'SlimStat\\Reports\\Registry\\ReportFactory' => $baseDir . '/src/Reports/Registry/ReportFactory.php',
     'SlimStat\\Reports\\Registry\\ReportLoader' => $baseDir . '/src/Reports/Registry/ReportLoader.php',
     'SlimStat\\Reports\\Registry\\ReportRegistry' => $baseDir . '/src/Reports/Registry/ReportRegistry.php',
-    'SlimStat\\Reports\\Traits\\HasFilters' => $baseDir . '/src/Reports/Traits/HasFilters.php',
     'SlimStat\\Reports\\Traits\\HasPagination' => $baseDir . '/src/Reports/Traits/HasPagination.php',
     'SlimStat\\Reports\\Traits\\HasTooltip' => $baseDir . '/src/Reports/Traits/HasTooltip.php',
     'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => $baseDir . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',

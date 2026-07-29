@@ -523,7 +523,6 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Reports\\Registry\\ReportFactory' => __DIR__ . '/../..' . '/src/Reports/Registry/ReportFactory.php',
         'SlimStat\\Reports\\Registry\\ReportLoader' => __DIR__ . '/../..' . '/src/Reports/Registry/ReportLoader.php',
         'SlimStat\\Reports\\Registry\\ReportRegistry' => __DIR__ . '/../..' . '/src/Reports/Registry/ReportRegistry.php',
-        'SlimStat\\Reports\\Traits\\HasFilters' => __DIR__ . '/../..' . '/src/Reports/Traits/HasFilters.php',
         'SlimStat\\Reports\\Traits\\HasPagination' => __DIR__ . '/../..' . '/src/Reports/Traits/HasPagination.php',
         'SlimStat\\Reports\\Traits\\HasTooltip' => __DIR__ . '/../..' . '/src/Reports/Traits/HasTooltip.php',
         'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => __DIR__ . '/../..' . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',
