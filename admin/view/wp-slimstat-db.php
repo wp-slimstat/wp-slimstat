@@ -2059,14 +2059,31 @@ class wp_slimstat_db
         $preflight   = false;
         $had_error   = false;
 
-        // Each temp table row carries (vid, t) — the visitor identifier and the
-        // MIN(dt) at which they qualified for the preceding step. The JOIN on
-        // step N+ enforces `new_row.dt >= r.t` so out-of-order matches (visitor
-        // hit step N before step N-1) don't count as converted. We use `>=`
-        // (not `>`) because dt has one-second granularity: two genuinely ordered
-        // steps that land in the same second (fast SPA navigation, a pageview
-        // immediately followed by an event row) must still count. Distinct step
-        // rules keep the same physical row from satisfying two steps at once.
+        // Each temp table row carries (vid, t, rid, rkind) — the visitor identifier, the
+        // MIN(dt) at which they qualified for the preceding step, and which physical row
+        // that was. The JOIN on step N+ enforces `new_row.dt >= r.t` so out-of-order
+        // matches (visitor hit step N before step N-1) don't count as converted. `>=`
+        // rather than `>` because dt has one-second granularity: two genuinely ordered
+        // steps that land in the same second (fast SPA navigation, a pageview immediately
+        // followed by an event row) must still count.
+        //
+        // But `>=` alone lets ONE physical pageview satisfy TWO steps whenever the rules
+        // overlap — "contains shop" then "contains shop/cart" against a single visit to
+        // /shop/cart — and report a conversion that never happened. This used to be
+        // waved away with "distinct step rules keep the same physical row from satisfying
+        // two steps at once"; nothing enforces that, and `ajax_save_funnel()` validates
+        // step count and shape but never distinctness. Measured on scratch tables: a
+        // visitor with exactly one pageview converted a two-step funnel.
+        //
+        // Tightening to `>` fixes that case and breaks a real one — measured in the same
+        // run, a visitor with two SEPARATE pageviews in the same second stopped counting.
+        // Neither timestamp comparison is the right test, because the question is not
+        // "later" but "a different row". So the row identity travels with the timestamp
+        // and step N+1 excludes exactly the row that satisfied step N.
+        //
+        // The id must be an ARGMIN — the id of the row that achieved MIN(dt) — not a second
+        // MIN() beside it. See the note at the query itself for why the obvious
+        // `MIN(dt), MIN(id)` pairing is wrong and how it reopens this very defect. (D54)
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event   = ($step['dimension'] === 'event_notes');
             $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
@@ -2089,24 +2106,61 @@ class wp_slimstat_db
             // time. Pageview steps use t1.dt.
             $dt_expr = $is_event ? 'te.dt' : 't1.dt';
 
+            // Which physical row satisfied the step. Pageview steps are identified by the
+            // pageview id, event steps by the event id.
+            $row_id_expr = $is_event ? 'te.event_id' : 't1.id';
+
+            // The id of the row that actually achieved MIN(dt) — an argmin, not a second
+            // independent aggregate. `MIN(dt)` and `MIN(id)` computed side by side do NOT
+            // describe the same row: they are evaluated independently over the group, so a
+            // visitor with rows (id 5, dt 100) and (id 8, dt 90) yields t=90 with rid=5.
+            // Then step N+1 excludes a row that never satisfied step N while the row that
+            // did stays eligible — reopening the very defect this carries rid to close.
+            // The two orders agree only if id and dt are co-monotonic, and they are not
+            // under concurrent writers: dt is stamped by PHP before the INSERT, so a
+            // request that starts later can still commit first and take a lower id.
+            //
+            // SUBSTRING_INDEX(GROUP_CONCAT(... ORDER BY dt, id), ',', 1) is the standard
+            // argmin for MySQL 5.6, which has no window functions. Truncation at
+            // group_concat_max_len drops from the END, so the first element — the only one
+            // read — is always intact.
+            $argmin_row_id = sprintf(
+                "CAST(SUBSTRING_INDEX(GROUP_CONCAT(%s ORDER BY %s ASC, %s ASC), ',', 1) AS UNSIGNED)",
+                $row_id_expr, $dt_expr, $row_id_expr
+            );
+
             // Base FROM clause — joined for event steps, plain for pageview steps.
             $from_sql = $is_event
                 ? sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats)
                 : sprintf('%s t1', $table_stats);
 
             if ($step_index === 0) {
-                // Step 1: per-visitor MIN(dt) within the date window.
+                // Step 1: per-visitor MIN(dt) within the date window, carrying the row that
+                // achieved it.
                 $select_sql = sprintf(
-                    "SELECT %s AS vid, MIN(%s) AS t FROM %s WHERE %s AND %s GROUP BY vid",
-                    $visitor_id, $dt_expr, $from_sql, $step_where, $date_where
+                    "SELECT %s AS vid, MIN(%s) AS t, %s AS rid FROM %s WHERE %s AND %s GROUP BY vid",
+                    $visitor_id, $dt_expr, $argmin_row_id, $from_sql, $step_where, $date_where
                 );
             } else {
-                // Step N>1: JOIN temp_read and require the new row's dt at or
-                // after the stored timestamp for the same visitor (see ordering
-                // note above for why `>=` rather than `>`).
+                // Step N>1: JOIN temp_read and require the new row's dt at or after the
+                // stored timestamp for the same visitor.
+                //
+                // The row-exclusion only applies when this step reads the same table as the
+                // one before it. Pageview ids and event ids are independent counters, so
+                // across a kind change any equality between them is a coincidence rather
+                // than identity — and a pageview row and an event row are never the same
+                // physical row anyway. Omitting the predicate there is both correct and
+                // cheaper than carrying a table marker to make it provably false.
+                $prev_is_event = ('event_notes' === ($funnel['steps'][$step_index - 1]['dimension'] ?? ''));
+                $exclude_prev  = ($prev_is_event === $is_event)
+                    ? sprintf(' AND %s <> r.rid', $row_id_expr)
+                    : '';
+
                 $select_sql = sprintf(
-                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s >= r.t GROUP BY vid",
-                    $visitor_id, $dt_expr, $from_sql, $temp_read, $visitor_id, $step_where, $date_where, $dt_expr
+                    "SELECT %s AS vid, MIN(%s) AS t, %s AS rid FROM %s INNER JOIN %s r ON r.vid = %s"
+                        . " WHERE %s AND %s AND %s >= r.t%s GROUP BY vid",
+                    $visitor_id, $dt_expr, $argmin_row_id, $from_sql, $temp_read, $visitor_id,
+                    $step_where, $date_where, $dt_expr, $exclude_prev
                 );
             }
 
@@ -2119,8 +2173,31 @@ class wp_slimstat_db
 
             // Create the per-step temp table once, then count from it — avoids
             // running the grouped subquery twice for the same step.
+            //
+            // The columns are DERIVED from the SELECT rather than declared. Declaring
+            // `vid VARCHAR(64)` gave it the database's default collation, and step 2 then
+            // joins that column against the visitor-identity expression, which carries the
+            // source column's collation. When the two differ — the ordinary result of a
+            // charset migration, where the table was created under one collation and the
+            // database default is now another — MySQL refuses the comparison:
+            //
+            //   Illegal mix of collations (utf8mb4_unicode_520_ci,IMPLICIT)
+            //                         and (utf8mb4_general_ci,IMPLICIT) for operation '='
+            //
+            // and every step from the second onward reports 0 visitors. Reproduced on
+            // scratch tables; deriving the column fixes it because `vid` then inherits the
+            // expression's own collation. (Note it is NOT enough for the database to be
+            // utf8mb4 while the columns are utf8mb3 — that is a coercible superset and
+            // joins fine, which is why this looked unreproducible at first.)
+            //
+            // Deriving also drops the VARCHAR(64) ceiling. Visitor identities on the
+            // reference dataset reach 73 characters (740 rows over 64), and WordPress
+            // clears STRICT_TRANS_TABLES, so the overflow truncated silently rather than
+            // erroring — two identities sharing a 64-character prefix would have been
+            // merged into one visitor. None do on that dataset, but the derived column is
+            // VARCHAR(256) and the question no longer arises. (D53, D16)
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
-            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
+            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (KEY(vid)) AS $select_sql");
 
             // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
             // truncation, missing CREATE TEMPORARY privilege, deadlock), the
