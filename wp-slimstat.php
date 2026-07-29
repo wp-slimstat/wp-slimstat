@@ -1328,7 +1328,9 @@ class wp_slimstat
             'mozcom_access_id'                 => '',
             'mozcom_secret_key'                => '',
             'show_complete_user_agent_tooltip' => 'no',
-            'async_load'                       => 'no',
+            // Reports load after the page instead of blocking it. Changes no number, only
+            // when the numbers arrive, and it is what issue #160 asks for. (D-defaults)
+            'async_load'                       => 'on',
             'limit_results'                    => '200',
             'enable_sov'                       => 'no',
 
@@ -1338,7 +1340,20 @@ class wp_slimstat
             // Exclusions - User Properties
             'ignore_wp_users'     => 'no',
             'ignore_spammers'     => 'on',
-            'ignore_bots'         => 'no',
+            // Bots are 27.7% of stored rows on the reference dataset, and every one of them
+            // is parsed by Browscap before being kept. Filtering them by default reclaims
+            // more storage than the whole normalisation phase, at zero migration risk.
+            //
+            // This reaches NEW installs only, and that is structural rather than lucky:
+            // install writes get_fresh_defaults() -> init_options() into the option, and
+            // init() merges array_merge(init_options(), $stored) with stored winning. Every
+            // existing install therefore already holds all 110 keys and keeps its own value.
+            // Verified on this install: ignore_bots is STORED as 'no' and stays 'no'.
+            //
+            // That matters because flipping it for an existing site would make historical
+            // and new traffic counts incomparable — which the plan requires never happen
+            // silently. (D-defaults)
+            'ignore_bots'         => 'on',
             'ignore_prefetch'     => 'on',
             'ignore_users'        => '',
             'ignore_ip'           => '',
