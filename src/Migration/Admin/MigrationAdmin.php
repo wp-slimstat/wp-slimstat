@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
-use SlimStat\Migration\Migrations\AddMissingIndexes;
-use SlimStat\Migration\Migrations\OptimizeColumnTypes;
 use wp_slimstat_admin;
 
 class MigrationAdmin

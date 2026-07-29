@@ -503,6 +503,19 @@ class wp_slimstat
         if (is_user_logged_in()) {
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
+
+            // The index-repair subsystem. Nothing called this, so the whole thing —
+            // nine migrations, the Migration page, the one-click retry notice and the
+            // AJAX endpoints behind it — was dead code, and an install whose indexes
+            // failed to build had no way to repair them. The legacy fallback did not
+            // help: show_indexes_notice() suppressed itself on class_exists() of the
+            // class below, which is always true. Both halves of the repair path were
+            // out, and neither failed loudly. (D51)
+            //
+            // init() registers on `init` at 70, after the admin's own 60. Migrations
+            // never run on their own — they run only from the Migration page, on an
+            // explicit click.
+            \SlimStat\Migration\MigrationService::init();
         }
     }
     // end init

@@ -26,6 +26,13 @@ abstract class AbstractIndexMigration extends AbstractMigration
         );
     }
 
+    /**
+     * Per-request answer to shouldRun(), because it is asked more than once.
+     *
+     * @var bool|null
+     */
+    private $shouldRunCache;
+
     public function run(): bool
     {
         if ($this->shouldRun()) {
@@ -41,20 +48,36 @@ abstract class AbstractIndexMigration extends AbstractMigration
                 // Optionally log error: $this->wpdb->last_error
                 return false;
             }
+
+            // The index now exists; a later shouldRun() in this request must say so.
+            $this->shouldRunCache = null;
         }
 
         return true;
     }
 
+    /**
+     * Does this index still need creating?
+     *
+     * Memoised: rendering the migration notice asks once via needsMigration() and again via
+     * getRequiredDiagnostics(), and each ask is a `SHOW INDEX` against a table with 443k
+     * rows. The sibling migration that recovers heatmap positions already caches its own
+     * probe for the same reason.
+     */
     public function shouldRun(): bool
     {
+        if (null !== $this->shouldRunCache) {
+            return $this->shouldRunCache;
+        }
+
         // Use backticks for table name to avoid issues with %i placeholder
         $table_name = $this->getTableName();
         $exists = $this->wpdb->get_var($this->wpdb->prepare(
             sprintf('SHOW INDEX FROM `%s` WHERE Key_name = %%s', $table_name),
             $this->getIndexName()
         ));
-        return empty($exists);
+
+        return $this->shouldRunCache = empty($exists);
     }
 
     public function getDiagnostics(): array

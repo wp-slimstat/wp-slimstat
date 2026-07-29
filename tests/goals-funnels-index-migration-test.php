@@ -101,30 +101,50 @@ foreach ($spec as $short => $expectedSql) {
         gfim_assert(false, "class exists: {$short}", $failures);
         continue;
     }
-    $db = new wpdb();
-    $m  = new $class($db);
+    // shouldRun() memoises its SHOW INDEX for the life of the instance — it is asked twice
+    // per admin page render, once via needsMigration() and once via the notice's
+    // diagnostics, and the probe is a SHOW INDEX against a 443k-row table. So each scenario
+    // below gets a fresh instance, which is how callers use it: a migration object lives
+    // for one request, and the only thing that changes the answer mid-request is run(),
+    // which invalidates its own cache.
+    $fresh = static function ($indexPresent) use ($class, $short) {
+        $db = new wpdb();
+        $db->getVarReturn = $indexPresent ? $short : null;  // non-empty -> index present
+        return [new $class($db), $db];
+    };
 
     // shouldRun(): true when index missing, false when present.
-    $db->getVarReturn = null;
+    [$m, $db] = $fresh(false);
     gfim_assert($m->shouldRun() === true, "{$short}: shouldRun() true when index missing", $failures);
-    $db->getVarReturn = $short; // any non-empty -> index present
+
+    [$m, $db] = $fresh(true);
     gfim_assert($m->shouldRun() === false, "{$short}: shouldRun() false when index present", $failures);
 
     // run() on a missing index emits the right DDL (name + table + prefix-length columns).
-    $db->getVarReturn = null;
-    $db->queryReturn  = 0;       // wpdb->query() returns int rows on success (>= 0, !== false)
-    $db->lastQuery    = '';
+    [$m, $db] = $fresh(false);
+    $db->queryReturn = 0;        // wpdb->query() returns int rows on success (>= 0, !== false)
+    $db->lastQuery   = '';
     gfim_assert($m->run() === true, "{$short}: run() succeeds when CREATE INDEX succeeds", $failures);
     gfim_assert($db->lastQuery === $expectedSql, "{$short}: emits correct CREATE INDEX SQL", $failures);
 
     // Failure must propagate (false), not be swallowed.
+    [$m, $db] = $fresh(false);
     $db->queryReturn = false;    // simulate ALTER/CREATE failure (e.g. large-table timeout)
     gfim_assert($m->run() === false, "{$short}: run() returns false when CREATE INDEX fails", $failures);
 
     // No-op (and no failure) when the index already exists.
-    $db->getVarReturn = $short;
-    $db->lastQuery    = '';
+    [$m, $db] = $fresh(true);
+    $db->lastQuery = '';
     gfim_assert($m->run() === true && $db->lastQuery === '', "{$short}: run() is a no-op when index already exists", $failures);
+
+    // And the memo must not outlive the change run() makes: after creating the index, a
+    // second run() in the same request must be a no-op rather than re-issuing the DDL.
+    [$m, $db] = $fresh(false);
+    $db->queryReturn = 0;
+    $m->run();
+    $db->getVarReturn = $short;  // the index now exists
+    $db->lastQuery    = '';
+    gfim_assert($m->run() === true && $db->lastQuery === '', "{$short}: run() twice does not re-issue the DDL", $failures);
 }
 
 // --- Source scan: the three classes are registered in MigrationService ---

@@ -3702,8 +3702,12 @@ class wp_slimstat_admin
 
     public static function show_indexes_notice()
     {
-		// If new migration system is active, suppress legacy performance notice
-		if (class_exists(\SlimStat\Migration\Admin\MigrationAdmin::class)) {
+		// Suppress this legacy notice when the migration system is actually running, which
+		// is what `has_action()` answers. The previous test was class_exists() on the
+		// class file — always true under a classmap autoloader, so this returned here on
+		// every install while the new system was not wired up at all. Two repair paths,
+		// both dead, each because of the other. (D51)
+		if (has_action('wp_ajax_slimstat_run_migrations')) {
 			return;
 		}
 

@@ -133,6 +133,7 @@
     "test:report-date-filter-scope": "php tests/report-date-filter-scope-test.php",
     "test:purge-archive-order": "php tests/purge-archive-order-test.php",
     "test:funnel-step-identity": "php tests/funnel-step-identity-test.php",
+    "test:migration-runner-reachable": "php tests/migration-runner-reachable-test.php",
     "test:split-merge-group-key": "php tests/split-merge-group-key-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
@@ -181,6 +182,7 @@
       "@test:report-date-filter-scope",
       "@test:purge-archive-order",
       "@test:funnel-step-identity",
+      "@test:migration-runner-reachable",
       "@test:split-merge-group-key"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",

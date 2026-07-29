@@ -25,6 +25,10 @@ class MigrationService
     public static function init(): void
     {
         add_action('init', function () {
+            // Not redundant with the is_user_logged_in() gate at the call site: that is true
+            // for any authenticated visitor on any FRONTEND page too. Without this, every
+            // logged-in frontend pageview would build a manager and register nine
+            // migrations — the same cost shape that was just removed from the admin bar.
             if (!is_admin()) {
                 return;
             }
