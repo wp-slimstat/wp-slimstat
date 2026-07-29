@@ -513,6 +513,7 @@ class wp_slimstat_db
 
         $table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
+        $cache_key = '';
 
         // Try to convert SQL to Query class for better caching and performance
         if (0 === stripos($sql_trim, 'select') && false !== stripos($sql_trim, $table)) {
@@ -557,7 +558,60 @@ class wp_slimstat_db
 
         // Fallback to wpdb for complex queries — use wp_slimstat::$wpdb
         // so External DB addon queries the correct database.
-        return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+
+        // Write back what we read.
+        //
+        // A transient is read above for EVERY select that reaches here, but it used to be
+        // written only on the converted path — so any query the regex could not parse paid
+        // a get_transient() on every render and never once benefited from it. That is every
+        // Pro report: measured on slimview3, 0 of 3 get_results() calls converted, all three
+        // read and none wrote, and `_transient_slimstat_query_*` held 0 rows.
+        //
+        // The regex cannot be widened into a fix. It demands `[^ ]+` for the table, and
+        // Pro's queries read `FROM \`local\`.wp_users tu INNER JOIN …` — a join, not a bare
+        // table name — so no amount of whitespace tolerance would let it convert them, and
+        // converting a join through the builder would not reproduce the same SQL anyway.
+        // The asymmetry between the read and the write is the defect, not the parsing.
+        //
+        // Gated on the window being entirely historical, the same rule the builder applies
+        // via canUseCacheForDateRange(). Without that gate a live window — whose SQL carries
+        // a timestamp that moves every second — would write a row per render that nothing
+        // can ever read, which is precisely the accumulation that left thousands of orphaned
+        // rows in wp_options.
+        //
+        // The key is an md5 of the FULL SQL, so anything that scopes a query — a filter, a
+        // blog restriction, a user predicate — is already part of the key and cannot be
+        // served to a request that asked something different.
+        //
+        // Worth stating plainly: the defect is real but the win is small. Measured on
+        // slimview3 with a historical range, steady state, 600 -> 598 queries per render.
+        // Three get_results() calls out of ~600 queries is all this path is; the claim that
+        // it puts "the whole plugin outside the cache" does not survive measurement. (D72)
+        if ('' !== $cache_key && self::window_is_cacheable()) {
+            set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Is the active window entirely in the past, and therefore safe to cache?
+     *
+     * The same test maybe_enable_query_cache() applies to a Query object, in a form a raw
+     * SQL path can use. A window reaching today is refused: its SQL carries a timestamp that
+     * moves, so every write would be unreadable by the next request.
+     *
+     * @since 5.6.0
+     * @return bool
+     */
+    protected static function window_is_cacheable()
+    {
+        if (empty(self::$filters_normalized['utime']['end'])) {
+            return false;
+        }
+
+        return (int) self::$filters_normalized['utime']['end'] < strtotime(date('Y-m-d 00:00:00'));
     }
 
     protected static function is_simple_count_query($sql)

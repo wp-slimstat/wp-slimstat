@@ -882,9 +882,31 @@ class wp_slimstat_admin
 
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
         // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
-        $GLOBALS['wpdb']->query(
-            "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%' LIMIT 1000"
-        );
+        //
+        // The prefix here used to be `wp_slimstat_cache_`, which nothing writes. The keys
+        // come from Query::getCacheKeyForQuery() and are prefixed `wp_slimstat_query_`, so
+        // this DELETE matched zero rows on every upgrade, forever — measured on the
+        // reference install: 0 rows matched the old LIKE against 2,146 that existed. The
+        // stale-cache inconsistency it was written to prevent was never actually prevented,
+        // and nothing else purges these.
+        //
+        // Batched rather than one unbounded DELETE, and batched rather than a single
+        // LIMIT 1000. An install that has been accumulating since the prefix first drifted
+        // can hold far more than one batch — this one held 2,146 — and a bare LIMIT would
+        // leave the rest behind while reporting success. The loop is capped so a
+        // pathological table cannot stall the upgrade.
+        for ($sweep = 0; $sweep < 50; $sweep++) {
+            $deleted = $GLOBALS['wpdb']->query(
+                "DELETE FROM {$GLOBALS['wpdb']->options}
+                  WHERE option_name LIKE '\_transient\_wp\_slimstat\_query\_%'
+                     OR option_name LIKE '\_transient\_timeout\_wp\_slimstat\_query\_%'
+                  LIMIT 1000"
+            );
+
+            if (!$deleted) {
+                break;
+            }
+        }
 
         // Rotate the goals/funnels cache version on upgrade so pre-fix cached
         // results (e.g. goal "uniques" that excluded NULL-fingerprint visitors)

@@ -534,31 +534,17 @@ class Query
         return strtotime(date('Y-m-d 00:00:00'));
     }
 
-    protected function getCacheKey($input)
-    {
-        $normalized = $input;
-        if (preg_match('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', $input, $matches)) {
-            $from       = $matches[1];
-            $to         = $matches[2];
-            $normalized = preg_replace('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', sprintf("BETWEEN '%s' AND '%s'", $from, $to), $input);
-        }
-
-        $normalized = preg_replace_callback('/(\d{4}-\d{2}-\d{2})[\s\d:]{0,8}/', fn ($m) => $m[1], $normalized);
-        $hash       = substr(md5($normalized), 0, 10);
-        return sprintf('wp_slimstat_cache_%s', $hash);
-    }
-
-    protected function getCachedResult($input)
-    {
-        $cacheKey = $this->getCacheKey($input);
-        return get_transient($cacheKey);
-    }
-
-    protected function setCachedResult($input, $result, $expiration = DAY_IN_SECONDS)
-    {
-        $cacheKey = $this->getCacheKey($input);
-        return set_transient($cacheKey, $result, $expiration);
-    }
+    // Removed: getCacheKey() / getCachedResult() / setCachedResult().
+    //
+    // A second, unused caching mechanism keyed on `wp_slimstat_cache_<hash>`, with a
+    // date-normalising step that would have collapsed a window's time-of-day into its date.
+    // Nothing in free or Pro ever called it — every live cache path goes through the
+    // *ForQuery() variants, which key on `wp_slimstat_query_<hash>`.
+    //
+    // It was not harmless. The upgrade routine's stale-cache sweep was written against THIS
+    // prefix, so it matched zero rows on every upgrade while the real cache accumulated
+    // untouched: measured at 0 matched against 2,146 present. Deleting the dead half is
+    // what makes the surviving prefix unambiguous.
 
     /**
      * Analyzes the WHERE clauses to detect date ranges that overlap with today.
