@@ -981,50 +981,199 @@ class Query
         $historical = is_array($historical) ? $historical : [];
         $live       = is_array($live) ? $live : [];
 
-        // If no group key provided, try to determine it from the data
-        if (!$groupKey) {
-            // Try to find a suitable group key from the first row
-            $firstRow = !empty($historical) ? $historical[0] : (!empty($live) ? $live[0] : null);
-            if ($firstRow && is_array($firstRow)) {
-                // Use the first column that's not a sum field
-                foreach (array_keys($firstRow) as $key) {
-                    if (!in_array($key, $sumFields)) {
-                        $groupKey = $key;
-                        break;
-                    }
+        // Rows are identified by EVERY non-aggregate column they carry, not by one guessed
+        // column. The old merge keyed on "the first column that isn't counthits", so a
+        // report grouping on (browser, browser_version) was re-keyed on browser alone and
+        // every version collapsed onto whichever one the live half listed first. (D5)
+        //
+        // The key is read from the ROW rather than parsed out of the GROUP BY clause, and
+        // that is the safety property. In a grouped result set every non-aggregate column
+        // is functionally dependent on the group key, so keying on all of them is always at
+        // least as fine-grained as the real grouping and can never fuse two groups that
+        // belong apart. Parsing the GROUP BY instead would have to survive qualified names,
+        // backticks, aliases and expressions containing commas — and each of those fails on
+        // the wrong side: a partly-wrong key silently fabricates rows, where an
+        // over-specific key merely leaves one unmerged, which is visible.
+        $rules   = $this->aggregateRules($sumFields);
+        $keyCols = null !== $groupKey ? (array) $groupKey : null;
+
+        $keyOf = static function (array $row) use ($rules, $keyCols) {
+            $parts = [];
+            foreach ($row as $col => $value) {
+                $isKey = null !== $keyCols ? in_array($col, $keyCols, true) : !isset($rules[$col]);
+                if (!$isKey) {
+                    continue;
                 }
+                // NULL and '' are different groups in SQL and must not collapse into one.
+                // The previous merge went further and dropped NULL-keyed groups entirely,
+                // because isset() is false for null — one country group, 175 rows, on the
+                // reference dataset.
+                $parts[] = null === $value ? "\0NULL" : (string) $value;
             }
 
-            // If still no group key, just merge without grouping
-            if (!$groupKey) {
-                return array_merge($historical, $live);
-            }
-        }
+            return [] === $parts ? null : implode("\0", $parts);
+        };
 
         $result = [];
-        foreach ($historical as $row) {
-            if (isset($row[$groupKey])) {
-                $key          = $row[$groupKey];
-                $result[$key] = $row;
-            }
-        }
+        foreach ([$historical, $live] as $partition) {
+            foreach ($partition as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
 
-        foreach ($live as $row) {
-            if (isset($row[$groupKey])) {
-                $key = $row[$groupKey];
-                if (isset($result[$key])) {
-                    foreach ($sumFields as $field) {
-                        if (isset($row[$field])) {
-                            $result[$key][$field] += $row[$field];
-                        }
-                    }
-                } else {
+                $key = $keyOf($row);
+                if (null === $key) {
+                    // Every column is an aggregate, so nothing identifies this row. Keep it
+                    // rather than throw it away.
+                    $result[] = $row;
+                    continue;
+                }
+
+                if (!isset($result[$key])) {
                     $result[$key] = $row;
+                    continue;
+                }
+
+                foreach ($row as $col => $value) {
+                    $result[$key][$col] = self::combineValue(
+                        isset($rules[$col]) ? $rules[$col] : null,
+                        array_key_exists($col, $result[$key]) ? $result[$key][$col] : null,
+                        $value
+                    );
                 }
             }
         }
 
         return array_values($result);
+    }
+
+    /**
+     * Which columns identify a row, and how to combine the rest, for a split query.
+     *
+     * Derived from the SELECT list and GROUP BY, both of which are still intact and
+     * unparsed at merge time. An aggregate can only be merged from partition results when
+     * its per-partition output is a sufficient statistic: COUNT and SUM add, MAX and MIN
+     * take the extremum, GROUP_CONCAT unions. AVG needs the per-partition counts to weight
+     * it and COUNT(DISTINCT) is not recoverable at all — neither reaches this path today,
+     * and both keep the historical behaviour of taking the first value seen rather than
+     * inventing a number.
+     *
+     * @param string[] $sumFields Columns the caller declares additive whatever the SQL says.
+     * @return array<string, array{0: string, 1: string|null}> alias => [operation, argument]
+     */
+    private function aggregateRules(array $sumFields)
+    {
+        $rules = [];
+
+        foreach ($this->splitTopLevelCommas((string) $this->fields) as $expr) {
+            $alias = $expr;
+            if (preg_match('/^(.*?)\s+AS\s+([`\'"]?)([A-Za-z0-9_]+)\2\s*$/is', $expr, $m)) {
+                $alias = $m[3];
+                $expr  = trim($m[1]);
+            }
+            $alias = trim($alias, " `'\"");
+
+            // COUNT(DISTINCT x) wears COUNT's clothes but is not additive: a value present
+            // in both halves would be counted once per half.
+            if (preg_match('/^\s*COUNT\s*\(\s*DISTINCT/i', $expr)) {
+                $rules[$alias] = ['FIRST', null];
+                continue;
+            }
+
+            if (preg_match('/^\s*(COUNT|SUM|MAX|MIN|AVG|GROUP_CONCAT)\s*\(/i', $expr, $fn)) {
+                $op  = strtoupper($fn[1]);
+                $sep = null;
+                if ('GROUP_CONCAT' === $op) {
+                    $sep = preg_match('/SEPARATOR\s+([\'"])(.*?)\1/is', $expr, $m) ? $m[2] : ',';
+                }
+                $rules[$alias] = [$op, $sep];
+            }
+        }
+
+        foreach ($sumFields as $field) {
+            $rules[$field] = ['SUM', null];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Combine one column's value across the two halves of a split range.
+     *
+     * @param array{0: string, 1: string|null}|null $rule
+     * @param mixed                                 $a
+     * @param mixed                                 $b
+     * @return mixed
+     */
+    private static function combineValue($rule, $a, $b)
+    {
+        if (null === $rule) {
+            // Part of the group key: both halves carry the same value by construction.
+            return $a;
+        }
+
+        list($op, $arg) = $rule;
+
+        switch ($op) {
+            case 'COUNT':
+            case 'SUM':
+                return $a + $b;
+            case 'MAX':
+                return (null === $a || (null !== $b && $b > $a)) ? $b : $a;
+            case 'MIN':
+                return (null === $a || (null !== $b && $b < $a)) ? $b : $a;
+            case 'GROUP_CONCAT':
+                $parts = array_merge(
+                    '' === (string) $a ? [] : explode($arg, (string) $a),
+                    '' === (string) $b ? [] : explode($arg, (string) $b)
+                );
+                return implode($arg, array_unique(array_filter($parts, static function ($v) {
+                    return '' !== $v;
+                })));
+            default:
+                // AVG, COUNT(DISTINCT) and anything unrecognised: keep what we have rather
+                // than fabricate a value the two halves cannot support.
+                return $a;
+        }
+    }
+
+    /**
+     * Split a clause on its top-level commas, ignoring those nested in parentheses.
+     *
+     * Parentheses only: a comma or bracket inside a string literal would confuse the depth
+     * counter. No clause this plugin generates contains one.
+     *
+     * @param string $fields
+     * @return string[]
+     */
+    private function splitTopLevelCommas($fields)
+    {
+        $out   = [];
+        $depth = 0;
+        $buf   = '';
+
+        for ($i = 0, $len = strlen($fields); $i < $len; $i++) {
+            $c = $fields[$i];
+            if ('(' === $c) {
+                $depth++;
+            } elseif (')' === $c) {
+                $depth--;
+            }
+
+            if (',' === $c && 0 === $depth) {
+                $out[] = $buf;
+                $buf   = '';
+                continue;
+            }
+
+            $buf .= $c;
+        }
+
+        $out[] = $buf;
+
+        return array_values(array_filter(array_map('trim', $out), static function ($v) {
+            return '' !== $v;
+        }));
     }
 
     /**
@@ -1484,6 +1633,18 @@ class Query
         }
 
         [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
+
+        // HAVING cannot survive the split. It filters groups AFTER aggregation, so running
+        // it against each half independently asks a different question of each: "Top Bounce
+        // Pages" (HAVING COUNT(visit_id) = 1) lets a page with one visit before midnight and
+        // one after pass in BOTH halves, then merges them into a page with two visits — the
+        // exact opposite of what the report is for. No merge can undo that, because the rows
+        // that should have been excluded were already selected. Run one query instead and
+        // give up only the historical half's cache entry. (D5)
+        if ($split && !empty($this->havingClauses)) {
+            $split = false;
+        }
+
         if ($split) {
             $baseWhereClauses    = $this->whereClauses;
             $baseValuesToPrepare = $this->valuesToPrepare;
@@ -1498,10 +1659,14 @@ class Query
             // merging.
             $parsedOffset = 0;
             $parsedLimit  = 0;
-            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $this->limitClause, $m)) {
+            // Cast: a query with no LIMIT leaves this null, and passing null to preg_match
+            // is deprecated from PHP 8.1 — it was emitting two notices per split query, i.e.
+            // on the default dashboard view of every install.
+            $limitClause  = (string) $this->limitClause;
+            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $limitClause, $m)) {
                 $parsedLimit  = intval($m[1]);
                 $parsedOffset = intval($m[2]);
-            } elseif (preg_match('/LIMIT\s+(\d+)/i', $this->limitClause, $m)) {
+            } elseif (preg_match('/LIMIT\s+(\d+)/i', $limitClause, $m)) {
                 $parsedLimit = intval($m[1]);
             }
             // Sub-queries fetch up to offset+limit rows (no OFFSET) so we
