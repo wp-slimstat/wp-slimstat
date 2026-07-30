@@ -37,6 +37,12 @@ class wp_slimstat_admin
     /** Wall-clock budget for the whole schema upgrade, well inside a default max_execution_time. */
     private const SCHEMA_UPGRADE_TIME_BUDGET = 10;
 
+    /** Single-flight claim for the schema upgrade. Non-autoloaded; released in a finally. */
+    private const SCHEMA_LOCK_OPTION = 'slimstat_schema_upgrade_lock';
+
+    /** A claim older than this is assumed dead and taken over. Longer than the request budget. */
+    private const SCHEMA_LOCK_STALE_AFTER = 900;
+
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -764,13 +770,140 @@ class wp_slimstat_admin
      */
     public static function update_tables_and_options()
     {
+        if (!self::may_run_schema_ddl()) {
+            return false;
+        }
+
+        if (!self::claim_schema_lock()) {
+            return false;
+        }
+
         try {
             return self::run_schema_upgrade();
         } catch (\Throwable $e) {
             wp_slimstat::record_degradation('schema upgrade', $e);
 
             return false;
+        } finally {
+            // Every exit path, including the deliberate early return the notes
+            // conversion uses to resume. A resumable migration that locks itself out
+            // until the stale-lock timeout is not resumable.
+            delete_option(self::SCHEMA_LOCK_OPTION);
         }
+    }
+
+    /**
+     * May THIS request run schema DDL?
+     *
+     * `admin_init` is not "an admin page": wp-admin/admin-ajax.php fires it too, and
+     * nothing else on the path checked a capability — wp-slimstat.php gates only on
+     * is_user_logged_in(), and wp_slimstat_admin::init() on nothing. So a subscriber
+     * opening /wp-admin/profile.php, a Heartbeat tick or an autosave could trigger
+     * DROP COLUMN, four table rebuilds, up to nine index builds and a full-table UPDATE.
+     *
+     * Cron and REST are excluded for a different reason than capability: they are
+     * background and third-party surfaces where nobody sees the outcome, and the
+     * tracker itself is a REST route — running a multi-minute ALTER there is the
+     * difference between an upgrade and an outage.
+     *
+     * Consequence worth stating: a site where nobody with manage_options ever loads
+     * wp-admin now stays un-upgraded rather than being upgraded by a subscriber. That
+     * is the correct trade — but it is a trade, and the durable fix is the migration
+     * registry's own WP-CLI driver and admin page, not a wider gate here.
+     *
+     * Scope: this guards the version-gated UPGRADE only. The two CREATE-TABLE repair
+     * paths — init() when the tables are missing, and the tracker's failed-INSERT
+     * recovery — are deliberately left ungated for now. They are the safety net for
+     * sites whose tables were never created, which is a live bug today (activation
+     * hooks are registered inside `if (is_admin())`, so `wp plugin activate` creates
+     * nothing). Gating them before fixing that would remove the net and the fall.
+     * They need their own treatment: a one-shot claim and a narrower trigger than
+     * "any INSERT failed".
+     */
+    private static function may_run_schema_ddl()
+    {
+        // The only abort a wp.org plugin can offer: no staged rollout, no canary, no
+        // telemetry, no remote switch. This is one honour point; the migration runner
+        // and its AJAX handler need their own.
+        if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
+            return false;
+        }
+
+        if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return false;
+        }
+
+        return current_user_can('manage_options');
+    }
+
+    /**
+     * Claim the single-flight lock, or decline.
+     *
+     * Deliberately NOT `add_option()`. Core's `add_option()` decides whether the option
+     * exists with a PHP-level `get_option()` pre-check and then issues
+     * `INSERT ... ON DUPLICATE KEY UPDATE`, which OVERWRITES (wp-includes/option.php).
+     * The unique index never rejects anything, so two concurrent requests can both pass
+     * the pre-check and both believe they hold the lock — the exact race this exists to
+     * close. A raw INSERT that lets the `option_name` unique index reject the loser is
+     * what actually makes the claim atomic.
+     *
+     * `wp_cache_add()` is the codebase's other claim idiom (the tracker's rate limiter),
+     * but it is only atomic against a PERSISTENT object cache. Most wp.org installs have
+     * none, where it degrades to a per-request array and would grant the lock to every
+     * concurrent request. The index is the only thing present on every install.
+     *
+     * A run killed by max_execution_time never reaches the `finally` that releases,
+     * so a stale claim is taken over — via a conditional UPDATE matching the exact
+     * value observed, so two requests that both see the same stale claim cannot both
+     * win. The staleness threshold is much longer than the upgrade's own wall-clock
+     * budget: the budget bounds one request's work, while a killed request may have
+     * left an ALTER running server-side after PHP has gone.
+     *
+     * `autoload = 'no'` is written directly because this bypasses the options API.
+     * Verified outside `wp_autoload_values_to_autoload()` on both WP 5.6 and 7.0.
+     */
+    private static function claim_schema_lock()
+    {
+        global $wpdb;
+
+        $now = time();
+
+        $suppressed = $wpdb->suppress_errors(true);
+        $claimed    = $wpdb->query($wpdb->prepare(
+            "INSERT INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'no')",
+            self::SCHEMA_LOCK_OPTION,
+            (string) $now
+        ));
+        $wpdb->suppress_errors($suppressed);
+
+        // The row is written behind the options API's back, so drop its caches.
+        wp_cache_delete(self::SCHEMA_LOCK_OPTION, 'options');
+        wp_cache_delete('notoptions', 'options');
+
+        if ($claimed) {
+            return true;
+        }
+
+        $held = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT option_value FROM `{$wpdb->options}` WHERE option_name = %s",
+            self::SCHEMA_LOCK_OPTION
+        ));
+
+        if ($held > 0 && ($now - $held) < self::SCHEMA_LOCK_STALE_AFTER) {
+            return false;
+        }
+
+        $took = $wpdb->query($wpdb->prepare(
+            "UPDATE `{$wpdb->options}` SET option_value = %s
+              WHERE option_name = %s AND option_value = %s",
+            (string) $now,
+            self::SCHEMA_LOCK_OPTION,
+            (string) $held
+        ));
+
+        wp_cache_delete(self::SCHEMA_LOCK_OPTION, 'options');
+
+        return (bool) $took;
     }
 
     /**

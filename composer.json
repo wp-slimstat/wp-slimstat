@@ -142,6 +142,7 @@
     "test:class-name-as-variable": "php tests/class-name-as-variable-scan-test.php",
     "test:consent-migration-gate": "php tests/consent-migration-gate-test.php",
     "test:notes-migration-bounded": "php tests/notes-migration-bounded-test.php",
+    "test:schema-ddl-gate": "php tests/schema-ddl-gate-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -197,7 +198,8 @@
       "@test:split-merge-group-key",
       "@test:class-name-as-variable",
       "@test:consent-migration-gate",
-      "@test:notes-migration-bounded"
+      "@test:notes-migration-bounded",
+      "@test:schema-ddl-gate"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
