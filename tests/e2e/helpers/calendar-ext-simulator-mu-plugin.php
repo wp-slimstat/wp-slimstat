@@ -20,6 +20,19 @@
 
 namespace SlimStat\Helpers;
 
+/**
+ * Guarded by SLIMSTAT_E2E_TESTING, like every other helper here. Ungated, this
+ * defines a namespaced jddayofweek() that throws, faking a missing ext-calendar.
+ * The file reaching wp-content/mu-plugins is not consent to run it: a helper gets
+ * there by an interrupted test run as easily as a deliberate one.
+ *
+ * The guard sits AFTER the namespace declaration because PHP requires that
+ * statement to come first — the return still short-circuits the file.
+ */
+if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
+    return;
+}
+
 function jddayofweek(int $julianday = 0, int $mode = 0): mixed
 {
     throw new \RuntimeException(
