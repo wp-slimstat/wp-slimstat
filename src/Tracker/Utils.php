@@ -242,13 +242,40 @@ class Utils
 		}
 	}
 
-	public static function getValueWithChecksum($value = 0)
+	/**
+	 * The key both cookie checksum schemes are computed with.
+	 *
+	 * One resolver. There were four copies of this resolution and two had drifted: the
+	 * legacy md5 branch below, and Tracker::_get_value_with_checksum(), which had no
+	 * AUTH_KEY fallback at all. Both read `settings['secret']` raw, so an empty secret
+	 * left them keyed on `md5($value . '')` — publicly computable, and enough to claim
+	 * any visit id. What that grants is not read-only: Processor keys its UPDATE on
+	 * visit_id AND ip across the session window, so a forged cookie widens a write.
+	 *
+	 * No shipped install reaches that state — init_options() mints a random secret on
+	 * every invocation, so the stored value is never empty in the tree — which is why
+	 * this was latent rather than live.
+	 *
+	 * NOT the same question as Session::getSecureKey() or IPHashProvider's key, and
+	 * they must not be merged. Those derive a PSEUDONYMISATION key and fall back to
+	 * per-call randomness; sign/verify needs a key that is stable across requests, and
+	 * a random one would invalidate every cookie on the next hit. Conversely this
+	 * resolver accepts whatever is in the options row, which those reject on purpose.
+	 */
+	private static function resolveSecret(): string
 	{
 		$secret = \wp_slimstat::$settings['secret'] ?? '';
+
 		if (empty($secret)) {
 			$secret = defined('AUTH_KEY') ? AUTH_KEY : 'slimstat_default_key';
 		}
-		return $value . '.' . hash_hmac('sha256', (string) $value, $secret);
+
+		return $secret;
+	}
+
+	public static function getValueWithChecksum($value = 0)
+	{
+		return $value . '.' . hash_hmac('sha256', (string) $value, self::resolveSecret());
 	}
 
 	public static function getValueWithoutChecksum($valueWithChecksum = '')
@@ -263,19 +290,18 @@ class Utils
 			return false;
 		}
 		[$value, $checksum] = $parts;
-		$secret = \wp_slimstat::$settings['secret'] ?? '';
-		if (empty($secret)) {
-			$secret = defined('AUTH_KEY') ? AUTH_KEY : 'slimstat_default_key';
-		}
+		$secret = self::resolveSecret();
+
 		if (hash_equals($checksum, hash_hmac('sha256', (string) $value, $secret))) {
 			return $value;
 		}
 
-		// Legacy fallback: accept MD5 checksums from cookies set before v5.4.2.
-		// This prevents all active sessions from resetting on upgrade.
-		// Safe to remove after v5.5.
-		$legacy_secret = \wp_slimstat::$settings['secret'] ?? '';
-		if (hash_equals($checksum, md5($value . $legacy_secret))) {
+		// Legacy scheme, keyed through the same resolver as the branch above. It covers
+		// cookies from before v5.4.2 AND any still minted through the legacy
+		// Tracker::_* surface, so retiring it is not simply a matter of waiting out an
+		// upgrade window — and the two E2E specs that claim to cover it assert only
+		// `status < 500`, so they pass with it deleted. Sunset tracked as W7.
+		if (hash_equals($checksum, md5($value . $secret))) {
 			return $value;
 		}
 

@@ -145,6 +145,7 @@
     "test:schema-ddl-gate": "php tests/schema-ddl-gate-test.php",
     "test:activation-hooks": "php tests/activation-hooks-registered-test.php",
     "test:network-scope-handshake": "php tests/network-scope-handshake-test.php",
+    "test:checksum-timing": "php tests/checksum-timing-safety-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -203,7 +204,8 @@
       "@test:notes-migration-bounded",
       "@test:schema-ddl-gate",
       "@test:activation-hooks",
-      "@test:network-scope-handshake"
+      "@test:network-scope-handshake",
+      "@test:checksum-timing"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

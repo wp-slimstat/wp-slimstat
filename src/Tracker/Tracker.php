@@ -381,9 +381,20 @@ class Tracker
         return Utils::logError($_error_code);
     }
 
+    /**
+     * @deprecated Use SlimStat\Tracker\Utils::getValueWithChecksum().
+     *
+     * Kept as a delegate rather than deleted for the same reason as _log_error(): it is
+     * public and reachable from an add-on. It carried its own copy of the signing key —
+     * the raw `settings['secret']` with no AUTH_KEY fallback, the most drifted of the
+     * copies X2 was about — and it is a live SIGNER, wired at :118. So this was not a
+     * legacy acceptor for pre-5.4.2 cookies: 5.5.1 mints md5 cookies today, through
+     * here. Delegating makes the two halves agree again, and moves this path onto HMAC,
+     * which the verifier already accepts alongside md5.
+     */
     public static function _get_value_with_checksum($_value = 0)
     {
-        return $_value . '.' . md5($_value . (\wp_slimstat::$settings['secret'] ?? ''));
+        return Utils::getValueWithChecksum($_value);
     }
 
 

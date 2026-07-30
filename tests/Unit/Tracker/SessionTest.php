@@ -108,11 +108,14 @@ class SessionTest extends WpSlimstatTestCase
                 return $value;
             });
 
-        // Build a valid checksum cookie value for visit_id = 42.
+        // Build a valid checksum cookie value for visit_id = 42, through the signer the
+        // code under test verifies against. Hand-rolling `md5($visitId . $secret)` here
+        // meant this "valid cookie" case and the "invalid checksum" case below were
+        // exercising the same rejection path — both assert false, so the suite stayed
+        // green while proving nothing. setUp() never sets a secret, and an empty secret
+        // is exactly the state whose md5 form is no longer accepted (X2).
         $visitId = 42;
-        $secret  = \wp_slimstat::$settings['secret'] ?? '';
-        $cookieValue = $visitId . '.' . md5($visitId . $secret);
-        $_COOKIE['slimstat_tracking_code'] = $cookieValue;
+        $_COOKIE['slimstat_tracking_code'] = \SlimStat\Tracker\Utils::getValueWithChecksum($visitId);
 
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
