@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace SlimStat\Migration;
 
-use SlimStat\Components\View;
-use wpdb;
 
 class MigrationManager
 {
@@ -78,15 +76,27 @@ class MigrationManager
             return $this->needsMemo = ('dirty' === $cached);
         }
 
-        $needs = false;
+        $needs       = false;
+        $unavailable = false;
         foreach ($this->migrations as $migration) {
             if ($migration->shouldRun()) {
                 $needs = true;
                 break;
             }
+            // A probe that could not reach the database answers "nothing to do" — the
+            // safe answer, but not a KNOWN one.
+            $unavailable = $unavailable
+                || (method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable());
         }
 
-        set_transient(self::TRANSIENT_PROBE, $needs ? 'dirty' : 'clean', self::PROBE_TTL);
+        // Never persist "I could not look" as "nothing to do". This cache has a
+        // twelve-hour life and only run/dismiss/reset clear it, so caching an
+        // unreachable database would hide the migration screen for half a day after
+        // the admin fixed the very configuration that broke it — with no way to force
+        // a re-probe.
+        if (!$unavailable) {
+            set_transient(self::TRANSIENT_PROBE, $needs ? 'dirty' : 'clean', self::PROBE_TTL);
+        }
 
         return $this->needsMemo = $needs;
     }

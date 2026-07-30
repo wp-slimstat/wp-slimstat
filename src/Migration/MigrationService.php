@@ -21,6 +21,35 @@ use SlimStat\Migration\Migrations\RecoverCorruptedHeatmapPositions;
 class MigrationService
 {
     /**
+     * The connection the slim_* tables are on.
+     *
+     * Not `global $wpdb`. `slimstat_custom_wpdb` can put the analytics tables on a
+     * different server entirely, and this subsystem exists to run DDL against those
+     * tables — so probing the main database told it, wrongly and permanently, that
+     * eight indexes were missing and that the utf8mb4 conversion was already done.
+     *
+     * The instanceof is not an ordering guard — wp_slimstat::init() assigns its handle
+     * 155 lines before it calls this class, and this only runs later still, on `init`
+     * priority 70. It defends against a third-party `slimstat_custom_wpdb` filter
+     * returning something that is not a wpdb, which would otherwise be a TypeError
+     * against the return type rather than a degraded report.
+     */
+    public static function analyticsConnection(): \wpdb
+    {
+        return \wp_slimstat::$wpdb instanceof \wpdb ? \wp_slimstat::$wpdb : self::coreConnection();
+    }
+
+    /**
+     * The connection WordPress core is on — wp_users, wp_options.
+     *
+     * Always local, whatever the analytics tables are doing.
+     */
+    public static function coreConnection(): \wpdb
+    {
+        return $GLOBALS['wpdb'];
+    }
+
+    /**
      * Initializes the migration system, registers migrations, and hooks into WordPress.
      */
     public static function init(): void
@@ -34,20 +63,27 @@ class MigrationService
                 return;
             }
 
-            global $wpdb;
-            $manager = new MigrationManager($wpdb);
+            // Named for what they are. The whole defect was that the handle called
+            // "$wpdb" was the wrong one.
+            $analytics = self::analyticsConnection();
+            $core      = self::coreConnection();
+
+            // MigrationManager declares no constructor — it works through the options
+            // and transients APIs, which are always core-side. Passing a handle here
+            // advertised a scoping it does not have.
+            $manager = new MigrationManager();
 
             // Register all migrations
-            $manager->register(new CreateDtOutIndex($wpdb));
-            $manager->register(new CreateCountryDtIndex($wpdb));
-            $manager->register(new CreateDtScreenIndex($wpdb));
-            $manager->register(new CreateDtBrowserIndex($wpdb));
-            $manager->register(new CreateDtPlatformIndex($wpdb));
-            $manager->register(new CreateGoalQueriesIndex($wpdb));
-            $manager->register(new CreateFunnelQueriesIndex($wpdb));
-            $manager->register(new CreateEventsNotesDtIndex($wpdb));
-            $manager->register(new RecoverCorruptedHeatmapPositions($wpdb));
-            $manager->register(new ConvertTablesToUtf8mb4($wpdb));
+            $manager->register(new CreateDtOutIndex($analytics, $core));
+            $manager->register(new CreateCountryDtIndex($analytics, $core));
+            $manager->register(new CreateDtScreenIndex($analytics, $core));
+            $manager->register(new CreateDtBrowserIndex($analytics, $core));
+            $manager->register(new CreateDtPlatformIndex($analytics, $core));
+            $manager->register(new CreateGoalQueriesIndex($analytics, $core));
+            $manager->register(new CreateFunnelQueriesIndex($analytics, $core));
+            $manager->register(new CreateEventsNotesDtIndex($analytics, $core));
+            $manager->register(new RecoverCorruptedHeatmapPositions($analytics, $core));
+            $manager->register(new ConvertTablesToUtf8mb4($analytics, $core));
 
             $admin = new MigrationAdmin($manager);
             $admin->hooks();

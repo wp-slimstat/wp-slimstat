@@ -51,8 +51,13 @@ $target = slimstat_function_body($source, 'targetCollation');
 if ('' === $target) {
     $failures[] = 'targetCollation() is gone — re-anchor this assertion rather than deleting it';
 } else {
-    if (!preg_match('/user_login/', $target) || !preg_match('/wpdb->users/', $target)) {
-        $failures[] = 'the target collation is not resolved from wp_users.user_login. Using the '
+    // coreWpdb, not wpdb: wp_users is a WordPress table and lives on the core
+    // connection. On an external-DB install the analytics handle cannot see it, the
+    // lookup returns null, and the fallback collation is silently chosen — which is
+    // the very ER_CANT_AGGREGATE_2COLLATIONS this assertion exists to prevent (C29).
+    if (!preg_match('/user_login/', $target) || !preg_match('/coreWpdb->users/', $target)) {
+        $failures[] = 'the target collation is not resolved from wp_users.user_login on the CORE '
+            . 'connection. Using the analytics handle finds no wp_users on an external-DB install; using '
             . 'database default instead leaves the charsets matching and the collations '
             . 'different, which makes the Pro user join throw ER_CANT_AGGREGATE_2COLLATIONS — '
             . 'measured, it turns a slow join into a fatal one';
@@ -95,9 +100,17 @@ if ('' === $run) {
 
 // ── 5. shouldRun() must be driven by the schema, not a stored flag ──────────
 // A flag can say "done" while the tables say otherwise — after a restore, say.
-$should = slimstat_function_body($source, 'shouldRun');
+$should  = slimstat_function_body($source, 'shouldRun');
 $pending = slimstat_function_body($source, 'pendingTables');
-if ('' === $pending || !preg_match('/information_schema|CHARACTER_SET_NAME/i', $pending)) {
+
+// Follow the delegation rather than pinning one method name: the counts moved into
+// tableStates() so that getDiagnostics() could tell an ABSENT table from a converted
+// one (both answer zero stale columns). What this assertion cares about is that the
+// decision is reached from the live schema somewhere on that chain — and, below, that
+// no stored flag short-circuits it.
+$decision_chain = $should . $pending . slimstat_function_body($source, 'tableStates');
+
+if ('' === $pending || !preg_match('/information_schema|CHARACTER_SET_NAME/i', $decision_chain)) {
     $failures[] = 'the migration does not decide from the live schema whether it is needed. A '
         . 'stored flag would report success on a database restored from a utf8mb3 dump';
 }

@@ -59,6 +59,15 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
     /** @var bool|null */
     private $shouldRunCache;
 
+    /**
+     * @var array<string,array{total:int,stale:int}>|null
+     *
+     * shouldRun() and getDiagnostics() both need these counts and both run on the same
+     * admin render; without the memo that is eight information_schema queries where
+     * four suffice. run() clears it, because converting a table changes the answer.
+     */
+    private $tableStatesCache;
+
     public function getId(): string
     {
         return 'convert-tables-to-utf8mb4';
@@ -87,10 +96,16 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
      */
     public function targetCollation(): string
     {
-        $collation = $this->wpdb->get_var($this->wpdb->prepare(
+        // Asked on the CORE connection. wp_users is a WordPress table: on an
+        // external-DB install it is not on the analytics server at all, so asking there
+        // returns null, silently selects FALLBACK_COLLATION, and converts the analytics
+        // tables to a collation that need not match the site's — which is
+        // ER_CANT_AGGREGATE_2COLLATIONS on the Pro user join, the exact fatal ADR-5
+        // exists to prevent. DATABASE() then correctly resolves to the core schema.
+        $collation = $this->coreWpdb->get_var($this->coreWpdb->prepare(
             "SELECT COLLATION_NAME FROM information_schema.COLUMNS
               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'user_login'",
-            $this->wpdb->users
+            $this->coreWpdb->users
         ));
 
         if (!is_string($collation) || 0 !== strpos($collation, 'utf8mb4_')) {
@@ -100,23 +115,60 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         return $collation;
     }
 
+    /**
+     * Per-table column counts: how many columns exist, and how many are still utf8mb3.
+     *
+     * Both facts in one pass, because counting only the STALE columns cannot tell a
+     * fully-converted table from one that is not on this connection at all — both
+     * answer zero. That is how getDiagnostics() came to render the target collation
+     * beside four tables on installs where nothing had been converted, and it is why
+     * `total` is carried through to the diagnostics rather than collapsed here.
+     *
+     * @return array<string,array{total:int,stale:int}>
+     */
+    private function tableStates(): array
+    {
+        if (null !== $this->tableStatesCache) {
+            return $this->tableStatesCache;
+        }
+
+        $states = [];
+
+        foreach (self::TABLES as $suffix) {
+            $table = $this->tablePrefix() . $suffix;
+
+            $counts = $this->wpdb->get_row($this->wpdb->prepare(
+                "SELECT COUNT(*) AS total,
+                        SUM(CASE WHEN CHARACTER_SET_NAME IS NOT NULL AND CHARACTER_SET_NAME <> 'utf8mb4'
+                                 THEN 1 ELSE 0 END) AS stale
+                   FROM information_schema.COLUMNS
+                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
+                $table
+            ), ARRAY_A);
+
+            // An unreachable database is not an answer about any table. Report nothing
+            // rather than four confident "nothing to do"s.
+            if ($this->probeFailed()) {
+                return $this->tableStatesCache = [];
+            }
+
+            $states[$table] = [
+                'total' => (int) ($counts['total'] ?? 0),
+                'stale' => (int) ($counts['stale'] ?? 0),
+            ];
+        }
+
+        return $this->tableStatesCache = $states;
+    }
+
     /** Tables that still carry at least one non-utf8mb4 text column. */
     private function pendingTables(): array
     {
         $pending = [];
 
-        foreach (self::TABLES as $suffix) {
-            $table = $this->wpdb->prefix . $suffix;
-
-            $stale = (int) $this->wpdb->get_var($this->wpdb->prepare(
-                "SELECT COUNT(*) FROM information_schema.COLUMNS
-                  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s
-                    AND CHARACTER_SET_NAME IS NOT NULL AND CHARACTER_SET_NAME <> 'utf8mb4'",
-                $table
-            ));
-
-            if ($stale > 0) {
-                $pending[$table] = $stale;
+        foreach ($this->tableStates() as $table => $state) {
+            if ($state['stale'] > 0) {
+                $pending[$table] = $state['stale'];
             }
         }
 
@@ -159,29 +211,46 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
             }
         }
 
-        $this->shouldRunCache = null;
+        $this->shouldRunCache   = null;
+        $this->tableStatesCache = null;
 
         return $ok;
     }
 
     public function getDiagnostics(): array
     {
-        $pending    = $this->pendingTables();
-        $collation  = $this->targetCollation();
+        $states      = $this->tableStates();
+        $collation   = $this->targetCollation();
         $diagnostics = [];
 
         foreach (self::TABLES as $suffix) {
-            $table = $this->wpdb->prefix . $suffix;
+            $table = $this->tablePrefix() . $suffix;
+            $state = $states[$table] ?? ['total' => 0, 'stale' => 0];
+
+            // Three states, not two. A table with no columns is not on this connection —
+            // the two archive tables are legitimately absent until something is archived,
+            // and on a misconfigured custom database none of them are there. Reporting
+            // that as "converted, collation utf8mb4_…" is the lie this migration's own
+            // screen was telling.
+            if (0 === $state['total']) {
+                $diagnostics[] = [
+                    'key'     => $table,
+                    'exists'  => false,
+                    'table'   => $table,
+                    'columns' => __('table not found on the analytics database', 'wp-slimstat'),
+                ];
+                continue;
+            }
 
             $diagnostics[] = [
                 'key'     => $table,
-                'exists'  => !isset($pending[$table]),
+                'exists'  => 0 === $state['stale'],
                 'table'   => $table,
-                'columns' => isset($pending[$table])
+                'columns' => $state['stale'] > 0
                     ? sprintf(
                         /* translators: 1: number of columns, 2: target collation */
-                        _n('%1$d column to convert to %2$s', '%1$d columns to convert to %2$s', $pending[$table], 'wp-slimstat'),
-                        $pending[$table],
+                        _n('%1$d column to convert to %2$s', '%1$d columns to convert to %2$s', $state['stale'], 'wp-slimstat'),
+                        $state['stale'],
                         $collation
                     )
                     : $collation,

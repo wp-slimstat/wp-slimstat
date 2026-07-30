@@ -29,6 +29,6 @@ class CreateDtBrowserIndex extends AbstractIndexMigration
 
     protected function getTableName(): string
     {
-        return $this->wpdb->prefix . 'slim_stats';
+        return $this->tablePrefix() . 'slim_stats';
     }
 }

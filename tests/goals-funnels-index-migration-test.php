@@ -40,6 +40,18 @@ if (!function_exists('__')) {
         return $text;
     }
 }
+if (!class_exists('wp_slimstat')) {
+    class wp_slimstat
+    {
+        /** @var array<string,string> Degradations the migration subsystem reported. */
+        public static $degradations = [];
+
+        public static function record_degradation($step, $e)
+        {
+            self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        }
+    }
+}
 if (!class_exists('wpdb')) {
     class wpdb
     {
@@ -54,6 +66,21 @@ if (!class_exists('wpdb')) {
         {
             $this->lastQuery = $sql;
             return $this->queryReturn;
+        }
+
+        /**
+         * The error text wpdb leaves after a failed query, '' when it succeeded.
+         *
+         * shouldRun() reads this to tell "the table is not on this connection" apart
+         * from "the index is missing" — get_var() answers null for both (C29).
+         *
+         * @var string
+         */
+        public $last_error = '';
+
+        public function suppress_errors($suppress = true)
+        {
+            return false;
         }
 
         public function get_var($sql)
@@ -119,6 +146,17 @@ foreach ($spec as $short => $expectedSql) {
 
     [$m, $db] = $fresh(true);
     gfim_assert($m->shouldRun() === false, "{$short}: shouldRun() false when index present", $failures);
+
+    // C29: on an external-DB install the table is not on this connection, SHOW INDEX
+    // errors, and get_var() answers null — the same value as "index missing". Reading
+    // that as "yes, run me" produced a migration notice that could never be cleared and
+    // a button that failed on every click. A probe that cannot read the table must
+    // answer neither clean nor dirty, and must say so.
+    wp_slimstat::$degradations = [];
+    [$m, $db]                  = $fresh(false);
+    $db->last_error            = "Table 'main.wp_slim_stats' doesn't exist";
+    gfim_assert($m->shouldRun() === false, "{$short}: shouldRun() false when the table is unreadable", $failures);
+    gfim_assert(wp_slimstat::$degradations !== [], "{$short}: an unreadable table records a degradation", $failures);
 
     // run() on a missing index emits the right DDL (name + table + prefix-length columns).
     [$m, $db] = $fresh(false);

@@ -26,8 +26,8 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
 
     public function run(): bool
     {
-        $events_table = $this->wpdb->prefix . 'slim_events';
-        $stats_table = $this->wpdb->prefix . 'slim_stats';
+        $events_table = $this->tablePrefix() . 'slim_events';
+        $stats_table = $this->tablePrefix() . 'slim_stats';
 
         $base_sql = "
             SELECT e.event_id, e.position, s.screen_width
@@ -106,8 +106,8 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             return $this->shouldRunCache;
         }
 
-        $events_table = $this->wpdb->prefix . 'slim_events';
-        $stats_table = $this->wpdb->prefix . 'slim_stats';
+        $events_table = $this->tablePrefix() . 'slim_events';
+        $stats_table = $this->tablePrefix() . 'slim_stats';
 
         $result = $this->wpdb->get_var(
             "
@@ -133,7 +133,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             [
                 'key'     => $this->getId(),
                 'exists'  => !$this->shouldRun(),
-                'table'   => $this->wpdb->prefix . 'slim_events',
+                'table'   => $this->tablePrefix() . 'slim_events',
                 'columns' => 'position',
             ],
         ];

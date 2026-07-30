@@ -34,6 +34,13 @@ if (!defined('AUTH_KEY')) {
 if (!defined('SLIMSTAT_ANALYTICS_DIR')) {
     define('SLIMSTAT_ANALYTICS_DIR', dirname(__DIR__, 3) . '/');
 }
+// wpdb result-format constants (wp-includes/wp-db.php).
+foreach (['OBJECT', 'OBJECT_K', 'ARRAY_A', 'ARRAY_N'] as $slimstat_wpdb_const) {
+    if (!defined($slimstat_wpdb_const)) {
+        define($slimstat_wpdb_const, $slimstat_wpdb_const);
+    }
+}
+unset($slimstat_wpdb_const);
 
 // ── wp_slimstat global stub ───────────────────────────────────────────────
 if (!class_exists('wp_slimstat')) {
@@ -44,6 +51,23 @@ if (!class_exists('wp_slimstat')) {
 
         /** @var object|null Stand-in for the WP $wpdb handle (set by tests that need it). */
         public static $wpdb = null;
+
+        /**
+         * Degradations recorded during a test, keyed by step.
+         *
+         * Tests that assert "this failure leaves a trace" read this. Whether the real
+         * recorder persists and surfaces correctly is pinned separately by
+         * tests/failsoft-visibility-test.php; here the property under test is only
+         * that the failing code path reports itself at all.
+         *
+         * @var array<string,string>
+         */
+        public static array $degradations = [];
+
+        public static function record_degradation($step, $e): void
+        {
+            self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        }
 
         /** @var array<string,mixed> */
         public static array $settings = [

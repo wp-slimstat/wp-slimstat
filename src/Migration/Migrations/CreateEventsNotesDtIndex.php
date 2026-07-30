@@ -29,6 +29,6 @@ class CreateEventsNotesDtIndex extends AbstractIndexMigration
 
     protected function getTableName(): string
     {
-        return $this->wpdb->prefix . 'slim_events';
+        return $this->tablePrefix() . 'slim_events';
     }
 }
