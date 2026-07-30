@@ -171,6 +171,8 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_dt_screen_indexed');
     delete_option('slimstat_dt_browser_indexed');
     delete_option('slimstat_dt_visit_indexed');
+    delete_option('slimstat_dt_platform_indexed');
+    delete_option('slimstat_notes_migration_cursor');
 
     // Goals & Funnels (5.5.0+): admin-configured records + cache-version key.
     delete_option('slimstat_goals');

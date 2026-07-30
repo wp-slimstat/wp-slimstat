@@ -28,6 +28,15 @@ class wp_slimstat_admin
         'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer',
     ];
 
+    /** Resume point for the 4.8.8 notes conversion. Non-autoloaded; removed on completion. */
+    private const NOTES_CURSOR_OPTION = 'slimstat_notes_migration_cursor';
+
+    /** Rows per statement. Batches walk ROWS, not id space — see convert_notes_to_brackets(). */
+    private const NOTES_BATCH_SIZE = 20000;
+
+    /** Wall-clock budget for the whole schema upgrade, well inside a default max_execution_time. */
+    private const SCHEMA_UPGRADE_TIME_BUDGET = 10;
+
     protected static $data_for_column = [
         'url'   => [],
         'sql'   => [],
@@ -765,11 +774,115 @@ class wp_slimstat_admin
     }
 
     /**
+     * Convert pre-4.8.8 semicolon-separated `notes` to the bracketed `[k:v]` form.
+     *
+     * Returns true when the whole table is converted, false when it must resume.
+     *
+     * Batched rather than issued as one statement. The original was a single unbatched
+     * `UPDATE ... WHERE notes NOT LIKE '[%'` with no bound: on a large table it cannot
+     * finish inside max_execution_time, and because the schema version is stamped only
+     * at the end of the upgrade, each attempt rolled back its undo and the whole
+     * sequence restarted on the next admin request — an unbounded retry loop rather
+     * than a failed upgrade.
+     *
+     * Two correctness fixes to the predicate:
+     *   - `notes <> ''` — the empty string satisfies `NOT LIKE '[%'`, so the original
+     *     rewrote empty notes to the literal '[]'. Measured 0 such rows on the
+     *     reference table, but it is wrong wherever they exist.
+     *   - `notes IS NOT NULL` — stated rather than relied upon. `NULL NOT LIKE '[%'`
+     *     is NULL, so NULL rows were already excluded; making it explicit stops a
+     *     later edit from turning 74% of the table into '[]'.
+     *
+     * Verified on the reference table: the boundary query plans as `type=range`,
+     * `key=PRIMARY`, `Using index`, and returns NULL past the last row so the tail
+     * terminates without a special case.
+     *
+     * KNOWN LIMITATION, shared with every other flag in this function: the cursor is a
+     * local `wp_options` row while the rows it describes may live on a remote
+     * connection (Pro's external-DB addon). Repointing that connection leaves a cursor
+     * describing a different table. Fixing it properly needs the connection-keyed
+     * schema-version scheme, not a local patch here.
+     */
+    private static function convert_notes_to_brackets($my_wpdb, $began)
+    {
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $state = get_option(self::NOTES_CURSOR_OPTION, []);
+
+        $cursor  = isset($state['cursor']) ? (int) $state['cursor'] : 0;
+        $ceiling = isset($state['ceiling']) ? (int) $state['ceiling'] : 0;
+
+        // Pin the ceiling once, on the first pass, and carry it across resumes.
+        //
+        // Without it the loop chases its own tail: the tracker keeps inserting while the
+        // migration runs, each new row gets a higher id, and the walk keeps finding more
+        // to look at. Those rows are already in bracketed form — Processor builds `notes`
+        // as an array and serialises it — so the UPDATE skips them, but the WALK does
+        // not, and on a busy site that extends the ceiling for as long as the migration
+        // lasts. Pinning defines the work set as "rows that existed when this started",
+        // which makes termination a property of the code rather than a race the insert
+        // rate happens to lose.
+        if ($ceiling <= 0) {
+            $ceiling = (int) $my_wpdb->get_var("SELECT MAX(id) FROM {$table}");
+            if ($ceiling <= 0) {
+                delete_option(self::NOTES_CURSOR_OPTION);
+
+                return true; // empty table, nothing to convert
+            }
+        }
+
+        while ($cursor < $ceiling) {
+            // Walk ROWS, not id space. `id` is sparse after years of purges — measured
+            // on the reference table, MAX(id) is 19,125,340 against 443,535 rows, a 43x
+            // gap. A fixed id-span loop would issue 957 statements and 957 option
+            // writes, ~96% of them over empty ranges; this issues 23. The subquery is
+            // an index-only scan of at most NOTES_BATCH_SIZE entries, and it returns the
+            // last id when fewer than a full batch remain, so the tail needs no special
+            // case. Empty result => NULL => 0 => done.
+            $upper = (int) $my_wpdb->get_var($my_wpdb->prepare(
+                "SELECT MAX(id) FROM (SELECT id FROM {$table} WHERE id > %d AND id <= %d ORDER BY id LIMIT %d) AS batch",
+                $cursor,
+                $ceiling,
+                self::NOTES_BATCH_SIZE
+            ));
+
+            if ($upper <= $cursor) {
+                break;
+            }
+
+            $result = $my_wpdb->query($my_wpdb->prepare(
+                "UPDATE {$table} SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' )
+                  WHERE id > %d AND id <= %d
+                    AND notes IS NOT NULL AND notes <> '' AND notes NOT LIKE '[%%'",
+                $cursor,
+                $upper
+            ));
+
+            if (false === $result) {
+                wp_slimstat::record_degradation('notes format migration', $my_wpdb->last_error);
+
+                return false;
+            }
+
+            $cursor = $upper;
+            update_option(self::NOTES_CURSOR_OPTION, ['cursor' => $cursor, 'ceiling' => $ceiling], false);
+
+            if ((time() - $began) >= self::SCHEMA_UPGRADE_TIME_BUDGET) {
+                return false;
+            }
+        }
+
+        delete_option(self::NOTES_CURSOR_OPTION);
+
+        return true;
+    }
+
+    /**
      * The schema/settings upgrade itself. Only ever called through the wrapper above.
      */
     private static function run_schema_upgrade()
     {
-        $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+        $my_wpdb        = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+        $upgrade_began  = time();
 
         // --- Updates for version 4.8.2 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
@@ -835,7 +948,12 @@ class wp_slimstat_admin
                 $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
             }
 
-            $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
+            if (!self::convert_notes_to_brackets($my_wpdb, $upgrade_began)) {
+                // Incomplete or failed. Return WITHOUT stamping the version, so the
+                // next admin request resumes from the stored cursor. Stamping here
+                // would abandon every remaining row in a half-converted column.
+                return false;
+            }
         }
 
         // --- Updates for version 5.4.0 ---
@@ -927,7 +1045,11 @@ class wp_slimstat_admin
         // can hold far more than one batch — this one held 2,146 — and a bare LIMIT would
         // leave the rest behind while reporting success. The loop is capped so a
         // pathological table cannot stall the upgrade.
-        for ($sweep = 0; $sweep < 50; $sweep++) {
+        //
+        // Shares the request's wall-clock budget with the notes conversion above.
+        // Without that, the upgrade could carefully spend 10s converting notes and then
+        // issue up to 50,000 more row deletes in the same request with no clock at all.
+        for ($sweep = 0; $sweep < 50 && (time() - $upgrade_began) < self::SCHEMA_UPGRADE_TIME_BUDGET; $sweep++) {
             $deleted = $GLOBALS['wpdb']->query(
                 "DELETE FROM {$GLOBALS['wpdb']->options}
                   WHERE option_name LIKE '\_transient\_wp\_slimstat\_query\_%'
