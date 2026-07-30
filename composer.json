@@ -143,6 +143,7 @@
     "test:consent-migration-gate": "php tests/consent-migration-gate-test.php",
     "test:notes-migration-bounded": "php tests/notes-migration-bounded-test.php",
     "test:schema-ddl-gate": "php tests/schema-ddl-gate-test.php",
+    "test:activation-hooks": "php tests/activation-hooks-registered-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -199,7 +200,8 @@
       "@test:class-name-as-variable",
       "@test:consent-migration-gate",
       "@test:notes-migration-bounded",
-      "@test:schema-ddl-gate"
+      "@test:schema-ddl-gate",
+      "@test:activation-hooks"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

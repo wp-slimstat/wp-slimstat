@@ -2063,6 +2063,43 @@ class wp_slimstat
     {
         return register_widget('slimstat_widget');
     }
+
+    /**
+     * Plugin activation. Loads the admin bundle first, because it is not loaded here.
+     *
+     * `register_activation_hook()` fires on whatever request activated the plugin, and
+     * that is routinely `wp plugin activate` — where `is_admin()` is false and
+     * admin/index.php was never included. Naming `wp_slimstat_admin` directly in the
+     * registration is what made the CLI path a silent no-op.
+     *
+     * `init_environment()` is deliberately allowed to run its DDL here: activation is
+     * the one moment where creating tables is exactly what the user asked for.
+     *
+     * KNOWN GAP, deliberately not closed here: on a network activation WordPress fires
+     * this once with `$network_wide = true`, and `init_environment()` creates tables for
+     * the CURRENT blog only. Subsites still get nothing. Closing that needs the
+     * per-blog table API and the `wp_insert_site` hook that replaced `wpmu_new_blog`,
+     * which are multisite work with their own test matrix.
+     */
+    public static function on_activate()
+    {
+        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+        wp_slimstat_admin::init_environment();
+    }
+
+    /**
+     * Plugin deactivation. Same reason for the wrapper as on_activate().
+     *
+     * Unregistered on the CLI path, this left all five events declared in
+     * src/cron-hooks.php scheduled against a deactivated plugin.
+     */
+    public static function on_deactivate()
+    {
+        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+        wp_slimstat_admin::deactivate();
+    }
     // end register_widget
 
     /**
@@ -2268,12 +2305,26 @@ if (function_exists('add_action')) {
     }
 
 
-    // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
-        register_activation_hook(__FILE__, ['wp_slimstat_admin', 'init_environment']);
-        register_deactivation_hook(__FILE__, ['wp_slimstat_admin', 'deactivate']);
     }
+
+    // From the codex: You can't call register_activation_hook() inside a function hooked
+    // to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called
+    // before the plugin is loaded or activated.
+    //
+    // Registered UNCONDITIONALLY. These sat inside the is_admin() branch above, and
+    // is_admin() returns WP_ADMIN — a constant defined in exactly one file,
+    // wp-admin/admin.php, which WP-CLI never loads. So `wp plugin activate` created no
+    // tables, no indexes and no visit-id counter and never flushed rewrite rules, while
+    // `wp plugin deactivate` left all five cron events in src/cron-hooks.php scheduled
+    // against a deactivated plugin — the exact thing that file exists to prevent.
+    //
+    // The callbacks go through wrappers rather than naming wp_slimstat_admin directly,
+    // because that class lives in admin/index.php and is not loaded on the CLI path
+    // these registrations were just moved onto.
+    register_activation_hook(__FILE__, ['wp_slimstat', 'on_activate']);
+    register_deactivation_hook(__FILE__, ['wp_slimstat', 'on_deactivate']);
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 
