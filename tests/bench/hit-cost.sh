@@ -41,16 +41,38 @@ fi
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WP_CONTENT="${WP_CONTENT_DIR:-$(cd "$ROOT/../.." && pwd)}"
 MU_DIR="$WP_CONTENT/mu-plugins"
-LOG="$WP_CONTENT/uploads/slimstat-bench/qlog.jsonl"
 
-mkdir -p "$MU_DIR"
+# The ledger lives outside the docroot, matching the mu-plugin. wp-content/uploads is
+# web-served and the ledger can carry statement text.
+BENCH_DIR="${SLIMSTAT_BENCH_DIR:-${TMPDIR:-/tmp}/slimstat-bench}"
+LOG="$BENCH_DIR/qlog.jsonl"
+REPLIES="$BENCH_DIR/replies.txt"
+
+# Registered BEFORE the copy, not after. The trap used to be installed on the line
+# below the cp, so a Ctrl-C in that window left the instrument installed — which is
+# how a stray ledger came to exist on this workstation. Cleaning up something that
+# was never created is a no-op; failing to clean up something that was is not.
+# SLIMSTAT_BENCH_KEEP=1 keeps the outputs for inspection; the mu-plugin always goes.
+cleanup() {
+  rm -f "$MU_DIR/slimstat-bench-qlog.php"
+  if [ "${SLIMSTAT_BENCH_KEEP:-}" != "1" ]; then
+    rm -f "$LOG" "$LOG.1" "$REPLIES"
+  fi
+}
+trap cleanup EXIT INT TERM
+
+mkdir -p "$MU_DIR" "$BENCH_DIR"
+chmod 700 "$BENCH_DIR" 2>/dev/null || true
 cp "$ROOT/tests/bench/mu/slimstat-bench-qlog.php" "$MU_DIR/"
 rm -f "$LOG"
 
-# Take the instrument back out however this exits. It is inert without the bench
-# header, but leaving a test mu-plugin behind on someone's install is not the
-# harness's call to make.
-trap 'rm -f "$MU_DIR/slimstat-bench-qlog.php"' EXIT
+# The mu-plugin refuses to run unless SLIMSTAT_BENCH is defined in wp-config.php.
+# The header alone used to arm it, and the header name is public.
+if ! grep -q "SLIMSTAT_BENCH" "$WP_CONTENT/../wp-config.php" 2>/dev/null; then
+  echo "ERROR: define('SLIMSTAT_BENCH', true); is missing from wp-config.php." >&2
+  echo "       The instrument is inert without it — add it, run, then remove it." >&2
+  exit 2
+fi
 
 HIT="$BASE_URL/wp-json/slimstat/v1/hit"
 b64url() { printf '%s' "$1" | base64 | tr '+/' '-_' | tr -d '='; }
@@ -60,7 +82,6 @@ RES="$(b64url "$BASE_URL/bench-page/")"
 # when it refused. Recording it is what stops a shape from silently measuring the
 # wrong path — a "rejected" shape measures nothing of the kind on a site where
 # `ignore_bots` is off, which is the shipped default.
-REPLIES="$WP_CONTENT/uploads/slimstat-bench/replies.txt"
 rm -f "$REPLIES"
 
 CONSENT="${SLIMSTAT_BENCH_CONSENT-slimstat_gdpr_consent=accepted}"

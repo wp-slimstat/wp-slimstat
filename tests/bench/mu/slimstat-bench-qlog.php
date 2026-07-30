@@ -10,10 +10,18 @@
  * filter — the single choke point every wpdb statement passes through — and does
  * nothing but increment integers.
  *
- * It is INERT unless the request carries the `X-Slimstat-Bench` header, so it can sit
- * in mu-plugins/ without affecting ordinary browsing.
+ * ARMING IT TAKES TWO THINGS, and only one of them is in this repository.
+ * `SLIMSTAT_BENCH` must be defined in wp-config.php, AND the request must carry the
+ * `X-Slimstat-Bench` header. The header alone used to be enough, and the header's name
+ * is public — so anyone who read the repo could turn a query ledger on for any request
+ * on any install that still had this file. The constant is the authorization; the
+ * header is only a label saying which run a line belongs to.
  *
- * Output: wp-content/uploads/slimstat-bench/qlog.jsonl (one object per bench request).
+ * Output goes OUTSIDE the docroot (sys_get_temp_dir()/slimstat-bench), because
+ * wp-content/uploads is web-served and the ledger can contain statement text. The
+ * directory is 0700, the file is capped, and option writes are redacted by name — the
+ * daily IP-hash salt passes through the same `query` filter this hooks, and a ledger
+ * that records it hands over the key to every hash on the site.
  *
  * @package wp-slimstat-tests
  */
@@ -22,14 +30,49 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Two independent conditions. The constant cannot be set by a request; the header
+// cannot be guessed into meaning anything without it.
+if (!defined('SLIMSTAT_BENCH') || !SLIMSTAT_BENCH) {
+    return;
+}
+
 if (empty($_SERVER['HTTP_X_SLIMSTAT_BENCH'])) {
     return;
 }
 
 final class SlimStat_Bench_QLog
 {
+    /** Rotate the ledger past this size rather than filling the disk. */
+    private const MAX_LOG_BYTES = 8388608;   // 8 MB
+
+    /** Statements kept per request; the rest are counted, not stored. */
+    private const MAX_SQL_ROWS = 200;
+
+    /**
+     * Option names whose VALUE must never reach the ledger.
+     *
+     * These writes pass through the same `query` filter this hooks, so a verbatim
+     * capture would record them. slimstat_daily_salt is the key that makes every
+     * hashed IP on the site reversible; the auth keys and the tracking secret are
+     * self-evident. Matched on the statement text because at this layer that is all
+     * there is — the filter sees SQL, not an option API call.
+     *
+     * @var string[]
+     */
+    private const REDACT = [
+        'slimstat_daily_salt',
+        'slimstat_options',
+        'auth_key',
+        'auth_salt',
+        'secret',
+        '_transient_',
+    ];
+
     /** @var array<string,int> */
     private static $counts = [];
+
+    /** @var int Statements dropped past MAX_SQL_ROWS — reported, never silent. */
+    private static $sql_truncated = 0;
 
     /** @var string */
     private static $label = '';
@@ -94,7 +137,13 @@ final class SlimStat_Bench_QLog
         }
 
         if (self::$sample_sql === 'all' || (self::$sample_sql === 'writes' && $is_write)) {
-            self::$sql[] = trim(preg_replace('/\s+/', ' ', (string) $query));
+            if (count(self::$sql) >= self::MAX_SQL_ROWS) {
+                // Counted, not dropped in silence: a truncated ledger that looks
+                // complete is worse than no ledger.
+                self::$sql_truncated++;
+            } else {
+                self::$sql[] = self::redact(trim(preg_replace('/\s+/', ' ', (string) $query)));
+            }
         }
 
         return $query;
@@ -108,9 +157,19 @@ final class SlimStat_Bench_QLog
         }
         $written = true;
 
-        $dir = WP_CONTENT_DIR . '/uploads/slimstat-bench';
-        if (!is_dir($dir) && !mkdir($dir, 0777, true) && !is_dir($dir)) {
+        // Outside the docroot and 0700: uploads/ is web-served, and the previous 0777
+        // made the ledger world-readable on any shared host.
+        $dir = self::directory();
+        if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
             return;
+        }
+
+        $file = $dir . '/qlog.jsonl';
+
+        // Append-only and uncapped is a disk-filler on a long run. Rotate rather than
+        // truncate, so an interrupted investigation does not lose its evidence.
+        if (is_file($file) && filesize($file) > self::MAX_LOG_BYTES) {
+            @rename($file, $file . '.1');
         }
 
         $row = array_merge(
@@ -122,7 +181,41 @@ final class SlimStat_Bench_QLog
             self::$sql === [] ? [] : ['sql' => self::$sql]
         );
 
-        file_put_contents($dir . '/qlog.jsonl', json_encode($row) . "\n", FILE_APPEND | LOCK_EX);
+        if (self::$sql_truncated > 0) {
+            $row['sql_truncated'] = self::$sql_truncated;
+        }
+
+        file_put_contents($file, json_encode($row) . "\n", FILE_APPEND | LOCK_EX);
+    }
+
+    /** Where the ledger lives. Never under the docroot. */
+    private static function directory(): string
+    {
+        if (defined('SLIMSTAT_BENCH_DIR') && SLIMSTAT_BENCH_DIR) {
+            return rtrim((string) SLIMSTAT_BENCH_DIR, '/');
+        }
+
+        return rtrim(sys_get_temp_dir(), '/') . '/slimstat-bench';
+    }
+
+    /**
+     * Replace the whole statement when it touches a secret.
+     *
+     * Not a value-level scrub: the point is that this instrument should never be the
+     * reason a key leaves the database, and a partial redaction is a promise that has
+     * to be re-audited every time the SQL shape changes.
+     */
+    private static function redact(string $sql): string
+    {
+        $haystack = strtolower($sql);
+
+        foreach (self::REDACT as $needle) {
+            if (strpos($haystack, $needle) !== false) {
+                return '[redacted: statement referenced ' . $needle . ']';
+            }
+        }
+
+        return $sql;
     }
 
     private static function bump(string $key): void
