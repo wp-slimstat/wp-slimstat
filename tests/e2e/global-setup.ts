@@ -9,6 +9,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
 import { installAllTestMuPlugins, installCptMuPlugin, enableE2eTesting } from './helpers/setup';
+import { backupAnalyticsTables } from './helpers/backup';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,6 +65,12 @@ async function loginAndSave(
 
 export default async function globalSetup(config: FullConfig): Promise<void> {
   const baseURL = BASE_URL;
+
+  // Before anything else, and before any spec can truncate. This is the only place
+  // the whole suite has to pass through, and ALLOW_LIVE_DB=1 is the only way any of
+  // it reaches a real dataset — so it is where the backup belongs. Throws rather
+  // than warns: 443,535 rows of parity baseline are not worth a console message.
+  backupAnalyticsTables();
 
   // Install all MU-plugins once so individual specs don't need to manage them.
   // This prevents state contamination when one spec's afterAll removes a plugin
