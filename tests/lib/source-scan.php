@@ -204,3 +204,32 @@ function slimstat_throwable_catch_bodies(string $source): array
 
     return $bodies;
 }
+
+/**
+ * Blank out comments, preserving every byte offset and line number.
+ *
+ * Raw-text scanners match prose, and the code that FIXES a defect is exactly where
+ * that defect gets described. Measured twice in one session: Pro's runtime-null
+ * scanner reported a fix as the defect because the new docblock quoted the removed
+ * expression, and the cron scanner below reported a RETIRED hook as scheduled
+ * because the comment explaining the retirement quoted wp_schedule_event().
+ *
+ * Offsets are preserved rather than the comments removed, so a caller can match
+ * against the blanked text and still index into the ORIGINAL — which matters when
+ * allow-markers live in comments, i.e. in exactly what this blanks out.
+ */
+function slimstat_blank_comments(string $source): string
+{
+    $out = '';
+
+    foreach (token_get_all($source) as $token) {
+        if (is_array($token) && (T_COMMENT === $token[0] || T_DOC_COMMENT === $token[0])) {
+            $newlines = substr_count($token[1], "\n");
+            $out .= str_repeat("\n", $newlines) . str_repeat(' ', strlen($token[1]) - $newlines);
+            continue;
+        }
+        $out .= is_array($token) ? $token[1] : $token;
+    }
+
+    return $out;
+}

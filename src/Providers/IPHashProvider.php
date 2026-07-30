@@ -27,6 +27,13 @@ class IPHashProvider
      * Length of the stored IP hash (must fit DB column, 39 chars matches IPv6 max length).
      */
     public const HASH_LENGTH = 39;
+
+    /** The salt and the UTC day it was minted for, as ONE value — see claimSaltFor(). */
+    private const SALT_OPTION = 'slimstat_daily_salt';
+
+    /** Pre-W5 companion option; read during the one-day upgrade window, never written. */
+    private const LEGACY_DATE_OPTION = 'slimstat_daily_salt_date';
+
     /**
      * Process IP address according to privacy settings and consent status.
      *
@@ -350,8 +357,11 @@ class IPHashProvider
         $userAgent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
         $secret = \wp_slimstat::$settings['secret'] ?? wp_hash('slimstat');
 
-        // Ensure daily salt exists (generate if missing)
-        $dailySalt = self::getDailySalt();
+        // Get today's salt, minting it if this is the first request of the UTC day.
+        // One call: generateDailySalt() returns the stored salt without writing when
+        // one already exists, so the old getDailySalt()-then-fall-back pair was an
+        // extra get_option() on the tracking path for no behaviour.
+        $dailySalt = self::generateDailySalt();
         if (empty($dailySalt)) {
             $dailySalt = self::generateDailySalt();
         }
@@ -434,19 +444,122 @@ class IPHashProvider
      */
     public static function generateDailySalt(): string
     {
-        $today = gmdate('Y-m-d');
-        $existingSalt = get_option('slimstat_daily_salt');
-        $saltDate = get_option('slimstat_daily_salt_date');
+        $today  = gmdate('Y-m-d');
+        $stored = get_option(self::SALT_OPTION);
 
-        // Generate new salt if date changed or no salt exists
-        if ($saltDate !== $today || empty($existingSalt)) {
-            $newSalt = wp_generate_password(32, false);
-            update_option('slimstat_daily_salt', $newSalt);
-            update_option('slimstat_daily_salt_date', $today);
-            return $newSalt;
+        return self::saltFor($stored, $today) ?: self::claimSaltFor($today, $stored);
+    }
+
+    /**
+     * Today's salt out of a stored value — current shape or pre-W5 — or '' if there
+     * is none. One convention ('' means absent) across the whole family, which is the
+     * contract getDailySalt() already published and hashIP() already tests with empty().
+     */
+    private static function saltFor($stored, string $day): string
+    {
+        if (is_array($stored) && ($stored['date'] ?? '') === $day && !empty($stored['salt'])) {
+            return (string) $stored['salt'];
         }
 
-        return $existingSalt;
+        return self::legacySaltFor($stored, $day);
+    }
+
+    /**
+     * The pre-W5 shape: a bare string here plus the date in its own option.
+     *
+     * Honoured for the rest of the day it was minted on. Rotating it on sight would
+     * re-hash every visitor halfway through the day, splitting that day's hashes into
+     * two uncorrelatable populations — the same damage the race causes, delivered by
+     * the upgrade instead. The window closes by itself at the next UTC midnight, and
+     * it is a date comparison rather than a version check so it cannot outlive its
+     * purpose on an install that upgrades late.
+     */
+    private static function legacySaltFor($stored, string $day): string
+    {
+        if (!is_string($stored) || '' === $stored) {
+            return '';
+        }
+
+        return get_option(self::LEGACY_DATE_OPTION) === $day ? $stored : '';
+    }
+
+    /**
+     * Mint today's salt, letting exactly one concurrent request win.
+     *
+     * generateDailySalt() runs on EVERY page load, so at UTC midnight whatever traffic
+     * the site has enters this together. The old read-check-write let all of them mint
+     * and all of them write, and the last writer won — so requests served in between
+     * hashed against a salt that no longer existed a moment later, and the day's
+     * hashes stopped being correlatable with each other, which is the one property a
+     * daily salt exists to provide.
+     *
+     * The write is therefore conditional on the exact bytes this request read. Only
+     * one UPDATE can match them; the losers affect zero rows and adopt the winner's
+     * value. Written through $wpdb rather than update_option() because the options API
+     * has no compare-and-swap, and add_option() is not the answer either — it does a
+     * PHP-level get_option() pre-check and then INSERT ... ON DUPLICATE KEY UPDATE,
+     * which overwrites, so the unique index never rejects anybody.
+     */
+    private static function claimSaltFor(string $today, $seen): string
+    {
+        global $wpdb;
+
+        $salt      = wp_generate_password(64, false);
+        $candidate = maybe_serialize(['date' => $today, 'salt' => $salt]);
+
+        $suppressed = $wpdb->suppress_errors(true);
+
+        if (false === $seen) {
+            // No row yet. A bare INSERT, so the unique index picks the winner.
+            // autoload stays 'yes': this is read on every page load, and moving it out
+            // of alloptions trades one write a day for a SELECT on every request.
+            $won = $wpdb->query($wpdb->prepare(
+                "INSERT INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'yes')",
+                self::SALT_OPTION,
+                $candidate
+            ));
+        } else {
+            $won = $wpdb->query($wpdb->prepare(
+                "UPDATE `{$wpdb->options}` SET option_value = %s WHERE option_name = %s AND option_value = %s",
+                $candidate,
+                self::SALT_OPTION,
+                maybe_serialize($seen)
+            ));
+        }
+
+        $wpdb->suppress_errors($suppressed);
+
+        // A hard error is not a lost race, and conflating them is expensive: on a
+        // read-only replica or a full disk the write can never succeed, and this runs
+        // on every page load — so invalidating alloptions here would make every
+        // request pay a full rebuild (measured: 2.57 ms) forever. Nobody swapped the
+        // row, so nothing is stale and there is nothing to re-read.
+        if (false === $won) {
+            return $salt;
+        }
+
+        // The row moved behind the options API's back. 'alloptions' is the one that
+        // actually held it (the row is autoloaded); 'notoptions' matters on the first
+        // mint, where the pre-write miss cached its non-existence.
+        wp_cache_delete(self::SALT_OPTION, 'options');
+        wp_cache_delete('notoptions', 'options');
+        wp_cache_delete('alloptions', 'options');
+
+        if ($won) {
+            // The legacy pair is provably retired: this is only reached once
+            // legacySaltFor() has declined, so no request can still be using it.
+            if (is_string($seen)) {
+                delete_option(self::LEGACY_DATE_OPTION);
+            }
+
+            return $salt;
+        }
+
+        // Lost the race. Take the winner's salt — everyone serving this day has to
+        // agree, and "mine is as good as theirs" is precisely the split being fixed.
+        // Falls back to this request's own salt rather than '', which callers read as
+        // "hashing unavailable".
+        return self::saltFor(get_option(self::SALT_OPTION), $today) ?: $salt;
     }
 
     /**
@@ -456,16 +569,7 @@ class IPHashProvider
      */
     public static function getDailySalt(): string
     {
-        $today = gmdate('Y-m-d');
-        $existingSalt = get_option('slimstat_daily_salt');
-        $saltDate = get_option('slimstat_daily_salt_date');
-
-        // Return salt only if it's for today
-        if ($saltDate === $today && !empty($existingSalt)) {
-            return $existingSalt;
-        }
-
-        return '';
+        return self::saltFor(get_option(self::SALT_OPTION), gmdate('Y-m-d'));
     }
 
     /**

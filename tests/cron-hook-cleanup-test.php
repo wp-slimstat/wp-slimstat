@@ -54,6 +54,10 @@ foreach ($directory as $file) {
     $rel = substr($path, strlen($plugin_root) + 1);
 
     // wp_schedule_event( $timestamp, $recurrence, 'hook' ) — hook is the 3rd arg.
+    // Code only: a comment explaining why a hook is NO LONGER scheduled quotes
+    // wp_schedule_event(), and this scanner duly reported it as a schedule site.
+    $src = slimstat_blank_comments($src);
+
     if (preg_match_all("/wp_schedule_event\s*\([^;]*?['\"]([a-z0-9_]+)['\"]\s*\)/i", $src, $m)) {
         foreach ($m[1] as $hook) {
             $scheduled[$hook][] = $rel;
@@ -83,6 +87,27 @@ if (!$scheduled) {
 }
 
 $failures = [];
+
+// --- 0) hooks that have been RETIRED must not be scheduled anywhere ---
+// A retired hook stays in src/cron-hooks.php so the sweep keeps clearing it off
+// installs that scheduled it before it was retired. That is the opposite of an
+// orphan, and the two are one edit apart -- so the retirement is pinned here.
+// wp_slimstat_generate_daily_salt fired at whatever hour the plugin was activated,
+// by which point the day's salt already existed; the salt is minted on demand under
+// a compare-and-swap instead (W5/W6). Re-scheduling it would re-deliver the
+// split-population bug from a scheduler, mid-day.
+$retired = ['wp_slimstat_generate_daily_salt'];
+
+foreach ($retired as $retired_hook) {
+    if (isset($scheduled[$retired_hook])) {
+        $failures[] = sprintf(
+            "'%s' is retired but is scheduled again in %s. It is minted on demand now; a "
+                . "scheduled rotation would split a day's hashes into two uncorrelatable sets",
+            $retired_hook,
+            implode(', ', array_unique($scheduled[$retired_hook]))
+        );
+    }
+}
 
 // --- 1) every scheduled hook must be declared ---
 foreach ($scheduled as $hook => $where) {

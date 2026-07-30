@@ -331,9 +331,19 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
-        // Schedule a daily cron job to regenerate IP hashing salt (for GDPR compliance)
-        if (!wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
-            wp_schedule_event(time(), 'daily', 'wp_slimstat_generate_daily_salt');
+        // The daily-salt cron is retired (W6). It was anchored at wp_schedule_event(time(),
+        // 'daily', …) — i.e. to whenever the plugin was activated — so it fired at an
+        // arbitrary hour, by which point the day's salt already existed and the run was a
+        // no-op. The salt is minted on demand instead, under a compare-and-swap, by the
+        // first request of each UTC day (IPHashProvider::generateDailySalt()).
+        //
+        // Not re-anchored to midnight: WP-Cron is request-triggered, so "due at 00:00 UTC"
+        // means "runs inside the first request after 00:00 UTC" — the same request that
+        // already mints. The name is the actual hazard: it promises a rotation the code no
+        // longer performs, so whoever makes it rotate again would re-deliver the
+        // split-population bug from a scheduler, mid-day.
+        if (wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
+            wp_clear_scheduled_hook('wp_slimstat_generate_daily_salt');
         }
 
         // Schedule a weekly cron job to update geoip database automatically

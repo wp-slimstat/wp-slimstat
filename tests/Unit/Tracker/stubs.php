@@ -8,11 +8,27 @@
 declare(strict_types=1);
 
 // ── WordPress functions needed by source files ─────────────────────────────
+// Seedable, because it is declared here as a real function and therefore cannot be
+// redefined by Brain Monkey — Patchwork refuses with DefinedTooEarly. A test that
+// needs to control an option writes $GLOBALS['slimstat_test_options'][$key] and
+// clears it in tearDown. An empty store returns $default, so every test that
+// predates this sees exactly the old behaviour.
+if (!isset($GLOBALS['slimstat_test_options'])) {
+    $GLOBALS['slimstat_test_options'] = [];
+}
 if (!function_exists('get_option')) {
-    function get_option($option, $default = false) { return $default; }
+    function get_option($option, $default = false)
+    {
+        return $GLOBALS['slimstat_test_options'][$option] ?? $default;
+    }
 }
 if (!function_exists('delete_option')) {
-    function delete_option($option) { return true; }
+    function delete_option($option)
+    {
+        // Mirrors get_option()'s store so a test can observe a deletion.
+        unset($GLOBALS['slimstat_test_options'][$option]);
+        return true;
+    }
 }
 
 // ── WordPress constants needed by source files ────────────────────────────

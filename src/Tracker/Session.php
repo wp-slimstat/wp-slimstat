@@ -274,10 +274,9 @@ class Session
 	 */
 	public static function generateAnonymousVisitId(): int
 	{
-		$daily_salt = \SlimStat\Providers\IPHashProvider::getDailySalt();
-		if (empty($daily_salt)) {
-			$daily_salt = \SlimStat\Providers\IPHashProvider::generateDailySalt();
-		}
+		// One call: generateDailySalt() is get-or-mint, so the old
+		// getDailySalt()-then-fall-back pair read the option twice for no behaviour.
+		$daily_salt = \SlimStat\Providers\IPHashProvider::generateDailySalt();
 
 		if (empty($daily_salt)) {
 			$daily_salt = gmdate('Y-m-d') . self::getSecureKey();

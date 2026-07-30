@@ -22,6 +22,8 @@ return [
     // Recurring (wp_schedule_event).
     'wp_slimstat_purge',
     'wp_slimstat_update_geoip_database',
+    // No longer scheduled (W6) — retained so deactivate/uninstall still sweep it off
+    // installs that scheduled it before it was retired.
     'wp_slimstat_generate_daily_salt',
     'slimstat_daily_cron_hook',
 

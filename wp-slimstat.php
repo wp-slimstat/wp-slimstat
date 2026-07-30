@@ -503,9 +503,6 @@ class wp_slimstat
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
 
-        // Hook IP hashing daily salt generation (for GDPR compliance)
-        add_action('wp_slimstat_generate_daily_salt', [\SlimStat\Providers\IPHashProvider::class, 'generateDailySalt']);
-
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
 
