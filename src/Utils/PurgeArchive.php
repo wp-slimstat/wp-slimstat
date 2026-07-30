@@ -65,6 +65,44 @@ class PurgeArchive
      * @param string   $live_alias Alias of the live table ('e' events, 's' pageviews).
      * @return string
      */
+    /**
+     * Run the collision probe, distinguishing "clean" from "could not tell".
+     *
+     * `$wpdb->get_var()` answers null both for "the query found nothing" and for "the
+     * query failed", and the purge read that null as clean — then archived with
+     * INSERT IGNORE and deleted what it believed it had archived.
+     *
+     * That is reachable today, not hypothetically. ConvertTablesToUtf8mb4 continues
+     * past a table it could not convert ("three of four is better than none"), so an
+     * install can sit with slim_stats on utf8mb4 and slim_stats_archive on utf8mb3.
+     * sameRow() then compares 33 columns ACROSS those two tables, and two IMPLICIT
+     * columns of different charsets raise ER_CANT_AGGREGATE_2COLLATIONS. The guard
+     * answered "no collision" and the rows went. A half-completed migration
+     * reintroducing the silent loss this guard exists to prevent.
+     *
+     * Errors are suppressed around the probe because it is a question, not a failure:
+     * a mid-conversion install should get a recorded degradation and a skipped purge,
+     * not a red admin on every page load.
+     *
+     * @param \wpdb   $db
+     * @param string  $sql  Prepared-statement template.
+     * @param array   $args Values for the template.
+     * @return bool|null true = a different row owns the key, false = clean,
+     *                   null = the probe could not run, so nothing may be deleted.
+     */
+    public static function probeForCollision($db, $sql, array $args = [])
+    {
+        $suppressed = $db->suppress_errors(true);
+        $found      = $db->get_var($args === [] ? $sql : $db->prepare($sql, ...$args));
+        $db->suppress_errors($suppressed);
+
+        if ('' !== (string) $db->last_error) {
+            return null;
+        }
+
+        return !empty($found);
+    }
+
     public static function sameRow($columns, $key, $live_alias)
     {
         $tests = [];

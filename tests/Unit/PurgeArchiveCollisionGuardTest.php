@@ -118,4 +118,60 @@ class PurgeArchiveCollisionGuardTest extends WpSlimstatTestCase
             'pageviews' => [PurgeArchive::STATS_COLUMNS, 'id', 's'],
         ];
     }
+
+    // ── The probe must not answer "clean" when it could not look (C25) ──────
+
+    /**
+     * A HALF-CONVERTED install is the case that matters, and it is reachable today:
+     * ConvertTablesToUtf8mb4 deliberately continues past a table it could not convert
+     * ("three of four is better than none"). If slim_stats converts and
+     * slim_stats_archive does not, sameRow() compares 33 columns ACROSS the two tables,
+     * and two IMPLICIT columns of different charsets raise ER_CANT_AGGREGATE_2COLLATIONS.
+     *
+     * $wpdb->get_var() returns null for that — exactly as it does for "no colliding row
+     * found". The guard read null as "clean" and execution proceeded to INSERT IGNORE and
+     * then DELETE. That is precisely the silent-loss shape this guard was written to
+     * prevent, reintroduced by a half-completed migration.
+     */
+    public function test_a_probe_that_errored_is_not_reported_as_clean(): void
+    {
+        $wpdb = $this->probeWpdb(null, 'Illegal mix of collations (utf8mb3_general_ci,IMPLICIT) '
+            . "and (utf8mb4_unicode_ci,IMPLICIT) for operation '<=>'");
+
+        $this->assertNull(
+            PurgeArchive::probeForCollision($wpdb, 'SELECT 1 ...', [123]),
+            'null means "could not tell" — the purge must stop rather than delete'
+        );
+    }
+
+    /** Clean: the probe ran and found no colliding row. */
+    public function test_a_probe_that_found_nothing_reports_clean(): void
+    {
+        $this->assertFalse(
+            PurgeArchive::probeForCollision($this->probeWpdb(null, ''), 'SELECT 1 ...', [123])
+        );
+    }
+
+    /** Collision: a different row already owns the key. */
+    public function test_a_probe_that_found_a_row_reports_a_collision(): void
+    {
+        $this->assertTrue(
+            PurgeArchive::probeForCollision($this->probeWpdb('1', ''), 'SELECT 1 ...', [123])
+        );
+    }
+
+    /**
+     * @param mixed  $getVar    What get_var() answers.
+     * @param string $lastError wpdb's error text, '' when the query succeeded.
+     */
+    private function probeWpdb($getVar, string $lastError): \wpdb
+    {
+        $wpdb             = \Mockery::mock(\wpdb::class);
+        $wpdb->last_error = $lastError;
+        $wpdb->shouldReceive('suppress_errors')->andReturn(false);
+        $wpdb->shouldReceive('prepare')->andReturnUsing(static fn($sql) => $sql);
+        $wpdb->shouldReceive('get_var')->andReturn($getVar);
+
+        return $wpdb;
+    }
 }

@@ -1802,16 +1802,32 @@ class wp_slimstat
             // fixed: the row is dropped by IGNORE and then deleted, with nothing recorded.
             $events_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($event_columns, 'event_id', 'e');
 
-            if (self::$wpdb->get_var(self::$wpdb->prepare(
+            // Tri-state: null means the probe itself could not run. On a half-converted
+            // install the cross-table comparison raises ER_CANT_AGGREGATE_2COLLATIONS,
+            // and reading that as "clean" is what let the DELETE through (C25).
+            $event_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
+                self::$wpdb,
                 "SELECT 1 FROM {$table_events} e
                  INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
                  LEFT JOIN {$table_stats} s ON s.id = e.id
                  WHERE ({$event_where})
                    AND NOT ({$events_are_replays})
                  LIMIT 1",
-                $days_ago,
-                $days_ago
-            ))) {
+                [$days_ago, $days_ago]
+            );
+
+            if (null === $event_collision) {
+                self::record_degradation(
+                    'purge (archiving events)',
+                    'could not check the event archive for key collisions, so nothing was deleted: '
+                        . self::$wpdb->last_error
+                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
+                        . 'some tables and not others - finish it before the purge can run again.'
+                );
+                return;
+            }
+
+            if ($event_collision) {
                 self::record_degradation(
                     'purge (archiving events)',
                     'the events archive already holds different rows under the primary keys about to be '
@@ -1859,14 +1875,29 @@ class wp_slimstat
             // over the same 33 columns the INSERT below copies.
             $stats_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($stats_columns, 'id', 's');
 
-            if (self::$wpdb->get_var(self::$wpdb->prepare(
+            // Same tri-state as the events probe above.
+            $stats_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
+                self::$wpdb,
                 "SELECT 1 FROM {$table_stats} s
                  INNER JOIN {$table_stats_archive} a ON a.id = s.id
                  WHERE s.dt < %d
                    AND NOT ({$stats_are_replays})
                  LIMIT 1",
-                $days_ago
-            ))) {
+                [$days_ago]
+            );
+
+            if (null === $stats_collision) {
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    'could not check the pageview archive for key collisions, so nothing was deleted: '
+                        . self::$wpdb->last_error
+                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
+                        . 'some tables and not others - finish it before the purge can run again.'
+                );
+                return;
+            }
+
+            if ($stats_collision) {
                 self::record_degradation(
                     'purge (archiving pageviews)',
                     'the pageview archive already holds different rows under the primary keys about to '

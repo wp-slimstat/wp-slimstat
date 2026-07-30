@@ -286,6 +286,57 @@ if (!preg_match('/LIMIT\s+1|get_var/i', $purge)) {
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────
+// ── The collision probe must be tri-state at BOTH call sites (C25) ─────────
+// The helper answering "could not tell" buys nothing if the purge reads that as
+// "clean". Measured: with the helper correct and these branches removed, every
+// behavioural test still passed — the call sites had no coverage at all.
+//
+// Reachable, not hypothetical: ConvertTablesToUtf8mb4 continues past a table it could
+// not convert, so an install can hold slim_stats on utf8mb4 and slim_stats_archive on
+// utf8mb3. sameRow() then compares 33 columns across the two, raising
+// ER_CANT_AGGREGATE_2COLLATIONS, and get_var() answers null for that exactly as it
+// does for "no colliding row".
+$probe_calls = preg_match_all('/PurgeArchive::probeForCollision\s*\(/', $purge);
+
+if ($probe_calls < 2) {
+    $failures[] = sprintf(
+        'the purge makes %d tri-state collision probe(s), expected 2 (events and pageviews). '
+            . 'A bare get_var() cannot tell "no collision" from "the comparison failed", and it '
+            . 'archived with INSERT IGNORE and then deleted on the strength of that',
+        $probe_calls
+    );
+}
+
+$unknown_branches = preg_match_all('/if\s*\(\s*null\s*===\s*\$\w*_collision\s*\)/', $purge);
+
+if ($unknown_branches < 2) {
+    $failures[] = sprintf(
+        'only %d of the 2 collision probes stop on "could not tell". Treating an unreadable '
+            . 'probe as clean is the fail-open this guard exists to close',
+        $unknown_branches
+    );
+}
+
+// The probe is a question, not a failure: a mid-conversion install should get a
+// recorded degradation and a skipped purge, not a red admin on every page load.
+$helper = (string) @file_get_contents(dirname(__DIR__) . '/src/Utils/PurgeArchive.php');
+$probe  = '' === $helper ? '' : slimstat_function_body($helper, 'probeForCollision');
+
+if ('' === $probe) {
+    $failures[] = 'cannot isolate PurgeArchive::probeForCollision() — re-anchor this scan';
+} else {
+    // suppress_errors(TRUE) specifically: the restore call at the end of the probe also
+    // contains the name, so matching the name alone passed with the enabling call deleted.
+    if (!preg_match('/suppress_errors\s*\(\s*true\s*\)/i', $probe)) {
+        $failures[] = 'probeForCollision() does not suppress errors around its query, so a '
+            . 'half-converted install paints the admin red on every page load';
+    }
+    if (false === strpos($probe, 'last_error')) {
+        $failures[] = 'probeForCollision() does not consult last_error, so it cannot tell a failed '
+            . 'comparison from a clean one';
+    }
+}
+
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: purge archive order (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
