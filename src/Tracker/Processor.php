@@ -8,9 +8,16 @@ use SlimStat\Services\Privacy;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
+use SlimStat\Utils\OptionClaim;
 
 class Processor
 {
+    /** Single-flight claim for the tracking path's schema repair. */
+    private const REPAIR_CLAIM_OPTION = 'slimstat_schema_repair_claim';
+
+    /** Seconds before another repair may be attempted. */
+    private const REPAIR_COOLDOWN = 300;
+
     /**
      * Schemes accepted for the stored referer. Anything else is treated as an XSS
      * attempt and dropped. Used both as the protocols allow-list for sanitize_url()
@@ -748,9 +755,10 @@ class Processor
         $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
         if (false === $stat['id']) {
-            include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
-            \wp_slimstat_admin::init_environment();
-            $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+            if (self::repairSchemaOnce()) {
+                $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+            }
+
             if (false === $stat['id']) {
                 Query::setProcessingTimestamp(null);
                 // Store DB error detail for admin diagnostics
@@ -820,4 +828,70 @@ class Processor
         )));
     }
 
+
+    /**
+     * Rebuild the schema from the tracking path — narrowly, and once.
+     *
+     * This exists because a site can genuinely have no tables: before C38 both
+     * lifecycle registrations sat inside `if (is_admin())`, which is false under
+     * WP-CLI, so `wp plugin activate` created nothing and this was the only thing that
+     * ever did. C38 fixed activation, which is what makes this the abnormal path again
+     * — and abnormal paths that run four CREATE TABLEs, five CREATE INDEXes and
+     * flush_rewrite_rules() from an anonymous front-end request need gating.
+     *
+     * Two gates, because the old code had neither:
+     *
+     *   - THE TRIGGER. It fired on ANY insert failure. A deadlock, a lock-wait timeout,
+     *     a full disk, an oversized packet — every one of them ran the whole DDL and
+     *     retried, and almost none of them is a missing table. Only an
+     *     ER_NO_SUCH_TABLE (1146) means the thing this repairs.
+     *   - SINGLE-FLIGHT. On a busy site a transient failure is not one failure, it is
+     *     every concurrent request failing at once. Each would have run the DDL
+     *     together, against the database that was already the thing in trouble. The
+     *     claim row also serves as the cooldown: it is left behind deliberately and
+     *     expires, so a site whose tables cannot be created does not retry forever.
+     *
+     * @return bool Whether the schema was rebuilt and a retry is worth attempting.
+     */
+    private static function repairSchemaOnce()
+    {
+        $error = (string) $GLOBALS['wpdb']->last_error;
+
+        // MySQL 1146 / MariaDB: "Table 'db.wp_slim_stats' doesn't exist". Matched on the
+        // text because wpdb exposes no error code, and on both spellings because the
+        // apostrophe is typographic in some locales.
+        if (!preg_match("/doesn'?t exist|no such table|1146/i", $error)) {
+            return false;
+        }
+
+        // One repair per cooldown, whoever gets there first. A losing request skips the
+        // DDL and reports the failure normally; it does not queue behind a rebuild.
+        if (!OptionClaim::insert(self::REPAIR_CLAIM_OPTION, (string) time(), 'no')) {
+            $held = (int) get_option(self::REPAIR_CLAIM_OPTION);
+
+            if ($held > 0 && (time() - $held) < self::REPAIR_COOLDOWN) {
+                return false;
+            }
+
+            // The claim is stale — the previous attempt died or its cooldown elapsed.
+            if (!OptionClaim::compareAndSwap(
+                self::REPAIR_CLAIM_OPTION,
+                (string) $held,
+                (string) time(),
+                'no'
+            )) {
+                return false;
+            }
+        }
+
+        try {
+            include_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
+            \wp_slimstat_admin::init_environment();
+        } catch (\Throwable $e) {
+            \wp_slimstat::record_degradation('schema repair from the tracking path', $e);
+            return false;
+        }
+
+        return true;
+    }
 }

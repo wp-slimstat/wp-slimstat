@@ -148,6 +148,7 @@
     "test:checksum-timing": "php tests/checksum-timing-safety-test.php",
     "test:e2e-helper-gating": "php tests/e2e-helper-gating-test.php",
     "test:bench-instrument-safety": "php tests/bench-instrument-safety-test.php",
+    "test:tracker-repair-gate": "php tests/tracker-repair-gate-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -209,7 +210,8 @@
       "@test:network-scope-handshake",
       "@test:checksum-timing",
       "@test:e2e-helper-gating",
-      "@test:bench-instrument-safety"
+      "@test:bench-instrument-safety",
+      "@test:tracker-repair-gate"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
