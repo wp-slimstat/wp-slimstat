@@ -80,6 +80,17 @@ for ($i = 0; $i < $count; $i++) {
     }
 }
 
+// Vacuity guard. If either token helper stops matching, $admin_only_ranges is empty,
+// the containment loop below becomes a no-op and this file reports PASS while asserting
+// nothing — the exact shape its siblings guard against with a pinned count. There are
+// several is_admin() blocks in this file and the scan is worthless without them.
+if ([] === $admin_only_ranges) {
+    fwrite(STDERR, "FAIL: found no is_admin() block in wp-slimstat.php. Either the file stopped\n"
+        . "  using is_admin() entirely, or the token walk is broken — fix the scan rather than\n"
+        . "  trusting this run, because with no ranges the containment check asserts nothing.\n");
+    exit(1);
+}
+
 // ── Assert each registration exists, and none is inside such a block ─────────
 $failures = [];
 $found    = [];
@@ -92,6 +103,33 @@ for ($i = 0; $i < $count; $i++) {
 
     $name          = $tokens[$i][1];
     $found[$name]  = true;
+
+    // The callback must not name wp_slimstat_admin: that class lives in admin/index.php,
+    // which is not loaded on the CLI path the registration was just moved onto. Walking
+    // the call's own argument span rather than regexing the file, because a regex over
+    // one spelling misses six others — array() syntax, double quotes, ::class, a string
+    // callable, a constant first argument, or a different admin-only class.
+    $args_end = slimstat_token_paren_end($tokens, $i, $count);
+    if (null !== $args_end) {
+        for ($k = $i; $k < $args_end; $k++) {
+            if (!is_array($tokens[$k])) {
+                continue;
+            }
+            if (!in_array($tokens[$k][0], [T_STRING, T_CONSTANT_ENCAPSED_STRING], true)) {
+                continue;
+            }
+            if (false !== strpos($tokens[$k][1], 'wp_slimstat_admin')) {
+                $failures[] = sprintf(
+                    'line %d: %s() names wp_slimstat_admin, which lives in admin/index.php and '
+                        . 'is not loaded on non-admin requests. The callback must load the admin '
+                        . 'bundle itself',
+                    $tokens[$i][2],
+                    $name
+                );
+                break;
+            }
+        }
+    }
 
     foreach ($admin_only_ranges as [$from, $to]) {
         if ($i > $from && $i < $to) {
@@ -110,17 +148,6 @@ foreach ($registrations as $name) {
     if (!isset($found[$name])) {
         $failures[] = "{$name}() is not called at all in wp-slimstat.php";
     }
-}
-
-// ── The callbacks must be reachable without the admin bundle preloaded ──────
-// wp_slimstat_admin lives in admin/index.php, which is only included on admin
-// requests. A callback naming that class directly is unresolvable on the CLI path the
-// registration was just moved onto — moving the registration without moving the
-// callback trades a silent no-op for a fatal.
-if (preg_match("/register_(?:de)?activation_hook\s*\(\s*__FILE__\s*,\s*\[\s*'wp_slimstat_admin'/", $source)) {
-    $failures[] = 'a registration points straight at wp_slimstat_admin, which lives in '
-        . 'admin/index.php and is not loaded on non-admin requests. The callback must load '
-        . 'the admin bundle itself';
 }
 
 if ($failures !== []) {

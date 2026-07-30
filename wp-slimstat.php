@@ -2083,9 +2083,22 @@ class wp_slimstat
      */
     public static function on_activate()
     {
-        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+        try {
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
 
-        wp_slimstat_admin::init_environment();
+            wp_slimstat_admin::init_environment();
+        } catch (\Throwable $e) {
+            // Fail soft, for the same reason update_tables_and_options() does. This runs
+            // DDL on strictly more paths than before the registration was moved, and an
+            // uncaught throw here either white-screens the plugins screen or aborts
+            // `wp plugin activate` mid-DDL.
+            //
+            // The trade is real and worth naming: failing soft means activating with no
+            // tables. That is the state the persisted degradation notice and the
+            // tracker's own recovery path exist to cover, and it is strictly better than
+            // a fatal on the screen the user is standing on.
+            self::record_degradation('activation', $e);
+        }
     }
 
     /**
@@ -2096,9 +2109,16 @@ class wp_slimstat
      */
     public static function on_deactivate()
     {
-        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+        try {
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
 
-        wp_slimstat_admin::deactivate();
+            wp_slimstat_admin::deactivate();
+        } catch (\Throwable $e) {
+            // Deactivation is the moment a user is trying to turn the plugin OFF. A
+            // throw here — including a parse error anywhere in the 4,176-line admin
+            // bundle this has to include — must not be what stops them.
+            self::record_degradation('deactivation', $e);
+        }
     }
     // end register_widget
 

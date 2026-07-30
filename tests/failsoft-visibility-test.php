@@ -81,7 +81,10 @@ contract_assert(
 // handlers answer with wp_send_json_error(), and the GeoIP cron path writes
 // slimstat_geoip_error — so requiring record_degradation() there would be noise.
 $guarded_functions = [
-    'wp-slimstat.php'                  => ['init', 'init_plugin', 'enqueue_tracker', 'render_gdpr_banner'],
+    // on_activate/on_deactivate run DDL and cron cleanup from whatever request performed
+    // the (de)activation — including `wp plugin activate`. A throw there white-screens
+    // the plugins screen or aborts the CLI mid-DDL.
+    'wp-slimstat.php'                  => ['init', 'init_plugin', 'enqueue_tracker', 'render_gdpr_banner', 'on_activate', 'on_deactivate'],
     // load_controllers' guard is the one with no behavioural coverage — the injected
     // controller in rest-api-fail-soft-test.php throws in register_routes(), not in
     // construction — so it is pinned here. register_routes and bannerHasConsentSafe
