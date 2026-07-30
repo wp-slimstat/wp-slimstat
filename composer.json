@@ -139,6 +139,8 @@
     "test:utf8mb4-conversion": "php tests/utf8mb4-conversion-test.php",
     "test:default-change-safety": "php tests/default-change-safety-test.php",
     "test:split-merge-group-key": "php tests/split-merge-group-key-test.php",
+    "test:class-name-as-variable": "php tests/class-name-as-variable-scan-test.php",
+    "test:consent-migration-gate": "php tests/consent-migration-gate-test.php",
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
@@ -191,7 +193,9 @@
       "@test:query-cache-symmetry",
       "@test:utf8mb4-conversion",
       "@test:default-change-safety",
-      "@test:split-merge-group-key"
+      "@test:split-merge-group-key",
+      "@test:class-name-as-variable",
+      "@test:consent-migration-gate"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",

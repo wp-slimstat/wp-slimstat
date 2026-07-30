@@ -50,6 +50,129 @@ function slimstat_function_body(string $source, string $name): string
 }
 
 /**
+ * Enumerate this plugin's own PHP files under $paths, excluding vendored code.
+ *
+ * Eight source-level tests carried a byte-identical copy of this walk before it was
+ * extracted, and the copies had already drifted — one lost its `sort()`, so its
+ * failure output was in filesystem order and irreproducible between machines.
+ * Sorted here so a failure list is stable.
+ *
+ * @param string[] $paths       Files or directories to scan.
+ * @param string   $deps_prefix Directory whose subtree is skipped (vendored code).
+ * @return string[]
+ */
+function slimstat_own_php_files(array $paths, string $deps_prefix): array
+{
+    $files = [];
+
+    foreach ($paths as $path) {
+        if (is_file($path)) {
+            if ('.php' === substr($path, -4)) {
+                $files[] = $path;
+            }
+            continue;
+        }
+        if (!is_dir($path)) {
+            continue;
+        }
+
+        $directory = new RecursiveDirectoryIterator($path, RecursiveDirectoryIterator::SKIP_DOTS);
+        $filtered  = new RecursiveCallbackFilterIterator($directory, function ($file) use ($deps_prefix) {
+            return 0 !== strpos($file->getPathname(), $deps_prefix . DIRECTORY_SEPARATOR);
+        });
+        foreach (new RecursiveIteratorIterator($filtered) as $file) {
+            $name = $file->getPathname();
+            if ('.php' === substr($name, -4)) {
+                $files[] = $name;
+            }
+        }
+    }
+
+    sort($files);
+
+    return $files;
+}
+
+/**
+ * Index of the next token that is not whitespace or a comment.
+ *
+ * Skipping comments matters: five assertions in this suite have passed by matching a
+ * name that appeared in a docblock, and a scanner that stops at `T_WHITESPACE` alone
+ * is defeated by `function init /* note *​/ (`.
+ */
+function slimstat_next_significant(array $tokens, int $i): int
+{
+    $count = count($tokens);
+    $i++;
+    while ($i < $count && is_array($tokens[$i])
+        && in_array($tokens[$i][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+        $i++;
+    }
+
+    return $i;
+}
+
+/**
+ * Byte-range of the brace block that opens at or after $from, as [openIndex, closeIndex].
+ *
+ * Returns null when no balanced block is found before $limit.
+ *
+ * `T_CURLY_OPEN` and `T_DOLLAR_OPEN_CURLY_BRACES` are counted because `"{$x}"`
+ * inside a block would otherwise close it early — the interpolation form emits an
+ * opening curly as a token but its closing brace as a plain '}'. Omitting them is a
+ * silent mis-match, not an error, which is why this lives in one place.
+ *
+ * @return array{0:int,1:int}|null
+ */
+function slimstat_token_block_range(array $tokens, int $from, int $limit): ?array
+{
+    $depth = 0;
+    $open  = null;
+
+    for ($k = $from; $k < $limit; $k++) {
+        if ('{' === $tokens[$k]) {
+            if (0 === $depth) {
+                $open = $k;
+            }
+            $depth++;
+        } elseif ('}' === $tokens[$k]) {
+            $depth--;
+            if (0 === $depth && null !== $open) {
+                return [$open, $k];
+            }
+        } elseif (is_array($tokens[$k])
+            && in_array($tokens[$k][0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true)) {
+            $depth++;
+        }
+    }
+
+    return null;
+}
+
+/**
+ * Index of the `)` closing the parenthesis group that opens at or after $from.
+ *
+ * Returns null when unbalanced before $limit.
+ */
+function slimstat_token_paren_end(array $tokens, int $from, int $limit): ?int
+{
+    $depth = 0;
+
+    for ($k = $from; $k < $limit; $k++) {
+        if ('(' === $tokens[$k]) {
+            $depth++;
+        } elseif (')' === $tokens[$k]) {
+            $depth--;
+            if (0 === $depth) {
+                return $k;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
  * Return the bodies of every `catch (\Throwable $e) { ... }` block in $source.
  *
  * @return string[]

@@ -734,8 +734,40 @@ class wp_slimstat_admin
 
     /**
      * Updates stuff around as needed (table schema, options, settings, files, etc)
+     *
+     * Fail-soft wrapper. This runs on `admin_init` with nothing above it to catch a
+     * throw, and the version stamp is the LAST statement in the body — so any
+     * uncaught error here means the stamp never lands, the branch is re-entered on
+     * the next request, and wp-admin white-screens permanently with no route out
+     * from inside WordPress.
+     *
+     * That is not hypothetical: `unset($wp_slimstat::$settings[...])` in the <4.8.4
+     * branch shipped exactly this shape (S1), and the ~180 lines below contain enough
+     * DDL, filtered `$wpdb` handles and legacy branches to do it again.
+     *
+     * Deliberately does NOT stamp the version on failure. Stamping would make the
+     * page load, but the column ALTERs in the legacy branches carry no per-step flag
+     * of their own (unlike the index steps, which have `slimstat_*_indexed` /
+     * `goals_indexes`), so a swallowed failure would skip them forever and leave the
+     * table permanently missing `email` / `fingerprint` / `tz_offset`. Retrying a
+     * visible failure is the lesser harm. Bounding that retry is separate work — it
+     * needs the claim-lock and per-step stamping, not a wider catch here.
      */
     public static function update_tables_and_options()
+    {
+        try {
+            return self::run_schema_upgrade();
+        } catch (\Throwable $e) {
+            wp_slimstat::record_degradation('schema upgrade', $e);
+
+            return false;
+        }
+    }
+
+    /**
+     * The schema/settings upgrade itself. Only ever called through the wrapper above.
+     */
+    private static function run_schema_upgrade()
     {
         $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
 
@@ -760,9 +792,9 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['no_maxmind_warning']);
             unset(wp_slimstat::$settings['no_browscap_warning']);
             unset(wp_slimstat::$settings['use_european_separators']);
-            unset($wp_slimstat::$settings['date_format']);
-            unset($wp_slimstat::$settings['time_format']);
-            unset($wp_slimstat::$settings['expand_details']);
+            unset(wp_slimstat::$settings['date_format']);
+            unset(wp_slimstat::$settings['time_format']);
+            unset(wp_slimstat::$settings['expand_details']);
 
             // Add table indexes for improved performance (idempotent)
             $indexes = [

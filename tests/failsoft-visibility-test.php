@@ -87,6 +87,11 @@ $guarded_functions = [
     // construction — so it is pinned here. register_routes and bannerHasConsentSafe
     // are proven at runtime by that test and gdpr-service-fail-soft-test.php.
     'src/Providers/RestApiManager.php' => ['load_controllers'],
+    // update_tables_and_options() runs on admin_init with nothing above it to catch a
+    // throw, and it stamps the schema version as its LAST statement — so an uncaught
+    // error there white-screens wp-admin permanently (S1 shipped exactly that). It was
+    // a hole in this convention rather than an exception to it.
+    'admin/index.php'                  => ['update_tables_and_options'],
 ];
 
 $guarded_catches = 0;
@@ -98,7 +103,19 @@ foreach ($guarded_functions as $rel => $functions) {
             continue;
         }
 
-        foreach (slimstat_throwable_catch_bodies($body) as $i => $catch) {
+        $catches = slimstat_throwable_catch_bodies($body);
+
+        // Per-function floor. The aggregate floor below only catches TOTAL extraction
+        // failure: measured, deleting one listed function's guard entirely left the
+        // aggregate above its threshold and the run still reported OK. Each listed
+        // function is listed because it must not be able to fatal, so each must carry
+        // at least one guard of its own.
+        contract_assert(
+            [] !== $catches,
+            sprintf('%s: %s() has no \\Throwable guard — it is listed here because it must not be able to fatal', $rel, $function)
+        );
+
+        foreach ($catches as $i => $catch) {
             $guarded_catches++;
             contract_assert(
                 false === strpos($catch, '::log('),
@@ -115,8 +132,8 @@ foreach ($guarded_functions as $rel => $functions) {
 // Vacuity guard: if the body/catch extraction silently stops matching, every
 // assertion above turns into a no-op that still prints OK. Pin the count.
 contract_assert(
-    $guarded_catches >= 7,
-    "only found {$guarded_catches} guarded catch blocks (expected at least 7) — the source scan is stale, "
+    $guarded_catches >= 8,
+    "only found {$guarded_catches} guarded catch blocks (expected at least 8) — the source scan is stale, "
     . 'fix it rather than trusting this run'
 );
 

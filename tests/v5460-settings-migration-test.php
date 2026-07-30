@@ -45,37 +45,53 @@ function test_wp_has_consent_exists(): bool
 
 define('TEST_SLIMSTAT_VERSION', '5.4.6');
 
-function run_migration(array $settings): array
+/**
+ * @param string $current The plugin version being upgraded TO. Parameterised so the
+ *                        pre-5.4.7 boundary can be exercised: with a fixed current
+ *                        version of 5.4.6, no fixture can express "stored flag is at
+ *                        or above 5.4.7 and the plugin is newer", which is exactly the
+ *                        case S2 was about.
+ */
+function run_migration(array $settings, string $current = TEST_SLIMSTAT_VERSION): array
 {
     $_migration_ran = $settings['_migration_5460'] ?? '0';
-    if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, TEST_SLIMSTAT_VERSION, '<'))) {
+    if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, $current, '<'))) {
+        // Mirrors production: one boundary, derived once.
+        $_pre_547 = version_compare($_migration_ran, '5.4.7', '<');
+
         // Save ORIGINAL banner value before consent-intent detection modifies it
         $_ss_banner_was_on_original = ('on' === ($settings['use_slimstat_banner'] ?? 'off'));
 
-        // --- Consent intent detection ---
-        $_had_opt_out_banner  = ('on' === ($settings['display_opt_out'] ?? 'no'));
-        $_had_opt_out_cookies = !empty(trim($settings['opt_out_cookie_names'] ?? ''));
-        $_had_opt_in_cookies  = !empty(trim($settings['opt_in_cookie_names'] ?? ''));
-        $_current_integration = $settings['consent_integration'] ?? '';
-        $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
+        // --- Consent intent detection (pre-5.4.7 installs only) ---
+        // Unbounded, this re-ran on every version bump and rewrote the three consent
+        // keys from stale 5.3.x evidence — switching GDPR off on sites that had
+        // enabled it through the 5.4+ UI, and on (which stops tracking) for sites
+        // that had deliberately disabled it.
+        if ($_pre_547) {
+            $_had_opt_out_banner  = ('on' === ($settings['display_opt_out'] ?? 'no'));
+            $_had_opt_out_cookies = !empty(trim($settings['opt_out_cookie_names'] ?? ''));
+            $_had_opt_in_cookies  = !empty(trim($settings['opt_in_cookie_names'] ?? ''));
+            $_current_integration = $settings['consent_integration'] ?? '';
+            $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
 
-        if ($_has_third_party_cmp) {
-            $settings['gdpr_enabled'] = 'on';
-        } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
-            $settings['gdpr_enabled'] = 'on';
-            $settings['use_slimstat_banner'] = 'on';
-            if ($_had_opt_in_cookies && test_wp_has_consent_exists()) {
-                $settings['consent_integration'] = 'wp_consent_api';
+            if ($_has_third_party_cmp) {
+                $settings['gdpr_enabled'] = 'on';
+            } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
+                $settings['gdpr_enabled'] = 'on';
+                $settings['use_slimstat_banner'] = 'on';
+                if ($_had_opt_in_cookies && test_wp_has_consent_exists()) {
+                    $settings['consent_integration'] = 'wp_consent_api';
+                } else {
+                    $settings['consent_integration'] = 'slimstat_banner';
+                }
             } else {
-                $settings['consent_integration'] = 'slimstat_banner';
+                $settings['gdpr_enabled'] = 'off';
+                $settings['consent_integration'] = '';
+                $settings['use_slimstat_banner'] = 'off';
             }
-        } else {
-            $settings['gdpr_enabled'] = 'off';
-            $settings['consent_integration'] = '';
-            $settings['use_slimstat_banner'] = 'off';
         }
 
-        if ('off' === $settings['gdpr_enabled']
+        if ('off' === ($settings['gdpr_enabled'] ?? 'off')
             && 'off' === ($settings['set_tracker_cookie'] ?? 'on')) {
             $settings['set_tracker_cookie'] = 'on';
         }
@@ -91,7 +107,7 @@ function run_migration(array $settings): array
         if ('on' === ($settings['hash_ip'] ?? 'off')) {
             $settings['hash_ip'] = 'off';
         }
-        $settings['_migration_5460'] = TEST_SLIMSTAT_VERSION;
+        $settings['_migration_5460'] = $current;
     }
     return $settings;
 }
@@ -346,5 +362,63 @@ $result = run_migration([
 
 mig_assert_same(TEST_SLIMSTAT_VERSION, $result['_migration_5460'], 'TEST 14: old "1" flag triggers re-run, updated to version');
 mig_assert_same('off', $result['anonymize_ip'],         'TEST 14: migration re-ran');
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TESTS 15-17 (S2): a >= 5.4.7 install must never have its consent rewritten
+//
+// These are the cases this file could not express before: every earlier fixture
+// stores a flag that is '0', absent, or below 5.4.7, so none of them upgrades FROM
+// the post-5.4.7 era. That gap is why the unbounded consent block survived here
+// while shipping a compliance regression.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// TEST 15 — GDPR enabled through the 5.4+ UI. No legacy 5.3.x keys, no third-party
+// CMP, so the unbounded block fell to its else branch and switched consent OFF.
+$result = run_migration([
+    'gdpr_enabled'         => 'on',
+    'use_slimstat_banner'  => 'on',
+    'consent_integration'  => 'slimstat_banner',
+    'display_opt_out'      => 'no',
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+    '_migration_5460'      => '5.5.0',
+], '6.0.0');
+
+mig_assert_same('on', $result['gdpr_enabled'],             'TEST 15: gdpr_enabled must survive the upgrade (was silently switched off)');
+mig_assert_same('on', $result['use_slimstat_banner'],      'TEST 15: use_slimstat_banner must survive');
+mig_assert_same('slimstat_banner', $result['consent_integration'], 'TEST 15: consent_integration must survive');
+mig_assert_same('6.0.0', $result['_migration_5460'],       'TEST 15: flag still advances to the new version');
+
+// TEST 16 — the other direction. A stale 5.3.x display_opt_out with GDPR
+// deliberately off had GDPR forced back ON, and with GDPR on and no consent cookie
+// tracking stops entirely.
+$result = run_migration([
+    'gdpr_enabled'         => 'off',
+    'use_slimstat_banner'  => 'off',
+    'consent_integration'  => '',
+    'display_opt_out'      => 'on',   // stale legacy key, still in the options array
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+    '_migration_5460'      => '5.5.1',
+], '6.0.0');
+
+mig_assert_same('off', $result['gdpr_enabled'],        'TEST 16: a stale display_opt_out must not force GDPR back on');
+mig_assert_same('off', $result['use_slimstat_banner'], 'TEST 16: nor the banner');
+mig_assert_same('', $result['consent_integration'],    'TEST 16: nor the integration');
+
+// TEST 17 — the boundary still lets genuine pre-5.4.7 installs migrate, so the gate
+// is not simply switching the migration off.
+$result = run_migration([
+    'gdpr_enabled'         => 'off',
+    'use_slimstat_banner'  => 'off',
+    'consent_integration'  => '',
+    'display_opt_out'      => 'on',
+    'opt_in_cookie_names'  => '',
+    'opt_out_cookie_names' => '',
+    '_migration_5460'      => '5.4.6',
+], '6.0.0');
+
+mig_assert_same('on', $result['gdpr_enabled'],        'TEST 17: a pre-5.4.7 install still maps its legacy consent intent');
+mig_assert_same('on', $result['use_slimstat_banner'], 'TEST 17: and still gets the banner');
 
 echo "All {$assertions} assertions passed in v5460-settings-migration-test.php\n";
