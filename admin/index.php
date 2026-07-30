@@ -1504,6 +1504,23 @@ class wp_slimstat_admin
                 'decimal_point' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['decimal_point'] ?? '.') : '.',
                 'thousands_sep' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['thousands_sep'] ?? ',') : ',',
             ],
+            // Network-scope handshake for Pro's Network View, which UNIONs every
+            // subsite's data into one report. admin-ajax.php carries no screen
+            // context, so the network screen has to say which scope it wants —
+            // explicitly. It used to be inferred from the Referer header, which the
+            // client controls, so any subsite Administrator could ask for the whole
+            // network. Minted only for a user who already holds the capability, and
+            // Pro re-checks that capability server-side: this parameter selects
+            // scope, it never grants it. Empty everywhere else, which means
+            // single-site — the safe default.
+            //
+            // The capability is the one stats_view_capability() already returns on a
+            // network screen. Both sides must name the same one, or a user who can
+            // open the network report gets main-site numbers under a network heading
+            // with nothing anywhere saying so.
+            'network_scope_nonce' => (is_multisite() && is_network_admin() && current_user_can('manage_network'))
+                ? wp_create_nonce('slimstat_network_scope')
+                : '',
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 

@@ -1717,6 +1717,15 @@ var SlimStatAdmin = {
                 granularity: granularity,
             };
 
+            // Ask for network scope explicitly when this is the network report
+            // screen. The nonce is minted server-side only for a super admin, and
+            // Pro re-checks the capability, so this says "which scope", not "may I".
+            // Absent nonce = single-site, which is the safe default.
+            if (SlimStatAdminParams.network_scope_nonce) {
+                data.slimstat_network_scope = 1;
+                data.slimstat_network_nonce = SlimStatAdminParams.network_scope_nonce;
+            }
+
             // Append the data from the hidden form
             filters_input = jQuery("#slimstat-filters-form .slimstat-post-filter").toArray();
             for (i in filters_input) {
