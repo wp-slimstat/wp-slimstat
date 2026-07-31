@@ -164,9 +164,12 @@ foreach ([
 // enqueue must consult the shared decision, and must not be able to throw on a hook
 // that also fires on wp-login.php.
 $src  = (string) file_get_contents(__DIR__ . '/../wp-slimstat.php');
-$body = $src === '' ? '' : slimstat_function_body($src, 'enqueue_gdpr_assets');
+// Optional lookup so the curated diagnostic below survives: the default form throws on
+// absence, which would replace this assertion's message with a stack trace.
+$body = $src === '' ? null : slimstat_find_function_body($src, 'enqueue_gdpr_assets');
 
-gba_assert('enqueue_gdpr_assets() exists', $body !== '', 'method not found');
+gba_assert('enqueue_gdpr_assets() exists', null !== $body, 'method not found');
+$body = (string) $body;
 gba_assert(
     'the enqueue consults the shared decision',
     strpos($body, 'shouldRenderBanner') !== false,

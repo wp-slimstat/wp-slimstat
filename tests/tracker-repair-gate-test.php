@@ -87,12 +87,18 @@ if ('' === $repair) {
 }
 
 // And the raw call must not be reachable any other way from the insert path.
-$store = slimstat_function_body($code, 'storeStat');
-if ('' === $store) {
-    $store = $code;   // method renamed; fall back to the whole file rather than passing vacuously
-}
+//
+// Scoped to process() — the method that performs the insert and the single retry.
+// The invariant is not "calls init_environment() without mentioning the gate", it is
+// "does not call it at all": repairSchemaOnce() is itself the caller, so any condition
+// mentioning both is true by construction and can never fire.
+//
+// Strings are blanked as well as comments. $code is already comment-blanked above, so
+// this only adds literals, and nothing in Processor.php names init_environment() inside
+// one today — it is insurance against a future SQL string, not a fix for a live match.
+$store = slimstat_strip_comments_and_strings(slimstat_function_body($code, 'process'));
 
-if (preg_match('/init_environment\s*\(/', $store) && false === strpos($store, 'repairSchemaOnce')) {
+if (preg_match('/init_environment\s*\(/', $store)) {
     $failures[] = 'the tracking path calls init_environment() directly. Every DDL recovery has to '
         . 'go through the gated entry point, or the gate is decorative';
 }

@@ -320,7 +320,9 @@ if ($unknown_branches < 2) {
 // The probe is a question, not a failure: a mid-conversion install should get a
 // recorded degradation and a skipped purge, not a red admin on every page load.
 $helper = (string) @file_get_contents(dirname(__DIR__) . '/src/Utils/PurgeArchive.php');
-$probe  = '' === $helper ? '' : slimstat_function_body($helper, 'probeForCollision');
+// Optional lookup so the curated "re-anchor this scan" diagnostic below survives; the
+// default form would throw and replace it with a stack trace.
+$probe  = '' === $helper ? '' : (string) slimstat_find_function_body($helper, 'probeForCollision');
 
 if ('' === $probe) {
     $failures[] = 'cannot isolate PurgeArchive::probeForCollision() — re-anchor this scan';

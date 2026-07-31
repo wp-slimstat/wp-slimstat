@@ -49,29 +49,30 @@ if ($source === false) {
     exit(1);
 }
 
-$normalize = slimstat_function_body($source, 'init_filters_normalized');
-if ($normalize === '') {
-    // Fall back to whichever method builds $fn['utime'].
-    $normalize = $source;
-}
-
 // ── 1. The clamp happens in one named place ─────────────────────────────────
 $clamp = slimstat_function_body($source, 'live_window_end');
-if ($clamp === '') {
-    $failures[] = 'live_window_end() is gone. Every window that reaches the present must be '
+if ('' === trim($clamp)) {
+    $failures[] = 'live_window_end() is empty. Every window that reaches the present must be '
         . 'clamped through one place, or the bucket cannot be applied consistently and the '
         . 'parity oracle cannot pin a straddling window';
 }
 
 // ── 2. No clamp site bypasses it ────────────────────────────────────────────
 // Both sites previously assigned intval(date_i18n('U')) directly.
-if (preg_match_all("/\\\$fn\['utime'\]\['end'\]\s*=\s*intval\(\s*date_i18n\(\s*'U'\s*\)\s*\)/", $source, $m)) {
+//
+// Scoped to init_filters(), the method that builds the window, rather than to the whole
+// file: a file-wide count would be satisfied by a clamp added to some unrelated method,
+// and the count below is the only thing pinning the hour-granularity branch. Absence of
+// init_filters() throws rather than silently counting zero.
+$builder = slimstat_function_body($source, 'init_filters');
+
+if (preg_match_all("/\\\$fn\['utime'\]\['end'\]\s*=\s*intval\(\s*date_i18n\(\s*'U'\s*\)\s*\)/", $builder, $m)) {
     $failures[] = 'a utime.end clamp assigns intval(date_i18n(\'U\')) directly instead of '
         . 'going through live_window_end(), so that window keeps moving every second — its '
         . 'cache entries are written and never read, and the oracle cannot pin it';
 }
 
-$clampSites = preg_match_all("/\\\$fn\['utime'\]\['end'\]\s*=\s*self::live_window_end\(\)/", $source);
+$clampSites = preg_match_all("/\\\$fn\['utime'\]\['end'\]\s*=\s*self::live_window_end\(\)/", $builder);
 if ($clampSites < 2) {
     $failures[] = 'expected both utime.end clamp sites to call live_window_end(); found '
         . $clampSites . '. The second site is the hour-granularity branch, and missing it '

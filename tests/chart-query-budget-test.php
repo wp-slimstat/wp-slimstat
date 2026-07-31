@@ -62,8 +62,10 @@ $buckets = file_get_contents($plugin_root . '/src/Helpers/DataBuckets.php');
 if ($buckets === false) {
     $failures[] = 'cannot read src/Helpers/DataBuckets.php';
 } else {
-    $ctor = slimstat_function_body($buckets, '__construct');
-    if ($ctor !== '' && preg_match('/\$wpdb\s*->\s*get_var\s*\(/', $ctor)) {
+    // Optional lookup on purpose: "DataBuckets has no constructor at all" is a legal way
+    // to satisfy "its constructor must not query", so absence must not be fatal here.
+    $ctor = slimstat_find_function_body($buckets, '__construct');
+    if (null !== $ctor && preg_match('/\$wpdb\s*->\s*get_var\s*\(/', $ctor)) {
         $failures[] = 'DataBuckets::__construct() queries the server timezone on every '
             . 'instantiation, and one is constructed per chart — read it through the memo';
     }

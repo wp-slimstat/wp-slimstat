@@ -72,8 +72,12 @@ foreach (array_unique($report_files) as $file) {
     $source = (string) file_get_contents($file);
     $name   = basename($file);
 
-    $callback_args = slimstat_function_body($source, 'get_callback_args');
-    if ($callback_args === '' || !preg_match('/\$this->get_data\s*\(/', $callback_args)) {
+    // Optional lookup on purpose: this walks EVERY report class, and a report that does
+    // not define get_callback_args() is a designed skip, not a broken assertion. The
+    // default slimstat_function_body() throws on absence, which is right for the ~24
+    // gates that name one specific function they require to exist — but wrong here.
+    $callback_args = slimstat_find_function_body($source, 'get_callback_args');
+    if (null === $callback_args || !preg_match('/\$this->get_data\s*\(/', $callback_args)) {
         continue; // get_data() is not amplified for this report
     }
 

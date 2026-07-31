@@ -15,38 +15,194 @@
 declare(strict_types=1);
 
 /**
- * Return the body of a named PHP function/method, or '' when it cannot be found.
+ * Text of a named function/method's body. Throws when there is no such definition.
  *
- * Brace-matched rather than regex-terminated, so it is immune to indentation style
- * and to nested closures/arrays — wp-slimstat.php mixes tabs and 4-space indents in
- * the same class, which is exactly what defeated the earlier patterns.
+ * TOKENISED, not brace-counted over raw text: a `{` inside a string, comment, regex or
+ * heredoc used to run the body on into the functions that follow, and a name appearing
+ * only in a comment returned a DIFFERENT function's body entirely. Both failures, and
+ * the fixtures that prove them, live in tests/source-scan-strength-test.php.
+ *
+ * NOT FOUND IS FATAL. Returning '' was indistinguishable from a genuinely empty body, so
+ * a rename silently emptied every assertion about it and the suite stayed green. An
+ * empty body still returns ''; only absence throws.
+ *
+ * Callers for which absence is a legitimate answer — "this class may not define the
+ * method at all" — want slimstat_find_function_body() instead, which returns null. Make
+ * that choice at the call site: an optional lookup should be visible where it is made.
+ *
+ * @throws RuntimeException when $name is not DEFINED in $source (a mention in a comment
+ *                          or a string is not a definition).
  */
 function slimstat_function_body(string $source, string $name): string
 {
-    if (!preg_match('/function\s+' . preg_quote($name, '/') . '\s*\(/', $source, $m, PREG_OFFSET_CAPTURE)) {
-        return '';
+    $body = slimstat_find_function_body($source, $name);
+
+    if (null === $body) {
+        throw new RuntimeException(sprintf(
+            'source-scan: no definition of %s() found. A mention in a comment or a string is '
+            . 'not a definition — if the function was renamed, the assertion reading it is now vacuous.',
+            $name
+        ));
     }
 
-    $open = strpos($source, '{', $m[0][1]);
-    if (false === $open) {
-        return '';
+    return $body;
+}
+
+/**
+ * Body of $name, or null when $source contains no such definition.
+ *
+ * The optional form. slimstat_function_body() is the default and should stay the default:
+ * of the consuming gates, all but two assert about a function they require to exist, and
+ * for those a silent '' is how an assertion becomes vacuous without anyone noticing.
+ */
+function slimstat_find_function_body(string $source, string $name): ?string
+{
+    $tokens = slimstat_tokenize($source);
+    $count  = count($tokens);
+
+    for ($i = 0; $i < $count; $i++) {
+        if (!is_array($tokens[$i]) || T_FUNCTION !== $tokens[$i][0]) {
+            continue;
+        }
+
+        $n = slimstat_next_significant($tokens, $i);
+
+        // `function &foo()` — the by-reference marker sits between the keyword and the
+        // name, and 8.1 split the ampersand into its own token types, so compare text
+        // rather than a token id.
+        if ($n < $count && '&' === slimstat_token_text($tokens[$n])) {
+            $n = slimstat_next_significant($tokens, $n);
+        }
+        if ($n >= $count || !is_array($tokens[$n]) || T_STRING !== $tokens[$n][0] || $name !== $tokens[$n][1]) {
+            continue;
+        }
+
+        // `use function Foo\bar;` also reads as T_FUNCTION + T_STRING. A definition is
+        // followed by its parameter list; an import is followed by `;` or `,`.
+        $after = slimstat_next_significant($tokens, $n);
+        if ($after >= $count || '(' !== slimstat_token_text($tokens[$after])) {
+            continue;
+        }
+
+        $paren = slimstat_token_paren_end($tokens, $after, $count);
+        if (null === $paren) {
+            continue;
+        }
+
+        // Step over any return type, then decide between a body and a bare `;` —
+        // abstract and interface methods are declarations with no body to return, and
+        // taking the next block would hand back the FOLLOWING method's.
+        $brace = null;
+        for ($k = $paren + 1; $k < $count; $k++) {
+            $text = slimstat_token_text($tokens[$k]);
+            if (';' === $text) {
+                break;
+            }
+            if ('{' === $text) {
+                $brace = $k;
+                break;
+            }
+        }
+        if (null === $brace) {
+            continue;
+        }
+
+        // The opening brace is already known, so only the matching close is looked up.
+        $range = slimstat_token_block_range($tokens, $brace, $count);
+        if (null === $range) {
+            continue;
+        }
+
+        return slimstat_token_text_range($tokens, $brace + 1, $range[1]);
     }
 
-    $depth  = 0;
-    $length = strlen($source);
-    for ($i = $open; $i < $length; $i++) {
-        $char = $source[$i];
-        if ('{' === $char) {
-            $depth++;
-        } elseif ('}' === $char) {
-            $depth--;
-            if (0 === $depth) {
-                return substr($source, $open + 1, $i - $open - 1);
+    return null;
+}
+
+/**
+ * token_get_all() over a whole file OR a bare fragment.
+ *
+ * Callers pass both: a file read from disk, and the body of one function extracted by
+ * slimstat_function_body(). A fragment has no `<?php`, and token_get_all() classifies
+ * everything before an open tag as T_INLINE_HTML — so a tokenised scan over a fragment
+ * sees ONE text blob and no PHP tokens at all.
+ *
+ * That is fail-open, and it bit immediately: the catch-block scanner returned zero
+ * guards for functions that plainly have `} catch (\Throwable $e) {`, because
+ * failsoft-visibility-test.php scans extracted bodies rather than files. A regex over
+ * raw text did not care; a tokeniser does.
+ *
+ * The synthetic open tag is dropped, so concatenating the returned tokens reproduces
+ * $source byte for byte and offset-preserving callers stay correct.
+ */
+function slimstat_tokenize(string $source, ?bool $is_file = null): array
+{
+    if (null === $is_file) {
+        // Sniff: a whole file contains a real open-tag TOKEN. Anchoring on `^\s*<\?`
+        // instead — the obvious test — is wrong for a file that opens with inline HTML,
+        // and two are in this tree (admin/view/partials/header.php and
+        // slimstat-pro-modal.php both start with an HTML comment). Those would be
+        // treated as fragments, get `<?php ` prepended, and have their leading HTML
+        // lexed as PHP: one apostrophe in that comment and everything after it becomes
+        // a string literal, so the blankers would blank REAL CODE and the catch scanner
+        // would return zero guards. Silent and fail-open — the exact hazard class this
+        // file exists to close, reintroduced by a different route.
+        //
+        // The residual ambiguity is a FRAGMENT that embeds a literal `<?php` in a
+        // string. That cannot be sniffed either way, so such a caller must say so.
+        $is_file = false;
+        foreach (token_get_all($source) as $token) {
+            if (is_array($token) && T_OPEN_TAG === $token[0]) {
+                $is_file = true;
+                break;
             }
         }
     }
 
-    return '';
+    if ($is_file) {
+        return token_get_all($source);
+    }
+
+    // A fragment has no `<?php`, and token_get_all() classifies everything before an open
+    // tag as T_INLINE_HTML — one text blob, no PHP tokens, so a tokenised scan silently
+    // sees nothing. The synthetic tag is dropped, so concatenating the returned tokens
+    // reproduces $source byte for byte and offset-preserving callers stay correct.
+    $tokens = token_get_all('<?php ' . $source);
+    array_shift($tokens);
+
+    return $tokens;
+}
+
+/** Source text of a token, whether it arrived as an array or a bare string. */
+function slimstat_token_text($token): string
+{
+    return is_array($token) ? $token[1] : $token;
+}
+
+/**
+ * Last segment of a possibly-qualified class name: `\Foo\Throwable` -> `Throwable`.
+ *
+ * PHP 8.0 stopped emitting qualified names as T_NS_SEPARATOR + T_STRING runs and now
+ * emits one T_NAME_FULLY_QUALIFIED / T_NAME_QUALIFIED / T_NAME_RELATIVE token carrying
+ * the whole name. Matching on T_STRING alone therefore silently stopped seeing
+ * `\Throwable` on 8.x — the tokeniser change turns a strict scan into a vacuous one.
+ */
+function slimstat_last_name_segment(string $name): string
+{
+    $pos = strrpos($name, '\\');
+
+    return false === $pos ? $name : substr($name, $pos + 1);
+}
+
+/** Concatenated source text of $tokens over the half-open range [$from, $to). */
+function slimstat_token_text_range(array $tokens, int $from, int $to): string
+{
+    $out = '';
+    for ($i = $from; $i < $to; $i++) {
+        $out .= slimstat_token_text($tokens[$i]);
+    }
+
+    return $out;
 }
 
 /**
@@ -173,33 +329,65 @@ function slimstat_token_paren_end(array $tokens, int $from, int $limit): ?int
 }
 
 /**
- * Return the bodies of every `catch (\Throwable $e) { ... }` block in $source.
+ * Bodies of every `catch (… Throwable …) { … }` block in $source.
+ *
+ * TOKENISED for the same reason as slimstat_function_body(), and this one was actively
+ * fail-open: the old regex ran over raw text, so a `catch (\Throwable $e)` quoted in a
+ * COMMENT or sitting inside a STRING counted as a real guard.
+ *
+ * On the CURRENT tree both implementations agree — 12 catches across the 8 guarded
+ * functions — so this is a latent hazard here, not a live miscount. It is demonstrated
+ * on a fixture in tests/source-scan-strength-test.php, where a function carrying no
+ * guard at all but describing the one it used to have reports two. That matters because
+ * tests/failsoft-visibility-test.php asserts fail-soft guards exist by counting these,
+ * so the functions most likely to carry such a comment are exactly the ones a raw-text
+ * count would credit falsely.
+ *
+ * Matching is on the caught TYPE LIST rather than on one literal spelling, so
+ * `catch (RuntimeException | \Throwable $e)` counts and `catch (MyThrowableThing $e)`
+ * does not.
  *
  * @return string[]
  */
-function slimstat_throwable_catch_bodies(string $source): array
+function slimstat_throwable_catch_bodies(string $source, ?bool $is_file = null): array
 {
+    $tokens = slimstat_tokenize($source, $is_file);
+    $count  = count($tokens);
     $bodies = [];
-    $offset = 0;
 
-    while (preg_match('/catch\s*\(\s*\\\\?Throwable\s+\$\w+\s*\)\s*\{/', $source, $m, PREG_OFFSET_CAPTURE, $offset)) {
-        $open   = $m[0][1] + strlen($m[0][0]) - 1;
-        $depth  = 0;
-        $length = strlen($source);
-
-        for ($i = $open; $i < $length; $i++) {
-            if ('{' === $source[$i]) {
-                $depth++;
-            } elseif ('}' === $source[$i]) {
-                $depth--;
-                if (0 === $depth) {
-                    $bodies[] = substr($source, $open + 1, $i - $open - 1);
-                    break;
-                }
-            }
+    for ($i = 0; $i < $count; $i++) {
+        if (!is_array($tokens[$i]) || T_CATCH !== $tokens[$i][0]) {
+            continue;
         }
 
-        $offset = $m[0][1] + strlen($m[0][0]);
+        $open_paren = slimstat_next_significant($tokens, $i);
+        if ($open_paren >= $count || '(' !== slimstat_token_text($tokens[$open_paren])) {
+            continue;
+        }
+
+        $paren = slimstat_token_paren_end($tokens, $open_paren, $count);
+        if (null === $paren) {
+            continue;
+        }
+
+        $catches_throwable = false;
+        for ($k = $open_paren + 1; $k < $paren; $k++) {
+            if (is_array($tokens[$k]) && 'Throwable' === slimstat_last_name_segment($tokens[$k][1])) {
+                $catches_throwable = true;
+                break;
+            }
+        }
+        if (!$catches_throwable) {
+            continue;
+        }
+
+        $range = slimstat_token_block_range($tokens, $paren + 1, $count);
+        if (null === $range) {
+            continue;
+        }
+
+        $bodies[] = slimstat_token_text_range($tokens, $range[0] + 1, $range[1]);
+        $i        = $range[1];
     }
 
     return $bodies;
@@ -218,18 +406,93 @@ function slimstat_throwable_catch_bodies(string $source): array
  * against the blanked text and still index into the ORIGINAL — which matters when
  * allow-markers live in comments, i.e. in exactly what this blanks out.
  */
-function slimstat_blank_comments(string $source): string
+function slimstat_blank_comments(string $source, ?bool $is_file = null): string
+{
+    return slimstat_blank_token_types($source, [T_COMMENT, T_DOC_COMMENT], $is_file);
+}
+
+/**
+ * Blank the listed token types, preserving every byte offset and line number.
+ *
+ * The two blankers differ ONLY in which token ids count as "not code", so the
+ * offset-preserving walk lives here once rather than being a property each of them has
+ * to get right independently.
+ *
+ * Offsets are preserved rather than the text removed, so a caller can match against the
+ * blanked text and still index into the ORIGINAL — which matters precisely because
+ * allow-markers live in comments, i.e. in exactly what this blanks out.
+ *
+ * T_CONSTANT_ENCAPSED_STRING keeps its delimiters and blanks only the content, so a
+ * scanner can still tell that a string was there at all. The tokeniser never emits one
+ * without both delimiters, so no length guard is needed.
+ *
+ * @param int[] $blank Token ids whose text is replaced by equivalent whitespace.
+ */
+function slimstat_blank_token_types(string $source, array $blank, ?bool $is_file = null): string
 {
     $out = '';
 
-    foreach (token_get_all($source) as $token) {
-        if (is_array($token) && (T_COMMENT === $token[0] || T_DOC_COMMENT === $token[0])) {
-            $newlines = substr_count($token[1], "\n");
-            $out .= str_repeat("\n", $newlines) . str_repeat(' ', strlen($token[1]) - $newlines);
+    foreach (slimstat_tokenize($source, $is_file) as $token) {
+        if (!is_array($token)) {
+            $out .= $token;
             continue;
         }
-        $out .= is_array($token) ? $token[1] : $token;
+        if (!in_array($token[0], $blank, true)) {
+            $out .= $token[1];
+            continue;
+        }
+
+        $text = $token[1];
+        $out .= T_CONSTANT_ENCAPSED_STRING === $token[0]
+            ? $text[0] . slimstat_blanked_like(substr($text, 1, -1)) . substr($text, -1)
+            : slimstat_blanked_like($text);
     }
 
     return $out;
+}
+
+/**
+ * Whitespace of the same byte length and line count as $text.
+ *
+ * Shared by the two blankers so "preserves offsets" is one implementation rather than a
+ * property each of them has to get right independently.
+ */
+function slimstat_blanked_like(string $text): string
+{
+    $newlines = substr_count($text, "\n");
+
+    return str_repeat("\n", $newlines) . str_repeat(' ', strlen($text) - $newlines);
+}
+
+/**
+ * Blank comments AND string contents, preserving every byte offset and line number.
+ *
+ * This is the guard for the standing "a name is not a use" hazard. All known instances
+ * matched a name that appeared in prose or in a literal rather than as the construct
+ * under test:
+ *
+ *   1. HTTP_REFERER inside the docblock explaining its removal
+ *   2. wp_schedule_event() inside the comment explaining the retirement
+ *   3. the DECLARATION of MAX_LOG_BYTES / $sql_truncated, whose every USE was deletable
+ *   4. suppress_errors — which the RESTORING call also contains
+ *   5. OptionClaim — which compareAndSwap() also mentions
+ *
+ * slimstat_blank_comments() handles 1-2. Cases 3-5 additionally need literals gone,
+ * because the surviving mention is inside a string. Offsets are preserved rather than
+ * the text removed so a caller can match against the stripped text and still index into
+ * the ORIGINAL — which matters precisely because allow-markers live in comments, i.e. in
+ * what this blanks out.
+ *
+ * The delimiters are kept and only the CONTENT is blanked, so a scanner can still tell
+ * that a string was there at all.
+ */
+function slimstat_strip_comments_and_strings(string $source, ?bool $is_file = null): string
+{
+    return slimstat_blank_token_types($source, [
+        T_COMMENT,
+        T_DOC_COMMENT,
+        T_ENCAPSED_AND_WHITESPACE,   // body of a "..." or heredoc with interpolation
+        T_INLINE_HTML,               // text outside <?php, which is not code either
+        T_CONSTANT_ENCAPSED_STRING,
+    ], $is_file);
 }

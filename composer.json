@@ -89,6 +89,7 @@
     "test:storage-update-sanitize": "php tests/storage-update-sanitization-test.php",
     "test:referer-android-app": "php tests/referer-android-app-storage-test.php",
     "test:referer-searchterms-encoding": "php tests/referer-searchterms-encoding-test.php",
+    "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:php74-compat": "php tests/php74-no-php80-functions-test.php",
     "test:implicit-nullable": "php tests/php-implicit-nullable-test.php",
     "test:ci-matrix-coverage": "php tests/ci-matrix-coverage-test.php",
@@ -152,6 +153,7 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "@test:source-scan-strength",
       "@test:php74-compat",
       "@test:implicit-nullable",
       "@test:ci-matrix-coverage",

@@ -104,8 +104,11 @@ if ($needs === '') {
 // Whatever caches the answer must be dropped when the answer can change, or the UI
 // reports the state from before the repair ran.
 foreach (['runAll', 'dismissNotice', 'resetDismissal'] as $method) {
+    // No `$body !== '' &&` guard: absence now throws rather than yielding '', so the
+    // condition it used to carry is unreachable, and skipping a missing method silently
+    // was how this assertion could have gone vacuous.
     $body = slimstat_function_body($manager, $method);
-    if ($body !== '' && !preg_match('/forgetProbe/', $body)) {
+    if (!preg_match('/forgetProbe/', $body)) {
         $failures[] = "{$method}() changes whether a migration is needed but does not "
             . 'invalidate the cached answer, so the notice and the Migration page keep '
             . 'reporting the previous state';
