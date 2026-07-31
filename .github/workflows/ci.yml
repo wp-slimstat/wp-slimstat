@@ -103,6 +103,23 @@ jobs:
         # and implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0).
         run: composer test:source-level
 
+      - name: Mutation registry
+        # Proves the gates can actually FAIL. Writing an assertion is not the work;
+        # proving it fails is — every recorded instance of the name-not-construct hazard
+        # was caught by mutation and none by the suite going green.
+        #
+        # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
+        # this runs here rather than living in composer.json unreferenced.
+        #
+        # The full registry is ~0.3s today. When it outgrows a PR lane, narrow it to the
+        # mutations whose target moved — passing the ref through env: rather than
+        # interpolating it into the run: line, and note this needs fetch-depth: 0:
+        #
+        #     env:
+        #       BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        #     run: composer test:mutations -- "--changed=$BASE_SHA"
+        run: composer test:mutations
+
 ##############################################################################
 # PHPStan — static analysis (baseline-gated), every push / PR
 ##############################################################################

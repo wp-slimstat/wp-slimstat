@@ -90,6 +90,8 @@
     "test:referer-android-app": "php tests/referer-android-app-storage-test.php",
     "test:referer-searchterms-encoding": "php tests/referer-searchterms-encoding-test.php",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
+    "test:mutation-registry": "php tests/mutation-registry-test.php",
+    "test:mutations": "php tests/verify/bin/run-mutations.php",
     "test:php74-compat": "php tests/php74-no-php80-functions-test.php",
     "test:implicit-nullable": "php tests/php-implicit-nullable-test.php",
     "test:ci-matrix-coverage": "php tests/ci-matrix-coverage-test.php",
@@ -154,6 +156,7 @@
     "test:phpstan": "@phpstan",
     "test:source-level": [
       "@test:source-scan-strength",
+      "@test:mutation-registry",
       "@test:php74-compat",
       "@test:implicit-nullable",
       "@test:ci-matrix-coverage",
