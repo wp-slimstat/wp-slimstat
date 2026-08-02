@@ -350,8 +350,18 @@ if (method_exists($schema, 'indexes')) {
 // had stopped checking — PITFALLS entry 19, inside the seam that added entry 19.
 $uninstall = slimstat_blank_comments((string) file_get_contents($plugin_root . '/uninstall.php'), false);
 
-if (preg_match_all('/[\'"](slim_[a-z0-9_]+)[\'"]/', $uninstall, $named)) {
-    $failures[] = 'uninstall.php names ' . implode(', ', array_unique($named[1])) . ' directly. '
+// Matched ANYWHERE, not as a wholly-quoted string. The second attempt at this assertion
+// required the name to sit between quotes — and a registered mutation restoring the real defect
+// SURVIVED it, because the actual shape embeds the name in a SQL fragment
+// (`'DROP TABLE IF EXISTS %sslim_stats'`), where the character before it is `s`, not a quote.
+// Two rewrites of one assertion, both of which read correctly and neither of which could fire.
+// The mutation is the only reason either was found.
+//
+// Safe as a bare substring search: every identifier in this file is `slimstat_`-prefixed
+// (`$slimstat_table`, `SlimStat\Schema\Schema`, `_transient_slimstat_goal_`), none of which
+// contains `slim_` — verified to return zero matches on the reconciled file.
+if (preg_match_all('/slim_[a-z0-9_]+/', $uninstall, $named)) {
+    $failures[] = 'uninstall.php names ' . implode(', ', array_unique($named[0])) . ' directly. '
         . 'Every table it drops must come from the manifest — live tables from Schema::tables(), '
         . 'retired ones from Schema::legacyTables() — or the next table added is the one nobody '
         . 'removes, on the code path where nobody looks afterwards';
