@@ -662,7 +662,12 @@ class wp_slimstat
         }
 
         $stored[$step] = ['message' => $message, 'time' => $now];
-        update_option(self::DEGRADATION_OPTION, $stored);
+        // autoload=false, and it is not cosmetic (C34). Without the third argument this
+        // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
+        // the sites already unhealthy enough to be recording degradations. It is read only
+        // by get_degradations(), which runs on admin screens. H2's own governance gate
+        // fails a new autoloaded option; this was one, introduced by the D1 fix.
+        update_option(self::DEGRADATION_OPTION, $stored, false);
     }
 
     /**
@@ -706,7 +711,10 @@ class wp_slimstat
         }
 
         if ($remaining) {
-            update_option(self::DEGRADATION_OPTION, $remaining);
+            // autoload=false here too. Two writers, and a single un-flagged one is enough:
+            // WordPress takes the autoload value from whichever write happened last, so
+            // fixing only the recorder would have left this pruning path silently undoing it.
+            update_option(self::DEGRADATION_OPTION, $remaining, false);
         } else {
             delete_option(self::DEGRADATION_OPTION);
         }

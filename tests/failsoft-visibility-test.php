@@ -162,6 +162,35 @@ contract_assert(
     'show_degradation_notice() must escape the recorded message — it is attacker-influenceable text'
 );
 
+// ── C34: the degradation option must never autoload ─────────────────────────
+// update_option() with no third argument puts the value in `alloptions`, fetched on EVERY
+// request — on precisely the sites already unhealthy enough to be recording degradations.
+// It is read only by get_degradations(), which runs on admin screens, and H2's own
+// governance gate fails a new autoloaded option.
+//
+// Counted across ALL writers rather than checked at one: WordPress takes the autoload value
+// from whichever write happened last, so a single un-flagged writer silently undoes every
+// flagged one. There were two, and only one was found by reading.
+$main_src   = slimstat_strip_comments_and_strings((string) file_get_contents($plugin_root . '/wp-slimstat.php'));
+$deg_writes = preg_match_all('/update_option\s*\(\s*self::DEGRADATION_OPTION\b/', $main_src);
+$deg_safe   = preg_match_all('/update_option\s*\(\s*self::DEGRADATION_OPTION\s*,[^;]*?,\s*false\s*\)/', $main_src);
+$assertions++;
+
+if ($deg_writes !== $deg_safe) {
+    $failures[] = sprintf(
+        '%d of %d writer(s) of the degradation option pass autoload=false. Every writer must: '
+        . 'WordPress takes the flag from the last write, so one un-flagged call puts the '
+        . 'option back into alloptions on every request',
+        $deg_safe,
+        $deg_writes
+    );
+}
+
+if (0 === $deg_writes) {
+    $failures[] = 'no writers of the degradation option were found — the scan is broken, not '
+        . 'the tree, and a zero here would read as "all safe"';
+}
+
 if ($failures) {
     fwrite(STDERR, "FAIL: fail-soft visibility contract violated:\n");
     foreach ($failures as $f) {
