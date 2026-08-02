@@ -6,11 +6,11 @@ rationale: D24/D25 requires that every DDL recovery from the tracking path goes 
 ---
 --- a/src/Tracker/Processor.php
 +++ b/src/Tracker/Processor.php
-@@ -755,6 +755,7 @@ class Processor
-         $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
- 
-         if (false === $stat['id']) {
-+            \wp_slimstat_admin::init_environment();
-             if (self::repairSchemaOnce()) {
-                 $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+@@ -752,6 +752,7 @@ class Processor
              }
+         }
+ 
++        \wp_slimstat_admin::init_environment();
+         $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+ 
+         // The error is passed rather than re-read from $wpdb->last_error: insertRow() can
