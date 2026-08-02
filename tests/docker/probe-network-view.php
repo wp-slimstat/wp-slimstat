@@ -72,12 +72,52 @@ foreach (get_sites([
     restore_current_blog();
 }
 
+// D22: which report paths reach the addon, and which do not.
+//
+// reports.php computes a "top" row's share as `100 * counthits / wp_slimstat_db::$pageviews`.
+// BOTH sides currently bypass the Network View: `count_records()` (the denominator) and
+// `get_top()` (the numerator) each build a Query, and src/Utils/Query.php applies no filters at
+// all. So the ratio is main-site-over-main-site — wrong as a *network* figure, but internally
+// consistent, which is why no percentage exceeds 100% today.
+//
+// Reported as two separate numbers, never as a single "safe" boolean. The first version of this
+// asserted `denominator >= total`, which is satisfied by the mixed-scope state AND by the
+// correct one — it could not have told them apart, which is PITFALLS 21/22 inside the seam that
+// wrote them. What matters is whether the two sides AGREE on scope, so that is what it prints.
+$denominator = null;
+
+// wp_slimstat_db lives in admin/view/ and is loaded only on admin screens, so it is required
+// explicitly here — a `class_exists` that quietly answers false would report `null` and read as
+// "not measured" rather than as the defect.
+$db_file = WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php';
+if (!class_exists('wp_slimstat_db') && is_readable($db_file)) {
+    require_once $db_file;
+}
+
+if (class_exists('wp_slimstat_db')) {
+    if (method_exists('wp_slimstat_db', 'init')) {
+        wp_slimstat_db::init();
+    }
+
+    // Date filters OFF. The fixture is dated January 2026 and the container's clock is not, so
+    // the default range excludes every row and count_records() answers 0 — which would read as
+    // "the denominator is main-site-only" for an entirely unrelated reason. What is being
+    // measured here is TABLE SCOPE, so the time axis has to be taken out of it.
+    $denominator = (int) wp_slimstat_db::count_records('id', '', false);
+}
+
 $result = [
     'filter_applied'      => $applied,
     'network_view_total'  => $total,
     'golden_expected'     => $expected,
     'raw_sum_of_counted'  => $truth,
     'agrees'              => ($total === $expected),
+    // D22 probe. `count_records` is reports.php's denominator; `network_view_total` is what the
+    // filtered path returns. They are EXPECTED to differ while D22 is open — the denominator is
+    // main-site, and so is the get_top() numerator it divides. `d22_open` is true whenever the
+    // filtered and unfiltered paths disagree, which is the state to be closed, not a failure.
+    'count_records'       => $denominator,
+    'd22_open'            => (null !== $denominator && null !== $total && $denominator !== $total),
 ];
 
 WP_CLI::log('NETWORK-VIEW-PROBE ' . json_encode($result));

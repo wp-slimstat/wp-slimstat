@@ -1068,6 +1068,28 @@ class wp_slimstat_db
         }
 
         $query->allowCaching(true);
+
+        // DELIBERATELY NOT network-scoped. This is the denominator in
+        // `100 * counthits / wp_slimstat_db::$pageviews` (reports.php:1586), and it stays on the
+        // main site because the NUMERATOR does.
+        //
+        // An earlier attempt at F9 routed this through `slimstat_get_var_sql` so Pro's Network
+        // View would UNION every subsite into it. Measured on the golden fixture, that made
+        // every "top" report WORSE: `get_top()` builds a Query and calls `getAll()`, and
+        // src/Utils/Query.php applies no filters at all — so the numerator was still main-site
+        // only. The denominator moved from 15 to 40 while the numerator stayed put, understating
+        // every row ~2.7x and turning a report whose rows summed to 100% into one summing to
+        // ~37%. There is no clamp in that direction: reports.php only guards `> 99`.
+        //
+        // The same trap sits three lines below in count_records_having(), which is the numerator
+        // for the bounce rate, the new-visitor rate and the seven duration buckets — all divided
+        // by this function. Scoping either one alone breaks the pair.
+        //
+        // Closing D22 means scoping where the SQL is BUILT — one helper that get_top(),
+        // get_recent(), get_group_by(), get_top_aggr(), count_records() and
+        // count_records_having() all route through, so numerator and denominator move together.
+        // That is its own seam. Until then this is consistent, and consistent-and-main-site
+        // beats a mixed-scope ratio that renders silently wrong.
         return intval($query->getVar());
     }
 
