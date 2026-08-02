@@ -29,9 +29,14 @@ $plugin_root = dirname(__DIR__);
 $failures    = [];
 
 $js      = (string) file_get_contents($plugin_root . '/admin/assets/js/migration.js');
-$manager = slimstat_strip_comments_and_strings(
-    (string) file_get_contents($plugin_root . '/src/Migration/MigrationManager.php')
-);
+$managerRaw = (string) file_get_contents($plugin_root . '/src/Migration/MigrationManager.php');
+
+// Two views, deliberately. Construct checks use the stripped source so a name in prose cannot
+// satisfy them; the literal check below needs string CONTENTS, which stripping blanks — the
+// first draft asserted on 'yes' against stripped source and could never have fired. Comments
+// are blanked in both, so neither can match its own explanation.
+$manager    = slimstat_strip_comments_and_strings($managerRaw);
+$managerLit = slimstat_blank_comments($managerRaw);
 
 // ── S7: the failure branch must not claim success ───────────────────────────
 // Count how many times the JS declares the run finished successfully. There is exactly one
@@ -74,9 +79,10 @@ if (!preg_match('/\.fail\s*\(/', $js)) {
 }
 
 // ── S8: dismissal is keyed to the migration set, not to "yes" ───────────────
-$dismiss = slimstat_function_body($manager, 'dismissNotice');
+$dismiss    = slimstat_function_body($manager, 'dismissNotice');
+$dismissLit = slimstat_function_body($managerLit, 'dismissNotice');
 
-if (preg_match('/[\'"]yes[\'"]/', $dismiss)) {
+if (preg_match('/[\'"]yes[\'"]/', $dismissLit)) {
     $failures[] = 'dismissNotice() still stores the literal "yes". needsMigration() '
         . 'short-circuits on that flag, so any migration added in v6.1 never announces itself '
         . 'on a site that completed v6.0\'s — the forward-compatibility hole in the exact '
