@@ -1,7 +1,7 @@
 target:    src/Tracker/Processor.php
 gate:      php tests/write-terminal-gate-test.php
 kind:      guard-removal
-expect:    process() still tests `false === $stat
+expect:    process() no longer asks whether a row was actually INSERTED
 rationale: Restores the C30 hole by asking isFailed() instead of !isStored(). "Not failed" is not "stored": an INSERT IGNORE that matched an existing row, or a row an FK refused, errors nowhere and stores nothing — which is exactly the 0 that used to propagate as $stat['id'] = 0 and take the FK-constrained event insert down with it.
 ---
 --- a/src/Tracker/Processor.php
