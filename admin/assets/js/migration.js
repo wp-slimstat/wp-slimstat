@@ -70,22 +70,49 @@
         var elapsedTimer = setInterval(function () {
             updateMetrics(done, total, startTs);
         }, 1000);
+        // Both migration requests: same endpoint, same nonce, same budget. The per-step call
+        // is the one that matters — MigrationManager::runOne() is where the ALGORITHM=COPY
+        // rebuild happens, so it is the request that meets a proxy's 504, not the final sweep.
+        function postMigration(extra) {
+            return $.ajax({
+                url: SlimstatMigration.ajaxUrl,
+                type: "POST",
+                data: $.extend({ action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce }, extra || {}),
+                // Without a timeout the request never settles and the spinner reads as
+                // "still working" forever. 15 minutes is a rebuild budget, not a guess.
+                timeout: 15 * 60 * 1000
+            });
+        }
+
+        function transportMessage(xhr, textStatus) {
+            if ("timeout" === textStatus) {
+                return SlimstatMigration.labels.timedOut;
+            }
+            return SlimstatMigration.labels.requestFailed + " (" + ((xhr && xhr.status) || textStatus) + ")";
+        }
+
+        // One exit for "the run is over". Badge, text and button state are decided here and
+        // nowhere else — two hand-written copies is how the else branch came to claim success.
+        function finishRun(state, message) {
+            updateStatus(message);
+            $("#slimstat-back-dashboard").show();
+            $("#slimstat-start-migration").toggle("error" === state);
+            $(".spinner").removeClass("is-active");
+            setStatusBadge(state);
+            setStatusText("error" === state ? "failed" : "done");
+            updateMetrics(done, total, startTs);
+            clearInterval(elapsedTimer);
+        }
+
         function next() {
             if (i >= total) {
                 // All individual steps completed, now run the final migration
-                $.post(SlimstatMigration.ajaxUrl, { action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce }, function (resp) {
+                postMigration().done(function (resp) {
                     var success = !!(resp && resp.success);
                     var data = resp && resp.data;
 
                     if (success && data && data.all_complete) {
-                        updateStatus(data.message || SlimstatMigration.labels.allFinished);
-                        $("#slimstat-back-dashboard").show();
-                        $("#slimstat-start-migration").hide();
-                        $(".spinner").removeClass("is-active");
-                        setStatusBadge("success");
-                        setStatusText("done");
-                        updateMetrics(done, total, startTs);
-                        clearInterval(elapsedTimer);
+                        finishRun("success", data.message || SlimstatMigration.labels.allFinished);
 
                         // Show completion message and redirect after a delay
                         setTimeout(function () {
@@ -93,22 +120,18 @@
                             window.location.href = $("#slimstat-back-dashboard").attr("href") || "admin.php?page=" + ((wp_slimstat_admin && wp_slimstat_admin.main_menu_slug) || "slimview1");
                         }, 2000);
                     } else {
-                        updateStatus(SlimstatMigration.labels.allFinished);
-                        $("#slimstat-back-dashboard").show();
-                        $("#slimstat-start-migration").hide();
-                        $(".spinner").removeClass("is-active");
-                        setStatusBadge("success");
-                        setStatusText("done");
-                        updateMetrics(done, total, startTs);
-                        clearInterval(elapsedTimer);
+                        // Reached exactly when the run did not complete.
+                        finishRun("error", (data && data.message) || SlimstatMigration.labels.notComplete);
                     }
+                }).fail(function (xhr, textStatus) {
+                    finishRun("error", transportMessage(xhr, textStatus));
                 });
                 return;
             }
             var step = steps[i];
             var $row = $("#slimstat-step-" + step.id + " .status");
             $row.html('<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + '</span> <span class="spinner is-active"></span>');
-            $.post(SlimstatMigration.ajaxUrl, { action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce, migration: step.id }, function (resp) {
+            postMigration({ migration: step.id }).done(function (resp) {
                 var ok = !!(resp && resp.success);
                 $row.html(ok ? '<span style="color:green;">' + SlimstatMigration.labels.done + "</span>" : '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
                 done += ok ? 1 : 0;
@@ -124,6 +147,13 @@
                 }
                 i++;
                 next();
+            }).fail(function (xhr, textStatus) {
+                $row.html('<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>");
+                // Deliberately does NOT call next(). A transport failure means this step's
+                // outcome is unknown — it may still be running server-side — and starting the
+                // next rebuild concurrently with one that may be alive is the exact contention
+                // the single-flight claim exists to prevent.
+                finishRun("error", transportMessage(xhr, textStatus));
             });
         }
         next();

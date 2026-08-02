@@ -90,6 +90,16 @@ class MigrationAdmin
 				'done' => __('Done', 'wp-slimstat'),
 				'failed' => __('Failed', 'wp-slimstat'),
 				'allFinished' => __('All migrations finished.', 'wp-slimstat'),
+				// S7 error paths. Hardcoding these in migration.js would have been an i18n
+				// regression in a file where every other string is translated.
+				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
+				'timedOut' => __('The migration request timed out. It may still be running on the server — reload this page before starting again.', 'wp-slimstat'),
+				'requestFailed' => __('The migration request failed. Nothing further has been run.', 'wp-slimstat'),
+				// Read by migration.js since it was written and never supplied here, so every
+				// locale has silently fallen back to the English baked into the JS.
+				'idle' => __('Idle', 'wp-slimstat'),
+				'runningShort' => __('Running', 'wp-slimstat'),
+				'failedHelp' => __('A step failed. Please check the logs and retry.', 'wp-slimstat'),
 			],
 		]);
 		wp_enqueue_script('slimstat-migration');

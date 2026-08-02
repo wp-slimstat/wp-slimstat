@@ -90,7 +90,13 @@ class MigrationManager
             return $this->needsMemo;
         }
 
-        if ('yes' === get_option(self::OPTION_DISMISSED)) {
+        // S8 — dismissal is keyed to the SET that was dismissed, not to the literal 'yes'.
+        // needsMigration() short-circuits here, so a bare flag meant any migration added in
+        // v6.1 never announced itself on a site that completed v6.0's — a
+        // forward-compatibility hole in the exact mechanism the star-schema programme rides
+        // on. A changed set produces a different fingerprint and re-arms the notice by
+        // construction, with no upgrade step to remember.
+        if ($this->migrationSetFingerprint() === get_option(self::OPTION_DISMISSED)) {
             return $this->needsMemo = false;
         }
 
@@ -136,9 +142,29 @@ class MigrationManager
         delete_transient(self::TRANSIENT_PROBE);
     }
 
+    /**
+     * Fingerprint of the registered migration set.
+     *
+     * Built from getId(), never getName(): the latter is __()-wrapped, so keying on it would
+     * make a site-language change look like a new set and re-announce every migration (C34
+     * records the same defect in the per-migration checkpoints). Sorted so registration
+     * order cannot change the answer.
+     */
+    private function migrationSetFingerprint(): string
+    {
+        $ids = [];
+        foreach ($this->migrations as $migration) {
+            $ids[] = $migration->getId();
+        }
+
+        sort($ids);
+
+        return md5(implode('|', $ids));
+    }
+
     public function dismissNotice(): void
     {
-        update_option(self::OPTION_DISMISSED, 'yes', false);
+        update_option(self::OPTION_DISMISSED, $this->migrationSetFingerprint(), false);
         $this->forgetProbe();
     }
 
@@ -215,7 +241,7 @@ class MigrationManager
             $ok = $target->run();
 
             $status = $this->getStatus();
-            $status[$target->getName()] = $ok;
+            $status[$target->getId()] = $ok;
             update_option(self::OPTION_STATUS, $status, false);
 
             $this->forgetProbe();
@@ -246,7 +272,7 @@ class MigrationManager
             foreach ($this->migrations as $migration) {
                 // Only run if needed, but always record status
                 $ok = !$migration->shouldRun() || $migration->run();
-                $results[$migration->getName()] = $ok;
+                $results[$migration->getId()] = $ok;
             }
         } finally {
             // Released on every path a `finally` can see. A crash skips it, which is what
