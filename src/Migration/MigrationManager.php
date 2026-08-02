@@ -3,10 +3,26 @@ declare(strict_types=1);
 
 namespace SlimStat\Migration;
 
+use SlimStat\Utils\OptionClaim;
 
 class MigrationManager
 {
     private const OPTION_STATUS = 'slimstat_migration_status';
+
+    /**
+     * Single-flight claim for runAll(). Not autoloaded: it is written on the admin path,
+     * lives for the duration of one run, and joining `alloptions` for that would invalidate
+     * the blob for every request on the site.
+     */
+    private const OPTION_RUN_CLAIM = 'slimstat_migration_run_claim';
+
+    /**
+     * Seconds after which a run claim is treated as abandoned.
+     *
+     * Longer than any single request's budget on purpose — taking over a claim whose holder
+     * is still running is how you get the concurrent rebuilds the claim prevents.
+     */
+    private const RUN_CLAIM_STALE_AFTER = 900;
 
     private const OPTION_DISMISSED = 'slimstat_migration_dismissed';
 
@@ -63,6 +79,13 @@ class MigrationManager
      */
     public function needsMigration(): bool
     {
+        // Before the memo and the transient, deliberately. Consulted after them, a 12 h
+        // cached "dirty" would outlive the switch being thrown and the notice would keep
+        // offering a button that must not be pressed.
+        if (MigrationService::migrationsDisabled()) {
+            return false;
+        }
+
         if (null !== $this->needsMemo) {
             return $this->needsMemo;
         }
@@ -131,13 +154,104 @@ class MigrationManager
         return is_array($status) ? $status : [];
     }
 
+    /**
+     * Run one migration by id, under the same single-flight claim as runAll().
+     *
+     * This is the branch the concurrency hazard actually travels. migration.js posts
+     * `migration: <id>` once PER STEP, and only posts the bare action after every step has
+     * already run — so runAll() is the cheap final sweep, while THIS is where a
+     * user-triggered ALGORITHM=COPY rebuild happens. Adding the claim to runAll() alone
+     * protected the sweep and left the rebuild unserialised.
+     *
+     * Also keeps the status write and the probe invalidation with the run rather than in the
+     * admin layer, where the option name was a hardcoded duplicate of OPTION_STATUS and
+     * forgetProbe() was never called at all.
+     *
+     * @return bool|null null when there is no such migration, or the claim was lost.
+     */
+    /**
+     * Take the single-flight claim, or take over a stale one.
+     *
+     * `finally` is exception-safe, not crash-safe — it does not run on a fatal, an OOM,
+     * max_execution_time or a dropped connection, which are exactly how a multi-minute
+     * ALGORITHM=COPY rebuild dies. The claim row has no TTL, so without takeover a killed
+     * run wedges the runner permanently while the UI reports "success, nothing happened".
+     * claim_schema_lock() learned this already; this is the same shape.
+     */
+    private function claimRun(): bool
+    {
+        if (OptionClaim::insert(self::OPTION_RUN_CLAIM, (string) time(), 'no')) {
+            return true;
+        }
+
+        $held = (int) get_option(self::OPTION_RUN_CLAIM);
+
+        if ($held > 0 && (time() - $held) < self::RUN_CLAIM_STALE_AFTER) {
+            return false;
+        }
+
+        return OptionClaim::compareAndSwap(self::OPTION_RUN_CLAIM, (string) $held, (string) time(), 'no');
+    }
+
+    public function runOne(string $id): ?bool
+    {
+        if (MigrationService::migrationsDisabled() || !$this->claimRun()) {
+            return null;
+        }
+
+        try {
+            $target = null;
+            foreach ($this->migrations as $migration) {
+                if ($migration->getId() === $id) {
+                    $target = $migration;
+                    break;
+                }
+            }
+
+            if (null === $target) {
+                return null;
+            }
+
+            $ok = $target->run();
+
+            $status = $this->getStatus();
+            $status[$target->getName()] = $ok;
+            update_option(self::OPTION_STATUS, $status, false);
+
+            $this->forgetProbe();
+
+            return $ok;
+        } finally {
+            delete_option(self::OPTION_RUN_CLAIM);
+        }
+    }
+
     public function runAll(): array
     {
+        if (MigrationService::migrationsDisabled()) {
+            return [];
+        }
+
+        // X7 — single flight. manage_options is held by every subsite Administrator and the
+        // endpoint had no mutual exclusion, so N parallel POSTs gave N concurrent
+        // ALGORITHM=COPY rebuilds contending on the metadata lock, each holding a connection
+        // for lock_wait_timeout plus rebuild time. A losing caller is refused, not queued:
+        // waiting behind a multi-minute table rebuild is how a request becomes a timeout.
+        if (!$this->claimRun()) {
+            return [];
+        }
         $results = [];
-        foreach ($this->migrations as $migration) {
-            // Only run if needed, but always record status
-            $ok = !$migration->shouldRun() || $migration->run();
-            $results[$migration->getName()] = $ok;
+
+        try {
+            foreach ($this->migrations as $migration) {
+                // Only run if needed, but always record status
+                $ok = !$migration->shouldRun() || $migration->run();
+                $results[$migration->getName()] = $ok;
+            }
+        } finally {
+            // Released on every path a `finally` can see. A crash skips it, which is what
+            // the takeover above exists for.
+            delete_option(self::OPTION_RUN_CLAIM);
         }
 
         update_option(self::OPTION_STATUS, $results, false);

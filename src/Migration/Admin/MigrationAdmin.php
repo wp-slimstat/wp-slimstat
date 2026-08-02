@@ -225,29 +225,36 @@ class MigrationAdmin
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
 		}
 
+		// Defence in depth, not a live hole: when the switch is thrown MigrationService::init()
+		// returns before hooks() runs, so this action is never registered and the POST dies in
+		// core. Kept so the guarantee survives the manager being constructed from somewhere
+		// else — WP-CLI, or a service provider. Not translated: no user can reach it.
+		if (\SlimStat\Migration\MigrationService::migrationsDisabled()) {
+			wp_send_json_error('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.');
+		}
+
 		$only = isset($_POST['migration']) ? sanitize_key(wp_unslash($_POST['migration'])) : '';
 
         if ($only) {
-            $migration_to_run = null;
-            foreach ($this->manager->getMigrations() as $migration) {
-                if ($migration->getId() === $only) {
-                    $migration_to_run = $migration;
-                    break;
+            // Delegated so this path takes the SAME single-flight claim as runAll(), writes
+            // the same OPTION_STATUS constant instead of a hardcoded duplicate, and
+            // invalidates the probe — none of which it did while it called run() directly.
+            $ok = $this->manager->runOne($only);
+
+            if (null !== $ok) {
+                $name = $only;
+                foreach ($this->manager->getMigrations() as $migration) {
+                    if ($migration->getId() === $only) {
+                        $name = $migration->getName();
+                        break;
+                    }
                 }
-            }
-
-            if ($migration_to_run) {
-                $ok = $migration_to_run->run();
-
-                $status = $this->manager->getStatus();
-                $status[$migration_to_run->getName()] = $ok;
-                update_option('slimstat_migration_status', $status, false);
 
                 if ($ok) {
-                    wp_send_json_success([$migration_to_run->getName() => true]);
+                    wp_send_json_success([$name => true]);
                 }
 
-                wp_send_json_error([$migration_to_run->getName() => false]);
+                wp_send_json_error([$name => false]);
             }
         }
 

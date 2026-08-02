@@ -175,6 +175,11 @@ function slimstat_uninstall($_wpdb = '')
     delete_option('slimstat_notes_migration_cursor');
     delete_option('slimstat_schema_upgrade_lock');
     delete_option('slimstat_schema_repair_claim');
+// Migration runner state. Every option this plugin creates has to be removable — and the
+// run claim especially, since a stranded one is the single thing a user cannot clear from
+// the UI, making reinstall the only remedy that must actually work.
+delete_option('slimstat_migration_run_claim');
+delete_option('slimstat_migration_dismissed');
 
     // Goals & Funnels (5.5.0+): admin-configured records + cache-version key.
     delete_option('slimstat_goals');

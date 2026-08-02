@@ -3956,6 +3956,17 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
         }
+
+        // The kill switch reaches THIS path too, and that is not belt-and-braces.
+        // show_indexes_notice() suppresses itself whenever the modern runner is registered,
+        // so disabling the modern runner UN-SUPPRESSES this notice — and its Apply buttons
+        // land here, running CREATE INDEX on wp_slim_stats. An admin who set the constant to
+        // stop a runaway index build would have been handed an unguarded UI offering the same
+        // DDL, which is the outcome the switch exists to prevent.
+        if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
+            wp_send_json_error(__('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.', 'wp-slimstat'));
+        }
+
         $wpdb = wp_slimstat::$wpdb;
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
@@ -4044,6 +4055,13 @@ class wp_slimstat_admin
 		// every install while the new system was not wired up at all. Two repair paths,
 		// both dead, each because of the other. (D51)
 		if (has_action('wp_ajax_slimstat_run_migrations')) {
+			return;
+		}
+
+		// Offering no button beats refusing the click. Without this, throwing the kill switch
+		// makes the test above false and renders this notice — the legacy repair UI — in
+		// place of the guarded one.
+		if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
 			return;
 		}
 

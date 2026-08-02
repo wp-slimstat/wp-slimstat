@@ -50,10 +50,39 @@ class MigrationService
     }
 
     /**
+     * Is the migration kill switch thrown?
+     *
+     * `define('SLIMSTAT_DISABLE_MIGRATIONS', true)` in wp-config.php. wp.org has no staged
+     * rollout, no canary, no telemetry and no remote kill switch, so this is the ONLY abort
+     * mechanism that exists once a build is out.
+     *
+     * DELIBERATELY NOT FILTERABLE. A switch a plugin can turn back on is not a kill switch,
+     * and the situation in which this is thrown is one where something is already going
+     * wrong on that site.
+     *
+     * One implementation because there are four call sites. Four hand-rolled
+     * `defined() && CONSTANT` checks are four chances to spell it differently, and the
+     * failure mode is silent — the misspelled one simply never fires.
+     */
+    public static function migrationsDisabled(): bool
+    {
+        return defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS;
+    }
+
+    /**
      * Initializes the migration system, registers migrations, and hooks into WordPress.
      */
     public static function init(): void
     {
+        // Nothing is built at all: no manager, no registered migrations, no probe. The
+        // legacy DDL path in admin/index.php has honoured this constant for some time, and
+        // this framework did not — so an owner who set it had every reason to believe
+        // migrations were off while the runner proceeded. A switch that is documented and
+        // silently partial is worse than one that does not exist, because it is trusted.
+        if (self::migrationsDisabled()) {
+            return;
+        }
+
         add_action('init', function () {
             // Not redundant with the is_user_logged_in() gate at the call site: that is true
             // for any authenticated visitor on any FRONTEND page too. Without this, every
