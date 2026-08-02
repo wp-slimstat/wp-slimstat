@@ -94,6 +94,8 @@ if (!class_exists('wp_slimstat_db') && is_readable($db_file)) {
     require_once $db_file;
 }
 
+$numerator = null;
+
 if (class_exists('wp_slimstat_db')) {
     if (method_exists('wp_slimstat_db', 'init')) {
         wp_slimstat_db::init();
@@ -104,6 +106,21 @@ if (class_exists('wp_slimstat_db')) {
     // "the denominator is main-site-only" for an entirely unrelated reason. What is being
     // measured here is TABLE SCOPE, so the time axis has to be taken out of it.
     $denominator = (int) wp_slimstat_db::count_records('id', '', false);
+
+    // The NUMERATOR, from the same path reports.php uses for a "top" report. Summed over its
+    // rows so it is directly comparable to the denominator: on a correctly-scoped install the
+    // rows of a top-resources report account for every pageview, so the two must be equal.
+    //
+    // This is the assertion PITFALLS 23 says was missing. Measuring only the denominator could
+    // not tell "both main-site" (consistent, wrong scope) from "denominator alone moved"
+    // (inconsistent, silently wrong) — the two states differ only in the numerator.
+    $rows = wp_slimstat_db::get_top(['columns' => 'resource', 'use_date_filters' => false]);
+    if (is_array($rows)) {
+        $numerator = 0;
+        foreach ($rows as $row) {
+            $numerator += (int) (is_array($row) ? ($row['counthits'] ?? 0) : ($row->counthits ?? 0));
+        }
+    }
 }
 
 $result = [
@@ -112,12 +129,28 @@ $result = [
     'golden_expected'     => $expected,
     'raw_sum_of_counted'  => $truth,
     'agrees'              => ($total === $expected),
-    // D22 probe. `count_records` is reports.php's denominator; `network_view_total` is what the
-    // filtered path returns. They are EXPECTED to differ while D22 is open — the denominator is
-    // main-site, and so is the get_top() numerator it divides. `d22_open` is true whenever the
-    // filtered and unfiltered paths disagree, which is the state to be closed, not a failure.
-    'count_records'       => $denominator,
-    'd22_open'            => (null !== $denominator && null !== $total && $denominator !== $total),
+    // D22 probe — BOTH sides of reports.php's ratio, and the state they are in.
+    //
+    // `report_denominator` is count_records(); `report_numerator` is the summed counthits of a
+    // top-resources report. Three distinguishable states, which is the whole point:
+    //
+    //   consistent-main-site  num == den == main-site total   today: wrong scope, but every
+    //                                                         percentage is internally right
+    //   MIXED                 num != den                      silently wrong: rows understate or
+    //                                                         overstate, and reports.php clamps
+    //                                                         only the >99 direction
+    //   consistent-network    num == den == network total     the target
+    //
+    // The previous version reported only the denominator and a `denominator >= total` flag,
+    // which the mixed state and the correct state both satisfy. It could not have told them
+    // apart — PITFALLS 21/22/23.
+    'report_denominator'  => $denominator,
+    'report_numerator'    => $numerator,
+    'report_scope'        => (null === $numerator || null === $denominator)
+        ? 'unmeasured'
+        : ($numerator !== $denominator
+            ? 'MIXED'
+            : ($denominator === $total ? 'consistent-network' : 'consistent-main-site')),
 ];
 
 WP_CLI::log('NETWORK-VIEW-PROBE ' . json_encode($result));
