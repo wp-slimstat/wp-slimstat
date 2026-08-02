@@ -184,6 +184,26 @@ class Utils
 	}
 
 	/**
+	 * Record why a write stored nothing, for the admin diagnostic.
+	 *
+	 * The counterpart to clearErrorDetail(), so both ends of this option have one owner and
+	 * the same autoload flag.
+	 *
+	 * Writes only on CHANGE. When this fires it usually fires systemically — a user-added
+	 * unique index refuses every repeat hit — so an unconditional update_option() would be
+	 * a wp_options write and an alloptions invalidation on every anonymous pageview, which
+	 * is the exact cost the tracker budget exists to hold at zero.
+	 */
+	public static function recordErrorDetail(string $detail): void
+	{
+		$detail = \sanitize_text_field($detail);
+
+		if ($detail !== (string) \get_option('slimstat_tracker_error_detail', '')) {
+			\wp_slimstat::update_option('slimstat_tracker_error_detail', $detail, self::DIAGNOSTIC_AUTOLOAD);
+		}
+	}
+
+	/**
 	 * Resolve a tracker code to a human-readable label when translations are loaded.
 	 *
 	 * @param int|null $code Tracker error or warning code.

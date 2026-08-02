@@ -76,7 +76,11 @@ if ('' === $repair) {
             . 'throw here is a white screen for a visitor — and an unrecorded one';
     }
 
-    if (!preg_match('/last_error/', $repair)) {
+    // The error now arrives as a PARAMETER rather than being re-read from
+    // $wpdb->last_error: insertRow() may run a column probe and a retry after the failing
+    // statement, and each resets the global, so it no longer describes the write being
+    // classified. Assert the narrowing happens on that parameter.
+    if (!preg_match('/preg_match\s*\([^,]+,\s*\$error\s*\)/', $repair)) {
         $failures[] = 'the repair does not inspect the error text, so it fires on deadlocks, '
             . 'lock-wait timeouts and full disks — almost none of which is a missing table';
     }

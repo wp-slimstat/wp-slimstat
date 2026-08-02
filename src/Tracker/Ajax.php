@@ -437,7 +437,7 @@ class Ajax
                     }
                 }
 
-                $id = Storage::updateRow($stat);
+                $id = Storage::updateRow($stat)->id();
             } else {
                 // Security: Validate and sanitize event position (x,y coordinates)
                 $position = self::sanitizePosition($data_js['pos'] ?? '');
@@ -461,7 +461,21 @@ class Ajax
 
                 $shouldEventBeTracked = apply_filters('slimstat_track_event_enabled', true, $event_info);
                 if ($shouldEventBeTracked) {
-                    Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+                    // C30's sharpest edge lands here: slim_events carries a FOREIGN KEY onto
+                    // slim_stats, so a pageview id of 0 made this insert fail — and the
+                    // failure was discarded, so the event vanished with no trace anywhere.
+                    $eventWrite = Storage::insertRow($event_info, $GLOBALS['wpdb']->prefix . 'slim_events');
+
+                    // NOT isFailed(): under INSERT IGNORE an FK refusal is downgraded to a
+                    // warning — rows_affected 0, last_error empty — so it arrives as IGNORED,
+                    // not FAILED. Asking "did it fail" would have missed the exact case this
+                    // guard exists for, which is a pageview id that no longer references a row.
+                    if (!$eventWrite->isStored()) {
+                        \wp_slimstat::record_degradation(
+                            'event insert stored no row',
+                            $eventWrite->error() ?: 'no matching pageview (foreign key)'
+                        );
+                    }
                 }
 
                 if (!empty($data_js['res'])) {
@@ -496,14 +510,14 @@ class Ajax
 
                         // Update stat before storage
                         \wp_slimstat::set_stat($stat);
-                        $id = Storage::updateRow($stat);
+                        $id = Storage::updateRow($stat)->id();
                     }
                 } else {
                     $stat['dt_out'] = \wp_slimstat::date_i18n('U');
 
                     // Update stat before storage
                     \wp_slimstat::set_stat($stat);
-                    $id = Storage::updateRow($stat);
+                    $id = Storage::updateRow($stat)->id();
                 }
             }
         } else {

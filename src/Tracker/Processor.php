@@ -752,21 +752,30 @@ class Processor
             }
         }
 
-        $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+        $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
-        if (false === $stat['id']) {
-            if (self::repairSchemaOnce()) {
-                $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
-            }
-
-            if (false === $stat['id']) {
-                Query::setProcessingTimestamp(null);
-                // Store DB error detail for admin diagnostics
-                $dbError = (string) $GLOBALS['wpdb']->last_error;
-                \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
-                return Utils::logError(200);
-            }
+        // The error is passed rather than re-read from $wpdb->last_error: insertRow() can
+        // run a column probe and a retry after the failing statement, each of which resets
+        // it, so the global no longer describes the write being classified.
+        if ($write->isFailed() && self::repairSchemaOnce($write->error())) {
+            $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
         }
+
+        // One exit for "nothing was stored". isFailed() is a strict subset of !isStored():
+        // an INSERT IGNORE that matched an existing row, or a row an FK refused, stored
+        // nothing without erroring — and that used to be a `0` that passed `false === $id`
+        // and propagated as $stat['id'] = 0, whose event insert then violated the FK and
+        // was silently dropped. One lost pageview beats a lost pageview plus a lost event
+        // plus a diagnostic saying everything is fine.
+        if (!$write->isStored()) {
+            Query::setProcessingTimestamp(null);
+            Utils::recordErrorDetail($write->isFailed()
+                ? $write->error()
+                : 'insert stored no row (duplicate or constraint) — not a database error');
+            return Utils::logError(200);
+        }
+
+        $stat['id'] = $write->id();
 
         // Clear stale DB error detail on successful insert.
         Utils::clearErrorDetail();
@@ -853,9 +862,9 @@ class Processor
      *
      * @return bool Whether the schema was rebuilt and a retry is worth attempting.
      */
-    private static function repairSchemaOnce()
+    private static function repairSchemaOnce($error = '')
     {
-        $error = (string) $GLOBALS['wpdb']->last_error;
+        $error = (string) $error;
 
         // MySQL 1146 / MariaDB: "Table 'db.wp_slim_stats' doesn't exist". Matched on the
         // text because wpdb exposes no error code, and on both spellings because the

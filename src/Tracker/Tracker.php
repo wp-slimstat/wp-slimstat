@@ -38,21 +38,24 @@ class Tracker
         return Processor::updateContentType($_status, $_location);
     }
 
-	public static function _insert_row($_data = [], $_table = '')
-	{
-		if (empty($_data) || empty($_table)) {
-			return -1;
-		}
+    /**
+     * BC shims. These carried FULL COPIES of the pre-fix write path — the same
+     * `insert_id ?: $result` conflation as C30, the same discarded `$query->execute()`
+     * as C31, and _update_row() additionally lacked the CVE-2026-7634 sanitization that
+     * Storage::updateRow() gained. A duplicate of a defect is a defect, and it survives
+     * every fix applied to the original.
+     *
+     * They keep their int contract for anything outside the tree; callers that need to
+     * know WHAT happened use Storage directly and read the WriteResult.
+     */
+    public static function _insert_row($_data = [], $_table = '')
+    {
+        if (empty($_data) || empty($_table)) {
+            return -1;
+        }
 
-		foreach ($_data as $key => $value) {
-			$_data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
-		}
-
-		return Query::insert($_table)
-			->ignore()
-			->values($_data)
-			->execute();
-	}
+        return Storage::insertRow($_data, $_table)->id();
+    }
 
     public static function _update_row($_data = [])
     {
@@ -60,27 +63,7 @@ class Tracker
             return false;
         }
 
-        $id = abs(intval($_data['id']));
-        unset($_data['id']);
-
-        $_data = array_filter($_data);
-
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $query = Query::update($table)->ignore()->where('id', '=', $id);
-
-        if (!empty($_data['notes']) && is_array($_data['notes'])) {
-            $notes_to_append = '[' . implode('][', $_data['notes']) . ']';
-            $query->setRaw('notes', "CONCAT(IFNULL(notes, ''), %s)", [$notes_to_append]);
-            unset($_data['notes']);
-        }
-
-        if ($_data !== []) {
-            $query->set($_data);
-        }
-
-        $query->execute();
-
-        return $id;
+        return Storage::updateRow($_data)->id();
     }
 
     public static function _set_visit_id($_force_assign = false)

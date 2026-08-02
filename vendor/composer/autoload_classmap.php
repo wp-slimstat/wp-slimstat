@@ -545,6 +545,7 @@ return array(
     'SlimStat\\Tracker\\Tracker' => $baseDir . '/src/Tracker/Tracker.php',
     'SlimStat\\Tracker\\Utils' => $baseDir . '/src/Tracker/Utils.php',
     'SlimStat\\Tracker\\VisitIdGenerator' => $baseDir . '/src/Tracker/VisitIdGenerator.php',
+    'SlimStat\\Tracker\\WriteResult' => $baseDir . '/src/Tracker/WriteResult.php',
     'SlimStat\\Utils\\Consent' => $baseDir . '/src/Utils/Consent.php',
     'SlimStat\\Utils\\OptionClaim' => $baseDir . '/src/Utils/OptionClaim.php',
     'SlimStat\\Utils\\PurgeArchive' => $baseDir . '/src/Utils/PurgeArchive.php',
