@@ -176,9 +176,12 @@ if (preg_match('/<=>/', $purge)) {
 // the purge goes on deleting the live rows. Compare against the CREATE TABLE the installer
 // actually issues, which is the only in-repo statement of the real shape.
 // Read as source, not via the autoloader: these scans run on PHP-only CI lanes with no
-// WordPress and no vendor tree, and PurgeArchive.php exits unless ABSPATH is defined.
-$installer   = file_get_contents($plugin_root . '/admin/index.php');
-$archiveSrc  = file_get_contents($plugin_root . '/src/Utils/PurgeArchive.php');
+// WordPress and no vendor tree, and PurgeArchive.php exits unless ABSPATH is defined. Schema.php
+// is the exception — it is deliberately dependency-free, so the column list can be READ rather
+// than recovered with a regex over interpolated SQL, which is what this did while the DDL lived
+// in admin/index.php.
+$archiveSrc = file_get_contents($plugin_root . '/src/Utils/PurgeArchive.php');
+require_once $plugin_root . '/src/Schema/Schema.php';
 
 $constColumns = static function (string $name) use ($archiveSrc): array {
     if ($archiveSrc === false || !preg_match('/const\s+' . $name . '\s*=\s*\[(.*?)\];/s', $archiveSrc, $m)) {
@@ -188,26 +191,20 @@ $constColumns = static function (string $name) use ($archiveSrc): array {
     return $cols[1];
 };
 
-$schemaColumns = static function (string $sql): array {
-    // Column definitions only: "name TYPE ...", stopping at the keys and constraints.
-    preg_match_all('/^\s*([a-z_]+)\s+(?:INT|BIGINT|SMALLINT|TINYINT|VARCHAR|CHAR|TEXT|DATETIME)\b/im', $sql, $m);
-    return $m[1];
-};
-
 $schemaTargets = [
-    ['/\$stats_table_sql\s*=\s*"(.*?)";/s', 'STATS_COLUMNS', 'slim_stats'],
-    ['/\$events_table_sql\s*=\s*"(.*?)";/s', 'EVENT_COLUMNS', 'slim_events'],
+    ['STATS_COLUMNS', 'slim_stats'],
+    ['EVENT_COLUMNS', 'slim_events'],
 ];
 
-foreach ($schemaTargets as [$pattern, $constant, $table]) {
-    if ($installer === false || !preg_match($pattern, $installer, $sql)) {
-        $failures[] = "could not find the {$table} CREATE TABLE in admin/index.php — "
-            . 're-anchor this assertion rather than deleting it';
+foreach ($schemaTargets as [$constant, $table]) {
+    $inSchema = array_keys(SlimStat\Schema\Schema::columns($table));
+    $declared = $constColumns($constant);
+
+    if ($inSchema === []) {
+        $failures[] = "the manifest declares no columns for {$table} — re-anchor this assertion "
+            . 'rather than deleting it';
         continue;
     }
-
-    $inSchema = $schemaColumns($sql[1]);
-    $declared = $constColumns($constant);
 
     if ($declared === []) {
         $failures[] = "PurgeArchive::{$constant} not found in src/Utils/PurgeArchive.php";

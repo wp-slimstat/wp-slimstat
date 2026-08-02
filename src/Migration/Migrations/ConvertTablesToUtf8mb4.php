@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SlimStat\Migration\Migrations;
 
 use SlimStat\Migration\AbstractMigration;
+use SlimStat\Schema\Schema;
 
 /**
  * Convert the analytics tables from utf8mb3 to utf8mb4.
@@ -46,16 +47,20 @@ use SlimStat\Migration\AbstractMigration;
  * That is why this ships as a migration behind an explicit click rather than an upgrade
  * hook: the site owner chooses when to take the write pause.
  *
+ * ── The table list and the target both come from Schema ────────────────────────────
+ *
+ * This class used to hold its own copy of each, which made it the arbiter of "what tables
+ * exist" for conversion while the installer was the arbiter for creation. A table added to one
+ * was converted by neither. Sharing `Schema::targetCollation()` is also what makes "created at"
+ * and "converted to" the same collation by construction rather than by two matching literals —
+ * and now that fresh installs are born at utf8mb4 (C11b), `shouldRun()` answers false on a site
+ * that has never recorded a pageview, where it used to advertise a 12-second rebuild of four
+ * empty tables (C41).
+ *
  * @since 5.6.0
  */
 class ConvertTablesToUtf8mb4 extends AbstractMigration
 {
-    /** Fallback when wp_users cannot be inspected. */
-    private const FALLBACK_COLLATION = 'utf8mb4_unicode_ci';
-
-    /** @var string[] */
-    private const TABLES = ['slim_stats', 'slim_events', 'slim_stats_archive', 'slim_events_archive'];
-
     /** @var bool|null */
     private $shouldRunCache;
 
@@ -96,23 +101,12 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
      */
     public function targetCollation(): string
     {
-        // Asked on the CORE connection. wp_users is a WordPress table: on an
-        // external-DB install it is not on the analytics server at all, so asking there
-        // returns null, silently selects FALLBACK_COLLATION, and converts the analytics
-        // tables to a collation that need not match the site's — which is
-        // ER_CANT_AGGREGATE_2COLLATIONS on the Pro user join, the exact fatal ADR-5
-        // exists to prevent. DATABASE() then correctly resolves to the core schema.
-        $collation = $this->coreWpdb->get_var($this->coreWpdb->prepare(
-            "SELECT COLLATION_NAME FROM information_schema.COLUMNS
-              WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = 'user_login'",
-            $this->coreWpdb->users
-        ));
-
-        if (!is_string($collation) || 0 !== strpos($collation, 'utf8mb4_')) {
-            return self::FALLBACK_COLLATION;
-        }
-
-        return $collation;
+        // Asked on the CORE connection, inside Schema. wp_users is a WordPress table: on an
+        // external-DB install it is not on the analytics server at all, so asking there returns
+        // null, silently selects the fallback, and converts the analytics tables to a collation
+        // that need not match the site's — which is ER_CANT_AGGREGATE_2COLLATIONS on the Pro
+        // user join, the exact fatal ADR-5 exists to prevent.
+        return Schema::targetCollation($this->coreWpdb);
     }
 
     /**
@@ -134,7 +128,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
 
         $states = [];
 
-        foreach (self::TABLES as $suffix) {
+        foreach (Schema::tables() as $suffix) {
             $table = $this->tablePrefix() . $suffix;
 
             $counts = $this->wpdb->get_row($this->wpdb->prepare(
@@ -223,7 +217,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         $collation   = $this->targetCollation();
         $diagnostics = [];
 
-        foreach (self::TABLES as $suffix) {
+        foreach (Schema::tables() as $suffix) {
             $table = $this->tablePrefix() . $suffix;
             $state = $states[$table] ?? ['total' => 0, 'stale' => 0];
 

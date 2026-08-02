@@ -1,0 +1,11 @@
+target:    src/Schema/Schema.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    Schema::engine() does not return InnoDB
+rationale: C42 as it actually shipped: `SHOW VARIABLES LIKE 'have_innodb'` was removed in MySQL 5.6.1, so the probe answered empty on every modern server and the ENGINE clause was dropped from all three CREATE TABLEs. The tables took the host default; on a MyISAM host the slim_events FOREIGN KEY is silently ignored, and Phase G's migration hard-refuses MyISAM — so v6 would refuse to migrate an install v6 itself created. This mutation reproduces the OUTCOME (a non-InnoDB engine) rather than the removed probe, because the outcome is what a user experiences and the probe is only one way to reach it.
+---
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -66,7 +66,7 @@
+-    public const ENGINE = 'InnoDB';
++    public const ENGINE = '';

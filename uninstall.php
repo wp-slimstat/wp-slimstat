@@ -5,6 +5,14 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
     exit;
 }
 
+// Required directly, not autoloaded. This file runs with the plugin unloaded and no Composer
+// autoloader — which is exactly why the drop list was hardcoded here in the first place, and why
+// Schema.php is deliberately dependency-free. `class_exists` first because WP-CLI's
+// `wp plugin uninstall` can reach this with the plugin still in memory.
+if (!class_exists('SlimStat\\Schema\\Schema')) {
+    require_once __DIR__ . '/src/Schema/Schema.php';
+}
+
 $slimstat_options = get_option('slimstat_options', []);
 
 // Delete COLLECTED ANALYTICS only when the user explicitly opted in (Settings →
@@ -52,9 +60,11 @@ if (!$slimstat_delete_data) {
     return;
 }
 
-$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_browsers', $GLOBALS[ 'wpdb' ]->base_prefix));
-$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_screenres', $GLOBALS[ 'wpdb' ]->base_prefix));
-$slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_content_info', $GLOBALS[ 'wpdb' ]->base_prefix));
+// Retired pre-5.0 dimension tables. Network-wide even on multisite, hence base_prefix, hence
+// outside the per-blog loop above.
+foreach (SlimStat\Schema\Schema::legacyTables('base_prefix') as $slimstat_legacy_table) {
+    $slimstat_wpdb->query(sprintf('DROP TABLE IF EXISTS %s%s', $GLOBALS['wpdb']->base_prefix, $slimstat_legacy_table));
+}
 
 /**
  * Clear every cron hook the plugin schedules, for the current site.
@@ -135,14 +145,23 @@ function slimstat_uninstall_artifacts($delete_data = false)
 
 function slimstat_uninstall($_wpdb = '')
 {
-    // Bye bye data...
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_outbound', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_events', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_events_archive', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_archive', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_3', $GLOBALS[ 'wpdb' ]->prefix));
-    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats_archive_3', $GLOBALS[ 'wpdb' ]->prefix));
+    // Bye bye data. The list comes from the manifest, in its declared FK-safe order (children
+    // before parents), so a table added in a later release cannot be the one nobody remembers to
+    // remove here — which is C16 exactly, and the reason this list needed four hand-edits to add
+    // one table.
+    // Live tables in the manifest's declared FK-safe order (children before parents), then the
+    // per-blog retired ones — `slim_outbound`, which predates 4.0, and the `_3` pair left by a
+    // 3.x-era per-blog naming scheme. Both lists come from Schema, so this file holds no table
+    // name of its own. It held three after the first pass at C16, in a second hardcoded loop
+    // the gate could not see, which is the whole defect reappearing at half size.
+    $slimstat_drop = array_merge(
+        SlimStat\Schema\Schema::tables(),
+        SlimStat\Schema\Schema::legacyTables('prefix')
+    );
+
+    foreach ($slimstat_drop as $slimstat_table) {
+        $_wpdb->query(sprintf('DROP TABLE IF EXISTS %s%s', $GLOBALS['wpdb']->prefix, $slimstat_table));
+    }
 
     // Bye bye options...
     delete_option('slimstat_options');

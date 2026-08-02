@@ -3,18 +3,44 @@ declare(strict_types=1);
 
 namespace SlimStat\Migration;
 
+use SlimStat\Schema\Schema;
 use wpdb;
 
 /**
  * Base helper for migrations that add a single database index.
+ *
+ * A subclass declares WHICH index it is responsible for — a key into the manifest — and nothing
+ * about its shape. Before this, each of the eight subclasses restated the index name, its column
+ * list and its table, which made them the sixth independent declaration of objects the installer
+ * and the upgrade path also declared. Two of those declarations disagreeing is not hypothetical:
+ * it is the mechanism behind C39, where a fresh install ended up with eleven secondary indexes on
+ * slim_stats and an upgraded one with thirteen.
  */
 abstract class AbstractIndexMigration extends AbstractMigration
 {
-    abstract protected function getIndexName(): string;
+    /** The manifest key for this index, `{prefix}` unresolved. */
+    abstract protected function getIndexKey(): string;
 
-    abstract protected function getIndexColumns(): array;
+    /** The manifest table suffix this index belongs to, e.g. `slim_stats`. */
+    abstract protected function getTableSuffix(): string;
 
-    abstract protected function getTableName(): string;
+    protected function getIndexName(): string
+    {
+        return Schema::resolve($this->getIndexKey(), $this->tablePrefix());
+    }
+
+    /**
+     * @return string[]
+     */
+    protected function getIndexColumns(): array
+    {
+        return array_map('trim', explode(',', Schema::indexes($this->getTableSuffix())[$this->getIndexKey()]));
+    }
+
+    protected function getTableName(): string
+    {
+        return $this->tablePrefix() . $this->getTableSuffix();
+    }
 
     public function getDescription(): string
     {

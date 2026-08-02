@@ -17,18 +17,13 @@ class CreateDtPlatformIndex extends AbstractIndexMigration
         return __('Create Platform Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_dt_platform';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['dt', 'platform'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->tablePrefix() . 'slim_stats';
+        return 'slim_stats';
     }
 }

@@ -53,11 +53,20 @@ function slimstat_committed_source(string $root, string $rel): string
     if (!function_exists('shell_exec')) {
         $bail('shell_exec is disabled');
     } else {
-        $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg('HEAD:' . $rel) . ' 2>/dev/null');
-        if (is_string($out) && '' !== $out) {
-            return $out;
+        // The INDEX first, then HEAD. This gate ran green immediately before the commit that
+        // shipped a classmap with 961 dev classes and zero SlimStat ones — because reading
+        // `HEAD:` validates the PREVIOUS commit, so the blob about to be committed was the one
+        // blob it never looked at. Locally the index is what is about to ship; in CI, with
+        // nothing staged, `git show :path` and `git show HEAD:path` are the same bytes, so this
+        // costs that lane nothing.
+        foreach ([':' . $rel, 'HEAD:' . $rel] as $rev) {
+            $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg($rev) . ' 2>/dev/null');
+            if (is_string($out) && '' !== $out) {
+                return $out;
+            }
         }
-        $bail('the git binary is unavailable, or the path is not committed');
+
+        $bail('the git binary is unavailable, or the path is neither staged nor committed');
     }
 
     $path = $root . '/' . $rel;
@@ -249,6 +258,44 @@ if (strpos($real_src, '$filesToLoad') !== false || strpos($real_src, 'autoload_f
     fwrite(STDERR, "FAIL: vendor/composer/autoload_real.php eagerly loads a `files` list.\n");
     fwrite(STDERR, "That is a dev-flavoured dump; it requires packages .distignore strips from the release.\n");
     fwrite(STDERR, "Fix: rebuild with `composer run build:autoload` (uses --no-dev) and commit.\n");
+    exit(1);
+}
+
+// --- the committed classmap must carry NO development classes ---
+//
+// `composer dump-autoload` (what you run so PHPUnit can load) writes the dev classmap;
+// `composer run build:autoload` writes the shipped one. Staging after the former puts ~961
+// Mockery / PHPUnit / Hamcrest / PhpParser entries into the file that goes to wp.org, parsed on
+// every WordPress request, referencing paths that `.distignore` excludes from the ZIP — so the
+// entries are not merely wasteful, they point at files that will not be there. That is the
+// shape of #325.
+//
+// This is mechanised because warning about it did not work. It is entry 2 in PITFALLS.md,
+// `/simplify` caught it twice, and it still landed in a commit on this branch — found only
+// because an unrelated seam happened to rebuild the autoloader and read the diff. A gate that
+// fails is worth more than a paragraph that warns.
+$dev_namespaces = ['Mockery', 'PHPUnit', 'Hamcrest', 'PhpParser', 'Prophecy', 'SebastianBergmann', 'DeepCopy', 'Brain'];
+$dev_found      = [];
+
+foreach ($classmap as $class => $path) {
+    foreach ($dev_namespaces as $ns) {
+        if (0 === strpos($class, $ns . '\\') || $class === $ns) {
+            $dev_found[$ns] = ($dev_found[$ns] ?? 0) + 1;
+            break;
+        }
+    }
+}
+
+if ($dev_found !== []) {
+    $summary = [];
+    foreach ($dev_found as $ns => $count) {
+        $summary[] = "{$ns} ({$count})";
+    }
+
+    fwrite(STDERR, "FAIL: the committed classmap contains development classes: " . implode(', ', $summary) . "\n");
+    fwrite(STDERR, "This is `composer dump-autoload` output, not `composer run build:autoload` output.\n");
+    fwrite(STDERR, "It ships to wp.org, is parsed on every request, and references paths .distignore excludes.\n");
+    fwrite(STDERR, "Fix: composer run build:autoload  (never `dump-autoload -a`), then re-stage vendor/composer/.\n");
     exit(1);
 }
 

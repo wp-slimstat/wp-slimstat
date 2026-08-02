@@ -811,19 +811,33 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         }
         // DB Indexes
         if (!empty($_POST['options']['db_indexes'])) {
+            // Both arms iterate the SAME manifest group, so the toggle cannot add one set and
+            // remove another — which is what a hand-maintained pair of lists eventually does.
+            // The group is declared in Schema::OPTIONAL_INDEXES, which Schema::ensure() also
+            // consults, so reconciliation cannot silently rebuild what this just dropped.
+            //
+            // Table-qualified, and the ADD goes through Schema::createIndexSql(). Hardcoding
+            // `slim_stats` here would ALTER the wrong table the day an optional index is
+            // declared on slim_events, and hand-building the DDL would leave a second index
+            // emitter alive in the one seam that exists to remove them.
+            $slimstat_prefix       = $GLOBALS['wpdb']->prefix;
+            $slimstat_toggle_group = \SlimStat\Schema\Schema::optionalGroup('db_indexes');
+
             if ('on' == $_POST['options']['db_indexes'] && 'no' == wp_slimstat::$settings['db_indexes']) {
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
+                foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
+                    wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix));
+                }
                 $save_messages[]                     = __('Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat');
                 wp_slimstat::$settings['db_indexes'] = 'on';
             } elseif ('no' == $_POST['options']['db_indexes'] && 'on' == wp_slimstat::$settings['db_indexes']) {
                 // An empty value means that the toggle has been switched to "Off"
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_resource_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_browser_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_searchterms_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_fingerprint_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
+                foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
+                    wp_slimstat::$wpdb->query(sprintf(
+                        'ALTER TABLE %s DROP INDEX %s',
+                        $slimstat_prefix . $slimstat_suffix,
+                        \SlimStat\Schema\Schema::resolve($slimstat_index, $slimstat_prefix)
+                    ));
+                }
                 $save_messages[]                     = __('Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat');
                 wp_slimstat::$settings['db_indexes'] = 'no';
             }

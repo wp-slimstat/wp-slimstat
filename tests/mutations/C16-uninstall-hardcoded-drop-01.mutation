@@ -1,0 +1,13 @@
+target:    uninstall.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    uninstall.php still hardcodes a slim_ table in a DROP statement
+rationale: C16 exactly. The drop list was hardcoded here, in FK-safe order, in the one file that cannot see the table inventory because it runs with the plugin unloaded and no autoloader — which is why Schema.php is dependency-free and required directly. A table added in Phase G and forgotten here is analytics data surviving an uninstall the user asked for, on the code path where nobody looks afterwards.
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -146,6 +146,7 @@
+     foreach (SlimStat\Schema\Schema::tables() as $slimstat_table) {
+         $_wpdb->query(sprintf('DROP TABLE IF EXISTS %s%s', $GLOBALS['wpdb']->prefix, $slimstat_table));
+     }
++    $_wpdb->query(sprintf('DROP TABLE IF EXISTS %sslim_stats', $GLOBALS['wpdb']->prefix));

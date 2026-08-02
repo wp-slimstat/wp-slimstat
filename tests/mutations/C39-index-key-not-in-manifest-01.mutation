@@ -1,0 +1,14 @@
+target:    src/Migration/Migrations/CreateDtOutIndex.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    which the manifest does not declare
+rationale: The one failure mode the structural half of the gate cannot see. Lifting the index shape into AbstractIndexMigration means a subclass declares only a key — and a key that is not in the manifest passes every "does it override the shape methods" check, then fatals on an undefined index the first time a user clicks the retry button. This is the whole reason the gate resolves each declared key against the loaded manifest rather than merely checking that the subclass looks right.
+---
+--- a/src/Migration/Migrations/CreateDtOutIndex.php
++++ b/src/Migration/Migrations/CreateDtOutIndex.php
+@@ -20,7 +20,7 @@
+     protected function getIndexKey(): string
+     {
+-        return 'idx_dt_out';
++        return 'idx_dt_outbound';
+     }

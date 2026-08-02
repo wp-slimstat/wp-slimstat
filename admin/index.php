@@ -3,6 +3,7 @@
 use SlimStat\Services\GeoService;
 use SlimStat\Components\DateRangeHelper;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
+use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
     public static $screens_info      = [];
@@ -437,16 +438,17 @@ class wp_slimstat_admin
 
         self::register_goals_funnels_header_hooks();
 
-        // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
-        foreach (self::get_index_definitions() as $def) {
-            if ('yes' === get_option($def['option'])) {
-                continue;
-            }
-            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $def['name']));
-            if (!empty($exists)) {
-                update_option($def['option'], 'yes');
-            }
-        }
+        // Sync index options with actual DB state — one SHOW INDEX for all of them, and none at
+        // all once every option is stamped.
+        //
+        // This was the seventh single-index probe site and the only one on a per-request path:
+        // up to six `SHOW INDEX … WHERE Key_name = 'x'` on every wp-admin and admin-ajax
+        // request, five of them duplicating a key list the first already returned. It also
+        // interacts badly with the honest stamping introduced alongside Schema::ensure(): the
+        // old code stamped 'yes' whether or not the build succeeded, so the loop fell silent
+        // after one pass, while a correctly-unstamped option on a large-table install would
+        // have left this probing six times per request indefinitely.
+        self::sync_index_options();
 
         self::register_index_hooks();
 
@@ -559,11 +561,13 @@ class wp_slimstat_admin
      */
     public static function drop_tables($_tables = [], $_blog_id = 1)
     {
-        $_tables['slim_events'] = $GLOBALS['wpdb']->prefix . 'slim_events';
-        $_tables['slim_stats']  = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-        $_tables['slim_events_archive'] = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-        $_tables['slim_stats_archive']  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+        // Derived from the manifest so a table added in Phase G cannot survive `wpmu_drop_tables`
+        // — deleting a subsite would leave its analytics behind forever, on the one code path
+        // where nobody looks afterwards. Schema::tables() is already in FK-safe order (children
+        // first), which core preserves when it issues the DROPs.
+        foreach (Schema::tables() as $suffix) {
+            $_tables[$suffix] = $GLOBALS['wpdb']->prefix . $suffix;
+        }
 
         return $_tables;
     }
@@ -579,46 +583,14 @@ class wp_slimstat_admin
             $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         }
 
-        // Create the tables
+        // Create the tables and reconcile every index in the manifest. The five probe-and-create
+        // blocks that used to live here were four of the six independent index creators C11
+        // enumerated; they duplicated entries init_tables() already handled, each with its own
+        // `SHOW INDEX` round trip and its own unconditional "yes" stamp.
         self::init_tables($my_wpdb);
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
         \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
-
-        // Ensure country/dt index exists for performance
-        $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
-        if (!$has_index || 0 === count($has_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_country_dt_indexed', 'yes');
-
-        // --- Add (dt, screen_width, screen_height) index for Top Screen Resolutions ---
-        $dt_screen_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_screen_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_screen_indexed', 'yes');
-
-        // --- Add (dt, browser, browser_version) index for Top Browsers ---
-        $dt_browser_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_browser_browser_version'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_browser_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_browser_indexed', 'yes');
-
-        // --- Add (dt, platform) index for Top Platforms ---
-        $dt_platform_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_platform'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_platform_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_platform_indexed', 'yes');
-
-        // --- Add (dt, visit_id) covering index for visitor counter queries ---
-        $dt_visit_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%sstats_dt_visit_idx'", $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-        if (empty($dt_visit_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX %sstats_dt_visit_idx ON %sslim_stats (dt, visit_id)', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_visit_indexed', 'yes');
 
         // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
         // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before WordPress
@@ -635,124 +607,79 @@ class wp_slimstat_admin
      */
     public static function init_tables($_wpdb = '')
     {
-        // Is InnoDB available?
-        $have_innodb = $_wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-        $use_innodb  = (!empty($have_innodb[0]) && 'YES' == $have_innodb[0]['Value']) ? 'ENGINE=InnoDB' : '';
-
-        // Table that stores the actual data about visits
-        $stats_table_sql = "
-            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
-                id INT UNSIGNED NOT NULL auto_increment,
-                ip VARCHAR(39) DEFAULT NULL,
-                other_ip VARCHAR(39) DEFAULT NULL,
-				username VARCHAR(256) DEFAULT NULL,
-				email VARCHAR(256) DEFAULT NULL,
-
-				country VARCHAR(16) DEFAULT NULL,
-				location VARCHAR(36) DEFAULT NULL,
-				city VARCHAR(256) DEFAULT NULL,
-
-				referer VARCHAR(2048) DEFAULT NULL,
-				resource VARCHAR(2048) DEFAULT NULL,
-				searchterms VARCHAR(2048) DEFAULT NULL,
-				notes VARCHAR(2048) DEFAULT NULL,
-				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
-				server_latency INT(10) UNSIGNED DEFAULT 0,
-				page_performance INT(10) UNSIGNED DEFAULT 0,
-
-				browser VARCHAR(40) DEFAULT NULL,
-				browser_version VARCHAR(15) DEFAULT NULL,
-				browser_type TINYINT UNSIGNED DEFAULT 0,
-				platform VARCHAR(15) DEFAULT NULL,
-				language VARCHAR(5) DEFAULT NULL,
-				fingerprint VARCHAR(256) DEFAULT NULL,
-				user_agent VARCHAR(2048) DEFAULT NULL,
-
-				resolution VARCHAR(12) DEFAULT NULL,
-				screen_width SMALLINT UNSIGNED DEFAULT 0,
-				screen_height SMALLINT UNSIGNED DEFAULT 0,
-
-				content_type VARCHAR(64) DEFAULT NULL,
-				category VARCHAR(256) DEFAULT NULL,
-				author VARCHAR(64) DEFAULT NULL,
-				content_id BIGINT(20) UNSIGNED DEFAULT 0,
-
-				outbound_resource VARCHAR(2048) DEFAULT NULL,
-
-				tz_offset SMALLINT DEFAULT 0,
-				dt_out INT(10) UNSIGNED DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (id),
-                INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_dt_visit_idx (dt, visit_id)
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        // This table will track outbound links (clicks on links to external sites)
-        $events_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
-				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        $archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
-			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
-
-        $events_archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        // Ok, let's create the table structure
-        self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats', $_wpdb);
-        self::_create_table($events_table_sql, $GLOBALS['wpdb']->prefix . 'slim_events', $_wpdb);
-        self::_create_table($archive_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats_archive', $_wpdb);
-        self::_create_table($events_archive_table_sql, $GLOBALS['wpdb']->prefix . 'slim_events_archive', $_wpdb);
+        // One reconciliation, from the manifest, replacing four hand-written CREATE TABLEs and
+        // a $index_defs loop that probed five indexes one statement at a time.
+        //
+        // Idempotent in both directions: it creates what is missing on a fresh install and adds
+        // what is missing on an upgraded one. Those were separate, mutually exclusive code paths
+        // before — a fresh install stamps the version before any admin page renders, so the
+        // upgrade gate never fires, and an update never fires activation, so the create gate
+        // never fires. That is how fresh installs ended up with 11 secondary indexes on
+        // slim_stats and upgraded ones with 13 (C39).
+        // The collation is passed as a closure, not a value: resolving it costs an
+        // information_schema query and it is consumed only when a table must actually be
+        // created, which on a healthy install is never.
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $report = Schema::ensure(
+            $_wpdb,
+            $prefix,
+            static function () {
+                return Schema::targetCollation($GLOBALS['wpdb']);
+            },
+            self::disabled_index_groups()
+        );
 
         // Let's save the version in the database
         if (empty(wp_slimstat::$settings['version'])) {
             wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
 
-        $index_defs = [
-            ['name' => 'idx_country_dt', 'sql' => sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_country_dt_indexed'],
-            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_screen_indexed'],
-            ['name' => 'idx_dt_browser_browser_version', 'sql' => sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_browser_indexed'],
-            ['name' => 'idx_dt_platform', 'sql' => sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_platform_indexed'],
-            // Speeds up "Currently Online" queries using dt_out > NOW()-300
-            ['name' => 'idx_dt_out', 'sql' => sprintf('CREATE INDEX idx_dt_out ON %sslim_stats (dt_out)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_out_indexed'],
-        ];
-        foreach ($index_defs as $idx) {
-            $exists = $_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['name']));
-            if (empty($exists)) {
-                $_wpdb->query($idx['sql']);
-            }
-            update_option($idx['option'], 'yes');
-        }
+        self::stamp_index_options($report['present'], $prefix);
 
+        return $report;
+    }
+
+    /**
+     * Optional-index groups the user has switched OFF.
+     *
+     * Settings -> Maintenance -> "Database Indexes" DROPs four indexes when toggled off. Without
+     * this, ensure() would rebuild them on the next admin_init and the toggle would silently
+     * reverse itself — a behaviour regression introduced by a refactor whose whole point was to
+     * change no behaviour.
+     *
+     * @return string[]
+     */
+    private static function disabled_index_groups()
+    {
+        // Absent means ON: the shipped default is 'on', and an install whose settings row
+        // predates the toggle must not be read as having opted out of four indexes.
+        return ('no' === (wp_slimstat::$settings['db_indexes'] ?? 'on')) ? ['db_indexes'] : [];
+    }
+
+    /**
+     * Stamp the `slimstat_*_indexed` options for indexes CONFIRMED present.
+     *
+     * Confirmed, not attempted. The old code stamped 'yes' unconditionally right after a
+     * CREATE INDEX whose result it never checked — so an index build that timed out on a large
+     * table still recorded success, and show_indexes_notice(), which reads these stamps to
+     * decide whether to offer a retry button, could never offer one. The notice was blind to
+     * exactly the failure it exists for.
+     *
+     * @param string[] $present Resolved index names confirmed on the table.
+     * @param string   $prefix
+     */
+    private static function stamp_index_options(array $present, $prefix)
+    {
+        $confirmed = array_flip($present);
+
+        foreach (Schema::tables() as $suffix) {
+            foreach (array_keys(Schema::indexes($suffix)) as $index) {
+                $option = Schema::indexOption($index);
+                if (null !== $option && isset($confirmed[Schema::resolve($index, $prefix)])) {
+                    update_option($option, 'yes');
+                }
+            }
+        }
     }
 
     // END: init_tables
@@ -1052,19 +979,11 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['time_format']);
             unset(wp_slimstat::$settings['expand_details']);
 
-            // Add table indexes for improved performance (idempotent)
-            $indexes = [
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_resource_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_browser_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_searchterms_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_fingerprint_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-            ];
-            foreach ($indexes as $index) {
-                $check_index = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $index['name']));
-                if (empty($check_index)) {
-                    wp_slimstat::$wpdb->query($index['sql']);
-                }
-            }
+            // The four indexes this block used to add by hand are in the manifest, and the
+            // single init_tables() call at the end of this function reconciles them along with
+            // every other. Restating them here was one of the six creators C11 enumerated, and
+            // the one that made a Phase E drop unholdable: an install upgrading from below 4.8.4
+            // re-added four dropped indexes with no way for anything to know it had.
             wp_slimstat::$settings['db_indexes'] = 'on';
         }
 
@@ -1086,10 +1005,8 @@ class wp_slimstat_admin
 
         // --- Updates for version 4.8.8 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
-            // Adding new index on the 'fingerprint' column for improved performance
-            if ('on' == wp_slimstat::$settings['db_indexes']) {
-                $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-            }
+            // The fingerprint index this block used to add is in the manifest, and the
+            // reconciliation below honours the same `db_indexes` setting this branch checked.
 
             if (!self::convert_notes_to_brackets($my_wpdb, $upgrade_began)) {
                 // Incomplete or failed. Return WITHOUT stamping the version, so the
@@ -1119,56 +1036,26 @@ class wp_slimstat_admin
             wp_slimstat::$settings['use_separate_menu'] = 'on';
         }
 
-        // --- Updates for version 5.4.3 ---
-        if (version_compare(wp_slimstat::$settings['version'], '5.4.3', '<')) {
-            // Add (dt, visit_id) covering index for visitor counter queries
-            $idx_name = $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx';
-            $check = $my_wpdb->get_results(sprintf(
-                "SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'",
-                $GLOBALS['wpdb']->prefix, $idx_name
-            ));
-            if (empty($check)) {
-                $result = $my_wpdb->query(sprintf(
-                    'CREATE INDEX %s ON %sslim_stats (dt, visit_id)',
-                    $idx_name, $GLOBALS['wpdb']->prefix
-                ));
-                if ($result !== false) {
-                    update_option('slimstat_dt_visit_indexed', 'yes');
-                }
-                // If fails (large table timeout), show_indexes_notice() surfaces a retry button
-            } else {
-                update_option('slimstat_dt_visit_indexed', 'yes');
-            }
-        }
+        // --- Bring the schema up to the manifest ---
+        //
+        // ONE reconciliation for the whole upgrade, replacing the 5.4.3 dt_visit block, the
+        // goals/funnels block and the 4.8.4/4.8.8 index adds above. Every index those blocks
+        // created is declared in Schema, so an install arriving here from any version converges
+        // on the same shape — which is precisely what did not happen before: the create path and
+        // the upgrade path are mutually exclusive by construction, so fresh installs never got
+        // the goal/funnel indexes and pre-5.4.0 installs never got the five $index_defs ones.
+        //
+        // Cost on a healthy install is one SHOW TABLES and one SHOW INDEX per table and no
+        // writes, against the fourteen single-index probes across six call sites it replaces.
+        $schema_report = self::init_tables($my_wpdb);
 
-        // --- Goals & Funnels composite indexes for query performance ---
-        // These three indexes are also registered as AbstractIndexMigration classes
-        // (Create{Goal,Funnel}QueriesIndex / CreateEventsNotesDtIndex in
-        // src/Migration/MigrationService.php) which provide the retry UI; keep the
-        // index name + columns here in sync with those classes.
+        // #318: only claim the goals indexes are done once all three are CONFIRMED present. A
+        // large-table ALTER that times out leaves this unset, which is what makes
+        // MigrationService surface its one-click retry.
         if (empty(wp_slimstat::$settings['goals_indexes'])) {
-            $goal_indexes = [
-                ['table' => 'slim_stats',  'name' => 'idx_goal_queries',   'sql' => 'ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20))'],
-                ['table' => 'slim_stats',  'name' => 'idx_funnel_queries', 'sql' => 'ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191))'],
-                ['table' => 'slim_events', 'name' => 'idx_events_notes_dt', 'sql' => 'ADD INDEX idx_events_notes_dt (dt, notes(64))'],
-            ];
-            $goal_indexes_built = true;
-            foreach ($goal_indexes as $idx) {
-                $table = $GLOBALS['wpdb']->prefix . $idx['table'];
-                $exists = wp_slimstat::$wpdb->get_results(
-                    wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $idx['name'])
-                );
-                if (empty($exists)) {
-                    // ALTER can time out on very large tables. Track the result so we
-                    // only mark this complete once every index is present; a failure
-                    // leaves goals_indexes unset so the modern migration system
-                    // (MigrationService) surfaces a one-click retry notice. (#318)
-                    if (false === wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}")) {
-                        $goal_indexes_built = false;
-                    }
-                }
-            }
-            if ($goal_indexes_built) {
+            $goal_indexes = ['idx_goal_queries', 'idx_funnel_queries', 'idx_events_notes_dt'];
+
+            if ([] === array_diff($goal_indexes, $schema_report['present'])) {
                 wp_slimstat::$settings['goals_indexes'] = 'on';
             }
         }
@@ -3771,25 +3658,6 @@ class wp_slimstat_admin
 
     // END: contextual_help
 
-    /**
-     * Creates a table in the database
-     */
-    protected static function _create_table($_sql = '', $_tablename = '', $_wpdb = '')
-    {
-        $_wpdb->query($_sql);
-
-        // Let's make sure this table was actually created
-        foreach ($_wpdb->get_col(sprintf("SHOW TABLES LIKE '%s'", $_tablename), 0) as $a_table) {
-            if ($a_table == $_tablename) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // END: _create_table
-
     public static function get_template($template, $args = [], $return = false)
     {
         // Push Args - use EXTR_SKIP to prevent variable overwriting for security
@@ -3913,44 +3781,75 @@ class wp_slimstat_admin
     private static function get_index_definitions(): array
     {
         $prefix = $GLOBALS['wpdb']->prefix;
-        return [
-            'slimstat_add_country_dt_index' => [
-                'name'    => 'idx_country_dt',
-                'columns' => 'country, dt',
-                'option'  => 'slimstat_country_dt_indexed',
-            ],
-            'slimstat_add_dt_screen_index' => [
-                'name'    => 'idx_dt_screen_width_screen_height',
-                'columns' => 'dt, screen_width, screen_height',
-                'option'  => 'slimstat_dt_screen_indexed',
-            ],
-            'slimstat_add_dt_browser_index' => [
-                'name'    => 'idx_dt_browser_browser_version',
-                'columns' => 'dt, browser, browser_version',
-                'option'  => 'slimstat_dt_browser_indexed',
-            ],
-            'slimstat_add_dt_platform_index' => [
-                'name'    => 'idx_dt_platform',
-                'columns' => 'dt, platform',
-                'option'  => 'slimstat_dt_platform_indexed',
-            ],
-            'slimstat_add_dt_out_index' => [
-                'name'    => 'idx_dt_out',
-                'columns' => 'dt_out',
-                'option'  => 'slimstat_dt_out_indexed',
-            ],
-            'slimstat_add_dt_visit_index' => [
-                'name'    => $prefix . 'stats_dt_visit_idx',
-                'columns' => 'dt, visit_id',
-                'option'  => 'slimstat_dt_visit_indexed',
-            ],
+
+        // The AJAX actions are a stable public contract — they are baked into nonces and into
+        // the notice's markup — so the action names stay written out. Everything they DESCRIBE
+        // comes from the manifest, because this was the sixth creator of the same six indexes
+        // and the one furthest from the other five: an index whose columns changed anywhere else
+        // left this UI quietly building the old shape on click.
+        $actions = [
+            'slimstat_add_country_dt_index'  => 'idx_country_dt',
+            'slimstat_add_dt_screen_index'   => 'idx_dt_screen_width_screen_height',
+            'slimstat_add_dt_browser_index'  => 'idx_dt_browser_browser_version',
+            'slimstat_add_dt_platform_index' => 'idx_dt_platform',
+            'slimstat_add_dt_out_index'      => 'idx_dt_out',
+            'slimstat_add_dt_visit_index'    => '{prefix}stats_dt_visit_idx',
         ];
+
+        $definitions = [];
+
+        foreach ($actions as $action => $index) {
+            $definitions[$action] = [
+                'index'  => $index,
+                'name'   => Schema::resolve($index, $prefix),
+                'option' => Schema::indexOption($index),
+            ];
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * Stamp any `slimstat_*_indexed` option whose index is present, in one query.
+     *
+     * Returns the manifest keys still MISSING, so the notice below does not repeat the probe.
+     *
+     * @return string[]
+     */
+    private static function sync_index_options(): array
+    {
+        $pending = [];
+
+        foreach (self::get_index_definitions() as $def) {
+            if ('yes' !== get_option($def['option'])) {
+                $pending[] = $def['index'];
+            }
+        }
+
+        if ([] === $pending) {
+            return [];
+        }
+
+        $state   = Schema::indexState(wp_slimstat::$wpdb, 'slim_stats', $GLOBALS['wpdb']->prefix);
+        $present = array_flip($state['present']);
+        $missing = [];
+
+        foreach ($pending as $index) {
+            if (isset($present[Schema::resolve($index, $GLOBALS['wpdb']->prefix)])) {
+                update_option(Schema::indexOption($index), 'yes');
+                continue;
+            }
+
+            $missing[] = $index;
+        }
+
+        return $missing;
     }
 
     /**
      * Generic AJAX handler for ensuring a database index exists.
      */
-    private static function ajax_ensure_index(string $nonce, string $index_name, string $columns, string $option_key): void
+    private static function ajax_ensure_index(string $nonce, string $index_key, string $index_name, string $option_key): void
     {
         check_ajax_referer($nonce);
         if (!current_user_can('manage_options')) {
@@ -3967,14 +3866,20 @@ class wp_slimstat_admin
             wp_send_json_error(__('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.', 'wp-slimstat'));
         }
 
-        $wpdb = wp_slimstat::$wpdb;
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
+        $wpdb   = wp_slimstat::$wpdb;
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $table  = $prefix . 'slim_stats';
+
+        $exists = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $index_name));
         if (!empty($exists)) {
             update_option($option_key, 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (%s)', $index_name, $table, $columns));
+
+        // Built from the manifest, not from the columns this handler was handed. The button and
+        // the reconciler have to create the same object or the retry silently builds a shape
+        // nothing else expects.
+        $result = $wpdb->query(Schema::createIndexSql('slim_stats', $index_key, $prefix));
         if (false !== $result) {
             update_option($option_key, 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -3989,7 +3894,7 @@ class wp_slimstat_admin
     {
         foreach (self::get_index_definitions() as $action => $def) {
             add_action('wp_ajax_' . $action, function () use ($action, $def) {
-                self::ajax_ensure_index($action, $def['name'], $def['columns'], $def['option']);
+                self::ajax_ensure_index($action, $def['index'], $def['name'], $def['option']);
             });
         }
     }
@@ -4068,68 +3973,64 @@ class wp_slimstat_admin
         if (!current_user_can('manage_options')) {
             return;
         }
-        $indexes = [
-            [
-                'option' => 'slimstat_dt_out_indexed',
-                'id'     => 'dt-out',
-                'label'  => __('Currently Online Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt_out</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_out',
-                'ajax'   => 'slimstat_add_dt_out_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+        // Human-readable copy only. The index key, its option, its AJAX action and the prefix
+        // resolution all come from get_index_definitions(), which reads the manifest — this was
+        // a seventh private restatement of that map, and the one place still hand-concatenating
+        // the prefix onto an index name. An index renamed in Schema used to leave this notice
+        // probing a key that no longer existed and offering a button forever.
+        $copy = [
+            'idx_dt_out' => [
+                'id'    => 'dt-out',
+                'label' => __('Currently Online Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt_out</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_country_dt_indexed',
-                'id'     => 'country-dt',
-                'label'  => __('World Map & Country Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
-                'key'    => 'idx_country_dt',
-                'ajax'   => 'slimstat_add_country_dt_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_country_dt' => [
+                'id'    => 'country-dt',
+                'label' => __('World Map & Country Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_screen_indexed',
-                'id'     => 'dt-screen',
-                'label'  => __('Screen Resolution Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_screen_width_screen_height',
-                'ajax'   => 'slimstat_add_dt_screen_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_screen_width_screen_height' => [
+                'id'    => 'dt-screen',
+                'label' => __('Screen Resolution Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_browser_indexed',
-                'id'     => 'dt-browser',
-                'label'  => __('Browser Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_browser_browser_version',
-                'ajax'   => 'slimstat_add_dt_browser_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_browser_browser_version' => [
+                'id'    => 'dt-browser',
+                'label' => __('Browser Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_platform_indexed',
-                'id'     => 'dt-platform',
-                'label'  => __('Platform Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_platform',
-                'ajax'   => 'slimstat_add_dt_platform_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_platform' => [
+                'id'    => 'dt-platform',
+                'label' => __('Platform Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_visit_indexed',
-                'id'     => 'dt-visit',
-                'label'  => __('Visitor Counter Performance', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>visit_id</code>', 'wp-slimstat'),
-                'key'    => $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx',
-                'ajax'   => 'slimstat_add_dt_visit_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            '{prefix}stats_dt_visit_idx' => [
+                'id'    => 'dt-visit',
+                'label' => __('Visitor Counter Performance', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>visit_id</code>', 'wp-slimstat'),
             ],
         ];
 
-        $pending = array_filter($indexes, function ($idx) {
-            $db = wp_slimstat::$wpdb;
-            $exists = $db->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
-            return empty($exists);
-        });
+        // Already computed on this request by init()'s sync, in one query rather than six.
+        $missing = self::sync_index_options();
+        if ([] === $missing) {
+            return;
+        }
+
+        $pending = [];
+        foreach (self::get_index_definitions() as $action => $def) {
+            if (!in_array($def['index'], $missing, true) || !isset($copy[$def['index']])) {
+                continue;
+            }
+
+            $pending[] = $copy[$def['index']] + [
+                'option' => $def['option'],
+                'key'    => $def['name'],
+                'ajax'   => $action,
+                'btn'    => __('Apply', 'wp-slimstat'),
+            ];
+        }
+
         if ([] === $pending) {
             return;
         }

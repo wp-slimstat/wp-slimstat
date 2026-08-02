@@ -17,18 +17,13 @@ class CreateDtBrowserIndex extends AbstractIndexMigration
         return __('Create Browser Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_dt_browser_browser_version';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['dt', 'browser', 'browser_version'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->tablePrefix() . 'slim_stats';
+        return 'slim_stats';
     }
 }

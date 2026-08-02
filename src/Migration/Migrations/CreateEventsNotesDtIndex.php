@@ -17,18 +17,13 @@ class CreateEventsNotesDtIndex extends AbstractIndexMigration
         return __('Create Events Notes Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_events_notes_dt';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['dt', 'notes(64)'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->tablePrefix() . 'slim_events';
+        return 'slim_events';
     }
 }

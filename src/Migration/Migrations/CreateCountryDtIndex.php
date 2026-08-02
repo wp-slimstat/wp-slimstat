@@ -17,18 +17,13 @@ class CreateCountryDtIndex extends AbstractIndexMigration
         return __('Create country, dt Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_country_dt';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['country', 'dt'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->tablePrefix() . 'slim_stats';
+        return 'slim_stats';
     }
 }

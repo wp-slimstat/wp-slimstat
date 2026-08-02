@@ -47,7 +47,22 @@ if ('' === $source) {
 }
 
 // ── 1. The target collation comes from wp_users, not the database default ───
-$target = slimstat_function_body($source, 'targetCollation');
+//
+// Follow the delegation, as assertion 5 already does for the pending-table probe. The resolution
+// moved into Schema so the installer and this migration cannot disagree about what "the target"
+// is — a fresh install created at one collation and converted to another is the same
+// ER_CANT_AGGREGATE_2COLLATIONS by a longer route. What matters is unchanged: wherever it lives,
+// it must read wp_users.user_login on the CORE connection and fall back to utf8mb4.
+$schema_src = (string) @file_get_contents($plugin_root . '/src/Schema/Schema.php');
+$target     = slimstat_function_body($source, 'targetCollation');
+
+if ('' !== $target && false !== strpos($target, 'Schema::targetCollation')) {
+    $target = slimstat_function_body($schema_src, 'targetCollation');
+    // The delegate takes the core handle as a parameter rather than reading a property, so the
+    // assertion below has to accept either spelling of "asked on the core connection".
+    $target = str_replace('$core->users', '$this->coreWpdb->users', $target);
+}
+
 if ('' === $target) {
     $failures[] = 'targetCollation() is gone — re-anchor this assertion rather than deleting it';
 } else {
@@ -119,10 +134,21 @@ if ('' !== $should && !preg_match('/pendingTables|shouldRunCache/', $should)) {
 }
 
 // ── 6. All four tables, archives included ───────────────────────────────────
+//
+// The list now comes from the manifest, which is the point: a table added in Phase G is
+// converted without anyone remembering to add it here. So the assertion moves up a level — the
+// migration must iterate Schema::tables(), and the manifest must still hold all four. Checking
+// only the first half would pass on a manifest that had lost a table; checking only the second
+// would pass on a migration that had stopped reading it.
+if (!preg_match('/foreach\s*\(\s*Schema::tables\(\)/', $source)) {
+    $failures[] = 'the migration does not iterate Schema::tables(). With its own copy of the '
+        . 'list, a table added to the schema is converted by nobody';
+}
+
 foreach (['slim_stats', 'slim_events', 'slim_stats_archive', 'slim_events_archive'] as $table) {
-    if (!preg_match('/' . preg_quote($table, '/') . "'/", $source)) {
-        $failures[] = "{$table} is not converted. Leaving one table behind reintroduces the "
-            . 'mismatch the moment anything joins across them';
+    if (!preg_match("/'" . preg_quote($table, '/') . "'\s*=>/", $schema_src)) {
+        $failures[] = "{$table} is not in the manifest, so it is not converted. Leaving one "
+            . 'table behind reintroduces the mismatch the moment anything joins across them';
     }
 }
 

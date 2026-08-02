@@ -98,7 +98,13 @@ if (!class_exists('wpdb')) {
 }
 
 // --- Load the migration base + concrete classes directly ---
+//
+// Schema first: AbstractIndexMigration reads the index name and columns from the manifest, so a
+// subclass now declares only which index it owns. The three assertions below still spell out the
+// exact CREATE INDEX text, which is what makes this a real check on that derivation rather than
+// a tautology — if the manifest and these expectations ever disagree, this fails.
 $files = [
+    '/src/Schema/Schema.php',
     '/src/Migration/MigrationInterface.php',
     '/src/Migration/AbstractMigration.php',
     '/src/Migration/AbstractIndexMigration.php',
@@ -197,15 +203,20 @@ $start = strpos($admin, "empty(wp_slimstat::\$settings['goals_indexes'])");
 $assignPos = $start !== false ? strpos($admin, "wp_slimstat::\$settings['goals_indexes'] = 'on';", $start) : false;
 $block = ($start !== false && $assignPos !== false) ? substr($admin, $start, $assignPos - $start) : '';
 
+// The block no longer issues its own ALTERs — Schema::ensure() reconciles all three along with
+// every other index — so what has to hold is unchanged in substance and different in form: the
+// flag may only be set when all three are CONFIRMED PRESENT afterwards. ensure() reports
+// `present` from a SHOW INDEX taken after the build, which is strictly stronger than the old
+// `query() !== false`: a statement that returned truthy but left no index used to set the flag.
 gfim_assert(
-    $block !== '' && strpos($block, 'false === wp_slimstat::$wpdb->query') !== false,
-    "legacy block checks the ALTER result (false === ...->query)",
+    $block !== '' && strpos($block, "\$schema_report['present']") !== false,
+    'the goals_indexes flag is decided on indexes confirmed present, not on an unchecked ALTER',
     $failures
 );
-// The assignment must be wrapped in the success guard, not unconditional after the loop.
+// Still a guard, not an unconditional assignment after the reconciliation.
 gfim_assert(
-    $block !== '' && strpos($block, 'if ($goal_indexes_built) {') !== false,
-    "goals_indexes='on' is set inside the if (\$goal_indexes_built) guard",
+    $block !== '' && preg_match('/if\s*\(\s*\[\]\s*===\s*array_diff\(/', $block) === 1,
+    "goals_indexes='on' is set only when NO required index is missing from the report",
     $failures
 );
 
