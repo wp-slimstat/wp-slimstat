@@ -612,6 +612,12 @@ class wp_slimstat
      */
     const DEGRADATION_OPTION = 'slimstat_degradations';
 
+    /** Last time the purge cron completed. Absence of success is the durable signal (C34). */
+    const LAST_PURGE_OK_OPTION = 'slimstat_last_purge_ok';
+
+    /** Seconds between purge runs — `twicedaily`, per admin/index.php's wp_schedule_event(). */
+    const PURGE_INTERVAL = 12 * HOUR_IN_SECONDS;
+
     /** Re-write a still-failing step at most this often, to bound wp_options writes. */
     const DEGRADATION_REFRESH = 3600;
 
@@ -684,10 +690,31 @@ class wp_slimstat
             return [];
         }
 
-        $cutoff = time() - self::DEGRADATION_TTL;
-        return array_filter($stored, static function ($record) use ($cutoff) {
+        $cutoff  = time() - self::DEGRADATION_TTL;
+        $current = array_filter($stored, static function ($record) use ($cutoff) {
             return isset($record['time']) && (int) $record['time'] >= $cutoff;
         });
+
+        // C34 — synthesised, not stored. Every recorded degradation expires after
+        // DEGRADATION_TTL (3 h) while the purge runs twicedaily (12 h), so a purge failing on
+        // every run was visible for 3 hours and invisible for 9. Deriving this from the
+        // last-success stamp makes the durable fact — "it has not succeeded" — the one that
+        // reports, instead of the perishable one.
+        if (self::purge_is_stale()) {
+            $last_ok = (int) get_option(self::LAST_PURGE_OK_OPTION, 0);
+
+            $current['purge (no successful run)'] = [
+                'message' => sprintf(
+                    'the purge has not completed since %s. It runs twice daily, so more than two '
+                    . 'missed runs means it is failing rather than merely idle — and any error it '
+                    . 'recorded has already aged out of this list.',
+                    gmdate('Y-m-d H:i', $last_ok) . ' UTC'
+                ),
+                'time'    => time(),
+            ];
+        }
+
+        return $current;
     }
 
     /**
@@ -1954,6 +1981,43 @@ class wp_slimstat
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
             self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
         }
+
+        // C34 — record that the purge SUCCEEDED, reached only by the path that completed.
+        //
+        // Every early return above records a degradation, and those expire after
+        // DEGRADATION_TTL (3 h) while this cron runs `twicedaily` (12 h). So a purge that
+        // fails every run was visible for 3 hours and invisible for 9, and an admin looking
+        // at a healthy-looking screen had a 75% chance of being wrong.
+        //
+        // Absence of success is durable; presence of a recent failure is not. Stamping the
+        // success and alarming on its staleness inverts the reporting so that the SILENT
+        // case is the one that raises, which is the direction a health signal has to fail.
+        self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
+    }
+
+    /**
+     * Has the purge gone too long without a successful run?
+     *
+     * Two intervals, not one: a single missed tick is ordinary (WP-Cron is spawned by
+     * traffic, so a quiet site skips ticks legitimately). Two consecutive misses is a
+     * pattern, and the point of this signal is to be quiet until it is not.
+     *
+     * A site that has never purged reports healthy — there is no failure to report, and the
+     * first run stamps the option.
+     */
+    public static function purge_is_stale(): bool
+    {
+        if (intval(self::$settings['auto_purge']) <= 0) {
+            return false;   // purging is off; silence is correct
+        }
+
+        $last_ok = (int) get_option(self::LAST_PURGE_OK_OPTION, 0);
+
+        if ($last_ok <= 0) {
+            return false;
+        }
+
+        return (self::now() - $last_ok) > (2 * self::PURGE_INTERVAL);
     }
 
     public static function wp_slimstat_update_geoip_database()

@@ -178,6 +178,7 @@ function slimstat_uninstall($_wpdb = '')
 // Migration runner state. Every option this plugin creates has to be removable — and the
 // run claim especially, since a stranded one is the single thing a user cannot clear from
 // the UI, making reinstall the only remedy that must actually work.
+delete_option('slimstat_last_purge_ok');
 delete_option('slimstat_migration_run_claim');
 delete_option('slimstat_migration_dismissed');
 
