@@ -33,6 +33,7 @@ BASE_URL="http://127.0.0.1:${HTTP_PORT}"
 status="PASS"; reason=""
 
 export COMPOSE_PROJECT_NAME="$PROJECT" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 rm -rf "$WP_DIR"            # fresh WP install per run (host bind-mount persists otherwise)
 mkdir -p "$WP_DIR" "$ART"
