@@ -36,7 +36,15 @@ if (!defined('SLIMSTAT_BENCH') || !SLIMSTAT_BENCH) {
     return;
 }
 
-if (empty($_SERVER['HTTP_X_SLIMSTAT_BENCH'])) {
+// The label may arrive as a request header OR, under WP-CLI, as an environment variable.
+// Both are only LABELS — `SLIMSTAT_BENCH` above is the authorization, and neither of these can
+// set it. The env path exists because the schema reconcile, the migration runner and the
+// activation sequence have no HTTP request to carry a header, so they were unmeasurable: every
+// query-count claim about them came from reading code rather than from counting.
+//
+// getenv() and not $_ENV: variables passed through `docker compose exec -e` and through WP-CLI
+// reach getenv() reliably, while $_ENV depends on the variables_order ini setting.
+if (empty($_SERVER['HTTP_X_SLIMSTAT_BENCH']) && false === getenv('SLIMSTAT_BENCH_LABEL')) {
     return;
 }
 
@@ -94,9 +102,12 @@ final class SlimStat_Bench_QLog
 
     public static function boot(): void
     {
-        self::$sample_sql = strtolower((string) ($_SERVER['HTTP_X_SLIMSTAT_BENCH_SQL'] ?? ''));
-        self::$label   = substr(preg_replace('/[^\w.\-]/', '', (string) $_SERVER['HTTP_X_SLIMSTAT_BENCH']), 0, 64);
-        self::$started = microtime(true);
+        $label = $_SERVER['HTTP_X_SLIMSTAT_BENCH'] ?? getenv('SLIMSTAT_BENCH_LABEL');
+        $sql   = $_SERVER['HTTP_X_SLIMSTAT_BENCH_SQL'] ?? getenv('SLIMSTAT_BENCH_SQL');
+
+        self::$sample_sql = strtolower((string) $sql);
+        self::$label      = substr(preg_replace('/[^\w.\-]/', '', (string) $label), 0, 64);
+        self::$started    = microtime(true);
 
         add_filter('query', [self::class, 'tally'], 0);
         add_action('shutdown', [self::class, 'flush'], PHP_INT_MAX);
@@ -132,7 +143,13 @@ final class SlimStat_Bench_QLog
         if (strpos($query, $options) !== false) {
             self::bump($is_write ? 'options_writes' : 'options_reads');
         }
-        if (strpos($query, 'slim_') !== false) {
+        // Matched on the ESCAPED form too. A `SHOW TABLES LIKE 'wp\_slim\_%'` is a slimstat read,
+        // but LIKE-escaping puts a backslash between `slim` and `_`, so the literal `slim_`
+        // never appears and the statement went uncounted. Found by a blind adjudication of two
+        // arms: it reported slim_reads 9 -> 3 where the true figure was 9 -> 4, because the arm
+        // that replaced four per-object probes with one pattern query had that one query
+        // silently excluded. A classifier that undercounts the arm it is measuring flatters it.
+        if (strpos($query, 'slim_') !== false || strpos($query, 'slim\\_') !== false) {
             self::bump($is_write ? 'slim_writes' : 'slim_reads');
         }
 
