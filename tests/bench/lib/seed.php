@@ -29,7 +29,14 @@ $log = static function (string $line): void {
 };
 
 try {
-    $seeder = new SlimStat_Bench_Seeder($db);
+    // Third argument: a profile (or overlay) filename inside tests/bench/. Seam I8 passes
+    // seed-profile-i8.json, which extends the measured profile and raises resource/referer
+    // cardinality past A4's MEMORY temp-table cliff.
+    $profile = isset($args[2]) && $args[2] !== ''
+        ? dirname(__DIR__) . '/' . basename((string) $args[2])
+        : null;
+
+    $seeder = new SlimStat_Bench_Seeder($db, $profile);
 
     if (($args[0] ?? '') === 'purge') {
         printf("purged %s seeded rows\n", number_format($seeder->purge()));
@@ -42,11 +49,23 @@ try {
     $seeder->seedTo($rows, $days, $log);
 
     $table = $db->prefix . 'slim_stats';
+    $now   = time();
+
+    // The SHAPE, not just the size. I8 exists because the previous fixture held 443,535 rows
+    // and still could not tell a 30-day report from a 90-day one, so a row count on its own
+    // says nothing about whether the fixture can support a conclusion.
     printf(
-        "\n%s now holds %s rows across %s visits\n",
+        "\n%s now holds %s rows across %s visits\n"
+            . "distinct resources: %s   distinct referers: %s\n"
+            . "rows last 30d: %s   last 90d: %s   all: %s\n",
         $table,
         number_format((int) $db->get_var("SELECT COUNT(*) FROM `{$table}`")),
-        number_format((int) $db->get_var("SELECT COUNT(DISTINCT visit_id) FROM `{$table}`"))
+        number_format((int) $db->get_var("SELECT COUNT(DISTINCT visit_id) FROM `{$table}`")),
+        number_format((int) $db->get_var("SELECT COUNT(DISTINCT resource) FROM `{$table}`")),
+        number_format((int) $db->get_var("SELECT COUNT(DISTINCT referer) FROM `{$table}`")),
+        number_format((int) $db->get_var("SELECT COUNT(*) FROM `{$table}` WHERE dt >= " . ($now - 30 * 86400))),
+        number_format((int) $db->get_var("SELECT COUNT(*) FROM `{$table}` WHERE dt >= " . ($now - 90 * 86400))),
+        number_format((int) $db->get_var("SELECT COUNT(*) FROM `{$table}`"))
     );
 } catch (\Throwable $e) {
     fwrite(STDERR, 'seed failed: ' . $e->getMessage() . "\n");

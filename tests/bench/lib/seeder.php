@@ -119,6 +119,34 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                 throw new RuntimeException("seed profile not readable: {$path}");
             }
             $decoded = json_decode($raw, true);
+
+            // An OVERLAY declares `extends` and carries only the keys it deliberately changes.
+            // The base profile is provenance — extracted from a real dump — so an overlay states
+            // its deltas beside its reasons instead of editing a measurement in place, where
+            // nothing downstream could tell the difference.
+            if (is_array($decoded) && !empty($decoded['extends'])) {
+                $base_path = dirname($path) . '/' . basename((string) $decoded['extends']);
+                $base_raw  = @file_get_contents($base_path);
+                if ($base_raw === false) {
+                    throw new RuntimeException("overlay {$path} extends unreadable base: {$base_path}");
+                }
+                $base = json_decode($base_raw, true);
+                if (!is_array($base)) {
+                    throw new RuntimeException("overlay base is not usable: {$base_path}");
+                }
+
+                // One level deep, which is all the schema has: scalars and maps of scalars.
+                foreach ($decoded as $key => $value) {
+                    if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
+                        $base[$key] = array_merge($base[$key], $value);
+                        continue;
+                    }
+                    $base[$key] = $value;
+                }
+
+                $decoded = $base;
+            }
+
             if (!is_array($decoded) || empty($decoded['weighted'])) {
                 throw new RuntimeException("seed profile is not usable: {$path}");
             }

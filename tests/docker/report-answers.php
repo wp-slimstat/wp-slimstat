@@ -1,0 +1,137 @@
+<?php
+// Dump the ANSWERS a set of reports gives, as stable JSON, for before/after comparison.
+//
+// The opening PHP tag IS required here and `declare(strict_types=1)` is NOT. WP-CLI's eval-file
+// evaluates a close-tag followed by the file's contents, so a file lacking an opening tag is
+// echoed as text — which is how this first ran, with the comparison reading this file's own
+// source as its data — and a declare() inside that wrapper is no longer the script's first
+// statement and fatals.
+//
+// This comment does not spell that close-tag literally, because doing so ends the PHP block
+// even inside a line comment. That was the second failure of this file, and it produced the
+// identical symptom as the first: source text where JSON was expected.
+//
+// WHY. Counting statements tells you what a change COST. It says nothing about whether the
+// numbers moved. A refactor that halves the query count and quietly changes a total is worse
+// than the code it replaced, and no gate in this programme could have seen it: the unit tests
+// exercise the new path only, and the topology probe checks a single aggregate.
+//
+// So this asks the real reports, against the real seeded corpus, and prints the answers. Two
+// arms, same database, diffed. Any difference is either a defect or an Expected-Diff entry —
+// never a shrug.
+//
+// DETERMINISM is the whole contract here. Every report below is ordered, and the values are
+// emitted in a fixed key order, so a byte diff between arms means the ANSWER changed and not
+// that a hash map iterated differently. Reports that depend on the current clock are pinned to
+// an explicit range for the same reason.
+
+if (!defined('WP_CLI') || !WP_CLI) {
+    fwrite(STDERR, "runs under WP-CLI\n");
+    exit(1);
+}
+
+$db_file = WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php';
+if (!class_exists('wp_slimstat_db') && is_readable($db_file)) {
+    require_once $db_file;
+}
+
+if (!class_exists('wp_slimstat_db')) {
+    WP_CLI::error('wp_slimstat_db is not loadable');
+}
+
+if (method_exists('wp_slimstat_db', 'init')) {
+    wp_slimstat_db::init();
+}
+
+/** Normalise a report row set into a plain, ordered array of arrays. */
+$rows = static function ($result) {
+    $out = [];
+    foreach ((array) $result as $row) {
+        $row = (array) $row;
+        ksort($row);
+        $out[] = $row;
+    }
+
+    return $out;
+};
+
+$answers = [];
+
+// ── provenance, so the artifact can prove two revisions actually ran ────────
+// A blind auditor pointed out that nothing IN the files recorded which code produced them: a
+// harness that silently failed to switch arms, or ran one revision twice, would emit two
+// identical files indistinguishable from a genuine equivalence result. The strongest possible
+// "identical" is then also the most likely false positive. This makes that detectable.
+$answers['_arm_version'] = defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : 'unknown';
+$answers['_arm_fingerprint'] = md5_file(WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php')
+    . ':' . (is_file(WP_PLUGIN_DIR . '/wp-slimstat/src/Schema/Schema.php') ? 'schema' : 'no-schema');
+
+// ── scalar counts ───────────────────────────────────────────────────────────
+// Date filters off throughout: the corpus is seeded relative to "now", and a report whose
+// window moves between two arms run minutes apart would diff for a reason that is not the code.
+$answers['count_records_id']       = (int) wp_slimstat_db::count_records('id', '', false);
+$answers['count_records_ip']       = (int) wp_slimstat_db::count_records('ip', '', false);
+$answers['count_records_visit_id'] = (int) wp_slimstat_db::count_records('visit_id', '', false);
+$answers['count_records_resource'] = (int) wp_slimstat_db::count_records('resource', '', false);
+$answers['count_human_hits']       = (int) wp_slimstat_db::count_records('id', 'browser_type <> 1', false);
+
+// ── top reports — the GROUP BY paths, which is where cardinality bites ──────
+foreach (['resource', 'browser', 'country', 'platform', 'referer'] as $column) {
+    $answers['top_' . $column] = $rows(wp_slimstat_db::get_top([
+        'columns'          => $column,
+        'use_date_filters' => false,
+    ]));
+}
+
+// ── unique visitors per dimension — a metric that is NOT COUNT(*) ──────────
+// Added because a blind audit found every measure in the set was `counthits`, so the
+// pageviews-versus-uniques distinction — the classic confusion in this plugin, and the one F9's
+// golden fixture is shaped around — could have been rewritten entirely without a single answer
+// moving. get_top_aggr walks a different code path from get_top.
+foreach (['browser', 'country'] as $column) {
+    $answers['uniques_' . $column] = $rows(wp_slimstat_db::get_top_aggr(
+        $column,
+        'visit_id > 0',
+        'COUNT(DISTINCT visit_id) AS counthits'
+    ));
+}
+
+// ── a FILTERED query — the WHERE-builder, otherwise untouched ──────────────
+// Also from that audit: every report above is an unfiltered GROUP BY, so the filter/segment
+// path — the largest and riskiest surface in a reports layer — was entirely unmeasured.
+$answers['top_resource_human'] = $rows(wp_slimstat_db::get_top([
+    'columns'          => 'resource',
+    'where'            => 'browser_type <> 1 AND resource IS NOT NULL',
+    'use_date_filters' => false,
+]));
+
+// ── a HAVING path — the bounce numerator ────────────────────────────────────
+$answers['bouncing_visits'] = (int) wp_slimstat_db::count_records_having(
+    'visit_id',
+    'visit_id > 0 AND browser_type <> 1',
+    'COUNT(id) = 1'
+);
+
+// ── an explicit date window, so range filtering is compared too ─────────────
+// Pinned to absolute bounds rather than "last 30 days": two arms run minutes apart would
+// otherwise select different rows and diff for a reason that is not the change.
+$end   = (int) getenv('SLIMSTAT_ANSWERS_END');
+$start = (int) getenv('SLIMSTAT_ANSWERS_START');
+if ($end > 0 && $start > 0) {
+    $answers['window_start'] = $start;
+    $answers['window_end']   = $end;
+    $answers['rows_in_window'] = (int) wp_slimstat_db::count_records(
+        'id',
+        'dt BETWEEN ' . $start . ' AND ' . $end,
+        false
+    );
+    $answers['top_resource_in_window'] = $rows(wp_slimstat_db::get_top([
+        'columns'          => 'resource',
+        'where'            => 'dt BETWEEN ' . $start . ' AND ' . $end,
+        'use_date_filters' => false,
+    ]));
+}
+
+ksort($answers);
+
+echo "SLIMSTAT-ANSWERS " . json_encode($answers) . "\n";

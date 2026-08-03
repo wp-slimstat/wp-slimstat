@@ -1,0 +1,55 @@
+{
+  "_comment": [
+    "OVERLAY on seed-profile.json. Seam I8 — the reshaped fixture.",
+    "",
+    "seed-profile.json is provenance: extracted by lib/extract-seed-profile.py from a real",
+    "production dump, and it is NOT edited here. Changing a measured distribution in place",
+    "would turn a measurement into an assertion, and nothing downstream would know.",
+    "This file states only the values that are deliberately overridden, and why each one is.",
+    "",
+    "WHAT I8 FIXES. The 443k reference dataset was built by duplicating a smaller dump 20x.",
+    "That compressed the time axis to ~33 days and froze cardinality at 1x, so every scan",
+    "reported examined ~= 401,240 at BOTH -30 and -90 days. No date-range conclusion taken on",
+    "it is falsifiable, and no index conclusion either: a report that ignores the range filter",
+    "entirely returns the same number as one that honours it.",
+    "",
+    "Two overrides, one property each."
+  ],
+
+  "extends": "seed-profile.json",
+  "overlay_version": 1,
+
+  "distinct": {
+    "_why_resource": [
+      "Measured value is 1,326 distinct resources. A4's cliff is MySQL switching an internal",
+      "temporary table from MEMORY to disk, which a GROUP BY resource crosses somewhere above",
+      "~2,048 distinct values on the default max_heap_table_size. At 1,326 the fixture sits",
+      "BELOW the cliff, so no query in the suite has ever gone to disk for a temp table and",
+      "the whole class of defect is unreachable — including the one A4 names.",
+      "",
+      "4096 is chosen to sit clearly past it rather than on it: a fixture that lands ON a",
+      "threshold measures the threshold's jitter, not the code. The synthesised tail comes from",
+      "the seeder's existing filler, so the head of the distribution keeps its measured skew and",
+      "only the long tail is manufactured — which is what selectivity depends on."
+    ],
+    "resource": 4096,
+
+    "_why_referer": [
+      "Raised in proportion (1,602 -> 4,096) so the referer report's grouping crosses the same",
+      "cliff. Leaving it at the measured value would make 'top referrers' the one report that",
+      "still cannot exercise the defect, for no reason a reader could infer."
+    ],
+    "referer": 4096
+  },
+
+  "_time_axis": [
+    "Not an overlay value — a CALLER obligation, stated here because this is where someone",
+    "looks. seed.php takes `days` as its second argument, and I8 requires >= 120 so that a",
+    "30-day window and a 90-day window select genuinely different row sets.",
+    "",
+    "tests/docker/seed-bench.sh passes 180 and then VERIFIES the property rather than trusting",
+    "it: it fails if rows(30d) is not strictly less than rows(90d), and if rows(90d) is not",
+    "strictly less than the total. A fixture that cannot tell the ranges apart is the exact",
+    "defect I8 exists to remove, and it must not be possible to build one and call it done."
+  ]
+}
