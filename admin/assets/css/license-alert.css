@@ -1,0 +1,308 @@
+/*
+ * SlimStat Pro license activation alert.
+ *
+ * Rendered by SlimStat\Services\Admin\LicenseAlert on SlimStat admin screens
+ * when Pro is installed but the license is missing/inactive/expired. Restrained,
+ * WordPress-native: a full-bordered panel (NOT the core notice side-stripe), a
+ * brand-tinted lock disc, and a single brand primary CTA. Warning hue is used as
+ * an accent only, never as body text. Tokens come from tokens.css with literal
+ * fallbacks so the panel renders correctly even on screens that do not load the
+ * token sheet.
+ *
+ * @since 5.5.0
+ */
+
+.slimstat-license-alert {
+	position: relative;
+	display: flex;
+	gap: var(--ss-space-4, 16px);
+	align-items: flex-start;
+	margin: 16px 0;
+	padding: var(--ss-space-5, 20px) var(--ss-space-6, 24px);
+	background: var(--ss-surface, #fff);
+	border: 1px solid var(--ss-border, #e2e4e7);
+	border-radius: var(--ss-radius-md, 12px);
+	box-shadow: var(--ss-shadow-card, 0 1px 4px rgba(60, 60, 90, 0.04));
+}
+
+/* Minimize / expand control, pinned to the top-inline-end corner. */
+.slimstat-license-alert__controls {
+	position: absolute;
+	top: 10px;
+	inset-inline-end: 10px;
+	display: flex;
+	gap: 2px;
+}
+
+.slimstat-license-alert__control {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 30px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: var(--ss-radius-xs, 6px);
+	background: transparent;
+	color: var(--ss-text-muted, #56585a);
+	cursor: pointer;
+	transition: background var(--ss-duration-fast, 0.15s) ease, color var(--ss-duration-fast, 0.15s) ease;
+}
+
+.slimstat-license-alert__control:hover {
+	background: var(--ss-surface-tint, #f6f7f7);
+	color: var(--ss-text-strong, #111827);
+}
+
+.slimstat-license-alert__control:focus-visible {
+	outline: 2px solid var(--ss-focus, #2271b1);
+	outline-offset: 1px;
+}
+
+.slimstat-license-alert__control .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	transition: transform var(--ss-duration-fast, 0.15s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1));
+}
+
+/* Minimized: collapse to a compact one-line bar — keep the icon, title and
+   controls, drop everything else. The chevron flips to point down (= expand). */
+.slimstat-license-alert.is-minimized {
+	/* Stay a compact row even below the 782px stacking breakpoint. */
+	flex-direction: row;
+	align-items: center;
+	padding-top: var(--ss-space-3, 12px);
+	padding-bottom: var(--ss-space-3, 12px);
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__text,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__actions,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__meta,
+.slimstat-license-alert.is-minimized .slimstat-license-alert__support {
+	display: none;
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__title {
+	margin: 0;
+}
+
+.slimstat-license-alert.is-minimized .slimstat-license-alert__minimize .dashicons {
+	transform: rotate(180deg);
+}
+
+/* Beat WordPress core's .notice-warning left side-stripe regardless of stylesheet
+   load order: .notice-warning is (0,1,0); this compound selector is (0,2,0), so
+   the banned colored side-stripe can never reappear. */
+.slimstat-license-alert.notice-warning {
+	border-color: var(--ss-border, #e2e4e7);
+	border-left-width: 1px;
+	border-inline-start-width: 1px;
+}
+
+/* Leading lock disc — brand tint, decorative. */
+.slimstat-license-alert__icon {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border-radius: var(--ss-radius-pill, 999px);
+	background: var(--ss-brand-100, #ffd7dc);
+	color: var(--ss-brand-700, #dc3232);
+}
+
+.slimstat-license-alert__icon .dashicons {
+	width: 24px;
+	height: 24px;
+	font-size: 24px;
+}
+
+.slimstat-license-alert__body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.slimstat-license-alert__title {
+	margin: 0 0 6px;
+	padding: 0;
+	/* Keep the heading clear of the single top-end control. */
+	padding-inline-end: 44px;
+	font-size: var(--ss-text-lg, 16px);
+	font-weight: 600;
+	line-height: 1.3;
+	color: var(--ss-text-strong, #111827);
+}
+
+.slimstat-license-alert__text {
+	margin: 0 0 14px;
+	max-width: 70ch;
+	font-size: var(--ss-text-md, 14px);
+	line-height: 1.5;
+	color: var(--ss-text-body, #202224);
+}
+
+.slimstat-license-alert__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ss-space-4, 16px);
+	margin-bottom: 10px;
+}
+
+/* Brand primary CTA — higher specificity than .wp-core-ui .button-primary.
+   Resting uses brand-700 (white on #dc3232 = 4.62:1, WCAG AA) rather than the
+   lighter brand-500 (4.33:1, fails); hover deepens to brand-900 (6.9:1). The
+   44px height meets the touch target and never undercuts WP core's mobile 40px. */
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	padding: 0 18px;
+	border-radius: var(--ss-radius-xs, 6px);
+	background: var(--ss-brand-700, #dc3232);
+	border-color: var(--ss-brand-700, #dc3232);
+	box-shadow: none;
+	color: #fff;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary:hover,
+.slimstat-license-alert .slimstat-license-alert__cta.button-primary:focus {
+	background: var(--ss-brand-900, #b31033);
+	border-color: var(--ss-brand-900, #b31033);
+	color: #fff;
+}
+
+/* Secondary/tertiary action links share the CTA's vertical rhythm and give a
+   44px tappable box (they only appear inside the action row). */
+.slimstat-license-alert__link {
+	display: inline-flex;
+	align-items: center;
+	min-height: 44px;
+	font-size: var(--ss-text-md, 14px);
+	color: var(--ss-info-fg, #2271b1);
+	text-decoration: underline;
+}
+
+.slimstat-license-alert__meta {
+	margin: 0 0 4px;
+	font-size: var(--ss-text-base, 13px);
+	color: var(--ss-text-muted, #56585a);
+}
+
+/* Click-to-copy coupon chip — one helpful tap, not a nag. */
+.slimstat-license-alert__coupon {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin: 0 2px;
+	padding: 2px 8px;
+	border: 1px solid var(--ss-border, #e2e4e7);
+	border-radius: var(--ss-radius-2xs, 4px);
+	background: var(--ss-surface-tint, #f6f7f7);
+	font-family: Menlo, Consolas, monospace;
+	font-size: var(--ss-text-base, 13px);
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: baseline;
+	color: var(--ss-text-strong, #111827);
+	cursor: pointer;
+	transition:
+		transform var(--ss-duration-fast, 0.15s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1)),
+		border-color var(--ss-duration-fast, 0.15s) ease,
+		color var(--ss-duration-fast, 0.15s) ease,
+		background var(--ss-duration-fast, 0.15s) ease;
+}
+
+.slimstat-license-alert__coupon:hover {
+	transform: translateY(-1px);
+	border-color: var(--ss-brand-300, #ff6b7d);
+	background: var(--ss-surface, #fff);
+}
+
+.slimstat-license-alert__coupon:active {
+	transform: translateY(0);
+}
+
+.slimstat-license-alert__coupon-icon {
+	width: 14px;
+	height: 14px;
+	font-size: 14px;
+	color: var(--ss-text-muted, #56585a);
+}
+
+.slimstat-license-alert__coupon-icon--done {
+	display: none;
+}
+
+/* Copied: a calm success confirmation — green chip, glyph flips to a check. */
+.slimstat-license-alert__coupon.is-copied {
+	border-color: var(--ss-success-fg, #18A456);
+	color: var(--ss-success-fg, #18A456);
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon {
+	color: var(--ss-success-fg, #18A456);
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon--copy {
+	display: none;
+}
+
+.slimstat-license-alert__coupon.is-copied .slimstat-license-alert__coupon-icon--done {
+	display: inline-block;
+}
+
+.slimstat-license-alert__support {
+	margin: 0;
+	font-size: var(--ss-text-base, 13px);
+	color: var(--ss-text-muted, #56585a);
+}
+
+/* Keyboard focus visibility — WordPress-native blue, never brand magenta. */
+.slimstat-license-alert a:focus-visible {
+	outline: 2px solid var(--ss-focus, #2271b1);
+	outline-offset: 2px;
+}
+
+/* Subtle entrance, suppressed under reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+	.slimstat-license-alert {
+		animation: slimstat-license-alert-in var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.4, 0, 0.2, 1));
+	}
+
+	/* A small, satisfying pop the moment the code is copied. */
+	.slimstat-license-alert__coupon.is-copied {
+		animation: slimstat-license-alert-pop var(--ss-duration-base, 0.25s) var(--ss-easing-out, cubic-bezier(0.25, 1, 0.5, 1));
+	}
+}
+
+@keyframes slimstat-license-alert-in {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slimstat-license-alert-pop {
+	0%   { transform: scale(1); }
+	45%  { transform: scale(1.06); }
+	100% { transform: scale(1); }
+}
+
+/* Stack at WordPress's own admin touch breakpoint so the banner reflows in step
+   with the rest of wp-admin. */
+@media (max-width: 782px) {
+	.slimstat-license-alert {
+		flex-direction: column;
+	}
+}
+
+/* A persistent banner has no place on a printed report. */
+@media print {
+	.slimstat-license-alert {
+		display: none !important;
+	}
+}

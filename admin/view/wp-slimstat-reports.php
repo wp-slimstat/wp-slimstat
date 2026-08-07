@@ -1777,6 +1777,11 @@ class wp_slimstat_reports
                 update_option('slimstat_goals', $normalized);
                 $goals = $normalized;
             }
+        } else {
+            // Pro capability is back (e.g. license reactivated): reactivate any
+            // goals we auto-paused for the Free tier so the customer is not left
+            // silently measuring only one of several goals. (#21)
+            $goals = self::restore_and_persist_tier_goals($goals);
         }
 
         // The "N of M used" pill counts ACTIVE goals only, so it stays accurate.
@@ -1834,9 +1839,53 @@ class wp_slimstat_reports
         foreach (array_keys($active) as $i) {
             if (!in_array($i, $keep, true)) {
                 $goals[$i]['active'] = false;
+                // Tag tier-paused goals so they can be auto-reactivated when Pro
+                // capability returns (e.g. license reactivated). Distinguishes
+                // them from goals the user paused by hand. (#21)
+                $goals[$i]['paused_by_tier'] = true;
             }
         }
         return $goals;
+    }
+
+    /**
+     * Reactivate goals that were auto-paused by the Free-tier limit.
+     *
+     * The inverse of pause_excess_free_goals(): when Pro capability returns, flip
+     * goals carrying the paused_by_tier marker back to active and clear the
+     * marker. Goals the user paused by hand (no marker) are left untouched. Pure
+     * (no I/O) so the caller decides when to persist; returns the goals unchanged
+     * when nothing was tier-paused. (#21)
+     *
+     * @param array $goals The stored goals list.
+     * @return array The goals with tier-paused entries reactivated.
+     */
+    public static function restore_tier_paused_goals(array $goals): array
+    {
+        foreach ($goals as $i => $g) {
+            if (!empty($g['paused_by_tier'])) {
+                $goals[$i]['active'] = true;
+                unset($goals[$i]['paused_by_tier']);
+            }
+        }
+        return $goals;
+    }
+
+    /**
+     * Reactivate tier-paused goals and persist if anything changed. Shared by the
+     * Goals card state and the compact widget so both reflect a license
+     * reactivation. Idempotent — writes only when a tier-paused goal is restored. (#21)
+     *
+     * @param array $goals The stored goals list.
+     * @return array The goals with tier-paused entries reactivated.
+     */
+    public static function restore_and_persist_tier_goals(array $goals): array
+    {
+        $restored = self::restore_tier_paused_goals($goals);
+        if ($restored !== $goals) {
+            update_option('slimstat_goals', $restored);
+        }
+        return $restored;
     }
 
     /**
@@ -1965,6 +2014,14 @@ class wp_slimstat_reports
 
         if ($is_widget) {
             $goals = get_option('slimstat_goals', []);
+            // The compact widget reads goals directly (bypassing the card state),
+            // so reactivate any tier-paused goals here too when Pro capability is
+            // back — otherwise the widget would render stale "paused" goals after a
+            // license reactivation until the Goals page is opened. Free tier
+            // ($max_goals === 1) is untouched. (#21)
+            if ((int) apply_filters('slimstat_max_goals', 1) > 1) {
+                $goals = self::restore_and_persist_tier_goals($goals);
+            }
             self::show_goals_compact($goals);
             if (wp_doing_ajax()) {
                 die();

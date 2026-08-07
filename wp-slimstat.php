@@ -231,7 +231,7 @@ class wp_slimstat
         }
 
         // Load all the settings
-        if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
+        if (self::settings_use_network_store()) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
             self::$settings = get_option('slimstat_options', []);
@@ -358,6 +358,24 @@ class wp_slimstat
 				self::$settings['use_slimstat_banner'] = 'off';
 			}
 		} // end GDPR consent-sync
+
+        // Pro license enforcement + activation alert (free is the authority).
+        // maybeRegister() registers the version-independent gate (report strip,
+        // goal/funnel limit clamp, front-end heatmap soft-disable) only when Pro is
+        // installed but the license is missing/inactive/expired. It runs here at
+        // plugins_loaded:20 — before any 'init'-hooked Pro addon reads its settings —
+        // and never persists its in-memory overrides. Both calls early-return cheaply
+        // for valid-license and free-only sites.
+        \SlimStat\Services\Admin\LicenseEnforcement::maybeRegister();
+        if (is_admin()) {
+            // The alert only renders in the admin notice area; its hooks never fire
+            // on the front end, so register them only where they can run.
+            \SlimStat\Services\Admin\LicenseAlert::register();
+        }
+
+        // Keep the cached Pro license status fresh on the daily cron so an expired
+        // license is detected without the admin re-saving the License tab.
+        add_action('slimstat_daily_license_check', [\SlimStat\Services\Admin\LicenseValidator::class, 'maybeRevalidate']);
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
@@ -503,6 +521,15 @@ class wp_slimstat
         if (is_user_logged_in()) {
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
+        } elseif (wp_doing_cron()) {
+            // Real WP-Cron runs unauthenticated, so the admin library (which
+            // instantiates CronEventManager) is never loaded and the daily hooks
+            // never fire. Construct it here so scheduled maintenance — including the
+            // daily Pro license revalidation on slimstat_daily_license_check — runs
+            // in background cron, not only when a logged-in admin happens to be present.
+            if (class_exists('SlimStat\\Services\\CronEventManager')) {
+                new \SlimStat\Services\CronEventManager();
+            }
         }
     }
     // end init
@@ -1398,6 +1425,21 @@ class wp_slimstat
     // end update_option
 
     /**
+     * Whether self::$settings was loaded from the network option store for this
+     * request (network-admin screens other than slimview). Single source of truth
+     * for init()'s read branch and any code that must write back to the same store
+     * (e.g. admin-ajax handlers, where is_network_admin() is always false).
+     *
+     * @return bool
+     */
+    public static function settings_use_network_store()
+    {
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+
+        return is_network_admin() && (empty($page) || false === strpos($page, 'slimview'));
+    }
+
+    /**
      * Attach a script to every page to track visitors' screen resolution and other browser-based information
      */
     public static function enqueue_tracker()
@@ -1855,8 +1897,51 @@ class wp_slimstat
      */
     public static function pro_is_installed($pluginSlug = 'wp-slimstat-pro/wp-slimstat-pro.php')
     {
+        // Memoised per request: plugin active-state is stable within a request, and
+        // this is now consulted on every request (license enforcement + alert), via
+        // several callers, so resolve it once.
+        static $cache = [];
+        if (isset($cache[$pluginSlug])) {
+            return $cache[$pluginSlug];
+        }
+
         include_once(ABSPATH . 'wp-admin/includes/plugin.php');
-        return (bool) is_plugin_active($pluginSlug);
+        return $cache[$pluginSlug] = (bool) is_plugin_active($pluginSlug);
+    }
+
+    /**
+     * Single source of truth for "are Pro features licensed and allowed to run".
+     *
+     * Returns true only when Pro is installed, a license key is present, and the
+     * stored license status is valid. This is the contract the Pro plugin calls
+     * from its addon gate and the free plugin uses to drive enforcement and the
+     * activation alert. Delegates to ConditionTagEvaluator for the in-memory
+     * (single-site) check so the license-state logic lives in one place.
+     *
+     * On a network-activated multisite the license may live in the NETWORK option,
+     * which a per-site request's self::$settings does not include — so when the
+     * in-memory check is negative, fall back to the network store (matching the
+     * store resolution used by LicenseValidator and the Pro addon gate). Single
+     * site is unaffected: is_multisite() short-circuits the fallback.
+     *
+     * @return bool
+     */
+    public static function pro_license_is_valid()
+    {
+        if (\SlimStat\Services\Admin\ConditionTagEvaluator::isLicenseActive()) {
+            return true;
+        }
+
+        if (self::pro_is_installed() && is_multisite()) {
+            $network = get_site_option('slimstat_options', []);
+            if (is_array($network)
+                && !empty($network['slimstat_pro_license_key'])
+                && !empty($network['slimstat_pro_license_status'])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -3,7 +3,9 @@ if (!function_exists('add_action')) {
     exit();
 }
 
-$is_pro = wp_slimstat::pro_is_installed();
+// Gate on license validity, not mere installation, so an unlicensed Pro install
+// sees the locked upsell instead of the live email-report builder.
+$is_pro = wp_slimstat::pro_license_is_valid();
 
 if (!$is_pro) {
     // For free users: show blurred content with modal
