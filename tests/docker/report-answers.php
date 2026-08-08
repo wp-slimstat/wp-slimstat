@@ -174,8 +174,56 @@ if ($end > 0 && $start > 0) {
 
 $timings = ['_reps' => $reps];
 
+/**
+ * Session status counters, which are DETERMINISTIC where milliseconds are not.
+ *
+ * A null control — the same ref as both arms — showed top_resource moving +12.69 ms (+11.3%)
+ * with no code difference at all, so the ms figures on this harness cannot carry a claim. These
+ * can: Handler_read_rnd_next is rows read from a full scan, Created_tmp_disk_tables is the
+ * MEMORY-to-disk spill A4 is about, Sort_rows is what a filesort moved. They do not vary with
+ * how busy the machine is.
+ *
+ * If these are identical across two arms, any latency difference between those arms is
+ * environmental BY DEFINITION — which is the check that makes a timing number interpretable
+ * rather than merely printed.
+ */
+$counters = static function () {
+    $wanted = [
+        'Handler_read_rnd_next', 'Handler_read_next', 'Handler_read_key', 'Handler_read_first',
+        'Created_tmp_tables', 'Created_tmp_disk_tables', 'Sort_rows', 'Sort_scan', 'Select_scan',
+    ];
+
+    $out = [];
+    foreach ($GLOBALS['wpdb']->get_results("SHOW SESSION STATUS WHERE Variable_name IN ('" . implode("','", $wanted) . "')") as $row) {
+        $out[$row->Variable_name] = (int) $row->Value;
+    }
+
+    return $out;
+};
+
 foreach ($timed as $name => $fn) {
     $samples = [];
+
+    // Counters are read once, around a SINGLE clean execution, before the timing loop. Summing
+    // them over repetitions would just multiply by $reps and hide the per-execution figure that
+    // is the actual comparable.
+    if (function_exists('wp_cache_flush')) {
+        wp_cache_flush();
+    }
+    $GLOBALS['wpdb']->query(
+        "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '\\_transient\\_%slimstat%'"
+            . " OR option_name LIKE '\\_transient\\_timeout\\_%slimstat%'"
+    );
+
+    $before_counters = $counters();
+    $fn();
+    $after_counters = $counters();
+
+    $delta = [];
+    foreach ($after_counters as $k => $v) {
+        $delta[$k] = $v - ($before_counters[$k] ?? 0);
+    }
+
     for ($i = 0; $i < $reps; $i++) {
         // The query cache must go between samples or every repetition after the first measures
         // the cache instead of the query.
@@ -199,11 +247,16 @@ foreach ($timed as $name => $fn) {
         $samples[] = (microtime(true) - $t0) * 1000;
     }
 
+    // RAW samples kept, not just min/median/max. A blind adjudicator noted that discarding
+    // 4 of 7 leaves no variance to reason about, so a delta can be neither supported nor
+    // refuted from the artifact — only eyeballed against a range.
     sort($samples);
     $timings[$name] = [
-        'min'    => round($samples[0], 2),
-        'median' => round($samples[intdiv(count($samples), 2)], 2),
-        'max'    => round($samples[count($samples) - 1], 2),
+        'samples'  => array_map(static function ($s) { return round($s, 2); }, $samples),
+        'min'      => round($samples[0], 2),
+        'median'   => round($samples[intdiv(count($samples), 2)], 2),
+        'max'      => round($samples[count($samples) - 1], 2),
+        'counters' => $delta,
     ];
 }
 

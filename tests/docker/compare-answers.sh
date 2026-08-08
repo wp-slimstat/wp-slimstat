@@ -200,21 +200,50 @@ ta_path = os.path.join(art, 'before-timing.json')
 tb_path = os.path.join(art, 'after-timing.json')
 if os.path.exists(ta_path) and os.path.exists(tb_path):
     ta, tb = json.load(open(ta_path)), json.load(open(tb_path))
+    keys = sorted(k for k in ta if not k.startswith('_') and k in tb)
+
+    # ── COUNTERS FIRST. These are the claim; milliseconds are context. ──────
+    # Handler_read_rnd_next is rows read by full scan, Created_tmp_disk_tables is the
+    # MEMORY-to-disk spill A4 names, Sort_rows is what a filesort moved. They do not vary
+    # with machine load, so a difference here IS the change and an absence of difference
+    # means any latency delta is environmental.
+    print('  deterministic counters, one clean execution per report')
+    counter_names = ['Handler_read_rnd_next', 'Handler_read_next', 'Created_tmp_disk_tables', 'Sort_rows']
+    moved = []
+    for key in keys:
+        ca, cb = ta[key].get('counters', {}), tb[key].get('counters', {})
+        diffs_here = [(n, ca.get(n, 0), cb.get(n, 0)) for n in counter_names if ca.get(n, 0) != cb.get(n, 0)]
+        if diffs_here:
+            moved.append(key)
+            print('    %-26s CHANGED' % key)
+            for n, x, y in diffs_here:
+                print('        %-26s %12d -> %12d  (%+d)' % (n, x, y, y - x))
+        else:
+            print('    %-26s identical  (rnd_next %s, tmp_disk %s)'
+                  % (key, ca.get('Handler_read_rnd_next', '?'), ca.get('Created_tmp_disk_tables', '?')))
+    print()
+
+    if not moved:
+        print('  => No counter moved. The two arms do the SAME work at the storage engine.')
+        print('     Any millisecond difference below is therefore environmental, not a result.')
+    else:
+        print('  => Counters moved for: %s. That difference is real work, and IS reportable.' % ', '.join(moved))
+    print()
+
+    # ── milliseconds, explicitly subordinate ────────────────────────────────
     reps = ta.get('_reps', '?')
-    print('  report latency, min of %s reps, cache flushed between samples (ms)' % reps)
+    print('  latency, %s reps per arm, caches and transients cleared between samples (ms)' % reps)
     print('  %-26s %10s %10s %10s' % ('report', 'before', 'after', 'delta'))
     print('  ' + '-' * 60)
-    for key in sorted(k for k in ta if not k.startswith('_')):
-        if key not in tb:
-            continue
-        x, y = ta[key]['min'], tb[key]['min']
+    for key in keys:
+        x, y = ta[key]['median'], tb[key]['median']
         print('  %-26s %10.2f %10.2f %+10.2f' % (key, x, y, y - x))
     print()
-    print('  Spread check — a wide min..max means the box was noisy and the delta is not evidence:')
-    for key in sorted(k for k in ta if not k.startswith('_')):
-        if key in tb:
-            print('    %-24s before %.2f..%.2f   after %.2f..%.2f'
-                  % (key, ta[key]['min'], ta[key]['max'], tb[key]['min'], tb[key]['max']))
+    print('  Raw spread (min..max). The harness NULL CONTROL measured +11.3%% on top_resource')
+    print('  with no code change at all, so treat any delta smaller than that as noise:')
+    for key in keys:
+        print('    %-24s before %.2f..%.2f   after %.2f..%.2f'
+              % (key, ta[key]['min'], ta[key]['max'], tb[key]['min'], tb[key]['max']))
     print()
 
 if not diffs:
