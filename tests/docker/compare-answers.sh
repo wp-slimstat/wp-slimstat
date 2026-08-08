@@ -182,16 +182,23 @@ print('  [%s] corpus cardinality past the 2048 cliff: %s distinct resources' % (
 # THE ARMS MUST DIFFER. Two identical files are the strongest possible "equivalent" and also
 # what a harness that failed to swap arms produces. A blind auditor named this as the one thing
 # the artifacts could not establish about themselves.
+null_control_env = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
 same_arm = a.get('_arm_fingerprint') == b.get('_arm_fingerprint')
-print('  [%s] the two arms are actually different code: %s vs %s' % (
+print('  [%s] the two arms are actually different code: %s vs %s  (%s PHP files hashed)' % (
     'FAIL' if same_arm else 'PASS',
-    str(a.get('_arm_fingerprint'))[:20], str(b.get('_arm_fingerprint'))[:20]))
+    str(a.get('_arm_fingerprint'))[:12], str(b.get('_arm_fingerprint'))[:12], a.get('_arm_files', '?')))
+if same_arm and not null_control_env:
+    print('         The two refs differ, but their src/ + admin/ PHP is byte-identical, so this')
+    print('         comparison could not observe the change. Either the change is outside the')
+    print('         shipped PHP surface (tests, docs, CI) — in which case there is nothing for')
+    print('         this harness to measure — or the wrong refs were passed.')
 
 # SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
 # environmental by construction, because there is no code difference to produce one. It is the
 # decisive test for the timing block, which — unlike the answers block above — has no control of
 # its own. A blind adjudicator named its absence as the reason no latency claim here is supported.
 null_control = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
+null_control_env = null_control
 if same_arm and null_control:
     print('  [NOTE] NULL CONTROL: both arms are the same code. Any timing delta below is')
     print('         environmental — it is the noise floor of this harness, not a result.')

@@ -63,8 +63,37 @@ $answers = [];
 // identical files indistinguishable from a genuine equivalence result. The strongest possible
 // "identical" is then also the most likely false positive. This makes that detectable.
 $answers['_arm_version'] = defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : 'unknown';
-$answers['_arm_fingerprint'] = md5_file(WP_PLUGIN_DIR . '/wp-slimstat/admin/view/wp-slimstat-db.php')
-    . ':' . (is_file(WP_PLUGIN_DIR . '/wp-slimstat/src/Schema/Schema.php') ? 'schema' : 'no-schema');
+
+// Hashed over the SHIPPED PHP surface — src/, admin/ and the main file — not one file.
+//
+// A single-file hash said "these arms are the same code" for two genuinely different commits
+// whose difference lay elsewhere, and aborted a valid run. It would also have missed the
+// opposite: a change confined to src/ leaving the fingerprinted file untouched, so two different
+// arms would have looked identical and the abort would never have fired at all.
+//
+// Vendor is excluded deliberately: it is normalised between arms on purpose (the autoloader is
+// rebuilt per arm), so including it would report a difference the harness itself created.
+$slimstat_root = WP_PLUGIN_DIR . '/wp-slimstat';
+$slimstat_hash = [];
+
+foreach (['src', 'admin'] as $slimstat_dir) {
+    $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(
+        $slimstat_root . '/' . $slimstat_dir,
+        RecursiveDirectoryIterator::SKIP_DOTS
+    ));
+    foreach ($it as $slimstat_file) {
+        $path = $slimstat_file->getPathname();
+        if (substr($path, -4) === '.php' && false === strpos($path, '/Dependencies/')) {
+            $slimstat_hash[] = substr($path, strlen($slimstat_root)) . ':' . md5_file($path);
+        }
+    }
+}
+
+$slimstat_hash[] = 'wp-slimstat.php:' . md5_file($slimstat_root . '/wp-slimstat.php');
+sort($slimstat_hash);
+
+$answers['_arm_fingerprint'] = md5(implode('|', $slimstat_hash));
+$answers['_arm_files']       = count($slimstat_hash);
 
 // ── scalar counts ───────────────────────────────────────────────────────────
 // Date filters off throughout: the corpus is seeded relative to "now", and a report whose
