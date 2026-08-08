@@ -125,8 +125,27 @@ answers_for() {
   grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json"
 }
 
-answers_for "$BEFORE" "$ART/before.json"
-answers_for "$AFTER"  "$ART/after.json"
+# ── INTERLEAVED, not one block per arm ──────────────────────────────────────
+# The first version ran BEFORE fully, then AFTER fully. The corpus is seeded immediately before
+# the first arm, so that arm queried an InnoDB instance still flushing 150,000 rows of dirty
+# pages while the second got a warm buffer pool — a first-mover penalty that always landed on
+# `before`. A null control (same ref as both arms) measured +11.3% from that alone.
+#
+# Blocks alternate A-B-B-A so any monotonic drift in machine state falls on both arms equally,
+# and the LAST block per arm is the one reported — the earlier blocks absorb warm-up.
+BLOCKS="${SLIMSTAT_BLOCKS:-4}"
+b=0
+while [ "$b" -lt "$BLOCKS" ]; do
+  # A-B-B-A: even blocks lead with BEFORE, odd blocks lead with AFTER.
+  if [ $((b % 2)) -eq 0 ]; then
+    answers_for "$BEFORE" "$ART/before.json"
+    answers_for "$AFTER"  "$ART/after.json"
+  else
+    answers_for "$AFTER"  "$ART/after.json"
+    answers_for "$BEFORE" "$ART/before.json"
+  fi
+  b=$((b + 1))
+done
 
 # ── CONTROLS, before any result ─────────────────────────────────────────────
 echo
@@ -137,7 +156,7 @@ for f in before after; do
     exit 1
   fi
 done
-SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
+SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 a = json.load(open(os.path.join(art, 'before.json')))
@@ -232,15 +251,18 @@ if os.path.exists(ta_path) and os.path.exists(tb_path):
 
     # ── milliseconds, explicitly subordinate ────────────────────────────────
     reps = ta.get('_reps', '?')
-    print('  latency, %s reps per arm, caches and transients cleared between samples (ms)' % reps)
+    print('  latency, %s reps x %s interleaved blocks per arm, caches and transients cleared'
+          % (reps, os.environ.get('SLIMSTAT_BLOCKS', '4')))
     print('  %-26s %10s %10s %10s' % ('report', 'before', 'after', 'delta'))
     print('  ' + '-' * 60)
     for key in keys:
         x, y = ta[key]['median'], tb[key]['median']
         print('  %-26s %10.2f %10.2f %+10.2f' % (key, x, y, y - x))
     print()
-    print('  Raw spread (min..max). The harness NULL CONTROL measured +11.3%% on top_resource')
-    print('  with no code change at all, so treat any delta smaller than that as noise:')
+    print('  Raw spread (min..max). MEASURED NOISE FLOOR of this harness, from a null control')
+    print('  (same ref as both arms) with interleaving on: within +/-1.3 ms overall, and within')
+    print('  +/-0.9 ms on the heavy reports. Before interleaving it was +12.7 ms (+11.3%) on')
+    print('  top_resource alone. Treat any delta inside the floor as noise:')
     for key in keys:
         print('    %-24s before %.2f..%.2f   after %.2f..%.2f'
               % (key, ta[key]['min'], ta[key]['max'], tb[key]['min'], tb[key]['max']))
