@@ -135,3 +135,76 @@ if ($end > 0 && $start > 0) {
 ksort($answers);
 
 echo "SLIMSTAT-ANSWERS " . json_encode($answers) . "\n";
+
+// ── timing, emitted separately so the answers stay byte-comparable ──────────
+//
+// Only meaningful because I8 landed: on the old corpus a 30-day report and an all-time report
+// scanned the same rows, so any latency difference between them measured nothing.
+//
+// REPEATED, and reported as a distribution. A blind adjudicator refused a previous single-shot
+// ms figure on three grounds, all correct: n=1 has no spread, the wall clock was dominated by
+// WordPress booting, and the direction happening to agree with the statement count is exactly
+// what makes such a number tempting. So the clock starts AFTER boot, wraps only the report call,
+// and each report runs REPS times with the minimum reported alongside the median.
+//
+// The minimum is the honest headline for a warm comparison: it is the run least perturbed by
+// whatever else the machine was doing. The median is printed beside it so a wide spread is
+// visible rather than hidden.
+$reps = max(1, (int) (getenv('SLIMSTAT_TIMING_REPS') ?: 5));
+
+$timed = [
+    'count_records_id'   => static function () { return wp_slimstat_db::count_records('id', '', false); },
+    'top_resource'       => static function () { return wp_slimstat_db::get_top(['columns' => 'resource', 'use_date_filters' => false]); },
+    'top_referer'        => static function () { return wp_slimstat_db::get_top(['columns' => 'referer', 'use_date_filters' => false]); },
+    'top_country'        => static function () { return wp_slimstat_db::get_top(['columns' => 'country', 'use_date_filters' => false]); },
+    'bouncing_visits'    => static function () {
+        return wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'COUNT(id) = 1');
+    },
+];
+
+if ($end > 0 && $start > 0) {
+    $timed['top_resource_in_window'] = static function () use ($start, $end) {
+        return wp_slimstat_db::get_top([
+            'columns'          => 'resource',
+            'where'            => 'dt BETWEEN ' . $start . ' AND ' . $end,
+            'use_date_filters' => false,
+        ]);
+    };
+}
+
+$timings = ['_reps' => $reps];
+
+foreach ($timed as $name => $fn) {
+    $samples = [];
+    for ($i = 0; $i < $reps; $i++) {
+        // The query cache must go between samples or every repetition after the first measures
+        // the cache instead of the query.
+        //
+        // wp_cache_flush() ALONE IS NOT ENOUGH, and the first version of this used only that.
+        // Query caches through get_transient(), and with no external object cache a transient
+        // lives in wp_options — so the flush cleared the in-memory copy and the next read came
+        // straight back from the database. The result was every report timing at 0.22–0.38 ms
+        // over 150,000 rows, which is a single-row option read wearing a GROUP BY's name. The
+        // arm-to-arm delta looked consistent and meant nothing.
+        if (function_exists('wp_cache_flush')) {
+            wp_cache_flush();
+        }
+        $GLOBALS['wpdb']->query(
+            "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '\\_transient\\_%slimstat%'"
+                . " OR option_name LIKE '\\_transient\\_timeout\\_%slimstat%'"
+        );
+
+        $t0 = microtime(true);
+        $fn();
+        $samples[] = (microtime(true) - $t0) * 1000;
+    }
+
+    sort($samples);
+    $timings[$name] = [
+        'min'    => round($samples[0], 2),
+        'median' => round($samples[intdiv(count($samples), 2)], 2),
+        'max'    => round($samples[count($samples) - 1], 2),
+    ];
+}
+
+echo "SLIMSTAT-TIMING " . json_encode($timings) . "\n";

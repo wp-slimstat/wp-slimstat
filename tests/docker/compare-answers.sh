@@ -47,12 +47,24 @@ mkdir -p "$WP_DIR" "$ART" "$WORKTREES"
 
 for ref in "$BEFORE" "$AFTER"; do
   dir="$WORKTREES/$ref"
-  [ -d "$dir" ] || git -C "$PLUGIN_SRC" worktree add --detach "$dir" "$ref" >/dev/null 2>&1 \
-    || { err "cannot create a worktree at $ref"; exit 1; }
+  # Tested on a FILE the worktree must contain, not on the directory existing. `[ -d "$dir" ]`
+  # is true for an empty directory left by an interrupted run, so the worktree add was skipped,
+  # vendor/ was rsynced into nothing, composer found no composer.json, and the arm booted with
+  # the CURRENT tree's classmap — authoritative, and mapping classes that ref does not have.
+  if [ ! -f "$dir/composer.json" ]; then
+    rm -rf "$dir"
+    git -C "$PLUGIN_SRC" worktree prune >/dev/null 2>&1
+    git -C "$PLUGIN_SRC" worktree add --detach "$dir" "$ref" >/dev/null 2>&1 \
+      || { err "cannot create a worktree at $ref"; exit 1; }
+  fi
   # Same normalisation measure-arms.sh declares, for the same reason: at some refs the committed
   # autoloader is the dev one and the arm cannot boot at all.
   rsync -a "$PLUGIN_SRC/vendor/" "$dir/vendor/" >/dev/null 2>&1
-  ( cd "$dir" && composer run build:autoload >/dev/null 2>&1 ) || warn "autoloader not rebuilt at $ref"
+  # FATAL, not a warning. A failed rebuild leaves the current tree's classmap in place, and it
+  # is classmap-AUTHORITATIVE — so the arm cannot load a class that ref does not have, and the
+  # run reports "not loadable" several minutes later with the cause scrolled off screen.
+  ( cd "$dir" && composer run build:autoload >/dev/null 2>&1 ) \
+    || { err "could not rebuild the autoloader at $ref — that arm would boot with the wrong classmap"; exit 1; }
 done
 
 log "[$CELL] build + up"
@@ -105,10 +117,12 @@ answers_for() {
   local ref="$1" out="$2"
   use_arm "$ref"
   dc exec -T -u www-data \
-     -e SLIMSTAT_ANSWERS_START="$WIN_START" -e SLIMSTAT_ANSWERS_END="$WIN_END" wp \
+     -e SLIMSTAT_ANSWERS_START="$WIN_START" -e SLIMSTAT_ANSWERS_END="$WIN_END" \
+     -e SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" wp \
      wp --path=/var/www/html eval-file \
      wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1
   grep -h 'SLIMSTAT-ANSWERS' "$out.raw" | sed 's/^SLIMSTAT-ANSWERS //' > "$out"
+  grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json"
 }
 
 answers_for "$BEFORE" "$ART/before.json"
@@ -123,7 +137,7 @@ for f in before after; do
     exit 1
   fi
 done
-python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
+SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 a = json.load(open(os.path.join(art, 'before.json')))
@@ -154,7 +168,15 @@ print('  [%s] the two arms are actually different code: %s vs %s' % (
     'FAIL' if same_arm else 'PASS',
     str(a.get('_arm_fingerprint'))[:20], str(b.get('_arm_fingerprint'))[:20]))
 
-if same_arm or distinct_res <= 2048:
+# SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
+# environmental by construction, because there is no code difference to produce one. It is the
+# decisive test for the timing block, which — unlike the answers block above — has no control of
+# its own. A blind adjudicator named its absence as the reason no latency claim here is supported.
+null_control = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
+if same_arm and null_control:
+    print('  [NOTE] NULL CONTROL: both arms are the same code. Any timing delta below is')
+    print('         environmental — it is the noise floor of this harness, not a result.')
+elif same_arm or distinct_res <= 2048:
     print('\nVERDICT: ABORTED — the comparison would not mean what it says')
     sys.exit(1)
 
@@ -171,8 +193,32 @@ for key in sorted(set(a) | set(b)):
     if a.get(key) != b.get(key):
         diffs.append(key)
 
+# ── timings, reported beside the verdict, never as part of it ───────────────
+# Correctness is the gate; cost is information. A run that got faster and changed an answer is a
+# failure, so the two are never combined into one number.
+ta_path = os.path.join(art, 'before-timing.json')
+tb_path = os.path.join(art, 'after-timing.json')
+if os.path.exists(ta_path) and os.path.exists(tb_path):
+    ta, tb = json.load(open(ta_path)), json.load(open(tb_path))
+    reps = ta.get('_reps', '?')
+    print('  report latency, min of %s reps, cache flushed between samples (ms)' % reps)
+    print('  %-26s %10s %10s %10s' % ('report', 'before', 'after', 'delta'))
+    print('  ' + '-' * 60)
+    for key in sorted(k for k in ta if not k.startswith('_')):
+        if key not in tb:
+            continue
+        x, y = ta[key]['min'], tb[key]['min']
+        print('  %-26s %10.2f %10.2f %+10.2f' % (key, x, y, y - x))
+    print()
+    print('  Spread check — a wide min..max means the box was noisy and the delta is not evidence:')
+    for key in sorted(k for k in ta if not k.startswith('_')):
+        if key in tb:
+            print('    %-24s before %.2f..%.2f   after %.2f..%.2f'
+                  % (key, ta[key]['min'], ta[key]['max'], tb[key]['min'], tb[key]['max']))
+    print()
+
 if not diffs:
-    print('VERDICT: IDENTICAL — %d reports, every answer byte-for-byte equal' % len(a))
+    print('VERDICT: IDENTICAL — %d reports, every answer byte-for-byte equal' % len([k for k in a if not k.startswith('_arm_')]))
     sys.exit(0)
 
 print('VERDICT: DIFFERENCES in %d of %d reports\n' % (len(diffs), len(set(a) | set(b))))

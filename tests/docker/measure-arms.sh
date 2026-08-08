@@ -51,7 +51,13 @@ trap cleanup EXIT
 # ── one worktree per arm, so neither arm is "the working tree" ───────────────
 for ref in "$BEFORE" "$AFTER"; do
   dir="$WORKTREES/$ref"
-  if [ ! -d "$dir" ]; then
+  # Tested on a FILE the worktree must contain, not on the directory existing. `-d` is true for
+  # an empty directory left by an interrupted run, so the add was skipped, vendor/ was rsynced
+  # into nothing, composer found no composer.json, and the arm booted with the CURRENT tree's
+  # classmap — authoritative, mapping classes that ref does not have.
+  if [ ! -f "$dir/composer.json" ]; then
+    rm -rf "$dir"
+    git -C "$PLUGIN_SRC" worktree prune >/dev/null 2>&1
     git -C "$PLUGIN_SRC" worktree add --detach "$dir" "$ref" >/dev/null 2>&1 \
       || { err "cannot create a worktree at $ref"; exit 1; }
   fi
@@ -68,8 +74,10 @@ for ref in "$BEFORE" "$AFTER"; do
   # measuring it here showed it is worse than recorded: the commit could not have booted from
   # its own ZIP.
   rsync -a "$PLUGIN_SRC/vendor/" "$dir/vendor/" >/dev/null 2>&1
+  # FATAL, not a warning: a failed rebuild leaves the current tree's classmap in place, and it is
+  # classmap-AUTHORITATIVE, so the arm silently boots with a map for code it does not contain.
   ( cd "$dir" && composer run build:autoload >/dev/null 2>&1 ) \
-    || warn "could not regenerate the autoloader at $ref — that arm may not boot"
+    || { err "could not rebuild the autoloader at $ref — that arm would boot with the wrong classmap"; exit 1; }
 done
 
 log "[$CELL] build + up (PHP $PHP, WP $WP)"
