@@ -528,6 +528,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Reports\\Traits\\HasTooltip' => __DIR__ . '/../..' . '/src/Reports/Traits/HasTooltip.php',
         'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => __DIR__ . '/../..' . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',
         'SlimStat\\Schema\\Schema' => __DIR__ . '/../..' . '/src/Schema/Schema.php',
+        'SlimStat\\Schema\\SurrogateKey' => __DIR__ . '/../..' . '/src/Schema/SurrogateKey.php',
         'SlimStat\\Services\\Admin\\ConditionTagEvaluator' => __DIR__ . '/../..' . '/src/Services/Admin/ConditionTagEvaluator.php',
         'SlimStat\\Services\\Admin\\Notification\\NotificationActions' => __DIR__ . '/../..' . '/src/Services/Admin/Notification/NotificationActions.php',
         'SlimStat\\Services\\Admin\\Notification\\NotificationFactory' => __DIR__ . '/../..' . '/src/Services/Admin/Notification/NotificationFactory.php',

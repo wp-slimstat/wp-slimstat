@@ -129,15 +129,25 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $this->assertSame([], $report['tables']);
         $this->assertSame([], $report['indexes']);
         $this->assertSame([], $report['failed']);
-        // 13 on slim_stats + 2 on slim_events + 1 on slim_events_archive. slim_stats_archive
-        // inherits slim_stats' set via `like` but is not reconciled, so it contributes none.
-        $this->assertCount(16, $report['present']);
+        // 13 on slim_stats + 2 on slim_events + 1 on slim_events_archive + 2 on
+        // slim_user_agents. slim_stats_archive inherits slim_stats' set via `like` but is not
+        // reconciled, so it contributes none.
+        //
+        // Written out, not derived. Deriving it from the manifest would make it true by
+        // construction and it would stop catching anything — so a new table is REQUIRED to
+        // update this number deliberately, which is the point.
+        $this->assertCount(18, $report['present']);
 
-        // One patterned SHOW TABLES for all four tables, then one SHOW INDEX per reconciled
-        // table. The old path issued fourteen single-index probes across six call sites, and a
-        // separate information_schema lookup for the collation that was always discarded.
+        // One patterned SHOW TABLES for ALL tables, then one SHOW INDEX per RECONCILED table:
+        // 1 + 4 (slim_events, slim_events_archive, slim_stats, slim_user_agents). The archive of
+        // slim_stats carries reconcile => false, so it costs nothing here.
+        //
+        // The old path issued fourteen single-index probes across six call sites, plus a
+        // separate information_schema lookup for the collation that was always discarded. This
+        // budget is the reason Layer 1 can add a dimension for ONE extra probe rather than one
+        // per index.
         $this->assertCount(
-            4,
+            5,
             $this->probes,
             "a healthy install must cost one table probe plus one index probe per reconciled "
                 . 'table: ' . implode(' | ', $this->probes)
@@ -193,7 +203,9 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // `CREATE TABLE IF NOT EXISTS` cannot give you, since it answers 0 both for "already
         // there" and for a statement the server refused.
         $this->assertSame([], $report['tables']);
-        $this->assertCount(4, $report['failed']);
+        // Five: slim_events, slim_events_archive, slim_stats, slim_stats_archive and the
+        // slim_user_agents dimension. Deliberately updated when Layer 1 landed.
+        $this->assertCount(5, $report['failed']);
 
         $create = implode("\n", $this->queries);
         $this->assertStringContainsString('ENGINE=InnoDB', $create);

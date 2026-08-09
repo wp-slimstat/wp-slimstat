@@ -126,6 +126,45 @@ final class Schema
             ],
         ],
 
+        /**
+         * ADR-9 Layer 1 — the first dimension (F10 / G3).
+         *
+         * Holds the PARSED user-agent dimensions only. The raw `user_agent` string stays
+         * denormalised on the fact row per ratified decision P4, which is what keeps Art. 17
+         * satisfiable: delete the fact row and the identity goes with it. A dimension row
+         * describes a browser, not a person, so it survives erasure without carrying anything
+         * personal.
+         *
+         * PRIMARY KEY IS DERIVED, NOT AUTO_INCREMENT — see SurrogateKey. That is the difference
+         * between the tracker computing a key locally and asking the database for one on every
+         * hit; the second costs a SELECT, a conditional INSERT and a race, per dimension, per
+         * pageview, and would make Layer 1 cost more than the whole programme saves.
+         *
+         * BINARY(8) and SurrogateKey::WIDTH must agree. A mismatch truncates silently and every
+         * key sharing its last bytes collapses into one row — asserted in SurrogateKeyTest and
+         * in the manifest gate rather than trusted.
+         *
+         * Not archived and not reconciled into slim_stats_archive: a dimension is small,
+         * append-only and shared by live and archived facts alike.
+         */
+        'slim_user_agents' => [
+            'columns' => [
+                'ua_id'           => 'BINARY(8) NOT NULL',
+                'browser'         => 'VARCHAR(40) DEFAULT NULL',
+                'browser_version' => 'VARCHAR(15) DEFAULT NULL',
+                'browser_type'    => 'TINYINT UNSIGNED DEFAULT 0',
+                'platform'        => 'VARCHAR(15) DEFAULT NULL',
+                'first_seen'      => 'INT(10) UNSIGNED DEFAULT 0',
+            ],
+            'primary' => 'ua_id',
+            'indexes' => [
+                // Reports group by browser, and by browser+version for the "Top Browsers"
+                // report. Both read the dimension directly rather than joining every fact row.
+                'idx_ua_browser' => 'browser, browser_version',
+                'idx_ua_platform' => 'platform',
+            ],
+        ],
+
         'slim_stats' => [
             'columns' => [
                 'id'                => 'INT UNSIGNED NOT NULL auto_increment',

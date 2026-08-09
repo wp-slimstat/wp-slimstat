@@ -513,6 +513,7 @@ return array(
     'SlimStat\\Reports\\Traits\\HasTooltip' => $baseDir . '/src/Reports/Traits/HasTooltip.php',
     'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => $baseDir . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',
     'SlimStat\\Schema\\Schema' => $baseDir . '/src/Schema/Schema.php',
+    'SlimStat\\Schema\\SurrogateKey' => $baseDir . '/src/Schema/SurrogateKey.php',
     'SlimStat\\Services\\Admin\\ConditionTagEvaluator' => $baseDir . '/src/Services/Admin/ConditionTagEvaluator.php',
     'SlimStat\\Services\\Admin\\Notification\\NotificationActions' => $baseDir . '/src/Services/Admin/Notification/NotificationActions.php',
     'SlimStat\\Services\\Admin\\Notification\\NotificationFactory' => $baseDir . '/src/Services/Admin/Notification/NotificationFactory.php',
