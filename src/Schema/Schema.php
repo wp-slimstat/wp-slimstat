@@ -197,6 +197,20 @@ final class Schema
                 'author'            => 'VARCHAR(64) DEFAULT NULL',
                 'content_id'        => 'BIGINT(20) UNSIGNED DEFAULT 0',
                 'outbound_resource' => 'VARCHAR(2048) DEFAULT NULL',
+                // ADR-9 Layer 1's join key to slim_user_agents (F10/G3). DECLARED HERE, not only
+                // added by AddUserAgentDimension, and the distinction is the whole of C39: a
+                // migration that adds a column the manifest does not know about means a FRESH
+                // install is born without it and pays a fact-table ALTER to catch up, while an
+                // upgraded one already has it — the two schema states F2 exists to collapse.
+                //
+                // Declaring it also silences C41 on a new site: the migration's
+                // factColumnExists() is true immediately, so shouldRun() is false and the
+                // notice does not offer to rebuild an empty table.
+                //
+                // NULL-able on purpose. An un-backfilled row is a real state (M6 has the
+                // dimension built by migration and cron, never by the tracker), and reports
+                // LEFT JOIN so a NULL key still counts from the fact row's own columns.
+                'ua_id'             => 'BINARY(8) DEFAULT NULL',
                 'tz_offset'         => 'SMALLINT DEFAULT 0',
                 'dt_out'            => 'INT(10) UNSIGNED DEFAULT 0',
                 'dt'                => 'INT(10) UNSIGNED DEFAULT 0',

@@ -61,6 +61,18 @@ wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || { err "activate fai
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "tables";' \
     >>"$ART/install.log" 2>&1 || { err "init_tables failed"; exit 1; }
 
+# ── EXERCISE_FRESH runs BEFORE seeding, on a virgin install ─────────────────
+# Some properties only exist on a fresh site — that it is born with the right columns, and that
+# it is NOT offered a migration. Neither can be checked after seeding, and the I8 corpus
+# assertions below would reject a one-row table anyway. So this probe gets its own moment.
+if [ -n "${EXERCISE_FRESH:-}" ]; then
+  cp "$HARNESS_DIR/$EXERCISE_FRESH" "$WP_DIR/wp-content/plugins/wp-slimstat/tests/docker/" 2>/dev/null
+  log "[$CELL] exercising $EXERCISE_FRESH on the fresh install"
+  dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+     "wp-content/plugins/wp-slimstat/tests/docker/$EXERCISE_FRESH" 2>&1 | tee "$ART/exercise-fresh.log"
+  [ "${PIPESTATUS[0]}" -eq 0 ] || { err "the fresh-install probe failed"; exit 1; }
+fi
+
 log "[$CELL] seeding $ROWS rows over $DAYS days with the I8 overlay"
 dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
    wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" seed-profile-i8.json \
