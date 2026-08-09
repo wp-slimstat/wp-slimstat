@@ -45,6 +45,12 @@ class PurgeArchive
         'browser', 'browser_version', 'browser_type', 'platform', 'language', 'fingerprint',
         'user_agent', 'resolution', 'screen_width', 'screen_height', 'content_type', 'category',
         'author', 'content_id', 'tz_offset', 'outbound_resource', 'dt_out', 'dt',
+        // ADR-9 Layer 1's dimension key (F10/G3). Added here in the same change that declared
+        // it on slim_stats, because the two lists diverging IS the defect this class guards:
+        // the purge deletes the live row and the archive keeps a copy missing the column.
+        // Caught by tests/purge-archive-order-test.php rather than by review — which is the
+        // schema-diff gate C25 and C36 earned doing exactly what it was built for.
+        'ua_id',
     ];
 
     /**
