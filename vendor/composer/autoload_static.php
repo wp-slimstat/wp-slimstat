@@ -497,6 +497,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Migration\\MigrationInterface' => __DIR__ . '/../..' . '/src/Migration/MigrationInterface.php',
         'SlimStat\\Migration\\MigrationManager' => __DIR__ . '/../..' . '/src/Migration/MigrationManager.php',
         'SlimStat\\Migration\\MigrationService' => __DIR__ . '/../..' . '/src/Migration/MigrationService.php',
+        'SlimStat\\Migration\\Migrations\\AddUserAgentDimension' => __DIR__ . '/../..' . '/src/Migration/Migrations/AddUserAgentDimension.php',
         'SlimStat\\Migration\\Migrations\\ConvertTablesToUtf8mb4' => __DIR__ . '/../..' . '/src/Migration/Migrations/ConvertTablesToUtf8mb4.php',
         'SlimStat\\Migration\\Migrations\\CreateCountryDtIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateCountryDtIndex.php',
         'SlimStat\\Migration\\Migrations\\CreateDtBrowserIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateDtBrowserIndex.php',

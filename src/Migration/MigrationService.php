@@ -7,6 +7,7 @@ use SlimStat\Migration\Admin\MigrationAdmin;
 use SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4;
 use SlimStat\Migration\Migrations\CreateCountryDtIndex;
 use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
+use SlimStat\Migration\Migrations\AddUserAgentDimension;
 use SlimStat\Migration\Migrations\CreateDtOutIndex;
 use SlimStat\Migration\Migrations\CreateDtPlatformIndex;
 use SlimStat\Migration\Migrations\CreateDtScreenIndex;
@@ -103,6 +104,10 @@ class MigrationService
             $manager = new MigrationManager();
 
             // Register all migrations
+            // ADR-9 Layer 1. Registered FIRST because it is the only migration here that
+            // rebuilds the fact table — an admin watching the migration screen should see
+            // the expensive step start, not have it appear after eight quick ones.
+            $manager->register(new AddUserAgentDimension($analytics, $core));
             $manager->register(new CreateDtOutIndex($analytics, $core));
             $manager->register(new CreateCountryDtIndex($analytics, $core));
             $manager->register(new CreateDtScreenIndex($analytics, $core));

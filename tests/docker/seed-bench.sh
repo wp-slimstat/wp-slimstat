@@ -103,6 +103,20 @@ fi
 
 [ "$fail" -eq 0 ] || exit 1
 
+# ── exercise any migration handed to us, against the seeded table ───────────
+# EXERCISE=<file> runs a probe inside the container after seeding. A migration that has only
+# ever run against a mock is a claim: the ALTER's algorithm is the server's choice, INSERT
+# IGNORE exists for what happens on a duplicate, and `<=>` matters only because the columns are
+# nullable. None of that behaviour exists in a double.
+if [ -n "${EXERCISE:-}" ]; then
+  cp "$HARNESS_DIR/$EXERCISE" "$WP_DIR/wp-content/plugins/wp-slimstat/tests/docker/" 2>/dev/null
+  log "[$CELL] exercising $EXERCISE"
+  dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+     "wp-content/plugins/wp-slimstat/tests/docker/$EXERCISE" 2>&1 | tee "$ART/exercise.log"
+  ex_rc=${PIPESTATUS[0]}
+  [ "$ex_rc" -eq 0 ] || { err "the exercised probe failed"; exit 1; }
+fi
+
 log "[$CELL] fixture is usable: ranges separate, cardinality past the cliff"
 [ "$keep" = "1" ] && log "[$CELL] container left up on http://127.0.0.1:${HTTP_PORT} (KEEP_BENCH=1)"
 exit 0
