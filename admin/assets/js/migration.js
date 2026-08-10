@@ -20,6 +20,21 @@
             var $li = $("<li/>", { id: "slimstat-step-" + s.id });
             $li.append($("<div/>", { class: "label", html: s.name + " — " + s.desc }));
             $li.append($("<span/>", { class: "status" }));
+            // An OFFERED step gets its own control and is skipped by "Start Migration".
+            // Without the button it would be listed and unstartable, which is how the first
+            // version of this shipped: excluded from the run loop and given nothing to replace
+            // it, so "optional" meant "visible and impossible".
+            if (s.optional) {
+                $li.addClass("slimstat-step-optional");
+                $li.append(
+                    $("<button/>", {
+                        class: "button slimstat-run-step",
+                        type: "button",
+                        "data-migration": s.id,
+                        text: SlimstatMigration.labels.runThisStep || "Run this step"
+                    })
+                );
+            }
             $ul.append($li);
         });
     }
@@ -57,7 +72,12 @@
         if (label) $text.text(label);
     }
     function runAll() {
-        var steps = (SlimstatMigration && SlimstatMigration.steps) || [];
+        // OWED ONLY. "Start Migration" applies what the site is owed; an offered step has its
+        // own button. Filtering here rather than in the loop keeps `total` and the progress
+        // bar honest — counting steps that will never run made the bar stop short of 100%.
+        var steps = ((SlimstatMigration && SlimstatMigration.steps) || []).filter(function (s) {
+            return !s.optional;
+        });
         var i = 0,
             done = 0,
             total = steps.length;
@@ -172,6 +192,51 @@
             $(this).prop("disabled", true);
             $(this).find(".spinner").addClass("is-active");
             runAll();
+        });
+
+        // One OFFERED step, started deliberately by the admin. Posts the same endpoint with the
+        // same nonce and the same 15-minute budget as a step inside the run loop — the work is
+        // identical, only the decision to do it differs.
+        $(document).on("click", ".slimstat-run-step", function (e) {
+            e.preventDefault();
+
+            var $btn = $(this).prop("disabled", true);
+            var id = $btn.data("migration");
+            var $status = $("#slimstat-step-" + id + " .status");
+
+            $status.html(
+                '<span style="color:#0073aa;">' + SlimstatMigration.labels.inProgress + "</span> " +
+                '<span class="spinner is-active"></span>'
+            );
+
+            $.ajax({
+                url: SlimstatMigration.ajaxUrl,
+                type: "POST",
+                data: { action: "slimstat_run_migrations", _ajax_nonce: SlimstatMigration.nonce, migration: id },
+                timeout: 15 * 60 * 1000
+            })
+                .done(function (resp) {
+                    var ok = !!(resp && resp.success);
+                    $status.html(
+                        ok
+                            ? '<span style="color:green;">' + SlimstatMigration.labels.done + "</span>"
+                            : '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span>"
+                    );
+                    // Re-enabled only on failure, so a completed step cannot be started twice by
+                    // a second click while the page still shows it.
+                    $btn.prop("disabled", ok);
+                })
+                .fail(function (xhr, textStatus) {
+                    $status.html(
+                        '<span style="color:red;">' + SlimstatMigration.labels.failed + "</span> " +
+                        '<span style="color:#666;">' +
+                        ("timeout" === textStatus
+                            ? SlimstatMigration.labels.timedOut
+                            : SlimstatMigration.labels.requestFailed) +
+                        "</span>"
+                    );
+                    $btn.prop("disabled", false);
+                });
         });
 
         // Notice dismissal

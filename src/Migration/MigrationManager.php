@@ -58,7 +58,30 @@ class MigrationManager
      */
     public function getRequiredMigrations(): array
     {
-        return array_filter($this->migrations, fn($migration) => $migration->shouldRun());
+        return array_filter(
+            $this->migrations,
+            fn($migration) => !$migration->isOptional() && $migration->shouldRun()
+        );
+    }
+
+    /**
+     * Migrations that are OFFERED rather than owed, and have work to do.
+     *
+     * The other half of getRequiredMigrations(), and it exists because the first version of this
+     * seam had no such method — the admin screen renders exclusively from the *required* set, so
+     * excluding an optional migration from that set removed it from the UI entirely. "Opt-in"
+     * silently meant "gone": no menu item, no row, and `getDescription()`'s new "Optional…" copy
+     * unreachable in every locale. The unit test that was supposed to catch this asserted
+     * against `getMigrations()`, which no rendering path calls.
+     *
+     * @return array<int, MigrationInterface>
+     */
+    public function getOfferedMigrations(): array
+    {
+        return array_filter(
+            $this->migrations,
+            fn($migration) => $migration->isOptional() && $migration->shouldRun()
+        );
     }
 
     public function register(MigrationInterface $migration): void
@@ -108,6 +131,13 @@ class MigrationManager
         $needs       = false;
         $unavailable = false;
         foreach ($this->migrations as $migration) {
+            // An OFFERED migration never makes the answer true. It is listed on the screen and
+            // runnable by name; what it must not do is put a notice on every admin page asking
+            // for a fact-table rebuild that Run 9 measured as buying nothing yet.
+            if ($migration->isOptional()) {
+                continue;
+            }
+
             if ($migration->shouldRun()) {
                 $needs = true;
                 break;
@@ -270,6 +300,14 @@ class MigrationManager
 
         try {
             foreach ($this->migrations as $migration) {
+                // "Apply All" applies everything OWED. An offered migration is skipped and left
+                // out of the results entirely rather than recorded as true — writing `true` for
+                // something that did not run is how a status map starts lying, and this map is
+                // what the screen renders.
+                if ($migration->isOptional()) {
+                    continue;
+                }
+
                 // Only run if needed, but always record status
                 $ok = !$migration->shouldRun() || $migration->run();
                 $results[$migration->getId()] = $ok;

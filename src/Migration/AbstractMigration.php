@@ -125,6 +125,28 @@ abstract class AbstractMigration implements MigrationInterface
 		return true; // Default to needing run; override in subclass
 	}
 
+	/**
+	 * Is this migration OFFERED rather than OWED?
+	 *
+	 * An optional migration is listed on the migration screen and can be run there by name, but
+	 * it never raises the admin notice, is never part of "Apply All", and never makes
+	 * needsMigration() true. `shouldRun()` still answers whether it has work to do — the two
+	 * questions are separate, and conflating them is what would make "offered" mean "invisible".
+	 *
+	 * Exists because F10 Layer 1 is real, measured, and currently buys nothing (Run 9 / M7): the
+	 * star schema's read path cannot pay while P4 keeps the parsed columns on the fact row. A
+	 * fresh install gets `ua_id` for free — it is in the manifest, so it arrives in CREATE TABLE
+	 * with no ALTER at all — while an existing site would pay a fact-table rebuild (~14 s at
+	 * 443k rows, ~5 min at 10M) for a column nothing reads yet. Charging every upgrading site
+	 * for that is not something a measured no-benefit result can justify.
+	 *
+	 * @since 6.0.0
+	 */
+	public function isOptional(): bool
+	{
+		return false;
+	}
+
 	public function getDiagnostics(): array
 	{
 		return []; // Default to no diagnostics; override in subclass

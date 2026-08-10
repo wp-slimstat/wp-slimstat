@@ -28,8 +28,11 @@ class MigrationAdmin
 
 	public function registerPage(): void
 	{
-		// Only register the migration page if there are migrations that need to run
-		if (!$this->manager->needsMigration()) {
+		// Registered when anything is OWED, and also when anything is merely OFFERED — the
+		// second half was missing and it is what made "opt-in" mean "unreachable". needsMigration()
+		// deliberately ignores optional migrations so they raise no notice; using it alone as the
+		// gate for the page removed the only place they could ever have been run from.
+		if (!$this->manager->needsMigration() && [] === $this->manager->getOfferedMigrations()) {
 			return;
 		}
 
@@ -70,12 +73,24 @@ class MigrationAdmin
 		wp_enqueue_script('jquery');
 		wp_register_script('slimstat-migration', plugins_url('/admin/assets/js/migration.js', SLIMSTAT_FILE), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, true);
 
+        // Owed first, then offered. `optional` is what migration.js keys on: it skips those in
+        // "Start Migration" and renders a per-row control instead, so an offered migration is
+        // visible and runnable without ever being run FOR the admin.
         $steps = [];
         foreach ($this->manager->getRequiredMigrations() as $migration) {
             $steps[] = [
-                'id'   => $migration->getId(),
-                'name' => $migration->getName(),
-                'desc' => $migration->getDescription(),
+                'id'       => $migration->getId(),
+                'name'     => $migration->getName(),
+                'desc'     => $migration->getDescription(),
+                'optional' => false,
+            ];
+        }
+        foreach ($this->manager->getOfferedMigrations() as $migration) {
+            $steps[] = [
+                'id'       => $migration->getId(),
+                'name'     => $migration->getName(),
+                'desc'     => $migration->getDescription(),
+                'optional' => true,
             ];
         }
 
@@ -98,6 +113,10 @@ class MigrationAdmin
 				// Read by migration.js since it was written and never supplied here, so every
 				// locale has silently fallen back to the English baked into the JS.
 				'idle' => __('Idle', 'wp-slimstat'),
+				// The per-step control for an OFFERED migration. Supplied here rather than
+				// hardcoded in migration.js, because a string baked into the JS is a string no
+				// locale ever translates — the defect the two labels above were added to fix.
+				'runThisStep' => __('Run this step', 'wp-slimstat'),
 				'runningShort' => __('Running', 'wp-slimstat'),
 				'failedHelp' => __('A step failed. Please check the logs and retry.', 'wp-slimstat'),
 			],
@@ -162,12 +181,13 @@ class MigrationAdmin
 			wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
 		}
 
-		// Check if there are any migrations that need to run
+		// Nothing owed AND nothing offered — only then is there no page to show. Testing the
+		// required set alone redirected the admin away from the one screen an optional
+		// migration can be started from.
 		$required_migrations = $this->manager->getRequiredMigrations();
 		$has_required_migrations = !empty($required_migrations);
 
-		// If no migrations are needed, redirect to the main SlimStat page
-		if (!$has_required_migrations) {
+		if (!$has_required_migrations && [] === $this->manager->getOfferedMigrations()) {
 			$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 			wp_safe_redirect(admin_url('admin.php?page=' . $parent));
 			exit;

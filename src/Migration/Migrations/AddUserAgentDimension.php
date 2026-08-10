@@ -59,11 +59,31 @@ class AddUserAgentDimension extends AbstractMigration
     public function getDescription(): string
     {
         return __(
-            'Adds a compact browser key to the analytics table and builds a lookup of browsers '
-                . 'and platforms, so browser reports no longer scan every pageview. Your existing '
-                . 'data is not modified and reports keep working while this runs.',
+            'Optional. Adds a compact browser key to the analytics table and builds a lookup of '
+                . 'browsers and platforms — groundwork for a future release. It does not make any '
+                . 'report faster today, and on a large table it can take several minutes. Your '
+                . 'existing data is not modified and reports keep working while it runs.',
             'wp-slimstat'
         );
+    }
+
+    /**
+     * OFFERED, NOT OWED — and the honest description above says why.
+     *
+     * Run 9 measured what this buys on the read path: nothing, and it cannot buy anything while
+     * P4 keeps `browser`/`browser_version`/`browser_type`/`platform` on the fact row. The
+     * dimension is an index over data that is already there, and `idx_dt_browser_browser_version`
+     * already indexes it better — a covering range scan the dimension join can only lose to.
+     *
+     * A fresh install still gets `ua_id` for free: it is declared in the manifest, so it arrives
+     * inside CREATE TABLE with no ALTER at all, and Layer 2 will find it waiting when P4 moves.
+     * What is opt-in is the part that COSTS something — the fact-table rebuild an existing site
+     * would otherwise pay on the migration screen (~14 s at 443k rows, ~5 min at 10M) for a
+     * column nothing reads yet.
+     */
+    public function isOptional(): bool
+    {
+        return true;
     }
 
     public function shouldRun(): bool
