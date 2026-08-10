@@ -994,6 +994,27 @@ class wp_slimstat_db
 
     // The following methods retrieve the information from the database
 
+    /**
+     * Resources seen in exactly one visit.
+     *
+     * `visit_id` IS NOT SELECTED, and its removal is the whole change. The inner query used to
+     * read `SELECT resource, visit_id … GROUP BY resource`, which names a column that is neither
+     * grouped nor aggregated — MySQL rejects that under `ONLY_FULL_GROUP_BY`, and the outer
+     * `COUNT(*)` never looked at the value. `HAVING COUNT(visit_id) = 1` is an aggregate and is
+     * unaffected.
+     *
+     * WHAT THIS DID NOT FIX, because it was never broken. EXPECTED-DIFFS recorded this as "it
+     * errors under ONLY_FULL_GROUP_BY and Bounce Pages silently reads 0". Measured on the bench
+     * corpus, it returns **56, matching an independently computed 56** — because
+     * `wpdb::set_sql_mode()` strips `ONLY_FULL_GROUP_BY` from every WordPress connection, and the
+     * server's own default has it on. The claim was written from reading the SQL, and the SQL is
+     * genuinely non-conforming: forcing the mode back on in the same session DOES reject it. So
+     * this is a latent hazard on any connection that keeps the mode — a `slimstat_custom_wpdb`
+     * filter returning something other than `wpdb`, or a future core change — not a live defect.
+     *
+     * Recorded that way rather than quietly fixed, because "the bug report was wrong about why"
+     * is exactly the kind of thing that gets rediscovered.
+     */
     public static function count_bouncing_pages()
     {
         $where = self::get_combined_where('visit_id > 0 AND content_type <> "404"', 'resource');
@@ -1002,30 +1023,12 @@ class wp_slimstat_db
             "
 			SELECT COUNT(*) counthits
 				FROM (
-					SELECT resource, visit_id
+					SELECT resource
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats
 					WHERE {$where}
 					GROUP BY resource
 					HAVING COUNT(visit_id) = 1
 				) as ts1",
-            'SUM(counthits) AS counthits'
-        ));
-    }
-
-    public static function count_exit_pages()
-    {
-        $where = self::get_combined_where('visit_id > 0', 'resource');
-
-        return intval(self::get_var(
-            "
-			SELECT COUNT(*) counthits
-				FROM (
-					SELECT resource, dt
-					FROM {$GLOBALS['wpdb']->prefix}slim_stats
-					WHERE {$where}
-					GROUP BY resource
-					HAVING dt = MAX(dt)
-				) AS ts1",
             'SUM(counthits) AS counthits'
         ));
     }
