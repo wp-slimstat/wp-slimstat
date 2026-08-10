@@ -288,4 +288,85 @@ class SchemaEnsureTest extends WpSlimstatTestCase
                 . 'reverse of the drop order'
         );
     }
+
+    /**
+     * The ADD and the CREATE must render one column identically.
+     *
+     * This is the single fragment where a fresh install and an upgraded one could disagree about
+     * the same column, and the disagreement would be invisible to the source gate: the manifest
+     * would still hold exactly one declaration, and the two renderings of it would differ. That
+     * is C39 in one line, which is why columnSql() exists rather than two sprintf() calls.
+     */
+    public function testAddedColumnMatchesTheCreatedOne(): void
+    {
+        $created = Schema::createTableSql('slim_stats', 'wp_', 'utf8mb4_unicode_ci');
+
+        foreach (['email', 'fingerprint', 'tz_offset', 'ua_id'] as $column) {
+            $added = Schema::addColumnSql('slim_stats', $column, 'wp_');
+
+            $this->assertStringStartsWith("ALTER TABLE `wp_slim_stats` ADD COLUMN {$column} ", $added);
+
+            $fragment = substr($added, strlen('ALTER TABLE `wp_slim_stats` ADD COLUMN '));
+
+            $this->assertStringContainsString(
+                $fragment,
+                $created,
+                "the ALTER renders {$column} differently from the CREATE, so an upgraded install "
+                    . 'and a fresh one end up with differently shaped tables'
+            );
+        }
+    }
+
+    public function testAfterIsOptionalAndNotDerivedFromDeclarationOrder(): void
+    {
+        // `tz_offset` is declared AFTER `ua_id` in the manifest and must be added AFTER
+        // `outbound_resource` on a 4.8.4.1 upgrade, where `ua_id` does not exist yet. Deriving
+        // position from the manifest would emit `AFTER ua_id` and fail on every such install.
+        $this->assertSame(
+            'ALTER TABLE `wp_slim_stats` ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource',
+            Schema::addColumnSql('slim_stats', 'tz_offset', 'wp_', 'outbound_resource')
+        );
+
+        $this->assertStringNotContainsString(
+            'AFTER',
+            Schema::addColumnSql('slim_stats', 'tz_offset', 'wp_'),
+            'position is a caller\'s argument, not a manifest property'
+        );
+    }
+
+    public function testTheArchiveFollowsSlimStatsThroughLike(): void
+    {
+        $this->assertSame(
+            str_replace('wp_slim_stats', 'wp_slim_stats_archive', Schema::addColumnSql('slim_stats', 'email', 'wp_')),
+            Schema::addColumnSql('slim_stats_archive', 'email', 'wp_'),
+            'the archive is declared `like` slim_stats, so one column has one definition across '
+                . 'both — the pair that shipped as VARCHAR(256) and VARCHAR(255) in adjacent lines'
+        );
+    }
+
+    public function testAddingAnUndeclaredColumnIsRefused(): void
+    {
+        // PITFALLS 30, made unrepresentable. A migration that adds a column the manifest does not
+        // know about means a fresh install is born without it and pays a fact-table ALTER to
+        // catch up, while an upgraded one already has it.
+        $this->expectException(\InvalidArgumentException::class);
+        Schema::addColumnSql('slim_stats', 'no_such_column', 'wp_');
+    }
+
+    public function testDroppingADeclaredColumnIsRefused(): void
+    {
+        // The inverse, and just as silent: the upgrade path would remove a column every fresh
+        // install is created with.
+        $this->expectException(\InvalidArgumentException::class);
+        Schema::dropColumnSql('slim_stats', 'fingerprint', 'wp_');
+    }
+
+    public function testDroppingARetiredColumnIsAllowed(): void
+    {
+        $this->assertSame(
+            'ALTER TABLE `wp_slim_stats` DROP COLUMN plugins',
+            Schema::dropColumnSql('slim_stats', 'plugins', 'wp_'),
+            '`plugins` was retired in 4.8.4.1 and the manifest correctly does not declare it'
+        );
+    }
 }

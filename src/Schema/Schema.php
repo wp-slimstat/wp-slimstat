@@ -597,7 +597,7 @@ final class Schema
         $lines = [];
 
         foreach (self::columns($suffix) as $column => $definition) {
-            $lines[] = sprintf('%s %s', $column, $definition);
+            $lines[] = self::columnSql($column, $definition);
         }
 
         $lines[] = sprintf('CONSTRAINT PRIMARY KEY (%s)', $def['primary']);
@@ -635,6 +635,106 @@ final class Schema
             $prefix . $suffix,
             self::indexes($suffix)[$index]
         );
+    }
+
+    /**
+     * The `ALTER TABLE … ADD COLUMN` for one manifest column.
+     *
+     * C39's other half, and the half F2 missed. `ensure()` reconciles tables and indexes; it has
+     * never reconciled COLUMNS, so a column arrives only by an `ALTER` written somewhere else —
+     * and the manifest never had to agree with it. That is not hypothetical drift:
+     *
+     *   - `ua_id` was added by AddUserAgentDimension and declared nowhere, so a fresh install was
+     *     born without it and paid a fact-table ALTER to catch up (fixed in 65c405ec, PITFALLS 30).
+     *   - `email` is `VARCHAR(256)` in the manifest and was added as `VARCHAR(255)` by the 4.8.2
+     *     block — so a fresh install and an install upgraded from below 4.8.2 have differently
+     *     shaped `slim_stats`, which is the exact divergence C39 measured for indexes.
+     *   - `fingerprint` was added as `VARCHAR(256)` to slim_stats and `VARCHAR(255)` to its own
+     *     archive, in adjacent lines of the same block.
+     *
+     * None of the three was reachable by the gate, because the gate looked for CREATE TABLE,
+     * CREATE INDEX, ADD INDEX and DROP INDEX — every DDL keyword except the one that adds a
+     * column. Rendering the fragment from here is what lets the gate say "no ADD COLUMN outside
+     * this file", the same rule the other four keywords have had since F2.
+     *
+     * POSITION IS DELIBERATELY NOT A MANIFEST PROPERTY. `$after` stays a caller's argument
+     * because it is a fact about one historical upgrade step, not about the target schema:
+     * `tz_offset` is declared after `ua_id` here and must be added `AFTER outbound_resource` on a
+     * 4.8.4.1 upgrade, where `ua_id` does not exist yet. Deriving it from the declaration order
+     * would emit `AFTER ua_id` and fail. Physical order already differs between fresh and
+     * upgraded installs and nothing reads it — wpdb returns associative rows and every INSERT
+     * names its columns.
+     *
+     * @param string      $after Column to add after; empty for "append". Unvalidated on purpose:
+     *                           the target may legitimately not be in the manifest any more
+     *                           (`plugins` was dropped in 4.8.4.1).
+     */
+    public static function addColumnSql(string $suffix, string $column, string $prefix, string $after = ''): string
+    {
+        $columns = self::columns($suffix);
+
+        if (!isset($columns[$column])) {
+            throw new \InvalidArgumentException(sprintf(
+                'Schema: no column "%s" declared on %s. A migration that adds a column the '
+                    . 'manifest does not know about is C39 reopened — the fresh install is born '
+                    . 'without it and the upgraded one has it.',
+                $column,
+                $suffix
+            ));
+        }
+
+        return sprintf(
+            'ALTER TABLE `%s` ADD COLUMN %s%s',
+            $prefix . $suffix,
+            self::columnSql($column, $columns[$column]),
+            '' === $after ? '' : ' AFTER ' . $after
+        );
+    }
+
+    /**
+     * The `ALTER TABLE … DROP COLUMN` for a column the manifest has deliberately forgotten.
+     *
+     * The inverse of addColumnSql(), and it refuses the inverse mistake. Dropping a column the
+     * manifest still declares gives an upgraded install a table missing something every fresh
+     * install is created with — C39 reached from the other side, and just as silent.
+     *
+     * Rendered here rather than written at the call site for one blunt reason: it is what lets
+     * the gate key on `ALTER TABLE` instead of on a list of keywords. MySQL's grammar is
+     * `ADD [COLUMN]`, `DROP [COLUMN]`, `MODIFY [COLUMN]`, `CHANGE [COLUMN]` — the word is
+     * OPTIONAL in all four, so a scan for `DROP COLUMN` is blind to `ALTER TABLE t DROP plugins`,
+     * which is valid, shorter, and reopens exactly the defect the scan exists to close. Keyword
+     * enumeration is the mechanism that failed the first time; `ALTER TABLE` has no optional
+     * spelling.
+     *
+     * The refusal is also worth more here than in the gate: a CI check runs on this repository,
+     * and this throws on the install.
+     */
+    public static function dropColumnSql(string $suffix, string $column, string $prefix): string
+    {
+        if (isset(self::columns($suffix)[$column])) {
+            throw new \InvalidArgumentException(sprintf(
+                'Schema: refusing to drop "%s" from %s — the manifest still declares it, so an '
+                    . 'upgraded install would lose a column every fresh install is born with.',
+                $column,
+                $suffix
+            ));
+        }
+
+        return sprintf('ALTER TABLE `%s` DROP COLUMN %s', $prefix . $suffix, $column);
+    }
+
+    /**
+     * One column, rendered once, for both the CREATE and the ALTER.
+     *
+     * A two-token `sprintf` hardly needs a method — except that these are the two paths a fresh
+     * install and an upgraded one take to the same column, and this is the single fragment where
+     * they could disagree. A trailing `COMMENT` or a charset clause added to the CREATE side
+     * alone would be C39 in one line, reachable by no gate: the manifest would still hold exactly
+     * one declaration, and the two renderings of it would differ.
+     */
+    private static function columnSql(string $column, string $definition): string
+    {
+        return sprintf('%s %s', $column, $definition);
     }
 
     /**

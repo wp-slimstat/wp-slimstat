@@ -327,9 +327,18 @@ $composer    = (string) file_get_contents($plugin_root . '/composer.json');
 $using       = 0;
 $unwired     = [];
 
+// ONE glob and ONE read per test file, feeding both censuses below. They partition the same
+// population — "opted into the library" and "did not" — so two glob expressions would be two
+// definitions of "the set of gating tests", free to drift apart. That is the failure the vacuity
+// floors here exist to catch, and it would be sitting inside the mechanism catching it.
+$gating_tests = [];
+
 foreach (glob($plugin_root . '/tests/*-test.php') ?: [] as $file) {
-    $name = basename($file);
-    if (false === strpos((string) file_get_contents($file), 'source-scan.php')) {
+    $gating_tests[basename($file)] = (string) file_get_contents($file);
+}
+
+foreach ($gating_tests as $name => $src) {
+    if (false === strpos($src, 'source-scan.php')) {
         continue;
     }
     $using++;
@@ -351,6 +360,122 @@ ss_assert_same('every source-scan consumer is wired into composer.json', [], $un
 ss_assert_true(
     sprintf('at least 20 gating tests still consume source-scan.php (found %d)', $using),
     $using >= 20
+);
+
+// ---------------------------------------------------------------------------
+// …and the ones that DID NOT opt in — the hole underneath everything above
+// ---------------------------------------------------------------------------
+//
+// Every check in this file inspects tests that already `require` source-scan.php. A scanner that
+// never opted in is therefore invisible to the gate that exists to police scanners, and its
+// raw-text matching is exactly the hazard this file was written to remove. The set the strength
+// gate could see was the set that had already been made safe.
+//
+// Found by accident, which is the point: php80-syntax-scan-test.php matched `/each\s*\(/` against
+// raw bytes and failed a commit because a CODE COMMENT contained the words "resolves each (table,
+// column) pair". Instance seven of name-not-construct, in a file no assertion on this branch was
+// capable of reading.
+//
+// A RATCHET, NOT A BAN. Twenty-one gating tests scan production source with a raw regex today;
+// failing all of them means the rule never lands, and a rule that cannot land protects nothing.
+// So the recorded state below is permitted, new offenders fail, and a file that gets FIXED must
+// leave the map.
+//
+// SAFE VS UNSAFE DIRECTION. A raw "must NOT appear" scan fails loudly on prose — noisy, never
+// silent. A raw "must appear" scan is satisfied BY prose, and passes while guarding nothing.
+// Anything added here should be checked for which kind it is.
+//
+// A MAP, NOT A LIST, and each entry carries its reason — a flat string[] has nowhere to put one,
+// and the failure message below instructs the next person to record why. The two kinds are not
+// the same debt: `exempt` will never shrink and should not, while `debt` is work nobody has done
+// yet. One count over both conflates them and stops describing anything.
+$raw_scanners = [];
+$recorded     = [
+    // ── exempt: a PHP tokeniser has nothing to say about the bytes these read ──
+    'ci-matrix-coverage-test.php'                => 'exempt — scans .github/workflows YAML',
+    'css-selector-scope-test.php'                => 'exempt — scans CSS',
+    'js-params-banner-gdpr-consistency-test.php' => 'exempt — scans JS',
+
+    // ── debt: PHP source matched as raw text; route through the library when next touched ──
+    'access-log-author-edit-link-test.php'   => 'debt',
+    'browscap-bot-safety-net-test.php'       => 'debt',
+    'browscap-fileinfo-preflight-test.php'   => 'debt',
+    'browscap-settings-isolation-test.php'   => 'debt',
+    'browscap-wp-filesystem-test.php'        => 'debt',
+    'dtr-pton-init-test.php'                 => 'debt',
+    'early-translation-test.php'             => 'debt',
+    'funnels-widget-compact-test.php'        => 'debt',
+    'gdpr-banner-asset-gating-test.php'      => 'debt',
+    'goals-funnels-index-migration-test.php' => 'debt',
+    'loose-comparison-scan-test.php'         => 'debt',
+    'network-scope-handshake-test.php'       => 'debt',
+    'php-implicit-nullable-test.php'         => 'debt',
+    'php74-no-php80-functions-test.php'      => 'debt',
+    'php82-84-forward-scan-test.php'         => 'debt',
+    'shortcode-w-whitelist-test.php'         => 'debt',
+    'wp-removed-core-fns-scan-test.php'      => 'debt',
+    'wp70-wp-version-guard-test.php'         => 'debt',
+];
+
+foreach ($gating_tests as $name => $src) {
+    // Reads a production file, and regex-matches something. `strpos` is deliberately not a
+    // trigger: a substring test over a whole file is an inventory question, not a construct
+    // question, and folding the two together would make the map unreadably large.
+    if (false === strpos($src, 'file_get_contents')) {
+        continue;
+    }
+    if (!preg_match("#'/(?:src|admin)/|/wp-slimstat\\.php|plugin_root \\. '/(?:src|admin)#", $src)) {
+        continue;
+    }
+    if (false === strpos($src, 'preg_match')) {
+        continue;
+    }
+
+    // Any of the three tokeniser-backed helpers counts as having gone through the library.
+    foreach (['slimstat_strip_comments_and_strings', 'slimstat_blank_comments', 'slimstat_function_body'] as $helper) {
+        if (false !== strpos($src, $helper)) {
+            continue 2;
+        }
+    }
+
+    $raw_scanners[] = $name;
+}
+
+sort($raw_scanners);
+
+ss_assert_same(
+    "new raw-text scanner(s) of production source — route the content through\n"
+        . "      slimstat_strip_comments_and_strings() or slimstat_blank_comments() before matching,\n"
+        . '      or add the file to $recorded as "exempt — <why a tokeniser cannot apply>"',
+    [],
+    array_values(array_diff($raw_scanners, array_keys($recorded)))
+);
+
+// The ratchet itself, and it points the OTHER WAY from the obvious one. The first draft asserted
+// `count($raw_scanners) <= count($recorded)` — which CANNOT FAIL, because the assertion above
+// already requires $raw_scanners ⊆ $recorded, and a subset of a set of unique basenames is never
+// larger than it. Six lines reading as the load-bearing half of a ratchet while measuring a
+// tautology, written into the same change as the PITFALLS entry about guards that look like they
+// work. Caught by a review agent; the gate ran green throughout.
+//
+// The check that does the advertised job is stale entries: a file that has been FIXED must leave
+// the map. Without it the map only grows stale, a fixed scanner can silently revert to raw
+// matching, and the "permission slip" the comment warns about is reachable through the mechanism
+// meant to prevent it.
+ss_assert_same(
+    "recorded raw scanner(s) that no longer scan raw — delete them from \$recorded;\n"
+        . '      a map that never shrinks stops being a ratchet and becomes a permission slip',
+    [],
+    array_values(array_diff(array_keys($recorded), $raw_scanners))
+);
+
+// Vacuity floor, same reason as $using above: if the detection regex goes stale, $raw_scanners
+// empties, BOTH array_diff assertions above are trivially satisfied in the first direction and
+// the second one fires with 21 names — so this floor is what makes the failure say "the detector
+// broke" rather than "twenty-one files were fixed at once".
+ss_assert_true(
+    sprintf('the raw-scanner detector still finds the known offenders (found %d, expected >= 15)', count($raw_scanners)),
+    count($raw_scanners) >= 15
 );
 
 // ---------------------------------------------------------------------------

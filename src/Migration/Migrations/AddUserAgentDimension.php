@@ -79,18 +79,26 @@ class AddUserAgentDimension extends AbstractMigration
         $stats = $this->tablePrefix() . 'slim_stats';
 
         if (!$this->factColumnExists()) {
-            // INPLACE by name. See the class docblock: the fallback is silent and 3.9x worse,
-            // and on the floor it blocks writes.
-            $altered = $this->wpdb->query(
-                "ALTER TABLE `{$stats}` ADD COLUMN ua_id BINARY(8) NULL, ALGORITHM=INPLACE, LOCK=NONE"
-            );
+            // The column DDL comes from the manifest, never from here. This class wrote
+            // `BINARY(8) NULL` while Schema declared `BINARY(8) DEFAULT NULL` — equivalent to
+            // MySQL, but two spellings of one fact, and it was two spellings only because for
+            // one commit there was no declaration at all (PITFALLS 30). Naming the column
+            // through Schema is what makes that unrepresentable: addColumnSql() throws on a
+            // column the manifest does not declare, so the next migration cannot add one
+            // silently the way this one did.
+            //
+            // The algorithm hint is appended rather than declared: it is how the statement runs,
+            // not what the schema is. INPLACE by name — see the class docblock; the fallback is
+            // silent and 3.9x worse, and on the floor it blocks writes.
+            $add     = Schema::addColumnSql('slim_stats', 'ua_id', $this->tablePrefix());
+            $altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
 
             if (false === $altered) {
                 // Retried WITHOUT the algorithm hint before giving up. A server that cannot do
                 // INPLACE for this change refuses the statement outright rather than falling
                 // back, and refusing to add the column at all would be worse than a slower
                 // rebuild the admin has explicitly started from the migration screen.
-                $altered = $this->wpdb->query("ALTER TABLE `{$stats}` ADD COLUMN ua_id BINARY(8) NULL");
+                $altered = $this->wpdb->query($add);
             }
 
             if (false === $altered) {

@@ -156,6 +156,164 @@ if (!preg_match('/CREATE TABLE/i', $schema_src)) {
         . '"no creator anywhere" satisfies it exactly as well as "one creator here"';
 }
 
+// ── 1b. Nothing else in the tree emits COLUMN DDL either ────────────────────
+//
+// THE HALF THE GATE ABOVE COULD NOT SEE, and it stayed unseen for the whole of F2. That scan
+// looks for CREATE TABLE, CREATE INDEX, ADD INDEX and DROP INDEX — every DDL keyword except the
+// ones that change a column. Three real divergences were live in the tree while it ran green:
+//
+//   ua_id       added by AddUserAgentDimension, declared in no manifest. A fresh install was
+//               born without it and paid a fact-table ALTER to catch up; C41's notice offered
+//               that rebuild on an install with no rows (PITFALLS 30).
+//   email       VARCHAR(255) in admin/index.php's 4.8.2 block, VARCHAR(256) in the manifest.
+//   fingerprint VARCHAR(256) on slim_stats and VARCHAR(255) on slim_stats_archive, declared in
+//               two ADJACENT LINES of the same block.
+//
+// So this is C39 exactly — fresh and upgraded installs converging on different schemas — on a
+// column instead of an index, and the reason it survived is that the gate policed "there is one
+// DECLARATION" while the defect was an ABSENCE. An absence is not a second declaration; nothing
+// the scan matched could ever point at it.
+//
+// KEYED ON `ALTER TABLE`, NOT ON A LIST OF COLUMN KEYWORDS — and that is the lesson of the
+// paragraph above rather than a detail of this one. The first draft of this section scanned for
+// `(?:ADD|MODIFY|CHANGE)\s+COLUMN`, which is the SAME MECHANISM that failed: an enumeration of
+// literal spellings. And it has the same kind of hole, because MySQL's grammar is `ADD [COLUMN]`,
+// `DROP [COLUMN]`, `MODIFY [COLUMN]`, `CHANGE [COLUMN]` — the word is OPTIONAL in all four. So
+//
+//     ALTER TABLE `{$stats}` ADD ua_id BINARY(8) NULL
+//
+// is valid, is one word shorter than what actually shipped, and is invisible to every keyword
+// scan here. The gate would have advertised "no column DDL outside the manifest" while enforcing
+// "none written with the optional keyword present", and the divergence class it lets through is
+// identical to the three above.
+//
+// `ALTER TABLE` has no optional spelling, and every statement that reshapes a table contains it
+// exactly once. Keying on it is complete on this axis by construction, rather than by re-auditing
+// the MySQL grammar each time someone extends a list.
+//
+// Also unconditional — no concrete-object-name requirement, unlike section 1 — because the shape
+// that actually shipped interpolates the table and carries no literal `slim_` for a window to
+// find. Requiring one would reproduce the exact blind spot this section exists to close.
+//
+// Three files legitimately ALTER without declaring a schema. They are NAMED, with the reason, not
+// pattern-matched: a pattern loose enough to admit them is loose enough to admit a column.
+$alter_exempt = [
+    'src/Migration/Migrations/ConvertTablesToUtf8mb4.php' => 'CONVERT TO CHARACTER SET, over the '
+        . 'tables the manifest names, to the collation the manifest targets. Declares nothing.',
+    'admin/view/wp-slimstat-db.php' => 'RENAME TO, between two temp tables of its own making '
+        . 'inside one function. Names no persistent object.',
+    'admin/config/index.php' => 'DROP INDEX with both the table and the index arriving as %s from '
+        . 'the manifest — the runner for a declaration, the same exemption AbstractIndexMigration '
+        . 'has in section 1.',
+];
+
+// ONE pass, three questions. The first draft walked $own_files twice with byte-identical
+// scaffolding — same skip list, same slimstat_blank_comments() — and that is not merely the
+// ~25 ms: it is two exclusion lists that must agree about which files the column gate covers,
+// inside a gate whose whole subject is two declarations of one fact drifting apart.
+$altering   = [];
+$call_sites = 0;
+$drop_sites = 0;
+
+foreach ($own_files as $file) {
+    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    if ($rel === $schema_rel) {
+        continue;
+    }
+
+    // Comments blanked, string CONTENTS kept — as in section 1, and for the same reason: both
+    // the DDL under test and the call arguments under test ARE string literals.
+    $src = slimstat_blank_comments((string) file_get_contents($file), false);
+
+    if (!isset($alter_exempt[$rel]) && preg_match_all('/ALTER\s+TABLE/', $src, $hits, PREG_OFFSET_CAPTURE)) {
+        foreach ($hits[0] as [, $offset]) {
+            $altering[] = sprintf('%s: %s', $rel, trim(substr($src, $offset, 70)));
+        }
+    }
+
+    // Every literal call site must name a column the manifest declares. The scan above proves
+    // only that the statement is CENTRALISED; this proves the centralised call is ASKING FOR
+    // SOMETHING REAL. Without it, `addColumnSql('slim_stats', 'ua_id', …)` against a manifest
+    // with no `ua_id` passes every structural check and throws on the upgrade path — the C39
+    // index-key failure (a declared key absent from the manifest) one level down, and the
+    // assertion that would have caught ua_id on the commit that introduced it.
+    //
+    // dropColumnSql() is checked in the SAME loop and asserted the OTHER WAY: a dropped column
+    // must NOT be declared, or the upgrade removes something every fresh install is created with.
+    if (!preg_match_all('/(add|drop)ColumnSql\(\s*\'([a-z_]+)\'\s*,\s*\'([a-z_]+)\'/', $src, $calls, PREG_SET_ORDER)) {
+        continue;
+    }
+
+    foreach ($calls as [, $verb, $suffix, $column]) {
+        if (!in_array($suffix, $schema::tables(), true)) {
+            $failures[] = "{$rel} calls {$verb}ColumnSql() for table \"{$suffix}\", which the "
+                . 'manifest does not declare';
+            continue;
+        }
+
+        $declared = isset($schema::columns($suffix)[$column]);
+
+        if ('add' === $verb) {
+            $call_sites++;
+
+            if (!$declared) {
+                $failures[] = "{$rel} adds column \"{$column}\" to {$suffix}, which the manifest "
+                    . 'does not declare — so a fresh install is born without it and an upgraded '
+                    . 'one has it, and the migration notice offers to rebuild a table with no '
+                    . 'rows (C41)';
+            }
+
+            continue;
+        }
+
+        $drop_sites++;
+
+        if ($declared) {
+            $failures[] = "{$rel} drops column \"{$column}\" from {$suffix}, which the manifest "
+                . 'still declares. An upgraded install loses a column every fresh install is born '
+                . 'with — C39 reached from the other side';
+        }
+    }
+}
+
+if ($altering !== []) {
+    $failures[] = sprintf(
+        "%d ALTER TABLE statement(s) outside %s and outside the recorded exemptions:\n      %s\n"
+            . '    A column definition must come from the manifest via Schema::addColumnSql() or '
+            . '::dropColumnSql(), or a fresh install and an upgraded one end up with differently '
+            . 'shaped tables — which is C39, and it happened three times on columns while this '
+            . 'gate watched only indexes',
+        count($altering),
+        $schema_rel,
+        implode("\n      ", $altering)
+    );
+}
+
+foreach (['ADD COLUMN', 'DROP COLUMN'] as $rendered) {
+    if (false === strpos($schema_src, $rendered)) {
+        $failures[] = "Schema.php emits no {$rendered} — as above, \"nobody does this anywhere\" "
+            . 'satisfies the scan exactly as well as "only the manifest does"';
+    }
+}
+
+// The call-site loop is satisfied by a tree where every call site is written some other way, and a
+// literal-argument regex is exactly the kind of parse that goes quietly stale. Seven adds: email,
+// fingerprint and tz_offset on both slim_stats and its archive in the legacy upgrade block, plus
+// ua_id in AddUserAgentDimension. One drop: `plugins`, retired in 4.8.4.1. A fall below either
+// means the parse stopped seeing them — not that the call sites went away.
+foreach ([['add', $call_sites, 7], ['drop', $drop_sites, 1]] as [$verb, $found, $floor]) {
+    if ($found < $floor) {
+        $failures[] = sprintf(
+            'only %d literal %sColumnSql() call site(s) parsed (expected at least %d) — the check '
+                . 'above ran on almost nothing, which is how an assertion certifies a property it '
+                . 'has stopped testing',
+            $found,
+            $verb,
+            $floor
+        );
+    }
+}
+
 // ── 2. The engine is unconditional (C42) ────────────────────────────────────
 // Checked on the STRIPPED source, unlike the DDL scans: here the hazard is the *construct*
 // `have_innodb` being probed, and the docblock above legitimately names it.

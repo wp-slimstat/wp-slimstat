@@ -956,9 +956,20 @@ class wp_slimstat_admin
 
         // --- Updates for version 4.8.2 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
-            // Add new email column to database
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
+            // Add new email column to database.
+            //
+            // The width comes from the manifest, and it did not used to: this block declared
+            // VARCHAR(255) while Schema declares VARCHAR(256), so an install upgraded from below
+            // 4.8.2 and a fresh one had differently shaped `slim_stats` — C39's finding, on a
+            // column instead of an index, and invisible to the gate because the gate knew every
+            // DDL keyword except ADD COLUMN. See Schema::addColumnSql().
+            // Written out rather than looped, and that is the point rather than an oversight:
+            // the gate resolves each (table, column) pair against the loaded manifest, and it can
+            // only do that for LITERAL arguments. A loop over `$suffix` is tidier source and
+            // statically unreadable — which is precisely how a column nobody declared got added.
+            $prefix = $GLOBALS['wpdb']->prefix;
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'email', $prefix, 'username'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'email', $prefix, 'username'));
         }
 
         // --- END: Updates for version 4.8.2 ---
@@ -991,14 +1002,19 @@ class wp_slimstat_admin
 
         // --- Updates for version 4.8.4.1 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
-            // Goodbye, browser plugins
-            wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP COLUMN plugins', $GLOBALS['wpdb']->prefix));
+            // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
+            // manifest still declares — the same guard as the ADD side, pointing the other way.
+            wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));
 
-            // Hello there, fingerprint and timezone offset
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
+            // Hello there, fingerprint and timezone offset.
+            //
+            // `fingerprint` was VARCHAR(256) on slim_stats and VARCHAR(255) on its own archive,
+            // in two adjacent lines of this block. Both now render from the one declaration.
+            $prefix = $GLOBALS['wpdb']->prefix;
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'fingerprint', $prefix, 'language'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'fingerprint', $prefix, 'language'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'tz_offset', $prefix, 'outbound_resource'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'tz_offset', $prefix, 'outbound_resource'));
         }
 
         // --- END: Updates for version 4.8.4.1 ---
@@ -4068,7 +4084,7 @@ class wp_slimstat_admin
         ?>
         <script>
         jQuery(function($){
-            var indexes = <?php echo wp_json_encode(array_values($pending)); ?>;
+            var indexes = <?php echo wp_json_encode($pending); ?>;
             var nonces = <?php echo wp_json_encode($nonces); ?>;
             var total = indexes.length, done = 0;
             function updateProgress() {
