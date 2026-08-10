@@ -382,5 +382,192 @@ if (!$old_consistent || !$new_consistent) {
     $fail = 1;
 }
 
+// ── 7. get_max_and_average_pages_per_visit() — three candidate forms ───────
+//
+// The most expensive thing section 4 measures: ~309,000 row reads against a 150,000-row table,
+// roughly two full passes. Its inner query is
+//
+//     SELECT count(ip) counthits, visit_id … GROUP BY visit_id
+//
+// and the outer reads ONLY `counthits` — `AVG(ts1.counthits)`, `MAX(ts1.counthits)`. So
+// `visit_id` is materialised into every derived row and never read, exactly the shape section 6
+// just measured on count_bouncing_pages(). It is CONFORMING here (it is the GROUP BY key), so
+// this is a cost question, not a correctness one.
+//
+// Two other candidates, both of which could be wrong, which is why they are measured rather than
+// reasoned about:
+//
+//   B  drop the unused visit_id from the inner SELECT
+//   C  drop it AND use count(*) instead of count(ip)
+//
+// C IS NOT OBVIOUSLY EQUIVALENT. `ip` is `VARCHAR(39) DEFAULT NULL`, and count(ip) skips NULLs
+// while count(*) does not. On a corpus with no NULL ip they agree; on one with NULLs they do not,
+// and the difference would be a silently smaller average. The probe therefore checks the answer
+// before it reports the cost, and prints the NULL count so the reader can see which world the
+// equivalence holds in.
+echo "\n7. get_max_and_average_pages_per_visit() — candidate inner forms\n";
+
+$null_ips = (int) $wpdb->get_var(
+    "SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats WHERE visit_id > 0 AND ip IS NULL"
+);
+printf("  rows with visit_id > 0 and a NULL ip: %d\n", $null_ips);
+if (0 === $null_ips) {
+    echo "  -> count(ip) and count(*) cannot differ ON THIS CORPUS. That is a property of the\n";
+    echo "     fixture, not of the schema: ip is nullable, so form C is only safe where it holds.\n";
+}
+
+$outer = 'SELECT AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits FROM (%s) AS ts1';
+// FOUR forms, and D is the one that ships. The first version measured only A, B and C — so the
+// headline number came from C (count(*) WITHOUT visit_id) while the code ships count(*) WITH it.
+// That made the -47% an A->C delta spanning TWO changes, attributed in the docblock to one. It is
+// defensible by subtraction, since A->B measured zero — but a subtraction presented as a
+// measurement is exactly what this file exists to stop.
+$forms = [
+    'A-count-ip'  => "SELECT count(ip) counthits, visit_id FROM {$wpdb->prefix}slim_stats WHERE visit_id > 0 AND dt BETWEEN %d AND %d GROUP BY visit_id",
+    'B-no-vid'    => "SELECT count(ip) counthits FROM {$wpdb->prefix}slim_stats WHERE visit_id > 0 AND dt BETWEEN %d AND %d GROUP BY visit_id",
+    'C-no-vid-*'  => "SELECT count(*) counthits FROM {$wpdb->prefix}slim_stats WHERE visit_id > 0 AND dt BETWEEN %d AND %d GROUP BY visit_id",
+    'D-SHIPPED'   => "SELECT count(*) counthits, visit_id FROM {$wpdb->prefix}slim_stats WHERE visit_id > 0 AND dt BETWEEN %d AND %d GROUP BY visit_id",
+];
+
+$sql = [];
+foreach ($forms as $name => $inner) {
+    $sql[$name] = sprintf($outer, $wpdb->prepare($inner, (int) $span['lo'], (int) $span['hi']));
+}
+
+$run_row = static function (string $q) use ($wpdb, $counters, $flush) {
+    $flush();
+    $before = $counters();
+    $t0     = microtime(true);
+    $row    = $wpdb->get_row($q, ARRAY_A);
+    $ms     = (microtime(true) - $t0) * 1000;
+    $after  = $counters();
+
+    return [
+        // Rounded: AVG comes back as a DECIMAL string whose trailing digits differ between
+        // equivalent plans, and a byte comparison of those would report a difference that is a
+        // property of the formatting rather than of the answer.
+        'avg'      => round((float) ($row['avghits'] ?? 0), 6),
+        'max'      => (int) ($row['maxhits'] ?? 0),
+        'ms'       => $ms,
+        'tmp_disk' => ($after['Created_tmp_disk_tables'] ?? 0) - ($before['Created_tmp_disk_tables'] ?? 0),
+        'rnd_next' => ($after['Handler_read_rnd_next'] ?? 0) - ($before['Handler_read_rnd_next'] ?? 0),
+    ];
+};
+
+// A-B-C-C-B-A, so each form is measured once early and once late and the ordering cannot favour
+// any of them. Same reason as section 6: TempTable's pool is process-wide.
+$seq7 = ['A-count-ip', 'B-no-vid', 'C-no-vid-*', 'D-SHIPPED', 'D-SHIPPED', 'C-no-vid-*', 'B-no-vid', 'A-count-ip'];
+$acc7 = [];
+
+foreach ($seq7 as $pos => $name) {
+    $r            = $run_row($sql[$name]);
+    $acc7[$name][] = $r;
+    printf(
+        "  #%d %-10s avg=%-12s max=%-6d tmp_disk=%d  rnd_next=%-9d  %.1f ms\n",
+        $pos + 1,
+        $name,
+        number_format($r['avg'], 6),
+        $r['max'],
+        $r['tmp_disk'],
+        $r['rnd_next'],
+        $r['ms']
+    );
+}
+
+// ANSWER FIRST — AGAINST AN INDEPENDENT ORACLE, NOT AGAINST FORM A.
+//
+// The first version used `A-count-ip` as the baseline: the buggy form the seam exists to remove.
+// On any corpus with a NULL ip — the only world where the fix matters at all — count(*)
+// legitimately answers a HIGHER average, and the probe would have printed
+// "[FAIL] D-SHIPPED answers avg=… against the current form's avg=…" and reported the CORRECT
+// answer as the defect.
+//
+// So the oracle is computed here, in SQL, a different way from any of the four forms: total
+// pageviews over distinct visits for the mean, and the largest per-visit run for the maximum.
+$oracle = $wpdb->get_row($wpdb->prepare(
+    "SELECT COUNT(*) / COUNT(DISTINCT visit_id) AS avghits,
+            (SELECT MAX(c) FROM (
+                SELECT COUNT(*) c FROM {$wpdb->prefix}slim_stats
+                 WHERE visit_id > 0 AND dt BETWEEN %d AND %d GROUP BY visit_id) x) AS maxhits
+       FROM {$wpdb->prefix}slim_stats
+      WHERE visit_id > 0 AND dt BETWEEN %d AND %d",
+    (int) $span['lo'],
+    (int) $span['hi'],
+    (int) $span['lo'],
+    (int) $span['hi']
+), ARRAY_A);
+
+$oracle_avg = round((float) ($oracle['avghits'] ?? 0), 6);
+$oracle_max = (int) ($oracle['maxhits'] ?? 0);
+
+printf("  independent oracle: avg=%s max=%d\n", number_format($oracle_avg, 6), $oracle_max);
+
+// NON-DEGENERACY FLOOR. round((float) null, 6) is 0.0, so a query that ERRORED — a bad prepare, a
+// renamed column, an empty window — makes every form compare equal to every other and the section
+// prints "[PASS] all four forms answer avg=0.000000 max=0". PITFALLS 38 re-entering through a new
+// section, in the file whose section 2 already guards with `> 0`.
+if ($oracle_avg <= 0.0 || $oracle_max <= 0) {
+    echo "  [FAIL] the oracle is degenerate — an empty result is not an answer, and every\n";
+    echo "         comparison below would pass by being equally empty\n";
+    $fail = 1;
+}
+
+// count(ip) and count(*) are only expected to AGREE where no ip is NULL. Where some are, count(*)
+// must be strictly larger, and the oracle is the count(*) answer.
+foreach ($acc7 as $name => $runs) {
+    $counts_column = in_array($name, ['A-count-ip', 'B-no-vid'], true);
+
+    foreach ($runs as $r) {
+        if ($r['avg'] <= 0.0 || $r['max'] <= 0) {
+            printf("  [FAIL] %s returned a degenerate answer (avg=%s max=%d)\n",
+                $name, number_format($r['avg'], 6), $r['max']);
+            $fail = 1;
+            continue;
+        }
+
+        if ($counts_column && $null_ips > 0) {
+            // Expected to UNDERCOUNT, and by a bounded amount. Reported, not failed: this is the
+            // defect being demonstrated, not a problem with the probe.
+            if ($r['avg'] >= $oracle_avg) {
+                printf("  [FAIL] %s counts a nullable column on a corpus with %d NULL ips, yet does\n"
+                     . "         not undercount — the two cannot both be true\n", $name, $null_ips);
+                $fail = 1;
+            }
+            continue;
+        }
+
+        if ($r['avg'] !== $oracle_avg || $r['max'] !== $oracle_max) {
+            printf(
+                "  [FAIL] %s answers avg=%s max=%d against an independently computed avg=%s max=%d\n",
+                $name,
+                number_format($r['avg'], 6),
+                $r['max'],
+                number_format($oracle_avg, 6),
+                $oracle_max
+            );
+            $fail = 1;
+        }
+    }
+}
+
+if (0 === $fail) {
+    printf("  [PASS] every form agrees with the independent oracle: avg=%s max=%d\n",
+        number_format($oracle_avg, 6), $oracle_max);
+}
+
+// Then cost, and only where both replicates of a form agree with each other.
+echo "  cost, both replicates required to agree before anything is claimed:\n";
+foreach ($acc7 as $name => $runs) {
+    $rnd  = array_unique(array_column($runs, 'rnd_next'));
+    $disk = array_unique(array_column($runs, 'tmp_disk'));
+    printf(
+        "    %-10s rnd_next=%-22s tmp_disk=%-8s %s\n",
+        $name,
+        implode('/', $rnd),
+        implode('/', $disk),
+        (1 === count($rnd) && 1 === count($disk)) ? 'stable' : 'UNSTABLE — no claim'
+    );
+}
+
 echo "\nVERDICT: " . (0 === $fail ? 'MEASURED' : 'FINDINGS') . "\n";
 exit(0);

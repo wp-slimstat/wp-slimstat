@@ -144,6 +144,58 @@ if (!preg_match('/FROM\s*\((.+?)\)\s*as\s+ts1/si', $body, $derived)) {
     }
 }
 
+// ── 3. "pages per visit" counts PAGES, not pages-that-have-an-ip ───────────
+//
+// `get_max_and_average_pages_per_visit()`'s inner query counted `count(ip)`. `ip` is
+// `VARCHAR(39) DEFAULT NULL` and `count(<column>)` skips NULLs, so a pageview recorded without an
+// ip was not counted as a page — and this function answers "pages per visit", where a row with no
+// ip is still a page. On any install with a NULL ip the old form understated both the average and
+// the maximum, silently.
+//
+// It is also 47% cheaper, measured: `count(ip)` reads the ip column of every row to decide
+// whether it is NULL. That is a consequence, not the reason.
+// ANCHORED ON THE SUBQUERY, for the reason section 2 above records at length: its first two
+// drafts scanned the whole body and could be satisfied by a different statement than the one
+// under test. Section 3's own first draft repeated that mistake exactly, and a review
+// demonstrated three false passes against real mutants:
+//
+//   count(ss.ip)        table-aliased      — `[a-z_]+` does not match a dot
+//   count(`ip`)         backtick-quoted    — nor a backtick
+//   count(DISTINCT ip)                     — nor a space
+//
+// Each of those slipped through as soon as ANY `count(*)` existed elsewhere in the body, such as
+// an outer `COUNT(*) AS visits`. The regression this section exists to stop was re-certified as
+// conformant. A fourth mutant showed the mirror problem: a legitimate second `count(ip)`
+// elsewhere in the body produced a FALSE FAIL.
+//
+// The anchor is the string literal that carries the per-visit grouping. Whatever COUNT lives in
+// THAT literal is the one that decides what "a page" means.
+$mav = slimstat_blank_comments(slimstat_function_body($db_src, 'get_max_and_average_pages_per_visit'), false);
+
+if (!preg_match('/\'([^\']*GROUP BY visit_id[^\']*)\'/i', $mav, $sub)) {
+    $failures[] = 'get_max_and_average_pages_per_visit() no longer builds a subquery literal '
+        . 'grouping by visit_id, so this check cannot locate the per-visit aggregate it '
+        . 'inspects. Failing rather than passing: an unlocatable subject has not been found '
+        . 'conformant';
+} else {
+    $subquery = $sub[1];
+
+    // Anything that is not literally `*` — an alias, a backtick, a DISTINCT, a plain column.
+    if (preg_match('/count\s*\(\s*([^)*][^)]*)\)/i', $subquery, $counted)) {
+        $failures[] = sprintf(
+            'get_max_and_average_pages_per_visit() counts count(%s) rather than count(*). '
+                . 'count(<column>) skips NULLs, and "pages per visit" must count PAGES — a '
+                . 'pageview whose column is NULL is still a page. It also reads that column on '
+                . 'every row: measured at 302,855 Handler_read_rnd_next against 152,854 for '
+                . 'count(*) on a 152,014-row table — a delta of 150,001, one full pass',
+            trim($counted[1])
+        );
+    } elseif (!preg_match('/count\s*\(\s*\*\s*\)/i', $subquery)) {
+        $failures[] = 'the per-visit subquery contains no COUNT at all — the check above would '
+            . 'pass on a query that had stopped aggregating';
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: GROUP BY conformance (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
