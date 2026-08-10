@@ -1361,7 +1361,15 @@ class Query
      *
      * @return mixed The value, or false/null if no rows are returned
      */
-    public function getVar()
+    /**
+     * Execute the query and return a single scalar.
+     *
+     * @param string $networkAggregate The OUTER aggregate that recombines a network-wide UNION,
+     *                                 from NetworkMerge::outerAggregate(). Empty — the default —
+     *                                 means this query is not eligible for merging and stays on
+     *                                 the current blog. D22 / M1.
+     */
+    public function getVar(string $networkAggregate = '')
     {
         // When caching is enabled and the date range includes today, skip cache
         // to stay consistent with getAll() which always fetches fresh live data.
@@ -1377,6 +1385,23 @@ class Query
 
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
+
+        // D22 — where the network scoping happens, and it happens HERE because here is where the
+        // SQL is finished. `admin/view/wp-slimstat-db.php` applied this filter around its legacy
+        // string-SQL path only, so every report that had been migrated to this builder silently
+        // left the Network View behind: get_top, get_recent, get_group_by, the charts, goals and
+        // funnels. Scoping the denominator without them is the ~2.7x understatement PITFALLS 23
+        // records.
+        //
+        // The caller's aggregate is what makes this safe. Without one the filter is not applied
+        // at all, so a query nobody has declared a merge for cannot be silently summed — and a
+        // silent SUM over COUNT(DISTINCT ip) is exactly the 7-where-the-answer-is-6 defect M1
+        // was ratified to prevent.
+        if ('' !== $networkAggregate) {
+            $query    = (string) apply_filters('slimstat_get_var_sql', $query, $networkAggregate);
+            $useCache = false; // the union spans blogs; the per-blog cache key does not.
+        }
+
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
@@ -1587,10 +1612,50 @@ class Query
      * part that should not be cached.
      * If this is not a live query, the function will simply return the result of the query.
      *
+     * @param string $networkIntent      A NetworkMerge intent, or '' for "not eligible" (the
+     *                                   default). Only NetworkMerge::SUM is accepted here: a
+     *                                   grouped report's `counthits` is COUNT(*), which is
+     *                                   additive; anything else must not be silently summed.
+     * @param string $selectNoAggregate  The non-aggregate select list, re-selected outside the
+     *                                   union.
+     * @param string $groupBy            The group key, re-applied outside the union.
+     * @param string $orderBy            The sort, re-applied outside the union.
+     *
      * @return array The result of the query
      */
-    public function getAll()
+    public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '')
     {
+        // D22 — a network-wide read is ONE query over a union of blogs, and it takes this path
+        // instead of the live/historical partitioning below.
+        //
+        // Not an optimisation skipped for convenience: that partitioning splits the query by
+        // date range and merges the halves in PHP, and wrapping each half in its own union would
+        // union N blogs twice and then merge two already-merged sets. The partitioning exists to
+        // make results cacheable, and a cross-blog result is not cacheable under a per-blog key
+        // anyway — so the two mechanisms have nothing to trade.
+        if (NetworkMerge::SUM === $networkIntent && NetworkMerge::isMerging()) {
+            $query = $this->prepareQuery($this->buildQuery(), $this->valuesToPrepare);
+
+            // The outer aggregates: the merge itself, plus whatever aggregate the caller adds
+            // (`MAX(dt) AS dt` on the "Recent …" reports). Both belong outside the union — an
+            // aggregate computed per arm and never re-computed is a per-blog answer wearing a
+            // network-wide label.
+            $aggregates = 'SUM(counthits) AS counthits'
+                . ('' === $extraAggregate ? '' : ', ' . $extraAggregate);
+
+            return (array) $this->db->get_results(
+                (string) apply_filters(
+                    'slimstat_get_results_sql',
+                    $query,
+                    $selectNoAggregate,
+                    $orderBy,
+                    $groupBy,
+                    $aggregates
+                ),
+                ARRAY_A
+            );
+        }
+
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);

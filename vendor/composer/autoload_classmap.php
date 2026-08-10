@@ -550,6 +550,7 @@ return array(
     'SlimStat\\Tracker\\VisitIdGenerator' => $baseDir . '/src/Tracker/VisitIdGenerator.php',
     'SlimStat\\Tracker\\WriteResult' => $baseDir . '/src/Tracker/WriteResult.php',
     'SlimStat\\Utils\\Consent' => $baseDir . '/src/Utils/Consent.php',
+    'SlimStat\\Utils\\NetworkMerge' => $baseDir . '/src/Utils/NetworkMerge.php',
     'SlimStat\\Utils\\OptionClaim' => $baseDir . '/src/Utils/OptionClaim.php',
     'SlimStat\\Utils\\PurgeArchive' => $baseDir . '/src/Utils/PurgeArchive.php',
     'SlimStat\\Utils\\Query' => $baseDir . '/src/Utils/Query.php',

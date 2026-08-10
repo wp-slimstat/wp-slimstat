@@ -1,6 +1,7 @@
 <?php
 
 use SlimStat\Utils\Query;
+use SlimStat\Utils\NetworkMerge;
 use SlimStat\Components\DateRangeHelper;
 
 // Let's define the main class with all the methods that we need
@@ -1037,9 +1038,23 @@ class wp_slimstat_db
         }
 
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $distinct_column = ('id' != $_column) ? 'DISTINCT ' . $_column : $_column;
 
-        $query = Query::select(sprintf('COUNT(%s) as counthits', $distinct_column))->from($table);
+        // M1 — the merge intent is declared from the COLUMN, and it decides the inner query's
+        // shape. `id` counts rows and sums; everything else must union the VALUES, because the
+        // golden fixture measures 6 distinct visitors network-wide against 7 summed per blog and
+        // no aggregate over per-blog counts can recover the 6.
+        //
+        // Only when a merge is actually happening. On a single site — and on a network screen
+        // that is not network-scoped — this stays the single `COUNT(DISTINCT …)` it has always
+        // been, because the row-returning shape is only worth its cost if something unions it.
+        $merging = NetworkMerge::isMerging();
+        $intent  = NetworkMerge::intentForColumn($_column);
+
+        $select = $merging
+            ? NetworkMerge::innerSelect($intent, $_column)
+            : sprintf('COUNT(%s) as counthits', ('id' != $_column) ? 'DISTINCT ' . $_column : $_column);
+
+        $query = Query::select($select)->from($table);
 
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
@@ -1069,28 +1084,35 @@ class wp_slimstat_db
 
         $query->allowCaching(true);
 
-        // DELIBERATELY NOT network-scoped. This is the denominator in
-        // `100 * counthits / wp_slimstat_db::$pageviews` (reports.php:1586), and it stays on the
-        // main site because the NUMERATOR does.
+        // NETWORK-SCOPED, and it may only be so because get_top() is scoped in the same change.
         //
-        // An earlier attempt at F9 routed this through `slimstat_get_var_sql` so Pro's Network
-        // View would UNION every subsite into it. Measured on the golden fixture, that made
-        // every "top" report WORSE: `get_top()` builds a Query and calls `getAll()`, and
-        // src/Utils/Query.php applies no filters at all — so the numerator was still main-site
-        // only. The denominator moved from 15 to 40 while the numerator stayed put, understating
-        // every row ~2.7x and turning a report whose rows summed to 100% into one summing to
-        // ~37%. There is no clamp in that direction: reports.php only guards `> 99`.
+        // This is the DENOMINATOR in `100 * counthits / wp_slimstat_db::$pageviews`
+        // (reports.php). An earlier attempt scoped it alone: the denominator moved 15 → 40 on
+        // the golden fixture while the numerator stayed at 15, understating every row ~2.7x and
+        // turning a report whose rows summed to 100% into one summing to ~37% — silently, since
+        // reports.php clamps only the `> 99` direction. Reverted, and recorded as PITFALLS 23.
         //
-        // The same trap sits three lines below in count_records_having(), which is the numerator
-        // for the bounce rate, the new-visitor rate and the seven duration buckets — all divided
-        // by this function. Scoping either one alone breaks the pair.
+        // The rule that replaced it: numerator and denominator move together, or neither moves.
+        // The oracle in tests/docker/probe-network-view.php reports both sides and the state
+        // they are in — consistent-main-site, MIXED, or consistent-network — so "they moved
+        // together" is measured on every topology run rather than argued here.
         //
-        // Closing D22 means scoping where the SQL is BUILT — one helper that get_top(),
-        // get_recent(), get_group_by(), get_top_aggr(), count_records() and
-        // count_records_having() all route through, so numerator and denominator move together.
-        // That is its own seam. Until then this is consistent, and consistent-and-main-site
-        // beats a mixed-scope ratio that renders silently wrong.
-        return intval($query->getVar());
+        // GATED ON THE SAME `$merging` FLAG THE NUMERATOR USES, and that is a compatibility
+        // requirement rather than tidiness. Pro's `slimstat_get_var_sql` rewriter has existed
+        // for years; `slimstat_network_merge_active` is new in this change. So on a site running
+        // v6 free against an OLDER Pro, applying the filter unconditionally would let the old
+        // rewriter scope this denominator while get_top() — which needs the new filter to know a
+        // merge is happening — stayed main-site. That is MIXED, on real installs, from a version
+        // combination nobody controls.
+        //
+        // Measured, not reasoned: the first version of this change did exactly that, and the
+        // topology oracle came back `report_denominator: 40, report_numerator: 15, report_scope:
+        // MIXED` against a Pro zip built before the new filter existed. Gating both sides on one
+        // flag makes the old-Pro case fall back to consistent-main-site — the previous, correct
+        // behaviour — instead of to a silently wrong ratio.
+        return intval($merging
+            ? $query->getVar(NetworkMerge::outerAggregate($intent, $_column))
+            : $query->getVar());
     }
 
     public static function count_records_having($_column = 'id', $_where = '', $_having = '')
@@ -1101,7 +1123,8 @@ class wp_slimstat_db
             return 0;
         }
 
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $merging         = NetworkMerge::isMerging();
+        $table           = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $distinct_column = ('id' !== $_column) ? 'DISTINCT ' . esc_sql($_column) : esc_sql($_column);
 
         $query = Query::select("COUNT(*) as counthits")
@@ -1114,7 +1137,26 @@ class wp_slimstat_db
             ) AS ts1");
 
         $query->allowCaching(true);
-        return intval($query->getVar());
+
+        // M2 — SCOPED WITH THE SAME GATE, and this function is the reason the rule is worded as
+        // "or neither moves" rather than "remember to do both".
+        //
+        // It is the NUMERATOR for the bounce rate, the new-visitor rate and the seven duration
+        // buckets, every one of which is divided by count_records(). The first version of this
+        // seam scoped count_records() and left this behind, recreating PITFALLS 23 on a
+        // different pair — with the deleted comment three lines above having named it: "Scoping
+        // either one alone breaks the pair." Caught by review, not by the suite: the symmetry
+        // gate pinned only the get_top/count_records pair, so it stayed green.
+        //
+        // SUM is the correct intent because the HAVING is evaluated INSIDE each blog, which M2
+        // ratifies as correct *today*: `visit_id` is per-blog, so a visit cannot span subsites
+        // and a single-pageview visit is single-pageview on the site it happened on. Each blog
+        // therefore contributes a whole number of bounces and those add. M2 is explicitly dated
+        // — G4's cross-blog `vid_hash` reopens it, at which point per-blog HAVING starts
+        // splitting one visit into two bounces.
+        return intval($merging
+            ? $query->getVar(NetworkMerge::outerAggregate(NetworkMerge::SUM, 'counthits'))
+            : $query->getVar());
     }
 
     public static function get_data_size()
@@ -1438,11 +1480,50 @@ class wp_slimstat_db
 
         // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
         // handles page slicing via array_slice in the rendering callbacks.
-        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit);
+        $limit   = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+        $merging = NetworkMerge::isMerging();
+
+        // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
+        // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's
+        // rewriter adds none outside — so each blog would contribute only ITS OWN top 20, and a
+        // resource ranked 21st on one subsite loses that subsite's hits entirely. The
+        // denominator, meanwhile, stays complete. That is a silent per-row undercount with rows
+        // summing to under 100%: PITFALLS 23's direction again, arrived at through pagination.
+        //
+        // The shape predates this change — the legacy string-SQL path had `LIMIT %d, %d` inside
+        // too — but it was unreachable, because nothing built by this builder ever reached the
+        // Network View. Routing these reports there for the first time is what makes it live.
+        if (!$merging) {
+            $query->limit($limit);
+        }
 
         $query->allowCaching(true);
-        return $query->getAll();
+
+        // D22 — the NUMERATOR, scoped in the same change as its denominator and by the same
+        // rule. `counthits` here is COUNT(*), which is additive over blogs, so SUM at the outer
+        // level is correct and is the one intent for which that is true.
+        //
+        // The group key travels with it: the union has to re-group by the same columns or the
+        // outer rows are per-blog fragments of one report row — the F10 Layer 2 grain mistake
+        // in a different costume (Run 9 / M7).
+        //
+        // `$_more_select` travels too. It is an aggregate (`MAX(dt) AS dt` on the "Recent …"
+        // reports), so it belongs in the OUTER select beside SUM(counthits) — computed over the
+        // union rather than per arm. Omitted, it still resolved inside t_union_all and drove the
+        // outer ORDER BY correctly while being absent from the returned columns, so the
+        // last-seen tooltip silently vanished on every network-scoped "Recent" report.
+        $rows = $query->getAll(
+            NetworkMerge::SUM,
+            $_as_column,
+            $group_by_column,
+            $order_with_tiebreak,
+            $_more_select
+        );
+
+        // The LIMIT the inner query no longer carries, applied once to the merged, re-sorted
+        // result. Bounded by the number of distinct group keys across the network, which is what
+        // a top-N report is a projection of anyway.
+        return $merging ? array_slice($rows, 0, $limit) : $rows;
     }
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')

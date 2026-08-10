@@ -565,6 +565,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Tracker\\VisitIdGenerator' => __DIR__ . '/../..' . '/src/Tracker/VisitIdGenerator.php',
         'SlimStat\\Tracker\\WriteResult' => __DIR__ . '/../..' . '/src/Tracker/WriteResult.php',
         'SlimStat\\Utils\\Consent' => __DIR__ . '/../..' . '/src/Utils/Consent.php',
+        'SlimStat\\Utils\\NetworkMerge' => __DIR__ . '/../..' . '/src/Utils/NetworkMerge.php',
         'SlimStat\\Utils\\OptionClaim' => __DIR__ . '/../..' . '/src/Utils/OptionClaim.php',
         'SlimStat\\Utils\\PurgeArchive' => __DIR__ . '/../..' . '/src/Utils/PurgeArchive.php',
         'SlimStat\\Utils\\Query' => __DIR__ . '/../..' . '/src/Utils/Query.php',
