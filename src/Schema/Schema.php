@@ -770,11 +770,19 @@ final class Schema
      *
      * @param  callable():string $collation Resolved only if a table must be created.
      * @param  string[] $disabledGroups Optional-index groups the user has switched off.
-     * @return array{tables:string[], indexes:string[], present:string[], failed:string[]}
+     * @return array{tables:string[], indexes:string[], present:string[], failed:string[], columns_missing:string[], columns_narrow:array<string,string>}
      */
     public static function ensure(wpdb $db, string $prefix, callable $collation, array $disabledGroups = []): array
     {
-        $report   = ['tables' => [], 'indexes' => [], 'present' => [], 'failed' => []];
+        $report   = [
+            'tables'          => [],
+            'indexes'         => [],
+            'present'         => [],
+            'failed'          => [],
+            // F4 — drift this run OBSERVED and deliberately did not act on.
+            'columns_missing' => [],
+            'columns_narrow'  => [],
+        ];
         $existing = self::existingTables($db, $prefix);
         $resolved = null;
 
@@ -800,6 +808,19 @@ final class Schema
 
             if (!self::reconciles($suffix)) {
                 continue;
+            }
+
+            // COLUMN DRIFT IS REPORTED, NEVER REPAIRED (F4). An `ALTER` here runs on
+            // `admin_init`, and rebuilding a 443k-row fact table there is precisely the hazard
+            // S7 removed. What was missing was never the repair — it was that column drift had
+            // no read model at all, so `email VARCHAR(255)` on every install upgraded from below
+            // 4.8.2 was invisible to everything, permanently.
+            $columns = self::columnState($db, $suffix, $prefix);
+            foreach ($columns['missing'] as $column) {
+                $report['columns_missing'][] = $suffix . '.' . $column;
+            }
+            foreach ($columns['narrow'] as $column => $widths) {
+                $report['columns_narrow'][$suffix . '.' . $column] = $widths;
             }
 
             $state             = self::indexState($db, $suffix, $prefix, $disabledGroups);
@@ -843,6 +864,112 @@ final class Schema
         }
 
         return $set;
+    }
+
+    /**
+     * Which manifest COLUMNS are on the table, and which have drifted — the sibling `indexState()`
+     * never had.
+     *
+     * F4. `ensure()` reconciles tables and indexes and has never reconciled columns, so a column
+     * reaches a FRESH install through `createTableSql()` and an UPGRADED one only if somebody
+     * hand-wrote a version-gated `ALTER`. Forget the second and the two diverge — which is C39,
+     * and it is how `ua_id` shipped for one commit (PITFALLS 30).
+     *
+     * REPORTING, NOT REPAIRING, and that is the whole design. `ensure()` runs on `admin_init`;
+     * an ALTER that rebuilds a 443k-row fact table there is the "long table rebuild reachable
+     * from an anonymous pageview" hazard S7 already had to remove once. What was missing is not
+     * the repair — it is that column drift was **reportable by nothing**. Two bespoke probes
+     * (`Storage::presentColumns()` on the write path, `AddUserAgentDimension::factColumnExists()`
+     * for one hardcoded name) and a write-path column-dropper stood in for a read model that did
+     * not exist.
+     *
+     * WHAT IS COMPARED, AND WHAT DELIBERATELY IS NOT.
+     *
+     * Presence, always. And for `VARCHAR`/`CHAR`, the declared LENGTH — but only when the table's
+     * is SMALLER than the manifest's. Narrower is the direction that truncates data; wider is
+     * somebody else's ALTER and not a hazard. This is the `email VARCHAR(255)` case: the 4.8.2
+     * upgrade block declared 255 while the manifest declares 256, so every install upgraded from
+     * below 4.8.2 is one character short and always will be — the repaired block never runs again
+     * on them.
+     *
+     * INTEGER TYPES ARE NOT COMPARED AT ALL. MySQL 8.0.19 removed the display width from integer
+     * types, so a column declared `INT(10) UNSIGNED` reports as `int unsigned` on 8.x and
+     * `int(10) unsigned` on ADR-2's 5.6 floor. Comparing them would report every integer column
+     * on every 8.x install as drifted — a normaliser that is right on one server and wrong on the
+     * other, which is a second parser disagreeing with the first, which is this programme's most
+     * repeated defect. So the answer to "has this INT changed" is "not measured here", said out
+     * loud, rather than a number that is wrong half the time.
+     *
+     * Reports NOTHING when the table cannot be read, exactly as `indexState()` does: `SHOW
+     * COLUMNS` against a table this connection cannot see is an ERROR, and `get_results()`
+     * answers `[]` for that as it does for a table with no columns. An unreadable table must
+     * produce no `missing` — or a fresh external-DB install reports its entire schema as absent.
+     *
+     * @return array{present:string[], missing:string[], undeclared:string[], narrow:array<string,string>}
+     */
+    public static function columnState(wpdb $db, string $suffix, string $prefix): array
+    {
+        $state   = ['present' => [], 'missing' => [], 'undeclared' => [], 'narrow' => []];
+        $wanted  = self::columns($suffix);
+
+        $suppressed = $db->suppress_errors(true);
+        $found      = $db->get_results(sprintf('SHOW COLUMNS FROM `%s`', $prefix . $suffix), ARRAY_A);
+        $error      = (string) $db->last_error;
+        $db->suppress_errors($suppressed);
+
+        if ('' !== $error || !is_array($found) || [] === $found) {
+            return $state;
+        }
+
+        $actual = [];
+        foreach ($found as $row) {
+            $actual[(string) ($row['Field'] ?? '')] = (string) ($row['Type'] ?? '');
+        }
+
+        foreach ($wanted as $column => $definition) {
+            if (!isset($actual[$column])) {
+                $state['missing'][] = $column;
+                continue;
+            }
+
+            $state['present'][] = $column;
+
+            $declared = self::charLength($definition);
+            $onTable  = self::charLength($actual[$column]);
+
+            if (null !== $declared && null !== $onTable && $onTable < $declared) {
+                $state['narrow'][$column] = sprintf('%d, declared %d', $onTable, $declared);
+            }
+        }
+
+        foreach (array_keys($actual) as $column) {
+            if (!isset($wanted[$column])) {
+                $state['undeclared'][] = $column;
+            }
+        }
+
+        return $state;
+    }
+
+    /**
+     * The character length of a VARCHAR/CHAR declaration, or null for anything else.
+     *
+     * Null is the "not comparable" answer and it is load-bearing — see columnState(): every
+     * integer type must reach it, because MySQL 8.0.19 dropped their display widths and a
+     * comparison would be wrong on one server or the other.
+     */
+    private static function charLength(string $type): ?int
+    {
+        // char/varchar AND binary/varbinary. All four keep their declared length on every server
+        // in ADR-2's range; integer display widths do not, and that is the whole reason this
+        // returns null rather than a number for them. `binary` matters concretely: `ua_id` is
+        // BINARY(8) and must equal SurrogateKey::WIDTH, so a narrowed one is a silently
+        // truncated key — every value sharing its last bytes collapsing into one dimension row.
+        if (!preg_match('/^\s*(?:var)?(?:char|binary)\s*\(\s*(\d+)\s*\)/i', $type, $m)) {
+            return null;
+        }
+
+        return (int) $m[1];
     }
 
     /**

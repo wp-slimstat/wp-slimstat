@@ -6,6 +6,19 @@ use SlimStat\Services\Admin\Notification\NotificationFactory;
 use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
+    /**
+     * Column drift observed by the last reconciliation (F4).
+     *
+     * Durable on purpose. The degradation channel heals by FORGETTING — a record not re-stamped
+     * within DEGRADATION_TTL is pruned as "stopped happening" — and ensure() runs only on
+     * activation and a version-gated upgrade. Without a durable copy, a permanently drifted
+     * install would show this for one three-hour window per plugin release.
+     *
+     * Never autoloaded: read on admin screens only, on installs already unhealthy enough to have
+     * drift (C34).
+     */
+    const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';
+
     public static $screens_info      = [];
     public static $config_url        = '';
     public static $current_screen    = 'slimview1';
@@ -460,6 +473,11 @@ class wp_slimstat_admin
         // reconciling there would add a wp_options read to every heartbeat and
         // autosave for nothing.
         if (!wp_doing_ajax()) {
+            // BEFORE the reconciliation, at a lower priority. reconcile_degradations() prunes
+            // records past DEGRADATION_TTL, so re-stating the drift afterwards would leave one
+            // request showing a notice the pruner had just removed and the next showing none.
+            // Stated first, pruned second — a still-drifted install never falls out of the notice.
+            add_action('admin_init', ['wp_slimstat_admin', 'refresh_column_drift_notice'], 98);
             add_action('admin_init', ['wp_slimstat', 'reconcile_degradations'], 99);
             add_action('admin_notices', ['wp_slimstat_admin', 'show_degradation_notice']);
         }
@@ -635,8 +653,100 @@ class wp_slimstat_admin
         }
 
         self::stamp_index_options($report['present'], $prefix);
+        self::record_column_drift($report);
 
         return $report;
+    }
+
+    /**
+     * Report column drift the reconciliation OBSERVED and deliberately did not repair (F4).
+     *
+     * `Schema::ensure()` reconciles tables and indexes and never columns — an `ALTER` here runs
+     * on `admin_init`, and rebuilding a 443k-row fact table there is the hazard S7 removed. What
+     * was missing was never the repair. It was that column drift was reportable by NOTHING: two
+     * bespoke probes and a write-path column-dropper absorbed the symptom, and no code path could
+     * say "this install's schema does not match the manifest".
+     *
+     * So it becomes a degradation — the existing mechanism for "we kept working, and something is
+     * not right" — rather than a notice of its own. Both known cases are real and neither is
+     * urgent: `ua_id` absent on an install that has not run the optional migration, and `email`
+     * one character narrow on anything upgraded from below 4.8.2, whose version stamp means the
+     * repaired block will never run again.
+     *
+     * PERSISTED DURABLY AS WELL AS RECORDED, and the second half is not belt-and-braces.
+     *
+     * The degradation channel HEALS BY FORGETTING: a record older than DEGRADATION_TTL (3 hours)
+     * without a re-stamp is treated as "the failure stopped happening" and pruned. That rule is
+     * right for `gdpr_banner`, which recurs on every front-end request and therefore re-stamps
+     * itself. It is exactly wrong here, because ensure() runs only on activation and on a
+     * version-gated upgrade — so a permanently drifted install would show this for one three-hour
+     * window per plugin release and then look healthy for a year.
+     *
+     * So the drift is written where it cannot age out, and re-recorded from there on every
+     * reconcile pass. Absence of the option is what clears it, which is the same shape C34 used
+     * for the purge: the durable fact is the thing that is true, and the notice is synthesised
+     * from it rather than being the only copy.
+     *
+     * @param array{columns_missing?:string[], columns_narrow?:array<string,string>} $report
+     */
+    private static function record_column_drift($report)
+    {
+        $drift = [];
+
+        foreach ($report['columns_missing'] ?? [] as $column) {
+            $drift[] = $column . ' (absent)';
+        }
+
+        foreach ($report['columns_narrow'] ?? [] as $column => $widths) {
+            $drift[] = sprintf('%s (%s)', $column, $widths);
+        }
+
+        if ([] === $drift) {
+            // Cleared by the ABSENCE of drift, not by the passage of time. This is the only thing
+            // that heals it, and it is re-checked on every reconciliation rather than expiring.
+            delete_option(self::COLUMN_DRIFT_OPTION);
+
+            return;
+        }
+
+        // Sorted so the message is stable across runs: an unsorted list whose order follows
+        // SHOW COLUMNS would defeat the (step, message) de-dupe and re-record on every pass.
+        sort($drift);
+
+        // autoload=false, for the reason C34 records: an option that joins `alloptions` is read
+        // on EVERY request, and this one is read only on admin screens — on precisely the
+        // installs already unhealthy enough to have drift.
+        update_option(self::COLUMN_DRIFT_OPTION, $drift, false);
+        self::announce_column_drift($drift);
+    }
+
+    /**
+     * Re-state the stored drift as a degradation, so the notice cannot age out beneath it.
+     *
+     * Called when drift is first observed and again on every admin reconcile pass. Cheap: one
+     * non-autoloaded option read, and record_degradation() declines to write when the same
+     * (step, message) was stamped inside DEGRADATION_REFRESH.
+     */
+    public static function refresh_column_drift_notice()
+    {
+        $drift = get_option(self::COLUMN_DRIFT_OPTION, []);
+
+        if (is_array($drift) && [] !== $drift) {
+            self::announce_column_drift($drift);
+        }
+    }
+
+    /** @param string[] $drift */
+    private static function announce_column_drift(array $drift)
+    {
+        wp_slimstat::record_degradation(
+            'schema column drift',
+            sprintf(
+                'these columns differ from the manifest: %s. Reports and tracking keep working; '
+                    . 'affected fields may be absent or truncated.',
+                implode(', ', $drift)
+            )
+        );
     }
 
     /**

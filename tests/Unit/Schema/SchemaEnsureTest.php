@@ -40,8 +40,11 @@ class SchemaEnsureTest extends WpSlimstatTestCase
      * @param string[] $tables  Full table names that exist.
      * @param array<string,string[]> $indexes Table name => key names present.
      * @param string $error     Non-empty to simulate a probe that could not reach the table.
+     * @param array<string,array<string,string>> $columns Table name => column => SHOW COLUMNS Type.
+     *                                          Absent means "exactly the manifest", which is what
+     *                                          every pre-F4 case assumed without saying so.
      */
-    private function db(array $tables, array $indexes, string $error = '')
+    private function db(array $tables, array $indexes, string $error = '', array $columns = [])
     {
         $this->queries = [];
         $this->probes  = [];
@@ -88,6 +91,43 @@ class SchemaEnsureTest extends WpSlimstatTestCase
                 }
 
                 return [];
+            }
+        );
+
+        // SHOW COLUMNS, for columnState(). Defaults to the manifest itself so the existing cases
+        // — written before columns were probed at all — keep describing a healthy install rather
+        // than suddenly reporting every column missing.
+        $wpdb->shouldReceive('get_results')->andReturnUsing(
+            static function ($sql, $output = null) use ($tables, $columns, &$probes) {
+                $probes[] = $sql;
+
+                if (!preg_match('/SHOW COLUMNS FROM `(.+)`/', $sql, $m)) {
+                    return [];
+                }
+
+                $table = $m[1];
+                if (!in_array($table, $tables, true)) {
+                    return [];
+                }
+
+                if (isset($columns[$table])) {
+                    $rows = [];
+                    foreach ($columns[$table] as $field => $type) {
+                        $rows[] = ['Field' => $field, 'Type' => $type];
+                    }
+
+                    return $rows;
+                }
+
+                $suffix = preg_replace('/^wp_/', '', $table);
+                $rows   = [];
+                foreach (Schema::columns($suffix) as $field => $definition) {
+                    // Lower-cased and stripped to what SHOW COLUMNS actually returns, so the
+                    // double cannot make a comparison pass that the server would fail.
+                    $rows[] = ['Field' => $field, 'Type' => strtolower(explode(' ', $definition)[0])];
+                }
+
+                return $rows;
             }
         );
 
@@ -138,19 +178,29 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // update this number deliberately, which is the point.
         $this->assertCount(18, $report['present']);
 
-        // One patterned SHOW TABLES for ALL tables, then one SHOW INDEX per RECONCILED table:
-        // 1 + 4 (slim_events, slim_events_archive, slim_stats, slim_user_agents). The archive of
-        // slim_stats carries reconcile => false, so it costs nothing here.
+        // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
+        // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
+        // slim_user_agents). The archive of slim_stats carries reconcile => false, so it costs
+        // nothing here.
         //
-        // The old path issued fourteen single-index probes across six call sites, plus a
-        // separate information_schema lookup for the collation that was always discarded. This
-        // budget is the reason Layer 1 can add a dimension for ONE extra probe rather than one
-        // per index.
+        // RAISED FROM 5 TO 9 DELIBERATELY, which is what this assertion is for. F4 added a column
+        // read model and it costs one metadata read per reconciled table. Two things make that
+        // affordable where the fourteen probes it replaced were not:
+        //
+        //   - ensure() is NOT on a per-request path. Its two callers are init_environment()
+        //     (activation and the tracker's repair path) and run_schema_upgrade() (version-gated).
+        //     The fourteen probes this budget was written against ran on every wp-admin request
+        //     whose slimstat_*_indexed option was still unstamped.
+        //   - SHOW COLUMNS reads metadata, not rows.
+        //
+        // The old path also made a separate information_schema lookup for the collation that was
+        // always discarded; that is still gone. If this number rises again, ask those same two
+        // questions before changing it.
         $this->assertCount(
-            5,
+            9,
             $this->probes,
-            "a healthy install must cost one table probe plus one index probe per reconciled "
-                . 'table: ' . implode(' | ', $this->probes)
+            'a healthy install must cost one table probe plus one index probe and one column '
+                . 'probe per reconciled table: ' . implode(' | ', $this->probes)
         );
     }
 
@@ -297,6 +347,141 @@ class SchemaEnsureTest extends WpSlimstatTestCase
      * would still hold exactly one declaration, and the two renderings of it would differ. That
      * is C39 in one line, which is why columnSql() exists rather than two sprintf() calls.
      */
+    // ── F4: the column read model ────────────────────────────────────────────
+
+    public function testColumnStateReportsAHealthyTableAsFullyPresent(): void
+    {
+        [$tables, $indexes] = $this->healthy();
+
+        $state = Schema::columnState($this->db($tables, $indexes), 'slim_stats', 'wp_');
+
+        $this->assertSame([], $state['missing']);
+        $this->assertSame([], $state['undeclared']);
+        $this->assertSame([], $state['narrow']);
+        $this->assertSame(array_keys(Schema::columns('slim_stats')), $state['present']);
+    }
+
+    public function testColumnStateNamesAMissingColumn(): void
+    {
+        // The ua_id shape (PITFALLS 30): declared in the manifest, absent from an install that
+        // has not run the optional migration. Reportable now; reportable by nothing before.
+        $columns = [];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            if ('ua_id' === $field) {
+                continue;
+            }
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+
+        [$tables, $indexes] = $this->healthy();
+        $db = $this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]);
+
+        $this->assertSame(['ua_id'], Schema::columnState($db, 'slim_stats', 'wp_')['missing']);
+    }
+
+    public function testColumnStateNamesANarrowColumnButNotAWideOne(): void
+    {
+        // THE MEASURED CASE. The 4.8.2 upgrade block declared `email VARCHAR(255)` while the
+        // manifest declares 256, so every install upgraded from below 4.8.2 is one character
+        // short — permanently, because its version stamp means the repaired block never runs
+        // again. Narrower truncates; wider is somebody else's ALTER and not a hazard.
+        $columns = [];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+        $columns['email']    = 'varchar(255)';
+        $columns['username'] = 'varchar(512)';
+
+        [$tables, $indexes] = $this->healthy();
+        $state = Schema::columnState($this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]), 'slim_stats', 'wp_');
+
+        $this->assertArrayHasKey('email', $state['narrow']);
+        $this->assertSame('255, declared 256', $state['narrow']['email']);
+        $this->assertArrayNotHasKey('username', $state['narrow'], 'a WIDER column is not drift worth reporting');
+    }
+
+    public function testColumnStateIgnoresIntegerWidthsAcrossServerVersions(): void
+    {
+        // MySQL 8.0.19 REMOVED the display width from integer types. A column declared
+        // `INT(10) UNSIGNED` reports as `int unsigned` on 8.x and `int(10) unsigned` on ADR-2's
+        // 5.6 floor — so comparing them would flag every integer column on every 8.x install.
+        // A normaliser that is right on one server and wrong on the other is a second parser
+        // disagreeing with the first, which is this programme's most repeated defect.
+        $columns = [];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+        // NARROWER display widths, deliberately. `int unsigned` (8.0.19+, no width at all) is
+        // skipped by any implementation and so proves nothing — the first version of this test
+        // used it and a mutation that compared EVERY parenthesised number SURVIVED. A smaller
+        // width is what a naive comparison reports as truncation and what a correct one ignores.
+        $columns['dt']           = 'int(8) unsigned';
+        $columns['content_id']   = 'bigint(12) unsigned';
+        $columns['screen_width'] = 'smallint(4) unsigned';
+
+        [$tables, $indexes] = $this->healthy();
+        $state = Schema::columnState($this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]), 'slim_stats', 'wp_');
+
+        $this->assertSame([], $state['narrow'], 'an integer type must never be reported as drift');
+        $this->assertSame([], $state['missing']);
+    }
+
+    public function testColumnStateReportsNothingWhenTheTableCannotBeRead(): void
+    {
+        // Same contract as indexState(): a probe that could not look is not an answer in either
+        // direction. Reporting `missing` here would make a fresh external-DB install announce
+        // its entire schema as absent.
+        $state = Schema::columnState($this->db([], []), 'slim_stats', 'wp_');
+
+        $this->assertSame([], $state['missing']);
+        $this->assertSame([], $state['present']);
+    }
+
+    public function testColumnStateNamesAnUndeclaredColumn(): void
+    {
+        // `plugins` on an install that never ran the 4.8.4.1 drop. Not a hazard, but the
+        // manifest cannot claim to describe a table it has not looked at.
+        $columns = ['plugins' => 'varchar(255)'];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+
+        [$tables, $indexes] = $this->healthy();
+        $state = Schema::columnState($this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]), 'slim_stats', 'wp_');
+
+        $this->assertSame(['plugins'], $state['undeclared']);
+    }
+
+    public function testEnsureReportsColumnDriftWithoutRepairingIt(): void
+    {
+        // F4's whole design in one assertion: the drift is REPORTED and no ALTER is issued.
+        // ensure() runs on admin_init, and rebuilding a 443k-row fact table there is the hazard
+        // S7 removed.
+        $columns = [];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            if ('ua_id' === $field) {
+                continue;
+            }
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+        $columns['email'] = 'varchar(255)';
+
+        [$tables, $indexes] = $this->healthy();
+        $db     = $this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]);
+        $report = Schema::ensure($db, 'wp_', static fn() => 'utf8mb4_unicode_ci');
+
+        $this->assertContains('slim_stats.ua_id', $report['columns_missing']);
+        $this->assertArrayHasKey('slim_stats.email', $report['columns_narrow']);
+
+        foreach ($this->queries as $sql) {
+            $this->assertStringNotContainsStringIgnoringCase(
+                'ALTER TABLE',
+                $sql,
+                'ensure() must REPORT column drift, never repair it — this runs on admin_init'
+            );
+        }
+    }
+
     public function testAddedColumnMatchesTheCreatedOne(): void
     {
         $created = Schema::createTableSql('slim_stats', 'wp_', 'utf8mb4_unicode_ci');
