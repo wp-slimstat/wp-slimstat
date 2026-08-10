@@ -117,12 +117,37 @@ foreach (['resource', 'browser', 'country', 'platform', 'referer'] as $column) {
 // pageviews-versus-uniques distinction — the classic confusion in this plugin, and the one F9's
 // golden fixture is shaped around — could have been rewritten entirely without a single answer
 // moving. get_top_aggr walks a different code path from get_top.
+// THESE TWO RETURNED `[]` FROM THE DAY THEY WERE ADDED, in every arm of every run, and a blind
+// adjudicator found it by asking why two reports were empty while their siblings had 59 and 105
+// rows. The call was wrong, not the function: `$_outer_select_column` is a column to GROUP BY,
+// and it was handed `COUNT(DISTINCT visit_id) AS counthits`. That renders
+//
+//     SELECT COUNT(DISTINCT visit_id) AS counthits, ts1.aggrid AS browser, COUNT(*) AS counthits
+//       … GROUP BY COUNT(DISTINCT visit_id) AS counthits
+//
+// — a duplicate alias AND a GROUP BY over an aggregate. Invalid, and `get_results()` answers
+// `[]` for a failed query exactly as it does for one that found nothing, with `show_errors` off
+// in this container. So the reports added specifically to stop `get_top_aggr()` being rewritten
+// without a single answer moving were themselves incapable of moving. The comment above them
+// described a coverage the code did not have.
+//
+// The real shape, from `slim_p4_24` "Top Exit Pages": collapse to ONE ROW PER VISIT with
+// MAX(id) — the visit's last pageview — then group and count. `COUNT(*)` over that is visits,
+// not pageviews, which is the distinction this block exists for.
 foreach (['browser', 'country'] as $column) {
-    $answers['uniques_' . $column] = $rows(wp_slimstat_db::get_top_aggr(
-        $column,
-        'visit_id > 0',
-        'COUNT(DISTINCT visit_id) AS counthits'
-    ));
+    // ARRAY FORM, so `use_date_filters` can be turned off — every other answer in this file is
+    // clock-independent by construction and these two must be too. The scalar form cannot
+    // express it, and until this run get_top_aggr() PARSED the flag and never consulted it, so
+    // an unfiltered aggregate was silently a 28-day one. Left as it was, a run crossing local
+    // midnight would report DIFFERENCES on these two with no code difference at all — in a
+    // harness that escalates any difference to "a defect or an EXPECTED-DIFFS entry".
+    $answers['uniques_' . $column] = $rows(wp_slimstat_db::get_top_aggr([
+        'columns'             => 'visit_id',
+        'where'               => 'visit_id > 0',
+        'outer_select_column' => $column,
+        'aggr_function'       => 'MAX',
+        'use_date_filters'    => false,
+    ]));
 }
 
 // ── a FILTERED query — the WHERE-builder, otherwise untouched ──────────────
@@ -162,6 +187,46 @@ if ($end > 0 && $start > 0) {
 }
 
 ksort($answers);
+
+// ── every report must have said SOMETHING ──────────────────────────────────
+//
+// "18 reports, every answer byte-for-byte equal" is a strong claim and an empty report satisfies
+// it perfectly. Two of these returned `[]` from the day they were added — a malformed call to
+// get_top_aggr() that `get_results()` reports identically to "found nothing", with show_errors
+// off in this container — so for every run since, two of the eighteen were identical because
+// neither of them ran.
+//
+// Found by a blind adjudicator asking why two reports were empty while their siblings had 59 and
+// 105 rows on the same 150,000 records. Not by this harness, which had no opinion about it.
+//
+// Scalars are exempt from the emptiness rule but not from the check: a count of 0 is a real
+// answer on an empty corpus, and the row-count controls in seed-bench.sh already refuse one.
+$hollow = [];
+foreach ($answers as $key => $value) {
+    if ('_' === $key[0] || !is_array($value)) {
+        continue;
+    }
+    if ([] === $value) {
+        $hollow[] = $key;
+    }
+}
+
+if ($hollow !== []) {
+    // Marked distinctly, because the caller captures this arm's whole output into a .raw file and
+    // surfaces the failure as "the arm produced no answers" — the same text an activation or
+    // autoloader failure produces. Without the marker the operator has to open the raw file to
+    // learn whether the arm failed to BOOT or merely failed to MEASURE, which are different
+    // problems with different fixes.
+    fwrite(STDERR, sprintf(
+        "SLIMSTAT-HOLLOW-REPORT FAIL: %d report(s) returned no rows — %s.\nAn empty report compares equal to an empty "
+            . "report, so it cannot detect a change in the code that produces it. Either the "
+            . "corpus cannot exercise them or the call is malformed; both make this arm's "
+            . "\"identical\" weaker than it reads.\n",
+        count($hollow),
+        implode(', ', $hollow)
+    ));
+    exit(1);
+}
 
 echo "SLIMSTAT-ANSWERS " . json_encode($answers) . "\n";
 

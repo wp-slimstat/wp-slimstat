@@ -152,7 +152,18 @@ echo
 echo "CONTROLS"
 for f in before after; do
   if [ ! -s "$ART/$f.json" ]; then
-    err "  [FAIL] the $f arm produced no answers — see $ART/$f.json.raw"
+    # Told apart, because they are different problems with different fixes. An arm that could not
+    # BOOT (activation, autoloader, a fatal) and an arm that booted and MEASURED NOTHING both
+    # arrive here as an empty .json, and the generic message sent the operator to the raw file to
+    # find out which.
+    if grep -q 'SLIMSTAT-HOLLOW-REPORT' "$ART/$f.json.raw" 2>/dev/null; then
+      err "  [FAIL] the $f arm ran but one or more reports returned no rows:"
+      err "         $(grep -o 'SLIMSTAT-HOLLOW-REPORT FAIL: .*' "$ART/$f.json.raw" | head -1)"
+      err "         An empty report compares equal to an empty report, so it cannot detect a"
+      err "         change in the code that produces it. Fix the report or the corpus."
+    else
+      err "  [FAIL] the $f arm produced no answers — see $ART/$f.json.raw"
+    fi
     exit 1
   fi
 done

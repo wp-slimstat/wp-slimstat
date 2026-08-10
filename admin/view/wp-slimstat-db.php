@@ -1528,6 +1528,15 @@ class wp_slimstat_db
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')
     {
+        // Declared BEFORE the branch, because only the array form sets them and both are read
+        // below. On the scalar-argument path `$_as_column` was already an undefined-variable
+        // read — harmless while PHP treated it as null, and a warning on 8.x — and
+        // `$_use_date_filters` would have become one the moment it started being honoured,
+        // silently turning the date filter OFF for every scalar caller. Defaults chosen to
+        // preserve exactly what those callers got before.
+        $_use_date_filters = true;
+        $_as_column        = '';
+
         if (is_array($_column)) {
             $_where               = empty($_column['where']) ? '' : $_column['where'];
             $_having              = empty($_column['having']) ? '' : $_column['having'];
@@ -1547,7 +1556,21 @@ class wp_slimstat_db
             $_as_column = $_column;
         }
 
-        $_where = self::get_combined_where($_where, $_column);
+        // `$_use_date_filters` is HONOURED, and until now it was parsed and thrown away: the
+        // array form reads `use_date_filters` at the top of this function and nothing ever
+        // consulted it, so `get_combined_where()` was called with two arguments and defaulted to
+        // true. Every caller asking for an unfiltered aggregate got a date-filtered one.
+        //
+        // Found through the bench harness rather than a report: the two `uniques_*` answers
+        // could not opt out, so they alone moved with the clock in a byte-comparison harness
+        // whose entire contract is that answers do not. Crossing local midnight mid-run would
+        // have produced DIFFERENCES with no code difference — and this harness escalates a
+        // difference to "a defect or an EXPECTED-DIFFS entry, never a shrug".
+        //
+        // get_top()'s D62 note applies to the flag itself: `isset()` rather than `empty()`,
+        // because `empty()` reads a declared `false` as "not set" and flips it back to true,
+        // which is the value a caller would be declaring on purpose.
+        $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
         $table  = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
 		$subQuerySql = sprintf('SELECT %s, %s(id) as aggrid FROM %s WHERE %s GROUP BY %s', $_column, $_aggr_function, $table, $_where, $_column);
