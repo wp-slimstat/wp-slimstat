@@ -51,34 +51,10 @@ $count  = count($tokens);
 
 $registrations = ['register_activation_hook', 'register_deactivation_hook'];
 
-// ── Byte ranges of every block guarded by a condition mentioning is_admin() ──
-$admin_only_ranges = [];
-for ($i = 0; $i < $count; $i++) {
-    if (!is_array($tokens[$i]) || T_IF !== $tokens[$i][0]) {
-        continue;
-    }
-
-    $cond_end = slimstat_token_paren_end($tokens, $i, $count);
-    if (null === $cond_end) {
-        continue;
-    }
-
-    $guards_on_admin = false;
-    for ($k = $i; $k < $cond_end; $k++) {
-        if (is_array($tokens[$k]) && T_STRING === $tokens[$k][0] && 'is_admin' === $tokens[$k][1]) {
-            $guards_on_admin = true;
-            break;
-        }
-    }
-    if (!$guards_on_admin) {
-        continue;
-    }
-
-    $range = slimstat_token_block_range($tokens, $cond_end, $count);
-    if (null !== $range) {
-        $admin_only_ranges[] = $range;
-    }
-}
+// ── Token-index ranges of every block guarded by a condition calling is_admin() ──
+// Shared with subsite-table-hook-test.php via source-scan.php, which is where the walk
+// went when that file's private copy was found testing containment in the wrong UNITS.
+$admin_only_ranges = slimstat_guarded_block_ranges($tokens);
 
 // Vacuity guard. If either token helper stops matching, $admin_only_ranges is empty,
 // the containment loop below becomes a no-op and this file reports PASS while asserting

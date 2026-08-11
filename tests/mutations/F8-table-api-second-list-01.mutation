@@ -1,0 +1,19 @@
+target:    wp-slimstat.php
+gate:      php tests/subsite-table-hook-test.php
+kind:      name-only
+expect:    does not delegate to the Schema manifest
+rationale: table() interpolates the name itself while a comment still says Schema::tableName() — the tenth-creator shape (C11) with the manifest's name left behind as prose. The gate strips comments and strings before matching, so the comment must not save it: unvalidated interpolation returns a plausible name for ANY typo and fails at query time instead of call time.
+---
+diff --git a/wp-slimstat.php b/wp-slimstat.php
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2330,7 +2330,8 @@
+      */
+     public static function table($name, $blog_id = 0)
+     {
+-        return \SlimStat\Schema\Schema::tableName($name, self::get_blog_prefix_for($blog_id));
++        // Schema::tableName($name, ...) semantics, inlined for speed:
++        return self::get_blog_prefix_for($blog_id) . $name;
+     }
+
+     /**

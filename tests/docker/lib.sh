@@ -77,10 +77,14 @@ wp_config_debug() {
 
 # Copy the working tree's free plugin into the cell. Args: wp_dir
 sync_plugin_src() {
-  local wp_dir="$1"
+  # Args: wp_dir [src_dir=$PLUGIN_SRC]. The optional source is what lets a two-arm
+  # measurement (measure-d10.sh) copy from a git worktree of a specific ref through the
+  # SAME excludes as every other cell — its first version carried a third private copy of
+  # this rsync, which is exactly the drift this helper was extracted to prevent.
+  local wp_dir="$1" src="${2:-$PLUGIN_SRC}"
   rm -rf "$wp_dir/wp-content/plugins/wp-slimstat"
   rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-        "$PLUGIN_SRC/" "$wp_dir/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
+        "$src/" "$wp_dir/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
   chmod -R a+rwX "$wp_dir/wp-content" 2>/dev/null || true
 }
 

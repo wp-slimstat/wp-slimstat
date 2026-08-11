@@ -29,6 +29,25 @@ if (!file_exists($wp_load_path)) {
     exit(1);
 }
 
+// A WordPress that cannot reach its database dies through wp_die() with EXIT CODE 0 —
+// dead_db()'s die() is a success to any aggregate reading `$?`. Measured on this machine
+// with the LocalWP MySQL down: this script printed the full "Error establishing a database
+// connection" page and test:all stayed green, a lane silently proving nothing (the
+// PITFALLS 38/44 shape, in the one test that is in test:all precisely BECAUSE it needs a
+// live WordPress). The shutdown guard turns any exit that did not reach the final verdict
+// line into a loud failure.
+$GLOBALS['reports_escaping_verdict_reached'] = false;
+register_shutdown_function(static function (): void {
+    if (empty($GLOBALS['reports_escaping_verdict_reached'])) {
+        fwrite(STDERR, "\nFAIL: reports-output-escaping-test exited before reaching its verdict — "
+            . "usually WordPress dying on the database connection, which exits 0. A lane that "
+            . "cannot boot proves nothing and must say so.\n");
+        // A shutdown function cannot change an exit code already set by die(); posix kill
+        // is overkill — re-exit non-zero, which PHP honours from shutdown context.
+        exit(1);
+    }
+});
+
 if (!defined('SHORTINIT')) {
     define('SHORTINIT', true);
 }
@@ -394,4 +413,5 @@ assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)"
 assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
 assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
 
+$GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

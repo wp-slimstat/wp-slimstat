@@ -306,6 +306,59 @@ function slimstat_token_block_range(array $tokens, int $from, int $limit): ?arra
 }
 
 /**
+ * TOKEN-INDEX ranges [[open, close], ...] of every `{ ... }` block whose `if` condition
+ * calls $guard.
+ *
+ * Extracted from activation-hooks-registered-test.php when subsite-table-hook-test.php
+ * grew a second copy — and the copies had ALREADY drifted in the way this library's
+ * header warns about: one tested containment with the token index, the other with a
+ * cumulative BYTE offset, against ranges that are token indexes. Two consumers
+ * disagreeing about one helper's units is a containment check that can never fire.
+ *
+ * Ranges are token indexes; test membership with the token's index, never a byte
+ * offset. Callers decide their own vacuity policy — a file known to contain guarded
+ * blocks should fail when this returns [] (see the call sites), because with no ranges
+ * every "not inside a guarded block" assertion passes vacuously.
+ *
+ * @param array<int, array{0:int,1:string,2:int}|string> $tokens token_get_all() output
+ * @return array<int, array{0:int,1:int}>
+ */
+function slimstat_guarded_block_ranges(array $tokens, string $guard = 'is_admin'): array
+{
+    $count  = count($tokens);
+    $ranges = [];
+
+    for ($i = 0; $i < $count; $i++) {
+        if (!is_array($tokens[$i]) || T_IF !== $tokens[$i][0]) {
+            continue;
+        }
+
+        $cond_end = slimstat_token_paren_end($tokens, $i, $count);
+        if (null === $cond_end) {
+            continue;
+        }
+
+        $calls_guard = false;
+        for ($k = $i; $k < $cond_end; $k++) {
+            if (is_array($tokens[$k]) && T_STRING === $tokens[$k][0] && $guard === $tokens[$k][1]) {
+                $calls_guard = true;
+                break;
+            }
+        }
+        if (!$calls_guard) {
+            continue;
+        }
+
+        $range = slimstat_token_block_range($tokens, $cond_end, $count);
+        if (null !== $range) {
+            $ranges[] = $range;
+        }
+    }
+
+    return $ranges;
+}
+
+/**
  * Index of the `)` closing the parenthesis group that opens at or after $from.
  *
  * Returns null when unbalanced before $limit.

@@ -113,9 +113,8 @@ mkdir -p "$WP_DIR/wp-content/mu-plugins"
 # ── swap one arm in ─────────────────────────────────────────────────────────
 use_arm() {
   local ref="$1"
-  rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat"
-  rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-        "$WORKTREES/$ref/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
+  # lib.sh's copy helper, pointed at the arm's worktree — one owner for the excludes.
+  sync_plugin_src "$WP_DIR" "$WORKTREES/$ref"
   # The ledger always comes from the CURRENT tree, never from the arm — an instrument that
   # changes between arms measures itself as well as the change.
   cp "$PLUGIN_SRC/tests/bench/mu/slimstat-bench-qlog.php" "$WP_DIR/wp-content/mu-plugins/" 2>/dev/null

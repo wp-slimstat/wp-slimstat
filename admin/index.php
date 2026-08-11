@@ -210,11 +210,9 @@ class wp_slimstat_admin
             self::$meta_user_reports = get_user_option('meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $GLOBALS['current_user']->ID);
         }
 
-        // WPMU - New blog created
-        $active_sitewide_plugins = get_site_option('active_sitewide_plugins');
-        if (!empty($active_sitewide_plugins['wp-slimstat/wp-slimstat.php'])) {
-            add_action('wpmu_new_blog', [self::class, 'new_blog']);
-        }
+        // Subsite creation moved to wp-slimstat.php's unconditional wp_initialize_site
+        // registration (D10): from here it existed only for logged-in admin requests, so
+        // WP-CLI and REST site creation found no callback and got no tables.
 
         // WPMU - Blog Deleted
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
@@ -561,18 +559,6 @@ class wp_slimstat_admin
         wp_safe_redirect(admin_url('admin.php?page=slimlayout'));
         die();
     }
-
-    /**
-     * Support for WP MU network activations
-     */
-    public static function new_blog($_blog_id)
-    {
-        switch_to_blog($_blog_id);
-        self::init_environment();
-        restore_current_blog();
-    }
-
-    // END: new_blog
 
     /**
      * Support for WP MU site deletion

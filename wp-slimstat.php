@@ -2211,18 +2211,41 @@ class wp_slimstat
      * `init_environment()` is deliberately allowed to run its DDL here: activation is
      * the one moment where creating tables is exactly what the user asked for.
      *
-     * KNOWN GAP, deliberately not closed here: on a network activation WordPress fires
-     * this once with `$network_wide = true`, and `init_environment()` creates tables for
-     * the CURRENT blog only. Subsites still get nothing. Closing that needs the
-     * per-blog table API and the `wp_insert_site` hook that replaced `wpmu_new_blog`,
-     * which are multisite work with their own test matrix.
+     * On a network activation WordPress fires this once with `$network_wide = true` — and
+     * before D10 the parameter was not even declared, so `init_environment()` ran for the
+     * CURRENT blog only and every subsite started tables-less, recording nothing until
+     * someone happened to load its wp-admin. The walk includes archived and spam sites:
+     * they keep their tables (only deletion drops them, via `wpmu_drop_tables`), so they
+     * get them at activation too — symmetric with drop_tables(), which derives the same
+     * list from the same manifest.
+     *
+     * @param bool $network_wide True when activated across the network from the network
+     *                           admin or `wp plugin activate --network`.
      */
-    public static function on_activate()
+    public static function on_activate($network_wide = false)
     {
         try {
             include_once plugin_dir_path(__FILE__) . 'admin/index.php';
 
-            wp_slimstat_admin::init_environment();
+            if ($network_wide && is_multisite()) {
+                foreach (get_sites(['fields' => 'ids', 'number' => 0]) as $blog_id) {
+                    switch_to_blog($blog_id);
+
+                    try {
+                        wp_slimstat_admin::init_environment();
+                    } catch (\Throwable $e) {
+                        // Per-site, so one refusing database does not leave every LATER
+                        // site tables-less as well. Each failure is recorded on the blog
+                        // it belongs to — switch_to_blog() has already pointed the
+                        // degradation option at that site's own wp_options.
+                        self::record_degradation('activation (blog ' . $blog_id . ')', $e);
+                    }
+
+                    restore_current_blog();
+                }
+            } else {
+                wp_slimstat_admin::init_environment();
+            }
         } catch (\Throwable $e) {
             // Fail soft, for the same reason update_tables_and_options() does. This runs
             // DDL on strictly more paths than before the registration was moved, and an
@@ -2235,6 +2258,105 @@ class wp_slimstat
             // a fatal on the screen the user is standing on.
             self::record_degradation('activation', $e);
         }
+    }
+
+    /**
+     * A site was just created — give it tables if this plugin is network-active (D10).
+     *
+     * Registered on `wp_initialize_site`, which fires on EVERY creation path: network
+     * admin, WP-CLI `wp site create`, the REST sites endpoint, and any plugin calling
+     * `wp_insert_site()`. Its predecessor `wpmu_new_blog` is fired by core only through a
+     * compat shim guarded by `has_action()` — and the old registration lived in
+     * admin/index.php behind `is_admin()`, so on precisely the requests that create sites
+     * programmatically the shim found no callback and the subsite got no tables.
+     *
+     * Priority 200: after core has created the site's own tables and options (priority
+     * range of `wp_initialize_site`'s own internals), so `switch_to_blog()` lands on a
+     * fully-initialized site.
+     *
+     * Per-site-activated networks are deliberately NOT handled here: the plugin is not
+     * active on the new subsite, so creating its tables would be writing schema for a
+     * plugin the site does not run. Activation on that site creates them (on_activate).
+     *
+     * @param \WP_Site $new_site The site object core just initialized.
+     */
+    public static function on_initialize_site($new_site)
+    {
+        try {
+            // Keyed on the REAL basename, not the canonical literal: the option is keyed
+            // by wherever the plugin actually lives, and a renamed install dir (beta ZIP,
+            // GitHub -master download) would turn a literal into a silent every-time miss —
+            // the same silent-no-op shape this callback exists to close.
+            $sitewide = get_site_option('active_sitewide_plugins');
+            if (empty($sitewide[plugin_basename(SLIMSTAT_FILE)])) {
+                return;
+            }
+
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+            switch_to_blog((int) $new_site->blog_id);
+
+            try {
+                wp_slimstat_admin::init_environment();
+            } finally {
+                restore_current_blog();
+            }
+        } catch (\Throwable $e) {
+            // Site creation must never fail because analytics could not make a table.
+            // The degradation notice and the tracker's failed-INSERT recovery cover it.
+            self::record_degradation('new subsite ' . (int) $new_site->blog_id, $e);
+        }
+    }
+
+    /**
+     * Fully-qualified name of one Slimstat table, optionally for another blog.
+     *
+     * The free half of the per-blog table API (F8): Pro's Network View executes per blog
+     * and recombines in PHP (ratified P3), and Phase G's migration runner targets blogs
+     * it is not currently on. Both need "blog N's slim_stats" WITHOUT switch_to_blog() —
+     * which swaps the whole option/cache context to compute one string.
+     *
+     * Name resolution is the manifest's (Schema::tableName throws on a typo at call time
+     * rather than at query time); prefix resolution is wpdb's own `get_blog_prefix()`,
+     * because interpolating `$wpdb->prefix` is exactly what made init_tables() unable to
+     * target a blog. `$blog_id` 0 means the CURRENT blog — get_blog_prefix() maps 0 to
+     * the main site, which is the wrong default on a subsite, so 0 is translated to null
+     * (wpdb's own "current blog") before the call.
+     *
+     * @param string $name    Table suffix as declared in the manifest, e.g. 'slim_stats'.
+     * @param int    $blog_id Blog to resolve for; 0 = the current blog.
+     * @return string
+     * @throws \InvalidArgumentException when $name is not a declared table.
+     */
+    public static function table($name, $blog_id = 0)
+    {
+        return \SlimStat\Schema\Schema::tableName($name, self::get_blog_prefix_for($blog_id));
+    }
+
+    /**
+     * Suffix => fully-qualified name for every Slimstat table, optionally for another blog.
+     *
+     * @param int $blog_id Blog to resolve for; 0 = the current blog.
+     * @return array<string,string>
+     */
+    public static function tables($blog_id = 0)
+    {
+        return \SlimStat\Schema\Schema::tableNames(self::get_blog_prefix_for($blog_id));
+    }
+
+    /**
+     * The prefix half of the API, written once because it is the subtle half: wpdb maps
+     * blog id 0 (and 1) to the MAIN SITE's base prefix, so an untranslated 0 default
+     * would silently point every current-blog call on a subsite at the main site — a bug
+     * invisible on single-site and on blog 1. 0 becomes null, which is wpdb's own
+     * spelling of "the current blog".
+     *
+     * @param int $blog_id 0 = the current blog.
+     * @return string
+     */
+    private static function get_blog_prefix_for($blog_id)
+    {
+        return $GLOBALS['wpdb']->get_blog_prefix(0 === (int) $blog_id ? null : (int) $blog_id);
     }
 
     /**
@@ -2481,6 +2603,13 @@ if (function_exists('add_action')) {
     // these registrations were just moved onto.
     register_activation_hook(__FILE__, ['wp_slimstat', 'on_activate']);
     register_deactivation_hook(__FILE__, ['wp_slimstat', 'on_deactivate']);
+
+    // Subsite creation (D10). Unconditional for the same reason as the two hooks above:
+    // sites are created by WP-CLI, REST and programmatic wp_insert_site() calls, where
+    // is_admin() is false and the admin bundle — home of the old wpmu_new_blog
+    // registration — was never loaded. The callback itself checks network-active status
+    // at fire time, so on single sites and per-site-activated networks this is a no-op.
+    add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 

@@ -340,6 +340,48 @@ final class Schema
     }
 
     /**
+     * Fully-qualified table name for one declared suffix under one prefix.
+     *
+     * The name-resolution half of the per-blog table API (`wp_slimstat::table()`), kept here
+     * because the manifest is the only authority on which suffixes exist — a hand-written list
+     * at the call site would be a tenth creator of the thing C11 counted nine of.
+     *
+     * Throws on an unknown suffix rather than returning a guessed name: a caller that
+     * interpolates `$prefix . $name` itself fails at query time with an SQL error naming a
+     * table; a caller that asks the manifest fails at CALL time naming the typo.
+     *
+     * @throws \InvalidArgumentException when the suffix is not in the manifest.
+     */
+    public static function tableName(string $suffix, string $prefix): string
+    {
+        if (!isset(self::TABLES[$suffix])) {
+            throw new \InvalidArgumentException(sprintf(
+                "unknown table suffix '%s' — the manifest declares: %s",
+                $suffix,
+                implode(', ', self::tables())
+            ));
+        }
+
+        return $prefix . $suffix;
+    }
+
+    /**
+     * Suffix => fully-qualified name for every declared table under one prefix.
+     *
+     * @return array<string,string>
+     */
+    public static function tableNames(string $prefix): array
+    {
+        $names = [];
+
+        foreach (self::tables() as $suffix) {
+            $names[$suffix] = $prefix . $suffix;
+        }
+
+        return $names;
+    }
+
+    /**
      * Creation order: every table after the tables it depends on.
      *
      * NOT the reverse of the drop order, which is what this method returned in its first draft.
