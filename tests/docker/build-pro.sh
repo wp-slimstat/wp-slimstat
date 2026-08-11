@@ -5,8 +5,10 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-OUT="$HARNESS_DIR/build/wp-slimstat-pro.zip"
-PRO_SRC="$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro"
+OUT="${PRO_ZIP_OUT:-$HARNESS_DIR/build/wp-slimstat-pro.zip}"
+# Overridable so a two-arm measurement can build Pro from a git WORKTREE of a specific
+# ref (measure-f6-external.sh) — the default stays the sibling checkout.
+PRO_SRC="${PRO_SRC_OVERRIDE:-$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro}"
 mkdir -p "$HARNESS_DIR/build"
 
 [ -d "$PRO_SRC" ] || { err "wp-slimstat-pro checkout not found at $PRO_SRC"; exit 1; }

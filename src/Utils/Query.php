@@ -150,6 +150,40 @@ class Query
     }
 
     /**
+     * Run this query on a SPECIFIC connection instead of the analytics one.
+     *
+     * The constructor binds `\wp_slimstat::$wpdb` — the analytics handle, which under the
+     * custom-DB add-on is a DIFFERENT database, possibly a different server. That is
+     * correct for `slim_` tables and WRONG for core tables: a `COUNT(*)` on `wp_posts`
+     * issued on the analytics connection hits a database that has no `wp_posts` (F6/C44).
+     * `get_your_blog()` did exactly that for six of its seven metrics, so on every
+     * external-DB install its post/page/comment counts read zero or errored silently.
+     *
+     * @param \wpdb $db The connection to run on.
+     * @return $this
+     */
+    public function on(\wpdb $db)
+    {
+        $this->db = $db;
+        return $this;
+    }
+
+    /**
+     * Run this query on the WORDPRESS (core) connection — where the core tables live.
+     *
+     * A named shorthand for `->on($GLOBALS['wpdb'])`, because "this queries a core table,
+     * not an analytics one" is the decision a reader needs to see, not the handle plumbing.
+     * Expressed as delegation, not a parallel assignment, so `on()` is the one place that
+     * binds a handle and is exercised on every `local()` call.
+     *
+     * @return $this
+     */
+    public function local()
+    {
+        return $this->on($GLOBALS['wpdb']);
+    }
+
+    /**
      * Specifies the table to be used in the query.
      *
      * @param string $table The name of the table to use.

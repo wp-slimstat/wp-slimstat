@@ -1881,24 +1881,29 @@ class wp_slimstat_db
             $comments_table = $GLOBALS['wpdb']->comments;
             $slim_stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
+            // The six post/comment metrics query CORE tables (wp_posts, wp_comments), so
+            // they run on the LOCAL connection — not the analytics one the constructor
+            // binds. Under the custom-DB add-on the analytics handle is a different
+            // database with no wp_posts, and every one of these read zero or errored
+            // silently (F6/C44). Only the latency metric below queries slim_stats.
             $results[0]['metric']  = __('Content Items', 'wp-slimstat');
-            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '!=', 'revision')->where('post_status', '!=', 'auto-draft')->getVar());
+            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '!=', 'revision')->where('post_status', '!=', 'auto-draft')->getVar());
             $results[0]['tooltip'] = __('This value includes not only posts and pages, but any custom post type, regardless of their status.', 'wp-slimstat');
 
             $results[1]['metric'] = __('Posts', 'wp-slimstat');
-            $results[1]['value']  = Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'post')->getVar();
+            $results[1]['value']  = Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'post')->getVar();
 
             $results[2]['metric'] = __('Pages', 'wp-slimstat');
-            $results[2]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'page')->getVar());
+            $results[2]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'page')->getVar());
 
             $results[3]['metric'] = __('Attachments', 'wp-slimstat');
-            $results[3]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'attachment')->getVar());
+            $results[3]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'attachment')->getVar());
 
             $results[4]['metric'] = __('Revisions', 'wp-slimstat');
-            $results[4]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'revision')->getVar());
+            $results[4]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'revision')->getVar());
 
             $results[5]['metric'] = __('Comments', 'wp-slimstat');
-            $results[5]['value']  = Query::select('COUNT(*)')->from($comments_table)->getVar();
+            $results[5]['value']  = Query::select('COUNT(*)')->local()->from($comments_table)->getVar();
 
             $results[6]['metric'] = __('Avg Comments per Post', 'wp-slimstat');
             $results[6]['value']  = empty($results[1]['value']) ? 0 : number_format_i18n($results[5]['value'] / $results[1]['value']);

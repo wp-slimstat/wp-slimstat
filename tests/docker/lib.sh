@@ -51,8 +51,10 @@ read_verdict_status() {
 # duplicated; keeping them here means the image args, the debug constants and the rsync excludes
 # have ONE owner and the two arms cannot drift.
 
-# docker compose for the current COMPOSE_PROJECT_NAME.
-dc() { docker compose -f "$HARNESS_DIR/docker-compose.yml" "$@"; }
+# docker compose for the current COMPOSE_PROJECT_NAME. DC_EXTRA_FILE lets a cell
+# overlay a second compose file (topology B/D add an external-db service) without
+# every other cell paying for services it does not use.
+dc() { docker compose -f "$HARNESS_DIR/docker-compose.yml" ${DC_EXTRA_FILE:+-f "$DC_EXTRA_FILE"} "$@"; }
 
 # WP-CLI inside the cell's wp container.
 wpc() { dc exec -T -u www-data wp wp --path=/var/www/html "$@"; }

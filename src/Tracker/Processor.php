@@ -308,7 +308,14 @@ class Processor
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Only check comment cookies if PII is allowed
             // Use original IP (before hashing) for spam check with Query builder
+            // ->local(): wp_comments is a CORE table. The default Query handle is the
+            // analytics connection, which under the custom-DB add-on is a different
+            // database (often server) with no wp_comments — so on an external-DB install
+            // a known commenter's username/email were never attached, silently, on every
+            // one of their pageviews (F6/C44). DB_NAME still qualifies it, harmlessly,
+            // since the local handle IS DB_NAME.
             $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+                ->local()
                 ->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
                 ->where('comment_author_IP', '=', $originalIpForGeo)
                 ->where('comment_approved', '=', 'spam')
