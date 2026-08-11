@@ -99,12 +99,38 @@ if ($blockers !== []) {
 // These are compared STRUCTURALLY (byte length must still match, and they must
 // still render) but their numeric content is reported as informational.
 $time_dependent = [
-    'slim_p1_03'         => 'At a Glance carries a rolling live window; a value was measured '
-        . 'decrementing 40 -> 39 over 66 seconds with byte-identical markup, which is rows '
-        . 'leaving the trailing edge, not a defect',
-    'slim_p1_04'         => 'Currently Online — dt/dt_out within the last 5 minutes by definition',
-    'slim_p1_18'         => 'Users Currently Online — same rolling window',
-    'slim_live_analytics' => 'Live Analytics — a per-minute series anchored to now()',
+    // VALUE-LEVEL, not report-level, wherever the report renders labelled values. Each entry is
+    // the set of labels that may legitimately move; EVERY OTHER value in that report is compared
+    // like any other.
+    //
+    // Measured (probe-glance-stability.php, three samples 70 s apart on a static corpus):
+    // slim_p1_03 has eight values and exactly ONE moves — "Last 30 minutes" went
+    // 4,529 -> 4,526 -> 4,526 while Pageviews, Days in Range, Average Daily Pageviews, From Any
+    // SERP, Unique IPs, Today and Yesterday held. The old entry exempted all eight.
+    //
+    // The asymmetry that governs this list: a value seen to move IS time-dependent on one
+    // observation, but a value that did not move in N samples is only as stable as N. A 30-minute
+    // window moves when a row leaves its trailing edge, which may not happen in any given sample
+    // — this probe saw "Last 30 minutes" move in one run and nothing move in the next. Do not add
+    // to this list from a single quiet run.
+    'slim_p1_03' => [
+        'labels' => ['Last 30 minutes'],
+        // How many labelled values the report must yield, in BOTH arms. Without it a partial
+        // extraction is indistinguishable from a complete one: reduce both arms to the single
+        // exempt label and the comparator prints "only Last 30 minutes moved (exempt)" and passes,
+        // having compared nothing. Measured — a `details` block drops one label and a preceding
+        // non-conforming paragraph drops another, so partial extraction is reachable, not
+        // hypothetical.
+        'expect' => 8,
+        'why'    => 'a rolling 30-minute window; the other seven values are compared',
+    ],
+
+    // Whole-report exemptions, for reports that do NOT render labelled values, so there is
+    // nothing finer to name. Each is a blind spot the size of the report — narrow them the moment
+    // their markup makes it possible.
+    'slim_p1_04'          => ['labels' => null, 'why' => 'Currently Online — dt/dt_out within the last 5 minutes by definition'],
+    'slim_p1_18'          => ['labels' => null, 'why' => 'Users Currently Online — same rolling window'],
+    'slim_live_analytics' => ['labels' => null, 'why' => 'Live Analytics — a per-minute series anchored to now()'],
 ];
 
 // ── Diff ───────────────────────────────────────────────────────────────────
@@ -165,7 +191,98 @@ foreach ($after['cells'] as $cell => $reports) {
         // This is the weakest check in the harness, which is why the list above
         // is short, justified per entry, and printed on every run.
         if (isset($time_dependent[$report_id])) {
-            $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
+            $rule = $time_dependent[$report_id];
+
+            // No labels declared: nothing finer to name, so the whole report is excused exactly
+            // as before. This is the honest whole-report case.
+            if (null === $rule['labels']) {
+                $live_moves[] = sprintf('%s/%s: %s', $cell, $report_id, implode(', ', $deltas) ?: 'markup');
+                continue;
+            }
+
+            // LABELS DECLARED BUT UNUSABLE IS A FAILURE, NOT A FALLBACK.
+            //
+            // The first version fell back to whole-report exemption here, and printed the same
+            // line the old code printed. Measured: against a baseline captured before `pairs`
+            // existed — which every baseline on disk is — a Pageviews 45,336 -> 44,900 regression
+            // was excused and the run reported PASS, byte-identical to the pre-narrowing output.
+            // The narrowing would have looked applied while behaving exactly as before, which is
+            // the worst of both: a blind spot plus a comment saying there isn't one.
+            //
+            // `expect` is checked on BOTH arms because a partial extraction passes every other
+            // test here: the exempt label survives, the missing ones are simply never compared,
+            // and the run prints "only <label> moved (exempt)".
+            $expected = $rule['expect'] ?? null;
+            $degraded = null;
+
+            if (empty($was['pairs']) || empty($now['pairs'])) {
+                $degraded = sprintf('no labelled values captured (before: %d, after: %d) — is the '
+                    . 'baseline older than the pairs field?', count($was['pairs'] ?? []), count($now['pairs'] ?? []));
+            } elseif (null !== $expected
+                && (count($was['pairs']) !== $expected || count($now['pairs']) !== $expected)) {
+                $degraded = sprintf('expected %d labelled values, got %d before and %d after — a '
+                    . 'partial extraction compares only what it found',
+                    $expected, count($was['pairs']), count($now['pairs']));
+            }
+
+            if (null !== $degraded) {
+                $changed[] = [
+                    'cell'        => $cell,
+                    'report'      => $report_id,
+                    'numbers'     => ['EXEMPTION DEGRADED: ' . $degraded],
+                    'markup_only' => false,
+                    'bytes'       => [$was['bytes'], $now['bytes']],
+                ];
+                continue;
+            }
+
+            // Labels declared AND pairs captured: excuse only those, and report every other moved
+            // value as a real change. This is what turns a report-sized blind spot into a
+            // value-sized one.
+            $unexcused = [];
+            foreach ($now['pairs'] as $label => $value) {
+                if (in_array($label, $rule['labels'], true)) {
+                    continue;
+                }
+                $before_value = $was['pairs'][$label] ?? '(absent)';
+                if ($before_value !== $value) {
+                    $unexcused[] = sprintf('%s: %s → %s', $label, $before_value, $value);
+                }
+            }
+
+            foreach (array_keys($was['pairs']) as $label) {
+                if (!array_key_exists($label, $now['pairs']) && !in_array($label, $rule['labels'], true)) {
+                    $unexcused[] = sprintf('%s: %s → (absent)', $label, $was['pairs'][$label]);
+                }
+            }
+
+            if ([] === $unexcused) {
+                // Name only the labels that ACTUALLY moved. The first version printed "only
+                // <label> moved (exempt)" unconditionally, so a markup-only hash change with all
+                // eight values identical asserted that a value had moved when none had.
+                $exempt_moved = [];
+                foreach ($rule['labels'] as $label) {
+                    if (($was['pairs'][$label] ?? null) !== ($now['pairs'][$label] ?? null)) {
+                        $exempt_moved[] = sprintf('%s %s → %s', $label,
+                            $was['pairs'][$label] ?? '(absent)', $now['pairs'][$label] ?? '(absent)');
+                    }
+                }
+
+                $live_moves[] = sprintf('%s/%s: %d values compared, %s', $cell, $report_id,
+                    count($now['pairs']) - count($rule['labels']),
+                    $exempt_moved === []
+                        ? 'no exempt value moved (markup only)'
+                        : 'exempt: ' . implode(', ', $exempt_moved));
+                continue;
+            }
+
+            $changed[] = [
+                'cell'        => $cell,
+                'report'      => $report_id,
+                'numbers'     => $unexcused,
+                'markup_only' => false,
+                'bytes'       => [$was['bytes'], $now['bytes']],
+            ];
             continue;
         }
 

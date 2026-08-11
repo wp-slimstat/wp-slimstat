@@ -165,6 +165,67 @@ $extract_numbers = static function (string $html): array {
     return array_slice($m[1], 0, 200);
 };
 
+/**
+ * Label -> value pairs, for the summary reports that render `<p>Label <span>value</span></p>`.
+ *
+ * Exists so an exemption can name a VALUE instead of a report. `slim_p1_03` was exempted whole
+ * because one of its eight values rolls; measured over three samples 70 s apart, exactly one does
+ * ("Last 30 minutes" 4,529 -> 4,526 -> 4,526) and the other seven — including the Today and
+ * Yesterday that F8 fixed — never move. A report-level exemption is a blind spot the size of the
+ * report where one the size of a value would do.
+ *
+ * Empty for any report that does not render this shape (tables, charts). A report with NO
+ * declared labels falls back to the report-level rule; a report WITH declared labels whose
+ * pairs are missing is reported as DEGRADED and fails the run, because silently reverting to
+ * the old behaviour is indistinguishable from the narrowing having worked.
+ *
+ * @return array<string,string>
+ */
+$extract_pairs = static function (string $html): array {
+    // PARAGRAPH-BOUNDED, in two steps. A single `#<p>(.*?)<span>(.*?)</span></p>#s` looks right
+    // and produces WRONG pairs rather than none, because the lazy match runs past its own `</p>`
+    // whenever the value span is not immediately followed by one. Measured against this plugin's
+    // real emitters:
+    //
+    //   a `details` <b> after the span (reports.php:1285)  8 pairs -> 7, "Days in Range" absorbed
+    //                                                      into the previous value and gone as a key
+    //   an outbound block before an At-a-Glance block      "Pageviews" gone, first label absorbs
+    //                                                      four paragraphs
+    //   Moz rankings (reports.php:2449)                    label becomes the tooltip prose, not
+    //                                                      "Moz Domain Authority"
+    //
+    // A wrong label is worse than no label: an exemption naming a real one would never match, and
+    // if the surrounding markup differs between arms the KEY drifts and every value in the report
+    // reports as (absent).
+    //
+    // So: cut the html into paragraphs first — `</p>` cannot be crossed — then read at most one
+    // label/value out of each. A paragraph that does not have the shape yields nothing, which is
+    // the safe answer.
+    $pairs = [];
+
+    if (!preg_match_all('#<p\b[^>]*>(.*?)</p>#s', $html, $paragraphs)) {
+        return $pairs;
+    }
+
+    foreach ($paragraphs[1] as $inner) {
+        // The LAST span in the paragraph is the value; everything before the first span is the
+        // label. Anything after the value span (a `details` <b>, a <br/>) is discarded rather than
+        // allowed to drag the next paragraph in.
+        if (!preg_match('#^(.*?)<span\b[^>]*>(.*?)</span>#s', $inner, $m)) {
+            continue;
+        }
+
+        $label = trim(html_entity_decode(wp_strip_all_tags($m[1]), ENT_QUOTES, 'UTF-8'));
+        $value = trim(html_entity_decode(wp_strip_all_tags($m[2]), ENT_QUOTES, 'UTF-8'));
+
+        if ('' !== $label) {
+            $pairs[$label] = $value;
+        }
+    }
+
+    return $pairs;
+};
+
 $reports = slimstat_bench_bootstrap_reports();
 
 $snapshot = [
@@ -213,6 +274,7 @@ foreach ($wanted as $cell => $filters) {
             'hash'    => $error === null ? md5($clean) : null,
             'bytes'   => strlen($clean),
             'numbers' => $error === null ? $extract_numbers($clean) : [],
+            'pairs'   => $error === null ? $extract_pairs($clean) : [],
             'error'   => $error,
         ];
         $db->queries = [];

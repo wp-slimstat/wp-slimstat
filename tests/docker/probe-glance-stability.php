@@ -90,48 +90,82 @@ $render = static function () {
         $error = $e->getMessage();
     }
 
-    $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES, 'UTF-8');
-    preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
+    // STRUCTURAL, not positional. The report renders `<p>Label <span>value</span></p>` with no
+    // newline between rows, so the flattened text is ONE line and a positional guess attributed
+    // the move to "Pageviews 22,258Days in Range 28Average Daily Pageviews 795F". Worse, the flat
+    // number regex also captures the literal 30 inside the LABEL "Last 30 minutes", so the array
+    // has nine numbers for eight metrics and every index past that point is off by one.
+    //
+    // Naming the wrong value would narrow the exemption around a stable number and leave the
+    // moving one unasserted — strictly worse than the report-level exemption it replaces.
+    preg_match_all('#<p>(.*?)<span>(.*?)</span></p>#s', $html, $rows, PREG_SET_ORDER);
 
-    // The labels too, so a moving number can be NAMED rather than reported as "position 6".
-    $labels = [];
-    foreach (preg_split('/\n+/', $text) as $line) {
-        $line = trim(preg_replace('/\s+/', ' ', $line));
-        if ('' !== $line) {
-            $labels[] = $line;
+    $pairs = [];
+    foreach ($rows as $row) {
+        $label = trim(html_entity_decode(wp_strip_all_tags($row[1]), ENT_QUOTES, 'UTF-8'));
+        $value = trim(html_entity_decode(wp_strip_all_tags($row[2]), ENT_QUOTES, 'UTF-8'));
+        if ('' !== $label) {
+            $pairs[$label] = $value;
         }
     }
 
-    return ['numbers' => $m[1], 'bytes' => strlen($html), 'lines' => $labels, 'error' => $error];
+    return ['pairs' => $pairs, 'bytes' => strlen($html), 'error' => $error, 'html' => $html];
 };
 
-$first = $render();
-printf("\nfirst render:  %d numbers, %d bytes%s\n", count($first['numbers']), $first['bytes'],
-    null === $first['error'] ? '' : '   ERROR: ' . $first['error']);
+$trials = max(2, (int) (getenv('GLANCE_TRIALS') ?: 3));
 
-// AN EMPTY RENDER IS NOT A STABLE RENDER, and the first version of this probe did not say so. It
-// printed "NOTHING MOVED across 0 numbers -> the exemption is no longer earned" about a report
-// that had produced 0 bytes. That is PITFALLS 38 — an empty result is not an answer — inside a
-// probe written to re-examine an exemption, which is the population where a confident vacuous
-// pass does the most damage.
-if (0 === $first['bytes'] || [] === $first['numbers']) {
-    printf("  [FAIL] the report rendered %d bytes and %d numbers. Nothing below would be a\n"
-        . "         statement about time-dependence: two empty renders are equal for a reason\n"
-        . "         that has nothing to do with the clock.%s\n",
-        $first['bytes'],
-        count($first['numbers']),
-        null === $first['error'] ? '' : "\n         The render threw: " . $first['error']);
-    echo "VERDICT: ABORTED\n";
-    exit(1);
+// N SAMPLES, NOT ONE PAIR — and this is the correction the probe's own first result forced.
+//
+// Run A showed "Last 30 minutes" moving 19 -> 18 across 70 seconds. Run B, same probe, same
+// corpus, showed NOTHING moving, and on that evidence alone the probe recommended lifting the
+// exemption entirely. Both are true: a 30-minute rolling window only moves when a row actually
+// falls out of the trailing edge during the sample, and whether one does in any given 70 seconds
+// is chance.
+//
+// So absence of movement in one trial is not stability. The asymmetry is the whole point:
+//
+//   moved at least once   -> PROVES time-dependence. One observation is enough.
+//   never moved in N      -> evidence of stability, and only as strong as N.
+//
+// Accumulated across trials, and the verdict says which kind of evidence it has.
+$samples = [];
+$first    = null;
+
+for ($t = 0; $t < $trials; $t++) {
+    if ($t > 0) {
+        sleep($gap);
+    }
+
+    $r = $render();
+
+    if (0 === $t) {
+        $first = $r;
+
+        echo "\n--- rendered markup, verbatim ---\n";
+        echo $r['html'] . "\n";
+        echo "--- end ---\n";
+
+        printf("\nsample 1: %d label/value pairs, %d bytes%s\n", count($r['pairs']), $r['bytes'],
+            null === $r['error'] ? '' : '   ERROR: ' . $r['error']);
+
+        if (0 === $r['bytes'] || [] === $r['pairs']) {
+            printf("  [FAIL] the report rendered %d bytes and %d pairs. Nothing below would be a\n"
+                . "         statement about time-dependence: two empty renders are equal for a\n"
+                . "         reason that has nothing to do with the clock.%s\n",
+                $r['bytes'],
+                count($r['pairs']),
+                null === $r['error'] ? '' : "\n         The render threw: " . $r['error']);
+            echo "VERDICT: ABORTED\n";
+            exit(1);
+        }
+        printf("  [PASS] the report renders %d labelled values — there is something to move\n",
+            count($r['pairs']));
+    } else {
+        printf("sample %d: %d pairs, %d bytes\n", $t + 1, count($r['pairs']), $r['bytes']);
+    }
+
+    $samples[] = $r;
 }
-printf("  [PASS] the report renders %d numbers — there is something for the clock to move\n",
-    count($first['numbers']));
-
-sleep($gap);
-
-$second = $render();
-printf("second render: %d numbers, %d bytes%s\n", count($second['numbers']), $second['bytes'],
-    null === $second['error'] ? '' : '   ERROR: ' . $second['error']);
 
 $rows_after = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats");
 if ($rows_after !== $rows_before) {
@@ -140,53 +174,52 @@ if ($rows_after !== $rows_before) {
     echo "VERDICT: ABORTED\n";
     exit(1);
 }
-printf("  [PASS] the corpus did not change under the probe (%d rows both times)\n", $rows_after);
+printf("  [PASS] the corpus did not change under the probe (%d rows throughout)\n", $rows_after);
 
-// ── which values moved ─────────────────────────────────────────────────────
+// -- which values moved, over every sample --------------------------------
 echo "\nWHICH VALUES MOVED\n";
+printf("  %d samples, %d s apart, over %d s total\n", $trials, $gap, $gap * ($trials - 1));
 
-$moved = [];
-$len   = max(count($first['numbers']), count($second['numbers']));
+$seen = [];
+foreach ($samples as $r) {
+    foreach ($r['pairs'] as $label => $value) {
+        $seen[$label][] = $value;
+    }
+}
 
-for ($i = 0; $i < $len; $i++) {
-    $a = $first['numbers'][$i] ?? '—';
-    $b = $second['numbers'][$i] ?? '—';
-
-    if ($a !== $b) {
-        // Name it from the rendered text: the label sits beside its value on the same line.
-        // WHOLE-TOKEN match, not strpos(). An unanchored substring makes "40" match "1,405",
-        // "402" and any year, and a vanished value arrives here as the em dash from the ?? above,
-        // which matches the first line containing any em dash. This probe's whole deliverable is
-        // naming WHICH value is time-dependent so the exemption can be narrowed from the report to
-        // the value — and a wrong label narrows it around the wrong number, leaving the moving one
-        // asserted and a stable one exempt.
-        $label  = '';
-        $needle = preg_quote((string) $b, '/');
-        foreach ($second['lines'] as $line) {
-            if ('—' !== $b && preg_match('/(?<![\d,.])' . $needle . '(?![\d,.])/', $line)) {
-                $label = $line;
-                break;
-            }
-        }
-        if ('' === $label) {
-            $label = '(value not locatable in the rendered text — position only)';
-        }
-        $moved[] = ['pos' => $i, 'from' => $a, 'to' => $b, 'label' => $label];
+$moved  = [];
+$stable = [];
+foreach ($seen as $label => $values) {
+    if (count(array_unique($values)) > 1) {
+        $moved[$label] = $values;
+    } else {
+        $stable[$label] = $values[0];
     }
 }
 
 if ([] === $moved) {
-    printf("  NOTHING MOVED across %d numbers.\n", $len);
-    echo "  -> the report is stable on a static corpus, and the exemption is no longer earned.\n";
-    echo "     slim_p1_03 can be value-compared like any other report.\n";
+    printf("  nothing moved across %d values in %d samples.\n", count($stable), $trials);
+    echo "  -> EVIDENCE OF STABILITY, AND ONLY AS STRONG AS THE SAMPLE. A rolling window moves\n";
+    echo "     only when a row leaves its trailing edge, which may not happen in any given\n";
+    echo "     window — this same probe saw 'Last 30 minutes' move 19 -> 18 in one run and\n";
+    echo "     nothing move in the next. Do not lift an exemption on this alone; raise\n";
+    echo "     GLANCE_TRIALS or GLANCE_GAP until either something moves or the sample is\n";
+    echo "     long enough to mean something.\n";
 } else {
-    printf("  %d of %d numbers moved:\n", count($moved), $len);
-    foreach ($moved as $m) {
-        printf("    #%-3d %-8s -> %-8s  %s\n", $m['pos'], $m['from'], $m['to'], substr($m['label'], 0, 60));
+    printf("  %d of %d values MOVED — proven time-dependent:\n", count($moved), count($seen));
+    foreach ($moved as $label => $values) {
+        printf("    %-28s %s\n", $label, implode(' -> ', $values));
     }
-    echo "  -> the exemption is still earned, but only for these. Every OTHER number in this\n";
-    echo "     report is stable and is currently unasserted for no reason.\n";
+    printf("\n  %d stable across the same window:\n", count($stable));
+    foreach ($stable as $label => $value) {
+        printf("    %-28s %s\n", $label, $value);
+    }
+    echo "\n  -> the exemption is earned by the moved value(s) ONLY. Exempting the whole report\n";
+    echo "     leaves the stable ones unasserted for no reason — a blind spot the size of the\n";
+    echo "     report where one the size of a value would do.\n";
 }
+
+$second = end($samples);
 
 printf("\n  bytes: %d -> %d (%s)\n", $first['bytes'], $second['bytes'],
     $first['bytes'] === $second['bytes'] ? 'identical' : 'CHANGED');
