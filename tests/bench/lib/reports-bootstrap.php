@@ -50,6 +50,29 @@ if (!function_exists('slimstat_bench_bootstrap_reports')) {
             require_once SLIMSTAT_ANALYTICS_DIR . 'admin/view/wp-slimstat-reports.php';
         }
 
+        // ASYNC_LOAD OFF, OR THE HARNESS MEASURES NOTHING.
+        //
+        // `raw_results_to_html()` returns '' when `async_load` is 'on' and the request is not
+        // AJAX — the report is meant to arrive over admin-ajax afterwards. `async_load` DEFAULTS
+        // TO 'on' for new installs (EXPECTED-DIFFS R7), the bench container is a new install, and
+        // 52 report definitions route through that method.
+        //
+        // MEASURED, on a 153,317-row corpus, before this line existed:
+        //
+        //     async_load 'on'   50 of 65 reports rendered NOTHING    98,724 bytes
+        //     async_load 'no'    1 of 65                            320,017 bytes
+        //
+        // Two empty renders hash identically. So fifty reports were reporting PARITY on every run
+        // regardless of what the code did — the oracle's largest blind spot, and one it could not
+        // report, because "identical" is exactly what it saw. The capability gate above was
+        // already handled with a comment saying "without a user every cell would render nothing
+        // and report a flattering zero"; this is the same hazard, one line further down, and it
+        // was not.
+        //
+        // Set on the in-memory settings rather than the option: the harness must not leave a
+        // container configured differently from the product it is measuring.
+        wp_slimstat::$settings['async_load'] = 'no';
+
         wp_slimstat_reports::init();
 
         return wp_slimstat_reports::$reports;

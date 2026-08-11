@@ -219,18 +219,68 @@ foreach ($wanted as $cell => $filters) {
     }
 }
 
-file_put_contents($out_path, wp_json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+// ── COVERAGE, COMPUTED BEFORE THE FILE IS WRITTEN ──────────────────────────
+//
+// A cell that rendered NOTHING compares byte-identically to another that rendered nothing, so it
+// reports parity on every run whatever the code does. This harness spent its whole life with 50 of
+// 65 reports empty — async_load defaults to 'on' and suppresses raw_results_to_html outside AJAX —
+// and could not say so: from the inside, empty-vs-empty is indistinguishable from correct.
+//
+// THREE COUNTERS, NOT ONE, because "rendered something" and "carries a comparable value" are
+// different questions and the first was standing in for the second:
+//
+//   errored       the render threw
+//   render_only   bytes > 0 but NO numbers — "No data to display" is 40 bytes after $normalise
+//                 and would otherwise count as full coverage. Two such cells also hash
+//                 identically: the same pathology at 40 bytes instead of 0.
+//   value_compared  carries at least one number, i.e. something a wrong value could move
+//
+// The floor is on value_compared as a PROPORTION, so adding cells or reports cannot dilute it.
+$counts = ['total' => 0, 'errored' => 0, 'empty' => 0, 'render_only' => 0, 'value_compared' => 0];
 
-$total  = array_sum(array_map('count', $snapshot['cells']));
-$errors = 0;
 foreach ($snapshot['cells'] as $cell_reports) {
     foreach ($cell_reports as $r) {
+        $counts['total']++;
+
         if ($r['error'] !== null) {
-            $errors++;
+            $counts['errored']++;
+        } elseif ((int) $r['bytes'] === 0) {
+            $counts['empty']++;
+        } elseif (empty($r['numbers'])) {
+            $counts['render_only']++;
+        } else {
+            $counts['value_compared']++;
         }
     }
 }
 
-printf("\ncaptured %d report/cell snapshots (%d could not render)\n", $total, $errors);
+$proportion = $counts['total'] > 0 ? $counts['value_compared'] / $counts['total'] : 0.0;
+
+// Recorded IN the snapshot, not only printed. The file is what parity-compare consumes and what
+// survives the session; a coverage number that lives only in a terminal cannot be checked later,
+// and an aborted snapshot on disk is otherwise byte-indistinguishable from a good one.
+$snapshot['coverage'] = $counts + ['value_compared_proportion' => round($proportion, 4)];
+
+printf("\ncaptured %d report/cell snapshots\n", $counts['total']);
+printf("  errored        %d\n", $counts['errored']);
+printf("  empty          %d\n", $counts['empty']);
+printf("  render_only    %d   (markup but no numbers — uncomparable)\n", $counts['render_only']);
+printf("  value_compared %d   (%.1f%%)\n", $counts['value_compared'], $proportion * 100);
+
+// 0.70 rather than 1.0: slim_p9_01 (Goals) genuinely fatals outside an admin request, and some
+// cells legitimately have no rows in their window. The number exists to make a COLLAPSE
+// impossible, not to pin today's figure — raising it is progress, and it is recorded in the file
+// so a later run can be compared against this one rather than against a memory.
+$floor = 0.70;
+
+if ($proportion < $floor) {
+    printf("\nVERDICT: ABORTED — only %.1f%% of cells carry a comparable value (floor %.0f%%).\n",
+        $proportion * 100, $floor * 100);
+    printf("A hollow snapshot reports parity it never checked, so NOTHING is written to %s.\n", $out_path);
+    exit(1);
+}
+
+file_put_contents($out_path, wp_json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+
 printf("wrote %s\n", $out_path);
 echo "VERDICT: OK\n";
