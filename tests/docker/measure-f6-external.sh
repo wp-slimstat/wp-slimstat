@@ -59,22 +59,15 @@ fi
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART"
 
-# ── per-ref arms (fail/build_pro_arm/cleanup_pro_arm: lib.sh) ───────────────
-FREE_SRC="$PLUGIN_SRC"; FREE_WT=""
-if [ "$FREE_REF" != "-" ]; then
-  FREE_WT="$CELL_DIR/free-src"; rm -rf "$FREE_WT"
-  git -C "$PLUGIN_SRC" worktree add --detach "$FREE_WT" "$FREE_REF" >/dev/null 2>&1 \
-    || { err "cannot create free worktree at $FREE_REF"; exit 1; }
-  FREE_SRC="$FREE_WT"
-fi
-
+# ── per-ref arms + provisioning (all shared machinery: lib.sh) ──────────────
+build_free_arm "$FREE_REF" "$CELL_DIR" || exit 1
 build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
 
 finish() {
   scan_debug_log "$WP_DIR" "$ART" || true   # captured for the report; D's before arm MAY hold errors by design
   write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason"
   dc down -v --remove-orphans >/dev/null 2>&1 || true
-  [ -n "$FREE_WT" ] && git -C "$PLUGIN_SRC" worktree remove --force "$FREE_WT" >/dev/null 2>&1
+  cleanup_free_arm
   cleanup_pro_arm
   log "$CELL → $status ${reason:+($reason)}"
 }
@@ -82,7 +75,7 @@ trap finish EXIT
 
 echo "CONTROLS:"
 echo "  topology: $TOPO (db2 $( [ "$TOPO" = "B" ] && echo 'RUNNING' || echo 'ABSENT — hostname must not resolve'))"
-if [ -n "$FREE_WT" ]; then echo "  free arm: $(git -C "$FREE_WT" rev-parse --short HEAD) (requested $FREE_REF)"; else echo "  free arm: WORKING TREE ($(git -C "$PLUGIN_SRC" rev-parse --short HEAD)+dirty?)"; fi
+echo "  free arm: $(free_arm_desc)"
 if [ -n "$PRO_WT" ]; then echo "  pro arm:  $(git -C "$PRO_WT" rev-parse --short HEAD) (requested $PRO_REF), zip rebuilt for this arm"; else echo "  pro arm:  sibling checkout ($(git -C "$PRO_CHECKOUT" rev-parse --short HEAD))"; fi
 
 log "[$CELL] build + up"
@@ -92,15 +85,13 @@ if [ "$TOPO" = "B" ]; then
     || { fail "db2 did not come up"; exit 1; }
 fi
 
-wpc core download --version="$WP" --force > "$ART/install.log" 2>&1 || { fail "core download failed"; exit 1; }
-wp_config_debug "$ART/install.log"
+provision_wp_cell "$ART" "$WP" "$BASE_URL" "$FREE_SRC" || exit 1
 if [ "$TOPO" = "D" ]; then
   # The disclosure path needs display; a real subset of sites run with it. Stated above.
+  # Set after provisioning: the constant matters at REQUEST time (rendered pages), and no
+  # measured request happens before this line.
   wpc config set WP_DEBUG_DISPLAY true --raw --type=constant >>"$ART/install.log" 2>&1
 fi
-wpc core install --url="$BASE_URL" --title="F6 $CELL" --admin_user=admin \
-    --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \
-    || { fail "core install failed"; exit 1; }
 
 # Real core content for the "Your Blog" numbers.
 for i in 1 2 3; do
@@ -108,36 +99,15 @@ for i in 1 2 3; do
 done
 wpc comment create --comment_post_ID=1 --comment_content="c1" --comment_approved=1 >>"$ART/install.log" 2>&1
 
-sync_plugin_src "$WP_DIR" "$FREE_SRC"
-mkdir -p "$WP_DIR/wp-content/plugins/.pro"
-cp "$ARM_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
-chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
-
-wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || { fail "free activation failed"; exit 1; }
-wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --activate --force \
-    >>"$ART/activate.log" 2>&1 || { fail "pro install failed"; exit 1; }
-
 # Point the addon at db2 AFTER activation (activation itself must run on the local DB so
-# the cell reaches a known state), then server-side tracking so a cookieless curl is a hit.
-wpc eval '
-  $s = get_option("slimstat_options", []);
-  $s["addon_custom_db_enable"] = "on";
-  $s["addon_custom_db_dbhost"] = "db2";
-  $s["addon_custom_db_dbname"] = "slimstat_ext";
-  $s["addon_custom_db_dbuser"] = "root";
-  $s["addon_custom_db_dbpass"] = "root";
-  $s["javascript_mode"] = "no";
-  $s["is_tracking"] = "on";
-  update_option("slimstat_options", $s);
-  echo "settings: host=db2 name=slimstat_ext topo='"$TOPO"'";
-' > "$ART/settings.log" 2>&1 || fail "settings update failed"
-cat "$ART/settings.log"; echo ""
+# the cell reaches a known state); server-side tracking so a cookieless curl is a hit.
+enable_custom_db_addon db2 slimstat_ext "$ART"
+echo "  settings: host=db2 name=slimstat_ext topo=$TOPO"
 
 # The external tables exist only if something creates them there: run the activation-path
 # repair once ON PURPOSE (B only) — this is the admin path that legitimately owns DDL.
 if [ "$TOPO" = "B" ]; then
-  wpc eval 'include_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_environment(); echo "env init ran";' \
-    >> "$ART/settings.log" 2>&1 || fail "init_environment failed"
+  init_analytics_env "$ART"
 fi
 
 # CONFOUND REMOVED (D only). Plain `plugin activate` above created the slim_ tables in the
@@ -151,7 +121,7 @@ if [ "$TOPO" = "D" ]; then
   # FK checks off: slim_events has a foreign key to slim_stats, so a naive drop order
   # leaves the parent behind (the guard below caught exactly that). Order-independent.
   dc exec -T db mysql -uroot -proot wordpress -e "SET FOREIGN_KEY_CHECKS=0;
-    DROP TABLE IF EXISTS wp_slim_events, wp_slim_events_archive, wp_slim_stats, wp_slim_stats_archive, wp_slim_user_agents;
+    DROP TABLE IF EXISTS wp_slim_events, wp_slim_events_archive, wp_slim_meta, wp_slim_stats, wp_slim_stats_archive, wp_slim_user_agents;
     SET FOREIGN_KEY_CHECKS=1;" >/dev/null 2>&1
   dropped=$(dc exec -T db mysql -uroot -proot wordpress -N -e \
     "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME LIKE 'wp\\_slim\\_%';" 2>/dev/null | tr -dc '0-9')

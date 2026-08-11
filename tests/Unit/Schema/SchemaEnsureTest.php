@@ -180,12 +180,13 @@ class SchemaEnsureTest extends WpSlimstatTestCase
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
-        // slim_user_agents). The archive of slim_stats carries reconcile => false, so it costs
-        // nothing here.
+        // slim_user_agents) + 1 (slim_meta's SHOW COLUMNS; it declares no secondary indexes, so
+        // indexState answers from the manifest without a SHOW INDEX). The archive of slim_stats
+        // carries reconcile => false, so it costs nothing here.
         //
-        // RAISED FROM 5 TO 9 DELIBERATELY, which is what this assertion is for. F4 added a column
-        // read model and it costs one metadata read per reconciled table. Two things make that
-        // affordable where the fourteen probes it replaced were not:
+        // RAISED FROM 5 TO 9 DELIBERATELY (F4's column read model), THEN 9 TO 10 (C48's
+        // slim_meta — one three-column metadata read on the same non-per-request path). Two
+        // things make this affordable where the fourteen probes it replaced were not:
         //
         //   - ensure() is NOT on a per-request path. Its two callers are init_environment()
         //     (activation and the tracker's repair path) and run_schema_upgrade() (version-gated).
@@ -197,7 +198,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // always discarded; that is still gone. If this number rises again, ask those same two
         // questions before changing it.
         $this->assertCount(
-            9,
+            10,
             $this->probes,
             'a healthy install must cost one table probe plus one index probe and one column '
                 . 'probe per reconciled table: ' . implode(' | ', $this->probes)
@@ -254,8 +255,8 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // there" and for a statement the server refused.
         $this->assertSame([], $report['tables']);
         // Five: slim_events, slim_events_archive, slim_stats, slim_stats_archive and the
-        // slim_user_agents dimension. Deliberately updated when Layer 1 landed.
-        $this->assertCount(5, $report['failed']);
+        // slim_user_agents dimension. Updated when Layer 1 landed, and again for C48 (slim_meta).
+        $this->assertCount(6, $report['failed']);
 
         $create = implode("\n", $this->queries);
         $this->assertStringContainsString('ENGINE=InnoDB', $create);

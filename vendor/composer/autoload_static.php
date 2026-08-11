@@ -529,6 +529,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Reports\\Traits\\HasPagination' => __DIR__ . '/../..' . '/src/Reports/Traits/HasPagination.php',
         'SlimStat\\Reports\\Traits\\HasTooltip' => __DIR__ . '/../..' . '/src/Reports/Traits/HasTooltip.php',
         'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => __DIR__ . '/../..' . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',
+        'SlimStat\\Schema\\Meta' => __DIR__ . '/../..' . '/src/Schema/Meta.php',
         'SlimStat\\Schema\\Schema' => __DIR__ . '/../..' . '/src/Schema/Schema.php',
         'SlimStat\\Schema\\SurrogateKey' => __DIR__ . '/../..' . '/src/Schema/SurrogateKey.php',
         'SlimStat\\Services\\Admin\\ConditionTagEvaluator' => __DIR__ . '/../..' . '/src/Services/Admin/ConditionTagEvaluator.php',

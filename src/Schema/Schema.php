@@ -165,6 +165,25 @@ final class Schema
             ],
         ],
 
+        // C48 — the install's identity and leases, ON THE CONNECTION THEY DESCRIBE. When
+        // the custom-DB add-on points analytics at another server, this table travels with
+        // the data: `install_uuid` and `owner_site_url` are what a dump carries and
+        // credentials do not, so P5's topology-F refusal compares owner_site_url against
+        // home_url() instead of fingerprinting dbhost/prefix (ADR-14's superseded and
+        // inverted failure). Key-value on purpose: identity rows and lease rows share the
+        // atomic-claim primitive (the PRIMARY KEY is what rejects a concurrent writer).
+        'slim_meta' => [
+            'columns' => [
+                // 191, not 256: the PRIMARY KEY must fit 767 index bytes under utf8mb4.
+                'meta_key'   => 'VARCHAR(191) NOT NULL',
+                'meta_value' => 'VARCHAR(2048) DEFAULT NULL',
+                // For a lease row this is the expiry epoch; for identity rows it is unused.
+                'dt'         => 'INT(10) UNSIGNED NOT NULL DEFAULT 0',
+            ],
+            'primary' => 'meta_key',
+            'indexes' => [],
+        ],
+
         'slim_stats' => [
             'columns' => [
                 'id'                => 'INT UNSIGNED NOT NULL auto_increment',

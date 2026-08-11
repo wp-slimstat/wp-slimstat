@@ -514,6 +514,7 @@ return array(
     'SlimStat\\Reports\\Traits\\HasPagination' => $baseDir . '/src/Reports/Traits/HasPagination.php',
     'SlimStat\\Reports\\Traits\\HasTooltip' => $baseDir . '/src/Reports/Traits/HasTooltip.php',
     'SlimStat\\Reports\\Types\\Analytics\\LiveAnalyticsReport' => $baseDir . '/src/Reports/Types/Analytics/LiveAnalyticsReport.php',
+    'SlimStat\\Schema\\Meta' => $baseDir . '/src/Schema/Meta.php',
     'SlimStat\\Schema\\Schema' => $baseDir . '/src/Schema/Schema.php',
     'SlimStat\\Schema\\SurrogateKey' => $baseDir . '/src/Schema/SurrogateKey.php',
     'SlimStat\\Services\\Admin\\ConditionTagEvaluator' => $baseDir . '/src/Services/Admin/ConditionTagEvaluator.php',

@@ -641,6 +641,15 @@ class wp_slimstat_admin
         self::stamp_index_options($report['present'], $prefix);
         self::record_column_drift($report);
 
+        // C48 — mint the install's identity beside its data, first-writer-wins. Here and
+        // not inside ensure(): ensure() is a DDL reconciler the tracker's repair path also
+        // runs, and identity should be minted by the admin path that owns the schema, on
+        // the same handle the tables were just ensured on. Skipped when slim_meta failed
+        // to create — writing identity into a missing table would only stamp failures.
+        if ($_wpdb instanceof \wpdb && !in_array($prefix . 'slim_meta', $report['failed'], true)) {
+            \SlimStat\Schema\Meta::ensureIdentity($_wpdb, $prefix);
+        }
+
         return $report;
     }
 

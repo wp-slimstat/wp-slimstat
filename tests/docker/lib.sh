@@ -69,6 +69,76 @@ cleanup_pro_arm() {
   return 0
 }
 
+# The free half of the same provenance rule: '-' = the working tree as it stands, a ref =
+# a detached worktree of exactly that ref. Sets FREE_SRC and FREE_WT ('' = working tree).
+build_free_arm() { # <free_ref|-> <cell_dir>
+  FREE_SRC="$PLUGIN_SRC"; FREE_WT=""
+  if [ "$1" != "-" ]; then
+    FREE_WT="$2/free-src"; rm -rf "$FREE_WT"
+    git -C "$PLUGIN_SRC" worktree add --detach "$FREE_WT" "$1" >/dev/null 2>&1 \
+      || { err "cannot create free worktree at $1"; return 1; }
+    FREE_SRC="$FREE_WT"
+  fi
+}
+
+cleanup_free_arm() {
+  [ -n "${FREE_WT:-}" ] && git -C "$PLUGIN_SRC" worktree remove --force "$FREE_WT" >/dev/null 2>&1
+  return 0
+}
+
+# One line of arm provenance for the CONTROLS block, same wording everywhere — the copies
+# had already diverged ('+dirty?' vs '+staged') by the time this was extracted.
+free_arm_desc() {
+  if [ -n "${FREE_WT:-}" ]; then
+    echo "$(git -C "$FREE_WT" rev-parse --short HEAD) (pinned ref)"
+  else
+    echo "WORKING TREE ($(git -C "$PLUGIN_SRC" rev-parse --short HEAD)+uncommitted)"
+  fi
+}
+
+# ── Shared WP cell provisioning ─────────────────────────────────────────────
+# download → config → install → free source → pro zip → both activations. The third
+# script to need this block is what got it extracted, same as build_pro_arm. Cell-specific
+# steps (posts, users, WP_DEBUG_DISPLAY) stay in the callers, after this returns.
+provision_wp_cell() { # <art> <wp_version> <base_url> <free_src>
+  local art="$1" wp="$2" base_url="$3" free_src="$4"
+  wpc core download --version="$wp" --force > "$art/install.log" 2>&1 || { fail "core download failed"; return 1; }
+  wp_config_debug "$art/install.log"
+  wpc core install --url="$base_url" --title="$COMPOSE_PROJECT_NAME" --admin_user=admin \
+      --admin_password=admin --admin_email=qa@example.com --skip-email >>"$art/install.log" 2>&1 \
+      || { fail "core install failed"; return 1; }
+  sync_plugin_src "$CELL_WP_DIR" "$free_src"
+  mkdir -p "$CELL_WP_DIR/wp-content/plugins/.pro"
+  cp "$ARM_PRO_ZIP" "$CELL_WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
+  chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
+  wpc plugin activate wp-slimstat >>"$art/install.log" 2>&1 || { fail "free activation failed"; return 1; }
+  wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --activate --force \
+      >>"$art/activate.log" 2>&1 || { fail "pro install failed"; return 1; }
+}
+
+# Point the custom-DB add-on at a host/db with server-side tracking on, root/root creds.
+enable_custom_db_addon() { # <host> <dbname> <art>
+  wpc eval '
+    $s = get_option("slimstat_options", []);
+    $s["addon_custom_db_enable"] = "on";
+    $s["addon_custom_db_dbhost"] = "'"$1"'";
+    $s["addon_custom_db_dbname"] = "'"$2"'";
+    $s["addon_custom_db_dbuser"] = "root";
+    $s["addon_custom_db_dbpass"] = "root";
+    $s["javascript_mode"] = "no";
+    $s["is_tracking"] = "on";
+    update_option("slimstat_options", $s);
+    echo "addon: on host='"$1"' db='"$2"'";
+  ' >> "$3/settings.log" 2>&1 || fail "addon settings update failed"
+}
+
+# The admin path that owns DDL: creates the analytics tables (and, post-C48, identity)
+# on whatever handle the add-on resolves.
+init_analytics_env() { # <art>
+  wpc eval 'include_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php"; wp_slimstat_admin::init_environment(); echo "env init ran";' \
+    >> "$1/settings.log" 2>&1 || fail "init_environment failed"
+}
+
 # Read a cell's verdict status back. Args: cell.json path
 #
 # The counterpart to write_verdict, and it lives here for the reason PITFALLS #5 gives: one
