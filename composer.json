@@ -157,6 +157,7 @@
     "test:network-scope-symmetry": "php tests/network-scope-symmetry-test.php",
     "test:group-by-conformance": "php tests/group-by-conformance-test.php",
     "test:surplus-arguments": "php tests/surplus-argument-scan-test.php",
+    "test:assertion-floor": "php tests/assertion-floor-check.php",
     "test:checksum-timing": "php tests/checksum-timing-safety-test.php",
     "test:e2e-helper-gating": "php tests/e2e-helper-gating-test.php",
     "test:bench-instrument-safety": "php tests/bench-instrument-safety-test.php",
@@ -233,14 +234,7 @@
       "@test:checksum-timing",
       "@test:e2e-helper-gating",
       "@test:bench-instrument-safety",
-      "@test:tracker-repair-gate"
-    ],
-    "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit",
-    "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php",
-    "test:all": [
-      "@test:unit",
-      "@test:integration",
-      "@test:source-level",
+      "@test:tracker-repair-gate",
       "@test:license-tags",
       "@test:geoip-resolver",
       "@test:geoservice",
@@ -249,7 +243,6 @@
       "@test:lazy-migration",
       "@test:content-type-attachment",
       "@test:rest-controller",
-      "@test:reports-escaping",
       "@test:fingerprint-sanitize",
       "@test:gdpr-consent",
       "@test:user-exclusion",
@@ -265,6 +258,15 @@
       "@test:storage-update-sanitize",
       "@test:referer-android-app",
       "@test:referer-searchterms-encoding"
+    ],
+    "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
+    "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",
+    "test:all": [
+      "@test:unit",
+      "@test:integration",
+      "@test:assertion-floor",
+      "@test:source-level",
+      "@test:reports-escaping"
     ]
   }
 }

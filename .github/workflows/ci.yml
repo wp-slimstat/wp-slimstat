@@ -84,6 +84,14 @@ jobs:
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:integration
 
+      - name: Assertion floor
+        # A suite can lose coverage WITHOUT losing a test: two ProcessorTest cases once went
+        # PASSING -> INCOMPLETE because a stub lacked a method, and PHPUnit still printed OK.
+        # Tests: 317 was identical before and after; assertions 602 -> 598 was the entire signal.
+        # Runs on the same lanes as the two suites above, because it reads the JUnit they write.
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
+        run: composer test:assertion-floor
+
       - name: PHP syntax lint (src/)
         # Lint plugin source only — skip src/Dependencies/ which contains
         # Mozart-scoped vendor files that may use PHP 8.0+ syntax.
