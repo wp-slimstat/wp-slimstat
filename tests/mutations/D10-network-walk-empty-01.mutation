@@ -9,10 +9,10 @@ diff --git a/wp-slimstat.php b/wp-slimstat.php
 +++ b/wp-slimstat.php
 @@ -2228,7 +2228,7 @@
              include_once plugin_dir_path(__FILE__) . 'admin/index.php';
-
+ 
              if ($network_wide && is_multisite()) {
 -                foreach (get_sites(['fields' => 'ids', 'number' => 0]) as $blog_id) {
 +                foreach ([] as $blog_id) {
                      switch_to_blog($blog_id);
-
+ 
                      try {

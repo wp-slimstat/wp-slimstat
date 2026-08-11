@@ -12,5 +12,6 @@ diff --git a/wp-slimstat.php b/wp-slimstat.php
      // registration — was never loaded. The callback itself checks network-active status
      // at fire time, so on single sites and per-site-activated networks this is a no-op.
 -    add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
-
+ 
      add_action('widgets_init', ['wp_slimstat', 'register_widget']);
+ 

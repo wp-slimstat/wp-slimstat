@@ -12,6 +12,6 @@ diff --git a/admin/index.php b/admin/index.php
          // registration (D10): from here it existed only for logged-in admin requests, so
          // WP-CLI and REST site creation found no callback and got no tables.
 +        add_action('wpmu_new_blog', [self::class, 'init_environment']);
-
+ 
          // WPMU - Blog Deleted
          add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);

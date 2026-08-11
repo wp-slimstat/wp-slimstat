@@ -68,6 +68,31 @@ foreach ($files as $file) {
             . 'moved file is INVALID, and an INVALID mutation proves nothing while looking like coverage';
     }
 
+    // THE ORACLE, not a second grammar. The parser's empty-line check names the exact
+    // corrupt spelling at write time, but a hand-rolled shape check is itself a second
+    // parser of the diff format — so the acceptance question is put to the SAME binary the
+    // runner will use: `git apply --check`, no gate executed, nothing written. This also
+    // catches context DRIFT (a mutation whose target moved under it), which previously
+    // surfaced only as INVALID in a full run — corrupt patches reached the registry twice
+    // (results of 2026-08-02 and 2026-08-11) before this existed.
+    if (!empty($spec['diff'])) {
+        $tmp = tempnam(sys_get_temp_dir(), 'mutcheck');
+        file_put_contents($tmp, $spec['diff']);
+        exec(
+            'cd ' . escapeshellarg($plugin_root) . ' && git apply --check ' . escapeshellarg($tmp) . ' 2>&1',
+            $apply_out,
+            $apply_rc
+        );
+        unlink($tmp);
+        if (0 !== $apply_rc) {
+            $failures[] = "{$id}: git apply --check rejects the diff — "
+                . trim(implode(' ', array_slice($apply_out, 0, 2)))
+                . ' (a patch the runner cannot apply reports INVALID, which proves nothing '
+                . 'while looking like coverage)';
+        }
+        $apply_out = [];
+    }
+
     // The gate must name something real in WHICHEVER form it is written. Checking only the
     // `tests/*.php` shape left `gate: composer test:typo` checked by nothing at all.
     if (!empty($spec['gate'])) {

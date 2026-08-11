@@ -83,5 +83,21 @@ function slimstat_mutation_parse(string $path): array
             . 'working assertion gets reported SURVIVED';
     }
 
+    // A blank CONTEXT line in a unified diff is a single space; the empty spelling is what
+    // `git apply` calls a corrupt patch, and it has now produced INVALID runs on two separate
+    // dates (see tests/verify/results/). INVALID at run time proves nothing about the gate —
+    // this catches the malformed file at registry-test time instead, naming the line. The
+    // final terminating newline is not a diff line, hence the rtrim.
+    foreach (explode("\n", rtrim($spec['diff'], "\n")) as $i => $line) {
+        if ('' === $line) {
+            $problems[] = sprintf(
+                'diff line %d is a truly-empty line — a blank context line must be a single '
+                . 'SPACE, or `git apply` rejects the patch as corrupt and the mutation reports '
+                . 'INVALID (which proves nothing in either direction)',
+                $i + 1
+            );
+        }
+    }
+
     return ['spec' => $spec, 'problems' => $problems];
 }

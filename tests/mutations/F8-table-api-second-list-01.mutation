@@ -15,5 +15,5 @@ diff --git a/wp-slimstat.php b/wp-slimstat.php
 +        // Schema::tableName($name, ...) semantics, inlined for speed:
 +        return self::get_blog_prefix_for($blog_id) . $name;
      }
-
+ 
      /**
