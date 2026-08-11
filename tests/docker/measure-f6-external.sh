@@ -59,9 +59,7 @@ fi
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART"
 
-fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
-
-# ── per-ref arms ────────────────────────────────────────────────────────────
+# ── per-ref arms (fail/build_pro_arm/cleanup_pro_arm: lib.sh) ───────────────
 FREE_SRC="$PLUGIN_SRC"; FREE_WT=""
 if [ "$FREE_REF" != "-" ]; then
   FREE_WT="$CELL_DIR/free-src"; rm -rf "$FREE_WT"
@@ -70,27 +68,14 @@ if [ "$FREE_REF" != "-" ]; then
   FREE_SRC="$FREE_WT"
 fi
 
-PRO_CHECKOUT="$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro"
-PRO_WT=""
-ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro.zip"
-if [ "$PRO_REF" != "-" ]; then
-  PRO_WT="$CELL_DIR/pro-src"; rm -rf "$PRO_WT"
-  git -C "$PRO_CHECKOUT" worktree add --detach "$PRO_WT" "$PRO_REF" >/dev/null 2>&1 \
-    || { err "cannot create pro worktree at $PRO_REF"; exit 1; }
-  ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro-$PRO_REF.zip"
-  PRO_SRC_OVERRIDE="$PRO_WT" PRO_ZIP_OUT="$ARM_PRO_ZIP" bash "$HARNESS_DIR/build-pro.sh" \
-    > "$ART/build-pro.log" 2>&1 || { err "pro build at $PRO_REF failed (see build-pro.log)"; exit 1; }
-else
-  bash "$HARNESS_DIR/build-pro.sh" > "$ART/build-pro.log" 2>&1 \
-    || { err "pro build failed (see build-pro.log)"; exit 1; }
-fi
+build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
 
 finish() {
   scan_debug_log "$WP_DIR" "$ART" || true   # captured for the report; D's before arm MAY hold errors by design
   write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason"
   dc down -v --remove-orphans >/dev/null 2>&1 || true
   [ -n "$FREE_WT" ] && git -C "$PLUGIN_SRC" worktree remove --force "$FREE_WT" >/dev/null 2>&1
-  [ -n "$PRO_WT" ] && git -C "$PRO_CHECKOUT" worktree remove --force "$PRO_WT" >/dev/null 2>&1
+  cleanup_pro_arm
   log "$CELL → $status ${reason:+($reason)}"
 }
 trap finish EXIT
@@ -198,6 +183,9 @@ if [ "$TOPO" = "B" ]; then
   echo "  slim_ tables in the EXTERNAL database: ${ext_tables:-?} · tracked rows there: ${ext_rows:-?}"
 
   # "Your Blog": the report's own function, then the independent truth from the core handle.
+  # Log FIRST, excerpt AFTER — `tee file | head -6` lets head close the pipe at line 6,
+  # which SIGPIPE-kills the eval BEFORE its printf flushes: the first B run captured seven
+  # lines of autoloader warnings and no numbers at all. The excerpt greps the log instead.
   wpc eval '
     include_once WP_PLUGIN_DIR . "/wp-slimstat/wp-slimstat.php";
     include_once WP_PLUGIN_DIR . "/wp-slimstat/admin/view/wp-slimstat-db.php";
@@ -207,22 +195,28 @@ if [ "$TOPO" = "B" ]; then
     $posts_truth    = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type=\"post\" AND post_status=\"publish\"");
     $comments_truth = (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_approved=1");
     printf("  your_blog: %s\n  core truth: posts=%d comments=%d\n", json_encode($yb), $posts_truth, $comments_truth);
-  ' 2>&1 | tee "$ART/yourblog.log" | head -6
+  ' > "$ART/yourblog.log" 2>&1
+  grep -a "your_blog:\|core truth:" "$ART/yourblog.log" || fail "your_blog probe emitted no numbers (see yourblog.log)"
 
-  # The MaxMind panel mechanism: its slim_ queries run on the CORE handle.
-  core_slim=$(wpc eval 'global $wpdb; $v = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats"); echo (null === $v) ? "ERR:" . $wpdb->last_error : $v;' 2>/dev/null | head -c 120)
-  echo "  MaxMind mechanism (slim_stats via CORE handle): ${core_slim}"
+  # The MaxMind panel mechanism: its slim_ queries run on the CORE handle. Same
+  # log-first-excerpt-after shape as your_blog above: a `| head -c` on the live pipe is
+  # the truncate-and-kill hazard, and it leaves nothing to inspect when the value is odd.
+  wpc eval 'global $wpdb; $v = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats"); echo "MECHANISM:" . ((null === $v) ? "ERR:" . $wpdb->last_error : $v);' \
+    > "$ART/maxmind-mechanism.log" 2>&1
+  core_slim=$(grep -a -o -m1 'MECHANISM:.*' "$ART/maxmind-mechanism.log" | head -c 130 | cut -d: -f2-)
+  echo "  MaxMind mechanism (slim_stats via CORE handle): ${core_slim:-NO CAPTURE — see maxmind-mechanism.log}"
 
   # The UserOverview mechanism: one statement naming the core schema, run on the ANALYTICS handle.
-  cross=$(wpc eval '
+  wpc eval '
     include_once WP_PLUGIN_DIR . "/wp-slimstat/wp-slimstat.php";
     wp_slimstat::init();
     global $wpdb;
     $sql = "SELECT COUNT(*) FROM `{$wpdb->dbname}`.{$wpdb->users}";
     $v = wp_slimstat::$wpdb->get_var($sql);
-    echo (null === $v) ? "ERR:" . wp_slimstat::$wpdb->last_error : "OK:" . $v;
-  ' 2>/dev/null | head -c 160)
-  echo "  UserOverview mechanism (core-schema table via ANALYTICS handle): ${cross}"
+    echo "MECHANISM:" . ((null === $v) ? "ERR:" . wp_slimstat::$wpdb->last_error : "OK:" . $v);
+  ' > "$ART/useroverview-mechanism.log" 2>&1
+  cross=$(grep -a -o -m1 'MECHANISM:.*' "$ART/useroverview-mechanism.log" | head -c 170 | cut -d: -f2-)
+  echo "  UserOverview mechanism (core-schema table via ANALYTICS handle): ${cross:-NO CAPTURE — see useroverview-mechanism.log}"
 fi
 
 # ── disclosure + liveness ───────────────────────────────────────────────────

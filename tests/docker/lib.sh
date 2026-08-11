@@ -33,6 +33,42 @@ wait_for() {
   return 1
 }
 
+# Record a cell failure without aborting: downgrade status, keep the FIRST reason.
+# Callers declare `status="PASS"; reason=""` before use; write_verdict reads both.
+fail() { status="FAIL"; reason="${reason:-$1}"; err "$1"; }
+
+# ── Pro measurement arm ─────────────────────────────────────────────────────
+# Resolve which wp-slimstat-pro build a two-arm measurement installs: '-' = the sibling
+# checkout as it stands (working tree), a ref = a detached worktree and a zip rebuilt for
+# exactly that ref. Sets PRO_CHECKOUT, PRO_WT ('' for working tree) and ARM_PRO_ZIP;
+# cleanup_pro_arm undoes the worktree from the caller's exit trap. Extracted when
+# measure-f6-useroverview.sh needed the second copy of measure-f6-external.sh's block:
+# arm provenance is the part a sealed measurement's credibility rests on, so it gets one
+# owner, like the bring-up helpers above.
+build_pro_arm() { # <pro_ref|-> <cell_dir> <art_dir>
+  local ref="$1" cell_dir="$2" art="$3"
+  PRO_CHECKOUT="$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro"
+  PRO_WT=""
+  ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro.zip"
+  if [ "$ref" != "-" ]; then
+    PRO_WT="$cell_dir/pro-src"; rm -rf "$PRO_WT"
+    git -C "$PRO_CHECKOUT" worktree add --detach "$PRO_WT" "$ref" >/dev/null 2>&1 \
+      || { err "cannot create pro worktree at $ref"; return 1; }
+    ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro-$ref.zip"
+    PRO_SRC_OVERRIDE="$PRO_WT" PRO_ZIP_OUT="$ARM_PRO_ZIP" bash "$HARNESS_DIR/build-pro.sh" \
+      > "$art/build-pro.log" 2>&1 || { err "pro build at $ref failed (see build-pro.log)"; return 1; }
+  else
+    bash "$HARNESS_DIR/build-pro.sh" > "$art/build-pro.log" 2>&1 \
+      || { err "pro build failed (see build-pro.log)"; return 1; }
+  fi
+}
+
+# Remove build_pro_arm's worktree, if one was made. Safe to call unconditionally.
+cleanup_pro_arm() {
+  [ -n "${PRO_WT:-}" ] && git -C "$PRO_CHECKOUT" worktree remove --force "$PRO_WT" >/dev/null 2>&1
+  return 0
+}
+
 # Read a cell's verdict status back. Args: cell.json path
 #
 # The counterpart to write_verdict, and it lives here for the reason PITFALLS #5 gives: one
