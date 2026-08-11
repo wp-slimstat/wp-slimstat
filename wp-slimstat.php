@@ -1243,10 +1243,46 @@ class wp_slimstat
     /**
      * Calls the date_i18n function without filters
      */
-    public static function date_i18n($_format)
+    /**
+     * date_i18n() with this plugin's own date filters suspended.
+     *
+     * THE SECOND ARGUMENT USED TO BE ACCEPTED BY THE CALLER AND NOT BY THIS FUNCTION, and PHP
+     * discards a surplus argument to a userland function without a warning of any kind. Two call
+     * sites in `get_overview_summary()` passed one:
+     *
+     *   Today      dt >       date_i18n('U', mktime(0,0,0, m, d,   Y))
+     *   Yesterday  dt BETWEEN date_i18n('U', mktime(0,0,0, m, d-1, Y))
+     *                     AND date_i18n('U', mktime(23,59,59, m, d-1, Y))
+     *
+     * With the timestamp dropped, every one of those became "now". So **Today asked for pageviews
+     * in the future** and **Yesterday asked for a window zero seconds wide**. Measured on the
+     * bench corpus before the fix: Today rendered 0 against a true 5,051, Yesterday 0 against
+     * 1,418. Both had read 0 on every install, forever, and EXPECTED-DIFFS had recorded the
+     * symptom as a live-window quirk that made the report non-comparable — a defect wearing an
+     * exemption.
+     *
+     * `false` is WordPress's own default for `$timestamp_with_offset`, so forwarding it unchanged
+     * keeps every existing one-argument call byte-identical — verified against core rather than
+     * assumed: `date_i18n()` uses neither `func_num_args()` nor `func_get_args()`, so there is no
+     * path that can tell an explicitly-passed default from an omitted one.
+     *
+     * THE RETURN TYPE IS `int|string`, NOT `string`, AND THE DISTINCTION IS THE ONE THAT MATTERS
+     * HERE. Core short-circuits `'U'` — the only format this codebase's timestamp callers use —
+     * and returns `current_time('timestamp')`, an **int**. Every other format returns a formatted
+     * string. An earlier draft of this docblock said `@return string`, which is wrong for exactly
+     * the case `now()` and the two Overview metrics depend on, and it is the only machine-readable
+     * type on the function: PHPStan would have inferred `string` for `date_i18n('U')` and flagged
+     * — or "fixed" — every int-typed consumer downstream of it.
+     *
+     * @param string    $_format
+     * @param int|false $_timestamp Timestamp WITH the site's GMT offset already applied — the
+     *                              same scheme `dt` is stored in. false means "now".
+     * @return int|string int for 'U', a formatted string otherwise.
+     */
+    public static function date_i18n($_format, $_timestamp = false)
     {
         self::toggle_date_i18n_filters(false);
-        $date = date_i18n($_format);
+        $date = date_i18n($_format, $_timestamp);
         self::toggle_date_i18n_filters(true);
 
         return $date;

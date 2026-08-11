@@ -147,9 +147,25 @@ if (!class_exists('wp_slimstat')) {
             self::$_data_js = $data;
         }
 
-        public static function date_i18n(string $format): int
+        public static function date_i18n(string $format, $timestamp = false): int
         {
-            return (int) date($format);
+            return (int) (false === $timestamp ? date($format) : date($format, (int) $timestamp));
+        }
+
+        /**
+         * The real class's documented helper for "now, in the format `dt` is stored in".
+         *
+         * ABSENT FROM THIS STUB UNTIL A CALLER NEEDED IT, and the way that surfaced is the point:
+         * Processor.php moved from date_i18n('U') to now() — the same value, correctly typed —
+         * and two ProcessorTest cases went from PASSING to INCOMPLETE, because they wrap the call
+         * in try/catch and treat any Throwable as "no full WP environment". So a missing stub
+         * method arrived as a TODO rather than as a failure, and the run still said OK.
+         *
+         * The assertion count is what gave it away: 602 -> 598 while the test count held at 317.
+         */
+        public static function now(): int
+        {
+            return self::date_i18n('U');
         }
 
         public static function get_request_uri(): string

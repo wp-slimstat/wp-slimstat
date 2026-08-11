@@ -716,7 +716,7 @@ class wp_slimstat_db
 
                 switch ($a_filter[1]) {
                     case 'strtotime':
-                        $custom_date = strtotime($a_filter[3], wp_slimstat::date_i18n('U'));
+                        $custom_date = strtotime($a_filter[3], wp_slimstat::now());
 
                         $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
                         $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
@@ -1317,10 +1317,10 @@ class wp_slimstat_db
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 
         $results[6]['metric'] = __('Today', 'wp-slimstat');
-        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d'), wp_slimstat::date_i18n('Y')))), false));
+        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d'), (int) wp_slimstat::date_i18n('Y')))), false));
 
         $results[7]['metric'] = __('Yesterday', 'wp-slimstat');
-        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))), false));
+        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))), false));
 
         // Turn date_i18n filters back on
         wp_slimstat::toggle_date_i18n_filters(true);

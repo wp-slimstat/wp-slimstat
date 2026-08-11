@@ -105,7 +105,18 @@ class Processor
         // Get current stat with validation
         $stat = \wp_slimstat::get_stat();
 
-        $stat['dt'] = \wp_slimstat::date_i18n('U');
+        // now(), not date_i18n('U'), and this is a CLARITY change rather than a behavioural one.
+        // Measured: core's date_i18n() short-circuits 'U' and returns current_time('timestamp'),
+        // an int already — so now()'s cast is an identity here, and every downstream use
+        // (`$stat['dt'] - $session_duration`, the `%d` in prepare(), the INT column) is unaffected
+        // either way. An earlier version of this comment claimed date_i18n() "returns a STRING"
+        // and that setProcessingTimestamp() "declares int|null"; neither is true, and both were
+        // written from reading the call rather than from running it.
+        //
+        // What stands is that now() is the documented call for this — "the current timestamp in
+        // the same format stored in the dt column" — and that it carries the type where
+        // date_i18n()'s is conditional on the format string.
+        $stat['dt'] = \wp_slimstat::now();
         if (empty($stat['notes'])) {
             $stat['notes'] = [];
         }

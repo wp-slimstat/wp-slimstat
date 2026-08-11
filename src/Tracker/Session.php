@@ -297,7 +297,10 @@ class Session
 		$user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
 		$client_ip = !empty($other_ip) ? $other_ip : $ip;
 
-		$current_timestamp = \wp_slimstat::date_i18n('U');
+		// now() over date_i18n('U') for the declared type, not for a behaviour change: core's 'U'
+		// branch already returns an int, so the division below and the hash it feeds are
+		// byte-identical either way. Verified rather than assumed.
+		$current_timestamp = \wp_slimstat::now();
 		$timestamp_entropy = floor($current_timestamp / 300) * 300;
 
 		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent . '|' . $timestamp_entropy;
