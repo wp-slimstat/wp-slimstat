@@ -483,6 +483,7 @@ return array(
     'SlimStat\\Migration\\MigrationManager' => $baseDir . '/src/Migration/MigrationManager.php',
     'SlimStat\\Migration\\MigrationService' => $baseDir . '/src/Migration/MigrationService.php',
     'SlimStat\\Migration\\Migrations\\AddUserAgentDimension' => $baseDir . '/src/Migration/Migrations/AddUserAgentDimension.php',
+    'SlimStat\\Migration\\Migrations\\AddVisitIdentity' => $baseDir . '/src/Migration/Migrations/AddVisitIdentity.php',
     'SlimStat\\Migration\\Migrations\\ConvertTablesToUtf8mb4' => $baseDir . '/src/Migration/Migrations/ConvertTablesToUtf8mb4.php',
     'SlimStat\\Migration\\Migrations\\CreateCountryDtIndex' => $baseDir . '/src/Migration/Migrations/CreateCountryDtIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateDtBrowserIndex' => $baseDir . '/src/Migration/Migrations/CreateDtBrowserIndex.php',

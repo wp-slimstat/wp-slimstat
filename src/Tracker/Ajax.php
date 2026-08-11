@@ -347,6 +347,13 @@ class Ajax
                     unset($stat['resource']);
                 }
 
+                // Client info BEFORE ensureVisitId — this order is load-bearing (D68
+                // mechanism c). The other way round, the anonymous branch derived the
+                // identity without the fingerprint, fell to the weaker IP+UA formula,
+                // produced a different id for the same person, and updateRow() then
+                // rewrote the original row's visit_id with it.
+                $stat = Utils::getClientInfo($data_js, $stat);
+
                 // Sync local stat (including id from client) to global before ensureVisitId,
                 // which calls get_stat()/set_stat() internally and would lose the id otherwise.
                 // See: https://github.com/wp-slimstat/wp-slimstat/issues/242
@@ -360,8 +367,6 @@ class Ajax
                 if (empty($stat['visit_id']) || $stat['visit_id'] <= 0) {
                     return Utils::logError(500);
                 }
-
-                $stat = Utils::getClientInfo($data_js, $stat);
 
                 if (empty($stat['resolution'])) {
                     $stat['dt_out'] = \wp_slimstat::date_i18n('U');

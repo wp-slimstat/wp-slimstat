@@ -177,61 +177,71 @@ class SessionTest extends WpSlimstatTestCase
     }
 
     // -----------------------------------------------------------------------
-    // generateAnonymousVisitId — pure PHP, no DB
+    // generateAnonymousVidHash — pure PHP, no DB (the only DB touch is the
+    // daily-salt option read, stubbed like everything else here)
     // -----------------------------------------------------------------------
+    //
+    // These two tests targeted generateAnonymousVisitId() until D68 deleted it — and
+    // then kept "passing": the try/catch → markTestIncomplete wrapper swallowed the
+    // Call-to-undefined-method Error, the pair reported Incomplete, and the assertion
+    // floor was RATCHETED from a run in which they asserted nothing (found by review;
+    // the incomplete count sat exactly at its ceiling). The wrappers are gone — a
+    // deleted callee must FAIL these tests, not excuse them. PITFALLS 41's shape, in
+    // the seam that was citing PITFALLS 41.
 
     /**
-     * generateAnonymousVisitId() must return a positive integer in all cases.
+     * generateAnonymousVidHash() returns exactly 32 lowercase hex chars — the one
+     * spelling that survives sanitize_text_field() at the write terminals, and the
+     * exact contract Storage::insertRow() validates before packing to BINARY(16).
      *
      * @test
      */
-    public function test_generate_anonymous_visit_id_returns_positive_int(): void
+    public function test_generate_anonymous_vid_hash_is_32_hex_chars(): void
     {
-        \wp_slimstat::set_stat(['dt' => time(), 'notes' => []]);
-
         Functions\stubs([
             'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
             'wp_salt'             => 'test-salt-value-that-is-long-enough-to-pass-validation',
         ]);
 
-        try {
-            $id = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $this->assertIsInt($id, 'generateAnonymousVisitId() must return an integer');
-            $this->assertGreaterThan(0, $id, 'generateAnonymousVisitId() must return a positive integer');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'generateAnonymousVisitId() threw: ' . $e->getMessage()
-            );
-        }
+        // A stored salt for TODAY, via the bootstrap's real get_option() store (Brain
+        // Monkey cannot stub over a defined function): generateDailySalt() returns it
+        // without minting, so wp_generate_password()/update_option() are never reached.
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+
+        $hash = \SlimStat\Tracker\Session::generateAnonymousVidHash(['dt' => time(), 'notes' => []]);
+
+        $this->assertMatchesRegularExpression(
+            '/^[0-9a-f]{32}$/',
+            $hash,
+            'the identity must be exactly 16 raw bytes spelled as lowercase hex — anything '
+                . 'else is dropped at the terminal and the visitor loses their identity'
+        );
     }
 
     /**
-     * generateAnonymousVisitId() must return a deterministic value for the same
-     * inputs (fingerprint + daily salt).
+     * Same person, same day, same fingerprint — same identity. Determinism is what
+     * lets the reuse probe and the consent-upgrade fallback FIND the person again.
      *
      * @test
      */
-    public function test_generate_anonymous_visit_id_is_deterministic(): void
+    public function test_generate_anonymous_vid_hash_is_deterministic(): void
     {
-        $fingerprint = 'abc123fingerprint';
-        \wp_slimstat::set_stat(['dt' => time(), 'notes' => [], 'fingerprint' => $fingerprint]);
-
         Functions\stubs([
             'sanitize_text_field' => static fn($v) => is_string($v) ? $v : '',
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
             'wp_salt'             => 'test-salt-value-that-is-long-enough-to-pass-validation',
         ]);
 
-        try {
-            $id1 = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $id2 = \SlimStat\Tracker\Session::generateAnonymousVisitId();
-            $this->assertSame($id1, $id2, 'generateAnonymousVisitId() must be deterministic for same inputs');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'generateAnonymousVisitId() threw: ' . $e->getMessage()
-            );
-        }
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+
+        $stat = ['dt' => time(), 'notes' => [], 'fingerprint' => 'abc123fingerprint'];
+
+        $this->assertSame(
+            \SlimStat\Tracker\Session::generateAnonymousVidHash($stat),
+            \SlimStat\Tracker\Session::generateAnonymousVidHash($stat),
+            'generateAnonymousVidHash() must be deterministic for the same inputs'
+        );
     }
 
     // -----------------------------------------------------------------------

@@ -209,7 +209,12 @@ class WriteTerminalTest extends WpSlimstatTestCase
         };
 
         $result = Storage::insertRow(
-            ['ip' => '1.2.3.4', 'resource' => '/x', 'dt' => 1, 'vid_hash' => 'deadbeef'],
+            // 32 hex chars, as Session actually produces: insertRow() VALIDATES vid_hash
+            // before packing it to BINARY(16) and drops anything else — so the 8-char
+            // 'deadbeef' this test originally used was discarded before the first INSERT,
+            // the intersection had nothing to narrow, and the retry never fired. The test
+            // failing on that change was correct behaviour on both sides.
+            ['ip' => '1.2.3.4', 'resource' => '/x', 'dt' => 1, 'vid_hash' => str_repeat('deadbeef', 4)],
             'wp_slim_stats'
         );
 

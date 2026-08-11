@@ -1,9 +1,9 @@
 {
   "unit": {
     "junit": "build/junit-unit.xml",
-    "tests": 321,
-    "assertions": 616,
-    "incomplete_max": 5
+    "tests": 322,
+    "assertions": 623,
+    "incomplete_max": 3
   },
   "integration": {
     "junit": "build/junit-integration.xml",

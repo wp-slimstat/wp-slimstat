@@ -8,6 +8,7 @@ use SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4;
 use SlimStat\Migration\Migrations\CreateCountryDtIndex;
 use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
 use SlimStat\Migration\Migrations\AddUserAgentDimension;
+use SlimStat\Migration\Migrations\AddVisitIdentity;
 use SlimStat\Migration\Migrations\CreateDtOutIndex;
 use SlimStat\Migration\Migrations\CreateDtPlatformIndex;
 use SlimStat\Migration\Migrations\CreateDtScreenIndex;
@@ -104,9 +105,15 @@ class MigrationService
             $manager = new MigrationManager();
 
             // Register all migrations
-            // ADR-9 Layer 1. Registered FIRST because it is the only migration here that
+            // D68/P2's REQUIRED column, ahead of everything: it is metadata-only (INSTANT
+            // on MySQL 8, INPLACE below), and until it lands every anonymous pageview pays
+            // P1's failed-INSERT-probe-retry dance and loses its identity field. Also
+            // ahead of the index migrations on principle — a column its own index depends
+            // on should exist before anything might build that index.
+            $manager->register(new AddVisitIdentity($analytics, $core));
+            // ADR-9 Layer 1. Registered next because it is the only migration here that
             // rebuilds the fact table — an admin watching the migration screen should see
-            // the expensive step start, not have it appear after eight quick ones.
+            // the expensive step start early, not have it appear after eight quick ones.
             $manager->register(new AddUserAgentDimension($analytics, $core));
             $manager->register(new CreateDtOutIndex($analytics, $core));
             $manager->register(new CreateCountryDtIndex($analytics, $core));

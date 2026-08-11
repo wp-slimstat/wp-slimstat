@@ -5,7 +5,6 @@ expect:    adds column "ua_id" to slim_stats
 rationale: PITFALLS 30, restored verbatim: a migration adds a column and the manifest does not declare it, so a FRESH install is born without it and pays a fact-table ALTER to catch up while an upgraded one already has it — C39's two schema states, plus C41's notice offering to rebuild an empty table. The COLUMN resolution branch specifically, which is separate code from C39-index-key-not-in-manifest-01's index branch and carries its own $call_sites floor; killing either leaves the other alive. The `expect:` names the column and table rather than the shared tail "which the manifest does not declare", because that substring is emitted by THREE assertions in this gate (unknown table, undeclared column, undeclared index key) and a verdict that cannot say which one fired is the conflation the format contract exists to prevent.
 ---
 diff --git a/src/Schema/Schema.php b/src/Schema/Schema.php
-index 9ff298cf..988e43c6 100644
 --- a/src/Schema/Schema.php
 +++ b/src/Schema/Schema.php
 @@ -210,7 +210,6 @@ final class Schema
@@ -13,6 +12,6 @@ index 9ff298cf..988e43c6 100644
                  // dimension built by migration and cron, never by the tracker), and reports
                  // LEFT JOIN so a NULL key still counts from the fact row's own columns.
 -                'ua_id'             => 'BINARY(8) DEFAULT NULL',
-                 'tz_offset'         => 'SMALLINT DEFAULT 0',
-                 'dt_out'            => 'INT(10) UNSIGNED DEFAULT 0',
-                 'dt'                => 'INT(10) UNSIGNED DEFAULT 0',
+                 // The cookieless visitor's identity — the FULL 128-bit HMAC, per ratified
+                 // P2 (D68). Declared here so fresh installs are born with it (C39); the
+                 // required AddVisitIdentity migration adds it on upgrades. NULL-able on

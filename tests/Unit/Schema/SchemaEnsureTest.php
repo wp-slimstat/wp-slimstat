@@ -169,14 +169,14 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $this->assertSame([], $report['tables']);
         $this->assertSame([], $report['indexes']);
         $this->assertSame([], $report['failed']);
-        // 13 on slim_stats + 2 on slim_events + 1 on slim_events_archive + 2 on
-        // slim_user_agents. slim_stats_archive inherits slim_stats' set via `like` but is not
-        // reconciled, so it contributes none.
+        // 14 on slim_stats (idx_vid_hash_dt joined for D68) + 2 on slim_events + 1 on
+        // slim_events_archive + 2 on slim_user_agents. slim_stats_archive inherits
+        // slim_stats' set via `like` but is not reconciled, so it contributes none.
         //
         // Written out, not derived. Deriving it from the manifest would make it true by
         // construction and it would stop catching anything — so a new table is REQUIRED to
         // update this number deliberately, which is the point.
-        $this->assertCount(18, $report['present']);
+        $this->assertCount(19, $report['present']);
 
         // One patterned SHOW TABLES for ALL tables, then per RECONCILED table one SHOW INDEX and
         // one SHOW COLUMNS: 1 + 4 + 4 (slim_events, slim_events_archive, slim_stats,
@@ -349,6 +349,56 @@ class SchemaEnsureTest extends WpSlimstatTestCase
      */
     // ── F4: the column read model ────────────────────────────────────────────
 
+    public function testEnsureSkipsAnIndexWhoseColumnsAreMissing(): void
+    {
+        // The upgrade gap D68 opens: `idx_vid_hash_dt` is in the manifest the moment the
+        // release lands, but `vid_hash` reaches an upgraded install only when the
+        // AddVisitIdentity migration runs. In between, ensure() runs on every version-gated
+        // admin_init — and a CREATE INDEX naming a missing column fails on EVERY pass,
+        // stamping failures for a state that is expected and self-healing. The index must be
+        // SKIPPED and the skip reported, then built normally on the pass after the column
+        // exists (the healthy() cases cover that half).
+        $columns = [];
+        foreach (Schema::columns('slim_stats') as $field => $definition) {
+            if ('vid_hash' === $field) {
+                continue;
+            }
+            $columns[$field] = strtolower(explode(' ', $definition)[0]);
+        }
+
+        [$tables, $indexes] = $this->healthy();
+        // The index is absent from the table too — that is the whole situation.
+        $indexes['wp_slim_stats'] = array_values(array_diff(
+            $indexes['wp_slim_stats'],
+            ['idx_vid_hash_dt']
+        ));
+
+        $report = Schema::ensure(
+            $this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]),
+            'wp_',
+            static fn() => 'utf8mb4_unicode_ci'
+        );
+
+        foreach ($this->queries as $sql) {
+            $this->assertStringNotContainsString(
+                'idx_vid_hash_dt',
+                $sql,
+                'ensure() must not try to build an index on a column the table does not have'
+            );
+        }
+
+        $this->assertSame(
+            ['wp_slim_stats.idx_vid_hash_dt' => 'vid_hash'],
+            $report['indexes_skipped_missing_column'],
+            'the skip must be REPORTED — silent is how a permanently missing index looks healthy'
+        );
+        $this->assertNotContains(
+            'idx_vid_hash_dt',
+            $report['failed'],
+            'an expected, self-healing state is not a failure'
+        );
+    }
+
     public function testColumnStateReportsAHealthyTableAsFullyPresent(): void
     {
         [$tables, $indexes] = $this->healthy();
@@ -486,7 +536,7 @@ class SchemaEnsureTest extends WpSlimstatTestCase
     {
         $created = Schema::createTableSql('slim_stats', 'wp_', 'utf8mb4_unicode_ci');
 
-        foreach (['email', 'fingerprint', 'tz_offset', 'ua_id'] as $column) {
+        foreach (['email', 'fingerprint', 'tz_offset', 'ua_id', 'vid_hash'] as $column) {
             $added = Schema::addColumnSql('slim_stats', $column, 'wp_');
 
             $this->assertStringStartsWith("ALTER TABLE `wp_slim_stats` ADD COLUMN {$column} ", $added);

@@ -247,7 +247,27 @@ class DataEraser
 		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
 		// Anonymize IP addresses (set to '0.0.0.0' as anonymous marker)
-		// Also clear username, email, and fingerprint
+		// Also clear username, email, fingerprint — and vid_hash, which is DERIVED from
+		// the fingerprint (or ip + user agent): clearing the inputs while keeping the
+		// value computed from them would leave the "anonymized" row carrying a visitor
+		// identifier this same UPDATE just promised to erase. visit_id stays: it is a
+		// sequential session number and carries nothing about the person.
+		//
+		// The column is probed first because an upgraded install may not have run the
+		// AddVisitIdentity migration yet — and naming a column the table lacks fails the
+		// WHOLE statement, which here means a GDPR erasure request silently erasing
+		// nothing. A schema that predates vid_hash has nothing to clear. Asked through
+		// the manifest's own read model (Schema::hasColumn) rather than a third
+		// hand-rolled probe; its conservative failure mode — unreadable table answers
+		// false — is safe here, because a table this connection cannot read will fail
+		// the UPDATE below loudly anyway.
+		$has_vid_hash = \SlimStat\Schema\Schema::hasColumn(
+			$GLOBALS['wpdb'],
+			'slim_stats',
+			$GLOBALS['wpdb']->prefix,
+			'vid_hash'
+		);
+
 		$updated = $GLOBALS['wpdb']->query(
 			$GLOBALS['wpdb']->prepare(
 				"UPDATE {$table}
@@ -255,9 +275,9 @@ class DataEraser
 				    other_ip = '',
 				    username = '',
 				    email = '',
-				    fingerprint = ''
+				    fingerprint = ''" . ($has_vid_hash ? ', vid_hash = NULL' : '') . '
 				WHERE ip = %s
-				LIMIT %d",
+				LIMIT %d',
 				$ip_address,
 				$number
 			)

@@ -55,22 +55,43 @@ class Session
 			}
 		}
 
-		// In anonymous mode without consent, use server-side visit ID
+		// In anonymous mode without consent, identity is server-side only (D68 / P2).
+		//
+		// The identity is `vid_hash` — the full-width HMAC, stamped on EVERY hit — and
+		// `visit_id` carries ONLY session semantics: found via the vid_hash probe within
+		// the session window, or minted from the sequential counter. The old shape put
+		// identity INTO visit_id as a 32-bit truncation with a 5-minute bucket folded in,
+		// which is both the stranger-merging collision X3 measured and the new-id-per-
+		// bucket churn D68 names.
 		$piiAllowed = Consent::piiAllowed($isConsentUpgrade);
 		if ($isAnonymousTracking && !$piiAllowed && !$hasCmpConsent) {
-			// Try to reuse existing visit_id from recent records to prevent duplicates
 			$stat = \wp_slimstat::get_stat();
-			$existing_visit_id = self::findExistingAnonymousVisitId($stat);
+
+			// Hex, not raw bytes: $stat travels through sanitize_text_field() at both
+			// write terminals, filters, and degradation messages — 32 hex chars survive
+			// all of them, raw bytes survive none. Storage packs it to BINARY(16).
+			$vid_hash = self::generateAnonymousVidHash($stat);
+			$stat['vid_hash'] = $vid_hash;
+
+			$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : intval(\wp_slimstat::date_i18n('U'));
+			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp);
 
 			if ($existing_visit_id > 0) {
 				$stat['visit_id'] = $existing_visit_id;
 				\wp_slimstat::set_stat($stat);
-				return false; // Not a new session, using existing visit_id
+				return false; // Same person within the session window: same visit.
 			}
 
-			// No existing record found, generate new visit_id
-			$identifier = self::generateAnonymousVisitId();
-			$stat['visit_id'] = $identifier;
+			// New session: a sequential id, exactly like the cookie branch. Deriving the
+			// id from the identity hash is what made two strangers one visitor (32 bits)
+			// and seeded VisitIdGenerator's counter next to the INT UNSIGNED ceiling
+			// (it re-seeds from MAX(visit_id)).
+			$next_visit_id = VisitIdGenerator::generateNextVisitId();
+			if ($next_visit_id <= 0) {
+				$next_visit_id = time();
+			}
+
+			$stat['visit_id'] = intval($next_visit_id);
 			\wp_slimstat::set_stat($stat);
 			return true;
 		}
@@ -202,32 +223,27 @@ class Session
 	}
 
 	/**
-	 * Find existing visit_id from recent records in anonymous mode.
+	 * Find the visit this anonymous person is already in, by identity, within the window.
 	 *
-	 * Checks if a record exists with the same IP (hashed), User Agent, and resource
-	 * within the session duration to prevent duplicate records on page refresh.
+	 * The old probe matched request ATTRIBUTES — hashed ip (unindexed), the exact
+	 * `resource` being viewed, browser, fingerprint-when-present — so a visitor who
+	 * NAVIGATED could never match their own session, and every anonymous pageview paid
+	 * an uncached range scan over the 30-minute window. Matching the identity itself
+	 * needs one predicate, is served by `idx_vid_hash_dt`, and is immune to the
+	 * fingerprint-present-vs-absent asymmetry that made the Ajax and Processor paths
+	 * issue differently-shaped queries for the same person.
 	 *
-	 * @param array $stat Current stat array
+	 * `visit_id > 0` is load-bearing: the newest matching row can carry the column
+	 * default (a row written by a programmatic hit, or before anonymous mode was on),
+	 * and LIMIT 1 without the filter would let that single row hide older good ones.
+	 *
+	 * @param string $vid_hash          32 hex chars, as generateAnonymousVidHash() returns.
+	 * @param int    $current_timestamp The hit's own dt.
 	 * @return int Visit ID if found, 0 otherwise
 	 */
-	private static function findExistingAnonymousVisitId(array $stat): int
+	private static function findExistingAnonymousVisitId(string $vid_hash, int $current_timestamp): int
 	{
-		if (empty($stat['resource'])) {
-			return 0;
-		}
-
-		// Get original IP before hashing
-		[$originalIp, $originalOtherIp] = Utils::getRemoteIp();
-		if (empty($originalIp)) {
-			return 0;
-		}
-
-		// Hash IP the same way IPHashProvider does in anonymous mode
-		$hashedStat = ['ip' => $originalIp, 'other_ip' => $originalOtherIp];
-		$hashedStat = \SlimStat\Providers\IPHashProvider::hashIP($hashedStat, $originalIp, $originalOtherIp);
-		$hashedIp = $hashedStat['ip'] ?? '';
-
-		if (empty($hashedIp)) {
+		if ('' === $vid_hash) {
 			return 0;
 		}
 
@@ -235,30 +251,15 @@ class Session
 			? intval(\wp_slimstat::$settings['session_duration'])
 			: 1800;
 
-		$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : \wp_slimstat::date_i18n('U');
-		$min_timestamp = $current_timestamp - $session_duration;
-
-		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-		// Build query to find existing record with same hashed IP, resource, and within session duration
-		$query = Query::select('visit_id')
-			->from($table)
-			->where('ip', '=', $hashedIp)
-			->where('resource', '=', $stat['resource'])
-			->where('dt', '>=', $min_timestamp)
-			->where('dt', '<=', $current_timestamp);
-
-		// If fingerprint is available, also match by fingerprint for better accuracy
-		if (!empty($stat['fingerprint'])) {
-			$query->where('fingerprint', '=', $stat['fingerprint']);
-		}
-
-		// Also match by user agent if available
-		if (!empty($stat['browser'])) {
-			$query->where('browser', '=', $stat['browser']);
-		}
-
-		$existing_visit_id = $query->orderBy('dt', 'DESC')
+		$existing_visit_id = Query::select('visit_id')
+			->from($GLOBALS['wpdb']->prefix . 'slim_stats')
+			// UNHEX in SQL rather than hex2bin in PHP so the comparison stays on the
+			// BINARY(16) column and the index — HEX(vid_hash) = %s would be a scan.
+			->whereRaw('vid_hash = UNHEX(%s)', [$vid_hash])
+			->where('visit_id', '>', 0)
+			->where('dt', '>=', $current_timestamp - $session_duration)
+			->where('dt', '<=', $current_timestamp)
+			->orderBy('dt', 'DESC')
 			->limit(1)
 			->getVar();
 
@@ -266,13 +267,29 @@ class Session
 	}
 
 	/**
-	 * Generate anonymous visit ID for cookie-less tracking.
+	 * The cookieless visitor's identity: 16 raw bytes of HMAC, returned as 32 hex chars.
 	 *
-	 * Uses fingerprint if available, otherwise falls back to IP + User Agent + daily salt.
+	 * Full-width per P2 — the predecessor cut the same HMAC to 32 bits, which is ~50%
+	 * collision odds at ~77k cookieless visitors and deterministic collisions by
+	 * construction, i.e. two strangers sharing one identity (X3). BINARY(16) of a
+	 * SHA-256 HMAC leaves collisions at the 2^-64 birthday bound.
 	 *
-	 * @return int Visit ID (32-bit integer from hash)
+	 * What is deliberately NOT in the identity:
+	 *   - the 5-minute bucket the old formula folded in (`floor(now/300)*300`) — that is
+	 *     what minted a new id at every boundary, and it existed to bound reuse of an id
+	 *     that was too narrow to be trusted as identity. Session bounds are the dt range
+	 *     on the rows themselves now (P2: "session boundaries expressed as a dt range").
+	 *   - nothing beyond the day: the DAILY salt stays, on purpose. No cross-day
+	 *     identity for non-consenting visitors is a privacy property, not a limitation.
+	 *
+	 * One derivation serves probe and mint alike (the probe matches this value), which
+	 * closes the old split where the probe hashed REMOTE_ADDR and the mint hashed the
+	 * forwarded address — two different people according to two halves of one function.
+	 *
+	 * @param array $stat Current stat array (fingerprint is read when present).
+	 * @return string 32 lowercase hex characters; Storage packs them to BINARY(16).
 	 */
-	public static function generateAnonymousVisitId(): int
+	public static function generateAnonymousVidHash(array $stat): string
 	{
 		// One call: generateDailySalt() is get-or-mint, so the old
 		// getDailySalt()-then-fall-back pair read the option twice for no behaviour.
@@ -282,32 +299,19 @@ class Session
 			$daily_salt = gmdate('Y-m-d') . self::getSecureKey();
 		}
 
-		$stat = \wp_slimstat::get_stat();
 		$fingerprint = $stat['fingerprint'] ?? '';
 
 		if (!empty($fingerprint)) {
-			$hash_input = $daily_salt . '|' . $fingerprint;
-			$hash       = hash_hmac('sha256', $hash_input, self::getSecureKey());
-			$visit_id = abs((int) hexdec(substr($hash, 0, 8)));
+			$identity = $daily_salt . '|' . $fingerprint;
+		} else {
+			[$ip, $other_ip] = Utils::getRemoteIp();
+			$user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
+			$client_ip  = !empty($other_ip) ? $other_ip : $ip;
 
-			return $visit_id;
+			$identity = $daily_salt . '|' . $client_ip . '|' . $user_agent;
 		}
 
-		[$ip, $other_ip] = Utils::getRemoteIp();
-		$user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_USER_AGENT'])) : '';
-		$client_ip = !empty($other_ip) ? $other_ip : $ip;
-
-		// now() over date_i18n('U') for the declared type, not for a behaviour change: core's 'U'
-		// branch already returns an int, so the division below and the hash it feeds are
-		// byte-identical either way. Verified rather than assumed.
-		$current_timestamp = \wp_slimstat::now();
-		$timestamp_entropy = floor($current_timestamp / 300) * 300;
-
-		$hash_input = $daily_salt . '|' . $client_ip . '|' . $user_agent . '|' . $timestamp_entropy;
-		$hash       = hash_hmac('sha256', $hash_input, self::getSecureKey());
-		$visit_id = abs((int) hexdec(substr($hash, 0, 8)));
-
-		return $visit_id;
+		return bin2hex(substr(hash_hmac('sha256', $identity, self::getSecureKey(), true), 0, 16));
 	}
 
 	/**

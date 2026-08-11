@@ -51,6 +51,10 @@ class PurgeArchive
         // Caught by tests/purge-archive-order-test.php rather than by review — which is the
         // schema-diff gate C25 and C36 earned doing exactly what it was built for.
         'ua_id',
+        // The cookieless identity (D68/P2), same rule as ua_id: added in the same change
+        // that declared it on slim_stats. Retention applies to the identity exactly as it
+        // applies to the row that carries it.
+        'vid_hash',
     ];
 
     /**

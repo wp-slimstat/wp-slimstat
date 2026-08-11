@@ -22,6 +22,19 @@ class Storage
 			$data[$key] = 'resource' == $key ? sanitize_url($value) : sanitize_text_field($value);
 		}
 
+		// vid_hash travels through $stat as 32 hex chars — the one spelling that survives
+		// sanitize_text_field() above, filters, and log lines — and is packed to the raw
+		// 16 bytes BINARY(16) stores only here, at the terminal, AFTER sanitization.
+		// Anything that is not exactly 32 hex chars is dropped rather than stored: a
+		// mangled identity matching nobody is strictly worse than no identity.
+		if (isset($data['vid_hash'])) {
+			if (preg_match('/^[0-9a-f]{32}$/i', (string) $data['vid_hash'])) {
+				$data['vid_hash'] = hex2bin((string) $data['vid_hash']);
+			} else {
+				unset($data['vid_hash']);
+			}
+		}
+
 		$result = self::write($table, $data);
 
 		// S6 — the window where the code is v6 and the schema is still v5.
@@ -182,6 +195,11 @@ class Storage
 		}
 
 		$data = array_filter($data);
+
+		// An UPDATE never rewrites identity. The row's vid_hash was set at insert from
+		// the full client info; re-deriving it here is exactly the retroactive-rewrite
+		// path D68's mechanism (c) exposed, so the field is refused wholesale.
+		unset($data['vid_hash']);
 
 		$table_name = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$query = Query::update($table_name)->ignore()->where('id', '=', $id);

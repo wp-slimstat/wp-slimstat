@@ -21,6 +21,23 @@ $has = (int) $wpdb->get_var(
 );
 if (1 !== $has) { $fail[] = 'a fresh install did NOT get ua_id from the manifest (C39: fresh and upgraded diverge)'; }
 
+// Same assertion for D68's identity column, on BOTH tables it is declared for — and the
+// REQUIRED migration must have nothing to do here, or every fresh install greets its admin
+// with a demand to migrate an empty table (C41's shape, on the required list this time).
+require_once WP_PLUGIN_DIR . '/wp-slimstat/src/Migration/Migrations/AddVisitIdentity.php';
+foreach (['slim_stats', 'slim_stats_archive'] as $suffix) {
+    $t = $wpdb->prefix . $suffix;
+    $has_vid = (int) $wpdb->get_var(
+        "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE()
+          AND TABLE_NAME='{$t}' AND COLUMN_NAME='vid_hash'"
+    );
+    if (1 !== $has_vid) { $fail[] = "a fresh install did NOT get vid_hash on {$t} (C39/D68)"; }
+}
+$vid_m = new SlimStat\Migration\Migrations\AddVisitIdentity($wpdb, $wpdb);
+if ($vid_m->shouldRun()) {
+    $fail[] = 'AddVisitIdentity wants to run on a FRESH install (C41: a required migration demanding work on tables born complete)';
+}
+
 $m = new SlimStat\Migration\Migrations\AddUserAgentDimension($wpdb, $wpdb);
 if ($m->shouldRun()) {
     $fail[] = 'the migration wants to run on an EMPTY fresh install (C41: offering a rebuild of a table with no rows)';

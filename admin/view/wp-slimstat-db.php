@@ -1964,17 +1964,26 @@ class wp_slimstat_db
 
     /**
      * Visitor identifier expression that handles NULL fingerprints:
-     * COALESCE(fingerprint, 'v_'+visit_id, 'ip_'+ip). Used both to populate the
-     * funnel temp tables (SELECT/INSERT) and, via count_unique_visitors(), to
-     * count distinct goal visitors — so goals and funnels share one identity and
-     * neither silently drops visitors that lack a fingerprint. The expression is
-     * only ever used in SELECT output, never in a WHERE clause.
+     * COALESCE(fingerprint, HEX(vid_hash), 'v_'+visit_id, 'ip_'+ip). Used both to
+     * populate the funnel temp tables (SELECT/INSERT) and, via
+     * count_unique_visitors(), to count distinct goal visitors — so goals and
+     * funnels share one identity and neither silently drops visitors that lack a
+     * fingerprint. The expression is only ever used in SELECT output, never in a
+     * WHERE clause.
+     *
+     * The vid_hash tier (D68/P2) sits between fingerprint and visit_id: for a
+     * cookieless visitor it is the real 128-bit identity, where visit_id is a
+     * sequential SESSION number — resolving identity through it counted one
+     * person once per session, and before D68 merged strangers outright at 32
+     * bits. HEX() because the ladder concatenates with string tiers; NULL rows
+     * (all history, and consenting visitors) fall through exactly as before.
      */
     private static function visitor_id_expr($alias = '')
     {
         $prefix = !empty($alias) ? $alias . '.' : '';
         return sprintf(
-            "COALESCE(%sfingerprint, CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
+            "COALESCE(%sfingerprint, HEX(%svid_hash), CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
+            $prefix,
             $prefix,
             $prefix,
             $prefix

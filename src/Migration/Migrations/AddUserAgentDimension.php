@@ -96,39 +96,13 @@ class AddUserAgentDimension extends AbstractMigration
 
     public function run(): bool
     {
-        $stats = $this->tablePrefix() . 'slim_stats';
-
-        if (!$this->factColumnExists()) {
-            // The column DDL comes from the manifest, never from here. This class wrote
-            // `BINARY(8) NULL` while Schema declared `BINARY(8) DEFAULT NULL` — equivalent to
-            // MySQL, but two spellings of one fact, and it was two spellings only because for
-            // one commit there was no declaration at all (PITFALLS 30). Naming the column
-            // through Schema is what makes that unrepresentable: addColumnSql() throws on a
-            // column the manifest does not declare, so the next migration cannot add one
-            // silently the way this one did.
-            //
-            // The algorithm hint is appended rather than declared: it is how the statement runs,
-            // not what the schema is. INPLACE by name — see the class docblock; the fallback is
-            // silent and 3.9x worse, and on the floor it blocks writes.
-            $add     = Schema::addColumnSql('slim_stats', 'ua_id', $this->tablePrefix());
-            $altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
-
-            if (false === $altered) {
-                // Retried WITHOUT the algorithm hint before giving up. A server that cannot do
-                // INPLACE for this change refuses the statement outright rather than falling
-                // back, and refusing to add the column at all would be worse than a slower
-                // rebuild the admin has explicitly started from the migration screen.
-                $altered = $this->wpdb->query($add);
-            }
-
-            if (false === $altered) {
-                \wp_slimstat::record_degradation(
-                    'add_user_agent_dimension',
-                    sprintf('could not add ua_id to %s: %s', $stats, (string) $this->wpdb->last_error)
-                );
-
-                return false;
-            }
+        // The ALTER policy — manifest DDL (PITFALLS 30), INPLACE-then-bare retry,
+        // degradation on failure — was hoisted to AbstractMigration::addManifestColumn()
+        // when AddVisitIdentity would otherwise have carried a second verbatim copy.
+        // INPLACE matters here specifically: the fallback rebuild is silent and 3.9x
+        // worse, and on the floor it blocks writes (see the class docblock).
+        if (!$this->addManifestColumn('slim_stats', 'ua_id', 'add_user_agent_dimension')) {
+            return false;
         }
 
         return $this->backfill();
@@ -225,16 +199,9 @@ class AddUserAgentDimension extends AbstractMigration
 
     private function factColumnExists(): bool
     {
-        $stats = $this->tablePrefix() . 'slim_stats';
-
-        $found = $this->wpdb->get_var(
-            "SELECT COUNT(*) FROM information_schema.COLUMNS
-              WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = '{$stats}'
-                AND COLUMN_NAME = 'ua_id'"
-        );
-
-        return !$this->probeFailed() && (int) $found > 0;
+        // Delegates to the hoisted probe so the C41 guard ("could not look is never
+        // not there") has ONE owner across every column migration.
+        return $this->columnExists('slim_stats', 'ua_id');
     }
 
     private function dimensionIsBehind(): bool

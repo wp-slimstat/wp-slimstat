@@ -151,4 +151,65 @@ abstract class AbstractMigration implements MigrationInterface
 	{
 		return []; // Default to no diagnostics; override in subclass
 	}
+
+	/**
+	 * Does the analytics table have this column?
+	 *
+	 * Hoisted when AddVisitIdentity grew a second verbatim copy of
+	 * AddUserAgentDimension's probe — the C41 guard ("could not look is never not
+	 * there") living in two places is the two-parsers shape this codebase keeps
+	 * re-recording. Name resolution goes through Schema::hasColumn(), the same read
+	 * model ensure()'s drift report uses; the probeFailed() tail is layered here
+	 * because it is a MIGRATION policy (a failed probe must not make run() skip its
+	 * ALTER), not a property of the question.
+	 */
+	protected function columnExists(string $suffix, string $column): bool
+	{
+		$found = \SlimStat\Schema\Schema::hasColumn($this->wpdb, $suffix, $this->tablePrefix(), $column);
+
+		return !$this->probeFailed() && $found;
+	}
+
+	/**
+	 * Add one manifest-declared column: ALTER from the manifest, INPLACE first,
+	 * bare retry, degradation on failure.
+	 *
+	 * One owner for the policy AddUserAgentDimension established and AddVisitIdentity
+	 * copied: the DDL comes from Schema::addColumnSql() (which throws on a column the
+	 * manifest does not declare — PITFALLS 30), the ALGORITHM=INPLACE, LOCK=NONE hint
+	 * is how the statement RUNS rather than what the schema is, and a server that
+	 * refuses the hint gets one bare retry, because refusing to add the column at all
+	 * is worse than a slower rebuild the admin explicitly started.
+	 *
+	 * @return bool True when the column is in place (or already was).
+	 */
+	protected function addManifestColumn(string $suffix, string $column, string $degradationKey): bool
+	{
+		if ($this->columnExists($suffix, $column)) {
+			return true;
+		}
+
+		$add     = \SlimStat\Schema\Schema::addColumnSql($suffix, $column, $this->tablePrefix());
+		$altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
+
+		if (false === $altered) {
+			$altered = $this->wpdb->query($add);
+		}
+
+		if (false === $altered) {
+			\wp_slimstat::record_degradation(
+				$degradationKey,
+				sprintf(
+					'could not add %s to %s: %s',
+					$column,
+					$this->tablePrefix() . $suffix,
+					(string) $this->wpdb->last_error
+				)
+			);
+
+			return false;
+		}
+
+		return true;
+	}
 }

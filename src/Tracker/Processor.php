@@ -509,9 +509,16 @@ class Processor
 							$searchIp = $hashedIp;
 						}
 
-						// Calculate the expected Anonymous Visit ID based on current IP/UA
-						// This helps find the session even if IP hashing doesn't match perfectly or if lookup needs to be more robust
-						$anonymousVisitId = Session::generateAnonymousVisitId();
+						// Re-derive the anonymous IDENTITY (vid_hash), not a visit id: since
+						// D68 the visit id is sequential and cannot be recomputed, while the
+						// hash is deterministic for the same person on the same day — which
+						// is exactly the window a consent upgrade happens in. It also finds
+						// the whole anonymous session regardless of how many visit ids the
+						// old code had split it across. On a schema the AddVisitIdentity
+						// migration has not reached, the column is absent and this SELECT
+						// fails softly (finds nothing); the upgrade then proceeds without
+						// claiming old rows, which is the pre-existing degraded behaviour.
+						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
 
 						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
 						// Note: We effectively group conditions here
@@ -524,9 +531,8 @@ class Processor
 							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
 						}
 
-						if ($anonymousVisitId > 0) {
-							// Use %s to handle large integers correctly on all platforms
-							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %s", (string)$anonymousVisitId);
+						if ('' !== $anonymousVidHash) {
+							$whereClause[] = $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $anonymousVidHash);
 						}
 
 						if (!empty($searchIp)) {

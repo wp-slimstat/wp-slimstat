@@ -240,7 +240,12 @@ foreach ($own_files as $file) {
     //
     // dropColumnSql() is checked in the SAME loop and asserted the OTHER WAY: a dropped column
     // must NOT be declared, or the upgrade removes something every fresh install is created with.
-    if (!preg_match_all('/(add|drop)ColumnSql\(\s*\'([a-z_]+)\'\s*,\s*\'([a-z_]+)\'/', $src, $calls, PREG_SET_ORDER)) {
+    // addManifestColumn() is AbstractMigration's hoisted wrapper around addColumnSql()
+    // (D68's review): its literal (table, column) arguments carry the SAME contract —
+    // they must name a manifest-declared pair — so it resolves in the same loop, as an
+    // 'add'. Without this, hoisting the wrapper silently removed ua_id's literal call
+    // site and the manifest-deletion mutation would have SURVIVED the next full run.
+    if (!preg_match_all('/(add|drop)(?:ColumnSql|ManifestColumn)\(\s*\'([a-z_]+)\'\s*,\s*\'([a-z_]+)\'/', $src, $calls, PREG_SET_ORDER)) {
         continue;
     }
 
@@ -297,11 +302,13 @@ foreach (['ADD COLUMN', 'DROP COLUMN'] as $rendered) {
 }
 
 // The call-site loop is satisfied by a tree where every call site is written some other way, and a
-// literal-argument regex is exactly the kind of parse that goes quietly stale. Seven adds: email,
-// fingerprint and tz_offset on both slim_stats and its archive in the legacy upgrade block, plus
-// ua_id in AddUserAgentDimension. One drop: `plugins`, retired in 4.8.4.1. A fall below either
-// means the parse stopped seeing them — not that the call sites went away.
-foreach ([['add', $call_sites, 7], ['drop', $drop_sites, 1]] as [$verb, $found, $floor]) {
+// literal-argument regex is exactly the kind of parse that goes quietly stale. Nine adds: email,
+// fingerprint and tz_offset on both slim_stats and its archive in the legacy upgrade block (six
+// addColumnSql), ua_id via addManifestColumn() in AddUserAgentDimension, and vid_hash via two
+// literal addManifestColumn() calls in AddVisitIdentity (live + archive, deliberately unrolled
+// from a loop so this gate can resolve them). One drop: `plugins`, retired in 4.8.4.1. A fall
+// below either means the parse stopped seeing them — not that the call sites went away.
+foreach ([['add', $call_sites, 9], ['drop', $drop_sites, 1]] as [$verb, $found, $floor]) {
     if ($found < $floor) {
         $failures[] = sprintf(
             'only %d literal %sColumnSql() call site(s) parsed (expected at least %d) — the check '

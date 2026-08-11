@@ -211,6 +211,18 @@ final class Schema
                 // dimension built by migration and cron, never by the tracker), and reports
                 // LEFT JOIN so a NULL key still counts from the fact row's own columns.
                 'ua_id'             => 'BINARY(8) DEFAULT NULL',
+                // The cookieless visitor's identity — the FULL 128-bit HMAC, per ratified
+                // P2 (D68). Declared here so fresh installs are born with it (C39); the
+                // required AddVisitIdentity migration adds it on upgrades. NULL-able on
+                // purpose: rows written before it existed, and rows from consenting
+                // (cookie-carrying) visitors, legitimately have no anonymous identity —
+                // their inputs are gone or never applied. Never backfilled.
+                //
+                // 16 bytes, not 4: the predecessor stored 32 bits of the same HMAC in
+                // visit_id, which is ~50% collision odds at ~77k cookieless visitors —
+                // and after G4 a collision is a subject-access export returning another
+                // person's browsing history (SurrogateKey's note carries the arithmetic).
+                'vid_hash'          => 'BINARY(16) DEFAULT NULL',
                 'tz_offset'         => 'SMALLINT DEFAULT 0',
                 'dt_out'            => 'INT(10) UNSIGNED DEFAULT 0',
                 'dt'                => 'INT(10) UNSIGNED DEFAULT 0',
@@ -240,6 +252,13 @@ final class Schema
                 // prefix limit. The gate recomputes that margin; do not widen it by hand.
                 'idx_goal_queries'                  => 'resource(191), dt, fingerprint(20)',
                 'idx_funnel_queries'                => 'fingerprint(20), dt, resource(191)',
+                // Serves the anonymous reuse probe (Session::findExistingAnonymousVisitId):
+                // an equality seek on the identity plus the session's dt range. Without it
+                // the probe is the same once-per-anonymous-pageview 30-minute range scan
+                // it replaced. On an upgraded install this index is declared before the
+                // AddVisitIdentity migration has added its column — ensure() skips an
+                // index whose columns are missing (reported, not errored) until then.
+                'idx_vid_hash_dt'                   => 'vid_hash, dt',
             ],
         ],
 
@@ -480,6 +499,58 @@ final class Schema
         }
 
         return $def['indexes'];
+    }
+
+    /**
+     * Is this manifest-declared column actually on the table?
+     *
+     * A projection of columnState()'s read model, so every caller asks the SAME
+     * question the drift report answers — three hand-rolled information_schema probes
+     * (two migrations and the GDPR eraser) had already grown, each free to decide
+     * failure semantics differently. This one is deliberately conservative: an
+     * UNREADABLE table reports every declared column missing, so the answer is false —
+     * callers who must distinguish "not there" from "could not look" layer their own
+     * error check on top (AbstractMigration::columnExists does, via probeFailed()).
+     *
+     * @throws \InvalidArgumentException when the column is not in the manifest — asking
+     *                                   about an undeclared column is a typo, not a
+     *                                   schema state.
+     */
+    public static function hasColumn(wpdb $db, string $suffix, string $prefix, string $column): bool
+    {
+        if (!isset(self::columns($suffix)[$column])) {
+            throw new \InvalidArgumentException(sprintf(
+                "column '%s' is not declared on '%s' in the manifest",
+                $column,
+                $suffix
+            ));
+        }
+
+        return !in_array($column, self::columnState($db, $suffix, $prefix)['missing'], true);
+    }
+
+    /**
+     * The bare column names one declared index is built from.
+     *
+     * Parses the manifest's own spelling — `'resource(191), dt, fingerprint(20)'` —
+     * so ensure() can ask "does the table have what this index needs" without a second
+     * list that could drift from the first (the C11 shape, at one remove).
+     *
+     * @return string[]
+     */
+    public static function indexColumnNames(string $suffix, string $index): array
+    {
+        $spec = self::indexes($suffix)[$index] ?? '';
+
+        $names = [];
+        foreach (explode(',', $spec) as $part) {
+            $name = trim(preg_replace('/\(.*$/', '', trim($part)));
+            if ('' !== $name) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
     }
 
     /**
@@ -824,6 +895,11 @@ final class Schema
             // F4 — drift this run OBSERVED and deliberately did not act on.
             'columns_missing' => [],
             'columns_narrow'  => [],
+            // Indexes whose columns the table does not have YET — the window between a
+            // release declaring the index and the column migration running. Skipped, not
+            // failed: a CREATE INDEX here loses on every admin_init until the migration
+            // lands, stamping failures for a state that is expected and self-healing.
+            'indexes_skipped_missing_column' => [],
         ];
         $existing = self::existingTables($db, $prefix);
         $resolved = null;
@@ -868,7 +944,24 @@ final class Schema
             $state             = self::indexState($db, $suffix, $prefix, $disabledGroups);
             $report['present'] = array_merge($report['present'], $state['present']);
 
+            $columns_absent = array_flip($columns['missing']);
+
             foreach ($state['missing'] as $index) {
+                // An index can only be built from columns the table has. The manifest may
+                // declare both together while a migration delivers the column later, so
+                // "column not there yet" is a skip with a name, never an attempt.
+                $unbuildable = '';
+                foreach (self::indexColumnNames($suffix, $index) as $column) {
+                    if (isset($columns_absent[$column])) {
+                        $unbuildable = $column;
+                        break;
+                    }
+                }
+                if ('' !== $unbuildable) {
+                    $report['indexes_skipped_missing_column'][$prefix . $suffix . '.' . $index] = $unbuildable;
+                    continue;
+                }
+
                 if (false === $db->query(self::createIndexSql($suffix, $index, $prefix))) {
                     $report['failed'][] = self::resolve($index, $prefix);
                     continue;
