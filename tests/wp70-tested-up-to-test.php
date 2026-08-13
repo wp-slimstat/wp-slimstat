@@ -44,5 +44,9 @@ if (false === strpos($ci, 'WP_REF="${WP_VERSION}-branch"')) {
     fwrite(STDERR, "FAIL: CI does not resolve unreleased WordPress versions to their release branch.\n");
     exit(1);
 }
+if (false === strpos($ci, "github.base_ref == 'master'")) {
+    fwrite(STDERR, "FAIL: the compatibility job does not run for pull requests targeting master.\n");
+    exit(1);
+}
 
 echo "OK: readme.txt Tested up to = {$actual}; matching CI lane is configured\n";

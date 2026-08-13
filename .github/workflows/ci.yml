@@ -136,7 +136,7 @@ jobs:
 
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
-# Runs on: push or PR targeting main or development branches only
+# Runs on: push or PR targeting the default, main, or development branches only
 ##############################################################################
   standard:
     name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
@@ -144,10 +144,11 @@ jobs:
     if: >
       github.event_name != 'schedule' &&
       (
+        github.ref == 'refs/heads/master' ||
         github.ref == 'refs/heads/main' ||
         github.ref == 'refs/heads/development' ||
         (github.event_name == 'pull_request' &&
-          (github.base_ref == 'main' || github.base_ref == 'development'))
+          (github.base_ref == 'master' || github.base_ref == 'main' || github.base_ref == 'development'))
       )
 
     strategy:
