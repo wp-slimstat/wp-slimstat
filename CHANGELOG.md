@@ -32,7 +32,7 @@
 - Fixed: Visit tracking no longer fails with a 500 error on hosts that don't have the optional PHP `fileinfo` extension (common on managed and minimal PHP builds). When the extension is missing, the plugin now falls back to its built-in browser detector and shows a dismissible admin notice so you can ask your host to enable the extension or turn off the Browscap library.
 - Fixed: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits when the tracker was handed an invalid IP, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
 - Fixed: On PHP 8.0 and newer, clearing the Posts-list "pageviews in the last N days" interval no longer rendered an empty day count in the column header — it now falls back to 28 days exactly as it always did on PHP 7 (a PHP 8.0 comparison-semantics change had broken the fallback).
-- Tested up to WordPress 7.0. Removed an obsolete WordPress-3.3 version check that read an internal global directly.
+- Tested up to WordPress 7.1. Removed an obsolete WordPress-3.3 version check that read an internal global directly.
 
 **PHP 8.1+ readiness**
 
@@ -44,7 +44,7 @@
 - Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3). The PHP 7.4 lane now runs real tests on every change instead of just lint checks — which is what caught the bugs above before they could ship.
 - New regression guards make sure the same class of compatibility issues can't sneak back in.
 - Added a `CONTRIBUTING.md` documenting the test suite for contributors, plus a few small style cleanups in the tests themselves.
-- CI now boots the full WordPress version matrix (5.6 → 7.0) end-to-end on every relevant change, instead of testing a single version, so version-specific regressions surface before release. PHP 8.0/8.3/8.4 are now also blocking lanes (were nightly-only).
+- CI now boots the WordPress compatibility matrix (5.6 → 7.1) end-to-end on every relevant change, instead of testing a single version, so version-specific regressions surface before release. PHP 8.0/8.3/8.4 are now also blocking lanes (were nightly-only).
 - Added PHPStan static analysis to catch type and null-safety issues before they ship.
 - Migrated the admin JavaScript off the jQuery event shorthands that jQuery 4.0 removes (no behavior change on today's jQuery). The bundled third-party libraries remain shimmed by jQuery Migrate.
 - Removed a stray, never-loaded bundled Symfony helper file.
