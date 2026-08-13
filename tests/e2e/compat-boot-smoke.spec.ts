@@ -1,7 +1,7 @@
 /**
  * E2E (compat matrix): admin + tracking boot smoke.
  *
- * Tagged @compat so the WordPress-version matrix lanes (5.6→7.0) can run this
+ * Tagged @compat so the WordPress-version matrix lanes (5.6→7.1) can run this
  * focused set via `--grep @compat` without executing the full suite on every
  * lane. The lane (WP core + PHP) is selected by the CI job's
  * .wp-env.override.json, not by anything in this file — one spec, N lanes.

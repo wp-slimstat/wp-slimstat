@@ -165,6 +165,7 @@ jobs:
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
+          - { wp: "7.1", php: "8.3" }
 
     env:
       TEST_BASE_URL: http://localhost:8889
@@ -241,8 +242,13 @@ jobs:
         run: |
           WP_REF="${WP_VERSION}"
           if [ "${WP_VERSION}" != "6.4" ] && ! git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" | grep -q .; then
-            echo "::warning::WordPress tag ${WP_VERSION} not found — falling back to trunk"
-            WP_REF="trunk"
+            WP_REF="${WP_VERSION}-branch"
+            if git ls-remote --heads https://github.com/WordPress/WordPress "refs/heads/${WP_REF}" | grep -q .; then
+              echo "::notice::WordPress tag ${WP_VERSION} not found — using release branch ${WP_REF}"
+            else
+              echo "::warning::WordPress tag and release branch for ${WP_VERSION} not found — falling back to trunk"
+              WP_REF="trunk"
+            fi
           fi
           if [ "${WP_VERSION}" = "6.4" ]; then
             printf '{"plugins":["."]}\n' > .wp-env.override.json
@@ -362,7 +368,7 @@ jobs:
         # matrix lanes run only the @compat-tagged compat specs via --grep, so
         # PRs stay within budget (the lane is the CI job, not the filename).
         # continue-on-error stays until the new lanes are reliably green; then
-        # remove it to make 6.4 + 7.0 blocking (interior lanes stay nightly).
+        # remove it to make 6.4 + the latest WP lane blocking (interior lanes stay nightly).
         # Many existing E2E tests assume local dev fixtures absent in fresh
         # wp-env — pre-existing failures, not regressions.
         continue-on-error: true
