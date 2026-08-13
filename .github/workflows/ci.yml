@@ -379,7 +379,7 @@ jobs:
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
         run: |
-          if [ "${WP_VERSION}" = "6.4" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ "${WP_VERSION}" = "6.4" ]; then
             npm run test:e2e
           else
             npm run test:e2e -- --grep "@compat"

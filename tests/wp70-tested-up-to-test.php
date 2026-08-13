@@ -48,5 +48,9 @@ if (false === strpos($ci, "github.base_ref == 'master'")) {
     fwrite(STDERR, "FAIL: the compatibility job does not run for pull requests targeting master.\n");
     exit(1);
 }
+if (false === strpos($ci, '"${{ github.event_name }}" != "pull_request"')) {
+    fwrite(STDERR, "FAIL: pull requests are not restricted to the focused compatibility smoke.\n");
+    exit(1);
+}
 
 echo "OK: readme.txt Tested up to = {$actual}; matching CI lane is configured\n";
