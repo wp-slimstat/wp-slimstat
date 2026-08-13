@@ -241,16 +241,7 @@ jobs:
         # (logged below) and run locally against the full plugin set.
         # printf (not heredoc) avoids YAML block-scalar indentation pitfalls.
         run: |
-          WP_REF="${WP_VERSION}"
-          if [ "${WP_VERSION}" != "6.4" ] && ! git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" | grep -q .; then
-            WP_REF="${WP_VERSION}-branch"
-            if git ls-remote --heads https://github.com/WordPress/WordPress "refs/heads/${WP_REF}" | grep -q .; then
-              echo "::notice::WordPress tag ${WP_VERSION} not found — using release branch ${WP_REF}"
-            else
-              echo "::warning::WordPress tag and release branch for ${WP_VERSION} not found — falling back to trunk"
-              WP_REF="trunk"
-            fi
-          fi
+          WP_REF=$(bash .github/scripts/resolve-wordpress-ref.sh "${WP_VERSION}")
           if [ "${WP_VERSION}" = "6.4" ]; then
             printf '{"plugins":["."]}\n' > .wp-env.override.json
           elif [ "${WP_VERSION}" = "5.6" ]; then
