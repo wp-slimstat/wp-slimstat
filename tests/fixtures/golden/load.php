@@ -66,6 +66,15 @@ if ($missing !== []) {
 global $wpdb;
 $loaded = 0;
 
+// The CONNECTION the rows execute on is the filtered analytics handle — under the custom-DB
+// add-on (topology D) that is a second server, and a loader writing through core $wpdb would
+// seed a database the plugin never reads. On every internal topology the filter answers
+// $GLOBALS['wpdb'] itself, so this is the identical object there. The table NAME still comes
+// from the blog-switched core prefix below — the add-on's handle does not follow
+// switch_to_blog(), which is exactly the plugin's own name-from-core, execute-on-analytics
+// pattern (F6).
+$analytics = apply_filters('slimstat_custom_wpdb', $wpdb);
+
 foreach ($rows_by_blog as $blog_id => $rows) {
     switch_to_blog($blog_id);
 
@@ -74,10 +83,10 @@ foreach ($rows_by_blog as $blog_id => $rows) {
     // would happily agree with a broken implementation.
     $table = $wpdb->prefix . 'slim_stats';
 
-    $wpdb->query("TRUNCATE TABLE `{$table}`");
+    $analytics->query("TRUNCATE TABLE `{$table}`");
 
     foreach ($rows as $row) {
-        $wpdb->insert(
+        $analytics->insert(
             $table,
             [
                 'ip'           => $row['ip'],
@@ -95,7 +104,7 @@ foreach ($rows_by_blog as $blog_id => $rows) {
         $loaded++;
     }
 
-    $actual = (int) $wpdb->get_var("SELECT COUNT(*) FROM `{$table}`");
+    $actual = (int) $analytics->get_var("SELECT COUNT(*) FROM `{$table}`");
     if ($actual !== count($rows)) {
         restore_current_blog();
         WP_CLI::error(sprintf(

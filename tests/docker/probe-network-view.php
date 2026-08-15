@@ -50,8 +50,15 @@ if (!defined('WP_NETWORK_ADMIN')) {
 $base = "SELECT COUNT(*) AS counthits FROM {$wpdb->prefix}slim_stats WHERE 1=1";
 $sql  = apply_filters('slimstat_get_var_sql', $base, 'SUM(counthits) AS counthits');
 
+// EXECUTED on the filtered analytics handle — the connection the plugin itself uses and
+// the one the tables live on. The first topology-D run executed this on core $wpdb and
+// reported total 0 against a correct 40 from every plugin-level path: the probe carried
+// the exact wrong-handle defect it exists to probe for. Same object on every internal
+// topology.
+$probe_handle = apply_filters('slimstat_custom_wpdb', $wpdb);
+
 $applied = ($sql !== $base);
-$total   = $applied ? (int) $wpdb->get_var($sql) : null;
+$total   = $applied ? (int) $probe_handle->get_var($sql) : null;
 
 // Raw ground truth, for contrast only: the tables that SHOULD be counted, summed directly.
 //
@@ -59,6 +66,11 @@ $total   = $applied ? (int) $wpdb->get_var($sql) : null;
 // so on a multi-network install the unscoped version summed the other network's blogs too and
 // reported 47 against a golden expectation of 40, i.e. the ground truth carried the very leak it
 // was there to contrast against.
+// Counted through the same filtered handle as $total above — the connection the tables
+// actually live on. Table names still come from the blog-switched core prefix (the
+// add-on's handle does not follow switch_to_blog) — the plugin's own F6 pattern.
+$analytics_handle = $probe_handle;
+
 $truth = 0;
 foreach (get_sites([
     'number'     => 0,
@@ -68,7 +80,7 @@ foreach (get_sites([
     'spam'       => 0,
 ]) as $site) {
     switch_to_blog($site->blog_id);
-    $truth += (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats");
+    $truth += (int) $analytics_handle->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats");
     restore_current_blog();
 }
 

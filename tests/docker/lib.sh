@@ -139,6 +139,34 @@ init_analytics_env() { # <art>
     >> "$1/settings.log" 2>&1 || fail "init_environment failed"
 }
 
+# How many slim_ tables a schema holds. One owner for the LIKE pattern and its escaping —
+# two cells had already grown two different definitions of "local slim tables".
+count_slim_tables() { # <db-service> <schema>
+  dc exec -T "$1" mysql -uroot -proot "$2" -N -e \
+    "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='$2' AND TABLE_NAME LIKE '%slim\\_%';" 2>/dev/null | tr -dc '0-9'
+}
+
+# Drop every slim_ table in a schema, by ENUMERATION — a hardcoded name list cannot see
+# multisite prefixes or a table added later, and GROUP_CONCAT truncates at 1024 bytes
+# (24 multisite names crossed it: the last DROP arrived cut mid-name and one table
+# survived). One DROP per name, composed in shell; FK checks off because slim_events
+# references slim_stats and a naive order leaves the parent behind. Verifies to 0 and
+# fails otherwise — a silently failed drop lets later checks fail with the wrong blame.
+drop_local_slim_tables() { # <db-service> <schema>
+  local svc="$1" schema="$2" drops="" t left
+  while IFS= read -r t; do
+    [ -n "$t" ] && drops="${drops}DROP TABLE IF EXISTS \`${t}\`; "
+  done < <(dc exec -T "$svc" mysql -uroot -proot "$schema" -N -e \
+    "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA='$schema' AND TABLE_NAME LIKE '%slim\\_%';" 2>/dev/null | tr -d '\r')
+  if [ -n "$drops" ]; then
+    dc exec -T "$svc" mysql -uroot -proot "$schema" -e \
+      "SET FOREIGN_KEY_CHECKS=0; ${drops}SET FOREIGN_KEY_CHECKS=1;" >/dev/null 2>&1 \
+      || { fail "could not drop the slim_ tables in $schema"; return 1; }
+  fi
+  left=$(count_slim_tables "$svc" "$schema")
+  [ "${left:-1}" = "0" ] || { fail "slim_ tables remain in $schema after the drop"; return 1; }
+}
+
 # Read a cell's verdict status back. Args: cell.json path
 #
 # The counterpart to write_verdict, and it lives here for the reason PITFALLS #5 gives: one

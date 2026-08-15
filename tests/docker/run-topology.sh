@@ -23,7 +23,7 @@ set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 [ -f "$HARNESS_DIR/matrix.env" ] && source "$HARNESS_DIR/matrix.env"
 
-TOPOLOGY="${1:?topology (A|C-subdir|C-subdomain|C-mainonly|E)}"
+TOPOLOGY="${1:?topology (A|C-subdir|C-subdomain|C-mainonly|D|E)}"
 HTTP_PORT="${2:-18900}"
 DB_PORT="${3:-13900}"
 PHP="${TOPOLOGY_PHP:-8.2}"
@@ -42,6 +42,13 @@ status="PASS"; reason=""
 export COMPOSE_PROJECT_NAME="$PROJECT" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
+# Topology D is C's subdirectory network with every blog's analytics tables on a SECOND
+# MySQL SERVICE (TOPOLOGIES.md: "C plus B"). The overlay must be exported before
+# boot_stack so dc() composes db2 in for every later exec too.
+if [ "$TOPOLOGY" = "D" ]; then
+  export DC_EXTRA_FILE="$HARNESS_DIR/docker-compose.db2.yml"
+  export DB2_PORT="$((DB_PORT + 500))"
+fi
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART"
 
@@ -61,6 +68,10 @@ trap finish EXIT
 
 log "[$CELL] build + up (PHP $PHP, WP $WP, http $HTTP_PORT, db $DB_PORT)"
 boot_stack "$ART" "$PHP" || { fail "stack did not come up (see build.log/up.log)"; exit 1; }
+if [ "$TOPOLOGY" = "D" ]; then
+  wait_for 40 3 dc exec -T db2 mysqladmin ping -h127.0.0.1 -uroot -proot --silent \
+    || { fail "db2 did not come up"; exit 1; }
+fi
 
 # ── core ────────────────────────────────────────────────────────────────────
 wpc core download --version="$WP" --force > "$ART/install.log" 2>&1 || { fail "core download failed"; exit 1; }
@@ -168,6 +179,53 @@ wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --a
   >>"$ART/activate.log" 2>&1 || wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --activate --force \
   >>"$ART/activate.log" 2>&1 || fail "pro install failed"
 
+# ── topology D: analytics moves to db2, and the local copies stop existing ──────────────
+if [ "$TOPOLOGY" = "D" ]; then
+  # The option row is PER BLOG under per-site activation, so the add-on is enabled per
+  # blog — deliberately NOT lib.sh's enable_custom_db_addon, which writes ONE blog and
+  # flips tracking flags this cell must not touch (D differs from C only in placement) — archived blog 4 included, since its table must exist for the exclusion claim
+  # to be about the FILTER and not about a missing table.
+  wpc eval '
+    foreach (get_sites(["number" => 0, "archived" => null, "deleted" => null, "spam" => null]) as $s) {
+      switch_to_blog($s->blog_id);
+      $o = get_option("slimstat_options", []);
+      $o["addon_custom_db_enable"] = "on";
+      $o["addon_custom_db_dbhost"] = "db2";
+      $o["addon_custom_db_dbname"] = "slimstat_ext";
+      $o["addon_custom_db_dbuser"] = "root";
+      $o["addon_custom_db_dbpass"] = "root";
+      update_option("slimstat_options", $o);
+      restore_current_blog();
+    }
+    echo "custom-db add-on enabled per blog";
+  ' >"$ART/customdb.log" 2>&1 || fail "could not enable the custom-db add-on per blog"
+
+  # Fresh process, so the memoised filter answers the EXTERNAL handle: every blog's tables
+  # ensured on db2. Table names come from the blog-switched core prefix; the handle is one
+  # connection for all blogs — the plugin's own F6 shape.
+  wpc eval '
+    include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
+    $h = apply_filters("slimstat_custom_wpdb", $GLOBALS["wpdb"]);
+    if ($h === $GLOBALS["wpdb"]) { echo "FILTER DID NOT ENGAGE"; exit(1); }
+    foreach (get_sites(["number" => 0, "archived" => null, "deleted" => null, "spam" => null]) as $s) {
+      switch_to_blog($s->blog_id);
+      wp_slimstat_admin::init_tables($h);
+      restore_current_blog();
+    }
+    echo "tables ensured on the external DB for every blog";
+  ' >>"$ART/customdb.log" 2>&1 || fail "could not ensure tables on db2"
+
+  # Per-site activation above already created every blog's tables in the WORDPRESS
+  # database (the add-on was off) — identical in any arm, so a count there measures
+  # activation, not routing (PITFALLS 49). Worse, a leftover local table lets a
+  # wrong-handle read answer PLAUSIBLY instead of failing. Drop them all: from here,
+  # any slim read on the core handle errors loudly, which is the trap this cell sets.
+  drop_local_slim_tables db wordpress || exit 1
+  ext_tables=$(count_slim_tables db2 slimstat_ext)
+  log "[$CELL] D: local slim_ tables 0 (verified by the drop) · external slim_ tables ${ext_tables:-?} (expect 24: 6 per blog x 4)"
+  [ "${ext_tables:-0}" -ge 20 ] || fail "external tables missing — db2 holds ${ext_tables:-0}"
+fi
+
 # ── the golden fixture ──────────────────────────────────────────────────────
 if [ "$is_network" -eq 1 ] && [ "$TOPOLOGY" != "C-mainonly" ]; then
   dc exec -T -u www-data -e SLIMSTAT_GOLDEN_ALLOW_DESTRUCTIVE=1 wp \
@@ -180,9 +238,10 @@ if [ "$is_network" -eq 1 ] && [ "$TOPOLOGY" != "C-mainonly" ]; then
   # archived blog was excluded — an outcome it was structurally incapable of observing.
   loaded=$(wpc eval '
     global $wpdb; $n = 0;
+    $h = apply_filters("slimstat_custom_wpdb", $wpdb); // same object unless topology D
     foreach (get_sites(["number" => 0, "archived" => 0, "deleted" => 0, "spam" => 0]) as $s) {
       switch_to_blog($s->blog_id);
-      $n += (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats");
+      $n += (int) $h->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}slim_stats");
       restore_current_blog();
     }
     echo $n;' 2>/dev/null | tr -dc '0-9')
@@ -201,6 +260,20 @@ if [ "$is_network" -eq 1 ] && [ "$TOPOLOGY" != "C-mainonly" ]; then
   # distinguishable — a correct Network View reports 40, one that only leaks the archived blog
   # reports 46, and one that leaks across networks too reports 53. Three different answers for
   # three different defects.
+  # D's row-placement assertion, post-fixture: every fixture row lives on db2 (40 counted
+  # + archived blog 4's 6), and the WordPress database still has no slim table — the
+  # loader wrote through the analytics handle, not around it. (Re-checked again after
+  # the probe below, for the read path.)
+  if [ "$TOPOLOGY" = "D" ]; then
+    ext_rows=$(dc exec -T db2 mysql -uroot -proot slimstat_ext -N -e \
+      "SELECT (SELECT COUNT(*) FROM wp_slim_stats) + (SELECT COUNT(*) FROM wp_2_slim_stats)
+            + (SELECT COUNT(*) FROM wp_3_slim_stats) + (SELECT COUNT(*) FROM wp_4_slim_stats);" 2>/dev/null | tr -dc '0-9')
+    local_after=$(count_slim_tables db wordpress)
+    log "[$CELL] D: rows on db2 ${ext_rows:-?} (expect 46) · local slim_ tables after fixture load ${local_after:-?} (expect 0)"
+    [ "${ext_rows:-0}" = "46" ] || fail "db2 holds ${ext_rows:-0} fixture rows, expected 46"
+    [ "${local_after:-1}" = "0" ] || fail "the LOADER recreated a slim_ table in the WordPress database"
+  fi
+
   if [ "$TOPOLOGY" = "E" ]; then
     wpc eval '
       global $wpdb;
@@ -236,6 +309,14 @@ if [ "$is_network" -eq 1 ] && [ "$TOPOLOGY" != "C-mainonly" ]; then
      > "$ART/network-view.log" 2>&1 || true
   grep -h 'NETWORK-VIEW-PROBE' "$ART/network-view.log" 2>/dev/null | tee -a "$ART/probe.txt" || true
   grep -h 'Warning:' "$ART/network-view.log" 2>/dev/null | head -2 || true
+
+  # D, re-checked AFTER the probe: the report render must not have recreated a slim table
+  # in the WordPress database (the C46 fork shape, from the read path this time).
+  if [ "$TOPOLOGY" = "D" ]; then
+    local_after_probe=$(count_slim_tables db wordpress)
+    log "[$CELL] D: local slim_ tables after probe ${local_after_probe:-?} (expect 0)"
+    [ "${local_after_probe:-1}" = "0" ] || fail "the probe's render recreated a slim_ table in the WordPress database"
+  fi
 fi
 
 # ── shape assertions ────────────────────────────────────────────────────────
@@ -245,7 +326,7 @@ blogs=$(wpc eval 'echo count(get_sites(["number" => 0, "archived" => null, "dele
 case "$TOPOLOGY" in
   A)           [ "${networks:-0}" = "0" ] || fail "topology A must not be a network (wp_site rows: $networks)" ;;
   C-mainonly)  [ "${blogs:-0}" = "1" ]    || fail "C-mainonly expects 1 blog, found $blogs" ;;
-  C-subdir|C-subdomain)
+  C-subdir|C-subdomain|D)
                [ "${blogs:-0}" -ge 4 ] || fail "$TOPOLOGY expects >=4 blogs, found $blogs"
                [ "${networks:-0}" = "1" ] || fail "$TOPOLOGY expects exactly 1 network, found $networks" ;;
   E)           [ "${networks:-0}" -ge 2 ] || fail "E expects >=2 networks, found $networks"

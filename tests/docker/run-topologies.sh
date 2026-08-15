@@ -14,7 +14,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib.sh"
 [ -f "$HERE/matrix.env" ] && source "$HERE/matrix.env"
 
-ALL=(A C-subdir C-subdomain C-mainonly E)
+ALL=(A C-subdir C-subdomain C-mainonly D E)
 TOPOLOGIES=("${@:-}")
 [ -z "${TOPOLOGIES[0]:-}" ] && TOPOLOGIES=("${ALL[@]}")
 
