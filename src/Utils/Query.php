@@ -1657,7 +1657,7 @@ class Query
      *
      * @return array The result of the query
      */
-    public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '')
+    public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '', int $outerLimit = 0)
     {
         // D22 — a network-wide read is ONE query over a union of blogs, and it takes this path
         // instead of the live/historical partitioning below.
@@ -1677,17 +1677,26 @@ class Query
             $aggregates = 'SUM(counthits) AS counthits'
                 . ('' === $extraAggregate ? '' : ', ' . $extraAggregate);
 
-            return (array) $this->db->get_results(
-                (string) apply_filters(
-                    'slimstat_get_results_sql',
-                    $query,
-                    $selectNoAggregate,
-                    $orderBy,
-                    $groupBy,
-                    $aggregates
-                ),
-                ARRAY_A
+            $sql = (string) apply_filters(
+                'slimstat_get_results_sql',
+                $query,
+                $selectNoAggregate,
+                $orderBy,
+                $groupBy,
+                $aggregates
             );
+
+            // The bound the callers deliberately left OFF the inner query (a LIMIT inside a
+            // union arm loses each blog's rank-N+1 rows), re-applied OUTSIDE the union: the
+            // rewriter's output ends `… GROUP BY … ORDER BY …`, and the caller's ORDER BY
+            // carries full tie-breakers, so the cut equals the callers' own array_slice —
+            // but MySQL top-Ns the outer sort and the wire carries `limit` rows instead of
+            // one row per (blog, group) across the whole network.
+            if ($outerLimit > 0) {
+                $sql .= ' LIMIT ' . $outerLimit;
+            }
+
+            return (array) $this->db->get_results($sql, ARRAY_A);
         }
 
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {

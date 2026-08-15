@@ -155,6 +155,32 @@ if (abs($expected['pages_per_visit_network'] - $expected['pages_per_visit_mean_o
         . 'cannot catch an implementation that averages the averages';
 }
 
+// M3 — per-blog DISTINCT lists for /about/ (ip as the concat column), plus the trap: the
+// cross-blog union a concat over unioned rows would produce.
+$about_ips_by_blog = [];
+$about_ips_union   = [];
+foreach ($counted as $row) {
+    if ('/about/' !== $row['resource']) {
+        continue;
+    }
+    $about_ips_by_blog[$row['blog_id']][$row['ip']] = true;
+    $about_ips_union[$row['ip']] = true;
+}
+$about_lists = [];
+foreach ($about_ips_by_blog as $blog_id => $ips) {
+    $ips = array_keys($ips);
+    sort($ips);
+    $about_lists[$blog_id] = $ips;
+}
+ksort($about_lists);
+$check('per-blog /about/ ip lists', $expected['about_ip_lists_per_blog'], $about_lists);
+$check('cross-blog /about/ ip union (the trap)', $expected['about_ips_merged_wrongly'], count($about_ips_union));
+
+if (count($about_lists) < 2) {
+    $failures[] = '/about/ has ip lists on fewer than two blogs, so the fixture cannot catch a '
+        . 'concat that mixes visitors across blogs';
+}
+
 // ── 4. The shared path — P3 says two rows, not one of eleven ────────────────
 $about_by_blog = [];
 foreach ($counted as $row) {

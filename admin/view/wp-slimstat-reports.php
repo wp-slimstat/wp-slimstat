@@ -2364,7 +2364,18 @@ class wp_slimstat_reports
                 $a_result['counthits'] = 0;
             }
 
-            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($a_result['resource']) . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
+            // Under a network merge the rows are PER BLOG (P3), and blog_id arrives from
+            // the rewriter's outer select — the same affordance the get_top renderer has
+            // at its resource link: without the origin, two /about/ rows from two subsites
+            // render with identical labels and hrefs that resolve against the network
+            // admin's own site, which is the wrong site for every subsite row.
+            $base_url = '';
+            if (isset($a_result['blog_id'])) {
+                $parsed   = parse_url(get_site_url($a_result['blog_id']));
+                $base_url = $parsed['scheme'] . '://' . $parsed['host'];
+            }
+
+            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
             $group_markup = [];
             if (!empty($a_result['column_group'])) {

@@ -100,6 +100,7 @@ $about_max  = null;
 $top_max    = null;
 $ppv_avg    = null;
 $ppv_max    = null;
+$gb_about   = null;
 
 if (class_exists('wp_slimstat_db')) {
     if (method_exists('wp_slimstat_db', 'init')) {
@@ -160,6 +161,28 @@ if (class_exists('wp_slimstat_db')) {
         $ppv_avg = round((float) (is_array($row) ? ($row['avghits'] ?? 0) : ($row->avghits ?? 0)), 4);
         $ppv_max = (int) (is_array($row) ? ($row['maxhits'] ?? 0) : ($row->maxhits ?? 0));
     }
+
+    // M3 — Users by Page's mechanism (get_group_by), exercised with ip as the concat
+    // column. Under P3's per-blog grain, /about/ is TWO rows whose DISTINCT lists are
+    // each their own blog's — [counthits 5, 3 ips] and [counthits 6, 1 ip]. Main-site
+    // only (unrouted) shows one row [5, 3 ips]; a cross-blog concat would show one row
+    // [11, 4 ips]. Three distinguishable shapes. Window already pinned above.
+    $gb = wp_slimstat_db::get_group_by(['column_group' => 'ip', 'group_by' => 'resource']);
+    if (is_array($gb)) {
+        $gb_about = [];
+        foreach ($gb as $row) {
+            $resource = is_array($row) ? ($row['resource'] ?? '') : ($row->resource ?? '');
+            if ('/about/' !== $resource) {
+                continue;
+            }
+            $hits = (int) (is_array($row) ? ($row['counthits'] ?? 0) : ($row->counthits ?? 0));
+            $list = (string) (is_array($row) ? ($row['column_group'] ?? '') : ($row->column_group ?? ''));
+            $ips  = array_filter(explode(';;;', $list));
+            sort($ips);
+            $gb_about[] = [$hits, $ips];
+        }
+        sort($gb_about);
+    }
 }
 
 $result = [
@@ -199,6 +222,20 @@ $result = [
     'ppv_avg_trap'        => round((float) ($spec['expected']['pages_per_visit_mean_of_blogs'] ?? 0), 4),
     'ppv_max'             => $ppv_max,
     'ppv_max_expected'    => $spec['expected']['max_pages_single_visit'] ?? null,
+    // M3: /about/ as [counthits, sorted ip list] pairs, sorted — two per-blog rows expected.
+    'gb_about'            => $gb_about,
+    'gb_about_expected'   => (static function () use ($spec) {
+        // Derived from the spec's gate-checked keys, not restated: the counthits from
+        // resources_per_blog, the lists from about_ip_lists_per_blog — so this
+        // expectation inherits golden-fixture-test.php's verification and cannot drift
+        // into a third, unchecked statement of the fixture.
+        $pairs = [];
+        foreach (($spec['expected']['about_ip_lists_per_blog'] ?? []) as $blog_id => $ips) {
+            $pairs[] = [(int) ($spec['expected']['resources_per_blog'][$blog_id]['/about/'] ?? 0), $ips];
+        }
+        sort($pairs);
+        return $pairs;
+    })(),
     'report_scope'        => (null === $numerator || null === $denominator)
         ? 'unmeasured'
         : ($numerator !== $denominator

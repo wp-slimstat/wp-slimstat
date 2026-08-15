@@ -100,6 +100,16 @@ return [
         'pages_per_visit_network'       => 5.714285714285714,
         'pages_per_visit_mean_of_blogs' => 5.833333333333333,
         'max_pages_single_visit'        => 10,
+        // M3 (Users by Page's mechanism, exercised with ip as the concat column since the
+        // fixture tracks no usernames). Under P3's per-blog grain each row's DISTINCT list
+        // is ITS OWN blog's — /about/ is two rows with separate lists, never one row whose
+        // list mixes visitors across blogs. The TRAP is the cross-blog union: 4 distinct
+        // ips in one merged row, which is what a concat over unioned rows would produce.
+        'about_ip_lists_per_blog' => [
+            1 => ['10.0.0.1', '10.0.0.2', '10.0.0.3'],
+            3 => ['10.0.0.5'],
+        ],
+        'about_ips_merged_wrongly' => 4,
         // Day A = 6 + 7 + 10 = 23, day B = 5 + 7 = 12, day C = 4 + 1 = 5. A+B = 35, and
         // 35 + 5 = 40. The first draft of this said 28 and 12, which do not even sum to 40 —
         // written without doing the arithmetic, and caught by the recomputation, which is the

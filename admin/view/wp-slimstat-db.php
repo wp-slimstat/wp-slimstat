@@ -1212,18 +1212,44 @@ class wp_slimstat_db
         // Add IS NOT NULL condition
         $query->where($_args['group_by'], 'IS NOT', null);
 
-        // GROUP BY
-        $query->groupBy($_args['group_by']);
+        // GROUP BY — P3's per-blog key under a merge, same as get_top. P3 also DISSOLVED
+        // M3's hard half: the planned cross-blog recombination (split the concat,
+        // re-dedupe, re-concat) assumed merged rows, but per-blog rows mean each arm's
+        // GROUP_CONCAT is already its own blog's finished DISTINCT list. Every
+        // (blog_id, group) exists in exactly ONE arm, so the outer aggregates are
+        // pass-throughs: SUM(counthits) is that arm's count, MAX(column_group) is that
+        // arm's list, and no cross-blog mixing exists to get wrong.
+        $merging   = NetworkMerge::isMerging();
+        $group_key = $merging ? NetworkMerge::groupKeyFor($_args['group_by']) : $_args['group_by'];
+        $query->groupBy($group_key);
 
-        // ORDER BY — tie-breaker on group key for deterministic pagination
-        $query->orderBy('counthits DESC, ' . $_args['group_by'] . ' ASC');
+        // ORDER BY — tie-breaker on the group key (which is already the per-blog key
+        // under a merge, so blog_id rides along without a second spelling of it here).
+        $order = 'counthits DESC, ' . $group_key . ' ASC';
+        $query->orderBy($order);
 
-        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by()
+        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by(). Not applied to
+        // the inner query when merging, for get_top's reason: buildQuery() puts the LIMIT
+        // inside every union arm, so each blog would contribute only its own top N and a
+        // group ranked N+1 on one subsite loses that subsite's rows entirely. The bound
+        // is re-applied OUTSIDE the union instead, by getAll's merge branch.
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit);
+        if (!$merging) {
+            $query->limit($limit);
+        }
 
         $query->allowCaching(true);
-        return $query->getAll();
+
+        $rows = $query->getAll(
+            NetworkMerge::SUM,
+            $_args['group_by'],
+            $group_key,
+            $order,
+            'MAX(column_group) AS column_group',
+            $limit
+        );
+
+        return $merging ? array_slice($rows, 0, $limit) : $rows;
     }
 
     /**
@@ -1606,12 +1632,13 @@ class wp_slimstat_db
             $_as_column,
             $group_by_column,
             $order_with_tiebreak,
-            $_more_select
+            $_more_select,
+            $limit
         );
 
-        // The LIMIT the inner query no longer carries, applied once to the merged, re-sorted
-        // result. Bounded by the number of distinct group keys across the network, which is what
-        // a top-N report is a projection of anyway.
+        // The LIMIT the inner query no longer carries is re-applied OUTSIDE the union by
+        // getAll's merge branch; the slice stays as the belt for a filter that answers
+        // with an unexpected shape.
         return $merging ? array_slice($rows, 0, $limit) : $rows;
     }
 
