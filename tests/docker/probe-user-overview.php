@@ -107,6 +107,33 @@ $capturing = false;
 $nq_core      = $wpdb->num_queries - $nq_core_before;
 $nq_analytics = $analytics->num_queries - $nq_analytics_before;
 
+// ── the durations statement's own cost: rows hydrated and rows read ─────────────────
+// slim_p8_01's per-user time_on_site used to hydrate one row per VISIT and sum in PHP;
+// the fold sums in SQL and hydrates one row per USER. Identified by its unique column
+// name (first SELECT naming visit_duration — its transient write repeats the name but
+// comes later and is not a SELECT), re-executed on the analytics handle so the counts
+// are attributable to THIS statement alone. Deterministic on a fixed corpus: hydration
+// is a row count, Handler_read_rnd_next counts logical row reads, not I/O.
+// Counter read matches probe-chart-totals.php: a point SELECT on performance_schema,
+// not SHOW SESSION STATUS, whose own ~500-row materialisation would drown the number.
+$rnd_next = static function () use ($analytics) {
+    return (int) $analytics->get_var("SELECT VARIABLE_VALUE FROM performance_schema.session_status WHERE VARIABLE_NAME = 'Handler_read_rnd_next'");
+};
+
+$durations_cost = null;
+foreach ($captured as $stmt) {
+    if (0 === stripos($stmt, 'select') && false !== stripos($stmt, 'visit_duration')) {
+        $rnd_before     = $rnd_next();
+        $hydrated       = $analytics->get_results($stmt, ARRAY_A);
+        $durations_cost = array(
+            'sql'           => $stmt,
+            'rows_hydrated' => count((array) $hydrated),
+            'rnd_next'      => $rnd_next() - $rnd_before,
+        );
+        break;
+    }
+}
+
 // ── the answer, keyed by username so comparison is keyed, never positional ──────────
 $keyed = array();
 $order = array();
@@ -136,6 +163,7 @@ $report = array(
                                   'handles_same_object' => ($analytics === $wpdb)),
     'sort_order'         => $order,
     'rows_by_username'   => $keyed,
+    'durations_stmt'     => $durations_cost,
     'sql'                => $captured,
 );
 

@@ -26,6 +26,12 @@
 #                 200s (visit 201) → '3m 20s', never logged in
 #   user  bob   — 1 pageview, no duration (single hit), never logged in
 #   user  carol — a real user with ZERO pageviews (the report's no-pageviews branch)
+#   user  dave  — 40 single-row visits of 25s each (ids 600-639): 40 pageviews,
+#                 time_on_site 40×25s = 1000s → '16m 40s', never logged in. The
+#                 grain-separation user: visits ≫ users, so the durations statement's
+#                 hydration count distinguishes one-row-per-VISIT from one-row-per-USER —
+#                 with one visit per user everywhere else, the two grains are identical
+#                 and the fold's cost claim would be unmeasurable on this corpus
 #   'ghost'     — slim rows with NO matching wp_users row: excluded (the INNER JOIN
 #                 semantics the split's PHP merge must keep)
 #   NULL row    — one username-less hit: appears nowhere
@@ -88,8 +94,8 @@ wpc core install --url="$BASE_URL" --title="F6 $CELL" --admin_user=admin \
     --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \
     || { fail "core install failed"; exit 1; }
 
-# The report's subjects: three more real users, one of whom will have no pageviews.
-for u in alice bob carol; do
+# The report's subjects: four more real users, one of whom will have no pageviews.
+for u in alice bob carol dave; do
   wpc user create "$u" "$u@example.com" --role=subscriber >>"$ART/install.log" 2>&1 \
     || fail "user create $u failed"
 done
@@ -112,7 +118,14 @@ SEED_SQL="INSERT INTO wp_slim_stats (ip, username, dt, dt_out, visit_id, notes, 
 ('2.2.2.3','Alice',1700020000,0,202,NULL,'/a'),
 ('3.3.3.3','bob',1700030000,0,301,NULL,'/d'),
 ('4.4.4.4','ghost',1700040000,0,401,NULL,'/e'),
-('5.5.5.5',NULL,1700050000,0,501,NULL,'/f');"
+('5.5.5.5',NULL,1700050000,0,501,NULL,'/f')"
+# dave's 40 visits, generated rather than hand-typed: deterministic literals (base epoch +
+# v×1000, duration 25s, visit_id 600+v), so both arms seed byte-identical corpora.
+for v in $(seq 0 39); do
+  SEED_SQL="$SEED_SQL,
+('6.6.6.6','dave',$((1700100000 + v * 1000)),$((1700100000 + v * 1000 + 25)),$((600 + v)),NULL,'/g')"
+done
+SEED_SQL="$SEED_SQL;"
 
 seed_analytics() { # svc dbname
   local svc="$1" db="$2" n
@@ -120,8 +133,8 @@ seed_analytics() { # svc dbname
     || { fail "seed into $svc/$db failed"; return 1; }
   n=$(dc exec -T "$svc" mysql -uroot -proot "$db" -N -e \
       "SELECT COUNT(*) FROM wp_slim_stats;" 2>/dev/null | tr -dc '0-9')
-  echo "  seeded $svc/$db: wp_slim_stats holds ${n:-?} rows (expect 8)"
-  [ "${n:-0}" = "8" ] || fail "seed row count ${n:-?} != 8 in $svc/$db"
+  echo "  seeded $svc/$db: wp_slim_stats holds ${n:-?} rows (expect 48)"
+  [ "${n:-0}" = "48" ] || fail "seed row count ${n:-?} != 48 in $svc/$db"
 }
 
 run_probe() { # state-name
