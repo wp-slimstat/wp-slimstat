@@ -1463,7 +1463,19 @@ class wp_slimstat_db
             $_column           = $_column['columns'];
         }
 
-        $group_by_column = $_column;
+        // P3, ratified: a network report keeps PER-BLOG row identity — /about/ on two
+        // subsites is two rows, each linking to its own site. Grouped by the column alone,
+        // MySQL folds them into one row whose blog_id is whichever union arm it met first
+        // (wpdb strips ONLY_FULL_GROUP_BY at connect, so this is a silent wrong answer,
+        // not an error): the row links to an arbitrary site under a number no site earned,
+        // and the SUM across rows cannot expose it — 6+5 in two rows and 11 in one sum
+        // identically. Measured on the golden fixture: about_rows 1→2, about_max 11→6,
+        // top_resource_max 16→7, network total unchanged at 40.
+        //
+        // Inside each union arm blog_id is the arm's injected constant, so the inner
+        // grouping is unchanged per blog; single-site queries never take this branch.
+        $merging         = NetworkMerge::isMerging();
+        $group_by_column = $merging ? NetworkMerge::groupKeyFor($_column) : $_column;
 
         if (!empty($_as_column)) {
             $_column = sprintf('%s AS %s', $_column, $_as_column);
@@ -1504,18 +1516,31 @@ class wp_slimstat_db
 			$query->havingRaw($_having);
 		}
 
-        // ORDER BY — append group key as tie-breaker for deterministic
-        // pagination when many rows share the primary sort value.
+        // ORDER BY — append tie-breakers for deterministic pagination when many rows
+        // share the primary sort value. Per COMPONENT, not the composed key: searching
+        // $_order_by for the two-column merge key can essentially never match, which
+        // silently degenerated to "always append both" — right by accident, and emitting
+        // a duplicate sort column whenever the caller already ordered by the base column.
+        // blog_id is appended under merge REGARDLESS of the base column's presence: two
+        // blogs tied on '/about/' under `order_by 'resource ASC'` still need it, or page
+        // cuts go nondeterministic exactly in the P3 case.
         $order_with_tiebreak = $_order_by;
-        if (false === stripos($_order_by, $group_by_column)) {
-            $order_with_tiebreak .= ', ' . $group_by_column . ' ASC';
+        $tiebreak_parts      = [];
+        if ($merging && false === stripos($_order_by, 'blog_id')) {
+            $tiebreak_parts[] = 'blog_id';
+        }
+        if (false === stripos($_order_by, $_column)) {
+            $tiebreak_parts[] = $_column . ' ASC';
+        }
+        if ([] !== $tiebreak_parts) {
+            $order_with_tiebreak .= ', ' . implode(', ', $tiebreak_parts);
         }
         $query->orderBy($order_with_tiebreak);
 
         // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
         // handles page slicing via array_slice in the rendering callbacks.
-        $limit   = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $merging = NetworkMerge::isMerging();
+        // ($merging was resolved above, where the P3 group key needed it.)
+        $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
 
         // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
         // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's
@@ -1562,6 +1587,14 @@ class wp_slimstat_db
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')
     {
+        // MAIN-SITE ONLY on a Network View, BY DECISION (M5, deferred) — stated here
+        // because two documents claimed this statement existed and nothing in the file
+        // said it, which made the deferral indistinguishable from an accident. The
+        // representative-row shape (aggregate in an inner query, re-join to pick the row
+        // that produced it) needs a composite (blog_id, id) key to survive a union merge;
+        // Run 9 refuted F10 Layer 2, so that key does not arrive in v6.0.0. Until it
+        // does, this function's reports read the current site only, everywhere.
+        //
         // Declared BEFORE the branch, because only the array form sets them and both are read
         // below. On the scalar-argument path `$_as_column` was already an undefined-variable
         // read — harmless while PHP treated it as null, and a warning on 8.x — and

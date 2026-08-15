@@ -1583,7 +1583,8 @@ class wp_slimstat_reports
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {
-                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? sprintf('%01.2f', (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)) : 0);
+                    $percentage_raw   = (wp_slimstat_db::$pageviews > 0) ? (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews) : 0;
+                    $percentage_value = $percentage_raw ? sprintf('%01.2f', $percentage_raw) : 0;
                     $counthits        = number_format_i18n($results[$i]['counthits']);
                     $percentage_value = number_format_i18n((float)$percentage_value, 2);
 
@@ -1617,7 +1618,15 @@ class wp_slimstat_reports
 
                 $bar = '';
                 if (!empty($percentage_value)) {
-                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . str_replace('%', '', $percentage_value) . '%"></span></span>';
+                    // The BAR is bounded at 100; the printed number is not. A percentage
+                    // above 100 means the ratio's two sides were scoped differently (a
+                    // network transition mid-flight, a stale cache) — the number saying so
+                    // is the signal PITFALLS 23 exists to keep audible, but the bar
+                    // overflowing its wrap is just broken layout. Four documents believed
+                    // a >99 clamp lived here; nothing ever did — this is the first guard.
+                    // Clamped on the RAW ratio, not un-parsed from the i18n string — which
+                    // also ends the comma-decimal locales' invalid CSS widths.
+                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, round($percentage_raw, 2)) . '%"></span></span>';
                 }
                 $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 

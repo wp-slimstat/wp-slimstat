@@ -83,6 +83,21 @@ class NetworkMerge
     }
 
     /**
+     * The group key that keeps PER-BLOG row identity under a merge — ratified P3:
+     * `/about/` on two subsites is two network rows, each linking to its own site.
+     *
+     * Owned here, beside DISTINCT_PER_BLOG's `COUNT(DISTINCT blog_id, %s)`, because the
+     * key string is shared vocabulary with Pro's rewriter (the outer query must re-group
+     * by exactly this) and get_top's tiebreak compares against the composed string — a
+     * second caller composing it with different spacing would silently diverge. M3's
+     * get_group_by is the next caller.
+     */
+    public static function groupKeyFor(string $column): string
+    {
+        return 'blog_id, ' . $column;
+    }
+
+    /**
      * The merge intent for `count_records($column)`, per M1.
      *
      * Written as a lookup on the column rather than on the SQL text, because the SQL is built

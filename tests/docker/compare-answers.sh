@@ -45,7 +45,30 @@ trap cleanup EXIT
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART" "$WORKTREES"
 
+echo "CONTROLS:"
 for ref in "$BEFORE" "$AFTER"; do
+  # '-' means THE WORKING TREE, resolved here explicitly — handed to git instead, '-' is
+  # @{-1}, the PREVIOUSLY CHECKED-OUT ref, and this script silently compared HEAD against
+  # a weeks-old tree while reporting plausible differences (PITFALLS 51). Every arm's
+  # RESOLVED identity is printed before any answer, so the next unintended arm is visible
+  # in the CONTROLS block rather than deduced from the shape of its wrong numbers.
+  if [ "$ref" = "-" ]; then
+    echo "  arm '-': WORKING TREE ($(git -C "$PLUGIN_SRC" rev-parse --short HEAD)+uncommitted)"
+    continue
+  fi
+  echo "  arm '$ref': $(git -C "$PLUGIN_SRC" rev-parse --short "$ref^{commit}" 2>/dev/null || echo 'UNRESOLVABLE')"
+done
+
+for ref in "$BEFORE" "$AFTER"; do
+  if [ "$ref" = "-" ]; then
+    # The working tree, copied through the same rsync surface as sync_plugin_src uses —
+    # never a git worktree, which cannot express uncommitted changes.
+    dir="$WORKTREES/worktree"
+    rm -rf "$dir"; mkdir -p "$dir"
+    rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
+          "$PLUGIN_SRC/" "$dir/" >/dev/null 2>&1
+    continue
+  fi
   dir="$WORKTREES/$ref"
   # Tested on a FILE the worktree must contain, not on the directory existing. `[ -d "$dir" ]`
   # is true for an empty directory left by an interrupted run, so the worktree add was skipped,
@@ -77,9 +100,12 @@ wpc core install --url="http://127.0.0.1:${HTTP_PORT}" --title="SS answers" --ad
     || { err "core install failed"; exit 1; }
 
 use_arm() {
+  # '-' resolved to the working-tree copy made above; see the CONTROLS block.
+  local arm_dir="$WORKTREES/$1"
+  [ "$1" = "-" ] && arm_dir="$WORKTREES/worktree"
   rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat"
   rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-        "$WORKTREES/$1/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
+        "$arm_dir/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
   # INSTRUMENTS ALWAYS COME FROM THE CURRENT TREE, NEVER FROM THE ARM. A probe that differs
   # between arms measures itself as well as the change.
   #

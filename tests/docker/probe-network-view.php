@@ -94,7 +94,10 @@ if (!class_exists('wp_slimstat_db') && is_readable($db_file)) {
     require_once $db_file;
 }
 
-$numerator = null;
+$numerator  = null;
+$about_rows = null;
+$about_max  = null;
+$top_max    = null;
 
 if (class_exists('wp_slimstat_db')) {
     if (method_exists('wp_slimstat_db', 'init')) {
@@ -114,11 +117,27 @@ if (class_exists('wp_slimstat_db')) {
     // This is the assertion PITFALLS 23 says was missing. Measuring only the denominator could
     // not tell "both main-site" (consistent, wrong scope) from "denominator alone moved"
     // (inconsistent, silently wrong) — the two states differ only in the numerator.
+    // One pass computes BOTH claims: the SUM (the D22 numerator) and ROW IDENTITY (the
+    // P3 assertion nothing was making). The fixture puts /about/ on two blogs (6 + 5);
+    // ratified P3 says the network report lists it TWICE, per blog. A GROUP BY that
+    // omits blog_id merges them into one row of 11 — and the sum is 11 either way, so
+    // the numerator alone cannot see it (that is exactly how it went unnoticed). Row
+    // count and max figure discriminate.
     $rows = wp_slimstat_db::get_top(['columns' => 'resource', 'use_date_filters' => false]);
     if (is_array($rows)) {
-        $numerator = 0;
+        $numerator  = 0;
+        $about_rows = 0;
+        $about_max  = 0;
+        $top_max    = 0;
         foreach ($rows as $row) {
-            $numerator += (int) (is_array($row) ? ($row['counthits'] ?? 0) : ($row->counthits ?? 0));
+            $resource   = is_array($row) ? ($row['resource'] ?? '') : ($row->resource ?? '');
+            $hits       = (int) (is_array($row) ? ($row['counthits'] ?? 0) : ($row->counthits ?? 0));
+            $numerator += $hits;
+            $top_max    = max($top_max, $hits);
+            if ('/about/' === $resource) {
+                $about_rows++;
+                $about_max = max($about_max, $hits);
+            }
         }
     }
 }
@@ -146,6 +165,14 @@ $result = [
     // apart — PITFALLS 21/22/23.
     'report_denominator'  => $denominator,
     'report_numerator'    => $numerator,
+    // P3 row identity: /about/ lives on two blogs (6 + 5). Ratified P3 lists it twice;
+    // a blog_id-less GROUP BY merges it into one row of 11 that the SUM cannot see.
+    'about_rows'          => $about_rows,
+    'about_rows_expected' => $spec['expected']['about_rows_in_network_report'] ?? null,
+    'about_max'           => $about_max,
+    'about_max_expected'  => $spec['expected']['about_largest_single_figure'] ?? null,
+    'top_resource_max'    => $top_max,
+    'top_max_expected'    => $spec['expected']['top_resource_per_blog_max'] ?? null,
     'report_scope'        => (null === $numerator || null === $denominator)
         ? 'unmeasured'
         : ($numerator !== $denominator
