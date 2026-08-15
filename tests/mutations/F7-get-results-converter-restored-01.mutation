@@ -1,0 +1,75 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/get-results-convert-contract-test.php
+kind:      restore-defect
+expect:    single-line statement did not reach the handle verbatim-once
+rationale: Restores the Query converter get_results() carried for years - the regex whose lazy `WHERE (.+?)` with every following group optional captured exactly ONE character of the WHERE clause, dropped the GROUP BY, appended a LIMIT 100 the caller never wrote, and cached the wrong rows under the md5 of the ORIGINAL sql. No shipped caller ever reached it (their tab-indented SQL fails the regex's literal-space demand), so nothing behavioural ever caught it; only the verbatim-execution contract can. The gate must see the single-line statement fail to arrive intact whether the restored converter mangles it or throws mid-rewrite - the test deliberately does not `continue` after a throw so both worlds trip the same assertion.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+index 29e66832..c5f9e7ec 100644
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -516,29 +516,49 @@ class wp_slimstat_db
+         $sql_trim = ltrim($_sql);
+         $cache_key = '';
+ 
++        // Try to convert SQL to Query class for better caching and performance
+         if (0 === stripos($sql_trim, 'select') && false !== stripos($sql_trim, $table)) {
+-            // Cache SELECTs on the analytics table; key rationale and the write-back gate
+-            // are documented at the write below.
++            // Add caching for SELECT queries
+             $cache_key      = 'slimstat_query_' . md5($_sql);
+             $cached_results = get_transient($cache_key);
+             if (false !== $cached_results) {
+                 return $cached_results;
+             }
++
++            // Try to parse and convert to Query class
++            if (preg_match('/SELECT (.+) FROM [^ ]+ WHERE (.+?)( GROUP BY (.+?))?( ORDER BY (.+?))?( LIMIT (\d+), (\d+))?/is', $_sql, $m)) {
++                $columns      = trim($m[1]);
++                $where        = trim($m[2]);
++                $group_by     = isset($m[4]) ? trim($m[4]) : '';
++                $order_by     = isset($m[6]) ? trim($m[6]) : '';
++                $limit_offset = isset($m[8]) ? intval($m[8]) : 0;
++                $limit_count  = isset($m[9]) ? intval($m[9]) : 100;
++
++                $q = Query::select($columns)->from($table);
++
++                if ($where && '1=1' !== $where) {
++                    $q->whereRaw($where);
++                }
++
++                if ('' !== $group_by && '0' !== $group_by) {
++                    $q->groupBy($group_by);
++                }
++
++                if ('' !== $order_by && '0' !== $order_by) {
++                    $q->orderBy($order_by);
++                }
++
++                $page = ($limit_offset / $limit_count) + 1;
++                $q->perPage($page, $limit_count);
++                $q->allowCaching(true);
++                $result = $q->getAll();
++                set_transient($cache_key, $result, 10 * MINUTE_IN_SECONDS);
++                return $result;
++            }
+         }
+ 
+-        // Nothing here rewrites the SQL into the Query builder, and nothing may without an
+-        // ANCHORED parse. The converter this method carried matched `WHERE (.+?)` with every
+-        // following group optional, so the lazy quantifier captured exactly ONE character:
+-        // `WHERE username IS NOT NULL GROUP BY username` executed as `WHERE (u)` with the
+-        // GROUP BY dropped and a LIMIT 100 the caller never wrote, and the wrong rows were
+-        // cached under the md5 of the ORIGINAL sql. No shipped caller ever reached it — the
+-        // regex demanded literal single spaces around FROM/WHERE and every caller ships
+-        // tab-indented SQL (see the D72 note below) — which is the only reason it never
+-        // corrupted a report. get_var()'s parsers survive because they anchor with `…$/`,
+-        // forcing full-clause capture. The contract is pinned by
+-        // tests/get-results-convert-contract-test.php: verbatim execution, both formattings.
+-        //
+-        // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
++        // Fallback to wpdb for complex queries — use wp_slimstat::$wpdb
++        // so External DB addon queries the correct database.
+         $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+ 
+         // Write back what we read.

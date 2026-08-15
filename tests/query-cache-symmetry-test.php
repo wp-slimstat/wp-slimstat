@@ -57,13 +57,22 @@ $results = slimstat_function_body($db, 'get_results');
 if ($results === '') {
     $failures[] = 'wp_slimstat_db::get_results() not found — re-anchor rather than deleting';
 } else {
-    $reads  = preg_match_all('/get_transient\s*\(/', $results);
-    $writes = preg_match_all('/set_transient\s*\(/', $results);
+    // Strip comments before counting, or the D72 defect-story comment in the function —
+    // which names get_transient() in prose — counts as a read path. The old fixed floor
+    // of 2 writes silently absorbed exactly that miscount.
+    $code   = slimstat_strip_comments_and_strings($results, false);
+    $reads  = preg_match_all('/get_transient\s*\(/', $code);
+    $writes = preg_match_all('/set_transient\s*\(/', $code);
 
-    if ($reads > 0 && $writes < 2) {
+    // Structural, not a hand-kept constant: every read path must carry a write. The
+    // Query-converter exit path (which carried its own write) is deleted — its parse
+    // captured one character of the WHERE clause, see get-results-convert-contract-test.php,
+    // which also asserts this symmetry BEHAVIOURALLY. This comparison is the cheap tripwire
+    // for the D72 shape returning: a read path added without a write passes a fixed floor
+    // but cannot pass writes < reads.
+    if ($writes < $reads) {
         $failures[] = 'get_results() reads a transient but writes one on fewer paths than it '
-            . 'reads on. Every query the conversion regex cannot parse — which is every Pro '
-            . 'report — then pays the read on every render and never benefits from it';
+            . 'reads on — a cache paid for on every render that can never once be hit';
     }
 
     // The fallback must be gated, or a live window whose SQL moves every second writes a
