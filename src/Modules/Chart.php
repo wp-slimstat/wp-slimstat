@@ -246,19 +246,31 @@ class Chart
         // with their bucket: a stale entry must never outlive the window it describes.
         $expiration = $isLive ? self::CACHE_LIVE_BUCKET_SECONDS : DAY_IN_SECONDS;
 
-        $rowsQuery   = $sqlInfo['query'];
-        $totalsQuery = $sqlInfo['totalsQuery'];
+        $rowsQuery = $sqlInfo['query'];
 
         if ($rowsQuery instanceof Query) {
             $rowsQuery->allowCaching(true, $expiration);
         }
 
-        if ($totalsQuery instanceof Query) {
-            $totalsQuery->allowCaching(true, $expiration);
-        }
+        $merged = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
 
-        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
-        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : [];
+        // Split the ROLLUP result: bucket rows, per-period super-rows (the totals the
+        // second query used to fetch), and the (NULL, NULL) grand total nothing renders.
+        // A bucket expression over a valid dt is never NULL, so dt IS NULL identifies a
+        // super-row on every supported MySQL (GROUPING() would need 8.0).
+        $results = [];
+        $totals  = [];
+        foreach ($merged as $row) {
+            $dt     = self::rowField($row, 'dt');
+            $period = self::rowField($row, 'period');
+            if (null === $dt) {
+                if (null !== $period) {
+                    $totals[] = $row;
+                }
+                continue;
+            }
+            $results[] = $row;
+        }
 
         return $this->processResults(
             $results,
@@ -416,37 +428,29 @@ class Chart
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
+            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {
             $rowsQuery->whereRaw($filterWhere);
         }
 
-        $rowsQuery->groupBy($dtExpr . ', period')
-            ->orderBy('sort_dt ASC, period ASC');
-
-        // Build totals query via Query builder
-        // No CONVERT_TZ needed for totals - dt is already stored as UTC timestamp and filters use UTC
-    $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-    // Ensure totals WHERE uses grouped OR so filters are applied correctly.
-    $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
-        $totalsQuery  = Query::select($totalsFields)
-            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
-
-        // Apply additional filters if any
-        if (!empty($filterWhere)) {
-            $totalsQuery->whereRaw($filterWhere);
-        }
-
-        $totalsQuery->groupBy('period')
-            ->orderBy('period ASC');
+        // ONE pass, not two (Run 25's licence): the per-period totals ride the SAME query
+        // as the buckets. GROUP BY period FIRST, then the bucket, WITH ROLLUP — each
+        // (period, NULL) super-row is that period's total computed over the underlying
+        // rows, which is correct even for COUNT(DISTINCT ...); summing the buckets is not
+        // (Run 8: 254 vs 21,410). Measured on the I8 corpus: Handler_read_rnd_next
+        // exactly halves, byte-stable A-B-B-A.
+        //
+        // No ORDER BY: MySQL below 8.0.12 rejects ORDER BY with ROLLUP outright, the
+        // supported floor is 5.6, and processResults() keys every row into DataBuckets
+        // by (dt, period) — the old ORDER BY was decoration. fetchChartData() splits the
+        // super-rows from the bucket rows and discards the (NULL, NULL) grand total.
+        $rowsQuery->groupBy('period, ' . $dtExpr . ' WITH ROLLUP');
 
         return [
-            'query'       => $rowsQuery,
-            'totalsQuery' => $totalsQuery,
-            'params'      => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+            'query'  => $rowsQuery,
+            'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
         ];
     }
 
@@ -629,6 +633,17 @@ class Chart
         return trim(preg_replace('/\s+/', ' ', $sql));
     }
 
+    /**
+     * One field from a result row that may be a stdClass or ARRAY_A. Six call sites had
+     * grown six inline copies of this duality, and the object branches lacked the
+     * missing-key guard their array twins had. Null when absent — load-bearing for the
+     * ROLLUP split, where `dt IS NULL` identifies a super-row.
+     */
+    private static function rowField($row, string $key)
+    {
+        return is_object($row) ? ($row->{$key} ?? null) : ($row[$key] ?? null);
+    }
+
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
         // Normalize totals to array of stdClass for backward compatibility
@@ -646,10 +661,10 @@ class Chart
 
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
-            $dt     = (int) (is_object($row) ? $row->dt : ($row['dt'] ?? 0));
-            $v1     = (int) (is_object($row) ? $row->v1 : ($row['v1'] ?? 0));
-            $v2     = (int) (is_object($row) ? $row->v2 : ($row['v2'] ?? 0));
-            $period = (string) (is_object($row) ? $row->period : ($row['period'] ?? ''));
+            $dt     = (int) self::rowField($row, 'dt');
+            $v1     = (int) self::rowField($row, 'v1');
+            $v2     = (int) self::rowField($row, 'v2');
+            $period = (string) self::rowField($row, 'period');
             $buckets->addRow($dt, $v1, $v2, $period);
         }
 

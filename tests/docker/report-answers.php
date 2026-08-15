@@ -186,6 +186,29 @@ if ($end > 0 && $start > 0) {
     ]));
 }
 
+// ── the chart module, through its own data path ─────────────────────────────────────
+//
+// Charts were the one report family OUTSIDE this answer set. Run 25 licensed folding
+// their totals query into the buckets query (WITH ROLLUP) — and a licence without a
+// parity surface is how a silent answer change ships. Reflection, stated in the open:
+// the module's public surfaces render HTML or read $_POST, and an instrument may open
+// the private data path it measures. Two windows, historical on purpose (ends before
+// today), so neither the live-window quantisation nor the clock moves the capture.
+$chart_capture = static function (int $c_start, int $c_end) {
+    $chart = new \SlimStat\Modules\Chart();
+    $norm  = new ReflectionMethod($chart, 'normalizeArgs');
+    $norm->setAccessible(true);
+    $fetch = new ReflectionMethod($chart, 'fetchChartData');
+    $fetch->setAccessible(true);
+
+    return $fetch->invoke($chart, $norm->invoke($chart, ['start' => $c_start, 'end' => $c_end]));
+};
+
+$chart_today = strtotime(date('Y-m-d 00:00:00'));
+$chart_end   = min($end > 0 ? $end : $chart_today - 1, $chart_today - 1);
+$answers['chart_daily']  = $chart_capture($chart_end - 5 * 86400 + 1, $chart_end);
+$answers['chart_weekly'] = $chart_capture($chart_end - 60 * 86400 + 1, $chart_end);
+
 ksort($answers);
 
 // ── every report must have said SOMETHING ──────────────────────────────────
@@ -253,6 +276,12 @@ $timed = [
     'top_country'        => static function () { return wp_slimstat_db::get_top(['columns' => 'country', 'use_date_filters' => false]); },
     'bouncing_visits'    => static function () {
         return wp_slimstat_db::count_records_having('visit_id', 'visit_id > 0 AND browser_type <> 1', 'COUNT(id) = 1');
+    },
+    // The chart's whole data path — the Run 25 licence says its counters halve when the
+    // totals query folds into the buckets query; this is where that claim is checked
+    // end-to-end through the module rather than on hand-built SQL.
+    'chart_weekly'       => static function () use ($chart_capture, $chart_end) {
+        return $chart_capture($chart_end - 60 * 86400 + 1, $chart_end);
     },
 ];
 

@@ -1335,6 +1335,12 @@ class wp_slimstat_reports
             for ($i = 0; $i < $count_page_results; $i++) {
                 $row_details       = '';
                 $percentage        = '';
+                // Reset per ROW like their siblings: only the 'top' branch assigns these,
+                // so on any other report type the bar block below read an undefined (or a
+                // previous row's) value. PHPStan surfaced the _raw half; the _value half
+                // had been latent since the bar existed.
+                $percentage_value  = '';
+                $percentage_raw    = 0;
                 $element_pre_value = '';
                 // Ensure $results[$i] is an array and the key exists
                 if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
