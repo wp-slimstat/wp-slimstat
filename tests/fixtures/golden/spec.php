@@ -91,6 +91,15 @@ return [
         'about_merged_wrongly'      => 11,
         'top_resource_per_blog_max' => 7,
         'top_resource_merged_wrongly' => 16,
+        // M4's three distinguishable answers. Network pages/visit is total pageviews over
+        // total visits: 40/7. The TRAP is the mean of per-blog averages — (15/3 + 14/2 +
+        // 11/2) / 3 — which weights a two-visit blog the same as a three-visit one; an
+        // outer AVG over unioned per-blog AVGs computes exactly that. Main-site-only
+        // (today's unrouted answer) is 15/3 = 5 with max 6. Max is a per-visit figure and
+        // MAX composes over blogs: visit 301's 10.
+        'pages_per_visit_network'       => 5.714285714285714,
+        'pages_per_visit_mean_of_blogs' => 5.833333333333333,
+        'max_pages_single_visit'        => 10,
         // Day A = 6 + 7 + 10 = 23, day B = 5 + 7 = 12, day C = 4 + 1 = 5. A+B = 35, and
         // 35 + 5 = 40. The first draft of this said 28 and 12, which do not even sum to 40 —
         // written without doing the arithmetic, and caught by the recomputation, which is the

@@ -98,6 +98,8 @@ $numerator  = null;
 $about_rows = null;
 $about_max  = null;
 $top_max    = null;
+$ppv_avg    = null;
+$ppv_max    = null;
 
 if (class_exists('wp_slimstat_db')) {
     if (method_exists('wp_slimstat_db', 'init')) {
@@ -140,6 +142,24 @@ if (class_exists('wp_slimstat_db')) {
             }
         }
     }
+
+    // M4 — pages per visit, the report's own function. Three distinguishable answers on
+    // this fixture: 40/7 = 5.7143 (network, correct), 5.8333 (mean of per-blog averages —
+    // what an outer AVG over unioned per-blog AVGs computes), 5.0 with max 6 (main-site
+    // only — the unrouted answer). Max must read 10 (visit 301) when network-scoped.
+    //
+    // The WINDOW IS PINNED first, because this function exposes no date toggle at all —
+    // get_combined_where() applies the default living window, the fixture is dated, and
+    // the first run of this probe measured 0/0: the clock, not the scope. Same rationale
+    // as the denominator above — the subject is BLOG scope, so the time axis is removed.
+    wp_slimstat_db::$filters_normalized['utime']['start'] = 1;
+    wp_slimstat_db::$filters_normalized['utime']['end']   = 2000000000;
+    $ppv = wp_slimstat_db::get_max_and_average_pages_per_visit();
+    if (is_array($ppv) && isset($ppv[0])) {
+        $row     = $ppv[0];
+        $ppv_avg = round((float) (is_array($row) ? ($row['avghits'] ?? 0) : ($row->avghits ?? 0)), 4);
+        $ppv_max = (int) (is_array($row) ? ($row['maxhits'] ?? 0) : ($row->maxhits ?? 0));
+    }
 }
 
 $result = [
@@ -173,6 +193,12 @@ $result = [
     'about_max_expected'  => $spec['expected']['about_largest_single_figure'] ?? null,
     'top_resource_max'    => $top_max,
     'top_max_expected'    => $spec['expected']['top_resource_per_blog_max'] ?? null,
+    // M4: pages/visit — network 5.7143, mean-of-blogs trap 5.8333, main-site 5.0/max 6.
+    'ppv_avg'             => $ppv_avg,
+    'ppv_avg_expected'    => round((float) ($spec['expected']['pages_per_visit_network'] ?? 0), 4),
+    'ppv_avg_trap'        => round((float) ($spec['expected']['pages_per_visit_mean_of_blogs'] ?? 0), 4),
+    'ppv_max'             => $ppv_max,
+    'ppv_max_expected'    => $spec['expected']['max_pages_single_visit'] ?? null,
     'report_scope'        => (null === $numerator || null === $denominator)
         ? 'unmeasured'
         : ($numerator !== $denominator

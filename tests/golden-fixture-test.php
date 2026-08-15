@@ -136,6 +136,25 @@ if (abs($expected['bounce_rate_pct'] - $expected['bounce_rate_mean_of_blogs_pct'
         . 'fixture cannot catch an implementation that averages them';
 }
 
+// M4 — pages per visit, from the same per-visit counts: the network answer (total over
+// total), the mean-of-blog-averages TRAP (what an outer AVG over unioned per-blog AVGs
+// computes), and the per-visit MAX, which composes over blogs where AVG does not.
+// Total pageviews is count($counted), already pinned above — not re-accumulated here.
+$blog_avgs  = [];
+$max_single = 0;
+foreach ($hits_by_blog as $blog_visits) {
+    $blog_avgs[]  = array_sum($blog_visits) / count($blog_visits);
+    $max_single   = max($max_single, max($blog_visits));
+}
+$check('network pages per visit', $expected['pages_per_visit_network'], count($counted) / $visits);
+$check('mean of per-blog pages-per-visit (the trap)', $expected['pages_per_visit_mean_of_blogs'], array_sum($blog_avgs) / count($blog_avgs));
+$check('max pages in a single visit', $expected['max_pages_single_visit'], $max_single);
+
+if (abs($expected['pages_per_visit_network'] - $expected['pages_per_visit_mean_of_blogs']) < 0.01) {
+    $failures[] = 'network pages-per-visit equals the mean of per-blog averages, so the fixture '
+        . 'cannot catch an implementation that averages the averages';
+}
+
 // ── 4. The shared path — P3 says two rows, not one of eleven ────────────────
 $about_by_blog = [];
 foreach ($counted as $row) {

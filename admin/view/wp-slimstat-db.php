@@ -1263,9 +1263,39 @@ class wp_slimstat_db
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
         $subQuery = sprintf('SELECT count(*) counthits, visit_id FROM %s WHERE %s GROUP BY visit_id', $table, $where);
+        $from     = sprintf('(%s) AS ts1', $subQuery);
+
+        if (NetworkMerge::isMerging()) {
+            // M4, forced: SUM/SUM at the TRUE outer level, divided once, here. An outer
+            // AVG over unioned per-blog rows weights a two-visit blog the same as a
+            // three-visit one — the mean of means, 5.8333 on the golden fixture where
+            // the network answer is 40/7 = 5.7143. Pageviews and visits both compose
+            // over blogs by SUM, the per-visit MAX by MAX, so three scalar aggregates
+            // go through the same getVar network path every other ratio uses. (One
+            // combined per-arm row would need a getRow network affordance that does not
+            // exist — deferred with Run 22 rather than silently.)
+            $sum_outer = NetworkMerge::outerAggregate(NetworkMerge::SUM, 'counthits');
+
+            $pageviews = (int) Query::select('SUM(ts1.counthits) AS counthits')
+                ->from($from)
+                ->getVar($sum_outer);
+            $visits = (int) Query::select('COUNT(*) AS counthits')
+                ->from($from)
+                ->getVar($sum_outer);
+            // MAX composes by MAX. Written here, not as a NetworkMerge intent: one
+            // caller does not mint vocabulary — a second MAX-composing caller moves it.
+            $max = (int) Query::select('MAX(ts1.counthits) AS counthits')
+                ->from($from)
+                ->getVar('MAX(counthits) AS counthits');
+
+            return [[
+                'avghits' => ($visits > 0) ? ($pageviews / $visits) : 0,
+                'maxhits' => $max,
+            ]];
+        }
 
         $query = Query::select('AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits')
-            ->from(sprintf('(%s) AS ts1', $subQuery));
+            ->from($from);
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
