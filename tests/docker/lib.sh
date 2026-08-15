@@ -108,12 +108,16 @@ provision_wp_cell() { # <art> <wp_version> <base_url> <free_src>
       --admin_password=admin --admin_email=qa@example.com --skip-email >>"$art/install.log" 2>&1 \
       || { fail "core install failed"; return 1; }
   sync_plugin_src "$CELL_WP_DIR" "$free_src"
-  mkdir -p "$CELL_WP_DIR/wp-content/plugins/.pro"
-  cp "$ARM_PRO_ZIP" "$CELL_WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
-  chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
   wpc plugin activate wp-slimstat >>"$art/install.log" 2>&1 || { fail "free activation failed"; return 1; }
-  wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --activate --force \
-      >>"$art/activate.log" 2>&1 || { fail "pro install failed"; return 1; }
+  # Pro rides only when the caller resolved an arm zip (build_pro_arm sets ARM_PRO_ZIP).
+  # A free-only bench cell provisions without it rather than re-inlining this block.
+  if [ -n "${ARM_PRO_ZIP:-}" ]; then
+    mkdir -p "$CELL_WP_DIR/wp-content/plugins/.pro"
+    cp "$ARM_PRO_ZIP" "$CELL_WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
+    chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
+    wpc plugin install /var/www/html/wp-content/plugins/.pro/wp-slimstat-pro.zip --activate --force \
+        >>"$art/activate.log" 2>&1 || { fail "pro install failed"; return 1; }
+  fi
 }
 
 # Point the custom-DB add-on at a host/db with server-side tracking on, root/root creds.
