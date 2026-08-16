@@ -148,6 +148,13 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $allColNames = $ref->getProperty('all_columns_names');
         $allColNames->setValue(null, []);
 
+        // The schema-presence memo must not leak one test's mocked SHOW COLUMNS
+        // into the next (guarded: the property arrives with the vid_hash fix).
+        if ($ref->hasProperty('fact_columns_present')) {
+            $ref->getProperty('fact_columns_present')->setValue(null, []);
+        }
+        \wp_slimstat::$wpdb = null;
+
         parent::tearDown();
     }
 
@@ -733,6 +740,172 @@ class QueryBuilderTest extends WpSlimstatTestCase
             1,
             substr_count(strtolower($orderClause), 'platform'),
             "the sort column appears more than once: {$orderClause}"
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // visitor_id_expr — the identity ladder consults the schema IN FRONT OF US
+    // ------------------------------------------------------------------
+    //
+    // The upgrade contract (S7/P1) means an upgraded site legitimately serves v6
+    // reports from a v5 table until the admin runs the migration screen: vid_hash
+    // (AddVisitIdentity, required-but-deferred) and, on pre-fingerprint installs,
+    // fingerprint may be absent for an unbounded window. Naming an absent column
+    // is an Unknown-column rejection that get_results() reports identically to
+    // "no visitors" — measured live: every goal, funnel and unique-visitor count
+    // on this workspace's own upgraded database. The ladder must be built from
+    // the tiers the table actually has; on a complete schema it must stay
+    // byte-identical to the historical spelling (the parity pin).
+
+    /**
+     * A dedicated ANALYTICS-handle mock expecting exactly one SHOW COLUMNS against
+     * the prefixed stats table. Deliberately distinct from $GLOBALS['wpdb'] (which
+     * carries no get_results expectation, so a probe against the WordPress
+     * connection fails the test): C44 external-DB users' stats live on another
+     * server, and probing the wrong handle would silently mis-shape the ladder
+     * exactly for them. The exact-SQL ->with() pins the probed table and prefix.
+     *
+     * @param string[]|null $columns Field names the probe reports, or null for
+     *                               "probe unreadable" (get_results answers []).
+     */
+    private function expectSchemaProbe(string $prefix, ?array $columns): void
+    {
+        $rows = [];
+        foreach ((array) $columns as $column) {
+            $rows[] = ['Field' => $column, 'Type' => 'varchar(255)'];
+        }
+
+        \wp_slimstat::$wpdb->shouldReceive('get_results')
+            ->once()
+            ->with('SHOW COLUMNS FROM `' . $prefix . 'slim_stats`', Mockery::any())
+            ->andReturn($rows);
+    }
+
+    private function invokeVisitorIdExpr(): string
+    {
+        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'visitor_id_expr');
+        $m->setAccessible(true);
+
+        return (string) $m->invoke(null, 't1');
+    }
+
+    private function visitorIdExprWithSchema(?array $columns, string $prefix = 'wp_'): string
+    {
+        $analytics = Mockery::mock('wpdb');
+        $analytics->last_error = '';
+        $analytics->shouldReceive('suppress_errors')->andReturn(false);
+        \wp_slimstat::$wpdb = $analytics;
+
+        $this->expectSchemaProbe($prefix, $columns);
+        $GLOBALS['wpdb']->prefix = $prefix;
+
+        return $this->invokeVisitorIdExpr();
+    }
+
+    /**
+     * BUG GUARD — an upgraded table without vid_hash must get a ladder without
+     * the vid_hash tier, not a query MySQL rejects.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_omits_vid_hash_when_the_table_lacks_it(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr,
+            'the ladder must skip the tier whose column the upgraded table does not have'
+        );
+    }
+
+    /**
+     * BUG GUARD (older half of the same window) — a pre-fingerprint table keeps
+     * only the universal tiers.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_on_an_ancient_table_keeps_only_universal_tiers(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource']);
+
+        $this->assertSame(
+            "COALESCE(CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * PARITY PIN — on a complete schema the ladder is byte-identical to the
+     * historical spelling, so goals/funnels answers cannot move on any site
+     * whose migration has run (and every fresh install).
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_is_byte_identical_on_a_complete_schema(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * FAIL-OPEN PIN — an unreadable probe must not change grouping semantics: the
+     * declared (manifest) ladder is emitted, and a genuinely missing column then
+     * surfaces exactly as it did before the probe existed.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_assumes_the_manifest_when_the_probe_cannot_read(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(null);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * COST PIN — one SHOW COLUMNS per request, not one per funnel step: the
+     * probe expectation carries ->once(), so a second build hitting the database
+     * again fails this test. A silent regression to N probes per funnel chain is
+     * exactly the class this performance programme exists to keep out.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_probes_once_per_request(): void
+    {
+        $first  = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $second = $this->invokeVisitorIdExpr();
+
+        $this->assertSame($first, $second);
+    }
+
+    /**
+     * MULTISITE PIN — switch_to_blog changes the table prefix mid-request, and
+     * each prefix must get its OWN probe and its own ladder: blog A migrated and
+     * blog B not is a legitimate simultaneous state. A memo keyed on anything
+     * but the prefix serves blog A's ladder to blog B's table.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_probes_per_prefix(): void
+    {
+        $degraded = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint']);
+        $this->assertStringNotContainsString('vid_hash', $degraded);
+
+        // switch_to_blog: new prefix, migrated schema — a SECOND probe (its own
+        // ->once() expectation) must fire and answer with the full ladder.
+        $this->expectSchemaProbe('site7_', ['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $GLOBALS['wpdb']->prefix = 'site7_';
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $this->invokeVisitorIdExpr()
         );
     }
 }

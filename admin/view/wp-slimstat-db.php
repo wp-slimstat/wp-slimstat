@@ -7,6 +7,14 @@ use SlimStat\Components\DateRangeHelper;
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
 {
+    // Per-request memo of the fact table's ACTUAL columns, keyed by table prefix
+    // (multisite: switch_to_blog changes the prefix mid-request). `true` means the
+    // probe could not read and the manifest is assumed. Never durable on purpose —
+    // a transient would survive the migration that adds the column and keep
+    // dropping the tier after the schema is whole (Storage::presentColumns'
+    // reasoning, applied to the read path).
+    private static $fact_columns_present = [];
+
     // Filters
     public static $columns_names = [];
 
@@ -2081,13 +2089,76 @@ class wp_slimstat_db
     private static function visitor_id_expr($alias = '')
     {
         $prefix = !empty($alias) ? $alias . '.' : '';
-        return sprintf(
-            "COALESCE(%sfingerprint, HEX(%svid_hash), CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
-            $prefix,
-            $prefix,
-            $prefix,
-            $prefix
-        );
+
+        // Tier presence is the SCHEMA'S, not the manifest's. The upgrade contract
+        // (S7/P1) defers DDL to the migration screen, so an upgraded site
+        // legitimately serves v6 reports from a v5 table for as long as the admin
+        // has not run it — vid_hash (AddVisitIdentity) and, pre-fingerprint,
+        // fingerprint itself are absent there, and naming an absent column is an
+        // Unknown-column rejection get_results() reports identically to "no
+        // visitors": every goal, funnel and unique count read 0, measured live on
+        // this workspace's own upgraded database. The write path has honoured the
+        // window since P1 (Storage intersects columns); this covers the read paths
+        // that share THIS ladder (goals, funnels, unique-visitor counts) — other
+        // report SQL naming late-era columns outright, like get_recent()'s explicit
+        // list, is the same hazard class and is tracked as its own seam. Dropping
+        // an absent tier reinterprets nothing — a column that does not exist holds
+        // no identity to fall through from.
+        $tiers = [];
+        if (self::fact_column_present('fingerprint')) {
+            $tiers[] = $prefix . 'fingerprint';
+        }
+        if (self::fact_column_present('vid_hash')) {
+            $tiers[] = sprintf('HEX(%svid_hash)', $prefix);
+        }
+        $tiers[] = sprintf("CONCAT('v_', %svisit_id)", $prefix);
+        $tiers[] = sprintf("CONCAT('ip_', %sip)", $prefix);
+
+        return 'COALESCE(' . implode(', ', $tiers) . ')';
+    }
+
+    /**
+     * Does the fact table in front of us actually have this column?
+     *
+     * One SHOW COLUMNS per request per prefix, memoised in $fact_columns_present —
+     * not per funnel step, not per query. Runs on the analytics handle
+     * (wp_slimstat::$wpdb) because that is the connection every caller of
+     * visitor_id_expr() queries; under an external DB (C44) probing the WordPress
+     * connection would answer for the wrong server.
+     *
+     * FAIL-OPEN: Schema::columnState() reports nothing when the table cannot be
+     * read, and answering "absent" on a transient probe failure would silently
+     * change grouping semantics. The manifest ladder is the declared truth; a
+     * genuinely missing column then surfaces exactly as it did before this probe
+     * existed.
+     *
+     * @param string $column
+     * @return bool
+     */
+    private static function fact_column_present($column)
+    {
+        $prefix = $GLOBALS['wpdb']->prefix;
+
+        if (!array_key_exists($prefix, self::$fact_columns_present)) {
+            // BOTH preconditions guarded, not just the class: this file also runs
+            // inside bare-PHP test harnesses and half-booted sites where the
+            // autoloader is absent (#325) — and columnState() type-hints wpdb, so a
+            // null analytics handle would turn a pure string-builder into a
+            // TypeError. Either gap means no probe, and no probe means the manifest
+            // is assumed, which is exactly the pre-probe behaviour.
+            $state = class_exists('\SlimStat\Schema\Schema') && wp_slimstat::$wpdb instanceof \wpdb
+                ? \SlimStat\Schema\Schema::columnState(wp_slimstat::$wpdb, 'slim_stats', $prefix)
+                : ['present' => []];
+
+            // A readable slim_stats always reports columns (id at minimum), so an
+            // empty `present` means the probe could not read — assume the manifest.
+            self::$fact_columns_present[$prefix] = [] === $state['present']
+                ? true
+                : array_flip($state['present']);
+        }
+
+        return true === self::$fact_columns_present[$prefix]
+            || isset(self::$fact_columns_present[$prefix][$column]);
     }
 
     /**

@@ -212,6 +212,50 @@ if ($chain_flag_mentions < 3) {
         . 'the bail flag has been hollowed';
 }
 
+// ── 6. The identity ladder names only tiers the table in front of us HAS ────
+//
+// The upgrade contract defers DDL to the migration screen, so an upgraded site
+// legitimately serves v6 funnels from a table without vid_hash (and, pre-5.x,
+// without fingerprint). An unconditional ladder is then an Unknown-column
+// rejection that get_results() reports identically to "no visitors" — measured
+// live on this workspace's own upgraded database: every goal and funnel read 0.
+// The behavioural pins live in tests/Unit/QueryBuilderTest.php (ladder shape
+// per schema state, byte-identity on complete schemas); this scan is the
+// vendor-independent gate the mutation registry fires on every lane.
+$ladder = slimstat_function_body($source, 'visitor_id_expr');
+if ('' === $ladder) {
+    $failures[] = 'visitor_id_expr() not found — re-anchor this section rather than deleting it';
+} else {
+    // Two layers, each covering the other's blind side. (1) STRINGS STRIPPED: the
+    // guard must exist as CODE, twice — a guard removed from code while its spelling
+    // survives inside a string literal must not keep this green (the registered
+    // name-only mutation fires exactly that bypass). (2) COMMENTS-ONLY BLANKED: each
+    // tier's own spelling must be present, so the two guards cannot collapse into
+    // one or swap to a column nothing declares.
+    $guard_calls = substr_count(
+        slimstat_strip_comments_and_strings($ladder, false),
+        'self::fact_column_present('
+    );
+    if ($guard_calls < 2) {
+        $failures[] = sprintf(
+            'visitor_id_expr() holds %d fact_column_present() guard(s) in CODE where 2 are '
+                . 'expected (fingerprint, vid_hash) — an unguarded tier on an upgraded table '
+                . 'without the column turns every goal, funnel and unique-visitor count into '
+                . 'an Unknown-column rejection reported identically to "no visitors"',
+            $guard_calls
+        );
+    }
+    $ladder_no_comments = slimstat_blank_comments($ladder, false);
+    foreach (['fingerprint', 'vid_hash'] as $optional_tier) {
+        if (false === strpos($ladder_no_comments, "self::fact_column_present('{$optional_tier}')")) {
+            $failures[] = "visitor_id_expr() no longer guards the {$optional_tier} tier behind "
+                . 'fact_column_present() — on an upgraded table without the column, every '
+                . 'goal, funnel and unique-visitor count becomes an Unknown-column rejection '
+                . 'reported identically to "no visitors"';
+        }
+    }
+}
+
 // ── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: funnel step identity (' . count($failures) . " problem(s))\n");
