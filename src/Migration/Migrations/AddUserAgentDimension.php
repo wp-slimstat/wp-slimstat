@@ -33,8 +33,11 @@ use SlimStat\Schema\SurrogateKey;
  * `INSERT IGNORE` after each fact row — correct, race-free, and one extra query on EVERY tracked
  * pageview, on a branch committed to ~13 fewer. Caching does not rescue it: without a persistent
  * object cache `wp_cache` is per-request, and the sites that most need the star schema are the
- * least likely to run Redis. So the dimension is derived here and refreshed by the maintenance
- * cron, and the tracker's cost stays a local hash.
+ * least likely to run Redis. So the dimension is derived here, and STALENESS RE-OFFERS THIS
+ * MIGRATION: in v6.0.0 the tracker writes no ua_id at all (that write — M6's "local hash" —
+ * and any cron refresh belong with Layer 2's reopen, M7), so new rows arrive unkeyed and
+ * dimensionIsBehind() turns shouldRun() back on. An earlier draft of this paragraph credited
+ * a "maintenance cron" refresher; no such code exists, and prose must not outrun the tree.
  *
  * That is affordable only because P4 keeps `browser`/`browser_version`/`browser_type`/`platform`
  * ON the fact row in v6.0.0. The dimension is an index over data that is already there, so a
@@ -113,7 +116,8 @@ class AddUserAgentDimension extends AbstractMigration
      *
      * Reads DISTINCT combinations rather than rows: a site with a million pageviews has a few
      * thousand distinct browser/platform tuples, so the work is bounded by cardinality and not
-     * by table size. That is the property that makes this affordable to re-run from cron.
+     * by table size. That is the property that makes this affordable to re-run each time
+     * staleness re-offers the migration (there is no cron — see the class docblock).
      */
     private function backfill(): bool
     {
