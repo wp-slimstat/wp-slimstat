@@ -112,6 +112,34 @@ foreach (['resource', 'browser', 'country', 'platform', 'referer'] as $column) {
     ]));
 }
 
+// ── the ALIASED class: an expression column wearing as_column ───────────────
+// The plain-column loop above can never see this class, and it went live broken
+// (D72, measured 2026-08-16 — the full story sits on get_top()'s tie-break
+// comment). These mirror the three production reports debug.log recorded
+// failing, as PINNED LITERALS rather than reads of wp_slimstat_reports::$reports
+// on purpose: slim_p1_10's real WHERE derives from home_url(), and this probe's
+// answers must not move with the environment or with a report edit. On a
+// defective tree all three return [] and the hollow-report gate below fails the
+// arm loudly instead of letting two empties compare equal.
+$aliased_shapes = [
+    'top_referer_domains' => [
+        'columns'   => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
+        'as_column' => 'referer',
+        'where'     => 'referer IS NOT NULL',
+    ],
+    'top_platform_prefixed' => [
+        'columns'   => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
+        'as_column' => 'platform',
+    ],
+    'top_resource_trimmed' => [
+        'columns'   => 'TRIM(TRAILING "/" FROM resource)',
+        'as_column' => 'resource',
+    ],
+];
+foreach ($aliased_shapes as $key => $shape) {
+    $answers[$key] = $rows(wp_slimstat_db::get_top($shape + ['use_date_filters' => false]));
+}
+
 // ── unique visitors per dimension — a metric that is NOT COUNT(*) ──────────
 // Added because a blind audit found every measure in the set was `counthits`, so the
 // pageviews-versus-uniques distinction — the classic confusion in this plugin, and the one F9's

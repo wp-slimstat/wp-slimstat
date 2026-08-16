@@ -626,4 +626,113 @@ class QueryBuilderTest extends WpSlimstatTestCase
         // Date range too
         $this->assertStringContainsString('BETWEEN', $sql);
     }
+
+    // ------------------------------------------------------------------
+    // get_top — ORDER BY with expression columns carrying as_column
+    // ------------------------------------------------------------------
+
+    /**
+     * Run get_top() against the mock connection and return every SQL string it executed.
+     *
+     * @param array<string,mixed> $args get_top() array arguments
+     * @return string[]
+     */
+    private function captureGetTopSql(array $args): array
+    {
+        $captured = [];
+        $this->wpdb->shouldReceive('get_results')
+            ->andReturnUsing(static function ($sql) use (&$captured) {
+                $captured[] = (string) $sql;
+                return [];
+            });
+
+        // get_top() unconditionally allows caching; the lookup must miss so the
+        // query actually reaches get_results().
+        $this->stubTransientCacheMiss();
+
+        $ref = new \ReflectionProperty(\wp_slimstat_db::class, 'filters_normalized');
+        $ref->setValue(null, ['misc' => ['limit_results' => 20]]);
+
+        \wp_slimstat_db::get_top($args + ['use_date_filters' => false]);
+
+        return $captured;
+    }
+
+    /**
+     * The ORDER BY clause (through to the end of the SQL) of the single query a
+     * get_top() call executed — asserting on the way that a query WAS executed and
+     * that it carries an ORDER BY at all, so each test keeps only its distinctive
+     * assertions and an absent ORDER BY cannot make substr() hand back the whole
+     * statement as the "clause".
+     */
+    private function getTopOrderClause(array $args): string
+    {
+        $captured = $this->captureGetTopSql($args);
+        $this->assertNotEmpty($captured, 'get_top() executed no query at all');
+
+        $orderPos = stripos($captured[0], 'ORDER BY');
+        $this->assertNotFalse($orderPos, "no ORDER BY in: {$captured[0]}");
+
+        return substr($captured[0], (int) $orderPos);
+    }
+
+    /**
+     * BUG GUARD — the tie-break must order by the ALIAS, never by the aliased
+     * expression. `$_column` is rewritten to "<expr> AS <alias>" before the
+     * tie-break block, and appending THAT produced
+     *
+     *     ORDER BY counthits DESC, REPLACE(...) AS referer ASC
+     *
+     * which MySQL rejects ("near 'AS referer ASC'") — every as_column report
+     * (Top Referring Domains, platform, trailing-slash resource, language)
+     * rendered empty while the identical query without the tie-break had worked.
+     *
+     * @test
+     */
+    public function test_get_top_tiebreak_orders_by_alias_not_aliased_expression(): void
+    {
+        $orderClause = $this->getTopOrderClause([
+            'columns'   => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
+            'as_column' => 'referer',
+        ]);
+
+        // An aliased expression inside ORDER BY is a syntax error, full stop.
+        $this->assertStringNotContainsStringIgnoringCase(
+            ' AS ',
+            $orderClause,
+            "ORDER BY carries an aliased expression — invalid SQL: {$orderClause}"
+        );
+
+        // The tie-break itself must still be there, spelled as the bare alias.
+        $this->assertMatchesRegularExpression(
+            '/ORDER BY\s+counthits DESC,\s*referer ASC/i',
+            $orderClause,
+            "tie-break on the alias is missing: {$orderClause}"
+        );
+    }
+
+    /**
+     * BUG GUARD (companion) — when the caller already orders by the alias, no
+     * tie-break is appended. Under the defect the containment check searched
+     * $_order_by for the whole "<expr> AS <alias>" string, which can essentially
+     * never match, so a duplicate (and invalid) sort column was appended even
+     * when the caller had ordered by the column already.
+     *
+     * @test
+     */
+    public function test_get_top_no_duplicate_tiebreak_when_caller_orders_by_alias(): void
+    {
+        $orderClause = $this->getTopOrderClause([
+            'columns'   => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
+            'as_column' => 'platform',
+            'order_by'  => 'platform ASC',
+        ]);
+
+        $this->assertStringNotContainsStringIgnoringCase(' AS ', $orderClause);
+        $this->assertSame(
+            1,
+            substr_count(strtolower($orderClause), 'platform'),
+            "the sort column appears more than once: {$orderClause}"
+        );
+    }
 }

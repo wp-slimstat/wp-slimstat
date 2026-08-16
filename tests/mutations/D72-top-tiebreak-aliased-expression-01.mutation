@@ -1,0 +1,20 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/group-by-conformance-test.php
+kind:      restore-defect
+expect:    appends $_column to the tie-break
+rationale: Restores the defect measured live on this install (debug.log, 2026-08-16): the tie-break appended $_column, which by that point is "<expr> AS <alias>" for every as_column report, so MySQL rejected the ORDER BY at "AS referer ASC" and Top Referring Domains / platform / trailing-slash resource all rendered empty. Proves the gate's absence assertion fires on the composed spelling, not merely that the alias spelling is present somewhere.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1574,8 +1574,8 @@
+         // a caller's own order_by uses, which is what makes this containment check able
+         // to match at all.
+-        if (false === stripos($_order_by, $_as_column)) {
+-            $tiebreak_parts[] = $_as_column . ' ASC';
++        if (false === stripos($_order_by, $_column)) {
++            $tiebreak_parts[] = $_column . ' ASC';
+         }
+         if ([] !== $tiebreak_parts) {
+             $order_with_tiebreak .= ', ' . implode(', ', $tiebreak_parts);
+         }

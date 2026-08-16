@@ -1565,8 +1565,16 @@ class wp_slimstat_db
         if ($merging && false === stripos($_order_by, 'blog_id')) {
             $tiebreak_parts[] = 'blog_id';
         }
-        if (false === stripos($_order_by, $_column)) {
-            $tiebreak_parts[] = $_column . ' ASC';
+        // The ALIAS, never $_column: by this point $_column has been rewritten to
+        // "<expr> AS <alias>" for every as_column report, and an aliased expression
+        // inside ORDER BY is a syntax error — measured live as "near 'AS referer ASC'"
+        // on Top Referring Domains, platform and trailing-slash resource, each report
+        // rendering empty. ORDER BY resolves select aliases, so the bare alias sorts
+        // by the same transformed value the row was grouped on; it is also the spelling
+        // a caller's own order_by uses, which is what makes this containment check able
+        // to match at all.
+        if (false === stripos($_order_by, $_as_column)) {
+            $tiebreak_parts[] = $_as_column . ' ASC';
         }
         if ([] !== $tiebreak_parts) {
             $order_with_tiebreak .= ', ' . implode(', ', $tiebreak_parts);

@@ -204,10 +204,7 @@ if (!preg_match('/\'([^\']*GROUP BY visit_id[^\']*)\'/i', $mav, $sub)) {
 // swapped), and as tied rows flapping between page refreshes for a human. The grouped
 // column as a second key makes the order a property of the data. Comments blanked: the
 // bare `counthits DESC` this forbids is quoted in prose right here.
-$aggr_body = slimstat_function_body(
-    (string) file_get_contents($db_path),
-    'get_top_aggr'
-);
+$aggr_body = slimstat_function_body($db_src, 'get_top_aggr');
 if ('' === $aggr_body) {
     $failures[] = 'get_top_aggr() not found — re-anchor this section rather than deleting it';
 } else {
@@ -221,6 +218,64 @@ if ('' === $aggr_body) {
             . 'column as tie-break — equal-count rows return in plan order, which varies '
             . 'between executions on 5.7 (measured: a same-corpus null control failed) and '
             . 'between refreshes for a user';
+    }
+}
+
+// ── get_top's tie-break orders by the ALIAS, never the aliased expression ───────────────
+//
+// By the tie-break block, $_column has been rewritten to "<expr> AS <alias>" for every
+// as_column report, and appending THAT produced `ORDER BY counthits DESC, REPLACE(...)
+// AS referer ASC` — a syntax error MySQL rejects at "AS referer ASC". Measured live:
+// Top Referring Domains, platform and trailing-slash resource all rendered empty while
+// debug.log filled with the rejection. $_as_column is the bare alias (and equals the
+// plain column when no alias is declared), so it is BOTH the only valid spelling inside
+// ORDER BY and the spelling a caller's own order_by uses — which is what lets the
+// containment check match at all. The behavioural pair lives in
+// tests/Unit/QueryBuilderTest.php; this scan is the vendor-independent gate the
+// mutation registry can fire on every CI lane.
+$top_body = slimstat_function_body($db_src, 'get_top');
+if ('' === $top_body) {
+    $failures[] = 'get_top() not found — re-anchor this section rather than deleting it';
+} else {
+    $top_no_comments = slimstat_blank_comments($top_body, false);
+    if (false === strpos($top_no_comments, "\$tiebreak_parts[] = \$_as_column . ' ASC';")) {
+        $failures[] = "get_top() no longer appends the tie-break as \$_as_column — the alias "
+            . 'is the only spelling of the sort column that is valid inside ORDER BY once '
+            . 'the select column carries AS';
+    }
+    if (false !== strpos($top_no_comments, "\$tiebreak_parts[] = \$_column . ' ASC';")) {
+        $failures[] = 'get_top() appends $_column to the tie-break — that string is '
+            . '"<expr> AS <alias>" for every as_column report, and an aliased expression '
+            . 'inside ORDER BY is the exact syntax error measured live (near "AS referer ASC")';
+    }
+}
+
+// ── the sibling sites hold the same contract at the CALLER ──────────────────
+//
+// get_top_aggr() and get_group_by() interpolate their column argument into GROUP BY and
+// ORDER BY verbatim, so an expression — or "<expr> AS <alias>" via get_top_aggr's fully
+// plumbed as_column path — is D72 pre-built, dead only because every current caller
+// passes a bare column. This holds the callers to that contract: the moment a report
+// registry entry hands either function an expression, the fix is to extend the function
+// the way get_top() was extended, not to weaken this scan.
+$reports_src = (string) file_get_contents($plugin_root . '/admin/view/wp-slimstat-reports.php');
+if ('' === $reports_src) {
+    $failures[] = 'wp-slimstat-reports.php unreadable — the caller-contract scan has no input';
+} else {
+    $reports_no_comments = slimstat_blank_comments($reports_src, false);
+    foreach (['outer_select_column', 'group_by'] as $arg_key) {
+        preg_match_all("/'" . $arg_key . "'\s*=>\s*'([^']*)'/", $reports_no_comments, $m);
+        foreach ($m[1] as $value) {
+            if ('' !== $value && !preg_match('/^[A-Za-z0-9_]+$/', $value)) {
+                $failures[] = sprintf(
+                    "a report passes %s => '%s' — get_top_aggr()/get_group_by() interpolate "
+                        . 'this into GROUP BY and ORDER BY verbatim, where an expression or an '
+                        . 'AS alias is invalid SQL (the D72 class); extend the function first',
+                    $arg_key,
+                    $value
+                );
+            }
+        }
     }
 }
 
