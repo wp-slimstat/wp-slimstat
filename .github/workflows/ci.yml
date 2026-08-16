@@ -53,6 +53,13 @@ jobs:
           # --quiet; --no-progress suppresses download bars without hiding test output.
 
       - name: Cache Composer dependencies
+        # ONLY on lanes that run composer install. The 7.4/8.0 lanes run from the
+        # CHECKOUT alone — the committed autoloader (build:autoload, #325) is exactly
+        # what they exercise — and a prefix-key restore here clobbered that committed
+        # classmap with a stale cached vendor/, failing source-level with "Schema not
+        # found" on the 8.0 lane while 8.1+ stayed green (they rebuild the classmap
+        # via dump-autoload, silently repairing the same clobber).
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         uses: actions/cache@v4
         with:
           path: vendor
@@ -443,6 +450,13 @@ jobs:
           coverage: none
 
       - name: Cache Composer dependencies
+        # ONLY on lanes that run composer install. The 7.4/8.0 lanes run from the
+        # CHECKOUT alone — the committed autoloader (build:autoload, #325) is exactly
+        # what they exercise — and a prefix-key restore here clobbered that committed
+        # classmap with a stale cached vendor/, failing source-level with "Schema not
+        # found" on the 8.0 lane while 8.1+ stayed green (they rebuild the classmap
+        # via dump-autoload, silently repairing the same clobber).
+        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         uses: actions/cache@v4
         with:
           path: vendor
