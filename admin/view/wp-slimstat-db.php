@@ -2002,6 +2002,18 @@ class wp_slimstat_db
      * @param string $alias  Table alias (e.g., 't1' or 'te').
      * @return string Prepared SQL WHERE fragment (e.g., "t1.resource = '/shop/'").
      */
+    /**
+     * AND a caller-supplied scope onto a WHERE — parenthesized, because the caller's
+     * clause may contain OR (the email loop already ANDs a report's own `where` with
+     * `author = %s` upstream). One owner for that invariant: a scoped aggregate that
+     * appends without the parens is a silent precedence bug. Empty scope returns the
+     * WHERE untouched, byte-for-byte.
+     */
+    private static function and_extra_where($where, $extra_where)
+    {
+        return '' === $extra_where ? $where : $where . ' AND (' . $extra_where . ')';
+    }
+
     private static function build_goal_where($goal, $alias = '')
     {
         // Read keys defensively: legacy/malformed stored goals or funnel steps
@@ -2100,7 +2112,7 @@ class wp_slimstat_db
      * @param array $goal Goal definition.
      * @return array ['total' => int, 'uniques' => int, 'cr' => float]
      */
-    public static function get_goal_results($goal)
+    public static function get_goal_results($goal, $extra_where = '')
     {
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
@@ -2115,7 +2127,15 @@ class wp_slimstat_db
         // Built from the normalized filters and a bucketed range — see
         // results_cache_key(). The old key hashed get_combined_where()'s SQL, which
         // moved every second and every request. (D33)
-        $cache_key = self::results_cache_key('goal', (string) $goal['id'], $cache_ver);
+        //
+        // A caller-scoped WHERE must be IN the key, or the fix it exists for undoes
+        // itself: the per-author email loop runs every author in ONE request, so
+        // without the key component the first author's numbers would be served to all
+        // the rest — from the memo below deterministically, from this transient for
+        // five minutes. Empty extra keeps the exact pre-D58 key, so dashboards keep
+        // their cache continuity.
+        $goal_key  = (string) $goal['id'] . ('' === $extra_where ? '' : '|' . md5($extra_where));
+        $cache_key = self::results_cache_key('goal', $goal_key, $cache_ver);
 
         // Per-request memo keyed by the result-determining signature (criteria +
         // filters + cache version), NOT the goal id — so several goals with the
@@ -2138,7 +2158,7 @@ class wp_slimstat_db
             // key, so a memo or transient hit skips this get_combined_where() work
             // entirely — the shape get_funnel_results() already uses.
             $filters_where  = self::get_combined_where('', '*', true, 't1');
-            $where_combined = $goal_where . ' AND ' . $filters_where;
+            $where_combined = self::and_extra_where($goal_where . ' AND ' . $filters_where, $extra_where);
 
             if ($is_event) {
                 $from = sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats);
@@ -2152,7 +2172,9 @@ class wp_slimstat_db
             // match funnel step-1 counts for the same rule. (#3)
             $uniques = self::count_unique_visitors($from, $where_combined);
 
-            $total_visitors = self::get_total_unique_visitors();
+            // The SAME scope as the numerator: a per-author conversion rate over the
+            // whole site's visitors would be a ratio of two different populations.
+            $total_visitors = self::get_total_unique_visitors($extra_where);
             $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
 
             // total_visitors is the CR denominator — returned so the card can show
@@ -2171,11 +2193,15 @@ class wp_slimstat_db
      *
      * @return int
      */
-    private static function get_total_unique_visitors()
+    private static function get_total_unique_visitors($extra_where = '')
     {
-        static $request_cache = null;
-        if ($request_cache !== null) {
-            return $request_cache;
+        // Keyed memo, not a scalar: the per-author email loop asks for a different
+        // scope per author within one request, and a scalar memo would hand author
+        // two the denominator of author one.
+        static $request_cache = [];
+        $memo_key = md5($extra_where);
+        if (isset($request_cache[$memo_key])) {
+            return $request_cache[$memo_key];
         }
 
         // Version-key like the goal/funnel transients so a CRUD cache bump (which
@@ -2183,25 +2209,28 @@ class wp_slimstat_db
         $cache_ver = get_option('slimstat_goals_cache_ver', '0');
         // Same shared builder as goals and funnels — this denominator is the single
         // most expensive statement on the goals screen, and it was recomputed on every
-        // render for the same reason. (D37)
-        $cache_key = self::results_cache_key('uv', '', $cache_ver);
+        // render for the same reason. (D37) Empty extra keeps the exact pre-D58 key.
+        // The memo token IS the transient's scope token — one digest, computed once, so
+        // the two layers cannot disagree about what a scope is.
+        $cache_key = self::results_cache_key('uv', '' === $extra_where ? '' : $memo_key, $cache_ver);
         $cached    = get_transient($cache_key);
 
         if (false !== $cached) {
-            $request_cache = intval($cached);
-            return $request_cache;
+            $request_cache[$memo_key] = intval($cached);
+            return $request_cache[$memo_key];
         }
 
         // Same NULL-safe visitor identity as the goal numerator (count_unique_visitors)
         // so the conversion-rate denominator and numerator stay consistent. (#3)
         // The WHERE is built only past the cache check — it drives the query, not the key.
-        $request_cache = self::count_unique_visitors(
+        $total = self::count_unique_visitors(
             sprintf('%s t1', $GLOBALS['wpdb']->prefix . 'slim_stats'),
-            self::get_combined_where('', '*', true, 't1')
+            self::and_extra_where(self::get_combined_where('', '*', true, 't1'), $extra_where)
         );
 
-        set_transient($cache_key, $request_cache, 15 * MINUTE_IN_SECONDS);
-        return $request_cache;
+        set_transient($cache_key, $total, 15 * MINUTE_IN_SECONDS);
+        $request_cache[$memo_key] = $total;
+        return $total;
     }
 
     /**
@@ -2220,6 +2249,13 @@ class wp_slimstat_db
         // import) would otherwise compute an aggregate per stored goal. (D14)
         $remaining = (int) apply_filters('slimstat_max_goals', 1);
 
+        // The caller's WHERE, honoured at last. This function declared $_args and read
+        // none of it, so the per-author email loop — which ANDs `author = %s` into the
+        // args of every report it mails — sent every author the SITE-WIDE goal numbers
+        // under their own name. (D58; the registered Expected Diff is R9: each author's
+        // numbers FALL to their own.)
+        $extra_where = empty($_args['where']) ? '' : (string) $_args['where'];
+
         foreach ($goals as $goal) {
             if (empty($goal['active']) || empty($goal['name']) || empty($goal['dimension'])) {
                 continue;
@@ -2228,7 +2264,7 @@ class wp_slimstat_db
                 break;
             }
             $remaining--;
-            $data      = self::get_goal_results($goal);
+            $data      = self::get_goal_results($goal, $extra_where);
             $results[] = [
                 'goal_name' => $goal['name'],
                 'uniques'   => $data['uniques'],
@@ -2374,7 +2410,7 @@ class wp_slimstat_db
      * @param array $funnel Funnel definition with steps array.
      * @return array Array of step results: name, visitors, pct, dropoff, unreachable.
      */
-    public static function get_funnel_results($funnel)
+    public static function get_funnel_results($funnel, $extra_where = '')
     {
         if (empty($funnel['steps']) || count($funnel['steps']) < 2) {
             return [];
@@ -2385,7 +2421,13 @@ class wp_slimstat_db
         // funnels — and a server-rendered funnel plus its AJAX twin — share one
         // transient. See results_cache_key() for the window and filter handling.
         // (#1, #22, builds on #19)
-        $cache_key = self::funnel_cache_key($funnel['steps'], $cache_ver);
+        //
+        // A caller-scoped WHERE joins the key for the same reason as in
+        // get_goal_results() — and here the scope-blind serve would come via the memo
+        // below deterministically. Empty extra keeps the exact pre-D58 key, so the
+        // dashboard/AJAX sharing is untouched.
+        $cache_key = self::funnel_cache_key($funnel['steps'], $cache_ver)
+            . ('' === $extra_where ? '' : '_' . md5($extra_where));
 
         // Per-request memo: a funnel rendered (or re-rendered) twice in one
         // request reuses its result instead of rebuilding temp tables again. (#12)
@@ -2402,7 +2444,9 @@ class wp_slimstat_db
 
         // Built only after the cache miss — it drives the step queries below, not the
         // cache key, so a memo/transient hit skips this get_combined_where() work.
-        $date_where = self::get_combined_where('', '*', true, 't1');
+        // The caller's scope rides inside $date_where because both step-query shapes
+        // below embed it — one append covers every step of the chain.
+        $date_where = self::and_extra_where(self::get_combined_where('', '*', true, 't1'), $extra_where);
 
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
@@ -2647,11 +2691,15 @@ class wp_slimstat_db
         $funnels   = array_slice(get_option('slimstat_funnels', []), 0, $max_funnels);
         $results   = [];
 
+        // Same D58 repair as get_goals_raw(): the caller's WHERE — the per-author
+        // email loop's `author = %s` — was declared and discarded here too.
+        $extra_where = empty($_args['where']) ? '' : (string) $_args['where'];
+
         foreach ($funnels as $funnel) {
             if (empty($funnel['name']) || empty($funnel['steps'])) {
                 continue;
             }
-            $step_results = self::get_funnel_results($funnel);
+            $step_results = self::get_funnel_results($funnel, $extra_where);
             foreach ($step_results as $i => $step) {
                 $results[] = [
                     'funnel_name' => $funnel['name'],
