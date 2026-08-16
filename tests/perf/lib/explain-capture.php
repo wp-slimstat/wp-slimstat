@@ -1,6 +1,7 @@
 <?php
 /**
- * Records every query SlimStat issues, for the CI EXPLAIN gate.
+ * Records every query SlimStat issues, for the CI EXPLAIN gate — and hosts the
+ * plan-row scan predicate the gate shares with its strength test.
  *
  * A pass-through *wrapper* around wpdb (it does not extend wpdb) that logs
  * SELECTs against SlimStat's tables before delegating. Installed by
@@ -26,6 +27,21 @@
  */
 
 declare(strict_types=1);
+
+if (!function_exists('slimstat_plan_row_is_full_scan')) {
+    /**
+     * Is this EXPLAIN row a full scan? BOTH access types qualify: type=ALL walks
+     * the table, type=index walks the ENTIRE index — the same row count through a
+     * different tree, and the gate's `!== 'ALL'` early-continue passed full index
+     * scans for as long as it existed (the I4 audit finding). Lives here rather
+     * than in explain-run.php so the strength test can require and DRIVE it —
+     * explain-run exits by design outside its eval context.
+     */
+    function slimstat_plan_row_is_full_scan(array $row): bool
+    {
+        return in_array($row['type'] ?? '', ['ALL', 'index'], true);
+    }
+}
 
 if (!class_exists('SlimStat_Explain_Capture_WPDB')) {
     /**
@@ -66,7 +82,13 @@ if (!class_exists('SlimStat_Explain_Capture_WPDB')) {
             if (stripos(ltrim($sql), 'SELECT') !== 0) {
                 return;
             }
-            if (stripos($sql, 'slim_stats') === false && stripos($sql, 'slim_events') === false) {
+            // ANY slim_ table, not an enumerated pair. The two-name filter this
+            // replaces left every other table — slim_meta, slim_user_agents, both
+            // archives, every future Phase G registration — invisible to the EXPLAIN
+            // gate (the I4 audit finding). 'slim_' WITH the underscore matches table
+            // names and cannot match 'slimstat' option keys, so core's transient
+            // reads stay out of scope.
+            if (stripos($sql, 'slim_') === false) {
                 return;
             }
 

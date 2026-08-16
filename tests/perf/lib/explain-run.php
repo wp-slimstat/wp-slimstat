@@ -164,7 +164,7 @@ foreach ($captured as $entry) {
     }
 
     foreach ($plan as $row) {
-        if (($row['type'] ?? '') !== 'ALL') {
+        if (!slimstat_plan_row_is_full_scan($row)) {
             continue;
         }
         $table = (string) ($row['table'] ?? '');
@@ -177,9 +177,11 @@ foreach ($captured as $entry) {
         $offenders[] = [
             'context'  => $entry['context'],
             'alias'    => $table,
+            'type'     => (string) ($row['type'] ?? ''),
             'rows'     => $max_rows,
             'examined' => (int) ($row['rows'] ?? 0),
             'key'      => $row['key'] ?? null,
+            'key_len'  => $row['key_len'] ?? null,
             'extra'    => $row['Extra'] ?? '',
             'sql'      => $sql,
         ];
@@ -195,12 +197,13 @@ if ($checked === 0) {
 }
 
 foreach ($offenders as $o) {
-    printf("FULL SCAN  %s\n", $o['context']);
-    printf("           alias=%s over %s rows, examined≈%s, key=%s%s\n",
+    printf("FULL %s SCAN  %s\n", 'index' === $o['type'] ? 'INDEX' : 'TABLE', $o['context']);
+    printf("           alias=%s over %s rows, examined≈%s, key=%s%s%s\n",
         $o['alias'],
         number_format($o['rows']),
         number_format($o['examined']),
         $o['key'] ?? 'NONE',
+        null !== $o['key_len'] ? ', key_len=' . $o['key_len'] : '',
         $o['extra'] !== '' ? ', extra=' . $o['extra'] : ''
     );
     printf("           %s\n\n", substr((string) preg_replace('/\s+/', ' ', $o['sql']), 0, 300));
@@ -215,7 +218,7 @@ echo wp_json_encode([
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n\n";
 
 if ($offenders !== []) {
-    printf("VERDICT: FAIL — %d full table scan(s) over %s rows\n",
+    printf("VERDICT: FAIL — %d full scan(s) over %s rows\n",
         count($offenders), number_format($threshold));
     return;
 }
