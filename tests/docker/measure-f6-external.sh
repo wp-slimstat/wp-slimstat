@@ -118,15 +118,14 @@ fi
 # tables reconciler) and tracked hits (the tracker's own repair). Any slim_ table in the WP
 # DB afterwards is the fork — before: the whole schema returns; after (P9): nothing does.
 if [ "$TOPO" = "D" ]; then
-  # FK checks off: slim_events has a foreign key to slim_stats, so a naive drop order
-  # leaves the parent behind (the guard below caught exactly that). Order-independent.
-  dc exec -T db mysql -uroot -proot wordpress -e "SET FOREIGN_KEY_CHECKS=0;
-    DROP TABLE IF EXISTS wp_slim_events, wp_slim_events_archive, wp_slim_meta, wp_slim_stats, wp_slim_stats_archive, wp_slim_user_agents;
-    SET FOREIGN_KEY_CHECKS=1;" >/dev/null 2>&1
-  dropped=$(dc exec -T db mysql -uroot -proot wordpress -N -e \
-    "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME LIKE 'wp\\_slim\\_%';" 2>/dev/null | tr -dc '0-9')
-  echo "  [D] dropped local slim_ tables; WP DB now holds ${dropped:-?} (expect 0) before the fork test"
-  [ "${dropped:-1}" = "0" ] || fail "could not drop local slim_ tables — the fork test would be confounded"
+  # lib.sh's drop (enumeration, one DROP per name, FK checks off, verify-to-zero) —
+  # this script carried its own six-name literal list, which is exactly the private
+  # copy the helper was extracted to prevent: a seventh slim_ table would have been
+  # invisible to the hardcoded list while the enumerating helper drops it.
+  # The helper fails the cell itself on either failure path (and fail() keeps the FIRST
+  # reason, so a second call here could never reach the verdict anyway).
+  drop_local_slim_tables db wordpress
+  echo "  [D] dropped local slim_ tables (verified to zero by the helper) before the fork test"
   # The admin reconciler path: an authenticated wp-admin visit runs update_tables_and_options().
   curl -s -o /dev/null -A "F6-probe/1.0" "$BASE_URL/wp-admin/admin.php?page=slimview1" >> "$ART/headers.log" 2>&1 || true
 fi

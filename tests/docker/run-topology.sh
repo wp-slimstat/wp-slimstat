@@ -317,6 +317,62 @@ if [ "$is_network" -eq 1 ] && [ "$TOPOLOGY" != "C-mainonly" ]; then
     log "[$CELL] D: local slim_ tables after probe ${local_after_probe:-?} (expect 0)"
     [ "${local_after_probe:-1}" = "0" ] || fail "the probe's render recreated a slim_ table in the WordPress database"
   fi
+
+  # ── slim_p8_01 under network scope (the Run 27/28 harness debt) ───────────────────
+  # Hand truths, seeded below on blogs 1 and 2 through the plugin's own handle:
+  #   alice — blog 1: two rows, visit 901, 300s · blog 2: one row, visit 903, 200s
+  #           → merged pageviews 3, time_on_site 500s = '8m 20s'
+  #   bobby — blog 1: one row, visit 902, no duration → pageviews 1, time_on_site 0
+  #           (four characters, not three: multisite refuses shorter usernames)
+  # A single-blog answer (alice pv 2) cannot equal the merged one (3), so a silently
+  # declined scope cannot masquerade as a pass. A divergent reading on an older Pro arm
+  # is the recorded RED, not a cell failure — mechanism in probe-uo-network.php's header.
+  #
+  # Users created in the SAME eval as the rows: they are load-bearing (the report's
+  # merge keeps only usernames with a wp_users row), and separate wp-cli round trips
+  # cost a full multisite bootstrap each.
+  wpc eval '
+    foreach (["alice", "bobby"] as $u) {
+      if (!get_user_by("login", $u)) { wp_create_user($u, wp_generate_password(), "$u@example.com"); }
+    }
+    $users = (int) count(array_filter(["alice", "bobby"], fn($u) => false !== get_user_by("login", $u)));
+    $h = apply_filters("slimstat_custom_wpdb", $GLOBALS["wpdb"]);
+    $seed = [
+      1 => [["alice","10.0.9.1","/u1",1700000000,0,901],
+            ["alice","10.0.9.1","/u2",1700000300,0,901],
+            ["bobby","10.0.9.2","/u3",1700001000,0,902]],
+      2 => [["alice","10.0.9.1","/u4",1700010000,1700010200,903]],
+    ];
+    $n = 0;
+    foreach ($seed as $blog_id => $rows) {
+      switch_to_blog($blog_id);
+      foreach ($rows as $r) {
+        $h->insert($GLOBALS["wpdb"]->prefix . "slim_stats",
+          ["username" => $r[0], "ip" => $r[1], "resource" => $r[2], "dt" => $r[3], "dt_out" => $r[4], "visit_id" => $r[5]],
+          ["%s","%s","%s","%d","%d","%d"]);
+        $n++;
+      }
+      restore_current_blog();
+    }
+    echo "UO_SEEDED=" . $n . " UO_USERS=" . $users;
+  ' > "$ART/uo-seed.log" 2>&1 || fail "uo seed failed"
+  uo_seeded=$(sed -n 's/.*UO_SEEDED=\([0-9]*\).*/\1/p' "$ART/uo-seed.log" | head -1)
+  uo_users=$(sed -n 's/.*UO_USERS=\([0-9]*\).*/\1/p' "$ART/uo-seed.log" | head -1)
+  [ "${uo_seeded:-0}" = "4" ] || fail "uo seed wrote ${uo_seeded:-0} rows, expected 4"
+  [ "${uo_users:-0}" = "2" ] || fail "uo seed has ${uo_users:-0} wp_users, expected 2"
+
+  probe_null_control wp-content/plugins/wp-slimstat/tests/docker/probe-uo-network.php \
+    "UO-NET-JSON" uo-net
+
+  # D's fork trap, extended over this NEW read path too: the UO render must not have
+  # recreated a slim table in the WordPress database (the same C46 re-check the
+  # network-view probe gets above — a new probe without it would let a fork answer
+  # plausibly).
+  if [ "$TOPOLOGY" = "D" ]; then
+    local_after_uo=$(count_slim_tables db wordpress)
+    log "[$CELL] D: local slim_ tables after uo probe ${local_after_uo:-?} (expect 0)"
+    [ "${local_after_uo:-1}" = "0" ] || fail "the uo probe's render recreated a slim_ table in the WordPress database"
+  fi
 fi
 
 # ── shape assertions ────────────────────────────────────────────────────────

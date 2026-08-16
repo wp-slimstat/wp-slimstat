@@ -86,6 +86,31 @@ cleanup_free_arm() {
   return 0
 }
 
+# Run a probe twice and byte-compare its fenced JSON — the same-arm null control every
+# measure script performs. Extracted at the FOURTH private copy, which was also the first
+# to drift (no diff evidence on mismatch, wpc hand-expanded). Args: <probe container path>
+# <marker prefix (e.g. UO-NET-JSON)> <artifact basename> ; artifacts land as
+# $ART/<base>-1.json, -2.json and, when identical, $ART/<base>.json. Uses fail(), so the
+# caller's cell FAILs (without exiting) on any probe error or a mismatch — and a mismatch
+# prints the diff head, because "two different answers" with no evidence forces a container
+# re-run to learn what differed.
+probe_null_control() { # <probe_path> <marker> <base>
+  local probe="$1" marker="$2" base="$3" run
+  for run in 1 2; do
+    wpc eval-file "$probe" > "$ART/$base-run$run.out" 2>&1 || fail "$base probe run $run errored"
+    awk -v m="$marker" '$0 == m "-BEGIN" {f=1; next} $0 == m "-END" {f=0} f' \
+      "$ART/$base-run$run.out" > "$ART/$base-$run.json"
+    [ -s "$ART/$base-$run.json" ] || fail "$base probe run $run produced no JSON"
+  done
+  if cmp -s "$ART/$base-1.json" "$ART/$base-2.json"; then
+    log "[$CELL] $base null control: two runs byte-identical ($(wc -c < "$ART/$base-1.json" | tr -d ' ') bytes)"
+    cp "$ART/$base-1.json" "$ART/$base.json"
+  else
+    fail "$base null control FAILED — same arm, two different answers"
+    diff "$ART/$base-1.json" "$ART/$base-2.json" | head -20
+  fi
+}
+
 # One line of arm provenance for the CONTROLS block, same wording everywhere — the copies
 # had already diverged ('+dirty?' vs '+staged') by the time this was extracted.
 free_arm_desc() {
