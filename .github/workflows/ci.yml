@@ -133,7 +133,19 @@ jobs:
         #     env:
         #       BASE_SHA: ${{ github.event.pull_request.base.sha }}
         #     run: composer test:mutations -- "--changed=$BASE_SHA"
-        run: composer test:mutations
+        #
+        # The vendor/ restore is load-bearing on the 8.1+ lanes: the dump-autoload step
+        # above rewrites the COMMITTED autoloader (dev-inclusive), and the runner's
+        # clean-tree gate rightly ABORTS on a dirty tree — a mutation cannot be told
+        # from an edit. Scoped to vendor/, the diagnosed perturbation, on purpose: a
+        # blanket `git checkout -- .` would launder ANY future step's tracked-file
+        # edits and the abort that surfaced this very surprise could never fire again.
+        # The gates are vendor-independent and were proven against the committed build
+        # (a bare clone on the 7.4 floor), so the commit under test is the right state
+        # to mutate. Untracked files are unaffected.
+        run: |
+          git checkout -- vendor/
+          composer test:mutations
 
 ##############################################################################
 # PHPStan — static analysis (baseline-gated), every push / PR
