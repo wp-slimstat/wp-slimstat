@@ -196,6 +196,34 @@ if (!preg_match('/\'([^\']*GROUP BY visit_id[^\']*)\'/i', $mav, $sub)) {
     }
 }
 
+// ── get_top_aggr's ORDER BY carries a tie-break ─────────────────────────────────────────
+//
+// ORDER BY an aggregate alone leaves equal-count rows in PLAN order, and the derived-table
+// + join shape's plan order varies BETWEEN EXECUTIONS on MySQL 5.7 — measured as a failed
+// same-corpus null control in the Run 42 floor cells (two identical runs, tied rows 19/20
+// swapped), and as tied rows flapping between page refreshes for a human. The grouped
+// column as a second key makes the order a property of the data. Comments blanked: the
+// bare `counthits DESC` this forbids is quoted in prose right here.
+$aggr_body = slimstat_function_body(
+    (string) file_get_contents($db_path),
+    'get_top_aggr'
+);
+if ('' === $aggr_body) {
+    $failures[] = 'get_top_aggr() not found — re-anchor this section rather than deleting it';
+} else {
+    // The literal lives in a string that full blanking would remove, so comments only are
+    // blanked and the assertion is PRESENCE of the tie-broken spelling — sufficient because
+    // the single call site makes the two spellings mutually exclusive, and the registered
+    // C49 mutation proves the match fails when the bare form returns.
+    $aggr_no_comments = slimstat_blank_comments($aggr_body, false);
+    if (!preg_match('/orderBy\s*\(\s*sprintf\s*\(\s*\'counthits DESC, %s ASC\'/', $aggr_no_comments)) {
+        $failures[] = 'get_top_aggr() no longer orders by counthits DESC with the grouped '
+            . 'column as tie-break — equal-count rows return in plan order, which varies '
+            . 'between executions on 5.7 (measured: a same-corpus null control failed) and '
+            . 'between refreshes for a user';
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: GROUP BY conformance (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
@@ -204,4 +232,5 @@ if ($failures) {
     exit(1);
 }
 
-echo "PASS: the aggregate queries this seam touched name only what they group or aggregate\n";
+echo "PASS: the aggregate queries this seam touched name only what they group or aggregate, "
+    . "and get_top_aggr's ORDER BY is deterministic on ties\n";

@@ -1683,7 +1683,12 @@ class wp_slimstat_db
 			->from(sprintf('(%s) AS ts1', $subQuerySql))
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
-            ->orderBy('counthits DESC')
+            // The tie-break is load-bearing: ORDER BY an aggregate alone leaves equal-count
+            // rows in plan order, and this derived-table shape's plan order varies BETWEEN
+            // EXECUTIONS on MySQL 5.7 — measured as a failed same-corpus null control (two
+            // identical runs, rows 19/20 swapped). Tied rows also flap between page refreshes
+            // for a human. Grouped column second makes the order a property of the DATA.
+            ->orderBy(sprintf('counthits DESC, %s ASC', $_outer_select_column))
             ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])));
 
         self::maybe_enable_query_cache($query);
