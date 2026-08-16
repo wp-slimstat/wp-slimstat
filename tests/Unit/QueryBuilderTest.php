@@ -870,6 +870,25 @@ class QueryBuilderTest extends WpSlimstatTestCase
     }
 
     /**
+     * CASE PIN (blind-review finding) — MySQL column identifiers are
+     * case-insensitive, so a table whose dump spells `Fingerprint` and `VID_HASH`
+     * satisfies the historical SQL and must get the FULL ladder. Reading case as
+     * absence silently regrouped every cookieless visitor per-session — different
+     * answers, no error anywhere, on a schema the pre-probe code served correctly.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_matches_columns_case_insensitively(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'Fingerprint', 'VID_HASH']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
      * COST PIN — one SHOW COLUMNS per request, not one per funnel step: the
      * probe expectation carries ->once(), so a second build hitting the database
      * again fails this test. A silent regression to N probes per funnel chain is

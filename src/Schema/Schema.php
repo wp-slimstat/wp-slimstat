@@ -1077,11 +1077,18 @@ final class Schema
 
         $actual = [];
         foreach ($found as $row) {
-            $actual[(string) ($row['Field'] ?? '')] = (string) ($row['Type'] ?? '');
+            // Lowercased on BOTH sides of every comparison below: MySQL column
+            // identifiers are case-insensitive, so a hand-restored dump spelling a
+            // column `Fingerprint` satisfies every query that names `fingerprint` —
+            // reading it as "missing" here is a false drift report, and downstream
+            // (visitor_id_expr's tier probe) it silently drops an identity tier and
+            // changes grouping with no error anywhere.
+            $actual[strtolower((string) ($row['Field'] ?? ''))] = (string) ($row['Type'] ?? '');
         }
 
         foreach ($wanted as $column => $definition) {
-            if (!isset($actual[$column])) {
+            $key = strtolower($column);
+            if (!isset($actual[$key])) {
                 $state['missing'][] = $column;
                 continue;
             }
@@ -1089,7 +1096,7 @@ final class Schema
             $state['present'][] = $column;
 
             $declared = self::charLength($definition);
-            $onTable  = self::charLength($actual[$column]);
+            $onTable  = self::charLength($actual[$key]);
 
             if (null !== $declared && null !== $onTable && $onTable < $declared) {
                 $state['narrow'][$column] = sprintf('%d, declared %d', $onTable, $declared);

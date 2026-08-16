@@ -74,8 +74,21 @@ class AddVisitIdentity extends AbstractMigration
         // (table, column) arguments against the manifest, and a variable table name is
         // a call site that gate cannot see (the same reason admin/index.php's legacy
         // block writes its six calls out longhand).
-        return $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity')
+        $ok = $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity')
             && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
+
+        if ($ok) {
+            // The column this adds changes what visitor_id_expr() emits, and the
+            // goal/funnel/unique-visitor transients are LADDER-BLIND — their keys
+            // hash range + filters + version, never the SQL — so answers computed
+            // under the degraded ladder would otherwise serve for up to 15 more
+            // minutes after the schema is whole. Rotating the version orphans them
+            // now. Same option clear_goals_cache() rotates, microtime for its same
+            // two-writes-in-one-second reason; blind review measured the window.
+            update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
+        }
+
+        return $ok;
     }
 
     public function getDiagnostics(): array
