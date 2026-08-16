@@ -1,0 +1,20 @@
+target:    src/Migration/Migrations/AddVisitIdentity.php
+gate:      php tests/anonymous-identity-test.php
+kind:      restore-defect
+expect:    as code — the migration writes rows into the fact table
+rationale: Adds the most plausible future backfill: an UPDATE recomputing identities from surviving columns, appended after the two column ALTERs. The per-day salts are gone, so any recomputation FABRICATES an identity the visitor never had — the P2 harm, from a migration whose screen says "no data is rewritten". The gate blanks comments AND strings first, so neither the docblock's own words nor the SQL literal can trip it — what fires is the query() call as CODE.
+---
+diff --git a/src/Migration/Migrations/AddVisitIdentity.php b/src/Migration/Migrations/AddVisitIdentity.php
+--- a/src/Migration/Migrations/AddVisitIdentity.php
++++ b/src/Migration/Migrations/AddVisitIdentity.php
+@@ -74,6 +74,8 @@
+         // (table, column) arguments against the manifest, and a variable table name is
+         // a call site that gate cannot see (the same reason admin/index.php's legacy
+         // block writes its six calls out longhand).
+-        return $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity')
+-            && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
++        $ok = $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity')
++            && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
++        \wp_slimstat::$wpdb->query("UPDATE {$this->tablePrefix()}slim_stats SET vid_hash = UNHEX(MD5(ip)) WHERE vid_hash IS NULL");
++        return $ok;
+     }

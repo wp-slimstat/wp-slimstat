@@ -1,0 +1,16 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      php tests/funnel-step-identity-test.php
+kind:      guard-removal
+expect:    caches without the !$had_error guard
+rationale: When CREATE TEMPORARY TABLE ... AS SELECT fails (privilege revoked, malformed rule, deadlock), get_funnel_results() bails with $had_error and skips set_transient, so the next request recomputes. Removing the guard caches the partial result — a corrupt funnel served as a plausible zero, indefinitely on a host that revoked the privilege: the D52 silent zero at the cache layer. The gate requires the if-condition to NEGATE $had_error, so `if (true)` — which keeps the block, the call, and the comment — fails the negation requirement, not a text match.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2662,5 +2662,5 @@
+         // Don't cache a funnel whose query errored — let it recompute next time
+         // in case the failure was transient (deadlock) or the rule was fixed.
+-        if (!$had_error) {
++        if (true) {
+             set_transient($cache_key, $results, 5 * MINUTE_IN_SECONDS);
+         }

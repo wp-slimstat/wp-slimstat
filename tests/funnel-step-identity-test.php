@@ -136,6 +136,82 @@ if (!preg_match('/\$row_id_expr\s*=\s*\$is_event\s*\?\s*[\'"]te\.event_id[\'"]\s
         . 'must identify its row by te.event_id and a pageview step by t1.id';
 }
 
+// ── 5. An errored chain is never cached ─────────────────────────────────────
+//
+// When CREATE TEMPORARY TABLE … AS SELECT fails — privilege revoked, malformed step
+// rule, STRICT truncation, deadlock — the chain bails with $had_error set. That partial
+// result must not reach set_transient: a cached zero would present a corrupt funnel as
+// real data for five minutes per miss and mask a revoked CREATE TEMPORARY privilege
+// indefinitely — the silent zero this seam removed, resurrected at the cache layer.
+// Token walk, token indices as the one unit throughout (the byte-vs-token drift is the
+// exact copied-guard hazard the shared helpers exist to prevent).
+$chain_tokens = slimstat_tokenize($chain, false);
+$chain_count  = count($chain_tokens);
+
+$transient_at = [];
+foreach ($chain_tokens as $i => $t) {
+    if (is_array($t) && T_STRING === $t[0] && 'set_transient' === $t[1]) {
+        $transient_at[] = $i;
+    }
+}
+
+if (1 !== count($transient_at)) {
+    $failures[] = 'get_funnel_results() holds ' . count($transient_at) . ' set_transient '
+        . 'call(s) where exactly 1 was expected — a second cache write is a second chance to '
+        . 'cache an errored chain; re-anchor this section rather than deleting it';
+} else {
+    $guarded = false;
+    for ($i = 0; $i < $chain_count; $i++) {
+        if (!is_array($chain_tokens[$i]) || T_IF !== $chain_tokens[$i][0]) {
+            continue;
+        }
+        $cond_end = slimstat_token_paren_end($chain_tokens, $i, $chain_count);
+        if (null === $cond_end) {
+            continue;
+        }
+        $negates_flag = false;
+        for ($k = $i; $k <= $cond_end; $k++) {
+            if (is_array($chain_tokens[$k]) && T_VARIABLE === $chain_tokens[$k][0]
+                && '$had_error' === $chain_tokens[$k][1]) {
+                // Walk back over whitespace: `! $had_error` is the WPCS spelling of the
+                // same guard, and a reformat must not read as a removed guard.
+                $p = $k - 1;
+                while ($p >= 0 && is_array($chain_tokens[$p]) && T_WHITESPACE === $chain_tokens[$p][0]) {
+                    $p--;
+                }
+                if ($p >= 0 && '!' === $chain_tokens[$p]) {
+                    $negates_flag = true;
+                    break;
+                }
+            }
+        }
+        if (!$negates_flag) {
+            continue;
+        }
+        $block = slimstat_token_block_range($chain_tokens, $cond_end, $chain_count);
+        if (null !== $block && $transient_at[0] > $block[0] && $transient_at[0] < $block[1]) {
+            $guarded = true;
+            break;
+        }
+    }
+    if (!$guarded) {
+        $failures[] = 'get_funnel_results() caches without the !$had_error guard — an errored '
+            . 'chain (revoked CREATE TEMPORARY privilege, malformed rule, deadlock) would be '
+            . 'served from cache as a plausible zero, self-healing never, instead of '
+            . 'recomputing on the next request';
+    }
+}
+
+// The guard is only as real as the flag: an error path that never SETS $had_error makes
+// the branch above unreachable-in-practice while the scan stays green. Strings and
+// comments blanked, so the three required mentions are code: init, set-on-failure, guard.
+$chain_flag_mentions = substr_count(slimstat_strip_comments_and_strings($chain, false), '$had_error');
+if ($chain_flag_mentions < 3) {
+    $failures[] = 'get_funnel_results() mentions $had_error ' . $chain_flag_mentions . ' time(s) '
+        . 'where at least 3 are expected (initialised, set on CREATE failure, cache guard) — '
+        . 'the bail flag has been hollowed';
+}
+
 // ── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {
     fwrite(STDERR, 'FAIL: funnel step identity (' . count($failures) . " problem(s))\n");
@@ -146,5 +222,5 @@ if ($failures !== []) {
 }
 
 echo "PASS: funnel step identity (steps consume distinct rows; temp table inherits the "
-    . "visitor identity's own collation and width)\n";
+    . "visitor identity's own collation and width; an errored chain is never cached)\n";
 exit(0);

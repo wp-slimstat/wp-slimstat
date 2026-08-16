@@ -195,6 +195,42 @@ if (null === $expr_body) {
         . 'counts would keep resolving cookieless identity through the 32-bit visit_id';
 }
 
+// ── 9. The migration adds columns and writes NO rows — the no-backfill policy ───────────
+//
+// Historical rows keep vid_hash NULL forever: their identity inputs (the per-day salts)
+// are gone, and recomputing with today's salt would fabricate an identity the visitor
+// never had — the P2 harm, delivered by a migration. Comments AND strings are blanked,
+// so neither the docblock stating this policy nor a quoted SQL literal can satisfy or
+// trip the scan; a write statement has to appear as CODE.
+$migration_src = (string) @file_get_contents($plugin_root . '/src/Migration/Migrations/AddVisitIdentity.php');
+if ('' === $migration_src) {
+    $failures[] = 'cannot read src/Migration/Migrations/AddVisitIdentity.php — re-anchor this '
+        . 'section rather than deleting it; the no-backfill policy loses its only gate with it';
+} else {
+    $migration_code = slimstat_strip_comments_and_strings($migration_src);
+
+    // Blanking control: the raw file names addManifestColumn once in a comment and twice
+    // as calls. Exactly 2 surviving the blanking proves both that the file was read and
+    // that the blanking ran — 3 here means the scan is reading prose.
+    $call_count = substr_count($migration_code, 'addManifestColumn');
+    if (2 !== $call_count) {
+        $failures[] = "AddVisitIdentity holds {$call_count} addManifestColumn call(s) where 2 were "
+            . 'expected (slim_stats + slim_stats_archive) — the migration changed shape or the '
+            . 'blanking control failed; re-anchor this section rather than deleting it';
+    }
+
+    // Residual channel, named rather than closed: a backfill hidden behind a NEW
+    // parent-class helper would be invisible to any single-file scan. The word list pins
+    // wpdb's method surface plus hash_hmac; \b cannot fire inside identifiers, so a
+    // future deleteMarker() or $updated does not trip it.
+    if (1 === preg_match('/\b(update|insert|replace|delete|query|get_results|hash_hmac)\b/i', $migration_code, $m)) {
+        $failures[] = "AddVisitIdentity contains '{$m[1]}' as code — the migration writes rows into "
+            . 'the fact table. The no-backfill policy is load-bearing: the historical identity '
+            . 'inputs are gone, so any backfill fabricates identities the visitor never had (P2); '
+            . 'NULL on old rows is the true statement';
+    }
+}
+
 echo "\n";
 if ([] !== $failures) {
     fwrite(STDERR, 'FAIL: anonymous identity (' . count($failures) . " problem(s))\n");
@@ -205,5 +241,5 @@ if ([] !== $failures) {
 }
 
 echo "PASS: cookieless identity is 128-bit vid_hash, session-stable, indexed, erasable; "
-    . "visit_id is sequential session-only\n";
+    . "visit_id is sequential session-only; the migration backfills nothing\n";
 exit(0);
