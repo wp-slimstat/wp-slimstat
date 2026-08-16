@@ -1,3 +1,32 @@
+= 6.0.0 - 2026-08-16 =
+
+**Performance — measured, not estimated**
+* Admin charts read about half the rows they used to: totals now ride the same query as their buckets (chart row reads halved on a 150k-row corpus, answers verified byte-identical before and after).
+* The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview, 96% fewer per refused bot.
+* Schema reconciliation fell from 14 statements to 4 on a healthy install.
+
+**Numbers that change on purpose** (each verified before/after against a measured register)
+* Archived events start appearing: events now archive before their parent rows are deleted.
+* Date ranges straddling midnight stop collapsing multi-column groups.
+* Form-submit, tel: and mailto: goals start working; one press produces exactly one hit.
+* Funnels: silent zeros fixed (temp-table collation/width); overlapping steps stop double-counting, so some funnel numbers go DOWN to their true value; an errored chain is never cached.
+* "Currently Online" honours the date filter.
+* New installs default ignore_bots and async_load to on; existing sites keep their settings by construction.
+* Per-author email reports become per-author — every author used to receive the site-wide numbers.
+* Network View totals become genuinely network-wide, with correct per-column merge semantics; network membership corrected four ways (archived/deleted/spam subsites out, non-public in, other networks out) — totals can move in either direction.
+* Multisite subsites created on WP 5.1+ and WP-CLI-activated sites start tracking at all.
+* Unique-browser and unique-country aggregates stop being silently limited to 28 days.
+* Pages-per-visit counts pageviews recorded without an IP.
+* Overview "Today" and "Yesterday" stop reading 0 on every install.
+* Cookieless visits stop splitting at 5-minute boundaries; anonymous identity is a full-width private hash, so one visitor's data can no longer collide into another's (GDPR).
+* External-database installs: reports read the right database; an unreachable analytics database no longer creates a second schema inside WordPress or prints the hostname. (Connection hardening ships in Pro 3.0.0.)
+* Tied rows in top-list reports (pages, browsers, countries, entry/exit pages) stop reordering between page refreshes.
+* Same-page refreshes during an anonymous session stop double-counting, so anonymous pageview counts can decrease slightly — to their true value.
+
+**Reliability**
+* One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
+* The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared database floor is tested, not assumed.
+
 = 5.5.1 - 2026-07-26 =
 
 **Compatibility & stability**
