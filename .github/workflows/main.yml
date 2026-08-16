@@ -11,6 +11,22 @@ jobs:
     steps:
     - uses: actions/checkout@master
 
+    # A tag workflow cannot `needs:` across workflow files, so the gate queries the
+    # tagged commit's check runs directly and fails closed: no Tier-1 success, no
+    # deploy. Before this step existed, a tag on a red commit shipped to WordPress.org
+    # with no reference to CI at all. Pinned by tests/perf-gate-integrity-test.php.
+    - name: Require green Tier 1 CI for this commit
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        conclusions=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+          --paginate --jq '[.check_runs[] | select(.name | startswith("Tier 1")) | .conclusion] | unique | join(",")')
+        echo "Tier 1 conclusions for ${GITHUB_SHA}: ${conclusions:-none}"
+        if [ "$conclusions" != "success" ]; then
+          echo "deploy refused: Tier 1 is not uniformly green for this commit"
+          exit 1
+        fi
+
     - name: Install required dependencies
       run: sudo apt-get update && sudo apt-get install -y subversion
 

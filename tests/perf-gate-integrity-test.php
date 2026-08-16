@@ -223,6 +223,65 @@ foreach (preg_split('/(?=^  \w[\w-]*:\s*\n\s+name:)/m', $ci_yaml) as $job) {
     }
 }
 
+// ── 5. The wp.org deploy is gated on green CI for the tagged commit ────────
+// main.yml is tag-triggered and, until the Lane I audit (Run 36), deployed with NO
+// reference to CI at all: a tag on a red commit shipped. Tag workflows cannot
+// `needs:` across workflow files, so the gate is a step that queries the commit's
+// check runs and fails closed; this assertion pins that the step exists and that it
+// can refuse (an exit 1 in the same step).
+$main_path = $plugin_root . '/.github/workflows/main.yml';
+$main_yaml = (string) @file_get_contents($main_path);
+// Comment lines stripped BEFORE searching: a commented-out gate step still contains
+// `check-runs` and `exit 1`, and review demonstrated the unstripped check passing on
+// exactly that — the deploy fully ungated again while this assertion stayed green.
+$main_code = (string) preg_replace('/^\s*#.*$/m', '', $main_yaml);
+if ('' === $main_yaml) {
+    $failures[] = 'cannot read .github/workflows/main.yml — the deploy workflow is unauditable';
+} elseif (false === strpos($main_code, 'check-runs') || false === strpos($main_code, 'exit 1')) {
+    $failures[] = 'main.yml deploys to WordPress.org without gating on the tagged commit\'s '
+        . 'CI check runs — a tag on a red commit ships. The deploy job needs a step (CODE, '
+        . 'not a comment) that queries check-runs for GITHUB_SHA and exits 1 unless Tier 1 '
+        . 'concluded success';
+}
+
+// ── 6. Every k6 script is wired somewhere; an unreferenced script measures nothing ──
+// Five of six scripts sat orphaned while "npm run test:perf" ran exactly one — coverage
+// that reads as "perf tested" while five scenarios never execute anywhere.
+// The same $k6_scripts set sections 1-2 already walk — a second glob here could
+// silently drift from it. npm scripts may glob; a literal `tests/perf/*.js` loop wires
+// every script at once and the strpos below honours it explicitly.
+$pkg = json_decode((string) @file_get_contents($plugin_root . '/package.json'), true);
+$referenced_blob = $ci_yaml . "\n" . $main_yaml . "\n"
+    . json_encode($pkg['scripts'] ?? [], JSON_UNESCAPED_SLASHES);
+foreach ($k6_scripts as $k6_file) {
+    $base = basename($k6_file);
+    if (false === strpos($referenced_blob, $base) && false === strpos($referenced_blob, 'tests/perf/*.js')) {
+        $failures[] = "tests/perf/{$base} is referenced by no npm script and no workflow — "
+            . 'an orphaned scenario reads as coverage while never executing';
+    }
+}
+
+// ── 7. continue-on-error demands a stated reason beside it ─────────────────
+// One deliberate instance exists (Tier-2 E2E, reason in the adjacent comment). The shape
+// to prevent is the SILENT one: a gate that stops failing with nothing explaining why.
+foreach (explode("\n", $ci_yaml) as $i => $line) {
+    if (false === strpos($line, 'continue-on-error: true')) {
+        continue;
+    }
+    // Any '#' is too weak in a file that is 47%% comment lines — a section divider
+    // within six lines satisfied it. The non-brittle demand: the comment must mention
+    // the SETTING it excuses (the one legitimate instance already does).
+    $context = implode("\n", array_slice(explode("\n", $ci_yaml), max(0, $i - 6), 6));
+    if (!preg_match('/#[^\n]*continue-on-error/', $context)) {
+        $failures[] = sprintf(
+            'ci.yml line %d sets continue-on-error without an adjacent comment naming the '
+            . 'setting and its reason — a gate that stops failing silently is the vacuity '
+            . 'this file exists to prevent',
+            $i + 1
+        );
+    }
+}
+
 // ── Report ─────────────────────────────────────────────────────────────────
 if ($failures !== []) {
     fwrite(STDERR, "FAIL: perf-gate integrity (" . count($failures) . " problem(s))\n");
@@ -232,5 +291,5 @@ if ($failures !== []) {
     exit(1);
 }
 
-echo "PASS: perf-gate integrity (" . count($k6_scripts) . " k6 script(s) checked)\n";
+echo "PASS: perf-gate integrity (" . count($k6_scripts) . " k6 script(s) checked; deploy gated; no orphans; c-o-e reasoned)\n";
 exit(0);
