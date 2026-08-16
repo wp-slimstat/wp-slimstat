@@ -115,7 +115,7 @@ $object_name = '/(?:slim_|idx_|_idx)/';
 $emitters    = [];
 
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     if (in_array($rel, $ddl_exempt, true)) {
         continue;
     }
@@ -216,7 +216,7 @@ $call_sites = 0;
 $drop_sites = 0;
 
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     if ($rel === $schema_rel) {
         continue;
     }
@@ -325,7 +325,7 @@ foreach ([['add', $call_sites, 9], ['drop', $drop_sites, 1]] as [$verb, $found, 
 // Checked on the STRIPPED source, unlike the DDL scans: here the hazard is the *construct*
 // `have_innodb` being probed, and the docblock above legitimately names it.
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     if (false !== strpos(slimstat_strip_comments_and_strings((string) file_get_contents($file), false), 'have_innodb')) {
         $failures[] = "{$rel} still probes have_innodb. The variable was removed in MySQL 5.6.1, "
             . 'so the probe returns empty and the ENGINE clause is dropped on every modern '
@@ -341,7 +341,7 @@ if (method_exists($schema, 'engine') && 'InnoDB' !== $schema::engine()) {
 
 // ── 3. Fresh installs are born at the target charset (C11b/C40) ─────────────
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     $src = slimstat_blank_comments((string) file_get_contents($file), false);
     if (preg_match('/utf8_general_ci|CHARACTER SET utf8[^m]/i', $src)) {
         $failures[] = "{$rel} names a utf8mb3 collation in code. A fresh install created there "

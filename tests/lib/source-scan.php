@@ -250,6 +250,20 @@ function slimstat_own_php_files(array $paths, string $deps_prefix): array
 }
 
 /**
+ * The repo-relative form of a path produced by slimstat_own_php_files().
+ *
+ * A PREFIX strip, never `str_replace($plugin_root, '', $file)`: str_replace removes
+ * every occurrence, and the root string can also occur INSIDE the path — a checkout
+ * mounted at /w turned admin/view/wp-slimstat-db.php into admin/viewp-slimstat-db.php,
+ * and the mangled $rel silently missed its DDL exemption. A relative path that feeds
+ * an allowlist or exemption lookup must come from here, not from an inline strip.
+ */
+function slimstat_rel_path(string $plugin_root, string $file): string
+{
+    return ltrim(substr($file, strlen($plugin_root)), '/');
+}
+
+/**
  * Index of the next token that is not whitespace or a comment.
  *
  * Skipping comments matters: five assertions in this suite have passed by matching a

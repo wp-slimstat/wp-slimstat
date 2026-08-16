@@ -53,7 +53,7 @@ $own_files = slimstat_own_php_files(
 $own_files[] = $plugin_root . '/wp-slimstat.php';
 
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     $src = slimstat_strip_comments_and_strings((string) file_get_contents($file), false);
 
     if (preg_match('/function\s+count_exit_pages\s*\(/', $src)) {

@@ -177,7 +177,7 @@ foreach ($targets as $class => $methods) {
 $checked = 0;
 
 foreach ($own_files as $file) {
-    $rel    = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel    = slimstat_rel_path($plugin_root, $file);
     $tokens = token_get_all((string) file_get_contents($file));
     $count  = count($tokens);
 

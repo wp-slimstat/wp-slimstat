@@ -108,7 +108,7 @@ foreach ($files as $file) {
 
         $findings[] = sprintf(
             '%s:%d  %s::',
-            str_replace($plugin_root . '/', '', $file),
+            slimstat_rel_path($plugin_root, $file),
             $line,
             $tokens[$i][1]
         );

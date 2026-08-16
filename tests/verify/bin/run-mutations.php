@@ -114,6 +114,17 @@ function mut_target_is_pristine(string $repo, string $target): bool
  */
 function mut_evaluate(string $repo, array $spec): array
 {
+    // The parser refuses an empty `expect:` in registry files (tests/lib/mutations.php),
+    // and the evaluator must refuse what the parser refuses: a spec reaching the check
+    // below without one turns "gate red for ANY reason" into KILLED — the ADR-E8
+    // after-side hole. Refused explicitly rather than left to strpos(), whose
+    // empty-needle behaviour diverges between the 7.4 floor (false, plus a warning)
+    // and 8.0+ (0) — the divergence that read this selftest's KILLED fixture as
+    // INVALID in CI while it passed locally on 8.2.
+    if ('' === $spec['expect']) {
+        return ['verdict' => INVALID, 'detail' => 'empty expect: — the evaluator refuses what the parser refuses'];
+    }
+
     // 0. The target must be pristine, or the revert below would discard a real edit and
     //    the "before" measurement would be of somebody's work in progress.
     if (!mut_target_is_pristine($repo, $spec['target'])) {
@@ -182,19 +193,24 @@ if (in_array('--selftest', $argv, true)) {
     $removes_guard = "--- a/subject.php\n+++ b/subject.php\n@@ -1,2 +1,2 @@\n <?php\n-function guarded() { return 'GUARD'; }\n+function guarded() { return 'NOPE'; }\n";
     $touches_only_comment = "--- a/subject.php\n+++ b/subject.php\n@@ -1,2 +1,2 @@\n <?php\n-function guarded() { return 'GUARD'; }\n+function guarded() { return 'GUARD'; } // still here\n";
 
+    // `0` is a REAL expect — it is what `grep -c` prints once the construct is gone — so
+    // the KILLED fixture exercises the expect-match branch: the one whose empty-needle
+    // strpos shortcut diverged between PHP 7.4 and 8.0 and failed this selftest in CI.
     $cases = [
         ['expect' => KILLED,   'label' => 'a real gate notices the construct disappearing',
-         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '', 'rationale' => 'x', 'diff' => $removes_guard]],
+         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '0', 'rationale' => 'x', 'diff' => $removes_guard]],
         ['expect' => SURVIVED, 'label' => 'a gate that only checks a NAME does not notice a comment-only change',
-         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'name-only', 'expect' => '', 'rationale' => 'x', 'diff' => $touches_only_comment]],
+         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'name-only', 'expect' => '0', 'rationale' => 'x', 'diff' => $touches_only_comment]],
         ['expect' => INVALID,  'label' => 'an already-red gate is INVALID, never KILLED',
-         'spec' => ['target' => 'subject.php', 'gate' => 'false', 'kind' => 'construct-removal', 'expect' => '', 'rationale' => 'x', 'diff' => $removes_guard]],
+         'spec' => ['target' => 'subject.php', 'gate' => 'false', 'kind' => 'construct-removal', 'expect' => '0', 'rationale' => 'x', 'diff' => $removes_guard]],
         ['expect' => INVALID,  'label' => 'a gate that fails for the WRONG reason is INVALID, never KILLED',
          'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal',
                     'expect' => 'a string this gate never prints', 'rationale' => 'x', 'diff' => $removes_guard]],
         ['expect' => INVALID,  'label' => 'a stale diff is INVALID, never SURVIVED',
-         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '', 'rationale' => 'x',
+         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '0', 'rationale' => 'x',
                     'diff' => "--- a/subject.php\n+++ b/subject.php\n@@ -1,2 +1,2 @@\n <?php\n-function absent() { return 'X'; }\n+function absent() { return 'Y'; }\n"]],
+        ['expect' => INVALID,  'label' => 'an empty expect is refused, never evaluated',
+         'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '', 'rationale' => 'x', 'diff' => $removes_guard]],
     ];
 
     echo "CONTROLS\n";

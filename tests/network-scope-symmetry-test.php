@@ -180,7 +180,7 @@ $own_files = slimstat_own_php_files(
 
 $askers = [];
 foreach ($own_files as $file) {
-    $rel = ltrim(str_replace($plugin_root, '', $file), '/');
+    $rel = slimstat_rel_path($plugin_root, $file);
     if ($rel === $merge_rel) {
         continue;
     }

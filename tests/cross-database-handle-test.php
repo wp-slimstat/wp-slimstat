@@ -57,7 +57,7 @@ foreach ($files as $file) {
         continue;
     }
 
-    $rel = str_replace($plugin_root . '/', '', $file);
+    $rel = slimstat_rel_path($plugin_root, $file);
     // Tokenise the COMMENT-BLANKED source, so a chain's reconstructed text cannot contain a
     // comment that says "->posts" or "->local()" — the raw-text hazard the source-scan
     // strength gate exists to remove. Blanking preserves byte offsets, so token positions
