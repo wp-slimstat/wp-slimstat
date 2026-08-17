@@ -39,10 +39,6 @@
 
 declare(strict_types=1);
 
-// For slimstat_php80_polyfilled_functions() only — this file does its own walking, deliberately,
-// because it reads raw bytes to catch calls inside strings that a tokeniser would blank.
-require_once __DIR__ . '/lib/source-scan.php';
-
 $plugin_root = dirname(__DIR__);
 
 // ── 1. Polyfill bootstrap MUST be required from wp-slimstat.php ──────────────
@@ -62,8 +58,15 @@ if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/P
 // Symfony/Polyfill/Php80 covers these 7 (verified in
 // src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php). They are safe to use
 // in own code, so they are NOT in $forbidden_functions.
-// One owner — see the helper's docblock for why, and for the third copy it does not yet cover.
-$polyfilled = slimstat_php80_polyfilled_functions();
+// NOT read from the shared helper, and the reason is that this file does not use it as a rule.
+// The allowance here IS the absence of these names from $forbidden_functions below; $polyfilled
+// only supplies a sentence on the failure path. An earlier version imported the library for it
+// and justified the import with "two copies would let a Symfony bump widen the allowance while
+// leaving the ban short" — true of php80-syntax-scan-test.php, which BANS them, and not of this
+// file, which bans nothing with it. The import also put this file in both halves of the
+// opted-in/raw-scanner partition source-scan-strength-test.php asserts. A local list feeding one
+// diagnostic string is the smaller thing.
+$polyfilled = ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
 
 // PHP 8.1+ stdlib functions with no PHP 7.4 fallback in the bundled polyfill.
 // Add later-version functions here as the language evolves.

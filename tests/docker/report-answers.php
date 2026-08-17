@@ -463,9 +463,12 @@ function slimstat_capture(callable $fn, array $flags = [])
             $query = isset($last['query']) ? substr((string) $last['query'], 0, 300) : null;
         }
 
-        // Truncated because these land in _arm_status, which run-rollup-floor.sh:127 compares
-        // byte-for-byte between two passes of the same arm; an unbounded error_str is a long way
-        // to carry something that varies.
+        // Truncated so an operator gets the failing statement without a wall of server text, and
+        // so two passes of one arm stay comparable by eye. NOT because run-rollup-floor.sh byte-
+        // compares it — an earlier version of this comment said that, and it is false: that script
+        // extracts SLIMSTAT-ANSWERS only, and _arm_status rides the CAPS line, which it never
+        // reads. The bound is hygiene with a real use; the reason given for it was borrowed from
+        // a control that cannot see this field.
         $env['error'] = [
             'str'   => (null === $str) ? null : substr($str, 0, 300),
             'query' => $query,
@@ -694,6 +697,14 @@ $slimstat_caps = [
     // read, and a failure line promising to say which path broke while carrying only the answer
     // that cannot.
     '_instrument'              => [
+        // WHICH instrument produced this. The same argument the provenance block above makes for
+        // the plugin — "nothing IN the files recorded which code produced them, so a harness that
+        // ran one revision twice emits two identical files indistinguishable from a real
+        // equivalence" — applies to the measuring end, and was recorded only for the measured
+        // one. compare-answers.sh copies this file from the current tree into BOTH arms, so the
+        // two hashes must match; a run where they differ is a harness that swapped more than it
+        // meant to, and that is worth being able to see rather than assume.
+        'fingerprint'         => md5_file(__FILE__),
         'detector_loud'       => $slimstat_detector_loud,
         'detector_suppressed' => $slimstat_detector_suppressed,
     ],
@@ -702,9 +713,10 @@ $slimstat_caps = [
 // ── the Pro arm, or the reason there isn't one ──────────────────────────────
 //
 // Never a missing key. An absent `_arm_pro` reads as "nobody looked"; the literal below says who
-// decided not to and where. Fixed string, never sprintf'd with a path or a version, because
-// run-rollup-floor.sh:127 compares this document byte-for-byte between two passes of the same arm
-// and a formatted reason is a wall clock waiting to happen.
+// decided not to and where. Fixed string, never sprintf'd with a path or a version, so two runs
+// of one arm produce the same bytes and a diff means something changed. NOT because
+// run-rollup-floor.sh compares it — that claim was here and is false: the script extracts
+// SLIMSTAT-ANSWERS only and never greps the CAPS line this key rides on.
 if (!is_dir($slimstat_pro_root)) {
     // OBSERVATIONAL, not an explanation. An earlier draft named the caller ("compare-answers.sh
     // never calls build_pro_arm()") — which is a fact about who configured the cell, not about

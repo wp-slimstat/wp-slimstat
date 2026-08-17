@@ -572,15 +572,20 @@ function slimstat_strip_comments_and_strings(string $source, ?bool $is_file = nu
  * required by a standalone gate with no WordPress and no autoloader, where a call parses fine and
  * fatals when made.
  *
- * One owner because two gates ask opposite questions of the same seven names
- * (php74-no-php80-functions-test.php allows them, php80-syntax-scan-test.php forbids them in the
- * unpolyfilled file), and a Symfony bump that adds a function would otherwise update the allowance
- * and silently leave the ban short — the drift this library exists to stop, one directory up.
+ * ONE CONSUMER TODAY, deliberately: php80-syntax-scan-test.php, which BANS these names in the one
+ * file loaded without the bootstrap. Two sibling copies exist and are knowingly left alone —
+ * php74-no-php80-functions-test.php holds its own for a diagnostic sentence (it bans nothing with
+ * it, so the drift argument does not reach it), and tests/Unit/Polyfill/Php80PolyfillLoadedTest.php
+ * has a PHPUnit data provider. Recorded rather than claimed fixed: "one list" would be a tidier
+ * sentence than the tree supports.
  *
- * A THIRD copy is still out there and is not yet reading this: the data provider in
- * tests/Unit/Polyfill/Php80PolyfillLoadedTest.php enumerates the same seven. It is a PHPUnit test
- * with an autoloader, so wiring it is a require away; recorded here rather than claimed fixed,
- * because "one list" is what this docblock would otherwise be asserting and it would be wrong.
+ * RESTATES the bootstrap rather than deriving from it, which is the weaker half of this helper.
+ * src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php is 58 lines of one repeating
+ * `if (!function_exists('X')) { function X(...) }` shape, so a guard-name-matches-declared-name
+ * regex would return exactly these seven from the authority itself. Not done here because a
+ * derivation over a scoper output that silently returns [] turns the ban into a loop over nothing
+ * — a gate that passes while banning nothing — so it needs a count floor in the same change, and
+ * that is a seam of its own rather than a line in this one.
  *
  * @return string[]
  */
