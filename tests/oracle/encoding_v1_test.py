@@ -101,7 +101,7 @@ for a, b in ct["different_after_canonicalisation"]:
 # language. It is the one thing both encoders must agree on that a value-based fixture cannot
 # see: add 'float' to one side's list alone and every value assertion still passes.
 for declared, want_kind in FIXTURES["type_kinds"].items():
-    check(f"kind of {declared}", E._kind(declared), want_kind)
+    check(f"kind of {declared}", E.kind(declared), want_kind)
 for declared in FIXTURES["types_that_must_raise"]:
     check_raises(f"{declared} must raise", lambda d=declared: E.encode_field(1, d))
     # A NULL in an unsupported column is still unsupported; returning \NUL early would hide it.

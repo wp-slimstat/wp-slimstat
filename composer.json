@@ -91,6 +91,7 @@
     "test:referer-searchterms-encoding": "php tests/referer-searchterms-encoding-test.php",
     "test:answer-envelope": "php tests/answer-envelope-classes-test.php",
     "test:fingerprint-v2": "php tests/fingerprint-v2-encoding-test.php",
+    "test:export-fidelity": "php tests/export-fidelity-test.php",
     "test:fingerprint-v2-py": "python3 tests/oracle/encoding_v1_test.py",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:migration-ui-honesty": "php tests/migration-ui-honesty-test.php",
@@ -279,7 +280,8 @@
       "@test:referer-searchterms-encoding",
       "@test:answer-envelope",
       "@test:fingerprint-v2",
-      "@test:fingerprint-v2-py"
+      "@test:fingerprint-v2-py",
+      "@test:export-fidelity"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",

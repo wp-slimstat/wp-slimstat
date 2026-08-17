@@ -133,8 +133,16 @@ if (!function_exists('slimstat_fp2_encode_field')) {
         return implode('|', $parts);
     }
 
-    /** h := SHA256(h || row), seeded with the spec version so ENCODING_V2 cannot collide. */
-    function slimstat_fp2_chain(array $row_encodings)
+    /**
+     * h := SHA256(h || row), seeded with the spec version so ENCODING_V2 cannot collide.
+     *
+     * Takes any iterable, NOT an array. The `array` hint it used to carry meant a 443k-row
+     * export could not stream through it without materialising every encoding first, so the
+     * export path open-coded the chain instead — and with it the `{len}:{token}` grammar, which
+     * then had five implementations. The Python sibling `encoding_v1.chain()` has always
+     * accepted any iterable for exactly this reason.
+     */
+    function slimstat_fp2_chain($row_encodings)
     {
         $h = hash('sha256', SLIMSTAT_FP2_SPEC, true);
         foreach ($row_encodings as $row) {

@@ -27,8 +27,12 @@ _INT_TYPES = ("tinyint", "smallint", "int", "bigint")
 _STR_TYPES = ("varchar",)
 
 
-def _kind(declared_type):
-    """Map a SHOW COLUMNS type to 'int' or 'str'. Raises on anything else, by design."""
+def kind(declared_type):
+    """Map a SHOW COLUMNS type to 'int' or 'str'. Raises on anything else, by design.
+
+    Public: read_export.py needs it, and reaching across a module boundary for a private
+    name was the only such call in tests/oracle/.
+    """
     base = declared_type.strip().lower().split("(")[0].split()[0]
     if base in _INT_TYPES:
         return "int"
@@ -43,10 +47,10 @@ def _kind(declared_type):
 
 def encode_field(value, declared_type):
     """One column -> one token. See the field-encoding table in the spec."""
-    kind = _kind(declared_type)          # validate the type even when the value is NULL
+    kind_of = kind(declared_type)          # validate the type even when the value is NULL
     if value is None:
         return NULL_TOKEN
-    if kind == "int":
+    if kind_of == "int":
         if isinstance(value, bool):      # bool is an int subclass in Python; MySQL has no bool
             raise ValueError("refusing to encode a Python bool as an integer column")
         if isinstance(value, (bytes, bytearray)):
@@ -98,7 +102,7 @@ def canonical_type(declared_type):
     data loss and must move the hash.
     """
     t = " ".join(str(declared_type).split()).strip().lower()
-    if _kind(t) == "int":
+    if kind(t) == "int":
         t = re.sub(r"\s*\(\s*\d+\s*\)", "", t)
     return t
 
