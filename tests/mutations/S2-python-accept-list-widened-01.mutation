@@ -16,4 +16,3 @@ diff --git a/tests/oracle/encoding_v1.py b/tests/oracle/encoding_v1.py
  
  
  def kind(declared_type):
- 

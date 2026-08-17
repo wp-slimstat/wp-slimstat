@@ -7,8 +7,7 @@ rationale: MOVES THE CONSTRUCT OUT AND LEAVES THE NAME BEHIND - the guard is rem
 diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
 --- a/admin/view/wp-slimstat-db.php
 +++ b/admin/view/wp-slimstat-db.php
-@@ -2107,9 +2107,8 @@
-         $tiers = [];
+@@ -2136,9 +2136,8 @@ class wp_slimstat_db
          if (self::fact_column_present('fingerprint')) {
              $tiers[] = $prefix . 'fingerprint';
          }
@@ -20,4 +19,3 @@ diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
          $tiers[] = sprintf("CONCAT('v_', %svisit_id)", $prefix);
          $tiers[] = sprintf("CONCAT('ip_', %sip)", $prefix);
  
-         return 'COALESCE(' . implode(', ', $tiers) . ')';

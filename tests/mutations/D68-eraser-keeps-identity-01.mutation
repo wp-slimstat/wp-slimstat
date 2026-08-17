@@ -7,8 +7,7 @@ rationale: Drops the vid_hash clause from the anonymization UPDATE while the sch
 diff --git a/src/Services/Privacy/DataEraser.php b/src/Services/Privacy/DataEraser.php
 --- a/src/Services/Privacy/DataEraser.php
 +++ b/src/Services/Privacy/DataEraser.php
-@@ -273,7 +273,7 @@
- 				SET ip = '0.0.0.0',
+@@ -275,7 +275,7 @@ class DataEraser
  				    other_ip = '',
  				    username = '',
  				    email = '',

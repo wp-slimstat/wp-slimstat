@@ -16,4 +16,3 @@ diff --git a/tests/bench/lib/export-snapshot.php b/tests/bench/lib/export-snapsh
      }
  
      /** Open a fresh export and create the carried manifest + meta tables. */
- 

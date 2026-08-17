@@ -16,4 +16,3 @@ diff --git a/tests/bench/lib/export-snapshot.php b/tests/bench/lib/export-snapsh
                      }
                  }
                  $insert->execute();
- 
