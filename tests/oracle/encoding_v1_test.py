@@ -13,7 +13,7 @@ entry — or to zero — leaves this gate printing OK and exiting 0, which is a 
 checks, which is decoration (the sibling gate answer-envelope-classes-test.php made the same
 argument first).
 """
-import json, os, sys
+import json, os, subprocess, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import encoding_v1 as E
@@ -64,8 +64,15 @@ check("empty table hashes to the seed alone", E.chain([]), empty["chained_hash"]
 check("empty table is NOT sha256 of nothing",
       E.chain([]) != empty["sha256_of_empty_string_for_contrast"], True)
 
+def to_cols(lines):
+    """One definition of the `name|type|NULL` grammar — it was written twice once the 5.6 case
+    landed, so a fixture-format change had two edit sites."""
+    return [(n, t, nul == "NULL") for n, t, nul in (line.split("|") for line in lines)]
+
+
 man = FIXTURES["manifest"]
-cols = [(n, t, nul == "NULL") for n, t, nul in (line.split("|") for line in man["lines"])]
+ct = FIXTURES["canonical_type"]
+cols = to_cols(man["lines"])
 check("manifest hash", E.manifest_hash(cols, man["order_by"]), man["manifest_hash"])
 widened = [(n, "varchar(45)" if n == "ip" else t, nul) for n, t, nul in cols]
 check("a widened type moves the manifest hash",
@@ -73,6 +80,22 @@ check("a widened type moves the manifest hash",
       man["manifest_hash_if_ip_widened_to_varchar_45"])
 check("a different ORDER BY moves the manifest hash",
       E.manifest_hash(cols, "dt"), man["manifest_hash_if_ordered_by_dt"])
+# The SAME schema as MySQL 5.6 spells it must hash the SAME. Non-vacuous: every other manifest
+# line here is 8.0 spelling — see tests/mutations/S2-manifest-hashes-raw-type-01.
+check("the 5.6 spelling of one schema hashes the same as the 8.0 spelling",
+      E.manifest_hash(to_cols(man["lines_as_mysql_56_spells_them"]), man["order_by"]),
+      man["manifest_hash"])
+# ...and the same property across EVERY pair, not just the one hand-written line above. The
+# single 5.6 line proves only that manifest_hash canonicalises SOMEHOW; a partial
+# canonicalisation — dropping int width but skipping the lowercase/whitespace normalisation
+# canonical_type() also performs — passes it while "INT UNSIGNED" still hashes differently from
+# "int unsigned". This asserts that manifest_hash COMPOSES with canonical_type.
+for a, b in ct["same_after_canonicalisation"]:
+    check(f"manifest_hash is blind to {a} vs {b}",
+          E.manifest_hash([("c", a, True)], "c"), E.manifest_hash([("c", b, True)], "c"))
+for a, b in ct["different_after_canonicalisation"]:
+    check(f"manifest_hash still separates {a} from {b}",
+          E.manifest_hash([("c", a, True)], "c") != E.manifest_hash([("c", b, True)], "c"), True)
 
 # The type table is read from the shared fixture, not from a constant copied into each
 # language. It is the one thing both encoders must agree on that a value-based fixture cannot
@@ -84,7 +107,6 @@ for declared in FIXTURES["types_that_must_raise"]:
     # A NULL in an unsupported column is still unsupported; returning \NUL early would hide it.
     check_raises(f"{declared} must raise even for NULL", lambda d=declared: E.encode_field(None, d))
 
-ct = FIXTURES["canonical_type"]
 for a, b in ct["same_after_canonicalisation"]:
     check(f"canonical_type({a}) == canonical_type({b})",
           E.canonical_type(a), E.canonical_type(b))
@@ -102,6 +124,16 @@ check("fingerprint over an iterator matches the chain",
       streamed["chained_hash"],
       E.chain([E.encode_row([None, ""], ["varchar(39)", "varchar(39)"]),
                E.encode_row(["", None], ["varchar(39)", "varchar(39)"])]))
+
+# The committed fixture must still be what its derivation produces. Both are in the tree, and
+# nothing tied them together: hand-edit the JSON, or edit derive-golden-fixtures.py and forget
+# to regenerate, and the two drift silently — leaving a fixture that claims to be hand-derived
+# from the spec while no longer being derivable from anything.
+derived = subprocess.run([sys.executable, os.path.join(HERE, "derive-golden-fixtures.py")],
+                         capture_output=True, text=True)
+check("the derivation script still runs", derived.returncode, 0)
+check("the committed fixture is exactly what the derivation produces",
+      derived.stdout, open(os.path.join(HERE, "golden-encoding-fixtures.json")).read())
 
 expected = FIXTURES["expected_assertions"]["python"]
 if passed + failed != expected:

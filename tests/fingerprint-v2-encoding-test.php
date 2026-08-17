@@ -103,11 +103,18 @@ $check(
 );
 
 $manifest = $fixtures['manifest'];
-$columns  = [];
-foreach ($manifest['lines'] as $line) {
-    list($name, $type, $nullable) = explode('|', $line);
-    $columns[] = [$name, $type, 'NULL' === $nullable];
-}
+// One definition of the `name|type|NULL` grammar. It was parsed in two places once the 5.6
+// case landed, which means a fixture-format change has two edit sites and the second copy
+// would go on silently parsing under the old rule.
+$to_columns = function (array $lines) {
+    $columns = [];
+    foreach ($lines as $line) {
+        list($name, $type, $nullable) = explode('|', $line);
+        $columns[] = [$name, $type, 'NULL' === $nullable];
+    }
+    return $columns;
+};
+$columns = $to_columns($manifest['lines']);
 $check('manifest hash', slimstat_fp2_manifest_hash($columns, $manifest['order_by']), $manifest['manifest_hash']);
 
 $widened = [];
@@ -124,6 +131,34 @@ $check(
     slimstat_fp2_manifest_hash($columns, 'dt'),
     $manifest['manifest_hash_if_ordered_by_dt']
 );
+// The SAME schema as MySQL 5.6 spells it must hash the SAME. Non-vacuous: every other manifest
+// line here is 8.0 spelling — see tests/mutations/S2-manifest-hashes-raw-type-01.
+$check(
+    'the 5.6 spelling of one schema hashes the same as the 8.0 spelling',
+    slimstat_fp2_manifest_hash($to_columns($manifest['lines_as_mysql_56_spells_them']), $manifest['order_by']),
+    $manifest['manifest_hash']
+);
+// ...and the same property across EVERY pair, not just the one hand-written line above. The
+// single 5.6 line proves only that manifest_hash canonicalises SOMEHOW; a partial
+// canonicalisation — dropping int width but skipping the lowercase/whitespace normalisation
+// canonical_type() also performs — passes it while `INT UNSIGNED` still hashes differently from
+// `int unsigned`. This asserts what actually matters: that manifest_hash COMPOSES with
+// canonical_type, over the pair list that already covers the class.
+foreach ($fixtures['canonical_type']['same_after_canonicalisation'] as $pair) {
+    $check(
+        "manifest_hash is blind to {$pair[0]} vs {$pair[1]}",
+        slimstat_fp2_manifest_hash([['c', $pair[0], true]], 'c'),
+        slimstat_fp2_manifest_hash([['c', $pair[1], true]], 'c')
+    );
+}
+foreach ($fixtures['canonical_type']['different_after_canonicalisation'] as $pair) {
+    $check(
+        "manifest_hash still separates {$pair[0]} from {$pair[1]}",
+        slimstat_fp2_manifest_hash([['c', $pair[0], true]], 'c')
+            !== slimstat_fp2_manifest_hash([['c', $pair[1], true]], 'c'),
+        true
+    );
+}
 
 // Routed through $check rather than bumping the counter directly: the assertions proving the
 // "fail loudly" rule is a property of the code — and not a sentence in a document — must not be

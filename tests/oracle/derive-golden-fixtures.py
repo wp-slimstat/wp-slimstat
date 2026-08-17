@@ -138,8 +138,25 @@ MANIFEST = {
         "ip|varchar(39)|NULL",
         "dt|int unsigned|NULL",
     ],
+    # The SAME schema as MySQL 5.6 spells it: integer display widths present. It must produce
+    # the SAME hash, because it is the same schema. TRANSCRIBED, not derived from "lines" by
+    # substitution — deriving it would put the INVERSE of the rule under test inside the
+    # oracle, and a second implementation of that rule is the second parser this programme
+    # keeps being bitten by. Without this key the canonicalisation is vacuous: every other
+    # line here is already 8.0's spelling. (Demonstrated — the mutation removing the
+    # canonical_type() call PASSED before this existed.)
+    "lines_as_mysql_56_spells_them": [
+        "id|int(10) unsigned|NOT NULL",
+        "ip|varchar(39)|NULL",
+        "dt|int(10) unsigned|NULL",
+    ],
     "order_by": "id",
 }
+# Guards the one way this case can go quietly vacuous again: if someone edits "lines" the
+# assertion goes loudly red, but "fixing" that red by pasting the 8.0 spelling in here would
+# leave it green while proving nothing.
+assert MANIFEST["lines_as_mysql_56_spells_them"] != MANIFEST["lines"], \
+    "the 5.6 spelling is identical to the 8.0 spelling — the case is vacuous again"
 MANIFEST["manifest_hash"] = manifest_hash(MANIFEST["lines"], MANIFEST["order_by"])
 # Same columns, one type widened -> different hash.
 MANIFEST["manifest_hash_if_ip_widened_to_varchar_45"] = manifest_hash(
@@ -195,9 +212,9 @@ out = {
     "types_that_must_raise": TYPES_THAT_MUST_RAISE,
     "canonical_type": CANONICAL_TYPE,
     "expected_assertions": {
-        "$why": "A counter nothing checks is decoration. Without this, shrinking field_cases to one entry — or to zero — leaves both gates printing PASS. The two sides differ by exactly the 3 SQL-shape checks, which have no Python analogue.",
-        "python": 61,
-        "php": 63,
+        "$why": "A counter nothing checks is decoration. Without this, shrinking field_cases to one entry — or to zero — leaves both gates printing PASS. The sides differ by 2: PHP adds 4 SQL-shape checks, Python adds 2 streamed-iterator checks, and neither has an analogue on the other side.",
+        "python": 69,
+        "php": 69,
     },
 }
 print(json.dumps(out, indent=2, ensure_ascii=False))

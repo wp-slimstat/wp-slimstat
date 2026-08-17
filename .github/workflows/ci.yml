@@ -140,7 +140,10 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry is ~0.3s today. When it outgrows a PR lane, narrow it to the
+        # The full registry is ~7.7s at 43 entries (measured 2026-08-17; the "~0.3s" this line
+        # claimed was off by ~25x and it is the sentence that decides when to narrow the run).
+        # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
+        # count, not just registry size. When it outgrows a PR lane, narrow it to the
         # mutations whose target moved — passing the ref through env: rather than
         # interpolating it into the run: line, and note this needs fetch-depth: 0:
         #

@@ -41,6 +41,22 @@ if (count($files) < $floor) {
     );
 }
 
+// The OTHER direction, which was unenforced and made the ratchet optional. `count < floor`
+// alone means adding mutations without raising FLOOR leaves them deletable at zero cost: the
+// entire protective value of a new mutation is created by hand-editing a second file that
+// nothing cross-checked. Deliberately NOT applied to FLOOR-NAME-ONLY, which is aspirational
+// (5 of 40 gates covered, 35 owed) and where exceeding the floor is the normal state.
+if (count($files) > $floor) {
+    $failures[] = sprintf(
+        'registry has %d mutation(s) but FLOOR is still %d — write %d into tests/mutations/FLOOR. '
+        . 'Until you do, the new mutation(s) are deletable without any gate noticing, which is '
+        . 'the whole thing the floor exists to prevent',
+        count($files),
+        $floor,
+        count($files)
+    );
+}
+
 if (0 === count($files)) {
     $failures[] = 'no mutation files at all';
 }

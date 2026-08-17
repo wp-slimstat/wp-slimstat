@@ -168,6 +168,11 @@
       "ip|varchar(39)|NULL",
       "dt|int unsigned|NULL"
     ],
+    "lines_as_mysql_56_spells_them": [
+      "id|int(10) unsigned|NOT NULL",
+      "ip|varchar(39)|NULL",
+      "dt|int(10) unsigned|NULL"
+    ],
     "order_by": "id",
     "manifest_hash": "0cecc83326863644d61e93f420c2ed3dfe94dd0fc86b7e1dfd4916cec092241b",
     "manifest_hash_if_ip_widened_to_varchar_45": "80accf5cd312c1c8414d859b11e4e96f9da839e242e01e999130873033e4196d",
@@ -225,8 +230,8 @@
     ]
   },
   "expected_assertions": {
-    "$why": "A counter nothing checks is decoration. Without this, shrinking field_cases to one entry — or to zero — leaves both gates printing PASS. The two sides differ by exactly the 3 SQL-shape checks, which have no Python analogue.",
-    "python": 61,
-    "php": 63
+    "$why": "A counter nothing checks is decoration. Without this, shrinking field_cases to one entry — or to zero — leaves both gates printing PASS. The sides differ by 2: PHP adds 4 SQL-shape checks, Python adds 2 streamed-iterator checks, and neither has an analogue on the other side.",
+    "python": 69,
+    "php": 69
   }
 }
