@@ -99,5 +99,61 @@ function slimstat_mutation_parse(string $path): array
         }
     }
 
+    // A hunk header STATES its own body size: `@@ -a,b +c,d @@` promises b lines on the old side
+    // (context + removed) and d on the new (context + added); an omitted count means 1. `git
+    // apply` re-derives both from the body and applies a contradicting hunk anyway, so a header
+    // that lies is invisible to every consumer — which is how a fabricated trailing context line
+    // reached five registry files by copy before anything noticed.
+    //
+    // Asking this here does NOT reintroduce the second-parser problem the delegation to
+    // `git apply --check` exists to avoid. That check answers "does this apply to the tree?";
+    // this one answers "does this file contradict itself?" — a question about the artifact alone,
+    // whose answer cannot drift as the tree moves.
+    $lines = explode("\n", $spec['diff']);
+    foreach ($lines as $i => $line) {
+        if (!preg_match('/^@@ -\d+(?:,(\d+))? \+\d+(?:,(\d+))? @@/', $line, $m)) {
+            continue;
+        }
+        // An absent count is the unified-diff spelling of 1, not of 0.
+        $want_old = ('' === ($m[1] ?? '')) ? 1 : (int) $m[1];
+        $want_new = ('' === ($m[2] ?? '')) ? 1 : (int) $m[2];
+
+        $old = $new = 0;
+        foreach (array_slice($lines, $i + 1) as $body) {
+            // '' is tested FIRST: indexing [0] on an empty string warns on PHP 8. It also ends
+            // the diff — a blank CONTEXT line is a single space, enforced by the loop above.
+            if ('' === $body || '@' === $body[0] || 0 === strpos($body, 'diff ')) {
+                break;
+            }
+            switch ($body[0]) {
+                case '-':
+                    $old++;
+                    break;
+                case '+':
+                    $new++;
+                    break;
+                case '\\':
+                    break;                  // "\ No newline at end of file" belongs to neither side
+                default:
+                    $old++;
+                    $new++;                 // context counts on both sides
+            }
+        }
+
+        if ($old !== $want_old || $new !== $want_new) {
+            $problems[] = sprintf(
+                'the hunk header on diff line %d declares -%d,+%d but its body holds -%d,+%d. '
+                . '`git apply` re-derives the counts and applies it regardless, so nothing '
+                . 'downstream can see this — regenerate the file with `git diff -U3` instead of '
+                . 'hand-editing the header.',
+                $i + 1,
+                $want_old,
+                $want_new,
+                $old,
+                $new
+            );
+        }
+    }
+
     return ['spec' => $spec, 'problems' => $problems];
 }

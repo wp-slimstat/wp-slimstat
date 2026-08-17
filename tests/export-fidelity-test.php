@@ -195,6 +195,13 @@ $names  = array_column($stats, 0);
 
 $check('slim_stats pins the v5-era set', count($stats), 33);
 $check('slim_events pins its whole set', count($events), 7);
+// The SIZE of the exclusion is asserted separately, and it is not belt-and-braces. The
+// per-column checks below self-cancel: emptying slimstat_fp2_v6_added_columns() removes two
+// assertions from this loop and adds exactly two to the pinned-type loop underneath (the set
+// grows by the two columns no longer excluded), so the assertion FLOOR stays satisfied by
+// coincidence. Measured, not theorised — that is how S3-pinned-set-includes-v6-columns-01
+// passed the count check while gutting the thing it exists to pin.
+$check('the v6 exclusion names exactly two columns', count(slimstat_fp2_v6_added_columns()), 2);
 foreach (slimstat_fp2_v6_added_columns() as $v6) {
     $check("the v6-added {$v6} is EXCLUDED by pinning", in_array($v6, $names, true), false);
 }
@@ -238,7 +245,7 @@ $check('no NULL keyword is derived as nullable (type: TINYINT UNSIGNED DEFAULT 0
 
 // A counter nothing checks is decoration: without this, deleting assertions leaves the gate
 // printing PASS with a smaller number nobody reads. Both sibling gates carry the same floor.
-$expected_assertions = 61;
+$expected_assertions = 62;
 if ($passed + count($failures) !== $expected_assertions) {
     $failures[] = sprintf(
         'assertion floor — ran %d, expected %d. Update the floor deliberately when adding or '

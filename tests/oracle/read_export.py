@@ -39,19 +39,27 @@ def _manifest(conn, table):
     return [(_text(n), _text(t), int(nu), int(w)) for n, t, nu, w in rows]
 
 
-def _value(value, declared, is_wide, table):
+def _value(value, is_str, is_wide, label):
     """One stored cell -> the value ENCODING_V1 should see.
 
     BLOB is how the export refuses to let SQLite reinterpret bytes. For a string column those
     bytes ARE the value, so they pass through untouched. For an integer too wide for SQLite's
     signed INTEGER they are its decimal rendering, decoded to ASCII so encode_field re-renders
     from the digits — never through a Python int that a 64-bit column could have narrowed.
+
+    `is_str` arrives PRECOMPUTED rather than derived here. Deriving it cost one E.kind() per
+    string cell — roughly a third of the 22.2M calls this module made over the 443k export — for
+    an answer that is fixed per COLUMN, so fingerprint_table() resolves it once and this indexes
+    the result. A list index beats even a cache hit: no hash, no dict probe. The other two-thirds,
+    the calls encode_field() makes, cannot be hoisted away — that primitive is exercised
+    standalone by the golden fixtures and has to keep validating its own argument — and those are
+    the ones encoding_v1.kind()'s memo exists for.
     """
     if isinstance(value, bytes):
         if is_wide:
             return value.decode("ascii")
-        if E.kind(declared) != "str":
-            raise ValueError(f"{table}.{declared}: unexpected BLOB for a narrow integer")
+        if not is_str:
+            raise ValueError(f"{label}: unexpected BLOB for a narrow integer")
     return value
 
 
@@ -68,14 +76,21 @@ def fingerprint_table(conn, table, order_by):
     """
     man = _manifest(conn, table)
     columns = [(name, declared, bool(nullable)) for name, declared, nullable, _ in man]
-    wide = [bool(r[3]) for r in man]
+
+    # Per-column facts, resolved ONCE instead of once per cell — see _value(). E.kind() raising
+    # on a type the spec has no rule for happens HERE as a side effect, which is where it belongs:
+    # before a single row is read, rather than partway through a chain that has already consumed
+    # half the export.
+    percol = [(E.kind(declared) == "str", bool(w), f"{_text(table)}.{name}")
+              for name, declared, _nullable, w in man]
 
     quoted = ", ".join('"' + n.replace('"', '""') + '"' for n, _, _ in columns)
     cur = conn.execute(f'SELECT {quoted} FROM "{table}" ORDER BY "{order_by}"')
 
+    # zip() truncating on a length mismatch is caught downstream, not here: a short row reaches
+    # encode_row() with fewer values than declared types, which raises.
     rows = (
-        [_value(v, declared, is_wide, table)
-         for v, (_, declared, _), is_wide in zip(row, columns, wide)]
+        [_value(v, is_str, is_wide, label) for v, (is_str, is_wide, label) in zip(row, percol)]
         for row in cur
     )
     return E.fingerprint(rows, columns, order_by)

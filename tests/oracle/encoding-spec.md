@@ -56,6 +56,14 @@ hazard does not arise; and `vid_hash` (`BINARY`) is **v6-added and therefore exc
 pinning**. Rules for those types are deliberately **not** written here — a rule nothing
 exercises is a rule nobody has tested, and this file would rather be short and true.
 
+**Type resolution is a pure function of the declared type alone.** Which rule a column takes
+depends on its `SHOW COLUMNS` type and on nothing else — not the cell's value, not the row, not
+the connection charset or session state. This is stated because both encoders now *depend* on it:
+each memoises the type→rule lookup, and both callers hoist it out of the row loop
+(`export-snapshot.php` per column before writing, `read_export.py` per column before reading).
+A future rule that inspected anything beyond the declared type would silently invalidate four
+optimisations at once, so such a rule may not be added without removing them first.
+
 ## Row encoding
 
 Each token is length-prefixed and the fields are joined:
