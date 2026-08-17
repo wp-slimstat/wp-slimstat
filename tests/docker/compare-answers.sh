@@ -290,6 +290,27 @@ if len(caps_by_arm) == 2:
         '' if not vacuous else ': ' + ', '.join(vacuous) +
         ' — these compare equal while proving nothing; enrich the corpus before trusting them'))
 
+    # THE EXTENDED TIER'S NULL CONTROL, and it only means anything in this mode. Under
+    # SLIMSTAT_NULL_CONTROL the two "arms" are the SAME code over the same corpus, so every
+    # extended surface must return the same value twice; anything that moves is nondeterministic
+    # and would read as a code difference on a real run. The answers document has had a control
+    # like this since run-rollup-floor compared two passes byte-for-byte, but the extended tier
+    # was moved onto its own line for the blind's sake and the control did not move with it —
+    # so the 22 newest values were the only ones nothing checked for repeatability.
+    #
+    # Reported per surface rather than as one verdict: "something moved" sends a reader back to
+    # a container, "get_overview_summary moved" sends them to a clock-dependent report.
+    if os.environ.get('SLIMSTAT_NULL_CONTROL') == '1':
+        unstable = sorted(
+            k for k in set(a_s) & set(b_s)
+            if json.dumps(a_s[k].get('value'), sort_keys=True)
+            != json.dumps(b_s[k].get('value'), sort_keys=True)
+            or a_s[k].get('class') != b_s[k].get('class')
+        )
+        print('  [%s] NULL CONTROL: extended surfaces repeat across two passes of one arm%s' % (
+            'PASS' if not unstable else 'FAIL',
+            '' if not unstable else ': %d moved — %s' % (len(unstable), ', '.join(unstable))))
+
 # SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
 # environmental by construction, because there is no code difference to produce one. It is the
 # decisive test for the timing block, which — unlike the answers block above — has no control of
