@@ -134,6 +134,61 @@ foreach ($files as $file) {
     }
 }
 
+// ── The .mutation files that are NOT in the registry ────────────────────────
+//
+// Some mutations cannot be registry entries: their gate is a three-cell docker matrix, and
+// `composer test:mutations` neither can run one nor should be made to depend on one. They live
+// under tests/docker/ instead — and the FLOOR, the gate-exists check and the runner all look at
+// tests/mutations/ only, so on their first day outside that glob they reproduced two of the three
+// defect classes this file's parser exists to catch: a truly-empty context line, and a hunk
+// header declaring -7,+7 over a body of -4,+4. `patch` fuzzed both in silently.
+//
+// So the FORMAT half applies to every .mutation in the tree, wherever it lives. The floor and the
+// name-only ratchet deliberately do not — those are properties of the registry, and stretching
+// them over files the runner cannot execute would make the registry's own numbers stop meaning
+// what they say.
+$loose = [];
+foreach (['tests/docker/mutations', 'tests/docker/reachability'] as $dir) {
+    foreach (glob($plugin_root . '/' . $dir . '/*.mutation') ?: [] as $path) {
+        $loose[] = $path;
+    }
+}
+foreach ($loose as $path) {
+    $id     = 'out-of-registry/' . basename($path, '.mutation');
+    $parsed = slimstat_mutation_parse($path);
+    $spec   = $parsed['spec'];
+
+    foreach ($parsed['problems'] as $problem) {
+        $failures[] = "{$id}: {$problem}";
+    }
+    if (!empty($spec['target']) && !file_exists($plugin_root . '/' . $spec['target'])) {
+        $failures[] = "{$id}: target does not exist — {$spec['target']}";
+    }
+    if (empty($spec['expect'])) {
+        $failures[] = "{$id}: no expect: header — exit code alone cannot say WHICH assertion "
+            . 'fired, so a kill could name one the mutation never touched';
+    }
+    // `git apply --check` rather than `patch`: patch FUZZES and offsets by default, so a diff
+    // that has drifted against its target still applies somewhere, and both drivers of these
+    // files use patch. This is the strictness their own comments claim to have.
+    if (!empty($spec['diff'])) {
+        $tmp = tempnam(sys_get_temp_dir(), 'mutcheck');
+        file_put_contents($tmp, $spec['diff']);
+        exec(
+            'cd ' . escapeshellarg($plugin_root) . ' && git apply --check ' . escapeshellarg($tmp) . ' 2>&1',
+            $loose_out,
+            $loose_rc
+        );
+        unlink($tmp);
+        if (0 !== $loose_rc) {
+            $failures[] = "{$id}: git apply --check rejects the diff — "
+                . trim(implode(' ', array_slice($loose_out, 0, 2)))
+                . ' (regenerate it against the current target; never fuzz it in by hand)';
+        }
+        $loose_out = [];
+    }
+}
+
 // ── name-only coverage, as a ratchet rather than a boolean ──────────────────
 // "At least one exists" cannot tell 1-of-26 from 26-of-26, and cannot notice movement in
 // either direction. What ratchets is how many CONSUMING GATES carry one — and the debt is

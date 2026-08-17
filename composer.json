@@ -94,6 +94,8 @@
     "test:export-fidelity": "php tests/export-fidelity-test.php",
     "test:fingerprint-v2-py": "python3 tests/oracle/encoding_v1_test.py",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
+    "test:control-wiring": "php tests/control-wiring-test.php",
+    "test:fp-negative": "php tests/fp-negative/run-negatives.php",
     "test:migration-ui-honesty": "php tests/migration-ui-honesty-test.php",
     "test:migration-kill-switch": "php tests/migration-kill-switch-test.php",
     "test:write-terminal": "php tests/write-terminal-gate-test.php",
@@ -178,6 +180,8 @@
     "test:phpstan": "@phpstan",
     "test:source-level": [
       "@test:source-scan-strength",
+      "@test:control-wiring",
+      "@test:fp-negative",
       "@test:mutation-registry",
       "@test:write-terminal",
       "@test:migration-kill-switch",
