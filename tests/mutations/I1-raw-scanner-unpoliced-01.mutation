@@ -2,13 +2,12 @@ target:    tests/php80-syntax-scan-test.php
 gate:      php tests/source-scan-strength-test.php
 kind:      restore-defect
 expect:    new raw-text scanner(s) of production source
-rationale: THE GENERAL HOLE, and the reason this registry entry matters more than the three above it. source-scan-strength-test.php walked tests/*-test.php and skipped every file that did not already mention source-scan.php — so its coverage set was the set that had ALREADY been made safe, and twenty-two raw scanners were invisible to the gate written to find exactly them. This mutation returns one scanner to raw matching. It was found by accident (a code comment containing "resolves each (table, column) pair" was reported as PHP's removed each()); accident is not a mechanism, so this is.
+rationale: THE GENERAL HOLE, and the reason this registry entry matters more than the three above it. source-scan-strength-test.php walked tests/*-test.php and skipped every file that did not already mention source-scan.php — so its coverage set was the set that had ALREADY been made safe, and twenty-two raw scanners were invisible to the gate written to find exactly them. This mutation returns ONE scanner to raw matching while the file's OTHER scanner stays correctly routed, which is the per-call-site claim the gate could not make until PITFALLS 62: its exemption was whole-file, so a single helper token anywhere excused every scanner beside it, and this mutation SURVIVED for three commits from c887376f. It was found by accident (a code comment containing "resolves each (table, column) pair" was reported as PHP's removed each()); accident is not a mechanism, so this is.
 ---
 diff --git a/tests/php80-syntax-scan-test.php b/tests/php80-syntax-scan-test.php
-index 1c803779..b87e5eca 100644
 --- a/tests/php80-syntax-scan-test.php
 +++ b/tests/php80-syntax-scan-test.php
-@@ -59,7 +59,7 @@ foreach ($files as $file) {
+@@ -71,7 +71,7 @@ foreach ($files as $file) {
      // Byte length is preserved by the strip, so $offset still indexes into $contents and the
      // allow-marker lookup below — which reads a COMMENT, and must therefore read the raw
      // text — stays correct.

@@ -395,6 +395,9 @@ $recorded     = [
     'ci-matrix-coverage-test.php'                => 'exempt — scans .github/workflows YAML',
     'css-selector-scope-test.php'                => 'exempt — scans CSS',
     'js-params-banner-gdpr-consistency-test.php' => 'exempt — scans JS',
+    // Surfaced by the per-call-site rule below: each of these routes SOME content through a
+    // helper and then scans other content raw, so the old whole-file exemption hid them.
+    'migration-ui-honesty-test.php'              => 'exempt — the raw subject is JS ($js), not PHP',
 
     // ── debt: PHP source matched as raw text; route through the library when next touched ──
     'access-log-author-edit-link-test.php'   => 'debt',
@@ -402,6 +405,11 @@ $recorded     = [
     'browscap-fileinfo-preflight-test.php'   => 'debt',
     'browscap-settings-isolation-test.php'   => 'debt',
     'browscap-wp-filesystem-test.php'        => 'debt',
+    // Both are "must APPEAR" scans over raw bytes — the SILENT direction this file warns about
+    // above: satisfied by the constant's name occurring in a comment, passing while guarding
+    // nothing. Hidden until the per-call-site rule below replaced the whole-file exemption.
+    'chart-query-budget-test.php'            => 'debt',
+    'purge-archive-order-test.php'           => 'debt',
     'dtr-pton-init-test.php'                 => 'debt',
     'early-translation-test.php'             => 'debt',
     'funnels-widget-compact-test.php'        => 'debt',
@@ -431,10 +439,61 @@ foreach ($gating_tests as $name => $src) {
         continue;
     }
 
-    // Any of the three tokeniser-backed helpers counts as having gone through the library.
-    foreach (['slimstat_strip_comments_and_strings', 'slimstat_blank_comments', 'slimstat_function_body'] as $helper) {
-        if (false !== strpos($src, $helper)) {
-            continue 2;
+    // A helper NAME anywhere in the file used to exempt the whole file. That is a whole-file
+    // substring test answering a per-call-site question, and it was exact only while a file held
+    // ONE scanner. When php80-syntax-scan-test.php gained a second, correctly routed scanner, the
+    // mutation returning its FIRST scanner to raw matching began to SURVIVE — the token was still
+    // present, so the file was still exempt — and composer test:mutations exited 1 for three
+    // commits before anyone ran it (PITFALLS 62).
+    //
+    // So: TAINT, not whitelist. The polarity matters and getting it backwards is what made a
+    // first attempt look impossible. Asking "is this subject PROVEN routed?" flags every derived
+    // variable — `$line` from exploding a stripped buffer reads as raw — and would need a large
+    // exemption list, which is a permission slip rather than a ratchet. Asking "is this subject
+    // PROVABLY raw file bytes?" cannot make that mistake:
+    //
+    //   seed      $v = [cast] file_get_contents(...)      — raw bytes, definitely
+    //   propagate $a = $b;                                 — plain alias ONLY
+    //   clear     $v = <anything calling a helper>         — routed from here on
+    //
+    // Any function call on the right-hand side keeps the variable out of the set, so a value
+    // derived through explode(), preg_split() or substr() is structurally incapable of being
+    // flagged. The union with the old whole-file rule is deliberate: no file that was already
+    // recorded leaves the map because of this change.
+    $tainted = [];
+    foreach (preg_split('/\R/', $src) as $line) {
+        if (preg_match('/\$(\w+)\s*=\s*(?:\([a-z]+\)\s*)?file_get_contents\s*\(/i', $line, $m)) {
+            $tainted[$m[1]] = true;
+            continue;
+        }
+        if (preg_match('/\$(\w+)\s*=\s*\$(\w+)\s*;/', $line, $m)) {
+            if (isset($tainted[$m[2]])) {
+                $tainted[$m[1]] = true;
+            }
+            continue;
+        }
+        // Routed: the value now comes out of a tokeniser-backed helper, whatever it held before.
+        if (preg_match('/\$(\w+)\s*=.*(?:slimstat_strip_comments_and_strings|slimstat_blank_comments|slimstat_function_body)\s*\(/', $line, $m)) {
+            unset($tainted[$m[1]]);
+        }
+    }
+
+    $scans_raw = false;
+    if (preg_match_all('/preg_match(?:_all)?\s*\([^,]*,\s*\$(\w+)/', $src, $subjects)) {
+        foreach ($subjects[1] as $subject) {
+            if (isset($tainted[$subject])) {
+                $scans_raw = true;
+                break;
+            }
+        }
+    }
+
+    if (!$scans_raw) {
+        // Fall back to the original whole-file question, so nothing already mapped drops out.
+        foreach (['slimstat_strip_comments_and_strings', 'slimstat_blank_comments', 'slimstat_function_body'] as $helper) {
+            if (false !== strpos($src, $helper)) {
+                continue 2;
+            }
         }
     }
 
