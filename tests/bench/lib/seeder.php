@@ -93,6 +93,15 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
 
     final class SlimStat_Bench_Seeder
     {
+        /**
+         * The RFC 5737 documentation range — never a real host, so a row carrying it is one this
+         * seeder wrote and purge() may delete. One owner because three statements depend on the
+         * literals agreeing (the row builder, the event attach, and the purge itself), and a
+         * safety claim enforced by three separate spellings is true only by coincidence.
+         */
+        private const MARKER_PREFIX = '203.0.113.';
+        private const MARKER_LIKE   = '203.0.113.%';
+
         /** @var wpdb */
         private $db;
 
@@ -124,11 +133,28 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
             // The base profile is provenance — extracted from a real dump — so an overlay states
             // its deltas beside its reasons instead of editing a measurement in place, where
             // nothing downstream could tell the difference.
-            if (is_array($decoded) && !empty($decoded['extends'])) {
+            //
+            // The chain is followed to its END, not one link. An earlier version resolved a
+            // single `extends` and stopped, which was correct while exactly one overlay existed
+            // and silently wrong the moment a second one stacked on the first: verify extends
+            // i8 extends the measured profile, and resolving one link yields i8's deltas WITHOUT
+            // the measured distributions underneath. That surfaces as "seed profile is not
+            // usable" if you are lucky, and as a corpus built from an overlay's fragments if the
+            // missing key happens not to be the one checked — which is PITFALLS 26's shape, a
+            // fixture wearing a name it did not earn.
+            $chain = [];
+            while (is_array($decoded) && !empty($decoded['extends'])) {
                 $base_path = dirname($path) . '/' . basename((string) $decoded['extends']);
-                $base_raw  = @file_get_contents($base_path);
+
+                // A cycle would otherwise spin here forever with no output to say why.
+                if (isset($chain[$base_path])) {
+                    throw new RuntimeException("seed profile extends cycle at: {$base_path}");
+                }
+                $chain[$base_path] = true;
+
+                $base_raw = @file_get_contents($base_path);
                 if ($base_raw === false) {
-                    throw new RuntimeException("overlay {$path} extends unreadable base: {$base_path}");
+                    throw new RuntimeException("overlay extends unreadable base: {$base_path}");
                 }
                 $base = json_decode($base_raw, true);
                 if (!is_array($base)) {
@@ -136,7 +162,12 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                 }
 
                 // One level deep, which is all the schema has: scalars and maps of scalars.
+                // The nearer overlay wins, so merging the far one UNDER it preserves precedence
+                // however long the chain gets.
                 foreach ($decoded as $key => $value) {
+                    if ('extends' === $key) {
+                        continue;
+                    }
                     if (is_array($value) && isset($base[$key]) && is_array($base[$key])) {
                         $base[$key] = array_merge($base[$key], $value);
                         continue;
@@ -181,6 +212,18 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
         private function nullRate(string $column, float $default = 0.0): float
         {
             return (float) ($this->profile['null_rates'][$column] ?? $default);
+        }
+
+        /**
+         * A `verify` block share, 0.0 when the profile does not ask for it.
+         *
+         * Its own function rather than a nullRate() with a flag because the two read DIFFERENT
+         * top-level sections — `null_rates` and `verify` — so merging them would need a section
+         * argument at all nine call sites to save one four-line body.
+         */
+        private function share(string $key): float
+        {
+            return (float) ($this->profile['verify'][$key] ?? 0.0);
         }
 
         /** True with probability $p, using integer randomness. */
@@ -250,6 +293,15 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                 // already holds real data, stale stats make EXPLAIN lie — which
                 // is the one thing this harness must not do.
                 $this->db->query("ANALYZE TABLE `{$table}`");
+
+                // Events are attached on THIS path too. seedTo() means "make the corpus hold N
+                // rows", which is declarative and re-runnable — so a table already at target must
+                // still end up with the events the profile asks for, or seeding an existing
+                // corpus under the verify overlay would leave the two event surfaces empty and
+                // reinstate the vacuity this profile exists to remove. The pass converges rather
+                // than repeating (see its NOT EXISTS), so calling it from both exits is safe.
+                $this->seedEvents($log);
+
                 return 0;
             }
 
@@ -275,6 +327,21 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
             $ct_null  = $this->nullRate('content_type', 0.0);
             $cat_null = $this->nullRate('category', 0.678);
             $auth_null = $this->nullRate('author', 0.198);
+
+            // ── verify-overlay knobs, every one defaulting to OFF ──────────────────────────
+            //
+            // WHY these columns are seeded at all: seed-profile-verify.json, which is the file
+            // that turns them on and states what each rate has to discriminate.
+            //
+            // WHY the default is 0.0, which is the half that lives in code: at the defaults every
+            // column below is written as NULL — exactly what the table held when the column was
+            // absent from the INSERT — so a profile without a `verify` block seeds a corpus
+            // byte-identical to the one every prior measurement used. A fixture that changed
+            // under existing callers would invalidate the runs that already cited it.
+            $ip_null     = $this->nullRate('ip');
+            $outbound    = $this->share('outbound');
+            $searchterms = $this->share('searchterms');
+            $loggedin    = $this->share('loggedin');
             $mean_pv  = max(1.0, (float) ($this->profile['mean_pageviews_per_visit'] ?? 1.0));
 
             // Autocommit off keeps each batch to one fsync instead of one per
@@ -331,10 +398,34 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                         if ($dt > $now) {
                             $dt = $now;
                         }
+                        // Only the ENTRY pageview carries searchterms, for the same reason the
+                        // referer does: a search landing is how the visit began, not something
+                        // that recurs on internal navigation.
+                        $terms = ($i === 0 && $this->chance($searchterms))
+                            ? 'query ' . random_int(1, 400)
+                            : null;
+
+                        // `loggedin:` is what UserOverview's last-login report greps for, and it
+                        // needs a username on the same row to group by. Deriving the note FROM
+                        // the username makes "both or neither" structural instead of two
+                        // expressions that have to agree.
+                        $user = $this->chance($loggedin) ? 'user-' . random_int(1, 40) : null;
+
+                        // NULL at the overlay's rate: a pageview with no ip is what separates
+                        // count(ip) from count(*), and without one the difference between them is
+                        // unobservable — R16 could not fail.
+                        //
+                        // A NULL ip would also be INVISIBLE to purge(), because `NULL LIKE '…'`
+                        // is NULL rather than true — so those rows would survive every purge,
+                        // and seedTo()'s COUNT(*) would then count the residue toward the next
+                        // run's target. The marker moves to other_ip on exactly those rows, so
+                        // "only rows this seeder created" stays a fact rather than a hope. No
+                        // captured surface reads other_ip.
+                        $no_ip = $this->chance($ip_null);
+
                         $rows[] = $this->tuple([
-                            // Documented RFC 5737 test range — never a real host,
-                            // and the marker purge() keys off.
-                            '203.0.113.' . random_int(1, 254),
+                            $no_ip ? null : self::MARKER_PREFIX . random_int(1, 254),
+                            $no_ip ? self::MARKER_PREFIX . random_int(1, 254) : null,
                             $this->pick('resource', '/'),
                             $i === 0 ? $referer : null,
                             $browser,
@@ -357,16 +448,22 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
                             $this->chance($cat_null) ? null : 'category-' . random_int(1, 40),
                             $this->chance($auth_null) ? null : 'author-' . random_int(1, 12),
                             random_int(1, 5000),
+                            // Outbound links belong to any pageview, not just the entry: a
+                            // visitor clicks away from whichever page they were on.
+                            $this->chance($outbound) ? 'https://outbound-' . random_int(1, 60) . '.example/' : null,
+                            $terms,
+                            null === $user ? null : 'loggedin:' . $user,
+                            $user,
                         ]);
                     }
                 }
 
                 $ok = $this->db->query(
                     "INSERT INTO `{$table}`
-                        (ip, resource, referer, browser, browser_version, platform, country,
+                        (ip, other_ip, resource, referer, browser, browser_version, platform, country,
                          browser_type, language, fingerprint, user_agent, visit_id, dt, dt_out,
                          screen_width, screen_height, resolution, content_type, category, author,
-                         content_id)
+                         content_id, outbound_resource, searchterms, notes, username)
                      VALUES " . implode(',', $rows)
                 );
                 if ($ok === false) {
@@ -393,7 +490,96 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
             $this->db->query("ANALYZE TABLE `{$table}`");
 
             $log && $log(sprintf('seeded %s rows', number_format($inserted)));
+
+            $this->seedEvents($log);
+
             return $inserted;
+        }
+
+        /**
+         * Attach events to already-seeded pageviews — the second half of the vacuity fix.
+         *
+         * `get_recent_events` and `get_top_events` returned EMPTY on both arms of every run,
+         * which compares equal and proves nothing about either. They were not broken; the
+         * corpus simply had no events to find, and the harness had no way to tell those two
+         * states apart.
+         *
+         * A SEPARATE PASS, not a column on the pageview INSERT, because slim_events carries a
+         * FOREIGN KEY onto slim_stats.id: a row can only be attached to a pageview that already
+         * exists and whose id the database has assigned. It also runs INSERT..SELECT rather than
+         * building tuples in PHP, so the ids come from the table instead of from an assumption
+         * about auto-increment.
+         *
+         * The description index is `(id DIV 2) % 12`, NOT `id % 12`. With the plain modulus the
+         * kind is decided by parity and the description by the same id, so every custom event
+         * landed on an odd index and `get_top_events` — which groups by NOTES, not by
+         * event_description — saw six distinct groups rather than twelve. Six is below the
+         * report's row limit, so its LIMIT never bound and a truncation defect could not show.
+         * DIV 2 first makes the two independent, which is what the sibling outbound knob already
+         * reasons about explicitly ("60 targets against a LIMIT 20 puts the cut INSIDE the data")
+         * and what this one claimed without delivering.
+         *
+         * TWO KINDS OF EVENT, and the split is the fixture's whole point. Both event reports
+         * exclude notes beginning `type:click` — get_top_events says so twice, once per branch
+         * (`notes NOT LIKE "type:click%"`, and `te.notes NOT LIKE "_ype:click%"` when a column
+         * filter is active). A first version of this method seeded ONLY click events, so both
+         * reports stayed empty on both arms and the vacuity it was written to fix survived it
+         * intact — the fixture produced rows the reports are designed never to return.
+         *
+         * So: odd ids get a custom event (`event:…`), which is what those two reports display;
+         * even ids get a click (`type:click,…`) carrying coordinates, which is what Pro's heat
+         * map filters for with `position LIKE '%,%'`. Seeding both means the exclusion is
+         * EXERCISED rather than merely satisfied — a report that stopped excluding clicks would
+         * roughly double its count instead of staying green, which is the question PITFALLS 22
+         * says to ask of any fixture: what number does it produce with the defect, and without.
+         */
+        private function seedEvents(?callable $log = null): void
+        {
+            $share = $this->share('events');
+            if ($share <= 0) {
+                return;
+            }
+
+            $stats  = $this->db->prefix . 'slim_stats';
+            $events = $this->db->prefix . 'slim_events';
+
+            if ((string) $this->db->get_var("SHOW TABLES LIKE '{$events}'") !== $events) {
+                $log && $log('  events: no slim_events table on this install — skipped');
+                return;
+            }
+
+            // Only ever attaches to rows this seeder wrote (the RFC 5737 marker purge() keys
+            // off), so a bench run against an install holding real data cannot decorate it.
+            $pct = max(1, (int) round($share * 100));
+            $ok  = $this->db->query(
+                "INSERT INTO `{$events}` (type, event_description, notes, position, id, dt)
+                 SELECT CASE WHEN (s.id % 2) = 1 THEN 2 ELSE 1 END,
+                        CONCAT('event-', ((s.id DIV 2) % 12)),
+                        CASE WHEN (s.id % 2) = 1
+                             THEN CONCAT('event:action-', ((s.id DIV 2) % 12))
+                             ELSE CONCAT('type:click,event:', ((s.id DIV 2) % 12))
+                        END,
+                        CONCAT(10 + (s.id % 900), ',', 10 + (s.id % 600)),
+                        s.id,
+                        s.dt
+                   FROM `{$stats}` s
+                  WHERE (s.ip LIKE '" . self::MARKER_LIKE . "' OR s.other_ip LIKE '" . self::MARKER_LIKE . "')
+                    AND (s.id % 100) < {$pct}
+                    AND NOT EXISTS (SELECT 1 FROM `{$events}` e WHERE e.id = s.id)"
+            );
+
+            if ($ok === false) {
+                throw new RuntimeException('event seed INSERT failed: ' . $this->db->last_error);
+            }
+
+            // Same reason seedTo() analyzes slim_stats, and the same cost: this table just went
+            // from empty to tens of thousands of rows, and get_recent_events is a JOIN whose side
+            // the optimiser picks from row estimates. innodb_stats_auto_recalc runs on a
+            // background thread, so an EXPLAIN issued moments later can still hold the
+            // empty-table estimate — which is a plan chosen from a fact that stopped being true.
+            $this->db->query("ANALYZE TABLE `{$events}`");
+            $this->db->queries = [];
+            $log && $log(sprintf('  events: %s rows attached', number_format((int) $ok)));
         }
 
         /**
@@ -409,7 +595,15 @@ if (!class_exists('SlimStat_Bench_Seeder')) {
             $removed = 0;
             do {
                 $n = (int) $this->db->query(
-                    "DELETE FROM `{$table}` WHERE ip LIKE '203.0.113.%' LIMIT {$chunk}"
+                    // BOTH columns: the verify overlay nulls `ip` on a share of the seeder's own
+                    // rows, and `NULL LIKE '…'` is NULL rather than true, so keying on ip alone
+                    // would leave those rows behind for ever — and seedTo()'s COUNT(*) would then
+                    // count the residue toward the next run's target. Those rows carry the marker
+                    // in other_ip instead, which is why ownership is asked as a question about
+                    // either column.
+                    "DELETE FROM `{$table}`
+                      WHERE (ip LIKE '" . self::MARKER_LIKE . "' OR other_ip LIKE '" . self::MARKER_LIKE . "')
+                      LIMIT {$chunk}"
                 );
                 $removed += $n;
                 $this->db->queries = [];

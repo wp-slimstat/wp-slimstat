@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "OVERLAY on seed-profile-i8.json, which is itself an overlay on the measured",
+    "seed-profile.json. Campaign S1 — the vacuity fix.",
+    "",
+    "WHY THIS EXISTS. S1's first full run produced a disposition table with zero blanks and",
+    "three surfaces that meant nothing: get_recent_events, get_top_events and get_top_outbound",
+    "returned EMPTY on BOTH arms. Empty compares equal to empty, so those three reported",
+    "agreement while proving that neither arm had been asked a question the corpus could",
+    "answer. That is PITFALLS 44's shape exactly, and PITFALLS 38's before it.",
+    "",
+    "A fourth surface failed from the other side. EXPECTED-DIFFS R16 predicts that",
+    "get_max_and_average_pages_per_visit rises when count(ip) becomes count(*) — which can only",
+    "happen if some row HAS a NULL ip. The seeder had never written one, so the two arms agreed",
+    "for a reason that has nothing to do with the fix, and R16 was unfalsifiable rather than",
+    "confirmed. A prediction that cannot fail is not evidence.",
+    "",
+    "EVERY KNOB HERE IS OFF IN THE BASE PROFILES. A caller that does not pass this overlay seeds",
+    "the corpus it always seeded, byte for byte, because each new column is written as NULL at",
+    "rate 0 — the same value the table held when the column was absent from the INSERT. Runs",
+    "already recorded against the I8 fixture stay valid.",
+    "",
+    "THE RATES ARE CHOSEN TO DISCRIMINATE, NOT TO BE REALISTIC. This is the question PITFALLS 22",
+    "demands of any fixture: what number does the check produce WITH the defect and WITHOUT it?",
+    "Each rate below is set where those two numbers differ by more than sampling noise on a",
+    "150k-row corpus, and the reason is stated per knob."
+  ],
+
+  "extends": "seed-profile-i8.json",
+  "overlay_version": 1,
+
+  "null_rates": {
+    "_why_ip": [
+      "R16's discriminator. count(ip) skips NULLs and count(*) does not, so the two forms differ",
+      "by exactly the NULL count. At 0 they are identical and R16 cannot fail; at 0.04 a 150k-row",
+      "corpus carries ~6,000 rows the old form drops — a difference no rounding can hide, while",
+      "staying far below a rate that would distort the pageviews-per-visit mean the same report",
+      "publishes.",
+      "",
+      "Production really does have NULL ips (a tracked hit whose address was unresolvable), so",
+      "this makes the fixture MORE like production, not less."
+    ],
+    "ip": 0.04
+  },
+
+  "verify": {
+    "_why_events": [
+      "0.30 attaches an event to roughly three pageviews in ten. Half are custom `event:` rows",
+      "and half are `type:click` rows, because BOTH event reports exclude notes LIKE",
+      "'type:click%' — seeding only clicks leaves them empty, which is how the first version of",
+      "this overlay failed to fix the vacuity it was written for.",
+      "",
+      "get_top_events groups by NOTES (not by event_description, which it never selects), over 12",
+      "distinct custom notes. Twelve is what makes the report's row limit bind on a corpus where",
+      "the limit is the default 20 only after other filters — and more to the point, twelve groups",
+      "each holding hundreds of rows means a dropped GROUP BY or a date filter that stopped",
+      "applying MOVES a number instead of leaving zero. An earlier draft claimed twelve while the",
+      "seeder delivered six, because the note kind and the description index were both keyed on",
+      "the row id: the seeder now indexes on (id DIV 2) so the two are independent.",
+      "",
+      "Also feeds Pro's heat map, which filters position LIKE '%,%': the seeded rows carry real",
+      "coordinates so that surface is exercisable rather than vacuous one layer out."
+    ],
+    "events": 0.30,
+
+    "_why_outbound": [
+      "0.08 of pageviews carry an outbound link across 60 distinct targets. get_top_outbound is",
+      "a LIMIT 20 report, so 60 targets means the cut line falls INSIDE the data — a report that",
+      "returned everything, or truncated at the wrong place, differs from one that does not. At",
+      "fewer than 20 distinct targets the limit would never bind and the surface would be green",
+      "no matter what the code did to it."
+    ],
+    "outbound": 0.08,
+
+    "_why_searchterms": [
+      "0.12 of ENTRY pageviews arrive with a search query. Only entry rows carry them, matching",
+      "how the tracker records a landing — seeding them on internal navigation would make the",
+      "search report count one arrival many times, which is the defect shape M2 records for",
+      "visits."
+    ],
+    "searchterms": 0.12,
+
+    "_why_loggedin": [
+      "0.02 of pageviews are logged-in hits carrying both a `loggedin:` note and the username to",
+      "group by. Pro's last-login report greps notes LIKE '%loggedin:%' and groups by username",
+      "over 40 users; 2% of 150k is ~3,000 rows, so MAX(dt) per user has real spread instead of",
+      "resolving from one row each. Run 46 measured that query on the live 443k table and chose",
+      "NOT to index it — this is the corpus that lets that decision be re-tested rather than",
+      "re-asserted."
+    ],
+    "loggedin": 0.02
+  }
+}

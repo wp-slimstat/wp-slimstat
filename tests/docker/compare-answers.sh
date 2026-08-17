@@ -29,6 +29,13 @@ DB_PORT="${6:-13970}"
 PHP="${TOPOLOGY_PHP:-8.2}"
 WP="${TOPOLOGY_WP:-6.7}"
 
+# The corpus profile. Defaults to I8 so every run recorded against this script keeps meaning
+# what it meant; the campaign passes seed-profile-verify.json, which stacks events, outbound
+# links, NULL ips, searchterms and `loggedin:` notes on top of I8 so the surfaces that compared
+# EMPTY against EMPTY have something to answer. The overlay's own knobs default to off, so the
+# two profiles differ only where the file says they do.
+SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:-seed-profile-i8.json}"
+
 CELL="answers"
 CELL_DIR="$WORK_ROOT/answers/$CELL"
 WP_DIR="$CELL_DIR/wp"
@@ -127,9 +134,9 @@ wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || { err "activate fai
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' \
     >>"$ART/install.log" 2>&1
 
-log "[$CELL] seeding $ROWS rows over $DAYS days (I8 overlay)"
+log "[$CELL] seeding $ROWS rows over $DAYS days ($SEED_PROFILE)"
 dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
-   wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" seed-profile-i8.json \
+   wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" "$SEED_PROFILE" \
    > "$ART/seed.log" 2>&1 || { err "seeding failed"; exit 1; }
 
 # Absolute window bounds, computed ONCE and passed to both arms. "Last 30 days" evaluated
@@ -200,6 +207,11 @@ for f in before after; do
     exit 1
   fi
 done
+# WHICH CORPUS produced this, printed with the other controls. Two archived runs are otherwise
+# indistinguishable — an I8 run and a verify run differ in whether three surfaces could answer at
+# all, and a reader who cannot tell them apart cannot tell what an "identical" covered.
+echo "  seed profile: $SEED_PROFILE  (rows=$ROWS days=$DAYS)"
+
 SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
@@ -242,6 +254,7 @@ if same_arm and not null_control_env:
 # instrument's core tier is what this comparison actually diffs — but a finding nobody prints is
 # a finding nobody has. Read from the extracted CAPS record, per arm, so the two eras' errors are
 # attributable rather than merged.
+caps_by_arm = {}
 for label in ('before', 'after'):
     caps_path = os.path.join(art, label + '-caps.json')
     if not os.path.exists(caps_path) or os.path.getsize(caps_path) == 0:
@@ -253,6 +266,7 @@ for label in ('before', 'after'):
         print('  [WARN] %s arm CAPS record unreadable (%s)' % (label, exc))
         continue
     surfaces = caps.get('_arm_surfaces', {})
+    caps_by_arm[label] = surfaces
     bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
     unsup = sorted(k for k, v in surfaces.items() if v.get('class') == 'unsupported')
     print('  [%s] %s arm extended surfaces: %d captured, %d errored%s' % (
@@ -260,6 +274,21 @@ for label in ('before', 'after'):
         (' — ' + ', '.join(bad)) if bad else ''))
     if unsup:
         print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
+
+# THE VACUITY FLOOR, mechanised rather than remembered. A surface EMPTY on BOTH arms compares
+# equal and reports agreement about a question neither arm was asked — PITFALLS 44's shape, and
+# PITFALLS 38's before it. Three surfaces sat in exactly that state for the whole of S1's first
+# run (no events, no outbound links in the corpus) and nothing said so; the corpus overlay fixed
+# those three, and this line is what catches the fourth. Stated as a control rather than left to
+# whoever reads the table, because "I checked" is the thing this programme keeps disproving.
+if len(caps_by_arm) == 2:
+    a_s, b_s = caps_by_arm['before'], caps_by_arm['after']
+    vacuous = sorted(k for k in set(a_s) & set(b_s)
+                     if a_s[k].get('class') == 'empty' and b_s[k].get('class') == 'empty')
+    print('  [%s] no extended surface is empty on BOTH arms%s' % (
+        'PASS' if not vacuous else 'FAIL',
+        '' if not vacuous else ': ' + ', '.join(vacuous) +
+        ' — these compare equal while proving nothing; enrich the corpus before trusting them'))
 
 # SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
 # environmental by construction, because there is no code difference to produce one. It is the
