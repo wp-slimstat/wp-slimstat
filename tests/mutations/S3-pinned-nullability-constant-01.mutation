@@ -1,0 +1,19 @@
+target:    tests/bench/lib/pinned-columns.php
+gate:      composer test:export-fidelity
+kind:      restore-defect
+expect:    NOT NULL is derived as not-nullable
+rationale: Replaces the derived nullability with a constant `true`, so every pinned column reads as NULLable. REGISTERED BECAUSE THE GATE COULD NOT SEE IT: the TYPE half of the derivation was asserted and this half was not, so this exact change left the gate byte-identical at its assertion count while the real slim_stats manifest hash moved 5e984655 -> 7c88d02b. slimstat_fp2_kind() cannot catch it either - it truncates at the first space, so `VARCHAR(39) DEFAULT NULL` and `VARCHAR(39)` are the same string to it. Nullability is half of what the manifest hash claims about a schema, and it was travelling on nothing. Three shapes are pinned now: NOT NULL present, DEFAULT NULL present, and no NULL keyword at all - the last being the case the stripos rule gets right without the keyword appearing.
+---
+diff --git a/tests/bench/lib/pinned-columns.php b/tests/bench/lib/pinned-columns.php
+--- a/tests/bench/lib/pinned-columns.php
++++ b/tests/bench/lib/pinned-columns.php
+@@ -53,7 +53,7 @@
+             // fingerprint would be guessing at, and a guessed type is a hash that means nothing.
+             throw new RuntimeException("cannot read a declared type out of `{$name} {$fragment}`");
+         }
+-        return [$type, false === stripos($fragment, 'NOT NULL')];
++        return [$type, true];
+     }
+ 
+     /**
+ 

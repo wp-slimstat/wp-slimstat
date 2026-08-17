@@ -1,0 +1,19 @@
+target:    tests/bench/lib/export-snapshot.php
+gate:      composer test:export-fidelity
+kind:      restore-defect
+expect:    CHAINED HASH agrees across languages
+rationale: Makes the export treat every integer as fitting SQLite's INTEGER, which is SIGNED 64-bit. BIGINT UNSIGNED runs to 18446744073709551615 and content_id is one, so every value above 2^63-1 is silently narrowed on the way out and the Python re-encode chains a different number than PHP wrote. This is the defect S2 caught in its fixture loader (the BIGINT maximum decoding as a float one larger) relocated into the export itself, where it would corrupt the corpus the oracle reads rather than one test's expectation. The narrow-integer path is left intact so the kill demonstrates the WIDTH rule, not the int/str dispatch beside it.
+---
+diff --git a/tests/bench/lib/export-snapshot.php b/tests/bench/lib/export-snapshot.php
+--- a/tests/bench/lib/export-snapshot.php
++++ b/tests/bench/lib/export-snapshot.php
+@@ -45,7 +45,7 @@
+         // type string. It normalises case, whitespace and display width first, so BIGINT(20)
+         // UNSIGNED and `bigint  unsigned` both land — where a bespoke pattern with `.*` between
+         // the anchors was looser than the canonicaliser in one direction and stricter in another.
+-        return 'bigint unsigned' === slimstat_fp2_canonical_type($type);
++        return false;
+     }
+ 
+     /** Open a fresh export and create the carried manifest + meta tables. */
+ 

@@ -158,6 +158,25 @@ try {
     );
     @unlink($poisoned);
 
+    // ── A TAMPERED MANIFEST must be caught too ────────────────────────────────────────────
+    // The poison control above flips a VALUE. But the manifest travels INSIDE the export, so a
+    // reader that trusts it cannot detect an export written under a different schema —
+    // demonstrated: widening a column and marking it NOT NULL in `_manifest` left chained_hash
+    // identical and the reader exited 0. Passing the independently derived manifest hash makes
+    // the schema half as out-of-band as `order_by` and `spec` already are.
+    $tampered = sys_get_temp_dir() . '/slimstat-export-tampered-' . getmypid() . '.sqlite';
+    @unlink($tampered);
+    copy($tmp, $tampered);
+    $t = new SQLite3($tampered);
+    $t->exec('UPDATE _manifest SET type = \'varchar(255)\', nullable = 0 WHERE name = \'ip\'');
+    $t->close();
+    $expect_hash = escapeshellarg($php['manifest_hash']);
+    $ok  = json_decode((string) shell_exec('python3 ' . $py . ' ' . escapeshellarg($tmp) . ' slim_stats id ' . $expect_hash . ' 2>&1'), true);
+    $bad = json_decode((string) shell_exec('python3 ' . $py . ' ' . escapeshellarg($tampered) . ' slim_stats id ' . $expect_hash . ' 2>&1'), true);
+    $check('the untampered export passes its expected manifest hash', isset($ok['chained_hash']), true);
+    $check('a TAMPERED manifest is refused', isset($bad['error']), true);
+    @unlink($tampered);
+
     // ── Refusals ──────────────────────────────────────────────────────────────────────────
     try {
         slimstat_fp2_export_open($tmp, 'wp_');
@@ -199,12 +218,27 @@ foreach (array_merge($stats, $events) as $col) {
 // manifest hash canonicalises. Pin that the derived set carries the raw declaration through.
 $event_id_type = $events[0][1];
 $check('the derived set carries declared display width through', $event_id_type, 'INT(10)');
+
+// NULLABILITY, pinned on three deliberately different declaration shapes. The type half of the
+// derivation was gated and this half was not: replacing the whole nullability rule with a
+// constant `true` left this gate byte-identical at its assertion count while the real
+// slim_stats manifest hash moved 5e984655 -> 7c88d02b. slimstat_fp2_kind() cannot catch it —
+// it truncates at the first space, so `VARCHAR(39) DEFAULT NULL` and `VARCHAR(39)` are the same
+// to it — and nothing else read the flag.
+$nullability = [];
+foreach (array_merge($stats, $events) as $col) {
+    $nullability[$col[0]] = $col[2];
+}
+$check('NOT NULL is derived as not-nullable (id: INT UNSIGNED NOT NULL auto_increment)', $nullability['id'], false);
+$check('DEFAULT NULL is derived as nullable (ip: VARCHAR(39) DEFAULT NULL)', $nullability['ip'], true);
+// The shape the `stripos('NOT NULL')` rule gets right without the keyword being present at all.
+$check('no NULL keyword is derived as nullable (type: TINYINT UNSIGNED DEFAULT 0)', $nullability['type'], true);
 // (That the manifest hash is BLIND to display width is gated over every pair in
 // tests/fingerprint-v2-encoding-test.php; repeating it here would be a fifth copy.)
 
 // A counter nothing checks is decoration: without this, deleting assertions leaves the gate
 // printing PASS with a smaller number nobody reads. Both sibling gates carry the same floor.
-$expected_assertions = 56;
+$expected_assertions = 61;
 if ($passed + count($failures) !== $expected_assertions) {
     $failures[] = sprintf(
         'assertion floor — ran %d, expected %d. Update the floor deliberately when adding or '
