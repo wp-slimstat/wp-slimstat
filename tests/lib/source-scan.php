@@ -563,3 +563,28 @@ function slimstat_strip_comments_and_strings(string $source, ?bool $is_file = nu
         T_CONSTANT_ENCAPSED_STRING,
     ], $is_file);
 }
+
+/**
+ * The stdlib functions Symfony's Php80 polyfill supplies — one list, two questions.
+ *
+ * Shipped code MAY use these: wp-slimstat.php requires the polyfill bootstrap, so they exist on
+ * the 7.4 floor. Code loaded WITHOUT that bootstrap may not — tests/docker/report-answers.php is
+ * required by a standalone gate with no WordPress and no autoloader, where a call parses fine and
+ * fatals when made.
+ *
+ * One owner because two gates ask opposite questions of the same seven names
+ * (php74-no-php80-functions-test.php allows them, php80-syntax-scan-test.php forbids them in the
+ * unpolyfilled file), and a Symfony bump that adds a function would otherwise update the allowance
+ * and silently leave the ban short — the drift this library exists to stop, one directory up.
+ *
+ * A THIRD copy is still out there and is not yet reading this: the data provider in
+ * tests/Unit/Polyfill/Php80PolyfillLoadedTest.php enumerates the same seven. It is a PHPUnit test
+ * with an autoloader, so wiring it is a require away; recorded here rather than claimed fixed,
+ * because "one list" is what this docblock would otherwise be asserting and it would be wrong.
+ *
+ * @return string[]
+ */
+function slimstat_php80_polyfilled_functions(): array
+{
+    return ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
+}

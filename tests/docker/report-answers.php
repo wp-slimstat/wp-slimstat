@@ -607,13 +607,28 @@ $answers['_arm_files']       = $slimstat_free['files'];
 $slimstat_chart_class = 'SlimStat\\Modules\\Chart';
 $slimstat_analytics_handle = slimstat_analytics_handle();
 
-// The detector's positive control — see `detector_live` below for why it exists. Deliberately
-// unsuppressed: the whole claim under test is that a failing statement REACHES $EZSQL_ERROR on
-// this build, and asking wpdb to be quiet about it would test the opposite. The table name is
-// one no schema declares.
-$slimstat_detector_before = slimstat_ezsql_count();
-$GLOBALS['wpdb']->query('SELECT 1 FROM __slimstat_detector_probe_absent__');
-$slimstat_detector_live = slimstat_ezsql_count() > $slimstat_detector_before;
+// The detector's positive control — see `_instrument` below for why it exists.
+//
+// TWICE, and the second one is the point. Unsuppressed, print_error()'s early return is never
+// reached, so a loud-only probe cannot tell "appends before it" from "appends after it" — and the
+// suppressed path is the one report code actually runs in (Schema, OptionClaim, Storage,
+// PurgeArchive all call suppress_errors(true)). A detector that only works while nobody is
+// suppressing fails silently on exactly the surfaces it was built for. The claims themselves are
+// enumerated once, on `_instrument` below.
+//
+// The table name is one no schema declares.
+$slimstat_detector_probe = static function () {
+    $before = slimstat_ezsql_count();
+    $GLOBALS['wpdb']->query('SELECT 1 FROM __slimstat_detector_probe_absent__');
+
+    return slimstat_ezsql_count() > $before;
+};
+
+$slimstat_detector_loud = $slimstat_detector_probe();
+
+$slimstat_suppressed_before   = $GLOBALS['wpdb']->suppress_errors(true);
+$slimstat_detector_suppressed = $slimstat_detector_probe();
+$GLOBALS['wpdb']->suppress_errors($slimstat_suppressed_before);
 
 // One root, one predicate, read by both this block and the _arm_pro block below — so the two
 // cannot disagree in the artifact about whether Pro was there. Network-activated Pro counts:
@@ -639,23 +654,11 @@ $slimstat_caps = [
     // exactly one of them, so the precondition every classification rests on is only auditable
     // with this recorded beside it.
     'ext_object_cache'         => function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache(),
-    // THE DETECTOR PROVES ITSELF, per arm, in the container that matters.
-    //
-    // Everything this instrument classifies rests on three claims about WordPress CORE — that
-    // wpdb::query() calls print_error() whenever last_error is set, that print_error() appends to
-    // $EZSQL_ERROR BEFORE its suppress_errors early return, and that the entry survives a later
-    // successful query clearing last_error. They are true of the core this was written against,
-    // and they were asserted in prose and executed nowhere: the unit gate SYNTHESISES the
-    // $EZSQL_ERROR entry, so if any of the three stopped holding here, a genuinely failed query
-    // would classify as `empty`, the finding would vanish from the record, and every test would
-    // stay green. That is the guard-that-looked-like-it-worked shape, aimed at the guard.
-    //
-    // So: issue one statement that cannot succeed and read the delta. false here means every
-    // `empty` on this arm is unsafe to believe. It runs BEFORE any capture and appends to a
-    // global the classifier only ever reads as a DELTA, so it cannot colour a later surface;
-    // lib.sh's debug-log scan greps for PHP fatals and parse errors, not SQL, so it cannot trip
-    // that either.
-    'detector_live'            => $slimstat_detector_live,
+    // Deliberately NOT here: the detector's self-report. Everything in this block is a fixed-shape
+    // fact about the CODE in front of us, established by inspection; the detector result is a fact
+    // about the CONTAINER's WordPress, established by a side effect. It travels under
+    // `_instrument` below, where a reader looking for an instrument self-report will find it and
+    // where this block's opening sentence stays true.
     'network_merge_active'     => (bool) apply_filters('slimstat_network_merge_active', false),
     'geolocation_country'      => (class_exists('wp_slimstat') && isset(wp_slimstat::$settings['geolocation_country']))
         ? wp_slimstat::$settings['geolocation_country']
@@ -665,6 +668,34 @@ $slimstat_caps = [
     // the first licenses reading a query count as a single database's work.
     '_handles'                 => [
         'same_object' => (null === $slimstat_analytics_handle) ? null : ($slimstat_analytics_handle === $GLOBALS['wpdb']),
+    ],
+
+    // ── the instrument's report about ITSELF, not about the arm ─────────────────────────────
+    //
+    // Everything the classifier does rests on three claims about WordPress CORE: that
+    // wpdb::query() calls print_error() whenever last_error is set, that print_error() appends to
+    // $EZSQL_ERROR BEFORE its suppress_errors early return, and that the entry survives a later
+    // successful query clearing last_error. They were asserted in prose and executed nowhere —
+    // the unit gate SYNTHESISES the array entry — so if any stopped holding here, a genuinely
+    // failed query would classify as `empty`, the finding would leave the record, and every test
+    // would stay green. The guard-that-looked-like-it-worked shape, aimed at the guard.
+    //
+    // NOT "per arm", though both arms print it. One container, one core, one wpdb: only the
+    // PLUGIN is swapped between arms, and no plugin revision can change whether core appends to a
+    // global. This is one fact about the cell, sampled twice — worth printing on each arm so the
+    // record is self-contained, not worth describing as two controls.
+    //
+    // Runs BEFORE any capture, and the classifier reads only DELTAS, so it cannot colour a later
+    // surface; lib.sh's debug-log scan greps PHP fatals and parse errors, not SQL, so it cannot
+    // trip that either.
+    // The two HALVES, and not their AND. The instrument reports what it observed; whether both
+    // together are sufficient is a judgement, and the consumer that prints the verdict is where a
+    // judgement belongs. An earlier version recorded the AND as well — three fields, one of them
+    // read, and a failure line promising to say which path broke while carrying only the answer
+    // that cannot.
+    '_instrument'              => [
+        'detector_loud'       => $slimstat_detector_loud,
+        'detector_suppressed' => $slimstat_detector_suppressed,
     ],
 ];
 

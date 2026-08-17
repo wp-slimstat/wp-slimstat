@@ -95,10 +95,9 @@ foreach ($files as $file) {
 // outcome both scans would otherwise miss: this file checks language constructs, the sibling
 // checks functions but scopes itself to shipped paths and allowlists these anyway. An earlier
 // draft of the comment above named str_contains() as covered by adding the path. It was not.
-$unpolyfilled = ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
 $instrument_src = slimstat_strip_comments_and_strings((string) file_get_contents($instrument), true);
 
-foreach ($unpolyfilled as $fn) {
+foreach (slimstat_php80_polyfilled_functions() as $fn) {
     if (preg_match('/(?<![:\w>$])' . preg_quote($fn, '/') . '\s*\(/', $instrument_src)) {
         $violations[] = sprintf(
             '%s  [no-polyfill]  → %s() needs Symfony\'s Php80 bootstrap, which the standalone '

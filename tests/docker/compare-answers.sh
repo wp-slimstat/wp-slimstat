@@ -269,7 +269,7 @@ for label in ('before', 'after'):
     surfaces = caps.get('_arm_surfaces', {})
     caps_by_arm[label] = surfaces
 
-    detector[label] = caps.get('detector_live')
+    detector[label] = caps.get('_instrument', {})
     bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
     unsup = sorted(k for k, v in surfaces.items() if v.get('class') == 'unsupported')
     print('  [%s] %s arm extended surfaces: %d captured, %d errored%s' % (
@@ -278,21 +278,39 @@ for label in ('before', 'after'):
     if unsup:
         print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
 
-# THE CLASSIFIER'S OWN PRECONDITION, proven per arm rather than assumed, and printed OUTSIDE the
-# per-arm loop on purpose. Inside it, an unreadable or missing CAPS file `continue`s — so the arm
-# whose record is gone would print no line at all, and a control that goes SILENT exactly when
-# something is wrong is the failure mode this block exists to remove. Absent is FAIL here.
+# THE CLASSIFIER'S OWN PRECONDITION, printed OUTSIDE the per-arm loop on purpose: inside it, an
+# unreadable or missing CAPS file `continue`s, so the arm whose record is gone would print no line
+# at all — and a control that goes SILENT exactly when something is wrong is the failure mode this
+# block exists to remove. Absent is FAIL here.
 #
-# What it asserts: a statement that CANNOT succeed was seen to register as an error in this
-# container. Without that, a failed query and an honest nothing are the same answer again, which
-# is the defect the whole envelope exists to end.
+# What it asserts: a statement that CANNOT succeed registered as an error in this container, BOTH
+# unsuppressed and under suppress_errors(true) — the second being the state most report code runs
+# in. The instrument reports the two halves; the AND is made HERE, because "both are required" is
+# a judgement and this is the line that publishes a verdict. Both arms print the same fact by
+# construction, so two PASS lines are one fact printed twice, not two controls.
+#
+# NON-ABORTING, and the reason is worth stating rather than assumed: a dead detector cannot
+# produce a silently green run here. A CORE report whose query failed comes back empty, which the
+# instrument's hollow gate already exits 1 on; an EXTENDED surface fails identically on both arms
+# of one container, so the both-arms-empty control below names it. The detector's value is
+# DIAGNOSTIC — it turns "this report is hollow" into "this report errored and here is the SQL" —
+# so a print earns its keep where throwing away a four-minute boot would not.
 for label in ('before', 'after'):
-    live = detector.get(label)
-    print('  [%s] %s arm: the error detector fired on a deliberately failing statement%s' % (
-        'PASS' if live is True else 'FAIL', label,
-        '' if live is True else
-        ' — every `empty` on this arm is unsafe to believe'
-        + ('' if label in detector else ' (no CAPS record for this arm)')))
+    inst = detector.get(label, {})
+    halves = (('unsuppressed', 'detector_loud'), ('suppressed', 'detector_suppressed'))
+    broke = [name for name, key in halves if inst.get(key) is not True]
+    live = not broke and inst != {}
+
+    note = ''
+    if not live:
+        note = " — the extended tier's error/empty classes are unsafe to read on this arm"
+        if label not in detector:
+            note += ' (no CAPS record for this arm)'
+        elif broke:
+            note += ' (failed: %s)' % ', '.join(broke)
+
+    print('  [%s] %s arm: the error detector fired, suppressed and unsuppressed%s' % (
+        'PASS' if live else 'FAIL', label, note))
 
 # THE VACUITY FLOOR, mechanised rather than remembered. A surface EMPTY on BOTH arms compares
 # equal and reports agreement about a question neither arm was asked — PITFALLS 44's shape, and
