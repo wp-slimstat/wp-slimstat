@@ -25,6 +25,18 @@
 // that a hash map iterated differently. Reports that depend on the current clock are pinned to
 // an explicit range for the same reason.
 
+// A require'r may load ONLY the helpers — same idiom and same naming as
+// tests/bench/lib/fingerprint.php's SLIMSTAT_BENCH_FINGERPRINT_LIB, an early return here rather
+// than that file's negative wrapper because this one is a 1,300-line script and wrapping it would
+// be a whole-file reindent. The classification envelope is gated behaviour —
+// the R4/R5 register amendment cites a committed test proving `error` ≠ `zero` ≠ `empty`, and a
+// test cannot prove what it cannot call. PHP binds unconditional top-level function declarations
+// when the file is parsed, so returning here still leaves every helper defined for the includer;
+// nothing below this line has run, so no WordPress is required.
+if (defined('SLIMSTAT_ANSWERS_LIB')) {
+    return;
+}
+
 if (!defined('WP_CLI') || !WP_CLI) {
     fwrite(STDERR, "runs under WP-CLI\n");
     exit(1);
