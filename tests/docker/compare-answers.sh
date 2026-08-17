@@ -49,8 +49,24 @@ export CELL_WP_DIR="$WP_DIR"
 cleanup() { dc down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-rm -rf "$WP_DIR"
+# $ART is CLEARED, not merely created. It used to be only mkdir -p'd, so every artifact from
+# the previous run survived into this one — and seven `exit 1` paths sit between here and the
+# first answers write (worktree add, autoloader rebuild, boot, core download, core install,
+# activate, seed). Any of them left the PREVIOUS run's complete, self-consistent, two-arm pair
+# sitting in $ART looking exactly like this run's output. That is how PITFALLS 60 happened one
+# layer up: a pair copied out of here need not have come from one run, and no fingerprint check
+# can see it, because both arms are legitimately different code.
+rm -rf "$WP_DIR" "$ART"
 mkdir -p "$WP_DIR" "$ART" "$WORKTREES"
+
+# What this run IS, written before it can produce anything, so evidence copied out of $ART can
+# be joined back to the run that made it. _arm_fingerprint identifies the CODE; two runs of the
+# same ref pair are byte-identical in every field the answers documents carry, which is exactly
+# the confusion PITFALLS 60 records. RUN_ID is the field that separates them.
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","seed_profile":"%s","rows":%s,"days":%s,"null_control":%s,"php":"%s","wp":"%s"}\n' \
+  "$RUN_ID" "$BEFORE" "$AFTER" "$SEED_PROFILE" "$ROWS" "$DAYS" \
+  "${SLIMSTAT_NULL_CONTROL:-0}" "$PHP" "$WP" > "$ART/run.json"
 
 echo "CONTROLS:"
 for ref in "$BEFORE" "$AFTER"; do
