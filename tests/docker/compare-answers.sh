@@ -149,6 +149,13 @@ answers_for() {
      wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1
   grep -h 'SLIMSTAT-ANSWERS' "$out.raw" | sed 's/^SLIMSTAT-ANSWERS //' > "$out"
   grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json"
+  # The capability/status record is EXTRACTED, not left in the .raw. Without this the extended
+  # tier's verdict had no reader at all: the instrument's WARN goes to stderr, which lands in a
+  # .raw that nothing greps, that verify-change.sh does not copy into the adjudication packet, and
+  # that each of the four interleaved blocks overwrites — so a surface that errored on one arm was
+  # "recorded loudly" into a file deleted seven times. An extracted file is what makes the claim
+  # true. It is deliberately NOT copied into the blind packet: it names capabilities per era.
+  grep -h 'SLIMSTAT-CAPS'    "$out.raw" | sed 's/^SLIMSTAT-CAPS //'    > "${out%.json}-caps.json"
 }
 
 # ── INTERLEAVED, not one block per arm ──────────────────────────────────────
@@ -229,6 +236,30 @@ if same_arm and not null_control_env:
     print('         comparison could not observe the change. Either the change is outside the')
     print('         shipped PHP surface (tests, docs, CI) — in which case there is nothing for')
     print('         this harness to measure — or the wrong refs were passed.')
+
+# EXTENDED SURFACES that errored, named here rather than left in a scratch file. These are not
+# fatal to the run by design — an errored extended surface is a FINDING about that era, and the
+# instrument's core tier is what this comparison actually diffs — but a finding nobody prints is
+# a finding nobody has. Read from the extracted CAPS record, per arm, so the two eras' errors are
+# attributable rather than merged.
+for label in ('before', 'after'):
+    caps_path = os.path.join(art, label + '-caps.json')
+    if not os.path.exists(caps_path) or os.path.getsize(caps_path) == 0:
+        print('  [WARN] %s arm emitted no CAPS record — the extended tier reported nothing' % label)
+        continue
+    try:
+        caps = json.load(open(caps_path))
+    except Exception as exc:
+        print('  [WARN] %s arm CAPS record unreadable (%s)' % (label, exc))
+        continue
+    surfaces = caps.get('_arm_surfaces', {})
+    bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
+    unsup = sorted(k for k, v in surfaces.items() if v.get('class') == 'unsupported')
+    print('  [%s] %s arm extended surfaces: %d captured, %d errored%s' % (
+        'PASS' if not bad else 'NOTE', label, len(surfaces), len(bad),
+        (' — ' + ', '.join(bad)) if bad else ''))
+    if unsup:
+        print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
 
 # SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
 # environmental by construction, because there is no code difference to produce one. It is the
