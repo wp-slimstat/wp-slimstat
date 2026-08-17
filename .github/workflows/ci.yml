@@ -112,10 +112,24 @@ jobs:
           fi
           echo "No syntax errors found."
 
+      - name: Python for the cross-language encoder gate
+        # test:source-level now includes test:fingerprint-v2-py, so python3 is a hard
+        # dependency of the one gate whose contract is "vendor-independent, runs from the bare
+        # checkout". ubuntu-latest happens to ship python3 today; relying on that means a
+        # runner image change breaks all six PHP lanes with a toolchain error rather than a
+        # test failure. Pinned here instead. Deliberately NOT guarded with `command -v python3
+        # ||` — that converts a hard failure into a gate that silently does not run, which is
+        # this programme's most repeated defect.
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Source-level regression tests
         # Vanilla PHP — runs on the 7.4 lane where PHPUnit 10.5 cannot.
         # Covers: PHP 8.0+ stdlib calls without polyfill (php74-compat),
-        # and implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0).
+        # implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0), and the
+        # ENCODING_V1 pair — one PHP encoder and one Python encoder held to the same
+        # hand-derived fixtures, which is only evidence if BOTH actually run.
         run: composer test:source-level
 
       - name: Mutation registry

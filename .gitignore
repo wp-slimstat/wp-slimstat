@@ -86,3 +86,7 @@ phpstan.neon
 # FLOOR-NAME-ONLY; a results file committed from a local run is a claim its author wrote,
 # not one a runner produced under controlled conditions. CI uploads the real ones.
 tests/verify/results/*.json
+
+# Python bytecode from tests/oracle/ — the oracle side is plain scripts, never a package.
+__pycache__/
+*.pyc
