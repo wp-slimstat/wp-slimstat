@@ -173,6 +173,13 @@ if (count($covered) < $name_only_floor) {
     );
 }
 
+// ── The parser's own checks must be able to fail ────────────────────────────
+// The cases live in tests/lib/mutations.php, beside the check they prove, because that file is
+// a byte-twin and this one is deliberately exempt from the twin gate. See the selftest's docblock.
+foreach (slimstat_mutation_parse_selftest() as $problem) {
+    $failures[] = "parser selftest: {$problem}";
+}
+
 // ── The runner must still be able to tell its verdicts apart ────────────────
 $runner = $plugin_root . '/tests/verify/bin/run-mutations.php';
 if (!is_readable($runner)) {

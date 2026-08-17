@@ -26,6 +26,58 @@ declare(strict_types=1);
 const SLIMSTAT_MUTATION_HEADERS = ['target', 'gate', 'kind', 'expect', 'rationale'];
 
 /**
+ * Prove the hunk-arithmetic check can FAIL — and that it stays silent on legal shapes.
+ *
+ * A registry of well-formed files is exactly what a check that does nothing also produces, so
+ * "PASS 49/floor 49" is not evidence about any check inside this parser. PITFALLS 64 is that
+ * shape one level out: a guard announced in prose and never written.
+ *
+ * It lives HERE, beside the check it proves, and not in either registry test, because this file
+ * is a byte-twin gated by jaan-to/bin/check-twins.sh while mutation-registry-test.php is
+ * deliberately exempt from that gate (it carries four real per-repo divergences). A control that
+ * is identical by nature but hand-copied into the exempt file is an ungated island inside the one
+ * place drift cannot be seen — the exact failure this programme keeps recording. One edit here
+ * covers both repos, and the twin gate enforces it.
+ *
+ * The three must-NOT-fire cases are not padding: each is a legal unified-diff shape that
+ * RESEMBLES a lie, and without them a check that fired on everything would still pass.
+ *
+ * @return string[] problems; empty means the check behaves in both directions
+ */
+function slimstat_mutation_parse_selftest(): array
+{
+    $cases = [
+        // [label, hunk, must this fire?]
+        ['an honest header',       "@@ -1,2 +1,2 @@\n ctx\n-old\n+new\n",                         false],
+        ['a header understating',  "@@ -1,1 +1,1 @@\n ctx\n-old\n+new\n",                         true],
+        ['a header overstating',   "@@ -1,9 +1,9 @@\n ctx\n-old\n+new\n",                         true],
+        ['an absent count (== 1)', "@@ -1 +1 @@\n-old\n+new\n",                                   false],
+        ['a no-newline marker',    "@@ -1,1 +1,1 @@\n-old\n\\ No newline at end of file\n+new\n", false],
+    ];
+
+    $problems = [];
+    $tmp      = tempnam(sys_get_temp_dir(), 'slimstat-hunk-');
+    foreach ($cases as [$label, $hunk, $should_fire]) {
+        file_put_contents(
+            $tmp,
+            "target:    x\ngate:      x\nkind:      x\nexpect:    x\nrationale: x\n---\n"
+            . "diff --git a/x b/x\n--- a/x\n+++ b/x\n" . $hunk
+        );
+        // Substring, not count: the stub headers are `x`, so other checks may also speak for the
+        // same synthetic file. This isolates the one under test.
+        $fired = false !== strpos(implode("\n", slimstat_mutation_parse($tmp)['problems']), 'hunk header');
+        if ($fired !== $should_fire) {
+            $problems[] = $should_fire
+                ? "the hunk-arithmetic check did NOT fire on {$label} — it cannot catch what it exists for"
+                : "the hunk-arithmetic check fired on {$label}, which is a LEGAL unified-diff shape";
+        }
+    }
+    @unlink($tmp);
+
+    return $problems;
+}
+
+/**
  * Every registered mutation file, sorted so a failure list is stable between machines.
  *
  * @return string[]
