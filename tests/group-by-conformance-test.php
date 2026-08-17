@@ -279,6 +279,90 @@ if ('' === $reports_src) {
     }
 }
 
+// ── get_recent's '*' expansion names only columns the table HAS ─────────────
+//
+// D74, the D73 window's remaining reader. The upgrade contract (S7/P1) defers DDL to the
+// migration screen, so v6 legitimately serves the Access Log from a table older than v5's
+// own 4.8.4.1 updater — the one that added `fingerprint` and `tz_offset`. Naming either is
+// an Unknown-column rejection get_results() reports identically to "no visits": the report
+// renders empty with no error on screen. Same fix as the identity ladder, through the same
+// per-request per-prefix memo — so 29 names cost ONE probe, not 29. Measured rather than
+// assumed, and the honest figure is not zero: goals and funnels do not run on the Access
+// Log's screen, so this call site is the memo's first toucher there and pays that one
+// SHOW COLUMNS (~1 ms warm) itself.
+//
+// TWO LAYERS, each covering the other's blind side, exactly as the funnel ladder's §6 pin
+// does — the string-literal bypass there was DEMONSTRATED by a blind reviewer, not imagined.
+// (1) STRINGS STRIPPED: the guard must exist as CODE, so a body that keeps the spelling in a
+// comment or a literal while dropping the call cannot stay green. (2) STRUCTURAL: the result
+// must be ACCUMULATED INSIDE a block the guard governs.
+//
+// Layer 2 was a `return $manifest;` regex until a blind reviewer demonstrated it pins a
+// LOCAL VARIABLE'S SPELLING and nothing else: `$out = $manifest; … return $out;` keeps a
+// fact_column_present() call in the body, never returns `$manifest`, satisfies both layers,
+// and ships D74 verbatim. Registered as D74-03 rather than merely fixed. The replacement
+// asks the question the defect actually answers — is the append governed by the guard —
+// through slimstat_guarded_block_ranges(), the helper PITFALLS 45 extracted for exactly
+// this (containment is by TOKEN INDEX; its two hand-written copies had already drifted into
+// comparing byte offsets against token ranges, which can never fire).
+// No absence branch: slimstat_function_body() THROWS when the definition is gone (its own
+// docblock: "not found is fatal"), which is the verdict a renamed subject should get. An
+// empty body reaches layer 1 and fails there, loudly.
+$recent_body = slimstat_function_body($db_src, 'recent_columns');
+
+if (false === strpos(
+    slimstat_strip_comments_and_strings($recent_body, false),
+    'self::fact_column_present('
+)) {
+    $failures[] = "recent_columns() holds no fact_column_present() call in CODE — get_recent('*') "
+        . 'then names every late-era column on a table that may predate them, and the Access '
+        . 'Log becomes an Unknown-column rejection reported identically to "no visits"';
+}
+
+$recent_tokens = slimstat_tokenize($recent_body, false);
+$guarded       = slimstat_guarded_block_ranges($recent_tokens, 'fact_column_present');
+$accumulates   = false;
+
+// An append is `$var [ ] =`. Whitespace and comments are skipped by the same walk the
+// library uses everywhere, so formatting cannot decide the verdict.
+foreach ($recent_tokens as $i => $token) {
+    if (!is_array($token) || T_VARIABLE !== $token[0]) {
+        continue;
+    }
+
+    $open = slimstat_next_significant($recent_tokens, $i);
+    if (!isset($recent_tokens[$open]) || '[' !== $recent_tokens[$open]) {
+        continue;
+    }
+
+    $close = slimstat_next_significant($recent_tokens, $open);
+    if (!isset($recent_tokens[$close]) || ']' !== $recent_tokens[$close]) {
+        continue;
+    }
+
+    $assign = slimstat_next_significant($recent_tokens, $close);
+    if (!isset($recent_tokens[$assign]) || '=' !== $recent_tokens[$assign]) {
+        continue;
+    }
+
+    foreach ($guarded as [$block_open, $block_close]) {
+        if ($i > $block_open && $i < $block_close) {
+            $accumulates = true;
+            break 2;
+        }
+    }
+}
+
+// Empty $guarded lands here too, and must: with no guarded block there is nothing for the
+// append to be inside, and a containment assertion over zero ranges passes vacuously.
+if (!$accumulates) {
+    $failures[] = 'recent_columns() does not build its result inside a block guarded by '
+        . 'fact_column_present() — the intersection is what makes the list safe, and a list '
+        . 'assembled outside the guard IS D74: it names fingerprint and tz_offset, which v5 '
+        . 'itself only added at 4.8.4.1, so the deferred-DDL window makes an older table a '
+        . 'legitimate serving state whose Access Log then reads as "no visits"';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: GROUP BY conformance (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
@@ -288,4 +372,5 @@ if ($failures) {
 }
 
 echo "PASS: the aggregate queries this seam touched name only what they group or aggregate, "
-    . "and get_top_aggr's ORDER BY is deterministic on ties\n";
+    . "get_top_aggr's ORDER BY is deterministic on ties, and get_recent's '*' names only "
+    . "columns the table in front of us has\n";

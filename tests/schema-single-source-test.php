@@ -417,6 +417,49 @@ foreach ($consumers as $rel => $what) {
     }
 }
 
+// ── 4b. A restated read-path column list must be a SUBSET of the manifest ───
+//
+// get_recent('*') restates 29 of slim_stats' columns on purpose: the Access Log shows a
+// chosen subset (no other_ip, email, location, searchterms, ua_id, vid_hash) in RENDERED
+// order, not declaration order, so deriving it from Schema::columns() would both widen the
+// SELECT — including the identity-bearing email and other_ip — and reshuffle the table.
+// Restating is right here; restating something the manifest does not declare is not.
+//
+// The direction that makes this load-bearing is D74's own mechanism turned around.
+// fact_column_present() answers from Schema::columnState(), whose `present` is the
+// intersection of the DECLARED manifest with the real table — so a name the manifest stops
+// declaring reads as absent even on a fully migrated install, and the column vanishes from
+// the Access Log with no error anywhere. Before D74 that same drift named a real column
+// unconditionally and failed loudly. This gate is what keeps the quiet direction closed.
+$db_rel = 'admin/view/wp-slimstat-db.php';
+$db_src = slimstat_blank_comments((string) file_get_contents($plugin_root . '/' . $db_rel), false);
+
+if (!preg_match('/\$manifest\s*=\s*\[([^\]]*)\];/', slimstat_function_body($db_src, 'recent_columns'), $m)) {
+    $failures[] = "{$db_rel}: recent_columns() no longer holds a \$manifest = [...] literal, so "
+        . 'the subset check below has no subject and would pass on any tree';
+} else {
+    preg_match_all("/'([a-z_]+)'/", $m[1], $names);
+    $undeclared = array_diff($names[1], array_keys($schema::columns('slim_stats')));
+
+    if ($undeclared !== []) {
+        $failures[] = sprintf(
+            "{$db_rel}: recent_columns() names %s, which the manifest does not declare. "
+                . 'Schema::columnState() reports only DECLARED columns as present, so the '
+                . 'Access Log would silently drop it on every install, migrated or not',
+            implode(', ', $undeclared)
+        );
+    }
+
+    // Vacuity guard: the diff above passes trivially on an empty name list.
+    if (count($names[1]) < 20) {
+        $failures[] = sprintf(
+            "{$db_rel}: recent_columns() yielded only %d column names — the subset check above "
+                . 'passes on a list it failed to parse',
+            count($names[1])
+        );
+    }
+}
+
 // Every Create*Index migration must name an index and nothing else about it. The shape comes
 // from AbstractIndexMigration reading the manifest; a subclass that overrides getIndexName(),
 // getIndexColumns() or getTableName() has taken the declaration back, and the manifest becomes a

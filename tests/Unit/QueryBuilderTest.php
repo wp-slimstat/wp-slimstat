@@ -789,7 +789,7 @@ class QueryBuilderTest extends WpSlimstatTestCase
         return (string) $m->invoke(null, 't1');
     }
 
-    private function visitorIdExprWithSchema(?array $columns, string $prefix = 'wp_'): string
+    private function armSchemaProbe(?array $columns, string $prefix): void
     {
         $analytics = Mockery::mock('wpdb');
         $analytics->last_error = '';
@@ -798,8 +798,38 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
         $this->expectSchemaProbe($prefix, $columns);
         $GLOBALS['wpdb']->prefix = $prefix;
+    }
+
+    private function visitorIdExprWithSchema(?array $columns, string $prefix = 'wp_'): string
+    {
+        $this->armSchemaProbe($columns, $prefix);
 
         return $this->invokeVisitorIdExpr();
+    }
+
+    private function invokeRecentColumns(): array
+    {
+        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'recent_columns');
+        $m->setAccessible(true);
+
+        return (array) $m->invoke(null);
+    }
+
+    private function recentColumnsWithSchema(?array $columns, string $prefix = 'wp_'): array
+    {
+        $this->armSchemaProbe($columns, $prefix);
+
+        return $this->invokeRecentColumns();
+    }
+
+    /**
+     * The complete '*' list get_recent() serves — the assertion twin of
+     * recent_columns()'s own manifest literal, spelled out here so the pin
+     * cannot be satisfied by reading the constant it checks.
+     */
+    private function recentManifest(): array
+    {
+        return ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
     }
 
     /**
@@ -926,5 +956,74 @@ class QueryBuilderTest extends WpSlimstatTestCase
             "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
             $this->invokeVisitorIdExpr()
         );
+    }
+
+    /**
+     * BUG GUARD (D74) — v5's own updater added `fingerprint` and `tz_offset` at
+     * 4.8.4.1, and the deferred-DDL upgrade contract makes a pre-4.8.4.1 table a
+     * legitimate serving state under v6. get_recent('*') naming either one is an
+     * Unknown-column rejection that get_results() reports identically to "no
+     * visits" — the Access Log renders empty with no error anywhere.
+     *
+     * @test
+     */
+    public function test_recent_columns_drop_what_a_pre_4841_table_lacks(): void
+    {
+        $vintage = array_values(array_diff($this->recentManifest(), ['fingerprint', 'tz_offset']));
+
+        $this->assertSame(
+            $vintage,
+            $this->recentColumnsWithSchema($vintage)
+        );
+    }
+
+    /**
+     * PARITY PIN — on a complete (migrated) schema the '*' list is byte-identical
+     * to the historical spelling, in the historical order, and columns the table
+     * has BEYOND the list (vid_hash, ua_id) must not leak into it: the list is a
+     * pinned contract, not "whatever the table holds".
+     *
+     * @test
+     */
+    public function test_recent_columns_are_byte_identical_on_a_complete_schema(): void
+    {
+        $migrated = array_merge($this->recentManifest(), ['vid_hash', 'ua_id']);
+
+        $this->assertSame(
+            $this->recentManifest(),
+            $this->recentColumnsWithSchema($migrated)
+        );
+    }
+
+    /**
+     * FAIL-OPEN PIN — an unreadable probe keeps the full list, exactly the
+     * pre-probe behaviour: a genuinely missing column then surfaces as the same
+     * SQL error it always was, instead of the probe silently narrowing the
+     * Access Log on a transient failure.
+     *
+     * @test
+     */
+    public function test_recent_columns_assume_the_manifest_when_the_probe_cannot_read(): void
+    {
+        $this->assertSame(
+            $this->recentManifest(),
+            $this->recentColumnsWithSchema(null)
+        );
+    }
+
+    /**
+     * COST PIN — recent_columns() rides the SAME memoised probe as the identity
+     * ladder: expectSchemaProbe() carries ->once(), so if the '*' expansion
+     * issued its own SHOW COLUMNS after the ladder already probed, Mockery
+     * fails this test on the second call.
+     *
+     * @test
+     */
+    public function test_recent_columns_share_the_ladder_probe(): void
+    {
+        $migrated = array_merge($this->recentManifest(), ['vid_hash']);
+        $this->visitorIdExprWithSchema($migrated);
+
+        $this->assertSame($this->recentManifest(), $this->invokeRecentColumns());
     }
 }

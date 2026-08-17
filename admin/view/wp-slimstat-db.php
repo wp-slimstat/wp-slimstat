@@ -1372,6 +1372,34 @@ class wp_slimstat_db
         return $results;
     }
 
+    /**
+     * The Access Log's '*' expansion — every fact column a COMPLETE schema
+     * carries, intersected with the columns actually present (P1's ratified
+     * shape; the read-path twin of Storage's insert intersection).
+     *
+     * Same window as visitor_id_expr()'s ladder: the upgrade contract (S7/P1)
+     * defers DDL to the migration screen, so v6 legitimately reports from a
+     * pre-4.8.4.1 table that lacks `fingerprint` and `tz_offset` — and one
+     * absent name is an Unknown-column rejection that get_results() reports
+     * identically to "no visits" (D74). Dropping an absent column loses no
+     * data: a column that does not exist holds no values to display. FAIL-OPEN
+     * through fact_column_present(): an unreadable probe keeps the full list,
+     * exactly the pre-probe behaviour.
+     */
+    private static function recent_columns()
+    {
+        $manifest = ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+
+        $present = [];
+        foreach ($manifest as $column) {
+            if (self::fact_column_present($column)) {
+                $present[] = $column;
+            }
+        }
+
+        return $present;
+    }
+
     public static function get_recent($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC')
     {
         if (is_array($_column)) {
@@ -1385,7 +1413,7 @@ class wp_slimstat_db
         }
 
         $columns = ('*' === $_column)
-            ? ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out']
+            ? self::recent_columns()
             : array_map('trim', explode(',', $_column));
         if (!empty($_as_column)) {
             $columns[0] = $columns[0] . ' AS ' . $_as_column;
