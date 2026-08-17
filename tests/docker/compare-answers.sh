@@ -255,6 +255,7 @@ if same_arm and not null_control_env:
 # a finding nobody has. Read from the extracted CAPS record, per arm, so the two eras' errors are
 # attributable rather than merged.
 caps_by_arm = {}
+detector = {}
 for label in ('before', 'after'):
     caps_path = os.path.join(art, label + '-caps.json')
     if not os.path.exists(caps_path) or os.path.getsize(caps_path) == 0:
@@ -267,6 +268,8 @@ for label in ('before', 'after'):
         continue
     surfaces = caps.get('_arm_surfaces', {})
     caps_by_arm[label] = surfaces
+
+    detector[label] = caps.get('detector_live')
     bad = sorted(k for k, v in surfaces.items() if v.get('class') == 'error')
     unsup = sorted(k for k, v in surfaces.items() if v.get('class') == 'unsupported')
     print('  [%s] %s arm extended surfaces: %d captured, %d errored%s' % (
@@ -274,6 +277,22 @@ for label in ('before', 'after'):
         (' — ' + ', '.join(bad)) if bad else ''))
     if unsup:
         print('         unsupported on this arm (recorded, not a failure): %s' % ', '.join(unsup))
+
+# THE CLASSIFIER'S OWN PRECONDITION, proven per arm rather than assumed, and printed OUTSIDE the
+# per-arm loop on purpose. Inside it, an unreadable or missing CAPS file `continue`s — so the arm
+# whose record is gone would print no line at all, and a control that goes SILENT exactly when
+# something is wrong is the failure mode this block exists to remove. Absent is FAIL here.
+#
+# What it asserts: a statement that CANNOT succeed was seen to register as an error in this
+# container. Without that, a failed query and an honest nothing are the same answer again, which
+# is the defect the whole envelope exists to end.
+for label in ('before', 'after'):
+    live = detector.get(label)
+    print('  [%s] %s arm: the error detector fired on a deliberately failing statement%s' % (
+        'PASS' if live is True else 'FAIL', label,
+        '' if live is True else
+        ' — every `empty` on this arm is unsafe to believe'
+        + ('' if label in detector else ' (no CAPS record for this arm)')))
 
 # THE VACUITY FLOOR, mechanised rather than remembered. A surface EMPTY on BOTH arms compares
 # equal and reports agreement about a question neither arm was asked — PITFALLS 44's shape, and

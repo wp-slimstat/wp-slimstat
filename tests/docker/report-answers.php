@@ -252,6 +252,23 @@ function slimstat_analytics_handle()
 }
 
 /**
+ * How many errors WordPress core has recorded so far.
+ *
+ * One owner, at the fourth copy. The guard is `isset() && is_array()` rather than a bare count
+ * because $EZSQL_ERROR only exists once something has failed — and the two copies inside
+ * slimstat_capture() plus the two the detector probe added had already drifted apart in shape
+ * on the day the fourth was written, which is how tests/lib/source-scan.php's walk earned its
+ * own extraction ("eight source-level tests carried a byte-identical copy … and the copies had
+ * already drifted").
+ */
+function slimstat_ezsql_count()
+{
+    return (isset($GLOBALS['EZSQL_ERROR']) && is_array($GLOBALS['EZSQL_ERROR']))
+        ? count($GLOBALS['EZSQL_ERROR'])
+        : 0;
+}
+
+/**
  * Drop every cached answer, so the next capture is a MEASUREMENT and not a replay.
  *
  * One owner for the two statements, at the third copy of them — the timing loop's pre-run and
@@ -407,7 +424,7 @@ function slimstat_capture(callable $fn, array $flags = [])
     // error raised by the purge attributed to the surface would be a lie about which code failed.
     slimstat_purge_report_cache();
 
-    $e0 = (isset($GLOBALS['EZSQL_ERROR']) && is_array($GLOBALS['EZSQL_ERROR'])) ? count($GLOBALS['EZSQL_ERROR']) : 0;
+    $e0 = slimstat_ezsql_count();
 
     try {
         $value  = $fn();
@@ -417,7 +434,7 @@ function slimstat_capture(callable $fn, array $flags = [])
         $thrown = get_class($t) . ': ' . $t->getMessage();
     }
 
-    $e1 = (isset($GLOBALS['EZSQL_ERROR']) && is_array($GLOBALS['EZSQL_ERROR'])) ? count($GLOBALS['EZSQL_ERROR']) : 0;
+    $e1 = slimstat_ezsql_count();
 
     $env = [
         'class'         => 'ok',
@@ -590,6 +607,14 @@ $answers['_arm_files']       = $slimstat_free['files'];
 $slimstat_chart_class = 'SlimStat\\Modules\\Chart';
 $slimstat_analytics_handle = slimstat_analytics_handle();
 
+// The detector's positive control — see `detector_live` below for why it exists. Deliberately
+// unsuppressed: the whole claim under test is that a failing statement REACHES $EZSQL_ERROR on
+// this build, and asking wpdb to be quiet about it would test the opposite. The table name is
+// one no schema declares.
+$slimstat_detector_before = slimstat_ezsql_count();
+$GLOBALS['wpdb']->query('SELECT 1 FROM __slimstat_detector_probe_absent__');
+$slimstat_detector_live = slimstat_ezsql_count() > $slimstat_detector_before;
+
 // One root, one predicate, read by both this block and the _arm_pro block below — so the two
 // cannot disagree in the artifact about whether Pro was there. Network-activated Pro counts:
 // run-topology.sh builds real multisite networks, and a site-only check would report
@@ -614,6 +639,23 @@ $slimstat_caps = [
     // exactly one of them, so the precondition every classification rests on is only auditable
     // with this recorded beside it.
     'ext_object_cache'         => function_exists('wp_using_ext_object_cache') && wp_using_ext_object_cache(),
+    // THE DETECTOR PROVES ITSELF, per arm, in the container that matters.
+    //
+    // Everything this instrument classifies rests on three claims about WordPress CORE — that
+    // wpdb::query() calls print_error() whenever last_error is set, that print_error() appends to
+    // $EZSQL_ERROR BEFORE its suppress_errors early return, and that the entry survives a later
+    // successful query clearing last_error. They are true of the core this was written against,
+    // and they were asserted in prose and executed nowhere: the unit gate SYNTHESISES the
+    // $EZSQL_ERROR entry, so if any of the three stopped holding here, a genuinely failed query
+    // would classify as `empty`, the finding would vanish from the record, and every test would
+    // stay green. That is the guard-that-looked-like-it-worked shape, aimed at the guard.
+    //
+    // So: issue one statement that cannot succeed and read the delta. false here means every
+    // `empty` on this arm is unsafe to believe. It runs BEFORE any capture and appends to a
+    // global the classifier only ever reads as a DELTA, so it cannot colour a later surface;
+    // lib.sh's debug-log scan greps for PHP fatals and parse errors, not SQL, so it cannot trip
+    // that either.
+    'detector_live'            => $slimstat_detector_live,
     'network_merge_active'     => (bool) apply_filters('slimstat_network_merge_active', false),
     'geolocation_country'      => (class_exists('wp_slimstat') && isset(wp_slimstat::$settings['geolocation_country']))
         ? wp_slimstat::$settings['geolocation_country']

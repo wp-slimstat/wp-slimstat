@@ -18,7 +18,19 @@ require_once __DIR__ . '/lib/source-scan.php';
 $plugin_root  = dirname(__DIR__);
 $deps_prefix  = $plugin_root . '/src/Dependencies';
 $allow_marker = 'php80-syntax: ok';
-$paths        = [$plugin_root . '/wp-slimstat.php', $plugin_root . '/admin', $plugin_root . '/src'];
+// tests/docker/report-answers.php is in scope for a reason that is NOT "it ships" — it does not.
+// tests/answer-envelope-classes-test.php `require`s it to gate the real classifier, and that test
+// runs in composer test:source-level, which CI runs on the 7.4 lane. So the whole instrument is
+// PARSED at the declared floor on a PR-blocking lane, while being authored for containers running
+// PHP 8.x. It is clean today; this line keeps that a fact instead of a coincidence, because the
+// alternative is learning it from a parse error in someone else's pull request.
+$instrument   = $plugin_root . '/tests/docker/report-answers.php';
+$paths        = [
+    $plugin_root . '/wp-slimstat.php',
+    $plugin_root . '/admin',
+    $plugin_root . '/src',
+    $instrument,
+];
 
 // The library's walk, not a tenth private copy of it. slimstat_own_php_files() exists because
 // eight source-level tests carried a byte-identical version of this loop and the copies had
@@ -70,6 +82,30 @@ foreach ($files as $file) {
             $rel = substr($file, strlen($plugin_root) + 1);
             $violations[] = sprintf('%s:%d  [%s]  → %s', $rel, $line_no, $label, trim($match));
         }
+    }
+}
+
+// ── the instrument gets NO polyfill, so the polyfilled seven are forbidden THERE ────────────
+//
+// php74-no-php80-functions-test.php allows str_contains() and its six siblings in shipped code,
+// and it is right to: wp-slimstat.php requires Symfony's Php80 bootstrap, so they exist at
+// runtime on 7.4. That allowance does NOT transfer here. answer-envelope-classes-test.php loads
+// this instrument with no WordPress, no autoloader and no polyfill — its docblock says so — so a
+// str_contains() in the instrument PARSES on 7.4 and then fatals when called, which is the one
+// outcome both scans would otherwise miss: this file checks language constructs, the sibling
+// checks functions but scopes itself to shipped paths and allowlists these anyway. An earlier
+// draft of the comment above named str_contains() as covered by adding the path. It was not.
+$unpolyfilled = ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
+$instrument_src = slimstat_strip_comments_and_strings((string) file_get_contents($instrument), true);
+
+foreach ($unpolyfilled as $fn) {
+    if (preg_match('/(?<![:\w>$])' . preg_quote($fn, '/') . '\s*\(/', $instrument_src)) {
+        $violations[] = sprintf(
+            '%s  [no-polyfill]  → %s() needs Symfony\'s Php80 bootstrap, which the standalone '
+                . 'gate that requires this file never loads — it would parse on 7.4 and fatal when called',
+            substr($instrument, strlen($plugin_root) + 1),
+            $fn
+        );
     }
 }
 
