@@ -1,0 +1,19 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P32-a-registered-old-error-still-needs-the-oracle label
+rationale: Drops the oracle term from old-errored-registered, which is how S4 shipped: a register hit plus an OLD error granted label (a)/pass with the oracle's verdict computed and discarded. (a) means NEW PROVEN CORRECT; a pre-blind register entry is evidence that a difference EXISTS and never evidence about its direction, so without this conjunct any arithmetic defect in v6's funnels rides in behind R4/R5 - the entries covering the exact surfaces v6 rewrote. The sibling rule emitting the same label (new-backed-registered) always carried the term; this one did not, and P19's oracle happened to agree with NEW, so the strong and the weak rule were indistinguishable to the whole plant set.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -314,8 +314,7 @@ RULES = (
+         "PROVEN CORRECT, and a registered OLD failure is evidence that the difference EXISTS, "
+         "never evidence that the number NEW put in its place is right. Accepted for existence; "
+         "if the entry is pre-blind its DIRECTION is not",
+-        lambda f: (f.old_class == "error" and f.register_hit is not None
+-                   and f.agrees(f.oracle_new)),
++        lambda f: (f.old_class == "error" and f.register_hit is not None),
+     ),
+     Rule(
+         "old-errored", "SQL-error",

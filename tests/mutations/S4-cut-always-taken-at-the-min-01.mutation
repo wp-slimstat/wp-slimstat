@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P37-an-ascending-report-cuts-at-the-max label
+rationale: Computes the cut at the wrong end of every ascending report. No plant set cut_side before run 53, so only the 'min' half had ever run. Measured on the ASC contract: the same triple that DIFFERs on above-the-cut-differs comes out EQUAL on tie-at-the-cut with this applied - a real difference at the top of the ranking pardoned as a tie.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -571,7 +571,7 @@ def compare_banded(a_rows, b_rows, contract=None):
+     field_name = contract["count_field"]
+     counts_a = _ranking_counts(a_rows, field_name, "the first answer")
+     counts_b = _ranking_counts(b_rows, field_name, "the second answer")
+-    pick = min if contract["cut_side"] == "min" else max
++    pick = min
+     cut_a, cut_b = pick(counts_a), pick(counts_b)
+ 
+     if cut_a != cut_b:

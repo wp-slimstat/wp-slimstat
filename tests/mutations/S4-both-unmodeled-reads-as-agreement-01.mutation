@@ -1,0 +1,18 @@
+target:    tests/oracle/compare/algebra.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    two arms that could not be asked have not agreed either verdict
+rationale: Two answers that were never computed - unsupported against unsupported, or one unmodeled oracle against another - reading as agreement. The single branch covers both class names, so both are asserted.
+---
+diff --git a/tests/oracle/compare/algebra.py b/tests/oracle/compare/algebra.py
+--- a/tests/oracle/compare/algebra.py
++++ b/tests/oracle/compare/algebra.py
+@@ -766,7 +766,7 @@ def compare_envelopes(old_env, new_env, contract=None, roles=("old", "new")):
+                      "both answers failed; two failures carry no comparable value",
+                      a_error=_error_text(old_env), b_error=_error_text(new_env))
+     if a_cls in ("unsupported", "unmodeled"):
+-        return _diff(INCOMPARABLE, "both-" + a_cls, "class",
++        return _diff(EQUAL, "both-" + a_cls, "class",
+                      "neither side answered: %s / %s"
+                      % (_reason(old_env), _reason(new_env)))
+     if a_cls == "empty":

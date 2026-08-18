@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      guard-removal
+expect:    P39-one-era-spells-the-clock-flag-and-the-other-does-not label
+rationale: Reads clock dependence from OLD alone. The flag describes the QUESTION, so one era spelling it and the other not is itself a reason to distrust a difference - and reading only OLD is the direction that adjudicates a clock-driven difference as a code change, manufacturing a blocking finding out of two arms having run minutes apart.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -593,7 +593,7 @@ def classify(triple, contract=None, register=None):
+         # Either arm declaring clock dependence makes the surface clock-dependent: the flag
+         # describes the QUESTION, and one era spelling it and the other not is itself a reason
+         # to distrust a difference.
+-        clock=any(_flag(env, name) for env in (old_env, new_env)
++        clock=any(_flag(env, name) for env in (old_env,)
+                   for name in ("clock_dependent", "calendar_day_dependent")),
+         # BOTH arms must be pinned for the pin to help. A window pinned on one side only leaves
+         # the other free to move, which is the state the pin exists to prevent.
