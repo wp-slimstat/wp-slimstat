@@ -1,7 +1,7 @@
 {
   "schema": "SLIMSTAT-PLANTS-V1",
   "about": "One plant per label the classifier can emit, one per rule in its decision table, and — since run 53 — a plant or a direct assertion per rule name in compare/algebra.py's DIFF_RULES, which the gate now enumerates rather than the README claiming. Each plant is an answer triple, the label it MUST receive, and a one-line statement of what mislabelling it would cost the campaign. See README.md beside this file.",
-  "expected_assertions": 364,
+  "expected_assertions": 370,
   "php_round_probes": {
     "about": "The rounding claim in compare/algebra.py::round_half_up, replayed rather than believed. Every expected value is what PHP's round() actually printed; nothing here was captured from the Python helper.",
     "measured_with": "php -r 'printf(round($v, $p))' on PHP 7.4.33 (docker run --rm php:7.4-cli, the declared floor) and on PHP 8.5.5 (this workstation, which is PHP 8.4+ and therefore uses the rewritten round()). Both interpreters printed the same value for all fifteen probes.",

@@ -555,6 +555,29 @@ check_diff("two oracles with no model have not agreed either",
                                      roles=("oracle", "oracle")),
            algebra.INCOMPARABLE, "both-unmodeled")
 
+# The two ROW-KEY properties, which no plant reaches because no plant needs them yet.
+#
+# `exact_columns` is the escape hatch for a zero-padded code, and deleting its branch left the
+# whole gate green — '007' and 7 are the same number and different answers, and a differ with no
+# hatch has to choose one of the two errors for every column in every report. Asserted in both
+# directions, because a hatch that is always open is the same defect as one that is nailed shut.
+check_diff("a column declared exact compares as bytes",
+           algebra.compare_rows([{"code": "007"}], [{"code": 7}],
+                                {"exact_columns": ("code",)}),
+           algebra.DIFFER, "row-values")
+check_diff("and the same column is a number without the declaration",
+           algebra.compare_rows([{"code": "007"}], [{"code": 7}]),
+           algebra.EQUAL, "rows-equal")
+
+# A row's key carries its COLUMN NAMES. Drop them and two rows holding the same values under
+# different columns are one row — a column swap, which is precisely the shape of a rewrite defect
+# in a query builder that assembles its SELECT list positionally.
+check_diff("two rows with the same values under different columns are different rows",
+           algebra.compare_rows([{"a": 1, "b": 2}], [{"a": 2, "b": 1}]),
+           algebra.DIFFER, "row-values",
+           "with the names dropped from the key these compare as the same multiset in another "
+           "order, so a swapped pair of columns reads as ORDER-ONLY rather than as a difference")
+
 # Negative zero, which had TWO answers in one differ: EQUAL down the scalar path (Decimal('-0')
 # == Decimal('0')) and DIFFER down the row path, because normalize() keeps the sign bit and the
 # cell token read 'n:-0' against 'n:0'. Which answer you got depended on whether the report's
