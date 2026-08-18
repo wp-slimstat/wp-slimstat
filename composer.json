@@ -93,6 +93,7 @@
     "test:fingerprint-v2": "php tests/fingerprint-v2-encoding-test.php",
     "test:export-fidelity": "php tests/export-fidelity-test.php",
     "test:fingerprint-v2-py": "python3 tests/oracle/encoding_v1_test.py",
+    "test:classifier-plants": "python3 tests/oracle/classify_test.py",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:control-wiring": "php tests/control-wiring-test.php",
     "test:fp-negative": "php tests/fp-negative/run-negatives.php",
@@ -285,6 +286,7 @@
       "@test:answer-envelope",
       "@test:fingerprint-v2",
       "@test:fingerprint-v2-py",
+      "@test:classifier-plants",
       "@test:export-fidelity"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
