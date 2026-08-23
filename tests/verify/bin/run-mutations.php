@@ -42,11 +42,15 @@
  *
  * VERDICTS
  *     KILLED     gate green on clean tree, red under the mutation. The assertion works.
- *     SURVIVED   gate green both ways. The assertion does not pin what it claims.
- *     INVALID    the gate was already red, the diff did not apply, or the gate failed for
- *                a reason other than `expect:`. Proves NOTHING — and is reported as its own
- *                verdict rather than folded into either of the other two, because that
- *                conflation is what made a whole run false once.
+ *     SURVIVED   gate green on the clean tree, green under the mutation, AND still green
+ *                with the mutated file's cache key broken. The third is what makes it a
+ *                measurement rather than a guess — see mut_evaluate() step 3a.
+ *     INVALID    the gate was already red, the diff did not apply, the gate failed for a
+ *                reason other than `expect:`, or the verdict CHANGED when nothing but the
+ *                cache key did — meaning the passing run was not reading the mutated
+ *                source. Proves NOTHING — and is reported as its own verdict rather than
+ *                folded into either of the other two, because that conflation is what made
+ *                a whole run false once.
  *
  * Usage:
  *     php tests/verify/bin/run-mutations.php [--selftest]
@@ -73,21 +77,25 @@ require_once dirname(__DIR__, 2) . '/lib/mutations.php';
 // MEASURES THE UNMUTATED SOURCE. It was reported SURVIVED while being perfectly sound.
 //
 // Worse than a wrong verdict, it leaks: the stale artifact outlives the revert, so a later
-// run on a git-clean tree can fail with the mutation's assertions, and __pycache__ is
-// gitignored so mut_tree_is_clean() cannot see it. This is "a gate that silently did not
+// run on a git-clean tree can fail with the mutation's assertions, and the cache directory
+// is gitignored so mut_tree_is_clean() cannot see it. This is "a gate that silently did not
 // run" wearing an interpreter cache (PITFALLS 31, 62), caught only because somebody
 // measured the registry instead of reading its verdict.
 //
 // THE GUARD IS AT THE SEAM, NOT IN THE ENVIRONMENT. The first version of it set
 // PYTHONDONTWRITEBYTECODE + PYTHONPYCACHEPREFIX, and two measurements retired that shape:
 //
-//   * IT COVERS ONE LANGUAGE, AND NOT THE COMMON ONE. Four of the 82 registry entries are
-//     size-preserving and THREE TARGET PHP — C48-lease-steal-condition-01,
-//     S3-export-stores-text-not-blob-01, S5-percentage-divides-before-multiplying-01 —
-//     against one targeting Python. PHP keys on mtime alone, a WIDER target than CPython's
-//     (mtime, size), and exposes no PHP_* env var for it: only `-d opcache.enable_cli=0`,
-//     i.e. a shell prefix, which cannot be used here (see mut_run()). Those 48 PHP gates
-//     were resting on an interpreter default that nothing in this repo asserts.
+//   * IT COVERS ONE LANGUAGE, AND NOT THE COMMON ONE. Counted across BOTH registries —
+//     this file is a byte-twin, so every number in it has to be true in both — FIVE
+//     entries are size-preserving and FOUR TARGET PHP: free's C48-lease-steal-condition-01,
+//     S3-export-stores-text-not-blob-01 and S5-percentage-divides-before-multiplying-01,
+//     and pro's UI-exact-first-inverted-01 (src/Support/UsernameIndex.php, a block swap of
+//     147 bytes for 147). Exactly one targets Python: free's
+//     S4-oracle-errored-outranks-old-errored-01, the entry that exposed this. PHP keys on
+//     mtime alone, a WIDER target than CPython's (mtime, size), and exposes no PHP_* env
+//     var for it: only `-d opcache.enable_cli=0`, i.e. a shell prefix, which cannot be used
+//     here (see mut_run()). Free's 48 PHP gates and all 15 of pro's were resting on an
+//     interpreter default that NEITHER repo asserts.
 //   * IT COSTS, AND NOT WHERE IT HELPS. An empty bytecode cache recompiles 37 stdlib
 //     modules — 1.0 MB, byte-identical every time — on each of ~102 python processes a
 //     registry run spawns, to protect the ~9 ms of it a mutation can actually change.
@@ -110,10 +118,14 @@ function mut_run(string $cmd, string $cwd): array
 {
     $out = [];
     $rc  = 0;
-    // Gates are free-form strings, and three call sites pass a COMPOUND `$cmd`, so a guard
-    // expressed as a shell prefix here would bind to the first simple command only —
-    // `composer test:a && composer test:b` guarded on the first half. That is why the
-    // cache-key guard lives at the apply/revert seams (top of this file), not in this string.
+    // Why the cache-key guard is NOT a shell prefix on this command. Counted rather than
+    // assumed: 0 of the 97 `gate:` strings across both registries is compound, so the
+    // "guarded on the first half of `a && b`" argument that used to sit here was about the
+    // runner's own git plumbing (the only compound $cmd values) and never about a gate.
+    // The reasons that do hold: a `-d opcache.enable_cli=0` prefix is PHP-only, inside a
+    // guard whose whole point is that it is language-agnostic; `composer test:x` spawns
+    // sub-processes that inherit no `-d`; and mut_run() does not know what the target is,
+    // which is the one fact the guard needs. It belongs at the seams (top of this file).
     exec('cd ' . escapeshellarg($cwd) . ' && ' . $cmd . ' 2>&1', $out, $rc);
 
     return [$rc, implode("\n", $out)];
@@ -156,6 +168,13 @@ function mut_target_is_pristine(string $repo, string $target): bool
  * after the apply and after the revert. A strictly increasing stamp rather than a bare
  * touch(), because the defect IS two writes landing in the same wall-clock second —
  * touching to "now" reproduces it rather than fixing it whenever the cycle is sub-second.
+ *
+ * The counter is RUN-WIDE and not per file, which looks like needless global state and is
+ * not. Per-file `max(time(), filemtime($path) + 1)` was traced and rejected: with the apply
+ * and the revert inside one second it stamps BOTH writes the same value, so the reverted
+ * CLEAN file lands on the cache entry holding the MUTATED artifact and the next mutation's
+ * clean-tree gate executes it — the leak described at the top of this file, reintroduced by
+ * the tidier-looking form. Uniqueness has to hold across the whole run, not within a file.
  */
 function mut_break_cache_key(string $repo, string $target): void
 {
@@ -168,7 +187,8 @@ function mut_break_cache_key(string $repo, string $target): void
 }
 
 /**
- * Apply one mutation and classify it. Always leaves the tree as it found it.
+ * Apply one mutation and classify it. Always leaves the tree as it found it IN CONTENT —
+ * the target's mtime is deliberately NOT restored; see mut_break_cache_key().
  *
  * @return array{verdict:string,detail:string}
  */
@@ -216,15 +236,30 @@ function mut_evaluate(string $repo, array $spec): array
     //     tree) and the KILLED side is guarded (`expect:`), but SURVIVED — the verdict
     //     that ACCUSES WORKING CODE of not pinning what it claims — was taken on trust.
     //
-    //         A gate passing under a mutation is only evidence when the gate
-    //         demonstrably read the mutated tree.
+    //         A gate passing under a mutation is only evidence when the verdict
+    //         SURVIVES its cache key being broken.
+    //
+    //     Stated that narrowly on purpose. The earlier wording here — "only evidence when
+    //     the gate demonstrably read the mutated tree" — claimed more than mtime can buy,
+    //     and that sentence would have been written into tests/verify/results/*.json beside
+    //     every SURVIVED. What this CANNOT see: a cache that does not validate on mtime at
+    //     all (opcache.validate_timestamps=0, a warm daemon or container), a cache keyed on
+    //     a DERIVED artifact rather than the target (this repo ships one — the committed
+    //     classmap-authoritative autoloader), and a gate that never opens the target at all,
+    //     which is ADR-E8's founding story arriving on the SURVIVED side. A content-hash
+    //     cache is the safe direction and needs nothing here: a mutation always moves the
+    //     hash.
     //
     //     So break the cache key again, with the mutated bytes untouched, and re-run. A
     //     verdict that changes when only the cache key changed was never about the code.
-    //     mtime rather than a content edit — an appended newline would perturb more —
-    //     because gates in this registry checksum their targets, and that would turn a
-    //     real SURVIVED into a false INVALID. Costs nothing on a healthy all-KILLED
-    //     registry: it runs only for a verdict that is about to be believed.
+    //     mtime, not a content edit. An appended newline perturbs strictly more, and no
+    //     registry gate hashes its target TODAY — but tests/fp-negative/run-negatives.php
+    //     sha256-pins four files that ARE mutation targets and refuses a run whose subject
+    //     moved, so "nothing hashes a target" is a fact with a short shelf life. Any gate
+    //     that did would report the perturbing byte as a failure and turn a real SURVIVED
+    //     into a false INVALID. mtime is inert for every target by construction. Costs
+    //     nothing on a healthy all-KILLED registry: it runs only for a verdict that is
+    //     about to be believed.
     $unread = '';
     if (0 === $rc_mutated) {
         mut_break_cache_key($repo, $spec['target']);
@@ -251,7 +286,7 @@ function mut_evaluate(string $repo, array $spec): array
             return ['verdict' => INVALID, 'detail' => $unread];
         }
 
-        return ['verdict' => SURVIVED, 'detail' => 'gate still passed, and still passed with the target cache key broken — the assertion does not pin this'];
+        return ['verdict' => SURVIVED, 'detail' => 'gate still passed, and still passed with the target mtime moved — the assertion does not pin this'];
     }
 
     // ADR-E8, after-side. Non-zero is NOT enough. These gates hold up to seven assertions,
@@ -276,10 +311,12 @@ if (in_array('--selftest', $argv, true)) {
     mkdir($tmp);
     mut_run('git init -q . && git config user.email t@t && git config user.name t', $tmp);
     file_put_contents($tmp . '/subject.php', "<?php\nfunction guarded() { return 'GUARD'; }\n");
-    // Fixture gates are `grep` and `false` rather than PHP scripts: mut_run() observes
-    // nothing but the exit code and the output, so the fixture's implementation language is
-    // not part of what the selftest proves — and six PHP interpreter spawns measured 294 ms
-    // of the 544 ms selftest, inside a PR-blocking gate. grep is ~13x cheaper.
+    // Fixture gates are `grep`, `false` and one four-line shell script rather than PHP
+    // scripts: mut_run() observes nothing but the exit code and the output, so the
+    // fixture's implementation language is not part of what the selftest proves — and six
+    // PHP interpreter spawns measured 294 ms of the 544 ms selftest, inside a PR-blocking
+    // gate (six was the case count when that was measured; there are seven now). grep is
+    // ~13x cheaper.
     //
     // observes.sh is a fixture gate that PASSES its first two invocations and fails the
     // third. The cache-key case below needs a gate whose verdict changes on re-run while
@@ -321,6 +358,7 @@ if (in_array('--selftest', $argv, true)) {
         // that stops a false SURVIVED must itself be provable, or it is one more
         // assertion nobody has watched fail.
         ['expect' => INVALID,  'label' => 'a gate that stops passing when only the cache key changes is INVALID, never SURVIVED',
+         'detail_has' => 'cache key',
          'spec' => ['target' => 'subject.php', 'gate' => 'sh observes.sh', 'kind' => 'name-only',
                     'expect' => 'never reached on this path', 'rationale' => 'x', 'diff' => $touches_only_comment]],
         ['expect' => INVALID,  'label' => 'an empty expect is refused, never evaluated',
@@ -330,8 +368,14 @@ if (in_array('--selftest', $argv, true)) {
     echo "CONTROLS\n";
     $ok = true;
     foreach ($cases as $case) {
-        $got = mut_evaluate($tmp, $case['spec'])['verdict'];
-        $pass = $got === $case['expect'];
+        $res  = mut_evaluate($tmp, $case['spec']);
+        $got  = $res['verdict'];
+        // Verdict alone is not enough for a case whose INVALID has more than one possible
+        // cause: shifting observes.sh by one invocation keeps it INVALID via the
+        // wrong-reason-expect branch while never entering the control at all. detail_has
+        // pins the case to the cause it names.
+        $pass = $got === $case['expect']
+            && (!isset($case['detail_has']) || false !== strpos($res['detail'], $case['detail_has']));
         $ok   = $ok && $pass;
         printf("  [%s] %s (expected %s, got %s)\n", $pass ? 'PASS' : 'FAIL', $case['label'], $case['expect'], $got);
     }
@@ -343,6 +387,10 @@ if (in_array('--selftest', $argv, true)) {
     // Required-red both ways: `touch($path)` with no stamp fails it, and so does a helper
     // that returns early. An end-to-end fixture cannot cover this, because forcing the
     // collision would mean predicting the mtime `git apply` is about to write.
+    // The explicit clearstatcache() calls below duplicate the one the helper already makes,
+    // deliberately: they keep this assertion about the STAMP, so a helper that dropped its
+    // own cache clearing fails here for the right reason instead of because filemtime()
+    // answered from a stale stat cache.
     $probe = $tmp . '/probe.txt';
     file_put_contents($probe, 'x');
     mut_break_cache_key($tmp, 'probe.txt');
@@ -354,6 +402,52 @@ if (in_array('--selftest', $argv, true)) {
     $bump = ($m2 > $m1);
     $ok   = $ok && $bump;
     printf("  [%s] two cache-key breaks in the same second still differ (%d then %d)\n", $bump ? 'PASS' : 'FAIL', $m1, $m2);
+
+    // COMPOSITION control — do the SEAMS call the guard?
+    //
+    // The probe above proves the helper works. It cannot prove mut_evaluate() invokes it,
+    // and that gap was not hypothetical: with only the probe in place, deleting ALL THREE
+    // seam calls and leaving mut_break_cache_key() as dead code still printed SELFTEST
+    // PASS, 8 of 8. The observes.sh case could not see it either, because it keys on
+    // invocation count rather than on the cache key. A guard whose absence nothing can
+    // detect is this campaign's signature defect (PITFALLS 61), and it was reintroduced
+    // here by the person writing the guard against it.
+    //
+    // mut_break_cache_key() is the only thing in this file that stamps a file into the
+    // FUTURE — git apply and git checkout both stamp "now" — so "was the subject
+    // future-stamped when the gate ran?" separates the helper being CALLED from the helper
+    // merely existing, and needs no same-wall-clock-second race to do it.
+    file_put_contents(
+        $tmp . '/seam-probe.php',
+        "<?php\n"
+        . "file_put_contents('.seams', filemtime('subject.php') > time() ? 'F' : 'N', FILE_APPEND);\n"
+        . "echo \"seam-probe ran\\n\";\n"
+        . "exit(false === strpos((string) file_get_contents('subject.php'), 'GUARD') ? 1 : 0);\n"
+    );
+    @unlink($tmp . '/.seams');
+    touch($tmp . '/subject.php', time() - 5);   // start NOT future-stamped, so 'N' is earned
+    clearstatcache(true, $tmp . '/subject.php');
+
+    $seam_verdict = mut_evaluate($tmp, [
+        'target' => 'subject.php', 'gate' => 'php seam-probe.php', 'kind' => 'construct-removal',
+        'expect' => 'seam-probe ran', 'rationale' => 'x', 'diff' => $removes_guard,
+    ])['verdict'];
+
+    $seams = (string) @file_get_contents($tmp . '/.seams');
+    clearstatcache(true, $tmp . '/subject.php');
+    $post_future = filemtime($tmp . '/subject.php') > time();
+    // N on the clean run (nothing has bumped it yet), F on the mutated run (the APPLY seam
+    // bumped it), and future again after mut_evaluate returns (the REVERT seam bumped it —
+    // the call that stops a reverted file from colliding with the mutated artifact).
+    $seam_ok = (KILLED === $seam_verdict) && ('NF' === $seams) && $post_future;
+    $ok      = $ok && $seam_ok;
+    printf(
+        "  [%s] the seams CALL the guard (verdict %s, gate saw %s, after revert %s)\n",
+        $seam_ok ? 'PASS' : 'FAIL',
+        $seam_verdict,
+        '' === $seams ? '(nothing)' : $seams,
+        $post_future ? 'future-stamped' : 'NOT future-stamped'
+    );
 
     mut_run('rm -rf ' . escapeshellarg($tmp), sys_get_temp_dir());
 
