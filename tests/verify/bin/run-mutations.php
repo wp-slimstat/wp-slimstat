@@ -63,33 +63,43 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/lib/mutations.php';
 
-// PYTHONDONTWRITEBYTECODE, and it is load-bearing rather than hygiene.
+// The cache-key guard, and it is load-bearing rather than hygiene.
 //
-// CPython validates a cached .pyc against (source mtime IN WHOLE SECONDS, source size). A
-// mutation that is a pure BLOCK MOVE changes neither: S4-oracle-errored-outranks-old-errored-01
-// reorders two Rule() entries and leaves classify.py at exactly 34,760 bytes, and the
-// apply-gate-revert cycle takes ~0.45s, so the write lands in the same wall-clock second as the
-// previous compile. Python then reuses the stale bytecode and THE GATE MEASURES THE UNMUTATED
-// SOURCE — it was reported SURVIVED while being perfectly sound.
+// A compiled-artifact cache keys on (source mtime, size) — CPython validates a .pyc that
+// way, PHP's opcache on mtime alone. A mutation that is a pure BLOCK MOVE changes neither:
+// S4-oracle-errored-outranks-old-errored-01 reorders two Rule() entries and leaves
+// classify.py at exactly 34,760 bytes, so when the apply lands in the same wall-clock
+// second as the previous compile, the interpreter reuses the stale artifact and THE GATE
+// MEASURES THE UNMUTATED SOURCE. It was reported SURVIVED while being perfectly sound.
 //
-// Worse than a wrong verdict, it leaks: the stale .pyc outlives the revert, so a later run on a
-// git-clean tree can fail with the mutation's assertions, and __pycache__ is gitignored so
-// mut_tree_is_clean() cannot see it. This is "a gate that silently did not run" wearing an
-// interpreter cache (PITFALLS 31, 62), caught only because somebody measured the registry
-// instead of reading its verdict.
+// Worse than a wrong verdict, it leaks: the stale artifact outlives the revert, so a later
+// run on a git-clean tree can fail with the mutation's assertions, and __pycache__ is
+// gitignored so mut_tree_is_clean() cannot see it. This is "a gate that silently did not
+// run" wearing an interpreter cache (PITFALLS 31, 62), caught only because somebody
+// measured the registry instead of reading its verdict.
 //
-// putenv() rather than a shell prefix: a prefix binds to one simple command, and the gates here
-// are free-form strings that may be compound. It also cannot be filtered on "looks like Python"
-// — 34 of the registry's gates reach python3 only from inside a composer script, so such a
-// filter would match none of them while looking correct.
-// PYTHONPYCACHEPREFIX, not PYTHONDONTWRITEBYTECODE — and the difference is the whole fix.
-// DONTWRITEBYTECODE stops Python WRITING a .pyc; it does not stop it READING one. Any ordinary
-// `composer test:classifier-plants` run re-seeds __pycache__, and the next registry run happily
-// reads that stale cache. Measured: with a seeded cache and a size-preserving edit,
-// DONTWRITEBYTECODE=1 still executes the OLD source; PYCACHEPREFIX pointing at a fresh directory
-// executes the new one. The first version of this guard would have looked like a fix and left the
-// false SURVIVED intact whenever anyone had run the gate directly beforehand.
-putenv('PYTHONPYCACHEPREFIX=' . sys_get_temp_dir() . '/slimstat-pyc-' . getmypid());
+// THE GUARD IS AT THE SEAM, NOT IN THE ENVIRONMENT. The first version of it set
+// PYTHONDONTWRITEBYTECODE + PYTHONPYCACHEPREFIX, and two measurements retired that shape:
+//
+//   * IT COVERS ONE LANGUAGE, AND NOT THE COMMON ONE. Four of the 82 registry entries are
+//     size-preserving and THREE TARGET PHP — C48-lease-steal-condition-01,
+//     S3-export-stores-text-not-blob-01, S5-percentage-divides-before-multiplying-01 —
+//     against one targeting Python. PHP keys on mtime alone, a WIDER target than CPython's
+//     (mtime, size), and exposes no PHP_* env var for it: only `-d opcache.enable_cli=0`,
+//     i.e. a shell prefix, which cannot be used here (see mut_run()). Those 48 PHP gates
+//     were resting on an interpreter default that nothing in this repo asserts.
+//   * IT COSTS, AND NOT WHERE IT HELPS. An empty bytecode cache recompiles 37 stdlib
+//     modules — 1.0 MB, byte-identical every time — on each of ~102 python processes a
+//     registry run spawns, to protect the ~9 ms of it a mutation can actually change.
+//     Interleaved, n=9, medians: 42.0 ms unguarded / 115.2 ms with both env vars /
+//     43.8 ms bumping mtime. About +7.5 s per registry run, inside a PR-blocking gate.
+//
+// Bumping the target's mtime at the apply and revert seams invalidates EVERY mtime-keyed
+// artifact — .pyc, opcache SHM and file_cache, make, ccache, tsc --incremental — for any
+// language, requires no cooperation from the child process, and costs +1.9 ms. Measured
+// against the real gate and the real mutation with the race made deterministic (mtime
+// pinned across the apply, so size AND mtime-second are identical): unguarded SURVIVED,
+// both env vars SURVIVED, mtime bump KILLED.
 
 const KILLED   = 'KILLED';
 const SURVIVED = 'SURVIVED';
@@ -100,25 +110,10 @@ function mut_run(string $cmd, string $cwd): array
 {
     $out = [];
     $rc  = 0;
-    // The bytecode guard is set by putenv() at the top of this file, NOT as a shell prefix
-    // here. A prefix binds to ONE simple command, and mut_run() is called with compound `$cmd`
-    // in three places, so `composer test:a && composer test:b` would have been guarded on the
-    // first half only — the fix for "a gate that silently did not run", reintroducing it.
-    //
-    // CPython validates a cached .pyc against (source mtime IN WHOLE SECONDS, source size). A
-    // mutation that is a pure BLOCK MOVE changes neither: tests/mutations/
-    // S4-oracle-errored-outranks-old-errored-01 reorders two Rule() entries and leaves
-    // classify.py at exactly 34,760 bytes, and the apply-gate-revert cycle takes ~0.45s, so the
-    // write routinely lands in the same wall-clock second as the previous compile. Python then
-    // reuses the stale bytecode and THE GATE MEASURES THE UNMUTATED SOURCE. The mutation was
-    // reported SURVIVED while being perfectly sound — verified by hand: purge __pycache__ and
-    // the same diff exits 1 naming P46.
-    //
-    // Worse than a wrong verdict, it leaks: the stale .pyc outlives the revert, so a later run
-    // on a git-clean tree can fail with the mutation's assertions. __pycache__ is gitignored, so
-    // mut_tree_is_clean() cannot see it. This is "a gate that silently did not run" wearing an
-    // interpreter cache — the same family as PITFALLS 31 and 62, and the only reason it was
-    // caught is that somebody measured the registry instead of reading its verdict.
+    // Gates are free-form strings, and three call sites pass a COMPOUND `$cmd`, so a guard
+    // expressed as a shell prefix here would bind to the first simple command only —
+    // `composer test:a && composer test:b` guarded on the first half. That is why the
+    // cache-key guard lives at the apply/revert seams (top of this file), not in this string.
     exec('cd ' . escapeshellarg($cwd) . ' && ' . $cmd . ' 2>&1', $out, $rc);
 
     return [$rc, implode("\n", $out)];
@@ -152,6 +147,24 @@ function mut_target_is_pristine(string $repo, string $target): bool
     [$rc] = mut_run('git diff --quiet -- ' . escapeshellarg($target) . ' && git diff --cached --quiet -- ' . escapeshellarg($target), $repo);
 
     return 0 === $rc;
+}
+
+/**
+ * Make the target's mtime unrepeatable, so no mtime-keyed cache can answer for it twice.
+ *
+ * Called at both seams where the target's CONTENT changes while its (mtime, size) need not:
+ * after the apply and after the revert. A strictly increasing stamp rather than a bare
+ * touch(), because the defect IS two writes landing in the same wall-clock second —
+ * touching to "now" reproduces it rather than fixing it whenever the cycle is sub-second.
+ */
+function mut_break_cache_key(string $repo, string $target): void
+{
+    static $tick = 0;
+    $path = $repo . '/' . $target;
+    if (is_file($path)) {
+        touch($path, time() + ++$tick);
+        clearstatcache(true, $path);
+    }
 }
 
 /**
@@ -193,10 +206,38 @@ function mut_evaluate(string $repo, array $spec): array
     if (0 !== $rc_apply) {
         return ['verdict' => INVALID, 'detail' => 'diff did not apply: ' . trim($apply_out)];
     }
+    mut_break_cache_key($repo, $spec['target']);
 
-    // 3. Classify, then revert unconditionally.
+    // 3. Classify.
     [$rc_mutated, $out_mutated] = mut_run($spec['gate'], $repo);
+
+    // 3a. ADR-E8, SURVIVED side — the half that had no control, which is where this
+    //     defect lived. The before-side is guarded (the gate must be green on the clean
+    //     tree) and the KILLED side is guarded (`expect:`), but SURVIVED — the verdict
+    //     that ACCUSES WORKING CODE of not pinning what it claims — was taken on trust.
+    //
+    //         A gate passing under a mutation is only evidence when the gate
+    //         demonstrably read the mutated tree.
+    //
+    //     So break the cache key again, with the mutated bytes untouched, and re-run. A
+    //     verdict that changes when only the cache key changed was never about the code.
+    //     mtime rather than a content edit — an appended newline would perturb more —
+    //     because gates in this registry checksum their targets, and that would turn a
+    //     real SURVIVED into a false INVALID. Costs nothing on a healthy all-KILLED
+    //     registry: it runs only for a verdict that is about to be believed.
+    $unread = '';
+    if (0 === $rc_mutated) {
+        mut_break_cache_key($repo, $spec['target']);
+        [$rc_recheck] = mut_run($spec['gate'], $repo);
+        if (0 !== $rc_recheck) {
+            $unread = 'gate passed, then failed (exit ' . $rc_recheck . ') when the target cache key '
+                . 'changed with its bytes untouched — the passing run was not reading the mutated source';
+        }
+    }
+
+    // 3b. Revert unconditionally.
     mut_run('git checkout -- ' . escapeshellarg($spec['target']), $repo);
+    mut_break_cache_key($repo, $spec['target']);
 
     // 4. Refuse to continue with a dirty tree — a leaked mutation would silently
     //    contaminate every mutation after this one.
@@ -206,7 +247,11 @@ function mut_evaluate(string $repo, array $spec): array
     }
 
     if (0 === $rc_mutated) {
-        return ['verdict' => SURVIVED, 'detail' => 'gate still passed — the assertion does not pin this'];
+        if ('' !== $unread) {
+            return ['verdict' => INVALID, 'detail' => $unread];
+        }
+
+        return ['verdict' => SURVIVED, 'detail' => 'gate still passed, and still passed with the target cache key broken — the assertion does not pin this'];
     }
 
     // ADR-E8, after-side. Non-zero is NOT enough. These gates hold up to seven assertions,
@@ -235,6 +280,21 @@ if (in_array('--selftest', $argv, true)) {
     // nothing but the exit code and the output, so the fixture's implementation language is
     // not part of what the selftest proves — and six PHP interpreter spawns measured 294 ms
     // of the 544 ms selftest, inside a PR-blocking gate. grep is ~13x cheaper.
+    //
+    // observes.sh is a fixture gate that PASSES its first two invocations and fails the
+    // third. The cache-key case below needs a gate whose verdict changes on re-run while
+    // the subject's bytes do not — the observable signature of a gate answering from a
+    // stale artifact instead of from the tree. A counter, not a real .pyc, because the
+    // bytecode race needs the apply to land in the same wall-clock second as the previous
+    // compile, and no fixture can force that: `git apply` stamps mtime with "now". The
+    // counter reproduces the SIGNATURE deterministically, which is what the control keys on.
+    file_put_contents(
+        $tmp . '/observes.sh',
+        'n=$(cat .n 2>/dev/null || echo 0)' . "\n"
+        . 'n=$((n + 1))' . "\n"
+        . 'echo $n > .n' . "\n"
+        . 'test $n -lt 3' . "\n"
+    );
     mut_run('git add -A && git commit -q -m init', $tmp);
 
     $removes_guard = "--- a/subject.php\n+++ b/subject.php\n@@ -1,2 +1,2 @@\n <?php\n-function guarded() { return 'GUARD'; }\n+function guarded() { return 'NOPE'; }\n";
@@ -256,6 +316,13 @@ if (in_array('--selftest', $argv, true)) {
         ['expect' => INVALID,  'label' => 'a stale diff is INVALID, never SURVIVED',
          'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '0', 'rationale' => 'x',
                     'diff' => "--- a/subject.php\n+++ b/subject.php\n@@ -1,2 +1,2 @@\n <?php\n-function absent() { return 'X'; }\n+function absent() { return 'Y'; }\n"]],
+        // Required-red for the cache-key guard. Without the SURVIVED-side control this
+        // case reports SURVIVED and the selftest fails — which is the point: the guard
+        // that stops a false SURVIVED must itself be provable, or it is one more
+        // assertion nobody has watched fail.
+        ['expect' => INVALID,  'label' => 'a gate that stops passing when only the cache key changes is INVALID, never SURVIVED',
+         'spec' => ['target' => 'subject.php', 'gate' => 'sh observes.sh', 'kind' => 'name-only',
+                    'expect' => 'never reached on this path', 'rationale' => 'x', 'diff' => $touches_only_comment]],
         ['expect' => INVALID,  'label' => 'an empty expect is refused, never evaluated',
          'spec' => ['target' => 'subject.php', 'gate' => 'grep -c GUARD subject.php', 'kind' => 'construct-removal', 'expect' => '', 'rationale' => 'x', 'diff' => $removes_guard]],
     ];
@@ -268,6 +335,26 @@ if (in_array('--selftest', $argv, true)) {
         $ok   = $ok && $pass;
         printf("  [%s] %s (expected %s, got %s)\n", $pass ? 'PASS' : 'FAIL', $case['label'], $case['expect'], $got);
     }
+    // Direct control for mut_break_cache_key() itself. The cases above all run through
+    // mut_evaluate(), and none of them can exercise the one property that separates this
+    // helper from a bare touch(): that two calls INSIDE THE SAME WALL-CLOCK SECOND still
+    // produce different stamps. That single second IS the defect — the apply landing in
+    // the same second as the previous compile — so it is asserted rather than assumed.
+    // Required-red both ways: `touch($path)` with no stamp fails it, and so does a helper
+    // that returns early. An end-to-end fixture cannot cover this, because forcing the
+    // collision would mean predicting the mtime `git apply` is about to write.
+    $probe = $tmp . '/probe.txt';
+    file_put_contents($probe, 'x');
+    mut_break_cache_key($tmp, 'probe.txt');
+    clearstatcache(true, $probe);
+    $m1 = filemtime($probe);
+    mut_break_cache_key($tmp, 'probe.txt');
+    clearstatcache(true, $probe);
+    $m2 = filemtime($probe);
+    $bump = ($m2 > $m1);
+    $ok   = $ok && $bump;
+    printf("  [%s] two cache-key breaks in the same second still differ (%d then %d)\n", $bump ? 'PASS' : 'FAIL', $m1, $m2);
+
     mut_run('rm -rf ' . escapeshellarg($tmp), sys_get_temp_dir());
 
     echo "\nVERDICT: " . ($ok ? "SELFTEST PASS\n" : "SELFTEST FAIL\n");
