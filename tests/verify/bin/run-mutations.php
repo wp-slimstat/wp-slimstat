@@ -63,6 +63,34 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/lib/mutations.php';
 
+// PYTHONDONTWRITEBYTECODE, and it is load-bearing rather than hygiene.
+//
+// CPython validates a cached .pyc against (source mtime IN WHOLE SECONDS, source size). A
+// mutation that is a pure BLOCK MOVE changes neither: S4-oracle-errored-outranks-old-errored-01
+// reorders two Rule() entries and leaves classify.py at exactly 34,760 bytes, and the
+// apply-gate-revert cycle takes ~0.45s, so the write lands in the same wall-clock second as the
+// previous compile. Python then reuses the stale bytecode and THE GATE MEASURES THE UNMUTATED
+// SOURCE — it was reported SURVIVED while being perfectly sound.
+//
+// Worse than a wrong verdict, it leaks: the stale .pyc outlives the revert, so a later run on a
+// git-clean tree can fail with the mutation's assertions, and __pycache__ is gitignored so
+// mut_tree_is_clean() cannot see it. This is "a gate that silently did not run" wearing an
+// interpreter cache (PITFALLS 31, 62), caught only because somebody measured the registry
+// instead of reading its verdict.
+//
+// putenv() rather than a shell prefix: a prefix binds to one simple command, and the gates here
+// are free-form strings that may be compound. It also cannot be filtered on "looks like Python"
+// — 34 of the registry's gates reach python3 only from inside a composer script, so such a
+// filter would match none of them while looking correct.
+// PYTHONPYCACHEPREFIX, not PYTHONDONTWRITEBYTECODE — and the difference is the whole fix.
+// DONTWRITEBYTECODE stops Python WRITING a .pyc; it does not stop it READING one. Any ordinary
+// `composer test:classifier-plants` run re-seeds __pycache__, and the next registry run happily
+// reads that stale cache. Measured: with a seeded cache and a size-preserving edit,
+// DONTWRITEBYTECODE=1 still executes the OLD source; PYCACHEPREFIX pointing at a fresh directory
+// executes the new one. The first version of this guard would have looked like a fix and left the
+// false SURVIVED intact whenever anyone had run the gate directly beforehand.
+putenv('PYTHONPYCACHEPREFIX=' . sys_get_temp_dir() . '/slimstat-pyc-' . getmypid());
+
 const KILLED   = 'KILLED';
 const SURVIVED = 'SURVIVED';
 const INVALID  = 'INVALID';
@@ -72,6 +100,25 @@ function mut_run(string $cmd, string $cwd): array
 {
     $out = [];
     $rc  = 0;
+    // The bytecode guard is set by putenv() at the top of this file, NOT as a shell prefix
+    // here. A prefix binds to ONE simple command, and mut_run() is called with compound `$cmd`
+    // in three places, so `composer test:a && composer test:b` would have been guarded on the
+    // first half only — the fix for "a gate that silently did not run", reintroducing it.
+    //
+    // CPython validates a cached .pyc against (source mtime IN WHOLE SECONDS, source size). A
+    // mutation that is a pure BLOCK MOVE changes neither: tests/mutations/
+    // S4-oracle-errored-outranks-old-errored-01 reorders two Rule() entries and leaves
+    // classify.py at exactly 34,760 bytes, and the apply-gate-revert cycle takes ~0.45s, so the
+    // write routinely lands in the same wall-clock second as the previous compile. Python then
+    // reuses the stale bytecode and THE GATE MEASURES THE UNMUTATED SOURCE. The mutation was
+    // reported SURVIVED while being perfectly sound — verified by hand: purge __pycache__ and
+    // the same diff exits 1 naming P46.
+    //
+    // Worse than a wrong verdict, it leaks: the stale .pyc outlives the revert, so a later run
+    // on a git-clean tree can fail with the mutation's assertions. __pycache__ is gitignored, so
+    // mut_tree_is_clean() cannot see it. This is "a gate that silently did not run" wearing an
+    // interpreter cache — the same family as PITFALLS 31 and 62, and the only reason it was
+    // caught is that somebody measured the registry instead of reading its verdict.
     exec('cd ' . escapeshellarg($cwd) . ' && ' . $cmd . ' 2>&1', $out, $rc);
 
     return [$rc, implode("\n", $out)];

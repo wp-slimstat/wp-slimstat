@@ -1,0 +1,18 @@
+target:    admin/view/wp-slimstat-db.php
+gate:      composer test:rounding-contract
+kind:      restore-defect
+expect:    round() was handed 28.74999999999999644729
+rationale: Restores the operand order ADR-17 was written about, on the one surface where the divergence is printed as text rather than used as a CSS width: the funnel step percentage. `($visitor_count / $step1_count) * 100` rounds twice - the division produces a double, and scaling it by 100 lands one ULP below the exact half - so 23 of 80 step-one visitors is handed to round() as 28.74999999999999644729 where the exact value is 28.75, and renders 28.7% on PHP 8.4/8.5 against 28.8% on 7.4-8.3 from the same database. The mutation deliberately LEAVES THE COMMENT claiming multiply-first in place, so what it proves is that the gate reads the expression rather than the prose beside it (PITFALLS 64: a mechanism is a file in the diff, prose describing one is a plan). The expect: string is the version-invariant half of the assertion - the double handed to round() - not the rendered value, because the rendered value is masked by PHP <= 8.3's pre-rounding and a gate keyed on it would report SURVIVED on the whole lower half of the support matrix while the defect was fully present.
+---
+diff --git a/admin/view/wp-slimstat-db.php b/admin/view/wp-slimstat-db.php
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -2773,7 +2773,7 @@
+                 // 23 of 80 step-one visitors read "28.7%" on PHP 8.4/8.5 and "28.8%" on 7.4-8.3
+                 // from the same database. 28.75 is the exact value; 28.8 is what half-up says.
+                 // ADR-17; PITFALLS 72.
+-                'pct'         => ($step1_count > 0) ? round((100 * $visitor_count) / $step1_count, 1) : 0,
++                'pct'         => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                 'dropoff'     => max(0, $dropoff),
+                 'unreachable' => $unreachable,
+             ];

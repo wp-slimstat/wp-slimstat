@@ -1,31 +1,90 @@
 {
   "schema": "SLIMSTAT-PLANTS-V1",
   "about": "One plant per label the classifier can emit, one per rule in its decision table, and — since run 53 — a plant or a direct assertion per rule name in compare/algebra.py's DIFF_RULES, which the gate now enumerates rather than the README claiming. Each plant is an answer triple, the label it MUST receive, and a one-line statement of what mislabelling it would cost the campaign. See README.md beside this file.",
-  "expected_assertions": 370,
+  "expected_assertions": 407,
   "php_round_probes": {
     "about": "The rounding claim in compare/algebra.py::round_half_up, replayed rather than believed. Every expected value is what PHP's round() actually printed; nothing here was captured from the Python helper.",
     "measured_with": "php -r 'printf(round($v, $p))' on PHP 7.4.33 (docker run --rm php:7.4-cli, the declared floor) and on PHP 8.5.5 (this workstation, which is PHP 8.4+ and therefore uses the rewritten round()). Both interpreters printed the same value for all fifteen probes.",
     "why_these_eleven": "Three negatives, because decimal.ROUND_HALF_UP is ties-AWAY-FROM-ZERO despite its name and that is the half of the claim most likely to be assumed rather than checked; 1.005, 0.285, 2.675 and 8.475, because those are the values where a rounder that works on the binary double gives the other answer; 1234567890.12345 for a magnitude with a fractional tail.",
     "why_four_of_them_twice": "The first eleven are JSON STRINGS, so _decimal() took its str branch for every one of them and the float branch — the one round_half_up's docstring calls load-bearing, where Decimal(str(v)) and Decimal(v) part company — was never taken by a probe at all. Replacing Decimal(str(value)) with Decimal(value) left the gate green through the whole of S4. The last four repeat the binary traps as JSON NUMBERS, which is how the ORACLE side hands a value over; with them, that same mutation turns six probes red.",
     "cases": [
-      {"value": "-0.5", "places": 0, "php_round": "-1"},
-      {"value": "-1.5", "places": 0, "php_round": "-2"},
-      {"value": "2.5", "places": 0, "php_round": "3"},
-      {"value": "1.005", "places": 2, "php_round": "1.01"},
-      {"value": "-1.005", "places": 2, "php_round": "-1.01"},
-      {"value": "0.285", "places": 2, "php_round": "0.29"},
-      {"value": "1.55", "places": 1, "php_round": "1.6"},
-      {"value": "1.15", "places": 1, "php_round": "1.2"},
-      {"value": "2.675", "places": 2, "php_round": "2.68"},
-      {"value": "8.475", "places": 2, "php_round": "8.48"},
-      {"value": "1234567890.12345", "places": 4, "php_round": "1234567890.1235"},
-      {"value": 1.005, "places": 2, "php_round": "1.01"},
-      {"value": 0.285, "places": 2, "php_round": "0.29"},
-      {"value": 2.675, "places": 2, "php_round": "2.68"},
-      {"value": 8.475, "places": 2, "php_round": "8.48"}
+      {
+        "value": "-0.5",
+        "places": 0,
+        "php_round": "-1"
+      },
+      {
+        "value": "-1.5",
+        "places": 0,
+        "php_round": "-2"
+      },
+      {
+        "value": "2.5",
+        "places": 0,
+        "php_round": "3"
+      },
+      {
+        "value": "1.005",
+        "places": 2,
+        "php_round": "1.01"
+      },
+      {
+        "value": "-1.005",
+        "places": 2,
+        "php_round": "-1.01"
+      },
+      {
+        "value": "0.285",
+        "places": 2,
+        "php_round": "0.29"
+      },
+      {
+        "value": "1.55",
+        "places": 1,
+        "php_round": "1.6"
+      },
+      {
+        "value": "1.15",
+        "places": 1,
+        "php_round": "1.2"
+      },
+      {
+        "value": "2.675",
+        "places": 2,
+        "php_round": "2.68"
+      },
+      {
+        "value": "8.475",
+        "places": 2,
+        "php_round": "8.48"
+      },
+      {
+        "value": "1234567890.12345",
+        "places": 4,
+        "php_round": "1234567890.1235"
+      },
+      {
+        "value": 1.005,
+        "places": 2,
+        "php_round": "1.01"
+      },
+      {
+        "value": 0.285,
+        "places": 2,
+        "php_round": "0.29"
+      },
+      {
+        "value": 2.675,
+        "places": 2,
+        "php_round": "2.68"
+      },
+      {
+        "value": 8.475,
+        "places": 2,
+        "php_round": "8.48"
+      }
     ]
   },
-
   "php_round_divergences": {
     "about": "Where round_half_up() does NOT match PHP's round(), recorded as a fixture because the campaign's declared floor is PHP 7.4 and the helper agrees with 8.4+ instead. This block exists because the eleven probes above could not have found it: a decimal literal of at most 15 significant digits survives pre-8.4's 15-digit pre-round unchanged, so short literals are the one class where the two implementations can never disagree, and all eleven were short literals.",
     "measured_with": "1400 boundary values generated from the plugin's own percentage expression round(($n / $d) * 100, $places) — admin/view/wp-slimstat-db.php:2290 and :2763 — for every d <= 2000, each run through round() on docker php:7.4-cli (7.4.33), php:8.2-cli (8.2.31), php:8.3-cli (8.3.33) and PHP 8.5.5 on this workstation. 144 of the 1400 disagree with the helper on 7.4, 8.2 AND 8.3; ZERO disagree on 8.5.5.",
@@ -33,12 +92,32 @@
     "what_the_gate_asserts": "That round_half_up returns `helper`, and that `helper` differs from `php_74_to_83_round`. The first goes red if someone quietly re-implements the pre-8.4 behaviour; the second goes red if the divergence recorded here stops being real — a fixture that could only ever confirm itself is the shape this whole gate exists to refuse.",
     "owed_to_s5": "DEFAULT_CONTRACT['places'] is None and no report-contracts.json exists, so nothing rounds today and no verdict can be wrong yet. The moment S5 sets `places` on a percentage report, an oracle-side value on this boundary compared against a string a pre-8.4 arm emitted yields a false DIFFER — or, worse direction, sides the oracle with a regressed NEW arm.",
     "cases": [
-      {"value": 14.374999999999998, "places": 2, "php_74_to_83_round": "14.38", "php_84_plus_round": "14.37", "helper": "14.37", "from": "(23/160)*100 — 23 of 160 converting uniques, round(($visitor_count / $step1_count) * 100, 2)"},
-      {"value": 28.749999999999996, "places": 1, "php_74_to_83_round": "28.8", "php_84_plus_round": "28.7", "helper": "28.7", "from": "(23/80)*100 — 23 of 80 funnel visitors at one decimal place"},
-      {"value": -14.374999999999998, "places": 2, "php_74_to_83_round": "-14.38", "php_84_plus_round": "-14.37", "helper": "-14.37", "from": "the negative of the first, because ties-away-from-zero is the half of the claim most often assumed rather than measured"}
+      {
+        "value": 14.374999999999998,
+        "places": 2,
+        "php_74_to_83_round": "14.38",
+        "php_84_plus_round": "14.37",
+        "helper": "14.37",
+        "from": "(23/160)*100 — 23 of 160 converting uniques, round(($visitor_count / $step1_count) * 100, 2)"
+      },
+      {
+        "value": 28.749999999999996,
+        "places": 1,
+        "php_74_to_83_round": "28.8",
+        "php_84_plus_round": "28.7",
+        "helper": "28.7",
+        "from": "(23/80)*100 — 23 of 80 funnel visitors at one decimal place"
+      },
+      {
+        "value": -14.374999999999998,
+        "places": 2,
+        "php_74_to_83_round": "-14.38",
+        "php_84_plus_round": "-14.37",
+        "helper": "-14.37",
+        "from": "the negative of the first, because ties-away-from-zero is the half of the claim most often assumed rather than measured"
+      }
     ]
   },
-
   "plants": [
     {
       "id": "P01-equal-ordinary-agreement",
@@ -48,11 +127,63 @@
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "12"}, {"resource": "/b", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "12"}, {"resource": "/b", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 12}, {"resource": "/b", "counthits": 7}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "12"
+            },
+            {
+              "resource": "/b",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "12"
+            },
+            {
+              "resource": "/b",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 12
+            },
+            {
+              "resource": "/b",
+              "counthits": 7
+            }
+          ]
+        }
       },
-      "expect": {"label": "equal", "rule": "arms-agree-oracle-agrees", "disposition": "pass", "arms_rule": "rows-equal", "observable": "none"}
+      "expect": {
+        "label": "equal",
+        "rule": "arms-agree-oracle-agrees",
+        "disposition": "pass",
+        "arms_rule": "rows-equal",
+        "observable": "none"
+      }
     },
     {
       "id": "P02-zero-is-a-measurement",
@@ -62,11 +193,36 @@
       "register": [],
       "triple": {
         "surface": "count_human_hits",
-        "old": {"class": "zero", "value": "0", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "zero", "value": 0, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "zero", "value": 0}
+        "old": {
+          "class": "zero",
+          "value": "0",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "zero",
+          "value": 0,
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "zero",
+          "value": 0
+        }
       },
-      "expect": {"label": "zero", "rule": "arms-agree-oracle-agrees-zero", "disposition": "pass", "arms_rule": "both-zero", "observable": "none"}
+      "expect": {
+        "label": "zero",
+        "rule": "arms-agree-oracle-agrees-zero",
+        "disposition": "pass",
+        "arms_rule": "both-zero",
+        "observable": "none"
+      }
     },
     {
       "id": "P03-hollow-arms-oracle-has-rows",
@@ -76,11 +232,40 @@
       "register": [],
       "triple": {
         "surface": "top_outbound",
-        "old": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"outbound_resource": "https://x/", "counthits": 3}]}
+        "old": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "outbound_resource": "https://x/",
+              "counthits": 3
+            }
+          ]
+        }
       },
-      "expect": {"label": "hollow", "rule": "hollow-arms", "disposition": "block", "arms_rule": "both-hollow"}
+      "expect": {
+        "label": "hollow",
+        "rule": "hollow-arms",
+        "disposition": "block",
+        "arms_rule": "both-hollow"
+      }
     },
     {
       "id": "P04-order-only-same-rows-different-sequence",
@@ -90,11 +275,63 @@
       "register": [],
       "triple": {
         "surface": "top_browser",
-        "old": {"class": "ok", "value": [{"browser": "Chrome", "counthits": "9"}, {"browser": "Safari", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"browser": "Safari", "counthits": "5"}, {"browser": "Chrome", "counthits": "9"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"browser": "Chrome", "counthits": 9}, {"browser": "Safari", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "counthits": "9"
+            },
+            {
+              "browser": "Safari",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Safari",
+              "counthits": "5"
+            },
+            {
+              "browser": "Chrome",
+              "counthits": "9"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "counthits": 9
+            },
+            {
+              "browser": "Safari",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "ORDER-ONLY", "rule": "order-only", "disposition": "unresolved", "arms_rule": "rows-reordered", "observable": "order-only"}
+      "expect": {
+        "label": "ORDER-ONLY",
+        "rule": "order-only",
+        "disposition": "unresolved",
+        "arms_rule": "rows-reordered",
+        "observable": "order-only"
+      }
     },
     {
       "id": "P05-order-only-but-oracle-holds-other-rows",
@@ -104,11 +341,62 @@
       "register": [],
       "triple": {
         "surface": "top_country",
-        "old": {"class": "ok", "value": [{"country": "de", "counthits": "9"}, {"country": "fr", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"country": "fr", "counthits": "5"}, {"country": "de", "counthits": "9"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"country": "de", "counthits": 9}, {"country": "fr", "counthits": 6}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "country": "de",
+              "counthits": "9"
+            },
+            {
+              "country": "fr",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "country": "fr",
+              "counthits": "5"
+            },
+            {
+              "country": "de",
+              "counthits": "9"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "country": "de",
+              "counthits": 9
+            },
+            {
+              "country": "fr",
+              "counthits": 6
+            }
+          ]
+        }
       },
-      "expect": {"label": "c", "rule": "order-only-oracle-differs", "disposition": "block", "observable": "order-only"}
+      "expect": {
+        "label": "c",
+        "rule": "order-only-oracle-differs",
+        "disposition": "block",
+        "observable": "order-only"
+      }
     },
     {
       "id": "P06-a-registered-R15-rows-up",
@@ -116,15 +404,85 @@
       "mislabelling_means": "As (b), a shipped correction reads as a regression and blocks its own release. As (a) without checking the register, every unexplained change becomes an expected diff — which is the campaign's central failure and the reason (a) requires a match at all.",
       "contract": {},
       "register": [
-        {"r": "R15", "surfaces": ["uniques_browser", "uniques_country"], "observable": "rows-up", "pre_blind": false, "note": "get_top_aggr never consulted use_date_filters; every caller asking for an unfiltered aggregate got a 28-day one"}
+        {
+          "r": "R15",
+          "surfaces": [
+            "uniques_browser",
+            "uniques_country"
+          ],
+          "observable": "rows-up",
+          "pre_blind": false,
+          "note": "get_top_aggr never consulted use_date_filters; every caller asking for an unfiltered aggregate got a 28-day one"
+        }
       ],
       "triple": {
         "surface": "uniques_browser",
-        "old": {"class": "ok", "value": [{"browser": "Chrome", "counthits": "7015"}, {"browser": "Safari", "counthits": "900"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"browser": "Chrome", "counthits": "45517"}, {"browser": "Safari", "counthits": "3300"}, {"browser": "Lynx", "counthits": "4"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"browser": "Chrome", "counthits": 45517}, {"browser": "Safari", "counthits": 3300}, {"browser": "Lynx", "counthits": 4}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "counthits": "7015"
+            },
+            {
+              "browser": "Safari",
+              "counthits": "900"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "counthits": "45517"
+            },
+            {
+              "browser": "Safari",
+              "counthits": "3300"
+            },
+            {
+              "browser": "Lynx",
+              "counthits": "4"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "counthits": 45517
+            },
+            {
+              "browser": "Safari",
+              "counthits": 3300
+            },
+            {
+              "browser": "Lynx",
+              "counthits": 4
+            }
+          ]
+        }
       },
-      "expect": {"label": "a", "rule": "new-backed-registered", "disposition": "pass", "register_id": "R15", "pre_blind": false, "observable": "rows-up"}
+      "expect": {
+        "label": "a",
+        "rule": "new-backed-registered",
+        "disposition": "pass",
+        "register_id": "R15",
+        "pre_blind": false,
+        "observable": "rows-up"
+      }
     },
     {
       "id": "P07-a-unregistered-nothing-covers-it",
@@ -134,11 +492,58 @@
       "register": [],
       "triple": {
         "surface": "top_platform",
-        "old": {"class": "ok", "value": [{"platform": "win", "counthits": "12"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"platform": "win", "counthits": "12"}, {"platform": "mac", "counthits": "4"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"platform": "win", "counthits": 12}, {"platform": "mac", "counthits": 4}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "platform": "win",
+              "counthits": "12"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "platform": "win",
+              "counthits": "12"
+            },
+            {
+              "platform": "mac",
+              "counthits": "4"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "platform": "win",
+              "counthits": 12
+            },
+            {
+              "platform": "mac",
+              "counthits": 4
+            }
+          ]
+        }
       },
-      "expect": {"label": "a-UNREGISTERED", "rule": "new-backed-unregistered", "disposition": "block", "observable": "rows-up"}
+      "expect": {
+        "label": "a-UNREGISTERED",
+        "rule": "new-backed-unregistered",
+        "disposition": "block",
+        "observable": "rows-up"
+      }
     },
     {
       "id": "P08-a-unregistered-entry-describes-another-symptom",
@@ -146,15 +551,68 @@
       "mislabelling_means": "Accepting a surface-only match files a registered defect's UNMEASURED symptom as expected — and the register's own amendment says why that is worse than no entry at all. Reporting a bare UNREGISTERED without naming the near miss makes the operator re-derive a finding the register almost had.",
       "contract": {},
       "register": [
-        {"r": "R2", "surfaces": ["get_group_by"], "observable": "rows-up", "pre_blind": false, "note": "mergeGroupResults() keys on the first non-counthits column and discards the rest"}
+        {
+          "r": "R2",
+          "surfaces": [
+            "get_group_by"
+          ],
+          "observable": "rows-up",
+          "pre_blind": false,
+          "note": "mergeGroupResults() keys on the first non-counthits column and discards the rest"
+        }
       ],
       "triple": {
         "surface": "get_group_by",
-        "old": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win,Mac,Linux", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win,Mac,Linux", "counthits": 7}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win,Mac,Linux",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win,Mac,Linux",
+              "counthits": 7
+            }
+          ]
+        }
       },
-      "expect": {"label": "a-UNREGISTERED", "rule": "new-backed-unregistered", "disposition": "block", "observable": "rows-same-count-values-differ", "near_miss": ["R2"]}
+      "expect": {
+        "label": "a-UNREGISTERED",
+        "rule": "new-backed-unregistered",
+        "disposition": "block",
+        "observable": "rows-same-count-values-differ",
+        "near_miss": [
+          "R2"
+        ]
+      }
     },
     {
       "id": "P09-b-regression-oracle-backs-old",
@@ -164,11 +622,59 @@
       "register": [],
       "triple": {
         "surface": "top_referer",
-        "old": {"class": "ok", "value": [{"referer": "https://a/", "counthits": "10"}, {"referer": "https://b/", "counthits": "4"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"referer": "https://a/", "counthits": "10"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"referer": "https://a/", "counthits": 10}, {"referer": "https://b/", "counthits": 4}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "referer": "https://a/",
+              "counthits": "10"
+            },
+            {
+              "referer": "https://b/",
+              "counthits": "4"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "referer": "https://a/",
+              "counthits": "10"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "referer": "https://a/",
+              "counthits": 10
+            },
+            {
+              "referer": "https://b/",
+              "counthits": 4
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "row-count", "observable": "rows-down"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-count",
+        "observable": "rows-down"
+      }
     },
     {
       "id": "P10-c-arms-agree-oracle-disagrees",
@@ -178,11 +684,36 @@
       "register": [],
       "triple": {
         "surface": "count_records_visit_id",
-        "old": {"class": "ok", "value": "1200", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": "1200", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": 1247}
+        "old": {
+          "class": "ok",
+          "value": "1200",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1200",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1247
+        }
       },
-      "expect": {"label": "c", "rule": "arms-agree-oracle-differs", "disposition": "block", "arms_rule": "numeric-exact", "observable": "none"}
+      "expect": {
+        "label": "c",
+        "rule": "arms-agree-oracle-differs",
+        "disposition": "block",
+        "arms_rule": "numeric-exact",
+        "observable": "none"
+      }
     },
     {
       "id": "P11-c-three-way-nobody-agrees",
@@ -192,11 +723,50 @@
       "register": [],
       "triple": {
         "surface": "get_max_and_average_pages_per_visit",
-        "old": {"class": "ok", "value": [{"avg": "1.9627", "max": "3338"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"avg": "1.2884", "max": "3338"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"avg": 1.2438, "max": 3338}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "avg": "1.9627",
+              "max": "3338"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "avg": "1.2884",
+              "max": "3338"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "avg": 1.2438,
+              "max": 3338
+            }
+          ]
+        }
       },
-      "expect": {"label": "c-THREE-WAY", "rule": "oracle-alone", "disposition": "block", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "c-THREE-WAY",
+        "rule": "oracle-alone",
+        "disposition": "block",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P12-d-vacuous-every-side-empty",
@@ -206,25 +776,114 @@
       "register": [],
       "triple": {
         "surface": "get_recent_events",
-        "old": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "empty", "value": []}
+        "old": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "empty",
+          "value": []
+        }
       },
-      "expect": {"label": "d-vacuous", "rule": "all-hollow", "disposition": "unresolved", "arms_rule": "both-hollow"}
+      "expect": {
+        "label": "d-vacuous",
+        "rule": "all-hollow",
+        "disposition": "unresolved",
+        "arms_rule": "both-hollow"
+      }
     },
     {
       "id": "P13-d-vacuous-whole-result-is-one-tie-band",
       "why": "A LIMIT 3 report in which every row ties at the same count. Any three of the tied candidates is a legal answer, so the two arms drew three entirely different rows and the tie rule would have called them equal.",
       "mislabelling_means": "As equal, a comparison with zero discriminating power is reported as agreement — the tie tolerance turning into a blanket pardon is the one way this campaign's own algebra could manufacture a false clean.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_searchterms",
-        "old": {"class": "ok", "value": [{"searchterms": "a", "counthits": "5"}, {"searchterms": "b", "counthits": "5"}, {"searchterms": "c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"searchterms": "d", "counthits": "5"}, {"searchterms": "e", "counthits": "5"}, {"searchterms": "f", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"searchterms": "a", "counthits": 5}, {"searchterms": "b", "counthits": 5}, {"searchterms": "c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "searchterms": "a",
+              "counthits": "5"
+            },
+            {
+              "searchterms": "b",
+              "counthits": "5"
+            },
+            {
+              "searchterms": "c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "searchterms": "d",
+              "counthits": "5"
+            },
+            {
+              "searchterms": "e",
+              "counthits": "5"
+            },
+            {
+              "searchterms": "f",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "searchterms": "a",
+              "counthits": 5
+            },
+            {
+              "searchterms": "b",
+              "counthits": 5
+            },
+            {
+              "searchterms": "c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "d-vacuous", "rule": "comparison-could-not-fail", "disposition": "unresolved", "arms_rule": "whole-result-is-one-tie-band"}
+      "expect": {
+        "label": "d-vacuous",
+        "rule": "comparison-could-not-fail",
+        "disposition": "unresolved",
+        "arms_rule": "whole-result-is-one-tie-band"
+      }
     },
     {
       "id": "P14-d-clock-unpinned-difference",
@@ -234,11 +893,36 @@
       "register": [],
       "triple": {
         "surface": "get_recent",
-        "old": {"class": "ok", "value": "1200", "flags": {"clock_dependent": true, "calendar_day_dependent": false, "pinned": false}},
-        "new": {"class": "ok", "value": "1207", "flags": {"clock_dependent": true, "calendar_day_dependent": false, "pinned": false}},
-        "oracle": {"class": "ok", "value": 1207}
+        "old": {
+          "class": "ok",
+          "value": "1200",
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1207",
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1207
+        }
       },
-      "expect": {"label": "d-clock", "rule": "clock-unpinned", "disposition": "unresolved", "arms_rule": "numeric-exact", "observable": "value-up"}
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "numeric-exact",
+        "observable": "value-up"
+      }
     },
     {
       "id": "P15-d-unmodeled-no-oracle-answer",
@@ -248,11 +932,41 @@
       "register": [],
       "triple": {
         "surface": "get_funnels_raw",
-        "old": {"class": "ok", "value": [{"step": "1", "counthits": "10"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"step": "1", "counthits": "11"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "10"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "11"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
         "oracle": null
       },
-      "expect": {"label": "d-unmodeled", "rule": "oracle-absent", "disposition": "unresolved"}
+      "expect": {
+        "label": "d-unmodeled",
+        "rule": "oracle-absent",
+        "disposition": "unresolved"
+      }
     },
     {
       "id": "P16-d-unmodeled-oracle-itself-errored",
@@ -262,11 +976,49 @@
       "register": [],
       "triple": {
         "surface": "get_goal_results",
-        "old": {"class": "ok", "value": [{"goal": "signup", "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"goal": "signup", "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "error", "value": null, "error": {"str": "no such column: goal_id", "query": "SELECT goal_id FROM slim_events", "count": 1}}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "goal": "signup",
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "goal": "signup",
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "error",
+          "value": null,
+          "error": {
+            "str": "no such column: goal_id",
+            "query": "SELECT goal_id FROM slim_events",
+            "count": 1
+          }
+        }
       },
-      "expect": {"label": "d-unmodeled", "rule": "oracle-errored", "disposition": "unresolved"}
+      "expect": {
+        "label": "d-unmodeled",
+        "rule": "oracle-errored",
+        "disposition": "unresolved"
+      }
     },
     {
       "id": "P17-d-unmodeled-surface-absent-from-one-era",
@@ -276,11 +1028,36 @@
       "register": [],
       "triple": {
         "surface": "live_window_end",
-        "old": {"class": "unsupported", "value": null, "__unsupported": "this surface takes no date-filter argument in the 5.5.1 era", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": false}},
-        "new": {"class": "ok", "value": "1755400000", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": 1755400000}
+        "old": {
+          "class": "unsupported",
+          "value": null,
+          "__unsupported": "this surface takes no date-filter argument in the 5.5.1 era",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1755400000",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1755400000
+        }
       },
-      "expect": {"label": "d-unmodeled", "rule": "arm-unsupported", "disposition": "unresolved", "observable": "value-differs"}
+      "expect": {
+        "label": "d-unmodeled",
+        "rule": "arm-unsupported",
+        "disposition": "unresolved",
+        "observable": "value-differs"
+      }
     },
     {
       "id": "P18-sql-error-on-old-unregistered",
@@ -290,11 +1067,51 @@
       "register": [],
       "triple": {
         "surface": "count_exit_pages",
-        "old": {"class": "error", "value": [], "error": {"str": "Expression #1 of SELECT list is not in GROUP BY clause", "query": "SELECT visit_id FROM wp_slim_stats GROUP BY resource", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/exit", "counthits": "6"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/exit", "counthits": 6}]}
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Expression #1 of SELECT list is not in GROUP BY clause",
+            "query": "SELECT visit_id FROM wp_slim_stats GROUP BY resource",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/exit",
+              "counthits": "6"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/exit",
+              "counthits": 6
+            }
+          ]
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "old-errored", "disposition": "block", "arms_rule": "class-mismatch", "observable": "error-to-ok"}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored",
+        "disposition": "block",
+        "arms_rule": "class-mismatch",
+        "observable": "error-to-ok"
+      }
     },
     {
       "id": "P19-a-registered-error-to-ok-pre-blind",
@@ -302,15 +1119,73 @@
       "mislabelling_means": "If the register still said 'zero', this triple would be filed UNREGISTERED and a registered defect would block the release — the amendment's own argument for why a wrong symptom is worse than no entry. And if the pre_blind flag were dropped, an unblinded ruling would be cited as blind evidence.",
       "contract": {},
       "register": [
-        {"r": "R4", "surfaces": ["get_funnel_results", "get_funnels_raw"], "observable": "error-to-ok", "pre_blind": true, "note": "CREATE TEMPORARY TABLE gives vid the DATABASE collation while t1.fingerprint carries the TABLE's; step two's join dies on Illegal mix of collations"}
+        {
+          "r": "R4",
+          "surfaces": [
+            "get_funnel_results",
+            "get_funnels_raw"
+          ],
+          "observable": "error-to-ok",
+          "pre_blind": true,
+          "note": "CREATE TEMPORARY TABLE gives vid the DATABASE collation while t1.fingerprint carries the TABLE's; step two's join dies on Illegal mix of collations"
+        }
       ],
       "triple": {
         "surface": "get_funnel_results",
-        "old": {"class": "error", "value": [], "error": {"str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='", "query": "CREATE TEMPORARY TABLE slim_funnel_1 (vid VARCHAR(64) NOT NULL)", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"step": "1", "counthits": "42"}, {"step": "2", "counthits": "17"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"step": 1, "counthits": 42}, {"step": 2, "counthits": 17}]}
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='",
+            "query": "CREATE TEMPORARY TABLE slim_funnel_1 (vid VARCHAR(64) NOT NULL)",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "42"
+            },
+            {
+              "step": "2",
+              "counthits": "17"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "step": 1,
+              "counthits": 42
+            },
+            {
+              "step": 2,
+              "counthits": 17
+            }
+          ]
+        }
       },
-      "expect": {"label": "a", "rule": "old-errored-registered", "disposition": "pass", "register_id": "R4", "pre_blind": true, "observable": "error-to-ok"}
+      "expect": {
+        "label": "a",
+        "rule": "old-errored-registered",
+        "disposition": "pass",
+        "register_id": "R4",
+        "pre_blind": true,
+        "observable": "error-to-ok"
+      }
     },
     {
       "id": "P20-sql-error-on-new-is-never-laundered",
@@ -318,15 +1193,63 @@
       "mislabelling_means": "This is failure protocol 6's laundering, in one triple: a NEW defect that merely errors differently, wearing a registered entry's number. The register may explain OLD's failures and may never explain NEW's.",
       "contract": {},
       "register": [
-        {"r": "R4", "surfaces": ["get_funnel_results"], "observable": "error-to-ok", "pre_blind": true, "note": "the entry that exists for this surface, in the other direction"}
+        {
+          "r": "R4",
+          "surfaces": [
+            "get_funnel_results"
+          ],
+          "observable": "error-to-ok",
+          "pre_blind": true,
+          "note": "the entry that exists for this surface, in the other direction"
+        }
       ],
       "triple": {
         "surface": "get_funnel_results",
-        "old": {"class": "ok", "value": [{"step": "1", "counthits": "42"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "error", "value": [], "error": {"str": "Table 'wp.slim_funnel_tmp' doesn't exist", "query": "SELECT * FROM slim_funnel_tmp", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"step": 1, "counthits": 42}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "42"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Table 'wp.slim_funnel_tmp' doesn't exist",
+            "query": "SELECT * FROM slim_funnel_tmp",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "step": 1,
+              "counthits": 42
+            }
+          ]
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "new-errored", "disposition": "block", "observable": "ok-to-error", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "new-errored",
+        "disposition": "block",
+        "observable": "ok-to-error",
+        "register_id": null
+      }
     },
     {
       "id": "P21-empty-is-not-error-both-values-are-the-same-bytes",
@@ -336,11 +1259,46 @@
       "register": [],
       "triple": {
         "surface": "uniques_country",
-        "old": {"class": "error", "value": [], "error": {"str": "Duplicate column name 'counthits'", "query": "SELECT COUNT(DISTINCT visit_id) AS counthits ... GROUP BY counthits", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"country": "de", "counthits": 9}]}
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Duplicate column name 'counthits'",
+            "query": "SELECT COUNT(DISTINCT visit_id) AS counthits ... GROUP BY counthits",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "country": "de",
+              "counthits": 9
+            }
+          ]
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "old-errored", "disposition": "block", "arms_rule": "class-mismatch", "observable": "error-to-hollow"}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored",
+        "disposition": "block",
+        "arms_rule": "class-mismatch",
+        "observable": "error-to-hollow"
+      }
     },
     {
       "id": "P22-hollow-is-not-zero",
@@ -350,67 +1308,274 @@
       "register": [],
       "triple": {
         "surface": "count_bouncing_pages",
-        "old": {"class": "empty", "value": [], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "zero", "value": 0, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "zero", "value": 0}
+        "old": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "zero",
+          "value": 0,
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "zero",
+          "value": 0
+        }
       },
-      "expect": {"label": "a-UNREGISTERED", "rule": "new-backed-unregistered", "disposition": "block", "arms_rule": "class-mismatch", "observable": "hollow-to-value"}
+      "expect": {
+        "label": "a-UNREGISTERED",
+        "rule": "new-backed-unregistered",
+        "disposition": "block",
+        "arms_rule": "class-mismatch",
+        "observable": "hollow-to-value"
+      }
     },
     {
       "id": "P23-tie-at-the-cut-is-not-a-difference",
       "why": "A LIMIT 3 report whose 3rd and 4th candidates tie at 5. OLD drew /b, NEW drew /d, everything above the cut is identical. OLD's get_top_aggr orders by counthits alone; NEW added the grouped column as a tie-break, so which member arrives is decided by the ORDER BY and not by the data.",
       "mislabelling_means": "Reported as a difference, the campaign manufactures a blocking finding out of the query plan — and does it on every top-N report with a tie, which is most of them.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/d", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 9}, {"resource": "/b", "counthits": 5}, {"resource": "/c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/d",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 9
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "equal", "rule": "arms-agree-oracle-agrees", "disposition": "pass", "arms_rule": "tie-at-the-cut", "observable": "none"}
+      "expect": {
+        "label": "equal",
+        "rule": "arms-agree-oracle-agrees",
+        "disposition": "pass",
+        "arms_rule": "tie-at-the-cut",
+        "observable": "none"
+      }
     },
     {
       "id": "P24-a-dropped-row-is-a-difference",
       "why": "P23's discriminating twin, and canary class ①: the same report with LIMIT 3 -> 2. NEW returns two rows where the limit is three, so nothing was cut here and the missing row is a drop.",
       "mislabelling_means": "If the tie tolerance pardoned this, the canary drill that proves blind adjudication has power would pass with the poison in place — and a truncation defect is the single most likely way a report quietly loses data.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 9}, {"resource": "/b", "counthits": 5}, {"resource": "/c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 9
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "row-count", "observable": "rows-down"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-count",
+        "observable": "rows-down"
+      }
     },
     {
       "id": "P25-float-inside-the-emitted-precision",
       "why": "A duration average emitted at four decimal places. The two sides differ in the fifth, which the report never showed.",
       "mislabelling_means": "Compared at full float precision, every average in the campaign differs and forty surfaces block on digits no user ever saw.",
-      "contract": {"places": 4},
+      "contract": {
+        "places": 4
+      },
       "register": [],
       "triple": {
         "surface": "get_average_visit_duration",
-        "old": {"class": "ok", "value": "1.23454999", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": 1.2345, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": 1.2345}
+        "old": {
+          "class": "ok",
+          "value": "1.23454999",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": 1.2345,
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1.2345
+        }
       },
-      "expect": {"label": "equal", "rule": "arms-agree-oracle-agrees", "disposition": "pass", "arms_rule": "numeric-at-4-places", "observable": "none"}
+      "expect": {
+        "label": "equal",
+        "rule": "arms-agree-oracle-agrees",
+        "disposition": "pass",
+        "arms_rule": "numeric-at-4-places",
+        "observable": "none"
+      }
     },
     {
       "id": "P26-float-on-the-half-up-boundary",
       "why": "1.23465 at four places. Half-up (and PHP's round(), which is ties-away-from-zero) gives 1.2347; banker's rounding gives 1.2346 and would make this triple agree.",
       "mislabelling_means": "Swap the rounding mode and this plant flips from (b) to equal — which makes it the one case that can tell whether the ONE rounding helper is still the one both sides use. A tolerance that forks between the oracle and the classifier is the common-mode risk this algebra was centralised to prevent.",
-      "contract": {"places": 4},
+      "contract": {
+        "places": 4
+      },
       "register": [],
       "triple": {
         "surface": "get_average_visit_duration",
-        "old": {"class": "ok", "value": "1.23465", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": "1.2346", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": "1.23465"}
+        "old": {
+          "class": "ok",
+          "value": "1.23465",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1.2346",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": "1.23465"
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "numeric-at-4-places", "observable": "value-down"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "numeric-at-4-places",
+        "observable": "value-down"
+      }
     },
     {
       "id": "P27-wpdb-strings-and-typed-oracle-numbers",
@@ -420,11 +1585,36 @@
       "register": [],
       "triple": {
         "surface": "count_records_id",
-        "old": {"class": "ok", "value": "42", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": 42, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": 42.0}
+        "old": {
+          "class": "ok",
+          "value": "42",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": 42,
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 42.0
+        }
       },
-      "expect": {"label": "equal", "rule": "arms-agree-oracle-agrees", "disposition": "pass", "arms_rule": "numeric-exact", "observable": "none"}
+      "expect": {
+        "label": "equal",
+        "rule": "arms-agree-oracle-agrees",
+        "disposition": "pass",
+        "arms_rule": "numeric-exact",
+        "observable": "none"
+      }
     },
     {
       "id": "P28-null-is-not-the-empty-string",
@@ -434,11 +1624,51 @@
       "register": [],
       "triple": {
         "surface": "top_country",
-        "old": {"class": "ok", "value": [{"country": null, "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"country": "", "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"country": null, "counthits": 3}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "country": null,
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "country": "",
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "country": null,
+              "counthits": 3
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "row-values", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P29-new-errored-outranks-an-oracle-with-no-model",
@@ -448,11 +1678,43 @@
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "10"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "error", "value": [], "error": {"str": "Unknown column 'x' in 'field list'", "query": "SELECT x FROM slim_stats", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "10"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Unknown column 'x' in 'field list'",
+            "query": "SELECT x FROM slim_stats",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
         "oracle": null
       },
-      "expect": {"label": "SQL-error", "rule": "new-errored", "disposition": "block", "observable": "ok-to-error", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "new-errored",
+        "disposition": "block",
+        "observable": "ok-to-error",
+        "register_id": null
+      }
     },
     {
       "id": "P30-new-errored-outranks-an-oracle-that-errored",
@@ -462,11 +1724,51 @@
       "register": [],
       "triple": {
         "surface": "get_goal_results",
-        "old": {"class": "ok", "value": [{"goal": "signup", "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "error", "value": [], "error": {"str": "Table 'wp.slim_events' doesn't exist", "query": "SELECT * FROM slim_events", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "error", "value": null, "error": {"str": "no such column: goal_id", "query": "SELECT goal_id FROM slim_events", "count": 1}}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "goal": "signup",
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Table 'wp.slim_events' doesn't exist",
+            "query": "SELECT * FROM slim_events",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "error",
+          "value": null,
+          "error": {
+            "str": "no such column: goal_id",
+            "query": "SELECT goal_id FROM slim_events",
+            "count": 1
+          }
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "new-errored", "disposition": "block", "observable": "ok-to-error", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "new-errored",
+        "disposition": "block",
+        "observable": "ok-to-error",
+        "register_id": null
+      }
     },
     {
       "id": "P31-new-errored-outranks-an-arm-that-could-not-be-asked",
@@ -476,11 +1778,42 @@
       "register": [],
       "triple": {
         "surface": "count_exit_pages",
-        "old": {"class": "unsupported", "value": null, "__unsupported": "wp_slimstat_db::count_exit_pages does not exist in the 5.5.1 era", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": false}},
-        "new": {"class": "error", "value": [], "error": {"str": "Unknown column 'dt_out' in 'where clause'", "query": "SELECT COUNT(*) FROM slim_stats WHERE dt_out = 0", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": 12}
+        "old": {
+          "class": "unsupported",
+          "value": null,
+          "__unsupported": "wp_slimstat_db::count_exit_pages does not exist in the 5.5.1 era",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Unknown column 'dt_out' in 'where clause'",
+            "query": "SELECT COUNT(*) FROM slim_stats WHERE dt_out = 0",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 12
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "new-errored", "disposition": "block", "observable": "ok-to-error", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "new-errored",
+        "disposition": "block",
+        "observable": "ok-to-error",
+        "register_id": null
+      }
     },
     {
       "id": "P32-a-registered-old-error-still-needs-the-oracle",
@@ -488,15 +1821,64 @@
       "mislabelling_means": "This is the laundering the register cannot be allowed to do. (a) means NEW PROVEN CORRECT; a registered OLD failure is evidence that the difference EXISTS and never evidence that NEW's replacement answer is right. Read as (a)/pass, any arithmetic defect in v6's funnels rides into the release behind the entry that exists to explain 5.5.1's collation crash.",
       "contract": {},
       "register": [
-        {"r": "R4", "surfaces": ["get_funnel_results", "get_funnels_raw"], "observable": "error-to-ok", "pre_blind": true, "note": "the entry that carries P19 — same surface, same observable, same pre-blind provenance"}
+        {
+          "r": "R4",
+          "surfaces": [
+            "get_funnel_results",
+            "get_funnels_raw"
+          ],
+          "observable": "error-to-ok",
+          "pre_blind": true,
+          "note": "the entry that carries P19 — same surface, same observable, same pre-blind provenance"
+        }
       ],
       "triple": {
         "surface": "get_funnel_results",
-        "old": {"class": "error", "value": [], "error": {"str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='", "query": "CREATE TEMPORARY TABLE slim_funnel_1 (vid VARCHAR(64) NOT NULL)", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"step": "1", "counthits": "42"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"step": 1, "counthits": 9999}]}
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='",
+            "query": "CREATE TEMPORARY TABLE slim_funnel_1 (vid VARCHAR(64) NOT NULL)",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "42"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "step": 1,
+              "counthits": 9999
+            }
+          ]
+        }
       },
-      "expect": {"label": "SQL-error", "rule": "old-errored", "disposition": "block", "observable": "error-to-ok", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored",
+        "disposition": "block",
+        "observable": "error-to-ok",
+        "register_id": null
+      }
     },
     {
       "id": "P33-a-registered-old-error-with-no-oracle-is-not-a-pass",
@@ -504,85 +1886,465 @@
       "mislabelling_means": "If a register hit alone licensed (a), the register would be a blanket pardon for every surface OLD happens to fail on, granted in exactly the state where nothing can check it. The entry says a difference exists; only the oracle or hand truth says NEW's number is the right one.",
       "contract": {},
       "register": [
-        {"r": "R5", "surfaces": ["get_funnels_raw"], "observable": "error-to-ok", "pre_blind": true, "note": "R5 as amended in Run 50 — funnels ERROR on MySQL 8 rather than reporting zero"}
+        {
+          "r": "R5",
+          "surfaces": [
+            "get_funnels_raw"
+          ],
+          "observable": "error-to-ok",
+          "pre_blind": true,
+          "note": "R5 as amended in Run 50 — funnels ERROR on MySQL 8 rather than reporting zero"
+        }
       ],
       "triple": {
         "surface": "get_funnels_raw",
-        "old": {"class": "error", "value": [], "error": {"str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='", "query": "SELECT t1.fingerprint FROM slim_stats t1 JOIN slim_funnel_1 f ON f.vid = t1.fingerprint", "count": 1}, "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"funnel_id": "1", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Illegal mix of collations (utf8mb4_0900_ai_ci,IMPLICIT) and (utf8mb4_unicode_520_ci,IMPLICIT) for operation '='",
+            "query": "SELECT t1.fingerprint FROM slim_stats t1 JOIN slim_funnel_1 f ON f.vid = t1.fingerprint",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "funnel_id": "1",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
         "oracle": null
       },
-      "expect": {"label": "SQL-error", "rule": "old-errored", "disposition": "block", "observable": "error-to-ok", "register_id": null}
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored",
+        "disposition": "block",
+        "observable": "error-to-ok",
+        "register_id": null
+      }
     },
     {
       "id": "P34-above-the-cut-differs-is-not-a-tie",
       "why": "P23's discriminating twin on the other side of the band. LIMIT 3, both answers exactly three rows, the cut value equal at 5 on both sides — and the TOP-RANKED row replaced. Everything the tie tolerance permits is present except the one thing it forbids.",
       "mislabelling_means": "The tie tolerance is the only rule in this algebra that can turn a real difference into EQUAL, and this branch is the whole of what bounds it. Flip it and a LIMIT-N answer whose last row happens to tie compares equal however much the rows above the cut differ — the blanket pardon P13 names as the one way this campaign's own algebra could manufacture a false clean.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "900"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/z", "counthits": "900"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 900}, {"resource": "/b", "counthits": 5}, {"resource": "/c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "900"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/z",
+              "counthits": "900"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 900
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "above-the-cut-differs", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "above-the-cut-differs",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P35-cut-value-differs-is-not-a-tie",
       "why": "The other half of the same rail: the two answers were cut in different places. OLD's last-ranked row holds 5 and NEW's holds 3, so there is no common tie band to be tolerant about.",
       "mislabelling_means": "A moved cut means the ranking changed, which is what a top-N report is. Pardoned as a tie, a report that started returning weaker rows reads as agreement.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "3"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 9}, {"resource": "/b", "counthits": 5}, {"resource": "/c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "3"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 9
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "cut-value-differs", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "cut-value-differs",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P36-more-rows-than-the-limit-is-not-a-tie",
       "why": "NEW returned FIVE rows against a contract LIMIT of three, with the extra rows tied at the cut. A dropped LIMIT in the query builder is an ordinary rewrite defect, and `rows-up` is an observable the register already models.",
       "mislabelling_means": "The band guard read `len(rows) < limit`, so an over-long answer entered the tie band and compared EQUAL to the truncated one — on any report whose cut value is 1, which a count-1 tail makes routine, an unbounded tail passed as agreement while the detail reported 'drew 0 different member(s)'.",
-      "contract": {"limit": 3},
+      "contract": {
+        "limit": 3
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "9"}, {"resource": "/b", "counthits": "5"}, {"resource": "/c", "counthits": "5"}, {"resource": "/d", "counthits": "5"}, {"resource": "/e", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 9}, {"resource": "/b", "counthits": 5}, {"resource": "/c", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            },
+            {
+              "resource": "/d",
+              "counthits": "5"
+            },
+            {
+              "resource": "/e",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 9
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "row-count", "observable": "rows-up"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-count",
+        "observable": "rows-up"
+      }
     },
     {
       "id": "P37-an-ascending-report-cuts-at-the-max",
       "why": "The `cut_side: 'max'` half of the band rule, which had no plant at all. An ASC-ranked LIMIT 3 report: the three SMALLEST counts arrive, so the cut — the last-ranked row — is the LARGEST of them, and the rows above the cut are the ones with smaller counts. Here one of those is replaced.",
       "mislabelling_means": "With the cut taken at the wrong end, the band lands on the top-ranked rows of every ascending report and the strict half of the rule has nothing left to check: measured, the same triple comes out EQUAL on tie-at-the-cut with `pick = min` forced, which is a real difference pardoned as a tie.",
-      "contract": {"limit": 3, "cut_side": "max"},
+      "contract": {
+        "limit": 3,
+        "cut_side": "max"
+      },
       "register": [],
       "triple": {
         "surface": "get_visits_duration",
-        "old": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": "1"}, {"bucket": "30-60s", "counthits": "2"}, {"bucket": "1-3m", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"bucket": "3-10m", "counthits": "1"}, {"bucket": "30-60s", "counthits": "2"}, {"bucket": "1-3m", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": 1}, {"bucket": "30-60s", "counthits": 2}, {"bucket": "1-3m", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": "1"
+            },
+            {
+              "bucket": "30-60s",
+              "counthits": "2"
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "3-10m",
+              "counthits": "1"
+            },
+            {
+              "bucket": "30-60s",
+              "counthits": "2"
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": 1
+            },
+            {
+              "bucket": "30-60s",
+              "counthits": 2
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "above-the-cut-differs", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "above-the-cut-differs",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P38-an-ascending-report-tolerates-its-own-tie-band",
       "why": "P37's accept-side twin: the same ascending contract, where what differs is a member of the tie band at the cut (both arms hold a row at 5, and which one arrives is the ORDER BY tie-break's to decide).",
       "mislabelling_means": "Without this the `cut_side: 'max'` branch would be pinned only in the direction that DIFFERs, and the tolerance the whole rule exists for could be deleted for ascending reports with the gate green.",
-      "contract": {"limit": 3, "cut_side": "max"},
+      "contract": {
+        "limit": 3,
+        "cut_side": "max"
+      },
       "register": [],
       "triple": {
         "surface": "get_visits_duration",
-        "old": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": "1"}, {"bucket": "30-60s", "counthits": "5"}, {"bucket": "1-3m", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": "1"}, {"bucket": "3-10m", "counthits": "5"}, {"bucket": "1-3m", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": 1}, {"bucket": "30-60s", "counthits": 5}, {"bucket": "1-3m", "counthits": 5}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": "1"
+            },
+            {
+              "bucket": "30-60s",
+              "counthits": "5"
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": "1"
+            },
+            {
+              "bucket": "3-10m",
+              "counthits": "5"
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": 1
+            },
+            {
+              "bucket": "30-60s",
+              "counthits": 5
+            },
+            {
+              "bucket": "1-3m",
+              "counthits": 5
+            }
+          ]
+        }
       },
-      "expect": {"label": "equal", "rule": "arms-agree-oracle-agrees", "disposition": "pass", "arms_rule": "tie-at-the-cut", "observable": "none"}
+      "expect": {
+        "label": "equal",
+        "rule": "arms-agree-oracle-agrees",
+        "disposition": "pass",
+        "arms_rule": "tie-at-the-cut",
+        "observable": "none"
+      }
     },
     {
       "id": "P39-one-era-spells-the-clock-flag-and-the-other-does-not",
@@ -592,11 +2354,36 @@
       "register": [],
       "triple": {
         "surface": "get_overview_summary",
-        "old": {"class": "ok", "value": "1200", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": false}},
-        "new": {"class": "ok", "value": "1207", "flags": {"clock_dependent": true, "calendar_day_dependent": false, "pinned": false}},
-        "oracle": {"class": "ok", "value": 1207}
+        "old": {
+          "class": "ok",
+          "value": "1200",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1207",
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1207
+        }
       },
-      "expect": {"label": "d-clock", "rule": "clock-unpinned", "disposition": "unresolved", "arms_rule": "numeric-exact", "observable": "value-up"}
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "numeric-exact",
+        "observable": "value-up"
+      }
     },
     {
       "id": "P40-calendar-day-dependence-is-clock-dependence",
@@ -606,11 +2393,51 @@
       "register": [],
       "triple": {
         "surface": "chart_daily",
-        "old": {"class": "ok", "value": [{"dt": "2026-08-10", "counthits": "5"}], "flags": {"clock_dependent": false, "calendar_day_dependent": true, "pinned": false}},
-        "new": {"class": "ok", "value": [{"dt": "2026-08-10", "counthits": "6"}], "flags": {"clock_dependent": false, "calendar_day_dependent": true, "pinned": false}},
-        "oracle": {"class": "ok", "value": [{"dt": "2026-08-10", "counthits": 6}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "dt": "2026-08-10",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": true,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "dt": "2026-08-10",
+              "counthits": "6"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": true,
+            "pinned": false
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "dt": "2026-08-10",
+              "counthits": 6
+            }
+          ]
+        }
       },
-      "expect": {"label": "d-clock", "rule": "clock-unpinned", "disposition": "unresolved", "arms_rule": "row-values", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P41-a-pin-on-one-arm-only-is-not-a-pin",
@@ -620,25 +2447,331 @@
       "register": [],
       "triple": {
         "surface": "top_resource_in_window",
-        "old": {"class": "ok", "value": [{"resource": "/a", "counthits": "40"}], "flags": {"clock_dependent": true, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/a", "counthits": "41"}], "flags": {"clock_dependent": true, "calendar_day_dependent": false, "pinned": false}},
-        "oracle": {"class": "ok", "value": [{"resource": "/a", "counthits": 41}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "40"
+            }
+          ],
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "41"
+            }
+          ],
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 41
+            }
+          ]
+        }
       },
-      "expect": {"label": "d-clock", "rule": "clock-unpinned", "disposition": "unresolved", "arms_rule": "row-values", "observable": "rows-same-count-values-differ"}
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
     },
     {
       "id": "P42-canary-one-survives-a-vacuous-oracle-leg",
       "why": "Canary class ① (LIMIT 20 -> 19) over the flat tail a sparse corpus produces: twenty rows all tied at one hit, with the twentieth truncated away on NEW. The ORACLE-vs-OLD comparison is vacuous — those two hold the same twenty rows in one tie band, which agrees with anything — while the ARMS comparison is a plain row-count difference.",
       "mislabelling_means": "The vacuity rule used to fire when ANY of the three comparisons was vacuous, so this triple came out d-vacuous with a rationale reading 'the comparison could not have failed' while its own detail recorded 20 rows against 19. Whether S7's stop/go gate saw the poison then depended on whether the tail happened to be flat — and a flat tail at counthits 1 is the ordinary shape of top_resource and top_searchterms on the slice corpus.",
-      "contract": {"limit": 20},
+      "contract": {
+        "limit": 20
+      },
       "register": [],
       "triple": {
         "surface": "top_resource",
-        "old": {"class": "ok", "value": [{"resource": "/p01", "counthits": "1"}, {"resource": "/p02", "counthits": "1"}, {"resource": "/p03", "counthits": "1"}, {"resource": "/p04", "counthits": "1"}, {"resource": "/p05", "counthits": "1"}, {"resource": "/p06", "counthits": "1"}, {"resource": "/p07", "counthits": "1"}, {"resource": "/p08", "counthits": "1"}, {"resource": "/p09", "counthits": "1"}, {"resource": "/p10", "counthits": "1"}, {"resource": "/p11", "counthits": "1"}, {"resource": "/p12", "counthits": "1"}, {"resource": "/p13", "counthits": "1"}, {"resource": "/p14", "counthits": "1"}, {"resource": "/p15", "counthits": "1"}, {"resource": "/p16", "counthits": "1"}, {"resource": "/p17", "counthits": "1"}, {"resource": "/p18", "counthits": "1"}, {"resource": "/p19", "counthits": "1"}, {"resource": "/p20", "counthits": "1"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"resource": "/p01", "counthits": "1"}, {"resource": "/p02", "counthits": "1"}, {"resource": "/p03", "counthits": "1"}, {"resource": "/p04", "counthits": "1"}, {"resource": "/p05", "counthits": "1"}, {"resource": "/p06", "counthits": "1"}, {"resource": "/p07", "counthits": "1"}, {"resource": "/p08", "counthits": "1"}, {"resource": "/p09", "counthits": "1"}, {"resource": "/p10", "counthits": "1"}, {"resource": "/p11", "counthits": "1"}, {"resource": "/p12", "counthits": "1"}, {"resource": "/p13", "counthits": "1"}, {"resource": "/p14", "counthits": "1"}, {"resource": "/p15", "counthits": "1"}, {"resource": "/p16", "counthits": "1"}, {"resource": "/p17", "counthits": "1"}, {"resource": "/p18", "counthits": "1"}, {"resource": "/p19", "counthits": "1"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"resource": "/p01", "counthits": 1}, {"resource": "/p02", "counthits": 1}, {"resource": "/p03", "counthits": 1}, {"resource": "/p04", "counthits": 1}, {"resource": "/p05", "counthits": 1}, {"resource": "/p06", "counthits": 1}, {"resource": "/p07", "counthits": 1}, {"resource": "/p08", "counthits": 1}, {"resource": "/p09", "counthits": 1}, {"resource": "/p10", "counthits": 1}, {"resource": "/p11", "counthits": 1}, {"resource": "/p12", "counthits": 1}, {"resource": "/p13", "counthits": 1}, {"resource": "/p14", "counthits": 1}, {"resource": "/p15", "counthits": 1}, {"resource": "/p16", "counthits": 1}, {"resource": "/p17", "counthits": 1}, {"resource": "/p18", "counthits": 1}, {"resource": "/p19", "counthits": 1}, {"resource": "/p20", "counthits": 1}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/p01",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p02",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p03",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p04",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p05",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p06",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p07",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p08",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p09",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p10",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p11",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p12",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p13",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p14",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p15",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p16",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p17",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p18",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p19",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p20",
+              "counthits": "1"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/p01",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p02",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p03",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p04",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p05",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p06",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p07",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p08",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p09",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p10",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p11",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p12",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p13",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p14",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p15",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p16",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p17",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p18",
+              "counthits": "1"
+            },
+            {
+              "resource": "/p19",
+              "counthits": "1"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/p01",
+              "counthits": 1
+            },
+            {
+              "resource": "/p02",
+              "counthits": 1
+            },
+            {
+              "resource": "/p03",
+              "counthits": 1
+            },
+            {
+              "resource": "/p04",
+              "counthits": 1
+            },
+            {
+              "resource": "/p05",
+              "counthits": 1
+            },
+            {
+              "resource": "/p06",
+              "counthits": 1
+            },
+            {
+              "resource": "/p07",
+              "counthits": 1
+            },
+            {
+              "resource": "/p08",
+              "counthits": 1
+            },
+            {
+              "resource": "/p09",
+              "counthits": 1
+            },
+            {
+              "resource": "/p10",
+              "counthits": 1
+            },
+            {
+              "resource": "/p11",
+              "counthits": 1
+            },
+            {
+              "resource": "/p12",
+              "counthits": 1
+            },
+            {
+              "resource": "/p13",
+              "counthits": 1
+            },
+            {
+              "resource": "/p14",
+              "counthits": 1
+            },
+            {
+              "resource": "/p15",
+              "counthits": 1
+            },
+            {
+              "resource": "/p16",
+              "counthits": 1
+            },
+            {
+              "resource": "/p17",
+              "counthits": 1
+            },
+            {
+              "resource": "/p18",
+              "counthits": 1
+            },
+            {
+              "resource": "/p19",
+              "counthits": 1
+            },
+            {
+              "resource": "/p20",
+              "counthits": 1
+            }
+          ]
+        }
       },
-      "expect": {"label": "c-THREE-WAY", "rule": "oracle-alone", "disposition": "block", "arms_rule": "row-count", "observable": "rows-down"}
+      "expect": {
+        "label": "c-THREE-WAY",
+        "rule": "oracle-alone",
+        "disposition": "block",
+        "arms_rule": "row-count",
+        "observable": "rows-down"
+      }
     },
     {
       "id": "P43-rows-against-a-scalar-is-a-changed-answer",
@@ -648,11 +2781,46 @@
       "register": [],
       "triple": {
         "surface": "get_visits_duration",
-        "old": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": "4"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": "4", "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"bucket": "0-30s", "counthits": 4}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": "4"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "4",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "bucket": "0-30s",
+              "counthits": 4
+            }
+          ]
+        }
       },
-      "expect": {"label": "b", "rule": "old-backed", "disposition": "block", "arms_rule": "shape-differs", "observable": "shape-differs"}
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "shape-differs",
+        "observable": "shape-differs"
+      }
     },
     {
       "id": "P44-a-matched-register-entry-prints-no-near-miss",
@@ -660,16 +2828,451 @@
       "mislabelling_means": "The near-miss field is FEEDBACK telling an operator to amend the register. Printed on a verdict the register just explained, it names the entry that granted the pass and asks for an amendment that was already made with user sign-off — and it appeared or vanished depending on the order of two JSON entries.",
       "contract": {},
       "register": [
-        {"r": "R2", "surfaces": ["get_group_by"], "observable": "rows-up", "pre_blind": false, "note": "R2 observable (a): more rows, each with a smaller count"},
-        {"r": "R2", "surfaces": ["get_group_by"], "observable": "rows-same-count-values-differ", "pre_blind": false, "note": "R2 observable (b), added by the Run 50 amendment: the same row count with column_group truncated"}
+        {
+          "r": "R2",
+          "surfaces": [
+            "get_group_by"
+          ],
+          "observable": "rows-up",
+          "pre_blind": false,
+          "note": "R2 observable (a): more rows, each with a smaller count"
+        },
+        {
+          "r": "R2",
+          "surfaces": [
+            "get_group_by"
+          ],
+          "observable": "rows-same-count-values-differ",
+          "pre_blind": false,
+          "note": "R2 observable (b), added by the Run 50 amendment: the same row count with column_group truncated"
+        }
       ],
       "triple": {
         "surface": "get_group_by",
-        "old": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "new": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win,Mac,Linux", "counthits": "7"}], "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}},
-        "oracle": {"class": "ok", "value": [{"browser": "Chrome", "column_group": "Win,Mac,Linux", "counthits": 7}]}
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win,Mac,Linux",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "browser": "Chrome",
+              "column_group": "Win,Mac,Linux",
+              "counthits": 7
+            }
+          ]
+        }
       },
-      "expect": {"label": "a", "rule": "new-backed-registered", "disposition": "pass", "register_id": "R2", "pre_blind": false, "observable": "rows-same-count-values-differ", "near_miss": []}
+      "expect": {
+        "label": "a",
+        "rule": "new-backed-registered",
+        "disposition": "pass",
+        "register_id": "R2",
+        "pre_blind": false,
+        "observable": "rows-same-count-values-differ",
+        "near_miss": []
+      }
+    },
+    {
+      "id": "P45-old-errored-registered-needs-an-oracle-that-answered",
+      "why": "OLD errored, NEW returned NOTHING, and the oracle also has nothing. The register covers the surface with error-to-hollow, so every term of old-errored-registered is satisfied and the oracle 'backs' NEW - by being just as empty. Two empties compare EQUAL and always will (PITFALLS 38), so this agreement is not evidence that NEW's nothing is the RIGHT nothing. Note where the same data lands elsewhere: with OLD hollow instead of errored, all-hollow calls it d-vacuous. The OLD-errored path sits ABOVE the vacuity rules and never reaches them, so one triple gets two answers depending on which rule saw it first.",
+      "mislabelling_means": "(a) is a PASS and means NEW PROVEN CORRECT. Filing a vacuous agreement there tells the campaign a surface was adjudicated when nothing was measured on it - the exact shape hollow-arms and all-hollow exist to refuse, arriving through the one door that skips both. Failure protocol 6 requires oracle or hand truth proving NEW's answer right before an OLD error may be registered; an empty oracle proves nothing about an empty NEW.",
+      "contract": {},
+      "register": [
+        {
+          "r": "R99",
+          "surfaces": [
+            "get_funnel_results"
+          ],
+          "observable": "error-to-hollow",
+          "note": "a registrable observable - OLD errored where NEW legitimately returns nothing"
+        }
+      ],
+      "triple": {
+        "surface": "get_funnel_results",
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Illegal mix of collations",
+            "query": "CREATE TEMPORARY TABLE",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "empty",
+          "value": [],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "empty",
+          "value": []
+        }
+      },
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored"
+      }
+    },
+    {
+      "id": "P46-old-errored-outranks-an-oracle-that-errored",
+      "why": "P29/P30/P31 pin all three of `new-errored`'s boundaries; `old-errored` had only one of its own pinned. OLD's query failed, NEW answers, and the ORACLE family blew up too. Two failures, and only one of them is a fact about the plugin under test.",
+      "mislabelling_means": "An oracle-state rule outranking an arm-error rule is the exact defect run 53 moved the table to close, and it was closed on two of its three boundaries. Move `oracle-errored` back above `old-errored` and this triple is demoted from a BLOCK to a listing - a 5.5.1 SQL failure on the campaign's flagship register surface filed as 'no truth computed' because the oracle happened to fail as well. Whether OLD's query threw is not a question the oracle has any bearing on.",
+      "contract": {},
+      "register": [],
+      "triple": {
+        "surface": "get_funnel_results",
+        "old": {
+          "class": "error",
+          "value": [],
+          "error": {
+            "str": "Illegal mix of collations (utf8mb4_unicode_ci,IMPLICIT) and (utf8mb4_general_ci,IMPLICIT)",
+            "query": "CREATE TEMPORARY TABLE slim_funnel_steps",
+            "count": 1
+          },
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "step": "1",
+              "counthits": "42"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "error",
+          "value": null,
+          "error": {
+            "str": "no such table: slim_funnel_steps",
+            "query": "SELECT step, COUNT(*) FROM slim_funnel_steps GROUP BY step",
+            "count": 1
+          }
+        }
+      },
+      "expect": {
+        "label": "SQL-error",
+        "rule": "old-errored",
+        "disposition": "block",
+        "arms_rule": "class-mismatch",
+        "observable": "error-to-ok",
+        "register_id": null
+      }
+    },
+    {
+      "id": "P47-the-other-era-spells-the-clock-flag-and-this-one-does-not",
+      "why": "P39's mirror. There the NEW capture declares clock dependence and OLD does not; here OLD declares it and NEW does not - the direction a 5.5.1 arm produces, because the older era's capture is the one that gets the flag added last. Either arm declaring it makes the surface clock-dependent, so both reads have to be observable to the gate.",
+      "mislabelling_means": "P39 pins the flag being read from OLD alone; nothing pinned it being read from NEW alone, and P39's own asymmetry (old=false / new=true) is invisible to a NEW-only reader. With `for env in (old_env, new_env)` narrowed to `(new_env,)` the gate stayed green and this triple became a-UNREGISTERED / block: a clock-driven difference adjudicated as a code change, which is verbatim the cost the OLD-only read was filed for, reached by the mirror one-line edit.",
+      "contract": {},
+      "register": [],
+      "triple": {
+        "surface": "get_overview_summary",
+        "old": {
+          "class": "ok",
+          "value": "1200",
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": "1207",
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": 1207
+        }
+      },
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "numeric-exact",
+        "observable": "value-up"
+      }
+    },
+    {
+      "id": "P48-a-pin-on-the-other-arm-only-is-not-a-pin-either",
+      "why": "P41's mirror. There OLD carries the pinned window and NEW does not; here NEW carries it and OLD does not. BOTH arms must be pinned for the pin to help, so both halves of the conjunction have to be observable.",
+      "mislabelling_means": "P41 pins the OLD half of `_flag(old) and _flag(new)`; its asymmetry is old=true / new=false, which a NEW-only reader sees as unpinned anyway - so the NEW half was pinned by nothing. Reduced to `pinned = _flag(new_env, 'pinned')` the gate stayed green and this triple became a-UNREGISTERED / block: a difference between one pinned capture and one free-running one judged as code, which is the state the pin exists to prevent.",
+      "contract": {},
+      "register": [],
+      "triple": {
+        "surface": "top_resource_in_window",
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "40"
+            }
+          ],
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": false
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "41"
+            }
+          ],
+          "flags": {
+            "clock_dependent": true,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 41
+            }
+          ]
+        }
+      },
+      "expect": {
+        "label": "d-clock",
+        "rule": "clock-unpinned",
+        "disposition": "unresolved",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
+    },
+    {
+      "id": "P49-more-rows-than-the-limit-on-the-OTHER-arm-is-not-a-tie-either",
+      "why": "P36 with the arms swapped: OLD returns FIVE rows against a contract LIMIT of three and NEW returns the three it should. The band guard is a two-sided conjunction - `len(a_rows) != limit or len(b_rows) != limit` - and P36 only ever exercises the b-side, because its OLD arm is at exactly the limit on every band plant in the set.",
+      "mislabelling_means": "Delete the a-side half and the gate stayed green while this triple flipped from b / block to equal / PASS on tie-at-the-cut: an arm that lost its LIMIT, plus a count-1 or count-5 tail, pardoned as an ORDER BY tie-break. The oracle leg reaches the same guard (classify compares oracle-vs-new and oracle-vs-old through it), so a hand-written oracle family that forgets to truncate lands here too. It also carries the SHORTER-than-limit half, which predates run 53's repair.",
+      "contract": {
+        "limit": 3
+      },
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            },
+            {
+              "resource": "/d",
+              "counthits": "5"
+            },
+            {
+              "resource": "/e",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": "9"
+            },
+            {
+              "resource": "/b",
+              "counthits": "5"
+            },
+            {
+              "resource": "/c",
+              "counthits": "5"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/a",
+              "counthits": 9
+            },
+            {
+              "resource": "/b",
+              "counthits": 5
+            },
+            {
+              "resource": "/c",
+              "counthits": 5
+            },
+            {
+              "resource": "/d",
+              "counthits": 5
+            },
+            {
+              "resource": "/e",
+              "counthits": 5
+            }
+          ]
+        }
+      },
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-count",
+        "observable": "rows-down"
+      }
+    },
+    {
+      "id": "P50-the-cut-is-the-min-not-the-last-row-in-the-list",
+      "why": "The one band plant whose rows arrive in CANONICAL order rather than ranked order, which is how the extended tier actually arrives: slimstat_canon_rows() sorts by json_encode to get a total order across arms, and its own docstring says that destroys the ranking. Counts 5, 90, 7 - the last element is not the last-ranked row, so `min()` (5) and `rows[-1]` (7) are two different cuts. The second-ranked resource is replaced between the arms.",
+      "mislabelling_means": "Every other band plant lists its rows in ranked order, where min()/max() and rows[-1] coincide, so `cut_a, cut_b = counts_a[-1], counts_b[-1]` left the whole gate green. With it live this triple flips from b / block to equal / PASS: the cut moves to 7, /bbb becomes the only row above it, and a replaced second-ranked resource falls inside the tie band. algebra.py names this exact shape ('a rule that read rows[-1] would be correct on the legacy keys and quietly wrong on the extended ones') and until this plant nothing in the tree could tell the two apart.",
+      "contract": {
+        "limit": 3
+      },
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/aaa",
+              "counthits": "5"
+            },
+            {
+              "resource": "/bbb",
+              "counthits": "90"
+            },
+            {
+              "resource": "/ccc",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/aaa",
+              "counthits": "5"
+            },
+            {
+              "resource": "/bbb",
+              "counthits": "90"
+            },
+            {
+              "resource": "/ddd",
+              "counthits": "7"
+            }
+          ],
+          "flags": {
+            "clock_dependent": false,
+            "calendar_day_dependent": false,
+            "pinned": true
+          }
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {
+              "resource": "/aaa",
+              "counthits": 5
+            },
+            {
+              "resource": "/bbb",
+              "counthits": 90
+            },
+            {
+              "resource": "/ccc",
+              "counthits": 7
+            }
+          ]
+        }
+      },
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "above-the-cut-differs",
+        "observable": "rows-same-count-values-differ"
+      }
     }
   ]
 }

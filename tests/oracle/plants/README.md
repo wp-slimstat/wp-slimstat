@@ -118,7 +118,17 @@ The degradation is applied to the DATA, never by editing a file, so nothing has 
 afterwards — PITFALLS 33 is an hour of work destroyed by the `git checkout` that was cleaning up
 after a probe that had not even run.
 
-## Twenty-two ways this is proven to fail — registered, not recounted
+## The 32 ways this is proven to fail — registered, not recounted
+
+> **That number is read by the gate, not typed here.** It was wrong twice. First it was a prose
+> table of ten mutations someone had once run by hand; run 53 replaced it with a spelled-out
+> *"Twenty-two"* — and the follow-up commits took the directory to twenty-five without touching
+> the sentence, so the paragraph written to close a stale hand-count went stale itself, one
+> commit later, in exactly the same way. Section 3b of `classify_test.py` now parses the digits
+> out of the heading above, counts `tests/mutations/S4-*.mutation`, and fails naming both
+> numbers when they disagree — and asserts the section's other claim too, that every one of
+> those files carries `gate: composer test:classifier-plants`. Registered as
+> The count in this heading is checked by section 3b of `classify_test.py`, which reads the digits and compares them with the directory. That check has no mutation of its own — an earlier draft of this line claimed one, naming a file that was never written, which is precisely the shape this section is about.
 
 This section used to be a prose table of ten mutations someone had once run by hand. The
 mutations were real and the table was accurate; what it could not do is *run again*. The
@@ -144,6 +154,26 @@ band guard, the vacuity rule swallowing a real arms difference, the clock/pin fl
 `Decimal(str(float))` boundary, both `cut_side` branches and the guard on the value, six widening
 edges in the scalar and envelope comparisons, the negative-zero fork, and the near miss printed
 on a hit.
+
+### The MIRROR of a one-sided guard is a defect of its own
+
+Seven entries were added after run 53's repair round, and six of them say the same thing: a
+two-sided property had been pinned on one side. `f.agrees(f.oracle_new)` was pinned where the
+oracle held rows and not where it held nothing (`S4-oracle-backs-new-by-being-empty-01`); the
+clock flag was pinned being read from OLD and not from NEW, and the pin was pinned the other way
+round (`S4-clock-flag-read-from-new-only-01`, `S4-pin-read-from-new-only-01`) — each because the
+single asymmetric plant that existed happened to lean the way a one-armed reader still sees; the
+band guard's `len(a_rows) != limit or len(b_rows) != limit` had every plant sitting at exactly
+`limit` on the a-side (`S4-band-guard-drops-the-first-arm-01`); the cut was pinned at the
+right END of the ranking and not at the right POSITION in the list, because every band plant
+listed its rows in ranked order where `min()` and `rows[-1]` coincide
+(`S4-cut-taken-as-the-last-row-01`); and `old-errored` was pinned above two of the three rules
+it has to outrank (`S4-oracle-errored-outranks-old-errored-01`). an assertion in `classify_test.py` section 8 rather than a registry entry (the edge is reached by a direct verdict assertion, not by a plant)
+The seventh is a different shape again — an edge two plants REACHED and no assertion READ — and it is closed by an assertion in section 8 of `classify_test.py` rather than by a registry entry.
+
+The rule that falls out, and it is cheap to apply: **when a guard names two sides, write the
+mutation that deletes each side separately.** A conjunction killed only by deleting the whole of
+it is pinned by nothing in particular.
 
 ## The PHP rounding probes
 

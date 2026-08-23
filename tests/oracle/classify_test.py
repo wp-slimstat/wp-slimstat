@@ -51,6 +51,7 @@ Python 3.x, standard library only.
 
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -213,6 +214,71 @@ else:
 ids = [plant["id"] for plant in PLANTS]
 check("plant ids are unique", len(set(ids)), len(ids),
       "two plants sharing an id makes a failure report ambiguous about which one failed")
+
+
+# ── 3b. The README's own count of this gate's mutations, read rather than believed ──────────
+#
+# plants/README.md heads a section "The N ways this is proven to fail — registered, not
+# recounted". That N has now been wrong TWICE. The first time it was a prose table of ten
+# mutations someone had once run by hand; run 53 replaced it with a spelled-out "Twenty-two",
+# and the follow-up commits took the directory to twenty-five without touching the sentence —
+# the same defect one commit later, in the paragraph written to close it.
+#
+# So the number is not typed by hand any more; it is READ from the heading and compared against
+# the directory. The second assertion is the section's other claim, which was equally unchecked:
+# every one of those files must name THIS gate, because a registered mutation whose `gate:` runs
+# some other script says nothing about the plant set (PITFALLS 64 — a mechanism is a file in the
+# diff, prose describing one is a plan).
+
+MUTATIONS_DIR = os.path.join(os.path.dirname(HERE), "mutations")
+README_PATH = os.path.join(PLANTS_DIR, "README.md")
+S4_MUTATIONS = sorted(name for name in os.listdir(MUTATIONS_DIR)
+                      if name.startswith("S4-") and name.endswith(".mutation"))
+
+_heading = re.search(r"^## The (\d+) ways this is proven to fail",
+                     open(README_PATH).read(), re.M)
+check("plants/README.md states its mutation count in a form this gate can read",
+      _heading is not None, True,
+      "without the machine-readable heading the count goes back to being a spelled-out number "
+      "nothing checks, which is how it drifted from ten to twenty-two to twenty-five")
+check("plants/README.md's mutation count matches tests/mutations/",
+      int(_heading.group(1)) if _heading else None, len(S4_MUTATIONS),
+      "a reader auditing the section against the directory finds entries the record does not "
+      "account for and has to re-derive which — the cost V13 and S4-IND-04 were filed for")
+
+# Matched with the header GRAMMAR the .mutation format actually uses — `key:` then whitespace
+# then the value — not with the six-space column this directory happens to be aligned to today.
+# The first version required the literal "gate:      composer test:classifier-plants": re-align
+# one file to a single space and it satisfies slimstat_mutation_parse(), the registry gate and
+# the runner, while this check reports it as wrongly gated. A third reader of a format that
+# already has one owner (tests/lib/mutations.php: "one parser, because two parsers are two
+# formats"), pinned to whitespace nothing else pins. PITFALLS 5.
+_GATE_RE = re.compile(r"^gate:\s*composer\s+test:classifier-plants\s*$", re.M)
+_wrong_gate = sorted(
+    name for name in S4_MUTATIONS
+    if not _GATE_RE.search(open(os.path.join(MUTATIONS_DIR, name)).read()))
+check("every S4 mutation is gated by this file", _wrong_gate, [],
+      "the README says every one of them carries `gate: composer test:classifier-plants`; one "
+      "that names a different script is counted as coverage of the plant set and is not")
+
+# ── 3c. The README's mutation IDs name real files ───────────────────────────────────────────
+#
+# 3b counts. It does not read. The section it guards named eight mutations and FIVE of the ids
+# did not exist: three were near-misses of the real filenames, one described an assertion that
+# lives in section 8 rather than a registry entry, and one — `S4-readme-mutation-count-unchecked`
+# — claimed the 3b gate above was itself mutation-covered when no such file was ever written.
+# That last one is PITFALLS 64's sentence exactly, three lines under a paragraph quoting it, in
+# the same commit that added the count check. Counting was the axis somebody thought of; naming
+# was the axis the drift used.
+_README_IDS = sorted(set(re.findall(r"`(S4-[A-Za-z0-9._-]+)`", open(README_PATH).read())))
+_phantom = [i for i in _README_IDS if i + ".mutation" not in S4_MUTATIONS]
+check("every mutation id cited in plants/README.md is a file on disk", _phantom, [],
+      "a citation to a mutation that does not exist reads as coverage and audits as coverage; "
+      "the reader only learns otherwise by running ls, which is the one thing prose cannot make "
+      "them do")
+check("the README cites enough mutation ids to be worth checking", len(_README_IDS) >= 5, True,
+      "if the section stopped naming any file, the check above would pass over an empty list — "
+      "loudest exactly when blind, which is the shape this whole gate exists against")
 
 
 # ── 4. The table's own invariants, printed rather than assumed ──────────────────────────────
@@ -506,6 +572,13 @@ check_raises("a Verdict is not a boolean",
 #                               rules all fire before any rule reads the arms verdict, so no
 #                               triple can carry these to a label. They still decide what a
 #                               family sees when it compares two answers of its own.
+#   both-hollow                 P03 and P12 REACH it, and neither one READS it: `hollow-arms`
+#                               and `all-hollow` fire on the class line and never consult
+#                               `arms.verdict`, so the rule NAME entered the section-9 coverage
+#                               set while its verdict was pinned by nothing. Measured: EQUAL
+#                               could be changed to DIFFER, INCOMPARABLE or ORDER_ONLY with all
+#                               fifty plants green. The verdict is load-bearing on the ORACLE
+#                               legs, where `Facts.agrees()` reads it, so it is asserted here.
 #
 # Each asserts the VERDICT and the RULE, because a right verdict from the wrong branch is the
 # thing expect.arms_rule exists to catch one level up.
@@ -554,6 +627,15 @@ check_diff("two oracles with no model have not agreed either",
                                      {"class": "unmodeled", "value": None, "reason": "y"},
                                      roles=("oracle", "oracle")),
            algebra.INCOMPARABLE, "both-unmodeled")
+check_diff("two empties are EQUAL, and the rule name says why that is not evidence",
+           algebra.compare_envelopes({"class": "empty", "value": [], "flags": ARM_FLAGS},
+                                     {"class": "empty", "value": [], "flags": ARM_FLAGS}),
+           algebra.EQUAL, "both-hollow",
+           "this is the one verdict in DIFF_RULES that two plants REACHED and no assertion READ. "
+           "classify.py settles the arms leg by class line, so P03 and P12 are green whatever "
+           "verdict comes back — but `Facts.agrees()` reads this same verdict on the oracle legs, "
+           "where EQUAL is what lets an empty oracle 'back' an empty NEW (P45) and anything else "
+           "silently re-routes every hollow triple to a different rule")
 
 # The two ROW-KEY properties, which no plant reaches because no plant needs them yet.
 #
@@ -597,6 +679,14 @@ check_diff("negative zero is zero after rounding, too",
 
 
 # ── 9. Every edge the DIFFER can take was taken by something above ──────────────────────────
+#
+# WHAT THIS LOOP ESTABLISHES, AND WHAT IT DOES NOT. It records that the edge was CONSTRUCTED, not
+# that anything read what it returned. An edge reached only through `expect.arms_rule` has its
+# NAME asserted and its VERDICT free: `both-hollow` was reached by two plants and could still be
+# flipped to any of the four verdicts with the whole gate green, because the two rules that label
+# those plants fire on the class line and never consult `arms.verdict`. That gap is closed one
+# edge at a time in section 8, not by this loop — so read a green here as "nothing was deleted",
+# and never as "every edge is pinned".
 
 for rule in algebra.DIFF_RULES:
     check("algebra rule %r is reached by this run" % rule, rule in seen_diff_rules, True,

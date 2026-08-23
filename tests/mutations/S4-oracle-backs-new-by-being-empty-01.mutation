@@ -1,0 +1,35 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+expect:    P45-old-errored-registered-needs-an-oracle-that-answered
+kind:      guard-removal
+rationale: Restores the hole the FIRST repair of the (a)-without-the-oracle blocker left behind,
+           found by the re-attack lens and confirmed by executing the production classifier.
+
+           The original defect was that `old-errored-registered` granted (a) — NEW PROVEN CORRECT
+           — from a register hit alone. The repair added `f.agrees(f.oracle_new)`. That term is
+           satisfied VACUOUSLY when NEW returned nothing and the oracle also has nothing: two
+           empties compare EQUAL and always will (PITFALLS 38). So the fix closed the value case
+           and left the hollow case open.
+
+           WHY THIS RULE AND NOT ANOTHER. It sits ABOVE hollow-arms and all-hollow, so it is the
+           one door into (a) that never reaches the vacuity checks. Measured on the real
+           classifier: OLD errored + NEW hollow + oracle hollow returned `a`/PASS, while the
+           IDENTICAL two empties with OLD hollow instead of errored returned `d-vacuous` three
+           rules further down. One triple, two answers, decided by which rule saw it first — and
+           the passing one was reached through the door with no vacuity check behind it.
+
+           `oracle_class in ANSWERED` is what makes the oracle's agreement mean something: it
+           must have MEASURED, not merely matched. The legitimate cases are untouched — NEW ok
+           with an agreeing oracle, and NEW zero with an oracle zero, both still land on (a),
+           because zero is a measurement and hollow is not.
+---
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -329,7 +329,6 @@
+         "instead of errored were called d-vacuous three rules further down — one triple, two "
+         "answers, decided by which rule saw it first",
+         lambda f: (f.old_class == "error" and f.register_hit is not None
+-                   and f.oracle_class in ANSWERED
+                    and f.agrees(f.oracle_new)),
+     ),
+     Rule(

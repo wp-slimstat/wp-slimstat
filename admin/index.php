@@ -1819,7 +1819,14 @@ class wp_slimstat_admin
         $chart_bars = '';
         $total_bars = count($minute_data);
         foreach ($minute_data as $i => $count) {
-            $height_pct = round(($count / $max_count) * 100);
+            // Multiply first, divide once, round once — `($count / $max_count) * 100` rounds
+            // twice and loses the exact half (23/40 arrives as 57.49999999999999289457, so
+            // PHP 8.4+ draws the bar at 57% where the ratio is 57.5%). $max_count is the
+            // maximum of the series. This site has never carried a zero guard, and one is NOT
+            // added here: both forms divide by $max_count exactly once, so the behaviour when
+            // it is 0 is identical before and after. Saying so rather than implying a safety
+            // this line does not provide. ADR-17; PITFALLS 72.
+            $height_pct = round((100 * $count) / $max_count);
             $is_peak = ($count === $max_count && $count > 0);
             $bar_class = $is_peak ? ' slimstat-adminbar__chart-bar--peak' : '';
             $minutes_ago = $total_bars - 1 - $i; // 29 for first bar, 0 for last bar
@@ -4193,7 +4200,11 @@ class wp_slimstat_admin
             var nonces = <?php echo wp_json_encode($nonces); ?>;
             var total = indexes.length, done = 0;
             function updateProgress() {
-                var percent = Math.round((done/total)*100);
+                // Multiply first, divide once — same contract as the PHP percentages in this
+                // file. Inline JS, so the PHP scan in tests/rounding-contract-test.php sees this
+                // as T_INLINE_HTML and cannot read it; the JS twin scan is what covers it.
+                // ADR-17; PITFALLS 72.
+                var percent = Math.round((100 * done) / total);
                 $('#slimstat-index-progress').css('width', percent+'%');
                 if (done === total) setTimeout(function(){ $('.slimstat-indexes-notice').fadeOut(); }, 2000);
             }

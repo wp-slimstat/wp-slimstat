@@ -25,14 +25,25 @@ $step_one_visitors = (int) ($steps[0]['visitors'] ?? 0);
         $pct         = (float) ($step['pct'] ?? 0);
         $dropoff     = (int) ($step['dropoff'] ?? 0);
         $unreachable = !empty($step['unreachable']);
-        $width       = $step_one_visitors > 0 ? max(2, (int) round(($visitors / $step_one_visitors) * 100)) : 0;
+        // Multiply first: `($visitors / $step_one_visitors) * 100` rounds twice — the division
+        // produces a double and scaling it by 100 lands one ULP below the exact half, so 23 of
+        // 40 gives round(57.49999999999999289457) = 57 on PHP 8.4+ where the exact value is
+        // 57.5. `(100 * $a) / $b` is a single correctly-rounded division and is exact on every
+        // supported runtime. The `max(2, …)` floor and the zero guard are unchanged — they are
+        // about an invisible bar, not about the arithmetic. ADR-17; PITFALLS 72.
+        $width       = $step_one_visitors > 0 ? max(2, (int) round((100 * $visitors) / $step_one_visitors)) : 0;
         $step_num    = $index + 1;
         // One formatted percentage, reused by the visible label and aria-valuetext
         // so the two can never drift (mirrors $pctLabel in goals-funnels.js).
         $pct_label   = number_format_i18n($pct, ((float) $pct == (int) $pct) ? 0 : 1);
         $dropoff_pct = 0;
         if ($index > 0 && !empty($steps[$index - 1]['visitors'])) {
-            $dropoff_pct = round(($dropoff / max(1, (int) $steps[$index - 1]['visitors'])) * 100, 1);
+            // Multiply first — same reason as $width above, and this one is PRINTED text rather
+            // than a CSS width: 23 dropped of 80 is exactly 28.75%, which half-up renders 28.8%.
+            // The max(1, …) divide-by-zero guard is deliberately left exactly where it was; it
+            // now guards the divisor of the single division instead of the first of two.
+            // ADR-17; PITFALLS 72.
+            $dropoff_pct = round((100 * $dropoff) / max(1, (int) $steps[$index - 1]['visitors']), 1);
         }
         ?>
         <li class="slimstat-gf-step<?php echo $unreachable ? ' slimstat-gf-step--unreachable' : ''; ?>" data-step="<?php echo esc_attr((string) $step_num); ?>">

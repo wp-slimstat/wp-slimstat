@@ -2312,7 +2312,14 @@ class wp_slimstat_reports
 
                 echo '<div class="slimstat-funnel-bars">';
                 foreach ($step_results as $step) {
-                    $width = $step1 > 0 ? (int) round(($step['visitors'] / $step1) * 100) : 0;
+                    // Multiply first, divide once, round once. The two-step form
+                    // `($step['visitors'] / $step1) * 100` hands round() a double that has
+                    // already lost the exact half — 23/40 arrives as 57.49999999999999289457 —
+                    // so PHP 8.4+ renders a bar 1% narrower than the ratio it represents. The
+                    // sibling expression further down this file already uses this form — named rather than
+                    // cited by line, because a line number rots silently the first time anything is
+                    // inserted above it, and adding this comment block moved it. ADR-17; PITFALLS 72.
+                    $width = $step1 > 0 ? (int) round((100 * $step['visitors']) / $step1) : 0;
                     // A zero-visitor or unreachable step keeps the muted fill (no
                     // brand color), so an empty bar never reads as a healthy step.
                     $zero = empty($step['visitors']) || !empty($step['unreachable']);

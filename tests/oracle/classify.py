@@ -175,6 +175,14 @@ OBSERVABLES = (
 
 NON_REGISTRABLE_OBSERVABLES = ("ok-to-error",)
 
+# The classes that carry a MEASURED answer. `empty` is an honest outcome and a real answer to the
+# question "how many rows", but it is not a measurement of a VALUE, and two of them compare EQUAL
+# unconditionally (PITFALLS 38: uniques_browser and uniques_country agreed in every arm of every
+# run while neither had ever executed). So wherever a rule needs the oracle to have PROVED
+# something rather than merely to have matched, it asks for one of these — one owner, because
+# observable_of() below needs the same set and two spellings of it would drift.
+ANSWERED = ("ok", "zero")
+
 
 class Register:
     """The machine-readable expected-diff register: R#, the surfaces it covers, the observable.
@@ -313,8 +321,15 @@ RULES = (
         "5.5.1's funnels ERROR on MySQL 8 and v6 answers. All three are required: (a) means NEW "
         "PROVEN CORRECT, and a registered OLD failure is evidence that the difference EXISTS, "
         "never evidence that the number NEW put in its place is right. Accepted for existence; "
-        "if the entry is pre-blind its DIRECTION is not",
+        "if the entry is pre-blind its DIRECTION is not. "
+        "THE ORACLE MUST HAVE ANSWERED, not merely agreed: this rule sits ABOVE hollow-arms and "
+        "all-hollow, so it is the one door into (a) that never reaches the vacuity checks. "
+        "Without `oracle_class in ANSWERED`, OLD-errored + NEW-hollow + oracle-hollow satisfied "
+        "every term and passed as (a)/PASS, while the identical two empties with OLD hollow "
+        "instead of errored were called d-vacuous three rules further down — one triple, two "
+        "answers, decided by which rule saw it first",
         lambda f: (f.old_class == "error" and f.register_hit is not None
+                   and f.oracle_class in ANSWERED
                    and f.agrees(f.oracle_new)),
     ),
     Rule(
@@ -344,7 +359,7 @@ RULES = (
         "compare equal and always will, which is exactly how uniques_browser and "
         "uniques_country agreed in every arm of every run while neither had ever executed "
         "(PITFALLS 38). Instrument or corpus defect; never recorded as a zero",
-        lambda f: f.old_class == "empty" and f.new_class == "empty" and f.oracle_class != "empty",
+        lambda f: f.old_class == "empty" and f.new_class == "empty" and f.oracle_class in ANSWERED,
     ),
     Rule(
         "all-hollow", "d-vacuous",
@@ -523,15 +538,14 @@ def observable_of(old_env, new_env, arms):
     on the state of the oracle that judged it.
     """
     old_cls, new_cls = old_env["class"], new_env["class"]
-    answered = ("ok", "zero")
 
     if new_cls == "error":
         return "ok-to-error"
     if old_cls == "error":
-        return "error-to-ok" if new_cls in answered else "error-to-hollow"
-    if old_cls == "empty" and new_cls in answered:
+        return "error-to-ok" if new_cls in ANSWERED else "error-to-hollow"
+    if old_cls == "empty" and new_cls in ANSWERED:
         return "hollow-to-value"
-    if new_cls == "empty" and old_cls in answered:
+    if new_cls == "empty" and old_cls in ANSWERED:
         return "value-to-hollow"
     if arms.verdict == algebra.EQUAL:
         return "none"

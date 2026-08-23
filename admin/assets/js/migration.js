@@ -39,7 +39,10 @@
         });
     }
     function setProgress(done, total) {
-        var pct = total ? Math.round((done / total) * 100) : 0;
+        // Multiply first, divide once. A progress bar is a percentage of two counts like any
+        // other, and Math.round of a value one ULP below the half rounds the wrong way in V8 the
+        // same as it does in PHP 8.4+. ADR-17; PITFALLS 72.
+        var pct = total ? Math.round((100 * done) / total) : 0;
         var $wrap = $(".slimstat-migration .progress");
         $(".slimstat-migration .bar").css("width", pct + "%");
         $("#slimstat-progress-percent").text(pct + "%");

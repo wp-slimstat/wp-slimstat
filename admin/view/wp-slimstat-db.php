@@ -2287,7 +2287,15 @@ class wp_slimstat_db
             // The SAME scope as the numerator: a per-author conversion rate over the
             // whole site's visitors would be a ratio of two different populations.
             $total_visitors = self::get_total_unique_visitors($extra_where);
-            $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
+            // MULTIPLY FIRST, divide once, round once. `($uniques / $total_visitors) * 100`
+            // discards the exact value before round() ever sees it: the division produces a
+            // double, and scaling that double by 100 lands one ULP BELOW the true half for a
+            // whole class of ordinary ratios — 23/160 is 14.375 exactly, but the two-step form
+            // hands round() 14.37499999999999822364 and gets 14.37. PHP <= 8.3 compensated with
+            // a "pre-rounding" step; 8.4 removed it as an upstream bug fix, exposing the defect
+            // rather than causing it. This form is one correctly-rounded division and is exact
+            // on every supported runtime. ADR-17; PITFALLS 72.
+            $cr = ($total_visitors > 0) ? round((100 * $uniques) / $total_visitors, 2) : 0.0;
 
             // total_visitors is the CR denominator — returned so the card can show
             // "N of M uniques" and make the percentage legible without re-querying. (#13)
@@ -2760,7 +2768,12 @@ class wp_slimstat_db
             $results[] = [
                 'name'        => $step['name'],
                 'visitors'    => $visitor_count,
-                'pct'         => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                // Multiply first — see the note on the goal conversion rate above. This one is
+                // the directly user-facing case: it is computed at 1 dp and PRINTED at 1 dp, so
+                // 23 of 80 step-one visitors read "28.7%" on PHP 8.4/8.5 and "28.8%" on 7.4-8.3
+                // from the same database. 28.75 is the exact value; 28.8 is what half-up says.
+                // ADR-17; PITFALLS 72.
+                'pct'         => ($step1_count > 0) ? round((100 * $visitor_count) / $step1_count, 1) : 0,
                 'dropoff'     => max(0, $dropoff),
                 'unreachable' => $unreachable,
             ];

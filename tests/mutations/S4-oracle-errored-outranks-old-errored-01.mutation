@@ -1,0 +1,43 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+expect:    P46-old-errored-outranks-an-oracle-that-errored
+kind:      boundary
+rationale: Restores the third of the three arm-fact/oracle-fact boundaries the rule-order repair left
+           unpinned. The first repair moved `new-errored` to position 1 and pinned two boundaries;
+           `oracle-errored` could still be moved back above `old-errored` with the gate green.
+
+           WHY IT MATTERS. OLD's SQL failure is a fact about an ARM — it is the R4/R5 shape, a
+           known-bug CANDIDATE that blocks until the pre-blind evidence gate is satisfied. The
+           oracle having failed is a fact about the REFEREE. If the referee's failure is consulted
+           first, a real OLD defect is filed as d-unmodeled: unresolved, listed, and never a
+           blocker. Arm facts are settled before oracle facts, and this proves the order is
+           load-bearing rather than incidental.
+---
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -331,6 +331,12 @@
+         lambda f: (f.old_class == "error" and f.register_hit is not None
+                    and f.oracle_class in ANSWERED
+                    and f.agrees(f.oracle_new)),
++    ),
++    Rule(
++        "oracle-errored", "d-unmodeled",
++        "the oracle itself failed, so no truth was computed. Reporting the arms' agreement here "
++        "would be reporting that two answers agreed with nothing",
++        lambda f: f.oracle_class == "error",
+     ),
+     Rule(
+         "old-errored", "SQL-error",
+@@ -346,12 +352,6 @@
+         "the oracle has no model for this surface, or the surface cannot be asked of it. An "
+         "absent third answer is never agreement — that is the whole reason there is a third one",
+         lambda f: f.oracle_class in ("unmodeled", "unsupported"),
+-    ),
+-    Rule(
+-        "oracle-errored", "d-unmodeled",
+-        "the oracle itself failed, so no truth was computed. Reporting the arms' agreement here "
+-        "would be reporting that two answers agreed with nothing",
+-        lambda f: f.oracle_class == "error",
+     ),
+     Rule(
+         "hollow-arms", "hollow",

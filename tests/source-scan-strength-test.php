@@ -398,6 +398,7 @@ $recorded     = [
     // Surfaced by the per-call-site rule below: each of these routes SOME content through a
     // helper and then scans other content raw, so the old whole-file exemption hid them.
     'migration-ui-honesty-test.php'              => 'exempt — the raw subject is JS ($js), not PHP',
+    'rounding-contract-test.php'                 => 'exempt — its PHP half IS tokenised (rc_rounding_calls); the raw-text half scans JAVASCRIPT, which no PHP tokeniser can strip. Added after the ADR-17 seam fixed six PHP percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72)',
 
     // ── debt: PHP source matched as raw text; route through the library when next touched ──
     'access-log-author-edit-link-test.php'   => 'debt',
