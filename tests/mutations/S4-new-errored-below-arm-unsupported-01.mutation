@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P31-new-errored-outranks-an-arm-that-could-not-be-asked label
+rationale: The ARM half of the rule-order repair. S4-SEM-01 named THREE rules sitting above `new-errored` in the table S4 shipped - `oracle-absent`, `oracle-errored` and `arm-unsupported` - and S4-new-errored-below-oracle-rules-01 spells its guard on `f.oracle_class`, which reaches the first two only. Measured: this entry takes 3 assertions red and all three are P31's, while the sibling takes 6 and none of them is. P31 was therefore a plant whose discriminating power nothing had ever run. What the branch costs when it is wrong is P31's own `mislabelling_means`, printed on failure; why the ordering is what it is, is argued at the RULES comment in classify.py.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -304,7 +304,7 @@ RULES = (
+         "to know that NEW's query failed, and no register entry may explain a NEW arm that "
+         "fails, however the failure is spelled. At position 1 this fires whatever the oracle's "
+         "state and whatever OLD did, which is the guarantee the position buys",
+-        lambda f: f.new_class == "error",
++        lambda f: f.new_class == "error" and "unsupported" not in (f.old_class, f.new_class),
+     ),
+     Rule(
+         "arm-unsupported", "d-unmodeled",

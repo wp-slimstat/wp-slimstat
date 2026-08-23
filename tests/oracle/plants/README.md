@@ -118,7 +118,7 @@ The degradation is applied to the DATA, never by editing a file, so nothing has 
 afterwards — PITFALLS 33 is an hour of work destroyed by the `git checkout` that was cleaning up
 after a probe that had not even run.
 
-## The 32 ways this is proven to fail — registered, not recounted
+## The 33 ways this is proven to fail — registered, not recounted
 
 > **That number is read by the gate, not typed here.** It was wrong twice. First it was a prose
 > table of ten mutations someone had once run by hand; run 53 replaced it with a spelled-out
@@ -127,8 +127,10 @@ after a probe that had not even run.
 > commit later, in exactly the same way. Section 3b of `classify_test.py` now parses the digits
 > out of the heading above, counts `tests/mutations/S4-*.mutation`, and fails naming both
 > numbers when they disagree — and asserts the section's other claim too, that every one of
-> those files carries `gate: composer test:classifier-plants`. Registered as
-> The count in this heading is checked by section 3b of `classify_test.py`, which reads the digits and compares them with the directory. That check has no mutation of its own — an earlier draft of this line claimed one, naming a file that was never written, which is precisely the shape this section is about.
+> those files carries `gate: composer test:classifier-plants`.
+>
+> That check has no mutation of its own — nothing guards section 3b but section 3b. An earlier
+> draft of this line claimed otherwise and named a mutation file nobody had written.
 
 This section used to be a prose table of ten mutations someone had once run by hand. The
 mutations were real and the table was accurate; what it could not do is *run again*. The
@@ -147,8 +149,10 @@ composer test:mutation-registry                          # the files are well-fo
 php tests/verify/bin/run-mutations.php --filter=S4-      # every one must be KILLED
 ```
 
-Each one restores a defect this gate was written for, and the ids say which: the table's ordering
-(`S4-new-errored-below-oracle-rules-01`), label (a) granted without the oracle
+Each one restores a defect this gate was written for, and the ids say which: the table's ordering,
+which needed two entries because a guard rewrite can say THIS PREDICATE and never THIS POSITION
+(`S4-new-errored-below-oracle-rules-01`, `S4-new-errored-below-arm-unsupported-01`), label (a)
+granted without the oracle
 (`S4-registered-old-error-without-oracle-01`), the two halves of the tie tolerance's rail and its
 band guard, the vacuity rule swallowing a real arms difference, the clock/pin flag reads, the
 `Decimal(str(float))` boundary, both `cut_side` branches and the guard on the value, six widening
@@ -157,8 +161,8 @@ on a hit.
 
 ### The MIRROR of a one-sided guard is a defect of its own
 
-Seven entries were added after run 53's repair round, and six of them say the same thing: a
-two-sided property had been pinned on one side. `f.agrees(f.oracle_new)` was pinned where the
+Every entry added after run 53's repair round but one says the same thing: a two-sided property
+had been pinned on one side, or a rule was pinned above some of what it has to outrank. `f.agrees(f.oracle_new)` was pinned where the
 oracle held rows and not where it held nothing (`S4-oracle-backs-new-by-being-empty-01`); the
 clock flag was pinned being read from OLD and not from NEW, and the pin was pinned the other way
 round (`S4-clock-flag-read-from-new-only-01`, `S4-pin-read-from-new-only-01`) — each because the
@@ -167,13 +171,21 @@ band guard's `len(a_rows) != limit or len(b_rows) != limit` had every plant sitt
 `limit` on the a-side (`S4-band-guard-drops-the-first-arm-01`); the cut was pinned at the
 right END of the ranking and not at the right POSITION in the list, because every band plant
 listed its rows in ranked order where `min()` and `rows[-1]` coincide
-(`S4-cut-taken-as-the-last-row-01`); and `old-errored` was pinned above two of the three rules
-it has to outrank (`S4-oracle-errored-outranks-old-errored-01`). an assertion in `classify_test.py` section 8 rather than a registry entry (the edge is reached by a direct verdict assertion, not by a plant)
+(`S4-cut-taken-as-the-last-row-01`); `old-errored` was pinned above two of the three rules it has
+to outrank (`S4-oracle-errored-outranks-old-errored-01`); and `new-errored` above two of its own
+three (`S4-new-errored-below-arm-unsupported-01`).
 The seventh is a different shape again — an edge two plants REACHED and no assertion READ — and it is closed by an assertion in section 8 of `classify_test.py` rather than by a registry entry.
 
 The rule that falls out, and it is cheap to apply: **when a guard names two sides, write the
 mutation that deletes each side separately.** A conjunction killed only by deleting the whole of
 it is pinned by nothing in particular.
+
+And one size up, because the two-sided rule did not cover the case that bit last: **when a rule's
+correctness is its POSITION relative to N others, it owes N mutations — or one that MOVES it.**
+`new-errored` names no sides; it has to outrank three rules, and a guard rewrite gave it two.
+`S4-oracle-errored-outranks-old-errored-01` shows the move spelling is available — it carries a
+two-hunk diff that relocates a whole `Rule(...)` block — so "one anchor" was never a constraint
+of the format, only a habit.
 
 ## The PHP rounding probes
 
