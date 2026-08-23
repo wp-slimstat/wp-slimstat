@@ -270,6 +270,15 @@ class Facts:
         Between the two ARMS it is not — there the order came from two SQL engines and is a
         finding of its own, which is why ORDER-ONLY is a label and not a footnote.
         """
+        if algebra.rule_family(diff.rule) == "both-hollow":
+            # Two empties compare EQUAL and always will (PITFALLS 38). On the ARMS leg that
+            # is caught by `hollow-arms` before any value rule; on an ORACLE leg nothing
+            # caught it, so an oracle that returned NOTHING was cited as backing an arm —
+            # granting (a)/PASS through `new-backed-registered`, and manufacturing a
+            # release-blocking (b) through `old-backed` on `old=empty, new=zero`, which is
+            # the shape of a FIX. Refused here rather than per-rule because four rules read
+            # this and only one had remembered to ask whether the oracle answered at all.
+            return False
         return diff.verdict in (algebra.EQUAL, algebra.ORDER_ONLY)
 
 
@@ -404,14 +413,14 @@ RULES = (
         "arms-agree-oracle-agrees-zero", "zero",
         "all three answer the number 0. Reported as its own label so a real measured zero is "
         "never filed beside a hollow one — the distinction R17's 'Today reads 0' turns on",
-        lambda f: f.arms.verdict == algebra.EQUAL and f.agrees(f.oracle_new)
+        lambda f: f.oracle_class in ANSWERED and f.arms.verdict == algebra.EQUAL and f.agrees(f.oracle_new)
         and f.new_class == "zero",
     ),
     Rule(
         "arms-agree-oracle-agrees", "equal",
         "all three agree over a real value. The ordinary outcome, and the only one that needs "
         "no adjudication",
-        lambda f: f.arms.verdict == algebra.EQUAL and f.agrees(f.oracle_new),
+        lambda f: f.oracle_class in ANSWERED and f.arms.verdict == algebra.EQUAL and f.agrees(f.oracle_new),
     ),
     Rule(
         "arms-agree-oracle-differs", "c",
@@ -422,9 +431,12 @@ RULES = (
     ),
     Rule(
         "new-backed-registered", "a",
-        "NEW differs from OLD, the oracle backs NEW, and a register entry covers this surface "
-        "with this observable. An expected diff — a number that changed on purpose",
-        lambda f: f.agrees(f.oracle_new) and f.register_hit is not None,
+        "NEW differs from OLD, the oracle ANSWERED and backs NEW, and a register entry covers "
+        "this surface with this observable. An expected diff — a number that changed on purpose. "
+        "`oracle_class in ANSWERED` is not redundant beside `agrees()`: an oracle that returned "
+        "nothing must not be able to prove NEW correct",
+        lambda f: (f.oracle_class in ANSWERED and f.agrees(f.oracle_new)
+                   and f.register_hit is not None),
     ),
     Rule(
         "new-backed-unregistered", "a-UNREGISTERED",
@@ -481,6 +493,23 @@ def _assert_table_invariants():
     names = [rule.name for rule in RULES]
     if len(set(names)) != len(names):
         raise ClassificationError("two rules share a name; a verdict must name one rule")
+    # NO RULE MAY PASS A RELEASE ON THE ORACLE'S AGREEMENT WITHOUT REQUIRING IT TO HAVE ANSWERED.
+    # Read from the guard's own bytecode — `co_names` needs no source file and no regex, so this
+    # cannot rot on reformatting the way a source scan would. It is here rather than in the gate
+    # because it makes the defect UNWRITABLE: `new-backed-registered` shipped without the term
+    # for the whole of S4 while fifty plants stayed green both with and without it, and the only
+    # thing that named the omission was a sweep nobody had run yet (PITFALLS 77).
+    for rule in RULES:
+        if LABELS[rule.label]["disposition"] != "pass":
+            continue
+        guard = rule.when.__code__.co_names
+        if "agrees" in guard and "ANSWERED" not in guard:
+            raise ClassificationError(
+                "rule %r emits the PASS label %r from f.agrees() without requiring "
+                "f.oracle_class in ANSWERED. Two empties compare EQUAL through `both-hollow` and "
+                "always will, so this rule can pass a release on an oracle that answered nothing. "
+                "Spell the conjunct even where the table's ORDER already makes it unreachable — "
+                "order is what this kind of table gets wrong." % (rule.name, rule.label))
 
 
 _assert_table_invariants()

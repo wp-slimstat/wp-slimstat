@@ -1,0 +1,29 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    emits the PASS label 'a' from f.agrees() without requiring f.oracle_class in ANSWERED
+rationale: Drops the ANSWERED term from new-backed-registered, which is how S4 shipped: OLD with rows,
+           NEW hollow, ORACLE hollow, one register entry - and the verdict was (a)/PASS, NEW PROVEN
+           CORRECT. The same hole S4-oracle-backs-new-by-being-empty-01 forbids on the sibling rule
+           old-errored-registered; the repair was applied to one of the two rules emitting (a), and
+           that entry's own rationale claimed this one always carried the term. It did not. Found by
+           SWEEPING the class cross product through the real classify() in Run 55 - 114 of 114,048
+           cases, reproduced independently at 4 of 700 - and by NO plant: all 50 were green with the
+           defect present and stayed green when it was fixed. NOTE WHAT KILLS IT, because it is not an
+           assertion: _assert_table_invariants() now refuses this at IMPORT, reading the guard's own
+           bytecode via __code__.co_names, so the gate dies before a single plant runs and the expect:
+           above is a ClassificationError rather than a check label. That is the point - the defect is
+           unwritable now, not merely detected.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -435,7 +435,7 @@ RULES = (
+         "this surface with this observable. An expected diff — a number that changed on purpose. "
+         "`oracle_class in ANSWERED` is not redundant beside `agrees()`: an oracle that returned "
+         "nothing must not be able to prove NEW correct",
+-        lambda f: (f.oracle_class in ANSWERED and f.agrees(f.oracle_new)
++        lambda f: (f.agrees(f.oracle_new)
+                    and f.register_hit is not None),
+     ),
+     Rule(

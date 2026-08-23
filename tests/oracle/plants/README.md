@@ -118,7 +118,7 @@ The degradation is applied to the DATA, never by editing a file, so nothing has 
 afterwards — PITFALLS 33 is an hour of work destroyed by the `git checkout` that was cleaning up
 after a probe that had not even run.
 
-## The 33 ways this is proven to fail — registered, not recounted
+## The 35 ways this is proven to fail — registered, not recounted
 
 > **That number is read by the gate, not typed here.** It was wrong twice. First it was a prose
 > table of ten mutations someone had once run by hand; run 53 replaced it with a spelled-out
@@ -162,8 +162,9 @@ on a hit.
 ### The MIRROR of a one-sided guard is a defect of its own
 
 Every entry added after run 53's repair round but one says the same thing: a two-sided property
-had been pinned on one side, or a rule was pinned above some of what it has to outrank. `f.agrees(f.oracle_new)` was pinned where the
-oracle held rows and not where it held nothing (`S4-oracle-backs-new-by-being-empty-01`); the
+had been pinned on one side, or a rule was pinned above some of what it has to outrank.
+`f.agrees(f.oracle_new)` was pinned where the oracle held rows and not where it held nothing
+(`S4-oracle-backs-new-by-being-empty-01`); the
 clock flag was pinned being read from OLD and not from NEW, and the pin was pinned the other way
 round (`S4-clock-flag-read-from-new-only-01`, `S4-pin-read-from-new-only-01`) — each because the
 single asymmetric plant that existed happened to lean the way a one-armed reader still sees; the
@@ -182,6 +183,19 @@ it is pinned by nothing in particular.
 
 And one size up, because the two-sided rule did not cover the case that bit last: **when a rule's
 correctness is its POSITION relative to N others, it owes N mutations — or one that MOVES it.**
+
+And a third rung, because neither of the two above caught what Run 55 found: **when a property is
+required of a CLASS of rules, holding it on one member proves nothing about the others — and what
+it owes is an invariant over the table, not a mutation per rule.** `f.agrees()` was repaired on
+`old-errored-registered` and the entry recording that repair asserted, of the only other rule
+emitting the same label, that it *"always carried the term"*. It did not
+(`S4-oracle-backs-new-by-being-empty-02`), and the same hole was live in two further rules — one
+of them manufacturing a release-blocking (b) out of an oracle that returned nothing
+(`S4-oracle-cannot-back-an-arm-by-being-empty-01`). Fifty plants were green with all of it present
+and stayed green when it was fixed. What closed it is not another plant: `agrees()` now refuses the
+vacuous agreement at the mechanism, and `_assert_table_invariants()` reads each guard's own
+bytecode at import so a PASS-granting rule that consults `agrees()` without `ANSWERED` cannot be
+written at all. PITFALLS 77.
 `new-errored` names no sides; it has to outrank three rules, and a guard rewrite gave it two.
 `S4-oracle-errored-outranks-old-errored-01` shows the move spelling is available — it carries a
 two-hunk diff that relocates a whole `Rule(...)` block — so "one anchor" was never a constraint

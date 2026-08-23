@@ -1,6 +1,6 @@
 target:    tests/oracle/classify.py
 gate:      composer test:classifier-plants
-expect:    P45-old-errored-registered-needs-an-oracle-that-answered
+expect:    rule 'old-errored-registered' emits the PASS label 'a' from f.agrees()
 kind:      guard-removal
 rationale: Restores the hole the FIRST repair of the (a)-without-the-oracle blocker left behind,
            found by the re-attack lens and confirmed by executing the production classifier.
@@ -22,6 +22,15 @@ rationale: Restores the hole the FIRST repair of the (a)-without-the-oracle bloc
            must have MEASURED, not merely matched. The legitimate cases are untouched — NEW ok
            with an agreeing oracle, and NEW zero with an oracle zero, both still land on (a),
            because zero is a measurement and hollow is not.
+           SUPERSEDED KILL MECHANISM, run 55: this entry's expect: used to name P45-old-errored-
+           registered-needs-an-oracle-that-answered, and P45 is what killed it. It no longer gets that
+           far. _assert_table_invariants() now reads each guard's bytecode at import and refuses any
+           PASS-granting rule that consults f.agrees() without f.oracle_class in ANSWERED, so the gate
+           dies before a plant runs. The expect: was re-pointed at the refusal - which names the RULE,
+           so this entry and -02 stay distinguishable - because a mutation reported KILLED by a
+           mechanism it never touched is PITFALLS 6 and the whole reason expect: exists. Consequence
+           recorded rather than hidden: P45's own discriminating power is now carried by the invariant
+           and by no mutation, and the plant remains as the contract's statement of the shape.
 ---
 --- a/tests/oracle/classify.py
 +++ b/tests/oracle/classify.py

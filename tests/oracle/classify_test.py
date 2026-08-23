@@ -64,6 +64,10 @@ PLANTS_DIR = os.path.join(HERE, "plants")
 FIXTURE = json.load(open(os.path.join(PLANTS_DIR, "plants.json")))
 PLANTS = FIXTURE["plants"]
 
+# The three flags slimstat_capture() emits unconditionally. One spelling, because `check_envelope`
+# hard-requires exactly this key set and a second copy would go stale in silence.
+ARM_FLAGS = {"clock_dependent": False, "calendar_day_dependent": False, "pinned": True}
+
 passed = 0
 failures = []
 
@@ -310,6 +314,94 @@ check("the table's last rule is unconditional", total, True,
       "but it means some triple has been unclassifiable for as long as that has been true")
 
 
+# ── 4b. An oracle that did not ANSWER backs nobody ──────────────────────────────────────────
+#
+# S4 green criterion 2, in its own words: "no path to `a` exists on which the oracle is absent,
+# errored, or disagrees with NEW". WHY `agrees()` alone does not establish that travels with the
+# code, on `Facts.agrees` and on `new-backed-registered`'s own `why`; what it COST is in
+# S4-oracle-backs-new-by-being-empty-02 and PITFALLS 77.
+#
+# A SWEEP rather than one more plant, because the claim is universal and a plant pins one triple.
+# That distinction is the whole finding: `P45` pins this exact shape for the SIBLING rule and did
+# not generalise, and all fifty plants were green with the defect present AND after it was fixed.
+#
+# Asserted on what may NOT happen — never on a destination label. Where these triples belong is
+# an OPEN QUESTION: by the taxonomy at the top of classify.py they are (d), "truth cannot be
+# established", and they currently land on `c-THREE-WAY`/block, whose `means` is at least true of
+# them. Planting a destination would capture the implementation, which criterion 5 forbids, and
+# would go red when the ADR lands — creating pressure to preserve whatever it froze.
+
+NON_ANSWERING_ORACLES = {
+    "empty": {"class": "empty", "value": []},
+    "error": {"class": "error", "value": None,
+              "error": {"str": "the oracle's own query failed", "query": "SELECT 1", "count": 1}},
+    "unsupported": {"class": "unsupported", "value": None, "reason": "not asked of that era"},
+    "unmodeled": {"class": "unmodeled", "value": None, "reason": "no family models this surface"},
+}
+check("every answer class outside ANSWERED has a fixture in this sweep",
+      sorted(NON_ANSWERING_ORACLES), sorted(set(algebra.ANSWER_CLASSES) - set(C.ANSWERED)),
+      "a sixth answer class would be swept by nothing and could back an arm by returning nothing "
+      "— the enumeration is derived so adding a class cannot narrow this section in silence")
+
+# The rules that cite the oracle as BACKING an arm. Named rather than derived: the property is
+# what the rule's verdict CLAIMS, which no introspection can read. Checked against the table so a
+# rename cannot leave this list quietly matching nothing.
+BACKED_BY_ORACLE = ("new-backed-registered", "new-backed-unregistered", "old-backed")
+check("every rule named as citing the oracle is still in the table",
+      sorted(set(BACKED_BY_ORACLE) & {r.name for r in C.RULES}), sorted(BACKED_BY_ORACLE),
+      "a renamed rule would drop out of this list and the sweep below would assert nothing about "
+      "it while still printing green")
+
+REGISTER_HIT = [{"r": "R99", "surfaces": ["top_pages"], "observable": "value-to-hollow"}]
+ARM_PAIRS = (("ok", "empty"), ("empty", "ok"), ("empty", "zero"), ("zero", "empty"),
+             ("ok", "zero"), ("zero", "ok"), ("ok", "ok"))
+ARM_VALUES = {"ok": [{"cnt": 5}], "empty": [], "zero": 0}
+
+
+def arm(cls, value):
+    return {"class": cls, "value": value, "flags": dict(ARM_FLAGS)}
+
+
+# Printed, not merely asserted — section 4's habit. When the ADR lands, this is the record of
+# where these triples used to go.
+observed = {}
+for old_cls, new_cls in ARM_PAIRS:
+    old_val = ARM_VALUES[old_cls]
+    new_val = [{"cnt": 9}] if (new_cls == "ok" and old_cls == "ok") else ARM_VALUES[new_cls]
+    for name, oracle in list(NON_ANSWERING_ORACLES.items()) + [("ABSENT", None)]:
+        where = "old=%s new=%s oracle=%s" % (old_cls, new_cls, name)
+        verdict = C.classify({"surface": "top_pages", "old": arm(old_cls, old_val),
+                              "new": arm(new_cls, new_val), "oracle": oracle},
+                             None, C.Register(REGISTER_HIT))
+        observed.setdefault((verdict.label, verdict.rule), []).append(where)
+        check("(a) is not granted by an oracle that never answered — %s" % where,
+              verdict.label != "a", True,
+              "(a) means NEW PROVEN CORRECT. An oracle that returned nothing has proven nothing, "
+              "and `agrees()` is satisfied by two empties comparing EQUAL for the one reason two "
+              "empties always will")
+        check("...and it does not PASS — %s" % where, verdict.disposition != "pass", True,
+              "a PASS here certifies a release against an answer nobody computed")
+        check("...and no rule claims the oracle BACKED an arm — %s" % where,
+              verdict.rule not in BACKED_BY_ORACLE, True,
+              "`old-backed` on old=empty/new=zero prints 'the oracle backs OLD: a release-"
+              "blocking regression' about a surface that started reporting a measured zero — a "
+              "FIX, called a regression, on the strength of an oracle that returned nothing")
+
+print("  4b: an oracle that did not answer sends %d triples to:" % sum(map(len, observed.values())))
+for (label, rule), wheres in sorted(observed.items()):
+    print("      %-14s %-24s x%d" % (label, rule, len(wheres)))
+
+# THE ANTI-VACUITY HALF — PITFALLS 63, the shape section 8 exists to refuse. Derived from the
+# plant set rather than hand-built, so it cannot drift from what the register actually declares.
+backed_plant = next(p for p in PLANTS if p["expect"].get("rule") == "new-backed-registered")
+backed = C.classify(backed_plant["triple"], backed_plant.get("contract"),
+                    C.Register(backed_plant.get("register", [])))
+check("an oracle that DID answer and backs NEW still grants (a)", backed.label, "a",
+      "every assertion above would pass if nothing could reach (a) at all, which is a gate "
+      "guarding an unreachable branch rather than a live one")
+check("...and that (a) passes", backed.disposition, "pass")
+
+
 # ── 5. POSITIVE CONTROLS — the plant set is made to catch three broken classifiers ──────────
 #
 # Not "the plants look discriminating". Three deliberately degraded inputs are RUN through the
@@ -475,7 +567,6 @@ check("Infinity is refused rather than compared", algebra.as_number("Infinity"),
 
 # ── 7. Must-raise: the refusals, each pinned to its reason ──────────────────────────────────
 
-ARM_FLAGS = {"clock_dependent": False, "calendar_day_dependent": False, "pinned": True}
 
 check_raises("an unknown answer class is refused",
              lambda: algebra.check_envelope({"class": "blank", "value": None, "flags": ARM_FLAGS},
