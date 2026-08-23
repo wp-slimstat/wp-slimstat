@@ -190,10 +190,36 @@ function rc_rounding_calls(string $source): array
     $calls  = [];
 
     for ($i = 0; $i < $count; $i++) {
-        if (!is_array($tokens[$i]) || T_STRING !== $tokens[$i][0]) {
+        if (!is_array($tokens[$i])) {
             continue;
         }
-        if (!isset($names[strtolower($tokens[$i][1])])) {
+        // T_NAME_FULLY_QUALIFIED / T_NAME_QUALIFIED as well as T_STRING, and the name taken
+        // through slimstat_last_name_segment(). On PHP 8.0+ `\round(...)` arrives as ONE token
+        // and was skipped before the depth walk ever ran, while PHP 7.4 tokenised it as
+        // T_NS_SEPARATOR + T_STRING and scanned it — so this scan's answer depended on the
+        // interpreter, in a file whose eval assertion is deliberately VERSION-INVARIANT.
+        //
+        // The helper and this exact idiom already existed (tests/lib/source-scan.php:190,
+        // tests/surplus-argument-scan-test.php:203 — byte-identical to these three lines),
+        // added when the same tokeniser change hid 242 call sites across 38 files from another
+        // gate. This was the next gate not using them.
+        //
+        // NOT at parity with pro's sibling, and saying so rather than implying otherwise. Pro
+        // checks T_STRING + T_NAME_FULLY_QUALIFIED and normalises with ltrim(), so `Foo\round(`
+        // is blind there and seen here; pro has no equivalent of slimstat_last_name_segment().
+        // Pro is the entirely-namespaced plugin, i.e. the half where a qualified call is MORE
+        // likely, so the weaker copy is on the wrong side. Tracked in STATE.json
+        // harness_debt_run53; the provenance header's "fix both in the same sitting" is
+        // discharged for the hazard, not yet for the coverage.
+        $is_name = T_STRING === $tokens[$i][0]
+            || (defined('T_NAME_FULLY_QUALIFIED') && T_NAME_FULLY_QUALIFIED === $tokens[$i][0])
+            || (defined('T_NAME_QUALIFIED') && T_NAME_QUALIFIED === $tokens[$i][0])
+            || (defined('T_NAME_RELATIVE') && T_NAME_RELATIVE === $tokens[$i][0]);
+        if (!$is_name) {
+            continue;
+        }
+        $name = strtolower(slimstat_last_name_segment($tokens[$i][1]));
+        if (!isset($names[$name])) {
             continue;
         }
 
@@ -234,7 +260,8 @@ function rc_rounding_calls(string $source): array
         $depth        = 0;
         $max_div_depth = -1;
         $divmul       = false;
-        $first_end    = $close;
+        $first_end     = $close;
+        $min_mul_depth = PHP_INT_MAX;
         for ($k = $open + 1; $k < $close; $k++) {
             $text = slimstat_token_text($tokens[$k]);
             if (is_array($tokens[$k])) {
@@ -249,16 +276,36 @@ function rc_rounding_calls(string $source): array
                     $first_end = $k;
                 }
                 $max_div_depth = -1;
+                $min_mul_depth = PHP_INT_MAX;
             } elseif ('/' === $text) {
                 $max_div_depth = max($max_div_depth, $depth);
-            } elseif ('*' === $text && $max_div_depth >= $depth) {
-                $divmul = true;
+                // ...and the MIRROR. A multiplication already seen at a STRICTLY SHALLOWER
+                // depth is `100 * ($a / $b)` — the same defect with the operands swapped, and
+                // the shape somebody writes applying ADR-17's remediation halfway, putting the
+                // 100 first without moving the parens. Strictly shallower is what separates it
+                // from the fix: the naive rule ("any * at depth <= any /") flags
+                // `(100 * $c / $t)`, which is the reordered form this gate exists to require.
+                // Pro carries the same half (wp-slimstat-pro bd950f8); without it the two
+                // siblings answered this question differently.
+                if ($min_mul_depth < $depth) {
+                    $divmul = true;
+                }
+            } elseif ('*' === $text) {
+                $min_mul_depth = min($min_mul_depth, $depth);
+                if ($max_div_depth >= $depth) {
+                    $divmul = true;
+                }
             }
         }
 
         $calls[] = [
-            'name'   => strtolower($tokens[$i][1]),
-            'line'   => is_array($tokens[$i]) ? (int) $tokens[$i][2] : 0,
+            // The NORMALISED name. Recording the raw token would store '\round' for a
+            // fully-qualified call, and the site matcher below reads 'round' — so the gate
+            // would report "found 0", i.e. "the site is gone", about a site that is present
+            // and correct. ('round' and not 'sprintf': $call['name'] has exactly two readers,
+            // the site matcher and a failure-message string, and only 'round' is compared.)
+            'name'   => $name,
+            'line'   => (int) $tokens[$i][2],
             'args'   => slimstat_token_text_range($tokens, $open + 1, $close),
             'first'  => trim(slimstat_token_text_range($tokens, $open + 1, $first_end)),
             'divmul' => $divmul,
@@ -607,6 +654,71 @@ $controls[] = [
     $scanned >= 40 && count($files) >= 50,
     sprintf('the scan is not blind: %d rounding/formatting call site(s) across %d shipped PHP files',
         $scanned, count($files)),
+];
+
+// The scanner reads a rounding call however its name is written, and refuses the shapes that
+// only look like one.
+//
+// WHY THIS EXISTS. Measured on this tree, four branches of rc_rounding_calls() could be deleted
+// with every control still printing PASS and the gate still exiting 0:
+//
+//   * the T_NAME_* clause           -> scanned 355 falls to 353, and nothing reads that number
+//                                      closely enough to notice (the census floor is >= 40)
+//   * the normalised 'name' key     -> no trace at all
+//   * the top-level-comma reset     -> no trace
+//   * the ->/::/function/new filter -> no trace
+//
+// The depth rule is the exception and needs no synthetic subject: this plugin ships the legal
+// `$x / (7 * 86400)` shape in src/Helpers/DataBuckets.php, so degrading `>= $depth` to `>= 0`
+// already fails the gate against real code. Pro needed nine synthetic subjects because pro's
+// tree holds no legal instance; free needs these because free's tree holds no ILLEGAL one.
+//
+// The census floor above is deliberately NOT tightened to an exact 355 instead. Pro can hold an
+// exact count over 21 files; free walks 127 files and 355 call sites, where an exact number
+// churns on every unrelated sprintf() anyone adds.
+$rc_shapes = [
+    'round(($a / $b) * 100, 2)'          => true,  // the shape the plugin shipped
+    '\round(($a / $b) * 100, 2)'         => true,  // ONE T_NAME_FULLY_QUALIFIED token on 8.0+
+    'Foo\round(($a / $b) * 100, 2)'      => true,  // T_NAME_QUALIFIED
+    'round(100 * ($a / $b), 2)'          => true,  // the mirror: operands swapped
+    'sprintf("%01.4f", (100 * $c / $t))' => false, // the reordered form this gate REQUIRES
+    'round($x / (7 * 86400), 2)'         => false, // divide by a computed constant — exemption
+    'round($a / $b, 2 * 3)'              => false, // multiplication in a LATER argument
+    'round(2 * 3, ($a / $b))'            => false, // the mirror half's comma reset
+    '$o->round(($a / $b) * 100, 2)'      => null,  // a METHOD — must not register as a call
+    'Foo::round(($a / $b) * 100, 2)'     => null,  // a static call — must not register
+];
+$rc_shape_bad = [];
+foreach ($rc_shapes as $rc_expr => $rc_want) {
+    $rc_calls = rc_rounding_calls('<?php ' . $rc_expr . ';');
+    if (null === $rc_want) {
+        if ([] !== $rc_calls) {
+            $rc_shape_bad[] = $rc_expr . ': must not register as a call, got ' . count($rc_calls);
+        }
+        continue;
+    }
+    if (1 !== count($rc_calls)) {
+        $rc_shape_bad[] = $rc_expr . ': the scanner found ' . count($rc_calls) . ' call(s), not 1';
+        continue;
+    }
+    if ($rc_want !== $rc_calls[0]['divmul']) {
+        $rc_shape_bad[] = $rc_expr . ': want divmul=' . var_export($rc_want, true)
+            . ', got ' . var_export($rc_calls[0]['divmul'], true);
+    }
+    // The RECORDED name, not merely the fact that something was recorded. Without this,
+    // reverting 'name' to the raw token leaves NO trace anywhere in the gate: a fully-qualified
+    // site would record '\round', the site matcher reads 'round', and the gate would report
+    // "found 0" — "the site is gone" — about a site that is present and correct.
+    $rc_want_name = (false === strpos($rc_expr, 'sprintf')) ? 'round' : 'sprintf';
+    if ($rc_want_name !== $rc_calls[0]['name']) {
+        $rc_shape_bad[] = $rc_expr . ": recorded name '" . $rc_calls[0]['name']
+            . "', want '" . $rc_want_name . "'";
+    }
+}
+$controls[] = [
+    [] === $rc_shape_bad,
+    'the scanner reads every rounding call shape it claims to, and no others'
+        . ([] === $rc_shape_bad ? '' : ' — ' . implode('; ', $rc_shape_bad)),
 ];
 
 // ── Report ───────────────────────────────────────────────────────────────────────────────────
