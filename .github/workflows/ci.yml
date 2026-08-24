@@ -140,12 +140,23 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry is ~7.7s at 43 entries (measured 2026-08-17; the "~0.3s" this line
-        # claimed was off by ~25x and it is the sentence that decides when to narrow the run).
+        # The full registry is ~160s at 101 entries (measured 2026-08-24; this line has now been
+        # wrong twice — "~0.3s" was off by 25x, then "~7.7s at 43 entries" by 20x — and it is the
+        # sentence that decides when to narrow the run, so it is measured on every floor bump).
         # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
-        # count, not just registry size. When it outgrows a PR lane, narrow it to the
-        # mutations whose target moved — passing the ref through env: rather than
-        # interpolating it into the run: line, and note this needs fetch-depth: 0:
+        # count, not just registry size, and it is dominated by a few slow gates rather than by
+        # the entry count: SEVEN entries gate on the two seal suites -- four on
+        # `test:seal-negative` (~13s each, and it boots the real entry point and is deliberately
+        # non-filterable, since the suite refuses a partial run) and three on
+        # `test:seal-entrypoint` (~4.7s, twenty sealed dry runs) -- which is ~115s of the total.
+        #
+        # KNOWN AND ACCEPTED: this step has no `if:`, so it runs on all six PHP lanes. That is
+        # NOT redundant even though the seal gates are pure python/bash — other entries gate on
+        # PHP source-level checks that genuinely differ by interpreter, which is how the rounding
+        # contract was found (7.4 vs 8.4). Narrowing to one lane would trade ~8 min of CI for a
+        # real loss of signal. When it does outgrow the lane, narrow it to the mutations whose
+        # target moved — passing the ref through env: rather than interpolating it into the
+        # run: line, and note this needs fetch-depth: 0:
         #
         #     env:
         #       BASE_SHA: ${{ github.event.pull_request.base.sha }}

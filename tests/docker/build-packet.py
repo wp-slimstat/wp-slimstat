@@ -18,8 +18,14 @@ def scrub_values(value):
     if isinstance(value,list): return [scrub_values(v) for v in value]
     return value
 
-for arm in ("arm-1","arm-2"):
-    side=source_for_ref.get(mapping[arm])
+# Under a NULL CONTROL both refs are the same, so `source_for_ref` collapses to one key and both
+# arms read `after.json` -- the `before` capture is discarded and the two blind arms are the same
+# bytes by construction. `arms_identical` then compares a fingerprint with itself and cannot fail,
+# and the noise floor the run exists to measure never reaches an adjudicator. The flip still
+# decides which arm holds which pass, so the blind is unchanged and the two captures are real.
+null_sides=("before","after") if mapping.get("b")==0 else ("after","before")
+for index,arm in enumerate(("arm-1","arm-2")):
+    side=null_sides[index] if bool(mapping.get("null_control")) else source_for_ref.get(mapping[arm])
     if side is None:
         print(f"SEAL REFUSED: mapping {arm} does not name either captured ref",file=sys.stderr); raise SystemExit(3)
     source=artifacts/f"{side}.json"
@@ -38,6 +44,14 @@ for arm in ("arm-1","arm-2"):
 # ever appear as a VALUE, where no structural rule can see them. See scrub-audit.py's header for
 # why the generic `ref`/`version` regexes cannot do this job over real report content.
 identity_keys=schema["answer_key_rules"]["identity_value_keys"]
+# Read here rather than below, because the floor's expectation depends on it: a NULL CONTROL runs
+# ONE ref as both arms, so the two arms SHARE every identity field by definition. The first
+# version of this floor did not know that and refused the noise-floor run outright — measured,
+# `3 distinct literals, expected 6`, on a run whose whole purpose is that the arms are the same.
+# A floor that cannot tell "the arms are identical because that is the experiment" from "the
+# arms are identical because the harness failed to swap them" is not a floor; the `arms_identical`
+# / `arms_differ` control below is what draws that line, and this reads the same field.
+null_control=bool(mapping.get("null_control"))
 literals=set()
 for arm,values in captured.items():
     for key in identity_keys:
@@ -55,10 +69,17 @@ for arm,values in captured.items():
 literals |= {ref_a,ref_b}
 abbreviated=sorted({ref[:n] for ref in (ref_a,ref_b) for n in range(7,13)})
 literals=sorted(literals)
-expected_literals=len(identity_keys)*len(captured)+2
+# Derived, not asserted. Both branches are one formula with two collapses -- one era rather than
+# two, one ref rather than two -- and `len({ref_a,ref_b})` computes the second instead of
+# hardcoding it, so a run mislabelled null with two distinct refs gets the right expectation and
+# therefore the right diagnosis rather than this floor's.
+eras=1 if null_control else len(captured)
+expected_literals=len(identity_keys)*eras+len({ref_a,ref_b})
 if len(literals)!=expected_literals:
-    print(f"SEAL REFUSED: {len(literals)} distinct literals, expected {expected_literals} — "
-          "the two arms share an identity field",file=sys.stderr); raise SystemExit(3)
+    detail=("a null control's arms must share every identity field" if null_control
+            else "the two arms share an identity field")
+    print(f"SEAL REFUSED: {len(literals)} distinct literals, expected {expected_literals} — {detail}",
+          file=sys.stderr); raise SystemExit(3)
 # Persisted, not recomputed. `seal.sh --unseal` re-audits the packet to catch anything planted
 # into it AFTER it was built — that is the whole point of that check — and it cannot re-derive
 # these: the captures are not in the packet, and the fingerprints and versions never enter the
@@ -81,7 +102,6 @@ def passed(control_id: str, condition: bool, evidence: str):
 
 a,b=captured["arm-1"],captured["arm-2"]
 same_fingerprint=a.get("_arm_fingerprint")==b.get("_arm_fingerprint")
-null_control=bool(mapping.get("null_control"))
 entropy=str(mapping.get("entropy_hex", ""))
 flip=json.load((run/"flip.json").open())
 commitment_ok=(len(entropy)==64 and hashlib.sha256(entropy.encode()).hexdigest()==flip.get("commitment"))

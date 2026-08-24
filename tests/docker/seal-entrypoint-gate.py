@@ -73,11 +73,40 @@ def behavior_gate():
             mapping=json.load((run/".sealed/mapping.json").open())
             if oct((run/".sealed/mapping.json").stat().st_mode & 0o777)!="0o600": fail("mapping.json is not mode 600")
             bits += "0" if mapping["arm-1"]==mapping["ref_a"] else "1"
-        if len(set(bits))!=2: fail("20 of 20 runs assigned arm-1 to the same ref")
+        # FATAL, and the band is DEGENERATE-SEQUENCE rather than a p-value. DESIGN.md §1:187
+        # already ratified this shape — "the gate is deterministic; the population audit is
+        # statistical … a CI gate that fails 1% of the time on a correct implementation is a gate
+        # people learn to re-run" — and the code had implemented §6's older table instead.
+        #
+        # Why not the p-test that was here. Exhaustively over all 2^20 sequences, a FAIR coin
+        # fails `seal-tool.py fairness` 1.190% of the time (T1 alone 0.258%, the Wald-Wolfowitz
+        # runs test 0.937% — the normal approximation to R is poor at N=20). This step has no
+        # `if:` and runs on six PHP lanes, so 6.93% of pushes -- one in fourteen -- went red on a
+        # correct implementation. Observed here: one run gave k=3 of 20, and the five immediately
+        # after gave 14, 8, 12, 10, 10.
+        #
+        # Why not merely "both assignments occur", which is where this briefly landed. That
+        # catches a STUCK source and nothing else. A perfectly alternating source -- 0101... ,
+        # k=10, R=20 -- passes it and passes the sign test, and alternation is not hypothetical
+        # here: seal_draw_entropy takes `first_byte & 1`, so any counter-backed source alternates.
+        # That is the exact mode DESIGN.md §1 gives the runs test for.
+        #
+        # So: reject only sequences no fair coin plausibly produces, in both modes. Measured
+        # false-alarm rate 7.8e-5 per lane, 1 push in 2,132 -- rare enough that a red here is
+        # worth reading rather than re-running. The statistical verdict stays with audit-flips,
+        # where N can be large enough to carry one.
+        k=bits.count("0"); runs=1+sum(a!=b for a,b in zip(bits,bits[1:]))
+        if k<=1 or k>=19:
+            fail(f"the flip is effectively stuck: k={k} of N=20 assignments to ref_a")
+        if runs>=19:
+            fail(f"the flip alternates: R={runs} runs in N=20, which is a counter, not entropy")
+
+        # ADVISORY beside it: the full statistical verdict, printed so a marginal draw is visible
+        # without being fatal.
         fair=subprocess.run([sys.executable,str(HERE/"seal-tool.py"),"fairness",bits],text=True,capture_output=True)
-        if fair.returncode: fail(f"flip fairness failed at N=20: {fair.stdout.strip()}")
         artifact_gate(root,Path("/nonexistent"))
-        print(f"SEAL GATE: 20 behavioral runs passed; k={bits.count('0')} assignments to ref_a")
+        verdict="within the fair band" if fair.returncode==0 else f"outside it (advisory) — {fair.stdout.strip()}"
+        print(f"SEAL GATE: 20 behavioral runs passed; k={k}, R={runs}, {verdict}")
 
 def archive_control():
     with tempfile.TemporaryDirectory(prefix="slimstat-archive-control-") as tmp:

@@ -59,14 +59,34 @@ case "$1" in
     ;;
   --unseal) unseal "$2" || exit $? ;;
   audit-flips)
-    shift; bits=
+    # THE POPULATION AUDIT. The entry-point gate rejects only degenerate sequences, because at
+    # N=20 nothing stronger can be fatal without training people to re-run it; the statistical
+    # verdict belongs here, over accumulated real runs.
+    #
+    # Two defects had to go first, and both made this command worse than useless. It read
+    # `seal_json_get` on directories with no mapping at all -- every pre-S6 run -- where both
+    # sides of the comparison return the empty string, "" = "" is true, and a `0` was appended.
+    # Measured over the 17 archived run directories: 15 of the 17 bits were INVENTED, and the
+    # command printed `T1 FAIL k=16 of N=17 (p=0.0003)` -- a confident verdict over fabricated
+    # data, behind 30 tracebacks. And with the two genuinely sealed runs it read `k=1 of N=2`,
+    # where Var[R] is zero, z is infinite, and a flawless history FAILS.
+    #
+    # So: unsealed directories are skipped and counted, and a sample too small to carry a verdict
+    # says so instead of producing one.
+    shift; bits=; skipped=0
     for run in "$@"; do
+      if [ ! -f "$run/.sealed/mapping.json" ]; then skipped=$((skipped + 1)); continue; fi
       if [ "$(seal_json_get "$run/.sealed/mapping.json" arm-1)" = "$(seal_json_get "$run/.sealed/mapping.json" ref_a)" ]; then
         bits="$bits""0"
       else
         bits="$bits""1"
       fi
     done
+    [ "$skipped" -eq 0 ] || seal_err "SEAL AUDIT: skipped $skipped director(ies) with no sealed mapping (pre-S6 runs carry none)"
+    if [ "${#bits}" -lt "${SLIMSTAT_AUDIT_MIN_N:-20}" ]; then
+      seal_err "SEAL AUDIT: ${#bits} sealed run(s) is too few for a fairness verdict (need ${SLIMSTAT_AUDIT_MIN_N:-20}); DESIGN.md targets N=50"
+      exit 0
+    fi
     python3 "$HERE/seal-tool.py" fairness "$bits"
     ;;
   --fairness) python3 "$HERE/seal-tool.py" fairness "$2" ;;

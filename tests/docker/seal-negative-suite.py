@@ -30,9 +30,11 @@ def check(name,result,code,needle,control=False):
 COMMON={"count_records_id":15000,"rows_in_window":10000,"count_records_resource":3000,
         "top_resource":[{"resource":"/a","counthits":2}]}
 
-def capture_pair():
-    return (dict(COMMON,_arm_version="5.5.1",_arm_fingerprint="fingerprint-a"),
-            dict(COMMON,_arm_version="6.0.0",_arm_fingerprint="fingerprint-b"))
+def capture_pair(same=False):
+    """The two captures. `same` is a NULL CONTROL: one arm, measured twice."""
+    before=dict(COMMON,_arm_version="5.5.1",_arm_fingerprint="fingerprint-a")
+    after=dict(before) if same else dict(COMMON,_arm_version="6.0.0",_arm_fingerprint="fingerprint-b")
+    return before,after
 
 def compare_stub(path,verdict,code):
     """A compare-answers.sh that writes real captures and then returns `code`."""
@@ -44,11 +46,16 @@ def compare_stub(path,verdict,code):
                     f'{body}echo "VERDICT: {verdict}"; exit {code}\n')
     path.chmod(0o755); return path
 
-def fixture(root,reports=True,build=True):
-    result=command([str(HERE/"seal.sh"),"flip",str(root),REF_A,REF_B,"40","30","0"])
+def fixture(root,reports=True,build=True,null=False):
+    # REFUSED, not skipped - the same rule this file states about its own subjects. Filing
+    # reports needs a MANIFEST, so this combination raised FileNotFoundError from digest()
+    # several frames away from the caller that asked for it.
+    if reports and not build: raise ValueError("reports require a built packet")
+    result=command([str(HERE/"seal.sh"),"flip",str(root),REF_A,(REF_A if null else REF_B),
+                    "40","30",("1" if null else "0")])
     if result.returncode: raise RuntimeError(result.stderr)
     run=Path(result.stdout.strip()); art=root/"art"; art.mkdir()
-    before,after=capture_pair()
+    before,after=capture_pair(same=null)
     (art/"before.json").write_text(json.dumps(before)+"\n")
     (art/"after.json").write_text(json.dumps(after)+"\n")
     if build:
@@ -225,8 +232,41 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     (run/".sealed/literals.json").unlink()
     check("T15",command([str(HERE/"seal.sh"),"--unseal",str(run)]),4,"literals.json is absent")
 
-expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15"]
-if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13"]:
+    # ── T16 (control): a NULL CONTROL packet builds ────────────────────────────────────────
+    # The literal floor added beside T12 counts distinct era markers and refuses when two arms
+    # share one — which is right for a real comparison and exactly backwards for a noise-floor
+    # run, where one ref IS both arms. Measured before this control existed: the campaign's own
+    # null control died on `3 distinct literals, expected 6`, after a full 129-second capture
+    # that had already printed IDENTICAL across 23 reports. A floor that refuses the experiment
+    # it was written to protect is worse than no floor, because it fails late and looks strict.
+    run,art=fixture(root/"t16",reports=False,build=False,null=True)
+    check("T16",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_A]),0,"blind packet built",True)
+
+    # ── T17: the arms failed to swap ────────────────────────────────────────────────────────
+    # A real comparison whose two captures carry the SAME identity fields is not a comparison.
+    # This is the case build-packet's literal floor draws the line on, and until now nothing
+    # exercised its refusal: T12 asserts exit 5 from the scrub, not exit 3 from the count, so
+    # both branches of the expectation could be deleted with the suite still green.
+    run,art=fixture(root/"t17",reports=False,build=False)
+    values=json.load((art/"after.json").open())
+    values["_arm_version"]="5.5.1"; values["_arm_fingerprint"]="fingerprint-a"
+    (art/"after.json").write_text(json.dumps(values)+"\n")
+    check("T17",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B]),3,
+          "the two arms share an identity field")
+
+    # ── T18: a null control whose two passes disagree ────────────────────────────────────────
+    # The mirror, and the reason the expectation is null-aware rather than simply relaxed. One
+    # ref measured twice must produce one fingerprint; two means the arm is not deterministic,
+    # which is the one thing a noise floor cannot be built on.
+    run,art=fixture(root/"t18",reports=False,build=False,null=True)
+    values=json.load((art/"after.json").open())
+    values["_arm_fingerprint"]="fingerprint-drifted"
+    (art/"after.json").write_text(json.dumps(values)+"\n")
+    check("T18",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_A]),3,
+          "a null control's arms must share every identity field")
+
+expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15","T17","T18"]
+if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13","T16"]:
     print(f"SEAL SUITE: declaration/execution mismatch required={required} controls={controls}",file=sys.stderr); raise SystemExit(6)
 print(f"SEAL SUITE: {len(expected)} declared negative tests, {len(required)} executed, {len(required)} red · "
       f"{len(controls)} controls, {len(controls)} as expected")

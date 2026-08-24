@@ -88,6 +88,16 @@ seal_flip() {
   local entropy commitment first bit arm1 arm2 id now source
   id=$(basename "$dir")
   [[ "$id" =~ ^R[0-9]{8}-[0-9a-f]{6}$ ]] || { seal_err "SEAL REFUSED: run id '$id' is not neutral"; return 3; }
+  # The invariant belongs here, where the label is written, rather than at the three places that
+  # each re-derived it. A run flagged null with two different refs used to seal cleanly and then
+  # refuse much later in build-packet.py with the WRONG diagnosis -- "a null control's arms must
+  # share every identity field", when the fault is a mislabelled run.
+  case "$null" in
+    1|true|True)
+      [ "$a" = "$z" ] || { seal_err "SEAL REFUSED: a null control names two different refs"; return 3; } ;;
+    *)
+      [ "$a" != "$z" ] || { seal_err "SEAL REFUSED: one ref as both arms is a null control; pass null=1 to say so"; return 3; } ;;
+  esac
   entropy=$(seal_draw_entropy) || return 3; seal_validate_entropy "$entropy" || return 3
   commitment=$(seal_sha256_text "$entropy"); first=$(printf '%s' "$entropy" | cut -c1-2); bit=$((16#$first & 1))
   if [ "$bit" -eq 0 ]; then arm1="$a"; arm2="$z"; else arm1="$z"; arm2="$a"; fi
