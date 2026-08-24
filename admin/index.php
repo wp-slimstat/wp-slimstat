@@ -83,6 +83,13 @@ class wp_slimstat_admin
         $has_network_reports = get_user_option('meta-box-order_slimstat_page_slimlayout-network', 1);
 
         self::$screens_info = [
+            'slimgeneral' => [
+                'is_report_group' => true,
+                'show_in_sidebar' => true,
+                'title'           => __('General', 'wp-slimstat'),
+                'capability'      => 'can_view',
+                'callback'        => [self::class, 'wp_slimstat_include_general'],
+            ],
             'slimview1' => [
                 'is_report_group' => true,
                 'show_in_sidebar' => true,
@@ -1294,17 +1301,20 @@ class wp_slimstat_admin
 		);
 		wp_enqueue_style('wp-slimstat-header-modern');
 
+		// Design tokens — foundational and tiny, registered unconditionally so any
+		// modern-layer stylesheet (Goals & Funnels, General) can declare it as a
+		// dependency regardless of which screen actually triggers the enqueue.
+		wp_register_style(
+			'wp-slimstat-tokens',
+			plugins_url('/admin/assets/css/tokens.css', __DIR__),
+			[],
+			SLIMSTAT_ANALYTICS_VERSION
+		);
+		wp_enqueue_style('wp-slimstat-tokens');
+
 		// Goals & Funnels CSS — only loaded on screens that actually render those reports.
 		// Honors slimlayout/Customize drag by inspecting the user's resolved report layout.
 		if (self::needs_goals_funnels_assets()) {
-			wp_register_style(
-				'wp-slimstat-tokens',
-				plugins_url('/admin/assets/css/tokens.css', __DIR__),
-				[],
-				SLIMSTAT_ANALYTICS_VERSION
-			);
-			wp_enqueue_style('wp-slimstat-tokens');
-
 			wp_register_style(
 				'wp-slimstat-goals-funnels',
 				plugins_url('/admin/assets/css/goals-funnels.css', __DIR__),
@@ -1312,6 +1322,17 @@ class wp_slimstat_admin
 				SLIMSTAT_ANALYTICS_VERSION
 			);
 			wp_enqueue_style('wp-slimstat-goals-funnels');
+		}
+
+		// General (slimgeneral) CSS — only loaded on its own screen.
+		if ('slimgeneral' === self::$current_screen) {
+			wp_register_style(
+				'wp-slimstat-general',
+				plugins_url('/admin/assets/css/general.css', __DIR__),
+				['wp-slimstat', 'wp-slimstat-tokens'],
+				SLIMSTAT_ANALYTICS_VERSION
+			);
+			wp_enqueue_style('wp-slimstat-general');
 		}
 
         if (!empty(wp_slimstat::$settings['custom_css'])) {
@@ -1553,6 +1574,17 @@ class wp_slimstat_admin
             );
             self::set_slimstat_script_translations('slimstat-goals-funnels');
         }
+
+        // General page's Pro-upsell modal open/close — only loaded on its own screen.
+        if ('slimgeneral' === self::$current_screen) {
+            wp_enqueue_script(
+                'slimstat-general',
+                plugins_url('/admin/assets/js/general.js', __DIR__),
+                ['jquery'],
+                SLIMSTAT_ANALYTICS_VERSION,
+                true
+            );
+        }
     }
 
     // END: wp_slimstat_enqueue_scripts
@@ -1614,13 +1646,18 @@ class wp_slimstat_admin
             }
         }
 
-        // Add the main menu
+        // Add the main menu. The callback here and the $parent screen's own
+        // add_submenu_page() callback below both resolve to the same WP hook
+        // (toplevel_page_{$parent}), and WP fires every callback registered on
+        // that hook — so this must be the resolved screen's own callback, not
+        // a hardcoded one, or the parent screen would render twice whenever
+        // its callback differs from wp_slimstat_include_view (e.g. slimgeneral).
         add_menu_page(
             __('SlimStat', 'wp-slimstat'),
             $menu_title,
             $minimum_capability,
             $parent,
-            [self::class, 'wp_slimstat_include_view'],
+            self::$screens_info[$parent]['callback'],
             'dashicons-chart-area'
         );
 
@@ -1956,6 +1993,16 @@ class wp_slimstat_admin
     }
 
     // END: add_menu_to_adminbar
+
+    /**
+     * Includes the General landing page
+     */
+    public static function wp_slimstat_include_general()
+    {
+        include(__DIR__ . '/view/general.php');
+    }
+
+    // END: wp_slimstat_include_general
 
     /**
      * Includes the appropriate panel to view the stats

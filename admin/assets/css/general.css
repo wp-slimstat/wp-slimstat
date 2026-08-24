@@ -1,0 +1,393 @@
+/*
+ * WP SlimStat — General (slimgeneral)
+ *
+ * The "at a glance" landing page: stat tiles, a pageviews chart, and a few
+ * top-N boxes with row-level Pro gating (blurred rows + unlock footer),
+ * mirroring the row-gating pattern used by add_lock_export_button() elsewhere
+ * in the free plugin.
+ *
+ * Tokens: see admin/assets/css/tokens.css (enqueued as a dependency). This
+ * file only references --ss-* names that already exist there — no parallel
+ * token scheme.
+ *
+ * @since 6.0.0
+ */
+
+.slimstat-general-page .page {
+    background: var(--ss-surface);
+    border-radius: var(--ss-radius-lg);
+    padding: var(--ss-space-6);
+    border: 1px solid var(--ss-border);
+}
+
+.slimstat-general-page .page-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--ss-space-5);
+    gap: var(--ss-space-4);
+}
+
+.slimstat-general-page .page-title h3 {
+    margin: 0;
+    font-size: var(--ss-text-2xl);
+    letter-spacing: -0.01em;
+    font-weight: 700;
+    color: var(--ss-text-primary);
+}
+
+/* ---------- Big-number stat row ---------- */
+.slimstat-general-page .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--ss-space-3);
+    margin-bottom: var(--ss-space-5);
+}
+
+.slimstat-general-page .stat {
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    padding: var(--ss-space-4) var(--ss-space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--ss-space-2);
+}
+
+.slimstat-general-page .stat .lbl {
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-general-page .stat .val {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ss-text-primary);
+    font-variant-numeric: tabular-nums;
+    font-family: var(--ss-font-num);
+}
+
+.slimstat-general-page .stat .sub {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-muted);
+}
+
+/* ---------- 2x2 data boxes ---------- */
+.slimstat-general-page .boxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--ss-space-5);
+    margin-bottom: var(--ss-space-5);
+}
+
+.slimstat-general-page .box {
+    background: var(--ss-surface);
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.slimstat-general-page .box-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ss-space-2) var(--ss-space-3);
+    padding: var(--ss-space-4) var(--ss-space-5) var(--ss-space-3);
+    min-width: 0;
+}
+
+.slimstat-general-page .box-head .t {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ss-text-primary);
+    white-space: nowrap;
+}
+
+.slimstat-general-page .toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: 2px;
+    background: var(--ss-surface-tint);
+    padding: 3px;
+    border-radius: var(--ss-radius-sm);
+}
+
+.slimstat-general-page .toggle button {
+    font: inherit;
+    white-space: nowrap;
+    font-size: var(--ss-text-xs);
+    font-weight: 500;
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    border-radius: var(--ss-radius-xs);
+    color: var(--ss-text-secondary);
+    cursor: pointer;
+}
+
+.slimstat-general-page .toggle button[aria-pressed="true"] {
+    background: var(--ss-surface);
+    color: var(--ss-text-primary);
+    font-weight: 600;
+    box-shadow: var(--ss-shadow-card);
+}
+
+.slimstat-general-page .toggle.disabled {
+    opacity: 0.55;
+}
+
+.slimstat-general-page .toggle.disabled button {
+    cursor: not-allowed;
+}
+
+/* rows */
+.slimstat-general-page .rows {
+    display: flex;
+    flex-direction: column;
+}
+
+.slimstat-general-page .row-i {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--ss-space-3);
+    padding: var(--ss-space-2) var(--ss-space-5);
+    position: relative;
+    font-size: var(--ss-text-base);
+}
+
+.slimstat-general-page .row-i + .row-i {
+    border-top: 1px solid var(--ss-border-soft);
+}
+
+.slimstat-general-page .row-i .name {
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    min-width: 0;
+    color: var(--ss-text-primary);
+    font-weight: 500;
+}
+
+.slimstat-general-page .row-i .name .txt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.slimstat-general-page .row-i .n {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ss-text-primary);
+    white-space: nowrap;
+}
+
+.slimstat-general-page .row-i .n .pct {
+    color: var(--ss-text-muted);
+    font-weight: 500;
+    font-size: var(--ss-text-sm);
+    margin-left: var(--ss-space-2);
+}
+
+.slimstat-general-page .row-i .bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: rgba(232, 41, 76, 0.07);
+    z-index: 0;
+}
+
+.slimstat-general-page .row-i > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* ---------- Pro gating: blurred real content ---------- */
+.slimstat-general-page .rows-blur {
+    filter: blur(4px);
+    opacity: 0.65;
+    pointer-events: none;
+    user-select: none;
+}
+
+.slimstat-general-page .unlock-foot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: var(--ss-space-3) var(--ss-space-5);
+    margin-top: auto;
+    border-top: 1px solid var(--ss-border-soft);
+    background: var(--ss-surface-tint);
+    font-size: var(--ss-text-sm);
+    font-weight: 600;
+    color: var(--ss-brand-500);
+    cursor: pointer;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    font-family: inherit;
+    width: 100%;
+}
+
+.slimstat-general-page .unlock-foot:hover {
+    background: var(--ss-brand-100);
+}
+
+/* Full-width blurred pro card */
+.slimstat-general-page .pro-card {
+    position: relative;
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-md);
+    overflow: hidden;
+    background: var(--ss-surface);
+    cursor: pointer;
+    transition: transform var(--ss-duration-base) var(--ss-easing-out),
+        box-shadow var(--ss-duration-base) var(--ss-easing-out),
+        border-color var(--ss-duration-base) var(--ss-easing-out);
+}
+
+.slimstat-general-page .pro-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--ss-shadow-raised);
+    border-color: var(--ss-brand-300);
+}
+
+.slimstat-general-page .pro-card .blurred {
+    filter: blur(6px);
+    opacity: 0.7;
+    pointer-events: none;
+    user-select: none;
+    padding: var(--ss-space-5);
+    min-height: 120px;
+}
+
+.slimstat-general-page .pro-card .veil {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ss-space-3);
+    text-align: center;
+    background: var(--ss-overlay);
+    backdrop-filter: blur(2px);
+}
+
+.slimstat-general-page .pro-card .veil .lock {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--ss-radius-md);
+    background: linear-gradient(135deg, var(--ss-brand-700), var(--ss-brand-500));
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--ss-shadow-raised);
+}
+
+.slimstat-general-page .pro-card .veil .cap {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ss-text-primary);
+}
+
+.slimstat-general-page .pro-card .veil .btn-pro {
+    font: inherit;
+    font-size: var(--ss-text-base);
+    font-weight: 600;
+    padding: 9px 18px;
+    border-radius: var(--ss-radius-sm);
+    border: none;
+    background: var(--ss-brand-500);
+    color: #fff;
+    cursor: pointer;
+}
+
+.slimstat-general-page .pro-card .veil .btn-pro:hover {
+    background: var(--ss-brand-700);
+}
+
+/*
+ * Modal is the shared .slimstat-pro-modal partial. Its own base rule
+ * (admin.scss) is `position: fixed` with no default-hidden state — it relies
+ * on each consumer page to control visibility. email-report.php forces it
+ * always-visible via `.slimstat-pro-modal-backdrop { display: block }`, but
+ * that backdrop class is never actually rendered anywhere in this plugin
+ * (dead selector) and that page is 100% Pro-gated anyway. General shows real
+ * free-tier data underneath, so the modal must stay a click-triggered
+ * overlay — hidden by default, opened on [data-upgrade] click by general.js,
+ * with our own scrim (not the unused legacy backdrop class) behind it.
+ */
+.wrap-slimstat .slimstat-pro-modal {
+    display: none;
+}
+
+.wrap-slimstat .slimstat-pro-modal.is-open {
+    display: block;
+}
+
+.slimstat-general-scrim {
+    position: fixed;
+    inset: 0;
+    background: var(--ss-overlay-scrim);
+    z-index: 29;
+    display: none;
+}
+
+.slimstat-general-scrim.is-open {
+    display: block;
+}
+
+/* ---------- Empty state ---------- */
+.slimstat-general-page .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ss-space-2);
+    padding: var(--ss-space-6) var(--ss-space-5);
+    text-align: center;
+    color: var(--ss-text-muted);
+    font-size: var(--ss-text-sm);
+}
+
+.slimstat-general-page .empty .big {
+    font-size: var(--ss-text-base);
+    font-weight: 600;
+    color: var(--ss-text-secondary);
+}
+
+/* ---------- RTL ---------- */
+[dir="rtl"] .slimstat-general-page .row-i .bar {
+    left: auto;
+    right: 0;
+}
+
+[dir="rtl"] .slimstat-general-page .row-i .n .pct {
+    margin-left: 0;
+    margin-right: var(--ss-space-2);
+}
+
+[dir="rtl"] .slimstat-general-page .stat {
+    text-align: right;
+}
+
+/* ---------- Narrow wp-admin ---------- */
+@media (max-width: 860px) {
+    .slimstat-general-page .stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .slimstat-general-page .boxes {
+        grid-template-columns: 1fr;
+    }
+}
