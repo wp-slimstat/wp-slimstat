@@ -53,6 +53,11 @@
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
+# S6: exercise the real campaign entry point before paying for three stateful database cells.
+# The gate performs twenty sealed dry runs, checks both assignments occur, and audits every
+# evidence directory. A caller that bypasses seal_flip must stop the floor matrix here.
+"$HARNESS_DIR/seal-entrypoint-gate.sh" || exit $?
+
 ROWS="${1:-30000}"; DAYS="${2:-120}"
 PHP_VER=8.2; WP_VER=6.8
 export HTTP_PORT=18910 DB_PORT=13910 PHP_VERSION="$PHP_VER"
