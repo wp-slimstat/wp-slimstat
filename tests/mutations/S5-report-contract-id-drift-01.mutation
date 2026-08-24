@@ -1,0 +1,18 @@
+target:    tests/oracle/report-contracts.json
+gate:      composer test:oracle-report-contracts
+kind:      boundary
+expect:    real report id slim_p1_99 does not exist
+rationale: Moves the top_resource mapping to a plausible but absent report id. The gate must
+           resolve contracts against the real registry rather than merely validate JSON shape.
+---
+--- a/tests/oracle/report-contracts.json
++++ b/tests/oracle/report-contracts.json
+@@ -2,7 +2,7 @@
+   "schema": "SLIMSTAT-ORACLE-CONTRACTS-V1",
+   "reports": {
+     "top_resource": {
+-      "report_id": "slim_p1_08",
++      "report_id": "slim_p1_99",
+       "title": "Top Web Pages",
+       "family": "top",
+       "dimension": "resource",

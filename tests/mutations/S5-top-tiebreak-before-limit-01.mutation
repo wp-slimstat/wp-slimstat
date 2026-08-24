@@ -1,0 +1,17 @@
+target:    tests/oracle/families/top.py
+gate:      composer test:oracle-top
+kind:      construct-removal
+expect:    top_resource ranked rows differ from hand truth
+rationale: Removes the dimension tie-break while retaining count and grain ordering. The golden
+           LIMIT cuts through a three-hit tie whose dimension order opposes blog-id order, so the
+           wrong row crosses the boundary and the exact ranked truth changes.
+---
+--- a/tests/oracle/families/top.py
++++ b/tests/oracle/families/top.py
+@@ -45,6 +45,5 @@
+     ranked.sort(key=lambda item: (
+         -item["counthits"],
+-        _order_value(item[dimension]),
+         tuple(_order_value(item[name]) for name in grain),
+     ))
+     return ranked if limit is None else ranked[:limit]
