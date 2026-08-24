@@ -669,7 +669,8 @@ check_raises("a Verdict is not a boolean",
 #                               set while its verdict was pinned by nothing. Measured: EQUAL
 #                               could be changed to DIFFER, INCOMPARABLE or ORDER_ONLY with all
 #                               fifty plants green. It remains an explicit algebra contract even
-#                               though ADR-18 Q2 now settles hollow oracle legs by class first.
+#                               though ADR-18 Q2 and the ANSWERED guards now settle hollow oracle
+#                               legs before a backing rule can treat their equality as evidence.
 #
 # Each asserts the VERDICT and the RULE, because a right verdict from the wrong branch is the
 # thing expect.arms_rule exists to catch one level up.

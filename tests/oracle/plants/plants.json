@@ -3322,7 +3322,7 @@
     },
     {
       "id": "P52-both-arms-short-of-the-limit-use-row-comparison",
-      "why": "Both arms return two rows against LIMIT 3 and replace the top-ranked row. No plant previously exercised both arms short of the limit; without a cut, the declared behavior is ordinary row comparison.",
+      "why": "Both arms return two rows against LIMIT 3 and replace the top-ranked row. No plant previously exercised both arms short of the limit; without a cut, the declared behavior is ordinary row comparison. This is a coverage ratchet over already-correct behavior, not evidence that a prior defect was repaired.",
       "mislabelling_means": "Treating a short result as a tie band can pardon a changed top row on the thin corpora where reports most often return fewer rows than their configured limit.",
       "contract": {"limit": 3},
       "register": [],
