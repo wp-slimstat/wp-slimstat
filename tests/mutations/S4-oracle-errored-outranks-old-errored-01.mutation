@@ -15,7 +15,7 @@ rationale: Restores the third of the three arm-fact/oracle-fact boundaries the r
 ---
 --- a/tests/oracle/classify.py
 +++ b/tests/oracle/classify.py
-@@ -331,6 +331,12 @@
+@@ -340,6 +340,12 @@
          lambda f: (f.old_class == "error" and f.register_hit is not None
                     and f.oracle_class in ANSWERED
                     and f.agrees(f.oracle_new)),
@@ -28,7 +28,7 @@ rationale: Restores the third of the three arm-fact/oracle-fact boundaries the r
      ),
      Rule(
          "old-errored", "SQL-error",
-@@ -346,12 +352,6 @@
+@@ -355,12 +361,6 @@
          "the oracle has no model for this surface, or the surface cannot be asked of it. An "
          "absent third answer is never agreement — that is the whole reason there is a third one",
          lambda f: f.oracle_class in ("unmodeled", "unsupported"),
@@ -40,4 +40,4 @@ rationale: Restores the third of the three arm-fact/oracle-fact boundaries the r
 -        lambda f: f.oracle_class == "error",
      ),
      Rule(
-         "hollow-arms", "hollow",
+         "oracle-hollow-beside-an-arms-difference", "d-unmodeled",

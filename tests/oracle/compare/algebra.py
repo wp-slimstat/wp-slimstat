@@ -530,6 +530,12 @@ def compare_banded(a_rows, b_rows, contract=None):
       * every row ABOVE the cut must be identical on both sides, as a multiset;
       * within the cut band, membership may differ — and only there.
 
+    ORDER_ONLY PRECEDENCE. The module-level invariant that a pure reorder is a distinct outcome
+    binds this function too, including when both answers are exactly `limit` rows. When the two
+    cut bands have identical membership, there is no tie substitution to pardon; comparison
+    delegates to compare_rows() so the same rows in another sequence remain ORDER_ONLY. This is
+    ADR-18 Q3, stated here rather than inherited silently from the branch that implements it.
+
     THE CUT IS min() (or max() under `cut_side: 'max'` for an ascending report), never
     `rows[-1]`. The extended tier's rows arrive canonically SORTED BY ENCODED ROW
     (`slimstat_canon_rows()`, which sorts by json_encode to get a total order across arms), so

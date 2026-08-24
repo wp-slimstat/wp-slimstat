@@ -107,9 +107,8 @@ LABELS = {
     },
     "c-THREE-WAY": {
         "disposition": "block",
-        "means": "the arms differ and the oracle was matched by neither of them — three "
-                 "different answers, or a comparison against one arm that established nothing "
-                 "(a LIMIT answer whose every row ties at the cut agrees with anything). Same "
+        "means": "neither arm matched the oracle: three different answers, or incomparable "
+                 "arms that the oracle independently contradicts on both legs. Same "
                  "disposition as (c) and a different shape, so a scorecard cannot report it as "
                  "'the arms agreed'",
     },
@@ -125,8 +124,8 @@ LABELS = {
     },
     "d-unmodeled": {
         "disposition": "unresolved",
-        "means": "no third answer exists: the oracle has no model, or errored, or an arm could "
-                 "not be asked. Never agreement",
+        "means": "no third answer exists: the oracle has no model, errored, returned no answer, "
+                 "or an arm could not be asked. Never agreement",
     },
     "SQL-error": {
         "disposition": "block",
@@ -363,6 +362,14 @@ RULES = (
         lambda f: f.oracle_class == "error",
     ),
     Rule(
+        "oracle-hollow-beside-an-arms-difference", "d-unmodeled",
+        "the arms differ but the oracle returned no rows. ADR-18 Q2: an empty third answer "
+        "establishes no truth and therefore cannot say both arms are wrong. The difference remains "
+        "unresolved and merge-blocking through the campaign's zero-unaccounted-(d) gate",
+        lambda f: (f.oracle_class == "empty"
+                   and f.arms.verdict in (algebra.DIFFER, algebra.ORDER_ONLY)),
+    ),
+    Rule(
         "hollow-arms", "hollow",
         "both arms returned no rows and the oracle says this surface has some. Two empties "
         "compare equal and always will, which is exactly how uniques_browser and "
@@ -375,6 +382,15 @@ RULES = (
         "every side is empty. The comparison agrees and could not have done anything else, so "
         "it establishes nothing about the code",
         lambda f: f.old_class == "empty" and f.new_class == "empty",
+    ),
+    Rule(
+        "oracle-contradicts-both-incomparable-arms", "c-THREE-WAY",
+        "the ARMS leg is INCOMPARABLE, but both independent oracle legs are real differences. "
+        "ADR-18 Q1: a vacuous leg establishes nothing about itself and cannot suppress what the "
+        "other two legs establish — both arms are wrong, or the oracle is",
+        lambda f: (f.arms.verdict == algebra.INCOMPARABLE
+                   and f.oracle_new.verdict == algebra.DIFFER
+                   and f.oracle_old.verdict == algebra.DIFFER),
     ),
     Rule(
         "comparison-could-not-fail", "d-vacuous",

@@ -1,7 +1,7 @@
 {
   "schema": "SLIMSTAT-PLANTS-V1",
   "about": "One plant per label the classifier can emit, one per rule in its decision table, and — since run 53 — a plant or a direct assertion per rule name in compare/algebra.py's DIFF_RULES, which the gate now enumerates rather than the README claiming. Each plant is an answer triple, the label it MUST receive, and a one-line statement of what mislabelling it would cost the campaign. See README.md beside this file.",
-  "expected_assertions": 516,
+  "expected_assertions": 544,
   "php_round_probes": {
     "about": "The rounding claim in compare/algebra.py::round_half_up, replayed rather than believed. Every expected value is what PHP's round() actually printed; nothing here was captured from the Python helper.",
     "measured_with": "php -r 'printf(round($v, $p))' on PHP 7.4.33 (docker run --rm php:7.4-cli, the declared floor) and on PHP 8.5.5 (this workstation, which is PHP 8.4+ and therefore uses the rewritten round()). Both interpreters printed the same value for all fifteen probes.",
@@ -3272,6 +3272,206 @@
         "disposition": "block",
         "arms_rule": "above-the-cut-differs",
         "observable": "rows-same-count-values-differ"
+      }
+    },
+    {
+      "id": "P51-both-arms-over-the-limit-with-equal-counts-is-not-a-tie",
+      "why": "Both arms return four rows against LIMIT 3 and differ in one count-tail member. No answer was cut at three, so the tie tolerance does not apply; this is the missing equal-count over-limit cell and must fall through to row-values.",
+      "mislabelling_means": "Admitting limit+1 answers into the band turns a swapped tail member into tie-at-the-cut agreement and converts a release-blocking regression into PASS.",
+      "contract": {"limit": 3},
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"},
+            {"resource": "/c", "counthits": "5"},
+            {"resource": "/d", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"},
+            {"resource": "/c", "counthits": "5"},
+            {"resource": "/e", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": 9},
+            {"resource": "/b", "counthits": 5},
+            {"resource": "/c", "counthits": 5},
+            {"resource": "/d", "counthits": 5}
+          ]
+        }
+      },
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
+    },
+    {
+      "id": "P52-both-arms-short-of-the-limit-use-row-comparison",
+      "why": "Both arms return two rows against LIMIT 3 and replace the top-ranked row. No plant previously exercised both arms short of the limit; without a cut, the declared behavior is ordinary row comparison.",
+      "mislabelling_means": "Treating a short result as a tie band can pardon a changed top row on the thin corpora where reports most often return fewer rows than their configured limit.",
+      "contract": {"limit": 3},
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {"resource": "/x", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": 9},
+            {"resource": "/b", "counthits": 5}
+          ]
+        }
+      },
+      "expect": {
+        "label": "b",
+        "rule": "old-backed",
+        "disposition": "block",
+        "arms_rule": "row-values",
+        "observable": "rows-same-count-values-differ"
+      }
+    },
+    {
+      "id": "P53-vacuous-arms-do-not-suppress-two-oracle-disagreements",
+      "why": "OLD and NEW are identical all-tie LIMIT answers, so their leg is INCOMPARABLE, while the oracle gives the same rows at a different count and therefore disagrees with both arms. ADR-18 Q1 says the vacuous leg establishes nothing about itself and cannot suppress the two real oracle disagreements.",
+      "mislabelling_means": "d-vacuous hides a finding whose two independent oracle legs both say the shipped answers are wrong merely because the surface declared a LIMIT.",
+      "contract": {"limit": 3},
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "1"},
+            {"resource": "/b", "counthits": "1"},
+            {"resource": "/c", "counthits": "1"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "1"},
+            {"resource": "/b", "counthits": "1"},
+            {"resource": "/c", "counthits": "1"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": 5},
+            {"resource": "/b", "counthits": 5},
+            {"resource": "/c", "counthits": 5}
+          ]
+        }
+      },
+      "expect": {
+        "label": "c-THREE-WAY",
+        "rule": "oracle-contradicts-both-incomparable-arms",
+        "disposition": "block",
+        "arms_rule": "whole-result-is-one-tie-band",
+        "observable": "rows-same-count-values-differ"
+      }
+    },
+    {
+      "id": "P54-an-empty-oracle-cannot-say-both-arms-are-wrong",
+      "why": "OLD returned rows, NEW returned no rows, and the oracle also returned no rows. ADR-18 Q2 says an oracle that never answered cannot establish that both arms are wrong; the truthful result is d-unmodeled and unresolved.",
+      "mislabelling_means": "c-THREE-WAY tells the operator that both arms are wrong or the oracle is, when the oracle supplied no third answer at all.",
+      "contract": {},
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [{"resource": "/a", "counthits": "5"}],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "new": {
+          "class": "empty",
+          "value": [],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "oracle": {"class": "empty", "value": []}
+      },
+      "expect": {
+        "label": "d-unmodeled",
+        "rule": "oracle-hollow-beside-an-arms-difference",
+        "disposition": "unresolved",
+        "arms_rule": "class-mismatch",
+        "observable": "value-to-hollow"
+      }
+    },
+    {
+      "id": "P55-order-only-remains-distinct-under-a-limit-contract",
+      "why": "Both arms return exactly LIMIT 3 with the same rows in different sequences. ADR-18 Q3 makes the file-wide ORDER_ONLY invariant bind inside compare_banded as well: an exact tie-band membership match delegates to compare_rows so sequence remains a distinct outcome.",
+      "mislabelling_means": "Folding this into EQUAL makes a collation or tie-break change on the campaign's ordinary top-N shape disappear as PASS.",
+      "contract": {"limit": 3},
+      "register": [],
+      "triple": {
+        "surface": "top_resource",
+        "old": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"},
+            {"resource": "/c", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "new": {
+          "class": "ok",
+          "value": [
+            {"resource": "/c", "counthits": "5"},
+            {"resource": "/a", "counthits": "9"},
+            {"resource": "/b", "counthits": "5"}
+          ],
+          "flags": {"clock_dependent": false, "calendar_day_dependent": false, "pinned": true}
+        },
+        "oracle": {
+          "class": "ok",
+          "value": [
+            {"resource": "/a", "counthits": 9},
+            {"resource": "/b", "counthits": 5},
+            {"resource": "/c", "counthits": 5}
+          ]
+        }
+      },
+      "expect": {
+        "label": "ORDER-ONLY",
+        "rule": "order-only",
+        "disposition": "unresolved",
+        "arms_rule": "rows-reordered",
+        "observable": "order-only"
       }
     }
   ]

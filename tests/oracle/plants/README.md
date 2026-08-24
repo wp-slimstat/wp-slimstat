@@ -118,7 +118,7 @@ The degradation is applied to the DATA, never by editing a file, so nothing has 
 afterwards — PITFALLS 33 is an hour of work destroyed by the `git checkout` that was cleaning up
 after a probe that had not even run.
 
-## The 35 ways this is proven to fail — registered, not recounted
+## The 39 ways this is proven to fail — registered, not recounted
 
 > **That number is read by the gate, not typed here.** It was wrong twice. First it was a prose
 > table of ten mutations someone had once run by hand; run 53 replaced it with a spelled-out
