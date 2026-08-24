@@ -93,6 +93,26 @@ and fails if the two derivations disagree, so the fixture cannot drift from its 
 | 9 | Top resource network-wide, per-blog rows | `/` on blog 2 = **7** | `/` = 16 — merged across blogs |
 | 10 | Any figure sourced from blog 4 | **none** | — |
 
+### Ranked Top Web Pages (`slim_p1_08`)
+
+The ranked answer preserves blog grain, orders `counthits` descending, then breaks ties by
+resource and blog id before applying `LIMIT 7`:
+
+| rank | blog | resource | counthits |
+|---:|---:|---|---:|
+| 1 | 2 | `/` | **7** |
+| 2 | 1 | `/` | **6** |
+| 3 | 3 | `/about/` | **6** |
+| 4 | 1 | `/about/` | **5** |
+| 5 | 1 | `/pricing/` | **4** |
+| 6 | 2 | `/shop/` | **4** |
+| 7 | 3 | `/` | **3** |
+
+The equal counts at ranks 2–3 and 5–6 exercise ordinary ties. Rank 7 cuts through the three-hit
+tie: `/` on blog 3 is retained while `/contact/` on blog 2 is immediately outside the limit.
+Applying the limit before ordering therefore produces a different answer. Merging blog rows
+instead would manufacture `/ = 16`, which is not this report's grain.
+
 ### The two traps, written out
 
 **Visitors (#2 vs #3).** Distinct IPs across the counted blogs are

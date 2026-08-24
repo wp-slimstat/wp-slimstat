@@ -247,16 +247,43 @@ foreach ($expected['resources_per_blog'] as $blog => $want) {
 // left the second as an unread number carrying the authority of "independently recomputed" —
 // which is the vacuity this fixture exists to refuse.
 $per_resource_totals = [];
-foreach ($res_by_blog as $resources) {
+$ranked_resources = [];
+foreach ($res_by_blog as $blog_id => $resources) {
     foreach ($resources as $resource => $count) {
         $per_resource_totals[$resource] = ($per_resource_totals[$resource] ?? 0) + $count;
+        $ranked_resources[] = [
+            'blog_id' => $blog_id,
+            'resource' => $resource,
+            'counthits' => $count,
+        ];
     }
 }
 
 $check('top per-blog resource figure', $expected['top_resource_per_blog_max'], max(array_map('max', $res_by_blog)));
 $check('top resource if wrongly merged', $expected['top_resource_merged_wrongly'], max($per_resource_totals));
 
-// ── 8. The time axis actually separates the ranges ──────────────────────────
+// ── 8. Ranked Top Web Pages — LIMIT cuts through a tie ───────────────────────
+// Preserve blog grain, sort counts descending, then use the report's dimension and blog id as
+// deterministic tie-breaks before applying LIMIT.
+usort($ranked_resources, static function (array $a, array $b): int {
+    if ($a['counthits'] !== $b['counthits']) {
+        return $b['counthits'] <=> $a['counthits'];
+    }
+    if ($a['resource'] !== $b['resource']) {
+        return $a['resource'] <=> $b['resource'];
+    }
+    return $a['blog_id'] <=> $b['blog_id'];
+});
+$ranked_resources = array_slice($ranked_resources, 0, $expected['top_resource_ranked']['limit']);
+$check('ranked Top Web Pages rows', $expected['top_resource_ranked']['rows'], $ranked_resources);
+
+if (count($ranked_resources) !== $expected['top_resource_ranked']['limit']) {
+    $failures[] = 'ranked Top Web Pages did not reach its declared LIMIT, so LIMIT behavior is untested';
+} elseif ($ranked_resources[1]['counthits'] !== $ranked_resources[2]['counthits']) {
+    $failures[] = 'ranked Top Web Pages has no tie inside the retained rows, so its tie-break is untested';
+}
+
+// ── 9. The time axis actually separates the ranges ──────────────────────────
 $window = strtotime($spec['window']['ends'] . ' UTC');
 $last30 = 0;
 $dayC   = 0;
@@ -280,7 +307,7 @@ if ($last30 === count($counted)) {
         . 'reference dataset useless for range conclusions (I8)';
 }
 
-// ── 9. EXPECTED.md must not drift from the spec it documents ────────────────
+// ── 10. EXPECTED.md must not drift from the spec it documents ───────────────
 //
 // EXPECTED.md is the document a human reads to check a number, and until this assertion existed
 // it was the one with no gate behind it. It had ALREADY drifted: the note celebrating a caught

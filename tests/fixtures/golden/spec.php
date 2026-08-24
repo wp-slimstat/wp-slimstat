@@ -91,6 +91,23 @@ return [
         'about_merged_wrongly'      => 11,
         'top_resource_per_blog_max' => 7,
         'top_resource_merged_wrongly' => 16,
+        // Hand-ranked network answer for slim_p1_08 (Top Web Pages). P3 preserves blog grain:
+        // the same resource on two sites is two rows, not one summed row. Counts descend;
+        // resource then blog_id break ties. LIMIT 7 deliberately cuts through a tie at three,
+        // so changing either the ordering or the limit changes this fixture's answer.
+        'top_resource_ranked' => [
+            'report_id' => 'slim_p1_08',
+            'limit' => 7,
+            'rows' => [
+                ['blog_id' => 2, 'resource' => '/',         'counthits' => 7],
+                ['blog_id' => 1, 'resource' => '/',         'counthits' => 6],
+                ['blog_id' => 3, 'resource' => '/about/',   'counthits' => 6],
+                ['blog_id' => 1, 'resource' => '/about/',   'counthits' => 5],
+                ['blog_id' => 1, 'resource' => '/pricing/', 'counthits' => 4],
+                ['blog_id' => 2, 'resource' => '/shop/',    'counthits' => 4],
+                ['blog_id' => 3, 'resource' => '/',         'counthits' => 3],
+            ],
+        ],
         // M4's three distinguishable answers. Network pages/visit is total pageviews over
         // total visits: 40/7. The TRAP is the mean of per-blog averages — (15/3 + 14/2 +
         // 11/2) / 3 — which weights a two-visit blog the same as a three-visit one; an
