@@ -169,6 +169,39 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         return $pending;
     }
 
+    /**
+     * OFFERED, not owed — the flag that matches every other sentence about this migration.
+     *
+     * This class inherited `AbstractMigration::isOptional()`, which returns false, so a pending
+     * conversion put "your database needs to be migrated" on every admin page of every upgrading
+     * site. The header above already says what that notice was demanding:
+     *
+     *   - the change is refused INPLACE, so it is a full table rebuild;
+     *   - the rebuild blocks writes, and on a tracking table blocked writes are dropped
+     *     pageviews;
+     *   - measured at 12.4 s on the real 443,535-row table, ~42 s at 1.5M, ~5 min at 10M;
+     *   - "that is why this ships as a migration behind an explicit click rather than an upgrade
+     *     hook: the site owner chooses when to take the write pause."
+     *
+     * ADR-6 is the same decision one level up: charset conversion is user-triggered, never an
+     * upgrade hook. A required flag makes the notice the trigger, which is what both of those
+     * sentences exist to prevent — and it is not a small difference at the top of the funnel,
+     * because the notice appears before the owner has read anything about the cost.
+     *
+     * What stays true: the work is still real, still listed, still runnable by name from the
+     * Migration screen, and `shouldRun()` is untouched. Optional here means OFFERED, never GONE
+     * — the quieter failure that OptionalMigrationTest pins in both directions.
+     *
+     * The cheap half of the upgrade is unaffected. `AddVisitIdentity` stays required: it is two
+     * metadata-only ALTERs (INSTANT on MySQL 8), and until it lands every anonymous pageview
+     * pays the failed-INSERT-probe-retry dance and loses its identity field. That is the one the
+     * notice should be about.
+     */
+    public function isOptional(): bool
+    {
+        return true;
+    }
+
     public function shouldRun(): bool
     {
         if (null !== $this->shouldRunCache) {

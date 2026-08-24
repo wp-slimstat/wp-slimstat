@@ -35,6 +35,30 @@ DAYS="${4:-180}"
 : "${SLIMSTAT_NULL_CONTROL:=0}"
 : "${SLIMSTAT_SEAL_DRYRUN:=0}"
 
+# THE CORPUS, chosen HERE rather than inherited from compare-answers.sh's default.
+#
+# compare-answers.sh defaults to seed-profile-i8.json so that every run ever recorded against it
+# keeps meaning what it meant, and its header says "the campaign passes seed-profile-verify.json".
+# No caller did. R20260824-a51bf2 therefore seeded I8, and `get_recent_events`, `get_top_events`
+# and `get_top_outbound` were EMPTY ON BOTH ARMS — three surfaces comparing equal about a question
+# neither arm was asked. The verify overlay is what turns events, outbound links, searchterms,
+# `loggedin:` notes and NULL ips on, and its NULL-ip rate is the only thing that makes register
+# entry R16 falsifiable rather than merely predicted.
+#
+# Printed in the dry-run line below so this is a fact a gate can read, not a variable a reviewer
+# has to trust: SLIMSTAT_SEAL_DRYRUN=1 names the corpus without booting a container.
+: "${SLIMSTAT_SEED_PROFILE:=seed-profile-verify.json}"
+
+# The comparison driver, overridable so the negative suite can drive this script's own abort
+# handling without a four-minute container boot.
+#
+# It is the most dangerous seam in this file and it is stated plainly rather than reassured
+# about: it replaces the entire measurement with an arbitrary program, and the run still
+# produces a sealed, manifest-signed, nine-control-PASS packet. T11b asserts exactly that. So
+# the guard is not a promise in this comment — it is the dry-run line below naming the driver,
+# and the seal gate refusing any run that reports a substituted one.
+: "${SLIMSTAT_COMPARE_CMD:=$HERE/compare-answers.sh}"
+
 # Resolved to concrete SHAs up front. A ref like HEAD means something different once a commit
 # lands mid-run, and a run that cannot name what it compared is not evidence.
 BEFORE_SHA=$(git -C "$PLUGIN_SRC" rev-parse "$BEFORE" 2>/dev/null) || { err "unknown ref: $BEFORE"; exit 1; }
@@ -45,7 +69,7 @@ RUNS_ROOT="$SLIMSTAT_RUNS_ROOT"
 RUNS=$(seal_new_run_dir "$RUNS_ROOT") || exit 3
 seal_flip "$RUNS" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" "$SLIMSTAT_NULL_CONTROL" || exit 3
 if [ "$SLIMSTAT_SEAL_DRYRUN" = 1 ]; then
-  echo "SEAL DRYRUN: $RUNS"
+  echo "SEAL DRYRUN: $RUNS  corpus=$SLIMSTAT_SEED_PROFILE  driver=$(basename "$SLIMSTAT_COMPARE_CMD")"
   exit 0
 fi
 
@@ -67,15 +91,25 @@ fi
 OUT="$RUNS/.sealed/verify.log"
 SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" \
 SLIMSTAT_BLOCKS="${SLIMSTAT_BLOCKS:-4}" \
-  "$HERE/compare-answers.sh" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" \
+SLIMSTAT_SEED_PROFILE="$SLIMSTAT_SEED_PROFILE" \
+  "$SLIMSTAT_COMPARE_CMD" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" \
   "${SLIMSTAT_HTTP_PORT:-18990}" "${SLIMSTAT_DB_PORT:-13990}" 2>&1 | tee "$OUT"
 rc=${PIPESTATUS[0]}
 chmod 600 "$OUT" || exit 3
 seal_assert_private "$OUT" 600 || exit 3
 
 # ── build the scrubbed packet from the directional capture ──────────────────
+# ONLY from a comparison that reached a verdict. rc 0 is IDENTICAL and rc 2 is DIFFERENCES —
+# both are answers. Anything else is an abort, and the captures on disk are then from a run the
+# harness has just refused: compare-answers.sh writes before.json/after.json before it evaluates
+# a single control, so on a vacuity abort $ART is fully populated and self-consistent. Building
+# from it produced a sealed, manifest-signed, control-passing packet for a run that said ABORTED,
+# and nothing downstream could tell the difference — seal-tool.py validates the packet, not the
+# verdict that produced it.
 ART="$WORK_ROOT/answers/answers/artifacts"
-if [ -d "$ART" ]; then
+if [ "$rc" != 0 ] && [ "$rc" != 2 ]; then
+  err "no packet built — the comparison aborted (exit $rc), so its captures are not evidence"
+elif [ -d "$ART" ]; then
   "$HERE/build-packet.sh" "$RUNS" "$ART" "$BEFORE_SHA" "$AFTER_SHA" || exit $?
 fi
 

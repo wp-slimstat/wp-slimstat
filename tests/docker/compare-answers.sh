@@ -29,12 +29,27 @@ DB_PORT="${6:-13970}"
 PHP="${TOPOLOGY_PHP:-8.2}"
 WP="${TOPOLOGY_WP:-6.7}"
 
-# The corpus profile. Defaults to I8 so every run recorded against this script keeps meaning
-# what it meant; the campaign passes seed-profile-verify.json, which stacks events, outbound
-# links, NULL ips, searchterms and `loggedin:` notes on top of I8 so the surfaces that compared
-# EMPTY against EMPTY have something to answer. The overlay's own knobs default to off, so the
-# two profiles differ only where the file says they do.
-SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:-seed-profile-i8.json}"
+# The corpus profile. NAMED BY THE CALLER, never defaulted — and the defect that removed the
+# default is the reason to state why at length.
+#
+# This line used to read `${SLIMSTAT_SEED_PROFILE:-seed-profile-i8.json}`, with a comment saying
+# "the campaign passes seed-profile-verify.json". No caller did. R20260824-a51bf2 therefore ran
+# the campaign's first real OLD<->NEW capture on the I8 fixture, where `get_recent_events`,
+# `get_top_events` and `get_top_outbound` are empty on BOTH arms: three surfaces comparing equal
+# about a question neither arm was asked. Nothing downstream could see it — the packet's nine
+# controls read the answers document, and all nine PASSED, because the vacuity lives in the caps
+# file the packet deliberately excludes.
+#
+# Moving the default up to verify-change.sh would relocate that defect rather than close it, and
+# would make it worse in one specific way: CLAUDE.md's noise-floor command invokes THIS script
+# directly, so the null control would have gone on seeding I8 while the run it is supposed to
+# bound seeded verify — a floor measured against a different corpus from the thing above it.
+#
+# The stated reason for keeping a default here does not survive inspection either: `run.json`
+# below already records `seed_profile`, so an archived run is interpretable from the artifact,
+# not from what the default happened to be on the day. So there is no default. A caller that
+# does not name a corpus gets an error instead of a fixture.
+SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:?name the corpus (seed-profile-verify.json for the campaign, seed-profile-i8.json to reproduce a pre-Run-58 record)}"
 
 CELL="answers"
 CELL_DIR="$WORK_ROOT/answers/$CELL"
@@ -342,7 +357,6 @@ if len(caps_by_arm) == 2:
         'PASS' if not vacuous else 'FAIL',
         '' if not vacuous else ': ' + ', '.join(vacuous) +
         ' — these compare equal while proving nothing; enrich the corpus before trusting them'))
-
     # THE EXTENDED TIER'S NULL CONTROL, and it only means anything in this mode. Under
     # SLIMSTAT_NULL_CONTROL the two "arms" are the SAME code over the same corpus, so every
     # extended surface must return the same value twice; anything that moves is nondeterministic
@@ -353,7 +367,7 @@ if len(caps_by_arm) == 2:
     #
     # Reported per surface rather than as one verdict: "something moved" sends a reader back to
     # a container, "get_overview_summary moved" sends them to a clock-dependent report.
-    if os.environ.get('SLIMSTAT_NULL_CONTROL') == '1':
+    if null_control_env:
         unstable = sorted(
             k for k in set(a_s) & set(b_s)
             if json.dumps(a_s[k].get('value'), sort_keys=True)
@@ -364,12 +378,30 @@ if len(caps_by_arm) == 2:
             'PASS' if not unstable else 'FAIL',
             '' if not unstable else ': %d moved — %s' % (len(unstable), ', '.join(unstable))))
 
+    # THE ABORT, and it is BELOW the control above rather than beside the FAIL line, because the
+    # two orders are not equivalent. A null control runs the SAME ref as both arms, so every
+    # surface the corpus does not populate is empty on both by construction — aborting on that
+    # would make the noise-floor run unrunnable on any corpus with a quiet surface, and the noise
+    # floor is what CLAUDE.md requires BEFORE any latency claim. So the vacuity abort is a
+    # statement about a REAL comparison, and under SLIMSTAT_NULL_CONTROL it is a warning instead.
+    #
+    # Until this existed the check printed FAIL and carried on: R20260824-a51bf2 named three
+    # vacuous surfaces and then published `DIFFERENCES in 2 of 26 reports` and handed the packet
+    # to the builder. Nothing downstream could catch it either — the packet's own nine controls
+    # read the ANSWERS document, and every one of them passed on that run, because the vacuity
+    # lives in the caps file the packet deliberately excludes.
+    if vacuous:
+        if null_control_env:
+            print('  [NOTE] NULL CONTROL: the vacuity above is expected — one ref, two arms.')
+        else:
+            print('\nVERDICT: ABORTED — an extended comparison is vacuous')
+            sys.exit(1)
+
 # SLIMSTAT_NULL_CONTROL=1 runs the SAME ref as both arms deliberately: any delta it reports is
 # environmental by construction, because there is no code difference to produce one. It is the
 # decisive test for the timing block, which — unlike the answers block above — has no control of
 # its own. A blind adjudicator named its absence as the reason no latency claim here is supported.
-null_control = os.environ.get('SLIMSTAT_NULL_CONTROL') == '1'
-null_control_env = null_control
+null_control = null_control_env
 if same_arm and null_control:
     print('  [NOTE] NULL CONTROL: both arms are the same code. Any timing delta below is')
     print('         environmental — it is the noise floor of this harness, not a result.')

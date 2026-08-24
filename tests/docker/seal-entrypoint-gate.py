@@ -38,12 +38,35 @@ def behavior_gate():
         b=subprocess.check_output([
             "git","-c","user.name=SlimStat Seal Gate","-c","user.email=seal-gate@example.invalid",
             "commit-tree","HEAD^{tree}","-m","seal gate fixture"],cwd=PLUGIN,text=True).strip()
+        # Popped, not inherited. A gate whose polarity is set by ambient shell state is not a
+        # guard: with SLIMSTAT_SEED_PROFILE exported, reverting the default would leave this
+        # green. The gate exists to observe what the entry point CHOOSES.
         env=dict(os.environ,SLIMSTAT_RUNS_ROOT=str(root),SLIMSTAT_SEAL_DRYRUN="1")
+        for inherited in ("SLIMSTAT_SEED_PROFILE","SLIMSTAT_COMPARE_CMD"): env.pop(inherited,None)
+        last=None
         for _ in range(20):
             result=subprocess.run([str(HERE/"verify-change.sh"),a,b,"10","2"],cwd=PLUGIN,env=env,text=True,capture_output=True)
             if result.returncode: fail(f"verify-change dry run exited {result.returncode}: {result.stderr.strip()}")
+            last=result
         runs=sorted(path for path in root.iterdir() if path.is_dir())
         if len(runs)!=20: fail(f"20 runs produced {len(runs)} distinct run directories")
+        # THE CORPUS THE ENTRY POINT SELECTS, read out of the run it just performed rather than
+        # out of its source. compare-answers.sh defaults to the I8 profile so archived runs keep
+        # meaning what they meant, and its header says "the campaign passes
+        # seed-profile-verify.json" — a caller that did not exist. R20260824-a51bf2 therefore
+        # seeded I8, and three extended surfaces were empty on BOTH arms: equal, and about a
+        # question neither arm was asked. Nothing downstream can catch that, because the packet's
+        # nine controls read the answers document and the vacuity lives in the caps file the
+        # packet excludes. So it is caught here, before a container is paid for.
+        # Bound explicitly rather than read off the loop variable: a loop that ran zero times
+        # would raise NameError here instead of refusing by name, and a gate whose failure mode
+        # is a traceback is a gate nobody can read.
+        if last is not None and "driver=compare-answers.sh" not in last.stdout:
+            fail("the entry point ran a substituted comparison driver — "
+                 "SLIMSTAT_COMPARE_CMD is a test seam and must not decide a campaign run")
+        if last is None or "corpus=seed-profile-verify.json" not in last.stdout:
+            reported=(last.stdout.strip() if last else "(no run)")
+            fail(f"the entry point does not select the campaign corpus — its dry run reports {reported or '(nothing)'}")
         bits=""
         for run in runs:
             if not re.fullmatch(r"R\d{8}-[0-9a-f]{6}",run.name): fail(f"run directory {run.name} is not neutral")

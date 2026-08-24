@@ -16,7 +16,20 @@ unseal() {
   seal_assert_private "$run/.sealed/mapping.json" 600 >/dev/null 2>&1 ||
     { seal_refuse 1 ".sealed/mapping.json is not private to the invoking uid"; return 4; }
   [ -f "$run/packet/MANIFEST.sha256" ] || { seal_refuse 3 "packet/MANIFEST.sha256 is absent"; return 4; }
-  "$HERE/scrub-audit.sh" "$run/packet" >/dev/null 2>&1 ||
+  # The SAME audit build-packet.py ran, with the same literals, or this check is a weaker rule
+  # wearing the stronger one's name — and a leak planted after the build is precisely what it
+  # exists to catch. seal_assert_private above has already proven .sealed is ours to read.
+  # The name rule lives in seal-lib.sh and is the stronger of the two in the tree: it resolves
+  # candidate hex tokens against the real repositories rather than rejecting anything that looks
+  # like hexadecimal, which is why it neither fires on a Unix timestamp nor misses a full SHA.
+  # build-packet.py runs it at build time as the `names_neutral` control; without it here, a
+  # directory renamed after the build — the exact window this whole block exists to cover — was
+  # checked only by scrub-audit's coarser path scan.
+  PLUGIN_SRC="$PLUGIN_SRC" seal_assert_neutral_names "$run" >/dev/null 2>&1 ||
+    { seal_refuse 3 "packet names stopped being neutral after the packet was built"; return 4; }
+  local sealed=()
+  [ -f "$run/.sealed/literals.json" ] && sealed=(--literals "$run/.sealed/literals.json")
+  "$HERE/scrub-audit.sh" "$run/packet" "${sealed[@]+"${sealed[@]}"}" >/dev/null 2>&1 ||
     { seal_refuse 3 "scrub audit found hits in packet/ after the packet was built"; return 4; }
   (cd "$run" && shasum -a 256 -c packet/MANIFEST.sha256 >/dev/null 2>&1) ||
     { seal_refuse 3 "packet manifest does not verify"; return 4; }

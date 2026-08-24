@@ -1,1 +1,44 @@
-{"schema":"SLIMSTAT-BLIND-PACKET-V1","answer_key_rules":{"forbid_prefix":"_","deny":["_arm_version","_arm_fingerprint","_arm_files","_arm_pro","_arm_status","_arm_surfaces","_arm_caps","_instrument","_handles","_reps","count_exit_pages","live_window_end","get_goal_results_arity","get_funnel_results_arity","chart_data_path","pro_installed","pro_active","memory_reset_peak_usage","ext_object_cache","network_merge_active","geolocation_country","recent_columns_shape","forced_max_goals","forced_max_funnels"]},"allowed_files":["arm-1/answers.json","arm-2/answers.json","contract.md","MANIFEST.sha256"]}
+{
+  "schema": "SLIMSTAT-BLIND-PACKET-V1",
+  "answer_key_rules": {
+    "forbid_prefix": "_",
+    "deny": [
+      "_arm_caps",
+      "_arm_files",
+      "_arm_fingerprint",
+      "_arm_pro",
+      "_arm_status",
+      "_arm_surfaces",
+      "_arm_version",
+      "_handles",
+      "_instrument",
+      "_reps",
+      "chart_data_path",
+      "count_exit_pages",
+      "ext_object_cache",
+      "forced_max_funnels",
+      "forced_max_goals",
+      "geolocation_country",
+      "get_funnel_results_arity",
+      "get_goal_results_arity",
+      "live_window_end",
+      "memory_reset_peak_usage",
+      "network_merge_active",
+      "pro_active",
+      "pro_installed",
+      "recent_columns_shape",
+      "ua_id",
+      "vid_hash"
+    ],
+    "identity_value_keys": [
+      "_arm_fingerprint",
+      "_arm_version"
+    ]
+  },
+  "allowed_files": [
+    "arm-1/answers.json",
+    "arm-2/answers.json",
+    "contract.md",
+    "MANIFEST.sha256"
+  ]
+}

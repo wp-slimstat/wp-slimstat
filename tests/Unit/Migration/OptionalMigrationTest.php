@@ -315,6 +315,93 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         $this->assertArrayHasKey('owed-migration', $results);
     }
 
+    /**
+     * The charset rebuild is OFFERED, and this is the case that says so about the real class.
+     *
+     * Every case above this one is about doubles, which is the right way to pin the manager's
+     * partition and the wrong way to learn what ships. `ConvertTablesToUtf8mb4` inherited
+     * `AbstractMigration::isOptional()`, which returns false, so it was OWED — and "owed" is not
+     * a shade of emphasis on this screen. It is the difference between a notice on every admin
+     * page saying the database "needs to be migrated" and a row on a page the owner chose to
+     * open.
+     *
+     * What that notice was asking for, in the class's own words at the top of its file:
+     *
+     *     ALGORITHM=INPLACE is refused for this change ... So it is a full table rebuild that
+     *     blocks writes for its duration, and on a tracking table blocked writes mean dropped
+     *     pageviews.
+     *     ... That is why this ships as a migration behind an explicit click rather than an
+     *     upgrade hook: the site owner chooses when to take the write pause.
+     *
+     * Measured there at 12.4 s on the real 443,535-row table and extrapolated to ~5 minutes at
+     * 10M rows. ADR-6 says the same thing — user-triggered, never an upgrade hook. So the
+     * required flag contradicted both the class it sat on and the decision that governs it, and
+     * the contradiction was invisible because no test asked.
+     *
+     * Pinned against the REAL class, not a double: a double would only re-assert the manager's
+     * partition, which the cases above already prove.
+     */
+    public function test_the_charset_rebuild_is_offered_rather_than_owed(): void
+    {
+        $migration = $this->charsetRebuild();
+
+        $this->assertTrue(
+            $migration->isOptional(),
+            'the utf8mb4 rebuild is OWED, so every upgrading site is told on every admin page to '
+                . 'take a write pause that drops pageviews — which is the opposite of the '
+                . '"explicit click" its own header and ADR-6 both promise'
+        );
+
+        // The vacuity control for the assertion above: isOptional() is only meaningful while
+        // there is work to do. A migration answering false to shouldRun() is in neither set, so
+        // an "offered" flag on a finished migration would prove nothing about the notice.
+        $this->assertTrue($migration->shouldRun(), 'the fixture no longer has work to offer');
+    }
+
+    public function test_a_pending_charset_rebuild_raises_no_notice_and_stays_reachable(): void
+    {
+        $manager = $this->manager([$this->charsetRebuild()]);
+
+        $this->assertFalse(
+            $manager->needsMigration(),
+            'a pending charset rebuild put the migration-required notice on every admin page'
+        );
+
+        // And OFFERED must not mean GONE — the quieter half, the one this file already records
+        // as the failure mode worth pinning. The screen renders from these two sets, so absent
+        // from both is invisible.
+        $offered = array_map(
+            static fn($m) => $m->getId(),
+            array_values($manager->getOfferedMigrations())
+        );
+        $this->assertSame(['convert-tables-to-utf8mb4'], $offered);
+        $this->assertSame([], $manager->getRequiredMigrations());
+    }
+
+    /**
+     * The real ConvertTablesToUtf8mb4 over a doubled connection reporting stale columns.
+     *
+     * information_schema is answered with a table that has columns and has NOT been converted,
+     * because that is the only state in which the owed/offered distinction is observable.
+     */
+    private function charsetRebuild(): \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4
+    {
+        $wpdb             = \Mockery::mock(\wpdb::class);
+        $wpdb->prefix     = 'wp_';
+        $wpdb->last_error = '';
+        $wpdb->shouldReceive('prepare')->andReturnUsing(static fn($sql) => $sql);
+        $wpdb->shouldReceive('suppress_errors')->andReturn(false);
+        // 30 columns, 3 of them still utf8mb3 — deliberately DIFFERENT numbers. The sibling
+        // fixture in ExternalDatabaseMigrationTest uses the same pair for the same reason: C29's
+        // live defect was code reading one where it meant the other, and `22/22` makes that
+        // confusion invisible. `total` is also what tells a fully-converted table apart from one
+        // that is not on this connection at all — both report zero stale.
+        $wpdb->shouldReceive('get_row')->andReturn(['total' => 30, 'stale' => 3]);
+        $wpdb->shouldReceive('get_var')->andReturn(null);
+
+        return new \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4($wpdb, $this->db());
+    }
+
     public function test_an_offered_migration_can_still_be_run_by_name(): void
     {
         $offered = $this->offered();
