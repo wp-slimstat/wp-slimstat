@@ -43,13 +43,31 @@ def behavior_gate():
         # green. The gate exists to observe what the entry point CHOOSES.
         env=dict(os.environ,SLIMSTAT_RUNS_ROOT=str(root),SLIMSTAT_SEAL_DRYRUN="1")
         for inherited in ("SLIMSTAT_SEED_PROFILE","SLIMSTAT_COMPARE_CMD"): env.pop(inherited,None)
-        last=None
+        # DRAW ORDER, captured from each run as it happens.
+        #
+        # This used to read `sorted(root.iterdir())` afterwards — directory name order, and a run
+        # id is `R<date>-<6 random hex>`, so the sort is a SHUFFLE of the draw sequence. Any test
+        # of ORDER is then meaningless by construction, which is not academic: the runs half of
+        # the fairness rule exists to catch a counter-backed source, and a counter's perfect
+        # 0101… reads as R≈10 once shuffled. Measured with a counter mutation applied — ten draws
+        # of 0,1,0,1,… came back as `1010101100`, R=8, indistinguishable from a fair coin. The
+        # gate could not have failed that mutation however the band was set.
+        #
+        # verify-change.sh prints its run directory in the dry-run line, so the order is free.
+        ordered=[]; last=None
         for _ in range(20):
             result=subprocess.run([str(HERE/"verify-change.sh"),a,b,"10","2"],cwd=PLUGIN,env=env,text=True,capture_output=True)
             if result.returncode: fail(f"verify-change dry run exited {result.returncode}: {result.stderr.strip()}")
             last=result
-        runs=sorted(path for path in root.iterdir() if path.is_dir())
-        if len(runs)!=20: fail(f"20 runs produced {len(runs)} distinct run directories")
+            token=result.stdout.split("SEAL DRYRUN:",1)[-1].strip().split()[0] if "SEAL DRYRUN:" in result.stdout else ""
+            if not token: fail("a dry run did not name its run directory, so draw order is unknowable")
+            ordered.append(Path(token))
+        on_disk=sorted(path for path in root.iterdir() if path.is_dir())
+        if len(on_disk)!=20: fail(f"20 runs produced {len(on_disk)} distinct run directories")
+        # Two different questions: what the runs REPORTED, and what is on disk. A driver that
+        # printed a path it did not write would satisfy one and not the other.
+        if len(set(ordered))!=20 or set(ordered)!=set(on_disk):
+            fail("the run directories named by the dry runs are not the ones on disk")
         # THE CORPUS THE ENTRY POINT SELECTS, read out of the run it just performed rather than
         # out of its source. compare-answers.sh defaults to the I8 profile so archived runs keep
         # meaning what they meant, and its header says "the campaign passes
@@ -68,7 +86,7 @@ def behavior_gate():
             reported=(last.stdout.strip() if last else "(no run)")
             fail(f"the entry point does not select the campaign corpus — its dry run reports {reported or '(nothing)'}")
         bits=""
-        for run in runs:
+        for run in ordered:
             if not re.fullmatch(r"R\d{8}-[0-9a-f]{6}",run.name): fail(f"run directory {run.name} is not neutral")
             mapping=json.load((run/".sealed/mapping.json").open())
             if oct((run/".sealed/mapping.json").stat().st_mode & 0o777)!="0o600": fail("mapping.json is not mode 600")
@@ -95,18 +113,20 @@ def behavior_gate():
         # false-alarm rate 7.8e-5 per lane, 1 push in 2,132 -- rare enough that a red here is
         # worth reading rather than re-running. The statistical verdict stays with audit-flips,
         # where N can be large enough to carry one.
-        k=bits.count("0"); runs=1+sum(a!=b for a,b in zip(bits,bits[1:]))
+        k=bits.count("0"); alternations=1+sum(a!=b for a,b in zip(bits,bits[1:]))
         if k<=1 or k>=19:
-            fail(f"the flip is effectively stuck: k={k} of N=20 assignments to ref_a")
-        if runs>=19:
-            fail(f"the flip alternates: R={runs} runs in N=20, which is a counter, not entropy")
+            # The needle keeps the phrase S6-flip-stuck-entropy-01 has always pinned, because the
+            # subject is the same defect and only the band around it widened.
+            fail(f"20 of 20 runs assigned arm-1 to the same ref (k={k} of N=20)")
+        if alternations>=19:
+            fail(f"the flip alternates: R={alternations} runs in N=20, which is a counter, not entropy")
 
         # ADVISORY beside it: the full statistical verdict, printed so a marginal draw is visible
         # without being fatal.
         fair=subprocess.run([sys.executable,str(HERE/"seal-tool.py"),"fairness",bits],text=True,capture_output=True)
         artifact_gate(root,Path("/nonexistent"))
         verdict="within the fair band" if fair.returncode==0 else f"outside it (advisory) — {fair.stdout.strip()}"
-        print(f"SEAL GATE: 20 behavioral runs passed; k={k}, R={runs}, {verdict}")
+        print(f"SEAL GATE: 20 behavioral runs passed; k={k}, R={alternations}, {verdict}")
 
 def archive_control():
     with tempfile.TemporaryDirectory(prefix="slimstat-archive-control-") as tmp:
