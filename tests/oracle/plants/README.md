@@ -118,7 +118,7 @@ The degradation is applied to the DATA, never by editing a file, so nothing has 
 afterwards — PITFALLS 33 is an hour of work destroyed by the `git checkout` that was cleaning up
 after a probe that had not even run.
 
-## The 39 ways this is proven to fail — registered, not recounted
+## The 38 ways this is proven to fail — registered, not recounted
 
 > **That number is read by the gate, not typed here.** It was wrong twice. First it was a prose
 > table of ten mutations someone had once run by hand; run 53 replaced it with a spelled-out
@@ -189,13 +189,13 @@ required of a CLASS of rules, holding it on one member proves nothing about the 
 it owes is an invariant over the table, not a mutation per rule.** `f.agrees()` was repaired on
 `old-errored-registered` and the entry recording that repair asserted, of the only other rule
 emitting the same label, that it *"always carried the term"*. It did not
-(`S4-oracle-backs-new-by-being-empty-02`), and the same hole was live in two further rules — one
-of them manufacturing a release-blocking (b) out of an oracle that returned nothing
-(`S4-oracle-cannot-back-an-arm-by-being-empty-01`). Fifty plants were green with all of it present
-and stayed green when it was fixed. What closed it is not another plant: `agrees()` now refuses the
-vacuous agreement at the mechanism, and `_assert_table_invariants()` reads each guard's own
-bytecode at import so a PASS-granting rule that consults `agrees()` without `ANSWERED` cannot be
-written at all. PITFALLS 77.
+(`S4-oracle-backs-new-by-being-empty-02`). Fifty plants were green with the hole present and
+stayed green when it was fixed. `_assert_table_invariants()` now reads each guard's own bytecode at
+import so a PASS-granting rule that consults `agrees()` without `ANSWERED` cannot be written at
+all. ADR-18 Q2 then made the broader `Facts.agrees()` hollow guard redundant: the decision table
+settles every arms difference beside an empty oracle as d-unmodeled before a backing rule can read
+it. Its mutation survived for that reason, so the dead guard and obsolete mutation were removed
+rather than preserved behind an assertion with no behavioral consequence. PITFALLS 77.
 `new-errored` names no sides; it has to outrank three rules, and a guard rewrite gave it two.
 `S4-oracle-errored-outranks-old-errored-01` shows the move spelling is available — it carries a
 two-hunk diff that relocates a whole `Rule(...)` block — so "one anchor" was never a constraint

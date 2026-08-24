@@ -269,15 +269,6 @@ class Facts:
         Between the two ARMS it is not — there the order came from two SQL engines and is a
         finding of its own, which is why ORDER-ONLY is a label and not a footnote.
         """
-        if algebra.rule_family(diff.rule) == "both-hollow":
-            # Two empties compare EQUAL and always will (PITFALLS 38). On the ARMS leg that
-            # is caught by `hollow-arms` before any value rule; on an ORACLE leg nothing
-            # caught it, so an oracle that returned NOTHING was cited as backing an arm —
-            # granting (a)/PASS through `new-backed-registered`, and manufacturing a
-            # release-blocking (b) through `old-backed` on `old=empty, new=zero`, which is
-            # the shape of a FIX. Refused here rather than per-rule because four rules read
-            # this and only one had remembered to ask whether the oracle answered at all.
-            return False
         return diff.verdict in (algebra.EQUAL, algebra.ORDER_ONLY)
 
 

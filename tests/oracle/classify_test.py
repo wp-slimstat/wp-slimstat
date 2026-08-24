@@ -668,8 +668,8 @@ check_raises("a Verdict is not a boolean",
 #                               `arms.verdict`, so the rule NAME entered the section-9 coverage
 #                               set while its verdict was pinned by nothing. Measured: EQUAL
 #                               could be changed to DIFFER, INCOMPARABLE or ORDER_ONLY with all
-#                               fifty plants green. The verdict is load-bearing on the ORACLE
-#                               legs, where `Facts.agrees()` reads it, so it is asserted here.
+#                               fifty plants green. It remains an explicit algebra contract even
+#                               though ADR-18 Q2 now settles hollow oracle legs by class first.
 #
 # Each asserts the VERDICT and the RULE, because a right verdict from the wrong branch is the
 # thing expect.arms_rule exists to catch one level up.
@@ -723,10 +723,8 @@ check_diff("two empties are EQUAL, and the rule name says why that is not eviden
                                      {"class": "empty", "value": [], "flags": ARM_FLAGS}),
            algebra.EQUAL, "both-hollow",
            "this is the one verdict in DIFF_RULES that two plants REACHED and no assertion READ. "
-           "classify.py settles the arms leg by class line, so P03 and P12 are green whatever "
-           "verdict comes back — but `Facts.agrees()` reads this same verdict on the oracle legs, "
-           "where EQUAL is what lets an empty oracle 'back' an empty NEW (P45) and anything else "
-           "silently re-routes every hollow triple to a different rule")
+           "classify.py now settles both arms and oracle hollow legs by class before backing "
+           "rules, but the algebra still owes an explicit meaning for two empty envelopes")
 
 # The two ROW-KEY properties, which no plant reaches because no plant needs them yet.
 #
