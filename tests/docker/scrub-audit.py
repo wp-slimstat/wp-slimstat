@@ -83,8 +83,39 @@ CLASSES={
 "path":re.compile(r"/tmp/php-matrix|/var/www|wp-slimstat-pro|worktree|\.claude/plans",re.I),
 "comparison-name":re.compile(r"-to-|_to_|\bversus\b|_v_",re.I)}
 
-# Measured zero-collision on both arms of R20260824-a51bf2 over all 23 packet-eligible keys.
-VALUE_CLASSES=("branch","path","arm-metadata","capability","v6-column","migration")
+# WHAT MAY BE APPLIED TO A VALUE, and the list is short because the test is not "does this look
+# like a marker" but "can a visitor have written it".
+#
+# Two questions decide membership, and only one of them is about false positives.
+#
+# FIRST: does the class name an ERA? That is what the packet must not carry. `arm-metadata`,
+# `capability`, `v6-column` and `migration` do — they are the vocabulary of one side of the
+# comparison. `path` does NOT: both arms run in the same container, so `/var/www` and
+# `/tmp/php-matrix` are identical on each and identify nothing. Path matching is hygiene, and it
+# keeps applying to filenames and keys, where the harness is the author.
+#
+# SECOND: can a visitor have written it? Everything excluded (`ref`, `era`, `direction`,
+# `comparison-name`, `version`, `branch`) is excluded because its vocabulary is ordinary English,
+# ordinary URL segments or ordinary hexadecimal, and a report answer is a URL a stranger typed.
+#
+# MEASURED, because on this the two questions disagree and measurement settles it:
+#
+#   corpus                     class that collided     evidence
+#   I8 fixture                 (none of these)         23 packet keys, both arms
+#   campaign verify corpus     branch                  `/development/info.php`
+#   real 443,535-row dataset   path                    100 rows carry `/var/www`
+#
+# `branch` survived the first pass because I8 has no `/development/` in it, and the first real
+# OLD<->NEW comparison then refused its own packet at exit 5 after a full capture. `path` would
+# have done the same to the upgrade rehearsal, which hydrates the real dataset. THE FLOOR IS ONLY
+# AS GOOD AS THE CORPUS BEHIND IT — a class that has not collided is not a class that cannot —
+# so the fixture below is drawn from real captures, and every remaining class was checked against
+# all 443,535 real rows: `vid_hash`, `ua_id`, `pro_active`, `pro_installed`, `needsMigration`,
+# `slimstat_run_migrations`, `_arm_*` and `_instrument` appear in zero of them.
+#
+# What none of this weakens is the identity check. Whether an era leaks is decided by the sealed
+# literals — this run's own SHAs, fingerprints and versions — which are exact, not lexical.
+VALUE_CLASSES=("arm-metadata","capability","v6-column","migration")
 
 # A file the audit cannot parse is not a file the audit has cleared. Declared here so the
 # refusal names a class like every other refusal does, rather than printing a tuple.
@@ -176,7 +207,9 @@ LEGITIMATE={"top_resource":[
     {"resource":"/a-new-chapter-for-jacob4078-welcome-to-the-veronalabs-family/","counthits":"31"},
     {"resource":"/big-changes-slimstat-v5-1/","counthits":"12"},
     {"resource":"/faq/do-i-need-to-keep-my-license-updated/","counthits":"9"},
-    {"resource":"/cart/?add-to-cart=x","counthits":"4"}],
+    {"resource":"/cart/?add-to-cart=x","counthits":"4"},
+    {"resource":"/development/info.php","counthits":"2"},
+    {"resource":"/var/www/html/legacy-import.php","counthits":"1"}],
     "window_start":1784980416,"window_end":1787572416,
     "top_referer":[{"referer":"https://wordpress.org/support/topic/no-cookies/","counthits":"3"}]}
 

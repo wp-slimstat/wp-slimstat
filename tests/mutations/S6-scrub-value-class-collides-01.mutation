@@ -6,12 +6,12 @@ rationale: Puts `era` back among the classes applied to VALUES, which is the sta
 ---
 --- a/tests/docker/scrub-audit.py
 +++ b/tests/docker/scrub-audit.py
-@@ -84,7 +84,7 @@
- "comparison-name":re.compile(r"-to-|_to_|\bversus\b|_v_",re.I)}
- 
- # Measured zero-collision on both arms of R20260824-a51bf2 over all 23 packet-eligible keys.
--VALUE_CLASSES=("branch","path","arm-metadata","capability","v6-column","migration")
-+VALUE_CLASSES=("branch","path","arm-metadata","capability","v6-column","migration","era")
+@@ -115,7 +115,7 @@
+ #
+ # What none of this weakens is the identity check. Whether an era leaks is decided by the sealed
+ # literals — this run's own SHAs, fingerprints and versions — which are exact, not lexical.
+-VALUE_CLASSES=("arm-metadata","capability","v6-column","migration")
++VALUE_CLASSES=("arm-metadata","capability","v6-column","migration","era")
  
  # A file the audit cannot parse is not a file the audit has cleared. Declared here so the
  # refusal names a class like every other refusal does, rather than printing a tuple.
