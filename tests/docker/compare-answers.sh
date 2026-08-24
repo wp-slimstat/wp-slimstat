@@ -469,13 +469,35 @@ if os.path.exists(ta_path) and os.path.exists(tb_path):
         x, y = ta[key]['median'], tb[key]['median']
         print('  %-26s %10.2f %10.2f %+10.2f' % (key, x, y, y - x))
     print()
-    print('  Raw spread (min..max). MEASURED NOISE FLOOR of this harness, from a null control')
-    print('  (same ref as both arms) with interleaving on: within +/-1.3 ms overall, and within')
-    print('  +/-0.9 ms on the heavy reports. Before interleaving it was +12.7 ms (+11.3%) on')
-    print('  top_resource alone. Treat any delta inside the floor as noise:')
+    # THIS RUN'S OWN SEPARATION, not a remembered floor.
+    #
+    # These three lines used to assert "MEASURED NOISE FLOOR of this harness ... within +/-1.3 ms
+    # overall" as though it had been measured for the run being printed. It had not: it was a
+    # figure from one null control, hardcoded, and reprinted verbatim under every subsequent
+    # comparison. Two null controls on the campaign corpus measured chart_weekly spreads of
+    # ~4 ms on a quiet machine and ~55 ms on a loaded one — so the sentence was off by a factor
+    # of forty when it mattered most, and it was the sentence a reader would use to decide
+    # whether a delta meant anything.
+    #
+    # What can be said from the run itself, with no remembered constant and no distributional
+    # assumption, is whether the two arms' OBSERVED RANGES OVERLAP. Overlapping ranges cannot
+    # separate the arms whatever the medians do. Disjoint ranges are a real separation in this
+    # run's own conditions, and the gap is printed so it can be weighed against the deltas above.
+    # It is still not a substitute for the deterministic counters, which is why they come first.
+    print('  Raw spread (min..max) per arm, and whether the two ranges are DISJOINT in this run.')
+    print('  Overlapping ranges cannot separate the arms however far apart the medians sit; a')
+    print('  remembered noise floor from another run cannot settle it either. The counters above')
+    print('  are what carry a claim — this is context for them.')
     for key in keys:
-        print('    %-24s before %.2f..%.2f   after %.2f..%.2f'
-              % (key, ta[key]['min'], ta[key]['max'], tb[key]['min'], tb[key]['max']))
+        lo_a, hi_a = ta[key]['min'], ta[key]['max']
+        lo_b, hi_b = tb[key]['min'], tb[key]['max']
+        gap = max(lo_b - hi_a, lo_a - hi_b, 0.0)   # 0 when the ranges overlap, either order
+        note = ('disjoint by %.2f ms' % gap) if gap > 0 else 'OVERLAP — not separated'
+        print('    %-24s before %.2f..%.2f   after %.2f..%.2f   %s'
+              % (key, lo_a, hi_a, lo_b, hi_b, note))
+    print()
+    print('  Run `SLIMSTAT_NULL_CONTROL=1` with one ref as both arms for this machine\'s floor')
+    print('  today; it varies with load, which is the reason the figure is not baked in here.')
     print()
 
 if not diffs:
