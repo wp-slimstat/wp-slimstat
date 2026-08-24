@@ -217,7 +217,15 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
         json.dumps({"top_resource":[{"resource":"/a","x":"fingerprint-a"}]})+"\n")
     check("T14",command([str(HERE/"seal.sh"),"--unseal",str(run)]),4,"scrub audit found hits")
 
-expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14"]
+    # ── T15: the sealed literals are MISSING rather than weakened ──────────────────────────
+    # The first version of the guard above fell back to an audit without them, so a run whose
+    # provenance had been removed re-audited under the weaker rule and unsealed cleanly. T14
+    # proves the rule is used; this proves it cannot be skipped.
+    run,_=fixture(root/"t15")
+    (run/".sealed/literals.json").unlink()
+    check("T15",command([str(HERE/"seal.sh"),"--unseal",str(run)]),4,"literals.json is absent")
+
+expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15"]
 if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13"]:
     print(f"SEAL SUITE: declaration/execution mismatch required={required} controls={controls}",file=sys.stderr); raise SystemExit(6)
 print(f"SEAL SUITE: {len(expected)} declared negative tests, {len(required)} executed, {len(required)} red · "

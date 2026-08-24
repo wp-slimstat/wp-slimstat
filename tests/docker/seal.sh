@@ -27,9 +27,13 @@ unseal() {
   # checked only by scrub-audit's coarser path scan.
   PLUGIN_SRC="$PLUGIN_SRC" seal_assert_neutral_names "$run" >/dev/null 2>&1 ||
     { seal_refuse 3 "packet names stopped being neutral after the packet was built"; return 4; }
-  local sealed=()
-  [ -f "$run/.sealed/literals.json" ] && sealed=(--literals "$run/.sealed/literals.json")
-  "$HERE/scrub-audit.sh" "$run/packet" "${sealed[@]+"${sealed[@]}"}" >/dev/null 2>&1 ||
+  # REFUSED when absent, not fallen back on. Every packet build writes this file, so a run
+  # without one is a run whose provenance is unknown — and the fallback made that state
+  # indistinguishable from a good one while quietly running the weaker rule. T14 catches a
+  # WEAKENED rule; nothing caught a MISSING file, which is the same shape one step further out.
+  [ -f "$run/.sealed/literals.json" ] ||
+    { seal_refuse 3 ".sealed/literals.json is absent, so the packet cannot be re-audited against this run's own era markers"; return 4; }
+  "$HERE/scrub-audit.sh" "$run/packet" --literals "$run/.sealed/literals.json" >/dev/null 2>&1 ||
     { seal_refuse 3 "scrub audit found hits in packet/ after the packet was built"; return 4; }
   (cd "$run" && shasum -a 256 -c packet/MANIFEST.sha256 >/dev/null 2>&1) ||
     { seal_refuse 3 "packet manifest does not verify"; return 4; }
