@@ -41,7 +41,14 @@ jobs:
 
     steps:
       - name: Checkout
+        # fetch-depth 2, not the default 1. seal-negative-suite.py's T11/T11b drive
+        # verify-change.sh with HEAD and HEAD~1; on a depth-1 clone HEAD~1 does not resolve and
+        # the entry point dies with "unknown ref" - exit 1, but for the WRONG REASON, so the case
+        # reports a mismatch rather than the refusal it exists to prove. A gate written against a
+        # developer's full clone cannot pass on a shallow one. PITFALLS 96.
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Set up PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@v2
