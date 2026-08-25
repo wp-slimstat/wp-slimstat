@@ -64,9 +64,10 @@ def fixture(root,reports=True,build=True,null=False):
     if reports: file_reports(run)
     return run,art
 
-def digest(run,arm):
-    lines=(run/"packet/MANIFEST.sha256").read_bytes().splitlines(keepends=True)
-    return hashlib.sha256(b"".join(x for x in lines if f"packet/{arm}/".encode() in x)).hexdigest()
+# The third copy of this was here. It is seal_common.manifest_digest now, for the reason that
+# module's header gives: this suite asserts that a TAMPERED packet_sha256 is refused, so it must
+# compute the untampered one exactly the way the producer and the validator do.
+from seal_common import manifest_digest as digest  # noqa: E402
 
 def file_reports(run):
     for arm in ("arm-1","arm-2"):
@@ -142,9 +143,22 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     archive=root/"archive"; archive.mkdir(); (archive/"arm-1-6.0.0.answers.json").write_text('{"_arm_version":"6.0.0"}\n')
     check("T9",command([str(HERE/"scrub-audit.sh"),str(archive)]),5,"SCRUB FAILED")
 
-    orphan=root/"orphan-root"; (orphan/"R20260824-aaaaaa").mkdir(parents=True); empty=root/"empty.txt"; empty.write_text("")
+    # T10: an UNDECLARED directory that is not wearing a sealed run's name. Its fixture used to be
+    # called R20260824-aaaaaa, which the census now refuses for a different and stronger reason —
+    # so the two rules get one test each rather than one test that could pass for either reason.
+    orphan=root/"orphan-root"; (orphan/"run99-some-evidence").mkdir(parents=True); empty=root/"empty.txt"; empty.write_text("")
     check("T10",command([str(HERE/"seal-entrypoint-gate.sh")],
-      {"SLIMSTAT_SEAL_SKIP_BEHAVIOR":"1","SLIMSTAT_SEAL_RUNS_ROOT":str(orphan),"SLIMSTAT_SEAL_PRE_S6":str(empty)}),1,"has no flip.json and is not declared pre-S6")
+      {"SLIMSTAT_SEAL_SKIP_BEHAVIOR":"1","SLIMSTAT_SEAL_RUNS_ROOT":str(orphan),"SLIMSTAT_SEAL_DECLARED_UNSEALED":str(empty)}),1,"has no flip.json and is not declared in runs-not-sealed-comparisons.txt")
+
+    # T10b: THE ALLOWLIST CANNOT EXCUSE A NAME THE SEAL ITSELF ISSUES. The directory below is
+    # declared — the strongest thing the allowlist can say about it — and wears the
+    # R<date>-<6 hex> shape seal_new_run_dir mints, with no flip.json. That is a run whose seal
+    # did not complete, which is the one case a name-based exemption must not be able to wave
+    # through, and until this rule existed appending one line was enough to do exactly that.
+    named=root/"named-root"; (named/"R20260825-bbbbbb").mkdir(parents=True)
+    declared_ok=root/"declared.txt"; declared_ok.write_text("R20260825-bbbbbb\n")
+    check("T10b",command([str(HERE/"seal-entrypoint-gate.sh")],
+      {"SLIMSTAT_SEAL_SKIP_BEHAVIOR":"1","SLIMSTAT_SEAL_RUNS_ROOT":str(named),"SLIMSTAT_SEAL_DECLARED_UNSEALED":str(declared_ok)}),1,"is named like a sealed run but has no flip.json")
 
     # ── T11: a comparison that ABORTED must not leave an adjudicable packet ────────────────
     # compare-answers.sh writes both captures BEFORE it evaluates a single control, so on a
@@ -293,7 +307,7 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     check("T19c",shell(unset+shlex.quote(str(HERE/"verify-change.sh"))+" HEAD HEAD~1",floor),0,
           "SEAL DRYRUN",True)
 
-expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15","T17","T18","T19","T19b"]
+expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T10b","T11","T12","T14","T15","T17","T18","T19","T19b"]
 if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13","T16","T19c"]:
     print(f"SEAL SUITE: declaration/execution mismatch required={required} controls={controls}",file=sys.stderr); raise SystemExit(6)
 print(f"SEAL SUITE: {len(expected)} declared negative tests, {len(required)} executed, {len(required)} red · "

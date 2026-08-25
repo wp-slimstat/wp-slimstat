@@ -41,15 +41,10 @@ def refuse(number: int, message: str) -> int:
     return 4
 
 
-def load(path: Path):
-    with path.open(encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def manifest_digest(run: Path, arm: str) -> str:
-    lines = (run / "packet/MANIFEST.sha256").read_bytes().splitlines(keepends=True)
-    body = b"".join(line for line in lines if f"packet/{arm}/".encode() in line)
-    return hashlib.sha256(body).hexdigest()
+# load() and manifest_digest() live in seal_common so that the SIDE THAT WRITES packet_sha256
+# (file-reports.py) and the side that reads it back and refuses on mismatch (this file) cannot
+# drift apart. See seal_common.py's header for what four separate spellings had already cost.
+from seal_common import load, manifest_digest  # noqa: E402
 
 
 def validate_structured(run: Path) -> tuple[int, str]:

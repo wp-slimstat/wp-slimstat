@@ -9,6 +9,11 @@ PLUGIN=HERE.parent.parent
 def fail(message):
     print(f"SEAL GATE: {message}",file=sys.stderr); raise SystemExit(1)
 
+# The name the seal itself mints. Defined once and used by BOTH the artifact census (a directory
+# wearing this name can never be excused by the allowlist) and behavior_gate's neutrality check
+# further down, which previously spelled it inline.
+RUN_DIR_NAME=re.compile(r"R\d{8}-[0-9a-f]{6}")
+
 def static_gate(subject):
     text=subject.read_text()
     if "source \"$HERE/seal-lib.sh\"" not in text or "seal_flip " not in text:
@@ -25,9 +30,19 @@ def artifact_gate(root,declared):
     for directory in sorted(path for path in root.iterdir() if path.is_dir()):
         if (directory/"flip.json").is_file() and (directory/".sealed/mapping.json").is_file():
             continue
+        # A NAME THE SEAL ITSELF ISSUES CAN NEVER BE EXCUSED BY NAME. seal_new_run_dir mints
+        # `R<date>-<6 hex>` and behavior_gate already asserts every sealed run carries that shape,
+        # so a directory wearing it and missing its flip.json is a run whose seal did not complete
+        # — the one case the allowlist must not be able to wave through. The allowlist is still
+        # the right mechanism for everything else (a line in a tracked file is a reviewed human
+        # edit; a marker file inside the directory would be written by whatever failed to seal),
+        # but an allowlist with no structural floor is one forgotten `git add` away from
+        # excusing exactly what the census exists to catch.
+        if RUN_DIR_NAME.fullmatch(directory.name):
+            fail(f"{directory} is named like a sealed run but has no flip.json — a seal that did not complete cannot be excused by name, and adding it to runs-not-sealed-comparisons.txt will not help")
         if directory.name in allowed:
             continue
-        fail(f"{directory} has no flip.json and is not declared pre-S6 — something wrote a run directory without sealing it")
+        fail(f"{directory} has no flip.json and is not declared in runs-not-sealed-comparisons.txt — something wrote a run directory without sealing it")
 
 def behavior_gate():
     with tempfile.TemporaryDirectory(prefix="slimstat-seal-gate-") as tmp:
@@ -87,7 +102,7 @@ def behavior_gate():
             fail(f"the entry point does not select the campaign corpus — its dry run reports {reported or '(nothing)'}")
         bits=""
         for run in ordered:
-            if not re.fullmatch(r"R\d{8}-[0-9a-f]{6}",run.name): fail(f"run directory {run.name} is not neutral")
+            if not RUN_DIR_NAME.fullmatch(run.name): fail(f"run directory {run.name} is not neutral")
             mapping=json.load((run/".sealed/mapping.json").open())
             if oct((run/".sealed/mapping.json").stat().st_mode & 0o777)!="0o600": fail("mapping.json is not mode 600")
             bits += "0" if mapping["arm-1"]==mapping["ref_a"] else "1"
@@ -139,6 +154,6 @@ static_gate(subject)
 if os.environ.get("SLIMSTAT_SEAL_SKIP_BEHAVIOR")!="1": behavior_gate()
 archive_control()
 root=Path(os.environ.get("SLIMSTAT_SEAL_RUNS_ROOT",PLUGIN.parent/"jaan-to/outputs/dev/v6-performance/runs"))
-declared=Path(os.environ.get("SLIMSTAT_SEAL_PRE_S6",HERE/"pre-s6-runs.txt"))
+declared=Path(os.environ.get("SLIMSTAT_SEAL_DECLARED_UNSEALED",HERE/"runs-not-sealed-comparisons.txt"))
 artifact_gate(root,declared)
 print("PASS: seal entrypoint — real caller sealed, archive distinguishable, artifact census complete")

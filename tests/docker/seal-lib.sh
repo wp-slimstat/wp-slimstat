@@ -122,7 +122,10 @@ PY
     seal_assert_private "$dir/.sealed/mapping.json" 600 &&
     seal_assert_neutral_names "$dir"
 }
-seal_arm_manifest_digest() {
-  awk -v arm="packet/$2/" '$2 ~ ("^" arm) {print}' "$1/packet/MANIFEST.sha256" | shasum -a 256 | awk '{print $1}'
-}
+# seal_arm_manifest_digest() was here. It had ZERO callers and it was not the same rule as the
+# three Python spellings it sat beside: it anchored the match to awk field 2 (`$2 ~ "^packet/arm-1/"`)
+# where every Python copy tests substring-anywhere-in-line. An orphan fourth definition of the
+# digest that decides whether a filed report matches the bytes it read, already disagreeing with
+# the other three — deleted rather than converted, because a shell caller would have to shell out
+# to the shared module anyway. The one definition is tests/docker/seal_common.py.
 seal_refuse() { seal_err "SEAL REFUSED: P$1 unmet — $2"; return 4; }

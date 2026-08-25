@@ -16,6 +16,25 @@ has_wp_core_fatal() { grep -qiE "$WP_CORE_FATAL_PATTERNS" "$1" 2>/dev/null; }
 log()  { printf '\033[1;34m[%s]\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
 warn() { printf '\033[1;33m[%s] WARN:\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
 err()  { printf '\033[1;31m[%s] ERROR:\033[0m %s\n' "$(date +%H:%M:%S)" "$*"; }
+die()  { err "$*"; exit 1; }
+
+# Two primitives every drill and measurement script here had privately. canary/run-canary.sh
+# sourced this file and then redefined `say` byte-identically to `log` above and `die` as `err`
+# plus an exit — paying for the source and then shadowing what it bought, so a later edit to `log`
+# would appear to have no effect there.
+#
+# reachability/run-gate.sh has its own copies and keeps them: it deliberately does NOT source this
+# file, and its recorded verdict binds to a subject digest under a container-backed gate this
+# session cannot execute. Converting a gate on the strength of reading it is the thing PITFALLS
+# keeps recording; it is filed as debt instead.
+digest() { shasum -a 256 "$1" | awk '{print $1}'; }
+now()    { date -u +%FT%TZ; }
+
+# WHERE AN ARM'S WORKTREE LIVES — one definition, because two scripts now write to it.
+# compare-answers.sh creates and reuses these; canary/run-canary.sh patches one in place before
+# handing the run to verify-change.sh. The path was composed by hand in both, which meant a layout
+# change in the owner would have silently sent the drill's `patch -p1 -d` somewhere else.
+arm_worktree_dir() { printf '%s/%s/%s/arms/%s' "$WORK_ROOT" "${2:-answers}" "${2:-answers}" "$1"; }
 
 # Write a cell's verdict JSON. Args: art_dir cell php wp status reason
 write_verdict() {

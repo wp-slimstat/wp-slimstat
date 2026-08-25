@@ -55,7 +55,13 @@ CELL="answers"
 CELL_DIR="$WORK_ROOT/answers/$CELL"
 WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
-WORKTREES="$CELL_DIR/arms"
+# Via lib.sh, because this layout now has a SECOND writer. tests/docker/canary/run-canary.sh
+# patches an arm worktree in place for the S7 canary drill and hands the run to verify-change.sh
+# unmodified, which is what keeps the sealed entry point unbypassed. It relies on the reuse
+# behaviour a dozen lines below — an existing worktree carrying a composer.json is NOT recreated —
+# so changing either that behaviour or this path breaks a caller in another directory. One helper
+# for both is what stops that from becoming a silent `patch -p1 -d` into the wrong tree.
+WORKTREES="$(dirname "$(arm_worktree_dir _ "$CELL")")"
 
 export COMPOSE_PROJECT_NAME="ssanswers" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
@@ -131,6 +137,28 @@ for ref in "$BEFORE" "$AFTER"; do
   # run reports "not loadable" several minutes later with the cause scrolled off screen.
   ( cd "$dir" && composer run build:autoload >/dev/null 2>&1 ) \
     || { err "could not rebuild the autoloader at $ref — that arm would boot with the wrong classmap"; exit 1; }
+done
+
+# WHAT THE ARM'S TREE ACTUALLY IS, not what its ref says it should be.
+#
+# The CONTROLS block above resolves each ref and stops there, and verify-change.sh's header says
+# in prose "arms are built from git worktrees at $BEFORE_SHA and $AFTER_SHA" — an identity neither
+# of them checks. It is false whenever a worktree has been patched, hand-edited or left dirty by
+# an interrupted run, and the `-` branch above already prints the honest form for the working
+# tree. This is a RECORD, never a refusal: tests/docker/canary/run-canary.sh deliberately patches
+# one of these worktrees for the S7 drill, so refusing here would forbid the drill. Printing it
+# makes the drill self-documenting in the run's own log and closes the general hole for every
+# other run, where a dirty arm is an accident nobody would otherwise see.
+for ref in "$BEFORE" "$AFTER"; do
+  [ "$ref" = "-" ] && continue
+  dir="$WORKTREES/$ref"
+  head="$(git -C "$dir" rev-parse --short HEAD 2>/dev/null || echo UNKNOWN)"
+  dirty="$(git -C "$dir" status --porcelain --untracked-files=no 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "$dirty" != 0 ]; then
+    warn "  arm tree '$ref': $head + $dirty MODIFIED file(s) — this arm is NOT the tree its ref names"
+  else
+    echo "  arm tree '$ref': $head, clean"
+  fi
 done
 
 log "[$CELL] build + up"
