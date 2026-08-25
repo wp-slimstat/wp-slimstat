@@ -34,6 +34,35 @@ DAYS="${4:-180}"
 : "${SLIMSTAT_RUNS_ROOT:=}"
 : "${SLIMSTAT_NULL_CONTROL:=0}"
 : "${SLIMSTAT_SEAL_DRYRUN:=0}"
+: "${SLIMSTAT_TIMING_REPS:=5}"
+: "${SLIMSTAT_BLOCKS:=4}"
+
+# A CONTROL MUST RUN AT THE CONFIGURATION OF THE THING IT CONTROLS (PITFALLS 89).
+#
+# Run 58's null control ran at 1 rep x 1 block against a comparison at 5 x 4. At one sample per
+# arm `min..max` collapses to a point, so "are the two ranges disjoint" is satisfied by any two
+# unequal numbers -- and it duly reported `disjoint` on 6 of 7 reports with ZERO code difference
+# between the arms, while its verdict line said IDENTICAL (that line describes the ANSWERS, not
+# the timings). It was then cited in three documents as the thing that licensed a latency claim.
+#
+# Re-run at 5 x 4 the same ref against itself still separates 2-3 reports of 7, on DIFFERENT
+# reports each pass. So the floor is real and the cheap control could not see it. Of every knob
+# here, this is the one that must not be turned down: a weaker control is not a cheaper version
+# of the control, it is not the control.
+#
+# The floor is unconditional rather than null-control-only, because the asymmetry cuts both ways:
+# a COMPARISON at 1 x 1 collapses its own ranges to points too, and would report every report as
+# `disjoint` against a properly-measured floor. Anything this entry point prints a separation
+# verdict for runs at 5 x 4 or it does not run.
+case "$SLIMSTAT_TIMING_REPS$SLIMSTAT_BLOCKS" in *[!0-9]*)
+  err "SLIMSTAT_TIMING_REPS and SLIMSTAT_BLOCKS must be numeric, got '$SLIMSTAT_TIMING_REPS' and '$SLIMSTAT_BLOCKS'"; exit 3 ;;
+esac
+if [ "$SLIMSTAT_TIMING_REPS" -lt 5 ] || [ "$SLIMSTAT_BLOCKS" -lt 4 ]; then
+  err "$SLIMSTAT_TIMING_REPS reps x $SLIMSTAT_BLOCKS blocks is below the floor this entry point prints a separation verdict at (5 x 4)"
+  err "  at 1 rep min..max is a point, so 'the two ranges are disjoint' is true for any two unequal numbers"
+  err "  raise SLIMSTAT_TIMING_REPS>=5 and SLIMSTAT_BLOCKS>=4 -- see PITFALLS 89"
+  exit 3
+fi
 
 # THE CORPUS, chosen HERE rather than inherited from compare-answers.sh's default.
 #
@@ -89,8 +118,8 @@ fi
 # log (PITFALLS 77). The public record receives only the scrubbed packet and post-adjudication
 # reveal.
 OUT="$RUNS/.sealed/verify.log"
-SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" \
-SLIMSTAT_BLOCKS="${SLIMSTAT_BLOCKS:-4}" \
+SLIMSTAT_TIMING_REPS="$SLIMSTAT_TIMING_REPS" \
+SLIMSTAT_BLOCKS="$SLIMSTAT_BLOCKS" \
 SLIMSTAT_SEED_PROFILE="$SLIMSTAT_SEED_PROFILE" \
   "$SLIMSTAT_COMPARE_CMD" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" \
   "${SLIMSTAT_HTTP_PORT:-18990}" "${SLIMSTAT_DB_PORT:-13990}" 2>&1 | tee "$OUT"

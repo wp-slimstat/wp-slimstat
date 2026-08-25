@@ -1,0 +1,17 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-negative
+kind:      constant-weakening
+expect:    is below the floor this entry point prints a separation verdict at
+rationale: Lowers the sampling floor so a run at 1 rep x 1 block is admitted again. This is not hypothetical: it is the exact configuration Run 58's null control actually ran at, against a comparison at 5 x 4, and it was cited in three documents as the thing that licensed a latency claim. At one sample per arm `min..max` collapses to a point, so the "are the two ranges disjoint" test is satisfied by any two unequal numbers -- the 1 x 1 control duly reported `disjoint` on 6 of 7 reports with ZERO code difference between its arms. Re-run at 5 x 4, the same ref against itself still separates 2-3 reports of 7, and on DIFFERENT reports each pass, so the floor is real and only the cheap control could not see it. The mutation is a constant change rather than a removal because that is how the defect arrives in practice: nobody deletes a control, they turn it down to make it fast.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -57,7 +57,7 @@
+ case "$SLIMSTAT_TIMING_REPS$SLIMSTAT_BLOCKS" in *[!0-9]*)
+   err "SLIMSTAT_TIMING_REPS and SLIMSTAT_BLOCKS must be numeric, got '$SLIMSTAT_TIMING_REPS' and '$SLIMSTAT_BLOCKS'"; exit 3 ;;
+ esac
+-if [ "$SLIMSTAT_TIMING_REPS" -lt 5 ] || [ "$SLIMSTAT_BLOCKS" -lt 4 ]; then
++if [ "$SLIMSTAT_TIMING_REPS" -lt 1 ] || [ "$SLIMSTAT_BLOCKS" -lt 1 ]; then
+   err "$SLIMSTAT_TIMING_REPS reps x $SLIMSTAT_BLOCKS blocks is below the floor this entry point prints a separation verdict at (5 x 4)"
+   err "  at 1 rep min..max is a point, so 'the two ranges are disjoint' is true for any two unequal numbers"
+   err "  raise SLIMSTAT_TIMING_REPS>=5 and SLIMSTAT_BLOCKS>=4 -- see PITFALLS 89"

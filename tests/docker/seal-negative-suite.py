@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import hashlib,json,os,shutil,subprocess,sys,tempfile
+import hashlib,json,os,shlex,shutil,subprocess,sys,tempfile
 from pathlib import Path
 
 HERE=Path(__file__).resolve().parent
@@ -265,8 +265,36 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     check("T18",command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_A]),3,
           "a null control's arms must share every identity field")
 
-expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15","T17","T18"]
-if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13","T16"]:
+    # ── T19: a run below the sampling floor it prints a separation verdict at ────────────────
+    # Run 58's null control ran at 1 rep x 1 block against a comparison at 5 x 4. At one sample
+    # `min..max` is a point, so "the two ranges are disjoint" holds for any two unequal numbers --
+    # it reported `disjoint` on 6 of 7 reports with ZERO code difference and was cited in three
+    # documents as licensing a latency claim. The floor is unconditional because the asymmetry
+    # cuts both ways: a COMPARISON at 1 x 1 collapses its own ranges just as thoroughly.
+    floor={"SLIMSTAT_RUNS_ROOT":str(root/"t19"),"SLIMSTAT_SEAL_DRYRUN":"1"}
+    under=dict(floor,SLIMSTAT_TIMING_REPS="1",SLIMSTAT_BLOCKS="1")
+    check("T19",command([str(HERE/"verify-change.sh"),"HEAD","HEAD"],dict(under,SLIMSTAT_NULL_CONTROL="1")),3,
+          "is below the floor this entry point prints a separation verdict at")
+    # T19b is not a duplicate of T19: the floor never reads SLIMSTAT_NULL_CONTROL, and the
+    # plausible weakening is to wrap it in one ("controls are cheap, real runs are expensive"),
+    # which T19 alone stays green through. Mutation S6-sampling-floor-null-only-01 is the
+    # mutant that separates them -- without it this test pins a decision nothing can break,
+    # which is the shape PITFALLS keeps recording.
+    check("T19b",command([str(HERE/"verify-change.sh"),"HEAD","HEAD~1"],under),3,
+          "is below the floor this entry point prints a separation verdict at")
+
+    # ── T19c: the floor does not refuse a correctly configured run ───────────────────────────
+    # T11/T11b already traverse the floor at the defaults, so a "refuse everything" mutant goes
+    # red there first; this is the local, explicit statement of the same property, next to the
+    # tests it qualifies. `env -u` rather than a dict, because command() merges over os.environ
+    # -- popping from the override cannot unset an ambient value, and a gate whose polarity is
+    # set by the developer's shell is not a guard (seal-entrypoint-gate.py says the same).
+    unset="env -u SLIMSTAT_TIMING_REPS -u SLIMSTAT_BLOCKS "
+    check("T19c",shell(unset+shlex.quote(str(HERE/"verify-change.sh"))+" HEAD HEAD~1",floor),0,
+          "SEAL DRYRUN",True)
+
+expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T11","T12","T14","T15","T17","T18","T19","T19b"]
+if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13","T16","T19c"]:
     print(f"SEAL SUITE: declaration/execution mismatch required={required} controls={controls}",file=sys.stderr); raise SystemExit(6)
 print(f"SEAL SUITE: {len(expected)} declared negative tests, {len(required)} executed, {len(required)} red · "
       f"{len(controls)} controls, {len(controls)} as expected")

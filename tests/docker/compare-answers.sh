@@ -79,9 +79,14 @@ mkdir -p "$WP_DIR" "$ART" "$WORKTREES"
 # same ref pair are byte-identical in every field the answers documents carry, which is exactly
 # the confusion PITFALLS 60 records. RUN_ID is the field that separates them.
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
-printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","seed_profile":"%s","rows":%s,"days":%s,"null_control":%s,"php":"%s","wp":"%s"}\n' \
+# timing_reps and blocks are recorded because their ABSENCE is what PITFALLS 89 cost: a null
+# control at 1x1 certified a comparison at 5x4, and the mismatch existed only as prose in two
+# log files, one line above the numbers it invalidated. A fact a gate can read, not a variable a
+# reviewer has to trust.
+printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","seed_profile":"%s","rows":%s,"days":%s,"null_control":%s,"timing_reps":%s,"blocks":%s,"php":"%s","wp":"%s"}\n' \
   "$RUN_ID" "$BEFORE" "$AFTER" "$SEED_PROFILE" "$ROWS" "$DAYS" \
-  "${SLIMSTAT_NULL_CONTROL:-0}" "$PHP" "$WP" > "$ART/run.json"
+  "${SLIMSTAT_NULL_CONTROL:-0}" "${SLIMSTAT_TIMING_REPS:-5}" "${SLIMSTAT_BLOCKS:-4}" \
+  "$PHP" "$WP" > "$ART/run.json"
 
 echo "CONTROLS:"
 for ref in "$BEFORE" "$AFTER"; do
@@ -462,7 +467,7 @@ if os.path.exists(ta_path) and os.path.exists(tb_path):
     # ── milliseconds, explicitly subordinate ────────────────────────────────
     reps = ta.get('_reps', '?')
     print('  latency, %s reps x %s interleaved blocks per arm, caches and transients cleared'
-          % (reps, os.environ.get('SLIMSTAT_BLOCKS', '4')))
+          % (reps, os.environ['SLIMSTAT_BLOCKS']))
     print('  %-26s %10s %10s %10s' % ('report', 'before', 'after', 'delta'))
     print('  ' + '-' * 60)
     for key in keys:
@@ -488,13 +493,24 @@ if os.path.exists(ta_path) and os.path.exists(tb_path):
     print('  Overlapping ranges cannot separate the arms however far apart the medians sit; a')
     print('  remembered noise floor from another run cannot settle it either. The counters above')
     print('  are what carry a claim — this is context for them.')
-    for key in keys:
-        lo_a, hi_a = ta[key]['min'], ta[key]['max']
-        lo_b, hi_b = tb[key]['min'], tb[key]['max']
-        gap = max(lo_b - hi_a, lo_a - hi_b, 0.0)   # 0 when the ranges overlap, either order
-        note = ('disjoint by %.2f ms' % gap) if gap > 0 else 'OVERLAP — not separated'
-        print('    %-24s before %.2f..%.2f   after %.2f..%.2f   %s'
-              % (key, lo_a, hi_a, lo_b, hi_b, note))
+    # The floor lives HERE as well as in verify-change.sh, because this is where the claim is
+    # EMITTED and this script is a documented entry point in its own right -- CLAUDE.md tells
+    # you to run it directly for the noise floor, which walks straight past the caller's guard.
+    # Below 5 x 4 the spreads are too few samples to mean anything: at 1 rep min..max is a
+    # point, so `disjoint` is true of any two unequal numbers. PITFALLS 89.
+    if not isinstance(reps, int) or reps < 5 or int(os.environ['SLIMSTAT_BLOCKS']) < 4:
+        print('    REFUSED: %s reps x %s blocks is below the 5 x 4 floor a separation verdict'
+              % (reps, os.environ['SLIMSTAT_BLOCKS']))
+        print('    needs. At 1 rep min..max is a point and `disjoint` is true of any two')
+        print('    unequal numbers -- see PITFALLS 89. The counters above are unaffected.')
+    else:
+        for key in keys:
+            lo_a, hi_a = ta[key]['min'], ta[key]['max']
+            lo_b, hi_b = tb[key]['min'], tb[key]['max']
+            gap = max(lo_b - hi_a, lo_a - hi_b, 0.0)   # 0 when the ranges overlap, either order
+            note = ('disjoint by %.2f ms' % gap) if gap > 0 else 'OVERLAP — not separated'
+            print('    %-24s before %.2f..%.2f   after %.2f..%.2f   %s'
+                  % (key, lo_a, hi_a, lo_b, hi_b, note))
     print()
     print('  Run `SLIMSTAT_NULL_CONTROL=1` with one ref as both arms for this machine\'s floor')
     print('  today; it varies with load, which is the reason the figure is not baked in here.')
