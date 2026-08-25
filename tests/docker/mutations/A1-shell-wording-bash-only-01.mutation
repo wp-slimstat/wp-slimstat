@@ -1,0 +1,43 @@
+target:    tests/fp-negative/scenarios.php
+gate:      composer test:fp-negative-linux no-python3
+kind:      restore-defect
+expect:    missing: command not found
+rationale: NOT A REGISTRY ENTRY, for the same structural reason as its neighbour: the gate needs
+           a container. `composer test:mutations` runs on the developer's host, and on macOS
+           /bin/sh is bash — under which the restored defect is INVISIBLE, because bash's
+           "sh: python3: command not found" CONTAINS the reverted needle. Run there, this
+           mutation reports SURVIVED on a correct tree. The gate above containerises, so its
+           verdict does not depend on the host: measured both ways, the gate exits 1 under dash
+           and 0 under bash.
+
+           WHAT IT PROVES. That `no-python3`'s CONTROL 3 assertion still binds to the shell's raw
+           answer reaching the detail line, on the shell CI actually runs. Restoring
+           'command not found' is the defect introduced by 3dff4b9d, which kept free's Tier 1
+           lane red on every push for a week while the export-fidelity gate itself was healthy —
+           `baseline` passed in the same CI run that failed. See PITFALLS 93.
+
+           WHY THIS DIFF AND NOT A DELETION. Deleting the needle also turns the scenario red, but
+           it pins the wrong thing — that SOME needle is present. Nobody deletes an assertion;
+           they write the one that is true of the machine in front of them. The one-literal
+           revert is the mistake in its original shape.
+
+           NOT AUTOMATED, and named so it is not mistaken for a lane. Nothing applies this file:
+           `mutation-registry-test.php`'s loose loop validates its FORMAT only, and `FP_MUTATIONS`
+           in run-rollup-floor.sh cannot host it — that lane executes its precondition as MySQL
+           and hardcodes both the gate and the kill string. Applied and observed red by hand at
+           Run 62. No `precondition:` header: the earlier draft carried one asserting "/bin/sh
+           here is dash", which no runner evaluates — the gate now guarantees it instead.
+---
+diff --git a/tests/fp-negative/scenarios.php b/tests/fp-negative/scenarios.php
+index 1ad3f17..b0cea20 100644
+--- a/tests/fp-negative/scenarios.php
++++ b/tests/fp-negative/scenarios.php
+@@ -178,7 +178,7 @@ function slimstat_neg_scenarios()
+                 // found"). Lowercase 'not found' is the only wording common to both, and strpos
+                 // is case-sensitive, so it cannot match the subject's own NOT-FOUND markers.
+                 // PITFALLS 93. Pinned by tests/docker/mutations/A1-shell-wording-bash-only-01.
+-                'not found',
++                'command not found',
+                 'tables-read=0',
+                 'the Python reader returned no fingerprint',
+             ],

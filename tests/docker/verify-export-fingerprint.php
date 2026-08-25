@@ -169,7 +169,7 @@ $server  = (string) $db->get_var('SELECT VERSION()');
 $charset = (string) $db->get_var('SELECT @@SESSION.character_set_connection');
 $py_raw  = trim((string) shell_exec('python3 --version 2>&1'));
 // The greppable line below is key=value, so an absent interpreter must not paste a shell error
-// ("sh: python3: command not found") into it with spaces in the middle of a field.
+// ("sh: 1: python3: not found") into it with spaces in the middle of a field.
 $py_ver  = (false !== strpos($py_raw, 'Python 3')) ? preg_replace('/^Python\s+/i', '', $py_raw) : 'NOT-FOUND';
 
 // CONTROL 5's inputs, sampled BEFORE either pass — as close to the boot that may have spawned the
@@ -971,8 +971,8 @@ try {
 
     // ── CONTROL 3 — two implementations actually ran ──────────────────────────────────────────
     // A gate that silently does not run is this workspace's most repeated defect, and a missing
-    // python3 is exactly that shape: shell_exec returns "command not found", json_decode returns
-    // null, and the run would report an absence as agreement.
+    // python3 is exactly that shape: shell_exec returns the shell's not-found message,
+    // json_decode returns null, and the run would report an absence as agreement.
     //
     // The detail says ONLY what the predicate evaluates. It used to print the two strongest
     // sentences in this file — that the MySQL side is evaluated by the server, and that

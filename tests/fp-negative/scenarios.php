@@ -159,7 +159,7 @@ function slimstat_neg_scenarios()
     ];
 
     // ── CONTROL 3 — INDEPENDENT. The second implementation never ran. This is the shape the
-    //    control was written for: shell_exec returns "command not found", json_decode returns
+    //    control was written for: shell_exec returns a not-found message, json_decode returns
     //    null, and an ABSENCE would otherwise be reported as agreement.
     $scenarios['no-python3'] = [
         'why'    => 'CONTROL 3 false: python3 is not on PATH, so no second implementation '
@@ -173,7 +173,12 @@ function slimstat_neg_scenarios()
                 // The greppable header keeps key=value intact even though the shell's answer has
                 // spaces in it; the control's own detail carries the raw answer.
                 'python=NOT-FOUND',
-                'command not found',
+                // NOT 'command not found': shell_exec() runs /bin/sh, which is bash on macOS
+                // ("sh: python3: command not found") and dash on Linux CI ("sh: 1: python3: not
+                // found"). Lowercase 'not found' is the only wording common to both, and strpos
+                // is case-sensitive, so it cannot match the subject's own NOT-FOUND markers.
+                // PITFALLS 93. Pinned by tests/docker/mutations/A1-shell-wording-bash-only-01.
+                'not found',
                 'tables-read=0',
                 'the Python reader returned no fingerprint',
             ],

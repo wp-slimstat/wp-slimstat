@@ -108,6 +108,7 @@
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:control-wiring": "php tests/control-wiring-test.php",
     "test:fp-negative": "php tests/fp-negative/run-negatives.php",
+    "test:fp-negative-linux": "bash tests/fp-negative/run-linux.sh",
     "test:migration-ui-honesty": "php tests/migration-ui-honesty-test.php",
     "test:migration-optionality": "php tests/migration-optionality-test.php",
     "test:autoloader-production": "php tests/autoloader-production-test.php",
