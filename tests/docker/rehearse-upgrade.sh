@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 # tests/docker/rehearse-upgrade.sh <old-ref> <new-ref> [dump.sql.gz] [http_port] [db_port]
 #
-#   SCENARIO=U1       default U1, and U1 is the only one ACCEPTED — see the refusal below.
-#                     Each scenario derives its own cell directory, compose project and default
-#                     ports, so two no longer share a cell directory or a compose project.
-#                     (NOT a concurrency claim: two rehearsals still share one git worktree
-#                     registry in $PLUGIN_SRC, and use_ref() prunes it. Untested, so unclaimed.)
-#                     Before this, CELL and COMPOSE_PROJECT_NAME were constants and a second
-#                     run silently overwrote the first's artifacts. The scenario names come from
+#   SCENARIO=U1|U4    default U1. U4 = Pro installed alongside, and needs PRO_REF.
+#                     U2/U3/U5/U6 are named in the plan and REFUSED here — see the refusal
+#                     below. Each scenario derives its own cell directory, compose project and
+#                     default ports, so two no longer share a cell directory or a compose
+#                     project. (NOT a concurrency claim: two rehearsals still share one git
+#                     worktree registry in $PLUGIN_SRC, and use_ref() prunes it. Untested, so
+#                     unclaimed.) Before this, CELL and COMPOSE_PROJECT_NAME were constants and
+#                     a second run silently overwrote the first's artifacts. The names come from
 #                     jaan-to/outputs/dev/v6-performance/NEXT-SESSION.md (B1/B5); note that
 #                     record says "one of seven" while enumerating six.
+#   PRO_REF=<ref|->   required by U4: the wp-slimstat-pro ref to build and install ('-' = the
+#                     sibling working tree). Free moves OLD -> NEW across the run, so a U4 run
+#                     observes the mixed window at R1 (old free, this Pro) and the matched pair
+#                     from R2 on.
+#
+#                     WHAT ONE U4 RUN DOES NOT COVER, stated because the first draft of this
+#                     block claimed otherwise: R7 is old free on a MIGRATED schema, i.e. a
+#                     rollback, not a mixed window — a real site in the window has an UNmigrated
+#                     one, because old free never migrates — and nothing Pro-side is read there
+#                     at all. A second run with an older PRO_REF reaches the new-free/old-Pro
+#                     corner but ASSERTS NOTHING about it: that Pro predates the floor, so the
+#                     scope leg records NOMETHOD and moves on. That corner — old Pro calling a
+#                     changed free API — is the actual risk and is still owed.
 #
 # WHAT HAPPENS TO A REAL SITE'S DATA WHEN IT UPDATES, rehearsed on that site's real data.
 #
@@ -57,8 +71,13 @@
 # Report ANSWERS before and after the migration are not diffed here; that is what the sealed
 # comparison does, over a corpus built to discriminate. This cell is about the data surviving,
 # not about what the reports say afterwards. Also absent: older schema vintages (4.8.x, 5.2.x),
-# scale beyond 443k, Pro alongside, multisite, and an external analytics database. Each is a
-# separate scenario and none of them is claimed by a green run of this one.
+# scale beyond 443k, multisite, and an external analytics database. Each is a separate scenario
+# and none of them is claimed by a green run of this one.
+#
+# Pro alongside IS covered, by SCENARIO=U4, and only what U4 asserts: that Pro activates, that
+# the data-safety legs still hold with it loaded, and that Pro 3.0.0's author-scoped email
+# reports go BLOCKED -> PERMITTED across the free upgrade. It makes no claim about Pro's own
+# reports, its performance figures, or any Pro surface these legs do not touch.
 #
 # The dump defaults to the newest under ~/slimstat-v6-baselines/. `slimstat-db.sh dump` writes
 # there, so the default is "this workspace's live site as it stands", which is a genuine
@@ -84,8 +103,21 @@ DUMP="${3:-}"
 # AND an assertion only it can fail -- the bar run-topology.sh:382 already sets for its shapes.
 SCENARIO="${SCENARIO:-U1}"
 case "$SCENARIO" in
-  U1) ;;
-  U2|U3|U4|U5|U6)
+  U1)
+    # The mirror of U4's guard, and the same defect in the other direction: PRO_REF with U1
+    # would install Pro, run the scope assertions and file the verdict under U1's name -- a U4
+    # wearing U1's. One flag, set here, is what every leg below branches on.
+    [ -z "${PRO_REF:-}" ] || { err "PRO_REF is set but SCENARIO=U1 is the free-only scenario; use SCENARIO=U4"; exit 2; }
+    WITH_PRO=0 ;;
+  U4)
+    # U4 IS "Pro alongside", so a U4 with no Pro is U1 wearing U4's name -- the very thing the
+    # arm below refuses. Required, not defaulted.
+    [ -n "${PRO_REF:-}" ] || {
+      err "SCENARIO=U4 needs PRO_REF (a wp-slimstat-pro ref, or '-' for the sibling working tree)."
+      err "  Without it this would run U1's legs and file the verdict under U4's name."
+      exit 2; }
+    WITH_PRO=1 ;;
+  U2|U3|U5|U6)
     err "SCENARIO $SCENARIO is named in the plan but NOT implemented here: this script runs U1's"
     err "  legs only, so it would print a PASS and file a verdict under $SCENARIO's name."
     exit 2 ;;
@@ -125,7 +157,10 @@ export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
 status="PASS"; reason=""
-cleanup() { [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >/dev/null 2>&1 || true; }
+cleanup() {
+  cleanup_pro_arm
+  [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >/dev/null 2>&1 || true
+}
 trap cleanup EXIT
 
 rm -rf "$WP_DIR" "$ART"; mkdir -p "$WP_DIR" "$ART" "$CELL_DIR/arms"
@@ -202,6 +237,48 @@ log "[$CELL] build + up (PHP $PHP, WP $WP)"
 boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
 
 echo
+# ── U4's own instrument ─────────────────────────────────────────────────────────────────────
+# Pro 3.0.0's author-scoped email reports need free >= 6.0.0 and are supposed to BLOCK on older
+# free (EmailReportsAddon::AUTHOR_SCOPED_MIN_FREE). This drives the real decision method through
+# reflection -- the same way Pro's own email-author-free-floor-test.php does -- because the
+# alternative, reading the constant, would assert the floor is WRITTEN rather than CONSULTED.
+# Four answers, not two: a Pro that predates the floor has no method, and that is not "permitted".
+# stderr goes to a log rather than /dev/null: when a probe returns empty the operator otherwise
+# gets "expected BLOCKED, got ''" and no way to find out why.
+pro_author_scope() {
+  wpc eval '
+    $c = "\\WpSlimstatPro\\Addon\\Addons\\EmailReportsAddon";
+    if (!class_exists($c)) { echo "NOCLASS"; return; }
+    if (!method_exists($c, "authorScopedReportBlocked")) { echo "NOMETHOD"; return; }
+    $m = new ReflectionMethod($c, "authorScopedReportBlocked");
+    if (PHP_VERSION_ID < 80100) { $m->setAccessible(true); }
+    echo $m->invoke(null, ["wp_slimstat_db", "get_goals_raw"]) ? "BLOCKED" : "PERMITTED";
+  ' 2>>"$ART/pro-probe.log" | tr -d '[:space:]'
+}
+
+# What a site OWNER would see. The reflection probe above proves the decision method flips; this
+# proves the consequence reaches a screen. Both, not either: the reflection probe distinguishes
+# NOCLASS from NOMETHOD, which a notice cannot, and the notice catches a floor that decides
+# correctly and then tells nobody.
+pro_floor_notice() {
+  wpc eval '
+    wp_set_current_user(1);
+    if (class_exists("wp_slimstat")) { \wp_slimstat::$settings["addon_email_report_send_authors"] = "on"; }
+    ob_start(); do_action("admin_notices"); $o = (string) ob_get_clean();
+    echo (false !== strpos($o, "6.0.0") && false !== stripos($o, "per-author")) ? "NOTICE" : "NONOTICE";
+  ' 2>>"$ART/pro-probe.log" | tr -d '[:space:]'
+}
+
+# Pro boots every addon FAIL-SOFT (ServiceProvider.php:51-68 catches Throwable per addon and
+# routes it to wp_slimstat_pro_record_degradation, which writes 'pro_<step>' into FREE's
+# slimstat_degradations). So all nine addons can fail to construct while the plugin still reports
+# active AND class_exists() still answers yes -- neither instrument above can see it. This one
+# can. Keys, not a count: 'how many' cannot say whether the failure was Pro's or the migration's.
+pro_degradation_keys() {
+  wpc eval 'echo implode(",", array_keys((array) get_option("slimstat_degradations", [])));' \
+    2>>"$ART/pro-probe.log" | tr -d '[:space:]'
+}
+
 echo "CONTROLS"
 echo "  dump:        $(basename "$DUMP")"
 echo "  old ref:     $OLD_REF"
@@ -215,7 +292,36 @@ gz_has '`vid_hash`|`ua_id`' && { err "the dump already carries v6 columns — no
 check "the dump is a pre-migration v5 schema" 0 "no vid_hash, no ua_id"
 
 use_ref "$OLD_REF" || exit 1
+
+# Pro rides in as the real ZIP or not at all: the container mounts only the WP install, so the
+# sibling checkout is unreachable from inside it and build_pro_arm's zip is the only path in.
+# provision_wp_cell installs it when ARM_PRO_ZIP is set (lib.sh:158) and skips it when it is not,
+# which is what keeps U1 free-only.
+if [ "$WITH_PRO" = 1 ]; then
+  log "[$CELL] building the Pro arm at ${PRO_REF}"
+  build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
+fi
 provision_wp_cell "$ART" "$WP" "$BASE_URL" "$CELL_DIR/arms/$OLD_REF" || exit 1
+
+# C5 (U4 only). A post-provision property, so it cannot sit in the CONTROLS block above, whose
+# subjects are all properties of the DUMP.
+#
+# It asks whether Pro's CODE LOADED, not whether WordPress lists it. The first draft read
+# active_plugins -- and provision_wp_cell (lib.sh:158-164) already hard-fails when
+# `wp plugin install --activate` returns non-zero, so that predicate is true of every run that
+# reaches this line. The one failure C5 exists to catch is the silent one: plugin row present,
+# autoloader dead. That is not hypothetical here -- the harness's own Pro build emits
+# class_alias() calls for prefixed names it never declares, and four of them warn at activation
+# while WP still reports the plugin active.
+# Every previous cell in this programme ran free-only (STATE.json, _arm_pro.__unsupported), so a
+# U4 that quietly failed to load Pro would repeat PITFALLS 21 exactly: five topologies reporting
+# PASS having exercised none of the code they exist to test.
+if [ "$WITH_PRO" = 1 ]; then
+  SCOPE_OLD=$(pro_author_scope)
+  [ "$SCOPE_OLD" != "NOCLASS" ] \
+    && check "Pro's code loaded alongside free" 0 "arm $(pro_arm_desc)" \
+    || check "Pro's code loaded alongside free" 1 "EmailReportsAddon did not load under $(pro_arm_desc)"
+fi
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' >>"$ART/install.log" 2>&1
 
 log "[$CELL] hydrating $(basename "$DUMP")"
@@ -238,11 +344,55 @@ BASE_MAX_ID=$(mysql_q "SELECT MAX(id) FROM wordpress.wp_slim_stats;" | tr -d '[:
 [ -n "$BASE_MAX_ID" ] || { err "could not pin the baseline row set"; exit 1; }
 FP_0=$(fingerprint)
 echo "  v5 fingerprint over id <= $BASE_MAX_ID: $FP_0"
+
+# U4's mixed window, first half. SCOPE_OLD was already READ by C5 above, which needed it to
+# prove Pro loaded; reported here so the two halves of the transition sit beside their values.
+if [ "$WITH_PRO" = 1 ]; then
+  echo "  author-scoped email reports under OLD free: $SCOPE_OLD"
+  NOTICE_OLD=$(pro_floor_notice)
+  # Read the fail-soft store HERE, not only after the migration. The option PERSISTS, so an
+  # addon that died during this window surfaces three legs later looking like migration damage.
+  DEG_OLD=$(pro_degradation_keys)
+  case "$DEG_OLD" in
+    *pro_*) check "no Pro addon failed to boot in the mixed window" 1 "degradations: $DEG_OLD" ;;
+    *)      check "no Pro addon failed to boot in the mixed window" 0 "${DEG_OLD:-none}" ;;
+  esac
+fi
 scan_debug_log "$WP_DIR" "$ART" >/dev/null 2>&1 || true
 
 echo
 echo "── R2 · the DEFERRED WINDOW: v6 code, v5 schema, no migration yet ───────"
 use_ref "$NEW_REF" || exit 1
+
+# U4's mixed window, second half. WordPress updates plugins ONE AT A TIME, so on day one a real
+# site runs new free beside old Pro, or old free beside new Pro, for as long as it takes the
+# second updater to run. Pro 3.0.0's author-scoped reports require free 6.0.0 and must degrade to
+# BLOCKED below it -- failing towards less data, never wrong data. The assertion is the
+# transition BLOCKED -> PERMITTED across the same free upgrade this cell is already performing,
+# which is a thing no other scenario can fail.
+if [ "$WITH_PRO" = 1 ]; then
+  SCOPE_NEW=$(pro_author_scope)
+  echo "  author-scoped email reports under NEW free: $SCOPE_NEW"
+  # No NOCLASS arm: C5 above already failed the run on it, before a row was hydrated.
+  case "$SCOPE_OLD" in
+    NOMETHOD)
+      # A Pro older than the floor cannot have it. That is the OTHER mixed-window corner, and it
+      # is not a failure -- but it must be visible, or a green U4 would imply a floor was checked.
+      note NOTE "Pro $PRO_REF predates authorScopedReportBlocked() — floor not exercised; this run covers the old-Pro corner (boot, track, migrate) only" ;;
+    BLOCKED)
+      [ "$SCOPE_NEW" = "PERMITTED" ] \
+        && check "author-scoped reports: BLOCKED on old free, PERMITTED on new" 0 "$SCOPE_OLD -> $SCOPE_NEW" \
+        || check "author-scoped reports: BLOCKED on old free, PERMITTED on new" 1 "$SCOPE_OLD -> $SCOPE_NEW"
+      # The decision is only half of it: a floor that decides correctly and renders nothing
+      # leaves the site owner with silently thinner reports and no reason given.
+      NOTICE_NEW=$(pro_floor_notice)
+      [ "$NOTICE_OLD" = "NOTICE" ] && [ "$NOTICE_NEW" = "NONOTICE" ] \
+        && check "and the site owner is TOLD, on old free only" 0 "$NOTICE_OLD -> $NOTICE_NEW" \
+        || check "and the site owner is TOLD, on old free only" 1 "$NOTICE_OLD -> $NOTICE_NEW (expected NOTICE -> NONOTICE)" ;;
+    *)
+      check "author-scoped reports are BLOCKED below the free floor" 1 "OLD free reported '$SCOPE_OLD', expected BLOCKED" ;;
+  esac
+fi
 HIT_1=$(track_hit "rehearse-deferred-window")
 [ "${HIT_1:-0}" -gt 0 ] && check "a pageview still lands before any migration" 0 "row id $HIT_1" \
   || check "a pageview still lands before any migration" 1 "slimtrack returned ${HIT_1:-nothing}"

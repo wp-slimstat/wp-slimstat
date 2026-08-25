@@ -140,6 +140,20 @@ free_arm_desc() {
   fi
 }
 
+# The Pro half of the same provenance line. Records the RESOLVED sha, never the ref as typed:
+# PRO_REF=development files a verdict naming a branch, and a branch does not identify a build.
+# NOTE: four earlier callers still print their own hand-rolled version of this line
+# (measure-f6-{external,topologyf,useroverview}.sh, run-email-author-counts.sh) and had already
+# drifted apart on spacing before this was extracted -- exactly why free_arm_desc() exists.
+# They are owed a migration onto this; rehearse-upgrade.sh is the first caller.
+pro_arm_desc() {
+  if [ -n "${PRO_WT:-}" ]; then
+    echo "$(git -C "$PRO_WT" rev-parse --short HEAD) (pinned ref)"
+  else
+    echo "WORKING TREE ($(git -C "${PRO_CHECKOUT:-.}" rev-parse --short HEAD)+uncommitted)"
+  fi
+}
+
 # ── Shared WP cell provisioning ─────────────────────────────────────────────
 # download → config → install → free source → pro zip → both activations. The third
 # script to need this block is what got it extracted, same as build_pro_arm. Cell-specific
