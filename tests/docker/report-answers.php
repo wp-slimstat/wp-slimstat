@@ -575,6 +575,14 @@ $capture = static function ($key, callable $fn, array $flags = []) use (&$answer
 // harness that silently failed to switch arms, or ran one revision twice, would emit two
 // identical files indistinguishable from a genuine equivalence result. The strongest possible
 // "identical" is then also the most likely false positive. This makes that detectable.
+//
+// THE `_arm_` PREFIX IS LOAD-BEARING AND ITS RULE LIVES ELSEWHERE. tests/docker/answers_population.py
+// decides which keys of this document are REPORTS by stripping exactly this prefix, and every
+// verdict, denominator and vacuity control in compare-answers.sh counts what it returns. A
+// provenance key added here WITHOUT the prefix silently becomes a report — inflating the
+// denominator and, since provenance differs between arms by construction, adding a permanent false
+// difference. That inflation already happened once for a different reason and survived ten Runs
+// (Run 61). The three keys below are the whole set; keep the prefix.
 $answers['_arm_version'] = defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : 'unknown';
 
 // Hashed over the SHIPPED PHP surface — src/, admin/ and the main file — not one file.

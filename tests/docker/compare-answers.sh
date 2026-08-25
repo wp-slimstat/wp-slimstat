@@ -276,15 +276,32 @@ done
 # all, and a reader who cannot tell them apart cannot tell what an "identical" covered.
 echo "  seed profile: $SEED_PROFILE  (rows=$ROWS days=$DAYS)"
 
-SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
+SLIMSTAT_NULL_CONTROL="${SLIMSTAT_NULL_CONTROL:-0}" SLIMSTAT_BLOCKS="$BLOCKS" PYTHONPATH="$HARNESS_DIR" python3 - "$ART" "$WIN_START" "$WIN_END" <<'PY'
 import json, sys, os
 art, start, end = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+# The report population is ONE rule in one file, imported by every site below that needs it —
+# both verdict branches, the diff loop that feeds them, and the two vacuity controls. They each
+# had their own copy and the two verdict branches disagreed by three keys; see
+# answers_population.py's header.
+#
+# Reached via PYTHONPATH, set on the same line that already passes this block its environment,
+# rather than through a positional argv slot: a heredoc has no `__file__`, so the usual
+# `sys.path.insert(0, Path(__file__).parent...)` every other consumer here uses is unavailable,
+# and an unnamed sys.argv[4] is a slot the next added argument sits on top of.
+from answers_population import comparable_keys
 a = json.load(open(os.path.join(art, 'before.json')))
 b = json.load(open(os.path.join(art, 'after.json')))
 
 # A comparison over an empty or trivial answer set is vacuously equal. Prove it is not.
-print('  [%s] before arm answered %d reports' % ('PASS' if len(a) >= 10 else 'FAIL', len(a)))
-print('  [%s] after arm answered %d reports' % ('PASS' if len(b) >= 10 else 'FAIL', len(b)))
+#
+# Counted over REPORTS, not over keys. These two read `len(a)` until Run 61, which includes the
+# three `_arm_` provenance keys — so the printed figure was the same inflated one this run
+# corrected everywhere else, and the floor of 10 was really a floor of 7 real reports. Same rule,
+# fourth site, and it was the site left un-migrated on the day the rule was centralised.
+a_reports = comparable_keys(a, {})
+b_reports = comparable_keys(b, {})
+print('  [%s] before arm answered %d reports' % ('PASS' if len(a_reports) >= 10 else 'FAIL', len(a_reports)))
+print('  [%s] after arm answered %d reports' % ('PASS' if len(b_reports) >= 10 else 'FAIL', len(b_reports)))
 print('  [%s] corpus is non-trivial: %s rows counted' % (
     'PASS' if a.get('count_records_id', 0) > 10000 else 'FAIL', a.get('count_records_id')))
 print('  [%s] top_resource returned rows: %d' % (
@@ -447,13 +464,17 @@ if len(a) < 10 or len(b) < 10 or a.get('count_records_id', 0) <= 10000:
     sys.exit(1)
 
 # ── the diff ────────────────────────────────────────────────────────────────
+# THE NUMERATOR AND THE DENOMINATOR ARE THE SAME POPULATION, derived once, here.
+#
+# This loop used to spell the `_arm_` rule itself — a third copy, ~170 lines below the import that
+# was added to end exactly that. The two DENOMINATORS were unified and the NUMERATOR was left
+# hand-rolled, which is the half the defect was measured against: the registry mutation edits
+# ARM_PREFIX in the module, so it moved the denominator and could not touch the number printed to
+# the left of "D of N". A mutation that cannot reach the production path proves nothing about it
+# (PITFALLS 91, one file over). Caught in review, before the commit.
+comparable = comparable_keys(a, b)
 print()
-diffs = []
-for key in sorted(set(a) | set(b)):
-    if key.startswith('_arm_'):
-        continue   # provenance, asserted DIFFERENT above; not a report answer
-    if a.get(key) != b.get(key):
-        diffs.append(key)
+diffs = [key for key in comparable if a.get(key) != b.get(key)]
 
 # ── timings, reported beside the verdict, never as part of it ───────────────
 # Correctness is the gate; cost is information. A run that got faster and changed an answer is a
@@ -544,11 +565,32 @@ if os.path.exists(ta_path) and os.path.exists(tb_path):
     print('  today; it varies with load, which is the reason the figure is not baked in here.')
     print()
 
+# THE DENOMINATOR IS THE POPULATION THE NUMERATOR WAS COUNTED OVER. Both verdict lines now read
+# it from one place, because they did not, and the two branches disagreed by three.
+#
+# The diff loop above skips every `_arm_` key — they are provenance, they are asserted DIFFERENT
+# by the arms_differ control, and they are not report answers. The IDENTICAL branch below excluded
+# them from its count too. The DIFFERENCES branch used `len(set(a) | set(b))`, which INCLUDED
+# them: three keys guaranteed to differ, deliberately barred from the numerator, silently inflating
+# the denominator of every non-identical run this harness has ever printed.
+#
+# Nothing caught it because the two branches are never taken by the same run, so no single log
+# shows both numbers. Two archived logs of the SAME document shape do: the null control ends
+# "IDENTICAL — 23 reports" and the campaign run ends "DIFFERENCES in 2 of 26 reports". Found by an
+# adversarial re-derivation of S1's closure at Run 61, which counted the packet by hand and got 23.
+#
+# The affected records are corrected rather than left standing: Run 50's "2 of 26 core reports",
+# Run 58's "DIFFERENCES in 2 of 26" and Run 60's "3 of 26" are all "of 23". The NUMERATORS were
+# always right, and no verdict changes.
+#
+# `comparable` is computed once, where the diff loop needs it, so the numerator is a SUBSET of the
+# denominator by construction rather than by two rules agreeing.
+
 if not diffs:
-    print('VERDICT: IDENTICAL — %d reports, every answer byte-for-byte equal' % len([k for k in a if not k.startswith('_arm_')]))
+    print('VERDICT: IDENTICAL — %d reports, every answer byte-for-byte equal' % len(comparable))
     sys.exit(0)
 
-print('VERDICT: DIFFERENCES in %d of %d reports\n' % (len(diffs), len(set(a) | set(b))))
+print('VERDICT: DIFFERENCES in %d of %d reports\n' % (len(diffs), len(comparable)))
 for key in diffs:
     x, y = a.get(key), b.get(key)
     if isinstance(x, list) or isinstance(y, list):

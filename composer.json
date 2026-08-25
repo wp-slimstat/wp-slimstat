@@ -103,6 +103,8 @@
     "test:seal-entrypoint": "bash tests/docker/seal-entrypoint-gate.sh",
     "test:canary-verdict": "python3 tests/docker/canary/compute-canary-verdict.py --selftest",
     "test:canary-filing": "python3 tests/docker/canary/file-reports.py --selftest",
+    "test:campaign-phase-gate": "php tests/campaign-phase-gate-test.php",
+    "test:answers-population": "python3 tests/docker/answers_population.py --selftest",
     "test:source-scan-strength": "php tests/source-scan-strength-test.php",
     "test:control-wiring": "php tests/control-wiring-test.php",
     "test:fp-negative": "php tests/fp-negative/run-negatives.php",
@@ -311,6 +313,8 @@
       "@test:seal-entrypoint",
       "@test:canary-verdict",
       "@test:canary-filing",
+      "@test:campaign-phase-gate",
+      "@test:answers-population",
       "@test:export-fidelity"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",

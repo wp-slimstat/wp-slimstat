@@ -35,4 +35,5 @@ run53-s4-classifier
 run54-rounding-seam
 run58-s6-blind-seal
 run60-s7-canary
+run61-s8-closure-audit
 s6-design
