@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # tests/docker/rehearse-upgrade.sh <old-ref> <new-ref> [dump.sql.gz] [http_port] [db_port]
 #
+#   SCENARIO=U1       default U1, and U1 is the only one ACCEPTED — see the refusal below.
+#                     Each scenario derives its own cell directory, compose project and default
+#                     ports, so two no longer share a cell directory or a compose project.
+#                     (NOT a concurrency claim: two rehearsals still share one git worktree
+#                     registry in $PLUGIN_SRC, and use_ref() prunes it. Untested, so unclaimed.)
+#                     Before this, CELL and COMPOSE_PROJECT_NAME were constants and a second
+#                     run silently overwrote the first's artifacts. The scenario names come from
+#                     jaan-to/outputs/dev/v6-performance/NEXT-SESSION.md (B1/B5); note that
+#                     record says "one of seven" while enumerating six.
+#
 # WHAT HAPPENS TO A REAL SITE'S DATA WHEN IT UPDATES, rehearsed on that site's real data.
 #
 # ── Why this exists ─────────────────────────────────────────────────────────────────────────
@@ -60,8 +70,42 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 OLD_REF="${1:?old ref (the version a site is updating FROM)}"
 NEW_REF="${2:?new ref (the version it is updating TO)}"
 DUMP="${3:-}"
-HTTP_PORT="${4:-18980}"
-DB_PORT="${5:-13980}"
+
+# ── Scenario ────────────────────────────────────────────────────────────────────────────────
+# The plan has named U1..U6 since it was written; the script had ONE linear scenario and two
+# hard-coded constants (CELL, COMPOSE_PROJECT_NAME), so "run U4" was never a thing you could
+# type. Validated against a closed set rather than accepted as free text: an unknown value used
+# to derive a directory and a port would otherwise produce a cell that runs and means nothing.
+# A name is not a scenario. SCENARIO reaches exactly three things -- CELL, the compose project
+# and the two default ports -- and NO leg, assertion or overlay branches on it. So U2..U6 would
+# have run U1's R1-R7 verbatim and written {"cell":"upgrade-u5","status":"PASS"} to cell.json
+# under the name of a scenario that never executed. That is PITFALLS 86 one altitude up, in the
+# file PITFALLS 86 is about. Each name moves to the accepting arm when it has legs of its own
+# AND an assertion only it can fail -- the bar run-topology.sh:382 already sets for its shapes.
+SCENARIO="${SCENARIO:-U1}"
+case "$SCENARIO" in
+  U1) ;;
+  U2|U3|U4|U5|U6)
+    err "SCENARIO $SCENARIO is named in the plan but NOT implemented here: this script runs U1's"
+    err "  legs only, so it would print a PASS and file a verdict under $SCENARIO's name."
+    exit 2 ;;
+  *) err "unknown SCENARIO '$SCENARIO' — expected one of U1 U2 U3 U4 U5 U6"; exit 2 ;;
+esac
+# exit 2 = unusable input, matching seal.sh:94, canary/run-canary.sh:256 and
+# reachability/run-gate.sh:171; exit 1 in this file means a leg failed.
+SCEN_N=$(( ${SCENARIO#U} - 1 ))
+# Pure expansion, not `tr`: the slug is the number in different clothes, and this makes that
+# visible. Lowercase because Compose REJECTS an uppercase project name outright
+# (run-topology.sh:36-38 records the same reason).
+SCEN_SLUG="u${SCENARIO#U}"
+
+# U1 keeps the ports the recorded run used, so its reproduction is not confounded by a changed
+# environment; the others step off it. Explicit args still win. Stride 1 is safe only because a
+# second database port is allocated at DB_PORT+500, not DB_PORT+1 -- U6 (external analytics DB)
+# needs one, and at +1 U1's second DB would land on U2's first. run-topology.sh:50 owns that
+# convention; reuse it there rather than adding a third.
+HTTP_PORT="${4:-$(( 18980 + SCEN_N ))}"
+DB_PORT="${5:-$(( 13980 + SCEN_N ))}"
 PHP="${TOPOLOGY_PHP:-8.2}"
 WP="${TOPOLOGY_WP:-6.7}"
 
@@ -70,13 +114,13 @@ if [ -z "$DUMP" ]; then
 fi
 [ -n "$DUMP" ] && [ -f "$DUMP" ] || { err "no dump: pass one, or run jaan-to/bin/slimstat-db.sh dump"; exit 1; }
 
-CELL="upgrade"
+CELL="upgrade-$SCEN_SLUG"
 CELL_DIR="$WORK_ROOT/rehearse/$CELL"
 WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
 
-export COMPOSE_PROJECT_NAME="ssrehearse" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export COMPOSE_PROJECT_NAME="ssrehearse$SCEN_SLUG" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
@@ -242,7 +286,7 @@ echo "── R3 · the migration ───────────────�
 #
 # The first version of this leg registered two by hand — AddVisitIdentity and
 # AddUserAgentDimension — and `runAll()` skips optional ones, so exactly ONE ran: a metadata-only
-# ADD COLUMN that is INSTANT on MySQL 8. The nine Create*Index migrations and
+# ADD COLUMN that is INSTANT on MySQL 8. The eight Create*Index migrations and
 # RecoverCorruptedHeatmapPositions, which are the entire cost and the entire risk on a 443k-row
 # v5 table, never executed, and the cell reported "every required migration reported true" in
 # 4.2 seconds. A hand-written registry is also a THIRD copy of MigrationService::init()'s list,
