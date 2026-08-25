@@ -291,7 +291,26 @@ class Chart
         $dtStart = (new \DateTime())->setTimestamp($args['start']);
         $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
 
-        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
+        // Both ends shift by the range and NEITHER is snapped. The start used to take a
+        // ->setTime(0, 0, 0), which made the previous window longer than the current one by the
+        // current start's time-of-day — 9h17m on a live 60-day chart, measured.
+        //
+        // That surplus is what produced a total no bar accounted for. The totals are a SQL
+        // aggregate over the window, so they counted it; DataBuckets::addRow() drops anything
+        // outside `[0, points)`, so no bar showed it; and nothing reconciles the two, because the
+        // totals are passed INTO DataBuckets and returned verbatim. On R20260824-2c8d1a that was
+        // 2,475 hits — chart_weekly reported a previous total of 47,552 over bars summing to
+        // 45,077, and the headline "up 14.2%" should have read up 20.5%.
+        //
+        // It also put the previous LABELS on a different week grid from the previous VALUES:
+        // mapPrevLabels() steps `+N WEEK` from previous_start while the buckets are aligned by
+        // getWeekStartTimestamp(), so a midnight-snapped start drifted the two apart — Sundays
+        // against Mondays in that run.
+        //
+        // Two windows of equal length that abut is what "the previous period" means, and the
+        // bucket alignment and the reconciliation both follow from it rather than being patched
+        // separately.
+        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds));
         $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
 
         return [
