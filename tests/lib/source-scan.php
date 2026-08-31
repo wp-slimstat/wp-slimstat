@@ -216,10 +216,10 @@ function slimstat_last_name_segment(string $name): string
  * without quote marks on purpose: tests/record-citation-test.php checks quoted spans in comments
  * naming a record, and quoting my own superseded prose there would be a citation of nothing.)
  *
- * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 counted SIX
- * hand-rolled copies of this predicate across the two repos (it lists four clause counts,
- * 4/3/1/1, for the six), and the revision this move discharged — STATE.json AT 19c57f6, before
- * the entry was rewritten to RESOLVED — said plainly:
+ * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 NOW counts SIX
+ * hand-rolled copies of this predicate across the two repos (listing four clause counts, 4/3/1/1,
+ * for the six); the revision this move discharged — STATE.json AT 19c57f6, where the entry still
+ * reasoned about TWO — said plainly:
  *
  *   "Cost is NOT the reason to do it … the duplication is. A slimstat_name_token_types() in
  *    tests/lib/source-scan.php fixes both in one move."
