@@ -20,6 +20,12 @@ on:
   schedule:
     # Tier 3 nightly — 02:00 UTC
     - cron: "0 2 * * *"
+  # Tier 3 is gated on `github.event_name == 'schedule'`, and GitHub runs scheduled workflows
+  # ONLY on the default branch. So before this, Tier 3 could not be run on any branch, by
+  # anyone, ever — which is how a fix for it sat unmerged on a feature branch for six weeks
+  # while the nightly failed every night with the defect that fix addresses. A tier nobody can
+  # trigger is a tier nobody can repair.
+  workflow_dispatch:
 
 ##############################################################################
 # TIER 1 — fast (PHPUnit unit + PHP lint, target <3 min)
@@ -477,7 +483,10 @@ jobs:
   nightly:
     name: "Tier 3 · nightly · PHP ${{ matrix.php }}"
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'schedule' }}
+    # `schedule` OR `workflow_dispatch`. Adding the trigger without widening this would have
+    # been a no-op that LOOKED like the fix: the workflow would start on dispatch and every
+    # nightly job would skip, reporting green. Both halves or neither.
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     strategy:
       fail-fast: false

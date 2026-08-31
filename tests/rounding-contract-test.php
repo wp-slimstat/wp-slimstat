@@ -197,7 +197,7 @@ function rc_is_exactly_representable(int $a, int $b): bool
  * The scan set (`$names` below) is "calls this gate looks at" and includes sprintf/printf. Those
  * do NOT round half-up; that they round ties-to-EVEN is the entire premise of this file. Reusing
  * the scan set as the rounder set made the nested-call guard suppress
- * `sprintf('%%.2f', sprintf('%%s', $a / $b))`, which prints 3.12 for 1/32 — the exact wrong answer
+ * `sprintf('%.2f', sprintf('%s', $a / $b))`, which prints 3.12 for 1/32 — the exact wrong answer
  * the guard's own failure message quotes. Measured, then separated.
  *
  * number_format/number_format_i18n ARE here: measured, number_format() rounds half-up, the same
@@ -251,6 +251,9 @@ function rc_rounding_calls(string $source): array
 {
     $names  = ['round' => true, 'sprintf' => true, 'printf' => true,
         'number_format' => true, 'number_format_i18n' => true];
+    // Pure and constant, so hoisting it out of the per-token loop below cannot
+    // change an answer — it was being rebuilt once per token.
+    $rounders = rc_half_up_rounders();
     $tokens = slimstat_tokenize($source);
     $count  = count($tokens);
     $calls  = [];
@@ -290,22 +293,14 @@ function rc_rounding_calls(string $source): array
         }
 
         // `$this->round(`, `Foo::round(`, `function round(` and `new round(` are not the
-        // function being scanned. Checked backwards over significant tokens only — a comment
-        // between the arrow and the name would otherwise hide a method call from this filter.
-        $prev = $i - 1;
-        while ($prev >= 0 && is_array($tokens[$prev])
-            && in_array($tokens[$prev][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
-            $prev--;
-        }
-        if ($prev >= 0 && is_array($tokens[$prev])
-            && in_array($tokens[$prev][0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION, T_NEW], true)) {
+        // function being scanned. Answered by the SAME helper the nested-call guard uses —
+        // keeping a second inline copy here is what the extraction was supposed to end, and
+        // leaving it would mean the two halves of this function could drift apart again.
+        if (!rc_is_call_to($tokens, $i, $names, $count)) {
             continue;
         }
 
         $open = slimstat_next_significant($tokens, $i);
-        if ($open >= $count || '(' !== slimstat_token_text($tokens[$open])) {
-            continue;
-        }
         $close = slimstat_token_paren_end($tokens, $open, $count);
         if (null === $close) {
             continue;
@@ -364,7 +359,7 @@ function rc_rounding_calls(string $source): array
                 // `sprintf('%.2f', round + ($a / $b))` attached it to an unrelated group's
                 // paren and suppressed a real division. Ask the question at the only moment it
                 // has an answer.
-                if (rc_is_call_to($tokens, $k, rc_half_up_rounders(), $count)) {
+                if (rc_is_call_to($tokens, $k, $rounders, $count)) {
                     $round_depths[$depth + 1] = true; // that '(' will open one level deeper
                 }
                 continue; // only bare-string tokens can be an operator or a bracket
@@ -822,6 +817,85 @@ $controls[] = [
         . ([] === $rc_guard_bad ? '' : ' — ' . implode('; ', $rc_guard_bad)),
 ];
 
+// EVERY member of rc_half_up_rounders() must actually round HALF-UP. The set is hardcoded — there
+// is nothing in this repo to derive it from, and a derived set would be a second scanner to get
+// wrong — but until now its membership was asserted only in prose. A name added to it silently
+// widens what the guard suppresses, so the claim is executed instead: each member must reproduce
+// this file's own integer oracle on the tie fixture. sprintf/printf would FAIL this, which is the
+// whole reason they are not in the set.
+$rc_rounder_bad     = [];
+$rc_rounder_skipped = [];
+$rc_rounder_names   = array_keys(rc_half_up_rounders());
+$rc_rounder_checked = 0;
+$rc_tie_want        = rc_exact_half_up(1, 32, 2);   // '3.13'
+$rc_tie_value       = (100 * 1) / 32;       // exactly 3.125
+foreach ($rc_rounder_names as $rc_fn) {
+    if (!function_exists($rc_fn)) {
+        // NAMED, not silently skipped, and the count below is not derived from the set being
+        // skipped. A silent `continue` plus a "(N checked)" label taken from the same array is
+        // the tautology the hard-coded site census exists to refuse: delete or typo a member
+        // and the label just prints a smaller number, in green.
+        $rc_rounder_skipped[] = $rc_fn;
+        continue;
+    }
+    $rc_rounder_checked++;
+    // try/catch, because a wrong-ARITY name is exactly what a careless addition looks like:
+    // floor() takes one argument, so calling it with two is an ArgumentCountError that would
+    // kill the run with exit 255 instead of reporting a clean red. Measured, then guarded — a
+    // control that fatals is a control whose message nobody reads.
+    try {
+        $rc_got = (string) $rc_fn($rc_tie_value, 2);
+    } catch (Throwable $rc_e) {
+        $rc_rounder_bad[] = "{$rc_fn}(3.125, 2) threw " . get_class($rc_e) . ' — it does not take '
+            . '(value, places), so it is not a rounding function of the shape this set assumes';
+        continue;
+    }
+    if ($rc_tie_want !== $rc_got) {
+        $rc_rounder_bad[] = "{$rc_fn}(3.125, 2) = {$rc_got}, want {$rc_tie_want} — not half-up, so "
+            . 'it must not be in rc_half_up_rounders(): the nested-call guard would suppress a '
+            . 'division this function never rounded';
+    }
+
+    // A SECOND value, below the half, and it is not decoration. Measured: the tie alone admits a
+    // ceiling — `ceil($v * 100) / 100` also returns 3.13 on 3.125 — and a ceiling is loose in
+    // exactly the direction this control exists to police. 3.121 separates them: half-up gives
+    // 3.12, always-up gives 3.13. Ties at 0 dp and negatives add nothing, because rc_exact_half_up
+    // refuses negative input by design, so half-away-from-zero is unobservable in this domain.
+    //
+    // Compared with a normalising sprintf rather than (string): `(string) round(50.0, 2)` is "50"
+    // where the oracle says "50.00", so the raw cast agrees with the oracle only at values where
+    // the two representations happen to coincide. 3.125 is one of those; 3.121 is too, but the
+    // normalisation is what makes that a property of the code rather than of the fixture.
+    $rc_low_want = rc_exact_half_up(3121, 100000, 2);   // 3.121 -> '3.12'
+    try {
+        $rc_low_got = sprintf('%.2F', (float) $rc_fn(3.121, 2));
+    } catch (Throwable $rc_e) {
+        $rc_low_got = 'threw ' . get_class($rc_e);
+    }
+    if ($rc_low_want !== $rc_low_got) {
+        $rc_rounder_bad[] = "{$rc_fn}(3.121, 2) = {$rc_low_got}, want {$rc_low_want} — it does not "
+            . 'round DOWN below the half, so it is not half-up (a ceiling passes the 3.125 tie)';
+    }
+}
+
+// The ONLY member allowed to go unchecked here is number_format_i18n, because it is WordPress's.
+// Pinned as an exact set: without this, a member that vanished from PHP — or a typo — would be
+// skipped and the control would still pass, having executed the claim for nobody.
+if (['number_format_i18n'] !== $rc_rounder_skipped) {
+    $rc_rounder_bad[] = 'unchecked members were ['
+        . implode(', ', $rc_rounder_skipped) . '], expected exactly [number_format_i18n] — a name '
+        . 'this control cannot execute is a name whose half-up claim nothing verifies';
+}
+
+$controls[] = [
+    [] === $rc_rounder_bad,
+    sprintf('every member of rc_half_up_rounders() reproduces exact half-up on the tie fixture '
+        . '(%d of %d checked; not defined outside WordPress: %s)',
+        $rc_rounder_checked, count($rc_rounder_names),
+        $rc_rounder_skipped ? implode(', ', $rc_rounder_skipped) : 'none')
+        . ([] === $rc_rounder_bad ? '' : ' — ' . implode('; ', $rc_rounder_bad)),
+];
+
 // ── The ratchet: no seventh site, anywhere in shipped PHP ────────────────────────────────────
 
 $deps_prefix = $plugin_root . '/src/Dependencies';
@@ -997,6 +1071,12 @@ $rc_shapes = [
     'round(($a / $b) * 100, 2)'          => true,  // the shape the plugin shipped
     '\round(($a / $b) * 100, 2)'         => true,  // ONE T_NAME_FULLY_QUALIFIED token on 8.0+
     'Foo\round(($a / $b) * 100, 2)'      => true,  // T_NAME_QUALIFIED
+    // OUTER-scanner subjects for qualified names. The three sprintf rows further down exercise
+    // the NESTED guard; these exercise $is_name + the name normalisation at the top of
+    // rc_rounding_calls(). They are separate halves and were asymmetric until 2026-08-31: a
+    // T_NAME_RELATIVE clause here was vacuous (deleting it left the gate green), and pro's outer
+    // scanner saw neither shape at all while its nested guard saw both.
+    'namespace\\round(($a / $b) * 100, 2)' => true,  // T_NAME_RELATIVE
     'round(100 * ($a / $b), 2)'          => true,  // the mirror: operands swapped
     // divmul=false is correct — the operands ARE in ADR-17's order. What makes this shape a
     // defect is the FORMATTER doing the rounding, which is `fmtround` below, not `divmul`.
@@ -1064,6 +1144,14 @@ $rc_fmt_shapes = [
     'sprintf("%.2f", sprintf("%s", $a / $b))'    => true,
     'sprintf("%.2f", $obj->round($a / $b))'      => true,
     'sprintf("%.2f", MyCls::round($a / $b))'     => true,
+    // The divergence corpus. Until 2026-08-31 free answered these with slimstat_last_name_segment()
+    // and pro with ltrim($name, '\\') — which strips only a LEADING backslash — so the two gates
+    // gave OPPOSITE verdicts on exactly these three, with pro (the namespaced repo) wrong. Caught
+    // by a human diffing two files, by nothing either file ran. They are pinned here because they
+    // are the only class of input the siblings have ever disagreed on.
+    'sprintf("%.2f", Ns\\round($a / $b, 2))'               => false,
+    'sprintf("%.2f", namespace\\round($a / $b, 2))'        => false,
+    'sprintf("%.2f", \\Ns\\Sub\\number_format($a / $b, 2))' => false,
 ];
 foreach ($rc_fmt_shapes as $rc_expr => $rc_want) {
     $rc_calls = rc_rounding_calls('<?php ' . $rc_expr . ';');
