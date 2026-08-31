@@ -190,6 +190,54 @@ function rc_is_exactly_representable(int $a, int $b): bool
 
 // ── The tokeniser: rounding call sites, and the shape that loses the boundary ────────────────
 
+
+/**
+ * The functions that actually round HALF-UP — deliberately NOT the scan set.
+ *
+ * The scan set (`$names` below) is "calls this gate looks at" and includes sprintf/printf. Those
+ * do NOT round half-up; that they round ties-to-EVEN is the entire premise of this file. Reusing
+ * the scan set as the rounder set made the nested-call guard suppress
+ * `sprintf('%%.2f', sprintf('%%s', $a / $b))`, which prints 3.12 for 1/32 — the exact wrong answer
+ * the guard's own failure message quotes. Measured, then separated.
+ *
+ * number_format/number_format_i18n ARE here: measured, number_format() rounds half-up, the same
+ * rule as round(), so formatting an already-divided value through it is not a second rule.
+ */
+function rc_half_up_rounders(): array
+{
+    return ['round' => true, 'number_format' => true, 'number_format_i18n' => true];
+}
+
+/**
+ * Is $tokens[$i] a genuine call to one of $names — not `$o->round(`, `Foo::round(`,
+ * `function round(` or `new round(`?
+ *
+ * Extracted so the nested-call guard asks the question the OUTER scanner already answers. Two
+ * spellings of "is this a call" in one function is how `$obj->round($a / $b)` came to suppress a
+ * division that nothing had rounded.
+ */
+function rc_is_call_to(array $tokens, int $i, array $names, int $count): bool
+{
+    if (!is_array($tokens[$i])) {
+        return false;
+    }
+    if (!isset($names[strtolower(slimstat_last_name_segment((string) $tokens[$i][1]))])) {
+        return false;
+    }
+    $prev = $i - 1;
+    while ($prev >= 0 && is_array($tokens[$prev])
+        && in_array($tokens[$prev][0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+        $prev--;
+    }
+    if ($prev >= 0 && is_array($tokens[$prev])
+        && in_array($tokens[$prev][0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON, T_FUNCTION, T_NEW], true)) {
+        return false;
+    }
+    $open = slimstat_next_significant($tokens, $i);
+
+    return $open < $count && '(' === slimstat_token_text($tokens[$open]);
+}
+
 /**
  * Every `round()` / `sprintf()` / `printf()` / `number_format*()` call in $source.
  *
@@ -287,7 +335,13 @@ function rc_rounding_calls(string $source): array
         // REQUIRES. So the exact defect that had just been fixed at four sites could be
         // reintroduced at a fifth and every control would stay green.
         $fmt_conv       = false;   // the format literal carries a %…f conversion
-        $div_in_value   = false;   // a `/` OPERATOR after the first top-level comma
+        $div_in_value   = false;   // a BARE `/` after the format literal — see below
+        // Depths at which a NESTED rounding call is open. A division inside one of those has
+        // already been rounded, so `sprintf('%.2f', round($a / $b, 2))` is round-then-format —
+        // correct, and the very remediation this gate's failure message recommends. Without
+        // this the rule flags its own advice, and a check that fails on correct code is a check
+        // somebody relaxes.
+        $round_depths   = [];
         for ($k = $open + 1; $k < $close; $k++) {
             $text = slimstat_token_text($tokens[$k]);
             if (is_array($tokens[$k])) {
@@ -300,11 +354,25 @@ function rc_rounding_calls(string $source): array
                 ) {
                     $fmt_conv = true;
                 }
+                // slimstat_last_name_segment(), not a second ltrim(): this function already
+                // normalises the OUTER call's name that way, and the docblock above argues at
+                // length that ltrim is the weaker copy. Two spellings in one function is how
+                // `Foo\round(` ends up recognised as an outer call and missed as a nested one.
+                //
+                // The LOOKAHEAD, not a `$pending_round` flag set here and cleared at the next
+                // bracket: measured, such a flag survives any token in between, so
+                // `sprintf('%.2f', round + ($a / $b))` attached it to an unrelated group's
+                // paren and suppressed a real division. Ask the question at the only moment it
+                // has an answer.
+                if (rc_is_call_to($tokens, $k, rc_half_up_rounders(), $count)) {
+                    $round_depths[$depth + 1] = true; // that '(' will open one level deeper
+                }
                 continue; // only bare-string tokens can be an operator or a bracket
             }
             if ('(' === $text || '[' === $text) {
                 $depth++;
             } elseif (')' === $text || ']' === $text) {
+                unset($round_depths[$depth]);
                 $depth--;
             } elseif (',' === $text && 0 === $depth) {
                 if ($first_end === $close) {
@@ -314,8 +382,10 @@ function rc_rounding_calls(string $source): array
                 $min_mul_depth = PHP_INT_MAX;
             } elseif ('/' === $text) {
                 $max_div_depth = max($max_div_depth, $depth);
-                if ($first_end !== $close) {
-                    $div_in_value = true; // a division in an argument AFTER the format literal
+                // Only a division that has NOT already been rounded: $round_depths holds the
+                // depths of any enclosing round()/number_format*() call.
+                if ($first_end !== $close && !$round_depths) {
+                    $div_in_value = true; // a bare division in an argument after the format
                 }
                 // ...and the MIRROR. A multiplication already seen at a STRICTLY SHALLOWER
                 // depth is `100 * ($a / $b)` — the same defect with the operands swapped, and
@@ -405,6 +475,67 @@ $controls[] = [
     sprintf('the integer oracle reproduces %d hand-derived values%s', count($oracle_cases),
         $oracle_bad ? ' — MISMATCH: ' . implode(', ', $oracle_bad) : ''),
 ];
+
+/**
+ * Why $site's fixtures cannot support its assertions, or null if they can.
+ *
+ * PURE on purpose, so the CONTROLS block can exercise every reason on a deliberately broken
+ * site. A control nobody has watched go red is this file's own signature defect.
+ *
+ * TWO fixtures, because no single pair does both jobs — measured:
+ *
+ *   23/160 @2dp   divide-first LOSES precision (14.374999…)   both rules render 14.38
+ *    1/32  @2dp   divide-first is EXACT                       3.12 vs 3.13 — separates them
+ *
+ * So `a`/`b` must make the operand-order defect visible, and `tie_a`/`tie_b` must separate
+ * half-up from ties-to-even. `tie_a` is OPTIONAL: the six ADR-17 sites predate it and their
+ * (b) limitation is recorded in the header rather than papered over.
+ *
+ * @param array{a:int,b:int,places:int,tie_a?:int,tie_b?:int} $site
+ */
+function rc_fixture_problem(array $site): ?string
+{
+    $a      = $site['a'];
+    $b      = $site['b'];
+    $places = $site['places'];
+
+    if (!rc_is_exactly_representable($a, $b)) {
+        return sprintf('fixture %d/%d cannot support the exactness assertion — 100·a/b is not a '
+            . 'dyadic rational, so NO double equals it and the check would fail for a reason '
+            . 'unrelated to operand order. Pick an on-boundary pair whose reduced denominator is '
+            . 'a power of two', $a, $b);
+    }
+
+    // The ADR-17 fixture must make the defect VISIBLE. If divide-first is exact on this pair,
+    // assertion (a) cannot fail — which is what a tie-only fixture silently did to E5/E6.
+    if (sprintf('%.20F', ($a / $b) * 100) === sprintf('%.20F', (100 * $a) / $b)) {
+        return sprintf('fixture %d/%d is exact under divide-first too, so assertion (a) could not '
+            . 'fail on it. Pick a pair where (a/b)*100 lands below (100*a)/b', $a, $b);
+    }
+
+    if (!isset($site['tie_a'])) {
+        return null; // no tie fixture declared — the header records what (b) then cannot do
+    }
+
+    $tie_a = $site['tie_a'];
+    $tie_b = $site['tie_b'];
+
+    // Checked, because the tie pair is fed to the same exact-expansion oracle as a/b and a
+    // non-dyadic one would fail assertion (b) for a reason unrelated to the rounding rule.
+    if (!rc_is_exactly_representable($tie_a, $tie_b)) {
+        return sprintf('tie fixture %d/%d is not a dyadic rational', $tie_a, $tie_b);
+    }
+
+    if (sprintf('%.' . $places . 'F', (float) rc_exact_expansion($tie_a, $tie_b, $places + 1))
+        === rc_exact_half_up($tie_a, $tie_b, $places)) {
+        return sprintf('tie fixture %d/%d is not on a rounding tie at %d dp — half-up and '
+            . 'ties-to-even render it identically, so assertion (b) could not fail. Pick a dyadic '
+            . 'pair whose exact expansion ends in a 5 at %d places, with an EVEN digit before it '
+            . '(an odd one makes both rules round up)', $tie_a, $tie_b, $places, $places + 1);
+    }
+
+    return null;
+}
 
 // ── The sites ────────────────────────────────────────────────────────────────────────────────
 //
@@ -503,8 +634,15 @@ $sites = [
         'file'    => 'admin/view/wp-slimstat-reports.php',
         'needles' => ['$percentage_raw'],
         'places'  => 2,
-        'a'       => 1,
-        'b'       => 32,
+        // TWO fixtures, for the reason Pro's sibling records at length: no single pair can serve
+        // both assertions. 23/160 makes divide-first LOSE precision, so (a) can fail on it, but
+        // 14.375 renders 14.38 under both rounding rules. 1/32 is exactly 3.125 — 3.12 vs 3.13,
+        // so (b) can fail on it — but is exact under divide-first, so (a) cannot. The first
+        // version of this change used 1/32 for both and silently made (a) unfalsifiable here.
+        'a'       => 23,
+        'b'       => 160,
+        'tie_a'   => 1,
+        'tie_b'   => 32,
         'surface' => 'the percentage beside every row of every top-N report — the most-seen number in the product',
         // The division is on the line above in the shipped file, so it is reproduced here
         // exactly as that line writes it: (100 * counthits) / pageviews, left-associative.
@@ -516,8 +654,11 @@ $sites = [
         'file'    => 'admin/view/wp-slimstat-db.php',
         'needles' => ['$new_visitors', '$total_human_hits'],
         'places'  => 2,
-        'a'       => 1,
-        'b'       => 32,
+        // Same split as E5, same reason.
+        'a'       => 23,
+        'b'       => 160,
+        'tie_a'   => 1,
+        'tie_b'   => 32,
         'surface' => 'the new-visitor rate in the traffic-sources summary (dashboard + Pro email report)',
         'setup'   => static function (int $a, int $b): string {
             return "\$new_visitors = {$a}; \$total_human_hits = {$b};";
@@ -582,11 +723,30 @@ foreach ($sites as $id => $site) {
     // developer/CI machine, in a script that WordPress never loads. The two calls are separated
     // so the pre-round double can be observed on its own — that observation is assertion (a),
     // and it is the only part of this gate that is version-invariant.
-    $setup   = $site['setup']($a, $b);
-    $handed  = eval($setup . ' return ' . $call['first'] . ';');
-    $rounded = eval($setup . ' return round(' . $call['args'] . ');');
+    // (b) runs on the site's TIE fixture where it declares one, because assertion (b) can only
+    // separate half-up from ties-to-even on a pair where the two rules disagree — and such a
+    // pair is, for these ratios, never also one where divide-first loses precision. One fixture
+    // cannot serve both, and using one silently disarms whichever assertion it does not suit.
+    // Sites with no `tie_a` keep the single fixture and the (b) limitation the header records.
+    $tie_a = isset($site['tie_a']) ? $site['tie_a'] : $a;
+    $tie_b = isset($site['tie_b']) ? $site['tie_b'] : $b;
+
+    $handed  = eval($site['setup']($a, $b) . ' return ' . $call['first'] . ';');
+    $rounded = eval($site['setup']($tie_a, $tie_b) . ' return round(' . $call['args'] . ');');
     $evaluated++;
     $checks += 2;
+
+    // One cause, one failure. The reasons live in rc_fixture_problem(), which is PURE so the
+    // CONTROLS block can run it on deliberately broken sites and watch each reason fire —
+    // inline, these guards only ever met fixtures that pass, so none had been seen red from
+    // inside this file. Pro's sibling learned this the expensive way: an equivalent fixture
+    // swap there was caught only because a registered mutation reported INVALID, and free has
+    // no mutation on this gate at all.
+    $problem = rc_fixture_problem($site);
+    if (null !== $problem) {
+        $failures[] = "{$id}: {$problem}";
+        continue;
+    }
 
     // (a) VERSION-INVARIANT. The value handed to round() must BE the ratio, not a double that
     //     has already lost it. False on 7.4 exactly as it is false on 8.5.
@@ -601,19 +761,65 @@ foreach ($sites as $id => $site) {
 
     // (b) THE USER-VISIBLE CLAIM. Masked on PHP <= 8.3 by the pre-rounding 8.4 removed, which is
     //     precisely why (a) exists beside it and is not redundant with it.
-    $want = rc_exact_half_up($a, $b, $site['places']);
+    $want = rc_exact_half_up($tie_a, $tie_b, $site['places']);
     $got  = sprintf('%.' . $site['places'] . 'F', (float) $rounded);
     if ($want !== $got) {
         $failures[] = sprintf('%s [%s]: renders %s%%, but exact half-up of 100 * %d / %d at %d dp is '
             . '%s%% — surface: %s',
-            $id, $ref, $got, $a, $b, $site['places'], $want, $site['surface']);
+            $id, $ref, $got, $tie_a, $tie_b, $site['places'], $want, $site['surface']);
+    }
+}
+
+// The 8 is HARD-CODED, and that is the point. `count($sites) === $evaluated` takes both sides
+// from $sites: delete a site and it prints "(7 of 7)" and passes, under a label saying "all".
+// A census is a fact about the product, so it belongs here as a number somebody has to come and
+// change on purpose. Pro's sibling made this correction first.
+$controls[] = [
+    8 === count($sites) && 8 === $evaluated,
+    sprintf('all shipped percentage sites were located and their expressions EVALUATED '
+        . '(%d declared, %d evaluated, 8 expected)', count($sites), $evaluated),
+];
+
+// Every reason rc_fixture_problem() can give, exercised on a site that breaks exactly that one
+// property — plus the shipped sites, which must report none. Without this the guards in the site
+// loop would only ever meet fixtures that pass, and a guard nobody has watched go red is the
+// shape this file's header is about. Each probe breaks ONE property, so a reason that stops
+// firing shows up as a named case rather than as a count.
+$rc_guard_probes = [
+    'a/b not dyadic'            => [['a' => 1,  'b' => 3,   'places' => 2], 'not a dyadic rational'],
+    'a/b exact divide-first'    => [['a' => 1,  'b' => 4,   'places' => 2], 'exact under divide-first'],
+    'tie not dyadic'            => [['a' => 23, 'b' => 160, 'places' => 2, 'tie_a' => 1,  'tie_b' => 3],   'tie fixture 1/3 is not a dyadic'],
+    'tie does not discriminate' => [['a' => 23, 'b' => 160, 'places' => 2, 'tie_a' => 23, 'tie_b' => 160], 'not on a rounding tie'],
+    // A site with NO tie fixture is legal — the six ADR-17 sites are exactly that — so this
+    // must return null. Without it, making the tie half mandatory would pass unnoticed.
+    'no tie fixture is legal'   => [['a' => 23, 'b' => 160, 'places' => 2], null],
+];
+$rc_guard_bad = [];
+foreach ($rc_guard_probes as $rc_what => [$rc_probe, $rc_needle]) {
+    $rc_got = rc_fixture_problem($rc_probe);
+    if (null === $rc_needle) {
+        if (null !== $rc_got) {
+            $rc_guard_bad[] = "{$rc_what}: expected no problem, got '{$rc_got}'";
+        }
+        continue;
+    }
+    if (null === $rc_got || false === strpos($rc_got, $rc_needle)) {
+        $rc_guard_bad[] = "{$rc_what}: expected a reason containing '{$rc_needle}', got "
+            . (null === $rc_got ? 'null (the fixture was accepted)' : "'{$rc_got}'");
+    }
+}
+foreach ($sites as $rc_id => $rc_site) {
+    $rc_got = rc_fixture_problem($rc_site);
+    if (null !== $rc_got) {
+        $rc_guard_bad[] = "shipped site {$rc_id} reports a fixture problem: {$rc_got}";
     }
 }
 
 $controls[] = [
-    count($sites) === $evaluated,
-    sprintf('all %d shipped percentage sites were located and their expressions EVALUATED (%d)',
-        count($sites), $evaluated),
+    [] === $rc_guard_bad,
+    sprintf('all %d fixture-problem reasons fire on a site that breaks exactly that property, '
+        . 'and no shipped site reports one', count($rc_guard_probes))
+        . ([] === $rc_guard_bad ? '' : ' — ' . implode('; ', $rc_guard_bad)),
 ];
 
 // ── The ratchet: no seventh site, anywhere in shipped PHP ────────────────────────────────────
@@ -846,6 +1052,18 @@ $rc_fmt_shapes = [
     'sprintf("%s", $a / $b)'                      => false, // no float conversion
     'round((100 * $c) / $t, 2)'                   => false, // not a formatter at all
     'number_format_i18n(round($a / $b, 2), 2)'    => false, // the shape this gate REQUIRES
+    // Round-then-format IS correct, in either spelling. Flagging these would make the rule fail
+    // on the very remediation its own failure message recommends — and a check that reds on
+    // correct code is a check somebody relaxes. Found by review, not by the tree.
+    'sprintf("%.2f", round($a / $b, 2))'          => false,
+    'sprintf("%.2f", number_format($a / $b, 2))'  => false,
+    // The three shapes the guard let through until review measured them. Each prints the WRONG
+    // answer at runtime — sprintf('%.2f', sprintf('%s', 100*1/32)) is "3.12" where half-up is
+    // "3.13" — while the guard reported "already rounded". A nested sprintf does not round, and
+    // a method or static named `round` is not PHP's round().
+    'sprintf("%.2f", sprintf("%s", $a / $b))'    => true,
+    'sprintf("%.2f", $obj->round($a / $b))'      => true,
+    'sprintf("%.2f", MyCls::round($a / $b))'     => true,
 ];
 foreach ($rc_fmt_shapes as $rc_expr => $rc_want) {
     $rc_calls = rc_rounding_calls('<?php ' . $rc_expr . ';');
