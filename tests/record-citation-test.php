@@ -62,6 +62,19 @@
  * does not resolve is a FAILURE, not a shrug — a citation nobody can check is a citation nobody
  * should trust. And the run refuses to print PASS while anything is unchecked.
  *
+ * ── TWIN ────────────────────────────────────────────────────────────────────────────────────
+ *
+ * wp-slimstat-pro/tests/record-citation-test.php is this file with FIVE stated divergences and no
+ * others: the file-gather call (pro has no admin/, and its enumerator takes exclude fragments
+ * rather than a prefix), the tokenizer call (pro's lib has no wrapper to prefer), the two control
+ * floors (79 files against 377), the rel-path helper prefix, and the docblocks. **Fix one twin,
+ * fix both, in the same sitting.**
+ *
+ * This header is the mechanism, because the automatic one cannot reach the pair:
+ * jaan-to/bin/check-twins.sh requires byte-identity from declare() down, and these differ in five
+ * code lines. That is the case it already excludes by name for mutation-registry-test.php, whose
+ * provenance header this one copies. Registering the pair would fail on line 1.
+ *
  * 7.4-safe: bare PHP, no PHPUnit, no WordPress, no vendor autoloader.
  *
  * Run: php tests/record-citation-test.php
@@ -100,7 +113,20 @@ $records = [
 // Returning early SILENTLY is not: measured on a standalone copy, the first version of this file
 // reported 9 failures and four red CONTROLS on a perfectly healthy tree. So the mode is printed,
 // and the fixtures below exercise the checker on every run regardless of which mode this is.
-$standalone = !is_dir($records_dir);
+//
+// DISCRIMINATED ON THE SIBLING ROOT, NEVER ON THE LEAF DIRECTORY. campaign-phase-gate-test.php
+// wrote that paragraph first, and this file ignored it while citing the very file it is in.
+// Keying on $records_dir answers the wrong question: it degrades to "there is no jaan-to here"
+// whenever that one path moves, and then prints that as fact, skips the whole scan and exits 0 —
+// in the one checkout that does have records to check. This workspace has moved jaan-to paths
+// before; CLAUDE.md carries a correction of exactly that kind. So: no jaan-to/ at all is a
+// standalone checkout and skips. A jaan-to/ that is present but has no records directory is a
+// FAILURE, because in that checkout the records are supposed to be there.
+$standalone = !is_dir($repo_root . '/jaan-to');
+if (!$standalone && !is_dir($records_dir)) {
+    $failures[] = sprintf('the jaan-to sibling is present but %s is not — if the programme '
+        . 'records moved, this gate moved with them and nobody updated it', $records_dir);
+}
 
 $can_shell = function_exists('shell_exec')
     && false === stripos((string) ini_get('disable_functions'), 'shell_exec');
@@ -310,11 +336,14 @@ if (!$standalone) {
         $plugin_root . '/src/Dependencies'
     );
 
-
     foreach ($files as $file) {
         $rel = slimstat_rel_path($plugin_root, $file);
 
-        foreach (slimstat_tokenize((string) file_get_contents($file)) as $token) {
+        // $is_file = true, stated rather than sniffed. Left unstated, slimstat_tokenize() lexes
+        // every file TWICE to look for a T_OPEN_TAG — measured at +22.75 ms over this corpus,
+        // +94.7%, which is 12x what the whole per-comment refactor costs. Every input here comes
+        // from slimstat_own_php_files(), so the answer is known at the call site.
+        foreach (slimstat_tokenize((string) file_get_contents($file), true) as $token) {
             if (!is_array($token) || (T_COMMENT !== $token[0] && T_DOC_COMMENT !== $token[0])) {
                 continue;
             }
@@ -340,9 +369,15 @@ if (!$standalone) {
 
 $fx_now     = 'the seal is opened only after both arms have been adjudicated blind';
 $fx_old     = 'the seal was opened before either arm had been adjudicated at all';
+$fx_short   = 'the seal is opened after the arms count';
+$fx_state   = 'the mapping is unsealed only after adjudication has finished';
 $fx_records = [
     'PITFALLS.md'  => 'preamble ' . $fx_now . ' tail',
     'DECISIONS.md' => 'the boundary is set by the entry below',
+    // A third record so the nearest-preceding SELECTOR has something to get wrong. With two
+    // records that never co-occur in one comment, first-match-wins and nearest-preceding are the
+    // same function, and every mutation between them survives.
+    'STATE.json'   => 'state preamble ' . $fx_state . ' tail',
 ];
 $fx_adrs    = [17 => true];
 $fx_resolve = static function (string $name, string $ref) use ($fx_old): ?string {
@@ -351,43 +386,69 @@ $fx_resolve = static function (string $name, string $ref) use ($fx_old): ?string
     return 'ab12cd3' === $ref ? 'old preamble ' . $fx_old . ' tail' : null;
 };
 
+// [label, the comment text, [failures, unchecked, quoted, checked, PITFALLS refs, ADR refs]]
+//
+// All six counts, not just the two problem counts. The four counters are floored by CONTROLS in
+// full mode and by nothing at all in standalone mode — which is the mode CI gets — so deleting
+// any one of the four `++` lines used to survive the entire table.
 $fx_cases = [
-    ['an in-range entry passes',                 '// PITFALLS ' . '4 — in range',                     0, 0],
-    ['a dangling entry fails',                   '// PITFALLS ' . '999 — no such entry',              1, 0],
-    ['a defined ADR passes',                     '// see ADR-' . '17 for the boundary',               0, 0],
-    ['an undefined ADR fails',                   '// see ADR-' . '999 for the boundary',              1, 0],
-    ['a verbatim quotation passes',              '// PITFALLS.md says "' . $fx_now . '"',             0, 0],
-    ['a fabricated quotation fails',             '// PITFALLS.md says "' . $fx_now . ' every time"',  1, 0],
-    ['a pinned ref redirects the comparison',    '// PITFALLS.md AT ab12cd3 said "' . $fx_old . '"',  0, 0],
-    ['the same quote unpinned fails',            '// PITFALLS.md says "' . $fx_old . '"',             1, 0],
-    ['an unresolvable ref fails, never waives',  '// PITFALLS.md AT 9999999 said "' . $fx_now . '"',  1, 0],
-    ['a short segment is UNCHECKED, not passed', '// PITFALLS.md says "the seal is opened only after both … arms"', 0, 1],
+    ['an in-range entry passes',                 '// PITFALLS ' . '4 — in range',                     [0, 0, 0, 0, 1, 0]],
+    ['a dangling entry fails',                   '// PITFALLS ' . '999 — no such entry',              [1, 0, 0, 0, 1, 0]],
+    ['a defined ADR passes',                     '// see ADR-' . '17 for the boundary',               [0, 0, 0, 0, 0, 1]],
+    ['an undefined ADR fails',                   '// see ADR-' . '999 for the boundary',              [1, 0, 0, 0, 0, 1]],
+    ['a verbatim quotation passes',              '// PITFALLS.md says "' . $fx_now . '"',             [0, 0, 1, 1, 0, 0]],
+    ['a fabricated quotation fails',             '// PITFALLS.md says "' . $fx_now . ' every time"',  [1, 0, 1, 1, 0, 0]],
+    ['a pinned ref redirects the comparison',    '// PITFALLS.md AT ab12cd3 said "' . $fx_old . '"',  [0, 0, 1, 1, 0, 0]],
+    ['the same quote unpinned fails',            '// PITFALLS.md says "' . $fx_old . '"',             [1, 0, 1, 1, 0, 0]],
+    ['an unresolvable ref fails, never waives',  '// PITFALLS.md AT 9999999 said "' . $fx_now . '"',  [1, 0, 1, 0, 0, 0]],
+    ['a short segment is UNCHECKED, not passed', '// PITFALLS.md says "the seal is opened only after both … arms"', [0, 1, 1, 1, 0, 0]],
     ['a pin governs one quotation, not the rest',
-        '// PITFALLS.md AT ab12cd3 said "' . $fx_old . '", and PITFALLS.md now says "' . $fx_now . '"', 0, 0],
+        '// PITFALLS.md AT ab12cd3 said "' . $fx_old . '", and PITFALLS.md now says "' . $fx_now . '"', [0, 0, 2, 2, 0, 0]],
     ['an unpinned superseded quote after a pin still fails',
-        '// PITFALLS.md AT ab12cd3 said "' . $fx_now . '", and PITFALLS.md also says "' . $fx_old . '"', 2, 0],
+        '// PITFALLS.md AT ab12cd3 said "' . $fx_now . '", and PITFALLS.md also says "' . $fx_old . '"', [2, 0, 2, 2, 0, 0]],
+    // The four below close mutants that the twelve above all survived. Each is the sole killer of
+    // a mechanism this file's docblock spends a paragraph on, and none of those paragraphs had a
+    // case behind it until the table was mutated rather than read.
+    ['a bare hex word is not a ref',             '// PITFALLS.md ab12cd3 says "' . $fx_now . '"',     [0, 0, 1, 1, 0, 0]],
+    ['the LAST pin in the window wins',          '// PITFALLS.md AT 9999999 AT ab12cd3 said "' . $fx_old . '"', [0, 0, 1, 1, 0, 0]],
+    ['under the 40-char floor is not a citation', '// PITFALLS.md says "' . $fx_short . '"',          [0, 0, 0, 0, 0, 0]],
+    // Named in the order that makes the two candidate rules DISAGREE: PITFALLS.md is reached
+    // first by the iteration, STATE.json is nearer the quote. Written the other way round this
+    // case passes under both rules and proves nothing — measured, by mutation, on the first
+    // version of this line.
+    ['the record is the NEAREST one named, not the first',
+        '// PITFALLS.md is mentioned in passing, and then STATE.json says "' . $fx_state . '"',      [0, 0, 1, 1, 0, 0]],
 ];
 
-$fx_ok = 0;
-foreach ($fx_cases as [$fx_label, $fx_text, $fx_want_fail, $fx_want_unchecked]) {
-    $fx = rct_comment_problems($fx_text, 'fixture', 0, $fx_records, 10, $fx_adrs, $fx_resolve);
-    if (count($fx['failures']) === $fx_want_fail && count($fx['unchecked']) === $fx_want_unchecked) {
+$fx_ok   = 0;
+$fx_reds = 0;
+foreach ($fx_cases as [$fx_label, $fx_text, $fx_want]) {
+    // Required-red is counted and printed, not implied: "16/16 cases behaved" is also what a
+    // table of sixteen all-green cases prints, and that table would prove nothing at all.
+    $fx_reds += ($fx_want[0] > 0 || $fx_want[1] > 0) ? 1 : 0;
+
+    $fx  = rct_comment_problems($fx_text, 'fixture', 0, $fx_records, 10, $fx_adrs, $fx_resolve);
+    $got = [count($fx['failures']), count($fx['unchecked']), $fx['quoted'], $fx['checked'],
+        $fx['pitfalls'], $fx['adrs']];
+    if ($got === $fx_want) {
         $fx_ok++;
         continue;
     }
-    $failures[] = sprintf('FIXTURE "%s": expected %d failure(s) and %d unchecked, got %d and %d',
-        $fx_label, $fx_want_fail, $fx_want_unchecked, count($fx['failures']), count($fx['unchecked']));
+    $failures[] = sprintf('FIXTURE "%s": expected [%s], got [%s]',
+        $fx_label, implode(',', $fx_want), implode(',', $got));
 }
 
 // ── CONTROLS ─────────────────────────────────────────────────────────────────────────────────
 
+echo "CONTROLS\n";
 printf("  MODE=%s\n", $standalone
     ? 'standalone — jaan-to/ is absent, so NO citation in this tree was checked; fixtures only'
-    : 'full — records present, every citation in this tree checked');
+    : 'full — records present; every PHP comment in the scanned tree checked');
 
 $controls[] = [
     $fx_ok === count($fx_cases),
-    sprintf('the checker was exercised by fixtures: %d/%d cases behaved', $fx_ok, count($fx_cases)),
+    sprintf('the checker was exercised by fixtures: %d/%d cases behaved (%d required-red)',
+        $fx_ok, count($fx_cases), $fx_reds),
 ];
 
 if (!$standalone) {
@@ -446,11 +507,8 @@ if ($failures || $unchecked) {
     exit(1);
 }
 
-if ($standalone) {
-    printf("PASS (standalone): %d/%d fixture case(s) behaved; no records present to check against\n",
-        $fx_ok, count($fx_cases));
-    exit(0);
-}
-
-printf("PASS: %d entry reference(s) resolve, and %d quoted segment(s) appear verbatim in the record named\n",
-    $pitfall_refs + $adr_refs, $checked);
+printf("PASS: record citation gate — %d fixtures (%d required-red), checked against %s\n",
+    count($fx_cases), $fx_reds, $standalone
+        ? 'FIXTURES ONLY (no jaan-to sibling in this checkout — the invariants still ran)'
+        : sprintf('the real records: %d entry reference(s) resolve and %d quoted segment(s) '
+            . 'appear verbatim in the record named', $pitfall_refs + $adr_refs, $checked));
