@@ -176,6 +176,8 @@ foreach ($targets as $class => $methods) {
 // ── walk every call site ────────────────────────────────────────────────────
 $checked = 0;
 
+$name_types = slimstat_name_token_types();
+
 foreach ($own_files as $file) {
     $rel    = slimstat_rel_path($plugin_root, $file);
     $tokens = token_get_all((string) file_get_contents($file));
@@ -200,9 +202,11 @@ foreach ($own_files as $file) {
             continue;
         }
 
-        $is_name = T_STRING === $tokens[$i][0]
-            || (defined('T_NAME_FULLY_QUALIFIED') && T_NAME_FULLY_QUALIFIED === $tokens[$i][0])
-            || (defined('T_NAME_QUALIFIED') && T_NAME_QUALIFIED === $tokens[$i][0]);
+        // slimstat_name_token_types(), not a hand-rolled chain. This copy had THREE clauses
+        // where the rounding gate had four, so `namespace\foo(` was a name there and not here —
+        // two scanners in one repo disagreeing about what a name IS. The lib owns the set now,
+        // and this gate gains T_NAME_RELATIVE by using it.
+        $is_name = isset($name_types[$tokens[$i][0]]);
 
         if (!$is_name || !isset($targets[slimstat_last_name_segment($tokens[$i][1])])) {
             continue;

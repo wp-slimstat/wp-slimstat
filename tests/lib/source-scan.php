@@ -194,6 +194,47 @@ function slimstat_last_name_segment(string $name): string
     return false === $pos ? $name : substr($name, $pos + 1);
 }
 
+/**
+ * The token types that can carry a function NAME, as an isset()-able map.
+ *
+ * PHP 7.4 emits only T_STRING. 8.0+ collapses a qualified name into ONE token —
+ * T_NAME_FULLY_QUALIFIED (`\round`), T_NAME_QUALIFIED (`Foo\round`) or T_NAME_RELATIVE
+ * (`namespace\round`) — so the set is assembled with defined() rather than written as a literal,
+ * and a scanner that checks T_STRING alone is blind to every qualified call on 8.x.
+ *
+ * The `static` memo is NOT a cost optimisation and should not be read as one: measured at the
+ * real call frequency (162 invocations per run) it saves 0.03 ms across the whole run, an order
+ * of magnitude below the +0.386 ms the call site cites for the map itself. It is here because the
+ * helper is now shared by two gates in this repo, which is the only reason building it once is
+ * worth a line.
+ *
+ * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 recorded four
+ * hand-rolled copies of this predicate across the two repos with FOUR DIFFERENT clause lists —
+ * 4, 3, 1 and 1 — and said plainly: "Cost is NOT the reason to do it … the duplication is. A
+ * slimstat_name_token_types() in tests/lib/source-scan.php fixes both in one move." A copy in a
+ * test file would have adopted the shape and left the reason undischarged.
+ *
+ * Its natural neighbour is slimstat_last_name_segment(): every consumer calls that on the
+ * matched token's text one line later. They are two halves of one hazard.
+ *
+ * @return array<int, true> Token type => true.
+ */
+function slimstat_name_token_types(): array
+{
+    static $types = null;
+
+    if (null === $types) {
+        $types = [T_STRING => true];
+        foreach (['T_NAME_FULLY_QUALIFIED', 'T_NAME_QUALIFIED', 'T_NAME_RELATIVE'] as $const) {
+            if (defined($const)) {
+                $types[constant($const)] = true;
+            }
+        }
+    }
+
+    return $types;
+}
+
 /** Concatenated source text of $tokens over the half-open range [$from, $to). */
 function slimstat_token_text_range(array $tokens, int $from, int $to): string
 {

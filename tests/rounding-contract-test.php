@@ -257,6 +257,7 @@ function rc_rounding_calls(string $source): array
     $tokens = slimstat_tokenize($source);
     $count  = count($tokens);
     $calls  = [];
+    $name_types = slimstat_name_token_types();
 
     for ($i = 0; $i < $count; $i++) {
         if (!is_array($tokens[$i])) {
@@ -268,22 +269,44 @@ function rc_rounding_calls(string $source): array
         // T_NS_SEPARATOR + T_STRING and scanned it — so this scan's answer depended on the
         // interpreter, in a file whose eval assertion is deliberately VERSION-INVARIANT.
         //
-        // The helper and this exact idiom already existed (tests/lib/source-scan.php:190,
-        // tests/surplus-argument-scan-test.php:203 — byte-identical to these three lines),
-        // added when the same tokeniser change hid 242 call sites across 38 files from another
-        // gate. This was the next gate not using them.
+        // The name SET comes from slimstat_name_token_types() and the name itself through
+        // slimstat_last_name_segment(), both in tests/lib/source-scan.php — added when the same
+        // tokeniser change hid 242 call sites across 38 files from another gate.
         //
-        // NOT at parity with pro's sibling, and saying so rather than implying otherwise. Pro
-        // checks T_STRING + T_NAME_FULLY_QUALIFIED and normalises with ltrim(), so `Foo\round(`
-        // is blind there and seen here; pro has no equivalent of slimstat_last_name_segment().
-        // Pro is the entirely-namespaced plugin, i.e. the half where a qualified call is MORE
-        // likely, so the weaker copy is on the wrong side. Tracked in STATE.json
-        // harness_debt_run53; the provenance header's "fix both in the same sitting" is
-        // discharged for the hazard, not yet for the coverage.
-        $is_name = T_STRING === $tokens[$i][0]
-            || (defined('T_NAME_FULLY_QUALIFIED') && T_NAME_FULLY_QUALIFIED === $tokens[$i][0])
-            || (defined('T_NAME_QUALIFIED') && T_NAME_QUALIFIED === $tokens[$i][0])
-            || (defined('T_NAME_RELATIVE') && T_NAME_RELATIVE === $tokens[$i][0]);
+        // ⚠ THE PARAGRAPH THAT SAT HERE IS SPENT, and is recorded rather than deleted because
+        // it was true for eight days. It read: *"NOT at parity with pro's sibling … Pro checks
+        // T_STRING + T_NAME_FULLY_QUALIFIED and normalises with ltrim(), so `Foo\round(` is
+        // blind there and seen here; pro has no equivalent of slimstat_last_name_segment() …
+        // the weaker copy is on the wrong side."* All three claims are now false: pro has
+        // pro_last_name_segment(), pro's outer scanner reads the same four token types, and
+        // both gates pin `Foo\round(` and `namespace\round(` as subjects. It also said this
+        // predicate was "byte-identical" to surplus-argument-scan-test.php:203 — that copy had
+        // THREE clauses, not four, so the two gates disagreed about what a name is. Both now
+        // read slimstat_name_token_types() from the lib, which is what STATE.json
+        // harness_debt_run53 prescribed and what actually discharges the duplication.
+        // A MAP read with isset(), not a four-way `||` chain. Measured on THIS corpus — 127
+        // shipped files, 235,924 tokens, 157,256 of them array tokens, of which 141,841 fall
+        // past the name set on every run and 15,415 hit it.
+        //
+        // The win, measured here rather than inferred: 59.779 ms -> 54.231 ms, −9.28%, against a
+        // null control of +0.006 ms at the same configuration, interquartile ranges disjoint,
+        // three replications agreeing on direction and magnitude. Isolated, the predicate
+        // accounts for essentially all of it (−4.99 ms of the −5.55).
+        //
+        // THE HOIST IS LOAD-BEARING, and this is the line to read before "simplifying" it: the
+        // map is fetched once per scan, above the loop. Called per token instead, the map form
+        // measures 9.957 ms against the chain's 8.789 — SLOWER than what it replaced. Now that
+        // the helper lives in the lib, the un-hoisted spelling is the natural one to write next.
+        //
+        // ⚠ TWO CLAIMS IN THE FIRST VERSION OF THIS COMMENT WERE PRO'S, TRANSPLANTED. It said
+        // "~31.5k tokens and ~18.8k fall past" — pro's corpus is 21 files, 7.5x smaller — and it
+        // said the map came out "0.026 ms FASTER than the narrow scanner". Neither was measured
+        // here, and the second does not even hold: against a T_STRING-only floor this map is
+        // 0.343 ms SLOWER (6.166 vs 6.231), a sign flip on a quantity dwarfed by the 2.6 ms the
+        // map wins over the chain. The token ratio happened to hold (60.1% vs 59.5%), which is
+        // exactly why the wrong numbers looked right. In a file carrying three paragraphs about
+        // citation rot.
+        $is_name = isset($name_types[$tokens[$i][0]]);
         if (!$is_name) {
             continue;
         }
@@ -827,54 +850,66 @@ $rc_rounder_bad     = [];
 $rc_rounder_skipped = [];
 $rc_rounder_names   = array_keys(rc_half_up_rounders());
 $rc_rounder_checked = 0;
-$rc_tie_want        = rc_exact_half_up(1, 32, 2);   // '3.13'
-$rc_tie_value       = (100 * 1) / 32;       // exactly 3.125
+
+// TWO fixtures, and the second is not decoration. Measured: the tie ALONE admits a ceiling —
+// `ceil($v * 100) / 100` also returns 3.13 on 3.125 — and a ceiling is loose in exactly the
+// direction this control exists to police. 3.121 separates them: half-up gives 3.12, always-up
+// gives 3.13. Ties at 0 dp and negatives would add nothing, because rc_exact_half_up()
+// refuses negative input by design, so half-away-from-zero is unobservable in this domain.
+//
+// Both rows normalise through sprintf rather than a bare (string) cast: `(string) round(50.0, 2)`
+// is "50" where the oracle says "50.00", so a raw cast agrees with the oracle only at values
+// where the two representations happen to coincide. Normalising makes that a property of the
+// check instead of a property of the fixture. Pro's sibling is identical.
+$rc_rounder_rows = [
+    // value, want, and the tail of the message this row's failure gets.
+    [(100 * 1) / 32, rc_exact_half_up(1, 32, 2),
+        'not half-up, so it must not be in rc_half_up_rounders(): the nested-call guard '
+        . 'would suppress a division this function never rounded'],
+    // 3.121 is NOT dyadic — the double is 3.120999… — so it stays a literal rather than being
+    // derived from the oracle's 100·a/b contract. 100 * 3121 / 100000 is that value; 3121 is
+    // prime, so the pair is already in lowest terms.
+    [3.121, rc_exact_half_up(3121, 100000, 2),
+        'does not round DOWN below the half, so it is not half-up (a ceiling passes the tie)'],
+];
+
 foreach ($rc_rounder_names as $rc_fn) {
     if (!function_exists($rc_fn)) {
         // NAMED, not silently skipped, and the count below is not derived from the set being
         // skipped. A silent `continue` plus a "(N checked)" label taken from the same array is
         // the tautology the hard-coded site census exists to refuse: delete or typo a member
-        // and the label just prints a smaller number, in green.
+        // and the label just prints a smaller number, in green. Pro's sibling is identical.
         $rc_rounder_skipped[] = $rc_fn;
         continue;
     }
     $rc_rounder_checked++;
-    // try/catch, because a wrong-ARITY name is exactly what a careless addition looks like:
+
+    // ONE try/catch around BOTH calls, and that is the point rather than tidiness: a member that
+    // is not (value, places)-shaped fails on the first call, and calling it again cannot add
+    // information. Two catches reported an ArgumentCountError from the SECOND call as
+    // "does not round DOWN below the half" — an arity failure wearing a rounding-direction
+    // message, which sends the reader to the wrong question.
+    //
+    // The catch exists because a wrong-arity name is what a careless addition looks like:
     // floor() takes one argument, so calling it with two is an ArgumentCountError that would
     // kill the run with exit 255 instead of reporting a clean red. Measured, then guarded — a
     // control that fatals is a control whose message nobody reads.
     try {
-        $rc_got = (string) $rc_fn($rc_tie_value, 2);
+        $rc_rounder_got = [];
+        foreach ($rc_rounder_rows as $rc_row) {
+            $rc_rounder_got[] = sprintf('%.2F', (float) $rc_fn($rc_row[0], 2));
+        }
     } catch (Throwable $rc_e) {
-        $rc_rounder_bad[] = "{$rc_fn}(3.125, 2) threw " . get_class($rc_e) . ' — it does not take '
-            . '(value, places), so it is not a rounding function of the shape this set assumes';
+        $rc_rounder_bad[] = "{$rc_fn}(value, 2) threw " . get_class($rc_e) . ' — it does not '
+            . 'take (value, places), so it is not a rounding function of the shape this set assumes';
         continue;
     }
-    if ($rc_tie_want !== $rc_got) {
-        $rc_rounder_bad[] = "{$rc_fn}(3.125, 2) = {$rc_got}, want {$rc_tie_want} — not half-up, so "
-            . 'it must not be in rc_half_up_rounders(): the nested-call guard would suppress a '
-            . 'division this function never rounded';
-    }
 
-    // A SECOND value, below the half, and it is not decoration. Measured: the tie alone admits a
-    // ceiling — `ceil($v * 100) / 100` also returns 3.13 on 3.125 — and a ceiling is loose in
-    // exactly the direction this control exists to police. 3.121 separates them: half-up gives
-    // 3.12, always-up gives 3.13. Ties at 0 dp and negatives add nothing, because rc_exact_half_up
-    // refuses negative input by design, so half-away-from-zero is unobservable in this domain.
-    //
-    // Compared with a normalising sprintf rather than (string): `(string) round(50.0, 2)` is "50"
-    // where the oracle says "50.00", so the raw cast agrees with the oracle only at values where
-    // the two representations happen to coincide. 3.125 is one of those; 3.121 is too, but the
-    // normalisation is what makes that a property of the code rather than of the fixture.
-    $rc_low_want = rc_exact_half_up(3121, 100000, 2);   // 3.121 -> '3.12'
-    try {
-        $rc_low_got = sprintf('%.2F', (float) $rc_fn(3.121, 2));
-    } catch (Throwable $rc_e) {
-        $rc_low_got = 'threw ' . get_class($rc_e);
-    }
-    if ($rc_low_want !== $rc_low_got) {
-        $rc_rounder_bad[] = "{$rc_fn}(3.121, 2) = {$rc_low_got}, want {$rc_low_want} — it does not "
-            . 'round DOWN below the half, so it is not half-up (a ceiling passes the 3.125 tie)';
+    foreach ($rc_rounder_rows as $rc_i => $rc_row) {
+        if ($rc_row[1] !== $rc_rounder_got[$rc_i]) {
+            $rc_rounder_bad[] = sprintf('%s(%s, 2) = %s, want %s — %s',
+                $rc_fn, $rc_row[0], $rc_rounder_got[$rc_i], $rc_row[1], $rc_row[2]);
+        }
     }
 }
 
@@ -889,7 +924,7 @@ if (['number_format_i18n'] !== $rc_rounder_skipped) {
 
 $controls[] = [
     [] === $rc_rounder_bad,
-    sprintf('every member of rc_half_up_rounders() reproduces exact half-up on the tie fixture '
+    sprintf('every member of rc_half_up_rounders() reproduces exact half-up on both fixtures '
         . '(%d of %d checked; not defined outside WordPress: %s)',
         $rc_rounder_checked, count($rc_rounder_names),
         $rc_rounder_skipped ? implode(', ', $rc_rounder_skipped) : 'none')
