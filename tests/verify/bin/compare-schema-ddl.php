@@ -4,7 +4,11 @@
  * the manifest emits now.
  *
  * VERIFICATION-PROTOCOL.md names this as mandatory before F2 lands: "the emitted DDL before and
- * after, for fresh AND upgraded installs". F2 is a refactor whose entire claim is that nine
+ * after, for fresh **and** upgraded installs". (The record writes that "and" in bold; this
+ * quotation carries the markers because it is a quotation. It read AND here until
+ * tests/record-citation-test.php was pointed at VERIFICATION-PROTOCOL.md and found it — the same
+ * defect class as an identifier renamed inside quote marks, live and unnoticed.) F2 is a
+ * refactor whose entire claim is that nine
  * creators are replaced by one WITHOUT changing what any of them produced, apart from three
  * changes that are the point (engine, collation, and the index set converging). A refactor that
  * silently drops a column or flips a default is not visible to any test that only exercises the

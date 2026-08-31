@@ -202,22 +202,35 @@ function slimstat_last_name_segment(string $name): string
  * (`namespace\round`) — so the set is assembled with defined() rather than written as a literal,
  * and a scanner that checks T_STRING alone is blind to every qualified call on 8.x.
  *
- * The `static` memo is NOT a cost optimisation and should not be read as one: measured at the
- * real call frequency (162 invocations per run) it saves 0.03 ms across the whole run, an order
- * of magnitude below the +0.386 ms the call site cites for the map itself. It is here because the
- * helper is now shared by two gates in this repo, which is the only reason building it once is
+ * The `static` memo is NOT a cost optimisation and should not be read as one: measured at THIS
+ * repo's call frequency (162 invocations per run) it saves 0.03 ms across the whole run, two
+ * orders of magnitude below the ~5.5 ms the MAP itself wins at the call site. It is here because
+ * the helper is shared by two gates in this repo, which is the only reason building it once is
  * worth a line.
  *
- * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 recorded SIX
- * hand-rolled copies of this predicate across the two repos — the clause counts 4/3/1/1 belong to
- * four of them — and said plainly: "Cost is NOT the reason to do it … the duplication is. A
- * slimstat_name_token_types() in tests/lib/source-scan.php fixes both in one move." A copy in a
- * test file would have adopted the shape and left the reason undischarged.
+ * (An earlier version of this sentence placed the memo an order of magnitude below a +0.386 ms
+ * figure it said the call site cited for the map. Wrong twice: 0.386 ms is PRO's number, measured
+ * over pro's 31,544-token corpus, and pro's call site attributes it to the `||` CHAIN this map
+ * replaced — not to the map. Free's own call site cites −5.55 ms and 0.343 ms and never 0.386.
+ * That is PITFALLS 104 sitting one paragraph above the commit that filed PITFALLS 104. Written
+ * without quote marks on purpose: tests/record-citation-test.php checks quoted spans in comments
+ * naming a record, and quoting my own superseded prose there would be a citation of nothing.)
  *
- * That quotation is verbatim, INCLUDING the identifier. Pro's twin carries the same sentence and
- * silently rewrote `slimstat_` to `pro_` inside the quote marks — editing a standing record to
- * suit the file quoting it, which is the exact rot the paragraphs around here are about. Fixed
- * there; noted here so the next port does not redo it.
+ * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 counted SIX
+ * hand-rolled copies of this predicate across the two repos (it lists four clause counts,
+ * 4/3/1/1, for the six), and the revision this move discharged — STATE.json AT 19c57f6, before
+ * the entry was rewritten to RESOLVED — said plainly:
+ *
+ *   "Cost is NOT the reason to do it … the duplication is. A slimstat_name_token_types() in
+ *    tests/lib/source-scan.php fixes both in one move."
+ *
+ * A copy in a test file would have adopted the shape and left that reason undischarged.
+ *
+ * THE REVISION IS NAMED ON PURPOSE. An earlier version of this paragraph quoted that sentence
+ * against the CURRENT STATE.json, where it no longer appears — the same commit that fixed the
+ * duplication also rewrote the entry, so the quote and the "SIX copies" figure came from two
+ * different revisions spliced together. A reader grepping STATE.json for the quote got nothing,
+ * in the docblock whose subject is misquotation. Verified now: 0 matches at HEAD, 1 at 19c57f6.
  *
  * Its natural neighbour is slimstat_last_name_segment(): every consumer calls that on the
  * matched token's text one line later. They are two halves of one hazard.
