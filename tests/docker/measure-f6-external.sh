@@ -24,8 +24,8 @@
 #   a real subset of production sites run with it, and the after arm must stay clean even
 #   under it. Stated here so the arm difference cannot read as an accident.
 #
-# One arm per invocation; '-' = working tree. Free ref via git worktree (as measure-d10);
-# Pro ref via a worktree handed to build-pro.sh (PRO_SRC_OVERRIDE) so the cell installs
+# One arm per invocation; '-' = Free working tree and Pro committed HEAD. Free ref via git worktree (as measure-d10);
+# Pro ref resolved by build_pro_arm and handed to Pro's shipped build/build-dist.sh so the cell installs
 # the real scoped zip of that ref, not source. Counts and presence/absence only — no
 # milliseconds.
 set -uo pipefail
@@ -76,7 +76,7 @@ trap finish EXIT
 echo "CONTROLS:"
 echo "  topology: $TOPO (db2 $( [ "$TOPO" = "B" ] && echo 'RUNNING' || echo 'ABSENT — hostname must not resolve'))"
 echo "  free arm: $(free_arm_desc)"
-if [ -n "$PRO_WT" ]; then echo "  pro arm:  $(git -C "$PRO_WT" rev-parse --short HEAD) (requested $PRO_REF), zip rebuilt for this arm"; else echo "  pro arm:  sibling checkout ($(git -C "$PRO_CHECKOUT" rev-parse --short HEAD))"; fi
+echo "  pro arm:  $(pro_arm_desc)"
 
 log "[$CELL] build + up"
 boot_stack "$ART" "$PHP" || { fail "stack did not come up"; exit 1; }

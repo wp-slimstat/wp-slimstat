@@ -5,14 +5,14 @@
 #                     U2/U3/U5/U6 are named in the plan and REFUSED here — see the refusal
 #                     below. Each scenario derives its own cell directory, compose project and
 #                     default ports, so two no longer share a cell directory or a compose
-#                     project. (NOT a concurrency claim: two rehearsals still share one git
-#                     worktree registry in $PLUGIN_SRC, and use_ref() prunes it. Untested, so
-#                     unclaimed.) Before this, CELL and COMPOSE_PROJECT_NAME were constants and
+#                     project. (NOT a concurrency claim: the Docker engine and cached artifacts
+#                     remain shared. Untested, so unclaimed.) Before this, CELL and
+#                     COMPOSE_PROJECT_NAME were constants and
 #                     a second run silently overwrote the first's artifacts. The names come from
 #                     jaan-to/outputs/dev/v6-performance/NEXT-SESSION.md (B1/B5); note that
 #                     record says "one of seven" while enumerating six.
 #   PRO_REF=<ref|->   required by U4: the wp-slimstat-pro ref to build and install ('-' = the
-#                     sibling working tree). Free moves OLD -> NEW across the run, so a U4 run
+#                     sibling checkout's committed HEAD). Free moves OLD -> NEW across the run, so a U4 run
 #                     observes the mixed window at R1 (old free, this Pro) and the matched pair
 #                     from R2 on.
 #
@@ -113,7 +113,7 @@ case "$SCENARIO" in
     # U4 IS "Pro alongside", so a U4 with no Pro is U1 wearing U4's name -- the very thing the
     # arm below refuses. Required, not defaulted.
     [ -n "${PRO_REF:-}" ] || {
-      err "SCENARIO=U4 needs PRO_REF (a wp-slimstat-pro ref, or '-' for the sibling working tree)."
+      err "SCENARIO=U4 needs PRO_REF (a wp-slimstat-pro ref, or '-' for committed HEAD)."
       err "  Without it this would run U1's legs and file the verdict under U4's name."
       exit 2; }
     WITH_PRO=1 ;;
@@ -194,23 +194,24 @@ row_count() { mysql_q "SELECT COUNT(*) FROM wordpress.wp_slim_stats;" | tr -d '[
 has_column() { mysql_q "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='wp_slim_stats' AND COLUMN_NAME='$1';" | tr -d '[:space:]'; }
 
 use_ref() { # <ref>
-  # Two statements, not one `local a= b=$a`: bash expands the whole assignment list before
-  # binding any of it, so the second reference is unset under `set -u`.
   local ref="$1"
-  local dir="$CELL_DIR/arms/$ref"
-  # R7 switches BACK to the old ref, so this runs twice for the same path. `rm -rf` alone leaves
-  # git's registration behind and the re-add then fails with "already exists" — which reads as
-  # "cannot create a worktree at <ref>" and looks like a bad ref rather than a stale handle.
-  git -C "$PLUGIN_SRC" worktree remove --force "$dir" >/dev/null 2>&1 || true
-  rm -rf "$dir"
-  git -C "$PLUGIN_SRC" worktree prune >/dev/null 2>&1 || true
-  git -C "$PLUGIN_SRC" worktree add --detach "$dir" "$ref" >/dev/null 2>&1 \
-    || { err "cannot create a worktree at $ref"; return 1; }
-  ( cd "$dir" && composer run build:autoload >/dev/null 2>&1 ) \
-    || { err "could not rebuild the autoloader at $ref — that arm would boot with the wrong classmap"; return 1; }
-  sync_plugin_src "$WP_DIR" "$dir"
+  local full sha
+  full=$(git -C "$PLUGIN_SRC" rev-parse "$ref^{commit}") || { err "cannot resolve Free ref $ref"; return 1; }
+  sha=${full:0:8}
+  ARM_FREE_ZIP="$HARNESS_DIR/build/wp-slimstat-$sha.zip"
+  FREE_ZIP_OUT="$ARM_FREE_ZIP" bash "$HARNESS_DIR/build-free.sh" "$full" \
+    > "$ART/build-free-$sha.log" 2>&1 || { err "Free ZIP build at $ref failed"; return 1; }
+  # The first arm is selected before WordPress exists; provision_wp_cell installs it. Every
+  # later transition goes through WordPress's upgrader, never through a source-tree rsync.
+  if [ -f "$WP_DIR/wp-config.php" ]; then
+    mkdir -p "$WP_DIR/wp-content/plugins/.free"
+    cp "$ARM_FREE_ZIP" "$WP_DIR/wp-content/plugins/.free/wp-slimstat.zip"
+    chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
+    wpc plugin install /var/www/html/wp-content/plugins/.free/wp-slimstat.zip --force \
+      >> "$ART/install.log" 2>&1 || { err "Free ZIP upgrade to $ref failed"; return 1; }
+  fi
 }
-drop_ref() { git -C "$PLUGIN_SRC" worktree remove --force "$CELL_DIR/arms/$1" >/dev/null 2>&1 || true; }
+drop_ref() { :; }
 
 # A tracked hit through the REAL path: the tracker's own entry point, not an INSERT.
 track_hit() { # <marker>
@@ -301,7 +302,7 @@ if [ "$WITH_PRO" = 1 ]; then
   log "[$CELL] building the Pro arm at ${PRO_REF}"
   build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
 fi
-provision_wp_cell "$ART" "$WP" "$BASE_URL" "$CELL_DIR/arms/$OLD_REF" || exit 1
+provision_wp_cell "$ART" "$WP" "$BASE_URL" "$PLUGIN_SRC" || exit 1
 
 # C5 (U4 only). A post-provision property, so it cannot sit in the CONTROLS block above, whose
 # subjects are all properties of the DUMP.
@@ -618,7 +619,6 @@ else
 fi
 
 drop_ref "$OLD_REF"; drop_ref "$NEW_REF"
-git -C "$PLUGIN_SRC" worktree prune >/dev/null 2>&1
 
 write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" 2>/dev/null || true
 

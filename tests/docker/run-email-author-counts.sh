@@ -52,7 +52,7 @@ trap finish EXIT
 
 echo "CONTROLS:"
 echo "  free: WORKING TREE ($(git -C "$PLUGIN_SRC" rev-parse --short HEAD)) — identical in both arms by construction"
-if [ -n "$PRO_WT" ]; then echo "  pro arm: $(git -C "$PRO_WT" rev-parse --short HEAD) (requested $PRO_REF), zip rebuilt for this arm"; else echo "  pro arm: sibling checkout ($(git -C "$PRO_CHECKOUT" rev-parse --short HEAD), working tree)"; fi
+echo "  pro arm: $(pro_arm_desc)"
 
 log "[$CELL] build + up"
 boot_stack "$ART" "$PHP" || { fail "stack did not come up"; exit 1; }

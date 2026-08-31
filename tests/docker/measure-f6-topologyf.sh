@@ -68,7 +68,7 @@ trap finish EXIT
 
 echo "CONTROLS:"
 echo "  free arm: $(free_arm_desc)"
-if [ -n "$PRO_WT" ]; then echo "  pro arm:  $(git -C "$PRO_WT" rev-parse --short HEAD) (requested $PRO_REF), zip rebuilt for this arm"; else echo "  pro arm:  sibling checkout ($(git -C "$PRO_CHECKOUT" rev-parse --short HEAD), working tree)"; fi
+echo "  pro arm:  $(pro_arm_desc)"
 echo "  foreign owner fixture: identical DDL + row in both arms — only the CODE differs"
 
 log "[$CELL] build + up"

@@ -57,10 +57,10 @@ wait_for() {
 fail() { status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 
 # ── Pro measurement arm ─────────────────────────────────────────────────────
-# Resolve which wp-slimstat-pro build a two-arm measurement installs: '-' = the sibling
-# checkout as it stands (working tree), a ref = a detached worktree and a zip rebuilt for
-# exactly that ref. Sets PRO_CHECKOUT, PRO_WT ('' for working tree) and ARM_PRO_ZIP;
-# cleanup_pro_arm undoes the worktree from the caller's exit trap. Extracted when
+# Resolve which shipped wp-slimstat-pro build a two-arm measurement installs: '-' = the sibling
+# checkout's committed HEAD, a ref = that exact commit. build/build-dist.sh owns the only scoper
+# toolchain; this helper never manufactures a second artifact recipe. Sets PRO_CHECKOUT,
+# PRO_RESOLVED_REF and ARM_PRO_ZIP. Extracted when
 # measure-f6-useroverview.sh needed the second copy of measure-f6-external.sh's block:
 # arm provenance is the part a sealed measurement's credibility rests on, so it gets one
 # owner, like the bring-up helpers above.
@@ -68,23 +68,17 @@ build_pro_arm() { # <pro_ref|-> <cell_dir> <art_dir>
   local ref="$1" cell_dir="$2" art="$3"
   PRO_CHECKOUT="$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro"
   PRO_WT=""
-  ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro.zip"
-  if [ "$ref" != "-" ]; then
-    PRO_WT="$cell_dir/pro-src"; rm -rf "$PRO_WT"
-    git -C "$PRO_CHECKOUT" worktree add --detach "$PRO_WT" "$ref" >/dev/null 2>&1 \
-      || { err "cannot create pro worktree at $ref"; return 1; }
-    ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro-$ref.zip"
-    PRO_SRC_OVERRIDE="$PRO_WT" PRO_ZIP_OUT="$ARM_PRO_ZIP" bash "$HARNESS_DIR/build-pro.sh" \
-      > "$art/build-pro.log" 2>&1 || { err "pro build at $ref failed (see build-pro.log)"; return 1; }
-  else
-    bash "$HARNESS_DIR/build-pro.sh" > "$art/build-pro.log" 2>&1 \
-      || { err "pro build failed (see build-pro.log)"; return 1; }
-  fi
+  [ "$ref" = "-" ] && ref=HEAD
+  PRO_RESOLVED_REF=$(git -C "$PRO_CHECKOUT" rev-parse "$ref^{commit}") \
+    || { err "cannot resolve Pro ref $ref"; return 1; }
+  ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro-${PRO_RESOLVED_REF:0:8}.zip"
+  PRO_REF_OVERRIDE="$PRO_RESOLVED_REF" PRO_ZIP_OUT="$ARM_PRO_ZIP" \
+    PRO_BUILD_LOG="$art/build-pro.log" bash "$HARNESS_DIR/build-pro.sh" \
+    || { err "Pro shipped build at $ref failed (see build-pro.log)"; return 1; }
 }
 
-# Remove build_pro_arm's worktree, if one was made. Safe to call unconditionally.
+# Retained for callers whose traps predate the shipped-artifact builder. Safe to call unconditionally.
 cleanup_pro_arm() {
-  [ -n "${PRO_WT:-}" ] && git -C "$PRO_CHECKOUT" worktree remove --force "$PRO_WT" >/dev/null 2>&1
   return 0
 }
 
@@ -147,8 +141,8 @@ free_arm_desc() {
 # drifted apart on spacing before this was extracted -- exactly why free_arm_desc() exists.
 # They are owed a migration onto this; rehearse-upgrade.sh is the first caller.
 pro_arm_desc() {
-  if [ -n "${PRO_WT:-}" ]; then
-    echo "$(git -C "$PRO_WT" rev-parse --short HEAD) (pinned ref)"
+  if [ -n "${PRO_RESOLVED_REF:-}" ]; then
+    echo "${PRO_RESOLVED_REF:0:8} (shipped ZIP)"
   else
     echo "WORKING TREE ($(git -C "${PRO_CHECKOUT:-.}" rev-parse --short HEAD)+uncommitted)"
   fi
@@ -158,15 +152,23 @@ pro_arm_desc() {
 # download → config → install → free source → pro zip → both activations. The third
 # script to need this block is what got it extracted, same as build_pro_arm. Cell-specific
 # steps (posts, users, WP_DEBUG_DISPLAY) stay in the callers, after this returns.
-provision_wp_cell() { # <art> <wp_version> <base_url> <free_src>
+provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
   local art="$1" wp="$2" base_url="$3" free_src="$4"
   wpc core download --version="$wp" --force > "$art/install.log" 2>&1 || { fail "core download failed"; return 1; }
   wp_config_debug "$art/install.log"
   wpc core install --url="$base_url" --title="$COMPOSE_PROJECT_NAME" --admin_user=admin \
       --admin_password=admin --admin_email=qa@example.com --skip-email >>"$art/install.log" 2>&1 \
       || { fail "core install failed"; return 1; }
-  sync_plugin_src "$CELL_WP_DIR" "$free_src"
-  wpc plugin activate wp-slimstat >>"$art/install.log" 2>&1 || { fail "free activation failed"; return 1; }
+  if [ -n "${ARM_FREE_ZIP:-}" ]; then
+    mkdir -p "$CELL_WP_DIR/wp-content/plugins/.free"
+    cp "$ARM_FREE_ZIP" "$CELL_WP_DIR/wp-content/plugins/.free/wp-slimstat.zip"
+    chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
+    wpc plugin install /var/www/html/wp-content/plugins/.free/wp-slimstat.zip --activate --force \
+      >>"$art/install.log" 2>&1 || { fail "Free ZIP install failed"; return 1; }
+  else
+    sync_plugin_src "$CELL_WP_DIR" "$free_src"
+    wpc plugin activate wp-slimstat >>"$art/install.log" 2>&1 || { fail "free activation failed"; return 1; }
+  fi
   # Pro rides only when the caller resolved an arm zip (build_pro_arm sets ARM_PRO_ZIP).
   # A free-only bench cell provisions without it rather than re-inlining this block.
   if [ -n "${ARM_PRO_ZIP:-}" ]; then

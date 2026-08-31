@@ -144,7 +144,7 @@ mkdir -p "$WP_DIR/wp-content/plugins/.pro"
 if [ -f "$PRO_ZIP" ]; then
   cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
 else
-  fail "PRO_ZIP not found at $PRO_ZIP — run tests/docker/build-pro.sh first"
+  fail "PRO_ZIP not found at $PRO_ZIP — run tests/docker/build-pro.sh (the shipped-builder wrapper) first"
 fi
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 
