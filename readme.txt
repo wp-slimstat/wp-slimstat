@@ -141,6 +141,7 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 * External-database installs: reports read the right database; an unreachable analytics database no longer creates a second schema inside WordPress or prints the hostname. (Connection hardening ships in Pro 3.0.0.)
 * Tied rows in top-list reports (pages, browsers, countries, entry/exit pages) stop reordering between page refreshes.
 * Same-page refreshes during an anonymous session stop double-counting, so anonymous pageview counts can decrease slightly — to their true value.
+* Percentages round the same way everywhere. A value landing exactly on a rounding boundary — 1 in 32 is exactly 3.125% — was printed as 3.12 in the top-list percentage column and the new-visitor rate, while the bar drawn beside it used 3.13. Both now round half-up, and the number and its bar are the same figure. Only on-the-boundary values move, and they move up by one in the last digit.
 
 **Reliability**
 * One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.

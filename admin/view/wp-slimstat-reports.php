@@ -1339,9 +1339,10 @@ class wp_slimstat_reports
                 // so on any other report type the bar block below read an undefined (or a
                 // previous row's) value. PHPStan surfaced the _raw half; the _value half
                 // had been latent since the bar existed.
-                $percentage_value  = '';
-                $percentage_raw    = 0;
-                $element_pre_value = '';
+                $percentage_value   = '';
+                $percentage_raw     = 0;
+                $percentage_rounded = 0;
+                $element_pre_value  = '';
                 // Ensure $results[$i] is an array and the key exists
                 if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
                     $element_value = $results[$i][$_args['columns']];
@@ -1590,9 +1591,14 @@ class wp_slimstat_reports
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {
                     $percentage_raw   = (wp_slimstat_db::$pageviews > 0) ? (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews) : 0;
-                    $percentage_value = $percentage_raw ? sprintf('%01.2f', $percentage_raw) : 0;
-                    $counthits        = number_format_i18n($results[$i]['counthits']);
-                    $percentage_value = number_format_i18n((float)$percentage_value, 2);
+                    // round(), not sprintf('%01.2f'). sprintf is a FORMATTER: `%.Nf` rounds
+                    // ties-to-EVEN on every runtime, so 100 * 1 / 32 — exactly 3.125 — printed
+                    // 3.12 here while the bar below sized itself from round()'s 3.13. The same
+                    // number, two rounding rules, 42 lines apart in one row (issue #334).
+                    // Rounded ONCE now and shared, so the two surfaces cannot drift again.
+                    $percentage_rounded = round($percentage_raw, 2);
+                    $counthits          = number_format_i18n($results[$i]['counthits']);
+                    $percentage_value   = number_format_i18n($percentage_rounded, 2);
 
                     $percentage = ' <span class="slimstat-count-pct">' . $counthits . '<span class="slimstat-pct">(' . $percentage_value . '%)</span></span>';
                 }
@@ -1632,7 +1638,9 @@ class wp_slimstat_reports
                     // a >99 clamp lived here; nothing ever did — this is the first guard.
                     // Clamped on the RAW ratio, not un-parsed from the i18n string — which
                     // also ends the comma-decimal locales' invalid CSS widths.
-                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, round($percentage_raw, 2)) . '%"></span></span>';
+                    // $percentage_rounded, not a second round() of $percentage_raw: the bar and
+                    // the printed number are the same figure and must round once, together.
+                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, $percentage_rounded) . '%"></span></span>';
                 }
                 $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 

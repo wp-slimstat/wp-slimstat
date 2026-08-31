@@ -1824,7 +1824,10 @@ class wp_slimstat_db
         $results           = [];
         $total_human_hits  = wp_slimstat_db::count_records('id', 'visit_id > 0 AND browser_type <> 1');
         $new_visitors      = wp_slimstat_db::count_records_having('ip', 'visit_id > 0', 'COUNT(visit_id) = 1');
-        $new_visitors_rate = ($total_human_hits > 0) ? sprintf('%01.2f', (100 * $new_visitors / $total_human_hits)) : 0;
+        // round(), not sprintf('%01.2f') — sprintf rounds ties-to-EVEN, so 100 * 1 / 32
+        // (exactly 3.125) printed 3.12 where every other percentage in the product gives
+        // 3.13. Issue #334; the operand order is ADR-17's and is unchanged.
+        $new_visitors_rate = ($total_human_hits > 0) ? round((100 * $new_visitors / $total_human_hits), 2) : 0;
         $server_name       = sanitize_text_field(wp_unslash($_SERVER['SERVER_NAME']));
 
         if (intval($new_visitors_rate) > 99) {

@@ -53,11 +53,29 @@
  *      the seventh from arriving unnoticed. It is depth-aware, so `round($x / (7 * 86400))`
  *      — a division by a computed constant, which is fine — is not flagged.
  *
- * WHAT IT DELIBERATELY DOES NOT ASSERT. `sprintf('%.Nf')` rounds ties-to-EVEN on every
- * runtime, so `1/32` prints `3.12` where the documented half-up rule says `3.13`, on the
- * percentage beside every row of every top-N report (ADR-17 §5a, "F1"). That is a real and
- * separate finding about a different mechanism; reordering the operands does not touch it, and
- * this file does not claim it does. Same for Pro's email report double-rounding ("F4").
+ *   3. NO SECOND ROUNDING RULE, repo-wide. `sprintf`/`printf` with a `%.Nf` conversion applied
+ *      to an expression containing a division is a failure wherever it appears — that is
+ *      sprintf being used as a rounding function, which it is not. New with #334/#335.
+ *
+ * ── WHAT IT USED TO SAY IT DELIBERATELY DID NOT ASSERT, AND NOW DOES ────────────────────────
+ *
+ * Until 2026-08-31 this section read: *"`sprintf('%.Nf')` rounds ties-to-EVEN on every runtime,
+ * so `1/32` prints `3.12` where the documented half-up rule says `3.13`, on the percentage
+ * beside every row of every top-N report (ADR-17 §5a, 'F1') … this file does not claim it does.
+ * Same for Pro's email report double-rounding ('F4')."* That was honest and correct while it
+ * stood. Both are fixed now — E5/E6 below assert F1, Pro's sibling asserts F4 — and assertion 3
+ * stops either coming back at a site nobody thought to add to the table.
+ *
+ * ── THE LIMIT THIS FILE STILL HAS, stated rather than left to be discovered ─────────────────
+ *
+ * Assertion (b) — "renders exact half-up" — can only tell half-up from ties-to-even on a
+ * fixture where the two rules DISAGREE. Measured: of the eight sites below, only **E5 and E6**
+ * carry such a fixture (1/32 = 3.125 at 2 dp). E1 (23/160), E3/E3' (23/80) and E4/E4'/E4''
+ * (23/40) render identically under both rules at their precisions, so for those six (b) checks
+ * precision and operand order but NOT the rounding rule. Their fixtures were chosen for
+ * ADR-17's boundary property and still serve assertion (a); giving them tie fixtures too means
+ * a second fixture per site, which is owed work and not done here. Assertion 3 covers the gap
+ * repo-wide in the meantime — it is the reason that gap is tolerable.
  *
  * 7.4-safe: bare PHP, no PHPUnit, no WordPress, no vendor autoloader.
  *
@@ -262,9 +280,26 @@ function rc_rounding_calls(string $source): array
         $divmul       = false;
         $first_end     = $close;
         $min_mul_depth = PHP_INT_MAX;
+        // `fmtround`: sprintf/printf used as a ROUNDING function — a `%.Nf` conversion applied
+        // to an expression containing a division. That is issues #334/#335's mechanism, and
+        // until 2026-08-31 this scanner could not see it: it checked operand ORDER only, and
+        // the shape table below listed `sprintf("%01.4f", (100 * $c / $t))` as a shape the gate
+        // REQUIRES. So the exact defect that had just been fixed at four sites could be
+        // reintroduced at a fifth and every control would stay green.
+        $fmt_conv       = false;   // the format literal carries a %…f conversion
+        $div_in_value   = false;   // a `/` OPERATOR after the first top-level comma
         for ($k = $open + 1; $k < $close; $k++) {
             $text = slimstat_token_text($tokens[$k]);
             if (is_array($tokens[$k])) {
+                // The format literal is the FIRST argument and is a string token, so it is only
+                // ever seen here. Matching on the token means `'%d/%d'`'s slash is a string and
+                // not an operator — the same reason this loop skips array tokens below.
+                if ($k < $first_end
+                    && T_CONSTANT_ENCAPSED_STRING === $tokens[$k][0]
+                    && preg_match('/%[-+ 0\']*[0-9]*(?:\.[0-9]+)?[fF]/', $text)
+                ) {
+                    $fmt_conv = true;
+                }
                 continue; // only bare-string tokens can be an operator or a bracket
             }
             if ('(' === $text || '[' === $text) {
@@ -279,6 +314,9 @@ function rc_rounding_calls(string $source): array
                 $min_mul_depth = PHP_INT_MAX;
             } elseif ('/' === $text) {
                 $max_div_depth = max($max_div_depth, $depth);
+                if ($first_end !== $close) {
+                    $div_in_value = true; // a division in an argument AFTER the format literal
+                }
                 // ...and the MIRROR. A multiplication already seen at a STRICTLY SHALLOWER
                 // depth is `100 * ($a / $b)` — the same defect with the operands swapped, and
                 // the shape somebody writes applying ADR-17's remediation halfway, putting the
@@ -309,6 +347,9 @@ function rc_rounding_calls(string $source): array
             'args'   => slimstat_token_text_range($tokens, $open + 1, $close),
             'first'  => trim(slimstat_token_text_range($tokens, $open + 1, $first_end)),
             'divmul' => $divmul,
+            // sprintf/printf being used to ROUND a ratio, rather than to format an
+            // already-rounded one. Issues #334/#335's mechanism, made scannable.
+            'fmtround' => ('sprintf' === $name || 'printf' === $name) && $fmt_conv && $div_in_value,
         ];
     }
 
@@ -442,6 +483,46 @@ $sites = [
             return "\$count = {$a}; \$max_count = {$b};";
         },
     ],
+
+    // ── E5/E6: the ties-to-even sites (issue #334) ──────────────────────────────────────────
+    //
+    // These two shipped `sprintf('%01.2f', …)` until this change. The docblock's "WHAT IT
+    // DELIBERATELY DOES NOT ASSERT" section named that mechanism and left it unfixed on
+    // purpose; it is fixed now, so the exemption becomes an assertion.
+    //
+    // sprintf is a FORMATTER, not a rounding function: `%.Nf` rounds ties-to-EVEN on every
+    // runtime. round() is half-up. The fixture below is chosen to be exactly on a tie so the
+    // two rules disagree — 100 × 1 / 32 is exactly 3.125, which sprintf prints `3.12` and
+    // round() gives `3.13`. That is issue #334's own reproduction, and it is a dyadic rational
+    // so rc_is_exactly_representable() accepts it and assertion (a) stays meaningful.
+    //
+    // Reverting either site to sprintf turns this gate red twice over: the matcher finds zero
+    // round() calls ("the site is gone"), and were it to find one, assertion (b) would compare
+    // 3.12 against 3.13. Both were watched failing before the fix landed.
+    'E5 top-N percentage column' => [
+        'file'    => 'admin/view/wp-slimstat-reports.php',
+        'needles' => ['$percentage_raw'],
+        'places'  => 2,
+        'a'       => 1,
+        'b'       => 32,
+        'surface' => 'the percentage beside every row of every top-N report — the most-seen number in the product',
+        // The division is on the line above in the shipped file, so it is reproduced here
+        // exactly as that line writes it: (100 * counthits) / pageviews, left-associative.
+        'setup'   => static function (int $a, int $b): string {
+            return "\$percentage_raw = (100 * {$a}) / {$b};";
+        },
+    ],
+    'E6 new-visitors rate' => [
+        'file'    => 'admin/view/wp-slimstat-db.php',
+        'needles' => ['$new_visitors', '$total_human_hits'],
+        'places'  => 2,
+        'a'       => 1,
+        'b'       => 32,
+        'surface' => 'the new-visitor rate in the traffic-sources summary (dashboard + Pro email report)',
+        'setup'   => static function (int $a, int $b): string {
+            return "\$new_visitors = {$a}; \$total_human_hits = {$b};";
+        },
+    ],
 ];
 
 $evaluated = 0;
@@ -548,13 +629,32 @@ foreach ($files as $file) {
     $rel = slimstat_rel_path($plugin_root, $file);
     foreach (rc_rounding_calls((string) file_get_contents($file)) as $call) {
         $scanned++;
+
+        // NO SEVENTH ROUNDING RULE. sprintf/printf is a FORMATTER: `%.Nf` rounds ties-to-EVEN
+        // on every runtime, while everything else in this plugin rounds half-up. Issues
+        // #334/#335 were four sites that used it to round anyway, and this gate could not see
+        // them — it checked operand ORDER only, and its own shape table listed
+        // `sprintf("%01.4f", (100 * $c / $t))` as a shape it REQUIRED. So the defect was
+        // re-enterable at a fifth site with every control still green. It is not now.
+        if ($call['fmtround']) {
+            $failures[] = sprintf('%s:%d — %s() is being used to ROUND a ratio: `%s`. `%%.Nf` rounds '
+                . 'ties-to-EVEN, so this disagrees with round() on exactly the boundary values the '
+                . 'rest of the product rounds up (1 in 32 is exactly 3.125%%: 3.12 here, 3.13 '
+                . 'everywhere else). Round first, then format: number_format_i18n(round(…, $p), $p) '
+                . '(issues #334/#335)',
+                $rel, $call['line'], $call['name'], preg_replace('/\s+/', ' ', $call['args']));
+        }
+
         if (!$call['divmul']) {
             continue;
         }
+        // The WHOLE argument list, not just the first — printing only the first showed a
+        // maintainer `"%01.4f"`, an expression containing neither a division nor a
+        // multiplication. Pro fixed this first; same sitting, same fix here.
         $failures[] = sprintf('%s:%d — %s() multiplies the result of a division: `%s`. Every one of '
             . 'these percentages is a ratio of two COUNTs; divide LAST so the single division is the '
             . 'only rounding: (100 * $a) / $b (ADR-17; PITFALLS 72)',
-            $rel, $call['line'], $call['name'], preg_replace('/\s+/', ' ', trim($call['first'])));
+            $rel, $call['line'], $call['name'], preg_replace('/\s+/', ' ', $call['args']));
     }
 }
 
@@ -668,6 +768,17 @@ $controls[] = [
 //   * the top-level-comma reset     -> no trace
 //   * the ->/::/function/new filter -> no trace
 //
+// ⚠ THE FIRST BULLET IS NOW STALE, AND IT IS LEFT ABOVE RATHER THAN EDITED AWAY because it is
+// the reason this block was written. Re-measured 2026-08-31 by deleting the T_NAME_* clause on
+// the real file: the gate exits **1**. This $rc_shapes table is what kills it — it names
+// `\round(…)` and `Foo\round(…)` as shapes that MUST register, and without the clause neither
+// does. The mutation described as surviving is killed by the block the description motivated.
+//
+// This matters beyond tidiness: the stale sentence was cited as evidence that the census floor
+// needed tightening to an exact count. It does not — the hole that argument rests on is closed,
+// and the paragraph below still holds. Measured baseline `scanned` is 354 (355 before issue
+// #334's fix removed one call site); the mutant reads 352.
+//
 // The depth rule is the exception and needs no synthetic subject: this plugin ships the legal
 // `$x / (7 * 86400)` shape in src/Helpers/DataBuckets.php, so degrading `>= $depth` to `>= 0`
 // already fails the gate against real code. Pro needed nine synthetic subjects because pro's
@@ -681,7 +792,11 @@ $rc_shapes = [
     '\round(($a / $b) * 100, 2)'         => true,  // ONE T_NAME_FULLY_QUALIFIED token on 8.0+
     'Foo\round(($a / $b) * 100, 2)'      => true,  // T_NAME_QUALIFIED
     'round(100 * ($a / $b), 2)'          => true,  // the mirror: operands swapped
-    'sprintf("%01.4f", (100 * $c / $t))' => false, // the reordered form this gate REQUIRES
+    // divmul=false is correct — the operands ARE in ADR-17's order. What makes this shape a
+    // defect is the FORMATTER doing the rounding, which is `fmtround` below, not `divmul`.
+    // This entry used to be commented "the reordered form this gate REQUIRES", which read as a
+    // blessing of the very shape issues #334/#335 are about.
+    'sprintf("%01.4f", (100 * $c / $t))' => false,
     'round($x / (7 * 86400), 2)'         => false, // divide by a computed constant — exemption
     'round($a / $b, 2 * 3)'              => false, // multiplication in a LATER argument
     'round(2 * 3, ($a / $b))'            => false, // the mirror half's comma reset
@@ -713,6 +828,39 @@ foreach ($rc_shapes as $rc_expr => $rc_want) {
     if ($rc_want_name !== $rc_calls[0]['name']) {
         $rc_shape_bad[] = $rc_expr . ": recorded name '" . $rc_calls[0]['name']
             . "', want '" . $rc_want_name . "'";
+    }
+}
+
+// The `fmtround` branch needs its own subjects, because free's tree contains no ILLEGAL
+// instance any more — the four sites #334/#335 fixed were the only ones, so without these the
+// branch could be deleted and every control would still print PASS. (Same reasoning as the
+// divmul shapes above; free needs synthetic subjects where pro needed them for the mirror.)
+$rc_fmt_shapes = [
+    // The defect: a %.Nf conversion applied to an expression containing a division.
+    'sprintf("%01.2f", (100 * $c) / $t)'          => true,
+    'sprintf("%01.4f", (100 * $c / $t))'          => true,
+    'printf("%.1f", $a / $b)'                     => true,
+    // NOT the defect, and each of these would be a false positive that gets the branch relaxed:
+    'sprintf("%01.2f", $already_rounded)'         => false, // formatting, no division
+    'sprintf("%d/%d", $a, $b)'                    => false, // the slash is inside a STRING
+    'sprintf("%s", $a / $b)'                      => false, // no float conversion
+    'round((100 * $c) / $t, 2)'                   => false, // not a formatter at all
+    'number_format_i18n(round($a / $b, 2), 2)'    => false, // the shape this gate REQUIRES
+];
+foreach ($rc_fmt_shapes as $rc_expr => $rc_want) {
+    $rc_calls = rc_rounding_calls('<?php ' . $rc_expr . ';');
+    if (!$rc_calls) {
+        $rc_shape_bad[] = $rc_expr . ': the scanner found no call at all';
+        continue;
+    }
+    // number_format_i18n(round(...)) registers two calls; the OUTER one is $rc_calls[0].
+    $rc_got = false;
+    foreach ($rc_calls as $rc_call) {
+        $rc_got = $rc_got || $rc_call['fmtround'];
+    }
+    if ($rc_want !== $rc_got) {
+        $rc_shape_bad[] = $rc_expr . ': want fmtround=' . var_export($rc_want, true)
+            . ', got ' . var_export($rc_got, true);
     }
 }
 $controls[] = [

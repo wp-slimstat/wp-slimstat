@@ -36,4 +36,5 @@ run54-rounding-seam
 run58-s6-blind-seal
 run60-s7-canary
 run61-s8-closure-audit
+run64-s0a-336-trigger
 s6-design
