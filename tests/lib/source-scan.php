@@ -208,11 +208,16 @@ function slimstat_last_name_segment(string $name): string
  * helper is now shared by two gates in this repo, which is the only reason building it once is
  * worth a line.
  *
- * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 recorded four
- * hand-rolled copies of this predicate across the two repos with FOUR DIFFERENT clause lists —
- * 4, 3, 1 and 1 — and said plainly: "Cost is NOT the reason to do it … the duplication is. A
+ * IN THE LIB, not in a gate, and that is the point. STATE.json harness_debt_run53 recorded SIX
+ * hand-rolled copies of this predicate across the two repos — the clause counts 4/3/1/1 belong to
+ * four of them — and said plainly: "Cost is NOT the reason to do it … the duplication is. A
  * slimstat_name_token_types() in tests/lib/source-scan.php fixes both in one move." A copy in a
  * test file would have adopted the shape and left the reason undischarged.
+ *
+ * That quotation is verbatim, INCLUDING the identifier. Pro's twin carries the same sentence and
+ * silently rewrote `slimstat_` to `pro_` inside the quote marks — editing a standing record to
+ * suit the file quoting it, which is the exact rot the paragraphs around here are about. Fixed
+ * there; noted here so the next port does not redo it.
  *
  * Its natural neighbour is slimstat_last_name_segment(): every consumer calls that on the
  * matched token's text one line later. They are two halves of one hazard.
