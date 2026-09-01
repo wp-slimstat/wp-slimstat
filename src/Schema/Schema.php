@@ -1080,10 +1080,13 @@ final class Schema
         $drift = ['missing' => [], 'narrow' => []];
 
         foreach (self::tables() as $suffix) {
-            if (!self::reconciles($suffix)) {
-                continue;
-            }
-
+            // NO reconciles() GUARD, deliberately. `reconcile => false` is a DDL policy — it says
+            // ensure() must not build indexes on this table — and it has no business suppressing
+            // OBSERVATION, which is read-only by construction here. Excluding non-reconciling
+            // tables meant `slim_stats_archive` was the one table whose drift nothing could ever
+            // report, which is precisely the table that freezes: it is created once with
+            // `CREATE TABLE ... LIKE` and never gains a column again. `slim_events_archive`
+            // reconciles and so was already covered; the asymmetry was invisible and arbitrary.
             $qualified        = self::qualifyDrift(self::columnState($db, $suffix, $prefix), $suffix);
             $drift['missing'] = array_merge($drift['missing'], $qualified['missing']);
             $drift['narrow']  = $drift['narrow'] + $qualified['narrow'];

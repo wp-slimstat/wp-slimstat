@@ -62,9 +62,10 @@ class AddUserAgentDimension extends AbstractMigration
     public function getDescription(): string
     {
         return __(
-            'Optional. Adds a compact browser key to the analytics table and builds a lookup of '
-                . 'browsers and platforms — groundwork for a future release. It does not make any '
-                . 'report faster today, and on a large table it can take several minutes. Your '
+            'Optional. Adds a compact browser key to the analytics table AND to the archive '
+                . 'table, and builds a lookup of browsers and platforms — groundwork for a future '
+                . 'release. It does not make any report faster today, and on a large table it can '
+                . 'take several minutes — roughly double that if you also have archived data. Your '
                 . 'existing data is not modified, and reports keep working while it runs. '
                 . 'Tracking normally keeps working too, but a server that cannot rebuild the '
                 . 'table online will pause tracking writes for the whole rebuild, so on a large '
@@ -94,10 +95,14 @@ class AddUserAgentDimension extends AbstractMigration
 
     public function shouldRun(): bool
     {
-        // Two independent conditions, and the OR matters: a run interrupted between the ALTER
-        // and the backfill leaves the column present and the dimension empty, which is a state
-        // that must still report "needs to run".
-        return !$this->factColumnExists() || $this->dimensionIsBehind();
+        // Three independent conditions, and the ORs matter: a run interrupted between the
+        // ALTER and the backfill leaves the column present and the dimension empty, which is a
+        // state that must still report "needs to run" — and a run from before the archive was
+        // included leaves the fact table done and the archive short, which must too, or the
+        // migration reports complete while every future purge silently drops the column.
+        return !$this->factColumnExists()
+            || !$this->columnExists('slim_stats_archive', 'ua_id')
+            || $this->dimensionIsBehind();
     }
 
     public function run(): bool
@@ -107,7 +112,20 @@ class AddUserAgentDimension extends AbstractMigration
         // when AddVisitIdentity would otherwise have carried a second verbatim copy.
         // INPLACE matters here specifically: the fallback rebuild is silent and 3.9x
         // worse, and on the floor it blocks writes (see the class docblock).
-        if (!$this->addManifestColumn('slim_stats', 'ua_id', 'add_user_agent_dimension')) {
+        // TWO TABLES, and the archive is not optional here. STATS_COLUMNS names `ua_id`, so
+        // an archive that lacks it while the fact table has it is a permanent `lost` column:
+        // every purge from then on copies one field fewer into the archive and there is no
+        // remedy short of dropping the archive table. AddVisitIdentity's docblock states this
+        // rule for `vid_hash` and calls addManifestColumn twice; this one stated the rule in a
+        // sibling file and then added the column to one table.
+        //
+        // Two literal calls, not a loop, for the same reason AddVisitIdentity gives: the
+        // schema-single-source gate resolves LITERAL (table, column) arguments against the
+        // manifest, and a variable table name is a call site that gate cannot see.
+        $ok = $this->addManifestColumn('slim_stats', 'ua_id', 'add_user_agent_dimension')
+            && $this->addManifestColumn('slim_stats_archive', 'ua_id', 'add_user_agent_dimension');
+
+        if (!$ok) {
             return false;
         }
 

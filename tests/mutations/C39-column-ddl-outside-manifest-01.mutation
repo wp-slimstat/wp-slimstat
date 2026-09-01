@@ -4,14 +4,13 @@ kind:      restore-defect
 expect:    ALTER TABLE statement(s) outside
 rationale: Column DDL written by hand again, and deliberately WITHOUT the optional COLUMN keyword. MySQL's grammar is `ADD [COLUMN]`, so `ALTER TABLE t ADD ua_id BINARY(8)` is valid and one word shorter than what shipped — and the first draft of this gate, which enumerated `(?:ADD|MODIFY|CHANGE)\s+COLUMN`, was blind to exactly this form. That is why the scan keys on `ALTER TABLE`, which has no optional spelling. This mutation is the only thing standing between the gate and a return to keyword enumeration.
 ---
-diff --git a/src/Migration/Migrations/AddUserAgentDimension.php b/src/Migration/Migrations/AddUserAgentDimension.php
 --- a/src/Migration/Migrations/AddUserAgentDimension.php
 +++ b/src/Migration/Migrations/AddUserAgentDimension.php
-@@ -101,6 +101,7 @@
-         // when AddVisitIdentity would otherwise have carried a second verbatim copy.
-         // INPLACE matters here specifically: the fallback rebuild is silent and 3.9x
-         // worse, and on the floor it blocks writes (see the class docblock).
+@@ -122,6 +122,7 @@
+         // Two literal calls, not a loop, for the same reason AddVisitIdentity gives: the
+         // schema-single-source gate resolves LITERAL (table, column) arguments against the
+         // manifest, and a variable table name is a call site that gate cannot see.
 +        $this->wpdb->query('ALTER TABLE ' . $this->tablePrefix() . 'slim_stats ADD ua_id BINARY(8) NULL');
-         if (!$this->addManifestColumn('slim_stats', 'ua_id', 'add_user_agent_dimension')) {
-             return false;
-         }
+         $ok = $this->addManifestColumn('slim_stats', 'ua_id', 'add_user_agent_dimension')
+             && $this->addManifestColumn('slim_stats_archive', 'ua_id', 'add_user_agent_dimension');
+ 

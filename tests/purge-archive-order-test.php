@@ -152,8 +152,16 @@ foreach ($guardTargets as [$archiveVar, $constant, $joinKey, $label]) {
 
     $before = substr($purge, 0, $ins[0][1]);
 
-    if (!preg_match('/PurgeArchive::' . $constant . '/', $before)) {
-        $failures[] = "the {$label} columns do not come from PurgeArchive::{$constant}";
+    // Re-anchored, not relaxed. The property is still "one shared source, never a hand-written
+    // list" — but the source is now PurgeArchive::copyableColumns(), which reads the constants
+    // itself and intersects them against the live tables. Naming the constant here again would
+    // FORBID that indirection, and the indirection is the fix: on an upgraded install the
+    // archive does not have every column the constant declares, and naming one stopped
+    // retention permanently. Section 2 above still pins the constants to the manifest, and
+    // section 2b below pins that the purge routes through the intersection.
+    if (!preg_match('/copyableColumns\s*\(/', $before)) {
+        $failures[] = "the {$label} columns do not come from PurgeArchive::copyableColumns(), so "
+            . 'they are not a shared source and are free to drift from the collision guard';
     }
     if (!preg_match('/PurgeArchive::sameRow\([^,]+,\s*\'' . $joinKey . '\'/', $before)) {
         $failures[] = "the {$label} archive INSERT is not preceded by a PurgeArchive::sameRow() "
@@ -224,6 +232,44 @@ foreach ($schemaTargets as [$constant, $table]) {
             . "{$table} does not have — the archive INSERT would fail outright and, because "
             . 'the purge fails closed, retention would stop';
     }
+}
+
+// ── 2b. The statement is built from the LIVE schema, not from the manifest ──
+//
+// Section 2 above compares the constants to the MANIFEST, and that is still the right
+// question — but it is not the whole one, and believing it was is what shipped the defect.
+// The archive tables are declared `reconcile => false`, so `Schema::ensure()` never adds a
+// column to them: they are created once with `CREATE TABLE ... LIKE` and frozen at whatever
+// `slim_stats` looked like that day. A fresh install is born correct; an upgraded one is not.
+//
+// `ua_id` was added to STATS_COLUMNS in the same change that declared it on `slim_stats`,
+// which section 2 checks and passes. But the migration adding it touches `slim_stats` only,
+// and it is OPTIONAL, so `runAll()` skips it — leaving upgraded installs with the column on
+// NEITHER table. The probe then named a column that does not exist, `probeForCollision()`
+// read the resulting error as "cannot tell" and refused to delete, and it did that on every
+// tick forever: events aged out, pageviews never did, and the message blamed utf8mb4.
+//
+// So the purge must intersect against what the tables actually have at run time.
+if (!preg_match('/copyableColumns\s*\(/', $purge)) {
+    $failures[] = 'wp_slimstat_purge() does not intersect the declared columns against the live '
+        . 'schema. The archive tables are never reconciled, so on an upgraded install the '
+        . 'manifest names columns they have never had — and naming one in the collision probe '
+        . 'stops retention permanently, with a recorded message that blames the charset migration';
+}
+
+// Not "copyableColumns is mentioned somewhere". The constants must no longer reach sameRow()
+// and the INSERT directly, or the intersection is decoration sitting beside the defect.
+if (preg_match('/PurgeArchive::(?:STATS|EVENT)_COLUMNS\s*;/', $purge)) {
+    $failures[] = 'wp_slimstat_purge() still assigns PurgeArchive::STATS_COLUMNS / EVENT_COLUMNS '
+        . 'straight into the column list it builds SQL from. The intersection has to be the '
+        . 'thing the statement is built from, not an extra call beside it';
+}
+
+// A missing key means there is no statement to build, and that must refuse rather than
+// proceed — the same refusal probeForCollision() already makes for a question it could not ask.
+if (!preg_match("/\\['usable'\\]/", $purge)) {
+    $failures[] = 'nothing checks the usable flag, so a purge whose archive table has lost its '
+        . 'primary key would build a statement that cannot identify a row and delete through it';
 }
 
 // ── 3. The parent DELETE only runs if the events were safely dealt with ─────

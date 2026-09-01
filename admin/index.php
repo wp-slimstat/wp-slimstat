@@ -4167,6 +4167,7 @@ class wp_slimstat_admin
             'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
             'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
             'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),
             // Synthesised inside get_degradations() from the last-success stamp, not recorded
             // by any call site — so a scan that derives its population from record_degradation()
             // arguments cannot see it, and it went unlabelled precisely because of that.

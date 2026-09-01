@@ -1863,8 +1863,52 @@ class wp_slimstat
 
         // Both archives' column lists, and the collision guard built from them, live on
         // \SlimStat\Utils\PurgeArchive so the INSERT and the guard cannot drift apart.
-        $event_columns = \SlimStat\Utils\PurgeArchive::EVENT_COLUMNS;
-        $stats_columns = \SlimStat\Utils\PurgeArchive::STATS_COLUMNS;
+        //
+        // INTERSECTED AGAINST THE LIVE SCHEMA, because the archive tables are declared
+        // reconcile => false and are therefore frozen at the shape their source had when they
+        // were first created. On an upgraded install the manifest declares columns the archive
+        // has never had -- and naming one in the collision probe made it error, which
+        // probeForCollision() reads as "cannot tell", which stops the DELETE. Every tick,
+        // forever: events aged out, pageviews never did, and the message blamed utf8mb4.
+        //
+        // See PurgeArchive::copyableColumns() for the full account.
+        //
+        // Computed only when archiving. With "Delete Records" archiving off there is no INSERT
+        // to build a column list for, and these four SHOW COLUMNS would be pure cost.
+        $event_columns = [];
+        $stats_columns = [];
+
+        if ($archive) {
+            $prefix     = $GLOBALS['wpdb']->prefix;
+            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
+            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+
+            $event_columns = $event_plan['copy'];
+            $stats_columns = $stats_plan['copy'];
+
+            // No key, no statement. Refusing here is the same refusal probeForCollision()
+            // makes: never DELETE through a question that could not be asked.
+            if (!$event_plan['usable'] || !$stats_plan['usable']) {
+                self::record_degradation(
+                    'purge (archive schema)',
+                    'an archive table is missing its primary key column, so nothing could be '
+                        . 'archived and nothing was deleted. Recreate the archive tables, or turn '
+                        . 'off archiving in Settings > Maintenance.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+
+                return;
+            }
+
+            // Columns the LIVE table has and the archive does not are real fidelity loss, and
+            // they are NOT reported here. Archive drift is permanent -- the archive gains no
+            // columns, ever -- and the degradation channel heals by forgetting: DEGRADATION_TTL
+            // is 3 hours while this cron runs twicedaily, so the warning would be visible for 3
+            // hours in every 12 and look healthy the rest of the time. That is C34's shape
+            // exactly, and admin/index.php's record_column_drift() docblock rejects this channel
+            // for that reason in so many words. Schema::columnDrift() now observes archive
+            // tables, so the loss surfaces durably in the schema-drift notice instead.
+        }
 
         // ── Events first. This ordering is the whole defect. ────────────────────────
         //
@@ -1921,8 +1965,8 @@ class wp_slimstat
                         . self::$wpdb->last_error
                         . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
                         . 'some tables and not others - finish it before the purge can run again.',
-                self::DEGRADATION_OPERATIONAL
-            );
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
 
@@ -1932,8 +1976,8 @@ class wp_slimstat
                     'the events archive already holds different rows under the primary keys about to be '
                         . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
                         . 'after records were cleared.',
-                self::DEGRADATION_OPERATIONAL
-            );
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
 
@@ -1997,8 +2041,8 @@ class wp_slimstat
                         . self::$wpdb->last_error
                         . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
                         . 'some tables and not others - finish it before the purge can run again.',
-                self::DEGRADATION_OPERATIONAL
-            );
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
 
@@ -2008,8 +2052,8 @@ class wp_slimstat
                     'the pageview archive already holds different rows under the primary keys about to '
                         . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
                         . 'reset after records were cleared.',
-                self::DEGRADATION_OPERATIONAL
-            );
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
 
