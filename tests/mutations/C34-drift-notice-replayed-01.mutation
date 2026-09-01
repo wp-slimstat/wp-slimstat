@@ -1,0 +1,17 @@
+target:    admin/index.php
+gate:      php tests/degradation-notice-honesty-test.php
+kind:      name-only
+expect:    announces the STORED list
+rationale: The replay defect wearing the fix's name. observe_column_drift() is still called two lines above, so a gate asserting "the name appears" passes - and the first draft of this gate did exactly that, and this mutation survived it. What is actually wrong is that the STORED list is announced: it is written only by init_tables(), which runs on activation and a version-gated upgrade, so nothing recomputes it after a migration adds the column. At admin_init priority 98 it also outruns the TTL pruner at 99, so the notice cannot age out either. An install that had fixed its schema kept being told to reinstall until the next plugin release.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -736,7 +736,7 @@
+             return;
+         }
+ 
+-        self::announce_column_drift($current);
++        self::announce_column_drift($stored);
+     }
+ 
+     /**

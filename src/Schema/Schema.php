@@ -953,12 +953,10 @@ final class Schema
             // no read model at all, so `email VARCHAR(255)` on every install upgraded from below
             // 4.8.2 was invisible to everything, permanently.
             $columns = self::columnState($db, $suffix, $prefix);
-            foreach ($columns['missing'] as $column) {
-                $report['columns_missing'][] = $suffix . '.' . $column;
-            }
-            foreach ($columns['narrow'] as $column => $widths) {
-                $report['columns_narrow'][$suffix . '.' . $column] = $widths;
-            }
+            $drift   = self::qualifyDrift($columns, $suffix);
+
+            $report['columns_missing'] = array_merge($report['columns_missing'], $drift['missing']);
+            $report['columns_narrow']  = $report['columns_narrow'] + $drift['narrow'];
 
             $state             = self::indexState($db, $suffix, $prefix, $disabledGroups);
             $report['present'] = array_merge($report['present'], $state['present']);
@@ -1061,6 +1059,65 @@ final class Schema
      *
      * @return array{present:string[], missing:string[], undeclared:string[], narrow:array<string,string>}
      */
+    /**
+     * Column drift across every reconciling table, READ ONLY.
+     *
+     * The observation half of what `ensure()` does, without the DDL half. `ensure()` creates
+     * tables and builds indexes; a caller that only wants to know whether the schema matches the
+     * manifest — the admin notice re-deriving itself on `admin_init` — must not be able to change
+     * it. F4's standing rule, and S7's: an `ALTER` on `admin_init` rebuilding a 443k-row fact
+     * table is the hazard that seam removed.
+     *
+     * The WALK is deliberately not shared with `ensure()`, which interleaves the same iteration
+     * with table creation and index reconciliation and needs the per-table `columnState()` for
+     * its own `columns_absent` logic. What IS shared is `qualifyDrift()` — the `<table>.<column>`
+     * naming rule, which is the part two owners could disagree about silently.
+     *
+     * @return array{missing:string[], narrow:array<string,string>}
+     */
+    public static function columnDrift(wpdb $db, string $prefix): array
+    {
+        $drift = ['missing' => [], 'narrow' => []];
+
+        foreach (self::tables() as $suffix) {
+            if (!self::reconciles($suffix)) {
+                continue;
+            }
+
+            $qualified        = self::qualifyDrift(self::columnState($db, $suffix, $prefix), $suffix);
+            $drift['missing'] = array_merge($drift['missing'], $qualified['missing']);
+            $drift['narrow']  = $drift['narrow'] + $qualified['narrow'];
+        }
+
+        return $drift;
+    }
+
+    /**
+     * Qualify one table's column state as `<table>.<column>` drift entries.
+     *
+     * One owner for the naming rule. Two callers construct drift lists and a third compares
+     * their products for equality, so a disagreement about whether the table prefix is included
+     * would show up as a permanent option rewrite rather than as an error.
+     *
+     * @param array{missing:string[], narrow:array<string,string>} $columns
+     *
+     * @return array{missing:string[], narrow:array<string,string>}
+     */
+    private static function qualifyDrift(array $columns, string $suffix): array
+    {
+        $drift = ['missing' => [], 'narrow' => []];
+
+        foreach ($columns['missing'] as $column) {
+            $drift['missing'][] = $suffix . '.' . $column;
+        }
+
+        foreach ($columns['narrow'] as $column => $widths) {
+            $drift['narrow'][$suffix . '.' . $column] = $widths;
+        }
+
+        return $drift;
+    }
+
     public static function columnState(wpdb $db, string $suffix, string $prefix): array
     {
         $state   = ['present' => [], 'missing' => [], 'undeclared' => [], 'narrow' => []];

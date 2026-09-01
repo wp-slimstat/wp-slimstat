@@ -98,7 +98,8 @@ abstract class AbstractMigration implements MigrationInterface
                         . 'check the custom-database settings.',
                     $this->getId(),
                     $this->wpdb->last_error
-                )
+                ),
+                \wp_slimstat::DEGRADATION_OPERATIONAL
             );
         }
 
@@ -223,7 +224,8 @@ abstract class AbstractMigration implements MigrationInterface
 					$column,
 					$this->tablePrefix() . $suffix,
 					(string) $this->wpdb->last_error
-				)
+				),
+				\wp_slimstat::DEGRADATION_OPERATIONAL
 			);
 
 			return false;

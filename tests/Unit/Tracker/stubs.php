@@ -62,6 +62,12 @@ unset($slimstat_wpdb_const);
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
+        /** Mirrors wp_slimstat's severity constants; the migration and tracker paths
+         *  name them when recording, so a stub without them fatals rather than fails. */
+        const DEGRADATION_LOAD = 'load';
+
+        const DEGRADATION_OPERATIONAL = 'operational';
+
         /** @var string */
         public static string $upload_dir = '/tmp/fake-browscap';
 

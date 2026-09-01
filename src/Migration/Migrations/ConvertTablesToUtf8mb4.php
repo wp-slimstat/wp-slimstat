@@ -231,7 +231,8 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
             if (false === $result) {
                 \wp_slimstat::record_degradation(
                     'utf8mb4 conversion',
-                    sprintf('%s could not be converted: %s', $table, $this->wpdb->last_error)
+                    sprintf('%s could not be converted: %s', $table, $this->wpdb->last_error),
+                    \wp_slimstat::DEGRADATION_OPERATIONAL
                 );
                 $ok = false;
                 // Keep going: converting three of four tables is better than none, and the

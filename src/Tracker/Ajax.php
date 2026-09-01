@@ -478,7 +478,8 @@ class Ajax
                     if (!$eventWrite->isStored()) {
                         \wp_slimstat::record_degradation(
                             'event insert stored no row',
-                            $eventWrite->error() ?: 'no matching pageview (foreign key)'
+                            $eventWrite->error() ?: 'no matching pageview (foreign key)',
+                            \wp_slimstat::DEGRADATION_OPERATIONAL
                         );
                     }
                 }

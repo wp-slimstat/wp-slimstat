@@ -634,6 +634,25 @@ class wp_slimstat
     const DEGRADATION_TTL = 10800; // 3 hours
 
     /**
+     * The two kinds of degradation, and they heal differently — which is why the kind is
+     * recorded here rather than guessed by the renderer from the step's name.
+     *
+     * LOAD is the #325 class: a feature whose code would not load, so it was disabled. It
+     * re-stamps itself on every request that retries it, so ageing out after DEGRADATION_TTL
+     * is the correct healing model, and "reinstall the plugin and flush your opcache" is
+     * genuinely the remedy.
+     *
+     * OPERATIONAL is everything that KEPT WORKING and reported a problem: a purge that could
+     * not archive, a migration that could not add a column, a character-set conversion that
+     * failed. None of it is fixed by reinstalling, and none of it re-stamps on a timer that
+     * matches the TTL — the purge runs twice daily against a 3-hour TTL — so these are
+     * re-derived from live state instead. Telling their owner to reinstall is false advice.
+     */
+    const DEGRADATION_LOAD = 'load';
+
+    const DEGRADATION_OPERATIONAL = 'operational';
+
+    /**
      * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
      *
      * self::log() only writes when WP_DEBUG is on, so on a normal production site
@@ -644,13 +663,20 @@ class wp_slimstat
      * Only touches the database when the recorded message actually changes, so a
      * persistently broken install does not add a wp_options write to every request.
      *
-     * @param string             $step Stable machine key for the guarded step, e.g. 'browscap'.
-     * @param \Throwable|string  $e    The swallowed error, or a description of a failure that
-     *                                 produced no exception — a query that returned false, or
-     *                                 a precondition that was not met.
+     * @param string             $step     Stable machine key for the guarded step, e.g. 'browscap'.
+     * @param \Throwable|string  $e        The swallowed error, or a description of a failure that
+     *                                     produced no exception — a query that returned false, or
+     *                                     a precondition that was not met.
+     * @param string             $severity DEGRADATION_LOAD or DEGRADATION_OPERATIONAL. Declared
+     *                                     HERE, at the catch block that knows which it is, and not
+     *                                     reconstructed downstream by pattern-matching the step
+     *                                     name — a renderer-side list has to be kept in sync with
+     *                                     two dozen call sites by discipline alone, and three of
+     *                                     those keys are built by concatenation at runtime so no
+     *                                     such list can ever be complete.
      * @return void
      */
-    public static function record_degradation($step, $e)
+    public static function record_degradation($step, $e, $severity = self::DEGRADATION_LOAD)
     {
         $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
         self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
@@ -667,7 +693,7 @@ class wp_slimstat
             return;
         }
 
-        $stored[$step] = ['message' => $message, 'time' => $now];
+        $stored[$step] = ['message' => $message, 'time' => $now, 'severity' => $severity];
         // autoload=false, and it is not cosmetic (C34). Without the third argument this
         // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
         // the sites already unhealthy enough to be recording degradations. It is read only
@@ -710,7 +736,8 @@ class wp_slimstat
                     . 'recorded has already aged out of this list.',
                     gmdate('Y-m-d H:i', $last_ok) . ' UTC'
                 ),
-                'time'    => time(),
+                'time'     => time(),
+                'severity' => self::DEGRADATION_OPERATIONAL,
             ];
         }
 
@@ -1893,8 +1920,9 @@ class wp_slimstat
                     'could not check the event archive for key collisions, so nothing was deleted: '
                         . self::$wpdb->last_error
                         . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.'
-                );
+                        . 'some tables and not others - finish it before the purge can run again.',
+                self::DEGRADATION_OPERATIONAL
+            );
                 return;
             }
 
@@ -1903,8 +1931,9 @@ class wp_slimstat
                     'purge (archiving events)',
                     'the events archive already holds different rows under the primary keys about to be '
                         . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
-                        . 'after records were cleared.'
-                );
+                        . 'after records were cleared.',
+                self::DEGRADATION_OPERATIONAL
+            );
                 return;
             }
 
@@ -1923,7 +1952,11 @@ class wp_slimstat
                 // Fail closed. If the events could not be archived — missing table, schema
                 // drift, anything — do not touch the pageviews, because deleting them
                 // cascades the events away with no copy anywhere.
-                self::record_degradation('purge (archiving events)', self::$wpdb->last_error);
+                self::record_degradation(
+                    'purge (archiving events)',
+                    self::$wpdb->last_error,
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
         }
@@ -1936,7 +1969,7 @@ class wp_slimstat
             $days_ago,
             $days_ago
         ))) {
-            self::record_degradation('purge (deleting events)', self::$wpdb->last_error);
+            self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
             return;
         }
 
@@ -1963,8 +1996,9 @@ class wp_slimstat
                     'could not check the pageview archive for key collisions, so nothing was deleted: '
                         . self::$wpdb->last_error
                         . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
-                        . 'some tables and not others - finish it before the purge can run again.'
-                );
+                        . 'some tables and not others - finish it before the purge can run again.',
+                self::DEGRADATION_OPERATIONAL
+            );
                 return;
             }
 
@@ -1973,8 +2007,9 @@ class wp_slimstat
                     'purge (archiving pageviews)',
                     'the pageview archive already holds different rows under the primary keys about to '
                         . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
-                        . 'reset after records were cleared.'
-                );
+                        . 'reset after records were cleared.',
+                self::DEGRADATION_OPERATIONAL
+            );
                 return;
             }
 
@@ -1983,7 +2018,11 @@ class wp_slimstat
                  SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
                 $days_ago
             ))) {
-                self::record_degradation('purge (archiving pageviews)', self::$wpdb->last_error);
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    self::$wpdb->last_error,
+                    self::DEGRADATION_OPERATIONAL
+                );
                 return;
             }
 
@@ -1992,7 +2031,7 @@ class wp_slimstat
         $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
 
         if (false === $rows_removed) {
-            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error);
+            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
             return;
         }
 

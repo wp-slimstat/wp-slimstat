@@ -43,6 +43,12 @@ if (!function_exists('__')) {
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
+        /** Mirrors wp_slimstat's severity constants; the migration and tracker paths
+         *  name them when recording, so a stub without them fatals rather than fails. */
+        const DEGRADATION_LOAD = 'load';
+
+        const DEGRADATION_OPERATIONAL = 'operational';
+
         /** @var array<string,string> Degradations the migration subsystem reported. */
         public static $degradations = [];
 

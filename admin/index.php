@@ -19,6 +19,9 @@ class wp_slimstat_admin
      */
     const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';
 
+    /** Throttles the admin_init re-observation. Self-expiring, so nothing has to clear it. */
+    const COLUMN_DRIFT_CHECK_TRANSIENT = 'slimstat_column_drift_checked';
+
     public static $screens_info      = [];
     public static $config_url        = '';
     public static $current_screen    = 'slimview1';
@@ -686,49 +689,130 @@ class wp_slimstat_admin
      */
     private static function record_column_drift($report)
     {
+        $drift = self::persist_column_drift(self::format_column_drift(
+            $report['columns_missing'] ?? [],
+            $report['columns_narrow'] ?? []
+        ));
+
+        if ([] === $drift) {
+            return;
+        }
+
+        self::announce_column_drift($drift);
+    }
+
+    /**
+     * Re-state the drift as a degradation, so the notice cannot age out beneath it.
+     *
+     * RE-DERIVED, NOT REPLAYED. The stored list is written only by init_tables(), which runs on
+     * activation and on a version-gated upgrade — so nothing recomputed it after a migration
+     * successfully added the column, and the notice re-stated drift that no longer existed until
+     * the next plugin release. Re-observing here is what lets a completed migration clear it.
+     *
+     * THROTTLED to DEGRADATION_REFRESH, and the population is why. The `email` column is one
+     * character narrow on every install upgraded from below 4.8.2 and F4 forbids repairing it, so
+     * the drift option is PERMANENT on a large, healthy-in-every-other-respect slice of the
+     * installed base — not on a broken few. Without the throttle each of those pays five
+     * `SHOW COLUMNS` on every wp-admin page load, forever, to re-derive a list record_degradation()
+     * will only re-stamp once an hour anyway. A healthy install still pays nothing at all: it has
+     * no option and returns above.
+     */
+    public static function refresh_column_drift_notice()
+    {
+        $stored = get_option(self::COLUMN_DRIFT_OPTION, []);
+
+        if (!is_array($stored) || [] === $stored) {
+            return;
+        }
+
+        $current = $stored;
+
+        if (false === get_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT)) {
+            set_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT, 1, wp_slimstat::DEGRADATION_REFRESH);
+            $current = self::persist_column_drift(self::observe_column_drift());
+        }
+
+        if ([] === $current) {
+            return;
+        }
+
+        self::announce_column_drift($current);
+    }
+
+    /**
+     * Store a drift list, or clear the option when there is none. Returns what it stored.
+     *
+     * One owner for the persistence rule, because there are two producers — the reconciliation
+     * that observes drift and the admin_init pass that re-observes it — and `autoload=false` is
+     * load-bearing at both: an option that joins `alloptions` is read on EVERY request, and this
+     * one is read on admin screens only.
+     *
+     * @param string[] $drift
+     *
+     * @return string[]
+     */
+    private static function persist_column_drift(array $drift)
+    {
+        if ([] === $drift) {
+            // Cleared by the ABSENCE of drift, not by the passage of time.
+            delete_option(self::COLUMN_DRIFT_OPTION);
+
+            return [];
+        }
+
+        update_option(self::COLUMN_DRIFT_OPTION, $drift, false);
+
+        return $drift;
+    }
+
+    /**
+     * Column drift as it is RIGHT NOW, in the shape persist_column_drift() stores.
+     *
+     * Reads only. `Schema::columnDrift()` issues one `SHOW COLUMNS` per reconciling table and
+     * repairs nothing — deliberately not `Schema::ensure()`, which also creates tables and builds
+     * indexes. Re-observing drift on `admin_init` must not be able to change the schema (F4, S7).
+     *
+     * @return string[]
+     */
+    private static function observe_column_drift()
+    {
+        $drift = Schema::columnDrift(
+            \SlimStat\Migration\MigrationService::analyticsConnection(),
+            $GLOBALS['wpdb']->prefix
+        );
+
+        return self::format_column_drift($drift['missing'], $drift['narrow']);
+    }
+
+    /**
+     * Render qualified drift as the display lines the notice and the option both hold.
+     *
+     * Shared by both producers. The stored list and a freshly observed one are compared for
+     * equality, so a formatting disagreement between them would not raise an error — it would
+     * silently rewrite the option on every pass.
+     *
+     * @param string[]              $missing
+     * @param array<string,string>  $narrow
+     *
+     * @return string[] sorted, so the (step, message) de-dupe in record_degradation() holds
+     */
+    private static function format_column_drift(array $missing, array $narrow)
+    {
         $drift = [];
 
-        foreach ($report['columns_missing'] ?? [] as $column) {
+        foreach ($missing as $column) {
             $drift[] = $column . ' (absent)';
         }
 
-        foreach ($report['columns_narrow'] ?? [] as $column => $widths) {
+        foreach ($narrow as $column => $widths) {
             $drift[] = sprintf('%s (%s)', $column, $widths);
-        }
-
-        if ([] === $drift) {
-            // Cleared by the ABSENCE of drift, not by the passage of time. This is the only thing
-            // that heals it, and it is re-checked on every reconciliation rather than expiring.
-            delete_option(self::COLUMN_DRIFT_OPTION);
-
-            return;
         }
 
         // Sorted so the message is stable across runs: an unsorted list whose order follows
         // SHOW COLUMNS would defeat the (step, message) de-dupe and re-record on every pass.
         sort($drift);
 
-        // autoload=false, for the reason C34 records: an option that joins `alloptions` is read
-        // on EVERY request, and this one is read only on admin screens — on precisely the
-        // installs already unhealthy enough to have drift.
-        update_option(self::COLUMN_DRIFT_OPTION, $drift, false);
-        self::announce_column_drift($drift);
-    }
-
-    /**
-     * Re-state the stored drift as a degradation, so the notice cannot age out beneath it.
-     *
-     * Called when drift is first observed and again on every admin reconcile pass. Cheap: one
-     * non-autoloaded option read, and record_degradation() declines to write when the same
-     * (step, message) was stamped inside DEGRADATION_REFRESH.
-     */
-    public static function refresh_column_drift_notice()
-    {
-        $drift = get_option(self::COLUMN_DRIFT_OPTION, []);
-
-        if (is_array($drift) && [] !== $drift) {
-            self::announce_column_drift($drift);
-        }
+        return $drift;
     }
 
     /** @param string[] $drift */
@@ -740,7 +824,8 @@ class wp_slimstat_admin
                 'these columns differ from the manifest: %s. Reports and tracking keep working; '
                     . 'affected fields may be absent or truncated.',
                 implode(', ', $drift)
-            )
+            ),
+            wp_slimstat::DEGRADATION_OPERATIONAL
         );
     }
 
@@ -823,7 +908,7 @@ class wp_slimstat_admin
         try {
             return self::run_schema_upgrade();
         } catch (\Throwable $e) {
-            wp_slimstat::record_degradation('schema upgrade', $e);
+            wp_slimstat::record_degradation('schema upgrade', $e, wp_slimstat::DEGRADATION_OPERATIONAL);
 
             return false;
         } finally {
@@ -1033,7 +1118,11 @@ class wp_slimstat_admin
             ));
 
             if (false === $result) {
-                wp_slimstat::record_degradation('notes format migration', $my_wpdb->last_error);
+                wp_slimstat::record_degradation(
+                'notes format migration',
+                $my_wpdb->last_error,
+                wp_slimstat::DEGRADATION_OPERATIONAL
+            );
 
                 return false;
             }
@@ -4046,7 +4135,7 @@ class wp_slimstat_admin
             return;
         }
 
-        // Human-readable name per guarded step; unknown keys fall back to the key.
+        // Human-readable name per guarded step; unknown keys are humanised, never printed raw.
         $labels = [
             'browscap'           => __('Browser detection library', 'wp-slimstat'),
             'upload_directory'   => __('Upload directory setup', 'wp-slimstat'),
@@ -4055,29 +4144,91 @@ class wp_slimstat_admin
             'rest_api'           => __('REST API tracking endpoints', 'wp-slimstat'),
             'consent_ajax'       => __('Consent AJAX handlers', 'wp-slimstat'),
             'gdpr_banner'          => __('GDPR consent banner setup', 'wp-slimstat'),
+            'gdpr_banner_assets'   => __('GDPR consent banner assets', 'wp-slimstat'),
             'gdpr_banner_render'   => __('GDPR consent banner display', 'wp-slimstat'),
             'rest_controller'      => __('REST tracking controller', 'wp-slimstat'),
             'rest_routes'          => __('REST route registration', 'wp-slimstat'),
             'banner_consent_check' => __('Consent banner status check', 'wp-slimstat'),
+            'activation'           => __('Plugin activation', 'wp-slimstat'),
+            'deactivation'         => __('Plugin deactivation', 'wp-slimstat'),
+
+            // Operational steps. Everything below kept working; none of it is a load failure,
+            // and none of it is fixed by reinstalling.
+            'schema column drift'  => __('Database columns differ from this version', 'wp-slimstat'),
+            'schema upgrade'       => __('Database schema upgrade', 'wp-slimstat'),
+            'schema repair from the tracking path' => __('Database repair during tracking', 'wp-slimstat'),
+            'notes format migration' => __('Notes format migration', 'wp-slimstat'),
+            'utf8mb4 conversion'   => __('Character-set conversion', 'wp-slimstat'),
+            'migration_db_unreachable' => __('Database unreachable during migration', 'wp-slimstat'),
+            'add_visit_identity'   => __('Migration: visit identity column', 'wp-slimstat'),
+            'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
+            'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
+            'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
+            'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
+            'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
+            'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            // Synthesised inside get_degradations() from the last-success stamp, not recorded
+            // by any call site — so a scan that derives its population from record_degradation()
+            // arguments cannot see it, and it went unlabelled precisely because of that.
+            'purge (no successful run)'   => __('Retention has not completed recently', 'wp-slimstat'),
         ];
 
-        $items = '';
+        $load_items        = '';
+        $operational_items = '';
+
         foreach ($degradations as $step => $record) {
-            $label   = $labels[$step] ?? $step;
+            // Three step keys are BUILT AT RUNTIME — 'activation (blog N)', 'new subsite N' and
+            // 'tracker write dropped columns absent from <table>' — so no exact-match map can
+            // ever cover them. Humanising the fallback is not polish; it is the only thing that
+            // covers those three, and it is why the map is not simply longer.
+            $label   = $labels[$step] ?? ucfirst(str_replace('_', ' ', $step));
             $message = isset($record['message']) ? (string) $record['message'] : '';
-            $items .= sprintf(
+            $item    = sprintf(
                 '<li><strong>%s</strong><br><code>%s</code></li>',
                 esc_html($label),
                 esc_html($message)
             );
+
+            // The KIND IS READ, NOT GUESSED. It was briefly reconstructed here from a
+            // renderer-side list of step names — which has to be kept in sync with two dozen
+            // call sites by discipline, and cannot cover the three keys built by concatenation
+            // at runtime. record_degradation() is told which it is at the catch block that
+            // knows. Legacy records written before that parameter existed default to LOAD,
+            // which is what they all were; they age out within DEGRADATION_TTL anyway.
+            $severity = isset($record['severity']) ? (string) $record['severity'] : wp_slimstat::DEGRADATION_LOAD;
+
+            if (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
+                $operational_items .= $item;
+            } else {
+                $load_items .= $item;
+            }
         }
 
-        self::show_message(
-            '<strong>' . esc_html__('Slimstat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
-            esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
-            '<ul class="ul-disc">' . $items . '</ul>',
-            'error'
-        );
+        // TWO NOTICES, TWO SEVERITIES, because one sentence cannot be true of both.
+        //
+        // The original copy — "failed to load and were disabled … reinstalling the plugin and
+        // flushing your PHP opcache normally clears it" — is exactly right for the #325 class it
+        // was written for, and false for every operational record. Schema drift is not fixed by
+        // reinstalling; a failed purge is not fixed by reinstalling. AbstractMigration.php's own
+        // comment records rejecting this channel for that reason. So the copy stays where it is
+        // true and the rest gets copy that is.
+        if ('' !== $load_items) {
+            self::show_message(
+                '<strong>' . esc_html__('Slimstat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
+                '<ul class="ul-disc">' . $load_items . '</ul>',
+                'error'
+            );
+        }
+
+        if ('' !== $operational_items) {
+            self::show_message(
+                '<strong>' . esc_html__('Slimstat Analytics reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+                '<ul class="ul-disc">' . $operational_items . '</ul>',
+                'warning'
+            );
+        }
     }
 
     public static function show_indexes_notice()

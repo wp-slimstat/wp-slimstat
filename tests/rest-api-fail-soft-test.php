@@ -62,6 +62,12 @@ function apply_filters($hook, $value = null)
 // RestApiManager's fail-soft catches call \wp_slimstat::record_degradation().
 class wp_slimstat
 {
+    /** Mirrors wp_slimstat's severity constants; the migration and tracker paths
+     *  name them when recording, so a stub without them fatals rather than fails. */
+    const DEGRADATION_LOAD = 'load';
+
+    const DEGRADATION_OPERATIONAL = 'operational';
+
     public static $degradations = [];
 
     public static function record_degradation($step, $e)

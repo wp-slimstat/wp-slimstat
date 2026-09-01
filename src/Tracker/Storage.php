@@ -156,7 +156,8 @@ class Storage
 	{
 		\wp_slimstat::record_degradation(
 			'tracker write dropped columns absent from ' . $table,
-			implode(', ', $missing)
+			implode(', ', $missing),
+			\wp_slimstat::DEGRADATION_OPERATIONAL
 		);
 	}
 
