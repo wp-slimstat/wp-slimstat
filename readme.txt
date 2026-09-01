@@ -52,7 +52,7 @@ Love the free plugin? Pro is for sites that live by their numbers. It adds the h
 = Requirements =
 * WordPress 5.6+
 * PHP 7.4+
-* MySQL 5.0.3+
+* MySQL 5.6+ (or MariaDB 10.0+)
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
 * At least 10 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)
@@ -120,12 +120,13 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 = 6.0.0 - 2026-09-01 =
 
 **Performance — measured, not estimated**
-* Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. Report output was verified byte-identical before and after.
+* Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.
 * The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview (2.83 -> 1.07), 96% fewer per refused bot (1.75 -> 0.07).
 * Schema reconciliation fell 71%: from 14 statements to 4 on a healthy install.
 
 **Numbers that change on purpose** (each verified before/after against a measured register)
 * Archived events start appearing: events now archive before their parent rows are deleted.
+* The weekly chart's "previous period" total now matches the bars it draws. The comparison window was longer than the current one by the current window's time of day, so the total counted hits that appeared in no bar. Previous-period totals go down slightly, the percentage-change headline goes up, and previous-period labels move to the same week grid the values were always on.
 * Date ranges straddling midnight stop collapsing multi-column groups.
 * Form-submit, tel: and mailto: goals start working; one press produces exactly one hit.
 * Funnels: silent zeros fixed (temp-table collation/width); overlapping steps stop double-counting, so some funnel numbers go DOWN to their true value; an errored chain is never cached.
@@ -154,7 +155,7 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 **Reliability**
 * Fixed: the upgrade step that repairs corrupted heat-map positions could offer itself forever. It asked "is there a candidate row?" but only repaired rows it could resolve unambiguously, so on a site with unresolvable rows it reported success and then offered again, each click re-scanning the events table. "All migrations complete" is now reachable.
 * One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
-* The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared database floor is tested, not assumed.
+* The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared MySQL floor is tested, not assumed. MariaDB 10.0+ is supported by design and has not yet been exercised in a test cell.
 
 = 5.5.1 - 2026-07-26 =
 * Fix: A rare plugin-loading problem could white-screen the entire site and lock administrators out of wp-admin. When a plugin file no longer matched its build index — after an interrupted update, a manually uploaded copy, or stale server caching — every page including wp-login stopped loading. The plugin now falls back to loading files directly, and disables only the affected feature if one part still cannot load. A build-time check prevents shipping an incomplete package. If your host caches PHP aggressively, flush its opcache if a blank screen persists after updating. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))

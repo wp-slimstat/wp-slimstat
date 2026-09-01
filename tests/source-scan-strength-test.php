@@ -409,6 +409,9 @@ $recorded     = [
     // header rather than hardcoding it is what stops this gate and the plugin drifting apart
     // silently, so the raw read is the point rather than an oversight.
     'textdomain-single-source-test.php'          => 'exempt — the raw subject is the plugin header comment; the gettext scan itself is tokenised',
+    // The subject is readme.txt and README.md — plain text, not PHP. The PHP half of this
+    // gate (the version_compare prohibition) DOES route through slimstat_blank_comments().
+    'db-floor-metadata-test.php'                 => 'exempt — the raw subject is readme.txt/README.md, which no PHP tokeniser can read',
 
     // ── debt: PHP source matched as raw text; route through the library when next touched ──
     'access-log-author-edit-link-test.php'   => 'debt',
