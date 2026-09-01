@@ -198,6 +198,148 @@ if (null === $noticeBody) {
     }
 }
 
+// ── No message may be silently truncated ───────────────────────────────────────────────
+//
+// record_degradation() stores substr($message, 0, 200), and the notice renders what was
+// STORED — so a longer message loses its tail with no warning anywhere. That is not
+// hypothetical: the anonymous-visit-reuse message was written at 236 characters and lost
+// exactly the clause naming the migration that ends it, while its own docblock two lines
+// above went on claiming it named it. Nothing checked.
+//
+// The limit is read from the source rather than hardcoded, so raising it there raises it here.
+$limit = 0;
+if (preg_match('/substr\(\s*\$message\s*,\s*0\s*,\s*(\d+)\s*\)/', $mainLit, $m)) {
+    $limit = (int) $m[1];
+} else {
+    $failures[] = 'record_degradation() no longer truncates with a literal substr() — re-anchor '
+        . 'this assertion rather than deleting it; the notice renders the STORED message, so a '
+        . 'silent length limit anywhere on that path needs a gate';
+}
+
+$measured = 0;
+$skipped  = 0;
+
+if ($limit > 0) {
+    // Tokenised, not regexed. Messages are written as multi-line concatenations and several
+    // interpolate a variable or wrap sprintf(); a regex narrow enough to be correct measured
+    // four of them and reported nothing skipped, which is a vacuous pass wearing a number.
+    foreach ($sources as $file) {
+        $tokens = slimstat_tokenize((string) file_get_contents($file), false);
+
+        foreach ($tokens as $i => $token) {
+            if (!is_array($token) || 'record_degradation' !== $token[1]) {
+                continue;
+            }
+
+            // A CALL, not the declaration. Without this the function's own `public static
+            // function record_degradation($step, $e, $severity = …)` is scanned too, its
+            // second "argument" is $e, and it inflates the skipped count by one — a number
+            // printed on the PASS line to describe coverage must not include the definition.
+            $before = $i - 1;
+            while ($before > 0 && is_array($tokens[$before]) && T_WHITESPACE === $tokens[$before][0]) {
+                $before--;
+            }
+            $priorType = is_array($tokens[$before]) ? $tokens[$before][0] : null;
+            if (T_DOUBLE_COLON !== $priorType && T_OBJECT_OPERATOR !== $priorType) {
+                continue;
+            }
+
+            // next_significant() increments internally; passing $i + 1 skips a token and
+            // lands past the paren, which measured nothing and reported nothing skipped.
+            $open = slimstat_next_significant($tokens, $i);
+            if (!isset($tokens[$open]) || '(' !== slimstat_token_text($tokens[$open])) {
+                continue;
+            }
+
+            $close = slimstat_token_paren_end($tokens, $open, count($tokens));
+            if (null === $close) {
+                continue;
+            }
+
+            // Split the argument list on top-level commas and take the second argument.
+            $depth = 0;
+            $args  = [[]];
+            for ($k = $open + 1; $k < $close; $k++) {
+                $text = slimstat_token_text($tokens[$k]);
+                if ('(' === $text || '[' === $text) {
+                    $depth++;
+                } elseif (')' === $text || ']' === $text) {
+                    $depth--;
+                } elseif (0 === $depth && ',' === $text) {
+                    $args[] = [];
+                    continue;
+                }
+                $args[count($args) - 1][] = $tokens[$k];
+            }
+
+            if (!isset($args[1])) {
+                continue;
+            }
+
+            $message   = '';
+            $literalOnly = true;
+            foreach ($args[1] as $piece) {
+                if (is_array($piece)) {
+                    if (T_CONSTANT_ENCAPSED_STRING === $piece[0]) {
+                        // Unescaped BY QUOTE STYLE. In a single-quoted PHP string only \\ and
+                        // \' are escapes, so stripslashes() would shorten a literal containing
+                        // a namespace separator and UNDER-count it — the one direction in which
+                        // this gate can pass a message it should catch.
+                        $inner    = substr($piece[1], 1, -1);
+                        $message .= "'" === $piece[1][0]
+                            ? str_replace(['\\\\', "\\'"], ['\\', "'"], $inner)
+                            : stripslashes($inner);
+                        continue;
+                    }
+                    if (T_WHITESPACE === $piece[0] || T_COMMENT === $piece[0] || T_DOC_COMMENT === $piece[0]) {
+                        continue;
+                    }
+                    $literalOnly = false;
+                    break;
+                }
+                if ('.' !== trim(slimstat_token_text($piece))) {
+                    $literalOnly = false;
+                    break;
+                }
+            }
+
+            if (!$literalOnly) {
+                // sprintf(), a variable, a constant — not measurable from source. Counted so
+                // that "measured none" can never read as "all fine".
+                $skipped++;
+                continue;
+            }
+
+            $measured++;
+
+            if (strlen($message) > $limit) {
+                $failures[] = sprintf(
+                    'a degradation message is %d characters against a %d-character store, so the '
+                        . 'admin never sees the end of it: "%s…"',
+                    strlen($message),
+                    $limit,
+                    substr($message, 0, 60)
+                );
+            }
+        }
+    }
+
+    // Vacuity floor. If the extraction stops matching, this section would pass by measuring
+    // nothing — which is exactly how the 236-character message shipped.
+    // Four of the thirty-five call sites build their message purely from literals; the rest
+    // interpolate an error string or wrap sprintf() and cannot be measured from source. That is
+    // a real limit on this assertion, and it is printed on the PASS line rather than implied,
+    // so nobody reads "no truncation found" as "no truncation possible".
+    if ($measured < 4) {
+        $failures[] = sprintf(
+            'only %d literal degradation message(s) could be measured (%d skipped as built at '
+                . 'run time) — the extraction has stopped seeing its subject',
+            $measured,
+            $skipped
+        );
+    }
+}
+
 // ── The severity constants exist and both are used ─────────────────────────────────────
 foreach (['DEGRADATION_LOAD', 'DEGRADATION_OPERATIONAL'] as $const) {
     if (!preg_match('/const\s+' . $const . '\s*=/', $mainLit)) {
@@ -270,4 +412,5 @@ if ($failures) {
 }
 
 echo 'PASS: ' . $found . ' degradation steps, all labelled; severity is recorded at the call '
-    . "site, not guessed; drift is re-derived, not replayed\n";
+    . 'site, not guessed; drift is re-derived, not replayed; ' . $measured . ' message(s) fit the '
+    . $limit . '-char store (' . $skipped . " built at run time, not measurable here)\n";

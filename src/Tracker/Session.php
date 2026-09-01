@@ -251,7 +251,14 @@ class Session
 			? intval(\wp_slimstat::$settings['session_duration'])
 			: 1800;
 
-		$existing_visit_id = Query::select('visit_id')
+		// REACTIVE, NEVER PREEMPTIVE. This runs on every anonymous pageview, so a
+		// "does vid_hash exist?" probe here would be one extra SHOW COLUMNS per hit,
+		// forever, on healthy installs too — the budget rule Storage.php states. So the
+		// question is asked and the failure is caught, rather than the schema being
+		// checked first. Memoising the check inside Schema is not the escape either:
+		// AddVisitIdentity::shouldRun() asks the same question before and after its own
+		// ALTER in one request, and a memo would freeze the migration screen.
+		$probe = Query::select('visit_id')
 			->from($GLOBALS['wpdb']->prefix . 'slim_stats')
 			// UNHEX in SQL rather than hex2bin in PHP so the comparison stays on the
 			// BINARY(16) column and the index — HEX(vid_hash) = %s would be a scan.
@@ -260,10 +267,56 @@ class Session
 			->where('dt', '>=', $current_timestamp - $session_duration)
 			->where('dt', '<=', $current_timestamp)
 			->orderBy('dt', 'DESC')
-			->limit(1)
-			->getVar();
+			->limit(1);
+
+		$existing_visit_id = $probe->probeVar();
+
+		if ($probe->probeFailed()) {
+			// Before AddVisitIdentity runs, vid_hash does not exist and this SELECT errors.
+			// Read as "no previous hit", which is what a bare null meant, every anonymous
+			// pageview mints a fresh visit_id — so visits inflate to roughly pageviews for
+			// the whole pre-migration window, silently. Say so once per request instead.
+			self::recordIdentityProbeFailure();
+
+			return 0;
+		}
 
 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
+	}
+
+	/**
+	 * Say once, per request, that the anonymous-identity probe could not run.
+	 *
+	 * Once, because this sits on the path that runs for EVERY anonymous pageview and
+	 * record_degradation() reads the degradations option before it decides whether to write —
+	 * so an unguarded call would put a wp_options READ on every hit of a tracked page, which is
+	 * the budget rule Storage.php:52-54 forbids. The static is what keeps it to one.
+	 *
+	 * The visitor sees nothing and tracking continues; the row still lands, it simply opens a
+	 * new visit. That degradation is the honest description of what is happening, and it names
+	 * the migration that ends it.
+	 */
+	private static function recordIdentityProbeFailure(): void
+	{
+		static $recorded = false;
+
+		if ($recorded) {
+			return;
+		}
+
+		$recorded = true;
+
+		// Under 200 characters, because record_degradation() stores substr($message, 0, 200)
+		// and the notice renders what was STORED. The first draft was 236 and lost its last
+		// clause — the one naming the migration that ends this — while the docblock above went
+		// on claiming it named it.
+		\wp_slimstat::record_degradation(
+			'anonymous visit reuse',
+			'cookieless visitors count as a new visit on every pageview: the identity column '
+				. 'could not be read. Tracking still works; visit counts are inflated until the '
+				. '"add visit identity" migration has run.',
+			\wp_slimstat::DEGRADATION_OPERATIONAL
+		);
 	}
 
 	/**

@@ -526,10 +526,20 @@ final class Schema
      * A projection of columnState()'s read model, so every caller asks the SAME
      * question the drift report answers — three hand-rolled information_schema probes
      * (two migrations and the GDPR eraser) had already grown, each free to decide
-     * failure semantics differently. This one is deliberately conservative: an
-     * UNREADABLE table reports every declared column missing, so the answer is false —
-     * callers who must distinguish "not there" from "could not look" layer their own
-     * error check on top (AbstractMigration::columnExists does, via probeFailed()).
+     * failure semantics differently.
+     *
+     * IT FAILS OPEN, and this docblock said the opposite until 2026-09-01. columnState()
+     * returns `missing => []` for a table it cannot read — it cannot distinguish "no such
+     * table" from "could not look" — so `!in_array($column, [], true)` is TRUE and an
+     * unreadable table reports every column PRESENT. The old text read "an UNREADABLE table
+     * reports every declared column missing, so the answer is false", which is exactly
+     * backwards, and anyone writing a guard from it gets fail-open where they reasoned
+     * fail-closed.
+     *
+     * Callers needing the distinction must layer their own error check on top, as
+     * AbstractMigration::columnExists() does via probeFailed(). Callers on a path that runs
+     * per-request should not ask this at all — ask the real question and catch its failure
+     * (Query::probeVar()), which costs nothing when the schema is whole.
      *
      * @throws \InvalidArgumentException when the column is not in the manifest — asking
      *                                   about an undeclared column is a typo, not a

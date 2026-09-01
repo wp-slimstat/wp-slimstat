@@ -1,0 +1,25 @@
+target:    src/Tracker/Session.php
+gate:      php tests/anonymous-identity-test.php
+kind:      name-only
+expect:    nothing checks probeFailed()
+rationale: Use the probe form and throw its verdict away. probeVar() is still called, so a gate asserting the name appears passes - and the null it returns is once again indistinguishable from "this visitor has no previous hit". Before AddVisitIdentity runs, vid_hash does not exist and that is EVERY hit: each anonymous pageview mints a fresh visit_id and visits inflate to roughly pageviews for the whole pre-migration window, silently.
+---
+--- a/src/Tracker/Session.php
++++ b/src/Tracker/Session.php
+@@ -302,16 +302,7 @@
+ 
+ 		$existing_visit_id = $probe->probeVar();
+ 
+-		if ($probe->probeFailed()) {
+-			// Before AddVisitIdentity runs, vid_hash does not exist and this SELECT errors.
+-			// Read as "no previous hit", which is what a bare null meant, every anonymous
+-			// pageview mints a fresh visit_id — so visits inflate to roughly pageviews for
+-			// the whole pre-migration window, silently. Say so once per request instead.
+-			self::recordIdentityProbeFailure();
+ 
+-			return 0;
+-		}
+-
+ 		return $existing_visit_id > 0 ? intval($existing_visit_id) : 0;
+ 	}
+ 

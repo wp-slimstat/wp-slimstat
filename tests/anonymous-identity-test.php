@@ -231,6 +231,47 @@ if ('' === $migration_src) {
     }
 }
 
+// ── The identity probe distinguishes "nothing" from "could not ask" ─────────────────────
+//
+// BEFORE THE MIGRATION RUNS, vid_hash DOES NOT EXIST. The lookup then errors, get_var()
+// returns null, and null is indistinguishable from "no previous hit by this visitor" — so
+// every anonymous pageview minted a fresh visit_id and visits inflated to roughly pageviews
+// for the whole pre-migration window, silently, with nothing recorded anywhere. wpdb also
+// prints the error into the front-end response under WP_DEBUG_DISPLAY.
+//
+// The fix has to be REACTIVE. A "does the column exist?" check here would be one extra
+// SHOW COLUMNS on every anonymous hit, forever, including on healthy installs — the budget
+// rule src/Tracker/Storage.php:52-54 states. So the assertions are: catch the failure, and
+// do not probe the schema to avoid it.
+$session_raw  = (string) file_get_contents($plugin_root . '/src/Tracker/Session.php');
+$session_code = slimstat_strip_comments_and_strings($session_raw);
+$probe_body   = slimstat_find_function_body($session_code, 'findExistingAnonymousVisitId');
+
+if (null === $probe_body) {
+    $failures[] = 'findExistingAnonymousVisitId() not found in Session.php';
+} else {
+    if (false === strpos($probe_body, 'probeVar')) {
+        $failures[] = 'the anonymous-session lookup calls getVar() rather than probeVar(), so a '
+            . 'failed query is indistinguishable from "this visitor has no previous hit". Before '
+            . 'the vid_hash migration runs that is every hit, and visits inflate to pageviews';
+    }
+
+    if (false === strpos($probe_body, 'probeFailed')) {
+        $failures[] = 'nothing checks probeFailed() after the lookup, so the null is still read '
+            . 'as "not found" — using the probe form and ignoring its verdict changes nothing';
+    }
+
+    // The budget half. A guard that fixes correctness by adding a query per pageview would be
+    // traded one defect for another, and this is the assertion that stops it.
+    foreach (['SHOW COLUMNS', 'hasColumn', 'columnState'] as $preemptive) {
+        if (false !== strpos($probe_body, $preemptive)) {
+            $failures[] = "the anonymous-session lookup calls {$preemptive} — that is a schema "
+                . 'probe on the path that runs for EVERY anonymous pageview. Reactive, never '
+                . 'preemptive: ask the real question and catch its failure';
+        }
+    }
+}
+
 echo "\n";
 if ([] !== $failures) {
     fwrite(STDERR, 'FAIL: anonymous identity (' . count($failures) . " problem(s))\n");

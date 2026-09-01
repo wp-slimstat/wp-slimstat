@@ -521,10 +521,25 @@ class Processor
 						// hash is deterministic for the same person on the same day — which
 						// is exactly the window a consent upgrade happens in. It also finds
 						// the whole anonymous session regardless of how many visit ids the
-						// old code had split it across. On a schema the AddVisitIdentity
-						// migration has not reached, the column is absent and this SELECT
-						// fails softly (finds nothing); the upgrade then proceeds without
-						// claiming old rows, which is the pre-existing degraded behaviour.
+						// old code had split it across.
+						//
+						// OWED, AND THE COMMENT HERE USED TO UNDERSTATE IT. It said the SELECT
+						// "fails softly (finds nothing) … which is the pre-existing degraded
+						// behaviour". Both halves are wrong. The vid_hash test below is OR'd
+						// with the ip and visit_id tests, and MySQL rejects the WHOLE statement
+						// on an unknown column (1054) — so before AddVisitIdentity runs it is
+						// not the vid_hash disjunct that fails, it is the entire lookup, and
+						// the ip match that used to claim the row goes with it. That path
+						// worked before the disjunct was added, so this is a regression, not
+						// the prior behaviour. The consent upgrade silently inserts a duplicate
+						// instead of claiming the anonymous rows.
+						//
+						// Not fixed here: this needs the same probe-and-fall-back treatment
+						// findExistingAnonymousVisitId() now has, plus its own mutation, and
+						// widening this change to restructure the consent-upgrade query is
+						// scope this commit should not take. Narrow but real — it needs
+						// $isConsentUpgrade && $isAnonymousTracking && $piiAllowed on a
+						// pre-migration schema, and it inflates visits rather than losing data.
 						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
 
 						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)

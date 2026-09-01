@@ -8,6 +8,9 @@ class Query
 {
     private $queries = [];
 
+    /** Set by probeVar(): true when that probe could not run, as opposed to finding nothing. */
+    private $lastProbeFailed = false;
+
     private $operation;
 
     private $table;
@@ -1449,6 +1452,62 @@ class Query
         }
 
         return $result;
+    }
+
+    /**
+     * getVar() as a QUESTION rather than an answer: null means "nothing", not "it broke".
+     *
+     * `get_var()` returns null both for "the query found no rows" and for "the query failed",
+     * and every caller that reads the second as the first is one schema state away from a
+     * silent behaviour change. The tracker's anonymous-session lookup was exactly that: before
+     * the vid_hash migration runs, the column does not exist, the SELECT errors, null comes
+     * back, and the caller reads it as "no previous hit from this visitor" — so every anonymous
+     * pageview minted a fresh visit_id and visits inflated to roughly pageviews for the whole
+     * pre-migration window. Nothing was recorded anywhere.
+     *
+     * Errors are suppressed because this is a question: an install mid-migration should get a
+     * recorded degradation, not wpdb printing a red error block into a front-end page. The same
+     * suppress-run-read-restore shape is PurgeArchive::probeForCollision() and
+     * Schema::columnState(); AbstractMigration::probeFailed() is only its read half.
+     *
+     * @return mixed|null The scalar, or null for BOTH "nothing" and "could not ask" — call
+     *                    probeFailed() immediately afterwards to tell them apart.
+     */
+    public function probeVar(string $networkAggregate = '')
+    {
+        // Cleared first, the way wpdb::query() clears it via flush(). Without this a stale
+        // error from an unrelated earlier query would be read as this probe's failure — and
+        // a cached hit returns without querying at all, so nothing else would clear it.
+        $this->db->last_error = '';
+
+        // finally, because suppression is GLOBAL state on the shared wpdb handle. With a
+        // non-empty $networkAggregate getVar() runs an apply_filters(), and third-party filter
+        // code can throw — leaking suppression would silently swallow every wpdb error for the
+        // rest of the request.
+        // Set BEFORE the attempt: a throw is "could not ask", and leaving the previous
+        // value standing would answer the next probeFailed() with a stale verdict.
+        $this->lastProbeFailed = true;
+
+        $suppressed = $this->db->suppress_errors(true);
+
+        try {
+            $result                = $this->getVar($networkAggregate);
+            $this->lastProbeFailed = '' !== (string) $this->db->last_error;
+        } finally {
+            $this->db->suppress_errors($suppressed);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Whether the last probeVar() on this builder could not run.
+     *
+     * Only meaningful immediately after probeVar(); it answers false before the first one.
+     */
+    public function probeFailed(): bool
+    {
+        return $this->lastProbeFailed;
     }
 
     /**

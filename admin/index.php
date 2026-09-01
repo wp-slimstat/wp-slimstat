@@ -4163,6 +4163,7 @@ class wp_slimstat_admin
             'add_visit_identity'   => __('Migration: visit identity column', 'wp-slimstat'),
             'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
             'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
+            'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
             'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
             'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
             'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
