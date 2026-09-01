@@ -1,0 +1,18 @@
+target:    uninstall.php
+gate:      php tests/uninstall-data-safety-test.php
+kind:      guard-removal
+expect:    exactly one cleanup query when the key is 'absent'
+rationale: Move the transient sweep back inside the opt-in branch. Keeping analytics is the DEFAULT since 5.5.1, so that branch is not taken on almost any real uninstall - which is exactly how sixteen families of transient survived every uninstall, reinstall and uninstall after that. admin/index.php records 2,146 accumulated wp_slimstat_query_* rows on the reference install. Transients are a regenerable cache, not the visitor history the opt-in protects, so gating them on it protects nothing and strands rows forever.
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -50,8 +50,8 @@
+     }
+ } else {
+     slimstat_uninstall_cron();
+-    slimstat_uninstall_transients();
+     if ($slimstat_delete_data) {
++        slimstat_uninstall_transients();
+         slimstat_uninstall($slimstat_wpdb);
+     }
+ }

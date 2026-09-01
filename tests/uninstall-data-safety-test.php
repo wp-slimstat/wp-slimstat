@@ -56,8 +56,34 @@ if ($case !== false && $case !== '') {
         public $options     = 'wp_options';
         public $queries     = [];
         public function query($sql) { $this->queries[] = $sql; return 0; }
-        public function esc_like($text) { return $text; }
-        public function prepare($sql, ...$args) { return $sql; }
+        public function esc_like($text)
+        {
+            // FAITHFUL, not an identity stub. With `return $text;` no gate could tell whether
+            // uninstall.php escaped its LIKE patterns at all — and `_` is a single-character
+            // wildcard, so an unescaped `_transient_slimstat_` also matches `XtransientYslimstatZ`.
+            // Mirrors wpdb::esc_like().
+            return addcslashes($text, '_%\\');
+        }
+        public function prepare($sql, ...$args)
+        {
+            // SUBSTITUTES, rather than returning the template. A double that hands back
+            // `... LIKE %s` records SQL in which no real prefix ever appears, so any assertion
+            // about WHICH keys are swept passes vacuously against a placeholder.
+            // Mirrors wpdb: a lone array argument IS the argument list.
+            if (1 === count($args) && is_array($args[0])) {
+                $args = $args[0];
+            }
+            foreach ($args as $arg) {
+                // str_replace with a count of 1, NOT preg_replace: a replacement string
+                // containing a backslash is reinterpreted by preg_replace, and every pattern
+                // here now carries them.
+                $pos = strpos($sql, '%s');
+                if (false !== $pos) {
+                    $sql = substr_replace($sql, "'" . $arg . "'", $pos, 2);
+                }
+            }
+            return $sql;
+        }
     };
 
     function get_option($name, $default = false)
@@ -101,6 +127,9 @@ if ($case !== false && $case !== '') {
     }
     echo json_encode([
         'queries'      => count($GLOBALS['wpdb']->queries),
+        // The SQL itself, not just a count. "How many queries" cannot distinguish a transient
+        // sweep from a DROP TABLE, and the assertion this replaced required zero of either.
+        'sql'          => array_values($GLOBALS['wpdb']->queries),
         'drops'        => $drops,
         'deleted'      => $GLOBALS['__deleted_options'],
         'fsDeletes'    => $GLOBALS['__fs_deletes'],
@@ -173,7 +202,31 @@ function run_case($case)
 // Neither may touch collected analytics, but both must still clean up artifacts.
 foreach (['absent', 'no'] as $case) {
     $result = run_case($case);
-    assert_same(0, $result['queries'], "no DB queries at all when the key is '{$case}'");
+
+    // RE-ANCHORED, and the previous form was asserting the defect. It required ZERO queries on
+    // the keep-data path — which is the DEFAULT since 5.5.1, so it is what almost every
+    // uninstall does — and zero queries is precisely why sixteen families of transient
+    // survived every uninstall and reinstall. admin/index.php records 2,146 accumulated
+    // wp_slimstat_query_* rows on the reference install.
+    //
+    // What must be true is not "no queries" but "no query that touches analytics". Exactly one
+    // DELETE now runs, and it must be against the options table and name only transients.
+    assert_same(1, $result['queries'], "exactly one cleanup query when the key is '{$case}'");
+    assert_true(
+        1 === preg_match('/^DELETE FROM \S*options WHERE/i', trim((string) $result['sql'][0])),
+        "the keep-data query is a DELETE against the options table, got: " . ($result['sql'][0] ?? '(none)')
+    );
+    assert_true(
+        0 === preg_match('/slim_stats|slim_events|slim_user_agents|slim_meta/i', (string) $result['sql'][0]),
+        'the keep-data query names no analytics table'
+    );
+    // Counts the ESCAPED form. Counting `_transient_` would pass against an unescaped
+    // pattern too, which is the thing esc_like() is there to prevent.
+    assert_true(
+        substr_count((string) $result['sql'][0], '\\_transient\\_') >= 6,
+        'the keep-data query sweeps all three transient families and their timeout twins, '
+            . 'with LIKE wildcards escaped: ' . ($result['sql'][0] ?? '(none)')
+    );
     assert_same([], $result['deleted'], "no options deleted when the key is '{$case}'");
     assert_true($result['clearedHooks'] !== [], "cron hooks cleared when the key is '{$case}'");
 

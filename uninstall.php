@@ -42,6 +42,7 @@ if (function_exists('is_multisite') && is_multisite()) {
     foreach ($blogids as $blog_id) {
         switch_to_blog($blog_id);
         slimstat_uninstall_cron();
+        slimstat_uninstall_transients();
         if ($slimstat_delete_data) {
             slimstat_uninstall($slimstat_wpdb);
         }
@@ -49,6 +50,7 @@ if (function_exists('is_multisite') && is_multisite()) {
     }
 } else {
     slimstat_uninstall_cron();
+    slimstat_uninstall_transients();
     if ($slimstat_delete_data) {
         slimstat_uninstall($slimstat_wpdb);
     }
@@ -143,6 +145,73 @@ function slimstat_uninstall_artifacts($delete_data = false)
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
 }
 
+/**
+ * Remove every transient this plugin creates. RUNS ON BOTH PATHS, like the cron cleanup.
+ *
+ * Transients are a regenerable cache, not analytics, so keeping them serves nobody: the
+ * "keep my data" setting is about a visitor's browsing history, not about a cached dropdown.
+ * Until now the keep-data path -- the DEFAULT since 5.5.1, and therefore what almost every
+ * uninstall does -- swept NOTHING, and the opt-in path swept four prefixes out of the sixteen
+ * families in use. admin/index.php records finding 2,146 accumulated wp_slimstat_query_* rows
+ * on the reference install; those survived an uninstall, a reinstall, and every uninstall
+ * after that.
+ *
+ * THREE PREFIX FAMILIES, NOT A LIST OF KEYS. The four-prefix list was already stale twice
+ * over. Every transient key this plugin writes begins `slimstat_`, `wp_slimstat_` or
+ * `wp-slimstat-`, and enumerating families covers keys added later by construction. The
+ * `_timeout_` twin of each is swept with it, or WordPress is left holding an expiry for a
+ * value that is gone.
+ *
+ * Per-blog, so it runs inside the multisite loop: transients live in each site's own options
+ * table. No site transients exist anywhere in this plugin (grep for set_site_transient
+ * returns nothing outside vendor/).
+ *
+ * Built with esc_like() + prepare(), NOT the hand-escaped sprintf() the goals sweep uses:
+ * `_` is a single-character LIKE wildcard, so an unescaped `slimstat_` also matches
+ * `slimstatX`, and getting that right by hand once per pattern is how the list went stale.
+ */
+function slimstat_uninstall_transients()
+{
+    $db = $GLOBALS['wpdb'];
+
+    // The three value families are written out as whole literals, because
+    // goals-cache-key-stability-test.php greps this file for `_transient_slimstat_` and a name
+    // built by concatenation is invisible to it. The `_timeout_` twins are DERIVED, so a fourth
+    // family cannot be added without one — which is the precise way the old four-prefix list
+    // went stale, and leaving a timeout behind strands an expiry for a value that is gone.
+    $families = [
+        '_transient_slimstat_',
+        '_transient_wp_slimstat_',
+        '_transient_wp-slimstat-',
+    ];
+
+    $patterns = [];
+    foreach ($families as $family) {
+        $patterns[] = $db->esc_like($family) . '%';
+        $patterns[] = $db->esc_like(str_replace('_transient_', '_transient_timeout_', $family)) . '%';
+    }
+
+    $db->query($db->prepare(
+        'DELETE FROM ' . $db->options . ' WHERE '
+            . implode(' OR ', array_fill(0, count($patterns), 'option_name LIKE %s')),
+        $patterns
+    ));
+
+    // OPTIONS-TABLE ONLY, and the previous comment here claimed otherwise. Under a persistent
+    // object cache set_transient() writes the `transient` cache group and no option row at all,
+    // so the DELETE above matches nothing and those entries are left to expire on their TTL.
+    // Flushing the `transient` group would take every other plugin's with it.
+    //
+    // What IS ours to flush are the two groups this plugin writes with wp_cache_set() directly.
+    // The call was wp_cache_delete_group(), which is not a WordPress function — core defines
+    // wp_cache_flush_group() (6.1+, with a shim for older drop-ins) — so this branch had never
+    // executed on any stock install.
+    if (function_exists('wp_cache_flush_group')) {
+        wp_cache_flush_group('slimstat_filter_options');
+        wp_cache_flush_group('slimstat');
+    }
+}
+
 function slimstat_uninstall($_wpdb = '')
 {
     // Bye bye data. The list comes from the manifest, in its declared FK-safe order (children
@@ -217,28 +286,13 @@ delete_option('slimstat_heatmap_recovery_watermark');
     delete_option('slimstat_funnels');
     delete_option('slimstat_goals_cache_ver');
 
-    // Goals & Funnels (5.5.0+): per-goal/per-funnel transients plus the
-    // unique-visitor denominator transients (slimstat_uv_*), accumulated between
-    // cache-version bumps. Safe to DELETE with LIKE here because uninstall runs
-    // once and isn't racing other requests.
-    $GLOBALS['wpdb']->query(sprintf(
-        "DELETE FROM %soptions WHERE option_name LIKE '\\_transient\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_goal\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_funnel\\_%%' OR option_name LIKE '\\_transient\\_slimstat\\_uv\\_%%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_uv\\_%%'",
-        $GLOBALS['wpdb']->prefix
-    ));
+    // The goals/funnels/unique-visitor transients used to be swept here, and the
+    // filter-options ones below. Both are now covered by slimstat_uninstall_transients(),
+    // which runs on BOTH uninstall paths rather than only this one — two sweepers for one job
+    // is how the list came to name four prefixes out of sixteen.
 
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
     $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
 
-    // Sweep filter-options transients left behind by the dropdown cache.
-    $transient_like = $GLOBALS['wpdb']->esc_like('_transient_slimstat_fopts_') . '%';
-    $timeout_like   = $GLOBALS['wpdb']->esc_like('_transient_timeout_slimstat_fopts_') . '%';
-    $GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare(
-        "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-        $transient_like,
-        $timeout_like
-    ));
-    if (function_exists('wp_cache_delete_group')) {
-        wp_cache_delete_group('slimstat_filter_options');
-    }
 }

@@ -191,12 +191,23 @@ foreach (['goal' => '7', 'funnel' => 'abc', 'uv' => ''] as $prefix => $scope) {
         strpos($admin, "'_transient_slimstat_{$prefix}_'") !== false,
         'admin/index.php no longer names it'
     );
-    gck_assert(
-        "uninstall.php removes the {$prefix} prefix",
-        strpos($uninstall, "_transient_slimstat_{$prefix}_") !== false,
-        'uninstalling would leave these rows behind'
-    );
+    // The per-prefix uninstall assertion is hoisted below. Inside this loop it had become
+    // three identical checks wearing three different labels, which reads as three times the
+    // coverage it has.
 }
+
+// RE-ANCHORED TO THE FAMILY, and asserted once. uninstall.php used to name `slimstat_goal_`,
+// `slimstat_funnel_` and `slimstat_uv_` literally — a hand-maintained list that covered four of
+// the ~20 transient families this plugin writes, and had gone stale twice. It now sweeps
+// `_transient_slimstat_%`, which subsumes all three by construction and cannot go stale when a
+// fourth goals-related key is added. Requiring the individual names here would forbid that
+// generalisation while proving nothing extra: each key is covered exactly when it starts with
+// the family prefix, which the per-prefix assertion inside the loop already checks.
+gck_assert(
+    'uninstall.php sweeps the slimstat_ transient family the three keys live in',
+    strpos($uninstall, '_transient_slimstat_') !== false,
+    'uninstalling would leave these rows behind'
+);
 
 // ── 8. Every call site goes through the one builder ─────────────────────────
 //
