@@ -235,13 +235,35 @@ $main_yaml = (string) @file_get_contents($main_path);
 // `check-runs` and `exit 1`, and review demonstrated the unstripped check passing on
 // exactly that — the deploy fully ungated again while this assertion stayed green.
 $main_code = (string) preg_replace('/^\s*#.*$/m', '', $main_yaml);
+
+// The gate asks GitHub about THIS commit and refuses on anything but success. It used to be
+// pinned on the literal `check-runs`, which named one endpoint rather than the property.
+// That endpoint turned out to be the wrong one: the nightly cron re-runs CI on the default
+// branch and every if:-skipped job records another check run against the same SHA (~700 on
+// master, 69 of them `skipped Static analysis · PHPStan`), so `[...] | unique` yields
+// "skipped,success" and the gate refuses every deploy. The deploy now scopes to a single
+// workflow RUN for the commit instead. So this pins the three properties that make it a
+// gate — it asks about GITHUB_SHA, it reads a conclusion, it can refuse — and not the URL.
+$gate_properties = [
+    'gh api'      => 'queries the GitHub API',
+    'GITHUB_SHA'  => 'asks about the tagged commit specifically',
+    'conclusion'  => 'reads the lanes\' conclusions rather than merely that they exist',
+    'exit 1'      => 'can refuse the deploy',
+];
 if ('' === $main_yaml) {
     $failures[] = 'cannot read .github/workflows/main.yml — the deploy workflow is unauditable';
-} elseif (false === strpos($main_code, 'check-runs') || false === strpos($main_code, 'exit 1')) {
-    $failures[] = 'main.yml deploys to WordPress.org without gating on the tagged commit\'s '
-        . 'CI check runs — a tag on a red commit ships. The deploy job needs a step (CODE, '
-        . 'not a comment) that queries check-runs for GITHUB_SHA and exits 1 unless Tier 1 '
-        . 'concluded success';
+} else {
+    $missing_properties = [];
+    foreach ($gate_properties as $needle => $property) {
+        if (false === strpos($main_code, $needle)) {
+            $missing_properties[] = "{$property} (no `{$needle}` in code)";
+        }
+    }
+    if ($missing_properties) {
+        $failures[] = 'main.yml deploys to WordPress.org without a working CI gate — a tag on a red '
+            . 'commit ships. The deploy job needs a step (CODE, not a comment) that: '
+            . implode('; ', $missing_properties);
+    }
 }
 
 // ── 6. Every k6 script is wired somewhere; an unreferenced script measures nothing ──

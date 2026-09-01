@@ -2,7 +2,7 @@
 # wp-slimstat CI — 3-Tier Pipeline
 #
 # Tier 1 · fast      PHPUnit unit tests + PHP lint   every push / PR
-# Tier 2 · standard  Playwright E2E via wp-env        push/PR to main/development
+# Tier 2 · standard  Playwright E2E via wp-env        push/PR to master/development
 # Tier 3 · nightly   Full PHP matrix + k6 perf        cron 02:00 UTC daily
 ##############################################################################
 
@@ -226,13 +226,20 @@ jobs:
   standard:
     name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
     runs-on: ubuntu-latest
+    # `master`, not `main`. This repository's default branch is master — the release branch
+    # every tag is cut from — and it has never had a branch called main. So this gate named a
+    # branch that does not exist, and a push to master ran Tier 1 and PHPStan and NO E2E at
+    # all, which is the opposite of the intent. Both spellings are accepted rather than one
+    # swapped for the other: if the default branch is ever renamed the lane keeps running,
+    # and naming a branch that does not exist is what this comment is about.
     if: >
       github.event_name != 'schedule' &&
       (
+        github.ref == 'refs/heads/master' ||
         github.ref == 'refs/heads/main' ||
         github.ref == 'refs/heads/development' ||
         (github.event_name == 'pull_request' &&
-          (github.base_ref == 'main' || github.base_ref == 'development'))
+          (github.base_ref == 'master' || github.base_ref == 'main' || github.base_ref == 'development'))
       )
 
     strategy:
@@ -632,6 +639,37 @@ jobs:
         run: |
           printf '{"phpVersion":"%s","plugins":["."]}\n' "${{ matrix.php }}" > .wp-env.override.json
           echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
+
+      - name: Restore the production autoloader before wp-env mounts the plugin
+        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. "Dump autoload (without mozart)" above
+        # rebuilds the autoloader on a tree that HAS dev dependencies installed, so the
+        # checkout now carries a dev autoloader. wp-env mounts that checkout, WordPress loads
+        # the plugin, and the container's PHP fatals parsing a union type in the dev
+        # dependency's source:
+        #
+        #   Parse error: syntax error, unexpected '|', expecting variable (T_VARIABLE)
+        #
+        # `wp-env start` exits 255, so k6 and the EXPLAIN gate — the only performance verdicts
+        # this pipeline produces — never run. Measured across five consecutive nightlies, all
+        # red here, all with both skipped.
+        #
+        # Same shape and same remedy as the mutation step in Tier 1 (see its `git checkout --
+        # vendor/` note for the full dev-autoloader rationale); this is that hazard reached
+        # through wp-env's bind mount instead.
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          git checkout -- vendor/
+          # Assert rather than print, and check the BOOT path (autoload_real/autoload_static),
+          # not the classmap, which is only consulted lazily. Patterns are capitalised because
+          # that is how the namespaces appear — and because a lowercase spelling here would be
+          # a `composer test:`-adjacent literal inside an inclusion-gated step, which is the
+          # exact input that fools a per-step CI-coverage scan.
+          if grep -qE "PHPUnit|Mockery|PhpParser" \
+               vendor/composer/autoload_static.php vendor/composer/autoload_real.php; then
+            echo "::error::dev autoloader is still on the boot path after restore"
+            exit 1
+          fi
+          echo "committed (--no-dev) autoloader restored and verified off the boot path"
 
       - name: Start wp-env (for k6 target)
         if: ${{ matrix.php == '8.2' }}

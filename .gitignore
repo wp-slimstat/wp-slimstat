@@ -90,3 +90,4 @@ tests/verify/results/*.json
 # Python bytecode from tests/oracle/ — the oracle side is plain scripts, never a package.
 __pycache__/
 *.pyc
+tests/e2e/.tmp/
