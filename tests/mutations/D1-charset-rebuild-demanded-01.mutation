@@ -6,9 +6,9 @@ rationale: Returns the charset rebuild to the REQUIRED set, where it shipped. Th
 ---
 --- a/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
 +++ b/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
-@@ -197,11 +197,6 @@
-      * pays the failed-INSERT-probe-retry dance and loses its identity field. That is the one the
-      * notice should be about.
+@@ -198,11 +198,6 @@
+      * identity field. That is the one the notice should be about. The difference that matters
+      * here is not duration, it is that COPY blocks writes and INPLACE does not.
       */
 -    public function isOptional(): bool
 -    {

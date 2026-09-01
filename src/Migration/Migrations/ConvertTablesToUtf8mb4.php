@@ -192,10 +192,11 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
      * Migration screen, and `shouldRun()` is untouched. Optional here means OFFERED, never GONE
      * — the quieter failure that OptionalMigrationTest pins in both directions.
      *
-     * The cheap half of the upgrade is unaffected. `AddVisitIdentity` stays required: it is two
-     * metadata-only ALTERs (INSTANT on MySQL 8), and until it lands every anonymous pageview
-     * pays the failed-INSERT-probe-retry dance and loses its identity field. That is the one the
-     * notice should be about.
+     * The cheaper half of the upgrade is unaffected. `AddVisitIdentity` stays required: it is
+     * two ADD COLUMN ALTERs rebuilt in place — cost and reasoning on that class — and until it
+     * lands every anonymous pageview pays the failed-INSERT-probe-retry dance and loses its
+     * identity field. That is the one the notice should be about. The difference that matters
+     * here is not duration, it is that COPY blocks writes and INPLACE does not.
      */
     public function isOptional(): bool
     {

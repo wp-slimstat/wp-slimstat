@@ -105,8 +105,8 @@ class MigrationService
             $manager = new MigrationManager();
 
             // Register all migrations
-            // D68/P2's REQUIRED column, ahead of everything: it is metadata-only (INSTANT
-            // on MySQL 8, INPLACE below), and until it lands every anonymous pageview pays
+            // D68/P2's REQUIRED column, ahead of everything. It is an in-place rebuild of
+            // two tables — cost and reasoning on AddVisitIdentity. Until it lands every anonymous pageview pays
             // P1's failed-INSERT-probe-retry dance and loses its identity field. Also
             // ahead of the index migrations on principle — a column its own index depends
             // on should exist before anything might build that index.

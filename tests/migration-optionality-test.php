@@ -42,7 +42,8 @@ $plugin_root = dirname(__DIR__);
 // The declared table. `true` = OFFERED (listed on the Migration screen, no notice);
 // `false` = OWED (the notice demands it).
 $declared = [
-    // Two metadata-only ALTERs, INSTANT on MySQL 8. Until it lands every anonymous pageview
+    // Two ADD COLUMN ALTERs, rebuilt in place — not the metadata-only INSTANT this comment
+    // used to claim. OWED regardless of cost: until it lands every anonymous pageview
     // pays the failed-INSERT-probe-retry dance and loses its identity field, so this is the
     // one the notice should be about.
     'AddVisitIdentity'                 => false,

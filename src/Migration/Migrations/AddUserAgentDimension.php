@@ -65,7 +65,10 @@ class AddUserAgentDimension extends AbstractMigration
             'Optional. Adds a compact browser key to the analytics table and builds a lookup of '
                 . 'browsers and platforms — groundwork for a future release. It does not make any '
                 . 'report faster today, and on a large table it can take several minutes. Your '
-                . 'existing data is not modified and reports keep working while it runs.',
+                . 'existing data is not modified, and reports keep working while it runs. '
+                . 'Tracking normally keeps working too, but a server that cannot rebuild the '
+                . 'table online will pause tracking writes for the whole rebuild, so on a large '
+                . 'site prefer a quiet period.',
             'wp-slimstat'
         );
     }

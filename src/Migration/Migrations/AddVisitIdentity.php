@@ -26,6 +26,15 @@ use SlimStat\Migration\AbstractMigration;
  * identity the visitor never had. NULL on old rows is the true statement: "identity
  * unknown". Reports LEFT-fall through visitor_id_expr()'s ladder exactly as before.
  *
+ * COST, measured once and stated here rather than in each caller's comment. 8.30 s for the
+ * pair on the 443,543-row reference install (MySQL 8.0.35) — but that install's ARCHIVE IS
+ * EMPTY, so the number is one table's rebuild plus a no-op, and a site with a populated
+ * archive pays roughly twice it. Not instant on any server: addManifestColumn() asks for
+ * ALGORITHM=INPLACE explicitly, which precludes the INSTANT path even where 8.0.12+ would
+ * offer it. Do not extrapolate linearly — this repo's own Run 7 scaled 152k to "~14 s at
+ * 443k" for the same operation class, and the measurement came in 1.7× under it. A rebuild
+ * is linear only while it fits the buffer pool.
+ *
  * The ARCHIVE gets the column too, in the same run: PurgeArchive::STATS_COLUMNS names
  * vid_hash, so a purge against an archive lacking it would fail whole — a skipped purge
  * and a degradation, per its guard, but a purge that works beats one that degrades.
@@ -50,8 +59,12 @@ class AddVisitIdentity extends AbstractMigration
         return __(
             'Adds a private, full-width identity column for visitors tracked without cookies. '
                 . 'Until it runs, anonymous pageviews are still recorded but cost extra database '
-                . 'work on every hit and cannot be grouped into visits reliably. Instant on '
-                . 'MySQL 8, brief on older servers; no data is rewritten.',
+                . 'work on every hit and cannot be grouped into visits reliably. The analytics '
+                . 'table and its archive are each rebuilt in place — about 8 seconds per 440,000 '
+                . 'rows on MySQL 8, so roughly double that if you also have archived data, and '
+                . 'longer on bigger tables. Tracking and reports normally keep working while it '
+                . 'runs, but a server that cannot rebuild online will pause tracking writes '
+                . 'until it finishes. No existing data is changed or removed.',
             'wp-slimstat'
         );
     }

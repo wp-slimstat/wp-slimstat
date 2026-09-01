@@ -179,7 +179,9 @@ abstract class AbstractMigration implements MigrationInterface
 	 * manifest does not declare — PITFALLS 30), the ALGORITHM=INPLACE, LOCK=NONE hint
 	 * is how the statement RUNS rather than what the schema is, and a server that
 	 * refuses the hint gets one bare retry, because refusing to add the column at all
-	 * is worse than a slower rebuild the admin explicitly started.
+	 * is worse than a slower rebuild the admin explicitly started. That retry is the
+	 * path on which tracking writes block, which is why both callers' descriptions say
+	 * so — see the note at the retry itself for why it is not recorded instead.
 	 *
 	 * @return bool True when the column is in place (or already was).
 	 */
@@ -192,6 +194,23 @@ abstract class AbstractMigration implements MigrationInterface
 		$add     = \SlimStat\Schema\Schema::addColumnSql($suffix, $column, $this->tablePrefix());
 		$altered = $this->wpdb->query($add . ', ALGORITHM=INPLACE, LOCK=NONE');
 
+		// The retry is reached only because the server REFUSED the online hint, so its
+		// reachable domain is the BLOCKING case — a MyISAM table (installs created before
+		// Schema::ENGINE pinned InnoDB still have them) copies under a write lock, and on a
+		// tracking table blocked writes are dropped pageviews.
+		//
+		// Deliberately not recorded anywhere. record_degradation() was tried and reverted:
+		// it renders "failed to load and were disabled … reinstalling the plugin normally
+		// clears it" at error severity, which is false after a rebuild that SUCCEEDED, and
+		// it self-deletes on the next admin_init (DEGRADATION_TTL), so it could not have
+		// answered "which path ran" anyway. The subsystem's actual precedent is
+		// ConvertTablesToUtf8mb4: a rebuild that blocks writes says so in its DESCRIPTION,
+		// and the degradation channel stays for failures. Both callers' descriptions now do.
+		//
+		// The right surface is a PRE-run warning — the moment an admin can still schedule
+		// the pause — which means an engine probe feeding getDiagnostics(). That widens the
+		// diagnostics contract and migration.js with it, so it is post-beta work, recorded
+		// here rather than half-built.
 		if (false === $altered) {
 			$altered = $this->wpdb->query($add);
 		}
