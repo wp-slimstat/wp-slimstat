@@ -46,8 +46,12 @@ $checked     = 0;
 // ABSOLUTE dependency path — the helper matches it at offset 0 against the absolute file
 // path, so a relative `/Dependencies/` literal silently excludes nothing (the shape every
 // other caller passes as `$plugin_root . '/src/Dependencies'`).
+// wp-slimstat.php is scanned too. It was outside this list, and it holds a live builder
+// chain — `\SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)` at the
+// purge path — that no cross-database check had ever examined. The routing rule this gate
+// enforces applies to the root file exactly as it applies to admin/ and src/.
 $files = slimstat_own_php_files(
-    [$plugin_root . '/admin', $plugin_root . '/src'],
+    [$plugin_root . '/admin', $plugin_root . '/src', $plugin_root . '/wp-slimstat.php'],
     $plugin_root . '/src/Dependencies'
 );
 
@@ -67,9 +71,23 @@ foreach ($files as $file) {
     $tokens = token_get_all(slimstat_blank_comments($source, true));
     $count  = count($tokens);
 
+    $query_entry_types = slimstat_name_token_types();
+
     for ($i = 0; $i < $count; $i++) {
         // Find `Query::select(` / `Query::update(` / etc. — the start of a builder chain.
-        if (!is_array($tokens[$i]) || T_STRING !== $tokens[$i][0] || 'Query' !== $tokens[$i][1]) {
+        // This is the chain-ENTRY detector, i.e. the denominator: a spelling it cannot see
+        // drops the whole chain before it is ever examined, and the printed "N chains checked"
+        // shrinks silently rather than failing. T_STRING alone misses the qualified spelling
+        // on PHP 8, where `\SlimStat\Utils\Query::delete(...)` is a single
+        // T_NAME_FULLY_QUALIFIED token.
+        //
+        // Both halves were needed to reach the one such chain in this tree, and the count is
+        // the evidence: adding wp-slimstat.php to the file list above put it in scope, and
+        // this type widening made it visible — 67 chains before, 68 now. It routes to a slim_
+        // table, so nothing was hiding behind it; being uncounted is the finding.
+        if (!is_array($tokens[$i])
+            || !isset($query_entry_types[$tokens[$i][0]])
+            || 'Query' !== slimstat_last_name_segment($tokens[$i][1])) {
             continue;
         }
         $next = slimstat_next_significant($tokens, $i);

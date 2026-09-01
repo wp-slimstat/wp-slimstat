@@ -411,9 +411,18 @@ function slimstat_guarded_block_ranges(array $tokens, string $guard = 'is_admin'
             continue;
         }
 
+        // Every name-shaped token, not T_STRING alone — and this one is in the LIBRARY, so it
+        // is the blind spot with the widest reach. Both consumers use these ranges for a
+        // must-be-ABSENT question ("this registration is not inside an is_admin() block"), so
+        // a single `\is_admin()` guard makes its block invisible, containment answers false,
+        // and the gate reports PASS on the C38 defect it exists to catch. The `[] === $ranges`
+        // vacuity check does not save it: that fires only if EVERY block goes invisible.
+        $guard_types = slimstat_name_token_types();
         $calls_guard = false;
         for ($k = $i; $k < $cond_end; $k++) {
-            if (is_array($tokens[$k]) && T_STRING === $tokens[$k][0] && $guard === $tokens[$k][1]) {
+            if (is_array($tokens[$k])
+                && isset($guard_types[$tokens[$k][0]])
+                && $guard === slimstat_last_name_segment($tokens[$k][1])) {
                 $calls_guard = true;
                 break;
             }

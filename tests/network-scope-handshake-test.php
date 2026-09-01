@@ -107,11 +107,23 @@ if (null === $mint_index) {
         'wp_create_nonce'  => HANDSHAKE_NONCE_ACTION,
     ];
 
+    // Every name-shaped token, not T_STRING alone — see slimstat_name_token_types() for why
+    // the tokeniser makes that necessary on PHP 8.
+    //
+    // NOTE THE POLARITY, because it is the opposite of Pro's. Pro matches the last segment in
+    // gates whose name list is FORBIDDEN, where over-matching is the safe direction to be
+    // wrong in. Here the list is REQUIRED, so last-segment matching widens what SATISFIES the
+    // gate: a hypothetical `\Some\Ns\current_user_can()` would set the capability flag. That
+    // is accepted only because the scanned file declares no namespace, so the qualified form
+    // can only ever be the global function this gate means. If admin/index.php is ever
+    // namespaced, this comparison has to become exact-or-root-qualified.
+    $name_types = slimstat_name_token_types();
+
     for ($k = $mint_index; $k < $end; $k++) {
-        if (!is_array($tokens[$k]) || T_STRING !== $tokens[$k][0]) {
+        if (!is_array($tokens[$k]) || !isset($name_types[$tokens[$k][0]])) {
             continue;
         }
-        $name = $tokens[$k][1];
+        $name = slimstat_last_name_segment($tokens[$k][1]);
 
         if (in_array($name, $required, true)) {
             $seen[$name] = true;

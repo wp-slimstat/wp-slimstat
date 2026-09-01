@@ -113,7 +113,13 @@ foreach ($files as $file) {
     $contents = file_get_contents($file);
     if (false === $contents) continue;
     foreach ($forbidden_functions as $fn) {
-        $pattern = '/(?<![>:$\\\\])\b' . preg_quote($fn, '/') . '\s*\(/';
+        // The lookbehind used to exclude a preceding backslash outright, which silently
+        // exempted the ROOT-QUALIFIED spelling: `\str_contains(` is the same global function
+        // and just as fatal on the 7.4 floor, and this scan could not see it. Now the leading
+        // `\` is part of the match and only a NAMESPACED call is excluded — in `Foo\str_contains(`
+        // the backslash is preceded by a word character, and starting at the name instead is
+        // blocked by the `\\` still in the class. `->fn(`, `::fn(` and `$fn(` stay excluded.
+        $pattern = '/(?<![\w>:$\\\\])\\\\?' . preg_quote($fn, '/') . '\s*\(/';
         if (!preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE)) continue;
         foreach ($matches[0] as [$match, $offset]) {
             $line_no = substr_count($contents, "\n", 0, $offset) + 1;

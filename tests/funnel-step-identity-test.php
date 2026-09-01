@@ -148,9 +148,16 @@ if (!preg_match('/\$row_id_expr\s*=\s*\$is_event\s*\?\s*[\'"]te\.event_id[\'"]\s
 $chain_tokens = slimstat_tokenize($chain, false);
 $chain_count  = count($chain_tokens);
 
-$transient_at = [];
+// Every name-shaped token, not T_STRING alone, and compared on the LAST SEGMENT. This
+// assertion is must-be-ABSENT in effect — it requires exactly one cache write — so the
+// T_STRING-only form failed OPEN: a second write spelled `\set_transient(` is one
+// T_NAME_FULLY_QUALIFIED token on PHP 8, the count stays 1, and the gate reports success on
+// the precise defect it exists to forbid. The must-be-PRESENT gates in this repo fail closed
+// when they go blind; this one does not, which is why it is worth more than the others.
+$name_types = slimstat_name_token_types();
+$transient_at    = [];
 foreach ($chain_tokens as $i => $t) {
-    if (is_array($t) && T_STRING === $t[0] && 'set_transient' === $t[1]) {
+    if (is_array($t) && isset($name_types[$t[0]]) && 'set_transient' === slimstat_last_name_segment($t[1])) {
         $transient_at[] = $i;
     }
 }
