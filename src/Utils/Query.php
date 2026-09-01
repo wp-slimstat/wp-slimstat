@@ -1478,7 +1478,13 @@ class Query
         // Cleared first, the way wpdb::query() clears it via flush(). Without this a stale
         // error from an unrelated earlier query would be read as this probe's failure — and
         // a cached hit returns without querying at all, so nothing else would clear it.
-        $this->db->last_error = '';
+        //
+        // flush(), not `last_error = ''`: assigning the literal lets PHPStan narrow the property
+        // and read the comparison below as provably dead. It is also wpdb's own reset, and what
+        // query() calls at its start. It additionally clears last_result, last_query,
+        // rows_affected, num_rows and col_info — nothing reads any of those across this probe —
+        // while insert_id, which VisitIdGenerator does read across statements, survives.
+        $this->db->flush();
 
         // finally, because suppression is GLOBAL state on the shared wpdb handle. With a
         // non-empty $networkAggregate getVar() runs an apply_filters(), and third-party filter
