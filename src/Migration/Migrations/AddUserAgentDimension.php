@@ -49,6 +49,22 @@ class AddUserAgentDimension extends AbstractMigration
     /** Rows read per backfill pass. Bounded so one pass cannot exhaust memory on a large table. */
     private const BATCH = 500;
 
+    /**
+     * Seconds one backfill pass may spend stamping fact rows before it stops and reports back.
+     *
+     * THE BOUND THAT ACTUALLY BINDS. set_time_limit() is a silent no-op under
+     * disabled_functions and under PHP-FPM's request_terminate_timeout — which is the hosting
+     * class most likely to kill a multi-minute rebuild — so a test asserting the CALL is
+     * present would be green on every install where it does nothing. An in-request deadline
+     * cannot be disabled by the host.
+     *
+     * There is no index on `ua_id`, so each UPDATE below is a full scan of the fact table:
+     * a pass is bounded by TIME, not by row count, because the cost of one tuple varies with
+     * table size. Ten seconds is comfortably inside the default max_execution_time of 30 while
+     * leaving room for the DISTINCT probe and the response.
+     */
+    private const PASS_SECONDS = 10;
+
     public function getId(): string
     {
         return 'add-user-agent-dimension';
@@ -161,7 +177,17 @@ class AddUserAgentDimension extends AbstractMigration
             return true; // nothing left to key
         }
 
+        $deadline = microtime(true) + self::PASS_SECONDS;
+        $stamped  = 0;
+
         foreach ($rows as $row) {
+            // Stop on the deadline rather than on the batch. Returning here is PROGRESS, not
+            // failure: every tuple already stamped stays stamped, and the next pass picks up
+            // whatever is still NULL.
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+
             $natural = $this->naturalKey($row);
             $key     = SurrogateKey::for($natural);
 
@@ -181,22 +207,68 @@ class AddUserAgentDimension extends AbstractMigration
             ));
 
             // Stamp every fact row sharing this tuple. Bounded by the tuple, not the table.
+            //
+            // NULL IS MATCHED WITH `IS NULL`, NOT BOUND. `<=>` is null-safe in SQL, but wpdb
+            // cannot BIND a null: _real_escape() returns '' for any non-scalar, so a tuple whose
+            // browser_version is NULL — the ordinary case, because UADetector defaults it to ''
+            // and the tracker's array_filter drops empties before the row is written — produced
+            // `browser_version <=> ''`, which is 0 against NULL. Those rows were never stamped,
+            // dimensionIsBehind() never settled, and the migration could not finish. Harmless
+            // before, because one pass returned false and stopped; with the client now
+            // re-posting while work remains, it would have spun for the whole pass cap.
+            $where = ['ua_id IS NULL'];
+            $args  = [$key];
+
+            foreach ([
+                'browser'         => $row['browser'],
+                'browser_version' => $row['browser_version'],
+                'browser_type'    => null === $row['browser_type'] ? null : (int) $row['browser_type'],
+                'platform'        => $row['platform'],
+            ] as $column => $value) {
+                if (null === $value) {
+                    $where[] = "`{$column}` IS NULL";
+                    continue;
+                }
+
+                $where[] = "`{$column}` <=> " . (is_int($value) ? '%d' : '%s');
+                $args[]  = $value;
+            }
+
             $this->wpdb->query($this->wpdb->prepare(
-                "UPDATE `{$stats}` SET ua_id = %s
-                  WHERE ua_id IS NULL
-                    AND browser <=> %s AND browser_version <=> %s
-                    AND browser_type <=> %d AND platform <=> %s",
-                $key,
-                $row['browser'],
-                $row['browser_version'],
-                (int) $row['browser_type'],
-                $row['platform']
+                "UPDATE `{$stats}` SET ua_id = %s WHERE " . implode(' AND ', $where),
+                $args
             ));
+
+            $stamped += max(0, (int) $this->wpdb->rows_affected);
         }
 
-        // Resumable by construction: the next call picks up whatever is still NULL. Reporting
-        // "not finished" here is honest rather than looping until a timeout kills the request.
-        return !$this->dimensionIsBehind();
+        // NON-CONVERGENCE IS FAILURE, though, and it has to be distinguishable from progress.
+        // A pass that found tuples to stamp and stamped no rows is not making progress and will
+        // not on the next pass either; saying "true, there is more" forever would hand the
+        // client a loop with no exit but its own cap.
+        if (0 === $stamped && $this->dimensionIsBehind()) {
+            \wp_slimstat::record_degradation(
+                'add_user_agent_dimension',
+                'the browser-dimension backfill selected rows to key but updated none, so it '
+                    . 'cannot finish. The migration has been stopped rather than retried.',
+                \wp_slimstat::DEGRADATION_OPERATIONAL
+            );
+
+            return false;
+        }
+
+        // PROGRESS IS NOT FAILURE, and returning !dimensionIsBehind() here said it was.
+        //
+        // A pass that stamped 500 tuples correctly and left 4,000 to go returned false, which
+        // runOne() recorded as false, which the UI painted red as "Failed" — on a run that had
+        // done exactly what it was asked. The admin was told a migration failed, given no
+        // indication that clicking again would help, and left with a half-stamped table they
+        // had no reason to trust.
+        //
+        // "Did it work" and "is it finished" are different questions. This answers the first;
+        // shouldRun() answers the second, and the AJAX response now carries it so the client
+        // can re-post the same step until it is done.
+        return true;
     }
 
     /**

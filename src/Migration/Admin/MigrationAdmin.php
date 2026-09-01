@@ -263,36 +263,91 @@ class MigrationAdmin
 			wp_send_json_error('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.');
 		}
 
+		// BUDGET. The client allows 15 minutes (migration.js); PHP's default
+		// max_execution_time is 30 seconds, so the server was dying nine minutes before the
+		// client gave up and the .fail() handler deliberately does not advance — the run
+		// halted with an outcome nobody could read. set_time_limit() is a no-op under
+		// disabled_functions and under PHP-FPM's request_terminate_timeout, so it is asked for
+		// here and NOT relied on: the real bound is the per-pass deadline inside the backfill.
+		if (function_exists('set_time_limit')) {
+			@set_time_limit(0);
+		}
+
+		ignore_user_abort(true);
+		wp_raise_memory_limit('admin');
+
 		$only = isset($_POST['migration']) ? sanitize_key(wp_unslash($_POST['migration'])) : '';
 
-        if ($only) {
-            // Delegated so this path takes the SAME single-flight claim as runAll(), writes
-            // the same OPTION_STATUS constant instead of a hardcoded duplicate, and
-            // invalidates the probe — none of which it did while it called run() directly.
-            $ok = $this->manager->runOne($only);
+		// SUPPRESSED AROUND THE RUN, RESTORED BEFORE THE RESPONSE.
+		//
+		// wpdb prints an HTML error block when show_errors is on, which it is whenever
+		// WP_DEBUG and WP_DEBUG_DISPLAY are — and that echo lands BEFORE wp_send_json_success().
+		// The body is then HTML-then-JSON, jQuery's .done() receives undefined, and
+		// `!!(resp && resp.success)` is false: a migration that SUCCEEDED reported as failed,
+		// on precisely the installs whose owners had turned debugging on to find out why.
+		//
+		// Suppression does not clear last_error, so probeFailed() still records what went
+		// wrong — the evidence survives, only the echo is stopped. Not ob_start(): that would
+		// swallow an unrelated fatal's output too.
+		// analyticsConnection(), not \wp_slimstat::$wpdb directly: that is the handle the
+		// migrations actually run on, and it exists to defend against a slimstat_custom_wpdb
+		// filter returning something that is not a wpdb — which this would otherwise call
+		// suppress_errors() on, fatally, inside the AJAX handler.
+		$analytics  = \SlimStat\Migration\MigrationService::analyticsConnection();
+		$suppressed = $analytics->suppress_errors(true);
 
-            if (null !== $ok) {
-                $name = $only;
-                foreach ($this->manager->getMigrations() as $migration) {
-                    if ($migration->getId() === $only) {
-                        $name = $migration->getName();
-                        break;
-                    }
-                }
+		try {
+			if ($only) {
+				// Delegated so this path takes the SAME single-flight claim as runAll(), writes
+				// the same OPTION_STATUS constant instead of a hardcoded duplicate, and
+				// invalidates the probe — none of which it did while it called run() directly.
+				$ok = $this->manager->runOne($only);
 
-                if ($ok) {
-                    wp_send_json_success([$name => true]);
-                }
+				if (null !== $ok) {
+					$name      = $only;
+					$remaining = false;
 
-                wp_send_json_error([$name => false]);
-            }
-        }
+					foreach ($this->manager->getMigrations() as $migration) {
+						if ($migration->getId() === $only) {
+							$name = $migration->getName();
+							// Asked AFTER the run: "is there more to do", which is a different
+							// question from "did this pass work". A long backfill answers true
+							// here for several passes while every one of them succeeded.
+							$remaining = $migration->shouldRun();
+							break;
+						}
+					}
 
-		// Run all
-		$result = $this->manager->runAll();
+					$analytics->suppress_errors($suppressed);
 
-		// Check if all migrations are now complete
-		$all_complete = !$this->manager->needsMigration();
+					if ($ok) {
+						wp_send_json_success([$name => true, 'remaining' => $remaining]);
+					}
+
+					wp_send_json_error([$name => false, 'remaining' => $remaining]);
+				}
+
+				// runOne() answers null when the single-flight claim is held by another
+				// request. Falling through to runAll() here ran a DIFFERENT thing than the one
+				// asked for, and answered with a payload carrying no 'remaining' — so the
+				// client marked the requested step green while it had never run. Retrying is
+				// the right answer, and the client can only do that if it is told.
+				$analytics->suppress_errors($suppressed);
+
+				wp_send_json_error([
+					'busy'    => true,
+					'message' => __('Another migration is already running. Try again in a moment.', 'wp-slimstat'),
+				]);
+			}
+
+			// Run all
+			$result = $this->manager->runAll();
+
+			// Check if all migrations are now complete
+			$all_complete = !$this->manager->needsMigration();
+		} finally {
+			$analytics->suppress_errors($suppressed);
+		}
 
 		wp_send_json_success([
 			'results' => $result,
