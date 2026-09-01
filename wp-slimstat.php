@@ -1699,19 +1699,26 @@ class wp_slimstat
             }
         }
 
-        // Register the correct script for adblock bypass, CDN, or default
-        $local_script_version = SLIMSTAT_ANALYTICS_VERSION;
-        $local_script_path = plugin_dir_path(__FILE__) . 'wp-slimstat.min.js';
-        if (file_exists($local_script_path)) {
-            $local_script_version .= '.' . filemtime($local_script_path);
-        }
-
+        // Register the correct script for adblock bypass, or default.
+        //
+        // THE CDN BRANCH IS GONE and enable_cdn no longer does anything: it served the tracker
+        // from a jsDelivr path mirroring wp.org's SVN tags, which 404s on any unreleased build
+        // with no fallback and nothing recorded. tests/tracker-script-origin-test.php holds the
+        // full account and pins it. The option key stays in init_options() so the
+        // array_merge(init_options(), $settings) invariant holds; it is simply never read.
         if ('adblock_bypass' === $method) {
             $hash_js  = md5(site_url() . 'slimstat');
             wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
-        } elseif ('on' == self::$settings['enable_cdn']) {
-            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
         } else {
+            // Stat the file only on the arm that reads the result. This runs on every
+            // front-end page view, and the adblock-bypass arm versions on the constant.
+            $local_script_version = SLIMSTAT_ANALYTICS_VERSION;
+            $local_script_path    = plugin_dir_path(__FILE__) . 'wp-slimstat.min.js';
+
+            if (file_exists($local_script_path)) {
+                $local_script_version .= '.' . filemtime($local_script_path);
+            }
+
             wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, $local_script_version, true);
         }
 

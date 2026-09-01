@@ -338,11 +338,6 @@ $settings = [
                 'title' => __('Performance', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'enable_cdn' => [
-                'title'       => __('Enable CDN', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("Use <a href='https://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).", 'wp-slimstat'),
-            ],
             'ajax_relative_path' => [
                 'title'       => __('Relative Ajax', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -362,7 +357,7 @@ $settings = [
             'external_pages_script' => [
                 'type'   => 'custom',
                 'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat'),
-                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
+                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="' . esc_url(plugins_url('/wp-slimstat.min.js', dirname(__DIR__))) . '"&gt;&lt;/script&gt;</pre>',
             ],
 
             'enable_browscap' => [

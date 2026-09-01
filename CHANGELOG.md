@@ -6,6 +6,7 @@
 * Schema reconciliation fell 71%: from 14 statements to 4 on a healthy install.
 
 **Numbers that change on purpose** (each verified before/after against a measured register)
+* Sites that had "Enable CDN" switched on start recording again. That option pointed the tracker at a URL that does not exist until the version is published on WordPress.org, so those sites were recording nothing; their traffic reappears from the moment of the update.
 * Archived events start appearing: events now archive before their parent rows are deleted.
 * Date ranges straddling midnight stop collapsing multi-column groups.
 * Form-submit, tel: and mailto: goals start working; one press produces exactly one hit.
@@ -40,6 +41,8 @@
 = 5.5.1 - 2026-07-26 =
 
 **Compatibility & stability**
+
+- Removed: the "Enable CDN" setting (Settings → Tracker → Performance). It served the tracking script from jsDelivr's mirror of the WordPress.org tag for your installed version — which only exists once that version has been published there. On a beta, or in the window between a release being tagged and WordPress.org syncing it, the request 404s and there was no fallback: the tracker never loaded and the site recorded nothing at all, with nothing to say so. If you had it switched on, tracking resumes on update. The copy-and-paste snippet for tracking external pages (Settings → Tracker) now points at your own site for the same reason; if you pasted the old snippet onto another site, replace it.
 
 - Fixed: A rare plugin-loading problem could take down your whole site and lock you out of wp-admin with a blank white screen ("critical error"). If a plugin file no longer matched its build index — for example after an interrupted update, a manually uploaded copy, or stale server caching — SlimStat could stop every page, including the login screen, from loading. The plugin now recovers gracefully: it falls back to loading files directly, and if one part still can't load it disables just that feature instead of crashing the site. A build-time safety check was also added so an incomplete package can't be released. ([#325](https://github.com/wp-slimstat/wp-slimstat/issues/325))
   - Note: if your host caches PHP files aggressively (opcache), a blank screen may persist until that cache is flushed — the cached copy of the old loader has to expire first.
