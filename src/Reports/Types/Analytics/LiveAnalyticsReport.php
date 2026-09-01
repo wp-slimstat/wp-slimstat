@@ -644,15 +644,15 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {
-			// Log error for debugging
-			error_log( 'Live Analytics AJAX Error: ' . $e->getMessage() );
+			// The helper carries the WP_DEBUG guard: this is an AJAX endpoint a broken
+			// report can hit on every poll, and an unguarded log floods a live debug.log.
+			\wp_slimstat::log( 'Live Analytics AJAX Error: ' . $e->getMessage(), 'error' );
 
 			wp_send_json_error( [
 				'message' => __( 'An error occurred while fetching data', 'wp-slimstat' ),
 			] );
 		} catch ( \Error $e ) {
-			// Log error for debugging
-			error_log( 'Live Analytics AJAX Fatal Error: ' . $e->getMessage() );
+			\wp_slimstat::log( 'Live Analytics AJAX Fatal Error: ' . $e->getMessage(), 'error' );
 
 			wp_send_json_error( [
 				'message' => __( 'A fatal error occurred while fetching data', 'wp-slimstat' ),

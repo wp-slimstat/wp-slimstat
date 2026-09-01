@@ -2487,6 +2487,7 @@ class slimstat_widget extends WP_Widget
      * Outputs the options form on admin
      *
      * @param array $instance The widget options
+     * @return string
      */
     public function form($_instance)
     {
@@ -2525,6 +2526,11 @@ class slimstat_widget extends WP_Widget
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo trim(strip_tags($slimstat_widget_filters)) ?></textarea>
         </p>
         <?php
+
+        // WP_Widget::form() is declared string|null: core treats a returned 'noform' as
+        // "nothing was rendered". This widget renders its own markup above, so the empty
+        // string is the correct "I have already output the form" answer.
+        return '';
     }
 
     /**

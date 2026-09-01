@@ -202,7 +202,13 @@ assert_true($on['clearedHooks'] !== [], 'cron hooks cleared when opted in');
 // The harness defines its own WP_Filesystem(), so it cannot exercise the case where
 // WordPress has not loaded the File API. Pin the guard at source level instead — the
 // same approach browscap-wp-filesystem-test.php takes for the identical hazard.
-$uninstall_src = (string) file_get_contents(dirname(__DIR__) . '/uninstall.php');
+require_once __DIR__ . '/lib/source-scan.php';
+// Comments blanked, strings kept: the option names matched below live INSIDE string
+// literals, so strip_comments_and_strings() would erase the subject. Blanking comments is
+// what stops a commented-out delete_option() line from satisfying these checks.
+$uninstall_src = slimstat_blank_comments(
+    (string) file_get_contents(dirname(__DIR__) . '/uninstall.php')
+);
 assert_true(
     strpos($uninstall_src, "require_once ABSPATH . 'wp-admin/includes/file.php'") !== false,
     'uninstall.php loads the WP File API before calling WP_Filesystem() (WP-CLI does not preload it)'
@@ -211,6 +217,58 @@ assert_true(
     strpos($uninstall_src, 'if (!WP_Filesystem())') !== false,
     'uninstall.php bails out when WP_Filesystem() cannot initialise, instead of calling delete() on null'
 );
+
+// Derived, not enumerated: every option this plugin mints as a `*OPTION*` constant must
+// actually be deleted when the user opts in. Written because 6.0.0 added
+// `slimstat_heatmap_recovery_watermark` with no line in uninstall.php — and widening the
+// scan past src/Migration then found three more the hand-maintained list had never had:
+// `slimstat_schema_column_drift`, `slimstat_visit_id_counter` (a different key from the
+// `slimstat_visit_id` that WAS listed), and the two bare-literal options below.
+//
+// The subject is $on['deleted'] — what the child process ACTUALLY deleted when it ran
+// uninstall.php with the opt-in set — not the file's source text. A source scan cannot
+// tell whether a delete_option() line is reachable, and would be satisfied by one sitting
+// after an early return.
+$plugin_root    = dirname(__DIR__);
+$minted_options = [];
+foreach (slimstat_own_php_files(
+    [$plugin_root . '/src', $plugin_root . '/admin', $plugin_root . '/wp-slimstat.php'],
+    $plugin_root . '/src/Dependencies'
+) as $path) {
+    $body = slimstat_blank_comments((string) file_get_contents($path));
+    // Both spellings are in use: OPTION_NAME (prefix) and SALT_OPTION (suffix).
+    if (preg_match_all("/const\s+[A-Z0-9_]*OPTION[A-Z0-9_]*\s*=\s*'([a-z0-9_]+)'/", $body, $m)) {
+        foreach ($m[1] as $option_name) {
+            $minted_options[$option_name] = slimstat_rel_path($plugin_root, $path);
+        }
+    }
+}
+
+// 13 measured at 6.0.0. A LOWER count means the walk or the regex broke, not that options
+// were removed — re-measure and lower this deliberately if a constant genuinely goes away.
+assert_true(
+    count($minted_options) >= 13,
+    'the option-constant scan still finds its subject (else every check below is vacuous), found: '
+        . count($minted_options)
+);
+foreach ($minted_options as $option_name => $declared_in) {
+    assert_true(
+        in_array($option_name, $on['deleted'], true),
+        "opting in deletes '{$option_name}', minted by {$declared_in} — an option the plugin creates has to be removable"
+    );
+}
+
+// Known residual, written down rather than left to be rediscovered: an option minted from
+// a bare literal has no constant for the scan above to find. Two exist, and both are
+// pinned by name here so that deleting their delete_option() lines still reds something.
+// The real fix is a manifest beside the table one in Schema.php (the C16 shape, see the
+// table list above); it is deliberately deferred past the 6.0.0 beta.
+foreach (['wp_slimstat_notifications', 'slimstat_purge_optimized_at'] as $literal_option) {
+    assert_true(
+        in_array($literal_option, $on['deleted'], true),
+        "opting in deletes '{$literal_option}' (minted from a bare literal, so no scan finds it)"
+    );
+}
 
 fwrite(STDOUT, "OK: {$assertions} assertions passed (analytics deleted only on explicit opt-in; cron + browscap cache always cleaned, GeoIP DB preserved)\n");
 exit(0);
