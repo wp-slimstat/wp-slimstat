@@ -242,17 +242,52 @@ if (!class_exists('wp_slimstat_db')) {
 // declaration lists are read from source and diffed against what this file provides.
 
 /**
+ * Read a plugin file this test asserts ABOUT, failing by name if it cannot be read.
+ *
+ * Every source-shape check in this file diffs against a string from disk, and an unreadable
+ * subject yields '' — which no `assert_not_contains` can tell from "the dangerous pattern is
+ * absent". Naming the read here means the failure says "this file moved" instead of the
+ * downstream assertion saying "the escaping is missing", which is a different bug report.
+ */
+function read_source(string $rel_path): string
+{
+    $source = @file_get_contents(__DIR__ . '/../' . $rel_path);
+
+    assert_true(
+        false !== $source,
+        "{$rel_path} is readable — an unreadable subject declares nothing, which every check "
+            . 'against it would read as agreement'
+    );
+
+    return (string) $source;
+}
+
+/**
  * Fail if $rel_path declares a name this file does not provide.
  *
- * An unreadable file needs no separate branch: it yields no matches, and the vacuity assertion
- * below is what fires.
+ * The docblock here used to say "an unreadable file needs no separate branch: it yields no
+ * matches, and the vacuity assertion below is what fires". True — but it covered only one of
+ * the two ways this control stops being a control. The other: preg_match_all() FAILS, returns
+ * false, and leaves $declared with no [1] key, so array_diff() below dies with "Argument #1
+ * must be of type array, null given" — a fatal inside the control that exists to prevent
+ * fatals, arriving as a crash rather than a named failure. Both are checked, in order.
  *
  * @param string[] $provided
  */
 function assert_no_drift(string $rel_path, string $pattern, array $provided, string $noun): void
 {
-    $source = (string) @file_get_contents(__DIR__ . '/../' . $rel_path);
-    preg_match_all($pattern, $source, $declared);
+    $declared = [];
+    $matched  = preg_match_all($pattern, read_source($rel_path), $declared);
+
+    // preg_last_error(), not preg_last_error_msg(): the 8.0 spelling IS permitted elsewhere in
+    // this repo (php74-no-php80-functions-test.php lists it as polyfilled), but that polyfill
+    // arrives via the plugin bootstrap, and this file boots under SHORTINIT and never loads it
+    // — on the PHP 7.4 container the CI step runs in, _msg() would fatal.
+    assert_true(
+        false !== $matched && isset($declared[1]),
+        "the {$noun} pattern ran against {$rel_path} and captured a group 1 "
+            . '(preg error code ' . preg_last_error() . ')'
+    );
 
     assert_true(
         [] !== $declared[1],
@@ -480,8 +515,11 @@ assert_contains('&quot;onclick=', $html, 'Country quote must be entity-escaped i
 // (right-now.php) are emitted by separate render paths render_column() can't drive
 // under SHORTINIT, so guard them by source shape. The runtime DOM proof for these
 // lives in tests/e2e/cf-ipcountry-xss.spec.ts.
-$reports_src  = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php'));
-$rightnow_src = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/right-now.php'));
+// right-now.php is read but never required by this file, so nothing else would notice it
+// moving; read_source() makes that failure say so instead of leaving four assertions below
+// to report missing escaping in a file they never opened.
+$reports_src  = preg_replace('/\s+/', ' ', read_source('admin/view/wp-slimstat-reports.php'));
+$rightnow_src = preg_replace('/\s+/', ' ', read_source('admin/view/right-now.php'));
 
 // Sink 1 — Audience world-map flag (alt + src). The stored code is validated to
 // 2 alphanumerics upstream and the flag path is realpath()-gated; the src is also

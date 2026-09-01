@@ -329,5 +329,8 @@
       "@test:source-level",
       "@test:reports-escaping"
     ]
+  },
+  "scripts-descriptions": {
+    "test:reports-escaping": "XSS gate over the report render path. Needs a live WordPress, so it is not in test:source-level; its CI home is the Tier 2 wp-env lane (.github/workflows/ci.yml), because membership of test:all meant it ran in no job at all. Locally it needs the DB socket passed to PHP — see CLAUDE.md."
   }
 }

@@ -352,6 +352,29 @@ jobs:
         run: npx wp-env start
         timeout-minutes: 5
 
+      - name: Reports output-escaping gate (XSS, needs a live WordPress)
+        # THE ONLY CI HOME THIS GATE HAS. tests/reports-output-escaping-test.php is a member
+        # of `composer test:all` and of nothing else, and no job runs test:all — so 56 XSS
+        # assertions over the report render path ran in no lane, on any tier, ever. It is not
+        # in test:source-level because it boots WordPress, and that is what this tier has.
+        #
+        # Two lanes, not one, and NOT because escaping is version-invariant — it is not. The
+        # test loads five html-api/ files by name because core moved wp_kses_hair()'s attribute
+        # parsing onto WP_HTML_Tag_Processor, and each require is file_exists()-guarded exactly
+        # because that file set varies by WP version. 6.4 already runs the full E2E suite; 7.0
+        # is where that surface is most likely to move under it again.
+        #
+        # Needs wp-env, NOT the plugin activation above: the test stubs wp_slimstat and
+        # wp_slimstat_db, feeds its own rows, and requires the view by path — it never reads a
+        # slim_ table. It does need a reachable database, because SHORTINIT still runs
+        # require_wp_db(), and its shutdown guard turns WordPress dying there (which exits 0)
+        # into a loud failure. So a green here cannot mean "it never ran".
+        #
+        # Blocking, unlike the E2E step below. On these lanes it is the first step that can
+        # fail this job, which is the point of adding it.
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' }}
+        run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
+
       - name: Activate plugin and create database tables
         # wp-env auto-activates the plugin but doesn't fire admin_init, which is
         # where init_tables() runs. Force table creation via wp eval.
