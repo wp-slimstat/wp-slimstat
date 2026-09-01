@@ -233,7 +233,7 @@ jobs:
     # swapped for the other: if the default branch is ever renamed the lane keeps running,
     # and naming a branch that does not exist is what this comment is about.
     if: >
-      github.event_name != 'schedule' &&
+      (github.event_name == 'push' || github.event_name == 'pull_request') &&
       (
         github.ref == 'refs/heads/master' ||
         github.ref == 'refs/heads/main' ||
