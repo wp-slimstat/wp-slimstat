@@ -1,7 +1,7 @@
-= 6.0.0 - 2026-08-16 =
+= 6.0.0 - 2026-09-01 =
 
 **Performance — measured, not estimated**
-* Admin charts read 50% fewer database rows: totals now ride the same query as their buckets (measured 303,424 -> 151,780 row reads and sort work also halved on a 150k-row corpus; answers verified byte-identical before and after).
+* Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. Report output was verified byte-identical before and after.
 * The tracking path stopped writing diagnostics into wp_options: 62% fewer option writes per stored pageview (2.83 -> 1.07), 96% fewer per refused bot (1.75 -> 0.07).
 * Schema reconciliation fell 71%: from 14 statements to 4 on a healthy install.
 
@@ -24,7 +24,16 @@
 * Same-page refreshes during an anonymous session stop double-counting, so anonymous pageview counts can decrease slightly — to their true value.
 * Percentages round the same way everywhere. A value landing exactly on a rounding boundary — 1 in 32 is exactly 3.125% — was printed as 3.12 in the top-list percentage column and the new-visitor rate, while the bar drawn beside it used 3.13. Both now round half-up, and the number and its bar are the same figure. Only on-the-boundary values move, and they move up by one in the last digit.
 
+**Upgrading — what the Migration screen asks for**
+* After updating, SlimStat adds a "Migration" screen under its menu. Nothing on that screen runs on its own: every step waits for an explicit click, and tracking keeps working the whole time.
+* One thing does happen without a click, as in every past release: the first time an administrator opens wp-admin after updating, SlimStat reconciles its own tables and indexes and creates anything missing — four statements on a healthy install. It does not rebuild the analytics table and does not add, widen or drop a column; that heavier work is what the Migration screen is for.
+* Required steps are small. The largest adds one column to the analytics table and its archive — measured at about 8 seconds per 440,000 rows on MySQL 8, so roughly double that if you also have archived data, and longer on bigger tables. Reads and writes continue while it runs on servers that support online rebuilds; one that does not will pause tracking writes until it finishes. No existing data is changed or removed.
+* Two steps are OFFERED, never required, because they rebuild whole tables and can take minutes on a large site: the browser-dimension backfill, and the utf8mb4 character-set conversion. "Apply All" does not take them — run them by name, at a quiet time, if you want them.
+* To postpone everything, define `SLIMSTAT_DISABLE_MIGRATIONS` as true in `wp-config.php`. The screen stops offering, and tracking and reports carry on.
+* Back up your database before upgrading, as with any major release.
+
 **Reliability**
+* Fixed: the upgrade step that repairs corrupted heat-map positions could offer itself forever. It asked "is there a candidate row?" but only repaired rows it could resolve unambiguously, so on a site with unresolvable rows it reported success and then offered again, each click re-scanning the events table. "All migrations complete" is now reachable.
 * One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
 * The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared database floor is tested, not assumed.
 
