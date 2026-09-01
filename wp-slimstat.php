@@ -529,7 +529,7 @@ class wp_slimstat
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
 
             // The index-repair subsystem. Nothing called this, so the whole thing —
-            // nine migrations, the Migration page, the one-click retry notice and the
+            // twelve migrations, the Migration page, the one-click retry notice and the
             // AJAX endpoints behind it — was dead code, and an install whose indexes
             // failed to build had no way to repair them. The legacy fallback did not
             // help: show_indexes_notice() suppressed itself on class_exists() of the

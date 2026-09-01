@@ -113,7 +113,7 @@ class MigrationService
             $manager->register(new AddVisitIdentity($analytics, $core));
             // ADR-9 Layer 1. Registered next because it is the only migration here that
             // rebuilds the fact table — an admin watching the migration screen should see
-            // the expensive step start early, not have it appear after eight quick ones.
+            // the expensive step start early, not have it appear after the eight index builds.
             $manager->register(new AddUserAgentDimension($analytics, $core));
             $manager->register(new CreateDtOutIndex($analytics, $core));
             $manager->register(new CreateCountryDtIndex($analytics, $core));

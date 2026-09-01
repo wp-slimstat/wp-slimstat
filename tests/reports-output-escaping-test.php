@@ -62,8 +62,50 @@ require_once ABSPATH . WPINC . '/kses.php';
 // SHORTINIT does not load the block parser stack needed by the default pre_kses hook.
 remove_all_filters('pre_kses');
 
+// Nor does it load the HTML API, which wp_kses_hair() has depended on since core moved
+// attribute parsing onto WP_HTML_Tag_Processor. Without it the first wp_kses_post() of a
+// tag-bearing user agent fatals with "Class WP_HTML_Tag_Processor not found" and the lane dies
+// mid-run — measured here against WordPress 7.1.
+//
+// Measured one at a time against this file's own payloads: tag-processor, attribute-token and
+// decoder are REQUIRED (dropping any one fatals). The other two are reachable only by inputs
+// this file does not yet feed — a named entity inside an attribute, and a duplicate attribute —
+// and are kept so adding such a payload does not resurrect the fatal. text-replacement is NOT
+// here: it is the write path (set_attribute/get_updated_html) and wp_kses_hair only reads.
+//
+// A glob would be worse, not more future-proof: sorted, class-wp-html-processor.php comes first
+// and extends WP_HTML_Tag_Processor, so globbing this directory fatals. Order does not matter
+// among the five below — none extends another — and each is guarded so an older core that ships
+// fewer of them still boots.
+foreach ([
+    'html5-named-character-references.php',
+    'class-wp-html-decoder.php',
+    'class-wp-html-span.php',
+    'class-wp-html-attribute-token.php',
+    'class-wp-html-tag-processor.php',
+] as $html_api_file) {
+    $html_api_path = ABSPATH . WPINC . '/html-api/' . $html_api_file;
+    if (file_exists($html_api_path)) {
+        require_once $html_api_path;
+    }
+}
+
 if (!defined('DOING_AJAX')) {
     define('DOING_AJAX', false);
+}
+
+// src/Constants.php is loaded by the plugin bootstrap, which SHORTINIT does not run. Defined
+// here rather than required, because Constants.php calls plugin_dir_url()/get_admin_url() and
+// SHORTINIT loads neither link-template.php nor the admin. Kept as a map so the control below
+// can diff it against the real declaration list — see assert_no_drift().
+$slimstat_constants = [
+    'SLIMSTAT_ANALYTICS_DIR'       => dirname(__DIR__) . '/',
+    'SLIMSTAT_ANALYTICS_URL'       => 'http://example.test/wp-content/plugins/wp-slimstat/',
+    'SLIMSTAT_ANALYTICS_ADMIN_URL' => 'http://example.test/wp-admin/',
+    'SLIMSTAT_ANALYTICS_SITE'      => 'https://wp-slimstat.com',
+];
+foreach ($slimstat_constants as $slimstat_const_name => $slimstat_const_value) {
+    defined($slimstat_const_name) || define($slimstat_const_name, $slimstat_const_value);
 }
 
 $assertions = 0;
@@ -153,9 +195,20 @@ if (!class_exists('wp_slimstat')) {
 if (!class_exists('wp_slimstat_db')) {
     class wp_slimstat_db
     {
-        public static $debug_message      = '';
-        public static $pageviews          = 100;
-        public static $filters_normalized = ['utime' => [], 'columns' => [], 'misc' => ['start_from' => 0]];
+        public static $debug_message       = '';
+        public static $pageviews           = 100;
+        public static $filters_normalized  = ['utime' => [], 'columns' => [], 'misc' => ['start_from' => 0]];
+
+        // Every remaining static the real class declares, with its real default.
+        // `$valueless_operators` was added to the real class by de4d94e7 (the #305 value-less
+        // filter fix, v5.5.0) and used at wp-slimstat-reports.php:2688 and :2735; the stub was
+        // never updated, so this lane died mid-run at the first filter render and reached none
+        // of its escaping assertions. assert_no_drift() below is what keeps this list honest.
+        public static $columns_names       = [];
+        public static $operator_names      = [];
+        public static $valueless_operators = ['is_empty', 'is_not_empty'];
+        public static $sql_where           = ['columns' => '', 'time_range' => ''];
+        public static $all_columns_names   = [];
 
         /**
          * Mirror the real parser's split-then-decode behavior so delimiter bugs surface here.
@@ -180,6 +233,51 @@ if (!class_exists('wp_slimstat_db')) {
         }
     }
 }
+
+// ── CONTROL: nothing here can drift from the source it stands in for ─────────────────────────
+//
+// A stub missing a static, or a bootstrap missing a constant, does not fail an assertion — it
+// FATALS, and takes every assertion after it with it. That is how this lane came to be running
+// zero of its escaping checks while `composer test:all` said nothing was wrong. So both
+// declaration lists are read from source and diffed against what this file provides.
+
+/**
+ * Fail if $rel_path declares a name this file does not provide.
+ *
+ * An unreadable file needs no separate branch: it yields no matches, and the vacuity assertion
+ * below is what fires.
+ *
+ * @param string[] $provided
+ */
+function assert_no_drift(string $rel_path, string $pattern, array $provided, string $noun): void
+{
+    $source = (string) @file_get_contents(__DIR__ . '/../' . $rel_path);
+    preg_match_all($pattern, $source, $declared);
+
+    assert_true(
+        [] !== $declared[1],
+        "{$rel_path} declares at least one {$noun} (else this control is vacuous)"
+    );
+    assert_same(
+        [],
+        array_values(array_diff($declared[1], $provided)),
+        "this file provides every {$noun} {$rel_path} declares — a missing one is a PHP 8 fatal, "
+            . 'not a notice, and kills every assertion after its first use'
+    );
+}
+
+assert_no_drift(
+    'admin/view/wp-slimstat-db.php',
+    '/^\s*public static \$([A-Za-z_][A-Za-z0-9_]*)/m',
+    array_keys((new ReflectionClass('wp_slimstat_db'))->getStaticProperties()),
+    'public static'
+);
+assert_no_drift(
+    'src/Constants.php',
+    '/^\s*define\(\'([A-Z0-9_]+)\'/m',
+    array_keys($slimstat_constants),
+    'constant'
+);
 
 if (!class_exists('wp_slimstat_admin')) {
     class wp_slimstat_admin

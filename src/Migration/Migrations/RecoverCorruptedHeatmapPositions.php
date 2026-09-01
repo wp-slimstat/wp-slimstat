@@ -7,6 +7,27 @@ use SlimStat\Migration\AbstractMigration;
 
 class RecoverCorruptedHeatmapPositions extends AbstractMigration
 {
+    /**
+     * Highest event_id this migration has already examined.
+     *
+     * MEASURED, on the 443k-row local corpus: 18,120 rows match the SQL predicate below and
+     * ZERO of them are recoverable. That is not a quirk of this dataset — recoverPosition()
+     * returns a value only when exactly ONE split of the digits is compatible with the screen
+     * width, and for a realistic position like 69270 at width 1440 several splits are, so the
+     * answer is ambiguous and the row is left alone. Correct behaviour.
+     *
+     * What was NOT correct: shouldRun() asked "is there a CANDIDATE row" while run() only fixes
+     * "rows with a UNIQUE split". Those sets differ, so on any install with one unrecoverable
+     * row the Migration screen offered this step, reported success, and offered it again —
+     * forever, each click re-scanning the whole events table with a REGEXP. "All migrations
+     * complete" was unreachable. Reproduced end to end here: run() returned OK in 0.43 s and
+     * shouldRun() was still true immediately afterwards.
+     *
+     * The watermark closes it without weakening anything: a row that has been examined and
+     * found unrecoverable is not offered again; a row that arrives later still is.
+     */
+    private const OPTION_WATERMARK = 'slimstat_heatmap_recovery_watermark';
+
     private ?bool $shouldRunCache = null;
 
     public function getId(): string
@@ -39,7 +60,8 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
               AND s.screen_width > 0";
 
         $batch_size = 1000;
-        $cursor = 0;
+        $cursor = $this->watermark();
+        $examined = $cursor;
 
         do {
             $rows = $this->wpdb->get_results(
@@ -57,6 +79,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
 
             // Advance cursor to the last event_id in this batch
             $cursor = (int) end($rows)['event_id'];
+            $examined = $cursor;
 
             // Collect recoverable rows for a batched UPDATE
             $updates = [];
@@ -94,10 +117,28 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
             }
         } while (count($rows) === $batch_size);
 
+        // Every candidate at or below $examined has now been offered to recoverPosition(); the
+        // ones still uncorrected are the ones it cannot decide. Recording that is what stops the
+        // screen re-offering work that has already been done.
+        if ($examined > $this->watermark()) {
+            \update_option(self::OPTION_WATERMARK, $examined, false);
+        }
+
         // Invalidate cache so shouldRun() re-checks after recovery
         $this->shouldRunCache = null;
 
         return true;
+    }
+
+    /**
+     * The highest event_id already examined, or 0 on a site that has never run this.
+     *
+     * Not autoloaded: it is written once on an admin click and read on the migration screen,
+     * so joining `alloptions` for it would invalidate that blob for every request on the site.
+     */
+    private function watermark(): int
+    {
+        return (int) \get_option(self::OPTION_WATERMARK, 0);
     }
 
     public function shouldRun(): bool
@@ -109,8 +150,11 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         $events_table = $this->tablePrefix() . 'slim_events';
         $stats_table = $this->tablePrefix() . 'slim_stats';
 
+        // `e.event_id > watermark` is the whole fix, and it also makes the probe cheap: the
+        // scan starts after everything already examined instead of re-reading the table.
         $result = $this->wpdb->get_var(
-            "
+            $this->wpdb->prepare(
+                "
             SELECT 1
             FROM {$events_table} e
             INNER JOIN {$stats_table} s ON e.id = s.id
@@ -118,8 +162,11 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
               AND e.position NOT LIKE '%,%'
               AND e.position REGEXP '^[0-9]+$'
               AND s.screen_width > 0
+              AND e.event_id > %d
             LIMIT 1
-            "
+            ",
+                $this->watermark()
+            )
         );
 
         $this->shouldRunCache = !empty($result);
