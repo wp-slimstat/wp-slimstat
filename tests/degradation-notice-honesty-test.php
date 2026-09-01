@@ -56,7 +56,7 @@ $mainLit   = slimstat_blank_comments((string) file_get_contents($plugin_root . '
 // humanising fallback, whose existence this split is what makes load-bearing.
 $sources = array_merge(
     [$plugin_root . '/wp-slimstat.php'],
-    slimstat_own_php_files([$plugin_root . '/src', $plugin_root . '/admin'], 'src/Dependencies')
+    slimstat_own_php_files([$plugin_root . '/src', $plugin_root . '/admin'], $plugin_root . '/src/Dependencies')
 );
 
 $steps        = [];

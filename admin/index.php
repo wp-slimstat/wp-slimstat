@@ -169,7 +169,7 @@ class wp_slimstat_admin
             'inactive' => [
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
-                'title'           => __('Inactive Reports'),
+                'title'           => __('Inactive Reports', 'wp-slimstat'),
                 'capability'      => '',
                 'callback'        => '', // No callback and capabilities are needed if show_in_sidebar is false
             ],
@@ -2165,7 +2165,7 @@ class wp_slimstat_admin
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __('Views') . '</span></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __('Views', 'wp-slimstat') . '</span></span>';
         } else {
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
         }
@@ -3935,7 +3935,26 @@ class wp_slimstat_admin
             }
         }
         $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        // 'wp-slimstat', not 'wp-slimstat-pro'. These two were the only strings in the free
+        // plugin bound to Pro's text domain, so neither has ever been translatable here:
+        // free ships no wp-slimstat-pro .mo, and on a site without Pro nothing loads that
+        // domain at all. wp.org's Plugin Check flags it as TextDomainMismatch.
+        //
+        // The URL is built with add_query_arg() and escaped: $utm_medium reached the href
+        // raw, and both translated strings reached an attribute and a text node unescaped.
+        $pricing_url = add_query_arg(
+            [
+                'utm_source'   => 'admin',
+                'utm_medium'   => $utm_medium,
+                'utm_campaign' => 'export',
+            ],
+            'https://wp-slimstat.com/pricing/'
+        );
+
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="'
+            . esc_attr__('Upgrade to Pro', 'wp-slimstat') . '" href="' . esc_url($pricing_url)
+            . '" target="_blank"><span class="dashicons dashicons-download"></span>'
+            . esc_html__('Export', 'wp-slimstat') . '</a> ' . $_header_buttons;
     }
 
     /**

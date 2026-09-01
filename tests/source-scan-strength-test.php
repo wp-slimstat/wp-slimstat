@@ -403,6 +403,12 @@ $recorded     = [
     // returned. Stripping comments before matching would delete the entire subject.
     'record-citation-test.php'                   => 'exempt — the subject IS the comments, taken from the tokeniser',
     'rounding-contract-test.php'                 => 'exempt — its PHP half IS tokenised (rc_rounding_calls); the raw-text half scans JAVASCRIPT, which no PHP tokeniser can strip. Added after the ADR-17 seam fixed six PHP percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72)',
+    // Every gettext call site IS tokenised. The one raw read is the plugin header's
+    // `Text Domain:` line, which lives inside a doc comment — so blanking comments before
+    // matching would delete the exact bytes it needs. Reading the declared domain from the
+    // header rather than hardcoding it is what stops this gate and the plugin drifting apart
+    // silently, so the raw read is the point rather than an oversight.
+    'textdomain-single-source-test.php'          => 'exempt — the raw subject is the plugin header comment; the gettext scan itself is tokenised',
 
     // ── debt: PHP source matched as raw text; route through the library when next touched ──
     'access-log-author-edit-link-test.php'   => 'debt',

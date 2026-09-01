@@ -1,0 +1,17 @@
+target:    admin/index.php
+gate:      php tests/textdomain-single-source-test.php
+kind:      name-only
+expect:    that domain is not loaded by this plugin
+rationale: The correct domain STILL APPEARS at the call site, spelled as a concatenation that evaluates to the wrong one. This is the bypass the gate's own strength claim invites: an earlier draft treated any non-single-literal argument as "built at run time" and skipped it, so 'wp-slimstat' . '-pro' passed while behaving exactly like the defect being fixed. A gate that reads a compile-time constant as dynamic is not reading the code, it is reading its shape.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -3952,7 +3952,7 @@
+         );
+ 
+         return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="'
+-            . esc_attr__('Upgrade to Pro', 'wp-slimstat') . '" href="' . esc_url($pricing_url)
++            . esc_attr__('Upgrade to Pro', 'wp-slimstat' . '-pro') . '" href="' . esc_url($pricing_url)
+             . '" target="_blank"><span class="dashicons dashicons-download"></span>'
+             . esc_html__('Export', 'wp-slimstat') . '</a> ' . $_header_buttons;
+     }

@@ -36,7 +36,7 @@ $failures    = [];
 
 $sources = array_merge(
     [$plugin_root . '/wp-slimstat.php'],
-    slimstat_own_php_files([$plugin_root . '/src', $plugin_root . '/admin'], 'src/Dependencies')
+    slimstat_own_php_files([$plugin_root . '/src', $plugin_root . '/admin'], $plugin_root . '/src/Dependencies')
 );
 
 $scanned = 0;
