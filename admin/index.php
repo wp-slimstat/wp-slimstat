@@ -3868,9 +3868,16 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        // Define which reports get this new functionality
+        // Define which reports get this new functionality. 'raw' (a real,
+        // invoked data-source callable on ~20 reports via raw_results_to_html())
+        // is the usual gate; 'exportable_report' is a second, PRESENCE-ONLY
+        // gate for reports that render through a different callback and have
+        // no 'raw' entry to overload for this purpose — e.g. General's
+        // (slim_p10_03..06) GeneralReports::* callbacks, which never read
+        // callback_args['raw'] at all. Keeping these separate means neither
+        // reader has to guess whether a given 'raw' entry is real or decorative.
         $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
-        if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
+        if (empty($callback_args) || (!array_key_exists('raw', $callback_args) && empty($callback_args['exportable_report']))) {
             return $_header_buttons;
         }
 

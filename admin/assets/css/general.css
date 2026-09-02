@@ -229,6 +229,61 @@
     padding: var(--ss-space-2) 0;
 }
 
+/*
+ * Pro-tier per-box pager (GeneralReports::renderPager()): a next/prev arrow
+ * pair at the bottom of the box, NOT the page-wide report_pagination()
+ * every other screen's single report uses — General has several independent
+ * gated boxes on one screen, so a shared page-navigating pager would page
+ * all of them together. Every page's rows are already in the DOM
+ * (server-rendered, [hidden] toggled by general.js); no request per click.
+ */
+.slimstat-general-page .slimstat-general-pager-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ss-space-3);
+    padding: var(--ss-space-2) var(--ss-space-4) var(--ss-space-3);
+    border-top: 1px solid var(--ss-border-soft);
+    margin-top: auto;
+}
+
+.slimstat-general-page .slimstat-general-pager-prev,
+.slimstat-general-page .slimstat-general-pager-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--ss-border);
+    border-radius: var(--ss-radius-sm);
+    background: var(--ss-surface);
+    color: var(--ss-text-secondary);
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background var(--ss-duration-fast) var(--ss-easing-out);
+}
+
+.slimstat-general-page .slimstat-general-pager-prev:hover:not(:disabled),
+.slimstat-general-page .slimstat-general-pager-next:hover:not(:disabled) {
+    background: var(--ss-hover);
+    color: var(--ss-text-primary);
+}
+
+.slimstat-general-page .slimstat-general-pager-prev:disabled,
+.slimstat-general-page .slimstat-general-pager-next:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.slimstat-general-page .slimstat-general-pager-status {
+    font-size: var(--ss-text-xs);
+    color: var(--ss-text-muted);
+    min-width: 80px;
+    text-align: center;
+}
+
 /* ---------- Pro gating: SYNTHETIC rows only, never real data ---------- */
 .slimstat-general-page .slimstat-gated-wrap {
     position: relative;

@@ -986,7 +986,7 @@ class wp_slimstat_reports
                         'data2' => 'COUNT( DISTINCT ip )',
                     ],
                 ],
-                'classes'   => ['full-width', 'extralarge', 'chart'],
+                'classes'   => ['full-width', 'chart'],
                 'locations' => ['slimgeneral'],
                 'pinned'    => true,
                 'tooltip'   => $pageviews_chart_tooltip,
@@ -994,8 +994,16 @@ class wp_slimstat_reports
             'slim_p10_03' => [
                 'title'         => __('Where visitors come from', 'wp-slimstat'),
                 'callback'      => [\SlimStat\Modules\GeneralReports::class, 'trafficSources'],
-                'callback_args' => [],
-                'classes'       => ['normal'],
+                // 'exportable_report' is a presence-only signal for
+                // admin/index.php's add_lock_export_button() — deliberately
+                // NOT 'raw' (a different key on ~20 other reports that IS a
+                // real callable raw_results_to_html() invokes). General's
+                // boxes render through GeneralReports::*, which never reads
+                // callback_args at all, so a 'raw' entry here would look
+                // load-bearing to a future reader and isn't; this key can
+                // only ever mean "show the Export-upgrade button".
+                'callback_args' => ['exportable_report' => true],
+                'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
                 'tooltip'       => __('How visitors reach your site: typed the address directly (Direct), arrived from a search engine (Search), or came from another link (Other referrers).', 'wp-slimstat'),
@@ -1003,8 +1011,8 @@ class wp_slimstat_reports
             'slim_p10_04' => [
                 'title'         => __('Your most visited pages', 'wp-slimstat'),
                 'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topPages'],
-                'callback_args' => [],
-                'classes'       => ['normal'],
+                'callback_args' => ['exportable_report' => true],
+                'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
                 'tooltip'       => __('The pages on your site viewed most often in the selected date range, ranked by pageviews.', 'wp-slimstat'),
@@ -1012,8 +1020,8 @@ class wp_slimstat_reports
             'slim_p10_05' => [
                 'title'         => __('Where your visitors are', 'wp-slimstat'),
                 'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topCountries'],
-                'callback_args' => [],
-                'classes'       => ['normal'],
+                'callback_args' => ['exportable_report' => true],
+                'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
                 'tooltip'       => __('The countries your visitors are browsing from, by share of total visits.', 'wp-slimstat'),
@@ -1021,8 +1029,8 @@ class wp_slimstat_reports
             'slim_p10_06' => [
                 'title'         => __('Devices & browsers', 'wp-slimstat'),
                 'callback'      => [\SlimStat\Modules\GeneralReports::class, 'devicesAndBrowsers'],
-                'callback_args' => [],
-                'classes'       => ['normal'],
+                'callback_args' => ['exportable_report' => true],
+                'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
                 'tooltip'       => __('The browser families your visitors use most. Exact device type (phone, tablet, desktop) is not tracked — this shows the browser they browsed with.', 'wp-slimstat'),

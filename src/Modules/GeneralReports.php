@@ -29,8 +29,11 @@ use SlimStat\Helpers\GeneralPageData;
  */
 class GeneralReports
 {
-    /** Total visible row slots on a gated (free-tier) box: 2 real + 8 fake. */
-    private const GATED_TOTAL_ROWS = 10;
+    /** Total visible row slots on a gated (free-tier) box: 2 real + 3 fake. */
+    private const GATED_TOTAL_ROWS = 5;
+
+    /** Rows per page for a Pro account's un-gated boxes (client-side pagination — see renderPager()). */
+    private const ROWS_PER_PAGE = 5;
 
     private const PRICING_URL = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=general';
 
@@ -233,14 +236,18 @@ class GeneralReports
     }
 
     /**
-     * Renders one free-tier-gated "top N" box: real rows first, then — for
-     * free-tier accounts only — synthetic rows filling out to
-     * GATED_TOTAL_ROWS, with a bold centered "Unlock full report with Pro"
-     * overlay covering the synthetic portion. The synthetic rows are
-     * GeneralPageData::fakeBlurredRows() output: plausible-looking but never
-     * derived from real stats, so inspecting the DOM under the CSS blur
-     * recovers no real numbers (unlike the previous rows-blur/aria-hidden
-     * markup, which sent real values to the browser).
+     * Renders one "top N" box. Free tier: real rows first, then synthetic
+     * rows filling out to GATED_TOTAL_ROWS, with a bold centered "Unlock
+     * full report with Pro" overlay covering the synthetic portion. The
+     * synthetic rows are GeneralPageData::fakeBlurredRows() output:
+     * plausible-looking but never derived from real stats, so inspecting the
+     * DOM under the CSS blur recovers no real numbers (unlike the previous
+     * rows-blur/aria-hidden markup, which sent real values to the browser).
+     *
+     * Pro tier: every real row, paginated ROWS_PER_PAGE at a time via
+     * renderPager() — a lightweight per-box, client-side pager (see that
+     * method's docblock for why this box can't reuse
+     * wp_slimstat_reports::report_pagination()).
      *
      * Row markup matches wp_slimstat_reports::raw_results_to_html()'s
      * .slimstat-tooltip-trigger / .slimstat-tooltip-bar-wrap /
@@ -251,9 +258,7 @@ class GeneralReports
      * necessarily a second implementation because raw_results_to_html()
      * fuses SQL dispatch, pagination and column-specific post-processing
      * into the same method, which General's rows (already fetched, already
-     * gated) don't go through. A Pro account (which renders every real row
-     * through this same method, $isPro=true, nothing gated) gets
-     * pixel-identical rows to any other report using that renderer.
+     * gated) don't go through.
      *
      * @param array<int, array<string, mixed>> $rows
      */
@@ -267,19 +272,19 @@ class GeneralReports
         $is_pro = \wp_slimstat::pro_is_installed();
         $total  = GeneralPageData::sumCounthits($rows);
 
-        // splitRows() already returns [$rows, []] untouched on Pro (no
-        // free-row cap, nothing blurred) — one code path for both tiers
-        // rather than a separate early-return branch that re-renders $rows
-        // instead of $shown.
-        [$shown, $blurred] = GeneralPageData::splitRows($rows, $is_pro, 2);
+        if ($is_pro) {
+            self::renderPager($rows, $field, $titleAttr, $total);
+            return;
+        }
+
+        // splitRows() caps at 2 free rows regardless of GATED_TOTAL_ROWS —
+        // the free-visible count and the total gated-box slot count are
+        // deliberately separate knobs.
+        [$shown, $blurred] = GeneralPageData::splitRows($rows, false, 2);
 
         echo '<div class="rows">';
         self::renderRows($shown, $field, $titleAttr, $total);
         echo '</div>';
-
-        if ($is_pro) {
-            return;
-        }
 
         $fakeSlots = max(0, self::GATED_TOTAL_ROWS - count($shown));
         $fakeRows  = empty($blurred) ? [] : GeneralPageData::fakeBlurredRows($fakeSlots, $field, $fakeLabel, $fakeSeed);
@@ -296,6 +301,57 @@ class GeneralReports
             echo '</a>';
             echo '</div>';
         }
+    }
+
+    /**
+     * A Pro-tier box's rows, split into ROWS_PER_PAGE-sized pages and all
+     * rendered up front (each page a <div class="slimstat-page">, every page
+     * but the first starting hidden), with a next/prev arrow pair at the
+     * bottom that general.js toggles which page is visible.
+     *
+     * NOT wp_slimstat_reports::report_pagination(): that pager is a single
+     * PAGE-WIDE filter (start_from, via fs_url()) that full-page-navigates —
+     * correct for a report alone on its own screen, but General has 4
+     * independent gated boxes on the SAME screen, and one shared start_from
+     * would page all 4 together when only one box's "next" was clicked.
+     * Since get_top() already returns every row (no SQL LIMIT/OFFSET), the
+     * cheaper and correct fix is a pager scoped to this one box: no new
+     * query, just which already-rendered page is visible.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     */
+    private static function renderPager(array $rows, string $field, bool $titleAttr, int $total): void
+    {
+        $pages = array_chunk($rows, self::ROWS_PER_PAGE);
+
+        if (count($pages) <= 1) {
+            echo '<div class="rows">';
+            self::renderRows($rows, $field, $titleAttr, $total);
+            echo '</div>';
+            return;
+        }
+
+        // data-status-format carries the translated "Page %1$s of %2$s"
+        // template so general.js can re-render the status text on every page
+        // change without hardcoding an English string client-side or
+        // resorting to a regex over already-rendered text.
+        echo '<div class="slimstat-general-pager" data-page="0" data-page-count="' . esc_attr(count($pages)) . '" data-status-format="' . esc_attr__('Page %1$s of %2$s', 'wp-slimstat') . '">';
+        foreach ($pages as $i => $a_page) {
+            echo '<div class="rows slimstat-page"' . (0 === $i ? '' : ' hidden') . '>';
+            self::renderRows($a_page, $field, $titleAttr, $total);
+            echo '</div>';
+        }
+        echo '<div class="slimstat-general-pager-controls">';
+        echo '<button type="button" class="slimstat-general-pager-prev" disabled aria-label="' . esc_attr__('Previous page', 'wp-slimstat') . '">&#9650;</button>';
+        echo '<span class="slimstat-general-pager-status">' . esc_html(sprintf(
+            /* translators: 1: current page number, 2: total page count */
+            __('Page %1$s of %2$s', 'wp-slimstat'),
+            1,
+            count($pages)
+        )) . '</span>';
+        echo '<button type="button" class="slimstat-general-pager-next" aria-label="' . esc_attr__('Next page', 'wp-slimstat') . '">&#9660;</button>';
+        echo '</div>';
+        echo '</div>';
     }
 
     /**
