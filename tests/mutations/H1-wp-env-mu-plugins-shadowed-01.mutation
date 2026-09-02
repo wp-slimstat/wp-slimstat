@@ -1,0 +1,20 @@
+target:    .wp-env.json
+gate:      composer test:e2e-harness-contract
+kind:      restore-defect
+expect:    bind-mounts 'wp-content/mu-plugins'
+rationale: Puts back the `mappings` block that REPLACED wp-content/mu-plugins with a repo directory holding one file. installAllTestMuPlugins() went on copying sixteen helpers into a path the container could not see, and reported success for every one -- a copy to a masked directory does not fail. nonce-helper-mu-plugin.php never loaded, admin-ajax.php answered 400 for an unregistered action, and 38 of the 50 failures on the WP 6.4 lane were that one fact wearing 38 different spec names. Sec.1 is the only thing that reads the mount, so if this survives, nothing in the tree can tell that state from a healthy one.
+---
+diff --git b/.wp-env.json a/.wp-env.json
+index 023ca6bf..3d63d84a 100644
+--- b/.wp-env.json
++++ a/.wp-env.json
+@@ -9,6 +9,9 @@
+     "../wp-consent-api"
+   ],
+   "themes": [],
++  "mappings": {
++    "wp-content/mu-plugins": "./tests/e2e/mu-plugins"
++  },
+   "env": {
+     "development": {
+       "config": {

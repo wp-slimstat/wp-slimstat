@@ -3,7 +3,7 @@
  * and installs all MU-plugins needed by the test suite.
  * Reuses cached auth files if they are less than 30 minutes old.
  */
-import { chromium, FullConfig } from '@playwright/test';
+import { chromium, request as playwrightRequest, FullConfig } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -20,6 +20,53 @@ function isAuthFresh(statePath: string): boolean {
   if (!fs.existsSync(statePath)) return false;
   const stat = fs.statSync(statePath);
   return Date.now() - stat.mtimeMs < MAX_AGE_MS;
+}
+
+/**
+ * HARNESS CANARY — one POST, before any spec runs.
+ *
+ * The suite spent months reporting 26 x "Cannot read properties of undefined (reading 'nonce')"
+ * and 12 x "test_create_nonce failed: HTTP 400" as 38 separate spec failures. They were one
+ * fact: `.wp-env.json` bind-mounted `wp-content/mu-plugins` over the directory
+ * installAllTestMuPlugins() writes into, so nonce-helper-mu-plugin.php was copied successfully
+ * to a path WordPress could not see, and admin-ajax.php answered 400 for an action nothing had
+ * registered.
+ *
+ * Every one of those failures pointed at the spec that happened to ask first. This asks first,
+ * on purpose, and names the real thing — the harness cannot deliver its own mu-plugins — before
+ * a single spec gets a chance to mistranslate it.
+ *
+ * It throws. A warning here would be a warning in a log nobody reads until the suite is red for
+ * a reason it does not state.
+ */
+async function assertNonceHelperReachable(baseURL: string, adminStatePath: string): Promise<void> {
+  const ctx = await playwrightRequest.newContext({ storageState: adminStatePath });
+  try {
+    const res = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
+      form: { action: 'test_create_nonce', nonce_action: 'slimstat_chart_nonce' },
+    });
+    const status = res.status();
+    const text = await res.text();
+
+    let body: unknown = null;
+    try { body = JSON.parse(text); } catch { /* reported below as the raw body */ }
+    const nonce = (body as { data?: { nonce?: string } } | null)?.data?.nonce;
+
+    if (status !== 200 || typeof nonce !== 'string' || nonce === '') {
+      throw new Error(
+        `HARNESS CANARY FAILED: test_create_nonce returned HTTP ${status} with body ` +
+        `${text.slice(0, 300)}\n\n` +
+        'This is the harness, not a product defect. nonce-helper-mu-plugin.php is not loading. ' +
+        'Check, in order: (1) no bind mount covers wp-content/mu-plugins in .wp-env.json or ' +
+        '.wp-env.override.json — a mount there REPLACES the directory setup.ts writes into, and ' +
+        'the copy still reports success; (2) WP_ROOT names the tests site, not development; ' +
+        '(3) SLIMSTAT_E2E_TESTING is defined in that site\'s wp-config.php. ' +
+        'tests/e2e-harness-contract-test.php pins (1) and (2) at source level.'
+      );
+    }
+  } finally {
+    await ctx.dispose();
+  }
 }
 
 async function loginAndSave(
@@ -114,4 +161,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       fs.copyFileSync(adminPath, authorPath);
     }
   }
+
+  // LAST, and only once the admin session exists -- the endpoint requires manage_options, so
+  // running this before login would report 'forbidden' for a helper that is in fact loaded.
+  await assertNonceHelperReachable(baseURL, path.join(AUTH_DIR, 'admin.json'));
 }

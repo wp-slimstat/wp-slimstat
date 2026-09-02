@@ -177,11 +177,16 @@ fi
 
 echo ""
 echo "AJAX handler invocations:"
+# AJAX_EXIT is this script's own verdict, separate from the two it collects from other tools.
+# Without it the check below printed a red FAIL and the script exited 0: the oracle for the very
+# regression run-qa.sh was written around could see the regression, say so, and report success.
+AJAX_EXIT=0
 if [[ -f "$AJAX_LOG" ]]; then
   FINAL_COUNT=$(wc -l < "$AJAX_LOG" | tr -d ' ')
   echo "  Total: $FINAL_COUNT"
   if [[ "$FINAL_COUNT" -gt 10 ]]; then
     echo -e "  ${RED}FAIL: Excessive AJAX calls detected — possible infinite loop regression${NC}"
+    AJAX_EXIT=1
   else
     echo -e "  ${GREEN}PASS: AJAX count is bounded${NC}"
   fi
@@ -193,11 +198,11 @@ fi
 
 echo ""
 echo -e "${YELLOW}=== Summary ===${NC}"
-TOTAL_EXIT=$((E2E_EXIT + K6_EXIT))
+TOTAL_EXIT=$((E2E_EXIT + K6_EXIT + AJAX_EXIT))
 if [[ $TOTAL_EXIT -eq 0 ]]; then
   echo -e "${GREEN}All QA tests PASSED${NC}"
 else
-  echo -e "${RED}Some tests FAILED (E2E=$E2E_EXIT, k6=$K6_EXIT)${NC}"
+  echo -e "${RED}Some tests FAILED (E2E=$E2E_EXIT, k6=$K6_EXIT, ajax=$AJAX_EXIT)${NC}"
 fi
 
 exit $TOTAL_EXIT

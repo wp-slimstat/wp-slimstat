@@ -50,6 +50,9 @@ $tokens = token_get_all($source);
 $count  = count($tokens);
 
 $registrations = ['register_activation_hook', 'register_deactivation_hook'];
+$registration_name_types = slimstat_name_token_types();
+// Hoisted beside its sibling: built once, not once per token of every argument span.
+$callback_name_types     = $registration_name_types + [T_CONSTANT_ENCAPSED_STRING => true];
 
 // ── Token-index ranges of every block guarded by a condition calling is_admin() ──
 // Shared with subsite-table-hook-test.php via source-scan.php, which is where the walk
@@ -72,12 +75,18 @@ $failures = [];
 $found    = [];
 
 for ($i = 0; $i < $count; $i++) {
-    if (!is_array($tokens[$i]) || T_STRING !== $tokens[$i][0]
-        || !in_array($tokens[$i][1], $registrations, true)) {
+    if (!is_array($tokens[$i]) || !isset($registration_name_types[$tokens[$i][0]])) {
         continue;
     }
 
-    $name          = $tokens[$i][1];
+    // Compare the LAST SEGMENT: on 8.x `\register_activation_hook` arrives as one token
+    // carrying the leading backslash, so a strict compare against the bare name misses it and
+    // the gate reports a registration that is right there as absent.
+    $name = slimstat_last_name_segment($tokens[$i][1]);
+    if (!in_array($name, $registrations, true)) {
+        continue;
+    }
+
     $found[$name]  = true;
 
     // The callback must not name wp_slimstat_admin: that class lives in admin/index.php,
@@ -91,7 +100,14 @@ for ($i = 0; $i < $count; $i++) {
             if (!is_array($tokens[$k])) {
                 continue;
             }
-            if (!in_array($tokens[$k][0], [T_STRING, T_CONSTANT_ENCAPSED_STRING], true)) {
+            // T_STRING alone is FAIL-OPEN here, and this is the direction that matters: PHP
+            // 8.0 collapses `\wp_slimstat_admin::init_environment` into ONE
+            // T_NAME_FULLY_QUALIFIED token, which is not T_STRING, so the loop `continue`d
+            // past the exact callback the check exists to refuse and the gate printed PASS.
+            // The sibling site in subsite-table-hook-test.php has the same blindness pointed
+            // the other way -- it stops FINDING a qualified registration, which fails loudly.
+            // A scan that goes quiet on 8.x is worth strictly less than one that goes red.
+            if (!isset($callback_name_types[$tokens[$k][0]])) {
                 continue;
             }
             if (false !== strpos($tokens[$k][1], 'wp_slimstat_admin')) {

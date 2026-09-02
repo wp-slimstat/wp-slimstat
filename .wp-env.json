@@ -9,9 +9,6 @@
     "../wp-consent-api"
   ],
   "themes": [],
-  "mappings": {
-    "wp-content/mu-plugins": "./tests/e2e/mu-plugins"
-  },
   "env": {
     "development": {
       "config": {

@@ -1,0 +1,20 @@
+target:    wp-slimstat.php
+gate:      composer test:subsite-hooks
+kind:      name-only
+expect:    inside an is_admin()-guarded block
+rationale: Restores the D10 defect -- the wp_initialize_site registration back behind is_admin(), so `wp site create` provisions a subsite with no analytics tables -- and writes the call QUALIFIED, which is the half the gate could not read. This mutation is deliberately not the bare rename: qualifying alone is a correct program, and the fixed gate rightly stays green on it, so a rename-only mutation would SURVIVE and prove nothing. The two halves together are what separates the gates. Before the fix the scan never matched `\add_action`, so `$registration_found` stayed false and the gate failed with 'does not register a callback' -- red, but for a registration that is right there on the line above it. Right verdict, wrong reason is not a working gate: the next reader relaxes the assertion that appears to be lying. `expect:` pins the guarded message specifically, so only the fixed gate can kill this.
+---
+diff --git a/wp-slimstat.php b/wp-slimstat.php
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -2705,7 +2705,9 @@
+     // is_admin() is false and the admin bundle — home of the old wpmu_new_blog
+     // registration — was never loaded. The callback itself checks network-active status
+     // at fire time, so on single sites and per-site-activated networks this is a no-op.
+-    add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
++    if (is_admin()) {
++        \add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
++    }
+ 
+     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
+ 

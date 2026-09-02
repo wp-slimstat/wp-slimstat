@@ -107,7 +107,9 @@ jobs:
       - name: Assertion floor
         # A suite can lose coverage WITHOUT losing a test: two ProcessorTest cases once went
         # PASSING -> INCOMPLETE because a stub lacked a method, and PHPUnit still printed OK.
-        # Tests: 317 was identical before and after; assertions 602 -> 598 was the entire signal.
+        # As measured 2026-05-14: Tests: 317 was identical before and after; assertions 602 -> 598
+        # was the entire signal. Those are that incident's numbers, not today's — today's live in
+        # tests/ASSERTION-FLOOR.json, which is what this step actually reads.
         # Runs on the same lanes as the two suites above, because it reads the JUnit they write.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer test:assertion-floor
@@ -153,9 +155,16 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry is ~160s at 101 entries (measured 2026-08-24; this line has now been
-        # wrong twice — "~0.3s" was off by 25x, then "~7.7s at 43 entries" by 20x — and it is the
-        # sentence that decides when to narrow the run, so it is measured on every floor bump).
+        # The full registry holds 146 entries and takes ~160s (timing last measured 2026-08-24,
+        # when the registry was smaller). This line has now been wrong three times — twice on the
+        # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real
+        # figure — and it is the sentence that decides when to narrow the run.
+        #
+        # The size is no longer remembered: tests/ci-comment-metrics-test.php pins every "N
+        # entries" in this block to tests/mutations/FLOOR, so a floor bump that forgets this line
+        # fails the build instead of quietly ageing it. That is also why the stale numbers above
+        # are described rather than quoted — a historical figure written in the checked form would
+        # make the gate's verdict depend on which one it read first.
         # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
         # count, not just registry size, and it is dominated by a few slow gates rather than by
         # the entry count: SEVEN entries gate on the two seal suites -- four on
@@ -361,9 +370,12 @@ jobs:
 
       - name: Reports output-escaping gate (XSS, needs a live WordPress)
         # THE ONLY CI HOME THIS GATE HAS. tests/reports-output-escaping-test.php is a member
-        # of `composer test:all` and of nothing else, and no job runs test:all — so 56 XSS
+        # of `composer test:all` and of nothing else, and no job runs test:all — so its XSS
         # assertions over the report render path ran in no lane, on any tier, ever. It is not
         # in test:source-level because it boots WordPress, and that is what this tier has.
+        # (The count that stood here was wrong and is deliberately not replaced: the test counts
+        # at runtime against a live WordPress, so no file in this repo can be its authority, and
+        # a number nothing can check is how the two figures above went stale.)
         #
         # Two lanes, not one, and NOT because escaping is version-invariant — it is not. The
         # test loads five html-api/ files by name because core moved wp_kses_hair()'s attribute
@@ -408,26 +420,36 @@ jobs:
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
         # and direct MySQL access. This step:
-        #   1. Finds the WordPress container and its volume path on the host.
+        #   1. Resolves the tests-WordPress root deterministically.
         #   2. Makes wp-config.php and mu-plugins writable by the runner user.
         #   3. Sets WP_ROOT so setup.ts points at the real WordPress root.
-        #   4. Finds the MySQL container's internal IP for TCP connections.
+        #   4. Finds the MySQL container's host-mapped port for TCP connections.
         #   5. Sets MYSQL_* env vars (socket disabled, TCP used instead).
         run: |
-          # ── WordPress container and volume ─────────────────────────────
-          WP_CTR=$(docker ps --format "{{.Names}}" | grep -v "cli" | grep -v "mysql\|mariadb" | head -1)
-          echo "WordPress container: $WP_CTR"
-
-          WP_VOL=$(docker inspect "$WP_CTR" \
-            --format '{{range .Mounts}}{{if eq .Destination "/var/www/html"}}{{.Source}}{{end}}{{end}}')
-          echo "WP volume path: $WP_VOL"
+          # ── WordPress root ───────────────────────────────────────
+          # This was `docker ps ... | grep -v cli | grep -v mysql | head -1`, which
+          # selects the WordPress container by what it is NOT. wp-env starts TWO:
+          # development on 8888 and tests on 8889. The browser talks to tests. Which
+          # one `head -1` returned was container creation order, i.e. luck -- and
+          # every debug.log assertion in the suite is negative ("no fatal appeared"),
+          # so reading the wrong site's log is indistinguishable from a pass.
+          # Ask wp-env instead, and fail the job rather than continue with an empty
+          # WP_ROOT: empty is not absent, it makes the specs read paths under /.
+          INSTALL_PATH="$(npx wp-env install-path 2>/dev/null || true)"
+          if [ -z "${INSTALL_PATH}" ] || [ ! -d "${INSTALL_PATH}/tests-WordPress" ]; then
+            echo "::error::could not resolve the wp-env install path"
+            echo "Without it every filesystem assertion reads a path under / and passes vacuously."
+            exit 1
+          fi
+          WP_ROOT="${INSTALL_PATH}/tests-WordPress"
+          echo "Resolved WP_ROOT=$WP_ROOT"
 
           # Grant runner user write access to wp-config.php and mu-plugins
-          sudo mkdir -p "$WP_VOL/wp-content/mu-plugins"
-          sudo chown -R "$(id -u):$(id -g)" "$WP_VOL/wp-content/mu-plugins"
-          sudo chown "$(id -u):$(id -g)" "$WP_VOL/wp-config.php"
+          sudo mkdir -p "$WP_ROOT/wp-content/mu-plugins"
+          sudo chown -R "$(id -u):$(id -g)" "$WP_ROOT/wp-content/mu-plugins"
+          sudo chown "$(id -u):$(id -g)" "$WP_ROOT/wp-config.php"
 
-          echo "WP_ROOT=$WP_VOL" >> $GITHUB_ENV
+          echo "WP_ROOT=$WP_ROOT" >> $GITHUB_ENV
 
           # ── MySQL access via host-mapped port ────────────────────────────
           # wp-env maps container port 3306 to a dynamic host port.
@@ -500,7 +522,13 @@ jobs:
           # upload-artifact@v4 requires a unique name per run — all 7 matrix lanes
           # sharing "playwright-report" caused HTTP 409 conflicts. Scope by lane.
           name: playwright-report-wp${{ matrix.wp }}-php${{ matrix.php }}
-          path: tests/e2e/playwright-report/
+          # run-artifacts/ holds the JSON and blob reporters' output. Only the HTML
+          # report was collected, so the per-spec census existed on the runner and
+          # was thrown away -- which is why one shared cause behind 38 failures was
+          # read, for months, as 38 unrelated ones.
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/run-artifacts/
           retention-days: 7
 
       - name: Stop wp-env

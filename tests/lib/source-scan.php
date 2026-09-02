@@ -253,6 +253,40 @@ function slimstat_name_token_types(): array
     return $types;
 }
 
+/**
+ * Strip comment lines from a YAML document, so a check for CODE cannot be satisfied by prose.
+ *
+ * Every gate that reads .github/workflows/ci.yml needs this, and each one that skipped it has
+ * been wrong in the same direction: `strpos($ci, 'npx wp-env install-path')` is TRUE when the
+ * only occurrence is a comment explaining that the command used to be missing. So is a check for
+ * an upload path that appears solely in a commented-out step. Prose is not configuration.
+ *
+ * There are two hand-rolled copies of this line in the tree already
+ * (ci-matrix-coverage-test.php, perf-gate-integrity-test.php). They are not migrated here
+ * because both are load-bearing gates with their own mutations and this is not the commit to
+ * re-point them; new callers use this one.
+ */
+function slimstat_yaml_strip_comments(string $yaml): string
+{
+    return (string) preg_replace('/^\s*#.*$/m', '', $yaml);
+}
+
+/**
+ * Split a GitHub Actions workflow into step blocks.
+ *
+ * Splits on six-space `- `, NOT on `- name:`. The difference is not stylistic: a step whose
+ * first key is `uses:` rather than `name:` folds into its predecessor under the `- name:`
+ * dialect, so an assertion scoped to "this step" silently reads two. ci-matrix-coverage-test.php
+ * documents that in its own comment and splits correctly; perf-gate-integrity-test.php still
+ * uses `- name:`. This is the correct dialect, extracted so a third one does not appear.
+ *
+ * @return string[] One entry per step; the first is whatever preceded the first step.
+ */
+function slimstat_ci_steps(string $yaml): array
+{
+    return preg_split('/(?=^[ ]{6}- )/m', $yaml) ?: [];
+}
+
 /** Concatenated source text of $tokens over the half-open range [$from, $to). */
 function slimstat_token_text_range(array $tokens, int $from, int $to): string
 {

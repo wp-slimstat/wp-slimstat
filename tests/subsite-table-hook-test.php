@@ -100,8 +100,11 @@ if ([] === $admin_only_ranges) {
 
 $registration_found   = false;
 $registration_guarded = false;
+$add_action_types = slimstat_name_token_types();
+
 for ($i = 0; $i < $count; $i++) {
-    if (!is_array($tokens[$i]) || T_STRING !== $tokens[$i][0] || 'add_action' !== $tokens[$i][1]) {
+    if (!is_array($tokens[$i]) || !isset($add_action_types[$tokens[$i][0]])
+        || 'add_action' !== slimstat_last_name_segment($tokens[$i][1])) {
         continue;
     }
 
