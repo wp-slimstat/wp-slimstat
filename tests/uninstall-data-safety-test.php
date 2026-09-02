@@ -37,6 +37,39 @@ if ($case !== false && $case !== '') {
     $GLOBALS['__fs_deleted']      = [];
     $GLOBALS['__cleared_hooks']   = [];
 
+    // The uploads root the harness reports, and the one every containment check is against.
+    //
+    // Computed ONCE and reported back in the JSON, because the driver and the child do not
+    // agree on sys_get_temp_dir(): proc_open() is handed `$_ENV`, which carries no TMPDIR
+    // under the default variables_order, so the child falls back to /var/tmp while the driver
+    // sees /var/folders/... A driver-side copy of this expression is two computations of one
+    // fact, and they were already disagreeing the first time this ran.
+    $GLOBALS['__upload_base'] = rtrim(sys_get_temp_dir(), '/\\') . '/wp-slimstat-test-uploads';
+    $upload_base              = $GLOBALS['__upload_base'];
+
+    // Cases carrying a relocation filter, written '<opt-in>@<where the filter points>'.
+    //
+    // apply_filters() is DEFINED ONLY for these. uninstall.php guards on
+    // function_exists('apply_filters'), so a harness that always defined it could never
+    // exercise the unfiltered path — and the unfiltered path is what cases 1-3 pin.
+    $filter_cases = [
+        'on@root'      => ['on',     '/'],
+        'on@uploads'   => ['on',     $upload_base],
+        'on@traversal' => ['on',     $upload_base . '/wp-slimstat/../../..'],
+        'on@inside'    => ['on',     $upload_base . '/moved-geo'],
+        'absent@root'  => ['absent', '/'],
+    ];
+
+    if (isset($filter_cases[$case])) {
+        $GLOBALS['__filter_return'] = $filter_cases[$case][1];
+        $case                       = $filter_cases[$case][0];
+
+        function apply_filters($hook, $value)
+        {
+            return 'slimstat_maxmind_path' === $hook ? $GLOBALS['__filter_return'] : $value;
+        }
+    }
+
     // 'on'     → explicit opt-in
     // 'no'     → what the Maintenance-tab toggle actually writes when switched off
     // 'absent' → a normal install that never saved that tab (the #327 population)
@@ -95,6 +128,14 @@ if ($case !== false && $case !== '') {
         $GLOBALS['__deleted_options'][] = $name;
         return true;
     }
+    // Recorded into the SAME list as delete_option(). The derived scan below asks whether an
+    // option the plugin mints is removed at all, not which store it lived in — and a network
+    // option missing from that list is the same defect as a per-blog one missing from it.
+    function delete_site_option($name)
+    {
+        $GLOBALS['__deleted_options'][] = $name;
+        return true;
+    }
     function is_multisite() { return false; }
     function wp_clear_scheduled_hook($hook)
     {
@@ -102,7 +143,7 @@ if ($case !== false && $case !== '') {
     }
     function wp_upload_dir()
     {
-        return ['basedir' => sys_get_temp_dir() . '/wp-slimstat-test-uploads'];
+        return ['basedir' => $GLOBALS['__upload_base']];
     }
     function WP_Filesystem()
     {
@@ -135,11 +176,17 @@ if ($case !== false && $case !== '') {
         'fsDeletes'    => $GLOBALS['__fs_deletes'],
         'fsDeleted'    => $GLOBALS['__fs_deleted'],
         'clearedHooks' => $GLOBALS['__cleared_hooks'],
+        'uploadBase'   => $GLOBALS['__upload_base'],
     ]);
     exit(0);
 }
 
 // ─────────────────────────────── DRIVER MODE ────────────────────────────────
+
+// Required here rather than beside its first assertion below: run_case() now calls
+// slimstat_spawn_child() out of it.
+require_once __DIR__ . '/lib/source-scan.php';
+
 $assertions = 0;
 
 function fail($message)
@@ -166,30 +213,18 @@ function assert_true($cond, $message)
 
 function run_case($case)
 {
-    // Pass the selector explicitly rather than relying on putenv() leaking into
-    // proc_open's default (null) environment — that inheritance is not guaranteed
-    // across platforms/SAPIs, and a child that silently ran the wrong case would
-    // make every assertion below vacuous.
-    $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-    $proc        = proc_open(
-        escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__),
-        $descriptors,
-        $pipes,
-        null,
-        ['SLIMSTAT_UNINSTALL_CASE' => $case] + $_ENV
-    );
-    if (!is_resource($proc)) {
+    // The spawn itself is slimstat_spawn_child(); the selector-as-explicit-env reasoning that
+    // used to live here moved onto it, with the second caller that arrived in the same commit.
+    $child = slimstat_spawn_child(__FILE__, ['SLIMSTAT_UNINSTALL_CASE' => $case]);
+
+    if (null === $child) {
         fail("could not spawn child for case '{$case}'");
     }
-    $out = stream_get_contents($pipes[1]);
-    $err = stream_get_contents($pipes[2]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    proc_close($proc);
 
-    $result = json_decode($out, true);
+    $result = json_decode($child['stdout'], true);
     if (!is_array($result)) {
-        fail("child for case '{$case}' returned no JSON.\nSTDOUT: {$out}\nSTDERR: {$err}");
+        fail("child for case '{$case}' returned no JSON.\nSTDOUT: {$child['stdout']}"
+            . "\nSTDERR: {$child['stderr']}");
     }
     return $result;
 }
@@ -227,7 +262,18 @@ foreach (['absent', 'no'] as $case) {
         'the keep-data query sweeps all three transient families and their timeout twins, '
             . 'with LIKE wildcards escaped: ' . ($result['sql'][0] ?? '(none)')
     );
-    assert_same([], $result['deleted'], "no options deleted when the key is '{$case}'");
+    // NOT "nothing deleted" — "no ANALYTICS option deleted". The network activation cursor is
+    // scheduler bookkeeping like the cron entries beside it, so it goes on both paths; the
+    // options this opt-in protects are the ones that must survive. Written as a difference so a
+    // new always-deleted key has to be added here deliberately rather than widening silently.
+    assert_same(
+        [],
+        array_values(array_diff($result['deleted'], [
+            'slimstat_network_activation_pending',
+            'slimstat_network_activation_attempting',
+        ])),
+        "no analytics option is deleted when the key is '{$case}'"
+    );
     assert_true($result['clearedHooks'] !== [], "cron hooks cleared when the key is '{$case}'");
 
     // Exactly one filesystem delete, and it must be the browscap cache — NOT the
@@ -252,10 +298,48 @@ assert_true(
 );
 assert_true($on['clearedHooks'] !== [], 'cron hooks cleared when opted in');
 
+// Cases 4-8 — `slimstat_maxmind_path` must not be able to aim the recursive delete.
+//
+// The next statement after that filter is `$wp_filesystem->delete($upload_dir, true, 'd')`,
+// so whatever a third-party filter returns is what gets recursively removed. 5.5.0 did not
+// apply the filter here at all; 6.0.0 added it so a site that MOVED the directory would not
+// keep everything after uninstall, and in doing so routed an arbitrary string into a
+// recursive delete. No in-tree consumer returns a broader path — the hazard is that nothing
+// stops one, and the blast radius runs from the whole uploads directory to the filesystem root.
+//
+// The sibling consumer was checked and is NOT affected: MaxmindGeoIPProvider's
+// `$wp_filesystem->delete($extractDir, true)` targets `<filtered>/.mmdb_extract_<random>`,
+// a directory that call just created, not the filtered path itself.
+foreach ([
+    'on@root'      => 'the filesystem root',
+    'on@uploads'   => 'the whole uploads directory',
+    'on@traversal' => 'a path that climbs out of uploads with ..',
+    'absent@root'  => 'the filesystem root, on the KEEP-data path (where the delete is scoped '
+        . 'to a child, so it would have removed /browscap-cache-master)',
+] as $case => $what) {
+    $escaped = run_case($case);
+    assert_same(
+        0,
+        $escaped['fsDeletes'],
+        "nothing is deleted when slimstat_maxmind_path returns {$what}; got: "
+            . implode(', ', $escaped['fsDeleted'])
+    );
+}
+
+// THE CONTROL, and without it the four above are satisfied by ignoring the filter entirely —
+// which would restore the 5.5.0 defect the filter was added to fix. A filter that stays inside
+// the uploads directory must still be honoured, at exactly the path it names.
+$moved = run_case('on@inside');
+assert_same(1, $moved['fsDeletes'], 'a relocation inside uploads is still honoured');
+assert_same(
+    $moved['uploadBase'] . '/moved-geo',
+    $moved['fsDeleted'][0] ?? null,
+    'the honoured relocation deletes the directory the filter named'
+);
+
 // The harness defines its own WP_Filesystem(), so it cannot exercise the case where
 // WordPress has not loaded the File API. Pin the guard at source level instead — the
 // same approach browscap-wp-filesystem-test.php takes for the identical hazard.
-require_once __DIR__ . '/lib/source-scan.php';
 // Comments blanked, strings kept: the option names matched below live INSIDE string
 // literals, so strip_comments_and_strings() would erase the subject. Blanking comments is
 // what stops a commented-out delete_option() line from satisfying these checks.
@@ -297,10 +381,11 @@ foreach (slimstat_own_php_files(
     }
 }
 
-// 13 measured at 6.0.0. A LOWER count means the walk or the regex broke, not that options
-// were removed — re-measure and lower this deliberately if a constant genuinely goes away.
+// 15 measured at 6.0.0 — 13, plus the two network-activation options. A LOWER count means the
+// walk or the regex broke, not that options were removed; re-measure and lower this
+// deliberately if a constant genuinely goes away.
 assert_true(
-    count($minted_options) >= 13,
+    count($minted_options) >= 15,
     'the option-constant scan still finds its subject (else every check below is vacuous), found: '
         . count($minted_options)
 );

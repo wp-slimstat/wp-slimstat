@@ -391,18 +391,25 @@ class wp_slimstat
 
         // Define the folder where to store the geolocation database (shared among sites in a network, by default)
         if (defined('UPLOADS')) {
-            self::$upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
+            $base = ABSPATH . UPLOADS;
         } else {
-            $upload_dir_info  = wp_upload_dir();
-            self::$upload_dir = $upload_dir_info['basedir'];
+            $upload_dir_info = wp_upload_dir();
+            $base            = $upload_dir_info['basedir'];
 
             // Handle multisite environment
             if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
-                self::$upload_dir = str_replace('/sites/' . get_current_blog_id(), '', self::$upload_dir);
+                $base = str_replace('/sites/' . get_current_blog_id(), '', $base);
             }
-
-            self::$upload_dir .= '/wp-slimstat';
         }
+
+        // ONE rtrim, AFTER both branches, so this agrees byte-for-byte with the path
+        // slimstat_uninstall_data_dir() builds. The first version of this put the rtrim inside
+        // the `else` only, and claimed in its own comment to cover both — while core defines
+        // UPLOADS WITH A TRAILING SLASH (ms-default-constants.php: `UPLOADBLOGSDIR . '/' .
+        // $site_id . '/files/'`), so the branch it skipped is the one multisite takes. A
+        // slimstat_maxmind_path filter comparing its input against this value would still have
+        // seen two different strings, on exactly the topology the comment was about.
+        self::$upload_dir = rtrim($base, '/\\') . '/wp-slimstat';
 
         // Apply filter to allow customization of the upload directory
         self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
@@ -611,6 +618,41 @@ class wp_slimstat
      * Shape: [ '<step>' => [ 'message' => string, 'time' => int ], ... ]
      */
     const DEGRADATION_OPTION = 'slimstat_degradations';
+
+    /**
+     * NETWORK option holding the blog ids a network activation still owes tables to.
+     *
+     * A network option, not a per-blog one: the walk switches blogs as it goes, so a
+     * per-blog option would be written to whichever site the loop happened to be standing
+     * on. Deleted when the list empties, so its absence means "nothing pending".
+     */
+    const ACTIVATION_CURSOR_OPTION = 'slimstat_network_activation_pending';
+
+    /**
+     * NETWORK option naming the blog whose setup is in flight right now.
+     *
+     * Written before the work and cleared with the cursor. Its only reader is the pass
+     * AFTER the one that wrote it: finding the same blog still at the head of the list
+     * means that pass never returned, which is the one thing a caught exception cannot
+     * tell you.
+     */
+    const ACTIVATION_ATTEMPT_OPTION = 'slimstat_network_activation_attempting';
+
+    /**
+     * Seconds one pass of the network-activation walk may spend starting new sites.
+     *
+     * Ten, matching AddUserAgentDimension::PASS_SECONDS — the one value in this codebase
+     * measured against a real corpus rather than chosen.
+     *
+     * A SEPARATE CONSTANT, NOT A SHARED ONE, and that is the point of this paragraph. The
+     * three migration budgets are slices of a dedicated AJAX request that the browser
+     * re-posts until the work is done; this one is spent INSIDE core's plugin-activation
+     * request, which must still reach the `update_site_option('active_sitewide_plugins')`
+     * that records the activation. Sharing the constant would mean raising it for a slow
+     * fact-table scan silently pushes the activation walk toward dying inside its hook —
+     * one number answering to four different deadlines.
+     */
+    const ACTIVATION_PASS_SECONDS = 10;
 
     /** Last time the purge cron completed. Absence of success is the durable signal (C34). */
     const LAST_PURGE_OK_OPTION = 'slimstat_last_purge_ok';
@@ -2309,6 +2351,16 @@ class wp_slimstat
      * get them at activation too — symmetric with drop_tables(), which derives the same
      * list from the same manifest.
      *
+     * AND THE WALK IS BUDGETED, BECAUSE AN UNBUDGETED ONE CANNOT ACTIVATE AT ALL. Core's
+     * activate_plugin() fires `activate_{$plugin}` and only THEN writes
+     * `active_sitewide_plugins` (wp-admin/includes/plugin.php). So a walk that exhausts
+     * max_execution_time does not merely leave the later sites tables-less: the request dies
+     * inside this hook, the option is never written, and the plugin is not network-activated.
+     * It leaves tables and rewritten `.htaccess` files behind on the sites it did reach — for a
+     * plugin that is not active — and the retry runs the same unbounded walk that just died.
+     * Per site this does up to 6 CREATE TABLE plus ~13 CREATE INDEX and a HARD
+     * flush_rewrite_rules(), which rewrites `.htaccess`.
+     *
      * @param bool $network_wide True when activated across the network from the network
      *                           admin or `wp plugin activate --network`.
      */
@@ -2318,21 +2370,31 @@ class wp_slimstat
             include_once plugin_dir_path(__FILE__) . 'admin/index.php';
 
             if ($network_wide && is_multisite()) {
-                foreach (get_sites(['fields' => 'ids', 'number' => 0]) as $blog_id) {
-                    switch_to_blog($blog_id);
+                // THE SNAPSHOT IS TAKEN AND PERSISTED BEFORE ANY WORK. Sites created after
+                // this point are covered by on_initialize_site(), so the list does not need
+                // to stay live — it needs to survive the request, which is the thing the
+                // previous version could not do.
+                // The marker goes with it. A previous activation that died left its blog id
+                // behind, and nothing else clears it — so without this line a RE-activation
+                // starts with a fresh cursor and a stale marker, and skips whichever blog that
+                // id names: either the one that died (which then gets no attempt at all) or a
+                // perfectly healthy one, named in a degradation that never happened.
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
 
-                    try {
-                        wp_slimstat_admin::init_environment();
-                    } catch (\Throwable $e) {
-                        // Per-site, so one refusing database does not leave every LATER
-                        // site tables-less as well. Each failure is recorded on the blog
-                        // it belongs to — switch_to_blog() has already pointed the
-                        // degradation option at that site's own wp_options.
-                        self::record_degradation('activation (blog ' . $blog_id . ')', $e);
-                    }
+                update_site_option(
+                    self::ACTIVATION_CURSOR_OPTION,
+                    array_map('intval', get_sites([
+                        'fields'                 => 'ids',
+                        'number'                 => 0,
+                        // get_sites() otherwise queues every id into the metadata
+                        // lazyloader. Nothing here reads site meta, so nothing fires
+                        // today — but the day something does, it is one IN() clause
+                        // holding the whole network.
+                        'update_site_meta_cache' => false,
+                    ]))
+                );
 
-                    restore_current_blog();
-                }
+                self::walk_pending_activation_sites();
             } else {
                 wp_slimstat_admin::init_environment();
             }
@@ -2348,6 +2410,223 @@ class wp_slimstat
             // a fatal on the screen the user is standing on.
             self::record_degradation('activation', $e);
         }
+    }
+
+    /**
+     * Give the next batch of pending subsites their tables, and return how many remain.
+     *
+     * SEPARATED FROM on_activate() BECAUSE WordPress FIRES ACTIVATION ONCE. A cursor whose
+     * only consumer is the hook that wrote it is a marker, not a resume: whatever the first
+     * pass could not finish would never be finished by anything. This is reached from
+     * on_activate() for the first pass and from continue_network_activation() on every later
+     * network-admin request.
+     *
+     * The budget bounds how many sites one request STARTS, not how long one takes. A single
+     * site's CREATE TABLE run is not interruptible, so a server slow enough to exceed the
+     * request limit on ONE site is beyond anything here — but it is guaranteed to make
+     * progress, because the deadline is not consulted before the first site. Without that
+     * guarantee a slow server converts a bounded walk into a walk that starts nothing, every
+     * pass, forever; ConvertTablesToUtf8mb4 has the same property for the same reason.
+     *
+     * @param float|null $budget_seconds Override the pass budget. Null takes
+     *                                   ACTIVATION_PASS_SECONDS. Zero still starts one site,
+     *                                   which is how tests reach the deadline branch without
+     *                                   spending ten real seconds to do it.
+     * @return int Sites still owed tables after this pass.
+     */
+    public static function walk_pending_activation_sites($budget_seconds = null)
+    {
+        // DEFAULTED TO false, NOT TO []. This method runs on every network-admin request, and
+        // core's delete_network_option() issues `SELECT meta_id FROM sitemeta` before it can
+        // decide there is nothing to delete — it has no notoptions short-circuit. Defaulting to
+        // [] made the absent case indistinguishable from the empty one, so the steady state
+        // paid that query on every page load, forever. The delete still runs for a value that
+        // IS stored and useless, which is what it was there for.
+        $pending = get_site_option(self::ACTIVATION_CURSOR_OPTION, false);
+
+        if (!is_array($pending) || [] === $pending) {
+            if (false !== $pending) {
+                delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+            }
+
+            return 0;
+        }
+
+        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+        $deadline   = microtime(true) + (float) ($budget_seconds ?? self::ACTIVATION_PASS_SECONDS);
+        $attempting = (int) get_site_option(self::ACTIVATION_ATTEMPT_OPTION, 0);
+
+        while ([] !== $pending) {
+            $blog_id = (int) array_shift($pending);
+
+            if ($blog_id === $attempting) {
+                // THE POISON PILL, and it is the cost of the at-least-once rule below. This
+                // blog was started on an earlier pass and that pass never came back, so the
+                // request died inside its DDL rather than throwing. Retrying it would start
+                // the same fatal work every pass forever — and because a pass always starts
+                // its first site, no site BEHIND it would ever be reached, while the notice
+                // went on promising progress. Once is a retry; twice is a loop.
+                // switch_to_blog() around it for the same reason the catch branch below
+                // relies on being inside one: record_degradation() writes to whichever blog is
+                // current. Without this the skip landed in the MAIN site's options under a key
+                // naming a subsite, while the catch branch landed on the subsite — one step
+                // key, two stores, and the paragraph below claiming per-blog recording.
+                switch_to_blog($blog_id);
+
+                self::record_degradation(
+                    'activation (blog ' . $blog_id . ')',
+                    new \RuntimeException(
+                        'setting up this site did not finish, so it was skipped; the rest of '
+                            . 'the network continues'
+                    ),
+                    self::DEGRADATION_OPERATIONAL
+                );
+
+                restore_current_blog();
+            } else {
+                // Recorded BEFORE the work, which is the only ordering that can survive the
+                // request dying inside it: the pending list is written AFTER, so a blog whose
+                // request died is still at the head when the next pass reads it, and this
+                // marker is the only thing that can tell "died" from "not started yet".
+                //
+                // What that buys is ONE attempt for a blog that kills its request, not two —
+                // an earlier draft of this comment said "retried once", which is true of a
+                // blog that THROWS (caught, cursor advances) and false of the case the marker
+                // exists for.
+                update_site_option(self::ACTIVATION_ATTEMPT_OPTION, $blog_id);
+
+                switch_to_blog($blog_id);
+
+                try {
+                    wp_slimstat_admin::init_environment();
+                } catch (\Throwable $e) {
+                    // Per-site, so one refusing database does not leave every LATER site
+                    // tables-less as well. Each failure is recorded on the blog it belongs to —
+                    // switch_to_blog() has already pointed the degradation option at that
+                    // site's own wp_options.
+                    self::record_degradation('activation (blog ' . $blog_id . ')', $e);
+                }
+
+                restore_current_blog();
+            }
+
+            // PERSISTED INSIDE THE LOOP, AND AFTER THE WORK. Writing the shortened list only
+            // once the site is done means a request killed mid-DDL retries that site rather
+            // than skipping it — init_environment() is idempotent, so at-least-once is the
+            // safe direction. Persisting after the whole loop is what made the previous
+            // version record nothing at all when it died.
+            if ([] === $pending) {
+                delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+            } else {
+                update_site_option(self::ACTIVATION_CURSOR_OPTION, $pending);
+            }
+
+            // CHECKED AT THE TAIL, which is what makes every pass start at least one site —
+            // and it needs no sentinel to say so. Checking at the head instead required a
+            // `$first` flag whose only job was to skip the check once; the two are the same
+            // set of work, and this spelling cannot get the flag wrong.
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+        }
+
+        return count($pending);
+    }
+
+    /**
+     * Is this plugin recorded as network-active right now?
+     *
+     * Keyed on the REAL basename, not the canonical literal: the option is keyed by wherever
+     * the plugin actually lives, and a renamed install dir (beta ZIP, GitHub -master download)
+     * would turn a literal into a silent every-time miss — the same silent-no-op shape the
+     * subsite hook exists to close.
+     *
+     * Hand-rolled rather than core's is_plugin_active_for_network(): that lives in
+     * wp-admin/includes/plugin.php, and on_initialize_site() fires on WP-CLI, REST and
+     * programmatic wp_insert_site() paths where the admin bundle is not loaded at all.
+     */
+    private static function is_network_active()
+    {
+        $sitewide = get_site_option('active_sitewide_plugins');
+
+        return !empty($sitewide[plugin_basename(SLIMSTAT_FILE)]);
+    }
+
+    /**
+     * Is this a network-admin request by someone who could act on the answer?
+     *
+     * Capability BEFORE any option read, which is the ordering MigrationAdmin::registerPage()
+     * was corrected to: a probe whose answer the caller cannot act on is a probe not worth
+     * making. All three checks are free — is_multisite() and is_network_admin() read constants,
+     * and 'site_admins' is in core's preloaded network-option set — so an ordinary admin page
+     * on a single site or a subsite pays nothing at all.
+     */
+    private static function is_network_admin_request()
+    {
+        return is_multisite() && is_network_admin() && current_user_can('manage_network');
+    }
+
+    /**
+     * Continue an interrupted network activation, from the network admin.
+     *
+     * Network admin only, deliberately. The walk is a burst of DDL and a hard rewrite flush;
+     * running it on an ordinary site admin's page load would spend someone else's request on
+     * it. Sites this never reaches are not stranded — admin/index.php's init() creates the
+     * tables for any blog whose own wp-admin is loaded, and the tracker has its own repair
+     * path — so this is the fast route, not the only one.
+     */
+    public static function continue_network_activation()
+    {
+        if (!self::is_network_admin_request() || !self::is_network_active()) {
+            return;
+        }
+
+        try {
+            self::walk_pending_activation_sites();
+        } catch (\Throwable $e) {
+            // OPERATIONAL, not a load failure: the plugin is running, and the admin notice's
+            // load-failure group offers "reinstall the plugin" as the remedy, which is the
+            // wrong instruction for a walk that ran and stopped.
+            self::record_degradation(
+                'network activation continuation',
+                $e,
+                self::DEGRADATION_OPERATIONAL
+            );
+        }
+    }
+
+    /** Tell the network admin that subsites are still waiting, and how many. */
+    public static function network_activation_notice()
+    {
+        // THE SAME TWO CONDITIONS THE RESUME USES. A cursor left by an activation core never
+        // recorded is one continue_network_activation() refuses to act on, so a notice asking
+        // for a reload that does nothing would be worse than silence.
+        if (!self::is_network_admin_request() || !self::is_network_active()) {
+            return;
+        }
+
+        $pending = get_site_option(self::ACTIVATION_CURSOR_OPTION, []);
+
+        if (!is_array($pending) || [] === $pending) {
+            return;
+        }
+
+        printf(
+            '<div class="notice notice-info"><p>%s</p></div>',
+            esc_html(sprintf(
+                /* translators: %s: a number of sites. */
+                _n(
+                    'SlimStat is still setting up %s site on this network. Reload this page to continue.',
+                    'SlimStat is still setting up %s sites on this network. Reload this page to continue.',
+                    count($pending),
+                    'wp-slimstat'
+                ),
+                number_format_i18n(count($pending))
+            ))
+        );
     }
 
     /**
@@ -2373,12 +2652,7 @@ class wp_slimstat
     public static function on_initialize_site($new_site)
     {
         try {
-            // Keyed on the REAL basename, not the canonical literal: the option is keyed
-            // by wherever the plugin actually lives, and a renamed install dir (beta ZIP,
-            // GitHub -master download) would turn a literal into a silent every-time miss —
-            // the same silent-no-op shape this callback exists to close.
-            $sitewide = get_site_option('active_sitewide_plugins');
-            if (empty($sitewide[plugin_basename(SLIMSTAT_FILE)])) {
+            if (!self::is_network_active()) {
                 return;
             }
 
@@ -2458,6 +2732,13 @@ class wp_slimstat
     public static function on_deactivate()
     {
         try {
+            // A pending activation walk is finished business the moment the plugin is turned
+            // off. continue_network_activation() also refuses when the plugin is not
+            // network-active, so this is belt and braces — but leaving the cursor behind
+            // would mean a reactivation inherits a stale site list from before.
+            delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+            delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+
             include_once plugin_dir_path(__FILE__) . 'admin/index.php';
 
             wp_slimstat_admin::deactivate();
@@ -2706,6 +2987,13 @@ if (function_exists('add_action')) {
     // registration — was never loaded. The callback itself checks network-active status
     // at fire time, so on single sites and per-site-activated networks this is a no-op.
     add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
+
+    // The consumer of the activation cursor. Registered here, beside the hook that WRITES
+    // it, because WordPress fires activation once: a resume whose only caller is the
+    // activation hook is a marker nothing ever resumes from. Both callbacks return
+    // immediately outside the network admin, so on single sites this is two no-ops.
+    add_action('admin_init', ['wp_slimstat', 'continue_network_activation']);
+    add_action('network_admin_notices', ['wp_slimstat', 'network_activation_notice']);
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 

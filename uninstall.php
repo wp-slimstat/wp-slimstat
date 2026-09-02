@@ -57,6 +57,7 @@ if (function_exists('is_multisite') && is_multisite()) {
 }
 
 slimstat_uninstall_artifacts($slimstat_delete_data);
+slimstat_uninstall_network_options();
 
 if (!$slimstat_delete_data) {
     return;
@@ -83,6 +84,121 @@ function slimstat_uninstall_cron()
 }
 
 /**
+ * Collapse `.`, `..` and repeated separators, without touching the filesystem.
+ *
+ * Textual on purpose: realpath() returns false for a path that does not exist, and "the
+ * directory is already gone" must not read the same as "this path is safe to delete".
+ */
+function slimstat_uninstall_normalise_path($path)
+{
+    $path     = str_replace('\\', '/', (string) $path);
+    $absolute = 0 === strpos($path, '/');
+    $out      = [];
+
+    foreach (explode('/', $path) as $segment) {
+        if ('' === $segment || '.' === $segment) {
+            continue;
+        }
+        if ('..' === $segment) {
+            array_pop($out);
+            continue;
+        }
+        $out[] = $segment;
+    }
+
+    return ($absolute ? '/' : '') . implode('/', $out);
+}
+
+/**
+ * $path, but only if it is a directory strictly inside $base. Otherwise null.
+ *
+ * STRICTLY inside: equal to $base is not contained, because $base is the whole uploads
+ * directory and removing it takes every other plugin's files with it.
+ */
+function slimstat_uninstall_contained_path($base, $path)
+{
+    if (!is_string($path)) {
+        return null;
+    }
+
+    $normal_base = slimstat_uninstall_normalise_path($base);
+    $normal_path = slimstat_uninstall_normalise_path($path);
+
+    // An empty base is the one that MUST be refused: it makes the needle below `/`, which
+    // every absolute path starts with, so every path would read as contained. Reached when
+    // wp_upload_dir() returns nothing usable.
+    //
+    // Three sibling clauses were removed from here after review proved none could change a
+    // verdict: `'/' === $normal_base` (the needle is then `//`, and normalisation never emits
+    // a doubled slash, so the strpos below already refuses), `'' === $normal_path` (strpos of
+    // an empty haystack is false), and `'' === trim($path)` (whitespace survives as a relative
+    // segment and fails the strpos anyway). An unkillable line inside a guard against
+    // recursive deletion is worse than none: it reads as protection nobody can test.
+    if ('' === $normal_base) {
+        return null;
+    }
+
+    if (0 !== strpos($normal_path, $normal_base . '/')) {
+        return null;
+    }
+
+    // Symlinks are invisible to the walk above, so resolve both ends when both exist. A path
+    // that does NOT exist is not refused here — there is nothing to delete either way, and
+    // refusing on absence would make an already-clean install look like an attack.
+    $real_base = realpath($normal_base);
+    $real_path = realpath($normal_path);
+
+    if (false !== $real_base && false !== $real_path) {
+        $real_base = slimstat_uninstall_normalise_path($real_base);
+        $real_path = slimstat_uninstall_normalise_path($real_path);
+
+        if (0 !== strpos($real_path, $real_base . '/')) {
+            return null;
+        }
+    }
+
+    return $path;
+}
+
+/**
+ * Where this plugin's downloadable artifacts live, or null when it cannot be established.
+ *
+ * `slimstat_maxmind_path` is a THIRD-PARTY filter and the caller's next statement is a
+ * RECURSIVE delete, so whatever the filter returns is what gets removed. 5.5.0 did not apply
+ * the filter on this path at all; 6.0.0 added it so a site that moved the directory would not
+ * keep everything after uninstall, and in doing so routed an arbitrary string into
+ * `delete($dir, true, 'd')`. Measured before this guard existed: a filter returning `/` made
+ * uninstall ask the filesystem to recursively delete the filesystem root.
+ *
+ * No in-tree consumer returns a broader path. The hazard is that nothing stopped one, and the
+ * caller cannot tell a relocation from a mistake.
+ */
+function slimstat_uninstall_data_dir()
+{
+    if (defined('UPLOADS')) {
+        $base = ABSPATH . UPLOADS;
+    } else {
+        $upload_dir_info = wp_upload_dir();
+        $base            = $upload_dir_info['basedir'];
+
+        // Handle multisite environment
+        if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
+            $base = str_replace('/sites/' . get_current_blog_id(), '', $base);
+        }
+    }
+
+    $upload_dir = rtrim($base, '/\\') . '/wp-slimstat';
+
+    // Honour the relocation filter, or a site that moved the directory keeps
+    // everything after uninstall.
+    if (function_exists('apply_filters')) {
+        $upload_dir = apply_filters('slimstat_maxmind_path', $upload_dir);
+    }
+
+    return slimstat_uninstall_contained_path($base, $upload_dir);
+}
+
+/**
  * Clean up uploads/wp-slimstat.
  *
  * The directory is a mixed bag, so the seam is drawn at the artifact, not the
@@ -99,24 +215,15 @@ function slimstat_uninstall_cron()
  */
 function slimstat_uninstall_artifacts($delete_data = false)
 {
-    if (defined('UPLOADS')) {
-        $upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
-    } else {
-        $upload_dir_info = wp_upload_dir();
-        $upload_dir      = $upload_dir_info['basedir'];
+    $upload_dir = slimstat_uninstall_data_dir();
 
-        // Handle multisite environment
-        if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
-            $upload_dir = str_replace('/sites/' . get_current_blog_id(), '', $upload_dir);
-        }
-
-        $upload_dir .= '/wp-slimstat';
-    }
-
-    // Honour the relocation filter, or a site that moved the directory keeps
-    // everything after uninstall.
-    if (function_exists('apply_filters')) {
-        $upload_dir = apply_filters('slimstat_maxmind_path', $upload_dir);
+    // REFUSED, not defaulted. Falling back to the unfiltered path would delete a directory the
+    // site said it does not use; leaving the files alone is the failure this plugin is allowed
+    // to have. A relocation that stays under uploads is still honoured, which is the property
+    // tests/uninstall-data-safety-test.php's `on@inside` case exists to keep true — without it
+    // this guard could be satisfied by ignoring the filter, restoring the 5.5.0 defect.
+    if (null === $upload_dir) {
+        return;
     }
 
     // WP_Filesystem() lives in wp-admin/includes/file.php, which is NOT loaded on
@@ -143,6 +250,37 @@ function slimstat_uninstall_artifacts($delete_data = false)
     }
 
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
+}
+
+/**
+ * Remove the NETWORK-scoped options this plugin mints. RUNS ON BOTH PATHS.
+ *
+ * Outside the blog loop, because a network option belongs to the network and deleting it once
+ * per blog would be N-1 wasted writes against whichever site the loop was standing on.
+ *
+ * On the always-runs path for the same reason as the cron entries: an interrupted network
+ * activation's cursor is scheduler bookkeeping, not collected analytics, and the opt-in exists
+ * to protect the latter. Leaving it behind would hand a reinstall a site list from before.
+ *
+ * delete_site_option() rather than delete_option(): on multisite the value lives in sitemeta,
+ * where delete_option() cannot see it. On a single site core routes it to delete_option()
+ * anyway, so one call is right in both topologies.
+ */
+function slimstat_uninstall_network_options()
+{
+    if (!function_exists('delete_site_option')) {
+        return;
+    }
+
+    // Named as literals, because this file runs with the plugin unloaded and the constants
+    // that mint them (wp_slimstat::ACTIVATION_CURSOR_OPTION, ::ACTIVATION_ATTEMPT_OPTION) are
+    // not reachable. What keeps the two lists in step is the derived scan in
+    // tests/uninstall-data-safety-test.php, which walks every *OPTION* constant in src/,
+    // admin/ AND wp-slimstat.php — where both of these are declared — and fails when one of
+    // them survives an opt-in uninstall.
+    foreach (['slimstat_network_activation_pending', 'slimstat_network_activation_attempting'] as $option) {
+        delete_site_option($option);
+    }
 }
 
 /**

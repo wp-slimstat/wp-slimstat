@@ -4,15 +4,18 @@ kind:      construct-removal
 expect:    never calls get_sites()
 rationale: The network-wide branch survives, reads $network_wide, and walks NOTHING — a network activation would silently initialize zero subsites while the parameter check still passes. The gate must require the enumeration construct itself, not just the branch. (Known limit, stated rather than papered over: a source gate cannot kill `if (false && $network_wide)`; the topology measurement is what covers behaviour.)
 ---
-diff --git a/wp-slimstat.php b/wp-slimstat.php
 --- a/wp-slimstat.php
 +++ b/wp-slimstat.php
-@@ -2228,7 +2228,7 @@
-             include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+@@ -2381,11 +2381,11 @@
+                 // perfectly healthy one, named in a degradation that never happened.
+                 delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
  
-             if ($network_wide && is_multisite()) {
--                foreach (get_sites(['fields' => 'ids', 'number' => 0]) as $blog_id) {
-+                foreach ([] as $blog_id) {
-                     switch_to_blog($blog_id);
- 
-                     try {
+                 update_site_option(
+                     self::ACTIVATION_CURSOR_OPTION,
+-                    array_map('intval', get_sites([
++                    array_map('intval', ([
+                         'fields'                 => 'ids',
+                         'number'                 => 0,
+                         // get_sites() otherwise queues every id into the metadata
+                         // lazyloader. Nothing here reads site meta, so nothing fires
+                         // today — but the day something does, it is one IN() clause

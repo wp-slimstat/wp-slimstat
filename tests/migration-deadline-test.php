@@ -144,6 +144,31 @@ foreach ($files as $file) {
                 . 'notice because grepping for the name finds it',
             $name
         );
+
+        continue;
+    }
+
+    // AND COMPARED. Two references is satisfied by a deadline that is computed and then never
+    // tested — the bypass this file recorded against itself and left open. It was closed first
+    // in tests/network-activation-bounded-test.php, for a walk outside this census, which left
+    // the three migrations here on the weaker check the same author had already judged
+    // insufficient. A guard's strong form belongs in the gate that needs it.
+    // BOTH OPERAND ORDERS, because the first version accepted only `microtime(true) >= $deadline`
+    // and rejected `$deadline <= microtime(true)` — a correct program — with a message saying
+    // the comparison was absent. Right verdict for the wrong reason is how a gate gets relaxed;
+    // wrong verdict with a confident message is how it gets deleted. Still a SPELLING check, and
+    // the failure text says so, because a scanner cannot recognise every way to compare a clock.
+    if (!preg_match('/microtime\\(\\s*true\\s*\\)\\s*>=?\\s*\\$deadline|\\$deadline\\s*<=?\\s*microtime\\(\\s*true\\s*\\)/', $code)) {
+        $failures[] = sprintf(
+            '%s computes a PASS_SECONDS deadline and never compares the clock against it — or '
+                . 'compares it in a spelling this gate does not recognise. It reads '
+                . '`microtime(true) >= $deadline` and `$deadline <= microtime(true)`, either '
+                . 'operator strict or not; if yours is correct and different, widen this pattern '
+                . 'rather than dropping the check. The constant is declared, the deadline is '
+                . 'assigned, and the loop runs to completion regardless — which is exactly what '
+                . 'the two-reference check above cannot tell apart from a working budget',
+            $name
+        );
     }
 }
 

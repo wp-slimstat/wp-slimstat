@@ -811,6 +811,52 @@ function slimstat_php80_polyfilled_functions(): array
 }
 
 /**
+ * Run one PHP script in a child process and hand back everything it produced.
+ *
+ * For the driver/harness shape: a test that must load a file which declares functions or
+ * classes at file scope can only do so once per process, so each case runs in its own child
+ * and reports back over STDOUT. uninstall.php and wp-slimstat.php are both that kind of file.
+ *
+ * The script path is a parameter because `__FILE__` here would be this library, not the caller.
+ *
+ * The selector is passed as an explicit environment array rather than through putenv(),
+ * because putenv() leaking into proc_open's default (null) environment is not guaranteed
+ * across platforms and SAPIs, and a child that silently ran the wrong case would make every
+ * assertion downstream vacuous. `$_ENV` is merged in for whatever the parent exports —
+ * measured as usually empty under the default `variables_order`, so the child starts near
+ * enough clean; nothing in these harnesses depends on an inherited variable, and PHP_BINARY
+ * is absolute.
+ *
+ * Decoding is left to the caller: one consumer wants JSON, another only an exit code.
+ *
+ * @param  string                $script Absolute path to the script to run.
+ * @param  array<string,string>  $env    Variables the child must see.
+ * @return array{stdout:string,stderr:string,exit:int}|null Null when the process could not start.
+ */
+function slimstat_spawn_child(string $script, array $env): ?array
+{
+    $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+    $process     = proc_open(
+        escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($script),
+        $descriptors,
+        $pipes,
+        null,
+        $env + $_ENV
+    );
+
+    if (!is_resource($process)) {
+        return null;
+    }
+
+    $stdout = (string) stream_get_contents($pipes[1]);
+    $stderr = (string) stream_get_contents($pipes[2]);
+    fclose($pipes[1]);
+    fclose($pipes[2]);
+
+    return ['stdout' => $stdout, 'stderr' => $stderr, 'exit' => (int) proc_close($process)];
+}
+
+/**
  * Collapse every whitespace run to one space, and trim.
  *
  * For comparing a span quoted in PHP — where the author wraps it to fit a docblock or an array

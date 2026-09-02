@@ -4170,6 +4170,7 @@ class wp_slimstat_admin
             'banner_consent_check' => __('Consent banner status check', 'wp-slimstat'),
             'activation'           => __('Plugin activation', 'wp-slimstat'),
             'deactivation'         => __('Plugin deactivation', 'wp-slimstat'),
+            'network activation continuation' => __('Setting up sites on this network', 'wp-slimstat'),
 
             // Operational steps. Everything below kept working; none of it is a load failure,
             // and none of it is fixed by reinstalling.
