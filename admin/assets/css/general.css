@@ -83,15 +83,27 @@
  * Customize (slimlayout) drag-and-drop to work. These rules restyle THAT
  * shared wrapper to keep the General page's existing "boxes" look, rather
  * than reintroducing a second, bespoke box markup alongside it.
+ *
+ * Layout is flex-wrap, matching every other report screen's
+ * `.meta-box-sortables{display:flex;flex-wrap:wrap}` (admin.css) — NOT a
+ * fixed 2-column grid. A rigid `grid-template-columns:1fr 1fr` here (the
+ * previous rule) halved every box's width regardless of its declared size
+ * class, which is what made "normal" boxes render at roughly a third of
+ * their real width with truncated/wrapped row text. Width now comes from
+ * the SAME unclassed-.postbox default (~32.8%, admin.css) the 'normal'
+ * classes array entries were already written to opt into — 'full-width'/
+ * 'extralarge' get their real percentage the same way, no grid-column
+ * override needed.
  */
 .slimstat-general-page .meta-box-sortables {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
     gap: var(--ss-space-5);
     margin-bottom: var(--ss-space-5);
 }
 
 .slimstat-general-page .meta-box-sortables .postbox {
+    width: 32.8%;
     background: var(--ss-surface);
     border: 1px solid var(--ss-border);
     border-radius: var(--ss-radius-md);
@@ -102,17 +114,32 @@
 }
 
 /*
- * "full-width" here is a literal entry in a report's 'classes' array
- * (report_header() concatenates that array as-is into the class attribute,
- * unprefixed — see slim_p1_01/slim_p7_02 for the existing convention this
- * follows) — NOT the same thing as postbox_config.full_width, which would
- * instead produce a "slimstat-full-width" class. General's chart/stats/
- * upsell entries use the 'classes' convention, matching every other
- * full-width report already registered.
+ * "full-width"/"extralarge" here are literal entries in a report's 'classes'
+ * array (report_header() concatenates that array as-is into the class
+ * attribute, unprefixed — see slim_p1_01/slim_p7_02 for the existing
+ * convention this follows) — NOT the same thing as postbox_config.full_width,
+ * which would instead produce a "slimstat-full-width" class. General's
+ * chart/stats/upsell entries use the 'classes' convention, matching every
+ * other full-width/extralarge report already registered; the percentages
+ * mirror admin.css's own .postbox.large/.extralarge/.full-width rules.
  */
 .slimstat-general-page .meta-box-sortables .postbox.full-width,
 .slimstat-general-page .meta-box-sortables .postbox.chart {
-    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox.extralarge {
+    width: 66.1%;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox.large {
+    width: 49.1%;
+}
+
+@media (max-width: 960px) {
+    .slimstat-general-page .meta-box-sortables .postbox {
+        width: 100%;
+    }
 }
 
 .slimstat-general-page .meta-box-sortables .postbox.slimstat-no-border {
@@ -216,29 +243,34 @@
 
 .slimstat-general-page .slimstat-gated-cta {
     position: absolute;
-    inset: 0;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin: var(--ss-space-2) var(--ss-space-4);
+    width: max-content;
+    max-width: calc(100% - var(--ss-space-6));
     padding: 14px 26px;
     border-radius: var(--ss-radius-pill);
     background: var(--ss-brand-500);
     color: #fff;
-    font-size: var(--ss-text-base);
+    font-size: var(--ss-text-sm);
     font-weight: 700;
+    line-height: 1.3;
     text-decoration: none;
     text-align: center;
+    white-space: nowrap;
     box-shadow: var(--ss-shadow-raised);
     transition: transform var(--ss-duration-base) var(--ss-easing-out),
         background var(--ss-duration-base) var(--ss-easing-out);
-    align-self: center;
-    width: fit-content;
-    height: fit-content;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+}
+
+@media (max-width: 380px) {
+    .slimstat-general-page .slimstat-gated-cta {
+        white-space: normal;
+    }
 }
 
 .slimstat-general-page .slimstat-gated-cta:hover,
@@ -434,9 +466,5 @@
 @media (max-width: 860px) {
     .slimstat-general-page .stats {
         grid-template-columns: 1fr 1fr;
-    }
-
-    .slimstat-general-page .meta-box-sortables {
-        grid-template-columns: 1fr;
     }
 }
