@@ -10,7 +10,7 @@ rationale: Puts the stale registry size back. This is the claim with no historic
          # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
          # this runs here rather than living in composer.json unreferenced.
          #
--        # The full registry holds 150 entries and takes ~160s (timing last measured 2026-08-24,
+-        # The full registry holds 151 entries and takes ~160s (timing last measured 2026-08-24,
 +        # The full registry holds 101 entries and takes ~160s (timing last measured 2026-08-24,
          # when the registry was smaller). This line has now been wrong three times — twice on the
          # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real

@@ -38,11 +38,29 @@ class MigrationManager
 
     private const TRANSIENT_PROBE = 'slimstat_migration_probe';
 
+    /**
+     * The OFFERED set's cache, separate from TRANSIENT_PROBE because it answers a different
+     * question. needsMigration() asks "is anything OWED"; this asks "what is on the menu". Folding
+     * them into one key would mean invalidating one invalidates the other, which is true today by
+     * coincidence and would stop being true the moment either gains its own trigger.
+     */
+    private const TRANSIENT_OFFERED = 'slimstat_migration_offered';
+
     /** @var array<int, MigrationInterface> */
     private $migrations = [];
 
     /** Per-request memo — needsMigration() is asked twice per admin page load. */
     private $needsMemo;
+
+    /**
+     * Per-request memo for getOfferedMigrations().
+     *
+     * On a NORMAL admin page this is asked once, from registerPage() on admin_menu. Its real
+     * payoff is the migration screen itself, where registerPage(), enqueueAssets() and
+     * renderPage() all ask — and the unreachable-database path, where the transient is
+     * deliberately not written and only this stops the probe repeating.
+     */
+    private $offeredMemo;
 
     /**
      * @return array<int, MigrationInterface>
@@ -78,10 +96,84 @@ class MigrationManager
      */
     public function getOfferedMigrations(): array
     {
-        return array_filter(
-            $this->migrations,
-            fn($migration) => $migration->isOptional() && $migration->shouldRun()
-        );
+        if (null !== $this->offeredMemo) {
+            return $this->offeredMemo;
+        }
+
+        // Cached for the same reason needsMigration() is. Reached from registerPage() on
+        // admin_menu — so every admin page load pays it — and twice more on the migration
+        // screen itself (enqueueAssets, renderPage). maybeShowNotice() on admin_notices asks
+        // needsMigration(), NOT this; the "twice per admin page" line belongs to that method
+        // and was copied here without re-checking. What makes this one expensive is that the
+        // guard is
+        // `!needsMigration() && [] === getOfferedMigrations()`, whose LEFT operand is a negation:
+        // it is TRUE exactly when nothing is owed. So the right side runs precisely in the healthy
+        // steady state, on every admin page, forever. (`&&` short-circuits normally; what makes
+        // this expensive is which side the negation puts first, not the operator.)
+        //
+        // Counted cost per call on a fully-backfilled install: SIX information_schema.COLUMNS
+        // aggregates from ConvertTablesToUtf8mb4 (one per declared table), then from
+        // AddUserAgentDimension three SHOW COLUMNS — Schema::columnState() memoises nothing, so
+        // wp_slim_stats is asked twice — and finally `SELECT 1 FROM wp_slim_stats WHERE ua_id
+        // IS NULL LIMIT 1`. TEN queries, and the last is the expensive one: `ua_id` is declared
+        // among the manifest's columns and in none of its indexes, so once every row is keyed
+        // that predicate matches nothing and LIMIT 1 saves nothing — it scans the fact table.
+        //
+        // (In the other steady state — offered but never run — !factColumnExists() short-
+        // circuits at the first SHOW COLUMNS, so it is seven.) information_schema is cheap on
+        // MySQL 8's data dictionary and slow on 5.6/5.7, both inside the declared floor.
+        //
+        // IDS, not instances. A transient is serialised, and migrations hold a live wpdb handle;
+        // storing objects would either fail or resurrect a stale connection. The ids are mapped
+        // back through the registry below, so the cache describes WHICH are offered and the
+        // objects always come from this request. An id the registry no longer declares is
+        // therefore ignored rather than fatal — a migration removed by an update stops matching.
+        //
+        // NOT keyed on migrationSetFingerprint(), deliberately, and it inherits the limitation
+        // that buys: a migration ADDED by an update stays invisible until this expires, up to
+        // PROBE_TTL. needsMigration()'s transient has exactly the same property, and keying only
+        // one of the two would make them disagree about how fresh they are — a difference nothing
+        // explains and the next reader takes for a bug. If it is worth closing, both move together.
+        $cached = get_transient(self::TRANSIENT_OFFERED);
+
+        if (is_array($cached)) {
+            $ids = array_flip($cached);
+
+            return $this->offeredMemo = array_filter(
+                $this->migrations,
+                static fn($migration) => $migration->isOptional() && isset($ids[$migration->getId()])
+            );
+        }
+
+        $offered     = [];
+        $unavailable = false;
+
+        foreach ($this->migrations as $key => $migration) {
+            if (!$migration->isOptional()) {
+                continue;
+            }
+
+            if ($migration->shouldRun()) {
+                $offered[$key] = $migration;
+            }
+
+            $unavailable = $unavailable
+                || (method_exists($migration, 'probeUnavailable') && $migration->probeUnavailable());
+        }
+
+        // Never persist "I could not look" as "nothing to offer" — the same rule needsMigration()
+        // states, and for the same reason: this cache lives twelve hours and only run/dismiss
+        // clears it, so caching an unreachable database would hide the offered steps for half a
+        // day after the admin fixed the configuration that broke it.
+        if (!$unavailable) {
+            set_transient(
+                self::TRANSIENT_OFFERED,
+                array_values(array_map(static fn($migration) => $migration->getId(), $offered)),
+                self::PROBE_TTL
+            );
+        }
+
+        return $this->offeredMemo = $offered;
     }
 
     public function register(MigrationInterface $migration): void
@@ -168,8 +260,10 @@ class MigrationManager
      */
     public function forgetProbe(): void
     {
-        $this->needsMemo = null;
+        $this->needsMemo   = null;
+        $this->offeredMemo = null;
         delete_transient(self::TRANSIENT_PROBE);
+        delete_transient(self::TRANSIENT_OFFERED);
     }
 
     /**

@@ -28,6 +28,20 @@ class MigrationAdmin
 
 	public function registerPage(): void
 	{
+		// BEFORE the probes, not after. The page this registers requires `manage_options`
+		// (below), and maybeShowNotice() already opens with this exact guard — this path did
+		// not, so it asked the database a question whose answer it could never act on.
+		//
+		// The cost fell on the wrong people. `MigrationService::init()` gates only on
+		// is_admin(), so on a membership, WooCommerce or multi-author site EVERY subscriber
+		// loading profile.php paid the full probe — which includes an unindexed
+		// `WHERE ua_id IS NULL` over the fact table, because `ua_id` is declared in the
+		// manifest's columns and in none of its indexes. Those are exactly the sites where
+		// that table is largest.
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
 		// Registered when anything is OWED, and also when anything is merely OFFERED — the
 		// second half was missing and it is what made "opt-in" mean "unreachable". needsMigration()
 		// deliberately ignores optional migrations so they raise no notice; using it alone as the
