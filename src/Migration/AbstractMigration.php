@@ -233,4 +233,76 @@ abstract class AbstractMigration implements MigrationInterface
 
 		return true;
 	}
+
+	/**
+	 * Build the manifest indexes that became buildable now that $column exists.
+	 *
+	 * ── Why a migration has to do this at all ────────────────────────────────────────────────
+	 *
+	 * `Schema::ensure()` reconciles indexes, but it SKIPS any index naming a column that does not
+	 * exist yet (Schema::ensure()'s missing-column branch) and reports the skip into
+	 * `indexes_skipped_missing_column`, which nothing reads. On an upgrading install ensure()
+	 * runs BEFORE this migration — it is called from the version-gated upgrade, which then stamps
+	 * the new version — so an index over a column this migration adds is skipped on the only pass
+	 * ensure() gets. The next pass is the next release. Until then the upgraded install runs
+	 * without an index the fresh install has had since `CREATE TABLE`.
+	 *
+	 * That is C39's fresh/upgraded divergence arriving through the skip mechanism instead of
+	 * through six competing index creators. Gated by tests/upgrade-index-convergence-test.php,
+	 * which derives the obligation from the manifest rather than from a list of index names.
+	 *
+	 * ── What it deliberately does not do ─────────────────────────────────────────────────────
+	 *
+	 * It builds ONLY the indexes that name $column, and only mandatory ones. Reconciling the whole
+	 * table would make a migration that adds one column rebuild every index a site had switched
+	 * off, and calling ensure() outright would also create tables — far more than adding a column
+	 * has any business doing.
+	 *
+	 * Tables that do not reconcile are skipped. `slim_stats_archive` declares the same index set
+	 * and reconciles none of it by design; building thirteen indexes on cold storage because a
+	 * column arrived would invent an obligation the schema explicitly declines.
+	 *
+	 * Failure is recorded and swallowed. The column is already in place by the time this runs, so
+	 * the migration has succeeded at the thing it exists to do; a missing index is slower, not
+	 * broken, and turning it into a failed migration would re-offer an ALTER that already landed.
+	 */
+	protected function reconcileColumnIndexes(string $suffix, string $column, string $degradationKey): void
+	{
+		if (!\SlimStat\Schema\Schema::reconciles($suffix)) {
+			return;
+		}
+
+		$wanted = \SlimStat\Schema\Schema::indexesForColumn($suffix, $column);
+		if ([] === $wanted) {
+			return;
+		}
+
+		$prefix = $this->tablePrefix();
+
+		// One SHOW INDEX for the table, not one probe per index. indexState() returns the manifest
+		// KEYS that are missing, which is what createIndexSql() takes, and it reports nothing at
+		// all when the table cannot be read — so an unreachable table builds nothing rather than
+		// issuing DDL against a name it could not confirm.
+		$state = \SlimStat\Schema\Schema::indexState($this->wpdb, $suffix, $prefix);
+
+		foreach ($wanted as $index) {
+			if (!in_array($index, $state['missing'], true)) {
+				continue;
+			}
+
+			if (false === $this->wpdb->query(\SlimStat\Schema\Schema::createIndexSql($suffix, $index, $prefix))) {
+				\wp_slimstat::record_degradation(
+					$degradationKey,
+					sprintf(
+						'could not create index %s on %s: %s. The column was added successfully; '
+							. 'reports that use it will be slower until the index exists.',
+						\SlimStat\Schema\Schema::resolve($index, $prefix),
+						$prefix . $suffix,
+						(string) $this->wpdb->last_error
+					),
+					\wp_slimstat::DEGRADATION_OPERATIONAL
+				);
+			}
+		}
+	}
 }

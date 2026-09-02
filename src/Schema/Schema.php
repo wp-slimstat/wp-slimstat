@@ -601,6 +601,50 @@ final class Schema
     }
 
     /**
+     * The optional GROUP an index belongs to, or null when it is mandatory.
+     *
+     * Not the same question as indexOption(). That one names the `slimstat_*_indexed` stamp an
+     * index writes when it is confirmed present, and mandatory indexes carry stamps too —
+     * `idx_country_dt` has one and is built unconditionally. THIS one names the group the
+     * Maintenance screen can switch off, which is the only reason to decline to build an index.
+     * Conflating them was the first draft of indexesForColumn(), and it would have silently
+     * skipped four mandatory indexes.
+     */
+    private static function optionalIndexGroup(string $index): ?string
+    {
+        return self::OPTIONAL_INDEXES[$index] ?? null;
+    }
+
+    /**
+     * Mandatory manifest indexes on $suffix whose column list contains $column.
+     *
+     * DERIVED FROM THE MANIFEST, never a list. An index declared over a column that a migration
+     * adds becomes this method's answer the moment it is declared — which is what stops the
+     * fresh/upgraded divergence reopening the way C39 did. A hand-written list would have to be
+     * edited every time, and the edit that forgets is precisely the defect.
+     *
+     * Optional-group indexes are excluded: those are the ones the site owner can switch off, and
+     * a migration that rebuilt them would override a choice they made deliberately.
+     *
+     * @return string[] manifest index KEYS, unresolved — pass to createIndexSql()
+     */
+    public static function indexesForColumn(string $suffix, string $column): array
+    {
+        $found = [];
+
+        foreach (array_keys(self::indexes($suffix)) as $name) {
+            if (null !== self::optionalIndexGroup($name)) {
+                continue;
+            }
+            if (in_array($column, self::indexColumnNames($suffix, $name), true)) {
+                $found[] = $name;
+            }
+        }
+
+        return $found;
+    }
+
+    /**
      * The manifest entries in one optional group, as [table suffix, index key] pairs.
      *
      * Table-QUALIFIED and key-bearing, both deliberately. Returning resolved names with the
@@ -617,7 +661,7 @@ final class Schema
 
         foreach (array_keys(self::TABLES) as $suffix) {
             foreach (array_keys(self::indexes($suffix)) as $name) {
-                if ((self::OPTIONAL_INDEXES[$name] ?? null) === $group && self::reconciles($suffix)) {
+                if (self::optionalIndexGroup($name) === $group && self::reconciles($suffix)) {
                     $found[] = [$suffix, $name];
                 }
             }
@@ -645,7 +689,7 @@ final class Schema
         $wanted = [];
 
         foreach (self::indexes($suffix) as $name => $columns) {
-            $group = self::OPTIONAL_INDEXES[$name] ?? null;
+            $group = self::optionalIndexGroup($name);
             if (null === $group || !isset($off[$group])) {
                 $wanted[$name] = $columns;
             }

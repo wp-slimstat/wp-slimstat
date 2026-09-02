@@ -23,24 +23,7 @@ use WpSlimstat\Tests\Unit\WpSlimstatTestCase;
 
 class AddVisitIdentityCacheVerTest extends WpSlimstatTestCase
 {
-    /**
-     * A wpdb double whose SHOW COLUMNS answers make both columnExists() probes
-     * report $present, so run() either short-circuits to success or attempts DDL.
-     */
-    private function db(bool $present): \wpdb
-    {
-        $wpdb             = Mockery::mock(\wpdb::class);
-        $wpdb->prefix     = 'wp_';
-        $wpdb->last_error = '';
-        $wpdb->shouldReceive('suppress_errors')->andReturn(false);
-        $wpdb->shouldReceive('get_results')->andReturn(
-            $present
-                ? [['Field' => 'id', 'Type' => 'int'], ['Field' => 'vid_hash', 'Type' => 'binary(16)']]
-                : [['Field' => 'id', 'Type' => 'int']]
-        );
-
-        return $wpdb;
-    }
+    use AddVisitIdentityDouble;
 
     /** @test */
     public function test_a_completed_run_rotates_the_goals_cache_version(): void
@@ -50,13 +33,13 @@ class AddVisitIdentityCacheVerTest extends WpSlimstatTestCase
             ->with('slimstat_goals_cache_ver', Mockery::type('string'), false)
             ->andReturn(true);
 
-        $this->assertTrue((new AddVisitIdentity($this->db(true)))->run());
+        $this->assertTrue((new AddVisitIdentity($this->addVisitIdentityDb(true, ['PRIMARY', 'idx_vid_hash_dt'])))->run());
     }
 
     /** @test */
     public function test_a_failed_run_does_not_rotate_the_cache_version(): void
     {
-        $wpdb = $this->db(false);
+        $wpdb = $this->addVisitIdentityDb(false, ['PRIMARY']);
         // Both the INPLACE attempt and the bare retry refuse: run() must fail.
         $wpdb->shouldReceive('query')->andReturn(false);
 

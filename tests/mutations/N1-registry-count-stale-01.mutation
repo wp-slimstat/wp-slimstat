@@ -4,14 +4,13 @@ kind:      restore-defect
 expect:    says the mutation registry holds 101 entries
 rationale: Puts the stale registry size back. This is the claim with no historical defence: FLOOR is one file in this repo, and the sentence citing it is the one a reader consults when deciding whether the mutation lane is worth its five-minute timeout. It stood at 101 while the registry held 141 -- a 40% understatement of the thing it exists to describe -- and nothing could tell, because a comment is checked by no interpreter. The mutation leaves the block's ISO date in place: the dating exemption must NOT rescue a registry claim, and if it ever does, this survives.
 ---
-diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
 @@ -155,7 +155,7 @@
          # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
          # this runs here rather than living in composer.json unreferenced.
          #
--        # The full registry holds 146 entries and takes ~160s (timing last measured 2026-08-24,
+-        # The full registry holds 147 entries and takes ~160s (timing last measured 2026-08-24,
 +        # The full registry holds 101 entries and takes ~160s (timing last measured 2026-08-24,
          # when the registry was smaller). This line has now been wrong three times — twice on the
          # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real

@@ -402,6 +402,7 @@ $recorded     = [
     // T_COMMENT/T_DOC_COMMENT — a tokeniser is applied, and the regex runs only on what it
     // returned. Stripping comments before matching would delete the entire subject.
     'record-citation-test.php'                   => 'exempt — the subject IS the comments, taken from the tokeniser',
+    'upgrade-index-convergence-test.php'         => 'exempt — reads production source only through slimstat_tokenize() and matches nothing against the raw bytes; the whole-file fallback below looks for the three BLANKING helpers and does not recognise the tokenised route, which is the stronger one. Adding slimstat_tokenize to that list would be the deeper fix, and it strands the two entries above it that are flagged by the fallback alone — a change for its own commit, not for one about an index',
     'rounding-contract-test.php'                 => 'exempt — its PHP half IS tokenised (rc_rounding_calls); the raw-text half scans JAVASCRIPT, which no PHP tokeniser can strip. Added after the ADR-17 seam fixed six PHP percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72)',
     // Every gettext call site IS tokenised. The one raw read is the plugin header's
     // `Text Domain:` line, which lives inside a doc comment — so blanking comments before

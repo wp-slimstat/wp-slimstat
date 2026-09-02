@@ -87,10 +87,33 @@ class AddVisitIdentity extends AbstractMigration
         // (table, column) arguments against the manifest, and a variable table name is
         // a call site that gate cannot see (the same reason admin/index.php's legacy
         // block writes its six calls out longhand).
-        $ok = $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity')
-            && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
+        $live = $this->addManifestColumn('slim_stats', 'vid_hash', 'add_visit_identity');
+
+        // The index over vid_hash, which ensure() could not build on the upgrade pass because the
+        // column did not exist yet — and will not revisit, because the same request stamped the
+        // new version. Without it an upgraded install serves the anonymous reuse probe as an
+        // unindexed 30-minute range scan on the fact table, per anonymous pageview, for the whole
+        // life of this release, while a fresh install has had the index since CREATE TABLE.
+        //
+        // KEYED ON THE LIVE TABLE'S OWN ALTER, never on the pair. Gating it on both — the first
+        // shape of this fix — means an archive ALTER that fails (bigger table, MyISAM, lock
+        // timeout) leaves `slim_stats` carrying `vid_hash` with no index, while shouldRun() stays
+        // true and every retry re-fails on the archive without ever reaching the index. That is
+        // precisely the defect this repairs, reached through the repair's own control flow.
+        //
+        // slim_stats_archive gets no call at all: it declares the same index set with
+        // `reconcile => false`, so a call would return at the guard on every possible run — and
+        // would quietly start building the archive's whole declared index set on cold storage the
+        // day E1 flips that flag.
+        if ($live) {
+            $this->reconcileColumnIndexes('slim_stats', 'vid_hash', 'add_visit_identity');
+        }
+
+        // Short-circuit preserved: the archive ALTER is attempted only when the live one landed.
+        $ok = $live && $this->addManifestColumn('slim_stats_archive', 'vid_hash', 'add_visit_identity');
 
         if ($ok) {
+
             // The column this adds changes what visitor_id_expr() emits, and the
             // goal/funnel/unique-visitor transients are LADDER-BLIND — their keys
             // hash range + filters + version, never the SQL — so answers computed

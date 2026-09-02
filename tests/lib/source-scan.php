@@ -475,6 +475,74 @@ function slimstat_guarded_block_ranges(array $tokens, string $guard = 'is_admin'
 }
 
 /**
+ * An argument list split on TOP-LEVEL commas, one token array per positional slot.
+ *
+ * $open is the `(` and $close the matching `)` — pass slimstat_token_paren_end()'s answer.
+ *
+ * ── Why positional, and why this is not "collect the string literals" ────────────────────────
+ *
+ * A scanner that walks the argument list gathering `T_CONSTANT_ENCAPSED_STRING` in order looks
+ * equivalent and is not. Given `foo($suffix, 'vid_hash', 'key')` it yields ['vid_hash', 'key'],
+ * so slot 0 reads as `vid_hash` — a value that belongs to slot 1. Every assertion built on that
+ * map is then checking the wrong pair, and the gate PASSES while the obligation it exists to
+ * enforce is unmet. That shape was written for tests/upgrade-index-convergence-test.php and
+ * caught in review before it landed; this exists so the next caller cannot rebuild it.
+ *
+ * Nested calls and array literals are stepped over, so `foo(bar('x'), 'y')` has 'y' in slot 1.
+ *
+ * @return array<int, array<int, array|string>> one entry per argument, in source order
+ */
+function slimstat_call_args(array $tokens, int $open, int $close): array
+{
+    $depth = 0;
+    $args  = [[]];
+
+    for ($k = $open + 1; $k < $close; $k++) {
+        $text = slimstat_token_text($tokens[$k]);
+
+        if ('(' === $text || '[' === $text) {
+            $depth++;
+        } elseif (')' === $text || ']' === $text) {
+            $depth--;
+        } elseif (0 === $depth && ',' === $text) {
+            $args[] = [];
+            continue;
+        }
+
+        $args[count($args) - 1][] = $tokens[$k];
+    }
+
+    return $args;
+}
+
+/**
+ * The single string literal an argument slot consists of, or null.
+ *
+ * Null when the slot holds a variable, a constant, a concatenation, or anything else that is not
+ * exactly one quoted string — which is the honest answer for a scanner deciding whether it can
+ * resolve the argument statically. Whitespace and comments are ignored so formatting does not
+ * change the verdict.
+ */
+function slimstat_arg_string(array $arg): ?string
+{
+    $found = null;
+
+    foreach ($arg as $token) {
+        if (is_array($token) && in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+        if (is_array($token) && T_CONSTANT_ENCAPSED_STRING === $token[0] && null === $found) {
+            $found = trim($token[1], "'\"");
+            continue;
+        }
+
+        return null; // a second token in this slot: not a bare literal
+    }
+
+    return $found;
+}
+
+/**
  * Index of the `)` closing the parenthesis group that opens at or after $from.
  *
  * Returns null when unbalanced before $limit.
