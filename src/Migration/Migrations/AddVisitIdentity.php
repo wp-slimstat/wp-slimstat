@@ -26,14 +26,14 @@ use SlimStat\Migration\AbstractMigration;
  * identity the visitor never had. NULL on old rows is the true statement: "identity
  * unknown". Reports LEFT-fall through visitor_id_expr()'s ladder exactly as before.
  *
- * COST, measured once and stated here rather than in each caller's comment. 8.30 s for the
- * pair on the 443,543-row reference install (MySQL 8.0.35) — but that install's ARCHIVE IS
- * EMPTY, so the number is one table's rebuild plus a no-op, and a site with a populated
- * archive pays roughly twice it. Not instant on any server: addManifestColumn() asks for
- * ALGORITHM=INPLACE explicitly, which precludes the INSTANT path even where 8.0.12+ would
- * offer it. Do not extrapolate linearly — this repo's own Run 7 scaled 152k to "~14 s at
- * 443k" for the same operation class, and the measurement came in 1.7× under it. A rebuild
- * is linear only while it fits the buffer pool.
+ * COST is MEASURED_COST below, once, and the description renders from it rather than restating
+ * it — a figure that exists twice is a figure that will disagree with itself. What the constant
+ * cannot carry is the caveat: that install's ARCHIVE IS EMPTY, so the number is one table's
+ * rebuild plus a no-op, and a site with a populated archive pays roughly twice it. Not instant on
+ * any server either — addManifestColumn() asks for ALGORITHM=INPLACE explicitly, which precludes
+ * the INSTANT path even where 8.0.12+ would offer it. Do not extrapolate linearly — this repo's
+ * own Run 7 scaled 152k to "~14 s at 443k" for the same operation class, and the measurement came
+ * in 1.7× under it. A rebuild is linear only while it fits the buffer pool.
  *
  * The ARCHIVE gets the column too, in the same run: PurgeArchive::STATS_COLUMNS names
  * vid_hash, so a purge against an archive lacking it would fail whole — a skipped purge
@@ -44,6 +44,23 @@ use SlimStat\Migration\AbstractMigration;
  */
 class AddVisitIdentity extends AbstractMigration
 {
+    /**
+     * The cost above, as data rather than as prose — see AbstractMigration::MEASURED_COST.
+     *
+     * The quotation lives in ADR-19's Run 64 correction, which is where the figure was recorded
+     * because it was recorded as a CORRECTION: the same ALTER pair had been described as
+     * "metadata-only … INSTANT on MySQL 8" until somebody ran it.
+     */
+    public const MEASURED_COST = [
+        'seconds' => 8.30,
+        'rows'    => 443543,
+        'engine'  => 'MySQL 8',
+        'bound'   => 'about',
+        'record'  => 'DECISIONS.md',
+        'anchor'  => 'ADR-19',
+        'quotes'  => ['Measured 8.30 s for the pair on the 443,543-row reference'],
+    ];
+
     public function getId(): string
     {
         return 'add-visit-identity';
@@ -56,16 +73,20 @@ class AddVisitIdentity extends AbstractMigration
 
     public function getDescription(): string
     {
-        return __(
-            'Adds a private, full-width identity column for visitors tracked without cookies. '
-                . 'Until it runs, anonymous pageviews are still recorded but cost extra database '
-                . 'work on every hit and cannot be grouped into visits reliably. The analytics '
-                . 'table and its archive are each rebuilt in place — about 8 seconds per 440,000 '
-                . 'rows on MySQL 8, so roughly double that if you also have archived data, and '
-                . 'longer on bigger tables. Tracking and reports normally keep working while it '
-                . 'runs, but a server that cannot rebuild online will pause tracking writes '
-                . 'until it finishes. No existing data is changed or removed.',
-            'wp-slimstat'
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "about 8 seconds on a 440,000-row table (MySQL 8)". */
+            __(
+                'Adds a private, full-width identity column for visitors tracked without cookies. '
+                    . 'Until it runs, anonymous pageviews are still recorded but cost extra '
+                    . 'database work on every hit and cannot be grouped into visits reliably. The '
+                    . 'analytics table and its archive are each rebuilt in place — %s, so roughly '
+                    . 'double that if you also have archived data, and longer on bigger tables. '
+                    . 'Tracking and reports normally keep working while it runs, but a server that '
+                    . 'cannot rebuild online will pause tracking writes until it finishes. No '
+                    . 'existing data is changed or removed.',
+                'wp-slimstat'
+            ),
+            $this->measuredCostPhrase()
         );
     }
 

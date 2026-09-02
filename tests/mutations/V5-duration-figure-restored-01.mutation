@@ -1,0 +1,21 @@
+target:    src/Migration/Migrations/AddUserAgentDimension.php
+gate:      composer test:migration-duration-honesty
+kind:      restore-defect
+expect:    none of the quoted spans state it
+rationale: Restores the exact figure that shipped: MEASURED_COST[seconds] goes back to the 14 seconds four docblocks claimed for this migration. That number was Run 7's EXTRAPOLATION of step 1 (the ALTER) from a 152k-row table, quoted throughout as the price of BOTH steps; step 2 is the cost, because there is no index on ua_id so every distinct tuple's UPDATE is a full scan of the fact table. Run 58 drove the whole migration on 443,543 real rows and it went past eight minutes before being interrupted -- it has never been observed finishing. So an admin deciding whether to accept a rebuild that can pause tracking writes was reading a number roughly 34x under the only figure anyone had. Everything else about the mutated tree is healthy: the citation still resolves, the quotes still appear verbatim under Run 58, the description still renders from the constant. Only the tie between the declared figure and the quoted span breaks -- which is the one check that makes the citation load-bearing rather than bookkeeping. Kills in a standalone checkout too, so it runs on all six PHP lanes and not only where jaan-to/ is a sibling.
+---
+--- a/src/Migration/Migrations/AddUserAgentDimension.php
++++ b/src/Migration/Migrations/AddUserAgentDimension.php
+@@ -58,11 +58,11 @@
+     /**
+      * See AbstractMigration::MEASURED_COST. `bound` is 'floor' and that is the whole point: the
+      * run was stopped, so 480 s is a number this migration EXCEEDED, not one it took.
+      */
+     public const MEASURED_COST = [
+-        'seconds' => 480,
++        'seconds' => 14,
+         'rows'    => 443543,
+         'engine'  => 'MySQL 8',
+         'bound'   => 'floor',
+         'record'  => 'VERIFICATION-PROTOCOL.md',
+         'anchor'  => 'Run 58',

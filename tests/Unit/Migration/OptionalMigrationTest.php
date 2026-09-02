@@ -7,8 +7,11 @@
  * `browser_type` and `platform` on the fact row, because the dimension is then an index over
  * data that is already there and `idx_dt_browser_browser_version` already indexes it better.
  *
- * That leaves a column whose cost is entirely real — a fact-table rebuild, ~14 s at 443k rows and
- * ~5 min at 10M — and whose benefit is entirely future. A fresh install pays none of it (the
+ * That leaves a column whose cost is entirely real — a fact-table rebuild plus a backfill,
+ * `AddUserAgentDimension::MEASURED_COST` — and whose benefit is entirely future. This header said
+ * "~14 s at 443k rows and ~5 min at 10M" until the migration was actually run and went past eight
+ * minutes on that table; it was the fourth copy of a figure measured for something else. A fresh
+ * install pays none of it (the
  * column is in the manifest, so it arrives inside CREATE TABLE), but an upgrading site would be
  * shown a notice on every admin page asking it to.
  *

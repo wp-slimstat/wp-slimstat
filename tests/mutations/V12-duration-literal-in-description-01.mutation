@@ -1,0 +1,21 @@
+target:    src/Migration/Migrations/AddUserAgentDimension.php
+gate:      composer test:migration-duration-honesty
+kind:      restore-defect
+expect:    to the admin as a literal
+rationale: Types the duration straight into the translatable string instead of rendering it, which is how the figure came to exist in four places at once and disagree with itself by a factor of twenty -- the docblocks said ~14 s while the sentence the admin actually read said 'several minutes'. The constant is left in place and still cites Run 58 correctly, so every citation check stays green: what this proves is that the rendering requirement is enforced, not merely documented. Without it a future edit could keep a perfectly-cited MEASURED_COST beside a hand-typed number and nothing would notice.
+---
+--- a/src/Migration/Migrations/AddUserAgentDimension.php
++++ b/src/Migration/Migrations/AddUserAgentDimension.php
+@@ -107,11 +107,11 @@
+             /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
+             __(
+                 'Optional. Adds a compact browser key to the analytics table AND to the archive '
+                     . 'table, and builds a lookup of browsers and platforms — groundwork for a '
+                     . 'future release. It does not make any report faster today, and it is by far '
+-                    . 'the slowest step here: %s — and that run was stopped before it finished, so '
++                    . 'the slowest step here: about 14 seconds — and that run was stopped, so '
+                     . 'it is a minimum and not an estimate. On a larger table you may not be able '
+                     . 'to complete it from this screen at all. Your existing data is not modified, '
+                     . 'and reports keep working while it runs. Tracking normally keeps working '
+                     . 'too, but a server that cannot rebuild the table online will pause tracking '
+                     . 'writes for the whole rebuild, so on a large site prefer a quiet period.',

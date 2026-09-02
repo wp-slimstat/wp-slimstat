@@ -13,10 +13,19 @@ use SlimStat\Schema\SurrogateKey;
  * TWO STEPS, DELIBERATELY SEPARABLE, because they fail differently and at different cost.
  *
  *   1. `ALTER TABLE … ADD COLUMN ua_id BINARY(8)` — a fact-table rebuild. Measured (Run 7):
- *      INSTANT is REFUSED below MySQL 8.0.12, so ADR-2's floor pays INPLACE — 4.7 s at 152k
- *      rows, ~14 s at the 443k reference table, ~5 minutes at 10M.
+ *      INSTANT is REFUSED below MySQL 8.0.12, so ADR-2's floor pays INPLACE — 4.7 s at 152k rows.
  *   2. Backfill the dimension from `SELECT DISTINCT` over the facts. Interruptible, resumable,
  *      and cheap to repeat.
+ *
+ * STEP 2 IS THE COST, AND NOTHING HERE SAID SO FOR THE WHOLE OF v6.0.0'S DEVELOPMENT. This
+ * docblock, isOptional() below, AbstractMigration::isOptional() and a unit test's header all
+ * carried "~14 s at 443k rows, ~5 min at 10M" — an EXTRAPOLATION of step 1's 152k figure, quoted
+ * in four places as the price of BOTH steps. It is not. There is no index on `ua_id` (see
+ * PASS_SECONDS), so every distinct tuple's UPDATE is a full scan of the fact table, and a pass
+ * stops on the clock with the client re-posting for the rest. MEASURED_COST below carries the
+ * only figure anyone has taken: past eight minutes on the 443,543-row reference table, and that
+ * run was INTERRUPTED — this migration has never been observed finishing. The description the
+ * admin reads renders from that constant, so the two cannot drift apart again.
  *
  * If step 1 succeeds and step 2 is interrupted, re-running does the right thing: the column is
  * already there, and the backfill is an `INSERT IGNORE` over rows it may have inserted before.
@@ -46,6 +55,23 @@ use SlimStat\Schema\SurrogateKey;
  */
 class AddUserAgentDimension extends AbstractMigration
 {
+    /**
+     * See AbstractMigration::MEASURED_COST. `bound` is 'floor' and that is the whole point: the
+     * run was stopped, so 480 s is a number this migration EXCEEDED, not one it took.
+     */
+    public const MEASURED_COST = [
+        'seconds' => 480,
+        'rows'    => 443543,
+        'engine'  => 'MySQL 8',
+        'bound'   => 'floor',
+        'record'  => 'VERIFICATION-PROTOCOL.md',
+        'anchor'  => 'Run 58',
+        'quotes'  => [
+            'it ran past **eight minutes** on this dataset',
+            'own live dump: 443,543 rows',
+        ],
+    ];
+
     /** Rows read per backfill pass. Bounded so one pass cannot exhaust memory on a large table. */
     private const BATCH = 500;
 
@@ -77,16 +103,21 @@ class AddUserAgentDimension extends AbstractMigration
 
     public function getDescription(): string
     {
-        return __(
-            'Optional. Adds a compact browser key to the analytics table AND to the archive '
-                . 'table, and builds a lookup of browsers and platforms — groundwork for a future '
-                . 'release. It does not make any report faster today, and on a large table it can '
-                . 'take several minutes — roughly double that if you also have archived data. Your '
-                . 'existing data is not modified, and reports keep working while it runs. '
-                . 'Tracking normally keeps working too, but a server that cannot rebuild the '
-                . 'table online will pause tracking writes for the whole rebuild, so on a large '
-                . 'site prefer a quiet period.',
-            'wp-slimstat'
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
+            __(
+                'Optional. Adds a compact browser key to the analytics table AND to the archive '
+                    . 'table, and builds a lookup of browsers and platforms — groundwork for a '
+                    . 'future release. It does not make any report faster today, and it is by far '
+                    . 'the slowest step here: %s — and that run was stopped before it finished, so '
+                    . 'it is a minimum and not an estimate. On a larger table you may not be able '
+                    . 'to complete it from this screen at all. Your existing data is not modified, '
+                    . 'and reports keep working while it runs. Tracking normally keeps working '
+                    . 'too, but a server that cannot rebuild the table online will pause tracking '
+                    . 'writes for the whole rebuild, so on a large site prefer a quiet period.',
+                'wp-slimstat'
+            ),
+            $this->measuredCostPhrase()
         );
     }
 
@@ -100,9 +131,9 @@ class AddUserAgentDimension extends AbstractMigration
      *
      * A fresh install still gets `ua_id` for free: it is declared in the manifest, so it arrives
      * inside CREATE TABLE with no ALTER at all, and Layer 2 will find it waiting when P4 moves.
-     * What is opt-in is the part that COSTS something — the fact-table rebuild an existing site
-     * would otherwise pay on the migration screen (~14 s at 443k rows, ~5 min at 10M) for a
-     * column nothing reads yet.
+     * What is opt-in is the part that COSTS something — the rebuild and backfill an existing site
+     * would otherwise pay on the migration screen, MEASURED_COST above, for a column nothing
+     * reads yet.
      */
     public function isOptional(): bool
     {

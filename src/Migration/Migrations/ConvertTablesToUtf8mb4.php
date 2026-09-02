@@ -62,6 +62,22 @@ use SlimStat\Schema\Schema;
 class ConvertTablesToUtf8mb4 extends AbstractMigration
 {
     /**
+     * See AbstractMigration::MEASURED_COST. Note what it is a measurement OF: the largest of the
+     * six tables, not the set. The other five are small on the reference install, so a site whose
+     * archive is populated pays more than this and the description says "for the largest table"
+     * rather than implying the figure covers the run.
+     */
+    public const MEASURED_COST = [
+        'seconds' => 12.4,
+        'rows'    => 443535,
+        'engine'  => 'MySQL 8',
+        'bound'   => 'about',
+        'record'  => 'DECISIONS.md',
+        'anchor'  => 'ADR-19',
+        'quotes'  => ['measured at 12.4 s on 443,535 rows'],
+    ];
+
+    /**
      * Seconds one pass may spend converting tables before it stops and reports back.
      *
      * This is the most expensive migration in the set: a `CONVERT TO CHARACTER SET` per table
@@ -101,11 +117,15 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
 
     public function getDescription(): string
     {
-        return __(
-            'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji '
-                . 'and match the collation WordPress uses for users. This rebuilds each table and '
-                . 'pauses tracking writes while it runs — about 12 seconds per 450,000 rows.',
-            'wp-slimstat'
+        return sprintf(
+            /* translators: %s: a measured cost, e.g. "about 12 seconds on a 440,000-row table (MySQL 8)". */
+            __(
+                'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store '
+                    . 'emoji and match the collation WordPress uses for users. This rebuilds each '
+                    . 'table and pauses tracking writes while it runs — %s for the largest of them.',
+                'wp-slimstat'
+            ),
+            $this->measuredCostPhrase()
         );
     }
 

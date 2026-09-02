@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-01T20:35:39+00:00\n"
+"POT-Creation-Date: 2026-09-02T15:37:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -995,7 +995,7 @@ msgstr ""
 
 #: admin/config/index.php:805
 #: admin/index.php:552
-#: src/Migration/Admin/MigrationAdmin.php:181
+#: src/Migration/Admin/MigrationAdmin.php:195
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
 
@@ -1332,9 +1332,9 @@ msgstr ""
 
 #: admin/index.php:3738
 #: admin/index.php:3785
-#: src/Migration/Admin/MigrationAdmin.php:255
-#: src/Migration/Admin/MigrationAdmin.php:363
-#: src/Migration/Admin/MigrationAdmin.php:390
+#: src/Migration/Admin/MigrationAdmin.php:269
+#: src/Migration/Admin/MigrationAdmin.php:377
+#: src/Migration/Admin/MigrationAdmin.php:404
 #: wp-slimstat.php:2726
 msgid "Permission denied"
 msgstr ""
@@ -6012,127 +6012,161 @@ msgstr ""
 msgid "Ensures the %1$s index exists on the %2$s table for performance."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:42
-#: src/Migration/Admin/MigrationAdmin.php:43
+#. translators: %s: a whole number of minutes.
+#: src/Migration/AbstractMigration.php:235
+#, php-format
+msgid "%s minute"
+msgid_plural "%s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %s: a whole number of seconds.
+#: src/Migration/AbstractMigration.php:237
+#, php-format
+msgid "%s second"
+msgid_plural "%s seconds"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: a duration, e.g. "8 minutes". 2: a row count, e.g. "440,000". 3: a database server, e.g. "MySQL 8".
+#: src/Migration/AbstractMigration.php:243
+#, php-format
+msgid "more than %1$s on a %2$s-row table (%3$s)"
+msgstr ""
+
+#. translators: 1: a duration, e.g. "8 seconds". 2: a row count, e.g. "440,000". 3: a database server, e.g. "MySQL 8".
+#: src/Migration/AbstractMigration.php:245
+#, php-format
+msgid "about %1$s on a %2$s-row table (%3$s)"
+msgstr ""
+
+#: src/Migration/Admin/MigrationAdmin.php:56
+#: src/Migration/Admin/MigrationAdmin.php:57
 msgid "Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:103
+#: src/Migration/Admin/MigrationAdmin.php:117
 msgid "Running migrations…"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:104
+#: src/Migration/Admin/MigrationAdmin.php:118
 msgid "In progress…"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:105
+#: src/Migration/Admin/MigrationAdmin.php:119
 msgid "Done"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:106
+#: src/Migration/Admin/MigrationAdmin.php:120
 msgid "Failed"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:107
+#: src/Migration/Admin/MigrationAdmin.php:121
 msgid "All migrations finished."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:110
+#: src/Migration/Admin/MigrationAdmin.php:124
 msgid "The migration did not complete. Nothing further has been run."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:111
+#: src/Migration/Admin/MigrationAdmin.php:125
 msgid "The migration request timed out. It may still be running on the server — reload this page before starting again."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:112
+#: src/Migration/Admin/MigrationAdmin.php:126
 msgid "The migration request failed. Nothing further has been run."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:115
+#: src/Migration/Admin/MigrationAdmin.php:129
 #: src/view/migration-page.php:20
 msgid "Idle"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:119
+#: src/Migration/Admin/MigrationAdmin.php:133
 msgid "Run this step"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:120
+#: src/Migration/Admin/MigrationAdmin.php:134
 msgid "Running"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:121
+#: src/Migration/Admin/MigrationAdmin.php:135
 msgid "A step failed. Please check the logs and retry."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:224
+#: src/Migration/Admin/MigrationAdmin.php:238
 #: src/view/migration-page.php:11
 msgid "SlimStat Database Migration"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:225
+#: src/Migration/Admin/MigrationAdmin.php:239
 msgid "SlimStat database migration required"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:226
+#: src/Migration/Admin/MigrationAdmin.php:240
 msgid "To improve SlimStat performance and stability, your database needs to be migrated."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:230
+#: src/Migration/Admin/MigrationAdmin.php:244
 msgid "Technical details"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:246
+#: src/Migration/Admin/MigrationAdmin.php:260
 msgid "Go to Migration Page"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:339
+#: src/Migration/Admin/MigrationAdmin.php:353
 msgid "Another migration is already running. Try again in a moment."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:355
+#: src/Migration/Admin/MigrationAdmin.php:369
 msgid "All migrations completed successfully!"
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:355
+#: src/Migration/Admin/MigrationAdmin.php:369
 msgid "Migrations completed, but some may still be needed."
 msgstr ""
 
-#: src/Migration/Admin/MigrationAdmin.php:394
+#: src/Migration/Admin/MigrationAdmin.php:408
 msgid "Migration dismissal reset"
 msgstr ""
 
-#: src/Migration/Migrations/AddUserAgentDimension.php:75
+#: src/Migration/Migrations/AddUserAgentDimension.php:101
 msgid "Build the browser dimension"
 msgstr ""
 
-#: src/Migration/Migrations/AddUserAgentDimension.php:80
-msgid "Optional. Adds a compact browser key to the analytics table AND to the archive table, and builds a lookup of browsers and platforms — groundwork for a future release. It does not make any report faster today, and on a large table it can take several minutes — roughly double that if you also have archived data. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period."
+#. translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)".
+#: src/Migration/Migrations/AddUserAgentDimension.php:108
+#, php-format
+msgid "Optional. Adds a compact browser key to the analytics table AND to the archive table, and builds a lookup of browsers and platforms — groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s — and that run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period."
 msgstr ""
 
-#: src/Migration/Migrations/AddVisitIdentity.php:54
+#: src/Migration/Migrations/AddVisitIdentity.php:71
 msgid "Add the anonymous visitor identity column"
 msgstr ""
 
-#: src/Migration/Migrations/AddVisitIdentity.php:59
-msgid "Adds a private, full-width identity column for visitors tracked without cookies. Until it runs, anonymous pageviews are still recorded but cost extra database work on every hit and cannot be grouped into visits reliably. The analytics table and its archive are each rebuilt in place — about 8 seconds per 440,000 rows on MySQL 8, so roughly double that if you also have archived data, and longer on bigger tables. Tracking and reports normally keep working while it runs, but a server that cannot rebuild online will pause tracking writes until it finishes. No existing data is changed or removed."
+#. translators: %s: a measured cost, e.g. "about 8 seconds on a 440,000-row table (MySQL 8)".
+#: src/Migration/Migrations/AddVisitIdentity.php:78
+#, php-format
+msgid "Adds a private, full-width identity column for visitors tracked without cookies. Until it runs, anonymous pageviews are still recorded but cost extra database work on every hit and cannot be grouped into visits reliably. The analytics table and its archive are each rebuilt in place — %s, so roughly double that if you also have archived data, and longer on bigger tables. Tracking and reports normally keep working while it runs, but a server that cannot rebuild online will pause tracking writes until it finishes. No existing data is changed or removed."
 msgstr ""
 
-#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:83
+#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:115
 msgid "Convert analytics tables to utf8mb4"
 msgstr ""
 
-#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:88
-msgid "Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji and match the collation WordPress uses for users. This rebuilds each table and pauses tracking writes while it runs — about 12 seconds per 450,000 rows."
+#. translators: %s: a measured cost, e.g. "about 12 seconds on a 440,000-row table (MySQL 8)".
+#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:122
+#, php-format
+msgid "Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji and match the collation WordPress uses for users. This rebuilds each table and pauses tracking writes while it runs — %s for the largest of them."
 msgstr ""
 
-#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:269
+#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:334
 msgid "table not found on the analytics database"
 msgstr ""
 
 #. translators: 1: number of columns, 2: target collation
-#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:281
+#: src/Migration/Migrations/ConvertTablesToUtf8mb4.php:346
 #, php-format
 msgid "%1$d column to convert to %2$s"
 msgid_plural "%1$d columns to convert to %2$s"
@@ -6171,11 +6205,11 @@ msgstr ""
 msgid "Create Goal Queries Index"
 msgstr ""
 
-#: src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php:40
+#: src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php:51
 msgid "Recover corrupted heatmap click positions"
 msgstr ""
 
-#: src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php:45
+#: src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php:56
 msgid "Attempts to restore comma-separated heatmap positions for historical rows when a single screen-width-compatible split exists."
 msgstr ""
 

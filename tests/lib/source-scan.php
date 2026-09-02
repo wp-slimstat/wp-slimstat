@@ -809,3 +809,63 @@ function slimstat_php80_polyfilled_functions(): array
 {
     return ['fdiv', 'preg_last_error_msg', 'str_contains', 'str_starts_with', 'str_ends_with', 'get_debug_type', 'get_resource_id'];
 }
+
+/**
+ * Collapse every whitespace run to one space, and trim.
+ *
+ * For comparing a span quoted in PHP — where the author wraps it to fit a docblock or an array
+ * literal — against the same span in Markdown, where it wraps at a different column. Neither
+ * wrapping is meaningful and a byte compare fails on both.
+ *
+ * There are two hand-rolled `preg_replace('/\s+/', ' ', …)` copies in record-citation-test.php
+ * already, without the trim and without /u. They are not migrated here: that file has a declared
+ * twin in wp-slimstat-pro whose header permits exactly five divergences, so re-pointing it needs
+ * a matching pro_ helper in the same sitting. New callers use this one.
+ */
+function slimstat_collapse_ws(string $text): string
+{
+    return trim((string) preg_replace('/\s+/u', ' ', $text));
+}
+
+/**
+ * The programme's standing records, and whether this checkout can see them.
+ *
+ * `jaan-to/` is a SIBLING of the plugin, not part of it, so a standalone checkout — which is what
+ * every CI lane has — cannot see the records at all. Every gate that cites them needs the same
+ * three things: where they live, which files are citable, and whether to skip.
+ *
+ * DISCRIMINATED ON THE SIBLING ROOT, NEVER ON THE LEAF DIRECTORY, and that is the whole reason
+ * this is a function. Keying on the records directory answers the wrong question: it degrades to
+ * "there is no jaan-to here" whenever that one path moves, then prints that as fact and exits 0
+ * in the one checkout that does have records to check. This workspace has moved jaan-to paths
+ * before. So: no `jaan-to/` at all is a standalone checkout and skips; a `jaan-to/` that is
+ * present but has no records directory is a PROBLEM, because there the records are supposed to be.
+ *
+ * Extracted at the fourth copy. record-citation-test.php (free and its pro twin) and
+ * campaign-phase-gate-test.php keep their inline versions — already in two spellings — because
+ * each is a load-bearing gate with its own mutations, and the pro twin bounds how far free's copy
+ * may drift. New callers use this one, which is what makes "the same set of records" true by
+ * construction rather than by a comment saying it is.
+ *
+ * @return array{standalone:bool,dir:string,records:array<string,string>,problems:array<int,string>}
+ */
+function slimstat_standing_records(string $plugin_root): array
+{
+    $repo_root = dirname($plugin_root);
+    $dir       = $repo_root . '/jaan-to/outputs/dev/v6-performance';
+
+    $records = [];
+    foreach (['STATE.json', 'PITFALLS.md', 'DECISIONS.md', 'VERIFICATION-PROTOCOL.md', 'EXPECTED-DIFFS.md'] as $name) {
+        $records[$name] = $dir . '/' . $name;
+    }
+
+    $standalone = !is_dir($repo_root . '/jaan-to');
+    $problems   = [];
+
+    if (!$standalone && !is_dir($dir)) {
+        $problems[] = sprintf('the jaan-to sibling is present but %s is not — if the programme '
+            . 'records moved, the gate reading them moved with them and nobody updated it', $dir);
+    }
+
+    return ['standalone' => $standalone, 'dir' => $dir, 'records' => $records, 'problems' => $problems];
+}
