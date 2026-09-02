@@ -4,6 +4,7 @@ class wp_slimstat_reports
 {
     public static $reports      = []; // Structures to store all the information about what screens and reports are available
     public static $user_reports = [
+        'slimgeneral' => [],
         'slimview1' => [],
         'slimview2' => [],
         'slimview3' => [],
@@ -956,6 +957,95 @@ class wp_slimstat_reports
                 'pinned'    => true,
                 'tooltip'   => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
             ],
+
+            // General (slimgeneral) landing-page reports. Each box is its own
+            // report entry — same "pinned to its dedicated screen" pattern as
+            // Goals & Funnels above (slim_p9_01/02) — so the Customize
+            // (slimlayout) drag-and-drop and meta-box-order persistence work
+            // for General exactly like every other screen, instead of the
+            // hardcoded markup this page used before. Callbacks live on
+            // \SlimStat\Modules\GeneralReports (SlimStat\Modules\* is the
+            // established namespace for this feature's PHP, alongside Chart).
+            'slim_p10_01' => [
+                'title'         => __('At a Glance', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'statsRow'],
+                'callback_args' => [],
+                'classes'       => ['full-width', 'general-stats'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
+                'tooltip'       => __('Unique Visitors, Pageviews, Bounce Rate and Average Visit Duration for the selected date range, each compared to the immediately preceding period of the same length.', 'wp-slimstat'),
+            ],
+            'slim_p10_02' => [
+                'title'         => __('Pageviews', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'pageviewsChart'],
+                'callback_args' => [
+                    'id'         => 'slim_general_pageviews',
+                    'chart_data' => [
+                        'data1' => 'COUNT( ip )',
+                        'data2' => 'COUNT( DISTINCT ip )',
+                    ],
+                ],
+                'classes'   => ['full-width', 'extralarge', 'chart'],
+                'locations' => ['slimgeneral'],
+                'pinned'    => true,
+                'tooltip'   => $pageviews_chart_tooltip,
+            ],
+            'slim_p10_03' => [
+                'title'         => __('Where visitors come from', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'trafficSources'],
+                'callback_args' => [],
+                'classes'       => ['normal'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('How visitors reach your site: typed the address directly (Direct), arrived from a search engine (Search), or came from another link (Other referrers).', 'wp-slimstat'),
+            ],
+            'slim_p10_04' => [
+                'title'         => __('Your most visited pages', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topPages'],
+                'callback_args' => [],
+                'classes'       => ['normal'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('The pages on your site viewed most often in the selected date range, ranked by pageviews.', 'wp-slimstat'),
+            ],
+            'slim_p10_05' => [
+                'title'         => __('Where your visitors are', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topCountries'],
+                'callback_args' => [],
+                'classes'       => ['normal'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('The countries your visitors are browsing from, by share of total visits.', 'wp-slimstat'),
+            ],
+            'slim_p10_06' => [
+                'title'         => __('Devices & browsers', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'devicesAndBrowsers'],
+                'callback_args' => [],
+                'classes'       => ['normal'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('The browser families your visitors use most. Exact device type (phone, tablet, desktop) is not tracked — this shows the browser they browsed with.', 'wp-slimstat'),
+            ],
+            'slim_p10_07' => [
+                'title'         => __('Campaigns you are running', 'wp-slimstat'),
+                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'campaigns'],
+                'callback_args' => [],
+                'classes'       => ['normal'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('Traffic attributed to marketing campaigns via utm_source / utm_campaign parameters.', 'wp-slimstat'),
+            ],
+            'slim_p10_08' => [
+                'title'          => __('Goals & Custom Events', 'wp-slimstat'),
+                'callback'       => [\SlimStat\Modules\GeneralReports::class, 'goalsUpsell'],
+                'callback_args'  => [],
+                'classes'        => ['full-width', 'general-upsell'],
+                'locations'      => ['slimgeneral'],
+                'pinned'         => true,
+                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
+                'tooltip'        => __('Track conversions for custom goals and see visitors turn into customers.', 'wp-slimstat'),
+            ],
         ];
 
         if ('on' != wp_slimstat::$settings['geolocation_country']) {
@@ -1038,6 +1128,47 @@ class wp_slimstat_reports
 
     // end init
 
+    /**
+     * The opening markup for a "?" tooltip trigger: the info-icon SVG plus
+     * the wrapping .slimstat-tooltip-trigger span and the .slimstat-tooltip-content
+     * span that admin.js's qtip binding reads its content from. Callers append
+     * their tooltip text (already trusted/escaped as appropriate) followed by
+     * '</span></span>'.
+     *
+     * Extracted so \SlimStat\Modules\GeneralReports::tooltipTrigger() — which
+     * needs its own per-tile tooltip triggers rather than report_header()'s
+     * single per-report one, since one General report entry (slim_p10_01)
+     * renders four stat tiles — can reuse this exact markup instead of a
+     * second hand-copied SVG string.
+     */
+    public static function tooltip_trigger_open(): string
+    {
+        return '<span class="header-tooltip slimstat-tooltip-trigger corner"><svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M8.6665 13.3125C8.97716 13.3125 9.229 13.0607 9.229 12.75V8.25C9.229 7.93934 8.97716 7.6875 8.6665 7.6875C8.35584 7.6875 8.104 7.93934 8.104 8.25V12.75C8.104 13.0607 8.35584 13.3125 8.6665 13.3125Z" fill="#9BA1A6"/> <path d="M8.6665 5.25C9.08072 5.25 9.4165 5.58579 9.4165 6C9.4165 6.41421 9.08072 6.75 8.6665 6.75C8.25229 6.75 7.9165 6.41421 7.9165 6C7.9165 5.58579 8.25229 5.25 8.6665 5.25Z" fill="#9BA1A6"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M0.604004 9C0.604004 4.5472 4.21371 0.9375 8.6665 0.9375C13.1193 0.9375 16.729 4.5472 16.729 9C16.729 13.4528 13.1193 17.0625 8.6665 17.0625C4.21371 17.0625 0.604004 13.4528 0.604004 9ZM8.6665 2.0625C4.83503 2.0625 1.729 5.16852 1.729 9C1.729 12.8315 4.83503 15.9375 8.6665 15.9375C12.498 15.9375 15.604 12.8315 15.604 9C15.604 5.16852 12.498 2.0625 8.6665 2.0625Z" fill="#9BA1A6"/></svg><span class="slimstat-tooltip-content">';
+    }
+
+    /**
+     * The .slimstat-tooltip-bar-wrap/.slimstat-tooltip-bar span pair for a
+     * "top N" row's percentage bar, given the RAW (un-rounded, un-clamped)
+     * percentage. Extracted out of raw_results_to_html()'s row loop so
+     * \SlimStat\Modules\GeneralReports::renderRows() — which renders the
+     * same visual row for General's gated boxes without going through
+     * raw_results_to_html() itself (that method also drives SQL dispatch,
+     * pagination and column-specific post-processing General's rows don't
+     * need) — shares this one clamp rule instead of a second copy of it.
+     *
+     * The BAR is bounded at 100; the printed number passed to this method's
+     * caller is not. A percentage above 100 means the ratio's two sides were
+     * scoped differently (a network transition mid-flight, a stale cache) —
+     * the number saying so is a signal worth keeping audible, but the bar
+     * overflowing its wrap is just broken layout. Clamped on the RAW ratio,
+     * not re-parsed from an i18n-formatted string — which also avoids
+     * invalid CSS widths on comma-decimal locales.
+     */
+    public static function tooltip_bar(float $percentage_raw): string
+    {
+        return '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, round($percentage_raw, 2)) . '%"></span></span>';
+    }
+
     public static function report_header($_report_id = '')
     {
         if (empty(self::$reports[$_report_id])) {
@@ -1084,7 +1215,7 @@ class wp_slimstat_reports
                 $header_buttons = '<a class="noslimstat refresh" title="' . __('Refresh', 'wp-slimstat') . '" href="' . self::fs_url() . '"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.44215 9.33359C2.50187 5.19973 5.89666 1.875 10.0656 1.875C12.8226 1.875 15.239 3.32856 16.5777 5.50601C16.7584 5.80006 16.6666 6.18499 16.3726 6.36576C16.0785 6.54654 15.6936 6.45471 15.5128 6.16066C14.3937 4.34037 12.3735 3.125 10.0656 3.125C6.57859 3.125 3.75293 5.89808 3.69234 9.33181L4.02599 9.00077C4.27102 8.75765 4.66675 8.75921 4.90986 9.00424C5.15298 9.24928 5.15143 9.645 4.90639 9.88812L3.50655 11.277C3.26288 11.5188 2.86982 11.5188 2.62614 11.277L1.2263 9.88812C0.981267 9.645 0.979713 9.24928 1.22283 9.00424C1.46595 8.75921 1.86167 8.75765 2.10671 9.00077L2.44215 9.33359ZM16.4885 8.72215C16.732 8.4815 17.1238 8.4815 17.3672 8.72215L18.7724 10.111C19.0179 10.3537 19.0202 10.7494 18.7776 10.9949C18.5349 11.2404 18.1392 11.2427 17.8937 11.0001L17.5521 10.6624C17.4943 14.8003 14.0846 18.125 9.90191 18.125C7.13633 18.125 4.71134 16.6725 3.3675 14.4949C3.18622 14.2012 3.2774 13.8161 3.57114 13.6348C3.86489 13.4535 4.24997 13.5447 4.43125 13.8384C5.5545 15.6586 7.58316 16.875 9.90191 16.875C13.4071 16.875 16.2433 14.0976 16.302 10.6641L15.962 11.0001C15.7165 11.2427 15.3208 11.2404 15.0782 10.9949C14.8355 10.7494 14.8378 10.3537 15.0833 10.111L16.4885 8.72215Z" fill="#676E74"/></svg></a>';
             }
 
-            $tooltip_base = '<span class="header-tooltip slimstat-tooltip-trigger corner"><svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M8.6665 13.3125C8.97716 13.3125 9.229 13.0607 9.229 12.75V8.25C9.229 7.93934 8.97716 7.6875 8.6665 7.6875C8.35584 7.6875 8.104 7.93934 8.104 8.25V12.75C8.104 13.0607 8.35584 13.3125 8.6665 13.3125Z" fill="#9BA1A6"/> <path d="M8.6665 5.25C9.08072 5.25 9.4165 5.58579 9.4165 6C9.4165 6.41421 9.08072 6.75 8.6665 6.75C8.25229 6.75 7.9165 6.41421 7.9165 6C7.9165 5.58579 8.25229 5.25 8.6665 5.25Z" fill="#9BA1A6"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M0.604004 9C0.604004 4.5472 4.21371 0.9375 8.6665 0.9375C13.1193 0.9375 16.729 4.5472 16.729 9C16.729 13.4528 13.1193 17.0625 8.6665 17.0625C4.21371 17.0625 0.604004 13.4528 0.604004 9ZM8.6665 2.0625C4.83503 2.0625 1.729 5.16852 1.729 9C1.729 12.8315 4.83503 15.9375 8.6665 15.9375C12.498 15.9375 15.604 12.8315 15.604 9C15.604 5.16852 12.498 2.0625 8.6665 2.0625Z" fill="#9BA1A6"/></svg><span class="slimstat-tooltip-content">';
+            $tooltip_base = self::tooltip_trigger_open();
             // $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
             $header_tooltip = $tooltip_base . (empty(self::$reports[$_report_id]['tooltip']) ? esc_html($_report_id) : self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id)) . '</span></span>';
 
@@ -1622,18 +1753,7 @@ class wp_slimstat_reports
                     $row_details = sprintf("<b class='slimstat-tooltip-content'>%s</b>", $row_details);
                 }
 
-                $bar = '';
-                if (!empty($percentage_value)) {
-                    // The BAR is bounded at 100; the printed number is not. A percentage
-                    // above 100 means the ratio's two sides were scoped differently (a
-                    // network transition mid-flight, a stale cache) — the number saying so
-                    // is the signal PITFALLS 23 exists to keep audible, but the bar
-                    // overflowing its wrap is just broken layout. Four documents believed
-                    // a >99 clamp lived here; nothing ever did — this is the first guard.
-                    // Clamped on the RAW ratio, not un-parsed from the i18n string — which
-                    // also ends the comma-decimal locales' invalid CSS widths.
-                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, round($percentage_raw, 2)) . '%"></span></span>';
-                }
+                $bar = !empty($percentage_value) ? self::tooltip_bar($percentage_raw) : '';
                 $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
                 // Strip all the filter links, if this information is shown on the frontend

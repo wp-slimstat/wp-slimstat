@@ -143,6 +143,150 @@ class GeneralScreenRegistrationTest extends TestCase
         );
     }
 
+    /**
+     * The General page's boxes are real report entries (slim_p10_01..08),
+     * driven through the shared wp_slimstat_reports::$reports /
+     * report_header()/callback_wrapper()/report_footer() system every other
+     * screen uses — not hardcoded inline markup. Each must declare
+     * 'slimgeneral' among its locations and be pinned (same "always render on
+     * its dedicated screen" pattern as Goals & Funnels — see
+     * GoalsFunnelsReportPlacementTest) so a saved layout that drags a copy
+     * elsewhere can't leave the General page empty.
+     */
+    public function test_general_reports_are_registered_and_pinned_to_slimgeneral(): void
+    {
+        $php = file_get_contents($this->reportsPath());
+
+        foreach (['slim_p10_01', 'slim_p10_02', 'slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06', 'slim_p10_07', 'slim_p10_08'] as $report_id) {
+            $this->assertMatchesRegularExpression(
+                "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'locations'\\s*=>\\s*\\['slimgeneral'\\][\\s\\S]*?'pinned'\\s*=>\\s*true/",
+                $php,
+                "{$report_id} must be registered, scoped to slimgeneral, and pinned"
+            );
+        }
+    }
+
+    /**
+     * Each General report's callback must point at a real method on
+     * \SlimStat\Modules\GeneralReports, the class this feature's render logic
+     * lives on (SlimStat\Modules\* namespace, alongside Chart) — not a
+     * closure or a string function name, so the Customize screen and
+     * callback_wrapper() can call it exactly like any other report.
+     */
+    public function test_general_reports_point_at_general_reports_class(): void
+    {
+        $php = file_get_contents($this->reportsPath());
+
+        $expected = [
+            'slim_p10_01' => 'statsRow',
+            'slim_p10_02' => 'pageviewsChart',
+            'slim_p10_03' => 'trafficSources',
+            'slim_p10_04' => 'topPages',
+            'slim_p10_05' => 'topCountries',
+            'slim_p10_06' => 'devicesAndBrowsers',
+            'slim_p10_07' => 'campaigns',
+            'slim_p10_08' => 'goalsUpsell',
+        ];
+
+        foreach ($expected as $report_id => $method) {
+            $this->assertMatchesRegularExpression(
+                "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'callback'\\s*=>\\s*\\[\\\\SlimStat\\\\Modules\\\\GeneralReports::class,\\s*'{$method}'\\]/",
+                $php,
+                "{$report_id} must call GeneralReports::{$method}()"
+            );
+        }
+    }
+
+    /**
+     * wp_slimstat_reports::$user_reports must declare a 'slimgeneral' key up
+     * front (same as slimview1..6/dashboard/inactive) so the init() merge
+     * loop and admin/view/layout.php's generic foreach over $user_reports
+     * both see the location on a fresh install, before any user has a saved
+     * layout.
+     */
+    public function test_user_reports_declares_slimgeneral_key(): void
+    {
+        $php = file_get_contents($this->reportsPath());
+
+        $this->assertMatchesRegularExpression(
+            "/public static \\\$user_reports = \\[\\s*'slimgeneral'\\s*=>\\s*\\[\\]/",
+            $php,
+            "\$user_reports must declare 'slimgeneral' => [] as its first location"
+        );
+    }
+
+    /**
+     * general.php must render through the SAME report_header()/
+     * callback_wrapper()/report_footer() loop over
+     * wp_slimstat_reports::$user_reports['slimgeneral'] as every other
+     * screen's admin/view/index.php — not a bespoke $boxes foreach with
+     * inline HTML, which is what made the granularity dropdown a no-op
+     * (slimstat-chart.js requires a .postbox > .inside ancestor that only
+     * report_header()/report_footer() produce).
+     */
+    public function test_general_view_uses_the_shared_report_loop(): void
+    {
+        $php = file_get_contents($this->generalViewPath());
+
+        $this->assertStringContainsString(
+            "wp_slimstat_reports::\$user_reports['slimgeneral']",
+            $php,
+            'general.php must loop over the slimgeneral user_reports list'
+        );
+        $this->assertStringContainsString(
+            'wp_slimstat_reports::report_header($a_report_id)',
+            $php,
+            'general.php must call report_header() for each report'
+        );
+        $this->assertStringContainsString(
+            'wp_slimstat_reports::callback_wrapper(',
+            $php,
+            'general.php must call callback_wrapper() for each report'
+        );
+        $this->assertStringContainsString(
+            'wp_slimstat_reports::report_footer()',
+            $php,
+            'general.php must call report_footer() for each report'
+        );
+
+        // Regression guard: the old bespoke per-box markup (row-i/bar/txt
+        // classes, the $render_box_rows closure) must be gone, not merely
+        // supplemented by the new loop.
+        $this->assertStringNotContainsString('$render_box_rows', $php);
+        $this->assertStringNotContainsString('class="row-i"', $php);
+    }
+
+    /**
+     * \SlimStat\Modules\GeneralReports must exist and expose every callback
+     * method referenced from the registry, so a PSR-4 autoload miss or a
+     * renamed method fails a fast, WP-bootstrap-free test rather than a
+     * fatal on the live admin screen.
+     */
+    public function test_general_reports_class_exposes_every_registered_callback(): void
+    {
+        $this->assertTrue(
+            class_exists(\SlimStat\Modules\GeneralReports::class),
+            'SlimStat\\Modules\\GeneralReports must exist'
+        );
+
+        foreach (['statsRow', 'pageviewsChart', 'trafficSources', 'topPages', 'topCountries', 'devicesAndBrowsers', 'campaigns', 'goalsUpsell'] as $method) {
+            $this->assertTrue(
+                method_exists(\SlimStat\Modules\GeneralReports::class, $method),
+                "GeneralReports::{$method}() must exist"
+            );
+        }
+    }
+
+    private function reportsPath(): string
+    {
+        return dirname(__DIR__, 2) . '/admin/view/wp-slimstat-reports.php';
+    }
+
+    private function generalViewPath(): string
+    {
+        return dirname(__DIR__, 2) . '/admin/view/general.php';
+    }
+
     private function indexPath(): string
     {
         return dirname(__DIR__, 2) . '/admin/index.php';

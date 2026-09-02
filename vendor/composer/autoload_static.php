@@ -510,6 +510,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Migration\\Migrations\\CreateGoalQueriesIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateGoalQueriesIndex.php',
         'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => __DIR__ . '/../..' . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
         'SlimStat\\Modules\\Chart' => __DIR__ . '/../..' . '/src/Modules/Chart.php',
+        'SlimStat\\Modules\\GeneralReports' => __DIR__ . '/../..' . '/src/Modules/GeneralReports.php',
         'SlimStat\\Providers\\IPHashProvider' => __DIR__ . '/../..' . '/src/Providers/IPHashProvider.php',
         'SlimStat\\Providers\\RestApiManager' => __DIR__ . '/../..' . '/src/Providers/RestApiManager.php',
         'SlimStat\\Reports\\Abstracts\\AbstractReport' => __DIR__ . '/../..' . '/src/Reports/Abstracts/AbstractReport.php',

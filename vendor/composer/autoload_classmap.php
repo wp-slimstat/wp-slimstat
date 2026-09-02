@@ -495,6 +495,7 @@ return array(
     'SlimStat\\Migration\\Migrations\\CreateGoalQueriesIndex' => $baseDir . '/src/Migration/Migrations/CreateGoalQueriesIndex.php',
     'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => $baseDir . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
     'SlimStat\\Modules\\Chart' => $baseDir . '/src/Modules/Chart.php',
+    'SlimStat\\Modules\\GeneralReports' => $baseDir . '/src/Modules/GeneralReports.php',
     'SlimStat\\Providers\\IPHashProvider' => $baseDir . '/src/Providers/IPHashProvider.php',
     'SlimStat\\Providers\\RestApiManager' => $baseDir . '/src/Providers/RestApiManager.php',
     'SlimStat\\Reports\\Abstracts\\AbstractReport' => $baseDir . '/src/Reports/Abstracts/AbstractReport.php',

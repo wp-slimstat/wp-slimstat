@@ -99,4 +99,80 @@ class GeneralPageData
             return $aRow['counthits'] > 0;
         }));
     }
+
+    /**
+     * The previous-period range for a [start, end] window: same length,
+     * immediately preceding, with its start normalized to local midnight.
+     *
+     * Mirrors \SlimStat\Modules\Chart::calculatePreviousArgs() EXACTLY (same
+     * seconds-diff, same setTime(0,0,0) on start only) so the General page's
+     * period-over-period badges describe the same "previous period" the
+     * pageviews chart's dashed line does. Chart.php's version calls
+     * \wp_timezone(), which needs WordPress loaded; this one takes the
+     * timezone as a parameter (defaulting to UTC) so it stays unit-testable
+     * with no WP bootstrap, same as the rest of this class. The view passes
+     * wp_timezone() in production.
+     *
+     * @return array{start: int, end: int}
+     */
+    public static function previousPeriod(int $start, int $end, ?\DateTimeZone $timezone = null): array
+    {
+        $timezone ??= new \DateTimeZone('UTC');
+        $rangeSeconds = $end - $start;
+
+        $dtStart = (new \DateTime('now', $timezone))->setTimestamp($start);
+        $dtEnd   = (new \DateTime('now', $timezone))->setTimestamp($end);
+
+        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
+        $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
+
+        return [
+            'start' => $dtStart->getTimestamp(),
+            'end'   => $dtEnd->getTimestamp(),
+        ];
+    }
+
+    /**
+     * Percent change from a previous-period value to the current one, for
+     * the stat-box comparison badges. Null (not 0 or INF) when the previous
+     * value is zero — "up from nothing" has no meaningful percentage, and
+     * the view renders that as "New" rather than a misleading number.
+     */
+    public static function percentChange(float $current, float $previous): ?float
+    {
+        if (0.0 === $previous) {
+            return null;
+        }
+
+        return (($current - $previous) / $previous) * 100;
+    }
+
+    /**
+     * Synthetic row data for the free-tier "blurred" rows beyond the free
+     * cap, so the page never sends real stats to the browser for content
+     * that CSS merely hides (a `filter: blur()` on real numbers is
+     * inspectable and un-blurrable via devtools — the numbers must not be
+     * real in the first place). Deterministic (no random()) so a given box
+     * renders the same fake rows on every load rather than flickering on
+     * refresh, and descending so the bars still look like a real ranked
+     * list. $seed offsets the synthetic curve per box so two boxes on the
+     * same page don't render identical-looking fake rows.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function fakeBlurredRows(int $count, string $field, string $labelPrefix, int $seed = 0): array
+    {
+        $rows = [];
+        for ($i = 0; $i < $count; $i++) {
+            // A smoothly decaying, slightly wavy curve — looks like a real
+            // ranked "top N" tail without being derived from real data.
+            $value = max(1, (int) round(40 / ($i + 2 + $seed % 5) + 3 * sin($i + $seed)));
+            $rows[] = [
+                $field       => $labelPrefix . ' ' . ($i + 1),
+                'counthits'  => $value,
+            ];
+        }
+
+        return $rows;
+    }
 }

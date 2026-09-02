@@ -75,38 +75,79 @@
     color: var(--ss-text-muted);
 }
 
-/* ---------- 2x2 data boxes ---------- */
-.slimstat-general-page .boxes {
+/*
+ * Report boxes now render through the shared report_header()/report_footer()
+ * .postbox/.inside wrapper (admin/view/wp-slimstat-reports.php) — the same
+ * markup every other screen's reports use, needed for slimstat-chart.js's
+ * fetchChartData() to find its granularity-refresh target and for the
+ * Customize (slimlayout) drag-and-drop to work. These rules restyle THAT
+ * shared wrapper to keep the General page's existing "boxes" look, rather
+ * than reintroducing a second, bespoke box markup alongside it.
+ */
+.slimstat-general-page .meta-box-sortables {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--ss-space-5);
     margin-bottom: var(--ss-space-5);
 }
 
-.slimstat-general-page .box {
+.slimstat-general-page .meta-box-sortables .postbox {
     background: var(--ss-surface);
     border: 1px solid var(--ss-border);
     border-radius: var(--ss-radius-md);
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    margin: 0;
 }
 
-.slimstat-general-page .box-head {
+/*
+ * "full-width" here is a literal entry in a report's 'classes' array
+ * (report_header() concatenates that array as-is into the class attribute,
+ * unprefixed — see slim_p1_01/slim_p7_02 for the existing convention this
+ * follows) — NOT the same thing as postbox_config.full_width, which would
+ * instead produce a "slimstat-full-width" class. General's chart/stats/
+ * upsell entries use the 'classes' convention, matching every other
+ * full-width report already registered.
+ */
+.slimstat-general-page .meta-box-sortables .postbox.full-width,
+.slimstat-general-page .meta-box-sortables .postbox.chart {
+    grid-column: 1 / -1;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox.slimstat-no-border {
+    border: none;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox.slimstat-no-background {
+    background: transparent;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox > h3 {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--ss-space-2) var(--ss-space-3);
     padding: var(--ss-space-4) var(--ss-space-5) var(--ss-space-3);
+    margin: 0;
     min-width: 0;
-}
-
-.slimstat-general-page .box-head .t {
     font-size: 15px;
     font-weight: 700;
     color: var(--ss-text-primary);
     white-space: nowrap;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox .inside {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.slimstat-general-page .meta-box-sortables .postbox.slimstat-hide-padding .inside {
+    padding: 0;
 }
 
 .slimstat-general-page .toggle {
@@ -146,99 +187,102 @@
     cursor: not-allowed;
 }
 
-/* rows */
+/*
+ * Rows are the shared wp_slimstat_reports::raw_results_to_html() row markup
+ * (<p class="slimstat-tooltip-trigger"> + .slimstat-tooltip-bar-wrap +
+ * .slimstat-count-pct/.slimstat-pct) — item 5 reuses that renderer's exact
+ * visual output rather than a second, bespoke row style, so its bar/percent
+ * styling already comes from admin.css's `.wrap-slimstat .meta-box-sortables
+ * .postbox .slimstat-tooltip-trigger ...` rules (scoped generically, not to
+ * body.index-php) with no duplication needed here.
+ */
 .slimstat-general-page .rows {
     display: flex;
     flex-direction: column;
+    padding: var(--ss-space-2) 0;
 }
 
-.slimstat-general-page .row-i {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: var(--ss-space-3);
-    padding: var(--ss-space-2) var(--ss-space-5);
+/* ---------- Pro gating: SYNTHETIC rows only, never real data ---------- */
+.slimstat-general-page .slimstat-gated-wrap {
     position: relative;
-    font-size: var(--ss-text-base);
 }
 
-.slimstat-general-page .row-i + .row-i {
-    border-top: 1px solid var(--ss-border-soft);
-}
-
-.slimstat-general-page .row-i .name {
-    display: flex;
-    align-items: center;
-    gap: var(--ss-space-2);
-    min-width: 0;
-    color: var(--ss-text-primary);
-    font-weight: 500;
-}
-
-.slimstat-general-page .row-i .name .txt {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.slimstat-general-page .row-i .n {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    color: var(--ss-text-primary);
-    white-space: nowrap;
-}
-
-.slimstat-general-page .row-i .n .pct {
-    color: var(--ss-text-muted);
-    font-weight: 500;
-    font-size: var(--ss-text-sm);
-    margin-left: var(--ss-space-2);
-}
-
-.slimstat-general-page .row-i .bar {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    background: rgba(232, 41, 76, 0.07);
-    z-index: 0;
-}
-
-.slimstat-general-page .row-i > * {
-    position: relative;
-    z-index: 1;
-}
-
-/* ---------- Pro gating: blurred real content ---------- */
 .slimstat-general-page .rows-blur {
     filter: blur(4px);
-    opacity: 0.65;
+    opacity: 0.55;
     pointer-events: none;
     user-select: none;
 }
 
-.slimstat-general-page .unlock-foot {
+.slimstat-general-page .slimstat-gated-cta {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: var(--ss-space-3) var(--ss-space-5);
-    margin-top: auto;
-    border-top: 1px solid var(--ss-border-soft);
-    background: var(--ss-surface-tint);
-    font-size: var(--ss-text-sm);
-    font-weight: 600;
-    color: var(--ss-brand-500);
-    cursor: pointer;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    font-family: inherit;
-    width: 100%;
+    gap: 8px;
+    margin: var(--ss-space-2) var(--ss-space-4);
+    padding: 14px 26px;
+    border-radius: var(--ss-radius-pill);
+    background: var(--ss-brand-500);
+    color: #fff;
+    font-size: var(--ss-text-base);
+    font-weight: 700;
+    text-decoration: none;
+    text-align: center;
+    box-shadow: var(--ss-shadow-raised);
+    transition: transform var(--ss-duration-base) var(--ss-easing-out),
+        background var(--ss-duration-base) var(--ss-easing-out);
+    align-self: center;
+    width: fit-content;
+    height: fit-content;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
-.slimstat-general-page .unlock-foot:hover {
-    background: var(--ss-brand-100);
+.slimstat-general-page .slimstat-gated-cta:hover,
+.slimstat-general-page .slimstat-gated-cta:focus-visible {
+    background: var(--ss-brand-700);
+    transform: translate(-50%, -50%) scale(1.03);
+    color: #fff;
+}
+
+.slimstat-general-page .slimstat-gated-cta svg {
+    flex: 0 0 auto;
+}
+
+/* ---------- Period-over-period comparison badges ---------- */
+.slimstat-general-page .stat .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    width: fit-content;
+    font-size: var(--ss-text-xs);
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--ss-radius-pill);
+}
+
+.slimstat-general-page .stat .delta-arrow {
+    font-size: 8px;
+    line-height: 1;
+}
+
+.slimstat-general-page .stat .delta-up {
+    color: var(--ss-success-fg);
+    background: var(--ss-success-bg);
+}
+
+.slimstat-general-page .stat .delta-down {
+    color: var(--ss-danger-fg);
+    background: var(--ss-danger-bg-soft);
+}
+
+.slimstat-general-page .stat .delta-flat,
+.slimstat-general-page .stat .delta-new {
+    color: var(--ss-text-muted);
+    background: var(--ss-surface-tint);
 }
 
 /* Full-width blurred pro card */
@@ -262,13 +306,21 @@
 
 .slimstat-general-page .pro-card .blurred {
     filter: blur(6px);
-    opacity: 0.7;
+    opacity: 0.5;
     pointer-events: none;
     user-select: none;
     padding: var(--ss-space-5);
-    min-height: 120px;
+    min-height: 140px;
+    background: linear-gradient(135deg, var(--ss-brand-100), var(--ss-surface-tint));
 }
 
+/*
+ * Semi-transparent glass veil over a brand-tinted gradient — borrowing the
+ * transparency/boldness language of live-analytics.php's
+ * .live-analytics-promo-overlay (a full chart-replacement promo) scaled down
+ * for this smaller in-page banner, rather than the flatter near-opaque
+ * --ss-overlay veil this used before.
+ */
 .slimstat-general-page .pro-card .veil {
     position: absolute;
     inset: 0;
@@ -278,13 +330,14 @@
     justify-content: center;
     gap: var(--ss-space-3);
     text-align: center;
-    background: var(--ss-overlay);
-    backdrop-filter: blur(2px);
+    padding: var(--ss-space-5);
+    background: linear-gradient(135deg, rgba(232, 41, 76, 0.16), rgba(255, 255, 255, 0.55));
+    backdrop-filter: blur(6px);
 }
 
 .slimstat-general-page .pro-card .veil .lock {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
     border-radius: var(--ss-radius-md);
     background: linear-gradient(135deg, var(--ss-brand-700), var(--ss-brand-500));
     color: #fff;
@@ -295,25 +348,31 @@
 }
 
 .slimstat-general-page .pro-card .veil .cap {
-    font-size: 15px;
-    font-weight: 600;
+    max-width: 34em;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.4;
     color: var(--ss-text-primary);
 }
 
 .slimstat-general-page .pro-card .veil .btn-pro {
     font: inherit;
     font-size: var(--ss-text-base);
-    font-weight: 600;
-    padding: 9px 18px;
-    border-radius: var(--ss-radius-sm);
+    font-weight: 700;
+    padding: 11px 24px;
+    border-radius: var(--ss-radius-pill);
     border: none;
     background: var(--ss-brand-500);
     color: #fff;
     cursor: pointer;
+    box-shadow: var(--ss-shadow-raised);
+    transition: transform var(--ss-duration-fast) var(--ss-easing-out),
+        background var(--ss-duration-fast) var(--ss-easing-out);
 }
 
 .slimstat-general-page .pro-card .veil .btn-pro:hover {
     background: var(--ss-brand-700);
+    transform: scale(1.04);
 }
 
 /*
@@ -367,16 +426,6 @@
 }
 
 /* ---------- RTL ---------- */
-[dir="rtl"] .slimstat-general-page .row-i .bar {
-    left: auto;
-    right: 0;
-}
-
-[dir="rtl"] .slimstat-general-page .row-i .n .pct {
-    margin-left: 0;
-    margin-right: var(--ss-space-2);
-}
-
 [dir="rtl"] .slimstat-general-page .stat {
     text-align: right;
 }
@@ -387,7 +436,7 @@
         grid-template-columns: 1fr 1fr;
     }
 
-    .slimstat-general-page .boxes {
+    .slimstat-general-page .meta-box-sortables {
         grid-template-columns: 1fr;
     }
 }

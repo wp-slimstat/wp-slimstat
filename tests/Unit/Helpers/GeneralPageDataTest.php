@@ -131,4 +131,117 @@ class GeneralPageDataTest extends TestCase
         $this->assertSame(['Direct', 'Search', 'Other referrers'], array_column($rows, 'label'));
         $this->assertSame([10, 5, 3], array_column($rows, 'counthits'));
     }
+
+    /**
+     * Mirrors \SlimStat\Modules\Chart::calculatePreviousArgs(): a normal
+     * multi-day range shifts back by its own length, both ends normalized to
+     * UTC midnight on the start only.
+     */
+    public function testPreviousPeriodShiftsBackByTheRangeLength(): void
+    {
+        // 2026-01-08 00:00:00 UTC .. 2026-01-10 00:00:00 UTC (2-day range)
+        $start = gmmktime(0, 0, 0, 1, 8, 2026);
+        $end   = gmmktime(0, 0, 0, 1, 10, 2026);
+
+        $previous = GeneralPageData::previousPeriod($start, $end);
+
+        $this->assertSame(gmmktime(0, 0, 0, 1, 6, 2026), $previous['start']);
+        $this->assertSame(gmmktime(0, 0, 0, 1, 8, 2026), $previous['end']);
+    }
+
+    /**
+     * A range whose start is mid-day gets normalized to midnight on the
+     * previous-period start — the end is shifted but NOT time-normalized,
+     * matching calculatePreviousArgs() exactly (setTime(0,0,0) is called
+     * only on $dtStart).
+     */
+    public function testPreviousPeriodNormalizesOnlyTheStartToMidnight(): void
+    {
+        $start = gmmktime(14, 30, 0, 6, 15, 2026);
+        $end   = gmmktime(9, 0, 0, 6, 16, 2026);
+
+        $previous = GeneralPageData::previousPeriod($start, $end);
+
+        $this->assertSame(gmmktime(0, 0, 0, 6, 14, 2026), $previous['start']);
+        $this->assertSame(gmmktime(14, 30, 0, 6, 15, 2026), $previous['end']);
+    }
+
+    /**
+     * The previous period is symmetric with the current one: its length
+     * (before the start-of-day normalization can shift it slightly) matches,
+     * and it ends exactly where the current period begins.
+     */
+    public function testPreviousPeriodEndsWhereTheCurrentPeriodBegins(): void
+    {
+        $start = gmmktime(0, 0, 0, 3, 1, 2026);
+        $end   = gmmktime(0, 0, 0, 3, 8, 2026);
+
+        $previous = GeneralPageData::previousPeriod($start, $end);
+
+        $this->assertSame($start, $previous['end']);
+    }
+
+    public function testPreviousPeriodAcceptsAnExplicitTimezone(): void
+    {
+        $tz    = new \DateTimeZone('America/New_York');
+        $start = gmmktime(0, 0, 0, 5, 8, 2026);
+        $end   = gmmktime(0, 0, 0, 5, 10, 2026);
+
+        $previous = GeneralPageData::previousPeriod($start, $end, $tz);
+
+        // Midnight America/New_York, not midnight UTC — must differ from
+        // the UTC-default result for the same inputs.
+        $utcPrevious = GeneralPageData::previousPeriod($start, $end);
+        $this->assertNotSame($utcPrevious['start'], $previous['start']);
+    }
+
+    public function testPercentChangeComputesTheDelta(): void
+    {
+        $this->assertSame(20.0, GeneralPageData::percentChange(120, 100));
+        $this->assertSame(-25.0, GeneralPageData::percentChange(75, 100));
+    }
+
+    public function testPercentChangeIsNullWhenPreviousIsZero(): void
+    {
+        $this->assertNull(GeneralPageData::percentChange(50, 0));
+    }
+
+    public function testPercentChangeIsZeroWhenUnchanged(): void
+    {
+        $this->assertSame(0.0, GeneralPageData::percentChange(50, 50));
+    }
+
+    public function testFakeBlurredRowsReturnsTheRequestedCount(): void
+    {
+        $rows = GeneralPageData::fakeBlurredRows(8, 'resource', 'Page', 0);
+
+        $this->assertCount(8, $rows);
+        foreach ($rows as $row) {
+            $this->assertArrayHasKey('resource', $row);
+            $this->assertArrayHasKey('counthits', $row);
+            $this->assertIsInt($row['counthits']);
+            $this->assertGreaterThan(0, $row['counthits']);
+        }
+    }
+
+    public function testFakeBlurredRowsIsDeterministicForTheSameSeed(): void
+    {
+        $first  = GeneralPageData::fakeBlurredRows(5, 'country', 'Region', 2);
+        $second = GeneralPageData::fakeBlurredRows(5, 'country', 'Region', 2);
+
+        $this->assertSame($first, $second);
+    }
+
+    public function testFakeBlurredRowsDiffersAcrossSeeds(): void
+    {
+        $a = GeneralPageData::fakeBlurredRows(5, 'country', 'Region', 0);
+        $b = GeneralPageData::fakeBlurredRows(5, 'country', 'Region', 3);
+
+        $this->assertNotSame($a, $b);
+    }
+
+    public function testFakeBlurredRowsHandlesZeroCount(): void
+    {
+        $this->assertSame([], GeneralPageData::fakeBlurredRows(0, 'resource', 'Page'));
+    }
 }

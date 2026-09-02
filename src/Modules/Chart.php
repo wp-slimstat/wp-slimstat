@@ -283,21 +283,27 @@ class Chart
         );
     }
 
+    /**
+     * Delegates to \SlimStat\Helpers\GeneralPageData::previousPeriod(), the
+     * shared, unit-tested implementation of this exact algorithm — extracted
+     * so the General page's period-over-period stat badges compute the
+     * "previous period" the same way this chart's dashed line does, rather
+     * than risking two copies drifting apart.
+     *
+     * Deliberately still passes NO timezone (previousPeriod() then defaults
+     * to UTC), matching this method's pre-extraction behavior exactly: the
+     * original called \wp_timezone() but never passed its return value into
+     * `new \DateTime()`, so setTime(0,0,0) always normalized to PHP's
+     * default timezone, not the site's configured one. Passing
+     * \wp_timezone() here — the seemingly-obvious "fix" — would silently
+     * shift every existing chart's previous-period boundary by the site's
+     * UTC offset on any non-UTC install. General.php's own call site passes
+     * wp_timezone() explicitly, which is correct for that new badge; this
+     * one intentionally is not touched.
+     */
     private function calculatePreviousArgs(array $args): array
     {
-        $rangeSeconds = $args['end'] - $args['start'];
-
-        \wp_timezone();
-        $dtStart = (new \DateTime())->setTimestamp($args['start']);
-        $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
-
-        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
-        $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
-
-        return [
-            'start' => $dtStart->getTimestamp(),
-            'end'   => $dtEnd->getTimestamp(),
-        ];
+        return \SlimStat\Helpers\GeneralPageData::previousPeriod($args['start'], $args['end']);
     }
 
     private function buildSql(array $args, array $prevArgs): array
