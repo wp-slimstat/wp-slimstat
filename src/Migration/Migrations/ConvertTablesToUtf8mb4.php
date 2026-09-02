@@ -61,6 +61,22 @@ use SlimStat\Schema\Schema;
  */
 class ConvertTablesToUtf8mb4 extends AbstractMigration
 {
+    /**
+     * Seconds one pass may spend converting tables before it stops and reports back.
+     *
+     * This is the most expensive migration in the set: a `CONVERT TO CHARACTER SET` per table
+     * across six tables, which the server performs as ALGORITHM=COPY and which BLOCKS WRITES for
+     * its duration. It shipped with no budget at all — the loop simply ran until the request died
+     * — and it was missed by the first draft of tests/migration-deadline-test.php, which looked
+     * for `do`/`while` and this uses `foreach`.
+     *
+     * The budget bounds how many rebuilds one request STARTS, not how long one takes; a single
+     * ALTER can still exceed it, and nothing here can interrupt that. Ten seconds matches
+     * AddUserAgentDimension::PASS_SECONDS, the one value in this subsystem measured against a
+     * real corpus.
+     */
+    private const PASS_SECONDS = 10;
+
     /** @var bool|null */
     private $shouldRunCache;
 
@@ -221,7 +237,36 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         // than inheriting whatever the host's default lock wait is.
         $this->wpdb->query('SET SESSION lock_wait_timeout = 30');
 
-        foreach (array_keys($this->pendingTables()) as $table) {
+        // Evaluated BEFORE the budget is armed, deliberately. pendingTables() costs one
+        // information_schema aggregate per declared table, and on a server with a large
+        // information_schema that probe alone can outlast the budget — which would break the loop
+        // on its first iteration having converted NOTHING, return true, and do the same on every
+        // subsequent pass. The step would spin to migration.js's retry cap without ever
+        // completing. Charging the budget only for work it can actually bound is what guarantees
+        // forward progress.
+        $pending = array_keys($this->pendingTables());
+
+        // Checked BETWEEN tables, never during one. A `CONVERT TO CHARACTER SET` is a single
+        // statement the server performs as ALGORITHM=COPY; it cannot be interrupted partway and
+        // there is nothing to checkpoint inside it. What the budget buys is that a six-table
+        // conversion does not start another rebuild in a request that is already nearly out of
+        // time — the pass stops cleanly instead, and pendingTables() re-derives from
+        // information_schema on the next one, so the remaining tables are picked up exactly where
+        // this left off.
+        $deadline = microtime(true) + self::PASS_SECONDS;
+        $first    = true;
+
+        foreach ($pending as $table) {
+            // Stop before STARTING another rebuild, not after — but never before the FIRST one.
+            // A budget that can decline to do any work at all is not a budget, it is a way for a
+            // migration to report success having done nothing, forever. At least one table per
+            // pass is what makes the step converge; the sibling migration gets the same guarantee
+            // by checking at the bottom of its loop body.
+            if (!$first && microtime(true) >= $deadline) {
+                break;
+            }
+            $first = false;
+
             // No ALGORITHM clause: INPLACE is refused for a charset change and naming COPY
             // explicitly buys nothing over the server's own choice.
             $result = $this->wpdb->query(

@@ -413,6 +413,52 @@ function slimstat_token_block_range(array $tokens, int $from, int $limit): ?arra
 }
 
 /**
+ * Is $name called at the STATEMENT LEVEL of the block spanning [$open, $close]?
+ *
+ * "Statement level" means brace depth 0 inside the block — the call runs on every pass through
+ * it, rather than only when some branch is taken. That distinction is the whole question for a
+ * loop that must record progress as it goes: a call reachable only from
+ * `if ($failed) { … }` looks identical to a containment check and is not the same property.
+ *
+ * SHARES slimstat_token_block_range()'s brace-token set, deliberately and by type. The first
+ * version of this walk lived inline in a gate and compared token TEXT: `T_CURLY_OPEN` (`"{$x}"`)
+ * has the text `{` so it matched by accident, but `T_DOLLAR_OPEN_CURLY_BRACES` (`"${x}"`) has the
+ * text `${` and did NOT — while its closing brace is a plain `}` that decremented anyway. One
+ * `${…}` anywhere in the block drove the depth to −1, after which a call inside an `if` read as
+ * statement level and the gate went green on the defect it existed to catch. Demonstrated on a
+ * fixture, not reasoned about. Two consumers disagreeing about which tokens open a brace is the
+ * failure this library's header describes, which is why the answer lives here once.
+ *
+ * @param array<int, array{0:int,1:string,2:int}|string> $tokens token_get_all() output
+ */
+function slimstat_statement_level_call(array $tokens, int $open, int $close, string $name): bool
+{
+    $depth = 0;
+
+    for ($k = $open + 1; $k < $close; $k++) {
+        $token = $tokens[$k];
+
+        if ('{' === $token) {
+            $depth++;
+            continue;
+        }
+        if ('}' === $token) {
+            $depth--;
+            continue;
+        }
+        if (is_array($token) && in_array($token[0], [T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES], true)) {
+            $depth++;
+            continue;
+        }
+        if (0 === $depth && is_array($token) && $name === slimstat_last_name_segment($token[1])) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
  * TOKEN-INDEX ranges [[open, close], ...] of every `{ ... }` block whose `if` condition
  * calls $guard.
  *

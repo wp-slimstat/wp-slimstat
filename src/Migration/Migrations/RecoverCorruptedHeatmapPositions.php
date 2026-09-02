@@ -28,6 +28,17 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
      */
     private const OPTION_WATERMARK = 'slimstat_heatmap_recovery_watermark';
 
+    /**
+     * Seconds one pass may spend walking candidates before it stops and reports back.
+     *
+     * This migration is REQUIRED — it declares no isOptional(), so it is in the admin notice and
+     * in "Apply All". Without a budget its `do { … } while` walked `slim_events ⋈ slim_stats` to
+     * exhaustion, so on an events table too large to finish inside `max_execution_time` the
+     * request simply died. Ten seconds is `AddUserAgentDimension::PASS_SECONDS`, which is the one
+     * value in this subsystem that has been run against a real corpus.
+     */
+    private const PASS_SECONDS = 10;
+
     private ?bool $shouldRunCache = null;
 
     public function getId(): string
@@ -62,6 +73,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
         $batch_size = 1000;
         $cursor = $this->watermark();
         $examined = $cursor;
+        $deadline = microtime(true) + self::PASS_SECONDS;
 
         do {
             $rows = $this->wpdb->get_results(
@@ -77,9 +89,7 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                 break;
             }
 
-            // Advance cursor to the last event_id in this batch
-            $cursor = (int) end($rows)['event_id'];
-            $examined = $cursor;
+            $batch_end = (int) end($rows)['event_id'];
 
             // Collect recoverable rows for a batched UPDATE
             $updates = [];
@@ -112,22 +122,59 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                     )
                 );
                 if ($result === false) {
+                    // Persist what DID complete before giving up. The failing batch is
+                    // deliberately NOT counted: its rows were offered but not corrected, and a
+                    // watermark past them would retire work that never happened. Before this,
+                    // a single transient UPDATE error discarded the whole pass — not only a
+                    // timeout — and the next attempt started from the same cursor.
+                    $this->persistWatermark($examined);
+                    $this->shouldRunCache = null;
+
                     return false;
                 }
             }
-        } while (count($rows) === $batch_size);
 
-        // Every candidate at or below $examined has now been offered to recoverPosition(); the
-        // ones still uncorrected are the ones it cannot decide. Recording that is what stops the
-        // screen re-offering work that has already been done.
-        if ($examined > $this->watermark()) {
-            \update_option(self::OPTION_WATERMARK, $examined, false);
-        }
+            $cursor   = $batch_end;
+            $examined = $batch_end;
+
+            // INSIDE the loop, which is the whole fix. Written after it — as it was — an
+            // interrupted run recorded ZERO progress: the UPDATEs it had already applied
+            // survived, but the SCAN did not, so the next attempt re-read the same rows. Since
+            // most candidates are permanently unrecoverable (measured: 18,120 matched the
+            // predicate, 0 were recoverable), that is a walk which finds the same nothing every
+            // time and never converges.
+            $this->persistWatermark($examined);
+
+            // Stop on the deadline rather than on the batch. This is PROGRESS, not failure:
+            // shouldRun() probes for candidates above the watermark, so it still reports work,
+            // the screen re-offers the step, and the next pass resumes exactly here.
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+        } while (count($rows) === $batch_size);
 
         // Invalidate cache so shouldRun() re-checks after recovery
         $this->shouldRunCache = null;
 
         return true;
+    }
+
+    /**
+     * Record how far the scan has reached, if that is further than last time.
+     *
+     * Every candidate at or below $examined has been offered to recoverPosition(); the ones still
+     * uncorrected are the ones it cannot decide. Recording that is what stops the screen
+     * re-offering work already done — and, now that it is called per batch, what makes an
+     * interrupted pass resumable instead of wasted.
+     *
+     * The comparison is against the stored value rather than a local, so a concurrent pass that
+     * got further cannot be walked backwards by this one.
+     */
+    private function persistWatermark(int $examined): void
+    {
+        if ($examined > $this->watermark()) {
+            \update_option(self::OPTION_WATERMARK, $examined, false);
+        }
     }
 
     /**
