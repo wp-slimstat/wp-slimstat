@@ -103,6 +103,7 @@
 }
 
 .slimstat-general-page .meta-box-sortables .postbox {
+    position: relative;
     width: 32.8%;
     background: var(--ss-surface);
     border: 1px solid var(--ss-border);
@@ -111,6 +112,45 @@
     display: flex;
     flex-direction: column;
     margin: 0;
+}
+
+/*
+ * report_header() emits .slimstat-header-buttons (refresh icon, and now the
+ * Export-upgrade button) as a SIBLING before the <h3>, not nested inside it
+ * (admin/view/wp-slimstat-reports.php's report_header(): '%s %s <div class=
+ * inside>' with $header_buttons first). admin.css floats this div for the
+ * standard postbox layout; without an equivalent rule here it rendered as a
+ * plain block, pushing the <h3> down by however tall THAT box's own button
+ * row happened to be — a box with just a refresh icon got a shorter header
+ * than one with refresh+Export, so titles across boxes in the same row
+ * landed at different heights. Pinning it to the corner instead removes it
+ * from flow entirely, so every box's <h3> sits at the same fixed offset
+ * regardless of how many buttons it carries.
+ *
+ * admin.css already has a same-specificity float-based rule for this exact
+ * node (`.wrap-slimstat .meta-box-sortables .postbox .slimstat-header-buttons`
+ * — general.php nests under .wrap-slimstat too, so both match). Equal
+ * specificity means source order decides the winner, which today happens to
+ * come out right only because wp-slimstat-general's enqueue lists
+ * 'wp-slimstat' as a dependency (admin/index.php) and so prints after it —
+ * a coincidence of enqueue order, not a guarantee. The selector below
+ * repeats `.slimstat-general-page` to add one extra class to the
+ * specificity tuple ((0,5,0) vs admin.css's (0,4,0)), so this rule wins on
+ * its own merits regardless of stylesheet order.
+ */
+.slimstat-general-page.slimstat-general-page .meta-box-sortables .postbox .slimstat-header-buttons {
+    position: absolute;
+    top: var(--ss-space-3);
+    right: var(--ss-space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--ss-space-2);
+    z-index: 1;
+}
+
+[dir="rtl"] .slimstat-general-page.slimstat-general-page .meta-box-sortables .postbox .slimstat-header-buttons {
+    right: auto;
+    left: var(--ss-space-4);
 }
 
 /*
@@ -154,9 +194,10 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
     gap: var(--ss-space-2) var(--ss-space-3);
-    padding: var(--ss-space-4) var(--ss-space-5) var(--ss-space-3);
+    /* Right padding clears the absolutely-positioned .slimstat-header-buttons
+       corner (Export + refresh can run ~110px wide together). */
+    padding: var(--ss-space-4) 120px var(--ss-space-3) var(--ss-space-5);
     margin: 0;
     min-width: 0;
     font-size: 15px;
@@ -493,13 +534,23 @@
     display: block;
 }
 
-/* ---------- Empty state ---------- */
+/*
+ * ---------- Empty state ----------
+ * min-height approximates 5 real rows' worth of height (admin.css's
+ * `.inside p{padding:10px 25px}` + this row markup's own 4px top/bottom
+ * margin + ~15px line-height for its 12px row text, ~43px/row) so an
+ * empty box in the same flex-wrap row as a box WITH 5 rows of data lands
+ * at the same height — otherwise the two "top" boxes in a pair start flush
+ * (the .postbox > h3 fix above) but end at different heights, which reads
+ * just as badly as misaligned tops.
+ */
 .slimstat-general-page .empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--ss-space-2);
+    min-height: 215px;
     padding: var(--ss-space-6) var(--ss-space-5);
     text-align: center;
     color: var(--ss-text-muted);

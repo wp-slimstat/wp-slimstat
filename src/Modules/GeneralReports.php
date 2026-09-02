@@ -162,11 +162,19 @@ class GeneralReports
 
     /**
      * "Your most visited pages" — same data source as slim_p1_08 "Top Web
-     * Pages" (wp_slimstat_db::get_top('resource')).
+     * Pages" (wp_slimstat_db::get_top('resource')), with one addition:
+     * 'resource IS NOT NULL'. A NULL resource is a Direct visit (no specific
+     * page — trafficSources() above already counts 'resource IS NULL'
+     * separately as "Direct"), and MySQL's GROUP BY resource folds every
+     * such row into one NULL bucket that get_top() returns like any other
+     * row, just with an empty label — get_resource_title(null) formats to
+     * ''. Direct traffic is often the single largest resource bucket, so it
+     * was appearing as the empty-looking top row rather than being excluded
+     * as "not a page" the way trafficSources() already treats it.
      */
     public static function topPages(array $args = []): void
     {
-        $rows = \wp_slimstat_db::get_top('resource');
+        $rows = \wp_slimstat_db::get_top('resource', 'resource IS NOT NULL');
         self::renderGatedBox($rows, 'resource', true, 2, __('Your pages will be ranked here by how often they are viewed.', 'wp-slimstat'), __('Page', 'wp-slimstat'));
     }
 

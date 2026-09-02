@@ -45,6 +45,17 @@ $is_pro = wp_slimstat::pro_is_installed();
                 ?>
                 <div class="meta-box-sortables">
                     <?php
+                    // admin.js's per-box refresh click handler
+                    // (jQuery("#meta-box-order-nonce").val(), read into
+                    // data.security) reads this exact field id — without it,
+                    // every refresh click on this page posted security:undefined,
+                    // check_ajax_referer('meta-box-order', 'security') failed,
+                    // and wp_die(-1) cut the AJAX response short: the spinner
+                    // swapped in but the box never got real content back. Same
+                    // field admin/view/index.php renders for every other screen.
+                    ?>
+                    <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>"/></form>
+                    <?php
                     foreach (wp_slimstat_reports::$user_reports['slimgeneral'] ?? [] as $a_report_id) {
                         // A report could have been deprecated...
                         if (empty(wp_slimstat_reports::$reports[$a_report_id])) {
