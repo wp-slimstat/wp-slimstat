@@ -21,7 +21,24 @@ $slimstat_options = get_option('slimstat_options', []);
 // slimstat_uninstall_cron() and slimstat_uninstall_artifacts().
 $slimstat_delete_data = ('on' === ($slimstat_options['delete_data_on_uninstall'] ?? 'no'));
 
-if ($slimstat_delete_data && !empty($slimstat_options['addon_custom_db_dbuser']) && !empty($slimstat_options['addon_custom_db_dbpass']) && !empty($slimstat_options['addon_custom_db_dbname']) && !empty($slimstat_options['addon_custom_db_dbhost'])) {
+// STRIPPED FIRST, before anything that can end the request. The `new wpdb()` below is core's,
+// and core's constructor bails to wp_die() when it cannot reach the host — on the one install
+// this matters for, the one whose external database is configured and gone. Everything after
+// that line, this file included, would simply not run. The handle is built from the LOCAL
+// $slimstat_options read above, so removing the stored copy first cannot break it.
+slimstat_uninstall_credentials();
+slimstat_uninstall_network_credentials();
+
+// Every key the connection is opened from, so the list that BUILDS a handle and the list that
+// REMOVES it cannot drift. A fifth member — a port, a socket, a TLS path — added below and
+// forgotten in the strip would reproduce this file's own defect at reduced size.
+$slimstat_has_external_db = $slimstat_delete_data;
+foreach (slimstat_uninstall_credential_keys() as $slimstat_credential_key) {
+    $slimstat_has_external_db = $slimstat_has_external_db && !empty($slimstat_options[$slimstat_credential_key]);
+}
+
+if ($slimstat_has_external_db) {
+    // Positional, because that is wpdb's contract rather than ours.
     $slimstat_wpdb = new wpdb($slimstat_options['addon_custom_db_dbuser'], $slimstat_options['addon_custom_db_dbpass'], $slimstat_options['addon_custom_db_dbname'], $slimstat_options['addon_custom_db_dbhost']);
 } else {
     $slimstat_wpdb = $GLOBALS['wpdb'];
@@ -43,6 +60,7 @@ if (function_exists('is_multisite') && is_multisite()) {
         switch_to_blog($blog_id);
         slimstat_uninstall_cron();
         slimstat_uninstall_transients();
+        slimstat_uninstall_credentials();
         if ($slimstat_delete_data) {
             slimstat_uninstall($slimstat_wpdb);
         }
@@ -51,6 +69,9 @@ if (function_exists('is_multisite') && is_multisite()) {
 } else {
     slimstat_uninstall_cron();
     slimstat_uninstall_transients();
+    // No credential strip here: the call at the top of this file already ran against this
+    // blog. The multisite loop above needs its own because it visits blogs that call never
+    // stood on; a single site has none.
     if ($slimstat_delete_data) {
         slimstat_uninstall($slimstat_wpdb);
     }
@@ -250,6 +271,109 @@ function slimstat_uninstall_artifacts($delete_data = false)
     }
 
     $wp_filesystem->delete($upload_dir . '/browscap-cache-master', true, 'd');
+}
+
+/**
+ * Remove the external-database connection from the settings array. RUNS ON BOTH PATHS.
+ *
+ * ── Why this is in FREE, and why the opt-in does not apply ───────────────────────────────────
+ *
+ * Pro's Custom DB addon writes `addon_custom_db_dbpass` — a plaintext database password —
+ * through `\wp_slimstat::update_option('slimstat_options', …)`. That is FREE's option array, so
+ * a `uninstall.php` on the Pro side could not reach it however carefully it was written, and
+ * deleting Pro alone leaves the password behind entirely.
+ *
+ * Free does delete the array, inside slimstat_uninstall() — which runs only when
+ * `delete_data_on_uninstall` is 'on', and that defaults to 'no'. So the password survived three
+ * of the four ways a site can remove this software: Pro alone, free alone at the default, and
+ * both at the default. Only "delete free with delete-data ON" removed it.
+ *
+ * A SECRET IS NOT "DATA". The opt-in exists to protect a site's analytics — the numbers someone
+ * might want back after reinstalling. It was never meant to preserve a credential for a server
+ * the site can no longer reach from here.
+ *
+ * ── What is stripped, and what is not ────────────────────────────────────────────────────────
+ *
+ * The connection tuple: host, name, user, password. NOT `addon_custom_db_enable`, which records
+ * whether the feature was switched on — that is a setting, and a reinstall finding it is the
+ * behaviour the opt-in protects. Host and user go with the password because they identify a
+ * server as usefully as the password unlocks it, and half a credential left in a public options
+ * table is not a smaller problem than all of it.
+ *
+ * ── Ordering ─────────────────────────────────────────────────────────────────────────────────
+ *
+ * Called from two places, each doing something the other cannot. At the top of this file,
+ * before the `new wpdb()` that can end the request — that call is what survives an unreachable
+ * external host, and on a single site it is the only one there is. And once per blog inside the
+ * multisite loop, which reaches the blogs the first call did not stand on. On an install with
+ * no credentials both are no-ops that write nothing.
+ */
+function slimstat_uninstall_credential_keys()
+{
+    // The connection tuple. NOT `addon_custom_db_enable`, which records whether the feature was
+    // switched on — that is a setting, and a reinstall finding it is the behaviour the opt-in
+    // protects. Verified safe: CustomDBAddon::credentials() returns null when the tuple is
+    // empty and addCustomDB() then hands back the CORE handle unchanged, so enable=on with a
+    // blank tuple falls through to the local database rather than erroring.
+    return [
+        'addon_custom_db_dbhost',
+        'addon_custom_db_dbname',
+        'addon_custom_db_dbuser',
+        'addon_custom_db_dbpass',
+    ];
+}
+
+/** $options without the connection tuple, or null when it carried none. */
+function slimstat_uninstall_without_credentials($options)
+{
+    if (!is_array($options)) {
+        return null;
+    }
+
+    $stripped = array_diff_key($options, array_flip(slimstat_uninstall_credential_keys()));
+
+    // Nothing removed, nothing to write. NOT a saving on the database — core's update_option()
+    // compares the serialised old value and returns before writing anyway; an earlier version
+    // of this comment claimed the write itself was avoided, which is simply not how that
+    // function behaves. What it skips is a sanitize_option() pass and two filters, and — the
+    // reason it is worth a line — it lets the gate assert that an install with no external
+    // database writes NOTHING, which is a property a caller can check.
+    return $stripped === $options ? null : $stripped;
+}
+
+function slimstat_uninstall_credentials()
+{
+    $stripped = slimstat_uninstall_without_credentials(get_option('slimstat_options', []));
+
+    if (null !== $stripped) {
+        update_option('slimstat_options', $stripped);
+    }
+}
+
+/**
+ * The same strip, against the NETWORK-scoped copy of the settings.
+ *
+ * THIS IS THE COPY THAT MATTERED MOST, and the first version of this change missed it entirely
+ * while its docblock said "RUNS ON BOTH PATHS". `wp_slimstat::update_option()` routes to
+ * update_site_option() whenever is_network_admin() is true, and Pro's Custom DB fields are only
+ * SHOWN at network level once Pro is network-activated — so on a network-activated multisite
+ * the credential can only ever have been saved into sitemeta. Neither slimstat_uninstall(),
+ * which deletes the per-blog row, nor the per-blog strip above could see it: the password
+ * survived all four uninstall scenarios there, including the explicit delete-data one.
+ *
+ * Once, outside the blog loop: a network option belongs to the network.
+ */
+function slimstat_uninstall_network_credentials()
+{
+    if (!function_exists('get_site_option') || !function_exists('update_site_option')) {
+        return;
+    }
+
+    $stripped = slimstat_uninstall_without_credentials(get_site_option('slimstat_options', []));
+
+    if (null !== $stripped) {
+        update_site_option('slimstat_options', $stripped);
+    }
 }
 
 /**

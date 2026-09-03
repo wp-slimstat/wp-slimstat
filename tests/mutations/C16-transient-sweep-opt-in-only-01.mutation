@@ -6,13 +6,20 @@ rationale: Move the transient sweep back inside the opt-in branch. Keeping analy
 ---
 --- a/uninstall.php
 +++ b/uninstall.php
-@@ -50,8 +50,8 @@
+@@ -66,15 +66,15 @@
+         }
+         restore_current_blog();
      }
  } else {
      slimstat_uninstall_cron();
 -    slimstat_uninstall_transients();
+     // No credential strip here: the call at the top of this file already ran against this
+     // blog. The multisite loop above needs its own because it visits blogs that call never
+     // stood on; a single site has none.
      if ($slimstat_delete_data) {
 +        slimstat_uninstall_transients();
          slimstat_uninstall($slimstat_wpdb);
      }
  }
+ 
+ slimstat_uninstall_artifacts($slimstat_delete_data);

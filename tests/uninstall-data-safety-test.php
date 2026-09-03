@@ -33,6 +33,13 @@ if ($case !== false && $case !== '') {
     define('WP_UNINSTALL_PLUGIN', true);
 
     $GLOBALS['__deleted_options'] = [];
+    $GLOBALS['__updated_options'] = [];
+    $GLOBALS['__switched']        = [];
+    $GLOBALS['__multisite']       = false;
+    $GLOBALS['__network_options'] = [];
+    $GLOBALS['__options_by_blog'] = [];
+    $GLOBALS['__current_blog']    = 1;
+    $GLOBALS['__updated_site_options'] = [];
     $GLOBALS['__fs_deletes']      = 0;
     $GLOBALS['__fs_deleted']      = [];
     $GLOBALS['__cleared_hooks']   = [];
@@ -70,15 +77,103 @@ if ($case !== false && $case !== '') {
         }
     }
 
+    // The external-database connection Pro writes — through \wp_slimstat::update_option(), so
+    // it lands in FREE's option array and Pro's own uninstall could never reach it.
+    $credentials = [
+        'addon_custom_db_enable' => 'on',
+        'addon_custom_db_dbhost' => 'db.internal.example',
+        'addon_custom_db_dbname' => 'analytics',
+        'addon_custom_db_dbuser' => 'slimstat_ro',
+        'addon_custom_db_dbpass' => 'correct-horse-battery-staple',
+    ];
+
     // 'on'     → explicit opt-in
     // 'no'     → what the Maintenance-tab toggle actually writes when switched off
     // 'absent' → a normal install that never saved that tab (the #327 population)
-    if ($case === 'on') {
-        $GLOBALS['__options'] = ['delete_data_on_uninstall' => 'on'];
+    // '<case>@ms' runs the identical case through the multisite branch.
+    if (substr($case, -3) === '@ms') {
+        $GLOBALS['__multisite'] = true;
+        $case                   = substr($case, 0, -3);
+    }
+
+    if ($case === 'keep-with-credentials') {
+        $GLOBALS['__options_by_blog'][1] = $credentials + [
+            'delete_data_on_uninstall' => 'no',
+            'is_tracking'              => 'on',
+        ];
+        // The SAME credential in the network store — the only place it can be on a
+        // network-activated install, because Pro shows those fields at network level only and
+        // wp_slimstat::update_option() routes network-admin writes to update_site_option().
+        $GLOBALS['__network_options']['slimstat_options'] = $credentials + [
+            'is_tracking' => 'on',
+        ];
+        // And on a SECOND blog, which only the loop's per-blog call can reach — so only in the
+        // multisite variant, where that loop runs at all.
+        if ($GLOBALS['__multisite']) {
+            $GLOBALS['__options_by_blog'][2] = $credentials + [
+                'delete_data_on_uninstall' => 'no',
+                'is_tracking'              => 'on',
+            ];
+        }
+    } elseif ($case === 'delete-with-external-db-that-bails') {
+        // Composed from $credentials rather than retyped, so a fifth tuple member added there
+        // reaches this case too — the same drift uninstall.php's own key list exists to stop.
+        $unreachable = ['addon_custom_db_dbhost' => 'bails-on-connect.example'] + $credentials;
+
+        $GLOBALS['__options_by_blog'][1] = $unreachable + [
+            'delete_data_on_uninstall' => 'on',
+            'is_tracking'              => 'on',
+        ];
+        $GLOBALS['__network_options']['slimstat_options'] = $unreachable + [
+            'is_tracking' => 'on',
+        ];
+    } elseif ($case === 'delete-with-credentials') {
+        $GLOBALS['__options_by_blog'][1] = $credentials + [
+            'delete_data_on_uninstall' => 'on',
+            'is_tracking'              => 'on',
+        ];
+    } elseif ($case === 'on') {
+        $GLOBALS['__options_by_blog'][1] = ['delete_data_on_uninstall' => 'on'];
     } elseif ($case === 'no') {
-        $GLOBALS['__options'] = ['delete_data_on_uninstall' => 'no'];
+        $GLOBALS['__options_by_blog'][1] = ['delete_data_on_uninstall' => 'no'];
     } else {
-        $GLOBALS['__options'] = [];
+        $GLOBALS['__options_by_blog'][1] = [];
+    }
+
+    // The EXTERNAL-database handle. uninstall.php does `new wpdb(user, pass, name, host)` when
+    // the opt-in is set and a connection is configured, and until this class existed that
+    // branch fataled — so the one path where an external database is purged had never been
+    // reached by any test, only reasoned about.
+    class wpdb
+    {
+        public $queries = [];
+
+        public function __construct($user = '', $pass = '', $name = '', $host = '')
+        {
+            $GLOBALS['__external_dsn']  = compact('user', 'name', 'host');
+            $GLOBALS['__external_wpdb'] = $this;
+
+            // CORE'S wpdb CAN END THE REQUEST HERE — and "can" is the honest word, which an
+            // earlier version of this comment got wrong by saying it always does.
+            // wpdb::bail() reaches wp_die() only when $show_errors is set, and the constructor
+            // sets it only under WP_DEBUG && WP_DEBUG_DISPLAY; otherwise it records the error
+            // and RETURNS, and uninstall.php runs on. The unconditional death is the
+            // wp-content/db-error.php drop-in, which die()s before that check and which
+            // managed hosts ship as a matter of course.
+            //
+            // So this models the minority path. It is the one worth modelling: it is the only
+            // ordering under which anything after line 30 of uninstall.php fails to run, and
+            // strip-first is free on every other.
+            //
+            // NOT MODELLED, and named so this fixture is not mistaken for the general case: the
+            // commoner branch returns a handle that is not ready, and every later
+            // $slimstat_wpdb->query('DROP TABLE …') then returns false while the external
+            // tables quietly survive. That is a different defect from this one.
+            if ('bails-on-connect.example' === $host) {
+                exit(0);
+            }
+        }
+        public function query($sql) { $this->queries[] = $sql; return 0; }
     }
 
     // A $wpdb double that records every query(); also serves as the custom-db
@@ -87,8 +182,14 @@ if ($case !== false && $case !== '') {
         public $prefix      = 'wp_';
         public $base_prefix = 'wp_';
         public $options     = 'wp_options';
+        public $blogs       = 'wp_blogs';
+        public $siteid      = 1;
         public $queries     = [];
         public function query($sql) { $this->queries[] = $sql; return 0; }
+        // Both blogs, as a real network returns. Blog 2 is the one that matters: the strip
+        // at the top of uninstall.php already covers whichever blog is current, so only a blog
+        // it never stood on can tell the loop's per-blog call from a no-op.
+        public function get_col($sql) { return [1, 2]; }
         public function esc_like($text)
         {
             // FAITHFUL, not an identity stub. With `return $text;` no gate could tell whether
@@ -119,24 +220,85 @@ if ($case !== false && $case !== '') {
         }
     };
 
+    // KEYED ON THE CURRENT BLOG. With one flat store the per-blog strip inside the loop was
+    // untestable: the call at the top of uninstall.php already covers whichever blog is
+    // current, so moving the loop's call behind the opt-in changed nothing the harness could
+    // see. That is V8-02, and it survived until this store could tell blogs apart.
     function get_option($name, $default = false)
     {
-        return $name === 'slimstat_options' ? $GLOBALS['__options'] : $default;
+        if ('slimstat_options' !== $name) {
+            return $default;
+        }
+
+        $blog = $GLOBALS['__current_blog'] ?? 1;
+
+        return $GLOBALS['__options_by_blog'][$blog] ?? $default;
     }
     function delete_option($name)
     {
         $GLOBALS['__deleted_options'][] = $name;
         return true;
     }
+    // The harness had no update_option at all, so an option WRITTEN BACK was invisible to it —
+    // which is the whole mechanism of a surgical strip. Recorded, and the store updated, so a
+    // later read in the same run sees what the strip left behind.
+    function update_option($name, $value, $autoload = null)
+    {
+        if ('slimstat_options' === $name) {
+            $GLOBALS['__options_by_blog'][$GLOBALS['__current_blog'] ?? 1] = $value;
+        }
+        $GLOBALS['__updated_options'][$name] = $value;
+        return true;
+    }
     // Recorded into the SAME list as delete_option(). The derived scan below asks whether an
     // option the plugin mints is removed at all, not which store it lived in — and a network
     // option missing from that list is the same defect as a per-blog one missing from it.
+    // THE NETWORK-SCOPED STORE. It did not exist until now, and its absence made
+    // slimstat_uninstall_network_credentials() return at its function_exists() guard — so the
+    // four assertions about the network copy compared an empty array against a list of keys and
+    // passed without the strip running at all. Vacuity in the assertions written to close a
+    // vacuity, caught by asking whether the stub they depend on was ever defined.
+    function get_site_option($name, $default = false)
+    {
+        return array_key_exists($name, $GLOBALS['__network_options'])
+            ? $GLOBALS['__network_options'][$name]
+            : $default;
+    }
+    function update_site_option($name, $value)
+    {
+        $GLOBALS['__network_options'][$name]      = $value;
+        $GLOBALS['__updated_site_options'][$name] = $value;
+        return true;
+    }
     function delete_site_option($name)
     {
+        unset($GLOBALS['__network_options'][$name]);
         $GLOBALS['__deleted_options'][] = $name;
         return true;
     }
-    function is_multisite() { return false; }
+    // Varied by case, because until it was every behavioural assertion in this file ran the
+    // single-site branch only — and a step wired into one branch and not the other was
+    // invisible to all of them. Measured: V8's defect applied to the multisite branch left the
+    // suite green at 63 assertions.
+    function is_multisite() { return !empty($GLOBALS['__multisite']); }
+
+    // Reached only once is_multisite() is true. slimstat_uninstall_data_dir() consults these to
+    // undo the per-site uploads path; on this fixture the base carries no `/sites/N`, so the
+    // str_replace is a no-op and the artifact assertions are unchanged.
+    function is_main_network() { return true; }
+    function is_main_site() { return true; }
+    function get_current_blog_id() { return (int) ($GLOBALS['__current_blog'] ?? 1); }
+    function switch_to_blog($blog_id)
+    {
+        $GLOBALS['__current_blog'] = (int) $blog_id;
+        $GLOBALS['__switched'][]   = (int) $blog_id;
+        return true;
+    }
+    function restore_current_blog()
+    {
+        $GLOBALS['__current_blog'] = 1;
+        return true;
+    }
     function wp_clear_scheduled_hook($hook)
     {
         $GLOBALS['__cleared_hooks'][] = $hook;
@@ -158,7 +320,32 @@ if ($case !== false && $case !== '') {
         return true;
     }
 
+    // Emitted from a SHUTDOWN HANDLER, so a case that ends the request mid-uninstall — the
+    // unreachable-host one — still reports what the store looked like when it stopped. A plain
+    // echo after the require prints nothing there, and the driver calls that "returned no
+    // JSON": a failure naming the harness instead of the subject.
+    register_shutdown_function('slimstat_uninstall_emit');
+
     require __DIR__ . '/../uninstall.php';
+
+    // Reached only when uninstall.php ran to the end. The shutdown handler emits either way,
+    // so without this flag a case that died halfway now produces a PARTIAL STORE THAT LOOKS
+    // LIKE A RESULT — where before the emitter existed it produced no JSON and a named
+    // failure. The flag buys that loudness back for the eleven cases that must complete.
+    $GLOBALS['__completed'] = true;
+
+    slimstat_uninstall_emit();
+    exit(0);
+}
+
+function slimstat_uninstall_emit()
+{
+    static $emitted = false;
+
+    if ($emitted) {
+        return;
+    }
+    $emitted = true;
 
     $drops = 0;
     foreach ($GLOBALS['wpdb']->queries as $q) {
@@ -177,8 +364,14 @@ if ($case !== false && $case !== '') {
         'fsDeleted'    => $GLOBALS['__fs_deleted'],
         'clearedHooks' => $GLOBALS['__cleared_hooks'],
         'uploadBase'   => $GLOBALS['__upload_base'],
+        'updated'      => $GLOBALS['__updated_options'],
+        'optionsNow'   => $GLOBALS['__options_by_blog'][1] ?? [],
+        'blog2Options' => $GLOBALS['__options_by_blog'][2] ?? null,
+        'networkOptionsNow' => $GLOBALS['__network_options']['slimstat_options'] ?? [],
+        'externalDsn'  => $GLOBALS['__external_dsn'] ?? null,
+        'externalSql'  => isset($GLOBALS['__external_wpdb']) ? $GLOBALS['__external_wpdb']->queries : [],
+        'completed'    => !empty($GLOBALS['__completed']),
     ]);
-    exit(0);
 }
 
 // ─────────────────────────────── DRIVER MODE ────────────────────────────────
@@ -226,6 +419,14 @@ function run_case($case)
         fail("child for case '{$case}' returned no JSON.\nSTDOUT: {$child['stdout']}"
             . "\nSTDERR: {$child['stderr']}");
     }
+
+    // Every case but the deliberate bail must have reached the end of uninstall.php. Without
+    // this, the shutdown emitter turns "died halfway" into a result the assertions read as
+    // real — quietly, and for whichever case broke rather than the one testing a break.
+    if ('delete-with-external-db-that-bails' !== $case && empty($result['completed'])) {
+        fail("child for case '{$case}' stopped before the end of uninstall.php");
+    }
+
     return $result;
 }
 
@@ -275,6 +476,15 @@ foreach (['absent', 'no'] as $case) {
         "no analytics option is deleted when the key is '{$case}'"
     );
     assert_true($result['clearedHooks'] !== [], "cron hooks cleared when the key is '{$case}'");
+
+    // NOTHING IS WRITTEN BACK when there is nothing to strip. The `updated` payload existed and
+    // no assertion read it, so the guard that produces this property was unkillable — an
+    // unconditional write passed every case in this file.
+    assert_same(
+        [],
+        $result['updated'],
+        "no option is written back when there is no credential to remove, key '{$case}'"
+    );
 
     // Exactly one filesystem delete, and it must be the browscap cache — NOT the
     // parent directory, which also holds a hand-uploaded GeoIP database.
@@ -337,6 +547,153 @@ assert_same(
     'the honoured relocation deletes the directory the filter named'
 );
 
+// Cases 9 & 10 — the external-database password must not survive an uninstall, on ANY path.
+//
+// Pro writes `addon_custom_db_dbpass` through `\wp_slimstat::update_option('slimstat_options')`,
+// so the credential lives inside FREE's option array. Free deletes that array only inside
+// slimstat_uninstall(), which runs only when `delete_data_on_uninstall` is 'on' — and that
+// defaults to 'no'. So before this change the password survived three of the four ways a site
+// can remove this software:
+//
+//   delete Pro only ................................. survives (free's uninstall never runs)
+//   delete free, keep data (THE DEFAULT) ............ survives
+//   delete both, keep data (THE DEFAULT) ............ survives
+//   delete free with delete-data ON ................. removed
+//
+// A SECRET IS NOT "DATA". The opt-in exists to protect a site's analytics — the numbers someone
+// might want back after a reinstall. It was never meant to preserve a database password the
+// site can no longer use, and a Pro-side uninstall.php cannot reach this array at all.
+$credential_keys = [
+    'addon_custom_db_dbhost',
+    'addon_custom_db_dbname',
+    'addon_custom_db_dbuser',
+    'addon_custom_db_dbpass',
+];
+
+// BOTH BRANCHES, the same assertions. `@ms` re-runs the identical case with is_multisite()
+// true, so the multisite loop is executed rather than reasoned about — the gap that let a
+// defect on that branch pass a suite of 63 assertions.
+foreach (['keep-with-credentials', 'keep-with-credentials@ms'] as $keep_case) {
+    $kept = run_case($keep_case);
+
+    foreach ($credential_keys as $credential_key) {
+        assert_true(
+            !array_key_exists($credential_key, $kept['optionsNow']),
+            "'{$credential_key}' is gone on the KEEP-data path ({$keep_case}) — the default one, "
+                . 'and the one where the option array survives'
+        );
+    }
+
+    // AND FROM THE NETWORK-SCOPED COPY. wp_slimstat::update_option() routes to
+    // update_site_option() whenever is_network_admin() is true, and Pro's Custom DB fields are
+    // only shown at network level once Pro is network-activated — so on those installs sitemeta
+    // is the ONLY place the credential ever was. The first version of this strip read
+    // get_option() alone and missed it on every one of the four uninstall paths.
+    foreach ($credential_keys as $credential_key) {
+        assert_true(
+            !array_key_exists($credential_key, $kept['networkOptionsNow']),
+            "'{$credential_key}' is gone from the NETWORK settings too ({$keep_case})"
+        );
+    }
+
+    // THE CONTROL FOR THE FOUR ABOVE. Without it they are satisfied by an empty array — which
+    // is exactly what they compared against before the network store existed, and by deleting
+    // the network settings wholesale, which the keep-data path must not do.
+    assert_true(
+        array_key_exists('is_tracking', $kept['networkOptionsNow']),
+        "the network settings array itself survives, minus the tuple ({$keep_case})"
+    );
+
+    // A BLOG THE EARLY STRIP NEVER STOOD ON. Only the per-blog call inside the loop reaches it,
+    // so this is the one assertion that can tell that call from a no-op.
+    if (null !== $kept['blog2Options']) {
+        foreach ($credential_keys as $credential_key) {
+            assert_true(
+                !array_key_exists($credential_key, $kept['blog2Options']),
+                "'{$credential_key}' is gone from a SECOND blog's settings ({$keep_case}) — only "
+                    . 'the per-blog call inside the loop can do that'
+            );
+        }
+        assert_true(
+            array_key_exists('is_tracking', $kept['blog2Options']),
+            "and that blog's other settings survive ({$keep_case})"
+        );
+    }
+}
+
+// THE CONTROL. Without it "strip the credentials" is satisfied by deleting the whole array,
+// which is the one thing the keep-data path must not do: these are the settings a reinstall is
+// supposed to find waiting.
+assert_true(
+    array_key_exists('is_tracking', $kept['optionsNow']),
+    'and the settings the opt-in protects are still there — the strip is surgical, not a delete'
+);
+assert_true(
+    !in_array('slimstat_options', $kept['deleted'], true),
+    'slimstat_options itself is NOT deleted on the keep-data path'
+);
+// The non-secret toggle stays: it says whether the feature was on, which is a setting, and
+// leaving it makes the strip's boundary explicit rather than incidental.
+assert_true(
+    array_key_exists('addon_custom_db_enable', $kept['optionsNow']),
+    'the on/off toggle is a setting, not a credential, and survives'
+);
+
+// The opt-in path removes the whole array, so the credential goes with it — asserted rather
+// than assumed, because it is the one path that was already correct and the easiest to break.
+$purged = run_case('delete-with-credentials');
+// Restated here for readability at this case rather than as independent coverage: case 3
+// already asserts it, and delete_option('slimstat_options') runs unconditionally inside
+// slimstat_uninstall(), so no change can break one without the other.
+assert_true(
+    in_array('slimstat_options', $purged['deleted'], true),
+    'the opt-in path still deletes the whole option array, credential included'
+);
+
+// AND THE PURGE GOES TO THE RIGHT SERVER. This branch — `new wpdb(...)` from the stored
+// connection — had never been reached by any test before the wpdb double above existed; it was
+// reasoned about and not run. Dropping an external install's tables against the CORE handle
+// would silently leave the analytics behind on the server that holds them while reporting
+// success, and the strip above must not break the handle, which is built before it runs.
+$external_drops = count(array_filter($purged['externalSql'], static function ($sql) {
+    return false !== stripos($sql, 'DROP TABLE');
+}));
+assert_true($external_drops >= 7, "the external database receives the DROPs, got {$external_drops}");
+assert_same(0, $purged['drops'], 'and the core database receives none of them');
+assert_same(
+    'db.internal.example',
+    $purged['externalDsn']['host'] ?? null,
+    'the handle was opened against the configured host'
+);
+
+// THE REQUEST THAT ENDS BEFORE THE UNINSTALL DOES. Core's wpdb constructor reaches wp_die()
+// when it cannot connect, so on an install whose external database is configured and gone,
+// uninstall.php stops at that line — before the blog loop, before the artifact cleanup, before
+// everything. The credential strip runs above it for exactly that reason, and this case is the
+// only thing that can tell that ordering from the obvious one.
+$bailed = run_case('delete-with-external-db-that-bails');
+foreach ($credential_keys as $credential_key) {
+    assert_true(
+        !array_key_exists($credential_key, $bailed['optionsNow']),
+        "'{$credential_key}' is gone even though the request died at the external connection"
+    );
+    assert_true(
+        !array_key_exists($credential_key, $bailed['networkOptionsNow']),
+        "'{$credential_key}' is gone from the network settings too, on that same dead request"
+    );
+}
+// THE CONTROL: the request really did stop AT THE CONNECTION.
+//
+// It used to assert `drops === 0`, and that was vacuous — `drops` counts the CORE handle, and
+// the completed twin of this case asserts `drops === 0` too, thirty lines up, because its DROPs
+// all go to the external one. The control could not fail for the reason it gave.
+//
+// externalSql is the first thing downstream of the constructor: zero queries on the handle that
+// was just built is the tightest available statement that nothing after it ran.
+assert_same([], $bailed['externalSql'], 'not one query reached the handle the request died building');
+assert_same(0, $bailed['queries'], 'and none reached the core handle either');
+assert_same([], $bailed['deleted'], 'and no option was deleted, so the strip is the only thing that ran');
+
 // The harness defines its own WP_Filesystem(), so it cannot exercise the case where
 // WordPress has not loaded the File API. Pin the guard at source level instead — the
 // same approach browscap-wp-filesystem-test.php takes for the identical hazard.
@@ -353,6 +710,70 @@ assert_true(
 assert_true(
     strpos($uninstall_src, 'if (!WP_Filesystem())') !== false,
     'uninstall.php bails out when WP_Filesystem() cannot initialise, instead of calling delete() on null'
+);
+
+// EVERY SINGLE-SITE STEP ALSO RUNS IN THE LOOP — derived, not enumerated.
+//
+// The first version of this counted three hand-written names and required each to appear twice.
+// That is a spell-check: it cannot see a FOURTH step added to one branch, and review proved it
+// cannot see the defect it was written for either — moving the credential strip inside the
+// opt-in on the multisite branch alone leaves the count at two and every behavioural case green.
+// The behavioural half now runs both branches (`@ms` above); this is the structural half, and it
+// compares the SETS, so a step added to one branch has to be accounted for without anyone
+// editing this file.
+$multisite_block = (string) strstr(
+    (string) strstr($uninstall_src, 'foreach ($blogids as $blog_id) {'),
+    'restore_current_blog();',
+    true
+);
+$single_block = (string) strstr(
+    (string) strstr($uninstall_src, "} else {\n    slimstat_uninstall_cron();"),
+    'slimstat_uninstall_artifacts(',
+    true
+);
+
+$branch_steps = [];
+foreach (['multisite' => $multisite_block, 'single-site' => $single_block] as $branch => $block) {
+    assert_true($block !== '', "the {$branch} branch was located in uninstall.php");
+    preg_match_all('/\b(slimstat_uninstall\w*)\s*\(/', $block, $found);
+    $branch_steps[$branch] = array_values(array_unique($found[1]));
+    sort($branch_steps[$branch]);
+}
+
+// VACUITY FLOOR, per branch. Four steps in the loop (the opt-in purge, credentials, cron,
+// transients) and three on the single-site path, which does not need the per-blog credential
+// strip. Floors on BOTH, because a floor only on the larger set turns "the loop lost a step"
+// into a message about the extraction being broken — a failure naming the harness instead of
+// the subject, which is the complaint this file makes elsewhere.
+assert_true(
+    count($branch_steps['multisite']) >= 4,
+    'the branch extraction still finds the multisite steps, found: '
+        . implode(', ', $branch_steps['multisite'])
+);
+assert_true(
+    count($branch_steps['single-site']) >= 3,
+    'the branch extraction still finds the single-site steps, found: '
+        . implode(', ', $branch_steps['single-site'])
+);
+// BOTH DIRECTIONS, with the one legitimate asymmetry NAMED — which is what a plain subset
+// check gives up. Measured: with only the subset half, a step added to the multisite loop and
+// forgotten in the single-site branch left the suite green, and that is the more natural
+// editing order of the two. Equality would have caught it, but equality also mandates the
+// redundant single-site credential call that was just removed as dead — so the exemption is
+// listed instead, and a second one has to be argued for here rather than slipped in.
+$multisite_only = ['slimstat_uninstall_credentials'];
+
+assert_same(
+    [],
+    array_values(array_diff($branch_steps['single-site'], $branch_steps['multisite'])),
+    'every uninstall step on the single-site path also runs inside the multisite loop'
+);
+assert_same(
+    $multisite_only,
+    array_values(array_diff($branch_steps['multisite'], $branch_steps['single-site'])),
+    'and the loop carries exactly one step the single-site path does not: the per-blog '
+        . 'credential strip, which a single site does not need because the call at the top of '
+        . 'uninstall.php already stands on its only blog'
 );
 
 // Derived, not enumerated: every option this plugin mints as a `*OPTION*` constant must
