@@ -121,6 +121,70 @@ foreach ($sources as $file) {
     }
 }
 
+// ── The rollback sentence, in the file wordpress.org actually shows people ──────────────
+//
+// The beta notes say what a downgrade does. The ~70,000 installs on wordpress.org never see
+// the beta notes: what their Plugins screen shows is readme.txt's Upgrade Notice, and that
+// said "back up your database first" and nothing at all about what going back does or does
+// not undo. An owner who rolls back after a bad afternoon deserves to know before they start.
+//
+// WORDED PER ADR-4, not as "one-way". The update ADDS columns and never removes a row; older
+// versions keep working on the updated tables (rehearsed at 5.5.x); the added columns simply
+// stay. "One-way" would overstate it and contradict this programme's own rollback leg — so
+// this requires the three facts rather than a slogan, and each is checked separately so a
+// rewrite that drops one is a named failure rather than a silent loss.
+// SCOPED TO THE ENTRY BEING OFFERED, and derived from `Stable tag:` so it moves with the
+// release rather than being pinned to a value that goes stale.
+//
+// The first version matched against the WHOLE Upgrade Notice section, which holds every
+// version's entry — and review proved it vacuous by moving the sentence verbatim into the
+// `= 5.5.1 =` entry, where a 6.0.0 upgrader will never see it, because wordpress.org renders
+// only the entry matching the version it is offering. The gate stayed green while the warning
+// had moved somewhere nobody reads it, which is the exact property its own comment claims.
+$readme_txt = (string) file_get_contents($plugin_root . '/readme.txt');
+
+$stable_tag = '';
+if (preg_match('/^\s*Stable tag:\s*(\S+)\s*$/m', $readme_txt, $st)) {
+    $stable_tag = $st[1];
+}
+
+$upgrade_notice = '';
+if ('' === $stable_tag) {
+    $failures[] = 'readme.txt declares no `Stable tag:` — the Upgrade Notice check below cannot '
+        . 'tell which entry wordpress.org will show, so it would have to read them all';
+} elseif (preg_match('/^= ' . preg_quote($stable_tag, '/') . ' =$(.*?)(?=^= |\Z)/ms', $readme_txt, $un)) {
+    $upgrade_notice = $un[1];
+}
+
+if ('' === trim($upgrade_notice)) {
+    $failures[] = sprintf(
+        'readme.txt has no `= %s =` entry under `== Upgrade Notice ==`. That is the block a '
+            . 'site owner reads on the Plugins screen before clicking update, and wordpress.org '
+            . 'renders only the entry matching the version it offers',
+        $stable_tag
+    );
+} else {
+    $rollback_facts = [
+        'that older versions keep working on the updated tables'
+            => '/older versions keep working|keep working on the updated tables/i',
+        'that the added columns stay'
+            => '/columns? (?:stay|remain|are not removed)/i',
+        'that no row is removed'
+            => '/never removes a row|removes no rows/i',
+    ];
+
+    foreach ($rollback_facts as $what => $pattern) {
+        if (!preg_match($pattern, $upgrade_notice)) {
+            $failures[] = sprintf(
+                'the readme.txt Upgrade Notice does not say %s. This is the ONLY downgrade '
+                    . 'warning the wordpress.org population ever sees — the beta notes reach a '
+                    . 'handful of testers and nobody else',
+                $what
+            );
+        }
+    }
+}
+
 if ($scanned < 20) {
     $failures[] = sprintf(
         'only %d shipped PHP file(s) were scanned — the file list has stopped resolving, so the '

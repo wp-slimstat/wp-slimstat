@@ -155,7 +155,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 161 entries and takes ~160s (timing last measured 2026-08-24,
+        # The full registry holds 167 entries and takes ~160s (timing last measured 2026-08-24,
         # when the registry was smaller). This line has now been wrong three times — twice on the
         # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real
         # figure — and it is the sentence that decides when to narrow the run.
@@ -266,6 +266,10 @@ jobs:
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
+          # 7.1 is current. Added with the metadata bump in readme.txt/README.md, so
+          # "Tested up to" and the lane that tests it move together — which is the whole
+          # property tests/wp70-tested-up-to-test.php exists to hold.
+          - { wp: "7.1", php: "8.3" }
 
     env:
       TEST_BASE_URL: http://localhost:8889
@@ -334,24 +338,68 @@ jobs:
 
       - name: Create wp-env override (CI — pin WP core + PHP per lane)
         # The committed .wp-env.json stays at core 6.4 / php 7.4; this gitignored
-        # override injects the per-lane WP core + runtime PHP. Siblings
-        # (../wp-slimstat-pro, ../cookie-law-info, ../wp-consent-api) aren't
-        # checked out in CI, so plugins is "." only — consent E2E specs self-skip
-        # (logged below) and run locally against the full plugin set.
+        # override injects the per-lane WP core + runtime PHP.
+        #
+        # THE PLUGIN SET IS THE SUBJECT OF ITS OWN GATE. This override used to read
+        # plugins:["."], which quietly cut the two consent plugins .wp-env.json
+        # declares out of every CI run — and between 49 and 130 of the 724 E2E tests
+        # reference or gate on them. The suite did not fail; it SELF-SKIPPED, so a
+        # census taken on that configuration would have measured CI setup rather
+        # than test health, and any ratchet built from it would have locked the
+        # wrong denominator in permanently.
+        #
+        # They come from wordpress.org rather than a sibling checkout, because a
+        # sibling is what CI does not have. wp-slimstat-pro cannot follow: it is a
+        # private repository, and giving this lane a deploy key is a decision about
+        # credentials rather than about coverage. It stays a DECLARED omission —
+        # named in tests/ci-matrix-coverage-test.php with its reason, and carved
+        # out of the census denominator, so "Pro is absent" reads as a choice and
+        # not as an accident.
+        #
         # printf (not heredoc) avoids YAML block-scalar indentation pitfalls.
         run: |
           WP_REF="${WP_VERSION}"
-          if [ "${WP_VERSION}" != "6.4" ] && ! git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" | grep -q .; then
-            echo "::warning::WordPress tag ${WP_VERSION} not found — falling back to trunk"
-            WP_REF="trunk"
+          # FAIL, do not fall back. This used to set WP_REF=trunk behind a ::warning::, which
+          # turns "the version this lane is named for does not exist" into a lane that boots
+          # something else and reports green — a coverage claim nobody can check, under a
+          # heading naming a version it is not running. Every tag resolves today, so this was
+          # latent rather than active, which is exactly when it is cheap to close.
+          #
+          # AND THE TWO FAILURES ARE TOLD APART. `! git ls-remote … | grep -q .` reports the
+          # exit status of GREP, discarding git's — so a rate limit or an outage produced the
+          # message "this tag does not exist, remove the lane", which invites deleting a
+          # perfectly good lane during a transient network failure. Capture git's status first.
+          # Pinned by §9 of tests/perf-gate-integrity-test.php.
+          if [ "${WP_VERSION}" != "6.4" ]; then
+            if ! wp_tag_refs="$(git ls-remote --tags https://github.com/WordPress/WordPress "refs/tags/${WP_VERSION}" 2>&1)"; then
+              echo "::error::cannot reach github.com to check for WordPress tag ${WP_VERSION}."
+              echo "::error::This is NOT a missing tag — do not change the matrix. Detail: ${wp_tag_refs}"
+              exit 1
+            fi
+            if [ -z "${wp_tag_refs}" ]; then
+              echo "::error::WordPress tag ${WP_VERSION} does not exist. Fix the matrix entry, or"
+              echo "::error::remove the lane — do not let it silently test trunk under that name."
+              exit 1
+            fi
           fi
+          # PINNED TO VERSIONS, for the same reason main.yml's actions are pinned to commits
+          # in this commit: `/plugin/<slug>.zip` is always-latest, so upstream would move the
+          # suite's environment with no diff here. Two concrete consequences it avoids:
+          # cookie-law-info is 3.5.1 in the workspace sibling and 3.5.5 on wordpress.org, so
+          # local and CI would already disagree; and wp-consent-api declares requires_php 7.4,
+          # exactly the floor lane's PHP, while the floor guard greps for `PHP Fatal error`
+          # UNSCOPED — one upstream bump would fail the SlimStat floor lane with a
+          # SlimStat-shaped message. Bump these deliberately, with a diff someone reads.
+          CONSENT_API_ZIP="https://downloads.wordpress.org/plugin/wp-consent-api.2.0.1.zip"
+          COOKIE_LAW_ZIP="https://downloads.wordpress.org/plugin/cookie-law-info.3.5.5.zip"
+          PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
           if [ "${WP_VERSION}" = "6.4" ]; then
-            printf '{"plugins":["."]}\n' > .wp-env.override.json
+            printf '{"plugins":[%s]}\n' "${PLUGINS}" > .wp-env.override.json
           elif [ "${WP_VERSION}" = "5.6" ]; then
             # Floor lane: enable debug.log so the floor fatal/deprecation guard has a log to read.
-            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."],"config":{"WP_DEBUG":true,"WP_DEBUG_LOG":true}}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":[%s],"config":{"WP_DEBUG":true,"WP_DEBUG_LOG":true}}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
           else
-            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":["."]}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" > .wp-env.override.json
+            printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":[%s]}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
           fi
           echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
 
@@ -377,11 +425,16 @@ jobs:
         # at runtime against a live WordPress, so no file in this repo can be its authority, and
         # a number nothing can check is how the two figures above went stale.)
         #
-        # Two lanes, not one, and NOT because escaping is version-invariant — it is not. The
+        # More than one lane, and NOT because escaping is version-invariant — it is not. The
         # test loads five html-api/ files by name because core moved wp_kses_hair()'s attribute
         # parsing onto WP_HTML_Tag_Processor, and each require is file_exists()-guarded exactly
-        # because that file set varies by WP version. 6.4 already runs the full E2E suite; 7.0
-        # is where that surface is most likely to move under it again.
+        # because that file set varies by WP version. 6.4 already runs the full E2E suite; the
+        # NEWEST lane is where that surface is most likely to move under it again — so this
+        # condition names the newest WordPress in the matrix, and widens with it. It said
+        # `6.4 || 7.0` while 7.1 was added, which would have quietly stopped covering the
+        # version the readme claims to be tested against. §8 of
+        # tests/perf-gate-integrity-test.php asserts the condition names every blocking
+        # version rather than a fixed pair.
         #
         # Needs wp-env, NOT the plugin activation above: the test stubs wp_slimstat and
         # wp_slimstat_db, feeds its own rows, and requires the view by path — it never reads a
@@ -391,7 +444,7 @@ jobs:
         #
         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
         # fail this job, which is the point of adding it.
-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' }}
+        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
 
       - name: Activate plugin and create database tables
@@ -407,14 +460,26 @@ jobs:
           echo "--- Verifying tables ---"
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
 
-      - name: Log consent-plugin status
-        # cookie-law-info / wp-consent-api are not checked out in CI, so consent
-        # E2E specs self-skip via their active_plugins guard (they run locally
-        # against the full plugin set). Log active plugins so the skip is visible
-        # and can't masquerade as a pass.
+      - name: Consent plugins must be ACTIVE, not merely requested
+        # The gate in tests/ci-matrix-coverage-test.php proves this workflow NAMES the plugins.
+        # It cannot prove wordpress.org served them: a 404, a slow mirror or a renamed zip
+        # leaves them absent, the consent specs self-skip exactly as they did before, and the
+        # census once again measures CI setup rather than test health — which is the single
+        # thing this workstream exists to stop.
+        #
+        # So this fails the lane. The previous version ended in `|| true`, which turns the one
+        # runtime check of the property into a log line.
         run: |
           echo "Active plugins on the WP ${WP_VERSION} lane:"
-          npx wp-env run tests-cli -- wp plugin list --status=active --field=name || true
+          npx wp-env run tests-cli -- wp plugin list --status=active --field=name
+          for slug in wp-consent-api cookie-law-info; do
+            if ! npx wp-env run tests-cli -- wp plugin is-active "$slug"; then
+              echo "::error::${slug} is not active on this lane. Every spec that gates on it"
+              echo "::error::will self-skip, and the quarantine census built from this run"
+              echo "::error::would measure CI setup rather than test health."
+              exit 1
+            fi
+          done
 
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
@@ -549,8 +614,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Full range: 7.4 (declared minimum) through 8.5 (current stable).
-        php: ["7.4", "8.0", "8.1", "8.2", "8.3", "8.4", "8.5"]
+        # 8.1 through 8.5. NOT 7.4 and 8.0, and their absence is the fix rather than a gap.
+        #
+        # Every composer and test step in this job carried
+        # `if: matrix.php != '7.4' && matrix.php != '8.0'`, so those two lanes ran checkout
+        # and setup-php and then stopped: 170 log lines, zero assertions, and a green tick
+        # each. A lane that executes nothing and reports success is worse than no lane — it
+        # is a coverage claim nobody has to defend.
+        #
+        # Deleting them costs no coverage. Tier 1 already runs php -l and
+        # composer test:source-level on 7.4 and 8.0 (its composer/PHPUnit steps are the only
+        # ones it skips there), so making these lanes run source-level would have asserted
+        # something already true — the same vacuity in a fresh coat.
+        #
+        # What 7.4 does and does not get is disclosed by ci-matrix-coverage-test.php's own
+        # output, not by its $execution_exempt array: that array holds 8.0 alone, and 7.4 is
+        # credited with EXECUTION coverage there, through the Tier 2 E2E lanes that pair it
+        # with WP 5.6-6.4. An earlier version of this sentence sent the reader to the array
+        # for a version that is not in it.
+        php: ["8.1", "8.2", "8.3", "8.4", "8.5"]
 
     steps:
       - name: Checkout
@@ -564,13 +646,12 @@ jobs:
           coverage: none
 
       - name: Cache Composer dependencies
-        # ONLY on lanes that run composer install. The 7.4/8.0 lanes run from the
-        # CHECKOUT alone — the committed autoloader (build:autoload, #325) is exactly
-        # what they exercise — and a prefix-key restore here clobbered that committed
-        # classmap with a stale cached vendor/, failing source-level with "Schema not
-        # found" on the 8.0 lane while 8.1+ stayed green (they rebuild the classmap
-        # via dump-autoload, silently repairing the same clobber).
-        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
+        # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
+        # above). The hazard it described is kept because it is not obvious: a prefix-key
+        # restore clobbered the COMMITTED classmap with a stale cached vendor/, failing
+        # source-level with "Schema not found" on 8.0 while 8.1+ stayed green — they rebuild
+        # it via dump-autoload and silently repair the same clobber. Tier 1 still guards
+        # against it, because Tier 1 still runs those two versions.
         uses: actions/cache@v4
         with:
           path: vendor
@@ -579,19 +660,17 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer install --no-interaction --no-progress --no-scripts
 
       - name: Dump autoload (without mozart)
-        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: composer dump-autoload -o --no-interaction
 
       - name: Run full PHPUnit suite
         # composer test:all runs phpunit + all standalone PHP test scripts.
         # Individual scripts may exit non-zero on CI if they depend on a live DB
         # or environment; run phpunit directly for the nightly matrix gate.
-        # PHPUnit 10.5 requires PHP ^8.1 — skip on PHP 7.4 (lint-only run).
-        if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
+        # PHPUnit 10.5 requires PHP ^8.1, which is now the matrix floor for this job —
+        # the two lanes that needed skipping are gone rather than guarded.
         run: composer test:unit
 
       # ── k6 performance tests ─────────────────────────────────────────────
@@ -659,8 +738,13 @@ jobs:
       # was measuring a 7.4 runtime.
       #
       # Pinning the runtime to the lane's PHP fixes both at the root, and reuses
-      # the override pattern Tier 2 already established above. plugins is "."
-      # only because the siblings in .wp-env.json aren't checked out in CI.
+      # the override pattern Tier 2 already established above.
+      #
+      # plugins is "." here DELIBERATELY, and no longer for the reason Tier 2 used
+      # to give. This lane measures query plans and per-request cost; a consent
+      # banner or a second analytics plugin in the same install would be noise in
+      # the only numbers it produces. Tier 2 installs the consent pair because its
+      # subject is behaviour; this one does not because its subject is cost.
       # Enforced by tests/perf-gate-integrity-test.php.
       - name: Create wp-env override (CI — pin runtime PHP to this lane)
         if: ${{ matrix.php == '8.2' }}
@@ -704,6 +788,35 @@ jobs:
         run: npx wp-env start
         timeout-minutes: 5
 
+      # ── THE STEP THAT WAS MISSING, AND WHY EVERY k6 RUN FAILED ───────────
+      #
+      # Tier 2 carries this and Tier 3 did not. Its own comment there says why it
+      # is needed: wp-env auto-activates the plugin, but activation alone never
+      # fires `admin_init`, and `admin_init` is what creates the tables.
+      #
+      # So k6 measured a WordPress where SlimStat's tables do not exist. The first
+      # ever Tier 3 dispatch (2026-09-02) reported 81.79% request failures —
+      # 301 of 368 — with `has online data` and `has sessions data` at 3%. Root
+      # cause was not the thresholds and not the credentials, which are passed
+      # correctly and which tests/perf/lib/env.js throws rather than defaulting
+      # for: adminbar-refresh-perf.js could not find the localized
+      # SlimStatAdminBar nonce, because the admin bar had no data to localize.
+      #
+      # Same defect class as the mu-plugin mapping fixed in 9ea64d94: the harness
+      # could not deliver the state its assertions require, and reported the
+      # shortfall as a product failure.
+      - name: Activate plugin and create database tables (k6 needs a real install)
+        if: ${{ matrix.php == '8.2' }}
+        run: |
+          npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
+          npx wp-env run tests-cli -- wp plugin activate wp-slimstat
+          npx wp-env run tests-cli -- wp eval '
+            include_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
+            wp_slimstat_admin::init_environment();
+            echo "init_environment() completed\n";
+          '
+          npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
       - name: Run k6 performance tests
         if: ${{ matrix.php == '8.2' }}
         env:
@@ -721,8 +834,15 @@ jobs:
       # access_type=ALL against a table over EXPLAIN_ROW_THRESHOLD rows.
       # See tests/perf/explain-gate.sh. Enforced by
       # tests/perf-gate-integrity-test.php (must not become a no-op again).
+      #
+      # always(), and that word is the whole point. This gate sits after k6, which
+      # has failed on every run this lane has ever had — so the EXPLAIN gate has
+      # never once executed. tests/perf-gate-integrity-test.php §3 pins its
+      # CONTENTS and proves it COULD fail; nothing asserted that it RUNS, and
+      # those are two different claims. A gate proven capable of failing, in a
+      # lane that never reaches it, is the recurring shape one altitude up.
       - name: EXPLAIN gate — full-table-scan check
-        if: ${{ matrix.php == '8.2' }}
+        if: ${{ matrix.php == '8.2' && always() }}
         env:
           EXPLAIN_ROW_THRESHOLD: "100000"
         run: bash tests/perf/explain-gate.sh

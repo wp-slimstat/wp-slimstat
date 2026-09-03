@@ -9,11 +9,15 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # @v4, not @master: whatever a moving branch points at on the day someone cuts a tag is
-    # what would run in the job holding the SVN credentials. (The deploy action below is
-    # still on @stable, which is the same class of risk and is left for a deliberate
-    # decision rather than changed in a CI-hygiene commit.)
-    - uses: actions/checkout@v4
+    # PINNED TO A COMMIT, not to @v4 and certainly not to @master. This job holds the SVN
+    # credentials for a plugin with ~70,000 active installs, and a tag push is the one event
+    # that makes it run — so whatever a moving ref points at on the day someone cuts a tag is
+    # what gets those credentials. A tag is a moving ref too: `v4` is republished on every
+    # 4.x release, and an account compromise upstream reaches this job without a commit here.
+    #
+    # 11d5960 is actions/checkout v4.4.0, which is what v4 resolved to when this was pinned.
+    # Bumping it is a deliberate edit with a diff someone reviews, which is the property.
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
     # A tag workflow cannot `needs:` across workflow files, so the gate asks GitHub about
     # the tagged commit and fails closed: no green, no deploy. Before this step existed, a
@@ -89,7 +93,11 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y subversion
 
     - name: WordPress Plugin Deploy
-      uses: 10up/action-wordpress-plugin-deploy@stable
+      # 54bd289 is the commit the `stable` BRANCH pointed at when this was pinned, and it is
+      # the same commit as tag 2.3.0 — so this froze the action without changing what runs.
+      # `stable` is a branch: every push to it would otherwise have shipped straight into the
+      # step that publishes to the WordPress.org SVN repository.
+      uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
       env:
         SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         SVN_USERNAME: ${{ secrets.SVN_USERNAME }}

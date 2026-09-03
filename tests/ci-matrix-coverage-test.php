@@ -217,6 +217,115 @@ foreach (array_keys($execution_exempt) as $exempt_version) {
     }
 }
 
+// ── The Tier 2 lane installs the plugins the suite gates on ───────────────────────────────
+//
+// .wp-env.json declares four plugins. The CI override used to rewrite that to `["."]`, and the
+// siblings were not checked out, so between 49 and 130 of the 724 E2E tests referenced or
+// gated on plugins the lane did not have. They did not FAIL — they self-skipped, so nothing
+// went red and the lane looked healthy.
+//
+// That matters most for what comes next. A quarantine census taken on that configuration
+// measures CI setup rather than test health, and a ceiling derived from it locks the wrong
+// denominator in permanently: every later plugin addition would lower the ceiling with no
+// defect fixed. So this runs BEFORE the census, and it is why E0 is first in that workstream.
+//
+// An omission is allowed, but only as a DECLARATION with a reason — the same shape Pro's
+// $standalone list uses. "Pro is absent" then reads as a decision someone made, which it is,
+// rather than as an accident nobody noticed.
+require_once __DIR__ . '/lib/source-scan.php';
+
+$wp_env_path = $plugin_root . '/.wp-env.json';
+$wp_env      = json_decode((string) file_get_contents($wp_env_path), true);
+
+if (!is_array($wp_env) || !isset($wp_env['plugins']) || !is_array($wp_env['plugins'])) {
+    fwrite(STDERR, "FAIL: .wp-env.json declares no plugins array — this gate reads it as the\n"
+        . "authority on what the E2E suite expects to be installed.\n");
+    exit(1);
+}
+
+// Keyed by the plugin's directory basename, which is the one spelling shared by a sibling
+// path ("../wp-consent-api"), a wordpress.org zip URL, and a slug.
+$declared_plugins = [];
+foreach ($wp_env['plugins'] as $entry) {
+    if ('.' === $entry) {
+        continue; // the plugin under test; the lane always has it
+    }
+    $declared_plugins[] = basename(rtrim((string) $entry, '/'));
+}
+
+// A PARSE GUARD, not a census. It was `count($declared_plugins) < 3`, calibrated to today's
+// exact number — which made the orphan check below unreachable: removing ../wp-slimstat-pro
+// from .wp-env.json, the one realistic way to orphan its omission, exited HERE instead, with a
+// message blaming the parser for a deliberate edit. A floor doing two jobs does the second
+// one badly.
+if ([] === $wp_env['plugins'] || !in_array('.', $wp_env['plugins'], true)) {
+    fwrite(STDERR, "FAIL: .wp-env.json's plugins array does not include \".\" — the plugin under\n"
+        . "test. The scan has stopped reading the file it treats as the authority.\n");
+    exit(1);
+}
+
+// Declared omissions: what the lane deliberately does not install, and why. A name here is a
+// claim someone has to defend in review; a name missing from BOTH here and the lane is the
+// silent gap this gate exists to end.
+$ci_plugin_omissions = [
+    'wp-slimstat-pro' => 'a private repository. Installing it in CI means giving this lane a '
+        . 'deploy key, which is a decision about credentials rather than about coverage — so '
+        . 'it stays out, and the E2E census carves the Pro-gated specs out of its denominator '
+        . 'rather than counting them as skips nobody chose.',
+];
+
+// COMMENTS STRIPPED, AND SCOPED TO THE STEP THAT BUILDS THE SET. Both halves were learned the
+// hard way, in this order: the first draft searched the whole Tier 2 block WITH its comments,
+// and dropping the consent plugins from the lane left it green — because another step's
+// comment mentions them by name. That is this file's own recorded defect (see the step-split
+// note above, where a comment containing "PHPUnit" credited PHP 8.0 with executing the plugin),
+// reproduced in the gate written after it.
+$override_step = '';
+foreach (slimstat_ci_steps(slimstat_yaml_strip_comments($ci_yaml)) as $step) {
+    if (false !== strpos($step, '.wp-env.override.json') && false !== strpos($step, 'WP_ENV_PHP_VERSION')) {
+        $override_step = $step;
+        break;
+    }
+}
+
+if ('' === $override_step) {
+    fwrite(STDERR, "FAIL: no ci.yml step builds a Tier 2 .wp-env.override.json — the plugin-set\n"
+        . "check below would pass by having nothing to read.\n");
+    exit(1);
+}
+
+$missing = [];
+foreach ($declared_plugins as $slug) {
+    if (false !== strpos($override_step, $slug)) {
+        continue;
+    }
+    if (isset($ci_plugin_omissions[$slug])) {
+        continue;
+    }
+    $missing[] = $slug;
+}
+
+if ($missing) {
+    fwrite(STDERR, "FAIL: .wp-env.json declares plugin(s) the Tier 2 E2E lane does not install,\n"
+        . "and which are not declared omissions:\n");
+    foreach ($missing as $slug) {
+        fwrite(STDERR, "  - {$slug}\n");
+    }
+    fwrite(STDERR, "Install them in the lane, or add them to \$ci_plugin_omissions WITH A REASON.\n"
+        . "Specs that gate on a plugin the lane lacks do not fail — they self-skip, so the suite\n"
+        . "stays green while a tenth of it never runs.\n");
+    exit(1);
+}
+
+// An omission for a plugin nothing declares any more is a permission slip for a decision
+// nobody is making — the same staleness $execution_exempt is checked for above.
+$orphan_omissions = array_diff(array_keys($ci_plugin_omissions), $declared_plugins);
+if ($orphan_omissions) {
+    fwrite(STDERR, "FAIL: \$ci_plugin_omissions names plugin(s) .wp-env.json no longer declares —\n"
+        . "delete them rather than leaving an excuse behind: " . implode(', ', $orphan_omissions) . "\n");
+    exit(1);
+}
+
 ksort($execution);
 ksort($static);
 echo "OK: CI matrix, PHP {$floor}-{$ceiling}\n";

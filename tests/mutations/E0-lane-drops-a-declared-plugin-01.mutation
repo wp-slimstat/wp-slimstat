@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-matrix-coverage
+kind:      restore-defect
+expect:    declares plugin(s) the Tier 2 E2E lane does not install
+rationale: Drops cookie-law-info from the lane's plugin set, restoring half of the defect that .wp-env.json declares four plugins while CI installed one. Between 49 and 130 of the 724 E2E tests reference or gate on the consent pair; with the plugin absent they do not FAIL, they SELF-SKIP, so the suite stays green while a tenth of it never runs. That is why this had to be fixed before the quarantine census: a census taken on that configuration measures CI setup rather than test health, and the ceiling derived from it locks the wrong denominator in permanently. The gate reads the OVERRIDE STEP with comments stripped -- the first version searched the whole Tier 2 block including comments, and this mutation survived it, because another step's comment names both plugins.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -391,7 +391,7 @@
+           # UNSCOPED — one upstream bump would fail the SlimStat floor lane with a
+           # SlimStat-shaped message. Bump these deliberately, with a diff someone reads.
+           CONSENT_API_ZIP="https://downloads.wordpress.org/plugin/wp-consent-api.2.0.1.zip"
+-          COOKIE_LAW_ZIP="https://downloads.wordpress.org/plugin/cookie-law-info.3.5.5.zip"
++          COOKIE_LAW_ZIP=""
+           PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
+           if [ "${WP_VERSION}" = "6.4" ]; then
+             printf '{"plugins":[%s]}\n' "${PLUGINS}" > .wp-env.override.json

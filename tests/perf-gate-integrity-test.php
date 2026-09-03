@@ -23,6 +23,17 @@
 
 declare(strict_types=1);
 
+// Adopted for sections 8-11. slimstat_ci_steps()'s docblock names THIS file as the one that
+// still splits ci.yml on `- name:` — a dialect that folds a step whose first key is `uses:`
+// into its predecessor, so a scan scoped to "this step" silently reads two.
+//
+// Sections 1-7 keep their inline splitting for now, and that is a deferral rather than a
+// judgement: each is load-bearing and carries its own mutation, so re-pointing them is a change
+// that owes its own required-red. The cost of the deferral is real and worth naming — §3 and
+// §11 locate the SAME EXPLAIN step under different splitters, and agree only because no step
+// in this file currently leads with `uses:` at six-space indent.
+require_once __DIR__ . '/lib/source-scan.php';
+
 $plugin_root = dirname(__DIR__);
 $failures    = [];
 
@@ -302,6 +313,230 @@ foreach (explode("\n", $ci_yaml) as $i => $line) {
             $i + 1
         );
     }
+}
+
+// ── 8. The XSS escaping gate runs, is blocking, and covers every blocking WP ───
+//
+// tests/reports-output-escaping-test.php is 56 escaping assertions over the report render
+// path, and it is a member of `composer test:all` and of nothing else. No job runs test:all —
+// so for the whole v6 programme it had exactly one CI home, the Tier 2 step below, and before
+// that step existed it had none. Deleting those lines returns it to running nowhere, which is
+// the state it was just rescued from, and nothing would have said so.
+//
+// The condition is checked against the MATRIX rather than against a remembered pair: it read
+// `6.4 || 7.0` while a 7.1 lane was added, which would have quietly stopped covering the
+// newest WordPress — the one the readme claims to be tested against.
+// COMMENTS STRIPPED, ONCE, FOR EVERY SECTION BELOW. Both halves of this were demonstrated
+// against the first draft, in opposite directions:
+//
+//   §8 gave a false PASS — the escaping condition was narrowed to drop the newest lane AND a
+//      comment mentioning the dropped version was added, and the strpos found the version in
+//      the comment. The defect was present and the gate was green.
+//   §9 gave a false FAIL — rewording a ci.yml COMMENT from `WP_REF=trunk` to `WP_REF="trunk"`,
+//      with no code touched at all, made the gate report a trunk fallback.
+//
+// This is the same shape ci-matrix-coverage-test.php records against itself ("a step COMMENT
+// containing the word PHPUnit credited PHP 8.0 with executing the plugin") — reproduced three
+// sections away from the E0 gate where I had just fixed it, in the same commit.
+$ci_code = slimstat_yaml_strip_comments($ci_yaml);
+
+$escaping_step = '';
+foreach (slimstat_ci_steps($ci_code) as $step) {
+    if (false !== strpos($step, 'reports-output-escaping-test.php')) {
+        $escaping_step = $step;
+        break;
+    }
+}
+
+if ('' === $escaping_step) {
+    $failures[] = 'no ci.yml step runs tests/reports-output-escaping-test.php. It is in '
+        . '`composer test:all` and nothing else, and no job runs test:all — so deleting that '
+        . 'step returns 56 XSS assertions to running nowhere';
+} else {
+    if (false !== strpos($escaping_step, 'continue-on-error')) {
+        $failures[] = 'the escaping gate is soft. An XSS gate that cannot fail the build is a '
+            . 'report, not a gate';
+    }
+
+    // The newest WordPress in the matrix must be among the versions it runs on.
+    $lanes = array_keys(slimstat_ci_wp_lanes($ci_yaml));
+
+    if (count($lanes) < 5) {
+        $failures[] = sprintf('only %d Tier 2 WP lanes found — the matrix scan has stopped '
+            . 'matching, so the coverage check below proves nothing', count($lanes));
+    } else {
+        usort($lanes, 'version_compare');
+        $newest = end($lanes);
+
+        if (false === strpos($escaping_step, "matrix.wp == '{$newest}'")) {
+            $failures[] = sprintf(
+                'the escaping gate does not run on WP %s, the newest lane in the matrix. Its '
+                    . 'subject is core\'s html-api file set, which is exactly what moves in a '
+                    . 'new WordPress — so the newest lane is the one it least affords to skip',
+                $newest
+            );
+        }
+    }
+}
+
+// The composer script must invoke the same path the CI step does, or renaming the file leaves
+// one of them pointing at nothing while the other still looks wired.
+$composer_json = (string) file_get_contents($plugin_root . '/composer.json');
+if (false === strpos($composer_json, 'tests/reports-output-escaping-test.php')) {
+    $failures[] = 'composer.json no longer invokes tests/reports-output-escaping-test.php — the '
+        . 'CI step and the composer script must name the same file, or a rename silently '
+        . 'unwires one of them';
+}
+
+// ── 9. A missing WordPress tag must fail, not silently become trunk ────────────
+//
+// `WP_REF="trunk"` behind a `::warning::` turns "this version does not exist" into a lane that
+// tests something else entirely and reports green. All seven tags resolve today, so this is
+// latent rather than active — which is precisely when it is cheap to close.
+// TWO HALVES, because the negative alone was vacuous: deleting the tag-existence check from
+// ci.yml ENTIRELY left this section green, so the guard could be removed wholesale — or
+// replaced by any other silent fallback — and nothing noticed. A check that only forbids one
+// spelling of a defect is not a check for the defect.
+$override_step = '';
+foreach (slimstat_ci_steps($ci_code) as $step) {
+    if (false !== strpos($step, '.wp-env.override.json') && false !== strpos($step, 'ls-remote')) {
+        $override_step = $step;
+        break;
+    }
+}
+
+if ('' === $override_step) {
+    $failures[] = 'no ci.yml step checks that the WordPress tag a lane names actually exists '
+        . '(no `ls-remote` beside the wp-env override). Without it a lane labelled for a version '
+        . 'that is not there boots something else and reports green';
+} else {
+    if (false !== strpos($override_step, 'WP_REF="trunk"') || false !== strpos($override_step, "WP_REF='trunk'")) {
+        $failures[] = 'ci.yml falls back to WordPress trunk when a tag does not resolve. A lane '
+            . 'named for a version it is not running is a coverage claim nobody can check: fail '
+            . 'the lane instead, so a WordPress that does not exist is reported as such';
+    }
+
+    if (false === strpos($override_step, 'exit 1')) {
+        $failures[] = 'the WordPress tag check does not fail the lane. Warning and continuing is '
+            . 'the fallback under another name: the message lands in a log nobody reads and the '
+            . 'status everyone reads stays green';
+    }
+}
+
+// ── 10. Everything the credential-holding workflow runs is pinned to a commit ──
+//
+// main.yml fires on `push: tags: - "*"` and holds the SVN credentials for a plugin with
+// ~70,000 active installs. A moving ref there — @stable, @master, or a version tag, which is
+// republished on every release — means whatever upstream points at on the day someone cuts a
+// tag is what receives those credentials.
+//
+// Evaluated against $main_code, which §5 already stripped of comments: the obvious spelling of
+// this check ("a 40-hex SHA appears somewhere") is satisfied by a SHA sitting in an
+// explanatory comment, which is exactly what main.yml carries beside each pin.
+preg_match_all('/^\s*-?\s*uses:\s*(\S+)/m', $main_code, $uses);
+$pinned = $uses[1] ?? [];
+
+if (count($pinned) < 2) {
+    $failures[] = sprintf('only %d `uses:` line(s) found in main.yml — the scan has stopped '
+        . 'reading the workflow, so the pin check below proves nothing', count($pinned));
+}
+
+foreach ($pinned as $ref) {
+    if (!preg_match('/@[0-9a-f]{40}$/', $ref)) {
+        $failures[] = sprintf(
+            'main.yml runs `%s`, which is not pinned to a commit. This workflow holds the '
+                . 'wordpress.org SVN credentials and runs on any tag push; a moving ref decides '
+                . 'what gets them, and neither a branch nor a version tag is immutable',
+            $ref
+        );
+    }
+}
+
+// ── 11. A lane that measures cost must first have something to measure ────────
+//
+// §3 asserts the EXPLAIN gate EXISTS, is not a TODO, carries no `exit 0`, and invokes
+// explain-gate.sh — it proves the gate COULD fail. Nothing asserted that it RUNS, and it never
+// has: it sits after a k6 step that failed on every dispatch this lane has ever had, and it
+// carried no always(). A gate proven capable of failing, in a lane that never reaches it, is
+// the recurring shape one altitude up. PITFALLS 111.
+//
+// And k6 itself measured a WordPress with no SlimStat tables, because Tier 2's activation step
+// was never ported here — 81.79% request failures, read as a product verdict.
+// SCOPED TO THE NIGHTLY JOB. The first draft scanned every step in the file and worked only
+// because `init_environment()` happens to be unique to Tier 3 today — Tier 2 gaining that call
+// would have satisfied the ordering check with a step in a different job entirely.
+$nightly_block = '';
+foreach (preg_split('/(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)/m', $ci_code) as $block) {
+    if (preg_match('/name:\s*"Tier 3/', $block)) {
+        $nightly_block = $block;
+        break;
+    }
+}
+
+if ('' === $nightly_block) {
+    $failures[] = 'no Tier 3 job block found in ci.yml — the k6/EXPLAIN checks below would pass '
+        . 'by having nothing to read';
+}
+
+$nightly_steps = slimstat_ci_steps($nightly_block);
+$k6_index      = null;
+$activate_idx  = null;
+$explain_step  = '';
+
+foreach ($nightly_steps as $i => $step) {
+    if (false !== strpos($step, 'npm run test:perf')) {
+        $k6_index = $i;
+    }
+    if (false !== strpos($step, 'init_environment()') && false !== strpos($step, 'wp plugin activate')) {
+        if (null === $k6_index) {
+            $activate_idx = $i;
+        }
+    }
+    if (false !== strpos($step, 'explain-gate.sh')) {
+        $explain_step = $step;
+    }
+}
+
+if (null === $k6_index) {
+    $failures[] = 'no ci.yml step runs `npm run test:perf` — the k6 lane has gone, and §1 and '
+        . '§2 above are then asserting about scripts nothing executes';
+} elseif (null === $activate_idx) {
+    $failures[] = 'the k6 lane runs before any step that activates the plugin and fires '
+        . 'init_environment(). wp-env auto-activates but never fires admin_init, which is what '
+        . 'creates the tables — so k6 measures a WordPress where they do not exist, and reports '
+        . 'the shortfall as a product failure';
+} else {
+    // ORDER IS NOT ENOUGH. A step that is present, in the right place, and gated off by its
+    // own `if:` leaves k6 measuring the same empty install while every ordering check above
+    // stays green. So the two conditions must MATCH: they run on the same lane, or the
+    // guarantee is fiction. Found by perturbing the fixed tree with `if: false` and watching
+    // this section pass.
+    $step_condition = static function ($step) {
+        return preg_match('/^\s*if:\s*(.+)$/m', (string) $step, $m) ? trim($m[1]) : '';
+    };
+
+    $k6_if       = $step_condition($nightly_steps[$k6_index]);
+    $activate_if = $step_condition($nightly_steps[$activate_idx]);
+
+    if ($k6_if !== $activate_if) {
+        $failures[] = sprintf(
+            'the k6 step runs on `%s` and the activation step on `%s`. A lane that reaches k6 '
+                . 'without the activation measures a WordPress with no SlimStat tables, and the '
+                . 'ordering check above cannot see it because the step is still there',
+            $k6_if,
+            $activate_if
+        );
+    }
+}
+
+// `'' === $explain_step` is deliberately NOT checked here: §3 already requires at least one
+// step named *EXPLAIN* and that every such step invokes explain-gate.sh, so §3 green entails
+// this is non-empty. A branch that cannot fail while its neighbour passes reads as coverage
+// and is not.
+if ('' !== $explain_step && false === strpos($explain_step, 'always()')) {
+    $failures[] = 'the EXPLAIN gate does not carry always(). It sits after k6, and k6 has failed '
+        . 'on every dispatch this lane has had — so the gate has never once executed. "Can fail" '
+        . 'and "did run" are two assertions; §3 makes the first and this makes the second';
 }
 
 // ── Report ─────────────────────────────────────────────────────────────────

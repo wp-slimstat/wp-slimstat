@@ -857,6 +857,34 @@ function slimstat_spawn_child(string $script, array $env): ?array
 }
 
 /**
+ * The Tier 2 WordPress lanes a CI workflow declares, as version => php.
+ *
+ * Four hand-rolled copies of this regex existed across three gates, two of them added in the
+ * same commit that added this helper, and two carried their own `< 5` vacuity floor hardcoding
+ * a number the matrix had already passed. They also disagreed about what to capture: one took
+ * the WP version, one the PHP version, one both.
+ *
+ * COMMENTS ARE STRIPPED FIRST. A matrix entry quoted in a comment — "was { wp: 7.1 }" — is
+ * prose about a lane, not a lane, and every gate that reads this file has been fooled by that
+ * shape at least once.
+ *
+ * @return array<string,string> e.g. ['5.6' => '7.4', … , '7.1' => '8.3'], insertion-ordered
+ */
+function slimstat_ci_wp_lanes(string $yaml): array
+{
+    $code  = slimstat_yaml_strip_comments($yaml);
+    $lanes = [];
+
+    if (preg_match_all('/\{\s*wp:\s*"(\d+\.\d+)"\s*,\s*php:\s*"(\d+\.\d+)"\s*\}/', $code, $m, PREG_SET_ORDER)) {
+        foreach ($m as $pair) {
+            $lanes[$pair[1]] = $pair[2];
+        }
+    }
+
+    return $lanes;
+}
+
+/**
  * Collapse every whitespace run to one space, and trim.
  *
  * For comparing a span quoted in PHP — where the author wraps it to fit a docblock or an array

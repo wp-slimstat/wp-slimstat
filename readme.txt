@@ -5,7 +5,7 @@ Text Domain: wp-slimstat
 Requires at least: 5.6
 Requires PHP: 7.4
 Recommended PHP extensions: fileinfo (required if the Browscap library is enabled)
-Tested up to: 7.0
+Tested up to: 7.1
 Stable tag: 6.0.0
 License: GPL-2.0+
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -109,7 +109,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.0.0 =
-Major release. Back up your database first. Faster dashboards and tracking, GDPR-grade anonymous identity, multisite and external-database fixes. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — the changelog lists each one.
+Major release. Back up your database first. Faster dashboards and tracking, GDPR-grade anonymous identity, multisite and external-database fixes. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — the changelog lists each one. Going back to 5.5.x: the update only ADDS database columns and never removes a row, and older versions keep working on the updated tables — but the added columns stay, so keep the backup you took.
 
 
 = 5.5.1 =

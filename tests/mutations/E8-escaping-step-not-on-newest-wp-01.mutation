@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-narrowing
+expect:    does not run on WP 7.1, the newest lane in the matrix
+rationale: Leaves the XSS escaping gate wired, blocking and green -- on yesterday's WordPress. tests/reports-output-escaping-test.php is 56 escaping assertions over the report render path, it belongs to `composer test:all` and to nothing else, and no job runs test:all, so this one CI step is its only home. Its subject is core's html-api file set, which is precisely what moves in a new WordPress -- the test file_exists()-guards five requires for exactly that reason. So a condition naming a fixed pair of versions stops covering the newest lane the moment one is added, silently, while the step still exists and still passes. The gate reads the matrix rather than a remembered pair, which is what makes this killable.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -422,7 +422,7 @@
+         #
+         # Blocking, unlike the E2E step below. On these lanes it is the first step that can
+         # fail this job, which is the point of adding it.
+-        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' || matrix.wp == '7.1' }}
++        if: ${{ matrix.wp == '6.4' || matrix.wp == '7.0' }}
+         run: npx wp-env run tests-cli -- php wp-content/plugins/wp-slimstat/tests/reports-output-escaping-test.php
+ 
+       - name: Activate plugin and create database tables
