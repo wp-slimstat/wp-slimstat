@@ -10,11 +10,15 @@
  * particular comments are the ones a reader consults precisely when deciding whether a lane is
  * worth its runtime. Wrong by 40% is worse than absent: absent prompts a measurement.
  *
- * This gate does not fix three numbers. It fixes the CLASS, by making the two figures that have
- * an authoritative home in the repo checkable against that home on every push:
+ * This gate does not fix three numbers. It fixes the CLASS, by making every figure that has an
+ * authoritative home in the repo checkable against that home on every push:
  *
  *   - a claim about the mutation registry's size must equal `tests/mutations/FLOOR`;
- *   - a claim about PHPUnit test or assertion counts must equal `tests/ASSERTION-FLOOR.json`.
+ *   - a claim about how many entries gate on one script — written `N ... on `gate`` — must equal
+ *     the number of .mutation files naming it;
+ *   - a claim about PHPUnit test or assertion counts must equal `tests/ASSERTION-FLOOR.json`;
+ *   - and a count spelled as a WORD beside `entries` is refused, because none of the above can
+ *     read it. That is not fastidiousness: it is the form four wrong numbers were written in.
  *
  * THE ONE EXEMPTION, AND WHY IT IS NARROW. A comment narrating a past incident — "assertions
  * 602 -> 598 was the entire signal" — is history, not a stale claim, and rewriting it to today's
@@ -85,6 +89,21 @@ if (!$known_tests || !$known_assertions) {
     exit(1);
 }
 
+// ── Per-gate entry counts ─────────────────────────────────────────────────────────────
+//
+// A claim like "7 entries on `composer test:seal-negative`" is checkable against the registry
+// and was not being checked, so the block carried FOUR wrong numbers about the two suites that
+// dominate the step's cost — the sentence that decides when to narrow the run. Same parser as
+// tests/mutation-registry-test.php: a private `gate:` regex would count headers differently
+// from the file that owns them.
+$gate_counts = slimstat_mutation_gate_counts($plugin_root);
+
+if (!$gate_counts) {
+    fwrite(STDERR, "FAIL: no .mutation file declares a gate: — every per-gate claim below would "
+        . "be unmatchable and pass\n");
+    exit(1);
+}
+
 // ── Comment blocks: contiguous runs of `#` lines, joined ──────────────────────────────
 //
 // Joined rather than read line by line because these sentences wrap: "so 56 XSS" ends one line
@@ -119,7 +138,7 @@ if (count($blocks) < 40) {
         . 'least 40 — the block scan is broken and every check below passes by finding nothing';
 }
 
-$claims = 0;
+$claims = ['"N entries" (registry total)' => 0, '"N entries on `gate`"' => 0, 'assertions' => 0, 'Tests:' => 0];
 
 foreach ($blocks as $block) {
     $text  = $block['text'];
@@ -130,23 +149,131 @@ foreach ($blocks as $block) {
     // preg_match_ALL. With `preg_match` the verdict depended on which count appeared first in
     // the prose, so re-ordering a sentence could fail the build with no metric having changed —
     // and a stale figure later in the same block was never read at all.
-    if (preg_match('/\bregistry\b/i', $text)) {
-        preg_match_all('/\b(\d+)\s+entries\b/', $text, $entry_counts);
+    // `registry` ALONE selects the npm-retry blocks too ("Transient registry blips"), and 1a
+    // would then read "3 retries on `npm install`" as a per-gate mutation count and fail on a
+    // gate that does not exist. The scope is the MUTATION registry; say so.
+    if (preg_match('/\bregistry\b/i', $text) && preg_match('/\bmutations?\b/i', $text)) {
+        // SENTENCE SCOPE, not block scope. 1b and 1c allow ANY run of non-numeric words between a
+        // number and its noun, which is right within a claim and wrong across a paragraph: over a
+        // whole block, `twenty sealed dry runs` in one sentence pairs with `entries` three
+        // sentences later and reports a claim nobody made. The block happened to pass only
+        // because a digit sat between them. A sentence is the unit a claim is actually made in;
+        // bounding by it keeps the adjective tolerance and drops the spurious reach, without the
+        // arbitrary word limit that let `Seven slow non-filterable seal entries` through.
+        // Found by building M4 and watching it fail for the wrong reason.
+        foreach (preg_split('/(?<=[.;])\s+/', $text) ?: [] as $text) {
+        // ── Claim 1a: SUBSET counts, which NAME the gate they count.
+        //
+        // A number that names its gate is not a claim about the registry total, and a gate that
+        // could not tell the two apart forced every subset figure to be spelled as a word to get
+        // past it — which is what this block did, and how four wrong numbers survived inside the
+        // paragraph explaining the exemption they were using. Naming the gate in BACKTICKS is the
+        // marker and the only exemption: written without them the number is read as a total and
+        // fails, which is the correct answer for `40 entries` and the wrong one for `4 on X`.
+        preg_match_all(
+            '/\b(\d+)\s+(?:[A-Za-z-]+\s+)*?on\s+`([^`]+)`/i',
+            $text,
+            $subset_matches,
+            PREG_SET_ORDER
+        );
 
-        foreach ($entry_counts[1] as $entry_count) {
-            $claims++;
-            if ((int) $entry_count !== $registry_floor) {
+        foreach ($subset_matches as $subset) {
+            $claims['"N entries on `gate`"']++;
+
+            $claimed = (int) $subset[1];
+            $gate    = trim($subset[2]);
+
+            if (!isset($gate_counts[$gate])) {
                 $failures[] = sprintf(
-                    '%s says the mutation registry holds %d entries; tests/mutations/FLOOR says '
-                        . '%d. This claim is never historical: FLOOR is a file in this repo, so '
-                        . 'the only way to be wrong about it is not to have looked. The sentence '
-                        . 'is also the one that decides when to narrow the run, which is why it '
-                        . 'is pinned',
+                    '%s claims %d entries on `%s`, which no .mutation file names as its gate. A '
+                        . 'count against a gate that does not exist cannot go stale, because it '
+                        . 'was never true',
                     $where,
-                    (int) $entry_count,
+                    $claimed,
+                    $gate
+                );
+            } elseif ($claimed !== $gate_counts[$gate]) {
+                $failures[] = sprintf(
+                    '%s claims %d entries on `%s`; %d .mutation file(s) name that gate',
+                    $where,
+                    $claimed,
+                    $gate,
+                    $gate_counts[$gate]
+                );
+            }
+        }
+
+        // ── Claim 1b: the registry TOTAL. No exemption, and no word may hide it.
+        //
+        // preg_match_ALL. With `preg_match` the verdict depended on which count appeared first in
+        // the prose, so re-ordering a sentence could fail the build with no metric having changed —
+        // and a stale figure later in the same block was never read at all.
+        //
+        // The gap between number and noun is ANY run of non-numeric words, not a fixed count.
+        // Pro carried `(\d+) entries` and then `(\d+)(\s+\w+){0,2} entries`, and a reviewer walked
+        // past both — the second with `40 known stale mutation registry entries`. A word limit is
+        // a deny-list of phrasings; `(?!\d)` is the property it stands in for, namely that a
+        // number may not leap another figure to reach its noun.
+        //
+        // The trailing lookahead is what keeps 1a's subset claims out, and it replaced an
+        // offset-overlap exclusion that did the same job in fifteen more lines and made this
+        // scan depend on 1a having run first.
+        preg_match_all(
+            '/\b(\d+)(?:\s+(?!\d)[A-Za-z][\w-]*)*?\s+entries\b(?!\s+on\s+`)/i',
+            $text,
+            $entry_counts,
+            PREG_SET_ORDER
+        );
+
+        foreach ($entry_counts as $hit) {
+            $claims['"N entries" (registry total)']++;
+
+            if ((int) $hit[1] !== $registry_floor) {
+                $failures[] = sprintf(
+                    '%s says "%s"; tests/mutations/FLOOR says %d. This claim is never historical: '
+                        . 'FLOOR is a file in this repo, so the only way to be wrong about it is '
+                        . 'not to have looked. The phrase is quoted rather than rebuilt from the '
+                        . 'number and the noun, which can sit any number of words apart',
+                    $where,
+                    trim($hit[0]),
                     $registry_floor
                 );
             }
+        }
+
+        // ── Claim 1c: a count spelled as a WORD beside the noun is refused outright.
+        //
+        // Not a hypothetical hole — it is the one this block fell through. `SEVEN entries gate on
+        // the two seal suites` sat here while the paragraph above it explained that historical
+        // figures are "described rather than quoted" so the gate would not read them. That
+        // exemption is for prose about the PAST; it is not a way to state a current figure the
+        // gate cannot check.
+        //
+        // Same unbounded non-numeric gap as 1b, deliberately. The first draft bounded this one at
+        // two words while leaving 1b unbounded — two bounds for one hazard in one function, and
+        // `Seven slow non-filterable seal entries` walked through the narrower one. The vocabulary
+        // is still a deny-list ("a dozen", "several" are not in it); if a fourth widening is ever
+        // proposed, the answer is to anchor on the NOUN instead — require every `entries` in scope
+        // to be covered by a matched 1a or 1b span — which costs three exemptions in this block
+        // and no vocabulary at all.
+        preg_match_all(
+            '/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|'
+                . 'fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|'
+                . 'seventy|eighty|ninety|hundred)(?:\s+(?!\d)[A-Za-z][\w-]*)*?\s+entries\b/i',
+            $text,
+            $word_claims,
+            PREG_SET_ORDER
+        );
+
+        foreach ($word_claims as $word_claim) {
+            $failures[] = sprintf(
+                '%s states "%s" — a count spelled as a WORD beside `entries`, which every pattern '
+                    . 'above reads digits for and therefore cannot check. Write it in digits, or '
+                    . 'do not put a count beside the noun',
+                $where,
+                trim($word_claim[0])
+            );
+        }
         }
     }
 
@@ -155,7 +282,7 @@ foreach ($blocks as $block) {
     // "assertions 602 -> 598" are the same kind of claim, and a pattern that reads only the
     // first shape had to be told so by the vacuity floor when the only sentence it could see
     // was deleted.
-    preg_match_all('/\b(\d+)\s+(?:[A-Za-z-]+\s+)?assertions?\b/i', $text, $before_noun);
+    preg_match_all('/\b(\d+)(?:\s+(?!\d)[A-Za-z][\w-]*)*?\s+assertions?\b/i', $text, $before_noun);
     preg_match_all('/\bassertions?\s+(\d+)(?:\s*->\s*(\d+))?/i', $text, $after_noun);
 
     $assertion_nums = array_merge(
@@ -166,7 +293,7 @@ foreach ($blocks as $block) {
     );
 
     foreach ($assertion_nums as $num) {
-        $claims++;
+        $claims['assertions']++;
         if (!isset($known_assertions[(int) $num]) && !$dated) {
             $failures[] = sprintf(
                 '%s states "%d assertions" but no suite in tests/ASSERTION-FLOOR.json reports '
@@ -185,7 +312,7 @@ foreach ($blocks as $block) {
     preg_match_all('/\bTests:\s*(\d+)\b/i', $text, $test_counts);
 
     foreach ($test_counts[1] as $num) {
-        $claims++;
+        $claims['Tests:']++;
         if (!isset($known_tests[(int) $num]) && !$dated) {
             $failures[] = sprintf(
                 '%s states "Tests: %d" but no suite in tests/ASSERTION-FLOOR.json reports that '
@@ -200,10 +327,16 @@ foreach ($blocks as $block) {
 
 // VACUITY FLOOR — if no claim matched, the patterns have drifted from the prose and a green
 // result here says nothing at all about ci.yml.
-if ($claims < 3) {
-    $failures[] = 'matched only ' . $claims . ' numeric claim(s) in ci.yml comments; expected at '
-        . 'least 3 — the patterns no longer find the sentences they were written for, so this '
-        . 'gate is passing because it looked at nothing';
+// PER CLASS, and it was a total until 2026-09-04. `$claims < 3` is satisfied by the two
+// assertion claims plus one other, so an entire class could be deleted or reworded and this gate
+// stayed green — the same defect Pro's twin carried, found there first. A floor over unrelated
+// classes measures their sum, which is not a property anyone wants to hold.
+foreach ($claims as $class => $n) {
+    if (0 === $n) {
+        $failures[] = sprintf('no `%s` claim matched anywhere in ci.yml comments. The pattern no '
+            . 'longer finds the sentence it was written for, or the sentence is gone — either way '
+            . 'this class of claim is now unchecked and the gate is silent about it', $class);
+    }
 }
 
 if ($failures) {
@@ -214,5 +347,11 @@ if ($failures) {
     exit(1);
 }
 
-echo 'PASS: ' . $claims . ' numeric claim(s) in ci.yml comments match the repo (registry floor '
-    . $registry_floor . ", assertion floors from tests/ASSERTION-FLOOR.json)\n";
+$breakdown = [];
+foreach ($claims as $class => $n) {
+    $breakdown[] = $n . ' ' . $class;
+}
+
+echo 'PASS: ' . array_sum($claims) . ' numeric claim(s) in ci.yml comments match the repo ('
+    . implode(', ', $breakdown) . '; registry floor ' . $registry_floor
+    . ", assertion floors from tests/ASSERTION-FLOOR.json)\n";

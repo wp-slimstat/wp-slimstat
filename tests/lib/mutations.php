@@ -209,3 +209,27 @@ function slimstat_mutation_parse(string $path): array
 
     return ['spec' => $spec, 'problems' => $problems];
 }
+
+/**
+ * gate: value => how many .mutation files name it.
+ *
+ * The walk over slimstat_mutation_files() + slimstat_mutation_parse() to aggregate `gate:` had
+ * been written three times across the two repos, aggregating three different ways — count in
+ * one, presence in another — which is precisely the drift this byte-twinned file exists to stop.
+ * A private `gate:` regex would be worse still: it would count headers differently from the
+ * parser that owns the format.
+ *
+ * @return array<string, int>
+ */
+function slimstat_mutation_gate_counts(string $plugin_root): array
+{
+    $counts = [];
+    foreach (slimstat_mutation_files($plugin_root) as $file) {
+        $gate = slimstat_mutation_parse($file)['spec']['gate'] ?? '';
+        if ('' !== $gate) {
+            $counts[$gate] = ($counts[$gate] ?? 0) + 1;
+        }
+    }
+
+    return $counts;
+}

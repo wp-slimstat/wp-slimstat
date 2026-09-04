@@ -648,6 +648,10 @@ ss_assert_true('!= excludes exactly the named value', !slimstat_ci_step_runs_for
 ss_assert_true('== is an allow-list: every other value is out', slimstat_ci_step_runs_for($std_steps[1], 'wp', '7.1') && !slimstat_ci_step_runs_for($std_steps[1], 'wp', '6.4'));
 ss_assert_true('no if: runs for every value', slimstat_ci_step_runs_for($fast_steps[1], 'php', '7.4'));
 ss_assert_true('steps_containing returns every match, not the first', 1 === count(slimstat_ci_steps_containing($std_steps, 'wp core version')) && 0 === count(slimstat_ci_steps_containing($std_steps, 'wp core version', 'npm run')));
+// POSITIONS, not a renumbering of the hits. The count-only assertion above cannot see the
+// difference, and neither can any gate but perf-gate §9b — which would report three cascading
+// unrelated failures rather than this one. Proven red by `$hits[] = count($hits);`.
+ss_assert_true('step_indexes returns step POSITIONS, not a renumbering of the hits', [1] === slimstat_ci_step_indexes($std_steps, 'wp core version'));
 $header_fixture = "<?php\n/*\n * Plugin Name: X\n * Version: 6.0.0\n * Requires PHP: 7.4\n*/\n";
 ss_assert_true('header_field reads a `* Field:` line', '6.0.0' === slimstat_header_field($header_fixture, 'Version') && '7.4' === slimstat_header_field($header_fixture, 'Requires PHP'));
 ss_assert_true('header_field reads a readme `Field:` line and misses an absent one', '6.0.0' === slimstat_header_field("Stable tag: 6.0.0\n", 'Stable tag') && null === slimstat_header_field($header_fixture, 'Tested up to'));

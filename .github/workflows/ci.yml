@@ -161,27 +161,43 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 191 entries and takes ~160s (timing last measured 2026-08-24,
-        # when the registry was smaller). This line has now been wrong three times — twice on the
-        # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real
-        # figure — and it is the sentence that decides when to narrow the run.
+        # The full registry holds 197 entries. The step took 210-270s per lane across all six
+        # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
+        # duration: the seconds in this block are not gate-checked, and no sentence written here
+        # can tell you whether they are still current.
+        #
+        # This line has now been wrong four times — twice on the duration, off by 25x and then
+        # 20x; once on the size, which sat 40 short of the real figure; and once on the seal
+        # breakdown below, which was wrong on every single one of its numbers while the paragraph
+        # beneath it explained why they had been spelled out. It is the sentence that decides
+        # when to narrow the run, so it is the worst one in the file to be wrong.
         #
         # The size is no longer remembered: tests/ci-comment-metrics-test.php pins every "N
-        # entries" in this block to tests/mutations/FLOOR, so a floor bump that forgets this line
-        # fails the build instead of quietly ageing it. That is also why the stale numbers above
-        # are described rather than quoted — a historical figure written in the checked form would
-        # make the gate's verdict depend on which one it read first.
+        # entries" in this block to tests/mutations/FLOOR, and every "N ... on `gate`" — the
+        # BACKTICKS are the marker — to the number of .mutation files naming that gate. A count
+        # spelled as a WORD beside `entries` is now REFUSED outright: that is the hole this block
+        # fell through. "Described rather than quoted" is for prose about the PAST, never a way to
+        # state a current figure in a form the gate cannot read.
+        #
         # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
-        # count, not just registry size, and it is dominated by a few slow gates rather than by
-        # the entry count: SEVEN entries gate on the two seal suites -- four on
-        # `test:seal-negative` (~13s each, and it boots the real entry point and is deliberately
-        # non-filterable, since the suite refuses a partial run) and three on
-        # `test:seal-entrypoint` (~4.7s, twenty sealed dry runs) -- which is ~115s of the total.
+        # count, not just registry size. The two seal suites are the slow ones: 7 entries on
+        # `composer test:seal-negative` (it boots the real entry point and is deliberately
+        # non-filterable, since the suite refuses a partial run) and 4 on
+        # `composer test:seal-entrypoint` (twenty sealed dry runs). Both counts are checked
+        # against the .mutation files naming each gate.
+        #
+        # Their SHARE of the total is deliberately not stated. The old text said "~115s of the
+        # total"; the rewrite that corrected the counts replaced it with "most of the measured
+        # time" — an adjective that cannot be wrong and therefore cannot be checked, which is the
+        # reword-instead-of-re-measure move this block exists to stop, committed while correcting
+        # an instance of it. Per-suite seconds have not been measured since the counts were fixed,
+        # so no figure is given. Run the step and read it.
         #
         # KNOWN AND ACCEPTED: this step has no `if:`, so it runs on all six PHP lanes. That is
         # NOT redundant even though the seal gates are pure python/bash — other entries gate on
         # PHP source-level checks that genuinely differ by interpreter, which is how the rounding
-        # contract was found (7.4 vs 8.4). Narrowing to one lane would trade ~8 min of CI for a
+        # contract was found (7.4 vs 8.4). Narrowing to one lane would save the other five —
+        # 17-22 min, derived from the 210-270s measured above and not itself gate-checked — for a
         # real loss of signal. When it does outgrow the lane, narrow it to the mutations whose
         # target moved — passing the ref through env: rather than interpolating it into the
         # run: line, and note this needs fetch-depth: 0:

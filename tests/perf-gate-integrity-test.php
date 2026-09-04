@@ -483,16 +483,74 @@ if ('' === $override_step) {
 // indirection two lines apart, or a stale wp-env cache serving last week's core. One step after
 // `wp-env start` asks the running site — `wp core version` — and fails the lane on a mismatch.
 // That is the assertion; the count above is its tripwire.
-$booted_steps = slimstat_ci_steps_containing($steps, 'wp core version');
+//
+// "AFTER" WAS PROSE ONLY until 2026-09-04. This section asserted that exactly one step contains
+// `wp core version`, that it compares, exits 1 and is not soft — never where it sits. Found in
+// Pro's twin, where a reviewer swapped the check with the step that starts wp-env (the site asked
+// for its version before it existed: PASS) and then moved it into a job that boots no wp-env at
+// all (PASS). Both fail at RUNTIME — `wp-env run` against a stopped environment prints nothing
+// and exits 1 — so this was an overstated claim rather than a silent hole, which is the only
+// reason it is a note here and not a shipped defect.
+//
+// The window is asked PER JOB, so it cannot straddle one by construction. Free has two wp-env
+// jobs (Tier 2 and Tier 3); over a flat step list, Tier 2's start pairs with Tier 3's stop the
+// moment Tier 2's own stop goes missing, and a version check sitting in any job between them
+// reads as "inside". The first draft recovered job identity by sniffing a two-space key in the
+// span between steps — a FOURTH copy of the rule slimstat_ci_job_blocks() owns, and a divergent
+// one: it rejected a key line ending in a tab, which that helper accepts, so one whitespace
+// character reintroduced exactly this hazard. Split by job and the caveat stops existing.
+$booted = slimstat_ci_step_indexes($steps, 'wp core version');
 
-if (1 !== count($booted_steps)) {
-    $failures[] = sprintf('%d ci.yml step(s) check `wp core version` after wp-env starts; exactly one '
-        . 'is expected. Without it nothing proves the lane booted the WordPress it is named for — '
-        . 'every static check on the override script reasons about a boot nobody observed', count($booted_steps));
-} elseif (false === strpos($booted_steps[0], 'WP_VERSION') || false === strpos($booted_steps[0], 'exit 1')
-    || false !== strpos($booted_steps[0], 'continue-on-error')) {
-    $failures[] = 'the `wp core version` step does not compare against WP_VERSION and `exit 1` on '
-        . 'a mismatch, or is continue-on-error; printing the version is a log line, not a gate';
+if (1 !== count($booted)) {
+    $failures[] = sprintf('%d ci.yml step(s) check `wp core version` after wp-env starts; exactly '
+        . 'one is expected. Without it nothing proves the lane booted the WordPress it is named '
+        . 'for — every static check on the override script reasons about a boot nobody observed',
+        count($booted));
+} else {
+    $booted_step = $steps[$booted[0]];
+
+    // NOT chained to the position check below: a step that had lost its `exit 1` AND moved out of
+    // the window would otherwise report only the first of the two.
+    if (false === strpos($booted_step, 'WP_VERSION') || false === strpos($booted_step, 'exit 1')
+        || false !== strpos($booted_step, 'continue-on-error')) {
+        $failures[] = 'the `wp core version` step does not compare against WP_VERSION and `exit 1` on '
+            . 'a mismatch, or is continue-on-error; printing the version is a log line, not a gate';
+    }
+
+    $host_job = null;
+    foreach (slimstat_ci_job_blocks($ci_code) as $job => $job_block) {
+        $job_steps = slimstat_ci_steps($job_block);
+        $at        = slimstat_ci_step_indexes($job_steps, 'wp core version');
+        if (!$at) {
+            continue;
+        }
+
+        $host_job = $job;
+        $opens    = array_values(array_filter(
+            slimstat_ci_step_indexes($job_steps, 'wp-env start'),
+            static fn(int $i): bool => $i < $at[0]
+        ));
+        $closes   = array_values(array_filter(
+            slimstat_ci_step_indexes($job_steps, 'wp-env stop'),
+            static fn(int $i): bool => $i > $at[0]
+        ));
+
+        if (!$opens || !$closes) {
+            $failures[] = sprintf('the `wp core version` step in job `%s` is outside the running '
+                . 'window: `wp-env start` before it at (%s), `wp-env stop` after it at (%s). Asking '
+                . 'a site for its version before it boots, or from a job that never boots one, is '
+                . 'not an observation',
+                $job,
+                $opens ? implode(', ', $opens) : 'none',
+                $closes ? implode(', ', $closes) : 'none');
+        }
+        break;
+    }
+
+    if (null === $host_job) {
+        $failures[] = 'the `wp core version` step belongs to no job block — slimstat_ci_job_blocks() '
+            . 'cannot place it, so the window below was never asked and this section is inert';
+    }
 }
 
 // ── 10. Everything the credential-holding workflow runs is pinned to a commit ──
@@ -550,23 +608,23 @@ if ('' === $nightly_block) {
         . 'by having nothing to read';
 }
 
+// The hand-rolled position walk this replaced was the only other one in tests/, in the file
+// that motivated extracting slimstat_ci_step_indexes() in the first place. Its two implicit
+// rules — LAST k6 step, and the last activation BEFORE it — are stated here rather than
+// emerging from the order of three ifs sharing one loop.
 $nightly_steps = slimstat_ci_steps($nightly_block);
-$k6_index      = null;
+$k6_indexes    = slimstat_ci_step_indexes($nightly_steps, 'npm run test:perf');
+$k6_index      = $k6_indexes ? (int) end($k6_indexes) : null;
 $activate_idx  = null;
-$explain_step  = '';
+$explain_steps = slimstat_ci_steps_containing($nightly_steps, 'explain-gate.sh');
+$explain_step  = $explain_steps ? (string) end($explain_steps) : '';
 
-foreach ($nightly_steps as $i => $step) {
-    if (false !== strpos($step, 'npm run test:perf')) {
-        $k6_index = $i;
-    }
-    if (false !== strpos($step, 'init_environment()') && false !== strpos($step, 'wp plugin activate')) {
-        if (null === $k6_index) {
-            $activate_idx = $i;
-        }
-    }
-    if (false !== strpos($step, 'explain-gate.sh')) {
-        $explain_step = $step;
-    }
+if (null !== $k6_index) {
+    $before_k6 = array_filter(
+        slimstat_ci_step_indexes($nightly_steps, 'init_environment()', 'wp plugin activate'),
+        static fn(int $i): bool => $i < $k6_index
+    );
+    $activate_idx = $before_k6 ? (int) end($before_k6) : null;
 }
 
 if (null === $k6_index) {

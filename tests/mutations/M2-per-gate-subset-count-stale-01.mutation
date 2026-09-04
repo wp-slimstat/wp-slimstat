@@ -1,0 +1,13 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-comment-metrics
+kind:      introduce-defect
+expect:    claims 5 entries on `composer test:seal-negative`; 7 .mutation file(s) name that gate
+rationale: Makes the per-gate subset count wrong. Before this check existed the same figure said `four` against a real 7, and its sibling `three` against a real 4, for months -- invisible because a claim naming its gate could not be told from a claim about the registry total, so writing it in digits would have FAILED the build and spelling it as a word was the only form that passed. Backticks around the gate name are now the marker that separates the two, and the number is checked against the .mutation files.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -182,3 +182,3 @@
+         # Each entry runs its gate TWICE — once clean, once mutated — so the cost tracks gate
+-        # count, not just registry size. The two seal suites are the slow ones: 7 entries on
++        # count, not just registry size. The two seal suites are the slow ones: 5 entries on
+         # `composer test:seal-negative` (it boots the real entry point and is deliberately

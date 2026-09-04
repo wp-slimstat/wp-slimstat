@@ -1155,22 +1155,45 @@ function slimstat_ci_matrix_cells(string $block): array
 }
 
 /**
+ * POSITIONS of every step containing ALL the needles. Order inside a job is a property in its
+ * own right: "the step that checks the booted version" is a check only if it runs AFTER the step
+ * that boots it and BEFORE the one that stops it. Returning step TEXT throws that away at the
+ * helper boundary, and §9b spent its whole life claiming the ordering in prose while asserting
+ * only that both steps existed — a reviewer swapped them in Pro's twin and the gate stayed green.
+ *
+ * $steps is a preg_split list, so the keys are already positions; no cast, which on a non-list
+ * array would quietly turn a string key into 0, i.e. "the first step".
+ *
+ * @return int[]
+ */
+function slimstat_ci_step_indexes(array $steps, string ...$needles): array
+{
+    $hits = [];
+    foreach ($steps as $i => $step) {
+        foreach ($needles as $needle) {
+            if (false === strpos($step, $needle)) {
+                continue 2;
+            }
+        }
+        $hits[] = $i;
+    }
+
+    return $hits;
+}
+
+/**
  * Every step whose text contains ALL of the needles. The caller asserts on the count — eight
  * gates carried a loop that silently took the FIRST match, so a second step containing the same
  * command in another job was invisible to the check meant to pin it.
+ *
+ * Kept as the text-returning view because eight gates read it; new callers that care about WHERE
+ * a step sits want slimstat_ci_step_indexes() above.
  *
  * @return string[]
  */
 function slimstat_ci_steps_containing(array $steps, string ...$needles): array
 {
-    return array_values(array_filter($steps, static function (string $step) use ($needles): bool {
-        foreach ($needles as $needle) {
-            if (false === strpos($step, $needle)) {
-                return false;
-            }
-        }
-        return true;
-    }));
+    return array_map(static fn(int $i): string => $steps[$i], slimstat_ci_step_indexes($steps, ...$needles));
 }
 
 /**
