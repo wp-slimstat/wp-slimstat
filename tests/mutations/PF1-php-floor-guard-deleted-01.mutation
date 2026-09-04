@@ -1,0 +1,17 @@
+target:    wp-slimstat.php
+gate:      composer test:php-floor
+kind:      guard-removal
+expect:    has no `PHP_VERSION_ID < 70400` check
+rationale: Deletes the runtime floor guard: the state free shipped in until 2026-09-04, found by the review of Pro D5, whose notice promised "the free plugin continues to work" about a sibling that could not.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -30,7 +30,7 @@
+  * `tests/php-floor-test.php` is the record: what is proven, what is ratcheted, and what
+  * widening this would cost.
+  */
+-if (PHP_VERSION_ID < 70400) {
++if (false) {
+     if (!function_exists('wp_slimstat_render_php_floor_notice')) {
+         function wp_slimstat_render_php_floor_notice()
+         {

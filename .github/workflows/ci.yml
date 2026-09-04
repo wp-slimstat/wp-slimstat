@@ -127,6 +127,12 @@ jobs:
           fi
           echo "No syntax errors found."
 
+      - name: Parse envelope — wp-slimstat.php on a real PHP 7.0
+        # Only an interpreter says what parses (PITFALLS 116). Pinned by tests/php-floor-test.php
+        # §5; one lane, since the answer does not depend on the host PHP. Alpine: 30 MB, not 130.
+        if: ${{ matrix.php == '7.4' }}
+        run: docker run --rm -v "${PWD}:/p:ro" -w /p php:7.0-cli-alpine php -l wp-slimstat.php
+
       - name: Python for the cross-language encoder gate
         # test:source-level now includes test:fingerprint-v2-py, so python3 is a hard
         # dependency of the one gate whose contract is "vendor-independent, runs from the bare
@@ -155,7 +161,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 167 entries and takes ~160s (timing last measured 2026-08-24,
+        # The full registry holds 188 entries and takes ~160s (timing last measured 2026-08-24,
         # when the registry was smaller). This line has now been wrong three times — twice on the
         # duration, off by 25x and then 20x, and once on the size, which sat 40 short of the real
         # figure — and it is the sentence that decides when to narrow the run.
@@ -415,6 +421,18 @@ jobs:
         # ship with Docker pre-installed.
         run: npx wp-env start
         timeout-minutes: 5
+
+      - name: Booted WordPress is the version this lane is named for
+        # Everything above reasons about which WordPress the lane WILL boot; this asks the running
+        # site. Exact match: an x.y release tag reports `x.y`, so a booted `6.4.7` is a stale cache
+        # or a fallback — the very thing this exists to catch. Pinned by perf-gate §9b.
+        run: |
+          booted="$(npx wp-env run tests-cli -- wp core version 2>/dev/null | tr -d '[:space:]')"
+          echo "lane WP ${WP_VERSION} booted WordPress ${booted}"
+          case "${booted}" in
+            "${WP_VERSION}") ;;
+            *) echo "::error::this lane is named for WordPress ${WP_VERSION} but booted ${booted}"; exit 1 ;;
+          esac
 
       - name: Reports output-escaping gate (XSS, needs a live WordPress)
         # THE ONLY CI HOME THIS GATE HAS. tests/reports-output-escaping-test.php is a member

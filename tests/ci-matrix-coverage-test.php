@@ -28,6 +28,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';  // hoisted: the condition rule now lives in the lib and is called above the old require
 $plugin_root = dirname(__DIR__);
 
 $header = file_get_contents($plugin_root . '/wp-slimstat.php');
@@ -78,7 +79,7 @@ if ($ci_yaml === false) {
 //               catches a runtime fatal, which is the defect this gate exists for.
 //   STATIC    — source-level scans and the mutation registry. Real tests, and they run on
 //               every lane, but they read source; they never execute the plugin.
-$job_blocks = preg_split('/(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)/m', $ci_yaml);
+$job_blocks = slimstat_ci_job_blocks($ci_yaml); // any two-space key, not the "Tier" naming convention
 
 // Does this step run for $version? BOTH conditional forms, and both quote styles.
 //
@@ -88,18 +89,8 @@ $job_blocks = preg_split('/(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)/m', $ci_yaml);
 // so a PHPUnit step that runs on 8.2 alone would have satisfied 7.4 and 8.0. That is the
 // same over-crediting the rewrite exists to end, reintroduced through the other operator.
 // `==` is an allow-list: if a step names the versions it runs for, everything else is out.
-$step_runs_for = static function (string $step_block, string $version): bool {
-    if (!preg_match('/^[^\S\n]+if:.*$/m', $step_block, $m)) {
-        return true; // no condition: runs on every version in the matrix
-    }
-    $cond = $m[0];
-
-    if (preg_match_all('/matrix\.php\s*==\s*[\'"]([0-9.]+)[\'"]/', $cond, $inc) && [] !== $inc[1]) {
-        return in_array($version, $inc[1], true);
-    }
-
-    return !preg_match('/matrix\.php\s*!=\s*[\'"]' . preg_quote($version, '/') . '[\'"]/', $cond);
-};
+// The rule lives in the lib (slimstat_ci_step_runs_for, with fixtures in source-scan-strength);
+// the history above is why it understands both operators.
 
 $execution = [];
 $static    = [];
@@ -153,7 +144,7 @@ foreach ($job_blocks as $block) {
 
     foreach ($versions as $v) {
         foreach ($steps as $step) {
-            if (!$step_runs_for($step, $v)) continue;
+            if (!slimstat_ci_step_runs_for($step, 'php', $v)) continue;
 
             if (preg_match('/(vendor\/bin\/phpunit|\bphpunit\b|composer\s+test:(unit|integration|all))/', $step)) {
                 $execution[$v] = true;

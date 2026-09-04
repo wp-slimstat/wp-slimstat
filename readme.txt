@@ -109,7 +109,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.0.0 =
-Major release. Back up your database first. Faster dashboards and tracking, GDPR-grade anonymous identity, multisite and external-database fixes. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — the changelog lists each one. Going back to 5.5.x: the update only ADDS database columns and never removes a row, and older versions keep working on the updated tables — but the added columns stay, so keep the backup you took.
+Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
 
 
 = 5.5.1 =

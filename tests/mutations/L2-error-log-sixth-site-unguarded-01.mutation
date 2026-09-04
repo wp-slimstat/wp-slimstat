@@ -1,0 +1,16 @@
+target:    uninstall.php
+gate:      composer test:no-unguarded-error-log
+kind:      introduce-defect
+expect:    calls error_log() outside a WP_DEBUG guard
+rationale: Adds a sixth, unguarded error_log() in uninstall.php. Two assertions must fire: containment (no guarded range holds it) and the pin (six sites against five).
+---
+--- a/uninstall.php
++++ b/uninstall.php
+@@ -4,6 +4,7 @@
+ if (!defined('WP_UNINSTALL_PLUGIN')) {
+     exit;
+ }
++error_log('slimstat uninstall reached');
+ 
+ // Required directly, not autoloaded. This file runs with the plugin unloaded and no Composer
+ // autoloader — which is exactly why the drop list was hardcoded here in the first place, and why

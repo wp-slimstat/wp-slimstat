@@ -1,0 +1,17 @@
+target:    src/Helpers/DataBuckets.php
+gate:      composer test:databuckets-week-start
+kind:      boundary
+expect:    a row one week past the range landed in a phantom bucket
+rationale: Widens the bounds check to `<=`; the row on Sunday 22 March (offset == points) is then kept as a sixth, unlabelled entry, and the strict five-element compare fires.
+---
+--- a/src/Helpers/DataBuckets.php
++++ b/src/Helpers/DataBuckets.php
+@@ -241,7 +241,7 @@
+         }
+ 
+         // Ensure offset is within bounds
+-        if ($offset >= 0 && $offset < $this->points) {
++        if ($offset >= 0 && $offset <= $this->points) {
+             $target = 'current' === $period ? 'datasets' : 'datasetsPrev';
+             if (!isset($this->{$target}['v1'][$offset])) {
+                 $this->{$target}['v1'][$offset] = 0;

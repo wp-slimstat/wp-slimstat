@@ -27,6 +27,7 @@
     }
   },
   "require": {
+    "php": ">=7.4",
     "veronalabs/browscap-php": "dev-standalone"
   },
   "require-dev": {
@@ -165,6 +166,13 @@
     "test:tracker-script-origin": "php tests/tracker-script-origin-test.php",
     "test:textdomain-single-source": "php tests/textdomain-single-source-test.php",
     "test:db-floor-metadata": "php tests/db-floor-metadata-test.php",
+    "test:php-floor": "php tests/php-floor-test.php",
+    "test:no-unguarded-error-log": "php tests/no-unguarded-error-log-test.php",
+    "test:ci-lane-executes-something": "php tests/ci-lane-executes-something-test.php",
+    "test:phpstan-baseline-ratchet": "php tests/phpstan-baseline-ratchet-test.php",
+    "test:dist-manifest": "php tests/dist-manifest-test.php",
+    "test:version-suffix-contract": "php tests/version-suffix-contract-test.php",
+    "test:databuckets-week-start": "php tests/databuckets-week-start-test.php",
     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
     "test:bundle-matches-source": "php tests/bundle-matches-source-test.php",
     "test:chart-query-budget": "php tests/chart-query-budget-test.php",
@@ -344,7 +352,14 @@
       "@test:canary-filing",
       "@test:campaign-phase-gate",
       "@test:answers-population",
-      "@test:export-fidelity"
+      "@test:export-fidelity",
+      "@test:php-floor",
+      "@test:no-unguarded-error-log",
+      "@test:ci-lane-executes-something",
+      "@test:phpstan-baseline-ratchet",
+      "@test:dist-manifest",
+      "@test:version-suffix-contract",
+      "@test:databuckets-week-start"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",

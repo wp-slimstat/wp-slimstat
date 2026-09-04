@@ -1,0 +1,18 @@
+target:    src/Tracker/VisitIdGenerator.php
+gate:      composer test:no-unguarded-error-log
+kind:      guard-removal
+expect:    calls error_log() outside a WP_DEBUG guard
+rationale: Removes the WP_DEBUG guard from one existing site, census unchanged, so only the containment check can catch it. This branch is the one a broken install reaches on every request.
+---
+--- a/src/Tracker/VisitIdGenerator.php
++++ b/src/Tracker/VisitIdGenerator.php
+@@ -245,8 +245,6 @@
+             return;
+         }
+ 
+-        if (defined('WP_DEBUG') && WP_DEBUG) {
+-            error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
+-        }
++        error_log('[WP SLIMSTAT] [ERROR]: ' . $message);
+     }
+ }

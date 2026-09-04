@@ -1,0 +1,17 @@
+target:    wp-slimstat.php
+gate:      composer test:php-floor
+kind:      introduce-defect
+expect:    parameter type `object`
+rationale: An `object` parameter type (7.2) on the notice function: the only construct in the 7.1-7.4 band that fits one signature edit. Section 3 fires; the interpreter step would too, one lane later.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -32,7 +32,7 @@
+  */
+ if (PHP_VERSION_ID < 70400) {
+     if (!function_exists('wp_slimstat_render_php_floor_notice')) {
+-        function wp_slimstat_render_php_floor_notice()
++        function wp_slimstat_render_php_floor_notice(object $context = null)
+         {
+             echo '<div class="notice notice-error"><p>'
+                 . 'SlimStat Analytics requires PHP 7.4 or newer. This site is running PHP '

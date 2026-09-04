@@ -22,13 +22,16 @@ if [ -f "$OUT" ] && [ -f "$REF_STAMP" ] && [ -f "$HASH_STAMP" ] \
   exit 0
 fi
 
+# The builder decides the directory and this script reads what it decided — one variable,
+# never a second copy of the recipe (PITFALLS 115). /tmp is /private/tmp on macOS.
+export WPSS_BUILD_DIR="${WPSS_BUILD_DIR:-/tmp/wpss-pro-$SHA}"
 if [ -n "${PRO_BUILD_LOG:-}" ]; then
   "$PRO_REPO/build/build-dist.sh" --ref "$FULL" --out "$HARNESS_DIR/build" \
     > "$PRO_BUILD_LOG" 2>&1
 else
   "$PRO_REPO/build/build-dist.sh" --ref "$FULL" --out "$HARNESS_DIR/build"
 fi
-ENV_FILE="/private/tmp/wpss-pro-$SHA/env.sh"
+ENV_FILE="${WPSS_BUILD_DIR}/env.sh"
 [ -f "$ENV_FILE" ] || { err "Pro builder did not write $ENV_FILE"; exit 1; }
 # shellcheck disable=SC1090
 source "$ENV_FILE"

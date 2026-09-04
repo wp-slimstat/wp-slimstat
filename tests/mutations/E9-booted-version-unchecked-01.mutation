@@ -1,0 +1,17 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-removal
+expect:    does not compare against WP_VERSION and `exit 1`
+rationale: Turns the mismatch arm of the `wp core version` case into a warning with no exit; the step still exists and names WP_VERSION, so only the exit-1 half of section 9b fires.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -431,7 +431,7 @@
+           echo "lane WP ${WP_VERSION} booted WordPress ${booted}"
+           case "${booted}" in
+             "${WP_VERSION}") ;;
+-            *) echo "::error::this lane is named for WordPress ${WP_VERSION} but booted ${booted}"; exit 1 ;;
++            *) echo "::warning::this lane is named for WordPress ${WP_VERSION} but booted ${booted}" ;;
+           esac
+ 
+       - name: Reports output-escaping gate (XSS, needs a live WordPress)

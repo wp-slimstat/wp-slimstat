@@ -1,0 +1,11 @@
+target:    tests/PHPSTAN-BASELINE-CEILING
+gate:      composer test:phpstan-baseline-ratchet
+kind:      constant-weakening
+expect:    tests/PHPSTAN-BASELINE-CEILING says 170 / 315
+rationale: Raises the committed ceiling without the baseline changing. The exact-match half of the ratchet catches it; the descent half (against HEAD) is what stops the bump being made legitimately in the same commit as a regenerated, larger baseline.
+---
+--- a/tests/PHPSTAN-BASELINE-CEILING
++++ b/tests/PHPSTAN-BASELINE-CEILING
+@@ -1 +1 @@
+-162 315
++170 315

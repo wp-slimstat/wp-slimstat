@@ -1,0 +1,16 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      guard-removal
+expect:    missing-WordPress-tag branch does not `exit 1`
+rationale: Removes exit 1 from the missing-tag branch only; the network-failure branch keeps its own, which is what satisfied the old whole-step search.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -385,7 +385,6 @@
+             if [ -z "${wp_tag_refs}" ]; then
+               echo "::error::WordPress tag ${WP_VERSION} does not exist. Fix the matrix entry, or"
+               echo "::error::remove the lane — do not let it silently test trunk under that name."
+-              exit 1
+             fi
+           fi
+           # PINNED TO VERSIONS, for the same reason main.yml's actions are pinned to commits

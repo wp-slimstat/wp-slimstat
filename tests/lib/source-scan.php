@@ -482,7 +482,9 @@ function slimstat_guarded_block_ranges(array $tokens, string $guard = 'is_admin'
     $ranges = [];
 
     for ($i = 0; $i < $count; $i++) {
-        if (!is_array($tokens[$i]) || T_IF !== $tokens[$i][0]) {
+        // `elseif` too: a guard on the second branch of an if/elseif is a guard. Missed until
+        // no-unguarded-error-log-test.php adopted this helper; pinned in source-scan-strength.
+        if (!is_array($tokens[$i]) || !in_array($tokens[$i][0], [T_IF, T_ELSEIF], true)) {
             continue;
         }
 
@@ -942,4 +944,253 @@ function slimstat_standing_records(string $plugin_root): array
     }
 
     return ['standalone' => $standalone, 'dir' => $dir, 'records' => $records, 'problems' => $problems];
+}
+
+/**
+ * Constructs in $php newer than PHP $floor_id, by token scan. One implementation for every
+ * "what does this file need to parse" ratchet, so a construct added to the table is added for all.
+ *
+ * `since` IS WHEN A CONSTRUCT BECAME MEANINGFUL, NOT WHEN IT BECAME PARSEABLE — and the two
+ * differ. `: void` is recorded as 7.1, the version that reserved the word; PHP 7.0 parses it
+ * as a class-named return type and moves on. A real interpreter (php:7.0-cli, run by a
+ * reviewer) parsed wp-slimstat.php while this table said it could not. So a floor taken from
+ * this scan is a RATCHET on what may be added to a file, never a statement of where the file
+ * stops parsing. Only an interpreter says that; php-floor-test.php §5 pins one into CI.
+ *
+ * A denylist, stated as such: it finds the constructs someone thought to list. 7.0–7.4 only:
+ * php80-syntax-scan-test.php owns 8.0+ over the same files with its own allow-marker, and a
+ * previous version of this table carried 8.x rows that no caller ever consumed — and defended
+ * them with a claim ("text matching checks the same on every lane") that was false, since on 7.4
+ * `#[` tokenises as a comment and `match`/`enum` as plain strings.
+ *
+ * @return array<int, array{line:int, construct:string, since:int}>
+ */
+function slimstat_php_constructs_newer_than(string $php, int $floor_id): array
+{
+    $found  = [];
+    $tokens = token_get_all($php);
+    $count  = count($tokens);
+
+    $operators = [
+        '??'  => ['null coalescing operator', 70000],
+        '<=>' => ['spaceship operator', 70000],
+        '??=' => ['null coalescing assignment', 70400],
+    ];
+
+    // Type names and the version each became one. `void` is return-only in the grammar, so no
+    // parseable file has it in a parameter position — one table serves both places.
+    $type_since = [
+        'int' => 70000, 'float' => 70000, 'string' => 70000, 'bool' => 70000,
+        'iterable' => 70100, 'void' => 70100, 'object' => 70200,
+    ];
+
+    /** Token $k names a type (T_STRING/T_ARRAY) and the next significant token is a variable. */
+    $typed_variable = static function (int $k) use ($tokens, $count): bool {
+        if ($k >= $count || !is_array($tokens[$k]) || !in_array($tokens[$k][0], [T_STRING, T_ARRAY], true)) {
+            return false;
+        }
+        $v = slimstat_next_significant($tokens, $k);
+
+        return $v < $count && is_array($tokens[$v]) && T_VARIABLE === $tokens[$v][0];
+    };
+
+    for ($i = 0; $i < $count; $i++) {
+        $token = $tokens[$i];
+        $text  = slimstat_token_text($token);
+        $lower = strtolower($text);
+        $line  = is_array($token) ? $token[2] : 0;
+
+        if (isset($operators[$text])) {
+            $found[] = ['line' => $line, 'construct' => $operators[$text][0], 'since' => $operators[$text][1]];
+            continue;
+        }
+
+        // `fn` only as a token in its own right (T_FN) and not a member name: `$o->fn()` is a call.
+        if (is_array($token) && 'fn' === $lower && T_STRING !== $token[0]) {
+            $prev = $i > 0 ? $tokens[$i - 1] : null;
+            if (!is_array($prev) || !in_array($prev[0], [T_OBJECT_OPERATOR, T_DOUBLE_COLON], true)) {
+                $found[] = ['line' => $line, 'construct' => 'arrow function', 'since' => 70400];
+                continue;
+            }
+        }
+
+        // Typed property: visibility, optional `static`, optional `?`, a type, then a variable.
+        if (is_array($token) && in_array($token[0], [T_PUBLIC, T_PRIVATE, T_PROTECTED, T_VAR], true)) {
+            $j = slimstat_next_significant($tokens, $i);
+            if ($j < $count && is_array($tokens[$j]) && T_STATIC === $tokens[$j][0]) {
+                $j = slimstat_next_significant($tokens, $j);
+            }
+            if ($j < $count && '?' === slimstat_token_text($tokens[$j])) {
+                $j = slimstat_next_significant($tokens, $j);
+            }
+            if ($typed_variable($j)) {
+                $found[] = ['line' => $tokens[$j][2], 'construct' => 'typed property', 'since' => 70400];
+            }
+            continue;
+        }
+
+        if (!is_array($token) || T_FUNCTION !== $token[0]) {
+            continue;
+        }
+
+        // Signature: skip the name (absent for a closure) to reach `(`, then walk to its match.
+        $open = slimstat_next_significant($tokens, $i);
+        if ($open < $count && '(' !== slimstat_token_text($tokens[$open])) {
+            $open = slimstat_next_significant($tokens, $open);
+        }
+        if ($open >= $count || '(' !== slimstat_token_text($tokens[$open])) {
+            continue;
+        }
+        $close = slimstat_token_paren_end($tokens, $open, $count);
+        if (null === $close) {
+            continue;
+        }
+
+        for ($k = $open + 1; $k < $close; $k++) {
+            if ('?' === slimstat_token_text($tokens[$k])) {
+                // Anchored on the variable that follows, because a default value may hold a
+                // ternary, which every runtime parses.
+                if ($typed_variable(slimstat_next_significant($tokens, $k))) {
+                    $found[] = ['line' => $line, 'construct' => 'nullable parameter type', 'since' => 70100];
+                }
+                continue;
+            }
+            if (is_array($tokens[$k]) && T_STRING === $tokens[$k][0] && isset($type_since[strtolower($tokens[$k][1])])) {
+                $found[] = [
+                    'line'      => $tokens[$k][2],
+                    'construct' => 'parameter type `' . $tokens[$k][1] . '`',
+                    'since'     => $type_since[strtolower($tokens[$k][1])],
+                ];
+            }
+        }
+
+        $after = slimstat_next_significant($tokens, $close);
+        if ($after < $count && ':' === slimstat_token_text($tokens[$after])) {
+            $t     = slimstat_next_significant($tokens, $after);
+            $since = 70000;
+            $name  = 'return type declaration';
+            if ($t < $count && '?' === slimstat_token_text($tokens[$t])) {
+                $since = 70100;
+                $name  = 'nullable return type';
+            } elseif ($t < $count && is_array($tokens[$t]) && isset($type_since[strtolower($tokens[$t][1])])) {
+                $since = $type_since[strtolower($tokens[$t][1])];
+                $name  = 'return type `' . $tokens[$t][1] . '`';
+            }
+            $found[] = ['line' => $line, 'construct' => $name, 'since' => $since];
+        }
+    }
+
+    return array_values(array_filter($found, static function (array $f) use ($floor_id): bool {
+        return $f['since'] > $floor_id;
+    }));
+}
+
+/**
+ * Does a ci.yml step run for one value of a matrix key? Both conditional forms, both quotes.
+ *
+ * Lifted from ci-matrix-coverage-test.php, where it was a private closure keyed to `matrix.php`,
+ * when ci-lane-executes-something-test.php needed the identical rule for `matrix.wp` as well.
+ * The history that shaped it is worth keeping with it: the first draft understood only the
+ * exclusion form (`matrix.php != 'X'`), so a step gated by the INCLUSION form
+ * (`matrix.php == '8.2'`) was credited to every version in the matrix — a PHPUnit step that
+ * ran on 8.2 alone satisfied 7.4 and 8.0. `==` is an allow-list: if a step names the versions
+ * it runs for, everything else is out.
+ *
+ * $step must already be comment-stripped; a commented-out `if:` is not a condition.
+ */
+function slimstat_ci_step_runs_for(string $step, string $matrix_key, string $value): bool
+{
+    if (!preg_match('/^[^\S\n]+if:.*$/m', $step, $m)) {
+        return true; // no condition: runs on every value in the matrix
+    }
+    $cond = $m[0];
+    $key  = preg_quote($matrix_key, '/');
+
+    if (preg_match_all('/matrix\.' . $key . '\s*==\s*[\'"]([0-9.]+)[\'"]/', $cond, $inc) && [] !== $inc[1]) {
+        return in_array($value, $inc[1], true);
+    }
+
+    return !preg_match('/matrix\.' . $key . '\s*!=\s*[\'"]' . preg_quote($value, '/') . '[\'"]/', $cond);
+}
+
+/**
+ * ci.yml split into its top-level job blocks, keyed by job id.
+ *
+ * Three gates carried the same `(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)` split. Anchoring on the
+ * name convention meant a job with a matrix and a name not starting "Tier" vanished from every
+ * consumer — the exact shape of empty lane ci-lane-executes-something exists to catch. This
+ * splits on any two-space key; consumers select by what the block contains (a matrix, a name).
+ * Keys under `on:` (`push:`, `pull_request:`) come through too and are filtered the same way.
+ *
+ * @return array<string, string> job id => block text
+ */
+function slimstat_ci_job_blocks(string $ci_code): array
+{
+    $blocks = [];
+    foreach (preg_split('/(?=^  [A-Za-z_][\w-]*:[ \t]*$)/m', $ci_code) ?: [] as $chunk) {
+        if (preg_match('/^  ([A-Za-z_][\w-]*):[ \t]*$/m', $chunk, $m)) {
+            $blocks[$m[1]] = $chunk;
+        }
+    }
+
+    return $blocks;
+}
+
+/**
+ * The matrix cells one job block declares, as [matrix key, value] pairs.
+ *
+ * `php: ["7.4", …]` lists are keyed `php`; Tier 2's `include:` pairs are keyed `wp`, because
+ * that is the key the job's own step conditions use. Both consumers of this used to carry both
+ * regexes; the include-pair one was the fifth copy of what slimstat_ci_wp_lanes() already does.
+ *
+ * @return array<int, array{0:string, 1:string}>
+ */
+function slimstat_ci_matrix_cells(string $block): array
+{
+    if (preg_match('/matrix:\s*php:\s*\[([^\]]+)\]/', $block, $mm) && preg_match_all('/"([0-9.]+)"/', $mm[1], $vm)) {
+        return array_map(static fn(string $v): array => ['php', $v], $vm[1]);
+    }
+
+    return array_map(static fn(string $wp): array => ['wp', $wp], array_keys(slimstat_ci_wp_lanes($block)));
+}
+
+/**
+ * Every step whose text contains ALL of the needles. The caller asserts on the count — eight
+ * gates carried a loop that silently took the FIRST match, so a second step containing the same
+ * command in another job was invisible to the check meant to pin it.
+ *
+ * @return string[]
+ */
+function slimstat_ci_steps_containing(array $steps, string ...$needles): array
+{
+    return array_values(array_filter($steps, static function (string $step) use ($needles): bool {
+        foreach ($needles as $needle) {
+            if (false === strpos($step, $needle)) {
+                return false;
+            }
+        }
+        return true;
+    }));
+}
+
+/**
+ * One field of a plugin header or readme header block (`* Version: 6.0.0` / `Stable tag: 6.0.0`).
+ * Seven readers used two regex shapes for the same lines; the two `Requires PHP` readers already
+ * captured differently. Read RAW — the header is a comment, so blanking would remove it.
+ */
+function slimstat_header_field(string $source, string $field): ?string
+{
+    return preg_match('/^\s*\*?\s*' . preg_quote($field, '/') . ':\s*(\S+)\s*$/m', $source, $m) ? $m[1] : null;
+}
+
+/**
+ * A file's content at a git revision, or null when the ref/path does not resolve or the tree is
+ * not a repository. The revision is EXPLICIT: a ratchet that compares against the last commit
+ * must not be handed the index, or a staged bump passes its own descent check.
+ */
+function slimstat_git_show(string $root, string $rev, string $path): ?string
+{
+    $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg($rev . ':' . $path) . ' 2>/dev/null');
+
+    return (null === $out || '' === $out) ? null : $out;
 }

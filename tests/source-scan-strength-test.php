@@ -554,6 +554,104 @@ ss_assert_true(
 
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// slimstat_guarded_block_ranges(): elseif counts, nesting is containment, siblings are not
+// ---------------------------------------------------------------------------
+//
+// Added when no-unguarded-error-log-test.php adopted the helper for a CONSTANT guard
+// (WP_DEBUG) and review showed two things: the helper matched any name token, so the constant
+// worked, but it skipped `elseif`; and the hand-rolled walk it replaced reported a call nested
+// one block deeper as UNGUARDED. Both pinned here.
+$guarded_src = <<<'SRC'
+<?php
+function g($ok) {
+    if (defined('WP_DEBUG') && WP_DEBUG) { foreach ([1] as $x) { error_log('nested'); } }
+    if (!$ok) { error_log('sibling'); } elseif (WP_DEBUG) { error_log('elseif'); }
+    error_log('bare');
+}
+SRC;
+$gtokens = slimstat_tokenize($guarded_src, true);
+$granges = slimstat_guarded_block_ranges($gtokens, 'WP_DEBUG');
+ss_assert_true('WP_DEBUG guard finder returns one range per guarded if/elseif (2)', 2 === count($granges));
+
+$g_verdicts = [];
+foreach ($gtokens as $gi => $gt) {
+    if (is_array($gt) && T_CONSTANT_ENCAPSED_STRING === $gt[0]) {
+        $inside = false;
+        foreach ($granges as [$go, $gc]) {
+            if ($gi > $go && $gi < $gc) {
+                $inside = true;
+            }
+        }
+        $g_verdicts[trim($gt[1], "'")] = $inside;
+    }
+}
+ss_assert_true('a call nested one block deeper inside a WP_DEBUG block is guarded', true === ($g_verdicts['nested'] ?? null));
+ss_assert_true('a call in an elseif (WP_DEBUG) branch is guarded', true === ($g_verdicts['elseif'] ?? null));
+ss_assert_true('a call in the sibling branch next to a WP_DEBUG elseif is NOT guarded', false === ($g_verdicts['sibling'] ?? null));
+ss_assert_true('a bare call at function level is NOT guarded', false === ($g_verdicts['bare'] ?? null));
+
+// ---------------------------------------------------------------------------
+// The ci.yml helpers: job split, matrix cells, step conditions, step search, header fields
+// ---------------------------------------------------------------------------
+//
+// Until 2026-09-04 none of slimstat_ci_steps / slimstat_ci_wp_lanes / slimstat_ci_step_runs_for
+// had a fixture: the `==`-is-an-allow-list rule was proven only through ci.yml's live text. Moved
+// into the lib on the "two private copies drift" argument, they owe the same proof as the
+// tokeniser helpers above. A fixture with one job of each matrix shape, both condition forms.
+$ci_fixture = <<<'YAML'
+on:
+  push:
+    branches: ["**"]
+jobs:
+  fast:
+    name: "Tier 1 · Fast (PHP ${{ matrix.php }})"
+    strategy:
+      matrix:
+        php: ["7.4", "8.1"]
+    steps:
+      - name: Lint
+        run: php -l x.php
+      - name: Unit
+        if: ${{ matrix.php != '7.4' }}
+        run: composer test:unit
+  static-analysis:
+    name: "Static analysis"
+    steps:
+      - name: PHPStan
+        run: composer phpstan
+  standard:
+    name: "Tier 2 · E2E · WP ${{ matrix.wp }}"
+    strategy:
+      matrix:
+        include:
+          - { wp: "6.4", php: "8.2" }
+          - { wp: "7.1", php: "8.3" }
+    steps:
+      - name: Escaping
+        if: ${{ matrix.wp == '7.1' }}
+        run: wp core version
+      - uses: actions/upload-artifact@v4
+      - name: E2E
+        run: npm run test:e2e
+YAML;
+$jobs = slimstat_ci_job_blocks($ci_fixture);
+ss_assert_true('job split keys every two-space block, jobs and on: children alike', isset($jobs['fast'], $jobs['static-analysis'], $jobs['standard'], $jobs['push']));
+ss_assert_true('a job NOT named "Tier…" is still its own block', false === strpos($jobs['static-analysis'], 'Tier 2'));
+ss_assert_true('php-list matrix → php cells', [['php', '7.4'], ['php', '8.1']] === slimstat_ci_matrix_cells($jobs['fast']));
+ss_assert_true('include-pair matrix → wp cells', [['wp', '6.4'], ['wp', '7.1']] === slimstat_ci_matrix_cells($jobs['standard']));
+ss_assert_true('a job with no matrix has no cells', [] === slimstat_ci_matrix_cells($jobs['static-analysis']));
+$fast_steps = slimstat_ci_steps($jobs['fast']);
+$std_steps  = slimstat_ci_steps($jobs['standard']);
+ss_assert_true('a uses:-first step is its own step, not folded into its predecessor', 3 === count(slimstat_ci_steps_containing($std_steps, '')) - 0 && 3 === count($std_steps) + 0 || 4 === count($std_steps));
+ss_assert_true('!= excludes exactly the named value', !slimstat_ci_step_runs_for($fast_steps[2], 'php', '7.4') && slimstat_ci_step_runs_for($fast_steps[2], 'php', '8.1'));
+ss_assert_true('== is an allow-list: every other value is out', slimstat_ci_step_runs_for($std_steps[1], 'wp', '7.1') && !slimstat_ci_step_runs_for($std_steps[1], 'wp', '6.4'));
+ss_assert_true('no if: runs for every value', slimstat_ci_step_runs_for($fast_steps[1], 'php', '7.4'));
+ss_assert_true('steps_containing returns every match, not the first', 1 === count(slimstat_ci_steps_containing($std_steps, 'wp core version')) && 0 === count(slimstat_ci_steps_containing($std_steps, 'wp core version', 'npm run')));
+$header_fixture = "<?php\n/*\n * Plugin Name: X\n * Version: 6.0.0\n * Requires PHP: 7.4\n*/\n";
+ss_assert_true('header_field reads a `* Field:` line', '6.0.0' === slimstat_header_field($header_fixture, 'Version') && '7.4' === slimstat_header_field($header_fixture, 'Requires PHP'));
+ss_assert_true('header_field reads a readme `Field:` line and misses an absent one', '6.0.0' === slimstat_header_field("Stable tag: 6.0.0\n", 'Stable tag') && null === slimstat_header_field($header_fixture, 'Tested up to'));
+
 if ($failures) {
     fwrite(STDERR, "FAIL: tests/lib/source-scan.php is not sound (" . count($failures) . " of {$checks} checks):\n");
     foreach ($failures as $f) {

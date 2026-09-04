@@ -1,0 +1,17 @@
+target:    wp-slimstat.php
+gate:      composer test:php-floor
+kind:      guard-removal
+expect:    does not `return` inside its own block
+rationale: Deletes the guard's own `return;` and nothing else; the next block's `return` two lines down is what the first version's 700-byte window found instead. Section 2's block-bounded check fires.
+---
+--- a/wp-slimstat.php
++++ b/wp-slimstat.php
+@@ -43,8 +43,6 @@
+     }
+ 
+     add_action('admin_notices', 'wp_slimstat_render_php_floor_notice');
+-
+-    return;
+ }
+ 
+ // check if composer autoloader exists

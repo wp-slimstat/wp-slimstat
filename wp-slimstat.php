@@ -14,6 +14,39 @@
  * Requires PHP: 7.4
 */
 
+/**
+ * THE PHP FLOOR, CHECKED BEFORE ANYTHING IS LOADED.
+ *
+ * WordPress honours `Requires PHP: 7.4` only in the update/activation UI; an already-installed
+ * plugin on a downgraded host loads regardless, and below the floor the requires below are
+ * parse errors — uncatchable, fatal to the whole site including wp-admin. This returns instead,
+ * with a notice. The notice function is declared INSIDE the branch so the common path pays
+ * nothing for it, and it is not translated or recorded because the textdomain and the
+ * degradation store both belong to the class that has not loaded.
+ *
+ * REACH: PHP 7.0–7.3. This file itself needs 7.0 to parse (`??` throughout) — proven by running
+ * php:7.0-cli against it and pinned by a Tier 1 step — so on older runtimes the guard is never
+ * reached and WordPress's header check is the only guard; 5.5.0 declared the same floor.
+ * `tests/php-floor-test.php` is the record: what is proven, what is ratcheted, and what
+ * widening this would cost.
+ */
+if (PHP_VERSION_ID < 70400) {
+    if (!function_exists('wp_slimstat_render_php_floor_notice')) {
+        function wp_slimstat_render_php_floor_notice()
+        {
+            echo '<div class="notice notice-error"><p>'
+                . 'SlimStat Analytics requires PHP 7.4 or newer. This site is running PHP '
+                . esc_html(PHP_VERSION)
+                . ', so SlimStat has not been loaded. Your analytics data is untouched.'
+                . '</p></div>';
+        }
+    }
+
+    add_action('admin_notices', 'wp_slimstat_render_php_floor_notice');
+
+    return;
+}
+
 // check if composer autoloader exists
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     return;

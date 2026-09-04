@@ -340,13 +340,10 @@ foreach (explode("\n", $ci_yaml) as $i => $line) {
 // sections away from the E0 gate where I had just fixed it, in the same commit.
 $ci_code = slimstat_yaml_strip_comments($ci_yaml);
 
-$escaping_step = '';
-foreach (slimstat_ci_steps($ci_code) as $step) {
-    if (false !== strpos($step, 'reports-output-escaping-test.php')) {
-        $escaping_step = $step;
-        break;
-    }
-}
+$steps = slimstat_ci_steps($ci_code);
+
+$escaping_steps = slimstat_ci_steps_containing($steps, 'reports-output-escaping-test.php');
+$escaping_step  = 1 === count($escaping_steps) ? $escaping_steps[0] : '';
 
 if ('' === $escaping_step) {
     $failures[] = 'no ci.yml step runs tests/reports-output-escaping-test.php. It is in '
@@ -358,34 +355,81 @@ if ('' === $escaping_step) {
             . 'report, not a gate';
     }
 
-    // The newest WordPress in the matrix must be among the versions it runs on.
+    // EVERY lane that carries the suite must be among the versions it runs on — not only the
+    // newest. The first version checked the newest lane alone, and a reviewer narrowed the
+    // condition to `matrix.wp == '7.1'`: §8 stayed green while the XSS gate silently stopped
+    // covering the lane that runs the FULL suite. Both of this section's comments then claimed
+    // "every blocking version". They lied by one.
+    //
+    // THE BASELINE COMES FROM .wp-env.json, WHICH IS THE TRUTH. ci.yml spells `6.4` four times
+    // — the matrix, the tag resolver, the override branch, the full-suite branch — and nothing
+    // pinned any of them to `.wp-env.json`'s `core`, the value wp-env actually boots. The second
+    // version of this section derived the baseline from one of those four copies, which made
+    // §8 a consumer of the duplication rather than its pin. Now the structured value is read
+    // and each copy is required to agree with it.
     $lanes = array_keys(slimstat_ci_wp_lanes($ci_yaml));
+
+    $wp_env   = json_decode((string) file_get_contents($plugin_root . '/.wp-env.json'), true);
+    $baseline = '';
+    if (preg_match('/#([0-9]+\.[0-9]+)$/', (string) ($wp_env['core'] ?? ''), $cm)) {
+        $baseline = $cm[1];
+    }
 
     if (count($lanes) < 5) {
         $failures[] = sprintf('only %d Tier 2 WP lanes found — the matrix scan has stopped '
             . 'matching, so the coverage check below proves nothing', count($lanes));
+    } elseif ('' === $baseline) {
+        $failures[] = '.wp-env.json has no `core: WordPress/WordPress#X.Y`; §8 cannot tell which '
+            . 'lane is the committed baseline, and a check with an empty must-cover set is green '
+            . 'on anything';
     } else {
+        if (!in_array($baseline, $lanes, true)) {
+            $failures[] = sprintf('.wp-env.json boots WordPress %s but no Tier 2 lane names it; '
+                . 'the committed baseline runs nowhere', $baseline);
+        }
+
+        $full_suite_steps = slimstat_ci_steps_containing($steps, 'npm run test:e2e');
+        if (1 !== count($full_suite_steps)
+            || !preg_match('/WP_VERSION\}?"?\s*=\s*"' . preg_quote($baseline, '/') . '"/', $full_suite_steps[0])) {
+            $failures[] = sprintf('the E2E step does not run the full suite on WP %s, the version '
+                . '.wp-env.json boots; the full-suite lane must be the committed baseline', $baseline);
+        }
+
         usort($lanes, 'version_compare');
         $newest = end($lanes);
 
-        if (false === strpos($escaping_step, "matrix.wp == '{$newest}'")) {
-            $failures[] = sprintf(
-                'the escaping gate does not run on WP %s, the newest lane in the matrix. Its '
-                    . 'subject is core\'s html-api file set, which is exactly what moves in a '
-                    . 'new WordPress — so the newest lane is the one it least affords to skip',
-                $newest
-            );
+        foreach (array_unique([$newest, $baseline]) as $must) {
+            if (false === strpos($escaping_step, "matrix.wp == '{$must}'")) {
+                $failures[] = sprintf(
+                    'the escaping gate does not run on WP %s (%s); its `if:` must include '
+                        . "matrix.wp == '%s'",
+                    $must,
+                    $must === $newest ? 'the newest lane in the matrix' : 'the full-suite baseline lane',
+                    $must
+                );
+            }
         }
     }
 }
 
+// The file the step runs must exist — a step naming a deleted file is a step that fails, not
+// one that guards, and until now nothing here asked.
+if (!is_file($plugin_root . '/tests/reports-output-escaping-test.php')) {
+    $failures[] = 'tests/reports-output-escaping-test.php does not exist. The CI step and the '
+        . 'composer script both name it; both would now fail rather than guard';
+}
+
 // The composer script must invoke the same path the CI step does, or renaming the file leaves
-// one of them pointing at nothing while the other still looks wired.
+// one of them pointing at nothing while the other still looks wired. Checked on the
+// `test:reports-escaping` KEY, not the whole file: a whole-file strpos was satisfied by the
+// path appearing in the script's own `_comment-` description while the script itself was gone.
 $composer_json = (string) file_get_contents($plugin_root . '/composer.json');
-if (false === strpos($composer_json, 'tests/reports-output-escaping-test.php')) {
-    $failures[] = 'composer.json no longer invokes tests/reports-output-escaping-test.php — the '
-        . 'CI step and the composer script must name the same file, or a rename silently '
-        . 'unwires one of them';
+$composer      = json_decode($composer_json, true);
+$escaping_script = (string) ($composer['scripts']['test:reports-escaping'] ?? '');
+if (false === strpos($escaping_script, 'tests/reports-output-escaping-test.php')) {
+    $failures[] = 'composer.json\'s `test:reports-escaping` script no longer invokes '
+        . 'tests/reports-output-escaping-test.php — the CI step and the composer script must '
+        . 'name the same file, or a rename silently unwires one of them';
 }
 
 // ── 9. A missing WordPress tag must fail, not silently become trunk ────────────
@@ -397,30 +441,58 @@ if (false === strpos($composer_json, 'tests/reports-output-escaping-test.php')) 
 // ci.yml ENTIRELY left this section green, so the guard could be removed wholesale — or
 // replaced by any other silent fallback — and nothing noticed. A check that only forbids one
 // spelling of a defect is not a check for the defect.
-$override_step = '';
-foreach (slimstat_ci_steps($ci_code) as $step) {
-    if (false !== strpos($step, '.wp-env.override.json') && false !== strpos($step, 'ls-remote')) {
-        $override_step = $step;
-        break;
-    }
-}
+$override_steps = slimstat_ci_steps_containing($steps, '.wp-env.override.json', 'ls-remote');
+$override_step  = 1 === count($override_steps) ? $override_steps[0] : '';
 
 if ('' === $override_step) {
     $failures[] = 'no ci.yml step checks that the WordPress tag a lane names actually exists '
         . '(no `ls-remote` beside the wp-env override). Without it a lane labelled for a version '
         . 'that is not there boots something else and reports green';
 } else {
-    if (false !== strpos($override_step, 'WP_REF="trunk"') || false !== strpos($override_step, "WP_REF='trunk'")) {
-        $failures[] = 'ci.yml falls back to WordPress trunk when a tag does not resolve. A lane '
-            . 'named for a version it is not running is a coverage claim nobody can check: fail '
-            . 'the lane instead, so a WordPress that does not exist is reported as such';
+    // THE MECHANISM, NOT A SPELLING. The first version forbade `WP_REF="trunk"` and
+    // `WP_REF='trunk'`; a reviewer replayed it against `WP_REF=trunk` and against
+    // `FALLBACK=trunk; WP_REF="${FALLBACK}"`: both green. What the step may do is assign WP_REF
+    // exactly once, from the matrix — so the list of assignments IS the assertion.
+    preg_match_all('/\bWP_REF=(\S*)/', $override_step, $wm);
+    if ($wm[1] !== ['"${WP_VERSION}"']) {
+        $failures[] = sprintf(
+            'the wp-env override step assigns WP_REF as [%s]; exactly one assignment, '
+                . 'WP_REF="${WP_VERSION}", is allowed. Any other is a fallback under some spelling '
+                . '— trunk, a pinned tag, an indirection — and a lane running a WordPress other '
+                . 'than the one it is named for is a coverage claim nobody can check',
+            implode(', ', $wm[1])
+        );
     }
 
-    if (false === strpos($override_step, 'exit 1')) {
-        $failures[] = 'the WordPress tag check does not fail the lane. Warning and continuing is '
-            . 'the fallback under another name: the message lands in a log nobody reads and the '
-            . 'status everyone reads stays green';
+    // AND THE MISSING-TAG BRANCH ITSELF MUST FAIL. The previous positive half looked for
+    // `exit 1` anywhere in the step, and the step has two; delete the second and the first kept
+    // the gate green, so "the tag check fails the lane" was certified by another branch's exit.
+    if (!preg_match('/if \[ -z "\$\{wp_tag_refs\}" \]; then(.*?)\n\s*fi\b/s', $override_step, $missing_tag)) {
+        $failures[] = 'the override step has no `if [ -z "${wp_tag_refs}" ]` branch — the tag-'
+            . 'existence check moved or is gone';
+    } elseif (false === strpos($missing_tag[1], 'exit 1')) {
+        $failures[] = 'the missing-WordPress-tag branch does not `exit 1`; warning and continuing '
+            . 'is the fallback under another name';
     }
+}
+
+// ── 9b. The booted WordPress is the one the lane is named for ───────────────────────────
+//
+// §9 reads the script's text. The defect is "the lane boots a WordPress other than the one it
+// is named for", and a static count cannot see a pinned-tag fallback spelled some new way, an
+// indirection two lines apart, or a stale wp-env cache serving last week's core. One step after
+// `wp-env start` asks the running site — `wp core version` — and fails the lane on a mismatch.
+// That is the assertion; the count above is its tripwire.
+$booted_steps = slimstat_ci_steps_containing($steps, 'wp core version');
+
+if (1 !== count($booted_steps)) {
+    $failures[] = sprintf('%d ci.yml step(s) check `wp core version` after wp-env starts; exactly one '
+        . 'is expected. Without it nothing proves the lane booted the WordPress it is named for — '
+        . 'every static check on the override script reasons about a boot nobody observed', count($booted_steps));
+} elseif (false === strpos($booted_steps[0], 'WP_VERSION') || false === strpos($booted_steps[0], 'exit 1')
+    || false !== strpos($booted_steps[0], 'continue-on-error')) {
+    $failures[] = 'the `wp core version` step does not compare against WP_VERSION and `exit 1` on '
+        . 'a mismatch, or is continue-on-error; printing the version is a log line, not a gate';
 }
 
 // ── 10. Everything the credential-holding workflow runs is pinned to a commit ──

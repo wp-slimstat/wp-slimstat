@@ -1,0 +1,16 @@
+target:    admin/index.php
+gate:      composer test:db-floor-metadata
+kind:      guard-removal
+expect:    does not hook `in_plugin_update_message-`
+rationale: Removes the add_action line; the callback stays defined so only the hook assertion fires. The hook reaches 6.0.0 -> 6.0.1 crossings: a 5.5.x site offered 6.0.0 renders the row with the INSTALLED code, which has no hook.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -224,7 +224,6 @@
+         // method runs on every logged-in request, so it is registered only there — see
+         // show_update_message() for what it can and cannot reach.
+         if ('plugins.php' === ($GLOBALS['pagenow'] ?? '')) {
+-            add_action('in_plugin_update_message-' . plugin_basename(SLIMSTAT_FILE), [self::class, 'show_update_message'], 10, 2);
+         }
+ 
+         // Display a notice that hightlights this version's features

@@ -8,6 +8,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/**
+ * Integer from an env var. Unset OR empty means the fallback; a non-integer is an error.
+ *
+ * One rule for every numeric env read: before this, `MYSQL_PORT` used `||` (empty → default)
+ * while the Playwright overrides used `!== undefined ? Number(...)` (empty → 0, `'abc'` → NaN).
+ */
+export function envInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const n = Number(raw);
+  if (!Number.isInteger(n)) throw new Error(`${name} must be an integer, got "${raw}"`);
+  return n;
+}
+
 /** WordPress site base URL */
 export const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:10003';
 
@@ -37,7 +51,7 @@ export const MYSQL_CONFIG = {
     ? { socketPath: _mysqlSocket }
     : {
         host: process.env.MYSQL_HOST || '127.0.0.1',
-        port: parseInt(process.env.MYSQL_PORT || '3306', 10),
+        port: envInt('MYSQL_PORT', 3306),
       }),
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || 'root',

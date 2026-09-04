@@ -220,6 +220,13 @@ class wp_slimstat_admin
         // WPMU - Blog Deleted
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
 
+        // Upgrade Notice beside the update link. The hook fires only on plugins.php, and this
+        // method runs on every logged-in request, so it is registered only there — see
+        // show_update_message() for what it can and cannot reach.
+        if ('plugins.php' === ($GLOBALS['pagenow'] ?? '')) {
+            add_action('in_plugin_update_message-' . plugin_basename(SLIMSTAT_FILE), [self::class, 'show_update_message'], 10, 2);
+        }
+
         // Display a notice that hightlights this version's features
         if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
             add_action('admin_notices', [self::class, 'show_latest_news']);
@@ -2220,6 +2227,29 @@ class wp_slimstat_admin
     public static function show_latest_news()
     {
         self::show_message(self::$admin_notice, 'info', 'latest-news');
+    }
+
+    /**
+     * The readme's Upgrade Notice, beside the update link on the Plugins screen.
+     *
+     * Core renders `upgrade_notice` on Dashboard → Updates and nowhere else; the Plugins-screen
+     * row hands it only to `in_plugin_update_message-{file}`, which this plugin never hooked.
+     * Escaped, stripped, printed; nothing else. Two honest limits: the row is rendered by the
+     * INSTALLED code, so a 5.5.x site being offered 6.0.0 does not have this hook yet and sees
+     * the notice on Dashboard → Updates only — the hook first matters for 6.0.0 → 6.0.1; and it
+     * prints what wordpress.org parsed from the readme, the only channel that carries
+     * per-version prose to already-installed code.
+     *
+     * @param array  $plugin_data Header data of the installed plugin (unused).
+     * @param object $response    The update offer from wordpress.org; `upgrade_notice` is optional.
+     */
+    public static function show_update_message($plugin_data, $response)
+    {
+        if (empty($response->upgrade_notice)) {
+            return;
+        }
+
+        echo '<br><strong>' . esc_html(wp_strip_all_tags((string) $response->upgrade_notice)) . '</strong>';
     }
 
     // END: show_latest_news
