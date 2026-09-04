@@ -607,6 +607,24 @@ jobs:
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
+          # ── CENSUS BRANCH ONLY — THIS BRANCH MUST NOT MERGE ──────────────────────────────
+          #
+          # Every CI read of this lane so far has been capped. Run 33771753689 and run
+          # 33874090767 both reported "50 failed / 5 flaky / ~470 did not run" -- the cap is
+          # maxFailures: 50, so the run STOPS at the fiftieth failure and the remaining ~470
+          # tests are never executed. That is not a census; it is the first fifty failures in
+          # scheduling order, and every count derived from it is a lower bound of unknown
+          # tightness.
+          #
+          # 0 = unbounded. Retries 0 as well: a retry masks a flake, and a census is counting
+          # flakes. Both are read by envInt(), which honours "0" because a non-empty string is
+          # truthy -- checked, not assumed.
+          #
+          # This costs one long run. It buys the denominator that WS3's quarantine ceiling is
+          # computed against, and a ceiling anchored to a capped run would lock in a number
+          # nobody can reproduce.
+          PW_MAX_FAILURES: "0"
+          PW_RETRIES: "0"
         run: |
           if [ "${WP_VERSION}" = "6.4" ]; then
             npm run test:e2e
