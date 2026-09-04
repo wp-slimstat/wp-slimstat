@@ -3,6 +3,25 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+// Both are set by MigrationAdmin::renderPage(), this file's only includer — but a template that
+// READS variables it does not declare is one PHPStan cannot reason about, and
+// `$has_required_migrations might not be defined` had been parked in phpstan-baseline.neon for
+// exactly that reason.
+//
+// Adding $offered_migrations did not add a baseline entry. It added TWO UNBAISELINED errors and
+// turned the PHPStan lane red — measured at the previous commit: three variable.undefined errors
+// in this file, one of them baselined and two not. So this is a build fix, not a tidy-up, and
+// the baseline's own header is why it is not fixed by baselining: never baseline a newly
+// introduced error.
+//
+// Declaring the contract removes all three, so the pre-existing entry is retired and the ceiling
+// descends with it — which is the ratchet's stated purpose rather than a side effect.
+//
+// is_array() rather than ?? : it narrows the type to array, so this survives a level bump; ??
+// alone leaves it `mixed`, which passes level 5 only because checkExplicitMixed is off.
+$has_required_migrations = isset($has_required_migrations) ? $has_required_migrations : false;
+$offered_migrations      = (isset($offered_migrations) && is_array($offered_migrations)) ? $offered_migrations : [];
+
 ?>
 
 <div class="backdrop-container">
@@ -75,7 +94,7 @@ if (!defined('ABSPATH')) {
                                         'wp-slimstat'
                                     )
                                 ),
-                                (int) count($offered_migrations)
+                                count($offered_migrations)
                             );
                             ?>
                         <?php endif; ?>

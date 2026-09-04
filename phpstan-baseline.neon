@@ -883,12 +883,6 @@ parameters:
 			path: src/ralouphie/getallheaders/getallheaders.php
 
 		-
-			message: '#^Variable \$has_required_migrations might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/view/migration-page.php
-
-		-
 			message: '#^Action callback returns string but should not return anything\.$#'
 			identifier: return.void
 			count: 1

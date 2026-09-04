@@ -117,7 +117,7 @@ For the full release workflow, run `/release-wp-slimstat`.
 `composer phpstan` runs PHPStan at level 5 over own code (`src/Dependencies` is excluded — it
 is vendored, Mozart-scoped code). Errors that predate the analysis are parked in
 `phpstan-baseline.neon`, and that file is a **migration tool, not a permission**: it holds
-**162 entries suppressing 315 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the
+**161 entries suppressing 314 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the
 build if either number differs from `tests/PHPSTAN-BASELINE-CEILING` or if the ceiling is ever
 raised. Fixing a baselined error means lowering the ceiling in the same commit; regenerating the
 baseline to absorb a new error is exactly what the gate exists to refuse.
