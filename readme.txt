@@ -185,9 +185,9 @@ Deleting the plugin no longer erases your analytics. Data is now kept by default
 * Fix: An IP-filter bug on PHP 8.1 silently added 8 extra binary bits for invalid IPs, which could make rules like "ignore my IP" behave incorrectly. Filters now match correctly across all PHP versions.
 * PHP 8.1+ readiness: cleaned up six internal function signatures so they no longer trigger deprecation warnings in `debug.log`. These would have become fatal errors on PHP 9.0 — the plugin is now ready for that transition.
 * Fix: On PHP 8.0+, clearing the Posts-list pageviews-column interval no longer shows an empty day count — it falls back to 28 days as it did on PHP 7.
-* Tested up to WordPress 7.1; removed an obsolete WordPress-3.3 version check.
+* Tested up to WordPress 7.0; removed an obsolete WordPress-3.3 version check.
 * PHP 8.0/8.3/8.4 readiness: prepared the admin JavaScript for jQuery 4.0 (no behavior change today) and removed a stray, never-loaded bundled file.
-* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3) and to boot the WordPress 5.6–7.1 matrix end-to-end; added PHPStan static analysis. The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
+* Internal: Added a compatibility shim so modern PHP idioms work the same on older PHP 7.4 hosts. Expanded automated CI testing to cover PHP 7.4 through 8.5 (was 7.4–8.3) and to boot the full WordPress 5.6–7.0 matrix end-to-end; added PHPStan static analysis. The PHP 7.4 lane now runs real tests on every change instead of just lint checks. Added `CONTRIBUTING.md` and a few small style cleanups in the test suite.
 
 = 5.4.12 - 2026-05-13 =
 * Security: Authenticated SQL injection in the chart AJAX endpoint (slimstat_fetch_chart_data) is now blocked. The `chart_data.where` parameter is validated against the trusted report registry before reaching the query layer. Reported via Patchstack (CVSS 8.5, High).
