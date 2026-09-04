@@ -175,6 +175,7 @@
     "test:databuckets-week-start": "php tests/databuckets-week-start-test.php",
     "test:consent-plugins-active-step": "php tests/consent-plugins-active-step-test.php",
     "test:no-orphan-test-files": "php tests/no-orphan-test-files-test.php",
+    "test:composer-script-closure": "php tests/composer-script-closure-test.php",
     "test:browscap-fileinfo-preflight": "php tests/browscap-fileinfo-preflight-test.php",
     "test:consent-filter-context": "php tests/consent-filter-context-test.php",
     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
@@ -366,6 +367,7 @@
       "@test:databuckets-week-start",
       "@test:consent-plugins-active-step",
       "@test:no-orphan-test-files",
+      "@test:composer-script-closure",
       "@test:browscap-fileinfo-preflight",
       "@test:consent-filter-context"
     ],

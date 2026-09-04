@@ -1,0 +1,16 @@
+target:    composer.json
+gate:      composer test:composer-script-closure
+kind:      guard-removal
+expect:    is reachable from neither test:all nor the standalone list
+rationale: Drops test:no-orphan-test-files from the test:all closure while leaving its definition. The script then runs only if someone types it -- the state test:fp-negative-linux was found in, reachable from nothing and running nowhere, which the file-level orphan gate cannot see because it only asks whether a FILE is named.
+---
+--- a/composer.json
++++ b/composer.json
+@@ -366,7 +366,6 @@
+       "@test:version-suffix-contract",
+       "@test:databuckets-week-start",
+       "@test:consent-plugins-active-step",
+-      "@test:no-orphan-test-files",
+       "@test:composer-script-closure",
+       "@test:browscap-fileinfo-preflight",
+       "@test:consent-filter-context"

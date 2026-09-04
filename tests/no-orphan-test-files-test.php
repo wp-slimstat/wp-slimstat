@@ -50,6 +50,15 @@ foreach ($scripts as $path) {
     }
 }
 
+// The glob must have matched SOMETHING. The derived check below compares two sets that are
+// blind together: move the suite under `tests/gates/` and update composer.json in the same
+// commit, and the glob returns 0 while the named-set regex (no `/` in its class) also returns 0
+// — `missing` is empty and the gate prints "all 0 scripts are invoked". Found by review.
+if (!$scripts) {
+    $failures[] = 'the tests/*-test.php glob matched nothing. Every check in this file compares '
+        . 'two sets derived from that glob, so an empty one is a PASS about nothing';
+}
+
 // VACUITY FLOOR, DERIVED. Every `tests/X-test.php` path NAMED in the corpus must exist on disk:
 // a glob that stopped matching leaves the named set larger than the found set. A remembered
 // count ("at least 100") is the kind of number this suite keeps catching as stale.
