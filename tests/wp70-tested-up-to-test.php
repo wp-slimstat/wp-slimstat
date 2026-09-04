@@ -49,8 +49,8 @@ if ('' === $ci) {
     exit(1);
 }
 if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci, $matches)) {
-    fwrite(STDERR, "FAIL: cannot find the Tier 2 standard job in .github/workflows/ci.yml\n");
-    exit(1);
+	fwrite(STDERR, "FAIL: cannot find the Tier 2 standard job in .github/workflows/ci.yml\n");
+	exit(1);
 }
 $tier_two      = $matches[0];
 $tier_two_code = slimstat_yaml_strip_comments($tier_two);
