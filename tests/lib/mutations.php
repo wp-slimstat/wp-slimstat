@@ -214,10 +214,16 @@ function slimstat_mutation_parse(string $path): array
  * gate: value => how many .mutation files name it.
  *
  * The walk over slimstat_mutation_files() + slimstat_mutation_parse() to aggregate `gate:` had
- * been written three times across the two repos, aggregating three different ways — count in
- * one, presence in another — which is precisely the drift this byte-twinned file exists to stop.
- * A private `gate:` regex would be worse still: it would count headers differently from the
- * parser that owns the format.
+ * been written TWICE across the two repos, two different ways — Pro's ci-comment-metrics built a
+ * presence map, free's wanted a count — which is precisely the drift this byte-twinned file
+ * exists to stop. A private `gate:` regex would be worse still: it would count headers
+ * differently from the parser that owns the format.
+ *
+ * An earlier version of this paragraph said "three times ... three different ways". Checked:
+ * there was one hand-rolled gate walk, in Pro, plus free's new caller. The third was
+ * mutation-registry-test.php, which aggregates `kind`, not `gate`. In a file whose whole premise
+ * is that two copies must not tell different stories, a docblock inflating its own justification
+ * is the shape this repo keeps recording.
  *
  * @return array<string, int>
  */
