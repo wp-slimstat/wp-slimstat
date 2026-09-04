@@ -1,0 +1,16 @@
+target:    composer.json
+gate:      composer test:no-orphan-test-files
+kind:      guard-removal
+expect:    is invoked by no composer script and no workflow
+rationale: Deletes the composer script that runs consent-filter-context-test.php; the file stays in tests/ with nothing invoking it.
+---
+--- a/composer.json
++++ b/composer.json
+@@ -176,7 +176,6 @@
+     "test:consent-plugins-active-step": "php tests/consent-plugins-active-step-test.php",
+     "test:no-orphan-test-files": "php tests/no-orphan-test-files-test.php",
+     "test:browscap-fileinfo-preflight": "php tests/browscap-fileinfo-preflight-test.php",
+-    "test:consent-filter-context": "php tests/consent-filter-context-test.php",
+     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
+     "test:bundle-matches-source": "php tests/bundle-matches-source-test.php",
+     "test:chart-query-budget": "php tests/chart-query-budget-test.php",

@@ -173,6 +173,10 @@
     "test:dist-manifest": "php tests/dist-manifest-test.php",
     "test:version-suffix-contract": "php tests/version-suffix-contract-test.php",
     "test:databuckets-week-start": "php tests/databuckets-week-start-test.php",
+    "test:consent-plugins-active-step": "php tests/consent-plugins-active-step-test.php",
+    "test:no-orphan-test-files": "php tests/no-orphan-test-files-test.php",
+    "test:browscap-fileinfo-preflight": "php tests/browscap-fileinfo-preflight-test.php",
+    "test:consent-filter-context": "php tests/consent-filter-context-test.php",
     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",
     "test:bundle-matches-source": "php tests/bundle-matches-source-test.php",
     "test:chart-query-budget": "php tests/chart-query-budget-test.php",
@@ -359,7 +363,11 @@
       "@test:phpstan-baseline-ratchet",
       "@test:dist-manifest",
       "@test:version-suffix-contract",
-      "@test:databuckets-week-start"
+      "@test:databuckets-week-start",
+      "@test:consent-plugins-active-step",
+      "@test:no-orphan-test-files",
+      "@test:browscap-fileinfo-preflight",
+      "@test:consent-filter-context"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",

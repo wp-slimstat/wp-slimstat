@@ -1,7 +1,7 @@
 target:    .github/workflows/ci.yml
 gate:      composer test:perf-gate-integrity
 kind:      restore-defect
-expect:    falls back to WordPress trunk when a tag does not resolve
+expect:    assigns WP_REF as [
 rationale: Restores the `WP_REF=trunk` fallback behind a ::warning::. A lane labelled 'WP 7.1' that cannot find that tag then boots TRUNK and reports green -- a coverage claim under a heading naming a version it is not running, which is the one thing a version matrix exists to prevent. All seven tags resolve today, so this was latent rather than active; latent is exactly when it is cheap to close and exactly when nobody notices it is open. The warning makes it worse rather than better: it is visible in a log nobody reads and invisible in the status everyone reads.
 ---
 --- a/.github/workflows/ci.yml

@@ -5,10 +5,11 @@
 #
 # Two gates:
 #   1. `php -l` on every staged PHP file. Fast, dependency-free.
-#   2. `composer test:source-level` whenever anything a source-level gate reads is staged —
-#      PHP, composer.json, workflows, mutations, .distignore, readme.txt. Until 2026-09-04 both
-#      hooks ran gate 1 only, so a commit that broke any of the ~140 source-level gates, or a
+#   2. `composer test:source-level` whenever anything but a pure asset is staged. Until
+#      2026-09-04 both hooks ran gate 1 only, so a commit that broke a source-level gate, or a
 #      mutation, landed locally with no resistance and surfaced on CI after push (DoD 19).
+#      Measured 2026-09-04: ~35 s in free, ~3 s in pro. No gate count here — it is a number no
+#      interpreter checks, and both figures were already wrong in the commit that wrote them.
 #
 # A gate that cannot run must FAIL, not skip: composer missing from PATH is an error here,
 # because a gate that silently does not run is this workspace's most repeated defect.
@@ -39,11 +40,19 @@ if [ -n "$staged_php" ]; then
   echo "  ✓ all staged PHP files pass php -l"
 fi
 
-# Anything a source-level gate reads. Docs and assets alone do not trigger the ~60 s suite.
-gate_inputs="$(printf '%s\n' "$staged" | grep -E '\.php$|(^|/)composer\.json$|^\.github/|^tests/mutations/|^\.distignore$|^readme\.txt$|\.ya?ml$' || true)"
+# Denylist, not allowlist: the allowlist version missed four real gate inputs on day one
+# (.gitattributes, CHANGELOG.md, the .pot, build/build-dist.sh — all Pro's), so a commit
+# touching only one of those skipped the very gate reading it.
+#
+# CSS AND .map ARE NOT ASSETS HERE, and the first denylist had them: css-selector-scope,
+# admin-ui-render-guards and funnels-widget-compact read admin/assets/css/*.css, and
+# bundle-matches-source reads the tracked wp-slimstat.min.js.map. Excluding them reproduced the
+# day-one defect inside its own fix. `scss` stays — nothing reads it. Scope per CLAUDE.md:
+# "pure-asset changes (images, fonts, binary fixtures)".
+gate_inputs="$(printf '%s\n' "$staged" | grep -vE '\.(png|jpe?g|gif|svg|ico|woff2?|ttf|eot|scss)$' || true)"
 
 if [ -z "$gate_inputs" ]; then
-  echo "  no source-level inputs staged, suite skipped"
+  echo "  only assets staged, suite skipped"
   exit 0
 fi
 
