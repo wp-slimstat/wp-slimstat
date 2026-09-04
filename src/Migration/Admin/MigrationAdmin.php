@@ -80,8 +80,17 @@ class MigrationAdmin
 		// Base SlimStat admin styles (if present)
 		wp_register_style('slimstat-admin-base', plugins_url('/admin/assets/css/admin.css', SLIMSTAT_FILE), [], SLIMSTAT_ANALYTICS_VERSION);
 		wp_enqueue_style('slimstat-admin-base');
+		// The page renders the SHARED header template, and that template is styled by
+		// header-modern.css — which this screen never enqueued. The markup then fell back to
+		// admin.css's legacy `.slimstat-header` rule: a #2B2B2B background with no foreground
+		// colour, so the brand, "Online Visitors" and "Premium" inherited WordPress's #3C434A.
+		// Measured in a browser on 2026-09-04 at a contrast ratio of 1.41:1, against WCAG AA's
+		// 4.5:1 — not a preference, unreadable. Pinned by tests/admin-header-assets-test.php.
+		wp_register_style('slimstat-header-modern', plugins_url('/admin/assets/css/header-modern.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
+		wp_enqueue_style('slimstat-header-modern');
+
 		// Migration page extras
-		wp_register_style('slimstat-migration', plugins_url('/admin/assets/css/migration.css', SLIMSTAT_FILE), ['slimstat-admin-base'], SLIMSTAT_ANALYTICS_VERSION);
+		wp_register_style('slimstat-migration', plugins_url('/admin/assets/css/migration.css', SLIMSTAT_FILE), ['slimstat-header-modern'], SLIMSTAT_ANALYTICS_VERSION);
 		wp_enqueue_style('slimstat-migration');
 
 		wp_enqueue_script('jquery');
@@ -199,9 +208,19 @@ class MigrationAdmin
 		// required set alone redirected the admin away from the one screen an optional
 		// migration can be started from.
 		$required_migrations = $this->manager->getRequiredMigrations();
+		// Fetched once and passed down. It was called only inside the redirect test, so the
+		// template could not tell "nothing to do" from "two optional steps waiting" and said the
+		// database was up to date while two were listed below it.
+		//
+		// An earlier version of this comment added "and it is the uncached probe, so calling it
+		// twice would have been the query cost as well". That is FALSE: getOfferedMigrations()
+		// memoises on $offeredMemo and is backed by a 12h transient, so a second call in the same
+		// request is free. Corrected rather than deleted, because a plausible-sounding reason is
+		// how a wrong one survives review.
+		$offered_migrations = $this->manager->getOfferedMigrations();
 		$has_required_migrations = !empty($required_migrations);
 
-		if (!$has_required_migrations && [] === $this->manager->getOfferedMigrations()) {
+		if (!$has_required_migrations && [] === $offered_migrations) {
 			$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 			wp_safe_redirect(admin_url('admin.php?page=' . $parent));
 			exit;

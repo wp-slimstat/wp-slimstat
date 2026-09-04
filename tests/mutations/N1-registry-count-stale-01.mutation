@@ -1,7 +1,7 @@
 target:    .github/workflows/ci.yml
 gate:      composer test:ci-comment-metrics
 kind:      introduce-defect
-expect:    says the mutation registry holds 101 entries
+expect:    says "101 entries"; tests/mutations/FLOOR says
 rationale: Inserts a stale registry-size claim as a plain sentence, anchored on two lines that carry no number. The previous form REPLACED the live count line -- the one line a floor bump always rewrites -- so it went INVALID on every bump and had to be regenerated each time, which is a mutation that reports nothing while looking like coverage. Pro's C1 was converted to the same insertion form for the same reason.
 ---
 --- a/.github/workflows/ci.yml

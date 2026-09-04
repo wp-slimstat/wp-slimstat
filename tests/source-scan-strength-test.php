@@ -397,6 +397,7 @@ $recorded     = [
     'js-params-banner-gdpr-consistency-test.php' => 'exempt — scans JS',
     // Surfaced by the per-call-site rule below: each of these routes SOME content through a
     // helper and then scans other content raw, so the old whole-file exemption hid them.
+    'migration-notice-visibility-test.php'       => 'exempt — its raw subjects are CSS and JS, which no PHP tokeniser can read; the template IS routed through slimstat_blank_comments()',
     'migration-ui-honesty-test.php'              => 'exempt — the raw subject is JS ($js), not PHP',
     // The subject is COMMENT TEXT, already cut out by slimstat_tokenize() and filtered to
     // T_COMMENT/T_DOC_COMMENT — a tokeniser is applied, and the regex runs only on what it

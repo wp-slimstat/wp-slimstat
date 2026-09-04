@@ -161,7 +161,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 197 entries. The step took 210-270s per lane across all six
+        # The full registry holds 200 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
