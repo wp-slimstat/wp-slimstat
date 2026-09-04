@@ -1,0 +1,27 @@
+# tests/docker/docker-compose.db2.yml — overlay adding the EXTERNAL analytics database
+# for topology B (reachable) cells. Composed on top of docker-compose.yml via lib.sh's
+# DC_EXTRA_FILE; the base cell stays one-db for every topology that is not B/D.
+#
+# Topology D (unreachable external DB) deliberately does NOT start this service — the
+# plugin is configured to point at the hostname `db2` and the resolution fails, which is
+# the outage under test. That is why the wp service gets no depends_on here: a B cell
+# waits for db2's healthcheck explicitly in the runner, and a D cell must be able to come
+# up WITHOUT db2 existing at all.
+services:
+  db2:
+    image: ${MYSQL_IMAGE:-mysql:8.0}
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --max_allowed_packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: slimstat_ext
+    ports:
+      - "127.0.0.1:${DB2_PORT:-13999}:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 3s
+      timeout: 5s
+      retries: 40

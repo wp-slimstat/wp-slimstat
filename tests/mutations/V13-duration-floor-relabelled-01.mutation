@@ -1,0 +1,21 @@
+target:    src/Migration/Migrations/AddUserAgentDimension.php
+gate:      composer test:migration-duration-honesty
+kind:      restore-defect
+expect:    while a quoted span says the run did not finish
+rationale: Relabels an INTERRUPTED run as an observed one. Run 58 drove this migration past eight minutes on 443,543 rows and was stopped; it has never been seen to finish. 'floor' is what makes the admin read 'more than 8 minutes' rather than 'about 8 minutes', so flipping it is understatement in exactly the direction this gate exists to stop -- and it is a one-word edit that leaves the figure, the citation and every quote untouched. The first version of the gate could not catch it and said so in its own header, recording `bound` as an author-asserted bypass on the argument that closing it would mean reading the record's prose. Review pointed out the scope error: reading the WHOLE record is a spell-check, but reading the author's OWN quoted spans is not -- they are short, chosen by the author, and already required to appear verbatim in the resolved section. So the bypass is closed rather than recorded, and a floor->about relabel now has to re-quote a different verbatim span from the same section instead of editing one word. Kills in a standalone checkout too, so it runs on all six PHP lanes.
+---
+--- a/src/Migration/Migrations/AddUserAgentDimension.php
++++ b/src/Migration/Migrations/AddUserAgentDimension.php
+@@ -61,11 +61,11 @@
+      */
+     public const MEASURED_COST = [
+         'seconds' => 480,
+         'rows'    => 443543,
+         'engine'  => 'MySQL 8',
+-        'bound'   => 'floor',
++        'bound'   => 'about',
+         'record'  => 'VERIFICATION-PROTOCOL.md',
+         'anchor'  => 'Run 58',
+         'quotes'  => [
+             'it ran past **eight minutes** on this dataset',
+             'own live dump: 443,543 rows',

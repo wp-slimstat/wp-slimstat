@@ -17,18 +17,13 @@ class CreateDtScreenIndex extends AbstractIndexMigration
         return __('Create Screen Resolution Index', 'wp-slimstat');
     }
 
-    protected function getIndexName(): string
+    protected function getIndexKey(): string
     {
         return 'idx_dt_screen_width_screen_height';
     }
 
-    protected function getIndexColumns(): array
+    protected function getTableSuffix(): string
     {
-        return ['dt', 'screen_width', 'screen_height'];
-    }
-
-    protected function getTableName(): string
-    {
-        return $this->wpdb->prefix . 'slim_stats';
+        return 'slim_stats';
     }
 }

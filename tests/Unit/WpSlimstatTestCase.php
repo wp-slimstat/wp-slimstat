@@ -36,4 +36,19 @@ abstract class WpSlimstatTestCase extends TestCase
             'wp_unslash'          => static fn($v) => is_string($v) ? stripslashes($v) : $v,
         ]);
     }
+
+    /**
+     * Stubs the transient-cache layer to always MISS, so a query under test reaches
+     * the mocked connection instead of a cached result. Shared here because inline
+     * copies of this map had already drifted between tests (one stubbed
+     * wp_using_ext_object_cache, two did not).
+     */
+    protected function stubTransientCacheMiss(): void
+    {
+        Monkey\Functions\stubs([
+            'get_transient'             => static fn() => false,
+            'set_transient'             => static fn() => true,
+            'wp_using_ext_object_cache' => static fn() => false,
+        ]);
+    }
 }

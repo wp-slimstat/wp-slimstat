@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace SlimStat\Migration\Admin;
 
 use SlimStat\Migration\MigrationManager;
-use SlimStat\Migration\Migrations\AddMissingIndexes;
-use SlimStat\Migration\Migrations\OptimizeColumnTypes;
 use wp_slimstat_admin;
 
 class MigrationAdmin
@@ -30,8 +28,25 @@ class MigrationAdmin
 
 	public function registerPage(): void
 	{
-		// Only register the migration page if there are migrations that need to run
-		if (!$this->manager->needsMigration()) {
+		// BEFORE the probes, not after. The page this registers requires `manage_options`
+		// (below), and maybeShowNotice() already opens with this exact guard — this path did
+		// not, so it asked the database a question whose answer it could never act on.
+		//
+		// The cost fell on the wrong people. `MigrationService::init()` gates only on
+		// is_admin(), so on a membership, WooCommerce or multi-author site EVERY subscriber
+		// loading profile.php paid the full probe — which includes an unindexed
+		// `WHERE ua_id IS NULL` over the fact table, because `ua_id` is declared in the
+		// manifest's columns and in none of its indexes. Those are exactly the sites where
+		// that table is largest.
+		if (!current_user_can('manage_options')) {
+			return;
+		}
+
+		// Registered when anything is OWED, and also when anything is merely OFFERED — the
+		// second half was missing and it is what made "opt-in" mean "unreachable". needsMigration()
+		// deliberately ignores optional migrations so they raise no notice; using it alone as the
+		// gate for the page removed the only place they could ever have been run from.
+		if (!$this->manager->needsMigration() && [] === $this->manager->getOfferedMigrations()) {
 			return;
 		}
 
@@ -72,12 +87,24 @@ class MigrationAdmin
 		wp_enqueue_script('jquery');
 		wp_register_script('slimstat-migration', plugins_url('/admin/assets/js/migration.js', SLIMSTAT_FILE), ['jquery'], SLIMSTAT_ANALYTICS_VERSION, true);
 
+        // Owed first, then offered. `optional` is what migration.js keys on: it skips those in
+        // "Start Migration" and renders a per-row control instead, so an offered migration is
+        // visible and runnable without ever being run FOR the admin.
         $steps = [];
         foreach ($this->manager->getRequiredMigrations() as $migration) {
             $steps[] = [
-                'id'   => $migration->getId(),
-                'name' => $migration->getName(),
-                'desc' => $migration->getDescription(),
+                'id'       => $migration->getId(),
+                'name'     => $migration->getName(),
+                'desc'     => $migration->getDescription(),
+                'optional' => false,
+            ];
+        }
+        foreach ($this->manager->getOfferedMigrations() as $migration) {
+            $steps[] = [
+                'id'       => $migration->getId(),
+                'name'     => $migration->getName(),
+                'desc'     => $migration->getDescription(),
+                'optional' => true,
             ];
         }
 
@@ -92,6 +119,20 @@ class MigrationAdmin
 				'done' => __('Done', 'wp-slimstat'),
 				'failed' => __('Failed', 'wp-slimstat'),
 				'allFinished' => __('All migrations finished.', 'wp-slimstat'),
+				// S7 error paths. Hardcoding these in migration.js would have been an i18n
+				// regression in a file where every other string is translated.
+				'notComplete' => __('The migration did not complete. Nothing further has been run.', 'wp-slimstat'),
+				'timedOut' => __('The migration request timed out. It may still be running on the server — reload this page before starting again.', 'wp-slimstat'),
+				'requestFailed' => __('The migration request failed. Nothing further has been run.', 'wp-slimstat'),
+				// Read by migration.js since it was written and never supplied here, so every
+				// locale has silently fallen back to the English baked into the JS.
+				'idle' => __('Idle', 'wp-slimstat'),
+				// The per-step control for an OFFERED migration. Supplied here rather than
+				// hardcoded in migration.js, because a string baked into the JS is a string no
+				// locale ever translates — the defect the two labels above were added to fix.
+				'runThisStep' => __('Run this step', 'wp-slimstat'),
+				'runningShort' => __('Running', 'wp-slimstat'),
+				'failedHelp' => __('A step failed. Please check the logs and retry.', 'wp-slimstat'),
 			],
 		]);
 		wp_enqueue_script('slimstat-migration');
@@ -154,12 +195,13 @@ class MigrationAdmin
 			wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
 		}
 
-		// Check if there are any migrations that need to run
+		// Nothing owed AND nothing offered — only then is there no page to show. Testing the
+		// required set alone redirected the admin away from the one screen an optional
+		// migration can be started from.
 		$required_migrations = $this->manager->getRequiredMigrations();
 		$has_required_migrations = !empty($required_migrations);
 
-		// If no migrations are needed, redirect to the main SlimStat page
-		if (!$has_required_migrations) {
+		if (!$has_required_migrations && [] === $this->manager->getOfferedMigrations()) {
 			$parent = empty(wp_slimstat_admin::$main_menu_slug) ? 'slimview1' : wp_slimstat_admin::$main_menu_slug;
 			wp_safe_redirect(admin_url('admin.php?page=' . $parent));
 			exit;
@@ -227,37 +269,99 @@ class MigrationAdmin
 			wp_send_json_error(__('Permission denied', 'wp-slimstat'));
 		}
 
+		// Defence in depth, not a live hole: when the switch is thrown MigrationService::init()
+		// returns before hooks() runs, so this action is never registered and the POST dies in
+		// core. Kept so the guarantee survives the manager being constructed from somewhere
+		// else — WP-CLI, or a service provider. Not translated: no user can reach it.
+		if (\SlimStat\Migration\MigrationService::migrationsDisabled()) {
+			wp_send_json_error('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.');
+		}
+
+		// BUDGET. The client allows 15 minutes (migration.js); PHP's default
+		// max_execution_time is 30 seconds, so the server was dying nine minutes before the
+		// client gave up and the .fail() handler deliberately does not advance — the run
+		// halted with an outcome nobody could read. set_time_limit() is a no-op under
+		// disabled_functions and under PHP-FPM's request_terminate_timeout, so it is asked for
+		// here and NOT relied on: the real bound is the per-pass deadline inside the backfill.
+		if (function_exists('set_time_limit')) {
+			@set_time_limit(0);
+		}
+
+		ignore_user_abort(true);
+		wp_raise_memory_limit('admin');
+
 		$only = isset($_POST['migration']) ? sanitize_key(wp_unslash($_POST['migration'])) : '';
 
-        if ($only) {
-            $migration_to_run = null;
-            foreach ($this->manager->getMigrations() as $migration) {
-                if ($migration->getId() === $only) {
-                    $migration_to_run = $migration;
-                    break;
-                }
-            }
+		// SUPPRESSED AROUND THE RUN, RESTORED BEFORE THE RESPONSE.
+		//
+		// wpdb prints an HTML error block when show_errors is on, which it is whenever
+		// WP_DEBUG and WP_DEBUG_DISPLAY are — and that echo lands BEFORE wp_send_json_success().
+		// The body is then HTML-then-JSON, jQuery's .done() receives undefined, and
+		// `!!(resp && resp.success)` is false: a migration that SUCCEEDED reported as failed,
+		// on precisely the installs whose owners had turned debugging on to find out why.
+		//
+		// Suppression does not clear last_error, so probeFailed() still records what went
+		// wrong — the evidence survives, only the echo is stopped. Not ob_start(): that would
+		// swallow an unrelated fatal's output too.
+		// analyticsConnection(), not \wp_slimstat::$wpdb directly: that is the handle the
+		// migrations actually run on, and it exists to defend against a slimstat_custom_wpdb
+		// filter returning something that is not a wpdb — which this would otherwise call
+		// suppress_errors() on, fatally, inside the AJAX handler.
+		$analytics  = \SlimStat\Migration\MigrationService::analyticsConnection();
+		$suppressed = $analytics->suppress_errors(true);
 
-            if ($migration_to_run) {
-                $ok = $migration_to_run->run();
+		try {
+			if ($only) {
+				// Delegated so this path takes the SAME single-flight claim as runAll(), writes
+				// the same OPTION_STATUS constant instead of a hardcoded duplicate, and
+				// invalidates the probe — none of which it did while it called run() directly.
+				$ok = $this->manager->runOne($only);
 
-                $status = $this->manager->getStatus();
-                $status[$migration_to_run->getName()] = $ok;
-                update_option('slimstat_migration_status', $status, false);
+				if (null !== $ok) {
+					$name      = $only;
+					$remaining = false;
 
-                if ($ok) {
-                    wp_send_json_success([$migration_to_run->getName() => true]);
-                }
+					foreach ($this->manager->getMigrations() as $migration) {
+						if ($migration->getId() === $only) {
+							$name = $migration->getName();
+							// Asked AFTER the run: "is there more to do", which is a different
+							// question from "did this pass work". A long backfill answers true
+							// here for several passes while every one of them succeeded.
+							$remaining = $migration->shouldRun();
+							break;
+						}
+					}
 
-                wp_send_json_error([$migration_to_run->getName() => false]);
-            }
-        }
+					$analytics->suppress_errors($suppressed);
 
-		// Run all
-		$result = $this->manager->runAll();
+					if ($ok) {
+						wp_send_json_success([$name => true, 'remaining' => $remaining]);
+					}
 
-		// Check if all migrations are now complete
-		$all_complete = !$this->manager->needsMigration();
+					wp_send_json_error([$name => false, 'remaining' => $remaining]);
+				}
+
+				// runOne() answers null when the single-flight claim is held by another
+				// request. Falling through to runAll() here ran a DIFFERENT thing than the one
+				// asked for, and answered with a payload carrying no 'remaining' — so the
+				// client marked the requested step green while it had never run. Retrying is
+				// the right answer, and the client can only do that if it is told.
+				$analytics->suppress_errors($suppressed);
+
+				wp_send_json_error([
+					'busy'    => true,
+					'message' => __('Another migration is already running. Try again in a moment.', 'wp-slimstat'),
+				]);
+			}
+
+			// Run all
+			$result = $this->manager->runAll();
+
+			// Check if all migrations are now complete
+			$all_complete = !$this->manager->needsMigration();
+		} finally {
+			$analytics->suppress_errors($suppressed);
+		}
 
 		wp_send_json_success([
 			'results' => $result,

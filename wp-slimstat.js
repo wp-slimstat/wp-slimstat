@@ -739,6 +739,27 @@ var SlimStat = (function () {
     }
 
     // -------------------------- Interaction Tracking -------------------------- //
+
+    // The one definition of "pressing this submits its form". Three places need it —
+    // the click delegation (which must stand aside), the submit listener (which must
+    // find the control that fired), and the note classifier — and when they each
+    // carried their own, they disagreed: an attribute test sees neither <button> with
+    // no type attribute, whose default type IS submit, nor type="image".
+    function isSubmitControl(el) {
+        // `.type` is the IDL property, so it reports the default rather than the
+        // literal attribute. `.form` is load-bearing, not a redundant precondition:
+        // a submit control outside a form submits nothing, so no submit event will
+        // ever follow and the click must still be tracked.
+        return !!(el && el.form && (el.type === "submit" || el.type === "image"));
+    }
+
+    // Fallback for browsers or code paths that give no SubmitEvent.submitter.
+    function findSubmitControl(form) {
+        return form && form.querySelector
+            ? form.querySelector('[type="submit"], [type="image"], button:not([type])')
+            : null;
+    }
+
     function trackInteraction(event, note, useBeacon) {
         var params = currentSlimStatParams();
         if (isEmpty(params.id) || isNaN(parseInt(params.id, 10)) || parseInt(params.id, 10) <= 0) {
@@ -797,7 +818,7 @@ var SlimStat = (function () {
         // Override type for tel/mailto links and submit buttons
         if (resourceUrl && resourceUrl.indexOf("tel:") === 0) noteObj.type = "tel";
         else if (resourceUrl && resourceUrl.indexOf("mailto:") === 0) noteObj.type = "mailto";
-        else if (target.getAttribute && target.getAttribute("type") === "submit") noteObj.type = "submit";
+        else if (isSubmitControl(target)) noteObj.type = "submit";
 
         if (event.type === "keypress") noteObj.key = String.fromCharCode(parseInt(event.which, 10));
         else if (event.type === "mousedown") noteObj.button = event.which === 1 ? "left" : event.which === 2 ? "middle" : "right";
@@ -1726,6 +1747,11 @@ var SlimStat = (function () {
         get_cookie: getCookie,
         send_to_server: sendToServer,
         ss_track: trackInteraction,
+        // Exposed because the delegation that must stand aside for submit controls
+        // lives in the runtime IIFE below, outside this module's scope — the same
+        // reason add_event and ss_track are exposed.
+        is_submit_control: isSubmitControl,
+        find_submit_control: findSubmitControl,
         init_fingerprint_hash: initFingerprintHash,
         get_slimstat_data: buildSlimStatData,
         get_component_value: getComponentValue,
@@ -2265,6 +2291,19 @@ if (!window.requestIdleCallback) {
                     break;
                 }
                 if (target.matches && target.matches("a,button,input,area")) {
+                    // Stand aside: the form's own submit event, below, records this
+                    // interaction. Tracking the click too counts every button-clicked
+                    // conversion twice, and clicking the button is how most people
+                    // submit a form.
+                    //
+                    // Deliberate consequence: when the submission does not happen —
+                    // constraint validation fails, or site code cancels it — no submit
+                    // event fires and nothing is recorded. That is the intended
+                    // reading. Nothing was submitted, so there is no conversion, and
+                    // filing it as a click would put a phantom in the funnel.
+                    if (SlimStat.is_submit_control(target)) {
+                        break;
+                    }
                     SlimStat.ss_track(e, null, null);
                     break;
                 }
@@ -2282,8 +2321,11 @@ if (!window.requestIdleCallback) {
             // Skip consent forms
             if (form.hasAttribute && form.hasAttribute("data-consent")) return;
 
-            // Use submit button as target if available, fallback to form
-            var submitBtn = form.querySelector('[type="submit"]');
+            // e.submitter names the control that actually triggered this submission;
+            // the selector fallback can only guess the first one. The target matters
+            // because ss_track derives the tracked resource from it — a button yields
+            // its form's action, a form yields nothing.
+            var submitBtn = e.submitter || SlimStat.find_submit_control(form);
             var syntheticEvent = {
                 type: "submit",
                 target: submitBtn || form,

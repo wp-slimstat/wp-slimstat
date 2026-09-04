@@ -8,6 +8,9 @@ class Query
 {
     private $queries = [];
 
+    /** Set by probeVar(): true when that probe could not run, as opposed to finding nothing. */
+    private $lastProbeFailed = false;
+
     private $operation;
 
     private $table;
@@ -147,6 +150,40 @@ class Query
         $instance->operation = 'union';
         $instance->queries   = $queries;
         return $instance;
+    }
+
+    /**
+     * Run this query on a SPECIFIC connection instead of the analytics one.
+     *
+     * The constructor binds `\wp_slimstat::$wpdb` — the analytics handle, which under the
+     * custom-DB add-on is a DIFFERENT database, possibly a different server. That is
+     * correct for `slim_` tables and WRONG for core tables: a `COUNT(*)` on `wp_posts`
+     * issued on the analytics connection hits a database that has no `wp_posts` (F6/C44).
+     * `get_your_blog()` did exactly that for six of its seven metrics, so on every
+     * external-DB install its post/page/comment counts read zero or errored silently.
+     *
+     * @param \wpdb $db The connection to run on.
+     * @return $this
+     */
+    public function on(\wpdb $db)
+    {
+        $this->db = $db;
+        return $this;
+    }
+
+    /**
+     * Run this query on the WORDPRESS (core) connection — where the core tables live.
+     *
+     * A named shorthand for `->on($GLOBALS['wpdb'])`, because "this queries a core table,
+     * not an analytics one" is the decision a reader needs to see, not the handle plumbing.
+     * Expressed as delegation, not a parallel assignment, so `on()` is the one place that
+     * binds a handle and is exercised on every `local()` call.
+     *
+     * @return $this
+     */
+    public function local()
+    {
+        return $this->on($GLOBALS['wpdb']);
     }
 
     /**
@@ -419,7 +456,14 @@ class Query
      *
      * @param string       $table      The table to join.
      * @param string|array $on         The join condition. Can be an array with two fields to join on, or a string with a condition.
-     * @param array        $conditions An array of conditions to join on. Each condition is an array with three elements: field, operator, value.
+     * @param array|string $conditions Extra conditions to AND into the join, each a
+     *                                 [field, operator, value] triple. For backward
+     *                                 compatibility this may instead be a STRING: the
+     *                                 right-hand field of a two-string `$on = $conditions`
+     *                                 join. Both report queries in
+     *                                 admin/view/wp-slimstat-db.php use the string form,
+     *                                 so the branch at the bottom of this method is live —
+     *                                 do not "simplify" it away as unreachable.
      * @param string       $joinType   The type of join. Can be INNER, LEFT, or RIGHT. Defaults to INNER.
      *
      * @return $this
@@ -527,31 +571,17 @@ class Query
         return strtotime(date('Y-m-d 00:00:00'));
     }
 
-    protected function getCacheKey($input)
-    {
-        $normalized = $input;
-        if (preg_match('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', $input, $matches)) {
-            $from       = $matches[1];
-            $to         = $matches[2];
-            $normalized = preg_replace('/BETWEEN\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?\s+AND\s+[\'\"]?(\d{4}-\d{2}-\d{2})[\s\d:]*[\'\"]?/i', sprintf("BETWEEN '%s' AND '%s'", $from, $to), $input);
-        }
-
-        $normalized = preg_replace_callback('/(\d{4}-\d{2}-\d{2})[\s\d:]{0,8}/', fn ($m) => $m[1], $normalized);
-        $hash       = substr(md5($normalized), 0, 10);
-        return sprintf('wp_slimstat_cache_%s', $hash);
-    }
-
-    protected function getCachedResult($input)
-    {
-        $cacheKey = $this->getCacheKey($input);
-        return get_transient($cacheKey);
-    }
-
-    protected function setCachedResult($input, $result, $expiration = DAY_IN_SECONDS)
-    {
-        $cacheKey = $this->getCacheKey($input);
-        return set_transient($cacheKey, $result, $expiration);
-    }
+    // Removed: getCacheKey() / getCachedResult() / setCachedResult().
+    //
+    // A second, unused caching mechanism keyed on `wp_slimstat_cache_<hash>`, with a
+    // date-normalising step that would have collapsed a window's time-of-day into its date.
+    // Nothing in free or Pro ever called it — every live cache path goes through the
+    // *ForQuery() variants, which key on `wp_slimstat_query_<hash>`.
+    //
+    // It was not harmless. The upgrade routine's stale-cache sweep was written against THIS
+    // prefix, so it matched zero rows on every upgrade while the real cache accumulated
+    // untouched: measured at 0 matched against 2,146 present. Deleting the dead half is
+    // what makes the surviving prefix unambiguous.
 
     /**
      * Analyzes the WHERE clauses to detect date ranges that overlap with today.
@@ -974,50 +1004,199 @@ class Query
         $historical = is_array($historical) ? $historical : [];
         $live       = is_array($live) ? $live : [];
 
-        // If no group key provided, try to determine it from the data
-        if (!$groupKey) {
-            // Try to find a suitable group key from the first row
-            $firstRow = !empty($historical) ? $historical[0] : (!empty($live) ? $live[0] : null);
-            if ($firstRow && is_array($firstRow)) {
-                // Use the first column that's not a sum field
-                foreach (array_keys($firstRow) as $key) {
-                    if (!in_array($key, $sumFields)) {
-                        $groupKey = $key;
-                        break;
-                    }
+        // Rows are identified by EVERY non-aggregate column they carry, not by one guessed
+        // column. The old merge keyed on "the first column that isn't counthits", so a
+        // report grouping on (browser, browser_version) was re-keyed on browser alone and
+        // every version collapsed onto whichever one the live half listed first. (D5)
+        //
+        // The key is read from the ROW rather than parsed out of the GROUP BY clause, and
+        // that is the safety property. In a grouped result set every non-aggregate column
+        // is functionally dependent on the group key, so keying on all of them is always at
+        // least as fine-grained as the real grouping and can never fuse two groups that
+        // belong apart. Parsing the GROUP BY instead would have to survive qualified names,
+        // backticks, aliases and expressions containing commas — and each of those fails on
+        // the wrong side: a partly-wrong key silently fabricates rows, where an
+        // over-specific key merely leaves one unmerged, which is visible.
+        $rules   = $this->aggregateRules($sumFields);
+        $keyCols = null !== $groupKey ? (array) $groupKey : null;
+
+        $keyOf = static function (array $row) use ($rules, $keyCols) {
+            $parts = [];
+            foreach ($row as $col => $value) {
+                $isKey = null !== $keyCols ? in_array($col, $keyCols, true) : !isset($rules[$col]);
+                if (!$isKey) {
+                    continue;
                 }
+                // NULL and '' are different groups in SQL and must not collapse into one.
+                // The previous merge went further and dropped NULL-keyed groups entirely,
+                // because isset() is false for null — one country group, 175 rows, on the
+                // reference dataset.
+                $parts[] = null === $value ? "\0NULL" : (string) $value;
             }
 
-            // If still no group key, just merge without grouping
-            if (!$groupKey) {
-                return array_merge($historical, $live);
-            }
-        }
+            return [] === $parts ? null : implode("\0", $parts);
+        };
 
         $result = [];
-        foreach ($historical as $row) {
-            if (isset($row[$groupKey])) {
-                $key          = $row[$groupKey];
-                $result[$key] = $row;
-            }
-        }
+        foreach ([$historical, $live] as $partition) {
+            foreach ($partition as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
 
-        foreach ($live as $row) {
-            if (isset($row[$groupKey])) {
-                $key = $row[$groupKey];
-                if (isset($result[$key])) {
-                    foreach ($sumFields as $field) {
-                        if (isset($row[$field])) {
-                            $result[$key][$field] += $row[$field];
-                        }
-                    }
-                } else {
+                $key = $keyOf($row);
+                if (null === $key) {
+                    // Every column is an aggregate, so nothing identifies this row. Keep it
+                    // rather than throw it away.
+                    $result[] = $row;
+                    continue;
+                }
+
+                if (!isset($result[$key])) {
                     $result[$key] = $row;
+                    continue;
+                }
+
+                foreach ($row as $col => $value) {
+                    $result[$key][$col] = self::combineValue(
+                        isset($rules[$col]) ? $rules[$col] : null,
+                        array_key_exists($col, $result[$key]) ? $result[$key][$col] : null,
+                        $value
+                    );
                 }
             }
         }
 
         return array_values($result);
+    }
+
+    /**
+     * Which columns identify a row, and how to combine the rest, for a split query.
+     *
+     * Derived from the SELECT list and GROUP BY, both of which are still intact and
+     * unparsed at merge time. An aggregate can only be merged from partition results when
+     * its per-partition output is a sufficient statistic: COUNT and SUM add, MAX and MIN
+     * take the extremum, GROUP_CONCAT unions. AVG needs the per-partition counts to weight
+     * it and COUNT(DISTINCT) is not recoverable at all — neither reaches this path today,
+     * and both keep the historical behaviour of taking the first value seen rather than
+     * inventing a number.
+     *
+     * @param string[] $sumFields Columns the caller declares additive whatever the SQL says.
+     * @return array<string, array{0: string, 1: string|null}> alias => [operation, argument]
+     */
+    private function aggregateRules(array $sumFields)
+    {
+        $rules = [];
+
+        foreach ($this->splitTopLevelCommas((string) $this->fields) as $expr) {
+            $alias = $expr;
+            if (preg_match('/^(.*?)\s+AS\s+([`\'"]?)([A-Za-z0-9_]+)\2\s*$/is', $expr, $m)) {
+                $alias = $m[3];
+                $expr  = trim($m[1]);
+            }
+            $alias = trim($alias, " `'\"");
+
+            // COUNT(DISTINCT x) wears COUNT's clothes but is not additive: a value present
+            // in both halves would be counted once per half.
+            if (preg_match('/^\s*COUNT\s*\(\s*DISTINCT/i', $expr)) {
+                $rules[$alias] = ['FIRST', null];
+                continue;
+            }
+
+            if (preg_match('/^\s*(COUNT|SUM|MAX|MIN|AVG|GROUP_CONCAT)\s*\(/i', $expr, $fn)) {
+                $op  = strtoupper($fn[1]);
+                $sep = null;
+                if ('GROUP_CONCAT' === $op) {
+                    $sep = preg_match('/SEPARATOR\s+([\'"])(.*?)\1/is', $expr, $m) ? $m[2] : ',';
+                }
+                $rules[$alias] = [$op, $sep];
+            }
+        }
+
+        foreach ($sumFields as $field) {
+            $rules[$field] = ['SUM', null];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Combine one column's value across the two halves of a split range.
+     *
+     * @param array{0: string, 1: string|null}|null $rule
+     * @param mixed                                 $a
+     * @param mixed                                 $b
+     * @return mixed
+     */
+    private static function combineValue($rule, $a, $b)
+    {
+        if (null === $rule) {
+            // Part of the group key: both halves carry the same value by construction.
+            return $a;
+        }
+
+        list($op, $arg) = $rule;
+
+        switch ($op) {
+            case 'COUNT':
+            case 'SUM':
+                return $a + $b;
+            case 'MAX':
+                return (null === $a || (null !== $b && $b > $a)) ? $b : $a;
+            case 'MIN':
+                return (null === $a || (null !== $b && $b < $a)) ? $b : $a;
+            case 'GROUP_CONCAT':
+                $parts = array_merge(
+                    '' === (string) $a ? [] : explode($arg, (string) $a),
+                    '' === (string) $b ? [] : explode($arg, (string) $b)
+                );
+                return implode($arg, array_unique(array_filter($parts, static function ($v) {
+                    return '' !== $v;
+                })));
+            default:
+                // AVG, COUNT(DISTINCT) and anything unrecognised: keep what we have rather
+                // than fabricate a value the two halves cannot support.
+                return $a;
+        }
+    }
+
+    /**
+     * Split a clause on its top-level commas, ignoring those nested in parentheses.
+     *
+     * Parentheses only: a comma or bracket inside a string literal would confuse the depth
+     * counter. No clause this plugin generates contains one.
+     *
+     * @param string $fields
+     * @return string[]
+     */
+    private function splitTopLevelCommas($fields)
+    {
+        $out   = [];
+        $depth = 0;
+        $buf   = '';
+
+        for ($i = 0, $len = strlen($fields); $i < $len; $i++) {
+            $c = $fields[$i];
+            if ('(' === $c) {
+                $depth++;
+            } elseif (')' === $c) {
+                $depth--;
+            }
+
+            if (',' === $c && 0 === $depth) {
+                $out[] = $buf;
+                $buf   = '';
+                continue;
+            }
+
+            $buf .= $c;
+        }
+
+        $out[] = $buf;
+
+        return array_values(array_filter(array_map('trim', $out), static function ($v) {
+            return '' !== $v;
+        }));
     }
 
     /**
@@ -1198,13 +1377,36 @@ class Query
     }
 
     /**
+     * Whether the query matches at least one row.
+     *
+     * Bounded to a single row, so the cost does not grow with the number of matches.
+     * Given its own terminal because the shape people reach for instead is
+     * `COUNT(...) > 0`, which has to visit every match before it can answer — the
+     * defect this exists to make hard to reintroduce. (D43)
+     *
+     * @return bool
+     */
+    public function exists(): bool
+    {
+        return null !== $this->limit(1)->getVar();
+    }
+
+    /**
      * Execute the query and return a single value from the first row
      *
      * This is a shortcut for `getAll()[0][0]`
      *
      * @return mixed The value, or false/null if no rows are returned
      */
-    public function getVar()
+    /**
+     * Execute the query and return a single scalar.
+     *
+     * @param string $networkAggregate The OUTER aggregate that recombines a network-wide UNION,
+     *                                 from NetworkMerge::outerAggregate(). Empty — the default —
+     *                                 means this query is not eligible for merging and stays on
+     *                                 the current blog. D22 / M1.
+     */
+    public function getVar(string $networkAggregate = '')
     {
         // When caching is enabled and the date range includes today, skip cache
         // to stay consistent with getAll() which always fetches fresh live data.
@@ -1220,6 +1422,23 @@ class Query
 
         $query = $this->buildQuery();
         $query = $this->prepareQuery($query, $this->valuesToPrepare);
+
+        // D22 — where the network scoping happens, and it happens HERE because here is where the
+        // SQL is finished. `admin/view/wp-slimstat-db.php` applied this filter around its legacy
+        // string-SQL path only, so every report that had been migrated to this builder silently
+        // left the Network View behind: get_top, get_recent, get_group_by, the charts, goals and
+        // funnels. Scoping the denominator without them is the ~2.7x understatement PITFALLS 23
+        // records.
+        //
+        // The caller's aggregate is what makes this safe. Without one the filter is not applied
+        // at all, so a query nobody has declared a merge for cannot be silently summed — and a
+        // silent SUM over COUNT(DISTINCT ip) is exactly the 7-where-the-answer-is-6 defect M1
+        // was ratified to prevent.
+        if ('' !== $networkAggregate) {
+            $query    = (string) apply_filters('slimstat_get_var_sql', $query, $networkAggregate);
+            $useCache = false; // the union spans blogs; the per-blog cache key does not.
+        }
+
         if ($useCache) {
             $cachedResult = $this->getCachedResultForQuery($query, $this->valuesToPrepare);
             if (false !== $cachedResult) {
@@ -1233,6 +1452,68 @@ class Query
         }
 
         return $result;
+    }
+
+    /**
+     * getVar() as a QUESTION rather than an answer: null means "nothing", not "it broke".
+     *
+     * `get_var()` returns null both for "the query found no rows" and for "the query failed",
+     * and every caller that reads the second as the first is one schema state away from a
+     * silent behaviour change. The tracker's anonymous-session lookup was exactly that: before
+     * the vid_hash migration runs, the column does not exist, the SELECT errors, null comes
+     * back, and the caller reads it as "no previous hit from this visitor" — so every anonymous
+     * pageview minted a fresh visit_id and visits inflated to roughly pageviews for the whole
+     * pre-migration window. Nothing was recorded anywhere.
+     *
+     * Errors are suppressed because this is a question: an install mid-migration should get a
+     * recorded degradation, not wpdb printing a red error block into a front-end page. The same
+     * suppress-run-read-restore shape is PurgeArchive::probeForCollision() and
+     * Schema::columnState(); AbstractMigration::probeFailed() is only its read half.
+     *
+     * @return mixed|null The scalar, or null for BOTH "nothing" and "could not ask" — call
+     *                    probeFailed() immediately afterwards to tell them apart.
+     */
+    public function probeVar(string $networkAggregate = '')
+    {
+        // Cleared first, the way wpdb::query() clears it via flush(). Without this a stale
+        // error from an unrelated earlier query would be read as this probe's failure — and
+        // a cached hit returns without querying at all, so nothing else would clear it.
+        //
+        // flush(), not `last_error = ''`: assigning the literal lets PHPStan narrow the property
+        // and read the comparison below as provably dead. It is also wpdb's own reset, and what
+        // query() calls at its start. It additionally clears last_result, last_query,
+        // rows_affected, num_rows and col_info — nothing reads any of those across this probe —
+        // while insert_id, which VisitIdGenerator does read across statements, survives.
+        $this->db->flush();
+
+        // finally, because suppression is GLOBAL state on the shared wpdb handle. With a
+        // non-empty $networkAggregate getVar() runs an apply_filters(), and third-party filter
+        // code can throw — leaking suppression would silently swallow every wpdb error for the
+        // rest of the request.
+        // Set BEFORE the attempt: a throw is "could not ask", and leaving the previous
+        // value standing would answer the next probeFailed() with a stale verdict.
+        $this->lastProbeFailed = true;
+
+        $suppressed = $this->db->suppress_errors(true);
+
+        try {
+            $result                = $this->getVar($networkAggregate);
+            $this->lastProbeFailed = '' !== (string) $this->db->last_error;
+        } finally {
+            $this->db->suppress_errors($suppressed);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Whether the last probeVar() on this builder could not run.
+     *
+     * Only meaningful immediately after probeVar(); it answers false before the first one.
+     */
+    public function probeFailed(): bool
+    {
+        return $this->lastProbeFailed;
     }
 
     /**
@@ -1430,10 +1711,59 @@ class Query
      * part that should not be cached.
      * If this is not a live query, the function will simply return the result of the query.
      *
+     * @param string $networkIntent      A NetworkMerge intent, or '' for "not eligible" (the
+     *                                   default). Only NetworkMerge::SUM is accepted here: a
+     *                                   grouped report's `counthits` is COUNT(*), which is
+     *                                   additive; anything else must not be silently summed.
+     * @param string $selectNoAggregate  The non-aggregate select list, re-selected outside the
+     *                                   union.
+     * @param string $groupBy            The group key, re-applied outside the union.
+     * @param string $orderBy            The sort, re-applied outside the union.
+     *
      * @return array The result of the query
      */
-    public function getAll()
+    public function getAll(string $networkIntent = '', string $selectNoAggregate = '', string $groupBy = '', string $orderBy = '', string $extraAggregate = '', int $outerLimit = 0)
     {
+        // D22 — a network-wide read is ONE query over a union of blogs, and it takes this path
+        // instead of the live/historical partitioning below.
+        //
+        // Not an optimisation skipped for convenience: that partitioning splits the query by
+        // date range and merges the halves in PHP, and wrapping each half in its own union would
+        // union N blogs twice and then merge two already-merged sets. The partitioning exists to
+        // make results cacheable, and a cross-blog result is not cacheable under a per-blog key
+        // anyway — so the two mechanisms have nothing to trade.
+        if (NetworkMerge::SUM === $networkIntent && NetworkMerge::isMerging()) {
+            $query = $this->prepareQuery($this->buildQuery(), $this->valuesToPrepare);
+
+            // The outer aggregates: the merge itself, plus whatever aggregate the caller adds
+            // (`MAX(dt) AS dt` on the "Recent …" reports). Both belong outside the union — an
+            // aggregate computed per arm and never re-computed is a per-blog answer wearing a
+            // network-wide label.
+            $aggregates = 'SUM(counthits) AS counthits'
+                . ('' === $extraAggregate ? '' : ', ' . $extraAggregate);
+
+            $sql = (string) apply_filters(
+                'slimstat_get_results_sql',
+                $query,
+                $selectNoAggregate,
+                $orderBy,
+                $groupBy,
+                $aggregates
+            );
+
+            // The bound the callers deliberately left OFF the inner query (a LIMIT inside a
+            // union arm loses each blog's rank-N+1 rows), re-applied OUTSIDE the union: the
+            // rewriter's output ends `… GROUP BY … ORDER BY …`, and the caller's ORDER BY
+            // carries full tie-breakers, so the cut equals the callers' own array_slice —
+            // but MySQL top-Ns the outer sort and the wire carries `limit` rows instead of
+            // one row per (blog, group) across the whole network.
+            if ($outerLimit > 0) {
+                $sql .= ' LIMIT ' . $outerLimit;
+            }
+
+            return (array) $this->db->get_results($sql, ARRAY_A);
+        }
+
         if (null !== $this->_isLiveQuery && $this->_isLiveQuery) {
             $query = $this->buildQuery();
             $query = $this->prepareQuery($query, $this->valuesToPrepare);
@@ -1462,6 +1792,18 @@ class Query
         }
 
         [$split, $histFrom, $histTo, $liveFrom, $liveTo, $dtIdx, $dtClauseIdx] = $this->getSplitDateRanges();
+
+        // HAVING cannot survive the split. It filters groups AFTER aggregation, so running
+        // it against each half independently asks a different question of each: "Top Bounce
+        // Pages" (HAVING COUNT(visit_id) = 1) lets a page with one visit before midnight and
+        // one after pass in BOTH halves, then merges them into a page with two visits — the
+        // exact opposite of what the report is for. No merge can undo that, because the rows
+        // that should have been excluded were already selected. Run one query instead and
+        // give up only the historical half's cache entry. (D5)
+        if ($split && !empty($this->havingClauses)) {
+            $split = false;
+        }
+
         if ($split) {
             $baseWhereClauses    = $this->whereClauses;
             $baseValuesToPrepare = $this->valuesToPrepare;
@@ -1476,10 +1818,14 @@ class Query
             // merging.
             $parsedOffset = 0;
             $parsedLimit  = 0;
-            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $this->limitClause, $m)) {
+            // Cast: a query with no LIMIT leaves this null, and passing null to preg_match
+            // is deprecated from PHP 8.1 — it was emitting two notices per split query, i.e.
+            // on the default dashboard view of every install.
+            $limitClause  = (string) $this->limitClause;
+            if (preg_match('/LIMIT\s+(\d+)\s+OFFSET\s+(\d+)/i', $limitClause, $m)) {
                 $parsedLimit  = intval($m[1]);
                 $parsedOffset = intval($m[2]);
-            } elseif (preg_match('/LIMIT\s+(\d+)/i', $this->limitClause, $m)) {
+            } elseif (preg_match('/LIMIT\s+(\d+)/i', $limitClause, $m)) {
                 $parsedLimit = intval($m[1]);
             }
             // Sub-queries fetch up to offset+limit rows (no OFFSET) so we

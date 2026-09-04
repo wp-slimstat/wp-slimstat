@@ -1,0 +1,17 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-entrypoint
+kind:      restore-defect
+expect:    20 of 20 runs assigned arm-1 to the same ref
+rationale: Replaces the real entropy source at the campaign entry point with the deterministic first 32 bytes of the committed seal script. Every run still has a neutral name, a commitment, a private mapping and a syntactically valid packet, so only the behavioral assignment sweep can distinguish this from a working seal. The exact verdict proves the gate measures both assignments rather than merely counting twenty plausible directories.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -67,7 +67,7 @@
+ RUNS_ROOT="$SLIMSTAT_RUNS_ROOT"
+ [ -n "$RUNS_ROOT" ] || RUNS_ROOT="$PLUGIN_SRC/../jaan-to/outputs/dev/v6-performance/runs"
+ RUNS=$(seal_new_run_dir "$RUNS_ROOT") || exit 3
+-seal_flip "$RUNS" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" "$SLIMSTAT_NULL_CONTROL" || exit 3
++SLIMSTAT_SEAL_ENTROPY_SOURCE="$HERE/seal.sh" seal_flip "$RUNS" "$BEFORE_SHA" "$AFTER_SHA" "$ROWS" "$DAYS" "$SLIMSTAT_NULL_CONTROL" || exit 3
+ if [ "$SLIMSTAT_SEAL_DRYRUN" = 1 ]; then
+   echo "SEAL DRYRUN: $RUNS  corpus=$SLIMSTAT_SEED_PROFILE  driver=$(basename "$SLIMSTAT_COMPARE_CMD")"
+   exit 0

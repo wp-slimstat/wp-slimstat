@@ -1,0 +1,17 @@
+target:    src/Tracker/Processor.php
+gate:      php tests/write-terminal-gate-test.php
+kind:      guard-removal
+expect:    process() no longer asks whether a row was actually INSERTED
+rationale: Restores the C30 hole by asking isFailed() instead of !isStored(). "Not failed" is not "stored": an INSERT IGNORE that matched an existing row, or a row an FK refused, errors nowhere and stores nothing — which is exactly the 0 that used to propagate as $stat['id'] = 0 and take the FK-constrained event insert down with it.
+---
+--- a/src/Tracker/Processor.php
++++ b/src/Tracker/Processor.php
+@@ -767,7 +767,7 @@ class Processor
+         // and propagated as $stat['id'] = 0, whose event insert then violated the FK and
+         // was silently dropped. One lost pageview beats a lost pageview plus a lost event
+         // plus a diagnostic saying everything is fine.
+-        if (!$write->isStored()) {
++        if ($write->isFailed()) {
+             Query::setProcessingTimestamp(null);
+             Utils::recordErrorDetail($write->isFailed()
+                 ? $write->error()

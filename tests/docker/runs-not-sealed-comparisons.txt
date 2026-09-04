@@ -1,0 +1,40 @@
+# Directories under jaan-to/outputs/dev/v6-performance/runs/ that are NOT sealed comparison
+# runs, declared so the artifact census can tell them from a run somebody wrote without sealing.
+#
+# The census's rule is: every directory under runs/ either carries flip.json + .sealed/mapping.json,
+# or is named here. An allowlist in the tree is the stronger control precisely because adding to it
+# is a tracked, reviewable edit — a marker file inside the directory could be written by the same
+# thing that failed to seal.
+#
+# Two classes live here, and the distinction matters:
+#
+#   PRE-S6 RUNS  — real comparison runs taken before the seal existed (PITFALLS 71). Named by
+#                  <before>-to-<after>, which is itself the disclosure S6 closed.
+#   EVIDENCE     — directories that were never a comparison at all: a seam's working artifacts, a
+#                  design copy, a drill. These have no arms to seal.
+#
+# This file was called `pre-s6-runs.txt` until 2026-08-25, when S7's drill directory needed
+# declaring and there was no honest way to call a post-S6 drill a pre-S6 run. The list had already
+# been holding evidence directories under that name since run52.
+
+# --- pre-S6 runs ---
+37d8415d-to-828d3431
+37d8415d-to-b0e2d146
+52ffe631-to-82a08024
+6acf6829-to-406e80ad
+6fe12a02-to-6fe12a02
+828d3431-to-828d3431
+828d3431-to-e39cb15d
+8e6a058a-to-82a08024
+9c00a6ca-to-3957a10e
+e39cb15d-to-b0e2d146
+
+# --- evidence directories, never a comparison ---
+run52-s3-export-fidelity
+run53-s4-classifier
+run54-rounding-seam
+run58-s6-blind-seal
+run60-s7-canary
+run61-s8-closure-audit
+run64-s0a-336-trigger
+s6-design

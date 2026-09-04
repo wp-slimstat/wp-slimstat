@@ -1,0 +1,20 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      restore-defect
+expect:    falls back to WordPress trunk when a tag does not resolve
+rationale: Restores the `WP_REF=trunk` fallback behind a ::warning::. A lane labelled 'WP 7.1' that cannot find that tag then boots TRUNK and reports green -- a coverage claim under a heading naming a version it is not running, which is the one thing a version matrix exists to prevent. All seven tags resolve today, so this was latent rather than active; latent is exactly when it is cheap to close and exactly when nobody notices it is open. The warning makes it worse rather than better: it is visible in a log nobody reads and invisible in the status everyone reads.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -377,9 +377,8 @@
+               exit 1
+             fi
+             if [ -z "${wp_tag_refs}" ]; then
+-              echo "::error::WordPress tag ${WP_VERSION} does not exist. Fix the matrix entry, or"
+-              echo "::error::remove the lane — do not let it silently test trunk under that name."
+-              exit 1
++              echo "::warning::WordPress tag ${WP_VERSION} not found — falling back to trunk"
++              WP_REF="trunk"
+             fi
+           fi
+           # PINNED TO VERSIONS, for the same reason main.yml's actions are pinned to commits

@@ -1,0 +1,19 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-negative
+kind:      restore-defect
+expect:    T11 expected exit 1 and 'no packet built'
+rationale: Restores the unguarded packet build. What only this entry can show is that the refusal has to live at the ENTRY POINT: seal-tool.py validates a packet and never the verdict that produced it, and the packet's own nine controls read the answers document, which an aborted run leaves complete and self-consistent. So every downstream check passes on evidence the harness has already refused. The measured shape of that failure is at verify-change.sh's own guard and at T11; it is not repeated here.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -107,9 +107,7 @@
+ # and nothing downstream could tell the difference — seal-tool.py validates the packet, not the
+ # verdict that produced it.
+ ART="$WORK_ROOT/answers/answers/artifacts"
+-if [ "$rc" != 0 ] && [ "$rc" != 2 ]; then
+-  err "no packet built — the comparison aborted (exit $rc), so its captures are not evidence"
+-elif [ -d "$ART" ]; then
++if [ -d "$ART" ]; then
+   "$HERE/build-packet.sh" "$RUNS" "$ART" "$BEFORE_SHA" "$AFTER_SHA" || exit $?
+ fi
+ 

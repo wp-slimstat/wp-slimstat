@@ -8,9 +8,16 @@ use SlimStat\Services\Privacy;
 use SlimStat\Services\Geolocation\GeolocationService;
 use SlimStat\Providers\IPHashProvider;
 use SlimStat\Utils\Consent;
+use SlimStat\Utils\OptionClaim;
 
 class Processor
 {
+    /** Single-flight claim for the tracking path's schema repair. */
+    private const REPAIR_CLAIM_OPTION = 'slimstat_schema_repair_claim';
+
+    /** Seconds before another repair may be attempted. */
+    private const REPAIR_COOLDOWN = 300;
+
     /**
      * Schemes accepted for the stored referer. Anything else is treated as an XSS
      * attempt and dropped. Used both as the protocols allow-list for sanitize_url()
@@ -98,7 +105,18 @@ class Processor
         // Get current stat with validation
         $stat = \wp_slimstat::get_stat();
 
-        $stat['dt'] = \wp_slimstat::date_i18n('U');
+        // now(), not date_i18n('U'), and this is a CLARITY change rather than a behavioural one.
+        // Measured: core's date_i18n() short-circuits 'U' and returns current_time('timestamp'),
+        // an int already — so now()'s cast is an identity here, and every downstream use
+        // (`$stat['dt'] - $session_duration`, the `%d` in prepare(), the INT column) is unaffected
+        // either way. An earlier version of this comment claimed date_i18n() "returns a STRING"
+        // and that setProcessingTimestamp() "declares int|null"; neither is true, and both were
+        // written from reading the call rather than from running it.
+        //
+        // What stands is that now() is the documented call for this — "the current timestamp in
+        // the same format stored in the dt column" — and that it carries the type where
+        // date_i18n()'s is conditional on the format string.
+        $stat['dt'] = \wp_slimstat::now();
         if (empty($stat['notes'])) {
             $stat['notes'] = [];
         }
@@ -290,7 +308,14 @@ class Processor
         } elseif ($piiAllowed && isset($_COOKIE['comment_author_' . COOKIEHASH])) {
             // Only check comment cookies if PII is allowed
             // Use original IP (before hashing) for spam check with Query builder
+            // ->local(): wp_comments is a CORE table. The default Query handle is the
+            // analytics connection, which under the custom-DB add-on is a different
+            // database (often server) with no wp_comments — so on an external-DB install
+            // a known commenter's username/email were never attached, silently, on every
+            // one of their pageviews (F6/C44). DB_NAME still qualifies it, harmlessly,
+            // since the local handle IS DB_NAME.
             $spam_comment = Query::select('comment_author, comment_author_email, COUNT(*) as comment_count')
+                ->local()
                 ->from(DB_NAME . '.' . $GLOBALS['wpdb']->comments)
                 ->where('comment_author_IP', '=', $originalIpForGeo)
                 ->where('comment_approved', '=', 'spam')
@@ -491,9 +516,31 @@ class Processor
 							$searchIp = $hashedIp;
 						}
 
-						// Calculate the expected Anonymous Visit ID based on current IP/UA
-						// This helps find the session even if IP hashing doesn't match perfectly or if lookup needs to be more robust
-						$anonymousVisitId = Session::generateAnonymousVisitId();
+						// Re-derive the anonymous IDENTITY (vid_hash), not a visit id: since
+						// D68 the visit id is sequential and cannot be recomputed, while the
+						// hash is deterministic for the same person on the same day — which
+						// is exactly the window a consent upgrade happens in. It also finds
+						// the whole anonymous session regardless of how many visit ids the
+						// old code had split it across.
+						//
+						// OWED, AND THE COMMENT HERE USED TO UNDERSTATE IT. It said the SELECT
+						// "fails softly (finds nothing) … which is the pre-existing degraded
+						// behaviour". Both halves are wrong. The vid_hash test below is OR'd
+						// with the ip and visit_id tests, and MySQL rejects the WHOLE statement
+						// on an unknown column (1054) — so before AddVisitIdentity runs it is
+						// not the vid_hash disjunct that fails, it is the entire lookup, and
+						// the ip match that used to claim the row goes with it. That path
+						// worked before the disjunct was added, so this is a regression, not
+						// the prior behaviour. The consent upgrade silently inserts a duplicate
+						// instead of claiming the anonymous rows.
+						//
+						// Not fixed here: this needs the same probe-and-fall-back treatment
+						// findExistingAnonymousVisitId() now has, plus its own mutation, and
+						// widening this change to restructure the consent-upgrade query is
+						// scope this commit should not take. Narrow but real — it needs
+						// $isConsentUpgrade && $isAnonymousTracking && $piiAllowed on a
+						// pre-migration schema, and it inflates visits rather than losing data.
+						$anonymousVidHash = Session::generateAnonymousVidHash($stat);
 
 						// Build complex WHERE clause: (ID match) OR (VisitID match) OR (IP match)
 						// Note: We effectively group conditions here
@@ -506,9 +553,8 @@ class Processor
 							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %d", $stat['visit_id']);
 						}
 
-						if ($anonymousVisitId > 0) {
-							// Use %s to handle large integers correctly on all platforms
-							$whereClause[] = $GLOBALS['wpdb']->prepare("visit_id = %s", (string)$anonymousVisitId);
+						if ('' !== $anonymousVidHash) {
+							$whereClause[] = $GLOBALS['wpdb']->prepare('vid_hash = UNHEX(%s)', $anonymousVidHash);
 						}
 
 						if (!empty($searchIp)) {
@@ -745,23 +791,33 @@ class Processor
             }
         }
 
-        $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
+        $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
 
-        if (false === $stat['id']) {
-            include_once(SLIMSTAT_ANALYTICS_DIR . 'admin/index.php');
-            \wp_slimstat_admin::init_environment();
-            $stat['id'] = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
-            if (false === $stat['id']) {
-                Query::setProcessingTimestamp(null);
-                // Store DB error detail for admin diagnostics
-                $dbError = (string) $GLOBALS['wpdb']->last_error;
-                \wp_slimstat::update_option('slimstat_tracker_error_detail', sanitize_text_field($dbError));
-                return Utils::logError(200);
-            }
+        // The error is passed rather than re-read from $wpdb->last_error: insertRow() can
+        // run a column probe and a retry after the failing statement, each of which resets
+        // it, so the global no longer describes the write being classified.
+        if ($write->isFailed() && self::repairSchemaOnce($write->error())) {
+            $write = Storage::insertRow($stat, $GLOBALS['wpdb']->prefix . 'slim_stats');
         }
 
-        // Clear stale DB error detail on successful insert
-        \wp_slimstat::update_option('slimstat_tracker_error_detail', '');
+        // One exit for "nothing was stored". isFailed() is a strict subset of !isStored():
+        // an INSERT IGNORE that matched an existing row, or a row an FK refused, stored
+        // nothing without erroring — and that used to be a `0` that passed `false === $id`
+        // and propagated as $stat['id'] = 0, whose event insert then violated the FK and
+        // was silently dropped. One lost pageview beats a lost pageview plus a lost event
+        // plus a diagnostic saying everything is fine.
+        if (!$write->isStored()) {
+            Query::setProcessingTimestamp(null);
+            Utils::recordErrorDetail($write->isFailed()
+                ? $write->error()
+                : 'insert stored no row (duplicate or constraint) — not a database error');
+            return Utils::logError(200);
+        }
+
+        $stat['id'] = $write->id();
+
+        // Clear stale DB error detail on successful insert.
+        Utils::clearErrorDetail();
 
         // Update stat after getting ID
         \wp_slimstat::set_stat($stat);
@@ -820,4 +876,74 @@ class Processor
         )));
     }
 
+
+    /**
+     * Rebuild the schema from the tracking path — narrowly, and once.
+     *
+     * This exists because a site can genuinely have no tables: before C38 both
+     * lifecycle registrations sat inside `if (is_admin())`, which is false under
+     * WP-CLI, so `wp plugin activate` created nothing and this was the only thing that
+     * ever did. C38 fixed activation, which is what makes this the abnormal path again
+     * — and abnormal paths that run four CREATE TABLEs, five CREATE INDEXes and
+     * flush_rewrite_rules() from an anonymous front-end request need gating.
+     *
+     * Two gates, because the old code had neither:
+     *
+     *   - THE TRIGGER. It fired on ANY insert failure. A deadlock, a lock-wait timeout,
+     *     a full disk, an oversized packet — every one of them ran the whole DDL and
+     *     retried, and almost none of them is a missing table. Only an
+     *     ER_NO_SUCH_TABLE (1146) means the thing this repairs.
+     *   - SINGLE-FLIGHT. On a busy site a transient failure is not one failure, it is
+     *     every concurrent request failing at once. Each would have run the DDL
+     *     together, against the database that was already the thing in trouble. The
+     *     claim row also serves as the cooldown: it is left behind deliberately and
+     *     expires, so a site whose tables cannot be created does not retry forever.
+     *
+     * @return bool Whether the schema was rebuilt and a retry is worth attempting.
+     */
+    private static function repairSchemaOnce($error = '')
+    {
+        $error = (string) $error;
+
+        // MySQL 1146 / MariaDB: "Table 'db.wp_slim_stats' doesn't exist". Matched on the
+        // text because wpdb exposes no error code, and on both spellings because the
+        // apostrophe is typographic in some locales.
+        if (!preg_match("/doesn'?t exist|no such table|1146/i", $error)) {
+            return false;
+        }
+
+        // One repair per cooldown, whoever gets there first. A losing request skips the
+        // DDL and reports the failure normally; it does not queue behind a rebuild.
+        if (!OptionClaim::insert(self::REPAIR_CLAIM_OPTION, (string) time(), 'no')) {
+            $held = (int) get_option(self::REPAIR_CLAIM_OPTION);
+
+            if ($held > 0 && (time() - $held) < self::REPAIR_COOLDOWN) {
+                return false;
+            }
+
+            // The claim is stale — the previous attempt died or its cooldown elapsed.
+            if (!OptionClaim::compareAndSwap(
+                self::REPAIR_CLAIM_OPTION,
+                (string) $held,
+                (string) time(),
+                'no'
+            )) {
+                return false;
+            }
+        }
+
+        try {
+            include_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
+            \wp_slimstat_admin::init_environment();
+        } catch (\Throwable $e) {
+            \wp_slimstat::record_degradation(
+                'schema repair from the tracking path',
+                $e,
+                \wp_slimstat::DEGRADATION_OPERATIONAL
+            );
+            return false;
+        }
+
+        return true;
+    }
 }

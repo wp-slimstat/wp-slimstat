@@ -26,7 +26,7 @@ Slimstat Analytics is an open source project, dependent in large part on communi
 ### Requirements ###
 * WordPress 5.6+
 * PHP 7.4+
-* MySQL 5.0.3+
+* MySQL 5.6+ (or MariaDB 10.0+)
 * At least 5 MB of free web space (240 MB if you plan on using the external libraries for geolocation and browser detection)
 * At least 10 MB of free DB space
 * At least 32 Mb of free PHP memory for the tracker (peak memory usage)

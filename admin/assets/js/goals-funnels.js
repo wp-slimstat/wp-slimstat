@@ -637,7 +637,12 @@
             var pct = Number(step.pct) || 0;
             var dropoff = Number(step.dropoff) || 0;
             var unreachable = !!step.unreachable;
-            var width = stepOne > 0 ? Math.max(2, Math.round((visitors / stepOne) * 100)) : 0;
+            // Multiply first, divide once — the twin of funnel-bars.php's $width. `(visitors /
+            // stepOne) * 100` divides into a double and then scales it, landing one ULP below the
+            // exact half: 23 of 40 gives Math.round(57.49999999999999289457) = 57 where the exact
+            // value is 57.5. Both halves of this twin must round the same way or the same funnel
+            // renders 58% server-side and 57% after an AJAX refresh. ADR-17; PITFALLS 72.
+            var width = stepOne > 0 ? Math.max(2, Math.round((100 * visitors) / stepOne)) : 0;
             var stepNum = i + 1;
             var pctLabel = formatPercent(pct);
             var stepCls = unreachable ? 'slimstat-gf-step slimstat-gf-step--unreachable' : 'slimstat-gf-step';
@@ -664,7 +669,9 @@
                     escHtml(__('No visitors reached this step in the selected date range', 'wp-slimstat')) + '</div>';
             } else if (i > 0 && dropoff > 0 && steps[i - 1] && steps[i - 1].visitors) {
                 var prev = Number(steps[i - 1].visitors);
-                var dropoffPct = prev > 0 ? formatPercent((dropoff / prev) * 100) : formatPercent(0);
+                // Multiply first — twin of funnel-bars.php's $dropoff_pct, and this one is
+                // PRINTED text rather than a CSS width. ADR-17; PITFALLS 72.
+                var dropoffPct = prev > 0 ? formatPercent((100 * dropoff) / prev) : formatPercent(0);
                 /* translators: 1: visitors dropped, 2: drop-off percentage */
                 var dropLine = sprintf(__('↓ %1$s dropped (%2$s%%)', 'wp-slimstat'), formatNumber(dropoff), dropoffPct);
                 html += '<div class="slimstat-gf-step__dropoff">' + escHtml(dropLine) + '</div>';

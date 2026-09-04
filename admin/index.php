@@ -3,8 +3,25 @@
 use SlimStat\Services\GeoService;
 use SlimStat\Components\DateRangeHelper;
 use SlimStat\Services\Admin\Notification\NotificationFactory;
+use SlimStat\Schema\Schema;
 class wp_slimstat_admin
 {
+    /**
+     * Column drift observed by the last reconciliation (F4).
+     *
+     * Durable on purpose. The degradation channel heals by FORGETTING — a record not re-stamped
+     * within DEGRADATION_TTL is pruned as "stopped happening" — and ensure() runs only on
+     * activation and a version-gated upgrade. Without a durable copy, a permanently drifted
+     * install would show this for one three-hour window per plugin release.
+     *
+     * Never autoloaded: read on admin screens only, on installs already unhealthy enough to have
+     * drift (C34).
+     */
+    const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';
+
+    /** Throttles the admin_init re-observation. Self-expiring, so nothing has to clear it. */
+    const COLUMN_DRIFT_CHECK_TRANSIENT = 'slimstat_column_drift_checked';
+
     public static $screens_info      = [];
     public static $config_url        = '';
     public static $current_screen    = 'slimview1';
@@ -27,6 +44,21 @@ class wp_slimstat_admin
     private const FILTER_SEARCH_SUBSTRING_DIMENSIONS = [
         'notes', 'searchterms', 'content_type', 'category', 'author', 'outbound_resource', 'user_agent', 'resource', 'referer',
     ];
+
+    /** Resume point for the 4.8.8 notes conversion. Non-autoloaded; removed on completion. */
+    private const NOTES_CURSOR_OPTION = 'slimstat_notes_migration_cursor';
+
+    /** Rows per statement. Batches walk ROWS, not id space — see convert_notes_to_brackets(). */
+    private const NOTES_BATCH_SIZE = 20000;
+
+    /** Wall-clock budget for the whole schema upgrade, well inside a default max_execution_time. */
+    private const SCHEMA_UPGRADE_TIME_BUDGET = 10;
+
+    /** Single-flight claim for the schema upgrade. Non-autoloaded; released in a finally. */
+    private const SCHEMA_LOCK_OPTION = 'slimstat_schema_upgrade_lock';
+
+    /** A claim older than this is assumed dead and taken over. Longer than the request budget. */
+    private const SCHEMA_LOCK_STALE_AFTER = 900;
 
     protected static $data_for_column = [
         'url'   => [],
@@ -137,7 +169,7 @@ class wp_slimstat_admin
             'inactive' => [
                 'is_report_group' => true,
                 'show_in_sidebar' => false,
-                'title'           => __('Inactive Reports'),
+                'title'           => __('Inactive Reports', 'wp-slimstat'),
                 'capability'      => '',
                 'callback'        => '', // No callback and capabilities are needed if show_in_sidebar is false
             ],
@@ -181,11 +213,9 @@ class wp_slimstat_admin
             self::$meta_user_reports = get_user_option('meta-box-order_' . wp_slimstat_admin::$page_location . '_page_slimlayout', $GLOBALS['current_user']->ID);
         }
 
-        // WPMU - New blog created
-        $active_sitewide_plugins = get_site_option('active_sitewide_plugins');
-        if (!empty($active_sitewide_plugins['wp-slimstat/wp-slimstat.php'])) {
-            add_action('wpmu_new_blog', [self::class, 'new_blog']);
-        }
+        // Subsite creation moved to wp-slimstat.php's unconditional wp_initialize_site
+        // registration (D10): from here it existed only for logged-in admin requests, so
+        // WP-CLI and REST site creation found no callback and got no tables.
 
         // WPMU - Blog Deleted
         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);
@@ -316,9 +346,19 @@ class wp_slimstat_admin
             wp_schedule_event(time(), 'twicedaily', 'wp_slimstat_purge');
         }
 
-        // Schedule a daily cron job to regenerate IP hashing salt (for GDPR compliance)
-        if (!wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
-            wp_schedule_event(time(), 'daily', 'wp_slimstat_generate_daily_salt');
+        // The daily-salt cron is retired (W6). It was anchored at wp_schedule_event(time(),
+        // 'daily', …) — i.e. to whenever the plugin was activated — so it fired at an
+        // arbitrary hour, by which point the day's salt already existed and the run was a
+        // no-op. The salt is minted on demand instead, under a compare-and-swap, by the
+        // first request of each UTC day (IPHashProvider::generateDailySalt()).
+        //
+        // Not re-anchored to midnight: WP-Cron is request-triggered, so "due at 00:00 UTC"
+        // means "runs inside the first request after 00:00 UTC" — the same request that
+        // already mints. The name is the actual hazard: it promises a rotation the code no
+        // longer performs, so whoever makes it rotate again would re-deliver the
+        // split-population bug from a scheduler, mid-day.
+        if (wp_next_scheduled('wp_slimstat_generate_daily_salt')) {
+            wp_clear_scheduled_hook('wp_slimstat_generate_daily_salt');
         }
 
         // Schedule a weekly cron job to update geoip database automatically
@@ -412,21 +452,36 @@ class wp_slimstat_admin
 
         self::register_goals_funnels_header_hooks();
 
-        // Sync index options with actual DB state — skip SHOW INDEX if option already confirmed
-        foreach (self::get_index_definitions() as $def) {
-            if ('yes' === get_option($def['option'])) {
-                continue;
-            }
-            $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $def['name']));
-            if (!empty($exists)) {
-                update_option($def['option'], 'yes');
-            }
-        }
+        // Sync index options with actual DB state — one SHOW INDEX for all of them, and none at
+        // all once every option is stamped.
+        //
+        // This was the seventh single-index probe site and the only one on a per-request path:
+        // up to six `SHOW INDEX … WHERE Key_name = 'x'` on every wp-admin and admin-ajax
+        // request, five of them duplicating a key list the first already returned. It also
+        // interacts badly with the honest stamping introduced alongside Schema::ensure(): the
+        // old code stamped 'yes' whether or not the build succeeded, so the loop fell silent
+        // after one pass, while a correctly-unstamped option on a large-table install would
+        // have left this probing six times per request indefinitely.
+        self::sync_index_options();
 
         self::register_index_hooks();
 
         // Register the combined notice
         add_action('admin_notices', ['wp_slimstat_admin', 'show_indexes_notice']);
+
+        // Surface fail-soft degradations (issue #325) and retire stale ones.
+        // admin-ajax.php also fires admin_init, but never renders admin_notices, so
+        // reconciling there would add a wp_options read to every heartbeat and
+        // autosave for nothing.
+        if (!wp_doing_ajax()) {
+            // BEFORE the reconciliation, at a lower priority. reconcile_degradations() prunes
+            // records past DEGRADATION_TTL, so re-stating the drift afterwards would leave one
+            // request showing a notice the pruner had just removed and the next showing none.
+            // Stated first, pruned second — a still-drifted install never falls out of the notice.
+            add_action('admin_init', ['wp_slimstat_admin', 'refresh_column_drift_notice'], 98);
+            add_action('admin_init', ['wp_slimstat', 'reconcile_degradations'], 99);
+            add_action('admin_notices', ['wp_slimstat_admin', 'show_degradation_notice']);
+        }
 
         // Initialize notification system
         if (class_exists('SlimStat\\Services\\Admin\\Notification\\NotificationManager')) {
@@ -475,12 +530,16 @@ class wp_slimstat_admin
     }
 
     /**
-     * Clears the purge cron job
+     * Clears every cron job this plugin schedules.
+     *
+     * The hook list lives in src/cron-hooks.php so this and uninstall.php cannot
+     * drift apart — see the note there.
      */
     public static function deactivate()
     {
-        wp_clear_scheduled_hook('wp_slimstat_purge');
-        wp_clear_scheduled_hook('wp_slimstat_update_geoip_database');
+        foreach (require SLIMSTAT_DIR . '/src/cron-hooks.php' as $hook) {
+            wp_clear_scheduled_hook($hook);
+        }
     }
 
     /**
@@ -505,27 +564,17 @@ class wp_slimstat_admin
     }
 
     /**
-     * Support for WP MU network activations
-     */
-    public static function new_blog($_blog_id)
-    {
-        switch_to_blog($_blog_id);
-        self::init_environment();
-        restore_current_blog();
-    }
-
-    // END: new_blog
-
-    /**
      * Support for WP MU site deletion
      */
     public static function drop_tables($_tables = [], $_blog_id = 1)
     {
-        $_tables['slim_events'] = $GLOBALS['wpdb']->prefix . 'slim_events';
-        $_tables['slim_stats']  = $GLOBALS['wpdb']->prefix . 'slim_stats';
-
-        $_tables['slim_events_archive'] = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-        $_tables['slim_stats_archive']  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+        // Derived from the manifest so a table added in Phase G cannot survive `wpmu_drop_tables`
+        // — deleting a subsite would leave its analytics behind forever, on the one code path
+        // where nobody looks afterwards. Schema::tables() is already in FK-safe order (children
+        // first), which core preserves when it issues the DROPs.
+        foreach (Schema::tables() as $suffix) {
+            $_tables[$suffix] = $GLOBALS['wpdb']->prefix . $suffix;
+        }
 
         return $_tables;
     }
@@ -541,46 +590,14 @@ class wp_slimstat_admin
             $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         }
 
-        // Create the tables
+        // Create the tables and reconcile every index in the manifest. The five probe-and-create
+        // blocks that used to live here were four of the six independent index creators C11
+        // enumerated; they duplicated entries init_tables() already handled, each with its own
+        // `SHOW INDEX` round trip and its own unconditional "yes" stamp.
         self::init_tables($my_wpdb);
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
         \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
-
-        // Ensure country/dt index exists for performance
-        $has_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_country_dt'", $GLOBALS['wpdb']->prefix));
-        if (!$has_index || 0 === count($has_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_country_dt_indexed', 'yes');
-
-        // --- Add (dt, screen_width, screen_height) index for Top Screen Resolutions ---
-        $dt_screen_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_screen_width_screen_height'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_screen_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_screen_indexed', 'yes');
-
-        // --- Add (dt, browser, browser_version) index for Top Browsers ---
-        $dt_browser_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_browser_browser_version'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_browser_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_browser_indexed', 'yes');
-
-        // --- Add (dt, platform) index for Top Platforms ---
-        $dt_platform_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = 'idx_dt_platform'", $GLOBALS['wpdb']->prefix));
-        if (empty($dt_platform_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_platform_indexed', 'yes');
-
-        // --- Add (dt, visit_id) covering index for visitor counter queries ---
-        $dt_visit_index = $my_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%sstats_dt_visit_idx'", $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-        if (empty($dt_visit_index)) {
-            $my_wpdb->query(sprintf('CREATE INDEX %sstats_dt_visit_idx ON %sslim_stats (dt, visit_id)', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-        }
-        update_option('slimstat_dt_visit_indexed', 'yes');
 
         // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
         // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before WordPress
@@ -597,140 +614,556 @@ class wp_slimstat_admin
      */
     public static function init_tables($_wpdb = '')
     {
-        // Is InnoDB available?
-        $have_innodb = $_wpdb->get_results("SHOW VARIABLES LIKE 'have_innodb'", ARRAY_A);
-        $use_innodb  = (!empty($have_innodb[0]) && 'YES' == $have_innodb[0]['Value']) ? 'ENGINE=InnoDB' : '';
-
-        // Table that stores the actual data about visits
-        $stats_table_sql = "
-            CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats (
-                id INT UNSIGNED NOT NULL auto_increment,
-                ip VARCHAR(39) DEFAULT NULL,
-                other_ip VARCHAR(39) DEFAULT NULL,
-				username VARCHAR(256) DEFAULT NULL,
-				email VARCHAR(256) DEFAULT NULL,
-
-				country VARCHAR(16) DEFAULT NULL,
-				location VARCHAR(36) DEFAULT NULL,
-				city VARCHAR(256) DEFAULT NULL,
-
-				referer VARCHAR(2048) DEFAULT NULL,
-				resource VARCHAR(2048) DEFAULT NULL,
-				searchterms VARCHAR(2048) DEFAULT NULL,
-				notes VARCHAR(2048) DEFAULT NULL,
-				visit_id INT UNSIGNED NOT NULL DEFAULT 0,
-				server_latency INT(10) UNSIGNED DEFAULT 0,
-				page_performance INT(10) UNSIGNED DEFAULT 0,
-
-				browser VARCHAR(40) DEFAULT NULL,
-				browser_version VARCHAR(15) DEFAULT NULL,
-				browser_type TINYINT UNSIGNED DEFAULT 0,
-				platform VARCHAR(15) DEFAULT NULL,
-				language VARCHAR(5) DEFAULT NULL,
-				fingerprint VARCHAR(256) DEFAULT NULL,
-				user_agent VARCHAR(2048) DEFAULT NULL,
-
-				resolution VARCHAR(12) DEFAULT NULL,
-				screen_width SMALLINT UNSIGNED DEFAULT 0,
-				screen_height SMALLINT UNSIGNED DEFAULT 0,
-
-				content_type VARCHAR(64) DEFAULT NULL,
-				category VARCHAR(256) DEFAULT NULL,
-				author VARCHAR(64) DEFAULT NULL,
-				content_id BIGINT(20) UNSIGNED DEFAULT 0,
-
-				outbound_resource VARCHAR(2048) DEFAULT NULL,
-
-				tz_offset SMALLINT DEFAULT 0,
-				dt_out INT(10) UNSIGNED DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (id),
-                INDEX {$GLOBALS['wpdb']->prefix}slim_stats_dt_idx (dt),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_resource_idx( resource( 20 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_browser_idx( browser( 10 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_searchterms_idx( searchterms( 15 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_fingerprint_idx( fingerprint( 20 ) ),
-				INDEX {$GLOBALS['wpdb']->prefix}stats_dt_visit_idx (dt, visit_id)
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        // This table will track outbound links (clicks on links to external sites)
-        $events_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_idx (dt),
-				CONSTRAINT fk_{$GLOBALS['wpdb']->prefix}slim_events_id FOREIGN KEY (id) REFERENCES {$GLOBALS['wpdb']->prefix}slim_stats(id) ON UPDATE CASCADE ON DELETE CASCADE
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        $archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_stats_archive
-			LIKE {$GLOBALS['wpdb']->prefix}slim_stats";
-
-        $events_archive_table_sql = "
-			CREATE TABLE IF NOT EXISTS {$GLOBALS['wpdb']->prefix}slim_events_archive (
-				event_id INT(10) NOT NULL AUTO_INCREMENT,
-				type TINYINT UNSIGNED DEFAULT 0,
-				event_description VARCHAR(64) DEFAULT NULL,
-				notes VARCHAR(256) DEFAULT NULL,
-				position VARCHAR(32) DEFAULT NULL,
-				id INT UNSIGNED NOT NULL DEFAULT 0,
-				dt INT(10) UNSIGNED DEFAULT 0,
-
-				CONSTRAINT PRIMARY KEY (event_id),
-				INDEX {$GLOBALS['wpdb']->prefix}slim_stat_events_archive_idx (dt)
-			) COLLATE utf8_general_ci {$use_innodb}";
-
-        // Ok, let's create the table structure
-        self::_create_table($stats_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats', $_wpdb);
-        self::_create_table($events_table_sql, $GLOBALS['wpdb']->prefix . 'slim_events', $_wpdb);
-        self::_create_table($archive_table_sql, $GLOBALS['wpdb']->prefix . 'slim_stats_archive', $_wpdb);
-        self::_create_table($events_archive_table_sql, $GLOBALS['wpdb']->prefix . 'slim_events_archive', $_wpdb);
+        // One reconciliation, from the manifest, replacing four hand-written CREATE TABLEs and
+        // a $index_defs loop that probed five indexes one statement at a time.
+        //
+        // Idempotent in both directions: it creates what is missing on a fresh install and adds
+        // what is missing on an upgraded one. Those were separate, mutually exclusive code paths
+        // before — a fresh install stamps the version before any admin page renders, so the
+        // upgrade gate never fires, and an update never fires activation, so the create gate
+        // never fires. That is how fresh installs ended up with 11 secondary indexes on
+        // slim_stats and upgraded ones with 13 (C39).
+        // The collation is passed as a closure, not a value: resolving it costs an
+        // information_schema query and it is consumed only when a table must actually be
+        // created, which on a healthy install is never.
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $report = Schema::ensure(
+            $_wpdb,
+            $prefix,
+            static function () {
+                return Schema::targetCollation($GLOBALS['wpdb']);
+            },
+            self::disabled_index_groups()
+        );
 
         // Let's save the version in the database
         if (empty(wp_slimstat::$settings['version'])) {
             wp_slimstat::$settings['version'] = SLIMSTAT_ANALYTICS_VERSION;
         }
 
-        $index_defs = [
-            ['name' => 'idx_country_dt', 'sql' => sprintf('CREATE INDEX idx_country_dt ON %sslim_stats (country, dt)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_country_dt_indexed'],
-            ['name' => 'idx_dt_screen_width_screen_height', 'sql' => sprintf('CREATE INDEX idx_dt_screen_width_screen_height ON %sslim_stats (dt, screen_width, screen_height)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_screen_indexed'],
-            ['name' => 'idx_dt_browser_browser_version', 'sql' => sprintf('CREATE INDEX idx_dt_browser_browser_version ON %sslim_stats (dt, browser, browser_version)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_browser_indexed'],
-            ['name' => 'idx_dt_platform', 'sql' => sprintf('CREATE INDEX idx_dt_platform ON %sslim_stats (dt, platform)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_platform_indexed'],
-            // Speeds up "Currently Online" queries using dt_out > NOW()-300
-            ['name' => 'idx_dt_out', 'sql' => sprintf('CREATE INDEX idx_dt_out ON %sslim_stats (dt_out)', $GLOBALS['wpdb']->prefix), 'option' => 'slimstat_dt_out_indexed'],
-        ];
-        foreach ($index_defs as $idx) {
-            $exists = $_wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['name']));
-            if (empty($exists)) {
-                $_wpdb->query($idx['sql']);
-            }
-            update_option($idx['option'], 'yes');
+        self::stamp_index_options($report['present'], $prefix);
+        self::record_column_drift($report);
+
+        // C48 — mint the install's identity beside its data, first-writer-wins. Here and
+        // not inside ensure(): ensure() is a DDL reconciler the tracker's repair path also
+        // runs, and identity should be minted by the admin path that owns the schema, on
+        // the same handle the tables were just ensured on. Skipped when slim_meta failed
+        // to create — writing identity into a missing table would only stamp failures.
+        if ($_wpdb instanceof \wpdb && !in_array($prefix . 'slim_meta', $report['failed'], true)) {
+            \SlimStat\Schema\Meta::ensureIdentity($_wpdb, $prefix);
         }
 
+        return $report;
+    }
+
+    /**
+     * Report column drift the reconciliation OBSERVED and deliberately did not repair (F4).
+     *
+     * `Schema::ensure()` reconciles tables and indexes and never columns — an `ALTER` here runs
+     * on `admin_init`, and rebuilding a 443k-row fact table there is the hazard S7 removed. What
+     * was missing was never the repair. It was that column drift was reportable by NOTHING: two
+     * bespoke probes and a write-path column-dropper absorbed the symptom, and no code path could
+     * say "this install's schema does not match the manifest".
+     *
+     * So it becomes a degradation — the existing mechanism for "we kept working, and something is
+     * not right" — rather than a notice of its own. Both known cases are real and neither is
+     * urgent: `ua_id` absent on an install that has not run the optional migration, and `email`
+     * one character narrow on anything upgraded from below 4.8.2, whose version stamp means the
+     * repaired block will never run again.
+     *
+     * PERSISTED DURABLY AS WELL AS RECORDED, and the second half is not belt-and-braces.
+     *
+     * The degradation channel HEALS BY FORGETTING: a record older than DEGRADATION_TTL (3 hours)
+     * without a re-stamp is treated as "the failure stopped happening" and pruned. That rule is
+     * right for `gdpr_banner`, which recurs on every front-end request and therefore re-stamps
+     * itself. It is exactly wrong here, because ensure() runs only on activation and on a
+     * version-gated upgrade — so a permanently drifted install would show this for one three-hour
+     * window per plugin release and then look healthy for a year.
+     *
+     * So the drift is written where it cannot age out, and re-recorded from there on every
+     * reconcile pass. Absence of the option is what clears it, which is the same shape C34 used
+     * for the purge: the durable fact is the thing that is true, and the notice is synthesised
+     * from it rather than being the only copy.
+     *
+     * @param array{columns_missing?:string[], columns_narrow?:array<string,string>} $report
+     */
+    private static function record_column_drift($report)
+    {
+        $drift = self::persist_column_drift(self::format_column_drift(
+            $report['columns_missing'] ?? [],
+            $report['columns_narrow'] ?? []
+        ));
+
+        if ([] === $drift) {
+            return;
+        }
+
+        self::announce_column_drift($drift);
+    }
+
+    /**
+     * Re-state the drift as a degradation, so the notice cannot age out beneath it.
+     *
+     * RE-DERIVED, NOT REPLAYED. The stored list is written only by init_tables(), which runs on
+     * activation and on a version-gated upgrade — so nothing recomputed it after a migration
+     * successfully added the column, and the notice re-stated drift that no longer existed until
+     * the next plugin release. Re-observing here is what lets a completed migration clear it.
+     *
+     * THROTTLED to DEGRADATION_REFRESH, and the population is why. The `email` column is one
+     * character narrow on every install upgraded from below 4.8.2 and F4 forbids repairing it, so
+     * the drift option is PERMANENT on a large, healthy-in-every-other-respect slice of the
+     * installed base — not on a broken few. Without the throttle each of those pays five
+     * `SHOW COLUMNS` on every wp-admin page load, forever, to re-derive a list record_degradation()
+     * will only re-stamp once an hour anyway. A healthy install still pays nothing at all: it has
+     * no option and returns above.
+     */
+    public static function refresh_column_drift_notice()
+    {
+        $stored = get_option(self::COLUMN_DRIFT_OPTION, []);
+
+        if (!is_array($stored) || [] === $stored) {
+            return;
+        }
+
+        $current = $stored;
+
+        if (false === get_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT)) {
+            set_transient(self::COLUMN_DRIFT_CHECK_TRANSIENT, 1, wp_slimstat::DEGRADATION_REFRESH);
+            $current = self::persist_column_drift(self::observe_column_drift());
+        }
+
+        if ([] === $current) {
+            return;
+        }
+
+        self::announce_column_drift($current);
+    }
+
+    /**
+     * Store a drift list, or clear the option when there is none. Returns what it stored.
+     *
+     * One owner for the persistence rule, because there are two producers — the reconciliation
+     * that observes drift and the admin_init pass that re-observes it — and `autoload=false` is
+     * load-bearing at both: an option that joins `alloptions` is read on EVERY request, and this
+     * one is read on admin screens only.
+     *
+     * @param string[] $drift
+     *
+     * @return string[]
+     */
+    private static function persist_column_drift(array $drift)
+    {
+        if ([] === $drift) {
+            // Cleared by the ABSENCE of drift, not by the passage of time.
+            delete_option(self::COLUMN_DRIFT_OPTION);
+
+            return [];
+        }
+
+        update_option(self::COLUMN_DRIFT_OPTION, $drift, false);
+
+        return $drift;
+    }
+
+    /**
+     * Column drift as it is RIGHT NOW, in the shape persist_column_drift() stores.
+     *
+     * Reads only. `Schema::columnDrift()` issues one `SHOW COLUMNS` per reconciling table and
+     * repairs nothing — deliberately not `Schema::ensure()`, which also creates tables and builds
+     * indexes. Re-observing drift on `admin_init` must not be able to change the schema (F4, S7).
+     *
+     * @return string[]
+     */
+    private static function observe_column_drift()
+    {
+        $drift = Schema::columnDrift(
+            \SlimStat\Migration\MigrationService::analyticsConnection(),
+            $GLOBALS['wpdb']->prefix
+        );
+
+        return self::format_column_drift($drift['missing'], $drift['narrow']);
+    }
+
+    /**
+     * Render qualified drift as the display lines the notice and the option both hold.
+     *
+     * Shared by both producers. The stored list and a freshly observed one are compared for
+     * equality, so a formatting disagreement between them would not raise an error — it would
+     * silently rewrite the option on every pass.
+     *
+     * @param string[]              $missing
+     * @param array<string,string>  $narrow
+     *
+     * @return string[] sorted, so the (step, message) de-dupe in record_degradation() holds
+     */
+    private static function format_column_drift(array $missing, array $narrow)
+    {
+        $drift = [];
+
+        foreach ($missing as $column) {
+            $drift[] = $column . ' (absent)';
+        }
+
+        foreach ($narrow as $column => $widths) {
+            $drift[] = sprintf('%s (%s)', $column, $widths);
+        }
+
+        // Sorted so the message is stable across runs: an unsorted list whose order follows
+        // SHOW COLUMNS would defeat the (step, message) de-dupe and re-record on every pass.
+        sort($drift);
+
+        return $drift;
+    }
+
+    /** @param string[] $drift */
+    private static function announce_column_drift(array $drift)
+    {
+        wp_slimstat::record_degradation(
+            'schema column drift',
+            sprintf(
+                'these columns differ from the manifest: %s. Reports and tracking keep working; '
+                    . 'affected fields may be absent or truncated.',
+                implode(', ', $drift)
+            ),
+            wp_slimstat::DEGRADATION_OPERATIONAL
+        );
+    }
+
+    /**
+     * Optional-index groups the user has switched OFF.
+     *
+     * Settings -> Maintenance -> "Database Indexes" DROPs four indexes when toggled off. Without
+     * this, ensure() would rebuild them on the next admin_init and the toggle would silently
+     * reverse itself — a behaviour regression introduced by a refactor whose whole point was to
+     * change no behaviour.
+     *
+     * @return string[]
+     */
+    private static function disabled_index_groups()
+    {
+        // Absent means ON: the shipped default is 'on', and an install whose settings row
+        // predates the toggle must not be read as having opted out of four indexes.
+        return ('no' === (wp_slimstat::$settings['db_indexes'] ?? 'on')) ? ['db_indexes'] : [];
+    }
+
+    /**
+     * Stamp the `slimstat_*_indexed` options for indexes CONFIRMED present.
+     *
+     * Confirmed, not attempted. The old code stamped 'yes' unconditionally right after a
+     * CREATE INDEX whose result it never checked — so an index build that timed out on a large
+     * table still recorded success, and show_indexes_notice(), which reads these stamps to
+     * decide whether to offer a retry button, could never offer one. The notice was blind to
+     * exactly the failure it exists for.
+     *
+     * @param string[] $present Resolved index names confirmed on the table.
+     * @param string   $prefix
+     */
+    private static function stamp_index_options(array $present, $prefix)
+    {
+        $confirmed = array_flip($present);
+
+        foreach (Schema::tables() as $suffix) {
+            foreach (array_keys(Schema::indexes($suffix)) as $index) {
+                $option = Schema::indexOption($index);
+                if (null !== $option && isset($confirmed[Schema::resolve($index, $prefix)])) {
+                    update_option($option, 'yes');
+                }
+            }
+        }
     }
 
     // END: init_tables
 
     /**
      * Updates stuff around as needed (table schema, options, settings, files, etc)
+     *
+     * Fail-soft wrapper. This runs on `admin_init` with nothing above it to catch a
+     * throw, and the version stamp is the LAST statement in the body — so any
+     * uncaught error here means the stamp never lands, the branch is re-entered on
+     * the next request, and wp-admin white-screens permanently with no route out
+     * from inside WordPress.
+     *
+     * That is not hypothetical: `unset($wp_slimstat::$settings[...])` in the <4.8.4
+     * branch shipped exactly this shape (S1), and the ~180 lines below contain enough
+     * DDL, filtered `$wpdb` handles and legacy branches to do it again.
+     *
+     * Deliberately does NOT stamp the version on failure. Stamping would make the
+     * page load, but the column ALTERs in the legacy branches carry no per-step flag
+     * of their own (unlike the index steps, which have `slimstat_*_indexed` /
+     * `goals_indexes`), so a swallowed failure would skip them forever and leave the
+     * table permanently missing `email` / `fingerprint` / `tz_offset`. Retrying a
+     * visible failure is the lesser harm. Bounding that retry is separate work — it
+     * needs the claim-lock and per-step stamping, not a wider catch here.
      */
     public static function update_tables_and_options()
     {
-        $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+        if (!self::may_run_schema_ddl()) {
+            return false;
+        }
+
+        if (!self::claim_schema_lock()) {
+            return false;
+        }
+
+        try {
+            return self::run_schema_upgrade();
+        } catch (\Throwable $e) {
+            wp_slimstat::record_degradation('schema upgrade', $e, wp_slimstat::DEGRADATION_OPERATIONAL);
+
+            return false;
+        } finally {
+            // Every exit path, including the deliberate early return the notes
+            // conversion uses to resume. A resumable migration that locks itself out
+            // until the stale-lock timeout is not resumable.
+            delete_option(self::SCHEMA_LOCK_OPTION);
+        }
+    }
+
+    /**
+     * May THIS request run schema DDL?
+     *
+     * `admin_init` is not "an admin page": wp-admin/admin-ajax.php fires it too, and
+     * nothing else on the path checked a capability — wp-slimstat.php gates only on
+     * is_user_logged_in(), and wp_slimstat_admin::init() on nothing. So a subscriber
+     * opening /wp-admin/profile.php, a Heartbeat tick or an autosave could trigger
+     * DROP COLUMN, four table rebuilds, up to nine index builds and a full-table UPDATE.
+     *
+     * Cron and REST are excluded for a different reason than capability: they are
+     * background and third-party surfaces where nobody sees the outcome, and the
+     * tracker itself is a REST route — running a multi-minute ALTER there is the
+     * difference between an upgrade and an outage.
+     *
+     * Consequence worth stating: a site where nobody with manage_options ever loads
+     * wp-admin now stays un-upgraded rather than being upgraded by a subscriber. That
+     * is the correct trade — but it is a trade, and the durable fix is the migration
+     * registry's own WP-CLI driver and admin page, not a wider gate here.
+     *
+     * Scope: this guards the version-gated UPGRADE only. The two CREATE-TABLE repair
+     * paths — init() when the tables are missing, and the tracker's failed-INSERT
+     * recovery — are deliberately left ungated for now. They are the safety net for
+     * sites whose tables were never created, which is a live bug today (activation
+     * hooks are registered inside `if (is_admin())`, so `wp plugin activate` creates
+     * nothing). Gating them before fixing that would remove the net and the fall.
+     * They need their own treatment: a one-shot claim and a narrower trigger than
+     * "any INSERT failed".
+     */
+    private static function may_run_schema_ddl()
+    {
+        // The only abort a wp.org plugin can offer: no staged rollout, no canary, no
+        // telemetry, no remote switch. This is one honour point; the migration runner
+        // and its AJAX handler need their own.
+        if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
+            return false;
+        }
+
+        if (wp_doing_ajax() || wp_doing_cron() || (defined('REST_REQUEST') && REST_REQUEST)) {
+            return false;
+        }
+
+        return current_user_can('manage_options');
+    }
+
+    /**
+     * Claim the single-flight lock, or decline.
+     *
+     * Deliberately NOT `add_option()`. Core's `add_option()` decides whether the option
+     * exists with a PHP-level `get_option()` pre-check and then issues
+     * `INSERT ... ON DUPLICATE KEY UPDATE`, which OVERWRITES (wp-includes/option.php).
+     * The unique index never rejects anything, so two concurrent requests can both pass
+     * the pre-check and both believe they hold the lock — the exact race this exists to
+     * close. A raw INSERT that lets the `option_name` unique index reject the loser is
+     * what actually makes the claim atomic.
+     *
+     * `wp_cache_add()` is the codebase's other claim idiom (the tracker's rate limiter),
+     * but it is only atomic against a PERSISTENT object cache. Most wp.org installs have
+     * none, where it degrades to a per-request array and would grant the lock to every
+     * concurrent request. The index is the only thing present on every install.
+     *
+     * A run killed by max_execution_time never reaches the `finally` that releases,
+     * so a stale claim is taken over — via a conditional UPDATE matching the exact
+     * value observed, so two requests that both see the same stale claim cannot both
+     * win. The staleness threshold is much longer than the upgrade's own wall-clock
+     * budget: the budget bounds one request's work, while a killed request may have
+     * left an ALTER running server-side after PHP has gone.
+     *
+     * `autoload = 'no'` is written directly because this bypasses the options API.
+     * Verified outside `wp_autoload_values_to_autoload()` on both WP 5.6 and 7.0.
+     */
+    private static function claim_schema_lock()
+    {
+        global $wpdb;
+
+        $now = time();
+
+        $suppressed = $wpdb->suppress_errors(true);
+        $claimed    = $wpdb->query($wpdb->prepare(
+            "INSERT INTO `{$wpdb->options}` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, 'no')",
+            self::SCHEMA_LOCK_OPTION,
+            (string) $now
+        ));
+        $wpdb->suppress_errors($suppressed);
+
+        // The row is written behind the options API's back, so drop its caches.
+        wp_cache_delete(self::SCHEMA_LOCK_OPTION, 'options');
+        wp_cache_delete('notoptions', 'options');
+
+        if ($claimed) {
+            return true;
+        }
+
+        $held = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT option_value FROM `{$wpdb->options}` WHERE option_name = %s",
+            self::SCHEMA_LOCK_OPTION
+        ));
+
+        if ($held > 0 && ($now - $held) < self::SCHEMA_LOCK_STALE_AFTER) {
+            return false;
+        }
+
+        $took = $wpdb->query($wpdb->prepare(
+            "UPDATE `{$wpdb->options}` SET option_value = %s
+              WHERE option_name = %s AND option_value = %s",
+            (string) $now,
+            self::SCHEMA_LOCK_OPTION,
+            (string) $held
+        ));
+
+        wp_cache_delete(self::SCHEMA_LOCK_OPTION, 'options');
+
+        return (bool) $took;
+    }
+
+    /**
+     * Convert pre-4.8.8 semicolon-separated `notes` to the bracketed `[k:v]` form.
+     *
+     * Returns true when the whole table is converted, false when it must resume.
+     *
+     * Batched rather than issued as one statement. The original was a single unbatched
+     * `UPDATE ... WHERE notes NOT LIKE '[%'` with no bound: on a large table it cannot
+     * finish inside max_execution_time, and because the schema version is stamped only
+     * at the end of the upgrade, each attempt rolled back its undo and the whole
+     * sequence restarted on the next admin request — an unbounded retry loop rather
+     * than a failed upgrade.
+     *
+     * Two correctness fixes to the predicate:
+     *   - `notes <> ''` — the empty string satisfies `NOT LIKE '[%'`, so the original
+     *     rewrote empty notes to the literal '[]'. Measured 0 such rows on the
+     *     reference table, but it is wrong wherever they exist.
+     *   - `notes IS NOT NULL` — stated rather than relied upon. `NULL NOT LIKE '[%'`
+     *     is NULL, so NULL rows were already excluded; making it explicit stops a
+     *     later edit from turning 74% of the table into '[]'.
+     *
+     * Verified on the reference table: the boundary query plans as `type=range`,
+     * `key=PRIMARY`, `Using index`, and returns NULL past the last row so the tail
+     * terminates without a special case.
+     *
+     * KNOWN LIMITATION, shared with every other flag in this function: the cursor is a
+     * local `wp_options` row while the rows it describes may live on a remote
+     * connection (Pro's external-DB addon). Repointing that connection leaves a cursor
+     * describing a different table. Fixing it properly needs the connection-keyed
+     * schema-version scheme, not a local patch here.
+     */
+    private static function convert_notes_to_brackets($my_wpdb, $began)
+    {
+        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $state = get_option(self::NOTES_CURSOR_OPTION, []);
+
+        $cursor  = isset($state['cursor']) ? (int) $state['cursor'] : 0;
+        $ceiling = isset($state['ceiling']) ? (int) $state['ceiling'] : 0;
+
+        // Pin the ceiling once, on the first pass, and carry it across resumes.
+        //
+        // Without it the loop chases its own tail: the tracker keeps inserting while the
+        // migration runs, each new row gets a higher id, and the walk keeps finding more
+        // to look at. Those rows are already in bracketed form — Processor builds `notes`
+        // as an array and serialises it — so the UPDATE skips them, but the WALK does
+        // not, and on a busy site that extends the ceiling for as long as the migration
+        // lasts. Pinning defines the work set as "rows that existed when this started",
+        // which makes termination a property of the code rather than a race the insert
+        // rate happens to lose.
+        if ($ceiling <= 0) {
+            $ceiling = (int) $my_wpdb->get_var("SELECT MAX(id) FROM {$table}");
+            if ($ceiling <= 0) {
+                delete_option(self::NOTES_CURSOR_OPTION);
+
+                return true; // empty table, nothing to convert
+            }
+        }
+
+        while ($cursor < $ceiling) {
+            // Walk ROWS, not id space. `id` is sparse after years of purges — measured
+            // on the reference table, MAX(id) is 19,125,340 against 443,535 rows, a 43x
+            // gap. A fixed id-span loop would issue 957 statements and 957 option
+            // writes, ~96% of them over empty ranges; this issues 23. The subquery is
+            // an index-only scan of at most NOTES_BATCH_SIZE entries, and it returns the
+            // last id when fewer than a full batch remain, so the tail needs no special
+            // case. Empty result => NULL => 0 => done.
+            $upper = (int) $my_wpdb->get_var($my_wpdb->prepare(
+                "SELECT MAX(id) FROM (SELECT id FROM {$table} WHERE id > %d AND id <= %d ORDER BY id LIMIT %d) AS batch",
+                $cursor,
+                $ceiling,
+                self::NOTES_BATCH_SIZE
+            ));
+
+            if ($upper <= $cursor) {
+                break;
+            }
+
+            $result = $my_wpdb->query($my_wpdb->prepare(
+                "UPDATE {$table} SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' )
+                  WHERE id > %d AND id <= %d
+                    AND notes IS NOT NULL AND notes <> '' AND notes NOT LIKE '[%%'",
+                $cursor,
+                $upper
+            ));
+
+            if (false === $result) {
+                wp_slimstat::record_degradation(
+                'notes format migration',
+                $my_wpdb->last_error,
+                wp_slimstat::DEGRADATION_OPERATIONAL
+            );
+
+                return false;
+            }
+
+            $cursor = $upper;
+            update_option(self::NOTES_CURSOR_OPTION, ['cursor' => $cursor, 'ceiling' => $ceiling], false);
+
+            if ((time() - $began) >= self::SCHEMA_UPGRADE_TIME_BUDGET) {
+                return false;
+            }
+        }
+
+        delete_option(self::NOTES_CURSOR_OPTION);
+
+        return true;
+    }
+
+    /**
+     * The schema/settings upgrade itself. Only ever called through the wrapper above.
+     */
+    private static function run_schema_upgrade()
+    {
+        $my_wpdb        = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+        $upgrade_began  = time();
 
         // --- Updates for version 4.8.2 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
-            // Add new email column to database
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN email VARCHAR(255) DEFAULT NULL AFTER username', $GLOBALS['wpdb']->prefix));
+            // Add new email column to database.
+            //
+            // The width comes from the manifest, and it did not used to: this block declared
+            // VARCHAR(255) while Schema declares VARCHAR(256), so an install upgraded from below
+            // 4.8.2 and a fresh one had differently shaped `slim_stats` — C39's finding, on a
+            // column instead of an index, and invisible to the gate because the gate knew every
+            // DDL keyword except ADD COLUMN. See Schema::addColumnSql().
+            // Written out rather than looped, and that is the point rather than an oversight:
+            // the gate resolves each (table, column) pair against the loaded manifest, and it can
+            // only do that for LITERAL arguments. A loop over `$suffix` is tidier source and
+            // statically unreadable — which is precisely how a column nobody declared got added.
+            $prefix = $GLOBALS['wpdb']->prefix;
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'email', $prefix, 'username'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'email', $prefix, 'username'));
         }
 
         // --- END: Updates for version 4.8.2 ---
@@ -747,23 +1180,15 @@ class wp_slimstat_admin
             unset(wp_slimstat::$settings['no_maxmind_warning']);
             unset(wp_slimstat::$settings['no_browscap_warning']);
             unset(wp_slimstat::$settings['use_european_separators']);
-            unset($wp_slimstat::$settings['date_format']);
-            unset($wp_slimstat::$settings['time_format']);
-            unset($wp_slimstat::$settings['expand_details']);
+            unset(wp_slimstat::$settings['date_format']);
+            unset(wp_slimstat::$settings['time_format']);
+            unset(wp_slimstat::$settings['expand_details']);
 
-            // Add table indexes for improved performance (idempotent)
-            $indexes = [
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_resource_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_browser_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_searchterms_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-                ['name' => $GLOBALS['wpdb']->prefix . 'stats_fingerprint_idx', 'sql' => sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix)],
-            ];
-            foreach ($indexes as $index) {
-                $check_index = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $index['name']));
-                if (empty($check_index)) {
-                    wp_slimstat::$wpdb->query($index['sql']);
-                }
-            }
+            // The four indexes this block used to add by hand are in the manifest, and the
+            // single init_tables() call at the end of this function reconciles them along with
+            // every other. Restating them here was one of the six creators C11 enumerated, and
+            // the one that made a Phase E drop unholdable: an install upgrading from below 4.8.4
+            // re-added four dropped indexes with no way for anything to know it had.
             wp_slimstat::$settings['db_indexes'] = 'on';
         }
 
@@ -771,26 +1196,34 @@ class wp_slimstat_admin
 
         // --- Updates for version 4.8.4.1 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
-            // Goodbye, browser plugins
-            wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP COLUMN plugins', $GLOBALS['wpdb']->prefix));
+            // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
+            // manifest still declares — the same guard as the ADD side, pointing the other way.
+            wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));
 
-            // Hello there, fingerprint and timezone offset
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN fingerprint VARCHAR(256) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN fingerprint VARCHAR(255) DEFAULT NULL AFTER language', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
-            $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats_archive ADD COLUMN tz_offset SMALLINT DEFAULT 0 AFTER outbound_resource', $GLOBALS['wpdb']->prefix));
+            // Hello there, fingerprint and timezone offset.
+            //
+            // `fingerprint` was VARCHAR(256) on slim_stats and VARCHAR(255) on its own archive,
+            // in two adjacent lines of this block. Both now render from the one declaration.
+            $prefix = $GLOBALS['wpdb']->prefix;
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'fingerprint', $prefix, 'language'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'fingerprint', $prefix, 'language'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats', 'tz_offset', $prefix, 'outbound_resource'));
+            $my_wpdb->query(Schema::addColumnSql('slim_stats_archive', 'tz_offset', $prefix, 'outbound_resource'));
         }
 
         // --- END: Updates for version 4.8.4.1 ---
 
         // --- Updates for version 4.8.8 ---
         if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
-            // Adding new index on the 'fingerprint' column for improved performance
-            if ('on' == wp_slimstat::$settings['db_indexes']) {
-                $my_wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS['wpdb']->prefix, $GLOBALS['wpdb']->prefix));
-            }
+            // The fingerprint index this block used to add is in the manifest, and the
+            // reconciliation below honours the same `db_indexes` setting this branch checked.
 
-            $my_wpdb->query(sprintf("UPDATE %sslim_stats SET notes = CONCAT( '[', REPLACE( notes, ';', '][' ), ']' ) WHERE notes NOT LIKE '[%%'", $GLOBALS['wpdb']->prefix));
+            if (!self::convert_notes_to_brackets($my_wpdb, $upgrade_began)) {
+                // Incomplete or failed. Return WITHOUT stamping the version, so the
+                // next admin request resumes from the stored cursor. Stamping here
+                // would abandon every remaining row in a half-converted column.
+                return false;
+            }
         }
 
         // --- Updates for version 5.4.0 ---
@@ -813,65 +1246,61 @@ class wp_slimstat_admin
             wp_slimstat::$settings['use_separate_menu'] = 'on';
         }
 
-        // --- Updates for version 5.4.3 ---
-        if (version_compare(wp_slimstat::$settings['version'], '5.4.3', '<')) {
-            // Add (dt, visit_id) covering index for visitor counter queries
-            $idx_name = $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx';
-            $check = $my_wpdb->get_results(sprintf(
-                "SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'",
-                $GLOBALS['wpdb']->prefix, $idx_name
-            ));
-            if (empty($check)) {
-                $result = $my_wpdb->query(sprintf(
-                    'CREATE INDEX %s ON %sslim_stats (dt, visit_id)',
-                    $idx_name, $GLOBALS['wpdb']->prefix
-                ));
-                if ($result !== false) {
-                    update_option('slimstat_dt_visit_indexed', 'yes');
-                }
-                // If fails (large table timeout), show_indexes_notice() surfaces a retry button
-            } else {
-                update_option('slimstat_dt_visit_indexed', 'yes');
-            }
-        }
+        // --- Bring the schema up to the manifest ---
+        //
+        // ONE reconciliation for the whole upgrade, replacing the 5.4.3 dt_visit block, the
+        // goals/funnels block and the 4.8.4/4.8.8 index adds above. Every index those blocks
+        // created is declared in Schema, so an install arriving here from any version converges
+        // on the same shape — which is precisely what did not happen before: the create path and
+        // the upgrade path are mutually exclusive by construction, so fresh installs never got
+        // the goal/funnel indexes and pre-5.4.0 installs never got the five $index_defs ones.
+        //
+        // Cost on a healthy install is one SHOW TABLES and one SHOW INDEX per table and no
+        // writes, against the fourteen single-index probes across six call sites it replaces.
+        $schema_report = self::init_tables($my_wpdb);
 
-        // --- Goals & Funnels composite indexes for query performance ---
-        // These three indexes are also registered as AbstractIndexMigration classes
-        // (Create{Goal,Funnel}QueriesIndex / CreateEventsNotesDtIndex in
-        // src/Migration/MigrationService.php) which provide the retry UI; keep the
-        // index name + columns here in sync with those classes.
+        // #318: only claim the goals indexes are done once all three are CONFIRMED present. A
+        // large-table ALTER that times out leaves this unset, which is what makes
+        // MigrationService surface its one-click retry.
         if (empty(wp_slimstat::$settings['goals_indexes'])) {
-            $goal_indexes = [
-                ['table' => 'slim_stats',  'name' => 'idx_goal_queries',   'sql' => 'ADD INDEX idx_goal_queries (resource(191), dt, fingerprint(20))'],
-                ['table' => 'slim_stats',  'name' => 'idx_funnel_queries', 'sql' => 'ADD INDEX idx_funnel_queries (fingerprint(20), dt, resource(191))'],
-                ['table' => 'slim_events', 'name' => 'idx_events_notes_dt', 'sql' => 'ADD INDEX idx_events_notes_dt (dt, notes(64))'],
-            ];
-            $goal_indexes_built = true;
-            foreach ($goal_indexes as $idx) {
-                $table = $GLOBALS['wpdb']->prefix . $idx['table'];
-                $exists = wp_slimstat::$wpdb->get_results(
-                    wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $idx['name'])
-                );
-                if (empty($exists)) {
-                    // ALTER can time out on very large tables. Track the result so we
-                    // only mark this complete once every index is present; a failure
-                    // leaves goals_indexes unset so the modern migration system
-                    // (MigrationService) surfaces a one-click retry notice. (#318)
-                    if (false === wp_slimstat::$wpdb->query("ALTER TABLE {$table} {$idx['sql']}")) {
-                        $goal_indexes_built = false;
-                    }
-                }
-            }
-            if ($goal_indexes_built) {
+            $goal_indexes = ['idx_goal_queries', 'idx_funnel_queries', 'idx_events_notes_dt'];
+
+            if ([] === array_diff($goal_indexes, $schema_report['present'])) {
                 wp_slimstat::$settings['goals_indexes'] = 'on';
             }
         }
 
         // Clear stale query cache transients on upgrade to prevent data inconsistencies
         // (e.g., cached $pageviews causing percentage >100% in reports — see #270)
-        $GLOBALS['wpdb']->query(
-            "DELETE FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE '_transient_wp_slimstat_cache_%' OR option_name LIKE '_transient_timeout_wp_slimstat_cache_%' LIMIT 1000"
-        );
+        //
+        // The prefix here used to be `wp_slimstat_cache_`, which nothing writes. The keys
+        // come from Query::getCacheKeyForQuery() and are prefixed `wp_slimstat_query_`, so
+        // this DELETE matched zero rows on every upgrade, forever — measured on the
+        // reference install: 0 rows matched the old LIKE against 2,146 that existed. The
+        // stale-cache inconsistency it was written to prevent was never actually prevented,
+        // and nothing else purges these.
+        //
+        // Batched rather than one unbounded DELETE, and batched rather than a single
+        // LIMIT 1000. An install that has been accumulating since the prefix first drifted
+        // can hold far more than one batch — this one held 2,146 — and a bare LIMIT would
+        // leave the rest behind while reporting success. The loop is capped so a
+        // pathological table cannot stall the upgrade.
+        //
+        // Shares the request's wall-clock budget with the notes conversion above.
+        // Without that, the upgrade could carefully spend 10s converting notes and then
+        // issue up to 50,000 more row deletes in the same request with no clock at all.
+        for ($sweep = 0; $sweep < 50 && (time() - $upgrade_began) < self::SCHEMA_UPGRADE_TIME_BUDGET; $sweep++) {
+            $deleted = $GLOBALS['wpdb']->query(
+                "DELETE FROM {$GLOBALS['wpdb']->options}
+                  WHERE option_name LIKE '\_transient\_wp\_slimstat\_query\_%'
+                     OR option_name LIKE '\_transient\_timeout\_wp\_slimstat\_query\_%'
+                  LIMIT 1000"
+            );
+
+            if (!$deleted) {
+                break;
+            }
+        }
 
         // Rotate the goals/funnels cache version on upgrade so pre-fix cached
         // results (e.g. goal "uniques" that excluded NULL-fingerprint visitors)
@@ -891,13 +1320,7 @@ class wp_slimstat_admin
 
     public static function add_dashboard_widgets()
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
@@ -1188,6 +1611,23 @@ class wp_slimstat_admin
                 'decimal_point' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['decimal_point'] ?? '.') : '.',
                 'thousands_sep' => is_object($GLOBALS['wp_locale'] ?? null) ? ($GLOBALS['wp_locale']->number_format['thousands_sep'] ?? ',') : ',',
             ],
+            // Network-scope handshake for Pro's Network View, which UNIONs every
+            // subsite's data into one report. admin-ajax.php carries no screen
+            // context, so the network screen has to say which scope it wants —
+            // explicitly. It used to be inferred from the Referer header, which the
+            // client controls, so any subsite Administrator could ask for the whole
+            // network. Minted only for a user who already holds the capability, and
+            // Pro re-checks that capability server-side: this parameter selects
+            // scope, it never grants it. Empty everywhere else, which means
+            // single-site — the safe default.
+            //
+            // The capability is the one stats_view_capability() already returns on a
+            // network screen. Both sides must name the same one, or a user who can
+            // open the network report gets main-site numbers under a network heading
+            // with nothing anywhere saying so.
+            'network_scope_nonce' => (is_multisite() && is_network_admin() && current_user_can('manage_network'))
+                ? wp_create_nonce('slimstat_network_scope')
+                : '',
         ];
         wp_localize_script('slimstat_admin', 'SlimStatAdminParams', $params);
 
@@ -1225,13 +1665,7 @@ class wp_slimstat_admin
     {
         global $submenu;
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (is_network_admin()) {
-            $minimum_capability = 'manage_network';
-        } elseif (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
+        $minimum_capability = self::stats_view_capability();
 
         // Find the first available location (screens with no reports assigned to them are hidden from the nav)
 		$parent = '';
@@ -1333,9 +1767,71 @@ class wp_slimstat_admin
     /**
      * Enqueue admin bar modal styles globally (admin + frontend)
      */
+    /**
+     * Whether the current user may see SlimStat's stats.
+     *
+     * One predicate for a question that had three answers: add_menu_to_adminbar()
+     * computed a capability including the network-admin branch, check_ajax_view_capability()
+     * computed the same thing without it, and enqueue_adminbar_styles() did not ask at
+     * all — so a logged-in subscriber downloaded admin-bar-modal.css (14.8 KB) and
+     * adminbar-realtime.js (6.9 KB), paid a wp_create_nonce(), and then polled
+     * admin-ajax.php every minute forever for a menu that never rendered. The JS guards
+     * only on its localize blob being present, not on the menu existing in the DOM.
+     *
+     * Six call sites computed this inline — the admin bar, the dashboard widget, the
+     * admin menu and three AJAX handlers — and only two of them carried the
+     * network-admin branch. Adding it everywhere is a no-op for the AJAX and dashboard
+     * paths: admin-ajax.php is not a network-admin screen, so is_network_admin() is
+     * false there either way.
+     *
+     * @since 5.6.0
+     * @return bool
+     */
+    private static function can_view_stats()
+    {
+        return current_user_can(self::stats_view_capability());
+    }
+
+    /**
+     * The capability a user needs to see SlimStat's stats.
+     *
+     * The admin menu needs the capability itself (add_menu_page() takes one); the admin
+     * bar, its assets and the AJAX handler need only the yes/no. Four byte-identical
+     * copies of this computation existed, and they had already drifted — the AJAX one
+     * omitted the network-admin branch.
+     *
+     * @since 5.6.0
+     * @return string
+     */
+    private static function stats_view_capability()
+    {
+        // Guarded like the plugin's other is_network_admin() call: this predicate is now
+        // consulted from wp_enqueue_scripts on the front end, and the AJAX handlers,
+        // where the admin-context helpers are not guaranteed to be loaded. Without the
+        // guard the funnel AJAX endpoints fatal.
+        if (function_exists('is_network_admin') && is_network_admin()) {
+            return 'manage_network';
+        }
+
+        // A whitelisted user gets the minimum capability instead of the configured one.
+
+        $whitelisted = false !== strpos(
+            (string) wp_slimstat::$settings['can_view'],
+            (string) ($GLOBALS['current_user']->user_login ?? '')
+        );
+
+        if (!$whitelisted && !empty(wp_slimstat::$settings['capability_can_view'])) {
+            return wp_slimstat::$settings['capability_can_view'];
+        }
+
+        return 'read';
+    }
+
     public static function enqueue_adminbar_styles()
     {
-        if (is_admin_bar_showing()) {
+        // Gated on the same capability the menu itself is: these assets exist only to
+        // style and refresh that menu, and the answer is already known here.
+        if (is_admin_bar_showing() && self::can_view_stats()) {
             wp_enqueue_style(
                 'slimstat-adminbar',
                 plugins_url('/admin/assets/css/admin-bar-modal.css', __DIR__),
@@ -1376,83 +1872,21 @@ class wp_slimstat_admin
      */
     public static function add_menu_to_adminbar()
     {
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (is_network_admin()) {
-            $minimum_capability = 'manage_network';
-        } elseif (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
-        $wpdb = wp_slimstat::$wpdb;
-        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
-        $today_start = mktime(0, 0, 0);
-        $yesterday_start = $today_start - 86400;
-        $yesterday_end = $today_start - 1;
+        // This runs on every logged-in FRONTEND pageview, so it reads from the
+        // shared 60-second cache rather than querying. See adminbar_today_stats().
+        $today_stats         = self::adminbar_today_stats();
+        $sessions_today      = $today_stats['sessions'];
+        $views_today         = $today_stats['views'];
+        $sessions_yesterday  = $today_stats['sessions_yesterday'];
+        $views_yesterday     = $today_stats['views_yesterday'];
+        $referrals_today     = $today_stats['referrals'];
+        $referrals_yesterday = $today_stats['referrals_yesterday'];
 
-        // Sessions Today (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt >= %d AND visit_id > 0",
-            $today_start
-        ));
-
-        // Views Today (pageviews)
-        $views_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt >= %d",
-            $today_start
-        ));
-
-        // Yesterday's sessions (unique sessions - using visit_id for anonymous/hashed IP compatibility)
-        $sessions_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(DISTINCT visit_id) FROM {$table} WHERE dt BETWEEN %d AND %d AND visit_id > 0",
-            $yesterday_start, $yesterday_end
-        ));
-
-        // Yesterday's views
-        $views_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d",
-            $yesterday_start, $yesterday_end
-        ));
-
-        // Referrals Today (external referrers only)
-        $site_host = parse_url(home_url(), PHP_URL_HOST);
-        $referrals_today = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $today_start, '%' . $wpdb->esc_like($site_host) . '%'
-        ));
-
-        // Referrals Yesterday
-        $referrals_yesterday = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(id) FROM {$table} WHERE dt BETWEEN %d AND %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-            $yesterday_start, $yesterday_end, '%' . $wpdb->esc_like($site_host) . '%'
-        ));
-
-        // Online Users — same 30-minute window query as header.php
-        $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
-        $window_minutes = 30;
-        $window_start = $current_minute_start - (($window_minutes - 1) * 60);
-
-        $online_count = (int) $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM (
-                SELECT visit_id, MAX(
-                    CASE
-                        WHEN dt_out IS NOT NULL AND dt_out > 0 AND dt_out >= dt THEN dt_out
-                        ELSE dt
-                    END
-                ) AS last_activity
-                FROM {$table}
-                WHERE visit_id > 0
-                    AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
-                GROUP BY visit_id
-                HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
-            ) live_sessions",
-            $window_start, $window_start, $window_start
-        ));
-        $online_count = max(0, $online_count);
+        $online_count = self::online_count();
 
         // Determine premium status early (needed for chart data)
         $is_pro = wp_slimstat::pro_is_installed();
@@ -1474,7 +1908,14 @@ class wp_slimstat_admin
         $chart_bars = '';
         $total_bars = count($minute_data);
         foreach ($minute_data as $i => $count) {
-            $height_pct = round(($count / $max_count) * 100);
+            // Multiply first, divide once, round once — `($count / $max_count) * 100` rounds
+            // twice and loses the exact half (23/40 arrives as 57.49999999999999289457, so
+            // PHP 8.4+ draws the bar at 57% where the ratio is 57.5%). $max_count is the
+            // maximum of the series. This site has never carried a zero guard, and one is NOT
+            // added here: both forms divide by $max_count exactly once, so the behaviour when
+            // it is 0 is identical before and after. Saying so rather than implying a safety
+            // this line does not provide. ADR-17; PITFALLS 72.
+            $height_pct = round((100 * $count) / $max_count);
             $is_peak = ($count === $max_count && $count > 0);
             $bar_class = $is_peak ? ' slimstat-adminbar__chart-bar--peak' : '';
             $minutes_ago = $total_bars - 1 - $i; // 29 for first bar, 0 for last bar
@@ -1724,7 +2165,7 @@ class wp_slimstat_admin
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __('Views') . '</span></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __('Views', 'wp-slimstat') . '</span></span>';
         } else {
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
         }
@@ -2443,13 +2884,7 @@ class wp_slimstat_admin
     {
         check_ajax_referer('meta-box-order', 'security');
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             return;
         }
 
@@ -2531,12 +2966,9 @@ class wp_slimstat_admin
      */
     private static function check_ajax_view_capability()
     {
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        // Same predicate the menu and its assets use — this carried its own copy, which
+        // had already drifted (it omitted the network-admin branch).
+        if (!self::can_view_stats()) {
             wp_send_json_error(['message' => esc_html__('Insufficient permissions', 'wp-slimstat')], 403);
             return false;
         }
@@ -2545,8 +2977,139 @@ class wp_slimstat_admin
     }
 
     /**
-     * Get online visitors count (30-minute window, session-spanning).
-     * Shared by get_online_visitors() and get_adminbar_stats().
+     * Today/yesterday figures for the admin bar, behind a 60-second transient.
+     *
+     * The single source of truth for both the render path (add_menu_to_adminbar,
+     * which runs on every logged-in FRONTEND pageview via admin_bar_menu) and the
+     * AJAX refresh (get_adminbar_stats).
+     *
+     * The render path used to compute these itself with six separate queries,
+     * including two unindexable `referer NOT LIKE '%host%'` scans — 886,726 rows
+     * read per frontend request on a 443k-row table, paid by every logged-in
+     * visitor on every page of the site. It also derived midnight from
+     * mktime(0,0,0) (server timezone) while this path uses current_time() (site
+     * timezone), so the two disagreed about when "today" began on any site whose
+     * WordPress timezone differs from its server's.
+     *
+     * Two conditional-aggregate queries at most once a minute, shared.
+     *
+     * @since 5.6.0
+     * @return array{sessions:int,sessions_yesterday:int,views:int,views_yesterday:int,referrals:int,referrals_yesterday:int}
+     */
+    private static function adminbar_today_stats()
+    {
+        $transient_key = 'slimstat_adminbar_today_' . get_current_blog_id();
+        $today_stats   = get_transient($transient_key);
+
+        if (is_array($today_stats)) {
+            return $today_stats;
+        }
+
+        $wpdb  = wp_slimstat::$wpdb;
+        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
+
+        $today_start     = strtotime('today', current_time('timestamp'));
+        $yesterday_start = $today_start - DAY_IN_SECONDS;
+        $yesterday_end   = $today_start - 1;
+        $site_host       = parse_url(home_url(), PHP_URL_HOST);
+        $referer_like    = '%' . $wpdb->esc_like((string) $site_host) . '%';
+
+        // Sessions + views: 1 query instead of 4, using conditional aggregates.
+        $row = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
+                COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
+                SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
+                SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
+            FROM {$table}
+            WHERE dt >= %d",
+            $today_start,
+            $yesterday_start, $yesterday_end,
+            $today_start,
+            $yesterday_start, $yesterday_end,
+            $yesterday_start
+        ));
+
+        // Referrals: 1 query instead of 2 — and skipped entirely without Pro.
+        // Both consumers discard these on free installs (the render path
+        // substitutes placeholder literals behind a blur, the AJAX path only
+        // emits them inside an is_pro branch), so on a free site this was an
+        // unindexable `referer NOT LIKE '%host%'` scan running every minute and
+        // throwing the result away.
+        $ref_row = null;
+        if (wp_slimstat::pro_is_installed()) {
+            $ref_row = $wpdb->get_row($wpdb->prepare(
+            "SELECT
+                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
+                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
+                FROM {$table}
+                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                $today_start,
+                $yesterday_start, $yesterday_end,
+                $yesterday_start,
+                $referer_like
+            ));
+        }
+
+        $today_stats = [
+            'sessions'            => (int) ($row->sessions_today ?? 0),
+            'sessions_yesterday'  => (int) ($row->sessions_yesterday ?? 0),
+            'views'               => (int) ($row->views_today ?? 0),
+            'views_yesterday'     => (int) ($row->views_yesterday ?? 0),
+            'referrals'           => (int) ($ref_row->referrals_today ?? 0),
+            'referrals_yesterday' => (int) ($ref_row->referrals_yesterday ?? 0),
+        ];
+
+        // Align expiry to the next minute boundary, so the cache turns over in
+        // step with the minute-granular chart rather than drifting against it.
+        set_transient($transient_key, $today_stats, max(60 - (current_time('timestamp') % 60), 1));
+
+        return $today_stats;
+    }
+
+    /**
+     * Visitors currently online, cached for the remainder of the current minute.
+     *
+     * Left uncached when the rest of the admin bar was fixed, on the grounds that it is
+     * the one figure labelled "right now" — but it ran on every admin render for every
+     * logged-in user, on top of the per-minute poll, and it is not cheap on a busy site.
+     * The figure already counts activity over a 30-minute window, so being up to a
+     * minute behind is a small change to how true it is. Signed off 2026-07-28; the
+     * measurements live in tests/adminbar-query-budget-test.php.
+     *
+     * Expiry is aligned to the minute boundary for the same reason adminbar_today_stats()
+     * aligns its own: adminbar-realtime.js refreshes at :00 of each wall-clock minute, so
+     * a flat 60-second TTL seeded mid-minute would still be live at the next poll and this
+     * figure would sit a minute behind the chart beside it.
+     *
+     * @since 5.6.0
+     * @return int
+     */
+    private static function online_count()
+    {
+        $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id();
+        $cached        = get_transient($transient_key);
+
+        // Strict check: a legitimate count of 0 must not read as a cache miss, or an
+        // idle site recomputes on every single render — the case this exists to fix.
+        if (false !== $cached) {
+            return (int) $cached;
+        }
+
+        $count = self::query_online_count();
+        set_transient($transient_key, $count, max(60 - (current_time('timestamp') % 60), 1));
+
+        return $count;
+    }
+
+    /**
+     * The uncached query behind online_count().
+     *
+     * Kept separate so the cache cannot become part of the query's contract, and so the
+     * two are independently testable. A derived-table GROUP BY over visit_id with a
+     * post-aggregation HAVING, filtered by an OR spanning `dt` and `dt_out` — it needs an
+     * index_merge to avoid a scan, and cannot get one on installs where the lazy
+     * `idx_dt_out` migration has not run.
      *
      * @since 5.4.3
      * @return int
@@ -2588,7 +3151,7 @@ class wp_slimstat_admin
             return;
         }
 
-        $online_visitors = self::query_online_count();
+        $online_visitors = self::online_count();
 
         wp_send_json_success([
             'count' => $online_visitors,
@@ -2611,66 +3174,13 @@ class wp_slimstat_admin
             return;
         }
 
-        $wpdb = wp_slimstat::$wpdb;
-        $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $is_pro = wp_slimstat::pro_is_installed();
 
-        // --- Online count (always fresh — fast indexed query) ---
-        $online_count = self::query_online_count();
+        // --- Online count (cached for the current minute; see online_count()) ---
+        $online_count = self::online_count();
 
         // --- Today stats (transient-cached, 60s TTL) ---
-        $blog_id = get_current_blog_id();
-        $transient_key = 'slimstat_adminbar_today_' . $blog_id;
-        $today_stats = get_transient($transient_key);
-
-        if (false === $today_stats) {
-            $today_start = strtotime('today', current_time('timestamp'));
-            $yesterday_start = $today_start - DAY_IN_SECONDS;
-            $yesterday_end = $today_start - 1;
-            $site_host = parse_url(home_url(), PHP_URL_HOST);
-            $referer_like = '%' . $wpdb->esc_like($site_host) . '%';
-
-            // Sessions + views: 2 queries instead of 4 using conditional aggregates
-            $row = $wpdb->get_row($wpdb->prepare(
-                "SELECT
-                    COUNT(DISTINCT CASE WHEN dt >= %d AND visit_id > 0 THEN visit_id END) AS sessions_today,
-                    COUNT(DISTINCT CASE WHEN dt BETWEEN %d AND %d AND visit_id > 0 THEN visit_id END) AS sessions_yesterday,
-                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
-                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
-                FROM {$table}
-                WHERE dt >= %d",
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $yesterday_start
-            ));
-
-            // Referrals: 1 query with conditional aggregates
-            $ref_row = $wpdb->get_row($wpdb->prepare(
-                "SELECT
-                    SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
-                    SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
-                FROM {$table}
-                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
-                $today_start,
-                $yesterday_start, $yesterday_end,
-                $yesterday_start,
-                $referer_like
-            ));
-
-            $today_stats = [
-                'sessions'             => (int) ($row->sessions_today ?? 0),
-                'sessions_yesterday'   => (int) ($row->sessions_yesterday ?? 0),
-                'views'                => (int) ($row->views_today ?? 0),
-                'views_yesterday'      => (int) ($row->views_yesterday ?? 0),
-                'referrals'            => (int) ($ref_row->referrals_today ?? 0),
-                'referrals_yesterday'  => (int) ($ref_row->referrals_yesterday ?? 0),
-            ];
-
-            $ttl = max(60 - (current_time('timestamp') % 60), 1); // align to next minute boundary
-            set_transient($transient_key, $today_stats, $ttl);
-        }
+        $today_stats = self::adminbar_today_stats();
 
         // --- Chart data (uses LiveAnalyticsReport's own 60s transient) ---
         $chart_data = null;
@@ -2817,13 +3327,7 @@ class wp_slimstat_admin
     {
         check_ajax_referer('meta-box-order', 'security');
 
-        // If this user is whitelisted, we use the minimum capability
-        $minimum_capability = 'read';
-        if (false === strpos(wp_slimstat::$settings['can_view'], (string) $GLOBALS['current_user']->user_login) && !empty(wp_slimstat::$settings['capability_can_view'])) {
-            $minimum_capability = wp_slimstat::$settings['capability_can_view'];
-        }
-
-        if (!current_user_can($minimum_capability)) {
+        if (!self::can_view_stats()) {
             wp_send_json_error('Insufficient permissions');
             return;
         }
@@ -3371,25 +3875,6 @@ class wp_slimstat_admin
 
     // END: contextual_help
 
-    /**
-     * Creates a table in the database
-     */
-    protected static function _create_table($_sql = '', $_tablename = '', $_wpdb = '')
-    {
-        $_wpdb->query($_sql);
-
-        // Let's make sure this table was actually created
-        foreach ($_wpdb->get_col(sprintf("SHOW TABLES LIKE '%s'", $_tablename), 0) as $a_table) {
-            if ($a_table == $_tablename) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    // END: _create_table
-
     public static function get_template($template, $args = [], $return = false)
     {
         // Push Args - use EXTR_SKIP to prevent variable overwriting for security
@@ -3450,7 +3935,26 @@ class wp_slimstat_admin
             }
         }
         $utm_medium = empty($_report_id) ? 'report-unknown' : $_report_id;
-        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="' . __('Upgrade to Pro', 'wp-slimstat-pro') . '" href="https://wp-slimstat.com/pricing/?utm_source=admin&utm_medium=' . $utm_medium . '&utm_campaign=export" target="_blank"><span class="dashicons dashicons-download"></span>' . __('Export', 'wp-slimstat-pro') . '</a> ' . $_header_buttons;
+        // 'wp-slimstat', not 'wp-slimstat-pro'. These two were the only strings in the free
+        // plugin bound to Pro's text domain, so neither has ever been translatable here:
+        // free ships no wp-slimstat-pro .mo, and on a site without Pro nothing loads that
+        // domain at all. wp.org's Plugin Check flags it as TextDomainMismatch.
+        //
+        // The URL is built with add_query_arg() and escaped: $utm_medium reached the href
+        // raw, and both translated strings reached an attribute and a text node unescaped.
+        $pricing_url = add_query_arg(
+            [
+                'utm_source'   => 'admin',
+                'utm_medium'   => $utm_medium,
+                'utm_campaign' => 'export',
+            ],
+            'https://wp-slimstat.com/pricing/'
+        );
+
+        return '<a class="slimstat-upgrade-pro slimstat-filter-link slimstat-filter-temp button-export-to-xls slimstat-font-download is-not-pro noslimstat" title="'
+            . esc_attr__('Upgrade to Pro', 'wp-slimstat') . '" href="' . esc_url($pricing_url)
+            . '" target="_blank"><span class="dashicons dashicons-download"></span>'
+            . esc_html__('Export', 'wp-slimstat') . '</a> ' . $_header_buttons;
     }
 
     /**
@@ -3513,57 +4017,105 @@ class wp_slimstat_admin
     private static function get_index_definitions(): array
     {
         $prefix = $GLOBALS['wpdb']->prefix;
-        return [
-            'slimstat_add_country_dt_index' => [
-                'name'    => 'idx_country_dt',
-                'columns' => 'country, dt',
-                'option'  => 'slimstat_country_dt_indexed',
-            ],
-            'slimstat_add_dt_screen_index' => [
-                'name'    => 'idx_dt_screen_width_screen_height',
-                'columns' => 'dt, screen_width, screen_height',
-                'option'  => 'slimstat_dt_screen_indexed',
-            ],
-            'slimstat_add_dt_browser_index' => [
-                'name'    => 'idx_dt_browser_browser_version',
-                'columns' => 'dt, browser, browser_version',
-                'option'  => 'slimstat_dt_browser_indexed',
-            ],
-            'slimstat_add_dt_platform_index' => [
-                'name'    => 'idx_dt_platform',
-                'columns' => 'dt, platform',
-                'option'  => 'slimstat_dt_platform_indexed',
-            ],
-            'slimstat_add_dt_out_index' => [
-                'name'    => 'idx_dt_out',
-                'columns' => 'dt_out',
-                'option'  => 'slimstat_dt_out_indexed',
-            ],
-            'slimstat_add_dt_visit_index' => [
-                'name'    => $prefix . 'stats_dt_visit_idx',
-                'columns' => 'dt, visit_id',
-                'option'  => 'slimstat_dt_visit_indexed',
-            ],
+
+        // The AJAX actions are a stable public contract — they are baked into nonces and into
+        // the notice's markup — so the action names stay written out. Everything they DESCRIBE
+        // comes from the manifest, because this was the sixth creator of the same six indexes
+        // and the one furthest from the other five: an index whose columns changed anywhere else
+        // left this UI quietly building the old shape on click.
+        $actions = [
+            'slimstat_add_country_dt_index'  => 'idx_country_dt',
+            'slimstat_add_dt_screen_index'   => 'idx_dt_screen_width_screen_height',
+            'slimstat_add_dt_browser_index'  => 'idx_dt_browser_browser_version',
+            'slimstat_add_dt_platform_index' => 'idx_dt_platform',
+            'slimstat_add_dt_out_index'      => 'idx_dt_out',
+            'slimstat_add_dt_visit_index'    => '{prefix}stats_dt_visit_idx',
         ];
+
+        $definitions = [];
+
+        foreach ($actions as $action => $index) {
+            $definitions[$action] = [
+                'index'  => $index,
+                'name'   => Schema::resolve($index, $prefix),
+                'option' => Schema::indexOption($index),
+            ];
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * Stamp any `slimstat_*_indexed` option whose index is present, in one query.
+     *
+     * Returns the manifest keys still MISSING, so the notice below does not repeat the probe.
+     *
+     * @return string[]
+     */
+    private static function sync_index_options(): array
+    {
+        $pending = [];
+
+        foreach (self::get_index_definitions() as $def) {
+            if ('yes' !== get_option($def['option'])) {
+                $pending[] = $def['index'];
+            }
+        }
+
+        if ([] === $pending) {
+            return [];
+        }
+
+        $state   = Schema::indexState(wp_slimstat::$wpdb, 'slim_stats', $GLOBALS['wpdb']->prefix);
+        $present = array_flip($state['present']);
+        $missing = [];
+
+        foreach ($pending as $index) {
+            if (isset($present[Schema::resolve($index, $GLOBALS['wpdb']->prefix)])) {
+                update_option(Schema::indexOption($index), 'yes');
+                continue;
+            }
+
+            $missing[] = $index;
+        }
+
+        return $missing;
     }
 
     /**
      * Generic AJAX handler for ensuring a database index exists.
      */
-    private static function ajax_ensure_index(string $nonce, string $index_name, string $columns, string $option_key): void
+    private static function ajax_ensure_index(string $nonce, string $index_key, string $index_name, string $option_key): void
     {
         check_ajax_referer($nonce);
         if (!current_user_can('manage_options')) {
             wp_send_json_error(__('Insufficient permissions.', 'wp-slimstat'));
         }
-        $wpdb = wp_slimstat::$wpdb;
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $exists = $wpdb->get_results(sprintf("SHOW INDEX FROM %s WHERE Key_name = '%s'", $table, $index_name));
+
+        // The kill switch reaches THIS path too, and that is not belt-and-braces.
+        // show_indexes_notice() suppresses itself whenever the modern runner is registered,
+        // so disabling the modern runner UN-SUPPRESSES this notice — and its Apply buttons
+        // land here, running CREATE INDEX on wp_slim_stats. An admin who set the constant to
+        // stop a runaway index build would have been handed an unguarded UI offering the same
+        // DDL, which is the outcome the switch exists to prevent.
+        if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
+            wp_send_json_error(__('Migrations are disabled by SLIMSTAT_DISABLE_MIGRATIONS in wp-config.php.', 'wp-slimstat'));
+        }
+
+        $wpdb   = wp_slimstat::$wpdb;
+        $prefix = $GLOBALS['wpdb']->prefix;
+        $table  = $prefix . 'slim_stats';
+
+        $exists = $wpdb->get_results($wpdb->prepare("SHOW INDEX FROM {$table} WHERE Key_name = %s", $index_name));
         if (!empty($exists)) {
             update_option($option_key, 'yes');
             wp_send_json_success(__('Index already exists.', 'wp-slimstat'));
         }
-        $result = $wpdb->query(sprintf('CREATE INDEX %s ON %s (%s)', $index_name, $table, $columns));
+
+        // Built from the manifest, not from the columns this handler was handed. The button and
+        // the reconciler have to create the same object or the retry silently builds a shape
+        // nothing else expects.
+        $result = $wpdb->query(Schema::createIndexSql('slim_stats', $index_key, $prefix));
         if (false !== $result) {
             update_option($option_key, 'yes');
             wp_send_json_success(__('Index added successfully.', 'wp-slimstat'));
@@ -3578,83 +4130,208 @@ class wp_slimstat_admin
     {
         foreach (self::get_index_definitions() as $action => $def) {
             add_action('wp_ajax_' . $action, function () use ($action, $def) {
-                self::ajax_ensure_index($action, $def['name'], $def['columns'], $def['option']);
+                self::ajax_ensure_index($action, $def['index'], $def['name'], $def['option']);
             });
+        }
+    }
+
+    /**
+     * Warn administrators when a SlimStat sub-feature is running degraded.
+     *
+     * The fail-soft guards added for issue #325 stop a class-load failure from
+     * white-screening the site, but they used to leave no trace outside WP_DEBUG —
+     * so a dead tracker or missing consent banner could go unnoticed for months.
+     * wp_slimstat::record_degradation() persists what broke; this surfaces it.
+     */
+    public static function show_degradation_notice()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $degradations = wp_slimstat::get_degradations();
+        if (!$degradations) {
+            return;
+        }
+
+        // Human-readable name per guarded step; unknown keys are humanised, never printed raw.
+        $labels = [
+            'browscap'           => __('Browser detection library', 'wp-slimstat'),
+            'upload_directory'   => __('Upload directory setup', 'wp-slimstat'),
+            'ip_hash_salt'       => __('Daily IP-hash salt (privacy)', 'wp-slimstat'),
+            'adblock_bypass'     => __('Ad-blocker bypass tracking', 'wp-slimstat'),
+            'rest_api'           => __('REST API tracking endpoints', 'wp-slimstat'),
+            'consent_ajax'       => __('Consent AJAX handlers', 'wp-slimstat'),
+            'gdpr_banner'          => __('GDPR consent banner setup', 'wp-slimstat'),
+            'gdpr_banner_assets'   => __('GDPR consent banner assets', 'wp-slimstat'),
+            'gdpr_banner_render'   => __('GDPR consent banner display', 'wp-slimstat'),
+            'rest_controller'      => __('REST tracking controller', 'wp-slimstat'),
+            'rest_routes'          => __('REST route registration', 'wp-slimstat'),
+            'banner_consent_check' => __('Consent banner status check', 'wp-slimstat'),
+            'activation'           => __('Plugin activation', 'wp-slimstat'),
+            'deactivation'         => __('Plugin deactivation', 'wp-slimstat'),
+            'network activation continuation' => __('Setting up sites on this network', 'wp-slimstat'),
+
+            // Operational steps. Everything below kept working; none of it is a load failure,
+            // and none of it is fixed by reinstalling.
+            'schema column drift'  => __('Database columns differ from this version', 'wp-slimstat'),
+            'schema upgrade'       => __('Database schema upgrade', 'wp-slimstat'),
+            'schema repair from the tracking path' => __('Database repair during tracking', 'wp-slimstat'),
+            'notes format migration' => __('Notes format migration', 'wp-slimstat'),
+            'utf8mb4 conversion'   => __('Character-set conversion', 'wp-slimstat'),
+            'migration_db_unreachable' => __('Database unreachable during migration', 'wp-slimstat'),
+            'add_visit_identity'   => __('Migration: visit identity column', 'wp-slimstat'),
+            'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
+            'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
+            'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),
+            'purge (archiving events)'    => __('Retention: archiving events', 'wp-slimstat'),
+            'purge (deleting events)'     => __('Retention: deleting events', 'wp-slimstat'),
+            'purge (archiving pageviews)' => __('Retention: archiving pageviews', 'wp-slimstat'),
+            'purge (deleting pageviews)'  => __('Retention: deleting pageviews', 'wp-slimstat'),
+            'purge (archive schema)'      => __('Retention: archive table columns', 'wp-slimstat'),
+            // Synthesised inside get_degradations() from the last-success stamp, not recorded
+            // by any call site — so a scan that derives its population from record_degradation()
+            // arguments cannot see it, and it went unlabelled precisely because of that.
+            'purge (no successful run)'   => __('Retention has not completed recently', 'wp-slimstat'),
+        ];
+
+        $load_items        = '';
+        $operational_items = '';
+
+        foreach ($degradations as $step => $record) {
+            // Three step keys are BUILT AT RUNTIME — 'activation (blog N)', 'new subsite N' and
+            // 'tracker write dropped columns absent from <table>' — so no exact-match map can
+            // ever cover them. Humanising the fallback is not polish; it is the only thing that
+            // covers those three, and it is why the map is not simply longer.
+            $label   = $labels[$step] ?? ucfirst(str_replace('_', ' ', $step));
+            $message = isset($record['message']) ? (string) $record['message'] : '';
+            $item    = sprintf(
+                '<li><strong>%s</strong><br><code>%s</code></li>',
+                esc_html($label),
+                esc_html($message)
+            );
+
+            // The KIND IS READ, NOT GUESSED. It was briefly reconstructed here from a
+            // renderer-side list of step names — which has to be kept in sync with two dozen
+            // call sites by discipline, and cannot cover the three keys built by concatenation
+            // at runtime. record_degradation() is told which it is at the catch block that
+            // knows. Legacy records written before that parameter existed default to LOAD,
+            // which is what they all were; they age out within DEGRADATION_TTL anyway.
+            $severity = isset($record['severity']) ? (string) $record['severity'] : wp_slimstat::DEGRADATION_LOAD;
+
+            if (wp_slimstat::DEGRADATION_OPERATIONAL === $severity) {
+                $operational_items .= $item;
+            } else {
+                $load_items .= $item;
+            }
+        }
+
+        // TWO NOTICES, TWO SEVERITIES, because one sentence cannot be true of both.
+        //
+        // The original copy — "failed to load and were disabled … reinstalling the plugin and
+        // flushing your PHP opcache normally clears it" — is exactly right for the #325 class it
+        // was written for, and false for every operational record. Schema drift is not fixed by
+        // reinstalling; a failed purge is not fixed by reinstalling. AbstractMigration.php's own
+        // comment records rejecting this channel for that reason. So the copy stays where it is
+        // true and the rest gets copy that is.
+        if ('' !== $load_items) {
+            self::show_message(
+                '<strong>' . esc_html__('Slimstat Analytics is running with reduced functionality.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('These features failed to load and were disabled so the rest of your site keeps working. This usually means an interrupted update or a stale server cache — reinstalling the plugin and flushing your PHP opcache normally clears it.', 'wp-slimstat') .
+                '<ul class="ul-disc">' . $load_items . '</ul>',
+                'error'
+            );
+        }
+
+        if ('' !== $operational_items) {
+            self::show_message(
+                '<strong>' . esc_html__('Slimstat Analytics reported a problem while running.', 'wp-slimstat') . '</strong><br>' .
+                esc_html__('Tracking and reports kept working. These are maintenance tasks that did not complete — some data may be missing or a column may be absent. Reinstalling the plugin does not clear these; check Slimstat > Migrations and Settings > Maintenance.', 'wp-slimstat') .
+                '<ul class="ul-disc">' . $operational_items . '</ul>',
+                'warning'
+            );
         }
     }
 
     public static function show_indexes_notice()
     {
-		// If new migration system is active, suppress legacy performance notice
-		if (class_exists(\SlimStat\Migration\Admin\MigrationAdmin::class)) {
+		// Suppress this legacy notice when the migration system is actually running, which
+		// is what `has_action()` answers. The previous test was class_exists() on the
+		// class file — always true under a classmap autoloader, so this returned here on
+		// every install while the new system was not wired up at all. Two repair paths,
+		// both dead, each because of the other. (D51)
+		if (has_action('wp_ajax_slimstat_run_migrations')) {
+			return;
+		}
+
+		// Offering no button beats refusing the click. Without this, throwing the kill switch
+		// makes the test above false and renders this notice — the legacy repair UI — in
+		// place of the guarded one.
+		if (defined('SLIMSTAT_DISABLE_MIGRATIONS') && SLIMSTAT_DISABLE_MIGRATIONS) {
 			return;
 		}
 
         if (!current_user_can('manage_options')) {
             return;
         }
-        $indexes = [
-            [
-                'option' => 'slimstat_dt_out_indexed',
-                'id'     => 'dt-out',
-                'label'  => __('Currently Online Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt_out</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_out',
-                'ajax'   => 'slimstat_add_dt_out_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+        // Human-readable copy only. The index key, its option, its AJAX action and the prefix
+        // resolution all come from get_index_definitions(), which reads the manifest — this was
+        // a seventh private restatement of that map, and the one place still hand-concatenating
+        // the prefix onto an index name. An index renamed in Schema used to leave this notice
+        // probing a key that no longer existed and offering a button forever.
+        $copy = [
+            'idx_dt_out' => [
+                'id'    => 'dt-out',
+                'label' => __('Currently Online Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt_out</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_country_dt_indexed',
-                'id'     => 'country-dt',
-                'label'  => __('World Map & Country Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
-                'key'    => 'idx_country_dt',
-                'ajax'   => 'slimstat_add_country_dt_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_country_dt' => [
+                'id'    => 'country-dt',
+                'label' => __('World Map & Country Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>country</code> and <code>dt</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_screen_indexed',
-                'id'     => 'dt-screen',
-                'label'  => __('Screen Resolution Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_screen_width_screen_height',
-                'ajax'   => 'slimstat_add_dt_screen_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_screen_width_screen_height' => [
+                'id'    => 'dt-screen',
+                'label' => __('Screen Resolution Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>screen_width</code>, <code>screen_height</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_browser_indexed',
-                'id'     => 'dt-browser',
-                'label'  => __('Browser Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_browser_browser_version',
-                'ajax'   => 'slimstat_add_dt_browser_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_browser_browser_version' => [
+                'id'    => 'dt-browser',
+                'label' => __('Browser Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>browser</code>, <code>browser_version</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_platform_indexed',
-                'id'     => 'dt-platform',
-                'label'  => __('Platform Reports', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
-                'key'    => 'idx_dt_platform',
-                'ajax'   => 'slimstat_add_dt_platform_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            'idx_dt_platform' => [
+                'id'    => 'dt-platform',
+                'label' => __('Platform Reports', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>platform</code>', 'wp-slimstat'),
             ],
-            [
-                'option' => 'slimstat_dt_visit_indexed',
-                'id'     => 'dt-visit',
-                'label'  => __('Visitor Counter Performance', 'wp-slimstat'),
-                'desc'   => __('Index on <code>dt</code>, <code>visit_id</code>', 'wp-slimstat'),
-                'key'    => $GLOBALS['wpdb']->prefix . 'stats_dt_visit_idx',
-                'ajax'   => 'slimstat_add_dt_visit_index',
-                'btn'    => __('Apply', 'wp-slimstat'),
+            '{prefix}stats_dt_visit_idx' => [
+                'id'    => 'dt-visit',
+                'label' => __('Visitor Counter Performance', 'wp-slimstat'),
+                'desc'  => __('Index on <code>dt</code>, <code>visit_id</code>', 'wp-slimstat'),
             ],
         ];
 
-        $pending = array_filter($indexes, function ($idx) {
-            $db = wp_slimstat::$wpdb;
-            $exists = $db->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS['wpdb']->prefix, $idx['key']));
-            return empty($exists);
-        });
+        // Already computed on this request by init()'s sync, in one query rather than six.
+        $missing = self::sync_index_options();
+        if ([] === $missing) {
+            return;
+        }
+
+        $pending = [];
+        foreach (self::get_index_definitions() as $action => $def) {
+            if (!in_array($def['index'], $missing, true) || !isset($copy[$def['index']])) {
+                continue;
+            }
+
+            $pending[] = $copy[$def['index']] + [
+                'option' => $def['option'],
+                'key'    => $def['name'],
+                'ajax'   => $action,
+                'btn'    => __('Apply', 'wp-slimstat'),
+            ];
+        }
+
         if ([] === $pending) {
             return;
         }
@@ -3692,11 +4369,15 @@ class wp_slimstat_admin
         ?>
         <script>
         jQuery(function($){
-            var indexes = <?php echo wp_json_encode(array_values($pending)); ?>;
+            var indexes = <?php echo wp_json_encode($pending); ?>;
             var nonces = <?php echo wp_json_encode($nonces); ?>;
             var total = indexes.length, done = 0;
             function updateProgress() {
-                var percent = Math.round((done/total)*100);
+                // Multiply first, divide once — same contract as the PHP percentages in this
+                // file. Inline JS, so the PHP scan in tests/rounding-contract-test.php sees this
+                // as T_INLINE_HTML and cannot read it; the JS twin scan is what covers it.
+                // ADR-17; PITFALLS 72.
+                var percent = Math.round((100 * done) / total);
                 $('#slimstat-index-progress').css('width', percent+'%');
                 if (done === total) setTimeout(function(){ $('.slimstat-indexes-notice').fadeOut(); }, 2000);
             }

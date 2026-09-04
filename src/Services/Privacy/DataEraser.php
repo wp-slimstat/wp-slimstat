@@ -121,18 +121,37 @@ class DataEraser
 		$stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 		$events_table = $GLOBALS['wpdb']->prefix . 'slim_events';
 
+		$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
+		$stats_archive_table  = $GLOBALS['wpdb']->prefix . 'slim_stats_archive';
+		$archive_exists       = (bool) $GLOBALS['wpdb']->get_var(
+			$GLOBALS['wpdb']->prepare('SHOW TABLES LIKE %s', $events_archive_table)
+		);
+
 		// Delete events by joining with stats table to filter by email
 		// Get IDs first, then delete (safer than direct join delete)
-		$event_ids = $GLOBALS['wpdb']->get_col(
-			$GLOBALS['wpdb']->prepare(
-				"SELECT e.id FROM {$events_table} e
+		//
+		// The archived pair is searched as well as the live one. An event is attributable
+		// to a person only through its parent pageview, so once retention moves a pageview
+		// into the archive its events are reachable ONLY via the archived parent — looking
+		// in the live tables alone would leave that person's notes, event descriptions and
+		// click positions in the archive forever. This mattered from the moment archiving
+		// began working: before that the archive tables were always empty. (D1)
+		$id_sql = "SELECT e.id FROM {$events_table} e
 				INNER JOIN {$stats_table} s ON e.id = s.id
-				WHERE s.email = %s
-				LIMIT %d OFFSET %d",
-				$email_address,
-				$number,
-				$offset
-			)
+				WHERE s.email = %s";
+
+		if ($archive_exists) {
+			$id_sql .= " UNION SELECT a.id FROM {$events_archive_table} a
+				INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
+				WHERE sa.email = %s";
+		}
+
+		$id_args = $archive_exists
+			? [$email_address, $email_address, $number, $offset]
+			: [$email_address, $number, $offset];
+
+		$event_ids = $GLOBALS['wpdb']->get_col(
+			$GLOBALS['wpdb']->prepare($id_sql . ' LIMIT %d OFFSET %d', ...$id_args)
 		);
 
 		if (!empty($event_ids)) {
@@ -152,15 +171,6 @@ class DataEraser
 				);
 			}
 
-			// Also check archive table
-			$events_archive_table = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
-			$archive_exists = $GLOBALS['wpdb']->get_var(
-				$GLOBALS['wpdb']->prepare(
-					"SHOW TABLES LIKE %s",
-					$events_archive_table
-				)
-			);
-
 			if ($archive_exists) {
 				$deleted_archive = $GLOBALS['wpdb']->query(
 					$GLOBALS['wpdb']->prepare(
@@ -179,8 +189,12 @@ class DataEraser
 			}
 		}
 
-		// Check if there are more pages
-		$remaining = $GLOBALS['wpdb']->get_var(
+		// Check if there are more pages.
+		//
+		// Counted across the archive too. Reporting done=true while archived events for
+		// this person remain would stop WordPress calling back, and the erasure request
+		// would be marked complete with the data still there.
+		$remaining = (int) $GLOBALS['wpdb']->get_var(
 			$GLOBALS['wpdb']->prepare(
 				"SELECT COUNT(*) FROM {$events_table} e
 				INNER JOIN {$stats_table} s ON e.id = s.id
@@ -189,7 +203,18 @@ class DataEraser
 			)
 		);
 
-		$done = ($remaining == 0);
+		if ($archive_exists) {
+			$remaining += (int) $GLOBALS['wpdb']->get_var(
+				$GLOBALS['wpdb']->prepare(
+					"SELECT COUNT(*) FROM {$events_archive_table} a
+					INNER JOIN {$stats_archive_table} sa ON a.id = sa.id
+					WHERE sa.email = %s",
+					$email_address
+				)
+			);
+		}
+
+		$done = (0 === $remaining);
 
 		return [
 			'items_removed'  => $items_removed,
@@ -222,7 +247,27 @@ class DataEraser
 		$table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
 		// Anonymize IP addresses (set to '0.0.0.0' as anonymous marker)
-		// Also clear username, email, and fingerprint
+		// Also clear username, email, fingerprint — and vid_hash, which is DERIVED from
+		// the fingerprint (or ip + user agent): clearing the inputs while keeping the
+		// value computed from them would leave the "anonymized" row carrying a visitor
+		// identifier this same UPDATE just promised to erase. visit_id stays: it is a
+		// sequential session number and carries nothing about the person.
+		//
+		// The column is probed first because an upgraded install may not have run the
+		// AddVisitIdentity migration yet — and naming a column the table lacks fails the
+		// WHOLE statement, which here means a GDPR erasure request silently erasing
+		// nothing. A schema that predates vid_hash has nothing to clear. Asked through
+		// the manifest's own read model (Schema::hasColumn) rather than a third
+		// hand-rolled probe; its conservative failure mode — unreadable table answers
+		// false — is safe here, because a table this connection cannot read will fail
+		// the UPDATE below loudly anyway.
+		$has_vid_hash = \SlimStat\Schema\Schema::hasColumn(
+			$GLOBALS['wpdb'],
+			'slim_stats',
+			$GLOBALS['wpdb']->prefix,
+			'vid_hash'
+		);
+
 		$updated = $GLOBALS['wpdb']->query(
 			$GLOBALS['wpdb']->prepare(
 				"UPDATE {$table}
@@ -230,9 +275,9 @@ class DataEraser
 				    other_ip = '',
 				    username = '',
 				    email = '',
-				    fingerprint = ''
+				    fingerprint = ''" . ($has_vid_hash ? ', vid_hash = NULL' : '') . '
 				WHERE ip = %s
-				LIMIT %d",
+				LIMIT %d',
 				$ip_address,
 				$number
 			)
@@ -271,14 +316,18 @@ class DataEraser
 	 */
 	public static function registerErasers($erasers)
 	{
-		$erasers['slimstat-pageviews'] = [
-			'eraser_friendly_name' => __('SlimStat Pageviews', 'wp-slimstat'),
-			'callback'             => [self::class, 'erasePageviews'],
-		];
-
+		// Events BEFORE pageviews. An event carries no email of its own — it can only be
+		// attributed to a person through its parent pageview — so erasing the pageviews
+		// first leaves the events unidentifiable and therefore unerasable. Same
+		// children-before-parents rule the retention purge has to follow. (D1)
 		$erasers['slimstat-events'] = [
 			'eraser_friendly_name' => __('SlimStat Events', 'wp-slimstat'),
 			'callback'             => [self::class, 'eraseEvents'],
+		];
+
+		$erasers['slimstat-pageviews'] = [
+			'eraser_friendly_name' => __('SlimStat Pageviews', 'wp-slimstat'),
+			'callback'             => [self::class, 'erasePageviews'],
 		];
 
 		return $erasers;

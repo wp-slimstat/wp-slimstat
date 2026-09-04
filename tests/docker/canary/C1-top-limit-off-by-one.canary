@@ -1,0 +1,34 @@
+id: C1
+subject_report: top_resource
+relation: row-count-differs-by-one
+file: admin/view/wp-slimstat-db.php
+applies_to_arm: new
+observable: exactly one arm returns 199 rows for top_resource where the other returns 200; the missing element is the lowest-ranked one; no other report moves
+blast_radius: 1 report
+never_committed: true — this diff is applied to an arm worktree by run-canary.sh and restored by digest
+see: CANARY-C1.md
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -1622,6 +1622,21 @@
+         // ($merging was resolved above, where the P3 group key needed it.)
+         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
+ 
++        // S7 CANARY C1 - DELIBERATE DEFECT. Applied to an ARM WORKTREE by
++        // tests/docker/canary/run-canary.sh, never committed to any branch, and restored
++        // byte-identically afterwards with the restoration verified by digest. See
++        // tests/docker/canary/CANARY-C1.md for the pre-declared subject and detection criteria.
++        //
++        // Narrow ON PURPOSE. `resource` with no WHERE is the call `top_resource` makes and the
++        // only captured report that makes it: top_resource_human and top_resource_in_window
++        // carry a WHERE, and top_resource_trimmed arrives here as the string
++        // 'TRIM(TRAILING "/" FROM resource) AS resource'. So exactly one report loses exactly
++        // one row, which is a harder thing to see than the six a patch at the shared LIMIT
++        // site would have moved.
++        if ('resource' === $_column && '' === $_where) {
++            $limit = max(1, $limit - 1);
++        }
++
+         // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
+         // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's
+         // rewriter adds none outside — so each blog would contribute only ITS OWN top 20, and a

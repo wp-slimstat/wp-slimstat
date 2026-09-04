@@ -1,0 +1,15 @@
+{
+  "schema": "SLIMSTAT-ORACLE-CONTRACTS-V1",
+  "reports": {
+    "top_resource": {
+      "report_id": "slim_p1_08",
+      "title": "Top Web Pages",
+      "family": "top",
+      "dimension": "resource",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    }
+  }
+}

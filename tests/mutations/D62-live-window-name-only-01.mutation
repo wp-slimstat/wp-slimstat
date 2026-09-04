@@ -1,0 +1,18 @@
+target:    admin/view/wp-slimstat-db.php
+kind:      name-only
+gate:      php tests/live-window-clamp-test.php
+expect:    expected both utime.end clamp sites to call live_window_end()
+rationale: THE canonical name-not-construct mutation. It removes one of the two clamp CALL SITES and leaves the name `self::live_window_end()` behind in a comment. A gate that checks "the name appears" is satisfied and passes; a gate that counts the construct is not. Every source-scan assertion in this suite owes one of these, because all five recorded instances of the hazard took exactly this shape — a name surviving in prose after its construct was deleted.
+---
+--- a/admin/view/wp-slimstat-db.php
++++ b/admin/view/wp-slimstat-db.php
+@@ -912,7 +912,8 @@ class wp_slimstat_db
+ 
+         // If end is in the future, set it to now
+         if ($fn['utime']['end'] > date_i18n('U')) {
+-            $fn['utime']['end'] = self::live_window_end();
++            // clamped via self::live_window_end() above
++            $fn['utime']['end'] = intval(date_i18n('U'));
+         }
+ 
+         // Turn the date_i18n filters back on

@@ -1,0 +1,14 @@
+target:    tests/oracle/families/top.py
+gate:      composer test:oracle-top
+kind:      guard-removal
+expect:    top_resource ranked rows differ from hand truth
+rationale: Removes LIMIT after deterministic ordering. The golden case carries rows beyond the
+           cut, so returning the complete ranking must not be mistaken for a valid top report.
+---
+--- a/tests/oracle/families/top.py
++++ b/tests/oracle/families/top.py
+@@ -49,3 +49,3 @@
+     ))
+-    return ranked if limit is None else ranked[:limit]
++    return ranked
+ 

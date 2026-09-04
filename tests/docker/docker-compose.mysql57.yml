@@ -1,0 +1,6 @@
+# Override for mysql:5.7 cells — the image has no arm64 build, so the DB service
+# (and only the DB service) runs emulated. The wp container stays native; timing is
+# meaningless in these cells anyway, and answers/counters do not care.
+services:
+  db:
+    platform: linux/amd64

@@ -83,8 +83,17 @@ class GoalsFunnelsPerfTest extends TestCase
         $caller = $this->methodBody('get_funnel_results');
         $this->assertStringNotContainsString('md5($date_where . $cache_ver)', $caller, 'Cache key must no longer hash the raw $date_where SQL');
 
-        $helper = $this->methodBody('funnel_cache_key');
-        $this->assertMatchesRegularExpression('/floor\(\s*\(int\)\s*\$range_end\s*\/\s*3600\s*\)/', $helper, 'funnel_cache_key must hour-bucket the window end');
+        // The bucketing moved into results_cache_key(), the one builder that goals,
+        // funnels and the unique-visitor denominator now all go through: goals and the
+        // denominator had exactly this defect and were still hashing a second-precision
+        // range end long after funnels stopped. (D33/D37)
+        $helper = $this->methodBody('results_cache_key');
+        $this->assertMatchesRegularExpression('/floor\(\s*\$end \/ self::CACHE_RANGE_BUCKET_SECONDS\s*\)/', $helper, 'results_cache_key must hour-bucket the window end');
+        $this->assertStringContainsString(
+            'results_cache_key(',
+            $this->methodBody('funnel_cache_key'),
+            'funnel_cache_key must delegate to the shared builder'
+        );
     }
 
     public function test_normalize_funnel_steps_is_result_determining_and_ordered(): void

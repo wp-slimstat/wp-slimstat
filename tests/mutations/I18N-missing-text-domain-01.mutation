@@ -1,0 +1,17 @@
+target:    admin/index.php
+gate:      php tests/textdomain-single-source-test.php
+kind:      guard-removal
+expect:    is called with no text domain
+rationale: Drop the text domain entirely. WordPress then looks the string up in core's 'default' domain, so it either falls back to English or - worse - picks up core's translation of an unrelated string that happens to share the msgid. Two calls in this file were in exactly that state and nothing had ever reported them; this gate found them on its first real run.
+---
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -169,7 +169,7 @@
+             'inactive' => [
+                 'is_report_group' => true,
+                 'show_in_sidebar' => false,
+-                'title'           => __('Inactive Reports', 'wp-slimstat'),
++                'title'           => __('Inactive Reports'),
+                 'capability'      => '',
+                 'callback'        => '', // No callback and capabilities are needed if show_in_sidebar is false
+             ],

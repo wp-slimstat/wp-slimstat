@@ -1,0 +1,348 @@
+<?php
+// Report-parity oracle — captures what every report actually shows a user.
+//
+//   wp eval-file tests/bench/lib/parity-snapshot.php <out.json> [cells]
+//   wp eval-file tests/bench/lib/parity-compare.php  <before.json> <after.json>
+//
+// The rule this exists to enforce: a faster wrong report is a worse product.
+// Nothing in the v6 programme may change a number a user sees unless that
+// change is deliberate, documented and signed off.
+//
+// It snapshots the RENDERED OUTPUT, not raw query results, because formatting
+// is where rounding and locale differences surface — number_format_i18n() is
+// what the user reads, not the float behind it.
+//
+// Cells (the four combinations that hide bugs):
+//   historical-unfiltered  a fixed absolute window, no filters
+//   historical-filtered    same window plus a column filter
+//   straddling-unfiltered  a window whose end is "now" — the ONLY way to
+//                          exercise Query::getAll()'s split-merge path
+//   straddling-filtered    same, plus a filter
+//
+// Absolute windows are used wherever possible so a snapshot does not depend on
+// when it was taken. The straddling cells cannot be made time-independent by
+// definition; the capture clock is recorded and parity-compare refuses to
+// compare snapshots taken on different local days.
+//
+// No declare(strict_types=1): `wp eval-file` (WP-CLI 2.12) eval()s this file.
+
+if (!defined('ABSPATH')) {
+    fwrite(STDERR, "must run inside WordPress (wp eval-file)\n");
+    exit(2);
+}
+
+$out_path = (string) ($args[0] ?? '');
+if ($out_path === '') {
+    echo "usage: wp eval-file parity-snapshot.php <out.json> [cell,cell,...]\n";
+    echo "VERDICT: ERROR\n";
+    return;
+}
+
+define('SLIMSTAT_BENCH_FINGERPRINT_LIB', true);
+require_once __DIR__ . '/fingerprint.php';
+
+if (!class_exists('wp_slimstat')) {
+    echo "ERROR: wp_slimstat is not loaded — is the plugin active?\n";
+    echo "VERDICT: ERROR\n";
+    return;
+}
+
+$db = wp_slimstat::$wpdb instanceof wpdb ? wp_slimstat::$wpdb : $GLOBALS['wpdb'];
+
+// A fixed window inside the dataset, so historical cells are reproducible
+// regardless of when the snapshot runs.
+//
+// Anchored two days BEFORE now, not at MAX(dt), and this is load-bearing:
+// init_filters() clamps every window's end to now(), and real datasets contain
+// future-dated rows (this one runs a day ahead of the wall clock). Anchoring on
+// MAX(dt) therefore produced a window whose end crept forward in real time,
+// pulling those future rows in a few at a time — 158 reports "changed" between
+// two runs of identical code, purely from the clock advancing.
+//
+// Ending the window two days back puts it entirely in the past, where nothing
+// can drift into it.
+$max_dt = (int) $db->get_var("SELECT MAX(dt) FROM `{$db->prefix}slim_stats`");
+if ($max_dt <= 0) {
+    echo "ERROR: no rows in slim_stats — nothing to snapshot\n";
+    echo "VERDICT: ERROR\n";
+    return;
+}
+// Quantised to the day it lands in: only the day/month/year are used to build
+// the filter, so carrying a to-the-second value would make two snapshots taken
+// a minute apart look like different windows.
+$anchor      = min($max_dt, time()) - (2 * DAY_IN_SECONDS);
+$anchor_day  = gmdate('j', $anchor);
+$anchor_mon  = gmdate('n', $anchor);
+$anchor_yr   = gmdate('Y', $anchor);
+$anchor_date = gmdate('Y-m-d', $anchor);
+$fixed      = sprintf('day equals %d&&&month equals %d&&&year equals %d&&&interval equals -30',
+    $anchor_day, $anchor_mon, $anchor_yr);
+
+// A filter that exercises the WHERE-building path without depending on any
+// particular row surviving: browser_type is always present and low-cardinality.
+$filter = 'browser_type equals 0';
+
+// The straddling window spans today's 00:00, which is what triggers
+// Query::getAll()'s split into a cacheable historical half and an uncached live
+// half.
+//
+// Its end USED to be unpinnable: init_filters() clamped any end at or after today
+// to now(), regardless of the hour/minute filters — measured, asking for a window
+// ending at today 00:00:59 still produced one ending at the current second. That
+// is why parity-compare treats these cells' values as informational, and it is a
+// real blind spot: these are the only cells that reach the split-merge path, so
+// the oracle exercised that path and then declined to look at the result.
+//
+// The clamp now runs through wp_slimstat_db::live_window_end(), which can round
+// down to a bucket. Pin it here so a straddling window is stable for the length of
+// the bucket and two snapshots taken minutes apart describe the SAME window.
+//
+// This changes nothing for sites: the filter ships at 0 and this is the only
+// caller that sets it. Override with SLIMSTAT_PARITY_BUCKET=0 to reproduce the
+// old unpinned behaviour.
+$parity_bucket = (int) (getenv('SLIMSTAT_PARITY_BUCKET') ?: 3600);
+if ($parity_bucket >= 2) {
+    add_filter('slimstat_live_window_bucket_seconds', static function () use ($parity_bucket) {
+        return $parity_bucket;
+    });
+}
+
+$straddling = 'interval equals -30';
+
+$all_cells = [
+    'historical-unfiltered' => $fixed,
+    'historical-filtered'   => $fixed . '&&&' . $filter,
+    'straddling-unfiltered' => $straddling,
+    'straddling-filtered'   => $straddling . '&&&' . $filter,
+];
+
+$wanted = isset($args[1]) && $args[1] !== ''
+    ? array_intersect_key($all_cells, array_flip(array_map('trim', explode(',', (string) $args[1]))))
+    : $all_cells;
+
+require_once __DIR__ . '/reports-bootstrap.php';
+
+/**
+ * Strip everything that legitimately differs between two runs of identical code.
+ *
+ * Anything removed here is invisible to the oracle, so the list is deliberately
+ * short and each entry is justified — over-normalising is how a parity check
+ * quietly stops checking.
+ */
+$normalise = static function (string $html): string {
+    $patterns = [
+        // Nonces and per-request tokens.
+        '/(_wpnonce|nonce|security)=[a-f0-9]{6,}/i'          => '$1=NONCE',
+        '/name="[^"]*nonce[^"]*"\s+value="[^"]*"/i'          => 'name="NONCE" value="NONCE"',
+        // Cache-busting and asset version query strings.
+        '/\?ver=[\w.\-]+/'                                    => '?ver=VER',
+        // Relative times ("3 mins ago") move with the wall clock.
+        '/\b\d+\s+(second|minute|min|hour|day|week|month|year)s?\s+ago\b/i' => 'RELTIME ago',
+        // Absolute timestamps rendered from now().
+        '/\b\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?\b/'     => 'TIMESTAMP',
+        // Raw UNIX epochs (2023-2033) embedded in markup — charts ship the
+        // window in data-args as {"start":…,"end":…}, and init_filters() clamps
+        // that end to the CURRENT SECOND, so two renders a second apart differ.
+        // Users never see an epoch, so normalising it hides nothing from them.
+        //
+        // Worth noting rather than only working around: this is the same
+        // second-precision clamp that gives goal transients a cache key which
+        // can never be hit twice (defect D33). The oracle rediscovered it
+        // independently.
+        '/\b1[7-9]\d{8}\b/'                                   => 'EPOCH',
+        // DOM ids that embed a counter or random suffix.
+        '/id="[\w\-]*?(chart|canvas)[\w\-]*?\d+"/i'          => 'id="DYNAMIC"',
+        // Whitespace noise.
+        '/\s+/'                                               => ' ',
+    ];
+    return trim((string) preg_replace(array_keys($patterns), array_values($patterns), $html));
+};
+
+/** Pull the numbers a user actually reads out of the rendered HTML. */
+$extract_numbers = static function (string $html): array {
+    $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES, 'UTF-8');
+    preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
+    return array_slice($m[1], 0, 200);
+};
+
+/**
+ * Label -> value pairs, for the summary reports that render `<p>Label <span>value</span></p>`.
+ *
+ * Exists so an exemption can name a VALUE instead of a report. `slim_p1_03` was exempted whole
+ * because one of its eight values rolls; measured over three samples 70 s apart, exactly one does
+ * ("Last 30 minutes" 4,529 -> 4,526 -> 4,526) and the other seven — including the Today and
+ * Yesterday that F8 fixed — never move. A report-level exemption is a blind spot the size of the
+ * report where one the size of a value would do.
+ *
+ * Empty for any report that does not render this shape (tables, charts). A report with NO
+ * declared labels falls back to the report-level rule; a report WITH declared labels whose
+ * pairs are missing is reported as DEGRADED and fails the run, because silently reverting to
+ * the old behaviour is indistinguishable from the narrowing having worked.
+ *
+ * @return array<string,string>
+ */
+$extract_pairs = static function (string $html): array {
+    // PARAGRAPH-BOUNDED, in two steps. A single `#<p>(.*?)<span>(.*?)</span></p>#s` looks right
+    // and produces WRONG pairs rather than none, because the lazy match runs past its own `</p>`
+    // whenever the value span is not immediately followed by one. Measured against this plugin's
+    // real emitters:
+    //
+    //   a `details` <b> after the span (reports.php:1285)  8 pairs -> 7, "Days in Range" absorbed
+    //                                                      into the previous value and gone as a key
+    //   an outbound block before an At-a-Glance block      "Pageviews" gone, first label absorbs
+    //                                                      four paragraphs
+    //   Moz rankings (reports.php:2449)                    label becomes the tooltip prose, not
+    //                                                      "Moz Domain Authority"
+    //
+    // A wrong label is worse than no label: an exemption naming a real one would never match, and
+    // if the surrounding markup differs between arms the KEY drifts and every value in the report
+    // reports as (absent).
+    //
+    // So: cut the html into paragraphs first — `</p>` cannot be crossed — then read at most one
+    // label/value out of each. A paragraph that does not have the shape yields nothing, which is
+    // the safe answer.
+    $pairs = [];
+
+    if (!preg_match_all('#<p\b[^>]*>(.*?)</p>#s', $html, $paragraphs)) {
+        return $pairs;
+    }
+
+    foreach ($paragraphs[1] as $inner) {
+        // The LAST span in the paragraph is the value; everything before the first span is the
+        // label. Anything after the value span (a `details` <b>, a <br/>) is discarded rather than
+        // allowed to drag the next paragraph in.
+        if (!preg_match('#^(.*?)<span\b[^>]*>(.*?)</span>#s', $inner, $m)) {
+            continue;
+        }
+
+        $label = trim(html_entity_decode(wp_strip_all_tags($m[1]), ENT_QUOTES, 'UTF-8'));
+        $value = trim(html_entity_decode(wp_strip_all_tags($m[2]), ENT_QUOTES, 'UTF-8'));
+
+        if ('' !== $label) {
+            $pairs[$label] = $value;
+        }
+    }
+
+    return $pairs;
+};
+
+$reports = slimstat_bench_bootstrap_reports();
+
+$snapshot = [
+    'captured_at'      => time(),
+    'captured_day'     => wp_date('Y-m-d'),
+    'timezone'         => wp_timezone_string(),
+    'fingerprint_hash' => slimstat_bench_fingerprint_hash(slimstat_bench_fingerprint($db)),
+    'anchor_date'      => $anchor_date,
+    'stats_rows'       => (int) $db->get_var("SELECT COUNT(*) FROM `{$db->prefix}slim_stats`"),
+    'live_bucket'      => $parity_bucket,
+    // The window end the straddling cells actually ran with. Two snapshots may both use a
+    // 3600 s bucket and still land in DIFFERENT buckets if they were taken either side of a
+    // boundary, so the comparator matches on this resolved value rather than on the bucket
+    // size. 0 when unpinned.
+    'live_window_end'  => 0,
+    'cells'            => [],
+];
+
+foreach ($wanted as $cell => $filters) {
+    printf("cell %s\n", $cell);
+    foreach ($reports as $report_id => $report) {
+        if (empty($report['callback'])) {
+            continue;
+        }
+        wp_slimstat_db::init($filters);
+
+        if (strpos($cell, 'straddling') === 0) {
+            $snapshot['live_window_end'] = (int) wp_slimstat_db::$filters_normalized['utime']['end'];
+        }
+
+        $html  = '';
+        $error = null;
+        try {
+            ob_start();
+            wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
+            $html = (string) ob_get_clean();
+        } catch (\Throwable $e) {
+            while (ob_get_level() > 0) {
+                ob_end_clean();
+            }
+            $error = $e->getMessage();
+        }
+
+        $clean = $normalise($html);
+        $snapshot['cells'][$cell][$report_id] = [
+            'hash'    => $error === null ? md5($clean) : null,
+            'bytes'   => strlen($clean),
+            'numbers' => $error === null ? $extract_numbers($clean) : [],
+            'pairs'   => $error === null ? $extract_pairs($clean) : [],
+            'error'   => $error,
+        ];
+        $db->queries = [];
+    }
+}
+
+// ── COVERAGE, COMPUTED BEFORE THE FILE IS WRITTEN ──────────────────────────
+//
+// A cell that rendered NOTHING compares byte-identically to another that rendered nothing, so it
+// reports parity on every run whatever the code does. This harness spent its whole life with 50 of
+// 65 reports empty — async_load defaults to 'on' and suppresses raw_results_to_html outside AJAX —
+// and could not say so: from the inside, empty-vs-empty is indistinguishable from correct.
+//
+// THREE COUNTERS, NOT ONE, because "rendered something" and "carries a comparable value" are
+// different questions and the first was standing in for the second:
+//
+//   errored       the render threw
+//   render_only   bytes > 0 but NO numbers — "No data to display" is 40 bytes after $normalise
+//                 and would otherwise count as full coverage. Two such cells also hash
+//                 identically: the same pathology at 40 bytes instead of 0.
+//   value_compared  carries at least one number, i.e. something a wrong value could move
+//
+// The floor is on value_compared as a PROPORTION, so adding cells or reports cannot dilute it.
+$counts = ['total' => 0, 'errored' => 0, 'empty' => 0, 'render_only' => 0, 'value_compared' => 0];
+
+foreach ($snapshot['cells'] as $cell_reports) {
+    foreach ($cell_reports as $r) {
+        $counts['total']++;
+
+        if ($r['error'] !== null) {
+            $counts['errored']++;
+        } elseif ((int) $r['bytes'] === 0) {
+            $counts['empty']++;
+        } elseif (empty($r['numbers'])) {
+            $counts['render_only']++;
+        } else {
+            $counts['value_compared']++;
+        }
+    }
+}
+
+$proportion = $counts['total'] > 0 ? $counts['value_compared'] / $counts['total'] : 0.0;
+
+// Recorded IN the snapshot, not only printed. The file is what parity-compare consumes and what
+// survives the session; a coverage number that lives only in a terminal cannot be checked later,
+// and an aborted snapshot on disk is otherwise byte-indistinguishable from a good one.
+$snapshot['coverage'] = $counts + ['value_compared_proportion' => round($proportion, 4)];
+
+printf("\ncaptured %d report/cell snapshots\n", $counts['total']);
+printf("  errored        %d\n", $counts['errored']);
+printf("  empty          %d\n", $counts['empty']);
+printf("  render_only    %d   (markup but no numbers — uncomparable)\n", $counts['render_only']);
+printf("  value_compared %d   (%.1f%%)\n", $counts['value_compared'], $proportion * 100);
+
+// 0.70 rather than 1.0: slim_p9_01 (Goals) genuinely fatals outside an admin request, and some
+// cells legitimately have no rows in their window. The number exists to make a COLLAPSE
+// impossible, not to pin today's figure — raising it is progress, and it is recorded in the file
+// so a later run can be compared against this one rather than against a memory.
+$floor = 0.70;
+
+if ($proportion < $floor) {
+    printf("\nVERDICT: ABORTED — only %.1f%% of cells carry a comparable value (floor %.0f%%).\n",
+        $proportion * 100, $floor * 100);
+    printf("A hollow snapshot reports parity it never checked, so NOTHING is written to %s.\n", $out_path);
+    exit(1);
+}
+
+file_put_contents($out_path, wp_json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+
+printf("wrote %s\n", $out_path);
+echo "VERDICT: OK\n";

@@ -11,7 +11,7 @@ mkdir -p "$WORK_ROOT/cells"
 command -v docker >/dev/null || { err "docker not found"; exit 1; }
 # Build the Pro artifact if it's not already there — one command to run the matrix.
 if [ ! -f "$PRO_ZIP" ]; then
-  log "Pro zip missing — building it (build-pro.sh)…"
+  log "Pro shipped ZIP missing — building it through build/build-dist.sh…"
   bash "$HARNESS_DIR/build-pro.sh" || { err "Pro build failed"; exit 1; }
 fi
 

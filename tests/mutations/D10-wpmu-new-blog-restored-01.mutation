@@ -1,0 +1,17 @@
+target:    admin/index.php
+gate:      php tests/subsite-table-hook-test.php
+kind:      restore-defect
+expect:    still names the 'wpmu_new_blog' hook
+rationale: Restores the deprecated-hook registration in the admin bundle — the D10 defect's exact shape. The gate must see the hook NAME as a string literal in the token stream, so a re-registration cannot ride back in on any callback spelling, while the explanatory comments naming the same hook (which stay in the tree) must NOT trip it.
+---
+diff --git a/admin/index.php b/admin/index.php
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -213,6 +213,7 @@
+         // Subsite creation moved to wp-slimstat.php's unconditional wp_initialize_site
+         // registration (D10): from here it existed only for logged-in admin requests, so
+         // WP-CLI and REST site creation found no callback and got no tables.
++        add_action('wpmu_new_blog', [self::class, 'init_environment']);
+ 
+         // WPMU - Blog Deleted
+         add_filter('wpmu_drop_tables', [self::class, 'drop_tables'], 10, 2);

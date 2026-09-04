@@ -1234,7 +1234,22 @@ class wp_slimstat_reports
         wp_slimstat_db::$debug_message = '';
         $where_params                  = $_args['where_params'] ?? null;
         if (!empty($_args['raw']) && is_array($_args['raw']) && isset($_args['raw'][0]) && method_exists($_args['raw'][0], 'get_combined_where')) {
-            $_args['where'] = call_user_func([$_args['raw'][0], 'get_combined_where'], $_args['where'], '', true, '', $where_params);
+            // Honour what the report declared. This was a hardcoded `true`, so a report
+            // asking for no date filter got one welded into its WHERE string here —
+            // before get_top(), which does honour the flag, ever saw it. The two
+            // "Currently Online" widgets declare it for a reason: "who is here right
+            // now" is not a question about the range being browsed, and with the filter
+            // applied the users one reported nobody online while somebody was. (D62)
+            $use_date_filters = $_args['use_date_filters'] ?? true;
+
+            $_args['where'] = call_user_func(
+                [$_args['raw'][0], 'get_combined_where'],
+                $_args['where'],
+                '',
+                $use_date_filters,
+                '',
+                $where_params
+            );
         }
 
         $all_results = call_user_func($_args['raw'], $_args);
@@ -1320,7 +1335,14 @@ class wp_slimstat_reports
             for ($i = 0; $i < $count_page_results; $i++) {
                 $row_details       = '';
                 $percentage        = '';
-                $element_pre_value = '';
+                // Reset per ROW like their siblings: only the 'top' branch assigns these,
+                // so on any other report type the bar block below read an undefined (or a
+                // previous row's) value. PHPStan surfaced the _raw half; the _value half
+                // had been latent since the bar existed.
+                $percentage_value   = '';
+                $percentage_raw     = 0;
+                $percentage_rounded = 0;
+                $element_pre_value  = '';
                 // Ensure $results[$i] is an array and the key exists
                 if (is_array($results[$i]) && isset($results[$i][$_args['columns']])) {
                     $element_value = $results[$i][$_args['columns']];
@@ -1568,9 +1590,15 @@ class wp_slimstat_reports
                 }
 
                 if (!empty($_args['type']) && 'top' == $_args['type']) {
-                    $percentage_value = ((wp_slimstat_db::$pageviews > 0) ? sprintf('%01.2f', (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews)) : 0);
-                    $counthits        = number_format_i18n($results[$i]['counthits']);
-                    $percentage_value = number_format_i18n((float)$percentage_value, 2);
+                    $percentage_raw   = (wp_slimstat_db::$pageviews > 0) ? (100 * $results[$i]['counthits'] / wp_slimstat_db::$pageviews) : 0;
+                    // round(), not sprintf('%01.2f'). sprintf is a FORMATTER: `%.Nf` rounds
+                    // ties-to-EVEN on every runtime, so 100 * 1 / 32 — exactly 3.125 — printed
+                    // 3.12 here while the bar below sized itself from round()'s 3.13. The same
+                    // number, two rounding rules, 42 lines apart in one row (issue #334).
+                    // Rounded ONCE now and shared, so the two surfaces cannot drift again.
+                    $percentage_rounded = round($percentage_raw, 2);
+                    $counthits          = number_format_i18n($results[$i]['counthits']);
+                    $percentage_value   = number_format_i18n($percentage_rounded, 2);
 
                     $percentage = ' <span class="slimstat-count-pct">' . $counthits . '<span class="slimstat-pct">(' . $percentage_value . '%)</span></span>';
                 }
@@ -1602,7 +1630,17 @@ class wp_slimstat_reports
 
                 $bar = '';
                 if (!empty($percentage_value)) {
-                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . str_replace('%', '', $percentage_value) . '%"></span></span>';
+                    // The BAR is bounded at 100; the printed number is not. A percentage
+                    // above 100 means the ratio's two sides were scoped differently (a
+                    // network transition mid-flight, a stale cache) — the number saying so
+                    // is the signal PITFALLS 23 exists to keep audible, but the bar
+                    // overflowing its wrap is just broken layout. Four documents believed
+                    // a >99 clamp lived here; nothing ever did — this is the first guard.
+                    // Clamped on the RAW ratio, not un-parsed from the i18n string — which
+                    // also ends the comma-decimal locales' invalid CSS widths.
+                    // $percentage_rounded, not a second round() of $percentage_raw: the bar and
+                    // the printed number are the same figure and must round once, together.
+                    $bar = '<span class="slimstat-tooltip-bar-wrap"><span class="slimstat-tooltip-bar" style="width:' . min(100, $percentage_rounded) . '%"></span></span>';
                 }
                 $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
@@ -1994,14 +2032,63 @@ class wp_slimstat_reports
     }
 
     /**
-     * Legacy compact Goals rendering — preserved for shortcode / widget / email report / CSV.
-     * Do not modify without auditing all four consumer paths.
+     * How many goals or funnels one render may compute aggregates for.
+     *
+     * The compact renderers below run on whatever request draws the widget — including
+     * an **anonymous frontend pageview**, via `[slimstat f=widget w=slim_p9_01]` — and
+     * the `raw` exporters run on the email-report cron. Each entry costs a COUNT plus a
+     * distinct-visitor count, or for a funnel a whole temp-table chain. Unbounded, that
+     * is however many rows the option happens to hold: measured on the reference
+     * install (443k rows, cold cache, 12 active goals and 6 funnels stored against tier
+     * maxima of 5 and 3) at **65 queries / 3.7 s** for goals and **51 / 1.2 s** for
+     * funnels, before this bound. (D14/D40)
+     *
+     * The default is the site's own tier maximum, so a correctly configured install
+     * sees no change — the bound bites only when the stored list exceeds what the tier
+     * allows, which is what a Pro-to-free downgrade or an imported option produces.
+     *
+     * Note what this does NOT do: within the tier maximum a public shortcode render
+     * still computes up to that many aggregates on a cache miss. Bounding *that* means
+     * deciding a public request may not compute analytics at all, which changes what
+     * the shortcode shows on a cold cache — a product decision, not a cleanup.
+     *
+     * @param int    $tier_max The tier limit for this entry type.
+     * @param string $type     'goals' or 'funnels'.
+     * @return int
+     */
+    private static function widget_max_entries(int $tier_max, string $type): int
+    {
+        /**
+         * Filters how many goals or funnels one render computes numbers for.
+         *
+         * Entries past the bound are still listed, without their numbers.
+         *
+         * @param int    $max  Defaults to the site's tier maximum for this type.
+         * @param string $type 'goals' or 'funnels' — the two have different tier
+         *                     defaults and very different per-entry cost, so a site
+         *                     must be able to tune them independently.
+         */
+        return max(0, (int) apply_filters('slimstat_widget_max_entries', $tier_max, $type));
+    }
+
+    /**
+     * Legacy compact Goals rendering — used by the shortcode and the dashboard widget.
+     *
+     * NOT by the email report or the CSV/Excel export: those read the `raw` callbacks
+     * (get_goals_raw()/get_funnels_raw()) and never reach here. The previous docblock
+     * claimed all four, which made this path look far more constrained than it is.
      */
     private static function show_goals_compact(array $goals): void
     {
         if (empty($goals)) {
             echo '<p class="nodata">' . esc_html__('No goals defined yet.', 'wp-slimstat') . '</p>';
         } else {
+            // Deliberately not routed through pause_excess_free_goals(): that marks
+            // excess goals inactive, and inactive goals are skipped entirely below, so
+            // it would make them vanish from the widget rather than appear without
+            // numbers — and it persists, on a path that is frequently an anonymous
+            // frontend request. See widget_max_entries(). (D14)
+            $remaining = self::widget_max_entries((int) apply_filters('slimstat_max_goals', 1), 'goals');
             echo '<table class="slimstat-goals-table widefat"><thead><tr>';
             echo '<th>' . esc_html__('Goal', 'wp-slimstat') . '</th>';
             echo '<th>' . esc_html__('Uniques', 'wp-slimstat') . '</th>';
@@ -2013,9 +2100,22 @@ class wp_slimstat_reports
                 if (empty($goal['active'])) {
                     continue;
                 }
-                $data = wp_slimstat_db::get_goal_results($goal);
+
                 echo '<tr>';
                 echo '<td>' . esc_html($goal['name']) . '</td>';
+
+                // Past the budget the goal is still listed — a widget that quietly
+                // showed 1 of 5 goals would be worse than a slow one — but its
+                // aggregates are not computed on this request.
+                if ($remaining <= 0) {
+                    echo '<td colspan="3" class="slimstat-goal-deferred">'
+                        . esc_html__('Not shown here — open the Goals report.', 'wp-slimstat')
+                        . '</td></tr>';
+                    continue;
+                }
+
+                $remaining--;
+                $data = wp_slimstat_db::get_goal_results($goal);
                 echo '<td>' . esc_html(number_format_i18n($data['uniques'])) . '</td>';
                 echo '<td>' . esc_html(number_format_i18n($data['total'])) . '</td>';
                 echo '<td>' . esc_html($data['cr']) . '%</td>';
@@ -2032,9 +2132,10 @@ class wp_slimstat_reports
     /**
      * Renders the Funnels report.
      *
-     * Same branching contract as show_goals(): widget mode (shortcode / dashboard
-     * widget / email / CSV fallback) keeps the legacy compact markup; admin mode
-     * renders the modern funnels card via the funnels-card partial.
+     * Same branching contract as show_goals(): widget mode (the shortcode and the
+     * dashboard widget) keeps the legacy compact markup; admin mode renders the modern
+     * funnels card via the funnels-card partial. The email report and the CSV/Excel
+     * export do NOT come through here — they read the `raw` callbacks.
      */
     public static function show_funnels($_args = [])
     {
@@ -2042,9 +2143,8 @@ class wp_slimstat_reports
 
         if ($is_widget) {
             $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
-            $is_pro      = $max_funnels > 0;
-            $funnels     = $is_pro ? get_option('slimstat_funnels', []) : [];
-            self::show_funnels_compact($is_pro, $funnels);
+            $funnels     = $max_funnels > 0 ? get_option('slimstat_funnels', []) : [];
+            self::show_funnels_compact($max_funnels, $funnels);
             if (wp_doing_ajax()) {
                 die();
             }
@@ -2098,12 +2198,19 @@ class wp_slimstat_reports
     }
 
     /**
-     * Legacy compact Funnels rendering — preserved for shortcode / widget / email report / CSV.
-     * Do not modify without auditing all four consumer paths.
+     * Legacy compact Funnels rendering — used by the shortcode and the dashboard widget.
+     *
+     * NOT by the email report or the CSV/Excel export: those read the `raw` callbacks
+     * (get_goals_raw()/get_funnels_raw()) and never reach here. The previous docblock
+     * claimed all four, which argued for computing every funnel up front to serve
+     * no-JS exporters that were never on this path.
+     *
+     * @param int   $max_funnels The tier maximum, also the default compute budget.
+     * @param array $funnels
      */
-    private static function show_funnels_compact(bool $is_pro, array $funnels): void
+    private static function show_funnels_compact(int $max_funnels, array $funnels): void
     {
-        if (!$is_pro) {
+        if ($max_funnels <= 0) {
             echo '<div class="slimstat-funnel--locked"><div class="slimstat-funnel-promo">';
             echo '<div class="slimstat-funnel-mock"><div class="slimstat-funnel-mock-bars">';
             $mock_heights = [200, 140, 80];
@@ -2128,12 +2235,12 @@ class wp_slimstat_reports
             return;
         }
 
-        // Render every funnel. With more than one we emit a tab strip; the admin
-        // JS (goals-funnels.js) hides the inactive panels and switches on click.
-        // The tab class is intentionally distinct from the main page's
-        // .slimstat-gf-tab so the two delegated handlers never collide. Panels
-        // stay visible server-side, so no-JS consumers (email report / CSV) still
-        // see every funnel stacked instead of just the first.
+        // List every funnel. With more than one we emit a tab strip; the admin JS
+        // (goals-funnels.js) hides the inactive panels and switches on click. The tab
+        // class is intentionally distinct from the main page's .slimstat-gf-tab so the
+        // two delegated handlers never collide. Panels stay visible server-side, so a
+        // reader without JS sees every funnel stacked rather than just the first —
+        // past the compute budget a panel carries its name and nothing else.
         $multi = count($funnels) > 1;
         // Unique id base per widget render so the tab/panel ARIA ids don't collide
         // when more than one compact widget renders on a page (e.g. two shortcodes).
@@ -2159,20 +2266,43 @@ class wp_slimstat_reports
             echo '</div>';
         }
 
+        // Each funnel is a temp-table chain; measured at 51 queries / 1.2 s for six on a
+        // cold cache over 443k rows. This renders on whatever request draws the widget,
+        // including an anonymous frontend pageview via the shortcode, so the number
+        // computed per render is bounded. See widget_max_entries(). (D40)
+        $remaining = self::widget_max_entries($max_funnels, 'funnels');
+
         foreach ($funnels as $idx => $funnel) {
-            $step_results = wp_slimstat_db::get_funnel_results($funnel);
-            $step1        = (int) ($step_results[0]['visitors'] ?? 0);
+            $deferred = ($remaining <= 0);
 
             // A multi-funnel widget is a real tab interface; pair each panel with
             // its tab. A lone panel gets no tab roles (there is no tab to pair).
+            // Built before the budget check: the tab strip above emits aria-controls
+            // for EVERY funnel, so a deferred panel still has to carry the id that
+            // points back at, or the tab references nothing.
             $panel_attrs = '';
             if ($multi) {
                 $panelId     = 'slimstat-funnel-wpanel-' . $uid . '-' . (int) $idx;
                 $tabId       = 'slimstat-funnel-wtab-' . $uid . '-' . (int) $idx;
                 $panel_attrs = ' role="tabpanel" id="' . esc_attr($panelId) . '" aria-labelledby="' . esc_attr($tabId) . '"';
             }
-            echo '<div class="slimstat-funnel-chart" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
+
+            echo '<div class="slimstat-funnel-chart' . ($deferred ? ' slimstat-funnel-deferred' : '')
+                . '" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
             echo '<h4>' . esc_html($funnel['name']) . '</h4>';
+
+            if ($deferred) {
+                // Listed, not dropped: the funnel stays discoverable without paying for
+                // its chain on this request.
+                echo '<p class="slimstat-funnel-summary">'
+                    . esc_html__('Not shown here — open the Funnels report.', 'wp-slimstat')
+                    . '</p></div>';
+                continue;
+            }
+
+            $remaining--;
+            $step_results = wp_slimstat_db::get_funnel_results($funnel);
+            $step1        = (int) ($step_results[0]['visitors'] ?? 0);
 
             if ($step1 === 0) {
                 echo '<p class="slimstat-funnel-summary">' . esc_html__('No matching visitors in this date range.', 'wp-slimstat') . '</p>';
@@ -2190,7 +2320,14 @@ class wp_slimstat_reports
 
                 echo '<div class="slimstat-funnel-bars">';
                 foreach ($step_results as $step) {
-                    $width = $step1 > 0 ? (int) round(($step['visitors'] / $step1) * 100) : 0;
+                    // Multiply first, divide once, round once. The two-step form
+                    // `($step['visitors'] / $step1) * 100` hands round() a double that has
+                    // already lost the exact half — 23/40 arrives as 57.49999999999999289457 —
+                    // so PHP 8.4+ renders a bar 1% narrower than the ratio it represents. The
+                    // sibling expression further down this file already uses this form — named rather than
+                    // cited by line, because a line number rots silently the first time anything is
+                    // inserted above it, and adding this comment block moved it. ADR-17; PITFALLS 72.
+                    $width = $step1 > 0 ? (int) round((100 * $step['visitors']) / $step1) : 0;
                     // A zero-visitor or unreachable step keeps the muted fill (no
                     // brand color), so an empty bar never reads as a healthy step.
                     $zero = empty($step['visitors']) || !empty($step['unreachable']);
@@ -2248,7 +2385,18 @@ class wp_slimstat_reports
                 $a_result['counthits'] = 0;
             }
 
-            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($a_result['resource']) . "'></a> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
+            // Under a network merge the rows are PER BLOG (P3), and blog_id arrives from
+            // the rewriter's outer select — the same affordance the get_top renderer has
+            // at its resource link: without the origin, two /about/ rows from two subsites
+            // render with identical labels and hrefs that resolve against the network
+            // admin's own site, which is the wrong site for every subsite row.
+            $base_url = '';
+            if (isset($a_result['blog_id'])) {
+                $parsed   = parse_url(get_site_url($a_result['blog_id']));
+                $base_url = $parsed['scheme'] . '://' . $parsed['host'];
+            }
+
+            $a_result['resource'] = "<a class='slimstat-font-logout slimstat-tooltip-trigger' target='_blank' title='" . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . "' href='" . esc_url($base_url . $a_result['resource']) . "'></a> " . esc_html($base_url) . "<a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('resource equals ' . $a_result['resource']) . "'>" . self::get_resource_title($a_result['resource']) . '</a>';
 
             $group_markup = [];
             if (!empty($a_result['column_group'])) {

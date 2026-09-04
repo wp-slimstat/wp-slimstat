@@ -338,11 +338,6 @@ $settings = [
                 'title' => __('Performance', 'wp-slimstat'),
                 'type'  => 'section_header',
             ],
-            'enable_cdn' => [
-                'title'       => __('Enable CDN', 'wp-slimstat'),
-                'type'        => 'toggle',
-                'description' => __("Use <a href='https://www.jsdelivr.com/' target='_blank'>JSDelivr</a>'s CDN, by serving our tracking code from their fast and reliable network (free service).", 'wp-slimstat'),
-            ],
             'ajax_relative_path' => [
                 'title'       => __('Relative Ajax', 'wp-slimstat'),
                 'type'        => 'toggle',
@@ -362,7 +357,7 @@ $settings = [
             'external_pages_script' => [
                 'type'   => 'custom',
                 'title'  => __('Add the following code to all the non-WordPress pages you would like to track, right before the closing BODY tag. Please make sure to change the protocol of all the URLs to HTTPS, if you external site is using a secure channel.', 'wp-slimstat'),
-                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js"&gt;&lt;/script&gt;</pre>',
+                'markup' => '<pre style="max-width:100%">&lt;script type="text/javascript"&gt;\n/* &lt;![CDATA[ */\nvar SlimStatParams = {\n  transport: "ajax",\n  ajaxurl: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '",\n  ajaxurl_ajax: "' . ((('on' == (wp_slimstat::$settings['ajax_relative_path'] ?? '')) ? admin_url('admin-ajax.php', 'relative') : admin_url('admin-ajax.php'))) . '"\n};\n/* ]]&gt; */\n&lt;/script&gt;\n&lt;script type="text/javascript" src="' . esc_url(plugins_url('/wp-slimstat.min.js', dirname(__DIR__))) . '"&gt;&lt;/script&gt;</pre>',
             ],
 
             'enable_browscap' => [
@@ -748,7 +743,7 @@ $settings = [
             'delete_data_on_uninstall' => [
                 'title'       => __('Delete Data on Uninstall', 'wp-slimstat'),
                 'type'        => 'toggle',
-                'description' => __('Delete all settings and slimstat on plugin uninstall. Warning! If you enable this feature, all slimstat and plugin settings will be permanently deleted from the database.', 'wp-slimstat'),
+                'description' => __('<strong>Off (default):</strong> deleting the plugin keeps all your analytics and settings, so reinstalling restores everything. <strong>On:</strong> deleting the plugin <strong>permanently</strong> erases every Slimstat table, all collected visits and all plugin settings. This cannot be undone — turn it on only if you really want the data gone.', 'wp-slimstat'),
             ],
         ],
     ],
@@ -773,12 +768,12 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         switch ($_GET['action']) {
             case 'reset-tracker-error':
                 $settings[6]['rows']['last_tracker_error']['after_input_field'] = __('So far so good.', 'wp-slimstat');
-                wp_slimstat::update_option('slimstat_tracker_error', []);
+                \SlimStat\Tracker\Utils::clearDiagnostic('slimstat_tracker_error');
                 break;
 
             case 'reset-geoip-error':
                 $settings[6]['rows']['last_geoip_error']['after_input_field'] = __('So far so good.', 'wp-slimstat');
-                wp_slimstat::update_option('slimstat_geoip_error', []);
+                \SlimStat\Tracker\Utils::clearDiagnostic('slimstat_geoip_error');
                 break;
 
             case 'reset-settings':
@@ -811,19 +806,33 @@ if (!empty($settings) && !empty($_REQUEST['slimstat_update_settings']) && wp_ver
         }
         // DB Indexes
         if (!empty($_POST['options']['db_indexes'])) {
+            // Both arms iterate the SAME manifest group, so the toggle cannot add one set and
+            // remove another — which is what a hand-maintained pair of lists eventually does.
+            // The group is declared in Schema::OPTIONAL_INDEXES, which Schema::ensure() also
+            // consults, so reconciliation cannot silently rebuild what this just dropped.
+            //
+            // Table-qualified, and the ADD goes through Schema::createIndexSql(). Hardcoding
+            // `slim_stats` here would ALTER the wrong table the day an optional index is
+            // declared on slim_events, and hand-building the DDL would leave a second index
+            // emitter alive in the one seam that exists to remove them.
+            $slimstat_prefix       = $GLOBALS['wpdb']->prefix;
+            $slimstat_toggle_group = \SlimStat\Schema\Schema::optionalGroup('db_indexes');
+
             if ('on' == $_POST['options']['db_indexes'] && 'no' == wp_slimstat::$settings['db_indexes']) {
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_resource_idx( resource( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_browser_idx( browser( 10 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_searchterms_idx( searchterms( 15 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats ADD INDEX %sstats_fingerprint_idx( fingerprint( 20 ) )', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
+                foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
+                    wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix));
+                }
                 $save_messages[]                     = __('Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat');
                 wp_slimstat::$settings['db_indexes'] = 'on';
             } elseif ('no' == $_POST['options']['db_indexes'] && 'on' == wp_slimstat::$settings['db_indexes']) {
                 // An empty value means that the toggle has been switched to "Off"
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_resource_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_browser_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_searchterms_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %sslim_stats DROP INDEX %sstats_fingerprint_idx', $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix));
+                foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
+                    wp_slimstat::$wpdb->query(sprintf(
+                        'ALTER TABLE %s DROP INDEX %s',
+                        $slimstat_prefix . $slimstat_suffix,
+                        \SlimStat\Schema\Schema::resolve($slimstat_index, $slimstat_prefix)
+                    ));
+                }
                 $save_messages[]                     = __('Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat');
                 wp_slimstat::$settings['db_indexes'] = 'no';
             }

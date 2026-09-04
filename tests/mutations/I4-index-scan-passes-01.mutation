@@ -1,0 +1,17 @@
+target:    tests/perf/lib/explain-capture.php
+gate:      php tests/explain-gate-strength-test.php
+kind:      boundary
+expect:    the blind spot the audit named
+rationale: Narrows the scan predicate back to type=ALL alone - a full index scan reads every row through the index and passes the gate as keyed access again, the exact I4 defect. The predicate is driven on hand rows where ALL and index must both answer true; dropping index can only fail the index case.
+---
+--- a/tests/perf/lib/explain-capture.php
++++ b/tests/perf/lib/explain-capture.php
+@@ -38,7 +38,7 @@
+      */
+     function slimstat_plan_row_is_full_scan(array $row): bool
+     {
+-        return in_array($row['type'] ?? '', ['ALL', 'index'], true);
++        return ($row['type'] ?? '') === 'ALL';
+     }
+ }
+ 

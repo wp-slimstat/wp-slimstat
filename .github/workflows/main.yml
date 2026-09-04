@@ -9,13 +9,95 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@master
+    # PINNED TO A COMMIT, not to @v4 and certainly not to @master. This job holds the SVN
+    # credentials for a plugin with ~70,000 active installs, and a tag push is the one event
+    # that makes it run — so whatever a moving ref points at on the day someone cuts a tag is
+    # what gets those credentials. A tag is a moving ref too: `v4` is republished on every
+    # 4.x release, and an account compromise upstream reaches this job without a commit here.
+    #
+    # 11d5960 is actions/checkout v4.4.0, which is what v4 resolved to when this was pinned.
+    # Bumping it is a deliberate edit with a diff someone reviews, which is the property.
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+    # A tag workflow cannot `needs:` across workflow files, so the gate asks GitHub about
+    # the tagged commit and fails closed: no green, no deploy. Before this step existed, a
+    # tag on a red commit shipped to WordPress.org with no reference to CI at all. Pinned by
+    # tests/perf-gate-integrity-test.php.
+    #
+    # SCOPED TO ONE WORKFLOW RUN, not to the commit's check-run list. The nightly cron
+    # starts CI on the default branch every night, and every if:-skipped job records ANOTHER
+    # check run against the same SHA — master HEAD carries ~700 of them, 69 of which are
+    # `skipped  Static analysis · PHPStan`. Any assertion over that list is an assertion over
+    # the pile: `[...] | unique | join(",")` yields "skipped,success" and refuses EVERY
+    # deploy. (A count-based variant is worse than useless here: `--paginate` applies `--jq`
+    # per page, so it emits one number per page and `[ "20\n20\n25" -lt 7 ]` is a shell error,
+    # not a comparison — the check never fires at all.)
+    #
+    # EXPECTED LANES ARE DERIVED FROM ci.yml at this commit, so there is no number to drift:
+    # bump the PHP matrix and the gate follows. Tier 1 + static analysis only. Tier 1 alone
+    # was the gate until now, and the beta heads showed what that permits — six Tier 1 lanes
+    # green while PHPStan was red on the release branch, one error in wp-slimstat.php. That
+    # tag would have deployed.
+    #
+    # Tier 2 is deliberately NOT required: its E2E assertions are continue-on-error, so
+    # requiring it would gate on lane setup rather than on the E2E result — and it is
+    # ref-gated to master/main/development, so a tag cut from any other commit carries a
+    # `skipped` conclusion that would refuse the deploy forever.
+    - name: Require green Tier 1 + static analysis for this commit
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+
+        run_id=$(gh api \
+          "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${GITHUB_SHA}&event=push&per_page=1" \
+          --jq '.workflow_runs[0].id // empty')
+        if [ -z "$run_id" ]; then
+          echo "deploy refused: no push-triggered CI run found for ${GITHUB_SHA}"
+          exit 1
+        fi
+        echo "Gating on CI run ${run_id} for ${GITHUB_SHA}"
+
+        gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+          --paginate --slurp > jobs.json
+
+        # The lanes this commit's own ci.yml declares: PHPStan plus one Tier 1 job per PHP.
+        {
+          echo "Static analysis · PHPStan"
+          sed -n '/^  fast:/,/^  phpstan:/p' .github/workflows/ci.yml \
+            | grep -m1 -oE 'php: \[[^]]*\]' \
+            | grep -oE '[0-9]+\.[0-9]+' \
+            | while read -r v; do echo "Tier 1 · fast · PHP $v"; done
+        } > expected.txt
+
+        if [ "$(wc -l < expected.txt)" -lt 2 ]; then
+          echo "deploy refused: could not derive the expected lanes from ci.yml"
+          cat expected.txt
+          exit 1
+        fi
+        echo "Expected lanes:"; cat expected.txt
+
+        fail=0
+        while read -r want; do
+          got=$(jq -r --arg n "$want" \
+            '[.[].jobs[] | select(.name == $n) | .conclusion] | unique | join(",")' jobs.json)
+          if [ "$got" != "success" ]; then
+            echo "deploy refused: '${want}' concluded [${got:-absent}]"
+            fail=1
+          fi
+        done < expected.txt
+        [ "$fail" -eq 0 ] || exit 1
+        echo "All expected lanes concluded success."
 
     - name: Install required dependencies
       run: sudo apt-get update && sudo apt-get install -y subversion
 
     - name: WordPress Plugin Deploy
-      uses: 10up/action-wordpress-plugin-deploy@stable
+      # 54bd289 is the commit the `stable` BRANCH pointed at when this was pinned, and it is
+      # the same commit as tag 2.3.0 — so this froze the action without changing what runs.
+      # `stable` is a branch: every push to it would otherwise have shipped straight into the
+      # step that publishes to the WordPress.org SVN repository.
+      uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
       env:
         SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
         SVN_USERNAME: ${{ secrets.SVN_USERNAME }}

@@ -32,6 +32,14 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	use HasTooltip;
 
 	/**
+	 * Request-scoped memo for get_data(). See the note there — one render calls
+	 * get_data() three times, and it is not a cheap call.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private $data_memo = null;
+
+	/**
 	 * {@inheritDoc}
 	 */
 	protected function init(): void {
@@ -66,6 +74,27 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * {@inheritDoc}
 	 */
 	public function get_data(): array {
+		// Memoised for the request. Rendering this report calls get_data() three
+		// times: to_array() -> get_callback_args() -> get_data(), then
+		// render_content() -> get_callback_args() -> get_data() and
+		// render_content() -> get_data() again (AbstractReport::321-356).
+		//
+		// That matters because get_all_live_counts() below is uncached and costs
+		// two queries — a 30-minute session count and a
+		// COUNT(DISTINCT resource)/COUNT(DISTINCT country) over the same window.
+		// Six uncached queries per render, and this report is constructed on any
+		// page=slim* screen and on every slimstat_load_report AJAX call,
+		// including screens that never display it.
+		//
+		// Per-instance, not static, and that matters: the AJAX handler below
+		// rewrites $_POST['metric'] to the validated value AFTER constructing a
+		// fresh report, and get_data() re-reads it. A static memo could be warmed
+		// before that rewrite and would then serve the wrong series on every
+		// refresh. A fresh instance per request is structurally immune.
+		if ( null !== $this->data_memo ) {
+			return $this->data_memo;
+		}
+
 		// Get the selected metric from request or default to 'users'
 		$selected_metric = sanitize_text_field( $_GET['metric'] ?? $_POST['metric'] ?? 'users' );
 
@@ -77,7 +106,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$chart_data = $this->get_chart_data_for_metric( $selected_metric );
 		$live_counts = $this->get_all_live_counts();
 
-		return [
+		$this->data_memo = [
 			'users_live'              => $live_counts['users'] ?? 0,
 			'pages_live'              => $live_counts['pages'] ?? 0,
 			'countries_live'          => $live_counts['countries'] ?? 0,
@@ -85,6 +114,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'selected_metric'         => $selected_metric,
 			'last_updated'            => \wp_slimstat::now(),
 		];
+
+		return $this->data_memo;
 	}
 
 	/**
@@ -613,15 +644,15 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 
 			wp_send_json_success( $data );
 		} catch ( \Exception $e ) {
-			// Log error for debugging
-			error_log( 'Live Analytics AJAX Error: ' . $e->getMessage() );
+			// The helper carries the WP_DEBUG guard: this is an AJAX endpoint a broken
+			// report can hit on every poll, and an unguarded log floods a live debug.log.
+			\wp_slimstat::log( 'Live Analytics AJAX Error: ' . $e->getMessage(), 'error' );
 
 			wp_send_json_error( [
 				'message' => __( 'An error occurred while fetching data', 'wp-slimstat' ),
 			] );
 		} catch ( \Error $e ) {
-			// Log error for debugging
-			error_log( 'Live Analytics AJAX Fatal Error: ' . $e->getMessage() );
+			\wp_slimstat::log( 'Live Analytics AJAX Fatal Error: ' . $e->getMessage(), 'error' );
 
 			wp_send_json_error( [
 				'message' => __( 'A fatal error occurred while fetching data', 'wp-slimstat' ),

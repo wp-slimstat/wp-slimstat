@@ -1,11 +1,20 @@
 <?php
 
 use SlimStat\Utils\Query;
+use SlimStat\Utils\NetworkMerge;
 use SlimStat\Components\DateRangeHelper;
 
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
 {
+    // Per-request memo of the fact table's ACTUAL columns, keyed by table prefix
+    // (multisite: switch_to_blog changes the prefix mid-request). `true` means the
+    // probe could not read and the manifest is assumed. Never durable on purpose —
+    // a transient would survive the migration that adds the column and keep
+    // dropping the tier after the schema is whole (Storage::presentColumns'
+    // reasoning, applied to the read path).
+    private static $fact_columns_present = [];
+
     // Filters
     public static $columns_names = [];
 
@@ -316,7 +325,7 @@ class wp_slimstat_db
 
                 // This condition could be empty if it's related to a custom column
                 if (!empty($new_clause)) {
-                    $_where .= ' AND ' . $new_clause;
+                    $_where = sprintf('(%s) AND %s', $_where, $new_clause);
                 }
             }
 
@@ -331,7 +340,10 @@ class wp_slimstat_db
         }
 
         if (!empty($_where) && ('' !== $time_range_condition && '0' !== $time_range_condition)) {
-            $_where = sprintf('%s AND %s', $_where, $time_range_condition);
+            // Parenthesise the caller's clause. SQL binds AND tighter than OR, so
+            // `A OR B` + ` AND range` silently becomes `A OR (B AND range)` — a filter
+            // that applies to half the condition. (D62)
+            $_where = sprintf('(%s) AND %s', $_where, $time_range_condition);
         } else {
             $_where = trim(sprintf('%s %s', $_where, $time_range_condition));
         }
@@ -346,7 +358,10 @@ class wp_slimstat_db
             $filter_not_empty = $column_with_alias . ' ' . (('varchar' == self::$columns_names[$_column][1]) ? 'IS NOT NULL' : '<> 0');
 
             if (false === strpos($_where, $filter_empty) && false === strpos($_where, $filter_not_empty)) {
-                $_where = sprintf('%s AND %s', $filter_not_empty, $_where);
+                // Same reason as above, and it matters more here: with the caller's
+                // clause on the RIGHT of the AND, `col IS NOT NULL AND A OR B` groups as
+                // `(col IS NOT NULL AND A) OR B`, so B escapes the filter entirely.
+                $_where = sprintf('%s AND (%s)', $filter_not_empty, $_where);
             }
         }
 
@@ -507,51 +522,85 @@ class wp_slimstat_db
 
         $table    = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $sql_trim = ltrim($_sql);
+        $cache_key = '';
 
-        // Try to convert SQL to Query class for better caching and performance
         if (0 === stripos($sql_trim, 'select') && false !== stripos($sql_trim, $table)) {
-            // Add caching for SELECT queries
+            // Cache SELECTs on the analytics table; key rationale and the write-back gate
+            // are documented at the write below.
             $cache_key      = 'slimstat_query_' . md5($_sql);
             $cached_results = get_transient($cache_key);
             if (false !== $cached_results) {
                 return $cached_results;
             }
-
-            // Try to parse and convert to Query class
-            if (preg_match('/SELECT (.+) FROM [^ ]+ WHERE (.+?)( GROUP BY (.+?))?( ORDER BY (.+?))?( LIMIT (\d+), (\d+))?/is', $_sql, $m)) {
-                $columns      = trim($m[1]);
-                $where        = trim($m[2]);
-                $group_by     = isset($m[4]) ? trim($m[4]) : '';
-                $order_by     = isset($m[6]) ? trim($m[6]) : '';
-                $limit_offset = isset($m[8]) ? intval($m[8]) : 0;
-                $limit_count  = isset($m[9]) ? intval($m[9]) : 100;
-
-                $q = Query::select($columns)->from($table);
-
-                if ($where && '1=1' !== $where) {
-                    $q->whereRaw($where);
-                }
-
-                if ('' !== $group_by && '0' !== $group_by) {
-                    $q->groupBy($group_by);
-                }
-
-                if ('' !== $order_by && '0' !== $order_by) {
-                    $q->orderBy($order_by);
-                }
-
-                $page = ($limit_offset / $limit_count) + 1;
-                $q->perPage($page, $limit_count);
-                $q->allowCaching(true);
-                $result = $q->getAll();
-                set_transient($cache_key, $result, 10 * MINUTE_IN_SECONDS);
-                return $result;
-            }
         }
 
-        // Fallback to wpdb for complex queries — use wp_slimstat::$wpdb
-        // so External DB addon queries the correct database.
-        return wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+        // Nothing here rewrites the SQL into the Query builder, and nothing may without an
+        // ANCHORED parse. The converter this method carried matched `WHERE (.+?)` with every
+        // following group optional, so the lazy quantifier captured exactly ONE character:
+        // `WHERE username IS NOT NULL GROUP BY username` executed as `WHERE (u)` with the
+        // GROUP BY dropped and a LIMIT 100 the caller never wrote, and the wrong rows were
+        // cached under the md5 of the ORIGINAL sql. No shipped caller ever reached it — the
+        // regex demanded literal single spaces around FROM/WHERE and every caller ships
+        // tab-indented SQL (see the D72 note below) — which is the only reason it never
+        // corrupted a report. get_var()'s parsers survive because they anchor with `…$/`,
+        // forcing full-clause capture. The contract is pinned by
+        // tests/get-results-convert-contract-test.php: verbatim execution, both formattings.
+        //
+        // Execute on wp_slimstat::$wpdb so the External DB addon queries the correct database.
+        $results = wp_slimstat::$wpdb->get_results($_sql, ARRAY_A);
+
+        // Write back what we read.
+        //
+        // A transient is read above for EVERY select that reaches here, but it used to be
+        // written only on the converted path — so any query the regex could not parse paid
+        // a get_transient() on every render and never once benefited from it. That is every
+        // Pro report: measured on slimview3, 0 of 3 get_results() calls converted, all three
+        // read and none wrote, and `_transient_slimstat_query_*` held 0 rows.
+        //
+        // The regex cannot be widened into a fix. It demands `[^ ]+` for the table, and
+        // Pro's queries read `FROM \`local\`.wp_users tu INNER JOIN …` — a join, not a bare
+        // table name — so no amount of whitespace tolerance would let it convert them, and
+        // converting a join through the builder would not reproduce the same SQL anyway.
+        // The asymmetry between the read and the write is the defect, not the parsing.
+        //
+        // Gated on the window being entirely historical, the same rule the builder applies
+        // via canUseCacheForDateRange(). Without that gate a live window — whose SQL carries
+        // a timestamp that moves every second — would write a row per render that nothing
+        // can ever read, which is precisely the accumulation that left thousands of orphaned
+        // rows in wp_options.
+        //
+        // The key is an md5 of the FULL SQL, so anything that scopes a query — a filter, a
+        // blog restriction, a user predicate — is already part of the key and cannot be
+        // served to a request that asked something different.
+        //
+        // Worth stating plainly: the defect is real but the win is small. Measured on
+        // slimview3 with a historical range, steady state, 600 -> 598 queries per render.
+        // Three get_results() calls out of ~600 queries is all this path is; the claim that
+        // it puts "the whole plugin outside the cache" does not survive measurement. (D72)
+        if ('' !== $cache_key && self::window_is_cacheable()) {
+            set_transient($cache_key, $results, 10 * MINUTE_IN_SECONDS);
+        }
+
+        return $results;
+    }
+
+    /**
+     * Is the active window entirely in the past, and therefore safe to cache?
+     *
+     * The same test maybe_enable_query_cache() applies to a Query object, in a form a raw
+     * SQL path can use. A window reaching today is refused: its SQL carries a timestamp that
+     * moves, so every write would be unreadable by the next request.
+     *
+     * @since 5.6.0
+     * @return bool
+     */
+    protected static function window_is_cacheable()
+    {
+        if (empty(self::$filters_normalized['utime']['end'])) {
+            return false;
+        }
+
+        return (int) self::$filters_normalized['utime']['end'] < strtotime(date('Y-m-d 00:00:00'));
     }
 
     protected static function is_simple_count_query($sql)
@@ -655,7 +704,7 @@ class wp_slimstat_db
 
                 switch ($a_filter[1]) {
                     case 'strtotime':
-                        $custom_date = strtotime($a_filter[3], wp_slimstat::date_i18n('U'));
+                        $custom_date = strtotime($a_filter[3], wp_slimstat::now());
 
                         $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
                         $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
@@ -827,7 +876,7 @@ class wp_slimstat_db
 
             // If end is in the future and the level of granularity is hours, set it to now
             if (!empty($fn['date']['interval_hours']) && $fn['utime']['end'] > date_i18n('U')) {
-                $fn['utime']['end'] = intval(date_i18n('U'));
+                $fn['utime']['end'] = self::live_window_end();
             }
 
             // Add 1 second to account for the time difference between midnight and 23:59:59
@@ -852,7 +901,7 @@ class wp_slimstat_db
 
         // If end is in the future, set it to now
         if ($fn['utime']['end'] > date_i18n('U')) {
-            $fn['utime']['end'] = intval(date_i18n('U'));
+            $fn['utime']['end'] = self::live_window_end();
         }
 
         // Turn the date_i18n filters back on
@@ -864,8 +913,96 @@ class wp_slimstat_db
         return $fn;
     }
 
+    /**
+     * The end of a window that reaches the present: "now", optionally rounded DOWN to a
+     * bucket. Named for what it returns rather than "now", because with a bucket set it is
+     * deliberately not now — it can be up to one bucket earlier.
+     *
+     * Every window reaching the present is clamped through here, and unbucketed the clamp
+     * lands on the current SECOND. That timestamp travels into the SQL, and the query cache
+     * keys on a hash of the SQL, so an identical report rendered twice a second apart
+     * produces two different keys and neither is ever read again. Measured over real admin
+     * renders of slimview2, steady state:
+     *
+     *     unbucketed (the default)   25 queries/render, 11 dead wp_options rows/render
+     *     bucketed to 1 hour         20 queries/render,  6 dead wp_options rows/render
+     *
+     * 724 such `_transient_wp_slimstat_query_*` rows had accumulated on this install. The
+     * residual 6 are Live Analytics statements carrying their own `time()`, out of reach
+     * from here.
+     *
+     * It also makes the window unpinnable, which is why the parity oracle declares its
+     * midnight-straddling cells "render-only" and never compares their values — and those
+     * are precisely the cells that exercise Query::getAll()'s split-merge path. The oracle
+     * exercises that path and then declines to look at the result. A bucket makes those
+     * cells comparable.
+     *
+     * **Ships inert.** The filter defaults to 0 because a bucket changes a number the user
+     * reads: a report ending "now" ends at the bucket boundary instead, excluding up to one
+     * bucket of the most recent traffic. Turning it on by default is a product decision and
+     * belongs with the other default changes, not here. Note the precedent cuts both ways —
+     * `Chart.php` already ships a 60-second bucket on its own query args, enabled, and
+     * `self::CACHE_RANGE_BUCKET_SECONDS` buckets this same value to an hour for the
+     * goal/funnel/UV cache keys, also unconditionally.
+     *
+     * Those siblings are independent of this filter and stay that way: setting a bucket here
+     * does not change `results_cache_key()`'s hard 3600, nor the literal 3600 in
+     * `wp_slimstat_admin::build_filter_options_cache_key()`, nor Chart's 60. A caller that
+     * sets a bucket not divisible by 60 will have Chart re-round the already-rounded value.
+     *
+     * **Call-site constraint:** this uses plain `date_i18n('U')` rather than
+     * `wp_slimstat::now()`, which is correct only because both call sites sit inside
+     * `init_filters()`'s `toggle_date_i18n_filters(false)` bracket, where the filters this
+     * would otherwise be exposed to are already off. Do not call this from outside that
+     * bracket without revisiting that.
+     *
+     * @since 5.6.0
+     * @return int
+     */
+    public static function live_window_end()
+    {
+        $now = intval(date_i18n('U'));
+
+        /**
+         * Round "now" down to a multiple of this many seconds when clamping a live window.
+         *
+         * 0 or 1 disables bucketing entirely, which is the shipped default and a no-op.
+         *
+         * @since 5.6.0
+         * @param int $seconds Bucket size in seconds. Default 0 (no bucketing).
+         */
+        $bucket = (int) apply_filters('slimstat_live_window_bucket_seconds', 0);
+
+        if ($bucket < 2) {
+            return $now;
+        }
+
+        return intdiv($now, $bucket) * $bucket;
+    }
+
     // The following methods retrieve the information from the database
 
+    /**
+     * Resources seen in exactly one visit.
+     *
+     * `visit_id` IS NOT SELECTED, and its removal is the whole change. The inner query used to
+     * read `SELECT resource, visit_id … GROUP BY resource`, which names a column that is neither
+     * grouped nor aggregated — MySQL rejects that under `ONLY_FULL_GROUP_BY`, and the outer
+     * `COUNT(*)` never looked at the value. `HAVING COUNT(visit_id) = 1` is an aggregate and is
+     * unaffected.
+     *
+     * WHAT THIS DID NOT FIX, because it was never broken. EXPECTED-DIFFS recorded this as "it
+     * errors under ONLY_FULL_GROUP_BY and Bounce Pages silently reads 0". Measured on the bench
+     * corpus, it returns **56, matching an independently computed 56** — because
+     * `wpdb::set_sql_mode()` strips `ONLY_FULL_GROUP_BY` from every WordPress connection, and the
+     * server's own default has it on. The claim was written from reading the SQL, and the SQL is
+     * genuinely non-conforming: forcing the mode back on in the same session DOES reject it. So
+     * this is a latent hazard on any connection that keeps the mode — a `slimstat_custom_wpdb`
+     * filter returning something other than `wpdb`, or a future core change — not a live defect.
+     *
+     * Recorded that way rather than quietly fixed, because "the bug report was wrong about why"
+     * is exactly the kind of thing that gets rediscovered.
+     */
     public static function count_bouncing_pages()
     {
         $where = self::get_combined_where('visit_id > 0 AND content_type <> "404"', 'resource');
@@ -874,30 +1011,12 @@ class wp_slimstat_db
             "
 			SELECT COUNT(*) counthits
 				FROM (
-					SELECT resource, visit_id
+					SELECT resource
 					FROM {$GLOBALS['wpdb']->prefix}slim_stats
 					WHERE {$where}
 					GROUP BY resource
 					HAVING COUNT(visit_id) = 1
 				) as ts1",
-            'SUM(counthits) AS counthits'
-        ));
-    }
-
-    public static function count_exit_pages()
-    {
-        $where = self::get_combined_where('visit_id > 0', 'resource');
-
-        return intval(self::get_var(
-            "
-			SELECT COUNT(*) counthits
-				FROM (
-					SELECT resource, dt
-					FROM {$GLOBALS['wpdb']->prefix}slim_stats
-					WHERE {$where}
-					GROUP BY resource
-					HAVING dt = MAX(dt)
-				) AS ts1",
             'SUM(counthits) AS counthits'
         ));
     }
@@ -910,9 +1029,23 @@ class wp_slimstat_db
         }
 
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $distinct_column = ('id' != $_column) ? 'DISTINCT ' . $_column : $_column;
 
-        $query = Query::select(sprintf('COUNT(%s) as counthits', $distinct_column))->from($table);
+        // M1 — the merge intent is declared from the COLUMN, and it decides the inner query's
+        // shape. `id` counts rows and sums; everything else must union the VALUES, because the
+        // golden fixture measures 6 distinct visitors network-wide against 7 summed per blog and
+        // no aggregate over per-blog counts can recover the 6.
+        //
+        // Only when a merge is actually happening. On a single site — and on a network screen
+        // that is not network-scoped — this stays the single `COUNT(DISTINCT …)` it has always
+        // been, because the row-returning shape is only worth its cost if something unions it.
+        $merging = NetworkMerge::isMerging();
+        $intent  = NetworkMerge::intentForColumn($_column);
+
+        $select = $merging
+            ? NetworkMerge::innerSelect($intent, $_column)
+            : sprintf('COUNT(%s) as counthits', ('id' != $_column) ? 'DISTINCT ' . $_column : $_column);
+
+        $query = Query::select($select)->from($table);
 
         // Add date filters if needed
         if ($_use_date_filters && !empty(self::$filters_normalized['utime']['start']) && !empty(self::$filters_normalized['utime']['end'])) {
@@ -941,7 +1074,36 @@ class wp_slimstat_db
         }
 
         $query->allowCaching(true);
-        return intval($query->getVar());
+
+        // NETWORK-SCOPED, and it may only be so because get_top() is scoped in the same change.
+        //
+        // This is the DENOMINATOR in `100 * counthits / wp_slimstat_db::$pageviews`
+        // (reports.php). An earlier attempt scoped it alone: the denominator moved 15 → 40 on
+        // the golden fixture while the numerator stayed at 15, understating every row ~2.7x and
+        // turning a report whose rows summed to 100% into one summing to ~37% — silently, since
+        // reports.php clamps only the `> 99` direction. Reverted, and recorded as PITFALLS 23.
+        //
+        // The rule that replaced it: numerator and denominator move together, or neither moves.
+        // The oracle in tests/docker/probe-network-view.php reports both sides and the state
+        // they are in — consistent-main-site, MIXED, or consistent-network — so "they moved
+        // together" is measured on every topology run rather than argued here.
+        //
+        // GATED ON THE SAME `$merging` FLAG THE NUMERATOR USES, and that is a compatibility
+        // requirement rather than tidiness. Pro's `slimstat_get_var_sql` rewriter has existed
+        // for years; `slimstat_network_merge_active` is new in this change. So on a site running
+        // v6 free against an OLDER Pro, applying the filter unconditionally would let the old
+        // rewriter scope this denominator while get_top() — which needs the new filter to know a
+        // merge is happening — stayed main-site. That is MIXED, on real installs, from a version
+        // combination nobody controls.
+        //
+        // Measured, not reasoned: the first version of this change did exactly that, and the
+        // topology oracle came back `report_denominator: 40, report_numerator: 15, report_scope:
+        // MIXED` against a Pro zip built before the new filter existed. Gating both sides on one
+        // flag makes the old-Pro case fall back to consistent-main-site — the previous, correct
+        // behaviour — instead of to a silently wrong ratio.
+        return intval($merging
+            ? $query->getVar(NetworkMerge::outerAggregate($intent, $_column))
+            : $query->getVar());
     }
 
     public static function count_records_having($_column = 'id', $_where = '', $_having = '')
@@ -952,7 +1114,8 @@ class wp_slimstat_db
             return 0;
         }
 
-        $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
+        $merging         = NetworkMerge::isMerging();
+        $table           = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $distinct_column = ('id' !== $_column) ? 'DISTINCT ' . esc_sql($_column) : esc_sql($_column);
 
         $query = Query::select("COUNT(*) as counthits")
@@ -965,7 +1128,26 @@ class wp_slimstat_db
             ) AS ts1");
 
         $query->allowCaching(true);
-        return intval($query->getVar());
+
+        // M2 — SCOPED WITH THE SAME GATE, and this function is the reason the rule is worded as
+        // "or neither moves" rather than "remember to do both".
+        //
+        // It is the NUMERATOR for the bounce rate, the new-visitor rate and the seven duration
+        // buckets, every one of which is divided by count_records(). The first version of this
+        // seam scoped count_records() and left this behind, recreating PITFALLS 23 on a
+        // different pair — with the deleted comment three lines above having named it: "Scoping
+        // either one alone breaks the pair." Caught by review, not by the suite: the symmetry
+        // gate pinned only the get_top/count_records pair, so it stayed green.
+        //
+        // SUM is the correct intent because the HAVING is evaluated INSIDE each blog, which M2
+        // ratifies as correct *today*: `visit_id` is per-blog, so a visit cannot span subsites
+        // and a single-pageview visit is single-pageview on the site it happened on. Each blog
+        // therefore contributes a whole number of bounces and those add. M2 is explicitly dated
+        // — G4's cross-blog `vid_hash` reopens it, at which point per-blog HAVING starts
+        // splitting one visit into two bounces.
+        return intval($merging
+            ? $query->getVar(NetworkMerge::outerAggregate(NetworkMerge::SUM, 'counthits'))
+            : $query->getVar());
     }
 
     public static function get_data_size()
@@ -1018,29 +1200,116 @@ class wp_slimstat_db
         // Add IS NOT NULL condition
         $query->where($_args['group_by'], 'IS NOT', null);
 
-        // GROUP BY
-        $query->groupBy($_args['group_by']);
+        // GROUP BY — P3's per-blog key under a merge, same as get_top. P3 also DISSOLVED
+        // M3's hard half: the planned cross-blog recombination (split the concat,
+        // re-dedupe, re-concat) assumed merged rows, but per-blog rows mean each arm's
+        // GROUP_CONCAT is already its own blog's finished DISTINCT list. Every
+        // (blog_id, group) exists in exactly ONE arm, so the outer aggregates are
+        // pass-throughs: SUM(counthits) is that arm's count, MAX(column_group) is that
+        // arm's list, and no cross-blog mixing exists to get wrong.
+        $merging   = NetworkMerge::isMerging();
+        $group_key = $merging ? NetworkMerge::groupKeyFor($_args['group_by']) : $_args['group_by'];
+        $query->groupBy($group_key);
 
-        // ORDER BY — tie-breaker on group key for deterministic pagination
-        $query->orderBy('counthits DESC, ' . $_args['group_by'] . ' ASC');
+        // ORDER BY — tie-breaker on the group key (which is already the per-blog key
+        // under a merge, so blog_id rides along without a second spelling of it here).
+        $order = 'counthits DESC, ' . $group_key . ' ASC';
+        $query->orderBy($order);
 
-        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by()
+        // LIMIT — no SQL OFFSET; PHP-side pagination in show_group_by(). Not applied to
+        // the inner query when merging, for get_top's reason: buildQuery() puts the LIMIT
+        // inside every union arm, so each blog would contribute only its own top N and a
+        // group ranked N+1 on one subsite loses that subsite's rows entirely. The bound
+        // is re-applied OUTSIDE the union instead, by getAll's merge branch.
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit);
+        if (!$merging) {
+            $query->limit($limit);
+        }
 
         $query->allowCaching(true);
-        return $query->getAll();
+
+        $rows = $query->getAll(
+            NetworkMerge::SUM,
+            $_args['group_by'],
+            $group_key,
+            $order,
+            'MAX(column_group) AS column_group',
+            $limit
+        );
+
+        return $merging ? array_slice($rows, 0, $limit) : $rows;
     }
 
+    /**
+     * Max and mean pageviews per visit.
+     *
+     * `count(*)`, NOT `count(ip)`, and the change is a correctness fix that happens to be
+     * cheaper rather than the other way round.
+     *
+     * `ip` is `VARCHAR(39) DEFAULT NULL`, and `count(ip)` skips NULLs — so a pageview recorded
+     * without an ip was not counted as a page. This function answers "pages per visit"; a row
+     * with no ip is still a page. On an install where any ip is NULL the old form understated
+     * both the average and the maximum, silently.
+     *
+     * MEASURED (Run 13) over 152,014 rows, four forms on an A-B-C-D-D-C-B-A schedule, each form's
+     * two replicates agreeing exactly, every answer checked against an independently computed
+     * oracle (`COUNT(*) / COUNT(DISTINCT visit_id)`) rather than against one of the forms:
+     *
+     *   count(ip), with visit_id      Handler_read_rnd_next = 302,855
+     *   count(ip), without            302,855      <- removing the unused column saves NOTHING
+     *   count(*),  without            152,854
+     *   count(*),  with visit_id      152,854      <- THIS form, the one that ships:  -49.5%
+     *
+     * The delta is 150,001 against a 152,014-row table — one full pass. `count(ip)` must read the
+     * ip column of every row to learn whether it is NULL; `count(*)` needs no column value.
+     *
+     * AND THE OBVIOUS OPTIMISATION HERE BUYS NOTHING — measured, not assumed, which is why the
+     * shipped form keeps `visit_id`. It is selected by the inner query and read by neither
+     * aggregate, the exact shape that cost count_bouncing_pages() a disk-spilled temp table one
+     * seam earlier. Here it changes `rnd_next` by **zero**, on both replicates, in both the
+     * count(ip) and count(*) pairs. It is the GROUP BY key and it documents the grain, so it
+     * stays. Do not "tidy" it on the strength of the other seam: the identical shape has
+     * different consequences in the two queries, and that is only knowable by measuring.
+     */
     public static function get_max_and_average_pages_per_visit()
     {
         $where = self::get_combined_where('visit_id > 0');
         $table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
-        $subQuery = sprintf('SELECT count(ip) counthits, visit_id FROM %s WHERE %s GROUP BY visit_id', $table, $where);
+        $subQuery = sprintf('SELECT count(*) counthits, visit_id FROM %s WHERE %s GROUP BY visit_id', $table, $where);
+        $from     = sprintf('(%s) AS ts1', $subQuery);
+
+        if (NetworkMerge::isMerging()) {
+            // M4, forced: SUM/SUM at the TRUE outer level, divided once, here. An outer
+            // AVG over unioned per-blog rows weights a two-visit blog the same as a
+            // three-visit one — the mean of means, 5.8333 on the golden fixture where
+            // the network answer is 40/7 = 5.7143. Pageviews and visits both compose
+            // over blogs by SUM, the per-visit MAX by MAX, so three scalar aggregates
+            // go through the same getVar network path every other ratio uses. (One
+            // combined per-arm row would need a getRow network affordance that does not
+            // exist — deferred with Run 22 rather than silently.)
+            $sum_outer = NetworkMerge::outerAggregate(NetworkMerge::SUM, 'counthits');
+
+            $pageviews = (int) Query::select('SUM(ts1.counthits) AS counthits')
+                ->from($from)
+                ->getVar($sum_outer);
+            $visits = (int) Query::select('COUNT(*) AS counthits')
+                ->from($from)
+                ->getVar($sum_outer);
+            // MAX composes by MAX. Written here, not as a NetworkMerge intent: one
+            // caller does not mint vocabulary — a second MAX-composing caller moves it.
+            $max = (int) Query::select('MAX(ts1.counthits) AS counthits')
+                ->from($from)
+                ->getVar('MAX(counthits) AS counthits');
+
+            return [[
+                'avghits' => ($visits > 0) ? ($pageviews / $visits) : 0,
+                'maxhits' => $max,
+            ]];
+        }
 
         $query = Query::select('AVG(ts1.counthits) AS avghits, MAX(ts1.counthits) AS maxhits')
-            ->from(sprintf('(%s) AS ts1', $subQuery));
+            ->from($from);
 
         self::maybe_enable_query_cache($query);
         return $query->getAll();
@@ -1092,15 +1361,43 @@ class wp_slimstat_db
         $results[5]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::now() - 1800), false));
 
         $results[6]['metric'] = __('Today', 'wp-slimstat');
-        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d'), wp_slimstat::date_i18n('Y')))), false));
+        $results[6]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt > ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d'), (int) wp_slimstat::date_i18n('Y')))), false));
 
         $results[7]['metric'] = __('Yesterday', 'wp-slimstat');
-        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, wp_slimstat::date_i18n('m'), wp_slimstat::date_i18n('d') - 1, wp_slimstat::date_i18n('Y')))), false));
+        $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))), false));
 
         // Turn date_i18n filters back on
         wp_slimstat::toggle_date_i18n_filters(true);
 
         return $results;
+    }
+
+    /**
+     * The Access Log's '*' expansion — every fact column a COMPLETE schema
+     * carries, intersected with the columns actually present (P1's ratified
+     * shape; the read-path twin of Storage's insert intersection).
+     *
+     * Same window as visitor_id_expr()'s ladder: the upgrade contract (S7/P1)
+     * defers DDL to the migration screen, so v6 legitimately reports from a
+     * pre-4.8.4.1 table that lacks `fingerprint` and `tz_offset` — and one
+     * absent name is an Unknown-column rejection that get_results() reports
+     * identically to "no visits" (D74). Dropping an absent column loses no
+     * data: a column that does not exist holds no values to display. FAIL-OPEN
+     * through fact_column_present(): an unreadable probe keeps the full list,
+     * exactly the pre-probe behaviour.
+     */
+    private static function recent_columns()
+    {
+        $manifest = ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+
+        $present = [];
+        foreach ($manifest as $column) {
+            if (self::fact_column_present($column)) {
+                $present[] = $column;
+            }
+        }
+
+        return $present;
     }
 
     public static function get_recent($_column = 'id', $_where = '', $_having = '', $_use_date_filters = true, $_as_column = '', $_more_columns = '', $_order_by = 'dt DESC')
@@ -1116,7 +1413,7 @@ class wp_slimstat_db
         }
 
         $columns = ('*' === $_column)
-            ? ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out']
+            ? self::recent_columns()
             : array_map('trim', explode(',', $_column));
         if (!empty($_as_column)) {
             $columns[0] = $columns[0] . ' AS ' . $_as_column;
@@ -1238,7 +1535,19 @@ class wp_slimstat_db
             $_column           = $_column['columns'];
         }
 
-        $group_by_column = $_column;
+        // P3, ratified: a network report keeps PER-BLOG row identity — /about/ on two
+        // subsites is two rows, each linking to its own site. Grouped by the column alone,
+        // MySQL folds them into one row whose blog_id is whichever union arm it met first
+        // (wpdb strips ONLY_FULL_GROUP_BY at connect, so this is a silent wrong answer,
+        // not an error): the row links to an arbitrary site under a number no site earned,
+        // and the SUM across rows cannot expose it — 6+5 in two rows and 11 in one sum
+        // identically. Measured on the golden fixture: about_rows 1→2, about_max 11→6,
+        // top_resource_max 16→7, network total unchanged at 40.
+        //
+        // Inside each union arm blog_id is the arm's injected constant, so the inner
+        // grouping is unchanged per blog; single-site queries never take this branch.
+        $merging         = NetworkMerge::isMerging();
+        $group_by_column = $merging ? NetworkMerge::groupKeyFor($_column) : $_column;
 
         if (!empty($_as_column)) {
             $_column = sprintf('%s AS %s', $_column, $_as_column);
@@ -1279,29 +1588,110 @@ class wp_slimstat_db
 			$query->havingRaw($_having);
 		}
 
-        // ORDER BY — append group key as tie-breaker for deterministic
-        // pagination when many rows share the primary sort value.
+        // ORDER BY — append tie-breakers for deterministic pagination when many rows
+        // share the primary sort value. Per COMPONENT, not the composed key: searching
+        // $_order_by for the two-column merge key can essentially never match, which
+        // silently degenerated to "always append both" — right by accident, and emitting
+        // a duplicate sort column whenever the caller already ordered by the base column.
+        // blog_id is appended under merge REGARDLESS of the base column's presence: two
+        // blogs tied on '/about/' under `order_by 'resource ASC'` still need it, or page
+        // cuts go nondeterministic exactly in the P3 case.
         $order_with_tiebreak = $_order_by;
-        if (false === stripos($_order_by, $group_by_column)) {
-            $order_with_tiebreak .= ', ' . $group_by_column . ' ASC';
+        $tiebreak_parts      = [];
+        if ($merging && false === stripos($_order_by, 'blog_id')) {
+            $tiebreak_parts[] = 'blog_id';
+        }
+        // The ALIAS, never $_column: by this point $_column has been rewritten to
+        // "<expr> AS <alias>" for every as_column report, and an aliased expression
+        // inside ORDER BY is a syntax error — measured live as "near 'AS referer ASC'"
+        // on Top Referring Domains, platform and trailing-slash resource, each report
+        // rendering empty. ORDER BY resolves select aliases, so the bare alias sorts
+        // by the same transformed value the row was grouped on; it is also the spelling
+        // a caller's own order_by uses, which is what makes this containment check able
+        // to match at all.
+        if (false === stripos($_order_by, $_as_column)) {
+            $tiebreak_parts[] = $_as_column . ' ASC';
+        }
+        if ([] !== $tiebreak_parts) {
+            $order_with_tiebreak .= ', ' . implode(', ', $tiebreak_parts);
         }
         $query->orderBy($order_with_tiebreak);
 
         // LIMIT — no SQL OFFSET for aggregated reports; PHP-side pagination
         // handles page slicing via array_slice in the rendering callbacks.
+        // ($merging was resolved above, where the P3 group key needed it.)
         $limit = max(1, intval(self::$filters_normalized['misc']['limit_results']));
-        $query->limit($limit);
+
+        // NOT APPLIED TO THE INNER QUERY WHEN MERGING, and this is a correctness fix rather than
+        // a tuning choice. `buildQuery()` puts the LIMIT inside every union arm, and Pro's
+        // rewriter adds none outside — so each blog would contribute only ITS OWN top 20, and a
+        // resource ranked 21st on one subsite loses that subsite's hits entirely. The
+        // denominator, meanwhile, stays complete. That is a silent per-row undercount with rows
+        // summing to under 100%: PITFALLS 23's direction again, arrived at through pagination.
+        //
+        // The shape predates this change — the legacy string-SQL path had `LIMIT %d, %d` inside
+        // too — but it was unreachable, because nothing built by this builder ever reached the
+        // Network View. Routing these reports there for the first time is what makes it live.
+        if (!$merging) {
+            $query->limit($limit);
+        }
 
         $query->allowCaching(true);
-        return $query->getAll();
+
+        // D22 — the NUMERATOR, scoped in the same change as its denominator and by the same
+        // rule. `counthits` here is COUNT(*), which is additive over blogs, so SUM at the outer
+        // level is correct and is the one intent for which that is true.
+        //
+        // The group key travels with it: the union has to re-group by the same columns or the
+        // outer rows are per-blog fragments of one report row — the F10 Layer 2 grain mistake
+        // in a different costume (Run 9 / M7).
+        //
+        // `$_more_select` travels too. It is an aggregate (`MAX(dt) AS dt` on the "Recent …"
+        // reports), so it belongs in the OUTER select beside SUM(counthits) — computed over the
+        // union rather than per arm. Omitted, it still resolved inside t_union_all and drove the
+        // outer ORDER BY correctly while being absent from the returned columns, so the
+        // last-seen tooltip silently vanished on every network-scoped "Recent" report.
+        $rows = $query->getAll(
+            NetworkMerge::SUM,
+            $_as_column,
+            $group_by_column,
+            $order_with_tiebreak,
+            $_more_select,
+            $limit
+        );
+
+        // The LIMIT the inner query no longer carries is re-applied OUTSIDE the union by
+        // getAll's merge branch; the slice stays as the belt for a filter that answers
+        // with an unexpected shape.
+        return $merging ? array_slice($rows, 0, $limit) : $rows;
     }
 
     public static function get_top_aggr($_column = 'id', $_where = '', $_outer_select_column = '', $_aggr_function = 'MAX')
     {
+        // MAIN-SITE ONLY on a Network View, BY DECISION (M5, deferred) — stated here
+        // because two documents claimed this statement existed and nothing in the file
+        // said it, which made the deferral indistinguishable from an accident. The
+        // representative-row shape (aggregate in an inner query, re-join to pick the row
+        // that produced it) needs a composite (blog_id, id) key to survive a union merge;
+        // Run 9 refuted F10 Layer 2, so that key does not arrive in v6.0.0. Until it
+        // does, this function's reports read the current site only, everywhere.
+        //
+        // Declared BEFORE the branch, because only the array form sets them and both are read
+        // below. On the scalar-argument path `$_as_column` was already an undefined-variable
+        // read — harmless while PHP treated it as null, and a warning on 8.x — and
+        // `$_use_date_filters` would have become one the moment it started being honoured,
+        // silently turning the date filter OFF for every scalar caller. Defaults chosen to
+        // preserve exactly what those callers got before.
+        $_use_date_filters = true;
+        $_as_column        = '';
+
         if (is_array($_column)) {
             $_where               = empty($_column['where']) ? '' : $_column['where'];
             $_having              = empty($_column['having']) ? '' : $_column['having'];
-            $_use_date_filters    = empty($_column['use_date_filters']) ? true : $_column['use_date_filters'];
+            // isset(), not empty(): `empty()` reads a declared `false` as "not set" and
+            // flips it back to true, which is exactly the value a report would be
+            // declaring on purpose. Matches get_top()'s reading of the same key. (D62)
+            $_use_date_filters    = isset($_column['use_date_filters']) ? (bool) $_column['use_date_filters'] : true;
             $_as_column           = empty($_column['as_column']) ? '' : $_column['as_column'];
             $_outer_select_column = empty($_column['outer_select_column']) ? '' : $_column['outer_select_column'];
             $_aggr_function       = empty($_column['aggr_function']) ? '' : $_column['aggr_function'];
@@ -1314,7 +1704,21 @@ class wp_slimstat_db
             $_as_column = $_column;
         }
 
-        $_where = self::get_combined_where($_where, $_column);
+        // `$_use_date_filters` is HONOURED, and until now it was parsed and thrown away: the
+        // array form reads `use_date_filters` at the top of this function and nothing ever
+        // consulted it, so `get_combined_where()` was called with two arguments and defaulted to
+        // true. Every caller asking for an unfiltered aggregate got a date-filtered one.
+        //
+        // Found through the bench harness rather than a report: the two `uniques_*` answers
+        // could not opt out, so they alone moved with the clock in a byte-comparison harness
+        // whose entire contract is that answers do not. Crossing local midnight mid-run would
+        // have produced DIFFERENCES with no code difference — and this harness escalates a
+        // difference to "a defect or an EXPECTED-DIFFS entry, never a shrug".
+        //
+        // get_top()'s D62 note applies to the flag itself: `isset()` rather than `empty()`,
+        // because `empty()` reads a declared `false` as "not set" and flips it back to true,
+        // which is the value a caller would be declaring on purpose.
+        $_where = self::get_combined_where($_where, $_column, $_use_date_filters);
         $table  = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
 		$subQuerySql = sprintf('SELECT %s, %s(id) as aggrid FROM %s WHERE %s GROUP BY %s', $_column, $_aggr_function, $table, $_where, $_column);
@@ -1323,7 +1727,12 @@ class wp_slimstat_db
 			->from(sprintf('(%s) AS ts1', $subQuerySql))
             ->join($table . ' t1', 'ts1.aggrid', 't1.id')
             ->groupBy($_outer_select_column)
-            ->orderBy('counthits DESC')
+            // The tie-break is load-bearing: ORDER BY an aggregate alone leaves equal-count
+            // rows in plan order, and this derived-table shape's plan order varies BETWEEN
+            // EXECUTIONS on MySQL 5.7 — measured as a failed same-corpus null control (two
+            // identical runs, rows 19/20 swapped). Tied rows also flap between page refreshes
+            // for a human. Grouped column second makes the order a property of the DATA.
+            ->orderBy(sprintf('counthits DESC, %s ASC', $_outer_select_column))
             ->limit(max(1, intval(self::$filters_normalized['misc']['limit_results'])));
 
         self::maybe_enable_query_cache($query);
@@ -1415,7 +1824,10 @@ class wp_slimstat_db
         $results           = [];
         $total_human_hits  = wp_slimstat_db::count_records('id', 'visit_id > 0 AND browser_type <> 1');
         $new_visitors      = wp_slimstat_db::count_records_having('ip', 'visit_id > 0', 'COUNT(visit_id) = 1');
-        $new_visitors_rate = ($total_human_hits > 0) ? sprintf('%01.2f', (100 * $new_visitors / $total_human_hits)) : 0;
+        // round(), not sprintf('%01.2f') — sprintf rounds ties-to-EVEN, so 100 * 1 / 32
+        // (exactly 3.125) printed 3.12 where every other percentage in the product gives
+        // 3.13. Issue #334; the operand order is ADR-17's and is unchanged.
+        $new_visitors_rate = ($total_human_hits > 0) ? round((100 * $new_visitors / $total_human_hits), 2) : 0;
         $server_name       = sanitize_text_field(wp_unslash($_SERVER['SERVER_NAME']));
 
         if (intval($new_visitors_rate) > 99) {
@@ -1591,24 +2003,29 @@ class wp_slimstat_db
             $comments_table = $GLOBALS['wpdb']->comments;
             $slim_stats_table = $GLOBALS['wpdb']->prefix . 'slim_stats';
 
+            // The six post/comment metrics query CORE tables (wp_posts, wp_comments), so
+            // they run on the LOCAL connection — not the analytics one the constructor
+            // binds. Under the custom-DB add-on the analytics handle is a different
+            // database with no wp_posts, and every one of these read zero or errored
+            // silently (F6/C44). Only the latency metric below queries slim_stats.
             $results[0]['metric']  = __('Content Items', 'wp-slimstat');
-            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '!=', 'revision')->where('post_status', '!=', 'auto-draft')->getVar());
+            $results[0]['value']   = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '!=', 'revision')->where('post_status', '!=', 'auto-draft')->getVar());
             $results[0]['tooltip'] = __('This value includes not only posts and pages, but any custom post type, regardless of their status.', 'wp-slimstat');
 
             $results[1]['metric'] = __('Posts', 'wp-slimstat');
-            $results[1]['value']  = Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'post')->getVar();
+            $results[1]['value']  = Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'post')->getVar();
 
             $results[2]['metric'] = __('Pages', 'wp-slimstat');
-            $results[2]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'page')->getVar());
+            $results[2]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'page')->getVar());
 
             $results[3]['metric'] = __('Attachments', 'wp-slimstat');
-            $results[3]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'attachment')->getVar());
+            $results[3]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'attachment')->getVar());
 
             $results[4]['metric'] = __('Revisions', 'wp-slimstat');
-            $results[4]['value']  = number_format_i18n(Query::select('COUNT(*)')->from($posts_table)->where('post_type', '=', 'revision')->getVar());
+            $results[4]['value']  = number_format_i18n(Query::select('COUNT(*)')->local()->from($posts_table)->where('post_type', '=', 'revision')->getVar());
 
             $results[5]['metric'] = __('Comments', 'wp-slimstat');
-            $results[5]['value']  = Query::select('COUNT(*)')->from($comments_table)->getVar();
+            $results[5]['value']  = Query::select('COUNT(*)')->local()->from($comments_table)->getVar();
 
             $results[6]['metric'] = __('Avg Comments per Post', 'wp-slimstat');
             $results[6]['value']  = empty($results[1]['value']) ? 0 : number_format_i18n($results[5]['value'] / $results[1]['value']);
@@ -1637,6 +2054,18 @@ class wp_slimstat_db
      * @param string $alias  Table alias (e.g., 't1' or 'te').
      * @return string Prepared SQL WHERE fragment (e.g., "t1.resource = '/shop/'").
      */
+    /**
+     * AND a caller-supplied scope onto a WHERE — parenthesized, because the caller's
+     * clause may contain OR (the email loop already ANDs a report's own `where` with
+     * `author = %s` upstream). One owner for that invariant: a scoped aggregate that
+     * appends without the parens is a silent precedence bug. Empty scope returns the
+     * WHERE untouched, byte-for-byte.
+     */
+    private static function and_extra_where($where, $extra_where)
+    {
+        return '' === $extra_where ? $where : $where . ' AND (' . $extra_where . ')';
+    }
+
     private static function build_goal_where($goal, $alias = '')
     {
         // Read keys defensively: legacy/malformed stored goals or funnel steps
@@ -1674,21 +2103,93 @@ class wp_slimstat_db
 
     /**
      * Visitor identifier expression that handles NULL fingerprints:
-     * COALESCE(fingerprint, 'v_'+visit_id, 'ip_'+ip). Used both to populate the
-     * funnel temp tables (SELECT/INSERT) and, via count_unique_visitors(), to
-     * count distinct goal visitors — so goals and funnels share one identity and
-     * neither silently drops visitors that lack a fingerprint. The expression is
-     * only ever used in SELECT output, never in a WHERE clause.
+     * COALESCE(fingerprint, HEX(vid_hash), 'v_'+visit_id, 'ip_'+ip). Used both to
+     * populate the funnel temp tables (SELECT/INSERT) and, via
+     * count_unique_visitors(), to count distinct goal visitors — so goals and
+     * funnels share one identity and neither silently drops visitors that lack a
+     * fingerprint. The expression is only ever used in SELECT output, never in a
+     * WHERE clause.
+     *
+     * The vid_hash tier (D68/P2) sits between fingerprint and visit_id: for a
+     * cookieless visitor it is the real 128-bit identity, where visit_id is a
+     * sequential SESSION number — resolving identity through it counted one
+     * person once per session, and before D68 merged strangers outright at 32
+     * bits. HEX() because the ladder concatenates with string tiers; NULL rows
+     * (all history, and consenting visitors) fall through exactly as before.
      */
     private static function visitor_id_expr($alias = '')
     {
         $prefix = !empty($alias) ? $alias . '.' : '';
-        return sprintf(
-            "COALESCE(%sfingerprint, CONCAT('v_', %svisit_id), CONCAT('ip_', %sip))",
-            $prefix,
-            $prefix,
-            $prefix
-        );
+
+        // Tier presence is the SCHEMA'S, not the manifest's. The upgrade contract
+        // (S7/P1) defers DDL to the migration screen, so an upgraded site
+        // legitimately serves v6 reports from a v5 table for as long as the admin
+        // has not run it — vid_hash (AddVisitIdentity) and, pre-fingerprint,
+        // fingerprint itself are absent there, and naming an absent column is an
+        // Unknown-column rejection get_results() reports identically to "no
+        // visitors": every goal, funnel and unique count read 0, measured live on
+        // this workspace's own upgraded database. The write path has honoured the
+        // window since P1 (Storage intersects columns); this covers the read paths
+        // that share THIS ladder (goals, funnels, unique-visitor counts) — other
+        // report SQL naming late-era columns outright, like get_recent()'s explicit
+        // list, is the same hazard class and is tracked as its own seam. Dropping
+        // an absent tier reinterprets nothing — a column that does not exist holds
+        // no identity to fall through from.
+        $tiers = [];
+        if (self::fact_column_present('fingerprint')) {
+            $tiers[] = $prefix . 'fingerprint';
+        }
+        if (self::fact_column_present('vid_hash')) {
+            $tiers[] = sprintf('HEX(%svid_hash)', $prefix);
+        }
+        $tiers[] = sprintf("CONCAT('v_', %svisit_id)", $prefix);
+        $tiers[] = sprintf("CONCAT('ip_', %sip)", $prefix);
+
+        return 'COALESCE(' . implode(', ', $tiers) . ')';
+    }
+
+    /**
+     * Does the fact table in front of us actually have this column?
+     *
+     * One SHOW COLUMNS per request per prefix, memoised in $fact_columns_present —
+     * not per funnel step, not per query. Runs on the analytics handle
+     * (wp_slimstat::$wpdb) because that is the connection every caller of
+     * visitor_id_expr() queries; under an external DB (C44) probing the WordPress
+     * connection would answer for the wrong server.
+     *
+     * FAIL-OPEN: Schema::columnState() reports nothing when the table cannot be
+     * read, and answering "absent" on a transient probe failure would silently
+     * change grouping semantics. The manifest ladder is the declared truth; a
+     * genuinely missing column then surfaces exactly as it did before this probe
+     * existed.
+     *
+     * @param string $column
+     * @return bool
+     */
+    private static function fact_column_present($column)
+    {
+        $prefix = $GLOBALS['wpdb']->prefix;
+
+        if (!array_key_exists($prefix, self::$fact_columns_present)) {
+            // BOTH preconditions guarded, not just the class: this file also runs
+            // inside bare-PHP test harnesses and half-booted sites where the
+            // autoloader is absent (#325) — and columnState() type-hints wpdb, so a
+            // null analytics handle would turn a pure string-builder into a
+            // TypeError. Either gap means no probe, and no probe means the manifest
+            // is assumed, which is exactly the pre-probe behaviour.
+            $state = class_exists('\SlimStat\Schema\Schema') && wp_slimstat::$wpdb instanceof \wpdb
+                ? \SlimStat\Schema\Schema::columnState(wp_slimstat::$wpdb, 'slim_stats', $prefix)
+                : ['present' => []];
+
+            // A readable slim_stats always reports columns (id at minimum), so an
+            // empty `present` means the probe could not read — assume the manifest.
+            self::$fact_columns_present[$prefix] = [] === $state['present']
+                ? true
+                : array_flip($state['present']);
+        }
+
+        return true === self::$fact_columns_present[$prefix]
+            || isset(self::$fact_columns_present[$prefix][$column]);
     }
 
     /**
@@ -1726,7 +2227,7 @@ class wp_slimstat_db
      * @param array $goal Goal definition.
      * @return array ['total' => int, 'uniques' => int, 'cr' => float]
      */
-    public static function get_goal_results($goal)
+    public static function get_goal_results($goal, $extra_where = '')
     {
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
@@ -1737,22 +2238,30 @@ class wp_slimstat_db
             return ['total' => 0, 'uniques' => 0, 'cr' => 0.0, 'total_visitors' => 0];
         }
 
-        $filters_where = self::get_combined_where('', '*', true, 't1');
-        $cache_ver     = get_option('slimstat_goals_cache_ver', '0');
-        // NOTE: keyed per goal id, so it embeds the live range end (second precision)
-        // and shares funnels' SSR/AJAX drift. Left as-is — a goal shows one number per
-        // id, so it never produces the "two identical things disagree" symptom #1 fixed
-        // for funnels. If a goal-number flicker is ever reported, route this through a
-        // shared range-bucket helper (see funnel_cache_key).
-        $cache_key     = 'slimstat_goal_' . $goal['id'] . '_' . md5($filters_where . $cache_ver);
+        $cache_ver = get_option('slimstat_goals_cache_ver', '0');
+        // Built from the normalized filters and a bucketed range — see
+        // results_cache_key(). The old key hashed get_combined_where()'s SQL, which
+        // moved every second and every request. (D33)
+        //
+        // A caller-scoped WHERE must be IN the key, or the fix it exists for undoes
+        // itself: the per-author email loop runs every author in ONE request, so
+        // without the key component the first author's numbers would be served to all
+        // the rest — from the memo below deterministically, from this transient for
+        // five minutes. Empty extra keeps the exact pre-D58 key, so dashboards keep
+        // their cache continuity.
+        $goal_key  = (string) $goal['id'] . ('' === $extra_where ? '' : '|' . md5($extra_where));
+        $cache_key = self::results_cache_key('goal', $goal_key, $cache_ver);
 
         // Per-request memo keyed by the result-determining signature (criteria +
         // filters + cache version), NOT the goal id — so several goals with the
         // same criteria run the COUNT/unique queries once per request instead of
         // once each, and a re-render reuses the result. Removes the duplicate
         // COUNT(*)/unique queries Query Monitor reported. (#12)
+        //
+        // Keyed on filters_signature() rather than the rendered WHERE so that WHERE
+        // does not have to be built before the memo and transient are consulted.
         static $request_memo = [];
-        $memo_key = md5($goal_where . '|' . $filters_where . '|' . $cache_ver);
+        $memo_key = md5($goal_where . '|' . self::filters_signature() . '|' . $cache_key);
         if (array_key_exists($memo_key, $request_memo)) {
             return $request_memo[$memo_key];
         }
@@ -1760,7 +2269,11 @@ class wp_slimstat_db
         $result = get_transient($cache_key);
 
         if (false === $result) {
-            $where_combined = $goal_where . ' AND ' . $filters_where;
+            // Built only after the cache miss — it drives the queries below, not the
+            // key, so a memo or transient hit skips this get_combined_where() work
+            // entirely — the shape get_funnel_results() already uses.
+            $filters_where  = self::get_combined_where('', '*', true, 't1');
+            $where_combined = self::and_extra_where($goal_where . ' AND ' . $filters_where, $extra_where);
 
             if ($is_event) {
                 $from = sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats);
@@ -1774,8 +2287,18 @@ class wp_slimstat_db
             // match funnel step-1 counts for the same rule. (#3)
             $uniques = self::count_unique_visitors($from, $where_combined);
 
-            $total_visitors = self::get_total_unique_visitors();
-            $cr = ($total_visitors > 0) ? round(($uniques / $total_visitors) * 100, 2) : 0.0;
+            // The SAME scope as the numerator: a per-author conversion rate over the
+            // whole site's visitors would be a ratio of two different populations.
+            $total_visitors = self::get_total_unique_visitors($extra_where);
+            // MULTIPLY FIRST, divide once, round once. `($uniques / $total_visitors) * 100`
+            // discards the exact value before round() ever sees it: the division produces a
+            // double, and scaling that double by 100 lands one ULP BELOW the true half for a
+            // whole class of ordinary ratios — 23/160 is 14.375 exactly, but the two-step form
+            // hands round() 14.37499999999999822364 and gets 14.37. PHP <= 8.3 compensated with
+            // a "pre-rounding" step; 8.4 removed it as an upstream bug fix, exposing the defect
+            // rather than causing it. This form is one correctly-rounded division and is exact
+            // on every supported runtime. ADR-17; PITFALLS 72.
+            $cr = ($total_visitors > 0) ? round((100 * $uniques) / $total_visitors, 2) : 0.0;
 
             // total_visitors is the CR denominator — returned so the card can show
             // "N of M uniques" and make the percentage legible without re-querying. (#13)
@@ -1793,38 +2316,44 @@ class wp_slimstat_db
      *
      * @return int
      */
-    private static function get_total_unique_visitors()
+    private static function get_total_unique_visitors($extra_where = '')
     {
-        static $request_cache = null;
-        if ($request_cache !== null) {
-            return $request_cache;
+        // Keyed memo, not a scalar: the per-author email loop asks for a different
+        // scope per author within one request, and a scalar memo would hand author
+        // two the denominator of author one.
+        static $request_cache = [];
+        $memo_key = md5($extra_where);
+        if (isset($request_cache[$memo_key])) {
+            return $request_cache[$memo_key];
         }
 
-        $table_stats = $GLOBALS['wpdb']->prefix . 'slim_stats';
-        $date_where  = self::get_combined_where('', '*', true, 't1');
         // Version-key like the goal/funnel transients so a CRUD cache bump (which
         // also runs the GC in clear_goals_cache()) rotates this denominator too.
-        $cache_ver   = get_option('slimstat_goals_cache_ver', '0');
-        // NOTE: like the goal key, this embeds the live range end and shares funnels'
-        // SSR/AJAX drift; left funnel-scoped on purpose (#1). Route through a shared
-        // range-bucket helper if this denominator ever needs the same fix.
-        $cache_key   = 'slimstat_uv_' . md5($date_where . $cache_ver);
-        $cached      = get_transient($cache_key);
+        $cache_ver = get_option('slimstat_goals_cache_ver', '0');
+        // Same shared builder as goals and funnels — this denominator is the single
+        // most expensive statement on the goals screen, and it was recomputed on every
+        // render for the same reason. (D37) Empty extra keeps the exact pre-D58 key.
+        // The memo token IS the transient's scope token — one digest, computed once, so
+        // the two layers cannot disagree about what a scope is.
+        $cache_key = self::results_cache_key('uv', '' === $extra_where ? '' : $memo_key, $cache_ver);
+        $cached    = get_transient($cache_key);
 
         if (false !== $cached) {
-            $request_cache = intval($cached);
-            return $request_cache;
+            $request_cache[$memo_key] = intval($cached);
+            return $request_cache[$memo_key];
         }
 
         // Same NULL-safe visitor identity as the goal numerator (count_unique_visitors)
         // so the conversion-rate denominator and numerator stay consistent. (#3)
-        $request_cache = self::count_unique_visitors(
-            sprintf('%s t1', $table_stats),
-            $date_where
+        // The WHERE is built only past the cache check — it drives the query, not the key.
+        $total = self::count_unique_visitors(
+            sprintf('%s t1', $GLOBALS['wpdb']->prefix . 'slim_stats'),
+            self::and_extra_where(self::get_combined_where('', '*', true, 't1'), $extra_where)
         );
 
-        set_transient($cache_key, $request_cache, 15 * MINUTE_IN_SECONDS);
-        return $request_cache;
+        set_transient($cache_key, $total, 15 * MINUTE_IN_SECONDS);
+        $request_cache[$memo_key] = $total;
+        return $total;
     }
 
     /**
@@ -1838,12 +2367,27 @@ class wp_slimstat_db
     {
         $goals   = get_option('slimstat_goals', []);
         $results = [];
+        // Bounded by the tier maximum, as the widget renderer is. This runs on the
+        // email-report cron, where an over-limit option (a Pro-to-free downgrade, an
+        // import) would otherwise compute an aggregate per stored goal. (D14)
+        $remaining = (int) apply_filters('slimstat_max_goals', 1);
+
+        // The caller's WHERE, honoured at last. This function declared $_args and read
+        // none of it, so the per-author email loop — which ANDs `author = %s` into the
+        // args of every report it mails — sent every author the SITE-WIDE goal numbers
+        // under their own name. (D58; the registered Expected Diff is R9: each author's
+        // numbers FALL to their own.)
+        $extra_where = empty($_args['where']) ? '' : (string) $_args['where'];
 
         foreach ($goals as $goal) {
             if (empty($goal['active']) || empty($goal['name']) || empty($goal['dimension'])) {
                 continue;
             }
-            $data      = self::get_goal_results($goal);
+            if ($remaining <= 0) {
+                break;
+            }
+            $remaining--;
+            $data      = self::get_goal_results($goal, $extra_where);
             $results[] = [
                 'goal_name' => $goal['name'],
                 'uniques'   => $data['uniques'],
@@ -1880,7 +2424,8 @@ class wp_slimstat_db
     }
 
     /**
-     * Signature of the active global column filters, for the funnel cache key.
+     * Signature of the active global column filters, for the goal / funnel / uv
+     * cache keys.
      *
      * Derived from the NORMALIZED filter array ([col => [operator, value]]), NOT
      * from get_combined_where()'s SQL: that SQL is run through $wpdb->prepare(),
@@ -1892,44 +2437,90 @@ class wp_slimstat_db
      *
      * @return string
      */
-    private static function funnel_filters_signature()
+    private static function filters_signature()
     {
         return md5(serialize(self::$filters_normalized['columns'] ?? []));
     }
 
     /**
-     * Build the funnel-result cache key: normalized step signature + the date
-     * window bucketed to the hour + the active column-filter signature + cache
-     * version. Bucketing the end (which is "now" for a live range, set with second
-     * precision) to the hour absorbs the sub-hour drift between a server-rendered
-     * funnel and its AJAX-loaded twin, so two identical funnels share one transient
-     * and return identical numbers. (#1)
-     * (A render pair straddling an hour boundary can still miss — a rare, ~few-second
-     * window that self-heals on the next render; acceptable given the 5-min TTL.)
+     * Bucket size for the live end of a cached date range, in seconds.
      *
-     * $filters_sig folds the active global filters into the key so toggling a report
-     * filter (e.g. "browser equals X") yields a new key instead of serving the stale
-     * unfiltered transient — the funnel equivalent of how Goals key on the filter
-     * WHERE. The date is intentionally NOT in $filters_sig (it lives in $range,
-     * hour-bucketed); only the COLUMN filters are, so the SSR/AJAX drift fix stands.
-     * The sig folds into the trailing md5 so the "slimstat_funnel_" prefix that
-     * clear_goals_cache() sweeps with a LIKE is preserved. (#22)
+     * Mirrors the hour-bucketing in wp_slimstat_admin::build_filter_options_cache_key().
+     * A plain literal rather than HOUR_IN_SECONDS so this class stays loadable without
+     * WordPress, which the cache-key test relies on.
+     */
+    const CACHE_RANGE_BUCKET_SECONDS = 3600;
+
+    /**
+     * Build the cache key for a goals/funnels result set.
+     *
+     * One builder for all three kinds of cached result, because they share one hazard:
+     * the date range's END is "now" for any live range, set with second precision by
+     * init_filters(). A key that embeds it changes on every request, so a 5- or
+     * 15-minute transient is written, never read back, and left to expire. Funnels
+     * bucketed the end to the hour to fix that; goals and the unique-visitor
+     * denominator did not, and each ran their queries uncached on every render while
+     * writing two dead wp_options rows apiece. (D33, D37)
+     *
+     * Bucketing trades key churn for bounded staleness, and the bound still comes from
+     * the transient's own TTL: within a bucket the key is stable, so the value
+     * refreshes on the TTL as intended rather than never being reused at all. The cost
+     * is that a render pair straddling a bucket boundary does not share a key and
+     * misses once — a rare, few-second window that self-heals on the next render, and
+     * a far better trade than a key that never changes and serves a stale window
+     * indefinitely.
+     *
+     * The range and the filter signature are read here rather than passed in, so a
+     * caller cannot pair one request's filters with another's window. The signature
+     * comes from the NORMALIZED filter array, never from get_combined_where()'s SQL:
+     * that SQL is run through $wpdb->prepare(), which wraps LIKE values in a
+     * placeholder salt regenerated per request —
+     *
+     *     t1.browser LIKE '{d71290c0…}Chrome{d71290c0…}'
+     *     t1.browser LIKE '{677774e4…}Chrome{677774e4…}'   <- same filter, next request
+     *
+     * so any "contains" filter would move the key every request even with the range
+     * bucketed. That is a second, independent reason the goal key could never hit.
+     *
+     * The `slimstat_<prefix>_` shape is load-bearing: clear_goals_cache() and
+     * uninstall.php both sweep these rows by LIKE prefix, and a key outside it would
+     * accumulate forever.
+     *
+     * @param string     $prefix    Result type: goal, funnel, uv.
+     * @param string     $scope     What distinguishes one result of that type from
+     *                              another (goal id, funnel step signature); '' when
+     *                              the type has a single result per filter set.
+     * @param int|string $cache_ver slimstat_goals_cache_ver, bumped by any CRUD.
+     * @return string
+     */
+    private static function results_cache_key($prefix, $scope, $cache_ver)
+    {
+        $start = (int) (self::$filters_normalized['utime']['start'] ?? 0);
+        $end   = (int) (self::$filters_normalized['utime']['end'] ?? 0);
+        $range = $start . ':' . (int) floor($end / self::CACHE_RANGE_BUCKET_SECONDS);
+
+        return 'slimstat_' . $prefix . '_' . ('' === $scope ? '' : $scope . '_')
+            . md5($range . '|' . self::filters_signature() . '|' . $cache_ver);
+    }
+
+    /**
+     * Scope a funnel's cache key to its RULES rather than its id, so two funnels with
+     * identical steps share one entry and can never disagree. (#1, #19)
+     *
+     * Everything else about the key — the bucketed window, the filter signature, the
+     * cache version, the swept prefix — lives in results_cache_key().
      *
      * @param array      $steps
-     * @param int        $range_start utime range start (seconds)
-     * @param int        $range_end   utime range end (seconds)
-     * @param string     $filters_sig column-filter signature (funnel_filters_signature())
      * @param int|string $cache_ver
      * @return string
      */
-    private static function funnel_cache_key($steps, $range_start, $range_end, $filters_sig, $cache_ver)
+    private static function funnel_cache_key($steps, $cache_ver)
     {
-        // 3600 = bucket the window end to the hour (mirrors the hour-bucketing in
-        // wp_slimstat_admin::build_filter_options_cache_key()).
-        $range = (int) $range_start . ':' . (int) floor((int) $range_end / 3600);
-
-        return 'slimstat_funnel_' . md5(serialize(self::normalize_funnel_steps($steps)))
-            . '_' . md5($range . '|' . $filters_sig . '|' . $cache_ver);
+        return self::results_cache_key(
+            'funnel',
+            md5(serialize(self::normalize_funnel_steps($steps))),
+            $cache_ver
+        );
     }
 
     /**
@@ -1942,26 +2533,24 @@ class wp_slimstat_db
      * @param array $funnel Funnel definition with steps array.
      * @return array Array of step results: name, visitors, pct, dropoff, unreachable.
      */
-    public static function get_funnel_results($funnel)
+    public static function get_funnel_results($funnel, $extra_where = '')
     {
         if (empty($funnel['steps']) || count($funnel['steps']) < 2) {
             return [];
         }
 
         $cache_ver = get_option('slimstat_goals_cache_ver', '0');
-        // Deterministic key: normalized step signature + hour-bucketed date window +
-        // active column-filter signature (NOT the funnel id, NOT the raw $date_where
-        // SQL) — so two identical funnels, and a server-rendered funnel + its AJAX
-        // twin, share one transient, while a change to the global report filters
-        // rotates the key instead of serving a stale unfiltered result. See
-        // funnel_cache_key() / funnel_filters_signature(). (#1, #22, builds on #19)
-        $cache_key = self::funnel_cache_key(
-            $funnel['steps'],
-            (int) (self::$filters_normalized['utime']['start'] ?? 0),
-            (int) (self::$filters_normalized['utime']['end'] ?? 0),
-            self::funnel_filters_signature(),
-            $cache_ver
-        );
+        // Keyed on the normalized step signature, not the funnel id, so two identical
+        // funnels — and a server-rendered funnel plus its AJAX twin — share one
+        // transient. See results_cache_key() for the window and filter handling.
+        // (#1, #22, builds on #19)
+        //
+        // A caller-scoped WHERE joins the key for the same reason as in
+        // get_goal_results() — and here the scope-blind serve would come via the memo
+        // below deterministically. Empty extra keeps the exact pre-D58 key, so the
+        // dashboard/AJAX sharing is untouched.
+        $cache_key = self::funnel_cache_key($funnel['steps'], $cache_ver)
+            . ('' === $extra_where ? '' : '_' . md5($extra_where));
 
         // Per-request memo: a funnel rendered (or re-rendered) twice in one
         // request reuses its result instead of rebuilding temp tables again. (#12)
@@ -1978,7 +2567,9 @@ class wp_slimstat_db
 
         // Built only after the cache miss — it drives the step queries below, not the
         // cache key, so a memo/transient hit skips this get_combined_where() work.
-        $date_where = self::get_combined_where('', '*', true, 't1');
+        // The caller's scope rides inside $date_where because both step-query shapes
+        // below embed it — one append covers every step of the chain.
+        $date_where = self::and_extra_where(self::get_combined_where('', '*', true, 't1'), $extra_where);
 
         $table_stats  = $GLOBALS['wpdb']->prefix . 'slim_stats';
         $table_events = $GLOBALS['wpdb']->prefix . 'slim_events';
@@ -2000,14 +2591,31 @@ class wp_slimstat_db
         $preflight   = false;
         $had_error   = false;
 
-        // Each temp table row carries (vid, t) — the visitor identifier and the
-        // MIN(dt) at which they qualified for the preceding step. The JOIN on
-        // step N+ enforces `new_row.dt >= r.t` so out-of-order matches (visitor
-        // hit step N before step N-1) don't count as converted. We use `>=`
-        // (not `>`) because dt has one-second granularity: two genuinely ordered
-        // steps that land in the same second (fast SPA navigation, a pageview
-        // immediately followed by an event row) must still count. Distinct step
-        // rules keep the same physical row from satisfying two steps at once.
+        // Each temp table row carries (vid, t, rid, rkind) — the visitor identifier, the
+        // MIN(dt) at which they qualified for the preceding step, and which physical row
+        // that was. The JOIN on step N+ enforces `new_row.dt >= r.t` so out-of-order
+        // matches (visitor hit step N before step N-1) don't count as converted. `>=`
+        // rather than `>` because dt has one-second granularity: two genuinely ordered
+        // steps that land in the same second (fast SPA navigation, a pageview immediately
+        // followed by an event row) must still count.
+        //
+        // But `>=` alone lets ONE physical pageview satisfy TWO steps whenever the rules
+        // overlap — "contains shop" then "contains shop/cart" against a single visit to
+        // /shop/cart — and report a conversion that never happened. This used to be
+        // waved away with "distinct step rules keep the same physical row from satisfying
+        // two steps at once"; nothing enforces that, and `ajax_save_funnel()` validates
+        // step count and shape but never distinctness. Measured on scratch tables: a
+        // visitor with exactly one pageview converted a two-step funnel.
+        //
+        // Tightening to `>` fixes that case and breaks a real one — measured in the same
+        // run, a visitor with two SEPARATE pageviews in the same second stopped counting.
+        // Neither timestamp comparison is the right test, because the question is not
+        // "later" but "a different row". So the row identity travels with the timestamp
+        // and step N+1 excludes exactly the row that satisfied step N.
+        //
+        // The id must be an ARGMIN — the id of the row that achieved MIN(dt) — not a second
+        // MIN() beside it. See the note at the query itself for why the obvious
+        // `MIN(dt), MIN(id)` pairing is wrong and how it reopens this very defect. (D54)
         foreach ($funnel['steps'] as $step_index => $step) {
             $is_event   = ($step['dimension'] === 'event_notes');
             $step_where = self::build_goal_where($step, $is_event ? 'te' : 't1');
@@ -2030,24 +2638,61 @@ class wp_slimstat_db
             // time. Pageview steps use t1.dt.
             $dt_expr = $is_event ? 'te.dt' : 't1.dt';
 
+            // Which physical row satisfied the step. Pageview steps are identified by the
+            // pageview id, event steps by the event id.
+            $row_id_expr = $is_event ? 'te.event_id' : 't1.id';
+
+            // The id of the row that actually achieved MIN(dt) — an argmin, not a second
+            // independent aggregate. `MIN(dt)` and `MIN(id)` computed side by side do NOT
+            // describe the same row: they are evaluated independently over the group, so a
+            // visitor with rows (id 5, dt 100) and (id 8, dt 90) yields t=90 with rid=5.
+            // Then step N+1 excludes a row that never satisfied step N while the row that
+            // did stays eligible — reopening the very defect this carries rid to close.
+            // The two orders agree only if id and dt are co-monotonic, and they are not
+            // under concurrent writers: dt is stamped by PHP before the INSERT, so a
+            // request that starts later can still commit first and take a lower id.
+            //
+            // SUBSTRING_INDEX(GROUP_CONCAT(... ORDER BY dt, id), ',', 1) is the standard
+            // argmin for MySQL 5.6, which has no window functions. Truncation at
+            // group_concat_max_len drops from the END, so the first element — the only one
+            // read — is always intact.
+            $argmin_row_id = sprintf(
+                "CAST(SUBSTRING_INDEX(GROUP_CONCAT(%s ORDER BY %s ASC, %s ASC), ',', 1) AS UNSIGNED)",
+                $row_id_expr, $dt_expr, $row_id_expr
+            );
+
             // Base FROM clause — joined for event steps, plain for pageview steps.
             $from_sql = $is_event
                 ? sprintf('%s te INNER JOIN %s t1 ON te.id = t1.id', $table_events, $table_stats)
                 : sprintf('%s t1', $table_stats);
 
             if ($step_index === 0) {
-                // Step 1: per-visitor MIN(dt) within the date window.
+                // Step 1: per-visitor MIN(dt) within the date window, carrying the row that
+                // achieved it.
                 $select_sql = sprintf(
-                    "SELECT %s AS vid, MIN(%s) AS t FROM %s WHERE %s AND %s GROUP BY vid",
-                    $visitor_id, $dt_expr, $from_sql, $step_where, $date_where
+                    "SELECT %s AS vid, MIN(%s) AS t, %s AS rid FROM %s WHERE %s AND %s GROUP BY vid",
+                    $visitor_id, $dt_expr, $argmin_row_id, $from_sql, $step_where, $date_where
                 );
             } else {
-                // Step N>1: JOIN temp_read and require the new row's dt at or
-                // after the stored timestamp for the same visitor (see ordering
-                // note above for why `>=` rather than `>`).
+                // Step N>1: JOIN temp_read and require the new row's dt at or after the
+                // stored timestamp for the same visitor.
+                //
+                // The row-exclusion only applies when this step reads the same table as the
+                // one before it. Pageview ids and event ids are independent counters, so
+                // across a kind change any equality between them is a coincidence rather
+                // than identity — and a pageview row and an event row are never the same
+                // physical row anyway. Omitting the predicate there is both correct and
+                // cheaper than carrying a table marker to make it provably false.
+                $prev_is_event = ('event_notes' === ($funnel['steps'][$step_index - 1]['dimension'] ?? ''));
+                $exclude_prev  = ($prev_is_event === $is_event)
+                    ? sprintf(' AND %s <> r.rid', $row_id_expr)
+                    : '';
+
                 $select_sql = sprintf(
-                    "SELECT %s AS vid, MIN(%s) AS t FROM %s INNER JOIN %s r ON r.vid = %s WHERE %s AND %s AND %s >= r.t GROUP BY vid",
-                    $visitor_id, $dt_expr, $from_sql, $temp_read, $visitor_id, $step_where, $date_where, $dt_expr
+                    "SELECT %s AS vid, MIN(%s) AS t, %s AS rid FROM %s INNER JOIN %s r ON r.vid = %s"
+                        . " WHERE %s AND %s AND %s >= r.t%s GROUP BY vid",
+                    $visitor_id, $dt_expr, $argmin_row_id, $from_sql, $temp_read, $visitor_id,
+                    $step_where, $date_where, $dt_expr, $exclude_prev
                 );
             }
 
@@ -2060,8 +2705,31 @@ class wp_slimstat_db
 
             // Create the per-step temp table once, then count from it — avoids
             // running the grouped subquery twice for the same step.
+            //
+            // The columns are DERIVED from the SELECT rather than declared. Declaring
+            // `vid VARCHAR(64)` gave it the database's default collation, and step 2 then
+            // joins that column against the visitor-identity expression, which carries the
+            // source column's collation. When the two differ — the ordinary result of a
+            // charset migration, where the table was created under one collation and the
+            // database default is now another — MySQL refuses the comparison:
+            //
+            //   Illegal mix of collations (utf8mb4_unicode_520_ci,IMPLICIT)
+            //                         and (utf8mb4_general_ci,IMPLICIT) for operation '='
+            //
+            // and every step from the second onward reports 0 visitors. Reproduced on
+            // scratch tables; deriving the column fixes it because `vid` then inherits the
+            // expression's own collation. (Note it is NOT enough for the database to be
+            // utf8mb4 while the columns are utf8mb3 — that is a coercible superset and
+            // joins fine, which is why this looked unreproducible at first.)
+            //
+            // Deriving also drops the VARCHAR(64) ceiling. Visitor identities on the
+            // reference dataset reach 73 characters (740 rows over 64), and WordPress
+            // clears STRICT_TRANS_TABLES, so the overflow truncated silently rather than
+            // erroring — two identities sharing a 64-character prefix would have been
+            // merged into one visitor. None do on that dataset, but the derived column is
+            // VARCHAR(256) and the question no longer arises. (D53, D16)
             wp_slimstat::$wpdb->query("DROP TEMPORARY TABLE IF EXISTS $temp_write");
-            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (vid VARCHAR(64) NOT NULL, t INT UNSIGNED NOT NULL, KEY(vid)) AS $select_sql");
+            $created = wp_slimstat::$wpdb->query("CREATE TEMPORARY TABLE $temp_write (KEY(vid)) AS $select_sql");
 
             // If CREATE … AS SELECT failed (malformed step rule, STRICT-mode
             // truncation, missing CREATE TEMPORARY privilege, deadlock), the
@@ -2103,7 +2771,12 @@ class wp_slimstat_db
             $results[] = [
                 'name'        => $step['name'],
                 'visitors'    => $visitor_count,
-                'pct'         => ($step1_count > 0) ? round(($visitor_count / $step1_count) * 100, 1) : 0,
+                // Multiply first — see the note on the goal conversion rate above. This one is
+                // the directly user-facing case: it is computed at 1 dp and PRINTED at 1 dp, so
+                // 23 of 80 step-one visitors read "28.7%" on PHP 8.4/8.5 and "28.8%" on 7.4-8.3
+                // from the same database. 28.75 is the exact value; 28.8 is what half-up says.
+                // ADR-17; PITFALLS 72.
+                'pct'         => ($step1_count > 0) ? round((100 * $visitor_count) / $step1_count, 1) : 0,
                 'dropoff'     => max(0, $dropoff),
                 'unreachable' => $unreachable,
             ];
@@ -2134,14 +2807,27 @@ class wp_slimstat_db
      */
     public static function get_funnels_raw($_args = [])
     {
-        $funnels = get_option('slimstat_funnels', []);
-        $results = [];
+        // Gated on the tier, like show_funnels() — this one was not, so a site that had
+        // been Pro and moved to free still built every stored funnel's temp-table chain
+        // on the email-report cron, for funnels the tier says do not exist. Bounded for
+        // the same reason the widget is: however many the option happens to hold. (D40)
+        $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
+        if ($max_funnels <= 0) {
+            return [];
+        }
+
+        $funnels   = array_slice(get_option('slimstat_funnels', []), 0, $max_funnels);
+        $results   = [];
+
+        // Same D58 repair as get_goals_raw(): the caller's WHERE — the per-author
+        // email loop's `author = %s` — was declared and discarded here too.
+        $extra_where = empty($_args['where']) ? '' : (string) $_args['where'];
 
         foreach ($funnels as $funnel) {
             if (empty($funnel['name']) || empty($funnel['steps'])) {
                 continue;
             }
-            $step_results = self::get_funnel_results($funnel);
+            $step_results = self::get_funnel_results($funnel, $extra_where);
             foreach ($step_results as $i => $step) {
                 $results[] = [
                     'funnel_name' => $funnel['name'],

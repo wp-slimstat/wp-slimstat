@@ -1,0 +1,18 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P29-new-errored-outranks-an-oracle-with-no-model label
+rationale: Restores the ORACLE half of the ordering S4 shipped with - `oracle-absent` and `oracle-errored` deciding before NEW's own SQL failure. A NEW arm that fatally errors on a surface the oracle cannot model then reads d-unmodeled/unresolved instead of SQL-error/block, and `unmodeled` is the DEFAULT oracle state through S4-S7, so it was the common case rather than a corner; the argument is at the RULES comment in classify.py. Kills P29 and P30 - 6 assertions - and reaches no further: this guard reads `f.oracle_class` while `arm-unsupported` fires on an ARM class, so the third rule S4-SEM-01 named needs a separate entry, S4-new-errored-below-arm-unsupported-01. The old ordering was invisible to all 28 of the original plants: P20 was the only new=error plant and it carried an oracle of class ok, which is the one oracle state under which the two orderings agree. Spelled as a guard rewrite rather than by moving the `Rule(...)` block - the format allows a move, and S4-oracle-errored-outranks-old-errored-01 in this directory is one - and the guard spelling is exactly why this entry cannot reach the third rule. An ordering mutation written as a predicate can only ever say THIS PREDICATE, never THIS POSITION.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -296,7 +296,7 @@ RULES = (
+         "to know that NEW's query failed, and no register entry may explain a NEW arm that "
+         "fails, however the failure is spelled. At position 1 this fires whatever the oracle's "
+         "state and whatever OLD did, which is the guarantee the position buys",
+-        lambda f: f.new_class == "error",
++        lambda f: f.new_class == "error" and f.oracle_class not in ("unmodeled", "unsupported", "error"),
+     ),
+     Rule(
+         "arm-unsupported", "d-unmodeled",

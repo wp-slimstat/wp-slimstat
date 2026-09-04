@@ -1,0 +1,17 @@
+target:    tests/e2e/helpers/setup.ts
+gate:      composer test:e2e-harness-contract
+kind:      guard-removal
+expect:    MU_PLUGIN_MANIFEST does not carry
+rationale: Removes nonce-helper-mu-plugin.php from the manifest. Since the bind mount was deleted, the manifest is the ONLY route a helper has into the container, so an entry dropped from it is a helper that silently stops existing -- reproducing, by a different mechanism, exactly the state that cost 38 of 50 failures on the WP 6.4 lane. This entry replaces an earlier one that orphaned the correlation logger; that file turned out to be a guaranteed no-op (nothing has ever set E2E_RUN_ID inside WordPress) and was deleted rather than pinned, because a mutation protecting dead code proves only that the code is still dead.
+---
+diff --git a/tests/e2e/helpers/setup.ts b/tests/e2e/helpers/setup.ts
+--- a/tests/e2e/helpers/setup.ts
++++ b/tests/e2e/helpers/setup.ts
+@@ -70,7 +70,6 @@
+ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
+   { sourceFile: 'ajax-logger-mu-plugin.php', deployedFile: 'geoip-ajax-logger.php' },
+   { sourceFile: 'cron-frontend-shim-mu-plugin.php', deployedFile: 'cron-frontend-shim-mu-plugin.php' },
+-  { sourceFile: 'nonce-helper-mu-plugin.php', deployedFile: 'nonce-helper-mu-plugin.php' },
+   { sourceFile: 'option-mutator-mu-plugin.php', deployedFile: 'option-mutator-mu-plugin.php' },
+   { sourceFile: 'server-tracking-mu-plugin.php', deployedFile: 'server-tracking-mu-plugin.php' },
+   { sourceFile: 'header-injector-mu-plugin.php', deployedFile: 'header-injector-mu-plugin.php' },

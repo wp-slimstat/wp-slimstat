@@ -11,6 +11,16 @@
  * Remove this file (or set the option to anything other than "yes") to disable.
  */
 
+/**
+ * Guarded by SLIMSTAT_E2E_TESTING, like every other helper here. Ungated, this can silently repoint the analytics tables at a different
+ * prefix.
+ * The file reaching wp-content/mu-plugins is not consent to run it: a helper
+ * gets there by an interrupted test run as easily as a deliberate one.
+ */
+if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
+    return;
+}
+
 add_filter('slimstat_custom_wpdb', function ($current_wpdb) {
     if (get_option('slimstat_test_use_custom_db') !== 'yes') {
         return $current_wpdb;

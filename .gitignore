@@ -81,3 +81,13 @@ package-lock.json
 
 # PHPStan local override (the committed config is phpstan.neon.dist)
 phpstan.neon
+
+# Mutation and equivalence run output. The tracked ratchets are tests/mutations/FLOOR and
+# FLOOR-NAME-ONLY; a results file committed from a local run is a claim its author wrote,
+# not one a runner produced under controlled conditions. CI uploads the real ones.
+tests/verify/results/*.json
+
+# Python bytecode from tests/oracle/ — the oracle side is plain scripts, never a package.
+__pycache__/
+*.pyc
+tests/e2e/.tmp/

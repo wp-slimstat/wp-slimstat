@@ -39,10 +39,38 @@ class DataBuckets
 
     private $points;
 
+    /**
+     * The database server's UTC offset in seconds, asked for once per request.
+     *
+     * The single source for this figure. It was issued twice over per chart — once
+     * here, once in Chart — and one DataBuckets is constructed per chart, so a report
+     * screen paid four round trips for a value that changes twice a year.
+     *
+     * Returns the raw signed offset and nothing else. Callers apply their own sign
+     * convention (Chart's is deliberately inverted, to cancel an implicit shift), so
+     * sharing the probe leaves that logic exactly where it is.
+     *
+     * Static rather than a transient: the answer is a property of the database
+     * connection, so caching it across requests would outlive a server timezone change
+     * or a failover to a differently configured replica, and it is far too cheap to be
+     * worth that risk. (D60)
+     *
+     * @return int
+     */
+    public static function serverTimezoneOffset(): int
+    {
+        static $offset = null;
+
+        if (null === $offset) {
+            $wpdb   = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+            $offset = (int) $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+        }
+
+        return $offset;
+    }
+
     public function __construct(string $labelFormat, string $gran, int $start, int $end, int $prevStart, int $prevEnd, array $totals = [])
     {
-        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
-
         $this->labelFormat = $labelFormat;
         $this->gran        = $gran;
         $this->start       = $start;
@@ -51,7 +79,7 @@ class DataBuckets
         $this->prevEnd     = $prevEnd;
         $this->totals      = $totals;
 
-        $offset_seconds = $wpdb->get_var('SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), NOW())');
+        $offset_seconds = self::serverTimezoneOffset();
         $sign           = ($offset_seconds < 0) ? '-' : '+';
         $abs            = abs($offset_seconds);
         $h              = floor($abs / 3600);

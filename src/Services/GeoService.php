@@ -191,9 +191,6 @@ class GeoService
 
     public function logError($error = '')
     {
-        update_option('slimstat_geoip_error', [
-            'time'  => time(),
-            'error' => $error,
-        ]);
+        \SlimStat\Tracker\Utils::logGeoIpError((string) $error);
     }
 }

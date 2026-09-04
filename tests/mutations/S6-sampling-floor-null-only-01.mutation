@@ -1,0 +1,17 @@
+target:    tests/docker/verify-change.sh
+gate:      composer test:seal-negative
+kind:      guard-narrowing
+expect:    is below the floor this entry point prints a separation verdict at
+rationale: Narrows the sampling floor to null controls only, which is the plausible weakening and the one that sounds reasonable out loud -- "controls are cheap, real comparisons are expensive, so only floor the control". It is wrong for the reason PITFALLS 89 gives: the asymmetry cuts both ways. A COMPARISON at 1 rep collapses its own min..max to a point just as thoroughly, and would then report every report as `disjoint` against a properly-measured floor. This mutant exists to make T19b non-redundant: T19 drives a null control and stays GREEN through this narrowing, so without this mutation T19b's kill set is a strict subset of T19's and it pins a decision nothing can break. That is the shape this registry keeps recording, so it is mechanised rather than argued.
+---
+--- a/tests/docker/verify-change.sh
++++ b/tests/docker/verify-change.sh
+@@ -57,7 +57,7 @@
+ case "$SLIMSTAT_TIMING_REPS$SLIMSTAT_BLOCKS" in *[!0-9]*)
+   err "SLIMSTAT_TIMING_REPS and SLIMSTAT_BLOCKS must be numeric, got '$SLIMSTAT_TIMING_REPS' and '$SLIMSTAT_BLOCKS'"; exit 3 ;;
+ esac
+-if [ "$SLIMSTAT_TIMING_REPS" -lt 5 ] || [ "$SLIMSTAT_BLOCKS" -lt 4 ]; then
++if [ "$SLIMSTAT_NULL_CONTROL" = "1" ] && { [ "$SLIMSTAT_TIMING_REPS" -lt 5 ] || [ "$SLIMSTAT_BLOCKS" -lt 4 ]; }; then
+   err "$SLIMSTAT_TIMING_REPS reps x $SLIMSTAT_BLOCKS blocks is below the floor this entry point prints a separation verdict at (5 x 4)"
+   err "  at 1 rep min..max is a point, so 'the two ranges are disjoint' is true for any two unequal numbers"
+   err "  raise SLIMSTAT_TIMING_REPS>=5 and SLIMSTAT_BLOCKS>=4 -- see PITFALLS 89"

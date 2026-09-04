@@ -1,0 +1,20 @@
+target:    src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+gate:      composer test:migration-deadline
+kind:      guard-removal
+expect:    declares PASS_SECONDS but never reads it
+rationale: Keeps the constant and deletes the only read of it, which is the failure mode a grep cannot see: the class still ADVERTISES a ten-second budget and bounds nothing. ConvertTablesToUtf8mb4 is the most expensive migration in the set -- a CONVERT TO CHARACTER SET per table across six tables, performed as ALGORITHM=COPY, blocking writes throughout -- and it shipped with no budget at all, missed by the first draft of this gate because that draft scanned for do/while and this uses foreach.
+---
+--- a/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
++++ b/src/Migration/Migrations/ConvertTablesToUtf8mb4.php
+@@ -251,11 +251,10 @@
+         // there is nothing to checkpoint inside it. What the budget buys is that a six-table
+         // conversion does not start another rebuild in a request that is already nearly out of
+         // time — the pass stops cleanly instead, and pendingTables() re-derives from
+         // information_schema on the next one, so the remaining tables are picked up exactly where
+         // this left off.
+-        $deadline = microtime(true) + self::PASS_SECONDS;
+         $first    = true;
+ 
+         foreach ($pending as $table) {
+             // Stop before STARTING another rebuild, not after — but never before the FIRST one.
+             // A budget that can decline to do any work at all is not a budget, it is a way for a

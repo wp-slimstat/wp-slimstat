@@ -3,7 +3,7 @@
  * Plugin Name: SlimStat Analytics
  * Plugin URI: https://wp-slimstat.com/
  * Description: The leading web analytics plugin for WordPress
- * Version: 5.5.0
+ * Version: 6.0.0
  * Author: Jason Crouse, VeronaLabs
  * Text Domain: wp-slimstat
  * Domain Path: /languages
@@ -20,7 +20,7 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 }
 
 // Set the plugin version and directory
-define('SLIMSTAT_ANALYTICS_VERSION', '5.5.0');
+define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
 define('SLIMSTAT_FILE', __FILE__);
 define('SLIMSTAT_DIR', __DIR__);
 define('SLIMSTAT_URL', plugins_url('', __FILE__));
@@ -223,7 +223,12 @@ class wp_slimstat
      */
     public static function init()
     {
-        \SlimStat\Providers\RestApiManager::run();
+        // Fail-soft: a class-load failure here must not white-screen every request (issue #325).
+        try {
+            \SlimStat\Providers\RestApiManager::run();
+        } catch (\Throwable $e) {
+            self::record_degradation('rest_api', $e);
+        }
 
         // Load all the settings
         if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
@@ -246,46 +251,73 @@ class wp_slimstat
         // On downgrade→re-upgrade, the stored version will differ from SLIMSTAT_ANALYTICS_VERSION,
         // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
         $_migration_ran = self::$settings['_migration_5460'] ?? '0';
+
+        // One boundary, derived once. Both the consent-intent mapping and the one-time
+        // resets below are 5.3.x-era migrations; the resets additionally skip fresh
+        // installs. Spelling the comparison twice invited them to drift apart.
+        $_pre_547 = version_compare($_migration_ran, '5.4.7', '<');
         if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
-            // --- Consent intent detection ---
-            // Read legacy v5.3.x consent settings to detect if user had configured privacy.
-            // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
-            $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
-            $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
-            $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
+            // --- Consent intent detection (pre-5.4.7 installs only) ---
+            //
+            // This maps legacy v5.3.x privacy settings onto the GDPR system. It is a
+            // ONE-TIME migration and must stay bounded to installs that predate 5.4.7,
+            // for the same reason the one-time resets below are bounded.
+            //
+            // Unbounded, it re-ran on every version bump (the outer gate fires whenever
+            // the stored flag is older than SLIMSTAT_ANALYTICS_VERSION) and rewrote the
+            // site's consent configuration from 5.3.x evidence that no longer described
+            // its choices — in both directions:
+            //
+            //   - a site that enabled GDPR through the 5.4+ UI has no legacy opt-out or
+            //     opt-in keys and no third-party CMP, so it fell to the else branch and
+            //     had gdpr_enabled set to 'off' — consent silently switched off;
+            //   - a site carrying a stale display_opt_out = 'on' that had deliberately
+            //     turned GDPR off had it forced back on, and with GDPR on and no consent
+            //     cookie, tracking stops.
+            //
+            // Fresh installs ('0') still enter here, and the else branch writes exactly
+            // the shipped defaults, so their outcome is unchanged. The one-time resets
+            // below share this boundary and additionally skip fresh installs.
+            if ($_pre_547) {
+                // Read legacy v5.3.x consent settings to detect if user had configured privacy.
+                // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
+                $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
+                $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
+                $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
 
-            // Check if user deliberately chose a third-party CMP in v5.4.x
-            $_current_integration = self::$settings['consent_integration'] ?? '';
-            $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
+                // Check if user deliberately chose a third-party CMP in v5.4.x
+                $_current_integration = self::$settings['consent_integration'] ?? '';
+                $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
 
-            if ($_has_third_party_cmp) {
-                // User deliberately configured a third-party CMP — preserve their setup
-                self::$settings['gdpr_enabled'] = 'on';
-            } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
-                // User had consent/privacy config in v5.3.x — map to GDPR system
-                self::$settings['gdpr_enabled'] = 'on';
-                self::$settings['use_slimstat_banner'] = 'on';
-                // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
-                // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
-                if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
-                    self::$settings['consent_integration'] = 'wp_consent_api';
+                if ($_has_third_party_cmp) {
+                    // User deliberately configured a third-party CMP — preserve their setup
+                    self::$settings['gdpr_enabled'] = 'on';
+                } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
+                    // User had consent/privacy config in v5.3.x — map to GDPR system
+                    self::$settings['gdpr_enabled'] = 'on';
+                    self::$settings['use_slimstat_banner'] = 'on';
+                    // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
+                    // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
+                    if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
+                        self::$settings['consent_integration'] = 'wp_consent_api';
+                    } else {
+                        self::$settings['consent_integration'] = 'slimstat_banner';
+                    }
                 } else {
-                    self::$settings['consent_integration'] = 'slimstat_banner';
+                    // No consent config ever — pure v5.3.x behavior: all tracked, no banner
+                    self::$settings['gdpr_enabled'] = 'off';
+                    self::$settings['consent_integration'] = '';
+                    self::$settings['use_slimstat_banner'] = 'off';
                 }
-            } else {
-                // No consent config ever — pure v5.3.x behavior: all tracked, no banner
-                self::$settings['gdpr_enabled'] = 'off';
-                self::$settings['consent_integration'] = '';
-                self::$settings['use_slimstat_banner'] = 'off';
-            }
 
-            unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
-                  $_current_integration, $_has_third_party_cmp);
+                unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
+                      $_current_integration, $_has_third_party_cmp);
+            }
 
             // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
             // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
             // Skip for fresh installs ('0' = never ran, no broken settings to fix).
-            if ('0' !== $_migration_ran && version_compare($_migration_ran, '5.4.7', '<')) {
+            if ($_pre_547 && '0' !== $_migration_ran) {
                 // Restore session cookie — Consent::piiAllowed() in Session.php gates
                 // the actual setcookie() call at runtime, not this setting.
                 if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
@@ -359,18 +391,25 @@ class wp_slimstat
 
         // Define the folder where to store the geolocation database (shared among sites in a network, by default)
         if (defined('UPLOADS')) {
-            self::$upload_dir = ABSPATH . UPLOADS . '/wp-slimstat';
+            $base = ABSPATH . UPLOADS;
         } else {
-            $upload_dir_info  = wp_upload_dir();
-            self::$upload_dir = $upload_dir_info['basedir'];
+            $upload_dir_info = wp_upload_dir();
+            $base            = $upload_dir_info['basedir'];
 
             // Handle multisite environment
             if (is_multisite() && !(is_main_network() && is_main_site() && defined('MULTISITE'))) {
-                self::$upload_dir = str_replace('/sites/' . get_current_blog_id(), '', self::$upload_dir);
+                $base = str_replace('/sites/' . get_current_blog_id(), '', $base);
             }
-
-            self::$upload_dir .= '/wp-slimstat';
         }
+
+        // ONE rtrim, AFTER both branches, so this agrees byte-for-byte with the path
+        // slimstat_uninstall_data_dir() builds. The first version of this put the rtrim inside
+        // the `else` only, and claimed in its own comment to cover both — while core defines
+        // UPLOADS WITH A TRAILING SLASH (ms-default-constants.php: `UPLOADBLOGSDIR . '/' .
+        // $site_id . '/files/'`), so the branch it skipped is the one multisite takes. A
+        // slimstat_maxmind_path filter comparing its input against this value would still have
+        // seen two different strings, on exactly the topology the comment was about.
+        self::$upload_dir = rtrim($base, '/\\') . '/wp-slimstat';
 
         // Apply filter to allow customization of the upload directory
         self::$upload_dir = apply_filters('slimstat_maxmind_path', self::$upload_dir);
@@ -462,13 +501,14 @@ class wp_slimstat
         add_action('admin_notices', [self::class, 'show_migration_5460_ip_notice']);
 
         // Register AJAX handlers for consent upgrade/revocation (anonymous tracking mode)
-        \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
+        try {
+            \SlimStat\Services\Privacy\ConsentHandler::registerAjaxHandlers();
+        } catch (\Throwable $e) {
+            self::record_degradation('consent_ajax', $e);
+        }
 
         // Hook a DB clean-up routine to the daily cronjob
         add_action('wp_slimstat_purge', [self::class, 'wp_slimstat_purge']);
-
-        // Hook IP hashing daily salt generation (for GDPR compliance)
-        add_action('wp_slimstat_generate_daily_salt', [\SlimStat\Providers\IPHashProvider::class, 'generateDailySalt']);
 
         // Hook a GeoIP database update routine to the daily cronjob
         add_action('wp_slimstat_update_geoip_database', [self::class, 'wp_slimstat_update_geoip_database']);
@@ -494,6 +534,19 @@ class wp_slimstat
         if (is_user_logged_in()) {
             include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
             add_action('init', ['wp_slimstat_admin', 'init'], 60);
+
+            // The index-repair subsystem. Nothing called this, so the whole thing —
+            // twelve migrations, the Migration page, the one-click retry notice and the
+            // AJAX endpoints behind it — was dead code, and an install whose indexes
+            // failed to build had no way to repair them. The legacy fallback did not
+            // help: show_indexes_notice() suppressed itself on class_exists() of the
+            // class below, which is always true. Both halves of the repair path were
+            // out, and neither failed loudly. (D51)
+            //
+            // init() registers on `init` at 70, after the admin's own 60. Migrations
+            // never run on their own — they run only from the Migration page, on an
+            // explicit click.
+            \SlimStat\Migration\MigrationService::init();
         }
     }
     // end init
@@ -556,6 +609,210 @@ class wp_slimstat
         // Log when debug is enabled
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log(sprintf('[WP SLIMSTAT] [%s]: %s', $log_level, $message));
+        }
+    }
+
+    /**
+     * Option holding the fail-soft degradations recorded since the last healthy pass.
+     *
+     * Shape: [ '<step>' => [ 'message' => string, 'time' => int ], ... ]
+     */
+    const DEGRADATION_OPTION = 'slimstat_degradations';
+
+    /**
+     * NETWORK option holding the blog ids a network activation still owes tables to.
+     *
+     * A network option, not a per-blog one: the walk switches blogs as it goes, so a
+     * per-blog option would be written to whichever site the loop happened to be standing
+     * on. Deleted when the list empties, so its absence means "nothing pending".
+     */
+    const ACTIVATION_CURSOR_OPTION = 'slimstat_network_activation_pending';
+
+    /**
+     * NETWORK option naming the blog whose setup is in flight right now.
+     *
+     * Written before the work and cleared with the cursor. Its only reader is the pass
+     * AFTER the one that wrote it: finding the same blog still at the head of the list
+     * means that pass never returned, which is the one thing a caught exception cannot
+     * tell you.
+     */
+    const ACTIVATION_ATTEMPT_OPTION = 'slimstat_network_activation_attempting';
+
+    /**
+     * Seconds one pass of the network-activation walk may spend starting new sites.
+     *
+     * Ten, matching AddUserAgentDimension::PASS_SECONDS — the one value in this codebase
+     * measured against a real corpus rather than chosen.
+     *
+     * A SEPARATE CONSTANT, NOT A SHARED ONE, and that is the point of this paragraph. The
+     * three migration budgets are slices of a dedicated AJAX request that the browser
+     * re-posts until the work is done; this one is spent INSIDE core's plugin-activation
+     * request, which must still reach the `update_site_option('active_sitewide_plugins')`
+     * that records the activation. Sharing the constant would mean raising it for a slow
+     * fact-table scan silently pushes the activation walk toward dying inside its hook —
+     * one number answering to four different deadlines.
+     */
+    const ACTIVATION_PASS_SECONDS = 10;
+
+    /** Last time the purge cron completed. Absence of success is the durable signal (C34). */
+    const LAST_PURGE_OK_OPTION = 'slimstat_last_purge_ok';
+
+    /** Seconds between purge runs — `twicedaily`, per admin/index.php's wp_schedule_event(). */
+    const PURGE_INTERVAL = 12 * HOUR_IN_SECONDS;
+
+    /** Re-write a still-failing step at most this often, to bound wp_options writes. */
+    const DEGRADATION_REFRESH = 3600;
+
+    /**
+     * Forget a degradation that has not recurred for this long.
+     *
+     * A still-broken step re-stamps its record every DEGRADATION_REFRESH, so a
+     * record older than a few multiples of that means the failure stopped happening
+     * and the notice should clear itself. This is the ONLY healing rule, deliberately:
+     * an in-process "this step succeeded" flag cannot heal `gdpr_banner` or
+     * `gdpr_banner_render`, which run on front-end and wp-login requests — a
+     * different PHP process from the wp-admin one that would read the flag.
+     */
+    const DEGRADATION_TTL = 10800; // 3 hours
+
+    /**
+     * The two kinds of degradation, and they heal differently — which is why the kind is
+     * recorded here rather than guessed by the renderer from the step's name.
+     *
+     * LOAD is the #325 class: a feature whose code would not load, so it was disabled. It
+     * re-stamps itself on every request that retries it, so ageing out after DEGRADATION_TTL
+     * is the correct healing model, and "reinstall the plugin and flush your opcache" is
+     * genuinely the remedy.
+     *
+     * OPERATIONAL is everything that KEPT WORKING and reported a problem: a purge that could
+     * not archive, a migration that could not add a column, a character-set conversion that
+     * failed. None of it is fixed by reinstalling, and none of it re-stamps on a timer that
+     * matches the TTL — the purge runs twice daily against a 3-hour TTL — so these are
+     * re-derived from live state instead. Telling their owner to reinstall is false advice.
+     */
+    const DEGRADATION_LOAD = 'load';
+
+    const DEGRADATION_OPERATIONAL = 'operational';
+
+    /**
+     * Record a fail-soft degradation so it is visible WITHOUT WP_DEBUG.
+     *
+     * self::log() only writes when WP_DEBUG is on, so on a normal production site
+     * a swallowed \Throwable left no trace anywhere: the plugin looked healthy while
+     * a sub-feature was dead. This persists a bounded record that
+     * wp_slimstat_admin::show_degradation_notice() surfaces to administrators.
+     *
+     * Only touches the database when the recorded message actually changes, so a
+     * persistently broken install does not add a wp_options write to every request.
+     *
+     * @param string             $step     Stable machine key for the guarded step, e.g. 'browscap'.
+     * @param \Throwable|string  $e        The swallowed error, or a description of a failure that
+     *                                     produced no exception — a query that returned false, or
+     *                                     a precondition that was not met.
+     * @param string             $severity DEGRADATION_LOAD or DEGRADATION_OPERATIONAL. Declared
+     *                                     HERE, at the catch block that knows which it is, and not
+     *                                     reconstructed downstream by pattern-matching the step
+     *                                     name — a renderer-side list has to be kept in sync with
+     *                                     two dozen call sites by discipline alone, and three of
+     *                                     those keys are built by concatenation at runtime so no
+     *                                     such list can ever be complete.
+     * @return void
+     */
+    public static function record_degradation($step, $e, $severity = self::DEGRADATION_LOAD)
+    {
+        $message = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        self::log(sprintf('SlimStat: %s failed: %s', $step, $message), 'error');
+
+        $message = substr($message, 0, 200);
+        $now     = time();
+        $stored  = self::get_degradations();
+
+        // Same failure, recorded recently → nothing new to say, skip the write.
+        if (isset($stored[$step]['message'], $stored[$step]['time'])
+            && $stored[$step]['message'] === $message
+            && ($now - (int) $stored[$step]['time']) < self::DEGRADATION_REFRESH
+        ) {
+            return;
+        }
+
+        $stored[$step] = ['message' => $message, 'time' => $now, 'severity' => $severity];
+        // autoload=false, and it is not cosmetic (C34). Without the third argument this
+        // option joins the `alloptions` blob and is fetched on EVERY request — on exactly
+        // the sites already unhealthy enough to be recording degradations. It is read only
+        // by get_degradations(), which runs on admin screens. H2's own governance gate
+        // fails a new autoloaded option; this was one, introduced by the D1 fix.
+        update_option(self::DEGRADATION_OPTION, $stored, false);
+    }
+
+    /**
+     * Currently-true degradations, newest first. Records past DEGRADATION_TTL are
+     * filtered out here so a healed failure stops being reported immediately, even
+     * before reconcile_degradations() prunes the stored option.
+     *
+     * @return array<string,array>
+     */
+    public static function get_degradations()
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored)) {
+            return [];
+        }
+
+        $cutoff  = time() - self::DEGRADATION_TTL;
+        $current = array_filter($stored, static function ($record) use ($cutoff) {
+            return isset($record['time']) && (int) $record['time'] >= $cutoff;
+        });
+
+        // C34 — synthesised, not stored. Every recorded degradation expires after
+        // DEGRADATION_TTL (3 h) while the purge runs twicedaily (12 h), so a purge failing on
+        // every run was visible for 3 hours and invisible for 9. Deriving this from the
+        // last-success stamp makes the durable fact — "it has not succeeded" — the one that
+        // reports, instead of the perishable one.
+        if (self::purge_is_stale()) {
+            $last_ok = (int) get_option(self::LAST_PURGE_OK_OPTION, 0);
+
+            $current['purge (no successful run)'] = [
+                'message' => sprintf(
+                    'the purge has not completed since %s. It runs twice daily, so more than two '
+                    . 'missed runs means it is failing rather than merely idle — and any error it '
+                    . 'recorded has already aged out of this list.',
+                    gmdate('Y-m-d H:i', $last_ok) . ' UTC'
+                ),
+                'time'     => time(),
+                'severity' => self::DEGRADATION_OPERATIONAL,
+            ];
+        }
+
+        return $current;
+    }
+
+    /**
+     * Drop stored degradations that have aged out, so the option does not linger in
+     * `alloptions` forever on a site that was broken once and then fixed.
+     *
+     * Hooked on admin_init (and not during ajax), so front-end requests pay nothing.
+     *
+     * @return void
+     */
+    public static function reconcile_degradations()
+    {
+        $stored = get_option(self::DEGRADATION_OPTION, []);
+        if (!is_array($stored) || !$stored) {
+            return;
+        }
+
+        $remaining = self::get_degradations();
+        if (count($remaining) === count($stored)) {
+            return;
+        }
+
+        if ($remaining) {
+            // autoload=false here too. Two writers, and a single un-flagged one is enough:
+            // WordPress takes the autoload value from whichever write happened last, so
+            // fixing only the recorder would have left this pruning path silently undoing it.
+            update_option(self::DEGRADATION_OPTION, $remaining, false);
+        } else {
+            delete_option(self::DEGRADATION_OPTION);
         }
     }
 
@@ -835,20 +1092,41 @@ class wp_slimstat
 
     public static function init_plugin()
     {
-        // Include our browser detector library
-        \SlimStat\Services\Browscap::init();
+        // Fail-soft (issue #325): each of these unconditional every-request calls
+        // autoloads a src class. Isolate them per step so one class-load failure
+        // degrades only that sub-feature instead of skipping the rest and, worse,
+        // white-screening every page and the wp-login screen.
 
-        // Make sure the upload directory is exist and is protected.
-        self::create_upload_directory();
+        // Include our browser detector library.
+        try {
+            \SlimStat\Services\Browscap::init();
+        } catch (\Throwable $e) {
+            self::record_degradation('browscap', $e);
+        }
 
-        // Ensure daily salt exists for IP hashing (GDPR compliance)
-        // This runs on every page load but only generates if missing
-        \SlimStat\Providers\IPHashProvider::generateDailySalt();
+        // Make sure the upload directory exists and is protected.
+        try {
+            self::create_upload_directory();
+        } catch (\Throwable $e) {
+            self::record_degradation('upload_directory', $e);
+        }
 
-        // Initialize adblock bypass functionality
-        \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
-        add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
-        add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
+        // Ensure the daily salt exists for IP hashing (GDPR compliance). Runs on
+        // every page load but only generates if missing.
+        try {
+            \SlimStat\Providers\IPHashProvider::generateDailySalt();
+        } catch (\Throwable $e) {
+            self::record_degradation('ip_hash_salt', $e);
+        }
+
+        // Initialize adblock bypass functionality.
+        try {
+            \SlimStat\Tracker\Tracker::rewrite_rule_tracker();
+            add_action('template_redirect', [\SlimStat\Tracker\Tracker::class, 'adblocker_javascript']);
+            add_action('init', [\SlimStat\Tracker\Tracker::class, 'rewrite_rule_tracker']);
+        } catch (\Throwable $e) {
+            self::record_degradation('adblock_bypass', $e);
+        }
     }
 
     /**
@@ -1034,10 +1312,46 @@ class wp_slimstat
     /**
      * Calls the date_i18n function without filters
      */
-    public static function date_i18n($_format)
+    /**
+     * date_i18n() with this plugin's own date filters suspended.
+     *
+     * THE SECOND ARGUMENT USED TO BE ACCEPTED BY THE CALLER AND NOT BY THIS FUNCTION, and PHP
+     * discards a surplus argument to a userland function without a warning of any kind. Two call
+     * sites in `get_overview_summary()` passed one:
+     *
+     *   Today      dt >       date_i18n('U', mktime(0,0,0, m, d,   Y))
+     *   Yesterday  dt BETWEEN date_i18n('U', mktime(0,0,0, m, d-1, Y))
+     *                     AND date_i18n('U', mktime(23,59,59, m, d-1, Y))
+     *
+     * With the timestamp dropped, every one of those became "now". So **Today asked for pageviews
+     * in the future** and **Yesterday asked for a window zero seconds wide**. Measured on the
+     * bench corpus before the fix: Today rendered 0 against a true 5,051, Yesterday 0 against
+     * 1,418. Both had read 0 on every install, forever, and EXPECTED-DIFFS had recorded the
+     * symptom as a live-window quirk that made the report non-comparable — a defect wearing an
+     * exemption.
+     *
+     * `false` is WordPress's own default for `$timestamp_with_offset`, so forwarding it unchanged
+     * keeps every existing one-argument call byte-identical — verified against core rather than
+     * assumed: `date_i18n()` uses neither `func_num_args()` nor `func_get_args()`, so there is no
+     * path that can tell an explicitly-passed default from an omitted one.
+     *
+     * THE RETURN TYPE IS `int|string`, NOT `string`, AND THE DISTINCTION IS THE ONE THAT MATTERS
+     * HERE. Core short-circuits `'U'` — the only format this codebase's timestamp callers use —
+     * and returns `current_time('timestamp')`, an **int**. Every other format returns a formatted
+     * string. An earlier draft of this docblock said `@return string`, which is wrong for exactly
+     * the case `now()` and the two Overview metrics depend on, and it is the only machine-readable
+     * type on the function: PHPStan would have inferred `string` for `date_i18n('U')` and flagged
+     * — or "fixed" — every int-typed consumer downstream of it.
+     *
+     * @param string    $_format
+     * @param int|false $_timestamp Timestamp WITH the site's GMT offset already applied — the
+     *                              same scheme `dt` is stored in. false means "now".
+     * @return int|string int for 'U', a formatted string otherwise.
+     */
+    public static function date_i18n($_format, $_timestamp = false)
     {
         self::toggle_date_i18n_filters(false);
-        $date = date_i18n($_format);
+        $date = date_i18n($_format, $_timestamp);
         self::toggle_date_i18n_filters(true);
 
         return $date;
@@ -1178,7 +1492,9 @@ class wp_slimstat
             'mozcom_access_id'                 => '',
             'mozcom_secret_key'                => '',
             'show_complete_user_agent_tooltip' => 'no',
-            'async_load'                       => 'no',
+            // Reports load after the page instead of blocking it. Changes no number, only
+            // when the numbers arrive, and it is what issue #160 asks for. (D-defaults)
+            'async_load'                       => 'on',
             'limit_results'                    => '200',
             'enable_sov'                       => 'no',
 
@@ -1188,7 +1504,20 @@ class wp_slimstat
             // Exclusions - User Properties
             'ignore_wp_users'     => 'no',
             'ignore_spammers'     => 'on',
-            'ignore_bots'         => 'no',
+            // Bots are 27.7% of stored rows on the reference dataset, and every one of them
+            // is parsed by Browscap before being kept. Filtering them by default reclaims
+            // more storage than the whole normalisation phase, at zero migration risk.
+            //
+            // This reaches NEW installs only, and that is structural rather than lucky:
+            // install writes get_fresh_defaults() -> init_options() into the option, and
+            // init() merges array_merge(init_options(), $stored) with stored winning. Every
+            // existing install therefore already holds all 110 keys and keeps its own value.
+            // Verified on this install: ignore_bots is STORED as 'no' and stays 'no'.
+            //
+            // That matters because flipping it for an existing site would make historical
+            // and new traffic counts incomparable — which the plan requires never happen
+            // silently. (D-defaults)
+            'ignore_bots'         => 'on',
             'ignore_prefetch'     => 'on',
             'ignore_users'        => '',
             'ignore_ip'           => '',
@@ -1251,11 +1580,21 @@ class wp_slimstat
 
     /**
      * Saves a given option in the database
+     *
+     * @param string    $_key      Option name.
+     * @param mixed     $_value    Option value.
+     * @param bool|null $_autoload Whether to autoload. `null` leaves the decision to
+     *                             WordPress, which autoloads anything new — fine for
+     *                             settings read on every request, wrong for anything
+     *                             only an admin screen reads, because each write of an
+     *                             autoloaded option invalidates the whole `alloptions`
+     *                             cache. Network options have no autoload column, so
+     *                             the flag is meaningless there and is not passed on.
      */
-    public static function update_option($_key = '', $_value = '')
+    public static function update_option($_key = '', $_value = '', $_autoload = null)
     {
         if (!is_network_admin()) {
-            update_option($_key, $_value);
+            update_option($_key, $_value, $_autoload);
         } else {
             update_site_option($_key, $_value);
         }
@@ -1361,20 +1700,30 @@ class wp_slimstat
 		$params['use_slimstat_banner'] = ('on' === $params['gdpr_enabled'] && 'on' === (self::$settings['use_slimstat_banner'] ?? 'off')) ? 'on' : 'off';
 
 		if ('on' === $params['use_slimstat_banner']) {
-			// Set GDPR consent endpoint based on tracking method
-			if ('rest' === $method) {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
-			} elseif ('ajax' === $method) {
-				$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
-			} elseif ('adblock_bypass' === $method) {
-				$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
-			} else {
-				$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+			// Fail-soft (issue #325): GDPRService may be unloadable. Reading its
+			// cookie-name constant here runs on wp_enqueue_scripts AND
+			// login_enqueue_scripts, so an uncaught error would white-screen the
+			// front page and lock the admin out of wp-login. Degrade the banner
+			// for this request instead of fatally aborting the enqueue.
+			try {
+				// Set GDPR consent endpoint based on tracking method
+				if ('rest' === $method) {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				} elseif ('ajax' === $method) {
+					$params['gdpr_consent_endpoint'] = ('on' == self::$settings['ajax_relative_path']) ? $ajax_url_relative : $ajax_url;
+				} elseif ('adblock_bypass' === $method) {
+					$params['gdpr_consent_endpoint'] = $params['ajaxurl_adblock'];
+				} else {
+					$params['gdpr_consent_endpoint'] = rest_url('slimstat/v1/gdpr/consent');
+				}
+				$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
+				$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
+				$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
+				$params['gdpr_consent_method'] = $method;
+			} catch (\Throwable $e) {
+				self::record_degradation('gdpr_banner', $e);
+				$params['use_slimstat_banner'] = 'off';
 			}
-			$params['gdpr_cookie_name'] = \SlimStat\Services\GDPRService::CONSENT_COOKIE_NAME;
-			$params['gdpr_cookie_path'] = defined('COOKIEPATH') ? COOKIEPATH : '/';
-			$params['gdpr_cookie_domain'] = defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '';
-			$params['gdpr_consent_method'] = $method;
 		}
 
         if ('on' === self::$settings['slimstat_debug'] || (defined('WP_DEBUG') && WP_DEBUG)) {
@@ -1392,19 +1741,26 @@ class wp_slimstat
             }
         }
 
-        // Register the correct script for adblock bypass, CDN, or default
-        $local_script_version = SLIMSTAT_ANALYTICS_VERSION;
-        $local_script_path = plugin_dir_path(__FILE__) . 'wp-slimstat.min.js';
-        if (file_exists($local_script_path)) {
-            $local_script_version .= '.' . filemtime($local_script_path);
-        }
-
+        // Register the correct script for adblock bypass, or default.
+        //
+        // THE CDN BRANCH IS GONE and enable_cdn no longer does anything: it served the tracker
+        // from a jsDelivr path mirroring wp.org's SVN tags, which 404s on any unreleased build
+        // with no fallback and nothing recorded. tests/tracker-script-origin-test.php holds the
+        // full account and pins it. The option key stays in init_options() so the
+        // array_merge(init_options(), $settings) invariant holds; it is simply never read.
         if ('adblock_bypass' === $method) {
             $hash_js  = md5(site_url() . 'slimstat');
             wp_register_script('wp_slimstat', home_url(sprintf('/%s.js/', $hash_js)), $dependencies, SLIMSTAT_ANALYTICS_VERSION, true);
-        } elseif ('on' == self::$settings['enable_cdn']) {
-            wp_register_script('wp_slimstat', 'https://cdn.jsdelivr.net/wp/wp-slimstat/tags/' . SLIMSTAT_ANALYTICS_VERSION . '/wp-slimstat.min.js', $dependencies, null, true);
         } else {
+            // Stat the file only on the arm that reads the result. This runs on every
+            // front-end page view, and the adblock-bypass arm versions on the constant.
+            $local_script_version = SLIMSTAT_ANALYTICS_VERSION;
+            $local_script_path    = plugin_dir_path(__FILE__) . 'wp-slimstat.min.js';
+
+            if (file_exists($local_script_path)) {
+                $local_script_version .= '.' . filemtime($local_script_path);
+            }
+
             wp_register_script('wp_slimstat', plugins_url('/wp-slimstat.min.js', __FILE__), $dependencies, $local_script_version, true);
         }
 
@@ -1434,10 +1790,48 @@ class wp_slimstat
 	 *
 	 * @return void
 	 */
+	/**
+	 * The request's GDPRService.
+	 *
+	 * Memoized because an undecided visitor's request builds one for the stylesheet
+	 * decision and another for the markup, and both answer the same question. Safe to
+	 * reuse: every mutable input is read from $_COOKIE at call time, not captured here.
+	 *
+	 * @return \SlimStat\Services\GDPRService
+	 */
+	private static function gdpr_service()
+	{
+		static $service = null;
+
+		if (null === $service) {
+			$service = new \SlimStat\Services\GDPRService(self::$settings);
+		}
+
+		return $service;
+	}
+
 	public static function enqueue_gdpr_assets()
 	{
 		if ('on' !== (self::$settings['use_slimstat_banner'] ?? 'off')) {
 			return;
+		}
+
+		// Only when the banner will actually appear. This stylesheet is 14.8 KB and
+		// render-blocking, and it used to load for every visitor on every page — including
+		// everyone who had already accepted or denied, for whom getBannerHtml() emits
+		// nothing at all. (D45)
+		//
+		// Fail OPEN: this runs on login_enqueue_scripts as well, and the same fail-soft
+		// rule as render_gdpr_banner() applies (issue #325) — an exception here must not
+		// take down wp-login.php. When consent state cannot be determined the stylesheet
+		// is enqueued, because the cost of guessing wrong that way is one unused file,
+		// while the other way is an unstyled consent banner.
+		try {
+			if (!self::gdpr_service()->shouldRenderBanner()) {
+				return;
+			}
+		} catch (\Throwable $e) {
+			self::record_degradation('gdpr_banner_assets', $e);
 		}
 
 		wp_enqueue_style(
@@ -1463,14 +1857,19 @@ class wp_slimstat
 			return;
 		}
 
-		$gdpr_service = new \SlimStat\Services\GDPRService(self::$settings);
-		$banner_html  = $gdpr_service->getBannerHtml();
+		// Fail-soft: this also runs on login_footer, so a render failure must not
+		// white-screen the wp-login page and lock the admin out (issue #325).
+		try {
+			$banner_html = self::gdpr_service()->getBannerHtml();
 
-		if ('' === $banner_html) {
-			return;
+			if ('' === $banner_html) {
+				return;
+			}
+
+			echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
+		} catch (\Throwable $e) {
+			self::record_degradation('gdpr_banner_render', $e);
 		}
-
-		echo $banner_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized in GDPRService
 	}
 
     public static function add_defer_to_script_tag($_tag, $_handle)
@@ -1499,36 +1898,294 @@ class wp_slimstat
         $table_events         = $GLOBALS['wpdb']->prefix . 'slim_events';
         $table_events_archive = $GLOBALS['wpdb']->prefix . 'slim_events_archive';
 
-        // Copy entries to the archive table, if needed
-        if ('no' != self::$settings['auto_purge_delete']) {
-            // Use Query builder for INSERT INTO ... SELECT ... with prepared statements
-            $insert_sql   = self::$wpdb->prepare(
-                "INSERT INTO {$table_stats_archive} (id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt) SELECT id, ip, other_ip, username, email, country, location, city, referer, resource, searchterms, notes, visit_id, server_latency, page_performance, browser, browser_version, browser_type, platform, language, fingerprint, user_agent, resolution, screen_width, screen_height, content_type, category, author, content_id, tz_offset, outbound_resource, dt_out, dt FROM {$table_stats} WHERE dt < %d",
-                $days_ago
-            );
-            $is_copy_done = self::$wpdb->query($insert_sql);
-            if (false !== $is_copy_done) {
-                \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-            }
-            $insert_sql_events = self::$wpdb->prepare(
-                "INSERT INTO {$table_events_archive} (type, event_description, notes, position, id, dt) SELECT type, event_description, notes, position, id, dt FROM {$table_events} WHERE dt < %d",
-                $days_ago
-            );
-            $is_copy_done      = self::$wpdb->query($insert_sql_events);
-            if (false !== $is_copy_done) {
-                \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
-            }
-        } else {
-            // Delete old entries
-            \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
-            \SlimStat\Utils\Query::delete($table_events)->where('dt', '<', $days_ago)->execute();
+        // Nothing to purge is the overwhelmingly common case: retention defaults to 420
+        // days and this runs every 12 hours. Two indexed probes, then stop — the tick used
+        // to continue into four full InnoDB table rebuilds regardless. (D1)
+        $has_work = self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_stats} WHERE dt < %d LIMIT 1", $days_ago))
+            || self::$wpdb->get_var(self::$wpdb->prepare("SELECT 1 FROM {$table_events} WHERE dt < %d LIMIT 1", $days_ago));
+
+        if (!$has_work) {
+            return;
         }
 
-        // Optimize tables (keep as direct queries)
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats_archive);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
-        self::$wpdb->query('OPTIMIZE TABLE ' . $table_events_archive);
+        $archive = ('no' != self::$settings['auto_purge_delete']);
+
+        // Both archives' column lists, and the collision guard built from them, live on
+        // \SlimStat\Utils\PurgeArchive so the INSERT and the guard cannot drift apart.
+        //
+        // INTERSECTED AGAINST THE LIVE SCHEMA, because the archive tables are declared
+        // reconcile => false and are therefore frozen at the shape their source had when they
+        // were first created. On an upgraded install the manifest declares columns the archive
+        // has never had -- and naming one in the collision probe made it error, which
+        // probeForCollision() reads as "cannot tell", which stops the DELETE. Every tick,
+        // forever: events aged out, pageviews never did, and the message blamed utf8mb4.
+        //
+        // See PurgeArchive::copyableColumns() for the full account.
+        //
+        // Computed only when archiving. With "Delete Records" archiving off there is no INSERT
+        // to build a column list for, and these four SHOW COLUMNS would be pure cost.
+        $event_columns = [];
+        $stats_columns = [];
+
+        if ($archive) {
+            $prefix     = $GLOBALS['wpdb']->prefix;
+            $event_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_events');
+            $stats_plan = \SlimStat\Utils\PurgeArchive::copyableColumns(self::$wpdb, $prefix, 'slim_stats');
+
+            $event_columns = $event_plan['copy'];
+            $stats_columns = $stats_plan['copy'];
+
+            // No key, no statement. Refusing here is the same refusal probeForCollision()
+            // makes: never DELETE through a question that could not be asked.
+            if (!$event_plan['usable'] || !$stats_plan['usable']) {
+                self::record_degradation(
+                    'purge (archive schema)',
+                    'an archive table is missing its primary key column, so nothing could be '
+                        . 'archived and nothing was deleted. Recreate the archive tables, or turn '
+                        . 'off archiving in Settings > Maintenance.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+
+                return;
+            }
+
+            // Columns the LIVE table has and the archive does not are real fidelity loss, and
+            // they are NOT reported here. Archive drift is permanent -- the archive gains no
+            // columns, ever -- and the degradation channel heals by forgetting: DEGRADATION_TTL
+            // is 3 hours while this cron runs twicedaily, so the warning would be visible for 3
+            // hours in every 12 and look healthy the rest of the time. That is C34's shape
+            // exactly, and admin/index.php's record_column_drift() docblock rejects this channel
+            // for that reason in so many words. Schema::columnDrift() now observes archive
+            // tables, so the loss surfaces durably in the schema-drift notice instead.
+        }
+
+        // ── Events first. This ordering is the whole defect. ────────────────────────
+        //
+        // {prefix}slim_events.id is a FOREIGN KEY into {prefix}slim_stats(id) ON DELETE
+        // CASCADE, created by this plugin. Deleting the parent pageviews first destroyed
+        // the event rows before the archive INSERT below could copy them — measured at
+        // 102,573 of 102,573 events lost at a 30-day cutoff, because an event is stamped
+        // with its parent's id when the pageview is recorded and so is never older than
+        // its parent.
+        //
+        // Selection keys off the PARENT's dt as well as the event's own, because the
+        // cascade keys off the parent: an event still inside the retention window whose
+        // parent has aged out was being destroyed without ever being eligible to archive.
+        $event_where = 'e.dt < %d OR s.dt < %d';
+
+        if ($archive) {
+            // Before trusting INSERT IGNORE, make sure nothing is standing on our keys.
+            //
+            // IGNORE cannot tell "this row is already archived" (the replay case, which is
+            // exactly what it is here for) from "a DIFFERENT row already owns this primary
+            // key" — and it reports the second as a silent no-op. Deleting afterwards would
+            // then destroy live rows that were never archived: data loss where the old code
+            // merely stopped working, which is the one direction a data-safety fix must not
+            // move.
+            //
+            // Reachable in the wild. DELETE does not reset AUTO_INCREMENT, but MariaDB and
+            // MySQL 5.7 re-derive it as MAX(id)+1 on restart, so an admin who uses "Delete
+            // Records" and later reboots gets fresh rows numbered from 1, colliding with
+            // whatever is already archived.
+            //
+            // The comparison covers every column the INSERT below copies. Anything narrower
+            // has false negatives, and a false negative here is worse than the bug being
+            // fixed: the row is dropped by IGNORE and then deleted, with nothing recorded.
+            $events_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($event_columns, 'event_id', 'e');
+
+            // Tri-state: null means the probe itself could not run. On a half-converted
+            // install the cross-table comparison raises ER_CANT_AGGREGATE_2COLLATIONS,
+            // and reading that as "clean" is what let the DELETE through (C25).
+            $event_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
+                self::$wpdb,
+                "SELECT 1 FROM {$table_events} e
+                 INNER JOIN {$table_events_archive} a ON a.event_id = e.event_id
+                 LEFT JOIN {$table_stats} s ON s.id = e.id
+                 WHERE ({$event_where})
+                   AND NOT ({$events_are_replays})
+                 LIMIT 1",
+                [$days_ago, $days_ago]
+            );
+
+            if (null === $event_collision) {
+                self::record_degradation(
+                    'purge (archiving events)',
+                    'could not check the event archive for key collisions, so nothing was deleted: '
+                        . self::$wpdb->last_error
+                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
+                        . 'some tables and not others - finish it before the purge can run again.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+
+            if ($event_collision) {
+                self::record_degradation(
+                    'purge (archiving events)',
+                    'the events archive already holds different rows under the primary keys about to be '
+                        . 'archived, so nothing was deleted. This usually means AUTO_INCREMENT was reset '
+                        . 'after records were cleared.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+
+            // INSERT IGNORE, with event_id carried explicitly, so a run interrupted between
+            // archiving and deleting is replayable: the next run re-copies the same rows
+            // and MySQL ignores the ones already there. Without event_id there is no key to
+            // dedupe on and the retry would duplicate every archived event instead.
+            if (false === self::$wpdb->query(self::$wpdb->prepare(
+                "INSERT IGNORE INTO {$table_events_archive} (" . implode(', ', $event_columns) . ")
+                 SELECT e." . implode(', e.', $event_columns) . "
+                 FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id
+                 WHERE {$event_where}",
+                $days_ago,
+                $days_ago
+            ))) {
+                // Fail closed. If the events could not be archived — missing table, schema
+                // drift, anything — do not touch the pageviews, because deleting them
+                // cascades the events away with no copy anywhere.
+                self::record_degradation(
+                    'purge (archiving events)',
+                    self::$wpdb->last_error,
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+        }
+
+        // Delete the events explicitly rather than leaning on the cascade, so the set
+        // removed is exactly the set archived, and so the behaviour is the same on an
+        // install whose tables are MyISAM and silently ignore the foreign key.
+        if (false === self::$wpdb->query(self::$wpdb->prepare(
+            "DELETE e FROM {$table_events} e LEFT JOIN {$table_stats} s ON s.id = e.id WHERE {$event_where}",
+            $days_ago,
+            $days_ago
+        ))) {
+            self::record_degradation('purge (deleting events)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+            return;
+        }
+
+        // ── Then the pageviews ──────────────────────────────────────────────────────
+        if ($archive) {
+            // Same collision guard as for events, on the pageviews' own primary key, and
+            // over the same 33 columns the INSERT below copies.
+            $stats_are_replays = \SlimStat\Utils\PurgeArchive::sameRow($stats_columns, 'id', 's');
+
+            // Same tri-state as the events probe above.
+            $stats_collision = \SlimStat\Utils\PurgeArchive::probeForCollision(
+                self::$wpdb,
+                "SELECT 1 FROM {$table_stats} s
+                 INNER JOIN {$table_stats_archive} a ON a.id = s.id
+                 WHERE s.dt < %d
+                   AND NOT ({$stats_are_replays})
+                 LIMIT 1",
+                [$days_ago]
+            );
+
+            if (null === $stats_collision) {
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    'could not check the pageview archive for key collisions, so nothing was deleted: '
+                        . self::$wpdb->last_error
+                        . '. An "Illegal mix of collations" here means the utf8mb4 conversion ran on '
+                        . 'some tables and not others - finish it before the purge can run again.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+
+            if ($stats_collision) {
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    'the pageview archive already holds different rows under the primary keys about to '
+                        . 'be archived, so nothing was deleted. This usually means AUTO_INCREMENT was '
+                        . 'reset after records were cleared.',
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+
+            if (false === self::$wpdb->query(self::$wpdb->prepare(
+                "INSERT IGNORE INTO {$table_stats_archive} (" . implode(', ', $stats_columns) . ")
+                 SELECT " . implode(', ', $stats_columns) . " FROM {$table_stats} WHERE dt < %d",
+                $days_ago
+            ))) {
+                self::record_degradation(
+                    'purge (archiving pageviews)',
+                    self::$wpdb->last_error,
+                    self::DEGRADATION_OPERATIONAL
+                );
+                return;
+            }
+
+        }
+
+        $rows_removed = \SlimStat\Utils\Query::delete($table_stats)->where('dt', '<', $days_ago)->execute();
+
+        if (false === $rows_removed) {
+            self::record_degradation('purge (deleting pageviews)', self::$wpdb->last_error, self::DEGRADATION_OPERATIONAL);
+            return;
+        }
+
+        // OPTIMIZE TABLE on InnoDB is a full table rebuild, and its cost tracks table SIZE
+        // rather than rows removed — back-to-back runs on a freshly rebuilt, unfragmented
+        // table cost the same as the first. It also takes an exclusive metadata lock at its
+        // boundaries, so tracking INSERTs queue behind it whenever a report query is open.
+        // Worth paying only after a purge actually freed space, and rarely.
+        //
+        // The archive tables are gone from the list: they are append-only and never
+        // fragment, so rebuilding them was pure cost forever.
+        //
+        // Stored as a non-autoloaded option rather than a transient, because a transient is
+        // evictable and it would fail in the wrong direction: past its retention horizon a
+        // site removes rows on every tick, so an evicted flag restores exactly the
+        // twice-daily rebuild this exists to stop, on the largest sites. Stamped BEFORE the
+        // rebuild so a crash cannot retry it every 12 hours.
+        $last_optimized = (int) get_option('slimstat_purge_optimized_at', 0);
+
+        if ($rows_removed > 0 && (self::now() - $last_optimized) > 30 * DAY_IN_SECONDS) {
+            self::update_option('slimstat_purge_optimized_at', self::now(), false);
+            self::$wpdb->query('OPTIMIZE TABLE ' . $table_stats);
+            self::$wpdb->query('OPTIMIZE TABLE ' . $table_events);
+        }
+
+        // C34 — record that the purge SUCCEEDED, reached only by the path that completed.
+        //
+        // Every early return above records a degradation, and those expire after
+        // DEGRADATION_TTL (3 h) while this cron runs `twicedaily` (12 h). So a purge that
+        // fails every run was visible for 3 hours and invisible for 9, and an admin looking
+        // at a healthy-looking screen had a 75% chance of being wrong.
+        //
+        // Absence of success is durable; presence of a recent failure is not. Stamping the
+        // success and alarming on its staleness inverts the reporting so that the SILENT
+        // case is the one that raises, which is the direction a health signal has to fail.
+        self::update_option(self::LAST_PURGE_OK_OPTION, self::now(), false);
+    }
+
+    /**
+     * Has the purge gone too long without a successful run?
+     *
+     * Two intervals, not one: a single missed tick is ordinary (WP-Cron is spawned by
+     * traffic, so a quiet site skips ticks legitimately). Two consecutive misses is a
+     * pattern, and the point of this signal is to be quiet until it is not.
+     *
+     * A site that has never purged reports healthy — there is no failure to report, and the
+     * first run stamps the option.
+     */
+    public static function purge_is_stale(): bool
+    {
+        if (intval(self::$settings['auto_purge']) <= 0) {
+            return false;   // purging is off; silence is correct
+        }
+
+        $last_ok = (int) get_option(self::LAST_PURGE_OK_OPTION, 0);
+
+        if ($last_ok <= 0) {
+            return false;
+        }
+
+        return (self::now() - $last_ok) > (2 * self::PURGE_INTERVAL);
     }
 
     public static function wp_slimstat_update_geoip_database()
@@ -1674,6 +2331,424 @@ class wp_slimstat
     {
         return register_widget('slimstat_widget');
     }
+
+    /**
+     * Plugin activation. Loads the admin bundle first, because it is not loaded here.
+     *
+     * `register_activation_hook()` fires on whatever request activated the plugin, and
+     * that is routinely `wp plugin activate` — where `is_admin()` is false and
+     * admin/index.php was never included. Naming `wp_slimstat_admin` directly in the
+     * registration is what made the CLI path a silent no-op.
+     *
+     * `init_environment()` is deliberately allowed to run its DDL here: activation is
+     * the one moment where creating tables is exactly what the user asked for.
+     *
+     * On a network activation WordPress fires this once with `$network_wide = true` — and
+     * before D10 the parameter was not even declared, so `init_environment()` ran for the
+     * CURRENT blog only and every subsite started tables-less, recording nothing until
+     * someone happened to load its wp-admin. The walk includes archived and spam sites:
+     * they keep their tables (only deletion drops them, via `wpmu_drop_tables`), so they
+     * get them at activation too — symmetric with drop_tables(), which derives the same
+     * list from the same manifest.
+     *
+     * AND THE WALK IS BUDGETED, BECAUSE AN UNBUDGETED ONE CANNOT ACTIVATE AT ALL. Core's
+     * activate_plugin() fires `activate_{$plugin}` and only THEN writes
+     * `active_sitewide_plugins` (wp-admin/includes/plugin.php). So a walk that exhausts
+     * max_execution_time does not merely leave the later sites tables-less: the request dies
+     * inside this hook, the option is never written, and the plugin is not network-activated.
+     * It leaves tables and rewritten `.htaccess` files behind on the sites it did reach — for a
+     * plugin that is not active — and the retry runs the same unbounded walk that just died.
+     * Per site this does up to 6 CREATE TABLE plus ~13 CREATE INDEX and a HARD
+     * flush_rewrite_rules(), which rewrites `.htaccess`.
+     *
+     * @param bool $network_wide True when activated across the network from the network
+     *                           admin or `wp plugin activate --network`.
+     */
+    public static function on_activate($network_wide = false)
+    {
+        try {
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+            if ($network_wide && is_multisite()) {
+                // THE SNAPSHOT IS TAKEN AND PERSISTED BEFORE ANY WORK. Sites created after
+                // this point are covered by on_initialize_site(), so the list does not need
+                // to stay live — it needs to survive the request, which is the thing the
+                // previous version could not do.
+                // The marker goes with it. A previous activation that died left its blog id
+                // behind, and nothing else clears it — so without this line a RE-activation
+                // starts with a fresh cursor and a stale marker, and skips whichever blog that
+                // id names: either the one that died (which then gets no attempt at all) or a
+                // perfectly healthy one, named in a degradation that never happened.
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+
+                update_site_option(
+                    self::ACTIVATION_CURSOR_OPTION,
+                    array_map('intval', get_sites([
+                        'fields'                 => 'ids',
+                        'number'                 => 0,
+                        // get_sites() otherwise queues every id into the metadata
+                        // lazyloader. Nothing here reads site meta, so nothing fires
+                        // today — but the day something does, it is one IN() clause
+                        // holding the whole network.
+                        'update_site_meta_cache' => false,
+                    ]))
+                );
+
+                self::walk_pending_activation_sites();
+            } else {
+                wp_slimstat_admin::init_environment();
+            }
+        } catch (\Throwable $e) {
+            // Fail soft, for the same reason update_tables_and_options() does. This runs
+            // DDL on strictly more paths than before the registration was moved, and an
+            // uncaught throw here either white-screens the plugins screen or aborts
+            // `wp plugin activate` mid-DDL.
+            //
+            // The trade is real and worth naming: failing soft means activating with no
+            // tables. That is the state the persisted degradation notice and the
+            // tracker's own recovery path exist to cover, and it is strictly better than
+            // a fatal on the screen the user is standing on.
+            self::record_degradation('activation', $e);
+        }
+    }
+
+    /**
+     * Give the next batch of pending subsites their tables, and return how many remain.
+     *
+     * SEPARATED FROM on_activate() BECAUSE WordPress FIRES ACTIVATION ONCE. A cursor whose
+     * only consumer is the hook that wrote it is a marker, not a resume: whatever the first
+     * pass could not finish would never be finished by anything. This is reached from
+     * on_activate() for the first pass and from continue_network_activation() on every later
+     * network-admin request.
+     *
+     * The budget bounds how many sites one request STARTS, not how long one takes. A single
+     * site's CREATE TABLE run is not interruptible, so a server slow enough to exceed the
+     * request limit on ONE site is beyond anything here — but it is guaranteed to make
+     * progress, because the deadline is not consulted before the first site. Without that
+     * guarantee a slow server converts a bounded walk into a walk that starts nothing, every
+     * pass, forever; ConvertTablesToUtf8mb4 has the same property for the same reason.
+     *
+     * @param float|null $budget_seconds Override the pass budget. Null takes
+     *                                   ACTIVATION_PASS_SECONDS. Zero still starts one site,
+     *                                   which is how tests reach the deadline branch without
+     *                                   spending ten real seconds to do it.
+     * @return int Sites still owed tables after this pass.
+     */
+    public static function walk_pending_activation_sites($budget_seconds = null)
+    {
+        // DEFAULTED TO false, NOT TO []. This method runs on every network-admin request, and
+        // core's delete_network_option() issues `SELECT meta_id FROM sitemeta` before it can
+        // decide there is nothing to delete — it has no notoptions short-circuit. Defaulting to
+        // [] made the absent case indistinguishable from the empty one, so the steady state
+        // paid that query on every page load, forever. The delete still runs for a value that
+        // IS stored and useless, which is what it was there for.
+        $pending = get_site_option(self::ACTIVATION_CURSOR_OPTION, false);
+
+        if (!is_array($pending) || [] === $pending) {
+            if (false !== $pending) {
+                delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+            }
+
+            return 0;
+        }
+
+        include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+        $deadline   = microtime(true) + (float) ($budget_seconds ?? self::ACTIVATION_PASS_SECONDS);
+        $attempting = (int) get_site_option(self::ACTIVATION_ATTEMPT_OPTION, 0);
+
+        while ([] !== $pending) {
+            $blog_id = (int) array_shift($pending);
+
+            if ($blog_id === $attempting) {
+                // THE POISON PILL, and it is the cost of the at-least-once rule below. This
+                // blog was started on an earlier pass and that pass never came back, so the
+                // request died inside its DDL rather than throwing. Retrying it would start
+                // the same fatal work every pass forever — and because a pass always starts
+                // its first site, no site BEHIND it would ever be reached, while the notice
+                // went on promising progress. Once is a retry; twice is a loop.
+                // switch_to_blog() around it for the same reason the catch branch below
+                // relies on being inside one: record_degradation() writes to whichever blog is
+                // current. Without this the skip landed in the MAIN site's options under a key
+                // naming a subsite, while the catch branch landed on the subsite — one step
+                // key, two stores, and the paragraph below claiming per-blog recording.
+                switch_to_blog($blog_id);
+
+                self::record_degradation(
+                    'activation (blog ' . $blog_id . ')',
+                    new \RuntimeException(
+                        'setting up this site did not finish, so it was skipped; the rest of '
+                            . 'the network continues'
+                    ),
+                    self::DEGRADATION_OPERATIONAL
+                );
+
+                restore_current_blog();
+            } else {
+                // Recorded BEFORE the work, which is the only ordering that can survive the
+                // request dying inside it: the pending list is written AFTER, so a blog whose
+                // request died is still at the head when the next pass reads it, and this
+                // marker is the only thing that can tell "died" from "not started yet".
+                //
+                // What that buys is ONE attempt for a blog that kills its request, not two —
+                // an earlier draft of this comment said "retried once", which is true of a
+                // blog that THROWS (caught, cursor advances) and false of the case the marker
+                // exists for.
+                update_site_option(self::ACTIVATION_ATTEMPT_OPTION, $blog_id);
+
+                switch_to_blog($blog_id);
+
+                try {
+                    wp_slimstat_admin::init_environment();
+                } catch (\Throwable $e) {
+                    // Per-site, so one refusing database does not leave every LATER site
+                    // tables-less as well. Each failure is recorded on the blog it belongs to —
+                    // switch_to_blog() has already pointed the degradation option at that
+                    // site's own wp_options.
+                    self::record_degradation('activation (blog ' . $blog_id . ')', $e);
+                }
+
+                restore_current_blog();
+            }
+
+            // PERSISTED INSIDE THE LOOP, AND AFTER THE WORK. Writing the shortened list only
+            // once the site is done means a request killed mid-DDL retries that site rather
+            // than skipping it — init_environment() is idempotent, so at-least-once is the
+            // safe direction. Persisting after the whole loop is what made the previous
+            // version record nothing at all when it died.
+            if ([] === $pending) {
+                delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+            } else {
+                update_site_option(self::ACTIVATION_CURSOR_OPTION, $pending);
+            }
+
+            // CHECKED AT THE TAIL, which is what makes every pass start at least one site —
+            // and it needs no sentinel to say so. Checking at the head instead required a
+            // `$first` flag whose only job was to skip the check once; the two are the same
+            // set of work, and this spelling cannot get the flag wrong.
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+        }
+
+        return count($pending);
+    }
+
+    /**
+     * Is this plugin recorded as network-active right now?
+     *
+     * Keyed on the REAL basename, not the canonical literal: the option is keyed by wherever
+     * the plugin actually lives, and a renamed install dir (beta ZIP, GitHub -master download)
+     * would turn a literal into a silent every-time miss — the same silent-no-op shape the
+     * subsite hook exists to close.
+     *
+     * Hand-rolled rather than core's is_plugin_active_for_network(): that lives in
+     * wp-admin/includes/plugin.php, and on_initialize_site() fires on WP-CLI, REST and
+     * programmatic wp_insert_site() paths where the admin bundle is not loaded at all.
+     */
+    private static function is_network_active()
+    {
+        $sitewide = get_site_option('active_sitewide_plugins');
+
+        return !empty($sitewide[plugin_basename(SLIMSTAT_FILE)]);
+    }
+
+    /**
+     * Is this a network-admin request by someone who could act on the answer?
+     *
+     * Capability BEFORE any option read, which is the ordering MigrationAdmin::registerPage()
+     * was corrected to: a probe whose answer the caller cannot act on is a probe not worth
+     * making. All three checks are free — is_multisite() and is_network_admin() read constants,
+     * and 'site_admins' is in core's preloaded network-option set — so an ordinary admin page
+     * on a single site or a subsite pays nothing at all.
+     */
+    private static function is_network_admin_request()
+    {
+        return is_multisite() && is_network_admin() && current_user_can('manage_network');
+    }
+
+    /**
+     * Continue an interrupted network activation, from the network admin.
+     *
+     * Network admin only, deliberately. The walk is a burst of DDL and a hard rewrite flush;
+     * running it on an ordinary site admin's page load would spend someone else's request on
+     * it. Sites this never reaches are not stranded — admin/index.php's init() creates the
+     * tables for any blog whose own wp-admin is loaded, and the tracker has its own repair
+     * path — so this is the fast route, not the only one.
+     */
+    public static function continue_network_activation()
+    {
+        if (!self::is_network_admin_request() || !self::is_network_active()) {
+            return;
+        }
+
+        try {
+            self::walk_pending_activation_sites();
+        } catch (\Throwable $e) {
+            // OPERATIONAL, not a load failure: the plugin is running, and the admin notice's
+            // load-failure group offers "reinstall the plugin" as the remedy, which is the
+            // wrong instruction for a walk that ran and stopped.
+            self::record_degradation(
+                'network activation continuation',
+                $e,
+                self::DEGRADATION_OPERATIONAL
+            );
+        }
+    }
+
+    /** Tell the network admin that subsites are still waiting, and how many. */
+    public static function network_activation_notice()
+    {
+        // THE SAME TWO CONDITIONS THE RESUME USES. A cursor left by an activation core never
+        // recorded is one continue_network_activation() refuses to act on, so a notice asking
+        // for a reload that does nothing would be worse than silence.
+        if (!self::is_network_admin_request() || !self::is_network_active()) {
+            return;
+        }
+
+        $pending = get_site_option(self::ACTIVATION_CURSOR_OPTION, []);
+
+        if (!is_array($pending) || [] === $pending) {
+            return;
+        }
+
+        printf(
+            '<div class="notice notice-info"><p>%s</p></div>',
+            esc_html(sprintf(
+                /* translators: %s: a number of sites. */
+                _n(
+                    'SlimStat is still setting up %s site on this network. Reload this page to continue.',
+                    'SlimStat is still setting up %s sites on this network. Reload this page to continue.',
+                    count($pending),
+                    'wp-slimstat'
+                ),
+                number_format_i18n(count($pending))
+            ))
+        );
+    }
+
+    /**
+     * A site was just created — give it tables if this plugin is network-active (D10).
+     *
+     * Registered on `wp_initialize_site`, which fires on EVERY creation path: network
+     * admin, WP-CLI `wp site create`, the REST sites endpoint, and any plugin calling
+     * `wp_insert_site()`. Its predecessor `wpmu_new_blog` is fired by core only through a
+     * compat shim guarded by `has_action()` — and the old registration lived in
+     * admin/index.php behind `is_admin()`, so on precisely the requests that create sites
+     * programmatically the shim found no callback and the subsite got no tables.
+     *
+     * Priority 200: after core has created the site's own tables and options (priority
+     * range of `wp_initialize_site`'s own internals), so `switch_to_blog()` lands on a
+     * fully-initialized site.
+     *
+     * Per-site-activated networks are deliberately NOT handled here: the plugin is not
+     * active on the new subsite, so creating its tables would be writing schema for a
+     * plugin the site does not run. Activation on that site creates them (on_activate).
+     *
+     * @param \WP_Site $new_site The site object core just initialized.
+     */
+    public static function on_initialize_site($new_site)
+    {
+        try {
+            if (!self::is_network_active()) {
+                return;
+            }
+
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+            switch_to_blog((int) $new_site->blog_id);
+
+            try {
+                wp_slimstat_admin::init_environment();
+            } finally {
+                restore_current_blog();
+            }
+        } catch (\Throwable $e) {
+            // Site creation must never fail because analytics could not make a table.
+            // The degradation notice and the tracker's failed-INSERT recovery cover it.
+            self::record_degradation('new subsite ' . (int) $new_site->blog_id, $e);
+        }
+    }
+
+    /**
+     * Fully-qualified name of one Slimstat table, optionally for another blog.
+     *
+     * The free half of the per-blog table API (F8): Pro's Network View executes per blog
+     * and recombines in PHP (ratified P3), and Phase G's migration runner targets blogs
+     * it is not currently on. Both need "blog N's slim_stats" WITHOUT switch_to_blog() —
+     * which swaps the whole option/cache context to compute one string.
+     *
+     * Name resolution is the manifest's (Schema::tableName throws on a typo at call time
+     * rather than at query time); prefix resolution is wpdb's own `get_blog_prefix()`,
+     * because interpolating `$wpdb->prefix` is exactly what made init_tables() unable to
+     * target a blog. `$blog_id` 0 means the CURRENT blog — get_blog_prefix() maps 0 to
+     * the main site, which is the wrong default on a subsite, so 0 is translated to null
+     * (wpdb's own "current blog") before the call.
+     *
+     * @param string $name    Table suffix as declared in the manifest, e.g. 'slim_stats'.
+     * @param int    $blog_id Blog to resolve for; 0 = the current blog.
+     * @return string
+     * @throws \InvalidArgumentException when $name is not a declared table.
+     */
+    public static function table($name, $blog_id = 0)
+    {
+        return \SlimStat\Schema\Schema::tableName($name, self::get_blog_prefix_for($blog_id));
+    }
+
+    /**
+     * Suffix => fully-qualified name for every Slimstat table, optionally for another blog.
+     *
+     * @param int $blog_id Blog to resolve for; 0 = the current blog.
+     * @return array<string,string>
+     */
+    public static function tables($blog_id = 0)
+    {
+        return \SlimStat\Schema\Schema::tableNames(self::get_blog_prefix_for($blog_id));
+    }
+
+    /**
+     * The prefix half of the API, written once because it is the subtle half: wpdb maps
+     * blog id 0 (and 1) to the MAIN SITE's base prefix, so an untranslated 0 default
+     * would silently point every current-blog call on a subsite at the main site — a bug
+     * invisible on single-site and on blog 1. 0 becomes null, which is wpdb's own
+     * spelling of "the current blog".
+     *
+     * @param int $blog_id 0 = the current blog.
+     * @return string
+     */
+    private static function get_blog_prefix_for($blog_id)
+    {
+        return $GLOBALS['wpdb']->get_blog_prefix(0 === (int) $blog_id ? null : (int) $blog_id);
+    }
+
+    /**
+     * Plugin deactivation. Same reason for the wrapper as on_activate().
+     *
+     * Unregistered on the CLI path, this left all five events declared in
+     * src/cron-hooks.php scheduled against a deactivated plugin.
+     */
+    public static function on_deactivate()
+    {
+        try {
+            // A pending activation walk is finished business the moment the plugin is turned
+            // off. continue_network_activation() also refuses when the plugin is not
+            // network-active, so this is belt and braces — but leaving the cursor behind
+            // would mean a reactivation inherits a stale site list from before.
+            delete_site_option(self::ACTIVATION_CURSOR_OPTION);
+            delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+
+            include_once plugin_dir_path(__FILE__) . 'admin/index.php';
+
+            wp_slimstat_admin::deactivate();
+        } catch (\Throwable $e) {
+            // Deactivation is the moment a user is trying to turn the plugin OFF. A
+            // throw here — including a parse error anywhere in the 4,176-line admin
+            // bundle this has to include — must not be what stops them.
+            self::record_degradation('deactivation', $e);
+        }
+    }
     // end register_widget
 
     /**
@@ -1783,6 +2858,7 @@ class slimstat_widget extends WP_Widget
      * Outputs the options form on admin
      *
      * @param array $instance The widget options
+     * @return string
      */
     public function form($_instance)
     {
@@ -1821,6 +2897,11 @@ class slimstat_widget extends WP_Widget
             <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo trim(strip_tags($slimstat_widget_filters)) ?></textarea>
         </p>
         <?php
+
+        // WP_Widget::form() is declared string|null: core treats a returned 'noform' as
+        // "nothing was rendered". This widget renders its own markup above, so the empty
+        // string is the correct "I have already output the form" answer.
+        return '';
     }
 
     /**
@@ -1879,12 +2960,40 @@ if (function_exists('add_action')) {
     }
 
 
-    // From the codex: You can't call register_activation_hook() inside a function hooked to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called before the plugin is loaded or activated.
     if (is_admin()) {
         include_once(plugin_dir_path(__FILE__) . 'admin/index.php');
-        register_activation_hook(__FILE__, ['wp_slimstat_admin', 'init_environment']);
-        register_deactivation_hook(__FILE__, ['wp_slimstat_admin', 'deactivate']);
     }
+
+    // From the codex: You can't call register_activation_hook() inside a function hooked
+    // to the 'plugins_loaded' or 'init' hooks (or any other hook). These hooks are called
+    // before the plugin is loaded or activated.
+    //
+    // Registered UNCONDITIONALLY. These sat inside the is_admin() branch above, and
+    // is_admin() returns WP_ADMIN — a constant defined in exactly one file,
+    // wp-admin/admin.php, which WP-CLI never loads. So `wp plugin activate` created no
+    // tables, no indexes and no visit-id counter and never flushed rewrite rules, while
+    // `wp plugin deactivate` left all five cron events in src/cron-hooks.php scheduled
+    // against a deactivated plugin — the exact thing that file exists to prevent.
+    //
+    // The callbacks go through wrappers rather than naming wp_slimstat_admin directly,
+    // because that class lives in admin/index.php and is not loaded on the CLI path
+    // these registrations were just moved onto.
+    register_activation_hook(__FILE__, ['wp_slimstat', 'on_activate']);
+    register_deactivation_hook(__FILE__, ['wp_slimstat', 'on_deactivate']);
+
+    // Subsite creation (D10). Unconditional for the same reason as the two hooks above:
+    // sites are created by WP-CLI, REST and programmatic wp_insert_site() calls, where
+    // is_admin() is false and the admin bundle — home of the old wpmu_new_blog
+    // registration — was never loaded. The callback itself checks network-active status
+    // at fire time, so on single sites and per-site-activated networks this is a no-op.
+    add_action('wp_initialize_site', ['wp_slimstat', 'on_initialize_site'], 200);
+
+    // The consumer of the activation cursor. Registered here, beside the hook that WRITES
+    // it, because WordPress fires activation once: a resume whose only caller is the
+    // activation hook is a marker nothing ever resumes from. Both callbacks return
+    // immediately outside the network admin, so on single sites this is two no-ops.
+    add_action('admin_init', ['wp_slimstat', 'continue_network_activation']);
+    add_action('network_admin_notices', ['wp_slimstat', 'network_activation_notice']);
 
     add_action('widgets_init', ['wp_slimstat', 'register_widget']);
 

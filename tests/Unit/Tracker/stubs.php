@@ -8,11 +8,27 @@
 declare(strict_types=1);
 
 // ── WordPress functions needed by source files ─────────────────────────────
+// Seedable, because it is declared here as a real function and therefore cannot be
+// redefined by Brain Monkey — Patchwork refuses with DefinedTooEarly. A test that
+// needs to control an option writes $GLOBALS['slimstat_test_options'][$key] and
+// clears it in tearDown. An empty store returns $default, so every test that
+// predates this sees exactly the old behaviour.
+if (!isset($GLOBALS['slimstat_test_options'])) {
+    $GLOBALS['slimstat_test_options'] = [];
+}
 if (!function_exists('get_option')) {
-    function get_option($option, $default = false) { return $default; }
+    function get_option($option, $default = false)
+    {
+        return $GLOBALS['slimstat_test_options'][$option] ?? $default;
+    }
 }
 if (!function_exists('delete_option')) {
-    function delete_option($option) { return true; }
+    function delete_option($option)
+    {
+        // Mirrors get_option()'s store so a test can observe a deletion.
+        unset($GLOBALS['slimstat_test_options'][$option]);
+        return true;
+    }
 }
 
 // ── WordPress constants needed by source files ────────────────────────────
@@ -34,16 +50,46 @@ if (!defined('AUTH_KEY')) {
 if (!defined('SLIMSTAT_ANALYTICS_DIR')) {
     define('SLIMSTAT_ANALYTICS_DIR', dirname(__DIR__, 3) . '/');
 }
+// wpdb result-format constants (wp-includes/wp-db.php).
+foreach (['OBJECT', 'OBJECT_K', 'ARRAY_A', 'ARRAY_N'] as $slimstat_wpdb_const) {
+    if (!defined($slimstat_wpdb_const)) {
+        define($slimstat_wpdb_const, $slimstat_wpdb_const);
+    }
+}
+unset($slimstat_wpdb_const);
 
 // ── wp_slimstat global stub ───────────────────────────────────────────────
 if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
+        /** Mirrors wp_slimstat's severity constants; the migration and tracker paths
+         *  name them when recording, so a stub without them fatals rather than fails. */
+        const DEGRADATION_LOAD = 'load';
+
+        const DEGRADATION_OPERATIONAL = 'operational';
+
         /** @var string */
         public static string $upload_dir = '/tmp/fake-browscap';
 
         /** @var object|null Stand-in for the WP $wpdb handle (set by tests that need it). */
         public static $wpdb = null;
+
+        /**
+         * Degradations recorded during a test, keyed by step.
+         *
+         * Tests that assert "this failure leaves a trace" read this. Whether the real
+         * recorder persists and surfaces correctly is pinned separately by
+         * tests/failsoft-visibility-test.php; here the property under test is only
+         * that the failing code path reports itself at all.
+         *
+         * @var array<string,string>
+         */
+        public static array $degradations = [];
+
+        public static function record_degradation($step, $e): void
+        {
+            self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        }
 
         /** @var array<string,mixed> */
         public static array $settings = [
@@ -107,9 +153,25 @@ if (!class_exists('wp_slimstat')) {
             self::$_data_js = $data;
         }
 
-        public static function date_i18n(string $format): int
+        public static function date_i18n(string $format, $timestamp = false): int
         {
-            return (int) date($format);
+            return (int) (false === $timestamp ? date($format) : date($format, (int) $timestamp));
+        }
+
+        /**
+         * The real class's documented helper for "now, in the format `dt` is stored in".
+         *
+         * ABSENT FROM THIS STUB UNTIL A CALLER NEEDED IT, and the way that surfaced is the point:
+         * Processor.php moved from date_i18n('U') to now() — the same value, correctly typed —
+         * and two ProcessorTest cases went from PASSING to INCOMPLETE, because they wrap the call
+         * in try/catch and treat any Throwable as "no full WP environment". So a missing stub
+         * method arrived as a TODO rather than as a failure, and the run still said OK.
+         *
+         * The assertion count is what gave it away: 602 -> 598 while the test count held at 317.
+         */
+        public static function now(): int
+        {
+            return self::date_i18n('U');
         }
 
         public static function get_request_uri(): string

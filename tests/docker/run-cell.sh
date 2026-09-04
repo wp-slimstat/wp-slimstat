@@ -33,12 +33,11 @@ BASE_URL="http://127.0.0.1:${HTTP_PORT}"
 status="PASS"; reason=""
 
 export COMPOSE_PROJECT_NAME="$PROJECT" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 rm -rf "$WP_DIR"            # fresh WP install per run (host bind-mount persists otherwise)
 mkdir -p "$WP_DIR" "$ART"
 
-dc()  { docker compose -f "$HARNESS_DIR/docker-compose.yml" "$@"; }
-wpc() { dc exec -T -u www-data wp wp --path=/var/www/html "$@"; }
 fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 blocked(){ status="BLOCKED-BY-WP-CORE"; reason="$1"; warn "BLOCKED: $1"; }
 
@@ -50,11 +49,12 @@ finish() {
 trap finish EXIT
 
 log "[$CELL] build + up (PHP $PHP, WP $WP, http $HTTP_PORT, db $DB_PORT)"
-dc build --build-arg PHP_VERSION="$PHP" wp  > "$ART/build.log" 2>&1 || { fail "image build failed"; exit 1; }
-dc up -d                                    > "$ART/up.log"    2>&1 || { fail "compose up failed"; exit 1; }
-
-# Wait for DB + Apache.
-wait_for 40 3 dc exec -T db mysqladmin ping -h127.0.0.1 -uroot -proot --silent || { fail "db never ready"; exit 1; }
+boot_stack "$ART" "$PHP"
+case $? in
+  1) fail "image build failed"; exit 1 ;;
+  2) fail "compose up failed";  exit 1 ;;
+  3) fail "db never ready";     exit 1 ;;
+esac
 wait_for 30 2 bash -c "curl -fsS -o /dev/null '$BASE_URL/' || [ \"\$(curl -s -o /dev/null -w '%{http_code}' '$BASE_URL/')\" != 000 ]" || true
 
 # ── WP core download (BLOCKED detection #1) ─────────────────────────────────
@@ -64,11 +64,7 @@ if ! wpc core download --version="$WP" --force > "$ART/wp-install.log" 2>&1; the
 fi
 
 # ── config + install (BLOCKED detection #2: WP core fatal on this PHP) ───────
-wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:3306 \
-     --force --skip-check >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG         true  --raw --type=constant >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG_LOG     true  --raw --type=constant >>"$ART/wp-install.log" 2>&1
-wpc config set WP_DEBUG_DISPLAY false --raw --type=constant >>"$ART/wp-install.log" 2>&1
+wp_config_debug "$ART/wp-install.log"
 
 if ! wpc core install --url="$BASE_URL" --title="SS QA $CELL" \
        --admin_user=admin --admin_password=admin --admin_email=qa@example.com \
@@ -87,9 +83,7 @@ fi
 
 # ── plugins: free (copied in) + Pro (built zip) ─────────────────────────────
 log "[$CELL] install plugins"
-rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat"
-rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-      "$PLUGIN_SRC/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
+sync_plugin_src "$WP_DIR"
 mkdir -p "$WP_DIR/wp-content/plugins/.pro"; cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 

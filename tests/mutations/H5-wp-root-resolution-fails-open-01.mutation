@@ -1,0 +1,21 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:e2e-harness-contract
+kind:      guard-removal
+expect:    resolves the install path without failing the job
+rationale: Keeps the deterministic resolution and deletes only its ability to fail. This is the more dangerous half and the easier one to write by accident: `|| true` makes an unresolved INSTALL_PATH empty rather than absent, so WP_ROOT becomes '/tests-WordPress', every filesystem read goes to a path that does not exist, and every negative assertion in the suite -- which is all of them, they all check that no fatal appeared -- passes having opened nothing. A green run that read no files is the exact shape this workspace keeps recording, so the clause is registered separately from H2 rather than being carried by it.
+---
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -436,11 +436,6 @@
+           # Ask wp-env instead, and fail the job rather than continue with an empty
+           # WP_ROOT: empty is not absent, it makes the specs read paths under /.
+           INSTALL_PATH="$(npx wp-env install-path 2>/dev/null || true)"
+-          if [ -z "${INSTALL_PATH}" ] || [ ! -d "${INSTALL_PATH}/tests-WordPress" ]; then
+-            echo "::error::could not resolve the wp-env install path"
+-            echo "Without it every filesystem assertion reads a path under / and passes vacuously."
+-            exit 1
+-          fi
+           WP_ROOT="${INSTALL_PATH}/tests-WordPress"
+           echo "Resolved WP_ROOT=$WP_ROOT"
+ 

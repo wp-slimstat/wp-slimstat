@@ -1,0 +1,21 @@
+target:    tests/oracle/classify.py
+gate:      composer test:classifier-plants
+kind:      restore-defect
+expect:    P53-vacuous-arms-do-not-suppress-two-oracle-disagreements label
+rationale: Removes the ADR-18 Q1 rule. An INCOMPARABLE arms leg then reaches comparison-could-not-fail first and suppresses two real oracle disagreements, returning d-vacuous/unresolved instead of c-THREE-WAY/block. P53 is derived from the ratified principle that a leg establishing nothing cannot suppress evidence established by the other legs.
+---
+diff --git a/tests/oracle/classify.py b/tests/oracle/classify.py
+--- a/tests/oracle/classify.py
++++ b/tests/oracle/classify.py
+@@ -387,11 +387,2 @@
+-    Rule(
+-        "oracle-contradicts-both-incomparable-arms", "c-THREE-WAY",
+-        "the ARMS leg is INCOMPARABLE, but both independent oracle legs are real differences. "
+-        "ADR-18 Q1: a vacuous leg establishes nothing about itself and cannot suppress what the "
+-        "other two legs establish — both arms are wrong, or the oracle is",
+-        lambda f: (f.arms.verdict == algebra.INCOMPARABLE
+-                   and f.oracle_new.verdict == algebra.DIFFER
+-                   and f.oracle_old.verdict == algebra.DIFFER),
+-    ),
+     Rule(
+         "comparison-could-not-fail", "d-vacuous",

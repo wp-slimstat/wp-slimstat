@@ -23,6 +23,22 @@ class Chart
 
     private const CHART_TYPES = ['line', 'bar'];
 
+    /**
+     * How coarsely the end of a today-inclusive window is quantised, and how long the
+     * resulting cache entry lives.
+     *
+     * Deliberately one number for both jobs: the bucket makes the key stable long
+     * enough to be hit, the TTL bounds staleness at one bucket. Two constants could
+     * drift into a cache that is written and never read.
+     *
+     * 60s matches the once-a-minute cadence `adminbar-realtime.js` refreshes at, so a
+     * chart is never more out of date than the figures printed beside it.
+     *
+     * @see \wp_slimstat_db::CACHE_RANGE_BUCKET_SECONDS for the same technique applied
+     *      to the goal and funnel transients (D33).
+     */
+    private const CACHE_LIVE_BUCKET_SECONDS = 60;
+
     private array $args = [];
 
     private array $data = [];
@@ -196,26 +212,65 @@ class Chart
 
     private function fetchChartData(array $args): array
     {
+        // Quantise the live end BEFORE anything else reads $args, so the WHERE and the
+        // current-vs-previous CASE describe the same window. The end is otherwise `now`
+        // to the second and the cache key derives from the generated SQL, so the key
+        // moved every render and the cache could never be hit — the same defect as the
+        // goal transients (D33). Enabling caching without this achieves nothing. Cost:
+        // the last <60s of today is ignored, well inside the hourly granularity.
+        //
+        // Not routed through Query::processDateRange(), which already splits a
+        // today-inclusive range into a cached historical half and a live half. Four
+        // reasons, recorded because "just use the builder" is the obvious cleanup and
+        // it would silently break the coarse granularities:
+        //   1. getSplitDateRanges() matches ONE contiguous `dt BETWEEN`; this predicate
+        //      is current OR previous in a single clause.
+        //   2. $end is also inlined into the SELECT list's CASE label, so splitting the
+        //      WHERE alone still leaves a key that moves every second.
+        //   3. mergeGroupResults() sums 'counthits', not v1/v2, and for WEEK/MONTH/YEAR
+        //      the bucket containing today appears in BOTH halves — it would keep one
+        //      and discard the other's counts.
+        //   4. getAll() takes the split path whenever it matches, regardless of whether
+        //      caching is on, so this would apply even with the cache disabled.
+        $todayStart = strtotime(date('Y-m-d 00:00:00'));
+        $isLive     = ($args['end'] >= $todayStart);
+
+        if ($isLive) {
+            $args['end'] = (int) (floor($args['end'] / self::CACHE_LIVE_BUCKET_SECONDS) * self::CACHE_LIVE_BUCKET_SECONDS);
+        }
+
         $prevArgs = $this->calculatePreviousArgs($args);
         $sqlInfo  = $this->buildSql($args, $prevArgs);
 
-        // Allow caching only if both current and previous ranges end before today
-        $todayStart     = strtotime(date('Y-m-d 00:00:00'));
-        $canCacheRanges = ($args['end'] < $todayStart && $prevArgs['end'] < $todayStart);
+        // Historical windows are immutable, so they keep the long TTL. Live ones expire
+        // with their bucket: a stale entry must never outlive the window it describes.
+        $expiration = $isLive ? self::CACHE_LIVE_BUCKET_SECONDS : DAY_IN_SECONDS;
 
-        $rowsQuery   = $sqlInfo['query'];
-        $totalsQuery = $sqlInfo['totalsQuery'];
+        $rowsQuery = $sqlInfo['query'];
 
         if ($rowsQuery instanceof Query) {
-            $rowsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
+            $rowsQuery->allowCaching(true, $expiration);
         }
 
-        if ($totalsQuery instanceof Query) {
-            $totalsQuery->allowCaching($canCacheRanges, DAY_IN_SECONDS);
-        }
+        $merged = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
 
-        $results = $rowsQuery instanceof Query ? $rowsQuery->getAll() : [];
-        $totals  = $totalsQuery instanceof Query ? $totalsQuery->getAll() : [];
+        // Split the ROLLUP result: bucket rows, per-period super-rows (the totals the
+        // second query used to fetch), and the (NULL, NULL) grand total nothing renders.
+        // A bucket expression over a valid dt is never NULL, so dt IS NULL identifies a
+        // super-row on every supported MySQL (GROUPING() would need 8.0).
+        $results = [];
+        $totals  = [];
+        foreach ($merged as $row) {
+            $dt     = self::rowField($row, 'dt');
+            $period = self::rowField($row, 'period');
+            if (null === $dt) {
+                if (null !== $period) {
+                    $totals[] = $row;
+                }
+                continue;
+            }
+            $results[] = $row;
+        }
 
         return $this->processResults(
             $results,
@@ -236,7 +291,26 @@ class Chart
         $dtStart = (new \DateTime())->setTimestamp($args['start']);
         $dtEnd   = (new \DateTime())->setTimestamp($args['end']);
 
-        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds))->setTime(0, 0, 0);
+        // Both ends shift by the range and NEITHER is snapped. The start used to take a
+        // ->setTime(0, 0, 0), which made the previous window longer than the current one by the
+        // current start's time-of-day — 9h17m on a live 60-day chart, measured.
+        //
+        // That surplus is what produced a total no bar accounted for. The totals are a SQL
+        // aggregate over the window, so they counted it; DataBuckets::addRow() drops anything
+        // outside `[0, points)`, so no bar showed it; and nothing reconciles the two, because the
+        // totals are passed INTO DataBuckets and returned verbatim. On R20260824-2c8d1a that was
+        // 2,475 hits — chart_weekly reported a previous total of 47,552 over bars summing to
+        // 45,077, and the headline "up 14.2%" should have read up 20.5%.
+        //
+        // It also put the previous LABELS on a different week grid from the previous VALUES:
+        // mapPrevLabels() steps `+N WEEK` from previous_start while the buckets are aligned by
+        // getWeekStartTimestamp(), so a midnight-snapped start drifted the two apart — Sundays
+        // against Mondays in that run.
+        //
+        // Two windows of equal length that abut is what "the previous period" means, and the
+        // bucket alignment and the reconciliation both follow from it rather than being patched
+        // separately.
+        $dtStart->modify(sprintf('-%s seconds', $rangeSeconds));
         $dtEnd->modify(sprintf('-%s seconds', $rangeSeconds));
 
         return [
@@ -273,7 +347,6 @@ class Chart
 
     private function sqlFor(string $gran, array $args, array $prevArgs): array
     {
-        $wpdb = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
         $data1 = $args['chart_data']['data1'] ?? '';
         $data2 = $args['chart_data']['data2'] ?? '';
         
@@ -318,12 +391,12 @@ class Chart
             $filterWhere = !empty($filterWhere) ? $filterWhere . ' AND ' . $wrapped : $wrapped;
         }
 
-        // Use UNIX_TIMESTAMP difference for broad MySQL 5.0.x compatibility.
-        // The sign appears inverted vs DataBuckets.php — this is INTENTIONAL:
-        // FROM_UNIXTIME(dt) returns server-local time, but CONVERT_TZ source '+00:00'
-        // declares it as UTC. The "inverted" sign cancels the implicit timezone shift,
-        // producing actual UTC. DataBuckets then applies the correct offset for display.
-        $totalOffsetSeconds = (int) $wpdb->get_var('SELECT UNIX_TIMESTAMP(NOW()) - UNIX_TIMESTAMP(UTC_TIMESTAMP())');
+        // One probe per request, shared with DataBuckets, which asks the same question
+        // of the same connection. The sign below is INVERTED relative to it, and that
+        // is INTENTIONAL: FROM_UNIXTIME(dt) returns server-local time while CONVERT_TZ
+        // declares its source as UTC, so the inversion cancels the implicit shift and
+        // produces actual UTC. DataBuckets then applies the offset for display.
+        $totalOffsetSeconds = DataBuckets::serverTimezoneOffset();
         $sign               = ($totalOffsetSeconds < 0) ? '+' : '-';
         $abs                = abs($totalOffsetSeconds);
         $h                  = floor($abs / 3600);
@@ -374,37 +447,29 @@ class Chart
         // binding tighter to only the latter OR clause.
         $rowsQuery = Query::select($fields)
             ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevArgs['start'], $prevArgs['end'], $start, $end]);
+            ->whereRaw('((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))', [$prevStart, $prevEnd, $start, $end]);
 
         // Apply additional filters if any
         if (!empty($filterWhere)) {
             $rowsQuery->whereRaw($filterWhere);
         }
 
-        $rowsQuery->groupBy($dtExpr . ', period')
-            ->orderBy('sort_dt ASC, period ASC');
-
-        // Build totals query via Query builder
-        // No CONVERT_TZ needed for totals - dt is already stored as UTC timestamp and filters use UTC
-    $totalsFields = sprintf("%s AS v1, %s AS v2, CASE WHEN dt BETWEEN %s AND %s THEN 'current' ELSE 'previous' END AS period", $data1, $data2, $start, $end);
-    // Ensure totals WHERE uses grouped OR so filters are applied correctly.
-    $totalsWhere  = '((dt BETWEEN %d AND %d) OR (dt BETWEEN %d AND %d))';
-        $totalsQuery  = Query::select($totalsFields)
-            ->from($GLOBALS['wpdb']->prefix . 'slim_stats')
-            ->whereRaw($totalsWhere, [$prevArgs['start'], $prevArgs['end'], $start, $end]);
-
-        // Apply additional filters if any
-        if (!empty($filterWhere)) {
-            $totalsQuery->whereRaw($filterWhere);
-        }
-
-        $totalsQuery->groupBy('period')
-            ->orderBy('period ASC');
+        // ONE pass, not two (Run 25's licence): the per-period totals ride the SAME query
+        // as the buckets. GROUP BY period FIRST, then the bucket, WITH ROLLUP — each
+        // (period, NULL) super-row is that period's total computed over the underlying
+        // rows, which is correct even for COUNT(DISTINCT ...); summing the buckets is not
+        // (Run 8: 254 vs 21,410). Measured on the I8 corpus: Handler_read_rnd_next
+        // exactly halves, byte-stable A-B-B-A.
+        //
+        // No ORDER BY: MySQL below 8.0.12 rejects ORDER BY with ROLLUP outright, the
+        // supported floor is 5.6, and processResults() keys every row into DataBuckets
+        // by (dt, period) — the old ORDER BY was decoration. fetchChartData() splits the
+        // super-rows from the bucket rows and discards the (NULL, NULL) grand total.
+        $rowsQuery->groupBy('period, ' . $dtExpr . ' WITH ROLLUP');
 
         return [
-            'query'       => $rowsQuery,
-            'totalsQuery' => $totalsQuery,
-            'params'      => ['label' => $periods[$gran]['label'], 'gran' => $gran],
+            'query'  => $rowsQuery,
+            'params' => ['label' => $periods[$gran]['label'], 'gran' => $gran],
         ];
     }
 
@@ -587,6 +652,17 @@ class Chart
         return trim(preg_replace('/\s+/', ' ', $sql));
     }
 
+    /**
+     * One field from a result row that may be a stdClass or ARRAY_A. Six call sites had
+     * grown six inline copies of this duality, and the object branches lacked the
+     * missing-key guard their array twins had. Null when absent — load-bearing for the
+     * ROLLUP split, where `dt IS NULL` identifies a super-row.
+     */
+    private static function rowField($row, string $key)
+    {
+        return is_object($row) ? ($row->{$key} ?? null) : ($row[$key] ?? null);
+    }
+
     private function processResults(array $rows, array $totals, array $params, int $start, int $end, int $prevStart, int $prevEnd): array
     {
         // Normalize totals to array of stdClass for backward compatibility
@@ -604,10 +680,10 @@ class Chart
 
         $buckets = new DataBuckets($params['label'], $params['gran'], $start, $end, $prevStart, $prevEnd, $totalsObjects);
         foreach ($rows as $row) {
-            $dt     = (int) (is_object($row) ? $row->dt : ($row['dt'] ?? 0));
-            $v1     = (int) (is_object($row) ? $row->v1 : ($row['v1'] ?? 0));
-            $v2     = (int) (is_object($row) ? $row->v2 : ($row['v2'] ?? 0));
-            $period = (string) (is_object($row) ? $row->period : ($row['period'] ?? ''));
+            $dt     = (int) self::rowField($row, 'dt');
+            $v1     = (int) self::rowField($row, 'v1');
+            $v2     = (int) self::rowField($row, 'v2');
+            $period = (string) self::rowField($row, 'period');
             $buckets->addRow($dt, $v1, $v2, $period);
         }
 

@@ -6,8 +6,13 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PLUGINS_DIR="$(cd "$PLUGIN_ROOT/.." && pwd)"
 cd "$PLUGIN_ROOT" || { echo "ERROR: Cannot cd to $PLUGIN_ROOT"; exit 1; }
 
-# Env vars — inherited from caller exports; fallbacks match helpers/env.ts defaults
-: "${WP_ROOT:=/Users/parhumm/Local Sites/test/app/public}"
+# Env vars — inherited from caller exports. The WP_ROOT fallback DERIVES, matching
+# helpers/env.ts:22 (`path.resolve(PLUGIN_DIR, '..', '..', '..')`); it used to name
+# "Local Sites/test/app/public", a directory that does not exist in this workspace, and the
+# comment here claimed it matched env.ts while env.ts had always derived. Nothing failed
+# loudly because the only consumer is `wp cache flush --path=… 2>/dev/null || true`, which
+# swallows the error — a flush against a nonexistent root on every batch.
+: "${WP_ROOT:=$(cd "$PLUGIN_ROOT/../../.." && pwd)}"
 : "${TEST_BASE_URL:=http://localhost:10003}"
 : "${RUN_ID:=$(date +%Y%m%d-%H%M%S)}"
 : "${ARTIFACTS:=$SCRIPT_DIR/run-artifacts/$RUN_ID}"

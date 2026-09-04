@@ -4,6 +4,7 @@ namespace SlimStat\Services\Geolocation\Provider;
 
 use SlimStat\Dependencies\GeoIp2\Database\Reader;
 use SlimStat\Services\Geolocation\AbstractGeoIPProvider;
+use SlimStat\Tracker\Utils;
 
 class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 {
@@ -20,14 +21,17 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 		// Validate license key format
 		if (!$this->isValidLicenseKey($license)) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => __('Invalid MaxMind license key format. License key should be 16-40 characters containing only letters, numbers, and underscores.', 'wp-slimstat'),
-			]);
+			self::logInvalidLicense();
 		}
 
 		// Direct download endpoint requires a license key
 		$this->dbUrl = sprintf('https://download.maxmind.com/app/geoip_download?edition_id=%s&license_key=%s&suffix=tar.gz', $edition, rawurlencode($license));
+	}
+
+	/** The same failure is reported from init() and from updateDatabase(). */
+	private static function logInvalidLicense(): void
+	{
+		Utils::logGeoIpError(__('Invalid MaxMind license key format. License key should be 16-40 characters containing only letters, numbers, and underscores.', 'wp-slimstat'));
 	}
 
 	public function locate($ip)
@@ -75,10 +79,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			// Validate license key before attempting download
 			$license = $this->getLicense();
 			if (!$this->isValidLicenseKey($license)) {
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => __('Invalid MaxMind license key format. License key should be 16-40 characters containing only letters, numbers, and underscores.', 'wp-slimstat'),
-				]);
+				self::logInvalidLicense();
 				return false;
 			}
 
@@ -94,10 +95,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 		$tmp = wp_tempnam('mmdb');
 		if (!$tmp) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => __('Failed to create temporary file for MaxMind database download.', 'wp-slimstat'),
-			]);
+			Utils::logGeoIpError(__('Failed to create temporary file for MaxMind database download.', 'wp-slimstat'));
 			return false;
 		}
 
@@ -136,10 +134,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				// Attempt 2: Fallback to download_url helper
 				$downloaded_file = download_url($this->dbUrl, 300);
 				if (is_wp_error($downloaded_file)) {
-					\wp_slimstat::update_option('slimstat_geoip_error', [
-						'time'  => time(),
-						'error' => sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $downloaded_file->get_error_message()),
-					]);
+					Utils::logGeoIpError(sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $downloaded_file->get_error_message()));
 					$cleanup();
 					return false;
 				}
@@ -148,10 +143,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				if (!$wp_filesystem->move($downloaded_file, $tgzPath, true)) {
 					$contents = $wp_filesystem->get_contents($downloaded_file);
 					if ($contents === false || !$wp_filesystem->put_contents($tgzPath, $contents, FS_CHMOD_FILE)) {
-						\wp_slimstat::update_option('slimstat_geoip_error', [
-							'time'  => time(),
-							'error' => __('Failed to stage downloaded MaxMind archive.', 'wp-slimstat'),
-						]);
+						Utils::logGeoIpError(__('Failed to stage downloaded MaxMind archive.', 'wp-slimstat'));
 						$wp_filesystem->delete($downloaded_file);
 						$cleanup();
 						return false;
@@ -162,10 +154,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 			// Try to extract mmdb from tar.gz using PharData if available
 			if (!class_exists('PharData')) {
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => __('MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar extension or upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'),
-				]);
+				Utils::logGeoIpError(__('MaxMind update requires the PHP Phar extension (PharData class not found). Please enable Phar extension or upload the .mmdb file manually to wp-content/uploads/wp-slimstat/.', 'wp-slimstat'));
 				$cleanup();
 				return false;
 			}
@@ -181,10 +170,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 			// Create extraction directory and ensure it's tracked for cleanup
 			if (!wp_mkdir_p($extractDir)) {
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => __('Failed to create temporary extraction directory.', 'wp-slimstat'),
-				]);
+				Utils::logGeoIpError(__('Failed to create temporary extraction directory.', 'wp-slimstat'));
 				$cleanup();
 				return false;
 			}
@@ -238,10 +224,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 								$error_message .= ' ' . sprintf(__('Diagnostic info: %s', 'wp-slimstat'), implode('; ', $error_details));
 							}
 
-							\wp_slimstat::update_option('slimstat_geoip_error', [
-								'time'  => time(),
-								'error' => $error_message,
-							]);
+							Utils::logGeoIpError($error_message);
 							$cleanup();
 							return false;
 						}
@@ -254,10 +237,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 			if (!$mmdb_found) {
 				$file_list = implode(', ', array_unique($files_in_archive));
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list),
-				]);
+				Utils::logGeoIpError(sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list));
 				$cleanup();
 				return false;
 			}
@@ -265,28 +245,21 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			$final_exists = file_exists($this->dbPath);
 
 			if ($final_exists) {
-				$file_size = filesize($this->dbPath);
-				\wp_slimstat::update_option('slimstat_geoip_error', []);
+				Utils::clearDiagnostic('slimstat_geoip_error');
 			}
 
 			// Always cleanup temporary files, even on success
 			$cleanup();
 			return $final_exists;
 		} catch (\Exception $exception) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()),
-			]);
+			Utils::logGeoIpError(sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()));
 			// Ensure cleanup happens even when exception is thrown
 			$cleanup();
 			return false;
 		}
 		} catch (\Exception $e) {
 			// Catch any fatal errors in the entire updateDatabase method
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => sprintf(__('Fatal error updating MaxMind database: %s', 'wp-slimstat'), $e->getMessage()),
-			]);
+			Utils::logGeoIpError(sprintf(__('Fatal error updating MaxMind database: %s', 'wp-slimstat'), $e->getMessage()));
 			return false;
 		}
 	}
@@ -305,26 +278,17 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			$host = 'download.maxmind.com';
 			$ip = gethostbyname($host);
 			if ($ip === $host) {
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => sprintf(__('DNS resolution failed for %s. Please check your internet connection and DNS settings.', 'wp-slimstat'), $host),
-				]);
+				Utils::logGeoIpError(sprintf(__('DNS resolution failed for %s. Please check your internet connection and DNS settings.', 'wp-slimstat'), $host));
 				return false;
 			}
 			$test_response = wp_remote_get('https://download.maxmind.com/', ['timeout' => 30]);
 			if (is_wp_error($test_response)) {
-				\wp_slimstat::update_option('slimstat_geoip_error', [
-					'time'  => time(),
-					'error' => sprintf(__('Cannot connect to MaxMind servers. Network error: %s', 'wp-slimstat'), $test_response->get_error_message()),
-				]);
+				Utils::logGeoIpError(sprintf(__('Cannot connect to MaxMind servers. Network error: %s', 'wp-slimstat'), $test_response->get_error_message()));
 				return false;
 			}
 			return true;
 		} catch (\Exception $e) {
-			\wp_slimstat::update_option('slimstat_geoip_error', [
-				'time'  => time(),
-				'error' => sprintf(__('Network connectivity check failed: %s', 'wp-slimstat'), $e->getMessage()),
-			]);
+			Utils::logGeoIpError(sprintf(__('Network connectivity check failed: %s', 'wp-slimstat'), $e->getMessage()));
 			return false;
 		}
 	}

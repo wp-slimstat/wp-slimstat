@@ -29,6 +29,25 @@ if (!file_exists($wp_load_path)) {
     exit(1);
 }
 
+// A WordPress that cannot reach its database dies through wp_die() with EXIT CODE 0 —
+// dead_db()'s die() is a success to any aggregate reading `$?`. Measured on this machine
+// with the LocalWP MySQL down: this script printed the full "Error establishing a database
+// connection" page and test:all stayed green, a lane silently proving nothing (the
+// PITFALLS 38/44 shape, in the one test that is in test:all precisely BECAUSE it needs a
+// live WordPress). The shutdown guard turns any exit that did not reach the final verdict
+// line into a loud failure.
+$GLOBALS['reports_escaping_verdict_reached'] = false;
+register_shutdown_function(static function (): void {
+    if (empty($GLOBALS['reports_escaping_verdict_reached'])) {
+        fwrite(STDERR, "\nFAIL: reports-output-escaping-test exited before reaching its verdict — "
+            . "usually WordPress dying on the database connection, which exits 0. A lane that "
+            . "cannot boot proves nothing and must say so.\n");
+        // A shutdown function cannot change an exit code already set by die(); posix kill
+        // is overkill — re-exit non-zero, which PHP honours from shutdown context.
+        exit(1);
+    }
+});
+
 if (!defined('SHORTINIT')) {
     define('SHORTINIT', true);
 }
@@ -43,8 +62,50 @@ require_once ABSPATH . WPINC . '/kses.php';
 // SHORTINIT does not load the block parser stack needed by the default pre_kses hook.
 remove_all_filters('pre_kses');
 
+// Nor does it load the HTML API, which wp_kses_hair() has depended on since core moved
+// attribute parsing onto WP_HTML_Tag_Processor. Without it the first wp_kses_post() of a
+// tag-bearing user agent fatals with "Class WP_HTML_Tag_Processor not found" and the lane dies
+// mid-run — measured here against WordPress 7.1.
+//
+// Measured one at a time against this file's own payloads: tag-processor, attribute-token and
+// decoder are REQUIRED (dropping any one fatals). The other two are reachable only by inputs
+// this file does not yet feed — a named entity inside an attribute, and a duplicate attribute —
+// and are kept so adding such a payload does not resurrect the fatal. text-replacement is NOT
+// here: it is the write path (set_attribute/get_updated_html) and wp_kses_hair only reads.
+//
+// A glob would be worse, not more future-proof: sorted, class-wp-html-processor.php comes first
+// and extends WP_HTML_Tag_Processor, so globbing this directory fatals. Order does not matter
+// among the five below — none extends another — and each is guarded so an older core that ships
+// fewer of them still boots.
+foreach ([
+    'html5-named-character-references.php',
+    'class-wp-html-decoder.php',
+    'class-wp-html-span.php',
+    'class-wp-html-attribute-token.php',
+    'class-wp-html-tag-processor.php',
+] as $html_api_file) {
+    $html_api_path = ABSPATH . WPINC . '/html-api/' . $html_api_file;
+    if (file_exists($html_api_path)) {
+        require_once $html_api_path;
+    }
+}
+
 if (!defined('DOING_AJAX')) {
     define('DOING_AJAX', false);
+}
+
+// src/Constants.php is loaded by the plugin bootstrap, which SHORTINIT does not run. Defined
+// here rather than required, because Constants.php calls plugin_dir_url()/get_admin_url() and
+// SHORTINIT loads neither link-template.php nor the admin. Kept as a map so the control below
+// can diff it against the real declaration list — see assert_no_drift().
+$slimstat_constants = [
+    'SLIMSTAT_ANALYTICS_DIR'       => dirname(__DIR__) . '/',
+    'SLIMSTAT_ANALYTICS_URL'       => 'http://example.test/wp-content/plugins/wp-slimstat/',
+    'SLIMSTAT_ANALYTICS_ADMIN_URL' => 'http://example.test/wp-admin/',
+    'SLIMSTAT_ANALYTICS_SITE'      => 'https://wp-slimstat.com',
+];
+foreach ($slimstat_constants as $slimstat_const_name => $slimstat_const_value) {
+    defined($slimstat_const_name) || define($slimstat_const_name, $slimstat_const_value);
 }
 
 $assertions = 0;
@@ -134,9 +195,20 @@ if (!class_exists('wp_slimstat')) {
 if (!class_exists('wp_slimstat_db')) {
     class wp_slimstat_db
     {
-        public static $debug_message      = '';
-        public static $pageviews          = 100;
-        public static $filters_normalized = ['utime' => [], 'columns' => [], 'misc' => ['start_from' => 0]];
+        public static $debug_message       = '';
+        public static $pageviews           = 100;
+        public static $filters_normalized  = ['utime' => [], 'columns' => [], 'misc' => ['start_from' => 0]];
+
+        // Every remaining static the real class declares, with its real default.
+        // `$valueless_operators` was added to the real class by de4d94e7 (the #305 value-less
+        // filter fix, v5.5.0) and used at wp-slimstat-reports.php:2688 and :2735; the stub was
+        // never updated, so this lane died mid-run at the first filter render and reached none
+        // of its escaping assertions. assert_no_drift() below is what keeps this list honest.
+        public static $columns_names       = [];
+        public static $operator_names      = [];
+        public static $valueless_operators = ['is_empty', 'is_not_empty'];
+        public static $sql_where           = ['columns' => '', 'time_range' => ''];
+        public static $all_columns_names   = [];
 
         /**
          * Mirror the real parser's split-then-decode behavior so delimiter bugs surface here.
@@ -161,6 +233,86 @@ if (!class_exists('wp_slimstat_db')) {
         }
     }
 }
+
+// ── CONTROL: nothing here can drift from the source it stands in for ─────────────────────────
+//
+// A stub missing a static, or a bootstrap missing a constant, does not fail an assertion — it
+// FATALS, and takes every assertion after it with it. That is how this lane came to be running
+// zero of its escaping checks while `composer test:all` said nothing was wrong. So both
+// declaration lists are read from source and diffed against what this file provides.
+
+/**
+ * Read a plugin file this test asserts ABOUT, failing by name if it cannot be read.
+ *
+ * Every source-shape check in this file diffs against a string from disk, and an unreadable
+ * subject yields '' — which no `assert_not_contains` can tell from "the dangerous pattern is
+ * absent". Naming the read here means the failure says "this file moved" instead of the
+ * downstream assertion saying "the escaping is missing", which is a different bug report.
+ */
+function read_source(string $rel_path): string
+{
+    $source = @file_get_contents(__DIR__ . '/../' . $rel_path);
+
+    assert_true(
+        false !== $source,
+        "{$rel_path} is readable — an unreadable subject declares nothing, which every check "
+            . 'against it would read as agreement'
+    );
+
+    return (string) $source;
+}
+
+/**
+ * Fail if $rel_path declares a name this file does not provide.
+ *
+ * The docblock here used to say "an unreadable file needs no separate branch: it yields no
+ * matches, and the vacuity assertion below is what fires". True — but it covered only one of
+ * the two ways this control stops being a control. The other: preg_match_all() FAILS, returns
+ * false, and leaves $declared with no [1] key, so array_diff() below dies with "Argument #1
+ * must be of type array, null given" — a fatal inside the control that exists to prevent
+ * fatals, arriving as a crash rather than a named failure. Both are checked, in order.
+ *
+ * @param string[] $provided
+ */
+function assert_no_drift(string $rel_path, string $pattern, array $provided, string $noun): void
+{
+    $declared = [];
+    $matched  = preg_match_all($pattern, read_source($rel_path), $declared);
+
+    // preg_last_error(), not preg_last_error_msg(): the 8.0 spelling IS permitted elsewhere in
+    // this repo (php74-no-php80-functions-test.php lists it as polyfilled), but that polyfill
+    // arrives via the plugin bootstrap, and this file boots under SHORTINIT and never loads it
+    // — on the PHP 7.4 container the CI step runs in, _msg() would fatal.
+    assert_true(
+        false !== $matched && isset($declared[1]),
+        "the {$noun} pattern ran against {$rel_path} and captured a group 1 "
+            . '(preg error code ' . preg_last_error() . ')'
+    );
+
+    assert_true(
+        [] !== $declared[1],
+        "{$rel_path} declares at least one {$noun} (else this control is vacuous)"
+    );
+    assert_same(
+        [],
+        array_values(array_diff($declared[1], $provided)),
+        "this file provides every {$noun} {$rel_path} declares — a missing one is a PHP 8 fatal, "
+            . 'not a notice, and kills every assertion after its first use'
+    );
+}
+
+assert_no_drift(
+    'admin/view/wp-slimstat-db.php',
+    '/^\s*public static \$([A-Za-z_][A-Za-z0-9_]*)/m',
+    array_keys((new ReflectionClass('wp_slimstat_db'))->getStaticProperties()),
+    'public static'
+);
+assert_no_drift(
+    'src/Constants.php',
+    '/^\s*define\(\'([A-Z0-9_]+)\'/m',
+    array_keys($slimstat_constants),
+    'constant'
+);
 
 if (!class_exists('wp_slimstat_admin')) {
     class wp_slimstat_admin
@@ -363,8 +515,11 @@ assert_contains('&quot;onclick=', $html, 'Country quote must be entity-escaped i
 // (right-now.php) are emitted by separate render paths render_column() can't drive
 // under SHORTINIT, so guard them by source shape. The runtime DOM proof for these
 // lives in tests/e2e/cf-ipcountry-xss.spec.ts.
-$reports_src  = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php'));
-$rightnow_src = preg_replace('/\s+/', ' ', (string) file_get_contents(__DIR__ . '/../admin/view/right-now.php'));
+// right-now.php is read but never required by this file, so nothing else would notice it
+// moving; read_source() makes that failure say so instead of leaving four assertions below
+// to report missing escaping in a file they never opened.
+$reports_src  = preg_replace('/\s+/', ' ', read_source('admin/view/wp-slimstat-reports.php'));
+$rightnow_src = preg_replace('/\s+/', ' ', read_source('admin/view/right-now.php'));
 
 // Sink 1 — Audience world-map flag (alt + src). The stored code is validated to
 // 2 alphanumerics upstream and the flag path is realpath()-gated; the src is also
@@ -394,4 +549,5 @@ assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)"
 assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
 assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
 
+$GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

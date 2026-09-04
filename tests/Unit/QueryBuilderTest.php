@@ -148,6 +148,13 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $allColNames = $ref->getProperty('all_columns_names');
         $allColNames->setValue(null, []);
 
+        // The schema-presence memo must not leak one test's mocked SHOW COLUMNS
+        // into the next (guarded: the property arrives with the vid_hash fix).
+        if ($ref->hasProperty('fact_columns_present')) {
+            $ref->getProperty('fact_columns_present')->setValue(null, []);
+        }
+        \wp_slimstat::$wpdb = null;
+
         parent::tearDown();
     }
 
@@ -625,5 +632,398 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertStringContainsString('language', $sql);
         // Date range too
         $this->assertStringContainsString('BETWEEN', $sql);
+    }
+
+    // ------------------------------------------------------------------
+    // get_top — ORDER BY with expression columns carrying as_column
+    // ------------------------------------------------------------------
+
+    /**
+     * Run get_top() against the mock connection and return every SQL string it executed.
+     *
+     * @param array<string,mixed> $args get_top() array arguments
+     * @return string[]
+     */
+    private function captureGetTopSql(array $args): array
+    {
+        $captured = [];
+        $this->wpdb->shouldReceive('get_results')
+            ->andReturnUsing(static function ($sql) use (&$captured) {
+                $captured[] = (string) $sql;
+                return [];
+            });
+
+        // get_top() unconditionally allows caching; the lookup must miss so the
+        // query actually reaches get_results().
+        $this->stubTransientCacheMiss();
+
+        $ref = new \ReflectionProperty(\wp_slimstat_db::class, 'filters_normalized');
+        $ref->setValue(null, ['misc' => ['limit_results' => 20]]);
+
+        \wp_slimstat_db::get_top($args + ['use_date_filters' => false]);
+
+        return $captured;
+    }
+
+    /**
+     * The ORDER BY clause (through to the end of the SQL) of the single query a
+     * get_top() call executed — asserting on the way that a query WAS executed and
+     * that it carries an ORDER BY at all, so each test keeps only its distinctive
+     * assertions and an absent ORDER BY cannot make substr() hand back the whole
+     * statement as the "clause".
+     */
+    private function getTopOrderClause(array $args): string
+    {
+        $captured = $this->captureGetTopSql($args);
+        $this->assertNotEmpty($captured, 'get_top() executed no query at all');
+
+        $orderPos = stripos($captured[0], 'ORDER BY');
+        $this->assertNotFalse($orderPos, "no ORDER BY in: {$captured[0]}");
+
+        return substr($captured[0], (int) $orderPos);
+    }
+
+    /**
+     * BUG GUARD — the tie-break must order by the ALIAS, never by the aliased
+     * expression. `$_column` is rewritten to "<expr> AS <alias>" before the
+     * tie-break block, and appending THAT produced
+     *
+     *     ORDER BY counthits DESC, REPLACE(...) AS referer ASC
+     *
+     * which MySQL rejects ("near 'AS referer ASC'") — every as_column report
+     * (Top Referring Domains, platform, trailing-slash resource, language)
+     * rendered empty while the identical query without the tie-break had worked.
+     *
+     * @test
+     */
+    public function test_get_top_tiebreak_orders_by_alias_not_aliased_expression(): void
+    {
+        $orderClause = $this->getTopOrderClause([
+            'columns'   => 'REPLACE( SUBSTRING_INDEX( ( SUBSTRING_INDEX( ( SUBSTRING_INDEX( referer, "://", -1 ) ), "/", 1 ) ), ".", -5 ), "www.", "" )',
+            'as_column' => 'referer',
+        ]);
+
+        // An aliased expression inside ORDER BY is a syntax error, full stop.
+        $this->assertStringNotContainsStringIgnoringCase(
+            ' AS ',
+            $orderClause,
+            "ORDER BY carries an aliased expression — invalid SQL: {$orderClause}"
+        );
+
+        // The tie-break itself must still be there, spelled as the bare alias.
+        $this->assertMatchesRegularExpression(
+            '/ORDER BY\s+counthits DESC,\s*referer ASC/i',
+            $orderClause,
+            "tie-break on the alias is missing: {$orderClause}"
+        );
+    }
+
+    /**
+     * BUG GUARD (companion) — when the caller already orders by the alias, no
+     * tie-break is appended. Under the defect the containment check searched
+     * $_order_by for the whole "<expr> AS <alias>" string, which can essentially
+     * never match, so a duplicate (and invalid) sort column was appended even
+     * when the caller had ordered by the column already.
+     *
+     * @test
+     */
+    public function test_get_top_no_duplicate_tiebreak_when_caller_orders_by_alias(): void
+    {
+        $orderClause = $this->getTopOrderClause([
+            'columns'   => 'CONCAT("p-", SUBSTRING(platform, 1, 3))',
+            'as_column' => 'platform',
+            'order_by'  => 'platform ASC',
+        ]);
+
+        $this->assertStringNotContainsStringIgnoringCase(' AS ', $orderClause);
+        $this->assertSame(
+            1,
+            substr_count(strtolower($orderClause), 'platform'),
+            "the sort column appears more than once: {$orderClause}"
+        );
+    }
+
+    // ------------------------------------------------------------------
+    // visitor_id_expr — the identity ladder consults the schema IN FRONT OF US
+    // ------------------------------------------------------------------
+    //
+    // The upgrade contract (S7/P1) means an upgraded site legitimately serves v6
+    // reports from a v5 table until the admin runs the migration screen: vid_hash
+    // (AddVisitIdentity, required-but-deferred) and, on pre-fingerprint installs,
+    // fingerprint may be absent for an unbounded window. Naming an absent column
+    // is an Unknown-column rejection that get_results() reports identically to
+    // "no visitors" — measured live: every goal, funnel and unique-visitor count
+    // on this workspace's own upgraded database. The ladder must be built from
+    // the tiers the table actually has; on a complete schema it must stay
+    // byte-identical to the historical spelling (the parity pin).
+
+    /**
+     * A dedicated ANALYTICS-handle mock expecting exactly one SHOW COLUMNS against
+     * the prefixed stats table. Deliberately distinct from $GLOBALS['wpdb'] (which
+     * carries no get_results expectation, so a probe against the WordPress
+     * connection fails the test): C44 external-DB users' stats live on another
+     * server, and probing the wrong handle would silently mis-shape the ladder
+     * exactly for them. The exact-SQL ->with() pins the probed table and prefix.
+     *
+     * @param string[]|null $columns Field names the probe reports, or null for
+     *                               "probe unreadable" (get_results answers []).
+     */
+    private function expectSchemaProbe(string $prefix, ?array $columns): void
+    {
+        $rows = [];
+        foreach ((array) $columns as $column) {
+            $rows[] = ['Field' => $column, 'Type' => 'varchar(255)'];
+        }
+
+        \wp_slimstat::$wpdb->shouldReceive('get_results')
+            ->once()
+            ->with('SHOW COLUMNS FROM `' . $prefix . 'slim_stats`', Mockery::any())
+            ->andReturn($rows);
+    }
+
+    private function invokeVisitorIdExpr(): string
+    {
+        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'visitor_id_expr');
+        $m->setAccessible(true);
+
+        return (string) $m->invoke(null, 't1');
+    }
+
+    private function armSchemaProbe(?array $columns, string $prefix): void
+    {
+        $analytics = Mockery::mock('wpdb');
+        $analytics->last_error = '';
+        $analytics->shouldReceive('suppress_errors')->andReturn(false);
+        \wp_slimstat::$wpdb = $analytics;
+
+        $this->expectSchemaProbe($prefix, $columns);
+        $GLOBALS['wpdb']->prefix = $prefix;
+    }
+
+    private function visitorIdExprWithSchema(?array $columns, string $prefix = 'wp_'): string
+    {
+        $this->armSchemaProbe($columns, $prefix);
+
+        return $this->invokeVisitorIdExpr();
+    }
+
+    private function invokeRecentColumns(): array
+    {
+        $m = new \ReflectionMethod(\wp_slimstat_db::class, 'recent_columns');
+        $m->setAccessible(true);
+
+        return (array) $m->invoke(null);
+    }
+
+    private function recentColumnsWithSchema(?array $columns, string $prefix = 'wp_'): array
+    {
+        $this->armSchemaProbe($columns, $prefix);
+
+        return $this->invokeRecentColumns();
+    }
+
+    /**
+     * The complete '*' list get_recent() serves — the assertion twin of
+     * recent_columns()'s own manifest literal, spelled out here so the pin
+     * cannot be satisfied by reading the constant it checks.
+     */
+    private function recentManifest(): array
+    {
+        return ['id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city', 'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version', 'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width', 'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out'];
+    }
+
+    /**
+     * BUG GUARD — an upgraded table without vid_hash must get a ladder without
+     * the vid_hash tier, not a query MySQL rejects.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_omits_vid_hash_when_the_table_lacks_it(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr,
+            'the ladder must skip the tier whose column the upgraded table does not have'
+        );
+    }
+
+    /**
+     * BUG GUARD (older half of the same window) — a pre-fingerprint table keeps
+     * only the universal tiers.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_on_an_ancient_table_keeps_only_universal_tiers(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource']);
+
+        $this->assertSame(
+            "COALESCE(CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * PARITY PIN — on a complete schema the ladder is byte-identical to the
+     * historical spelling, so goals/funnels answers cannot move on any site
+     * whose migration has run (and every fresh install).
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_is_byte_identical_on_a_complete_schema(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * FAIL-OPEN PIN — an unreadable probe must not change grouping semantics: the
+     * declared (manifest) ladder is emitted, and a genuinely missing column then
+     * surfaces exactly as it did before the probe existed.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_assumes_the_manifest_when_the_probe_cannot_read(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(null);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * CASE PIN (blind-review finding) — MySQL column identifiers are
+     * case-insensitive, so a table whose dump spells `Fingerprint` and `VID_HASH`
+     * satisfies the historical SQL and must get the FULL ladder. Reading case as
+     * absence silently regrouped every cookieless visitor per-session — different
+     * answers, no error anywhere, on a schema the pre-probe code served correctly.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_matches_columns_case_insensitively(): void
+    {
+        $expr = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'Fingerprint', 'VID_HASH']);
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $expr
+        );
+    }
+
+    /**
+     * COST PIN — one SHOW COLUMNS per request, not one per funnel step: the
+     * probe expectation carries ->once(), so a second build hitting the database
+     * again fails this test. A silent regression to N probes per funnel chain is
+     * exactly the class this performance programme exists to keep out.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_probes_once_per_request(): void
+    {
+        $first  = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $second = $this->invokeVisitorIdExpr();
+
+        $this->assertSame($first, $second);
+    }
+
+    /**
+     * MULTISITE PIN — switch_to_blog changes the table prefix mid-request, and
+     * each prefix must get its OWN probe and its own ladder: blog A migrated and
+     * blog B not is a legitimate simultaneous state. A memo keyed on anything
+     * but the prefix serves blog A's ladder to blog B's table.
+     *
+     * @test
+     */
+    public function test_visitor_id_ladder_probes_per_prefix(): void
+    {
+        $degraded = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint']);
+        $this->assertStringNotContainsString('vid_hash', $degraded);
+
+        // switch_to_blog: new prefix, migrated schema — a SECOND probe (its own
+        // ->once() expectation) must fire and answer with the full ladder.
+        $this->expectSchemaProbe('site7_', ['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $GLOBALS['wpdb']->prefix = 'site7_';
+
+        $this->assertSame(
+            "COALESCE(t1.fingerprint, HEX(t1.vid_hash), CONCAT('v_', t1.visit_id), CONCAT('ip_', t1.ip))",
+            $this->invokeVisitorIdExpr()
+        );
+    }
+
+    /**
+     * BUG GUARD (D74) — v5's own updater added `fingerprint` and `tz_offset` at
+     * 4.8.4.1, and the deferred-DDL upgrade contract makes a pre-4.8.4.1 table a
+     * legitimate serving state under v6. get_recent('*') naming either one is an
+     * Unknown-column rejection that get_results() reports identically to "no
+     * visits" — the Access Log renders empty with no error anywhere.
+     *
+     * @test
+     */
+    public function test_recent_columns_drop_what_a_pre_4841_table_lacks(): void
+    {
+        $vintage = array_values(array_diff($this->recentManifest(), ['fingerprint', 'tz_offset']));
+
+        $this->assertSame(
+            $vintage,
+            $this->recentColumnsWithSchema($vintage)
+        );
+    }
+
+    /**
+     * PARITY PIN — on a complete (migrated) schema the '*' list is byte-identical
+     * to the historical spelling, in the historical order, and columns the table
+     * has BEYOND the list (vid_hash, ua_id) must not leak into it: the list is a
+     * pinned contract, not "whatever the table holds".
+     *
+     * @test
+     */
+    public function test_recent_columns_are_byte_identical_on_a_complete_schema(): void
+    {
+        $migrated = array_merge($this->recentManifest(), ['vid_hash', 'ua_id']);
+
+        $this->assertSame(
+            $this->recentManifest(),
+            $this->recentColumnsWithSchema($migrated)
+        );
+    }
+
+    /**
+     * FAIL-OPEN PIN — an unreadable probe keeps the full list, exactly the
+     * pre-probe behaviour: a genuinely missing column then surfaces as the same
+     * SQL error it always was, instead of the probe silently narrowing the
+     * Access Log on a transient failure.
+     *
+     * @test
+     */
+    public function test_recent_columns_assume_the_manifest_when_the_probe_cannot_read(): void
+    {
+        $this->assertSame(
+            $this->recentManifest(),
+            $this->recentColumnsWithSchema(null)
+        );
+    }
+
+    /**
+     * COST PIN — recent_columns() rides the SAME memoised probe as the identity
+     * ladder: expectSchemaProbe() carries ->once(), so if the '*' expansion
+     * issued its own SHOW COLUMNS after the ladder already probed, Mockery
+     * fails this test on the second call.
+     *
+     * @test
+     */
+    public function test_recent_columns_share_the_ladder_probe(): void
+    {
+        $migrated = array_merge($this->recentManifest(), ['vid_hash']);
+        $this->visitorIdExprWithSchema($migrated);
+
+        $this->assertSame($this->recentManifest(), $this->invokeRecentColumns());
     }
 }

@@ -1,0 +1,19 @@
+target:    admin/index.php
+gate:      php tests/schema-single-source-test.php
+kind:      restore-defect
+expect:    which the manifest still declares
+rationale: C39 reached from the other side. The 4.8.4.1 upgrade drops a column the manifest still declares, so an upgraded install loses something every fresh install is created with — the same two-schema-states outcome, and just as silent. Schema::dropColumnSql() refuses it at runtime; this proves the gate sees it at build time too, so the refusal is not the only thing holding it.
+---
+diff --git a/admin/index.php b/admin/index.php
+index 68f343c6..f22b23db 100644
+--- a/admin/index.php
++++ b/admin/index.php
+@@ -1004,7 +1004,7 @@ class wp_slimstat_admin
+         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
+             // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
+             // manifest still declares — the same guard as the ADD side, pointing the other way.
+-            wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));
++            wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'fingerprint', $GLOBALS['wpdb']->prefix));
+ 
+             // Hello there, fingerprint and timezone offset.
+             //

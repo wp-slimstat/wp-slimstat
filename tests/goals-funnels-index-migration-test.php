@@ -40,6 +40,24 @@ if (!function_exists('__')) {
         return $text;
     }
 }
+if (!class_exists('wp_slimstat')) {
+    class wp_slimstat
+    {
+        /** Mirrors wp_slimstat's severity constants; the migration and tracker paths
+         *  name them when recording, so a stub without them fatals rather than fails. */
+        const DEGRADATION_LOAD = 'load';
+
+        const DEGRADATION_OPERATIONAL = 'operational';
+
+        /** @var array<string,string> Degradations the migration subsystem reported. */
+        public static $degradations = [];
+
+        public static function record_degradation($step, $e)
+        {
+            self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
+        }
+    }
+}
 if (!class_exists('wpdb')) {
     class wpdb
     {
@@ -54,6 +72,21 @@ if (!class_exists('wpdb')) {
         {
             $this->lastQuery = $sql;
             return $this->queryReturn;
+        }
+
+        /**
+         * The error text wpdb leaves after a failed query, '' when it succeeded.
+         *
+         * shouldRun() reads this to tell "the table is not on this connection" apart
+         * from "the index is missing" — get_var() answers null for both (C29).
+         *
+         * @var string
+         */
+        public $last_error = '';
+
+        public function suppress_errors($suppress = true)
+        {
+            return false;
         }
 
         public function get_var($sql)
@@ -71,7 +104,13 @@ if (!class_exists('wpdb')) {
 }
 
 // --- Load the migration base + concrete classes directly ---
+//
+// Schema first: AbstractIndexMigration reads the index name and columns from the manifest, so a
+// subclass now declares only which index it owns. The three assertions below still spell out the
+// exact CREATE INDEX text, which is what makes this a real check on that derivation rather than
+// a tautology — if the manifest and these expectations ever disagree, this fails.
 $files = [
+    '/src/Schema/Schema.php',
     '/src/Migration/MigrationInterface.php',
     '/src/Migration/AbstractMigration.php',
     '/src/Migration/AbstractIndexMigration.php',
@@ -101,30 +140,61 @@ foreach ($spec as $short => $expectedSql) {
         gfim_assert(false, "class exists: {$short}", $failures);
         continue;
     }
-    $db = new wpdb();
-    $m  = new $class($db);
+    // shouldRun() memoises its SHOW INDEX for the life of the instance — it is asked twice
+    // per admin page render, once via needsMigration() and once via the notice's
+    // diagnostics, and the probe is a SHOW INDEX against a 443k-row table. So each scenario
+    // below gets a fresh instance, which is how callers use it: a migration object lives
+    // for one request, and the only thing that changes the answer mid-request is run(),
+    // which invalidates its own cache.
+    $fresh = static function ($indexPresent) use ($class, $short) {
+        $db = new wpdb();
+        $db->getVarReturn = $indexPresent ? $short : null;  // non-empty -> index present
+        return [new $class($db), $db];
+    };
 
     // shouldRun(): true when index missing, false when present.
-    $db->getVarReturn = null;
+    [$m, $db] = $fresh(false);
     gfim_assert($m->shouldRun() === true, "{$short}: shouldRun() true when index missing", $failures);
-    $db->getVarReturn = $short; // any non-empty -> index present
+
+    [$m, $db] = $fresh(true);
     gfim_assert($m->shouldRun() === false, "{$short}: shouldRun() false when index present", $failures);
 
+    // C29: on an external-DB install the table is not on this connection, SHOW INDEX
+    // errors, and get_var() answers null — the same value as "index missing". Reading
+    // that as "yes, run me" produced a migration notice that could never be cleared and
+    // a button that failed on every click. A probe that cannot read the table must
+    // answer neither clean nor dirty, and must say so.
+    wp_slimstat::$degradations = [];
+    [$m, $db]                  = $fresh(false);
+    $db->last_error            = "Table 'main.wp_slim_stats' doesn't exist";
+    gfim_assert($m->shouldRun() === false, "{$short}: shouldRun() false when the table is unreadable", $failures);
+    gfim_assert(wp_slimstat::$degradations !== [], "{$short}: an unreadable table records a degradation", $failures);
+
     // run() on a missing index emits the right DDL (name + table + prefix-length columns).
-    $db->getVarReturn = null;
-    $db->queryReturn  = 0;       // wpdb->query() returns int rows on success (>= 0, !== false)
-    $db->lastQuery    = '';
+    [$m, $db] = $fresh(false);
+    $db->queryReturn = 0;        // wpdb->query() returns int rows on success (>= 0, !== false)
+    $db->lastQuery   = '';
     gfim_assert($m->run() === true, "{$short}: run() succeeds when CREATE INDEX succeeds", $failures);
     gfim_assert($db->lastQuery === $expectedSql, "{$short}: emits correct CREATE INDEX SQL", $failures);
 
     // Failure must propagate (false), not be swallowed.
+    [$m, $db] = $fresh(false);
     $db->queryReturn = false;    // simulate ALTER/CREATE failure (e.g. large-table timeout)
     gfim_assert($m->run() === false, "{$short}: run() returns false when CREATE INDEX fails", $failures);
 
     // No-op (and no failure) when the index already exists.
-    $db->getVarReturn = $short;
-    $db->lastQuery    = '';
+    [$m, $db] = $fresh(true);
+    $db->lastQuery = '';
     gfim_assert($m->run() === true && $db->lastQuery === '', "{$short}: run() is a no-op when index already exists", $failures);
+
+    // And the memo must not outlive the change run() makes: after creating the index, a
+    // second run() in the same request must be a no-op rather than re-issuing the DDL.
+    [$m, $db] = $fresh(false);
+    $db->queryReturn = 0;
+    $m->run();
+    $db->getVarReturn = $short;  // the index now exists
+    $db->lastQuery    = '';
+    gfim_assert($m->run() === true && $db->lastQuery === '', "{$short}: run() twice does not re-issue the DDL", $failures);
 }
 
 // --- Source scan: the three classes are registered in MigrationService ---
@@ -139,15 +209,20 @@ $start = strpos($admin, "empty(wp_slimstat::\$settings['goals_indexes'])");
 $assignPos = $start !== false ? strpos($admin, "wp_slimstat::\$settings['goals_indexes'] = 'on';", $start) : false;
 $block = ($start !== false && $assignPos !== false) ? substr($admin, $start, $assignPos - $start) : '';
 
+// The block no longer issues its own ALTERs — Schema::ensure() reconciles all three along with
+// every other index — so what has to hold is unchanged in substance and different in form: the
+// flag may only be set when all three are CONFIRMED PRESENT afterwards. ensure() reports
+// `present` from a SHOW INDEX taken after the build, which is strictly stronger than the old
+// `query() !== false`: a statement that returned truthy but left no index used to set the flag.
 gfim_assert(
-    $block !== '' && strpos($block, 'false === wp_slimstat::$wpdb->query') !== false,
-    "legacy block checks the ALTER result (false === ...->query)",
+    $block !== '' && strpos($block, "\$schema_report['present']") !== false,
+    'the goals_indexes flag is decided on indexes confirmed present, not on an unchecked ALTER',
     $failures
 );
-// The assignment must be wrapped in the success guard, not unconditional after the loop.
+// Still a guard, not an unconditional assignment after the reconciliation.
 gfim_assert(
-    $block !== '' && strpos($block, 'if ($goal_indexes_built) {') !== false,
-    "goals_indexes='on' is set inside the if (\$goal_indexes_built) guard",
+    $block !== '' && preg_match('/if\s*\(\s*\[\]\s*===\s*array_diff\(/', $block) === 1,
+    "goals_indexes='on' is set only when NO required index is missing from the report",
     $failures
 );
 
