@@ -7,7 +7,7 @@ import { chromium, request as playwrightRequest, FullConfig } from '@playwright/
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
+import { BASE_URL, ADMIN_USER, ADMIN_PASS, AUTHOR_USER, AUTHOR_PASS } from './helpers/env';
 import { installAllTestMuPlugins, installCptMuPlugin, enableE2eTesting } from './helpers/setup';
 import { backupAnalyticsTables } from './helpers/backup';
 
@@ -144,8 +144,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
 
   // Login as author — override via WP_AUTHOR_USER / WP_AUTHOR_PASS env vars.
   // Non-fatal; some test environments lack this user.
-  const authorUser = process.env.WP_AUTHOR_USER ?? 'dordane';
-  const authorPass = process.env.WP_AUTHOR_PASS ?? 'testpass123';
+  const authorUser = AUTHOR_USER;
+  const authorPass = AUTHOR_PASS;
   try {
     await loginAndSave(
       baseURL,

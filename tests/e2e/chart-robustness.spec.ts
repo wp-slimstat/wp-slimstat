@@ -16,7 +16,7 @@ import {
   fetchChartData, insertRows, clearTestData,
   getV1, getLabels, sumArr, sumV1, utcMidnight, utcTimestamp,
 } from './helpers/chart';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 import type { Page } from '@playwright/test';
 
 /** Login as admin if the page was redirected or access denied */
@@ -27,8 +27,8 @@ async function ensureAdminLoggedIn(page: Page): Promise<void> {
 
   if (needsLogin) {
     await page.goto(`${BASE_URL}/wp-login.php`);
-    await page.fill('#user_login', 'parhumm');
-    await page.fill('#user_pass', 'testpass123');
+    await page.fill('#user_login', ADMIN_USER);
+    await page.fill('#user_pass', ADMIN_PASS);
     await page.click('#wp-submit');
     await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
   }

@@ -32,7 +32,7 @@ import {
   installCptMuPlugin,
   uninstallCptMuPlugin,
 } from './helpers/setup';
-import { BASE_URL } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL } from './helpers/env';
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -73,8 +73,8 @@ async function loginAsAdmin(browser: import('@playwright/test').Browser): Promis
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
-  await page.fill('#user_login', 'parhumm');
-  await page.fill('#user_pass', 'testpass123');
+  await page.fill('#user_login', ADMIN_USER);
+  await page.fill('#user_pass', ADMIN_PASS);
   await page.click('#wp-submit');
   await page.waitForURL('**/wp-admin/**', { timeout: 45_000, waitUntil: 'domcontentloaded' });
   return { context, page };
@@ -144,7 +144,7 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
   // ────────────────────────────────────────────────────────────────
   test('ignore_users excludes specific username in server-side mode', async ({ browser }) => {
     await setSlimstatSetting('ignore_wp_users', 'no');
-    await setSlimstatSetting('ignore_users', 'parhumm');
+    await setSlimstatSetting('ignore_users', ADMIN_USER);
 
     const { context, page } = await loginAsAdmin(browser);
     await clearStatsTable();
@@ -153,7 +153,7 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
     const pageUrl = await createTrackableProduct('E2E Username Exclusion', slug);
     await page.goto(pageUrl, { waitUntil: 'domcontentloaded' });
 
-    // User 'parhumm' should be excluded by username blacklist
+    // The logged-in admin should be excluded by username blacklist
     await expect.poll(
       () => getRecentStatByResource(slug),
       { timeout: 6_000, intervals: [500] }
@@ -251,7 +251,7 @@ test.describe('User Exclusion — Server-Side Mode (@user-exclusion-server)', ()
       { timeout: 15_000, intervals: [500] }
     ).not.toBeNull();
 
-    expect(stat!.username).toBe('parhumm');
+    expect(stat!.username).toBe(ADMIN_USER);
 
     await page.close();
     await context.close();

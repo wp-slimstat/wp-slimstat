@@ -7,7 +7,7 @@
  */
 import { serialize as phpSerialize } from 'php-serialize';
 import { getPool } from './setup';
-import { assertSafeTestDatabase } from './env';
+import { ADMIN_USER, assertSafeTestDatabase } from './env';
 
 export interface Goal {
     id?: number;
@@ -133,7 +133,7 @@ export async function seedStats(rows: StatRow[]): Promise<void> {
  */
 export async function pinReportToDashboard(
     boxId: string,
-    login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
+    login: string = ADMIN_USER,
 ): Promise<void> {
     const metaKey = 'meta-box-order_admin_page_slimlayout';
     const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;

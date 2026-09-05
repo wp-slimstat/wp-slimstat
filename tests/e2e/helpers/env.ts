@@ -46,6 +46,10 @@ const _mysqlSocket = process.env.MYSQL_SOCKET ?? '/tmp/mysql.sock';
 export const ADMIN_USER = process.env.WP_ADMIN_USER ?? 'parhumm';
 export const ADMIN_PASS = process.env.WP_ADMIN_PASS ?? 'testpass123';
 
+/** Non-admin author account, for the specs that need a second role. */
+export const AUTHOR_USER = process.env.WP_AUTHOR_USER ?? 'dordane';
+export const AUTHOR_PASS = process.env.WP_AUTHOR_PASS ?? 'testpass123';
+
 export const MYSQL_CONFIG = {
   ...(_mysqlSocket
     ? { socketPath: _mysqlSocket }
