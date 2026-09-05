@@ -1,0 +1,32 @@
+# The E2E suite's skip budget. Enforced by tests/e2e-quarantine-census-test.php, which must
+# reproduce every number here EXACTLY and refuses any commit that RAISES one.
+#
+# Raising a number is not an option that exists. If a change adds a skip, the change is wrong:
+# a blocking Tier 2 lane with a growable skip budget is an advisory lane wearing a red tick.
+# If a change REMOVES a skip, lower the number in the same commit — leaving the old value is
+# headroom for the next one, and headroom is how a ratchet becomes a dial.
+#
+#   pro            skips guarded on Pro being ABSENT. CI installs no Pro (ci.yml overwrites
+#                  .wp-env.json to {"plugins":["."]}), so this number measures the lane's
+#                  configuration, not the suite's health. It is its own line so it can never be
+#                  confused with the rest, and so it visibly collapses if Pro ever joins the lane.
+#   conditional    every other guarded skip: consent plugins absent, a missing es_ES .po, a
+#                  project filter, a precondition the test could not establish.
+#   unconditional  bare test.skip(), and declaration-form test.skip('title', fn) / test.fixme(...).
+#                  Coverage switched off with no condition and no ticket. This is the number to
+#                  drive to zero first: a permanently disabled test carries the reassurance of
+#                  coverage with none of the cost.
+#
+# WHAT THESE NUMBERS ARE NOT. They count SITES IN SOURCE, not skips in a run. Run 65 (the uncapped
+# census: 537 expected / 132 unexpected / 79 skipped / 0 flaky) skipped 79 tests, of which 43
+# carried an annotation — 33 Pro, 10 conditional — and 36 carried none at all. Those 36 are not
+# skip sites: 21 spec files declare mode: 'serial', and the first failure in such a group aborts
+# the rest, which Playwright reports as skipped. They are downstream of the 132 failures and
+# return to the denominator as those are fixed, so counting them here would ratchet the cascade
+# into the contract and this file could never descend past it. Reading source is what keeps them
+# out. The three Pro guards added to pro-maxmind-details-addon.spec.ts on this branch move three
+# tests from failing to skipping, so the next uncapped run should annotate 46, not 43.
+
+pro            36
+conditional    31
+unconditional  20
