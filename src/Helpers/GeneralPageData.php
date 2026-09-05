@@ -87,14 +87,19 @@ class GeneralPageData
      * referrers), dropping any bucket with a zero count so the box's own
      * empty-state can trigger when there is nothing real to show.
      *
-     * @return array<int, array{label: string, counthits: int}>
+     * The label key is 'referer_type', not a generic 'label': these rows are
+     * consumed by wp_slimstat_reports::raw_results_to_html(), which reads each
+     * row's label from the key named by the report's `columns` arg — so the
+     * key and that arg have to agree (see slim_p10_03's registration).
+     *
+     * @return array<int, array{referer_type: string, counthits: int}>
      */
     public static function trafficRows(int $directCount, int $searchCount, int $otherReferrersCount, string $directLabel, string $searchLabel, string $otherLabel): array
     {
         return array_values(array_filter([
-            ['label' => $directLabel, 'counthits' => $directCount],
-            ['label' => $searchLabel, 'counthits' => $searchCount],
-            ['label' => $otherLabel, 'counthits' => $otherReferrersCount],
+            ['referer_type' => $directLabel, 'counthits' => $directCount],
+            ['referer_type' => $searchLabel, 'counthits' => $searchCount],
+            ['referer_type' => $otherLabel, 'counthits' => $otherReferrersCount],
         ], static function (array $aRow): bool {
             return $aRow['counthits'] > 0;
         }));
@@ -168,8 +173,8 @@ class GeneralPageData
             // ranked "top N" tail without being derived from real data.
             $value = max(1, (int) round(40 / ($i + 2 + $seed % 5) + 3 * sin($i + $seed)));
             $rows[] = [
-                $field       => $labelPrefix . ' ' . ($i + 1),
-                'counthits'  => $value,
+                $field      => $labelPrefix . ' ' . ($i + 1),
+                'counthits' => $value,
             ];
         }
 

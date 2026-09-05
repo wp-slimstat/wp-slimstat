@@ -456,6 +456,9 @@ class wp_slimstat_admin
 
         self::register_goals_funnels_header_hooks();
 
+        // General page: free-tier gating chrome for its table reports.
+        \SlimStat\Modules\GeneralReports::register_hooks();
+
         // Sync index options with actual DB state — one SHOW INDEX for all of them, and none at
         // all once every option is stamped.
         //
@@ -3868,16 +3871,9 @@ class wp_slimstat_admin
             return $_header_buttons;
         }
 
-        // Define which reports get this new functionality. 'raw' (a real,
-        // invoked data-source callable on ~20 reports via raw_results_to_html())
-        // is the usual gate; 'exportable_report' is a second, PRESENCE-ONLY
-        // gate for reports that render through a different callback and have
-        // no 'raw' entry to overload for this purpose — e.g. General's
-        // (slim_p10_03..06) GeneralReports::* callbacks, which never read
-        // callback_args['raw'] at all. Keeping these separate means neither
-        // reader has to guess whether a given 'raw' entry is real or decorative.
+        // Define which reports get this new functionality
         $callback_args = \wp_slimstat_reports::$reports[$_report_id]['callback_args'] ?? [];
-        if (empty($callback_args) || (!array_key_exists('raw', $callback_args) && empty($callback_args['exportable_report']))) {
+        if (empty($callback_args) || !array_key_exists('raw', $callback_args)) {
             return $_header_buttons;
         }
 

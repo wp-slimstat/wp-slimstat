@@ -54,10 +54,31 @@
     gap: var(--ss-space-2);
 }
 
+/*
+ * Title on the left, info icon pinned to the card's right edge opposite it.
+ * The icon is a sibling of the title text inside .lbl, so without this it
+ * just trails the text inline at whatever width the title happens to be.
+ */
 .slimstat-general-page .stat .lbl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ss-space-2);
     font-size: var(--ss-text-sm);
     font-weight: 600;
     color: var(--ss-text-secondary);
+}
+
+/*
+ * admin.css gives .header-tooltip a transform: translateY(3px) that suits the
+ * postbox <h3> it was written for; inside a flex-centred label it just knocks
+ * the icon off the text's centre line.
+ */
+.slimstat-general-page .stat .lbl .header-tooltip {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    transform: none;
 }
 
 .slimstat-general-page .stat .val {
@@ -256,85 +277,39 @@
 }
 
 /*
- * Rows are the shared wp_slimstat_reports::raw_results_to_html() row markup
- * (<p class="slimstat-tooltip-trigger"> + .slimstat-tooltip-bar-wrap +
- * .slimstat-count-pct/.slimstat-pct) — item 5 reuses that renderer's exact
- * visual output rather than a second, bespoke row style, so its bar/percent
- * styling already comes from admin.css's `.wrap-slimstat .meta-box-sortables
- * .postbox .slimstat-tooltip-trigger ...` rules (scoped generically, not to
- * body.index-php) with no duplication needed here.
+ * Rows come from wp_slimstat_reports::raw_results_to_html() — the shared
+ * renderer every other report screen uses — so all of the row, bar and
+ * percentage styling already arrives from admin.css's
+ * `.wrap-slimstat .meta-box-sortables .postbox .slimstat-tooltip-trigger ...`
+ * rules. Nothing is restyled here; the only General-specific behaviour is
+ * the free-tier gate below.
  */
-.slimstat-general-page .rows {
-    display: flex;
-    flex-direction: column;
-    padding: var(--ss-space-2) 0;
-}
 
 /*
- * Pro-tier per-box pager (GeneralReports::renderPager()): a next/prev arrow
- * pair at the bottom of the box, NOT the page-wide report_pagination()
- * every other screen's single report uses — General has several independent
- * gated boxes on one screen, so a shared page-navigating pager would page
- * all of them together. Every page's rows are already in the DOM
- * (server-rendered, [hidden] toggled by general.js); no request per click.
+ * ---------- Free-tier gating ----------
+ * The rows past the free limit hold SYNTHETIC data, substituted server-side
+ * by GeneralReports::gateRows() before the renderer ever sees them — the
+ * blur is cosmetic, not the security boundary, so removing it in devtools
+ * reveals only invented values.
+ *
+ * The synthetic rows carry their own class, applied server-side by
+ * GeneralReports::markSyntheticRows() through the shared renderer's
+ * `slimstat_report_row_classes` filter. Deliberately NOT a positional
+ * selector: the renderer emits its debug message and its pagination as <p>
+ * siblings of the rows, and wraps the rows in an extra <div> on the
+ * non-AJAX path, so counting rows in CSS — from either end — shifts or stops
+ * matching depending on the render path and the debug setting.
  */
-.slimstat-general-page .slimstat-general-pager-controls {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--ss-space-3);
-    padding: var(--ss-space-2) var(--ss-space-4) var(--ss-space-3);
-    border-top: 1px solid var(--ss-border-soft);
-    margin-top: auto;
-}
-
-.slimstat-general-page .slimstat-general-pager-prev,
-.slimstat-general-page .slimstat-general-pager-next {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--ss-border);
-    border-radius: var(--ss-radius-sm);
-    background: var(--ss-surface);
-    color: var(--ss-text-secondary);
-    font-size: 11px;
-    line-height: 1;
-    cursor: pointer;
-    transition: background var(--ss-duration-fast) var(--ss-easing-out);
-}
-
-.slimstat-general-page .slimstat-general-pager-prev:hover:not(:disabled),
-.slimstat-general-page .slimstat-general-pager-next:hover:not(:disabled) {
-    background: var(--ss-hover);
-    color: var(--ss-text-primary);
-}
-
-.slimstat-general-page .slimstat-general-pager-prev:disabled,
-.slimstat-general-page .slimstat-general-pager-next:disabled {
-    opacity: 0.4;
-    cursor: default;
-}
-
-.slimstat-general-page .slimstat-general-pager-status {
-    font-size: var(--ss-text-xs);
-    color: var(--ss-text-muted);
-    min-width: 80px;
-    text-align: center;
-}
-
-/* ---------- Pro gating: SYNTHETIC rows only, never real data ---------- */
-.slimstat-general-page .slimstat-gated-wrap {
-    position: relative;
-}
-
-.slimstat-general-page .rows-blur {
+.slimstat-general-page .postbox.is-gated p.slimstat-row-synthetic {
     filter: blur(4px);
     opacity: 0.55;
     pointer-events: none;
     user-select: none;
+}
+
+/* The gated box hides its pagination: there is nothing further to page to. */
+.slimstat-general-page .postbox.is-gated .pagination {
+    display: none;
 }
 
 .slimstat-general-page .slimstat-gated-cta {
@@ -535,26 +510,47 @@
 }
 
 /*
- * ---------- Empty state ----------
- * min-height approximates 5 real rows' worth of height (admin.css's
- * `.inside p{padding:10px 25px}` + this row markup's own 4px top/bottom
- * margin + ~15px line-height for its 12px row text, ~43px/row) so an
- * empty box in the same flex-wrap row as a box WITH 5 rows of data lands
- * at the same height — otherwise the two "top" boxes in a pair start flush
- * (the .postbox > h3 fix above) but end at different heights, which reads
- * just as badly as misaligned tops.
+ * ---------- Equal-height table boxes ----------
+ * Every table box reserves 5 rows' worth of body height whether it is full,
+ * partly filled, or empty, so boxes sharing a flex-wrap row line up at the
+ * bottom as well as the top (the .postbox > h3 fix above handles the top).
+ *
+ * 215px ~= 5 rows: admin.css gives each row `.inside p{padding:10px 25px}`
+ * plus this markup's own 4px top/bottom margin over ~15px line-height for
+ * its 12px text, so ~43px a row. An approximation on purpose — the exact
+ * figure lives in admin.css, which this page deliberately does not fork.
  */
-.slimstat-general-page .empty {
+.slimstat-general-page .meta-box-sortables .postbox.large .inside {
+    min-height: 215px;
+}
+
+/*
+ * The shared renderer's own empty state (<p class="nodata">) and the one
+ * campaigns() prints (.empty) — centred in that reserved space rather than
+ * clinging to the top of an otherwise blank box.
+ */
+.slimstat-general-page .empty,
+.slimstat-general-page .inside > p.nodata {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    flex: 1;
     gap: var(--ss-space-2);
-    min-height: 215px;
+    margin: 0;
     padding: var(--ss-space-6) var(--ss-space-5);
     text-align: center;
     color: var(--ss-text-muted);
     font-size: var(--ss-text-sm);
+}
+
+/*
+ * Only for boxes outside the .large grid — campaigns() (slim_p10_07) is a
+ * 'normal' box, so the rule above does not reserve its height. Inside a
+ * .large box this is already covered there, and `flex: 1` does the filling.
+ */
+.slimstat-general-page .meta-box-sortables .postbox:not(.large) .empty {
+    min-height: 215px;
 }
 
 .slimstat-general-page .empty .big {

@@ -120,7 +120,7 @@ class GeneralPageDataTest extends TestCase
         $rows = GeneralPageData::trafficRows(10, 0, 0, 'Direct', 'Search', 'Other referrers');
 
         $this->assertCount(1, $rows);
-        $this->assertSame('Direct', $rows[0]['label']);
+        $this->assertSame('Direct', $rows[0]['referer_type']);
         $this->assertSame(10, $rows[0]['counthits']);
     }
 
@@ -128,8 +128,25 @@ class GeneralPageDataTest extends TestCase
     {
         $rows = GeneralPageData::trafficRows(10, 5, 3, 'Direct', 'Search', 'Other referrers');
 
-        $this->assertSame(['Direct', 'Search', 'Other referrers'], array_column($rows, 'label'));
+        $this->assertSame(['Direct', 'Search', 'Other referrers'], array_column($rows, 'referer_type'));
         $this->assertSame([10, 5, 3], array_column($rows, 'counthits'));
+    }
+
+    /**
+     * The label key is what wp_slimstat_reports::raw_results_to_html() reads
+     * to render each row (it looks up the key named by the report's `columns`
+     * arg, 'referer_type' for slim_p10_03). A rename here without the matching
+     * registry change renders rows with no label at all — the exact defect
+     * this table had while it used a hand-rolled renderer.
+     */
+    public function testTrafficRowsUsesTheRefererTypeKeyRawResultsToHtmlReads(): void
+    {
+        $rows = GeneralPageData::trafficRows(10, 5, 3, 'Direct', 'Search', 'Other referrers');
+
+        foreach ($rows as $aRow) {
+            $this->assertArrayHasKey('referer_type', $aRow);
+            $this->assertNotSame('', $aRow['referer_type']);
+        }
     }
 
     /**

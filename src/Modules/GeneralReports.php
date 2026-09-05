@@ -21,23 +21,119 @@ use SlimStat\Helpers\GeneralPageData;
  * every other screen — general.php no longer renders any of this directly,
  * it only loops wp_slimstat_reports::$user_reports['slimgeneral'].
  *
- * Free/pro-tier row gating (item 6/7 of the General-page rework): gated
- * boxes cap at GATED_TOTAL_ROWS visible slots (2 real + up to 8 synthetic)
- * and render a bold "Unlock full report with Pro" overlay CTA — never real
- * data — for the blurred-looking portion, so DOM inspection cannot recover
- * real numbers the CSS merely hides.
+ * The four table boxes do NOT render themselves. They are ordinary
+ * wp_slimstat_reports::raw_results_to_html() reports, registered exactly
+ * like slim_p1_08 / slim_p1_13 / slim_p2_18 — that renderer owns the row
+ * markup, the percentage bars, the per-column label formatting
+ * (get_resource_title(), browser icons, country flags) and the pagination
+ * arrows. An earlier revision of this class re-implemented that row markup
+ * by hand; it had none of the per-column label formatting, which is why
+ * those tables rendered rows with a number and no name.
+ *
+ * Free-tier row gating (items 6/7 of the rework) is applied to the DATA,
+ * not the markup: gateRows() below truncates to FREE_ROWS real rows and
+ * appends synthetic ones, so what reaches the browser under the CSS blur
+ * was never real data and DOM inspection cannot recover it.
  */
 class GeneralReports
 {
-    /** Total visible row slots on a gated (free-tier) box: 2 real + 3 fake. */
+    /** Total row slots a gated (free-tier) table shows: FREE_ROWS real + synthetic filler. */
     private const GATED_TOTAL_ROWS = 5;
 
-    /** Rows per page for a Pro account's un-gated boxes (client-side pagination — see renderPager()). */
-    private const ROWS_PER_PAGE = 5;
+    /** Real rows a free-tier table reveals; everything past this is synthetic. */
+    private const FREE_ROWS = 2;
 
     private const PRICING_URL = 'https://wp-slimstat.com/pricing/?utm_source=wp-slimstat&utm_medium=link&utm_campaign=general';
 
     private const LOCK_ICON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+
+    /** The General table reports that carry the free-tier gate. */
+    private const GATED_REPORT_IDS = ['slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06'];
+
+    /**
+     * The free tier's gating chrome — the `is-gated` postbox class the blur
+     * CSS keys off, and the "Unlock full report with Pro" overlay.
+     *
+     * Both go through the SAME public filters Goals & Funnels uses for its
+     * own header chrome (slimstat_reports_info /
+     * slimstat_report_header_after_title, see
+     * wp_slimstat_admin::register_goals_funnels_header_hooks()), so the
+     * shared renderer keeps rendering these four reports exactly as it
+     * renders every other top-N report — no fork, no General-only branch
+     * inside raw_results_to_html().
+     */
+    public static function register_hooks(): void
+    {
+        add_filter('slimstat_reports_info', [self::class, 'markGatedReports']);
+        add_filter('slimstat_report_header_after_title', [self::class, 'injectUnlockCta'], 10, 2);
+        add_filter('slimstat_report_row_classes', [self::class, 'markSyntheticRows'], 10, 3);
+    }
+
+    /**
+     * Tags the synthetic rows of a gated General table with
+     * `slimstat-row-synthetic`, which the CSS blurs.
+     *
+     * By class rather than by CSS position: the renderer emits its debug
+     * message and its "Showing x - y of z" pagination as <p> siblings of the
+     * rows and, on the non-AJAX path, wraps the rows in an extra <div>, so
+     * every positional selector — counting from the front OR the end — either
+     * shifts or stops matching depending on the render path and the debug
+     * setting.
+     *
+     * @param string               $classes
+     * @param array<string, mixed> $args  The report's own callback args.
+     * @param int                  $index Row index within the rendered page.
+     */
+    public static function markSyntheticRows($classes = '', $args = [], $index = 0)
+    {
+        $raw = is_array($args) ? ($args['raw'] ?? null) : null;
+        $isGeneralTable = is_array($raw) && isset($raw[0]) && self::class === $raw[0];
+
+        if (!$isGeneralTable || \wp_slimstat::pro_is_installed() || $index < self::FREE_ROWS) {
+            return $classes;
+        }
+
+        return trim($classes . ' slimstat-row-synthetic');
+    }
+
+    /**
+     * Adds the `is-gated` class to the four table reports when the free tier
+     * is active, so the CSS knows which boxes to blur past FREE_ROWS.
+     *
+     * @param array<string, array<string, mixed>> $reports
+     * @return array<string, array<string, mixed>>
+     */
+    public static function markGatedReports($reports)
+    {
+        if (!is_array($reports) || \wp_slimstat::pro_is_installed()) {
+            return $reports;
+        }
+
+        foreach (self::GATED_REPORT_IDS as $aReportId) {
+            if (isset($reports[$aReportId]['classes']) && is_array($reports[$aReportId]['classes'])) {
+                $reports[$aReportId]['classes'][] = 'is-gated';
+            }
+        }
+
+        return $reports;
+    }
+
+    /**
+     * The "Unlock full report with Pro" overlay for a gated table, injected
+     * right after the postbox <h3> (the filter's insertion point) and
+     * positioned over the blurred rows by CSS.
+     */
+    public static function injectUnlockCta($html = '', $reportId = '')
+    {
+        if (!in_array($reportId, self::GATED_REPORT_IDS, true) || \wp_slimstat::pro_is_installed()) {
+            return $html;
+        }
+
+        return $html . '<a class="slimstat-gated-cta" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">'
+            . self::LOCK_ICON
+            . '<span>' . esc_html__('Unlock full report with Pro', 'wp-slimstat') . '</span>'
+            . '</a>';
+    }
 
     /**
      * A per-tile tooltip trigger, via the SAME markup
@@ -140,66 +236,116 @@ class GeneralReports
     }
 
     /**
-     * "Where visitors come from": Direct / Search / Other referrers.
+     * Data source for the "Where visitors come from" table: Direct / Search /
+     * Other referrers.
+     *
+     * This is a `raw` callable in the wp_slimstat_reports::$reports sense —
+     * raw_results_to_html() calls it to GET the rows and does all the
+     * rendering itself (bars, percentages, labels, pagination), exactly as it
+     * does for slim_p1_08 and friends. The other three General tables need no
+     * callable at all: they are plain get_top() columns, so their registry
+     * entries point `raw` straight at wp_slimstat_db::get_top() like every
+     * other top-N report in the plugin.
+     *
+     * Row shape matches get_top()'s: the label lives under the key named by
+     * the report's `columns` arg ('referer_type' here), alongside 'counthits'.
+     *
+     * @return array<int, array{referer_type: string, counthits: int}>
      */
-    public static function trafficSources(array $args = []): void
+    public static function trafficSourcesRaw($args = [])
     {
         $direct_count = \wp_slimstat_db::count_records('id', 'resource IS NULL');
         $search_count = \wp_slimstat_db::count_records('id', 'searchterms IS NOT NULL');
-        $other_count  = GeneralPageData::otherReferrersCount((int) \wp_slimstat_db::$pageviews, $direct_count, $search_count);
 
-        $rows = GeneralPageData::trafficRows(
-            $direct_count,
-            $search_count,
-            $other_count,
-            __('Direct', 'wp-slimstat'),
-            __('Search', 'wp-slimstat'),
-            __('Other referrers', 'wp-slimstat')
+        // Count pageviews here rather than reading wp_slimstat_db::$pageviews:
+        // that static is only populated by wp_slimstat_db::init() when the
+        // request's `page` is absent or contains 'slimview' (see its "data
+        // used by multiple reports" block). This screen is 'slimgeneral', and
+        // the async box requests post that same value, so the static is 0 for
+        // every render of this table — which made otherReferrersCount() return
+        // max(0, 0 - direct - search) = 0 and trafficRows() drop the "Other
+        // referrers" row entirely, silently, on every page load.
+        $pageviews = (int) \wp_slimstat_db::$pageviews;
+        if (0 === $pageviews) {
+            $pageviews = (int) \wp_slimstat_db::count_records();
+        }
+
+        $other_count = GeneralPageData::otherReferrersCount($pageviews, $direct_count, $search_count);
+
+        return self::gateRows(
+            GeneralPageData::trafficRows(
+                $direct_count,
+                $search_count,
+                $other_count,
+                __('Direct', 'wp-slimstat'),
+                __('Search', 'wp-slimstat'),
+                __('Other referrers', 'wp-slimstat')
+            ),
+            'referer_type',
+            __('Source', 'wp-slimstat'),
+            1
         );
-
-        self::renderGatedBox($rows, 'label', false, 1, __('We will group your visitors by Direct, Search and other referrers once they arrive.', 'wp-slimstat'), __('Source', 'wp-slimstat'));
     }
 
     /**
-     * "Your most visited pages" — same data source as slim_p1_08 "Top Web
-     * Pages" (wp_slimstat_db::get_top('resource')), with one addition:
-     * 'resource IS NOT NULL'. A NULL resource is a Direct visit (no specific
-     * page — trafficSources() above already counts 'resource IS NULL'
-     * separately as "Direct"), and MySQL's GROUP BY resource folds every
-     * such row into one NULL bucket that get_top() returns like any other
-     * row, just with an empty label — get_resource_title(null) formats to
-     * ''. Direct traffic is often the single largest resource bucket, so it
-     * was appearing as the empty-looking top row rather than being excluded
-     * as "not a page" the way trafficSources() already treats it.
+     * `raw` callable for the three General tables whose data is a plain
+     * get_top() column — it forwards to get_top() unchanged and then applies
+     * the same free-tier gate as trafficSourcesRaw().
+     *
+     * raw_results_to_html() invokes a `raw` callable with the report's own
+     * $_args, and get_top() already accepts that array form (its $_column
+     * parameter doubles as an args array — see wp_slimstat_db::get_top()), so
+     * forwarding is enough; the gate is the only thing added.
+     *
+     * @return array<int, array<string, mixed>>
      */
-    public static function topPages(array $args = []): void
+    public static function topColumnRaw($args = [])
     {
-        $rows = \wp_slimstat_db::get_top('resource', 'resource IS NOT NULL');
-        self::renderGatedBox($rows, 'resource', true, 2, __('Your pages will be ranked here by how often they are viewed.', 'wp-slimstat'), __('Page', 'wp-slimstat'));
+        $rows = \wp_slimstat_db::get_top($args);
+
+        // ?? not ?: — none of these reports declare 'as_column', and ?:
+        // evaluates its left operand, so it warned on every render.
+        $column = is_array($args)
+            ? (!empty($args['as_column']) ? $args['as_column'] : ($args['columns'] ?? ''))
+            : $args;
+
+        return self::gateRows(is_array($rows) ? $rows : [], (string) $column, __('Item', 'wp-slimstat'), 2);
     }
 
     /**
-     * "Where your visitors are" — same data source as slim_p1_13 "Top
-     * Countries" (wp_slimstat_db::get_top('country')).
+     * The free-tier gate, applied to ROWS rather than to rendered markup.
+     *
+     * Pro sees everything. Free sees FREE_ROWS real rows followed by
+     * synthetic filler out to GATED_TOTAL_ROWS: the CSS blurs the tail, but
+     * because the tail was never real, opening devtools and removing the blur
+     * reveals only the synthetic values (the live-analytics.php precedent).
+     *
+     * Returning FEWER rows than exist is also what keeps the Free table from
+     * offering pagination into data the tier cannot see — raw_results_to_html()
+     * derives its pagination from the row count this returns.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @return array<int, array<string, mixed>>
      */
-    public static function topCountries(array $args = []): void
+    private static function gateRows(array $rows, string $field, string $fakeLabel, int $fakeSeed): array
     {
-        $rows = \wp_slimstat_db::get_top('country');
-        self::renderGatedBox($rows, 'country', false, 3, __('Countries appear here as soon as someone visits.', 'wp-slimstat'), __('Country', 'wp-slimstat'));
-    }
+        if (count($rows) <= self::FREE_ROWS) {
+            return $rows;
+        }
 
-    /**
-     * "Browsers": real Browser-family data, same query shape as slim_p2_18
-     * "Top Browser Families" (wp_slimstat_db::get_top('browser')). Device
-     * FORM FACTOR (phone/tablet/desktop) genuinely isn't tracked — this box
-     * used to claim "device type is not tracked" and then show nothing at
-     * all, which is misleading twice over: browser (and OS, via slim_p2_19's
-     * platform expression) ARE tracked and were simply never queried here.
-     */
-    public static function devicesAndBrowsers(array $args = []): void
-    {
-        $rows = \wp_slimstat_db::get_top('browser');
-        self::renderGatedBox($rows, 'browser', true, 4, __('Browser families will appear here as visitors arrive.', 'wp-slimstat'), __('Browser', 'wp-slimstat'));
+        // splitRows() already encodes "Pro sees everything, Free sees the
+        // first N" — reused here rather than re-sliced inline, so the tier
+        // rule has one implementation and one set of tests.
+        [$shown, $hidden] = GeneralPageData::splitRows($rows, \wp_slimstat::pro_is_installed(), self::FREE_ROWS);
+
+        if (empty($hidden)) {
+            return $shown;
+        }
+
+        return array_merge(
+            $shown,
+            GeneralPageData::fakeBlurredRows(self::GATED_TOTAL_ROWS - count($shown), $field, $fakeLabel, $fakeSeed)
+        );
     }
 
     /**
@@ -241,145 +387,6 @@ class GeneralReports
         <div class="slimstat-general-scrim"></div>
         <?php
         \wp_slimstat_admin::get_template('slimstat-pro-modal');
-    }
-
-    /**
-     * Renders one "top N" box. Free tier: real rows first, then synthetic
-     * rows filling out to GATED_TOTAL_ROWS, with a bold centered "Unlock
-     * full report with Pro" overlay covering the synthetic portion. The
-     * synthetic rows are GeneralPageData::fakeBlurredRows() output:
-     * plausible-looking but never derived from real stats, so inspecting the
-     * DOM under the CSS blur recovers no real numbers (unlike the previous
-     * rows-blur/aria-hidden markup, which sent real values to the browser).
-     *
-     * Pro tier: every real row, paginated ROWS_PER_PAGE at a time via
-     * renderPager() — a lightweight per-box, client-side pager (see that
-     * method's docblock for why this box can't reuse
-     * wp_slimstat_reports::report_pagination()).
-     *
-     * Row markup matches wp_slimstat_reports::raw_results_to_html()'s
-     * .slimstat-tooltip-trigger / .slimstat-tooltip-bar-wrap /
-     * .slimstat-count-pct / .slimstat-pct output for the VISIBLE rows — the
-     * percentage-bar span itself is the same shared
-     * wp_slimstat_reports::tooltip_bar() call that method uses (one clamp
-     * rule, not two copies of it); the surrounding row markup is
-     * necessarily a second implementation because raw_results_to_html()
-     * fuses SQL dispatch, pagination and column-specific post-processing
-     * into the same method, which General's rows (already fetched, already
-     * gated) don't go through.
-     *
-     * @param array<int, array<string, mixed>> $rows
-     */
-    private static function renderGatedBox(array $rows, string $field, bool $titleAttr, int $fakeSeed, string $emptyBody, string $fakeLabel): void
-    {
-        if (empty($rows)) {
-            echo '<div class="empty"><span class="big">' . esc_html__('No data yet', 'wp-slimstat') . '</span><span>' . esc_html($emptyBody) . '</span></div>';
-            return;
-        }
-
-        $is_pro = \wp_slimstat::pro_is_installed();
-        $total  = GeneralPageData::sumCounthits($rows);
-
-        if ($is_pro) {
-            self::renderPager($rows, $field, $titleAttr, $total);
-            return;
-        }
-
-        // splitRows() caps at 2 free rows regardless of GATED_TOTAL_ROWS —
-        // the free-visible count and the total gated-box slot count are
-        // deliberately separate knobs.
-        [$shown, $blurred] = GeneralPageData::splitRows($rows, false, 2);
-
-        echo '<div class="rows">';
-        self::renderRows($shown, $field, $titleAttr, $total);
-        echo '</div>';
-
-        $fakeSlots = max(0, self::GATED_TOTAL_ROWS - count($shown));
-        $fakeRows  = empty($blurred) ? [] : GeneralPageData::fakeBlurredRows($fakeSlots, $field, $fakeLabel, $fakeSeed);
-        $fakeTotal = GeneralPageData::sumCounthits(array_merge($shown, $fakeRows));
-
-        if (!empty($fakeRows)) {
-            echo '<div class="slimstat-gated-wrap">';
-            echo '<div class="rows rows-blur" aria-hidden="true">';
-            self::renderRows($fakeRows, $field, false, $fakeTotal ?: 1);
-            echo '</div>';
-            echo '<a class="slimstat-gated-cta" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">';
-            echo self::LOCK_ICON;
-            echo '<span>' . esc_html__('Unlock full report with Pro', 'wp-slimstat') . '</span>';
-            echo '</a>';
-            echo '</div>';
-        }
-    }
-
-    /**
-     * A Pro-tier box's rows, split into ROWS_PER_PAGE-sized pages and all
-     * rendered up front (each page a <div class="slimstat-page">, every page
-     * but the first starting hidden), with a next/prev arrow pair at the
-     * bottom that general.js toggles which page is visible.
-     *
-     * NOT wp_slimstat_reports::report_pagination(): that pager is a single
-     * PAGE-WIDE filter (start_from, via fs_url()) that full-page-navigates —
-     * correct for a report alone on its own screen, but General has 4
-     * independent gated boxes on the SAME screen, and one shared start_from
-     * would page all 4 together when only one box's "next" was clicked.
-     * Since get_top() already returns every row (no SQL LIMIT/OFFSET), the
-     * cheaper and correct fix is a pager scoped to this one box: no new
-     * query, just which already-rendered page is visible.
-     *
-     * @param array<int, array<string, mixed>> $rows
-     */
-    private static function renderPager(array $rows, string $field, bool $titleAttr, int $total): void
-    {
-        $pages = array_chunk($rows, self::ROWS_PER_PAGE);
-
-        if (count($pages) <= 1) {
-            echo '<div class="rows">';
-            self::renderRows($rows, $field, $titleAttr, $total);
-            echo '</div>';
-            return;
-        }
-
-        // data-status-format carries the translated "Page %1$s of %2$s"
-        // template so general.js can re-render the status text on every page
-        // change without hardcoding an English string client-side or
-        // resorting to a regex over already-rendered text.
-        echo '<div class="slimstat-general-pager" data-page="0" data-page-count="' . esc_attr(count($pages)) . '" data-status-format="' . esc_attr__('Page %1$s of %2$s', 'wp-slimstat') . '">';
-        foreach ($pages as $i => $a_page) {
-            echo '<div class="rows slimstat-page"' . (0 === $i ? '' : ' hidden') . '>';
-            self::renderRows($a_page, $field, $titleAttr, $total);
-            echo '</div>';
-        }
-        echo '<div class="slimstat-general-pager-controls">';
-        echo '<button type="button" class="slimstat-general-pager-prev" disabled aria-label="' . esc_attr__('Previous page', 'wp-slimstat') . '">&#9650;</button>';
-        echo '<span class="slimstat-general-pager-status">' . esc_html(sprintf(
-            /* translators: 1: current page number, 2: total page count */
-            __('Page %1$s of %2$s', 'wp-slimstat'),
-            1,
-            count($pages)
-        )) . '</span>';
-        echo '<button type="button" class="slimstat-general-pager-next" aria-label="' . esc_attr__('Next page', 'wp-slimstat') . '">&#9660;</button>';
-        echo '</div>';
-        echo '</div>';
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $rows
-     */
-    private static function renderRows(array $rows, string $field, bool $titleAttr, int $total): void
-    {
-        foreach ($rows as $a_row) {
-            $counthits    = (int) ($a_row['counthits'] ?? 0);
-            $percent_raw  = $total > 0 ? (100 * $counthits / $total) : 0;
-            $percent      = number_format_i18n((float) sprintf('%01.2f', $percent_raw), 2);
-            $label        = (string) ($a_row[$field] ?? '');
-            $title_attr   = $titleAttr ? ' title="' . esc_attr($label) . '"' : '';
-
-            echo '<p class="slimstat-tooltip-trigger"' . $title_attr . '>';
-            echo \wp_slimstat_reports::tooltip_bar($percent_raw);
-            echo esc_html($label);
-            echo ' <span class="slimstat-count-pct">' . esc_html(number_format_i18n($counthits)) . '<span class="slimstat-pct">(' . esc_html($percent) . '%)</span></span>';
-            echo '</p>';
-        }
     }
 
     /**

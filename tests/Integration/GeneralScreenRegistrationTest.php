@@ -167,11 +167,10 @@ class GeneralScreenRegistrationTest extends TestCase
     }
 
     /**
-     * Each General report's callback must point at a real method on
-     * \SlimStat\Modules\GeneralReports, the class this feature's render logic
-     * lives on (SlimStat\Modules\* namespace, alongside Chart) — not a
+     * The non-table General reports render themselves, so their callbacks
+     * point at a real method on \SlimStat\Modules\GeneralReports — not a
      * closure or a string function name, so the Customize screen and
-     * callback_wrapper() can call it exactly like any other report.
+     * callback_wrapper() can call them exactly like any other report.
      */
     public function test_general_reports_point_at_general_reports_class(): void
     {
@@ -180,10 +179,6 @@ class GeneralScreenRegistrationTest extends TestCase
         $expected = [
             'slim_p10_01' => 'statsRow',
             'slim_p10_02' => 'pageviewsChart',
-            'slim_p10_03' => 'trafficSources',
-            'slim_p10_04' => 'topPages',
-            'slim_p10_05' => 'topCountries',
-            'slim_p10_06' => 'devicesAndBrowsers',
             'slim_p10_07' => 'campaigns',
             'slim_p10_08' => 'goalsUpsell',
         ];
@@ -193,6 +188,49 @@ class GeneralScreenRegistrationTest extends TestCase
                 "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'callback'\\s*=>\\s*\\[\\\\SlimStat\\\\Modules\\\\GeneralReports::class,\\s*'{$method}'\\]/",
                 $php,
                 "{$report_id} must call GeneralReports::{$method}()"
+            );
+        }
+    }
+
+    /**
+     * The four table reports must render through the SHARED renderer,
+     * wp_slimstat_reports::raw_results_to_html(), exactly like slim_p1_08 and
+     * every other top-N report — never through a General-only renderer.
+     *
+     * This is the regression guard for the defect that motivated the switch:
+     * a hand-rolled row renderer reproduced the bars and percentages but not
+     * raw_results_to_html()'s per-column label formatting (get_resource_title(),
+     * browser icons, country flags), so those tables rendered rows carrying a
+     * number and no name at all.
+     */
+    public function test_general_table_reports_use_the_shared_renderer(): void
+    {
+        $php = file_get_contents($this->reportsPath());
+
+        $expected = [
+            'slim_p10_03' => 'referer_type',
+            'slim_p10_04' => 'resource',
+            'slim_p10_05' => 'country',
+            'slim_p10_06' => 'browser',
+        ];
+
+        foreach ($expected as $report_id => $column) {
+            $this->assertMatchesRegularExpression(
+                "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'callback'\\s*=>\\s*\\[self::class,\\s*'raw_results_to_html'\\]/",
+                $php,
+                "{$report_id} must render through raw_results_to_html(), not a bespoke renderer"
+            );
+
+            $this->assertMatchesRegularExpression(
+                "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'columns'\\s*=>\\s*'{$column}'/",
+                $php,
+                "{$report_id} must declare columns => '{$column}' — raw_results_to_html() reads each row's label from the key that names, and picks its per-column formatting from it"
+            );
+
+            $this->assertMatchesRegularExpression(
+                "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'raw'\\s*=>\\s*\\[/",
+                $php,
+                "{$report_id} must declare a 'raw' data-source callable"
             );
         }
     }
@@ -269,12 +307,75 @@ class GeneralScreenRegistrationTest extends TestCase
             'SlimStat\\Modules\\GeneralReports must exist'
         );
 
-        foreach (['statsRow', 'pageviewsChart', 'trafficSources', 'topPages', 'topCountries', 'devicesAndBrowsers', 'campaigns', 'goalsUpsell'] as $method) {
+        $methods = [
+            // Reports that render themselves.
+            'statsRow', 'pageviewsChart', 'campaigns', 'goalsUpsell',
+            // `raw` data-source callables for the shared renderer.
+            'trafficSourcesRaw', 'topColumnRaw',
+            // Free-tier gating chrome, hooked in wp_slimstat_admin::init().
+            'register_hooks', 'markGatedReports', 'injectUnlockCta',
+        ];
+
+        foreach ($methods as $method) {
             $this->assertTrue(
                 method_exists(\SlimStat\Modules\GeneralReports::class, $method),
                 "GeneralReports::{$method}() must exist"
             );
         }
+    }
+
+    /**
+     * The hand-rolled row renderer must stay deleted. It reproduced the bars
+     * and percentages but none of raw_results_to_html()'s per-column label
+     * formatting, which is what left rows showing a count and no name.
+     */
+    public function test_general_reports_has_no_bespoke_row_renderer(): void
+    {
+        $php = file_get_contents(dirname(__DIR__, 2) . '/src/Modules/GeneralReports.php');
+
+        foreach (['function renderRows', 'function renderGatedBox', 'function renderPager'] as $needle) {
+            $this->assertStringNotContainsString(
+                $needle,
+                $php,
+                "GeneralReports::{$needle}() must not come back — the tables render through raw_results_to_html()"
+            );
+        }
+    }
+
+    /**
+     * The free-tier blur must key off the server-applied marker class, never
+     * off row position.
+     *
+     * raw_results_to_html() emits the SQL debug message and the "Showing x -
+     * y of z" pagination as <p> siblings of the rows, and wraps the rows in
+     * an extra <div> on the non-AJAX path — so a positional selector shifts
+     * or stops matching depending on the render path and the debug setting.
+     * An earlier revision used :nth-child(n + 3) and did not match at all on
+     * first paint.
+     */
+    public function test_free_tier_blur_targets_the_marker_class_not_a_position(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/general.css');
+
+        $this->assertStringContainsString(
+            'p.slimstat-row-synthetic',
+            $css,
+            'the blur must target the marker class GeneralReports::markSyntheticRows() applies'
+        );
+
+        foreach (['nth-child(n + 3)', 'nth-child(n+3)', 'nth-last-of-type'] as $positional) {
+            $this->assertStringNotContainsString(
+                $positional,
+                $css,
+                "positional blur selector '{$positional}' must not come back"
+            );
+        }
+
+        $this->assertStringContainsString(
+            'slimstat_report_row_classes',
+            file_get_contents($this->reportsPath()),
+            'raw_results_to_html() must expose the per-row class filter the marker relies on'
+        );
     }
 
     private function reportsPath(): string

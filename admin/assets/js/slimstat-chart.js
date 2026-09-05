@@ -260,6 +260,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     borderWidth: isPrevious ? 1 : 2,
                     fill: chartType === "bar" ? true : false,
                     tension: chartType === "line" ? 0.3 : 0,
+                    // Monotone keeps the curve smooth but stops it overshooting
+                    // past its own data points — a plain tensioned spline dips
+                    // below the last value on a falling series, which on count
+                    // data reads as negative pageviews. Paired with yScale.min
+                    // = 0 below (the axis floor); this fixes the CURVE, that
+                    // fixes the AXIS.
+                    cubicInterpolationMode: chartType === "line" ? "monotone" : "default",
                     pointBorderColor: "transparent",
                     pointBackgroundColor: color,
                     pointBorderWidth: 2,
@@ -534,6 +541,13 @@ document.addEventListener("DOMContentLoaded", function () {
             yScale.min = -1;
             yScale.max = 1;
             yScale.ticks.stepSize = 1;
+        } else {
+            // Every series these charts plot is a COUNT, so the axis can never
+            // legitimately go below zero. Without this floor Chart.js sizes the
+            // axis from the data alone and the smoothed line (tension 0.3)
+            // overshoots under its own last point on a falling curve — drawing
+            // pageviews as negative on the way down to a zero month.
+            yScale.min = 0;
         }
 
         return new Chart(ctx, {

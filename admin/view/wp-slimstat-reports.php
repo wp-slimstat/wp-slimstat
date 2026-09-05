@@ -991,18 +991,23 @@ class wp_slimstat_reports
                 'pinned'    => true,
                 'tooltip'   => $pageviews_chart_tooltip,
             ],
+            // The four General tables are ordinary raw_results_to_html()
+            // top-N reports, registered exactly like slim_p1_08 / slim_p1_13 /
+            // slim_p2_18 above — same callback, same 'type'/'columns'/'raw'
+            // shape. That renderer owns the row markup, the percentage bars,
+            // the per-column label formatting (get_resource_title(), browser
+            // icons, country flags) and the pagination arrows. `raw` points at
+            // GeneralReports rather than straight at wp_slimstat_db::get_top()
+            // only so the free-tier row gate can be applied to the DATA before
+            // rendering; topColumnRaw() forwards to get_top() unchanged.
             'slim_p10_03' => [
                 'title'         => __('Where visitors come from', 'wp-slimstat'),
-                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'trafficSources'],
-                // 'exportable_report' is a presence-only signal for
-                // admin/index.php's add_lock_export_button() — deliberately
-                // NOT 'raw' (a different key on ~20 other reports that IS a
-                // real callable raw_results_to_html() invokes). General's
-                // boxes render through GeneralReports::*, which never reads
-                // callback_args at all, so a 'raw' entry here would look
-                // load-bearing to a future reader and isn't; this key can
-                // only ever mean "show the Export-upgrade button".
-                'callback_args' => ['exportable_report' => true],
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'referer_type',
+                    'raw'     => [\SlimStat\Modules\GeneralReports::class, 'trafficSourcesRaw'],
+                ],
                 'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
@@ -1010,8 +1015,12 @@ class wp_slimstat_reports
             ],
             'slim_p10_04' => [
                 'title'         => __('Your most visited pages', 'wp-slimstat'),
-                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topPages'],
-                'callback_args' => ['exportable_report' => true],
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'resource',
+                    'raw'     => [\SlimStat\Modules\GeneralReports::class, 'topColumnRaw'],
+                ],
                 'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
@@ -1019,8 +1028,12 @@ class wp_slimstat_reports
             ],
             'slim_p10_05' => [
                 'title'         => __('Where your visitors are', 'wp-slimstat'),
-                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'topCountries'],
-                'callback_args' => ['exportable_report' => true],
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'country',
+                    'raw'     => [\SlimStat\Modules\GeneralReports::class, 'topColumnRaw'],
+                ],
                 'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
@@ -1028,8 +1041,12 @@ class wp_slimstat_reports
             ],
             'slim_p10_06' => [
                 'title'         => __('Devices & browsers', 'wp-slimstat'),
-                'callback'      => [\SlimStat\Modules\GeneralReports::class, 'devicesAndBrowsers'],
-                'callback_args' => ['exportable_report' => true],
+                'callback'      => [self::class, 'raw_results_to_html'],
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'browser',
+                    'raw'     => [\SlimStat\Modules\GeneralReports::class, 'topColumnRaw'],
+                ],
                 'classes'       => ['large'],
                 'locations'     => ['slimgeneral'],
                 'pinned'        => true,
@@ -1762,7 +1779,19 @@ class wp_slimstat_reports
                 }
 
                 $bar = !empty($percentage_value) ? self::tooltip_bar($percentage_raw) : '';
-                $row_output = sprintf("<p class='slimstat-tooltip-trigger'>%s%s%s%s %s</p>", $bar, $element_pre_value, $element_value, $percentage, $row_details);
+
+                // Per-row classes, so a report can style individual rows without
+                // forking this renderer. $i is the row's index within the page
+                // being rendered, which is what a positional CSS selector cannot
+                // reliably recover: the debug message and pagination are <p>
+                // siblings too, and the non-AJAX path wraps the rows in an extra
+                // <div>. Used by the General page to mark its free-tier rows.
+                //
+                // $_args carries no report id — _check_args() replaces it with
+                // the registry entry, which has none — so the filter receives
+                // the report's own $_args, whose 'columns' identifies it.
+                $row_classes = trim('slimstat-tooltip-trigger ' . apply_filters('slimstat_report_row_classes', '', $_args, $i));
+                $row_output  = sprintf("<p class='%s'>%s%s%s%s %s</p>", esc_attr($row_classes), $bar, $element_pre_value, $element_value, $percentage, $row_details);
 
                 // Strip all the filter links, if this information is shown on the frontend
                 if (!is_admin()) {
