@@ -277,6 +277,162 @@ if ('' === $main_yaml) {
     }
 }
 
+// ── 5a. The deploy job must not create files inside the checkout ───────────
+// The step above used to redirect into ./jobs.json and ./expected.txt — the workspace root,
+// which IS the tree the deploy step rsyncs into the wordpress.org SVN repository. .distignore
+// is that rsync's only exclusion list and neither name was in it, so every tag would have
+// published two CI scratch files to ~70,000 installs. Fixed by writing to $RUNNER_TEMP; pinned
+// here as the CLASS, because the next scratch file will have a different name and adding names
+// to .distignore is a list somebody has to remember.
+//
+// The matcher is proved in both directions on fixtures below. A scan for `>` over a workflow
+// file that currently redirects twice is exactly what a scan that has stopped matching also
+// produces, and this file's own §8 has already recorded one false PASS of that shape.
+$workspace_redirects = static function (string $code): array {
+    $targets = [];
+    if (preg_match_all('/(?<![0-9<>&=-])>>?[ \t]*([^\s|;&]+)/', $code, $rm)) {
+        foreach ($rm[1] as $target) {
+            if ('/dev/null' === $target || preg_match('/^&[12]$/', $target)) {
+                continue;
+            }
+            // $RUNNER_TEMP is outside the checkout. The GitHub file commands are runner-owned
+            // paths, not workspace paths, and appending to them is how a step exports a value.
+            if (false !== strpos($target, 'RUNNER_TEMP')
+                || preg_match('/GITHUB_(ENV|OUTPUT|PATH|STEP_SUMMARY)/', $target)) {
+                continue;
+            }
+            $targets[] = $target;
+        }
+    }
+
+    return $targets;
+};
+
+foreach ([
+    ['> jobs.json',                         true],
+    ['--paginate --slurp > ./expected.txt', true],
+    ['> "$GITHUB_WORKSPACE/out.txt"',       true],
+    ['> "${RUNNER_TEMP:?}/jobs.json"',      false],
+    ['>> "$GITHUB_ENV"',                    false],
+    ['2>&1',                                false],
+    ['> /dev/null',                         false],
+] as [$fixture, $should_fire]) {
+    if (([] !== $workspace_redirects($fixture)) !== $should_fire) {
+        $failures[] = sprintf(
+            '§5a control: the workspace-redirect matcher %s on `%s` — it cannot say which of '
+                . "main.yml's redirects lands in the tree that gets rsynced to wordpress.org",
+            $should_fire ? 'did NOT fire' : 'fired',
+            $fixture
+        );
+    }
+}
+
+foreach ($workspace_redirects($main_code) as $target) {
+    $failures[] = sprintf(
+        'main.yml redirects into `%s`, a path inside the checkout. The deploy step rsyncs this '
+            . 'checkout to the wordpress.org SVN repository and .distignore is its only exclusion '
+            . 'list, so that file ships to every install. Write to "$RUNNER_TEMP/…" instead',
+        $target
+    );
+}
+
+// ── 5b. The required lanes are the lanes ci.yml actually declares ──────────
+// The deploy gate's expected set was PHPStan + Tier 1 only. Tier 2 also carries the
+// `Reports output-escaping gate` step, which is blocking and is the ONLY CI home
+// tests/reports-output-escaping-test.php has (§8) — so a tag on a commit whose XSS gate had
+// failed found a red Tier 2 job, a green expected set, and deployed.
+//
+// EXECUTED, NOT READ. The derivation lives in .github/expected-lanes.sh so that this section
+// can run it and compare its output against the same set computed here through a different
+// reader — slimstat_ci_wp_lanes() and slimstat_ci_step_runs_for(), which carry their own
+// mutations. Two readers of one file that must agree exactly; a grep for "Tier 2" in main.yml
+// would have been satisfied by the word appearing in the comment explaining its absence, which
+// is precisely how §8 was fooled once already.
+$lanes_script = $plugin_root . '/.github/expected-lanes.sh';
+if (!is_file($lanes_script)) {
+    $failures[] = '.github/expected-lanes.sh does not exist — main.yml derives the lanes a tag '
+        . 'must find green from it, so the deploy gate now names nothing';
+} elseif (false === strpos($main_code, 'expected-lanes.sh')) {
+    $failures[] = 'main.yml no longer runs .github/expected-lanes.sh — the script this section '
+        . 'proves correct is not the one the deploy gate uses, so this check guards nothing';
+} else {
+    $script_out = [];
+    $script_rc  = 0;
+    exec('bash ' . escapeshellarg($lanes_script) . ' 2>/dev/null', $script_out, $script_rc);
+    $script_lanes = array_values(array_filter(array_map('trim', $script_out), 'strlen'));
+
+    $deploy_ci_code = slimstat_yaml_strip_comments($ci_yaml);
+    $deploy_jobs    = slimstat_ci_job_blocks($deploy_ci_code);
+    $deploy_steps   = slimstat_ci_steps($deploy_ci_code);
+
+    // The job NAME is the thing GitHub reports a conclusion under, so it is what the deploy
+    // gate compares against — read it from ci.yml rather than retyping it here. A retyped
+    // name is PITFALLS 124 one file over: it stops matching and nothing says so.
+    $job_name = static function (string $block): string {
+        return preg_match('/^[ ]{4}name:[ ]*"?(.+?)"?[ ]*$/m', $block, $m) ? $m[1] : '';
+    };
+
+    $escaping = slimstat_ci_steps_containing($deploy_steps, 'reports-output-escaping-test.php');
+
+    $expected_lanes = [];
+    foreach (['phpstan' => [], 'fast' => ['php'], 'standard' => ['wp', 'php']] as $job => $keys) {
+        $name = $job_name($deploy_jobs[$job] ?? '');
+        if ('' === $name) {
+            $failures[] = sprintf('ci.yml declares no job `%s` with a name — the deploy gate '
+                . 'derives its expected lanes from that name, and cannot', $job);
+            continue;
+        }
+        if ([] === $keys) {
+            $expected_lanes[] = $name;
+            continue;
+        }
+        if ('fast' === $job) {
+            foreach (slimstat_ci_matrix_cells($deploy_jobs[$job]) as [, $php]) {
+                $expected_lanes[] = str_replace('${{ matrix.php }}', $php, $name);
+            }
+            continue;
+        }
+        // Tier 2: only the lanes the blocking escaping gate runs on. `1 !== count` is §8's
+        // failure to report, not this one's, but a silent skip here would leave the Tier 2
+        // requirement vacuous — which is the defect being fixed.
+        if (1 !== count($escaping)) {
+            $failures[] = sprintf('%d ci.yml step(s) run reports-output-escaping-test.php; the '
+                . 'deploy gate cannot tell which Tier 2 lanes are blocking', count($escaping));
+            continue;
+        }
+        foreach (slimstat_ci_wp_lanes($ci_yaml) as $wp => $php) {
+            if (slimstat_ci_step_runs_for($escaping[0], 'wp', (string) $wp)) {
+                $expected_lanes[] = str_replace(
+                    ['${{ matrix.wp }}', '${{ matrix.php }}'],
+                    [(string) $wp, $php],
+                    $name
+                );
+            }
+        }
+    }
+
+    sort($script_lanes);
+    sort($expected_lanes);
+
+    if (0 !== $script_rc) {
+        $failures[] = sprintf('.github/expected-lanes.sh exited %d — the deploy gate refuses '
+            . 'every tag until it can derive its lanes', $script_rc);
+    } elseif ($script_lanes !== $expected_lanes) {
+        $failures[] = sprintf(
+            '.github/expected-lanes.sh and ci.yml disagree about which lanes gate the deploy. '
+                . 'The script names [%s]; ci.yml declares [%s]',
+            implode(', ', $script_lanes),
+            implode(', ', $expected_lanes)
+        );
+    } elseif ([] === array_filter($expected_lanes, static function (string $n): bool {
+        return 0 === strpos($n, 'Tier 2');
+    })) {
+        $failures[] = 'the deploy gate requires no Tier 2 lane. Tier 2 carries the blocking '
+            . 'escaping gate, the only CI home the report-render XSS assertions have, so a tag '
+            . 'on a commit whose XSS gate failed would deploy';
+    }
+}
+
 // ── 6. Every k6 script is wired somewhere; an unreferenced script measures nothing ──
 // Five of six scripts sat orphaned while "npm run test:perf" ran exactly one — coverage
 // that reads as "perf tested" while five scenarios never execute anywhere.

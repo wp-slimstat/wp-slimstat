@@ -34,16 +34,42 @@ jobs:
     # not a comparison — the check never fires at all.)
     #
     # EXPECTED LANES ARE DERIVED FROM ci.yml at this commit, so there is no number to drift:
-    # bump the PHP matrix and the gate follows. Tier 1 + static analysis only. Tier 1 alone
-    # was the gate until now, and the beta heads showed what that permits — six Tier 1 lanes
-    # green while PHPStan was red on the release branch, one error in wp-slimstat.php. That
-    # tag would have deployed.
+    # bump the PHP matrix and the gate follows. The derivation lives in .github/expected-lanes.sh
+    # rather than inline here, because a derivation inlined in a workflow can only be READ, and
+    # every gate in this repository that was only read turned out to be wrong in a way reading
+    # did not show. As a script it is EXECUTED by tests/perf-gate-integrity-test.php §5b, which
+    # computes the same set from ci.yml through a different reader and requires exact agreement.
     #
-    # Tier 2 is deliberately NOT required: its E2E assertions are continue-on-error, so
-    # requiring it would gate on lane setup rather than on the E2E result — and it is
-    # ref-gated to master/main/development, so a tag cut from any other commit carries a
-    # `skipped` conclusion that would refuse the deploy forever.
-    - name: Require green Tier 1 + static analysis for this commit
+    # TIER 2 IS NOW REQUIRED, for the lanes that carry the blocking escaping gate. It was
+    # excluded for two stated reasons, and neither survived the lanes it was excluded from:
+    #
+    #   "its E2E assertions are continue-on-error, so requiring it would gate on lane setup
+    #   rather than on the E2E result" — true of the E2E step, and irrelevant to the job's
+    #   conclusion. Tier 2 also carries `Reports output-escaping gate`, which is blocking and
+    #   is THE ONLY CI HOME tests/reports-output-escaping-test.php has: it is in
+    #   `composer test:all`, no job runs test:all, so outside that step its XSS assertions over
+    #   the report render path run nowhere. A commit whose XSS gate failed had a red Tier 2 job
+    #   and a green deploy gate. Requiring Tier 1 + PHPStan is what let it ship.
+    #
+    #   "it is ref-gated to master/main/development, so a tag cut from any other commit carries
+    #   a `skipped` conclusion that would refuse the deploy forever" — the ref-gate said `main`
+    #   in a repository whose default branch is master and which has never had a main, so at the
+    #   time that reason was written Tier 2 did not run on the release branch at all. It does
+    #   now. A tag cut from a commit that was never pushed to master/main/development is a
+    #   release that never ran the release gates, and refusing it is the correct outcome, not a
+    #   deadlock: push the commit to one of those branches and the run exists.
+    #
+    # Interior WP lanes (5.6…6.9) stay out: their only blocking content is compat setup, and
+    # their E2E step is continue-on-error, so requiring them would gate the release on lane
+    # setup — which IS the objection above, applied where it holds.
+    #
+    # NOTHING IS WRITTEN INTO THE WORKSPACE. Both files below used to be redirected into the
+    # checkout root as ./jobs.json and ./expected.txt. The deploy step underneath rsyncs this
+    # checkout to the wordpress.org SVN repository with .distignore as its only exclusion list,
+    # and neither name is in it — so every tag would have published two CI scratch files to
+    # ~70,000 installs. $RUNNER_TEMP is outside the checkout, which closes the class instead of
+    # adding two more names to a list that has to be remembered.
+    - name: Require green Tier 1, static analysis and the blocking Tier 2 lanes for this commit
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -59,33 +85,21 @@ jobs:
         echo "Gating on CI run ${run_id} for ${GITHUB_SHA}"
 
         gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
-          --paginate --slurp > jobs.json
+          --paginate --slurp > "${RUNNER_TEMP:?}/jobs.json"
 
-        # The lanes this commit's own ci.yml declares: PHPStan plus one Tier 1 job per PHP.
-        {
-          echo "Static analysis · PHPStan"
-          sed -n '/^  fast:/,/^  phpstan:/p' .github/workflows/ci.yml \
-            | grep -m1 -oE 'php: \[[^]]*\]' \
-            | grep -oE '[0-9]+\.[0-9]+' \
-            | while read -r v; do echo "Tier 1 · fast · PHP $v"; done
-        } > expected.txt
+        bash .github/expected-lanes.sh > "${RUNNER_TEMP:?}/expected.txt"
 
-        if [ "$(wc -l < expected.txt)" -lt 2 ]; then
-          echo "deploy refused: could not derive the expected lanes from ci.yml"
-          cat expected.txt
-          exit 1
-        fi
-        echo "Expected lanes:"; cat expected.txt
+        echo "Expected lanes:"; cat "${RUNNER_TEMP:?}/expected.txt"
 
         fail=0
         while read -r want; do
           got=$(jq -r --arg n "$want" \
-            '[.[].jobs[] | select(.name == $n) | .conclusion] | unique | join(",")' jobs.json)
+            '[.[].jobs[] | select(.name == $n) | .conclusion] | unique | join(",")' "${RUNNER_TEMP:?}/jobs.json")
           if [ "$got" != "success" ]; then
             echo "deploy refused: '${want}' concluded [${got:-absent}]"
             fail=1
           fi
-        done < expected.txt
+        done < "${RUNNER_TEMP:?}/expected.txt"
         [ "$fail" -eq 0 ] || exit 1
         echo "All expected lanes concluded success."
 
