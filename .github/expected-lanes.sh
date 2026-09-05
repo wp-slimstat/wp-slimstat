@@ -45,8 +45,9 @@ tier1=$(printf '%s\n' "$code" \
 # alone let that commit deploy.
 #
 # Not the whole Tier 2 matrix: the interior WP lanes exist for compat breadth and their E2E
-# step is continue-on-error, so requiring them would gate the release on lane setup. The lanes
-# named here are the ones where a red job means a release gate said no.
+# step is advisory, so requiring them would gate the release on lane setup. The lanes named
+# here are the ones where a red job means a release gate said no -- and there are now two
+# independent ways for a lane to be one of those, so the required set is their UNION.
 tier2_block=$(printf '%s\n' "$code" | sed -n '/^  standard:/,/^  nightly:/p')
 
 esc_wp=$(printf '%s\n' "$tier2_block" \
@@ -62,13 +63,60 @@ if [ -z "$esc_wp" ]; then
   esc_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+"' | grep -oE '[0-9]+\.[0-9]+' || true)
 fi
 
+# ---- Tier 2: the lanes whose E2E step can fail the job ---------------------------------
+# The second way to be release-gating, and the one the escaping gate cannot see. Until the
+# `continue-on-error` flip every Tier 2 E2E step was advisory, so the escaping gate was the
+# only blocking thing in the job and deriving from it alone was complete. It is not any more:
+# the baseline and newest lanes now fail the job on a red suite, and a WP version could be
+# added to that list without also being added to the escaping gate's `if:` -- a lane that
+# blocks CI, does not gate the tag, and looks correct from either file read on its own.
+#
+# So this family is derived separately and unioned in. Today it is a subset of $esc_wp and the
+# output does not move; the point is that it cannot silently stop being one.
+soft_line=$(printf '%s\n' "$tier2_block" | grep -E '^[[:space:]]*continue-on-error[[:space:]]*:' || true)
+soft_count=$(printf '%s\n' "$soft_line" | grep -c . || true)
+
+if [ "$soft_count" != "1" ]; then
+  # Zero means the step became unconditionally blocking without saying so, or moved out of the
+  # job; more than one means this script cannot tell which step it is reading. Both are fixes
+  # to make here, not conditions to guess through: guessing soft drops a gating lane from the
+  # required set, which is the exact hole being closed.
+  echo "expected-lanes: the Tier 2 job declares ${soft_count} continue-on-error line(s); this derivation reads exactly one" >&2
+  exit 1
+fi
+
+case "$soft_line" in
+  *"fromJSON("*)
+    block_wp=$(printf '%s\n' "$soft_line" | grep -oE "fromJSON\('\[[^]]*\]'\)" | grep -oE '[0-9]+\.[0-9]+' || true)
+    # A polarity flip turns the same list into the lanes that are SOFT. §7 of the perf gate is
+    # what forbids that shape; this script refuses to read it rather than trusting §7 ran.
+    case "$soft_line" in
+      *'!contains('*) : ;;
+      *) echo "expected-lanes: the Tier 2 continue-on-error names a version list without a leading \`!\`, so the list is the soft lanes, not the blocking ones" >&2; exit 1 ;;
+    esac
+    ;;
+  *': false'*)
+    block_wp=$(printf '%s\n' "$tier2_block" | grep -oE '\{ wp: "[0-9]+\.[0-9]+"' | grep -oE '[0-9]+\.[0-9]+' || true)
+    ;;
+  *': true'*)
+    block_wp=""   # advisory everywhere: the escaping gate is again the only blocking step
+    ;;
+  *)
+    echo "expected-lanes: cannot read the Tier 2 continue-on-error as a blocking set:${soft_line}" >&2
+    exit 1
+    ;;
+esac
+
+# Union, deduplicated, in version order so the comparison in perf-gate §5b is order-stable.
+tier2_wp=$(printf '%s\n%s\n' "$esc_wp" "$block_wp" | grep -E '^[0-9]+\.[0-9]+$' | sort -u -V)
+
 echo "Static analysis · PHPStan"
 
 for v in $tier1; do
   echo "Tier 1 · fast · PHP $v"
 done
 
-for wp in $esc_wp; do
+for wp in $tier2_wp; do
   # `.` is any-character in a regex, so 6.4 would also match a lane called 674.
   wp_re="${wp//./[.]}"
   php=$(printf '%s\n' "$tier2_block" \
@@ -88,4 +136,5 @@ done
 # one Tier 1 lane -- so the entire Tier 2 requirement could vanish from this derivation and the
 # deploy would still be reported as gated. Each family answers for itself.
 [ -n "$tier1" ]  || { echo "expected-lanes: no Tier 1 PHP matrix found in ci.yml" >&2; exit 1; }
-[ -n "$esc_wp" ] || { echo "expected-lanes: no Tier 2 WordPress lanes found in ci.yml" >&2; exit 1; }
+[ -n "$esc_wp" ]   || { echo "expected-lanes: no Tier 2 WordPress lanes found in ci.yml" >&2; exit 1; }
+[ -n "$tier2_wp" ] || { echo "expected-lanes: the Tier 2 union is empty" >&2; exit 1; }

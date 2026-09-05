@@ -374,6 +374,45 @@ if (!is_file($lanes_script)) {
 
     $escaping = slimstat_ci_steps_containing($deploy_steps, 'reports-output-escaping-test.php');
 
+    // The second family of release-gating Tier 2 lanes, read here through slimstat_ci_steps()
+    // where the script reads it through sed. Until the `continue-on-error` flip the escaping
+    // gate was the only blocking step in Tier 2, so deriving from it alone was complete; now
+    // the E2E step itself fails the job on the baseline and newest lanes, and a WP version
+    // could join that list without joining the escaping gate's `if:`. Such a lane blocks CI,
+    // does not gate the tag, and reads as correct in either file taken alone.
+    //
+    // Unioned rather than substituted: the escaping gate still runs on lanes whose E2E step is
+    // advisory, and those still gate the release. Today the blocking set is a subset of the
+    // escaping set and the expected lanes do not move.
+    $deploy_e2e   = slimstat_ci_steps_containing($deploy_steps, 'npm run test:e2e');
+    $blocking_wp  = [];
+    $blocking_all = false;
+    if (1 !== count($deploy_e2e)
+        || !preg_match('/continue-on-error\s*:\s*(.+)/', $deploy_e2e[0], $dm)) {
+        $failures[] = sprintf('§5b: %d ci.yml step(s) run npm run test:e2e and this section could '
+            . 'not read a continue-on-error on one — so it cannot say which Tier 2 lanes fail the '
+            . 'job, and the deploy gate would derive its required set from half its sources',
+            count($deploy_e2e));
+    } else {
+        $soft_expr = trim($dm[1]);
+        if ('true' === $soft_expr) {
+            $blocking_wp = [];                    // advisory everywhere
+        } elseif ('false' === $soft_expr) {
+            $blocking_all = true;                 // blocking everywhere
+        } elseif (preg_match('/!\s*contains\(\s*fromJSON\(\s*\'(\[[^\']*\])\'\s*\)/', $soft_expr, $bm)) {
+            $decoded     = json_decode($bm[1], true);
+            $blocking_wp = is_array($decoded) ? array_map('strval', $decoded) : [];
+            if ([] === $blocking_wp) {
+                $failures[] = '§5b: the Tier 2 continue-on-error names an empty or unreadable '
+                    . 'version list, which would quietly drop the blocking family from the union';
+            }
+        } else {
+            $failures[] = sprintf('§5b: cannot read the Tier 2 continue-on-error `%s` as a '
+                . 'blocking set. Guessing advisory drops a gating lane from the deploy gate',
+                $soft_expr);
+        }
+    }
+
     $expected_lanes = [];
     foreach (['phpstan' => [], 'fast' => ['php'], 'standard' => ['wp', 'php']] as $job => $keys) {
         $name = $job_name($deploy_jobs[$job] ?? '');
@@ -401,7 +440,9 @@ if (!is_file($lanes_script)) {
             continue;
         }
         foreach (slimstat_ci_wp_lanes($ci_yaml) as $wp => $php) {
-            if (slimstat_ci_step_runs_for($escaping[0], 'wp', (string) $wp)) {
+            if (slimstat_ci_step_runs_for($escaping[0], 'wp', (string) $wp)
+                || $blocking_all
+                || in_array((string) $wp, $blocking_wp, true)) {
                 $expected_lanes[] = str_replace(
                     ['${{ matrix.wp }}', '${{ matrix.php }}'],
                     [(string) $wp, $php],
