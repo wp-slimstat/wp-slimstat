@@ -114,6 +114,53 @@ resolve_arm_zip() { # <ref>
   printf '%s\n' "$zip"
 }
 
+# ── What shape is this table, and what shape is that corpus? ────────────────
+# H3. A vintage cell is only a vintage cell if the CORPUS matches the arm. The existing C1 asks
+# the dump for `vid_hash`/`ua_id` and stops there, which a 5.5-shaped dump passes under a 4.8.1
+# arm — and then the cell is 4.8.1 code on 5.5 tables: every ADD COLUMN in the 4.8 blocks is a
+# no-op against a column that is already there, every DROP finds nothing to drop, and the cell
+# reports the DDL path green having executed none of it. That is the failure this pair of
+# functions exists to make impossible, and it is invisible in every other signal a cell emits.
+#
+# The comparison is column SET against column SET: what the arm's own DDL just built (read from
+# information_schema, so it is the schema that exists rather than the schema we believe in) and
+# what the dump file declares (read from the FILE, before the import — afterwards the table IS
+# the dump's shape and the question can no longer be asked).
+
+# The live column set of a table, sorted, comma-joined. Empty when the table does not exist.
+table_columns() { # <table>
+  mysql_q "SELECT COLUMN_NAME FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='$1' ORDER BY COLUMN_NAME;" \
+    | tr -d '\r' | sed '/^$/d' | sort | tr '\n' ',' | sed 's/,$//'
+}
+
+# The column set a gzipped dump declares for a table, in the same shape. Reads only that CREATE
+# TABLE block: index lines are `KEY` / `PRIMARY KEY` / `UNIQUE KEY`, which carry a backtick but
+# not in first position, and the range ends at the closing `)` so a second table in the same
+# file cannot leak in.
+dump_columns() { # <dump.gz> <table>
+  gzip -dc "$1" \
+    | sed -n "/^CREATE TABLE \`$2\` (/,/^)/p" \
+    | sed -n 's/^  `\([^`]*\)`.*/\1/p' \
+    | sort | tr '\n' ',' | sed 's/,$//'
+}
+
+# Which columns are in the first set and not in the second. Both take the comma-joined form
+# above; the result is comma-joined too, and empty when the first set is contained in the second.
+columns_missing_from() { # <set-a> <set-b>
+  local haystack=",$2," c
+  # `printf '%s\n'`, not `printf '%s'`: BSD sed does not add the trailing newline the input
+  # lacks, and `read` returns false on a final unterminated line WITHOUT running the body, so the
+  # LAST column silently dropped out of every difference. Caught by the empty-second-set case in
+  # tests/rehearsal-column-control-test.php, which is why that case is there. PITFALLS 131.
+  printf '%s\n' "$1" | tr ',' '\n' | sed '/^$/d' | while IFS= read -r c; do
+    case "$haystack" in
+      *",$c,"*) : ;;
+      *)        printf '%s\n' "$c" ;;
+    esac
+  done | tr '\n' ',' | sed 's/,$//'
+}
+
 # Write a cell's verdict JSON. Args: art_dir cell php wp status reason
 write_verdict() {
   local art="$1" cell="$2" php="$3" wp="$4" status="$5" reason="$6"

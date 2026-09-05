@@ -1,0 +1,18 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-column-control-test.php
+kind:      restore-defect
+expect:    the only one that vintage ships
+rationale: 4.8.1 ships no admin/index.php: the class and the init_tables() signature live in admin/wp-slimstat-admin.php. Drop that branch and the cell finds no file, includes nothing, creates no tables -- and include_once WARNS rather than fatals, so the run continues and the hydration below creates wp_slim_stats itself, from the dump. The cell then asserts the whole migration against a table the arm never built, and reports PASS. This mutation SURVIVED the first draft of the gate, which looked for the filename anywhere in the file and found it in a comment; the assertion now names the file_exists() candidate.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -364,8 +364,7 @@
+ run_vintage_installer() {
+   wpc eval '
+     $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
+-    $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
+-       : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");
++    $f = file_exists($dir . "admin/index.php") ? "admin/index.php" : "";
+     if ($f === "") { echo "NOFILE"; }
+     else {
+       include_once($dir . $f);

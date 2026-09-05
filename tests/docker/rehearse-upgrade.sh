@@ -353,7 +353,56 @@ if [ "$WITH_PRO" = 1 ]; then
     && check "Pro's code loaded alongside free" 0 "arm $(pro_arm_desc)" \
     || check "Pro's code loaded alongside free" 1 "EmailReportsAddon did not load under $(pro_arm_desc)"
 fi
-wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' >>"$ART/install.log" 2>&1
+# ── H2 · the arm's OWN installer builds the arm's OWN tables ────────────────
+# The single line this replaces named `admin/index.php`, which 4.8.1 does not ship: that vintage
+# keeps the same class, and the same `wp_slimstat_admin::init_tables($_wpdb='')` signature, in
+# admin/wp-slimstat-admin.php. include_once on a missing path is a warning, not a fatal, so the
+# old line would have gone to install.log and the cell would have carried on with NO wp_slim_stats
+# at all -- and then the hydration below creates the table itself, from the dump, and every
+# schema assertion downstream describes the DUMP's shape while claiming to describe the arm's.
+# Which file ran is echoed back so the verdict names it rather than assuming it.
+run_vintage_installer() {
+  wpc eval '
+    $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
+    $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
+       : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");
+    if ($f === "") { echo "NOFILE"; }
+    else {
+      include_once($dir . $f);
+      if (!method_exists("wp_slimstat_admin", "init_tables")) { echo "NOMETHOD"; }
+      else { wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo $f; }
+    }'
+}
+INSTALLER=$(run_vintage_installer 2>>"$ART/install.log" | tr -d '[:space:]')
+case "$INSTALLER" in
+  admin/*) check "the arm's own installer ran" 0 "$INSTALLER" ;;
+  *)       check "the arm's own installer ran" 1 "${INSTALLER:-no output} under arm $OLD_REF" ;;
+esac
+
+ARM_COLS=$(table_columns wp_slim_stats)
+ARM_COL_N=$(printf '%s' "$ARM_COLS" | tr ',' '\n' | grep -c '[^[:space:]]' || true)
+[ -n "$ARM_COLS" ] \
+  && check "the arm built its own tables before hydration" 0 "$ARM_COL_N columns" \
+  || check "the arm built its own tables before hydration" 1 "wp_slim_stats does not exist"
+
+# ── C1b (H3) · the CORPUS is the arm's own vintage ──────────────────────────
+# C1 above asks the dump for vid_hash/ua_id and stops. A 5.5-shaped dump passes that under a
+# 4.8.1 arm, and the cell is then 4.8.1 code on 5.5 tables: every ADD COLUMN in the 4.8 blocks
+# is a no-op against a column already present, every DROP finds nothing, and the DDL path reports
+# green having executed none of itself. Nothing else a cell emits can see that.
+# Set against set, and it has to happen HERE: after the arm's installer, before the import. One
+# line later the table IS the dump's shape and the question is no longer answerable.
+DUMP_COLS=$(dump_columns "$DUMP" wp_slim_stats)
+[ -n "$DUMP_COLS" ] \
+  || { err "the dump declares no CREATE TABLE for wp_slim_stats — $(basename "$DUMP") is not a corpus"; exit 1; }
+ONLY_ARM=$(columns_missing_from "$ARM_COLS" "$DUMP_COLS")
+ONLY_DUMP=$(columns_missing_from "$DUMP_COLS" "$ARM_COLS")
+if [ -z "$ONLY_ARM" ] && [ -z "$ONLY_DUMP" ]; then
+  check "the corpus is the arm's own vintage" 0 "$ARM_COL_N columns, identical sets"
+else
+  check "the corpus is the arm's own vintage" 1 \
+        "arm-only: ${ONLY_ARM:-none}; dump-only: ${ONLY_DUMP:-none}"
+fi
 
 log "[$CELL] hydrating $(basename "$DUMP")"
 gzip -dc "$DUMP" | dc exec -T db mysql -uroot -proot wordpress 2>"$ART/import.err" \
