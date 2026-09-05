@@ -1,0 +1,18 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-arm-resolution-test.php
+kind:      restore-defect
+expect:    before anything is fetched
+rationale: The ordering, which is the half that rots quietly. Consulting the manifest only as a fallback still refuses an unpinned version -- the digest cannot match an empty string -- so the cell still fails and the exit code is still 1. What changes is that the ZIP has already been downloaded by then, which is exactly the habit the pin exists to prevent: fetch first, add the hash afterwards, and the manifest becomes a record of what was downloaded rather than a decision about what may be. The fixture's origin deliberately serves the unpinned version, so this assertion cannot pass because the download failed for its own reasons.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -91,8 +91,7 @@
+     # only in the sense that nothing had looked at it.
+     printf '%s' "$ver" | grep -qE '^[0-9]+(\.[0-9]+){1,3}$' \
+       || { err "not a plugin version: '$ver'" >&2; return 1; }
+-    want=$(arm_manifest_sha "$ver") \
+-      || { err "no pinned sha256 for $ver in $ARMS_MANIFEST — add the line in the same commit as the cell that needs it" >&2; return 1; }
++    want=$(arm_manifest_sha "$ver" || true)
+     if [ ! -s "$zip" ]; then
+       mkdir -p "$ARMS_DIR"
+       curl -fsS -o "$zip.part" "$ARMS_BASE_URL/wp-slimstat.$ver.zip" \

@@ -193,14 +193,42 @@ fingerprint() {
 row_count() { mysql_q "SELECT COUNT(*) FROM wordpress.wp_slim_stats;" | tr -d '[:space:]'; }
 has_column() { mysql_q "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='wp_slim_stats' AND COLUMN_NAME='$1';" | tr -d '[:space:]'; }
 
+# H1's control, and the reason the vintage arms are trustworthy at all. `resolve_arm_zip` proves
+# the BYTES are the ones wp.org served; this proves those bytes are what is now installed and
+# running. The two are different claims: `wp plugin install --force` can succeed on a ZIP whose
+# folder name collides with an existing plugin dir, leaving the previous arm in place, and every
+# assertion downstream would then describe the wrong vintage while the cell reported PASS. A
+# vintage cell whose arm silently did not change is the one failure that makes all the others
+# meaningless, so it is asserted after every install, not once at the start.
+assert_arm_vintage() { # <ref>
+  [ -n "${ARM_FREE_VERSION:-}" ] || return 0   # git arms: the sha is the identity, not a version
+  local got
+  got=$(wpc plugin get wp-slimstat --field=version 2>/dev/null | tr -d '[:space:]')
+  [ "$got" = "$ARM_FREE_VERSION" ] \
+    && check "the installed arm is the vintage requested ($1)" 0 "WordPress reports $got" \
+    || check "the installed arm is the vintage requested ($1)" 1 \
+             "asked for $ARM_FREE_VERSION, WordPress reports ${got:-nothing}"
+}
+
 use_ref() { # <ref>
   local ref="$1"
-  local full sha
-  full=$(git -C "$PLUGIN_SRC" rev-parse "$ref^{commit}") || { err "cannot resolve Free ref $ref"; return 1; }
-  sha=${full:0:8}
-  ARM_FREE_ZIP="$HARNESS_DIR/build/wp-slimstat-$sha.zip"
-  FREE_ZIP_OUT="$ARM_FREE_ZIP" bash "$HARNESS_DIR/build-free.sh" "$full" \
-    > "$ART/build-free-$sha.log" 2>&1 || { err "Free ZIP build at $ref failed"; return 1; }
+  local full sha zip rc
+  # wp.org:<version> and *.zip resolve to bytes; anything else is a git ref and gets built.
+  zip=$(resolve_arm_zip "$ref"); rc=$?
+  if [ "$rc" = 1 ]; then
+    return 1
+  elif [ "$rc" = 0 ]; then
+    ARM_FREE_ZIP="$zip"
+    ARM_FREE_VERSION=$(arm_ref_version "$ref")
+    log "[$CELL] arm $ref -> $(basename "$zip") ($(digest "$zip" | cut -c1-12), pinned)"
+  else
+    ARM_FREE_VERSION=""
+    full=$(git -C "$PLUGIN_SRC" rev-parse "$ref^{commit}") || { err "cannot resolve Free ref $ref"; return 1; }
+    sha=${full:0:8}
+    ARM_FREE_ZIP="$HARNESS_DIR/build/wp-slimstat-$sha.zip"
+    FREE_ZIP_OUT="$ARM_FREE_ZIP" bash "$HARNESS_DIR/build-free.sh" "$full" \
+      > "$ART/build-free-$sha.log" 2>&1 || { err "Free ZIP build at $ref failed"; return 1; }
+  fi
   # The first arm is selected before WordPress exists; provision_wp_cell installs it. Every
   # later transition goes through WordPress's upgrader, never through a source-tree rsync.
   if [ -f "$WP_DIR/wp-config.php" ]; then
@@ -209,6 +237,7 @@ use_ref() { # <ref>
     chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
     wpc plugin install /var/www/html/wp-content/plugins/.free/wp-slimstat.zip --force \
       >> "$ART/install.log" 2>&1 || { err "Free ZIP upgrade to $ref failed"; return 1; }
+    assert_arm_vintage "$ref"
   fi
 }
 drop_ref() { :; }
@@ -303,6 +332,7 @@ if [ "$WITH_PRO" = 1 ]; then
   build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
 fi
 provision_wp_cell "$ART" "$WP" "$BASE_URL" "$PLUGIN_SRC" || exit 1
+assert_arm_vintage "$OLD_REF"   # the first arm is installed by provision_wp_cell, not by use_ref
 
 # C5 (U4 only). A post-provision property, so it cannot sit in the CONTROLS block above, whose
 # subjects are all properties of the DUMP.

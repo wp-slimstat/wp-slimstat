@@ -36,6 +36,84 @@ now()    { date -u +%FT%TZ; }
 # change in the owner would have silently sent the drill's `patch -p1 -d` somewhere else.
 arm_worktree_dir() { printf '%s/%s/%s/arms/%s' "$WORK_ROOT" "${2:-answers}" "${2:-answers}" "$1"; }
 
+# ── Vintage arms: the ZIP wordpress.org serves, not a ZIP we built ──────────
+# H1. Cells 7a-7d upgrade FROM 4.8.1 / 5.1.5 / 5.2.13 / 5.4.12, and build-free.sh cannot produce
+# those arms: it hard-requires `.distignore` at the ref, which the 4.8 line predates by years.
+# The wp.org ZIP is therefore not merely a more faithful arm, it is the ONLY arm those vintages
+# can have — so `use_ref` accepts `wp.org:<version>` and a bare `.zip` path beside a git ref.
+#
+# Bytes we did not build must be pinned, hence arms.sha256. The failure this refuses is quiet:
+# a truncated download, a re-rolled ZIP, a proxy error page saved under the right name — each
+# gives a cell that runs to completion and reports on code no site is running. An unpinned
+# version is refused BEFORE the download, so "it worked, add the hash after" cannot become the
+# habit.
+ARMS_DIR="${ARMS_DIR:-$HOME/slimstat-v6-baselines/arms}"
+ARMS_MANIFEST="${ARMS_MANIFEST:-$HARNESS_DIR/arms.sha256}"
+ARMS_BASE_URL="${ARMS_BASE_URL:-https://downloads.wordpress.org/plugin}"
+
+# The version an arm ref names, or empty for a git ref. Split out because the container-side H1
+# control compares it against what WordPress reports, and a second hand-rolled `${ref#wp.org:}`
+# there is how the two would drift.
+arm_ref_version() { # <ref>
+  case "$1" in
+    wp.org:*) printf '%s\n' "${1#wp.org:}" ;;
+    *)        : ;;
+  esac
+}
+
+# The pinned digest for a version, or exit 1 if this version is not in the manifest.
+arm_manifest_sha() { # <version>
+  awk -v want="wp-slimstat.$1.zip" '$2 == want { print $1; hit = 1 } END { exit hit ? 0 : 1 }' \
+    "$ARMS_MANIFEST"
+}
+
+# Resolve an arm ref to a ZIP on disk, downloading and verifying when it names a wp.org version.
+# THREE exit codes, because two would lose the distinction that matters:
+#   0  a vintage arm; the path is on stdout
+#   2  not a vintage ref at all — the caller should build it from git, as it always did
+#   1  a vintage ref that could not be honoured — unpinned, undownloadable, or wrong bytes
+# Returning 2 as "failure" would send a typo'd `wp.org:5.5` down the build path, where
+# `git rev-parse` fails with a message about a commit that has nothing to do with the mistake.
+# Every diagnostic goes to stderr EXPLICITLY. `err` writes to stdout like `log` does, and this
+# function's return value IS its stdout — so an unredirected message is captured by
+# `zip=$(resolve_arm_zip ...)` and becomes a path-shaped string naming no file. Found by the
+# test below, which asserts stdout is empty on every refusal. PITFALLS 130.
+resolve_arm_zip() { # <ref>
+  local ref="$1" ver zip want got
+  case "$ref" in
+    wp.org:*) ver=$(arm_ref_version "$ref"); zip="$ARMS_DIR/wp-slimstat.$ver.zip" ;;
+    *.zip)    ver=""; zip="$ref" ;;
+    *)        return 2 ;;
+  esac
+
+  if [ -n "$ver" ]; then
+    # Validated before it reaches a path or a URL: `wp.org:../../etc/passwd` is a version string
+    # only in the sense that nothing had looked at it.
+    printf '%s' "$ver" | grep -qE '^[0-9]+(\.[0-9]+){1,3}$' \
+      || { err "not a plugin version: '$ver'" >&2; return 1; }
+    want=$(arm_manifest_sha "$ver") \
+      || { err "no pinned sha256 for $ver in $ARMS_MANIFEST — add the line in the same commit as the cell that needs it" >&2; return 1; }
+    if [ ! -s "$zip" ]; then
+      mkdir -p "$ARMS_DIR"
+      curl -fsS -o "$zip.part" "$ARMS_BASE_URL/wp-slimstat.$ver.zip" \
+        || { rm -f "$zip.part"; err "could not fetch wp-slimstat.$ver.zip from $ARMS_BASE_URL" >&2; return 1; }
+      mv "$zip.part" "$zip"
+    fi
+  fi
+
+  [ -s "$zip" ] || { err "arm ZIP not found or empty: $zip" >&2; return 1; }
+
+  if [ -n "$ver" ]; then
+    got=$(digest "$zip")
+    [ "$got" = "$want" ] || {
+      err "arm ZIP for $ver is not the pinned bytes: expected $want, got $got" >&2
+      return 1
+    }
+  fi
+
+  printf '%s\n' "$zip"
+}
+
 # Write a cell's verdict JSON. Args: art_dir cell php wp status reason
 write_verdict() {
   local art="$1" cell="$2" php="$3" wp="$4" status="$5" reason="$6"
