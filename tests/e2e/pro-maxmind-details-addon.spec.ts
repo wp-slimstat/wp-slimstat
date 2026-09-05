@@ -97,6 +97,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 2: Whois AJAX works with DB-backed provider ──────────────
 
   test('whois AJAX responds without fatal error', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -120,6 +124,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 3: Cloudflare provider → explicit unsupported message ────
 
   test('cloudflare provider blocks whois with explicit message', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -143,6 +151,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 4: Geolocation disabled → actionable settings message ────
 
   test('disabled geolocation shows settings message on AJAX call', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'disable');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
