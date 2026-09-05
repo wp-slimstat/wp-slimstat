@@ -450,13 +450,26 @@ foreach ($k6_scripts as $k6_file) {
     }
 }
 
-// ── 7. continue-on-error demands a stated reason beside it ─────────────────
-// One deliberate instance exists (Tier-2 E2E, reason in the adjacent comment). The shape
-// to prevent is the SILENT one: a gate that stops failing with nothing explaining why.
+// ── 7. continue-on-error demands a stated reason, and the blocking set is not free-form ──
+//
+// THIS SECTION MATCHED THE LITERAL `continue-on-error: true` AND NOTHING ELSE. The moment the
+// Tier 2 E2E step became `continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp)
+// }}` — the flip that makes the baseline and newest lanes blocking — the loop below matched zero
+// lines, and every check in this section was satisfied by a file it had stopped reading. Widening
+// it is therefore not a nicety attached to the flip: flipping without it REMOVES a guard in the
+// act of tightening a lane, which is why the two land in one commit.
+//
+// The second half is the one the widening buys. Once the value is an expression, the version list
+// inside it is ordinary text that any edit can widen back to everything — restoring the old
+// advisory lane while the line still looks like a flip. So the list is pinned to the same two
+// facts §8 pins the escaping gate to, read from structure rather than retyped: the committed
+// baseline in .wp-env.json's `core`, and the newest lane declared in the matrix.
+$soft_lines = 0;
 foreach (explode("\n", $ci_yaml) as $i => $line) {
-    if (false === strpos($line, 'continue-on-error: true')) {
+    if (!preg_match('/^\s*continue-on-error\s*:/', $line)) {
         continue;
     }
+    $soft_lines++;
     // Any '#' is too weak in a file that is 47%% comment lines — a section divider
     // within six lines satisfied it. The non-brittle demand: the comment must mention
     // the SETTING it excuses (the one legitimate instance already does).
@@ -468,6 +481,81 @@ foreach (explode("\n", $ci_yaml) as $i => $line) {
             . 'this file exists to prevent',
             $i + 1
         );
+    }
+}
+
+// VACUITY FLOOR for the loop above. Its whole failure mode is matching nothing, and it has
+// already done so once — this section's own history is the evidence.
+if (0 === $soft_lines) {
+    $failures[] = 'ci.yml declares no continue-on-error at all. Either the Tier 2 E2E step lost '
+        . 'the setting (every lane now blocking, so the job fails on host-environment debt rather '
+        . 'than on defects), or this scan has stopped matching — and a scan that matches nothing '
+        . 'reports it in the same words as a clean file';
+}
+
+// ── 7b. The E2E lane's blocking set ─────────────────────────────────────────────────────
+$soft_ci_code = slimstat_yaml_strip_comments($ci_yaml);
+$e2e_steps    = slimstat_ci_steps_containing(slimstat_ci_steps($soft_ci_code), 'npm run test:e2e');
+
+// Derived, not retyped. §8 pins the escaping gate to exactly these two versions for exactly this
+// reason: the baseline is the only lane that runs the full suite, and the newest lane is the one
+// the readme's "Tested up to" claims. A literal pair here would go stale the day the matrix gains
+// a version, and would go stale silently.
+$soft_wp_env   = json_decode((string) file_get_contents($plugin_root . '/.wp-env.json'), true);
+$soft_baseline = preg_match('/#([0-9]+\.[0-9]+)$/', (string) ($soft_wp_env['core'] ?? ''), $bm) ? $bm[1] : '';
+$soft_lanes    = array_keys(slimstat_ci_wp_lanes($ci_yaml));
+usort($soft_lanes, 'version_compare');
+
+if (1 !== count($e2e_steps)) {
+    $failures[] = sprintf('%d ci.yml step(s) run `npm run test:e2e`; exactly one is expected, and '
+        . 'without it this section cannot tell which lanes the E2E suite may fail', count($e2e_steps));
+} elseif ('' === $soft_baseline || count($soft_lanes) < 5) {
+    $failures[] = sprintf('cannot derive the blocking set (baseline "%s" from .wp-env.json, %d '
+        . 'Tier 2 lanes from the matrix); an empty must-block set is green on anything, including '
+        . 'a lane that blocks nowhere', $soft_baseline, count($soft_lanes));
+} else {
+    $blocking = array_values(array_unique([$soft_baseline, (string) end($soft_lanes)]));
+    usort($blocking, 'version_compare');
+
+    if (!preg_match('/continue-on-error\s*:\s*(.+)/', $e2e_steps[0], $cm)) {
+        $failures[] = 'the E2E step declares no continue-on-error. Every Tier 2 lane would block, '
+            . 'including the interior version-drift lanes, and the job would go red on '
+            . 'host-environment debt rather than on defects';
+    } elseif (in_array(trim($cm[1]), ['true', "'true'", '"true"'], true)) {
+        $failures[] = sprintf('the E2E step is soft on every lane (`continue-on-error: true`). WP '
+            . '%s runs the full suite and WP %s is the newest version the readme claims; a suite '
+            . 'that cannot fail either is a report, not a gate', $blocking[0], end($blocking));
+    } elseif (!preg_match('/fromJSON\(\s*\'(\[[^\']*\])\'\s*\)/', $cm[1], $jm)) {
+        $failures[] = 'the E2E step\'s continue-on-error is neither `true` nor the '
+            . '`!contains(fromJSON(\'[…]\'), matrix.wp)` form this section can read. Rewriting it '
+            . 'into a shape nothing parses is how the blocking set stops being checked';
+    } else {
+        $declared = json_decode($jm[1], true);
+        $declared = is_array($declared) ? array_map('strval', $declared) : [];
+        usort($declared, 'version_compare');
+
+        if ($declared !== $blocking) {
+            $failures[] = sprintf(
+                'the E2E step blocks on [%s]; the derived blocking set is [%s] — WP %s is the '
+                    . 'committed baseline (.wp-env.json boots it, and it is the only lane running '
+                    . 'the full suite) and WP %s is the newest lane in the matrix. Widening this '
+                    . 'list back toward every lane restores the advisory lane while still looking '
+                    . 'like a flip; narrowing it drops the coverage the flip was for',
+                implode(', ', $declared),
+                implode(', ', $blocking),
+                $blocking[0],
+                end($blocking)
+            );
+        }
+
+        // The polarity, which is the half a version list cannot express. `contains(...)` without
+        // the `!` blocks the interior lanes and softens exactly the two that matter — the same
+        // line, the same versions, the opposite lane set.
+        if (!preg_match('/!\s*contains\s*\(\s*fromJSON/', $cm[1])) {
+            $failures[] = 'the E2E step\'s continue-on-error names the right versions but does not '
+                . 'NEGATE the contains(). continue-on-error is false where the lane blocks, so '
+                . 'without the `!` the blocking set and the soft set are exactly swapped';
+        }
     }
 }
 

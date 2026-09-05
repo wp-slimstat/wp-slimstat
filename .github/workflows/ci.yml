@@ -161,7 +161,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 212 entries. The step took 210-270s per lane across all six
+        # The full registry holds 215 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -637,11 +637,27 @@ jobs:
         # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
         # matrix lanes run only the @compat-tagged compat specs via --grep, so
         # PRs stay within budget (the lane is the CI job, not the filename).
-        # continue-on-error stays until the new lanes are reliably green; then
-        # remove it to make 6.4 + 7.0 blocking (interior lanes stay nightly).
-        # Many existing E2E tests assume local dev fixtures absent in fresh
-        # wp-env — pre-existing failures, not regressions.
-        continue-on-error: true
+        #
+        # BLOCKING on 6.4 and 7.1; soft everywhere else. continue-on-error is the
+        # setting being excused, and the expression is FALSE — the lane can fail
+        # the job — for exactly two versions: the committed baseline that
+        # .wp-env.json boots, and the newest WordPress in the matrix above.
+        #
+        # Read "blocking on 7.1" literally. The branch below runs the full suite
+        # only when WP_VERSION is the baseline; every other lane runs
+        # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
+        # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
+        # lanes stay soft on purpose: they are version-drift signal, not a merge
+        # gate, and making them blocking would fail the job on host-environment
+        # debt rather than on defects.
+        #
+        # The version list is not free-form. perf-gate-integrity §7 derives the
+        # blocking set from .wp-env.json's `core` and the newest lane in the
+        # matrix and requires this list to equal it exactly — widening it back to
+        # everything, dropping either version, or reverting to a bare `true` all
+        # fail that gate. §7 used to match only the literal `continue-on-error:
+        # true`, so before this commit it would have matched nothing here.
+        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
         env:
           # wp-env creates a fresh WordPress with default admin credentials.
           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
