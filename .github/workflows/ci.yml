@@ -161,7 +161,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 206 entries. The step took 210-270s per lane across all six
+        # The full registry holds 208 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -493,6 +493,46 @@ jobs:
           '
           echo "--- Verifying tables ---"
           npx wp-env run tests-cli -- wp db query "SHOW TABLES LIKE '%slim%';"
+
+      - name: Pretty permalinks, and prove /wp-json/ actually routes
+        # WordPress installs with an EMPTY permalink_structure, so /wp-json/ is not rewritten
+        # at all and the obfuscated /request/{hash}/ endpoint cannot exist. The tracker builds
+        # its URL from the REST root and degrades to index.php?rest_route=, so tracking keeps
+        # working and data-collection-rest kept passing — which is why this went unread for the
+        # whole programme. What breaks is every spec that NAMES the pretty path, that
+        # route-intercepts it to simulate a transport failure, or that needs /request/: 25 of
+        # the 132 failures in the uncapped census (Run 65), one cause. Local dev and the
+        # overwhelming majority of real installs run pretty permalinks; the lane did not.
+        #
+        # The verification cannot be `wp option get permalink_structure`. That reads back what
+        # the line above just wrote, and says nothing about whether Apache hands /wp-json/ to
+        # WordPress at all — the observed failure was Apache's own HTML 404 body, not
+        # WordPress's rest_no_route JSON. So fetch the REST index over HTTP and require both
+        # that WordPress answered it and that the plugin's namespace is in it.
+        run: |
+          npx wp-env run tests-cli -- wp rewrite structure '/%postname%/' --hard
+          npx wp-env run tests-cli -- wp rewrite flush --hard
+          BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+          case "${BODY}" in
+            *'"namespaces"'*) ;;
+            *)
+              echo "::error::GET ${TEST_BASE_URL}/wp-json/ was not answered by WordPress on the"
+              echo "::error::WP ${WP_VERSION} lane. Pretty permalinks are not routing, so every"
+              echo "::error::spec that names the pretty REST path or the /request/ endpoint"
+              echo "::error::fails on transport, and the census measures CI setup rather than"
+              echo "::error::test health."
+              echo "--- first 400 bytes of the response ---"
+              printf '%s' "${BODY}" | head -c 400
+              exit 1 ;;
+          esac
+          case "${BODY}" in
+            *'slimstat/v1'*) ;;
+            *)
+              echo "::error::/wp-json/ routes, but slimstat/v1 is not among its namespaces, so"
+              echo "::error::the plugin's REST routes are not registered on this lane."
+              exit 1 ;;
+          esac
+          echo "Pretty permalinks route: /wp-json/ answered by WordPress, slimstat/v1 present."
 
       - name: Consent plugins must be ACTIVE, not merely requested
         # The gate in tests/ci-matrix-coverage-test.php proves this workflow NAMES the plugins.

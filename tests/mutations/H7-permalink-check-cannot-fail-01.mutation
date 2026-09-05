@@ -1,0 +1,25 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:permalink-step
+kind:      guard-removal
+expect:    does not `exit 1` when the fetch fails
+rationale: Keeps the fetch and both body checks, drops only the two exits. The step still sets the structure, still curls /wp-json/ and still prints the error annotations, so the lane reads as verified while a plain-permalink lane goes green -- the exact state that hid 25 census failures. Killed because the step must be able to fail the lane.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -523,14 +523,14 @@
+               echo "::error::test health."
+               echo "--- first 400 bytes of the response ---"
+               printf '%s' "${BODY}" | head -c 400
+-              exit 1 ;;
++              ;;
+           esac
+           case "${BODY}" in
+             *'slimstat/v1'*) ;;
+             *)
+               echo "::error::/wp-json/ routes, but slimstat/v1 is not among its namespaces, so"
+               echo "::error::the plugin's REST routes are not registered on this lane."
+-              exit 1 ;;
++              ;;
+           esac
+           echo "Pretty permalinks route: /wp-json/ answered by WordPress, slimstat/v1 present."
+ 

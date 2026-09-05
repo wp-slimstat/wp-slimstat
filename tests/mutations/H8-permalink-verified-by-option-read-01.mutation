@@ -1,0 +1,40 @@
+target:    .github/workflows/ci.yml
+gate:      php tests/permalink-structure-step-test.php
+kind:      name-only
+expect:    never fetches /wp-json/ over HTTP
+rationale: Verifies the permalink structure by reading back the option the line above just wrote, keeping the step name, the success message and an exit 1. This is the shape the first draft of the gate missed: the step's own prose contains /wp-json/ and slimstat/v1, so two of three body assertions passed on the name alone. The failure being pinned is Apache not routing the path to WordPress at all, which permalink_structure cannot report.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -512,26 +512,11 @@
+         run: |
+           npx wp-env run tests-cli -- wp rewrite structure '/%postname%/' --hard
+           npx wp-env run tests-cli -- wp rewrite flush --hard
+-          BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+-          case "${BODY}" in
+-            *'"namespaces"'*) ;;
+-            *)
+-              echo "::error::GET ${TEST_BASE_URL}/wp-json/ was not answered by WordPress on the"
+-              echo "::error::WP ${WP_VERSION} lane. Pretty permalinks are not routing, so every"
+-              echo "::error::spec that names the pretty REST path or the /request/ endpoint"
+-              echo "::error::fails on transport, and the census measures CI setup rather than"
+-              echo "::error::test health."
+-              echo "--- first 400 bytes of the response ---"
+-              printf '%s' "${BODY}" | head -c 400
+-              exit 1 ;;
+-          esac
+-          case "${BODY}" in
+-            *'slimstat/v1'*) ;;
+-            *)
+-              echo "::error::/wp-json/ routes, but slimstat/v1 is not among its namespaces, so"
+-              echo "::error::the plugin's REST routes are not registered on this lane."
+-              exit 1 ;;
+-          esac
++          STRUCTURE="$(npx wp-env run tests-cli -- wp option get permalink_structure)"
++          if [ -z "${STRUCTURE}" ]; then
++            echo "::error::permalink_structure is empty on the WP ${WP_VERSION} lane."
++            exit 1
++          fi
+           echo "Pretty permalinks route: /wp-json/ answered by WordPress, slimstat/v1 present."
+ 
+       - name: Consent plugins must be ACTIVE, not merely requested
