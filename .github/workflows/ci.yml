@@ -252,7 +252,7 @@ jobs:
 
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
-# Runs on: push or PR targeting main or development branches only
+# Runs on: push or PR targeting master, main, or development
 ##############################################################################
   standard:
     name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
@@ -594,11 +594,11 @@ jobs:
           echo "Floor guard: no fatals/own-code deprecations in debug.log."
 
       - name: Run E2E tests
-        # The committed-baseline (6.4) lane runs the FULL suite; the WP-version
-        # matrix lanes run only the @compat-tagged compat specs via --grep, so
-        # PRs stay within budget (the lane is the CI job, not the filename).
+        # On pushes, the committed-baseline (6.4) lane runs the full suite and
+        # the other WordPress versions run the @compat-tagged smoke specs. Pull
+        # requests keep every lane focused on @compat so they stay within budget.
         # continue-on-error stays until the new lanes are reliably green; then
-        # remove it to make 6.4 + 7.0 blocking (interior lanes stay nightly).
+        # remove it to make 6.4 + the latest WP lane blocking (interior lanes stay nightly).
         # Many existing E2E tests assume local dev fixtures absent in fresh
         # wp-env — pre-existing failures, not regressions.
         continue-on-error: true
@@ -608,7 +608,7 @@ jobs:
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
         run: |
-          if [ "${WP_VERSION}" = "6.4" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ "${WP_VERSION}" = "6.4" ]; then
             npm run test:e2e
           else
             npm run test:e2e -- --grep "@compat"
