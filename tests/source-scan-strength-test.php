@@ -399,12 +399,13 @@ $recorded     = [
     // helper and then scans other content raw, so the old whole-file exemption hid them.
     'migration-notice-visibility-test.php'       => 'exempt — its raw subjects are CSS and JS, which no PHP tokeniser can read; the template IS routed through slimstat_blank_comments()',
     'migration-ui-honesty-test.php'              => 'exempt — the raw subject is JS ($js), not PHP',
-    // The subject is COMMENT TEXT, already cut out by slimstat_tokenize() and filtered to
-    // T_COMMENT/T_DOC_COMMENT — a tokeniser is applied, and the regex runs only on what it
-    // returned. Stripping comments before matching would delete the entire subject.
-    'record-citation-test.php'                   => 'exempt — the subject IS the comments, taken from the tokeniser',
-    'upgrade-index-convergence-test.php'         => 'exempt — reads production source only through slimstat_tokenize() and matches nothing against the raw bytes; the whole-file fallback below looks for the three BLANKING helpers and does not recognise the tokenised route, which is the stronger one. Adding slimstat_tokenize to that list would be the deeper fix, and it strands the two entries above it that are flagged by the fallback alone — a change for its own commit, not for one about an index',
-    'rounding-contract-test.php'                 => 'exempt — its PHP half IS tokenised (rc_rounding_calls); the raw-text half scans JAVASCRIPT, which no PHP tokeniser can strip. Added after the ADR-17 seam fixed six PHP percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72)',
+    // Two scanners, one file, and only one of them can be tokenised. The PHP half IS routed
+    // through slimstat_tokenize() (rc_rounding_calls); the raw half walks the LINES OF A
+    // JAVASCRIPT FILE, which no PHP tokeniser can strip. It is detected here through the
+    // split-taint rule below rather than through the whole-file name check, which would let
+    // the tokenised half vouch for this one. Added after the ADR-17 seam fixed six PHP
+    // percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72).
+    'rounding-contract-test.php'                 => 'exempt — its raw half scans JAVASCRIPT line by line; the PHP half is tokenised',
     // Every gettext call site IS tokenised. The one raw read is the plugin header's
     // `Text Domain:` line, which lives inside a doc comment — so blanking comments before
     // matching would delete the exact bytes it needs. Reading the declared domain from the
@@ -488,8 +489,22 @@ foreach ($gating_tests as $name => $src) {
             }
             continue;
         }
+        // Split of a tainted value: the loop variable carries the taint, because splitting raw
+        // bytes yields raw bytes. Without this the commonest raw-scan shape in this suite —
+        // read a file, walk its lines, match each line — is INVISIBLE to the tracker: the
+        // `foreach` rebinding is neither a seed nor a plain alias, so the subject looks clean.
+        // rounding-contract-test.php is exactly that shape, and while it was invisible here the
+        // whole-file fallback below was left to answer alone. It cannot: that file ALSO has a
+        // correctly tokenised PHP scanner, so the mere presence of the helper's name vouched for
+        // the raw JS scanner beside it — PITFALLS 62's failure, rebuilt inside its own fix.
+        if (preg_match('/foreach\s*\(\s*(?:explode|preg_split|str_split|str_getcsv)\s*\([^;]*?\$(\w+)\s*\)\s*as\s*(?:\$\w+\s*=>\s*)?\$(\w+)/', $line, $m)) {
+            if (isset($tainted[$m[1]])) {
+                $tainted[$m[2]] = true;
+            }
+            continue;
+        }
         // Routed: the value now comes out of a tokeniser-backed helper, whatever it held before.
-        if (preg_match('/\$(\w+)\s*=.*(?:slimstat_strip_comments_and_strings|slimstat_blank_comments|slimstat_function_body)\s*\(/', $line, $m)) {
+        if (preg_match('/\$(\w+)\s*=.*(?:slimstat_strip_comments_and_strings|slimstat_blank_comments|slimstat_function_body|slimstat_tokenize)\s*\(/', $line, $m)) {
             unset($tainted[$m[1]]);
         }
     }
@@ -506,7 +521,9 @@ foreach ($gating_tests as $name => $src) {
 
     if (!$scans_raw) {
         // Fall back to the original whole-file question, so nothing already mapped drops out.
-        foreach (['slimstat_strip_comments_and_strings', 'slimstat_blank_comments', 'slimstat_function_body'] as $helper) {
+        // slimstat_tokenize() belongs here too: a token stream is the structured form the other
+        // three are built on, and a gate walking name tokens cannot be satisfied by a comment.
+        foreach (['slimstat_strip_comments_and_strings', 'slimstat_blank_comments', 'slimstat_function_body', 'slimstat_tokenize'] as $helper) {
             if (false !== strpos($src, $helper)) {
                 continue 2;
             }

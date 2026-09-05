@@ -13,7 +13,7 @@
 #
 # A gate that cannot run must FAIL, not skip: composer missing from PATH is an error here,
 # because a gate that silently does not run is this workspace's most repeated defect.
-# /simplify is enforced by the Claude Code commit gate, not here (a shell hook cannot call it).
+# /simplify is a once-per-branch pre-PR step since 2026-09-05; the Claude Code commit gate only requires the test gate.
 #
 set -euo pipefail
 

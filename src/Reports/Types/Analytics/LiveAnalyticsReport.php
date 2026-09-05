@@ -563,15 +563,22 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			'slimstat-live-analytics',
 			plugins_url( '/admin/assets/css/live-analytics.css', SLIMSTAT_FILE ),
 			[],
-			'5.4.0'
+			SLIMSTAT_ANALYTICS_VERSION
 		);
 
 		// Enqueue Live Analytics JavaScript
 		wp_enqueue_script(
 			'slimstat-live-analytics',
 			plugins_url( '/admin/assets/js/live-analytics.js', SLIMSTAT_FILE ),
-			[ 'slimstat_chartjs', 'jquery', 'slimstat_admin' ],
-			'5.4.1',
+			// NOT 'slimstat_admin'. That handle is registered only on the report screens, and
+			// this enqueue fires on every screen whose id contains "slimstat" — so on the
+			// migration screen WordPress found the dependency missing and silently dropped the
+			// script (Query Monitor: "slimstat_admin (missing)", 2026-09-05). live-analytics.js
+			// references nothing admin.js defines — verified by grep — so the dependency was
+			// never real. The version literal below was frozen at '5.4.1' for the same reason a
+			// hand-typed cache-buster always is; tests/asset-version-contract-test.php.
+			[ 'slimstat_chartjs', 'jquery' ],
+			SLIMSTAT_ANALYTICS_VERSION,
 			true
 		);
 

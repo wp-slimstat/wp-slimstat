@@ -270,7 +270,11 @@ class wp_slimstat
             self::$settings = get_option('slimstat_options', []);
         }
 
-        if (empty(self::$settings)) {
+        // Knowable only here: once the defaults are written, a fresh install and a 5.4.0
+        // upgrader are indistinguishable by their settings, and the migration below needs to
+        // tell them apart.
+        $_fresh_install = empty(self::$settings);
+        if ($_fresh_install) {
             // Fresh install: set defaults including geolocation_provider=dbip
             self::$settings = self::get_fresh_defaults();
             self::update_option('slimstat_options', self::$settings);
@@ -278,117 +282,29 @@ class wp_slimstat
 
         self::$settings = array_merge(self::init_options(), self::$settings);
 
-        // One-shot migration: runs once on first boot after installing this build.
-        // '_migration_5460' is absent from all pre-5.4.6 installs; array_merge fills it
-        // with '0' from init_options(). After running, the flag stores the version that ran it.
-        // On downgrade→re-upgrade, the stored version will differ from SLIMSTAT_ANALYTICS_VERSION,
-        // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
-        $_migration_ran = self::$settings['_migration_5460'] ?? '0';
-
-        // One boundary, derived once. Both the consent-intent mapping and the one-time
-        // resets below are 5.3.x-era migrations; the resets additionally skip fresh
-        // installs. Spelling the comparison twice invited them to drift apart.
-        $_pre_547 = version_compare($_migration_ran, '5.4.7', '<');
-        if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
-            // --- Consent intent detection (pre-5.4.7 installs only) ---
-            //
-            // This maps legacy v5.3.x privacy settings onto the GDPR system. It is a
-            // ONE-TIME migration and must stay bounded to installs that predate 5.4.7,
-            // for the same reason the one-time resets below are bounded.
-            //
-            // Unbounded, it re-ran on every version bump (the outer gate fires whenever
-            // the stored flag is older than SLIMSTAT_ANALYTICS_VERSION) and rewrote the
-            // site's consent configuration from 5.3.x evidence that no longer described
-            // its choices — in both directions:
-            //
-            //   - a site that enabled GDPR through the 5.4+ UI has no legacy opt-out or
-            //     opt-in keys and no third-party CMP, so it fell to the else branch and
-            //     had gdpr_enabled set to 'off' — consent silently switched off;
-            //   - a site carrying a stale display_opt_out = 'on' that had deliberately
-            //     turned GDPR off had it forced back on, and with GDPR on and no consent
-            //     cookie, tracking stops.
-            //
-            // Fresh installs ('0') still enter here, and the else branch writes exactly
-            // the shipped defaults, so their outcome is unchanged. The one-time resets
-            // below share this boundary and additionally skip fresh installs.
-            if ($_pre_547) {
-                // Read legacy v5.3.x consent settings to detect if user had configured privacy.
-                // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
-                $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
-                $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
-                $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
-
-                // Check if user deliberately chose a third-party CMP in v5.4.x
-                $_current_integration = self::$settings['consent_integration'] ?? '';
-                $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
-
-                if ($_has_third_party_cmp) {
-                    // User deliberately configured a third-party CMP — preserve their setup
-                    self::$settings['gdpr_enabled'] = 'on';
-                } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
-                    // User had consent/privacy config in v5.3.x — map to GDPR system
-                    self::$settings['gdpr_enabled'] = 'on';
-                    self::$settings['use_slimstat_banner'] = 'on';
-                    // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
-                    // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
-                    if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
-                        self::$settings['consent_integration'] = 'wp_consent_api';
-                    } else {
-                        self::$settings['consent_integration'] = 'slimstat_banner';
-                    }
-                } else {
-                    // No consent config ever — pure v5.3.x behavior: all tracked, no banner
-                    self::$settings['gdpr_enabled'] = 'off';
-                    self::$settings['consent_integration'] = '';
-                    self::$settings['use_slimstat_banner'] = 'off';
-                }
-
-                unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
-                      $_current_integration, $_has_third_party_cmp);
+        // One-shot settings migration for installs that ran v5.4.0–v5.4.5. The logic lives in
+        // SlimStat\Migration\LegacySettings5460 so the unit test exercises THIS code rather than
+        // a transcription of it — the transcription had drifted from this block in three places,
+        // and the one that mattered hid a 6.0.0 regression: `'0' !== $_migration_ran` skipped
+        // the resets on fresh installs AND on every upgrader from 5.4.0–5.4.5, who never had the
+        // key. Whether the options row existed is the discriminator, and only this method knows.
+        //
+        // No rewrite flush here: activation and settings-change paths own that, and a flush on
+        // plugins_loaded fires before the rule is registered on 'init' and wastes a DB write.
+        $_legacy = \SlimStat\Migration\LegacySettings5460::apply(
+            self::$settings,
+            SLIMSTAT_ANALYTICS_VERSION,
+            $_fresh_install,
+            function_exists('wp_has_consent')
+        );
+        if ($_legacy['ran']) {
+            self::$settings = $_legacy['settings'];
+            if ($_legacy['ip_notice']) {
+                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
             }
-
-            // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
-            // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
-            // Skip for fresh installs ('0' = never ran, no broken settings to fix).
-            if ($_pre_547 && '0' !== $_migration_ran) {
-                // Restore session cookie — Consent::piiAllowed() in Session.php gates
-                // the actual setcookie() call at runtime, not this setting.
-                if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
-                    self::$settings['set_tracker_cookie'] = 'on';
-                }
-
-                // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML.
-                // Always reset — server-side mode was a v5.4.0 default, not a user choice.
-                if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
-                    self::$settings['javascript_mode'] = 'on';
-                }
-
-                // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
-                $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
-                $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
-                if ($_ss_ip_was_anonymized) {
-                    self::$settings['anonymize_ip'] = 'off';
-                }
-                if ($_ss_ip_was_hashed) {
-                    self::$settings['hash_ip'] = 'off';
-                }
-                if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
-                    set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
-                }
-            }
-
-            unset($_ss_ip_was_anonymized, $_ss_ip_was_hashed);
-            // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
-            self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
             self::update_option('slimstat_options', self::$settings);
-
-            // Rewrite rules are flushed via two other paths:
-            // 1. Activation hook: admin/index.php init_environment() calls flush_rewrite_rules()
-            // 2. Settings change: RestApiManager sets 'slimstat_permalink_structure_updated' option,
-            //    which triggers flush_rewrite_rules() on next init via rewriteRuleRequest()
-            // No flush needed here — doing so during migration (plugins_loaded) would fire before
-            // the rewrite rule is registered on 'init' and waste a DB write.
         }
+        unset($_legacy);
 
         // Allow third party tools to edit the options
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);

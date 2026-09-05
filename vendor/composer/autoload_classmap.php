@@ -479,6 +479,7 @@ return array(
     'SlimStat\\Migration\\AbstractIndexMigration' => $baseDir . '/src/Migration/AbstractIndexMigration.php',
     'SlimStat\\Migration\\AbstractMigration' => $baseDir . '/src/Migration/AbstractMigration.php',
     'SlimStat\\Migration\\Admin\\MigrationAdmin' => $baseDir . '/src/Migration/Admin/MigrationAdmin.php',
+    'SlimStat\\Migration\\LegacySettings5460' => $baseDir . '/src/Migration/LegacySettings5460.php',
     'SlimStat\\Migration\\MigrationInterface' => $baseDir . '/src/Migration/MigrationInterface.php',
     'SlimStat\\Migration\\MigrationManager' => $baseDir . '/src/Migration/MigrationManager.php',
     'SlimStat\\Migration\\MigrationService' => $baseDir . '/src/Migration/MigrationService.php',

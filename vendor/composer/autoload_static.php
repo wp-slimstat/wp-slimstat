@@ -494,6 +494,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Migration\\AbstractIndexMigration' => __DIR__ . '/../..' . '/src/Migration/AbstractIndexMigration.php',
         'SlimStat\\Migration\\AbstractMigration' => __DIR__ . '/../..' . '/src/Migration/AbstractMigration.php',
         'SlimStat\\Migration\\Admin\\MigrationAdmin' => __DIR__ . '/../..' . '/src/Migration/Admin/MigrationAdmin.php',
+        'SlimStat\\Migration\\LegacySettings5460' => __DIR__ . '/../..' . '/src/Migration/LegacySettings5460.php',
         'SlimStat\\Migration\\MigrationInterface' => __DIR__ . '/../..' . '/src/Migration/MigrationInterface.php',
         'SlimStat\\Migration\\MigrationManager' => __DIR__ . '/../..' . '/src/Migration/MigrationManager.php',
         'SlimStat\\Migration\\MigrationService' => __DIR__ . '/../..' . '/src/Migration/MigrationService.php',

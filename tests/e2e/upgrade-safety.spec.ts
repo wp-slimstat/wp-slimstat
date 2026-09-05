@@ -93,6 +93,11 @@ const EXPECTED_COLUMNS = [
   'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width',
   'screen_height', 'content_type', 'category', 'author', 'content_id',
   'outbound_resource', 'tz_offset', 'dt_out', 'dt',
+  // 6.0.0 additions. Both are declared in the Schema manifest, so a fresh install is born
+  // with them; on an UPGRADED install vid_hash arrives via the required AddVisitIdentity
+  // migration and ua_id via the OPTIONAL AddUserAgentDimension one. This list is what CI's
+  // fresh wp-env compares against, and it was frozen at the 5.x shape.
+  'vid_hash', 'ua_id',
 ];
 
 // ─── Tests ───────────────────────────────────────────────────────
