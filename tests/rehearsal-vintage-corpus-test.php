@@ -587,6 +587,83 @@ $check(
         && false !== strpos($reh_src, 'if [ "$FP_BROKEN" != "$FP_PRE_C4" ]; then')
 );
 
+// ── What Run 65's SECOND live pass found, once the legacy path was actually driven ─────────
+//
+// The options-row fix turned nine failures into three, and all three were the instrument rather
+// than the upgrade: a control that broke the schema the next leg measured (PITFALLS 135), and a
+// rollback leg asserting through an API convention its own arm does not have (PITFALLS 136).
+
+// C4 drops vid_hash to prove the cell can go red. MySQL takes the column out of every index it
+// belongs to on the way, so the drop also rewrote idx_vid_hash_dt to (dt) — and the restore, which
+// re-runs the migration, cannot rebuild it: the migration's probe matches on Key_name, and the
+// mutilated index still answers to the name. The next leg then read `dt` and called it a rollback
+// defect. Both halves are asserted: the explicit drop that makes the probe see work, and the
+// check that the index came back before R7 is allowed to have an opinion about it.
+$check(
+    'the C4 control restores the index its own DROP COLUMN mutilated, not just the column',
+    false !== strpos($reh_src, 'DROP INDEX idx_vid_hash_dt ON wordpress.wp_slim_stats')
+        && false !== strpos($reh_src, 'IDX_COLS_C4=$(index_columns wp_slim_stats idx_vid_hash_dt)')
+        && false !== strpos($reh_src, 'and so was the index the drop took with it')
+);
+// The PLUGIN-side premise that comment rests on. If indexState() ever starts comparing the
+// columns as well as the name, the mutilated index becomes visible to the migration, the explicit
+// drop above becomes unnecessary, and the paragraph explaining why it is there becomes a story
+// about code that no longer exists.
+$schema_src = is_file($plugin_root . '/src/Schema/Schema.php')
+    ? (string) file_get_contents($plugin_root . '/src/Schema/Schema.php')
+    : '';
+$check(
+    'the premise still holds: the index probe matches on Key_name and nothing else',
+    false !== strpos($schema_src, "\$found      = \$db->get_col(sprintf('SHOW INDEX FROM `%s`', \$prefix . \$suffix), 2);")
+        && false !== strpos($schema_src, 'if (isset($have[self::resolve($name, $prefix)])) {')
+);
+
+// 4.8.1's slimtrack() is a filter callback: every return hands back $_argument, never an id. A
+// probe reading that return could not report success on the oldest arm under any circumstances,
+// so R7's tracking check was structurally red. The row is what both arms produce.
+$check(
+    'a tracked hit is measured by the row it wrote, not by what slimtrack returned',
+    false !== strpos($reh_src, '_th_before=$(scalar_q "SELECT COALESCE(MAX(id),0) FROM wordpress.wp_slim_stats;")')
+        && false !== strpos($reh_src, 'if [ "${_th_after:-0}" -gt "${_th_before:-0}" ]; then')
+        // The negative: no reading of the return value survives anywhere in the cell.
+        && false === strpos(vc_code_only($reh_src), 'is_numeric')
+);
+// And not by looking the marker up either — hit_resource() asserts the marker as a separate
+// check, and a probe keyed on `WHERE resource = ...` would leave that check asserting the row
+// its own SELECT had chosen.
+$check(
+    'and not by the marker, which a later check has to be free to test',
+    false !== strpos($reh_src, 'hit_resource() { mysql_q "SELECT resource FROM wordpress.wp_slim_stats WHERE id=$1;"')
+        && false === strpos($reh_src, 'WHERE resource=')
+);
+// R7 claims a property survived the rollback. Nothing had ever read that property BEFORE the
+// rollback: R2's and R5's hits are both under v6. Without this reading, "the rollback broke
+// tracking" and "this arm never tracked here" are the same red.
+$check(
+    'R1 reads the OLD arm tracking, so R7 compares rather than assumes',
+    false !== strpos($reh_src, 'HIT_0=$(track_hit "rehearse-old-code-baseline")')
+        && false !== strpos($reh_src, 'the OLD version tracks before anything is migrated')
+);
+// That control writes a row, and R2's "it landed exactly once" is a delta. A delta still anchored
+// to the hydrated count would swallow the control's row — and a delta that swallows one row
+// swallows a duplicate.
+$vc_hit0     = strpos($reh_src, 'HIT_0=$(track_hit');
+$vc_rebase   = strrpos($reh_src, 'ROWS_0=$(stats_rows)');
+$vc_rows1    = strpos($reh_src, 'ROWS_1=$(stats_rows)');
+$check(
+    'and R2 re-baselines its row delta after that hit, not before it',
+    false !== $vc_hit0 && false !== $vc_rebase && false !== $vc_rows1
+        && $vc_hit0 < $vc_rebase && $vc_rebase < $vc_rows1
+        && strpos($reh_src, 'ROWS_0=$(stats_rows)') !== $vc_rebase
+);
+// "1 recorded" names no step. The finding was already in the container the failing run threw
+// away; learning it cost a second 90-second cell.
+$check(
+    'the degradation check names what it found, not how much of it there was',
+    false !== strpos($reh_src, 'DEG_DETAIL=$(wpc eval')
+        && false !== strpos($reh_src, '"$DEGRADED recorded — ${DEG_DETAIL:-unreadable}"')
+);
+
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";
 if ([] !== $failures) {
     fwrite(STDERR, "FAIL: rehearsal vintage corpus\n  - " . implode("\n  - ", $failures) . "\n");

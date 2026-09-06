@@ -311,14 +311,26 @@ track_hit() { # <marker>
   # which row they had made. This repo ships tests/surplus-argument-scan-test.php for exactly
   # that defect class, and it tokenises admin/ and src/, so a call inside a shell string here is
   # outside its reach twice over.
+  #
+  # AND NOT THROUGH slimtrack()'s RETURN VALUE, which is the older half of this note. 4.8.1's
+  # `slimtrack($_argument = '')` is a FILTER callback: every one of its twelve returns hands back
+  # $_argument, never an id, so `is_numeric($id) ? $id : 0` could not report success on that arm
+  # under any circumstances. R7 asked "does the previous version still track after a migration",
+  # measured the NEW code's return convention against the OLD code, and reported a rollback
+  # defect. What both arms share is the ROW, so that is what this reads: the greatest id before,
+  # the greatest id after, and the delta. Not `WHERE resource = '/$1'` — hit_resource() below
+  # asserts the marker separately, and a lookup keyed on the marker would make that check assert
+  # its own SELECT. Run 65 cell 7a, PITFALLS 136.
+  _th_before=$(scalar_q "SELECT COALESCE(MAX(id),0) FROM wordpress.wp_slim_stats;")
   wpc eval "
     \$_SERVER['HTTP_USER_AGENT']='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
     \$_SERVER['REMOTE_ADDR']='203.0.113.7';
     \$_SERVER['HTTP_REFERER']='https://example.com/from';
     \$_SERVER['REQUEST_URI']='/$1';
-    \$id = wp_slimstat::slimtrack();
-    echo is_numeric(\$id) ? \$id : 0;
-  " 2>/dev/null | tr -d '[:space:]'
+    wp_slimstat::slimtrack();
+  " >/dev/null 2>&1
+  _th_after=$(scalar_q "SELECT COALESCE(MAX(id),0) FROM wordpress.wp_slim_stats;")
+  if [ "${_th_after:-0}" -gt "${_th_before:-0}" ]; then echo "$_th_after"; else echo 0; fi
 }
 
 # The row a track_hit() claims to have written, read back by id.
@@ -504,6 +516,19 @@ FP_0=$(fingerprint)
 FP_CORE_0=$(fingerprint_core)
 echo "  v5 fingerprint over id <= $BASE_MAX_ID: $FP_0"
 echo "  the eight columns nothing may touch:    $FP_CORE_0"
+
+# R7 closes by asking whether the OLD version still tracks on the migrated schema. Until this
+# control existed, no leg had ever seen the old arm track AT ALL, so a red R7 was equally
+# consistent with "the rollback broke tracking" and "this arm never tracked in this container" —
+# and the cell asserted the first. A leg that claims a property SURVIVED must hold a reading of
+# that property from before. The hit lands ABOVE BASE_MAX_ID, so no fingerprint in this cell
+# sees it, exactly as R2's and R5's do. PITFALLS 136.
+HIT_0=$(track_hit "rehearse-old-code-baseline")
+[ "${HIT_0:-0}" -gt 0 ] && check "the OLD version tracks before anything is migrated" 0 "row id $HIT_0" \
+  || check "the OLD version tracks before anything is migrated" 1 "no row appeared"
+# R2 counts its single row from HERE. The control above has just written one, and a delta still
+# anchored to the hydrated count would absorb it — which is a delta that would absorb a duplicate.
+ROWS_0=$(stats_rows)
 
 # U4's mixed window, first half. SCOPE_OLD was already READ by C5 above, which needed it to
 # prove Pro loaded; reported here so the two halves of the transition sit beside their values.
@@ -797,9 +822,19 @@ FP_CORE_1=$(fingerprint_core)
 [ "$FP_CORE_1" = "$FP_CORE_0" ] && check "the eight columns nothing may touch are unchanged" 0 "$FP_CORE_1" \
   || check "the eight columns nothing may touch are unchanged" 1 "$FP_CORE_0 -> $FP_CORE_1"
 
+# The KEYS and their messages, not a count. "1 recorded" names no step, so the only way to learn
+# which one degraded was to change this line and run the whole cell again — 90 seconds of docker
+# to ask a question the failing run already had the answer to. A check reports the finding, not
+# the cardinality of the findings. PITFALLS 136.
 DEGRADED=$(wpc eval 'echo count((array) get_option("slimstat_degradations", []));' 2>/dev/null | tr -d '[:space:]')
+DEG_DETAIL=$(wpc eval '
+  $out = [];
+  foreach ((array) get_option("slimstat_degradations", []) as $k => $v) {
+      $out[] = $k . ": " . (is_array($v) && isset($v["message"]) ? $v["message"] : "(no message)");
+  }
+  echo implode(" | ", $out);' 2>/dev/null | tr -d '\n')
 [ "${DEGRADED:-0}" -eq 0 ] && check "no degradation was recorded" 0 \
-  || check "no degradation was recorded" 1 "$DEGRADED recorded"
+  || check "no degradation was recorded" 1 "$DEGRADED recorded — ${DEG_DETAIL:-unreadable}"
 
 echo
 echo "── R4 · idempotence ─────────────────────────────────────────────────────"
@@ -877,12 +912,26 @@ if [ "$FP_BROKEN" != "$FP_PRE_C4" ]; then
 else
   note PASS "the fingerprint ignores columns the migration added, as its scope requires"
 fi
+# DROP COLUMN is not a scalpel. MySQL removes the column from every index it takes part in, so
+# the statement above also rewrote idx_vid_hash_dt down to (dt) — and re-adding the COLUMN does
+# not rebuild the INDEX, because Schema::indexState() matches on Key_name alone: an index of the
+# right name over the wrong columns reads as present, and reconcileColumnIndexes() skips it. So
+# this control handed R7 a schema THIS CONTROL had broken, and R7 reported "idx_vid_hash_dt
+# survived the rollback intact — dt" about a rollback that had touched nothing. A control that
+# does not put the world back does not test the next leg, it writes the next leg's verdict.
+# Dropping the mutilated index by name is what makes the migration's own probe see work to do.
+# Run 65 cell 7a, PITFALLS 135.
+mysql_q "DROP INDEX idx_vid_hash_dt ON wordpress.wp_slim_stats;" >/dev/null 2>&1
 wpc eval '
   $a = SlimStat\Migration\MigrationService::analyticsConnection();
   (new SlimStat\Migration\Migrations\AddVisitIdentity($a,$GLOBALS["wpdb"]))->run(); echo "restored";
 ' >/dev/null 2>&1
 [ "$(has_column vid_hash)" = 1 ] && note PASS "the column was restored for the rollback leg" \
   || { note FAIL "could not restore vid_hash"; fail "C4 restore"; }
+IDX_COLS_C4=$(index_columns wp_slim_stats idx_vid_hash_dt)
+[ "$IDX_COLS_C4" = "vid_hash,dt" ] \
+  && note PASS "and so was the index the drop took with it — vid_hash,dt" \
+  || { note FAIL "the control left idx_vid_hash_dt as '${IDX_COLS_C4:-gone}'"; fail "C4 left the index it broke"; }
 
 echo
 echo "── R7 · rollback to the OLD code on the migrated schema ─────────────────"
