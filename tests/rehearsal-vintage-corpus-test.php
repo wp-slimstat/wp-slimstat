@@ -702,6 +702,27 @@ $check(
         && false !== strpos($reh_src, '[ "$DRIFT_STORED" = "$DRIFT_NOW" ]')
 );
 
+// Every `wpc eval` is its own process, and admin/index.php is loaded on admin requests only. The
+// first draft of the refresh named wp_slimstat_admin:: in a process where the class did not exist:
+// a fatal, swallowed by 2>/dev/null, which failed the stale-record leg with `stored 'none'` — the
+// right colour for the wrong reason. A silent eval is not evidence that it ran.
+$check(
+    'the refresh eval loads the admin class and reports that it ran',
+    false !== strpos($reh_src, 'DRIFT_REFRESHED=$(wpc eval')
+        && false !== strpos($reh_src, 'require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
+  delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);')
+        && false !== strpos($reh_src, '[ "$DRIFT_REFRESHED" = "refreshed" ]')
+);
+// The stored record is read by the option's literal name, because a read through the class
+// constant can fatal and a fatal returns the empty string — indistinguishable from a healed
+// record, on the one leg whose whole job is to tell stale from healed. Pinned against the
+// constant so the literal cannot drift away from it silently.
+$check(
+    'the literal the stale-record leg reads is the constant the plugin writes',
+    false !== strpos($reh_src, 'get_option("slimstat_schema_column_drift", [])')
+        && false !== strpos($admin_src, "const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';")
+);
+
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";
 if ([] !== $failures) {
     fwrite(STDERR, "FAIL: rehearsal vintage corpus\n  - " . implode("\n  - ", $failures) . "\n");

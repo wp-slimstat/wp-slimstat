@@ -831,10 +831,20 @@ FP_CORE_1=$(fingerprint_core)
 # clears the option when the drift is gone -- "the durable fact is the thing that is true, and the
 # notice is synthesised from it". The cell simply never gave it an admin_init. Drive one, exactly
 # where an admin's next page load would. PITFALLS 137.
-wpc eval '
+#
+# REQUIRED, and the eval REPORTS. Every `wpc eval` is its own process and `admin/index.php` is
+# loaded on admin requests only, so the first draft named `wp_slimstat_admin::` in a process where
+# that class did not exist: a fatal, swallowed by `2>/dev/null`, leaving the refresh undone and the
+# option unread. It failed the leg below with `stored 'none'` — the right colour for the wrong
+# reason, which is the failure mode this whole cell keeps finding. The sentinel is what tells the
+# two apart. Run 65 cell 7a pass 4, PITFALLS 137.
+DRIFT_REFRESHED=$(wpc eval '
+  require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
   delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);
   wp_slimstat_admin::refresh_column_drift_notice();
-' >/dev/null 2>&1
+  echo "refreshed";' 2>/dev/null | tr -d '[:space:]')
+[ "$DRIFT_REFRESHED" = "refreshed" ] && check "the drift record was re-derived, as an admin_init would" 0 \
+  || check "the drift record was re-derived, as an admin_init would" 1 "the refresh did not run — ${DRIFT_REFRESHED:-no output at all}"
 
 # Observed HERE, not read back from the option, and the difference is the whole point: on an arm
 # that never drifted there is no option at all, and refresh_column_drift_notice() returns early
@@ -855,8 +865,11 @@ DRIFT_NOW=$(wpc eval '
 # have caught the stale snapshot on its own: it compares what is STORED against what is TRUE,
 # so a record written before the migration and never re-derived fails here whether or not the
 # drift it describes has healed.
+# Read by the option's LITERAL name, not through the class constant: this is the leg that decides
+# whether the record is stale, and a read that can fatal returns the empty string — which is
+# exactly what a healed record looks like. The gate pins the literal against the constant.
 DRIFT_STORED=$(wpc eval '
-  echo implode(", ", (array) get_option(wp_slimstat_admin::COLUMN_DRIFT_OPTION, []));' 2>/dev/null | tr -d '\n')
+  echo implode(", ", (array) get_option("slimstat_schema_column_drift", []));' 2>/dev/null | tr -d '\n')
 [ "$DRIFT_STORED" = "$DRIFT_NOW" ] && check "and the durable record was re-derived, not replayed" 0 "${DRIFT_NOW:-none}" \
   || check "and the durable record was re-derived, not replayed" 1 "stored '${DRIFT_STORED:-none}' vs on disk '${DRIFT_NOW:-none}'"
 
