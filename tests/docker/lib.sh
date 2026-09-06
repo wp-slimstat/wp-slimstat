@@ -215,19 +215,35 @@ run_vintage_installer() {
       if (!method_exists("wp_slimstat_admin", "init_tables")) { echo "NOMETHOD"; }
       else {
         wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
-        /* init_tables ends, in every vintage, with a comment that says it is saving the version
-           in the database and an assignment that does nothing of the kind:
-               if (empty(wp_slimstat::$settings["version"])) { ... = wp_slimstat::$version; }
-           The write is to the in-memory array. The arm persists it from slimstat_save_options()
-           on the shutdown of a REAL request, and `wp eval` has no such shutdown -- so without
-           the two lines below the options row carries no version key at all, and the next code
-           to read it gets array_merge(init_options(), $stored), whose default IS the reading
-           code own version. A 4.8.1 arm then looks like 6.0.0 to its own upgrade path and every
-           4.8.x block is skipped. Persisted through the ARM own saver wherever it has one, so
-           this reproduces what a real first request leaves behind rather than inventing a row.
-           PITFALLS 133. */
-        if (method_exists("wp_slimstat", "slimstat_save_options")) { wp_slimstat::slimstat_save_options(); }
-        else { update_option("slimstat_options", wp_slimstat::$settings); }
+        /* LEAVE THE OPTIONS ROW A REAL SITE OF THIS VINTAGE WOULD HAVE.
+           init_tables() ends, in every vintage, with a comment that says it saves the version in
+           the database and an assignment that only touches the in-memory array. The arm own
+           saver would persist it -- but slimstat_save_options() takes the settings signature
+           AFTER merging defaults over the stored row, so on a request where nothing actually
+           changed it short-circuits and writes nothing at all. Combined with an activation hook
+           (init_environment) that only calls init_tables, a freshly activated vintage has NO
+           options row: it first appears on some later request that changes a setting.
+
+           An absent row is not a neutral starting state. The next code to read the version gets
+           array_merge(init_options(), $stored), whose default IS the reading code own version, so
+           a 4.8.1 arm introduces itself to its own upgrade path as 6.0.0 and every 4.8.x block is
+           skipped (PITFALLS 133) -- and v6 goes further, reading an absent row as a FRESH INSTALL
+           while 443k rows sit in the table (PITFALLS 134).
+
+           So the default is a site that has been USED, written as the arm own saver would have
+           written it on that first changing request: the arm own merged settings, carrying the
+           arm own version. REHEARSE_ARM_OPTIONS=absent opts out and rehearses the other site,
+           which is the reproduction for 134. They are different subjects, and a cell records
+           which one it ran. */
+        if (getenv("REHEARSE_ARM_OPTIONS") !== "absent") {
+          $row = get_option("slimstat_options", []);
+          if (!is_array($row) || !isset($row["version"])) {
+            update_option("slimstat_options", wp_slimstat::$settings);
+          }
+        }
+        /* The return value stays the installer FILENAME and nothing else: both callers compare it
+           to a path, and appending a status word here would have failed that comparison in a way
+           that reads as "the vintage installer is missing". */
         echo $f;
       }
     }'

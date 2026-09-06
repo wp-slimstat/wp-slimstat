@@ -529,9 +529,24 @@ $check(
 // carrying `version`, or init() stopped merging defaults underneath the stored row, the comments
 // in lib.sh and rehearse-upgrade.sh would become a story about code that no longer exists.
 $check(
-    'the vintage installer persists the version its own init_tables only set in memory',
-    false !== strpos($lib_src, 'slimstat_save_options')
-        && false !== strpos($lib_src, 'update_option("slimstat_options", wp_slimstat::$settings)')
+    'the vintage installer leaves the options row its own init_tables only set in memory',
+    false !== strpos($lib_src, 'update_option("slimstat_options", wp_slimstat::$settings)')
+);
+// The arm's own saver cannot be used for it: slimstat_save_options() signs the settings AFTER
+// merging defaults over the stored row, so on a request that changed nothing it short-circuits
+// and writes nothing. Reaching for it is the obvious repair and it is silently a no-op, which is
+// why the negative is asserted rather than left to the comment.
+$check(
+    'and does not route that through the arm saver, which short-circuits on an unchanged signature',
+    false === strpos(vc_code_only($lib_src), 'slimstat_save_options')
+);
+// Present and absent are different subjects, not a strict/lenient pair: "absent" is the site that
+// reproduces PITFALLS 134. A cell that cannot say which one it ran has recorded an ambiguous
+// result, so the switch is named in the run output AND carried in the verdict.
+$check(
+    'the two starting sites are selectable, and the cell records which one it ran',
+    false !== strpos($lib_src, 'getenv("REHEARSE_ARM_OPTIONS") !== "absent"')
+        && false !== strpos($reh_src, '\\"arm_options\\":\\"${REHEARSE_ARM_OPTIONS:-present}\\"')
 );
 $check(
     'lib.sh can read the STORED version, and reads it from the options row ONLY',

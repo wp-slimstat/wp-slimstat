@@ -632,6 +632,7 @@ if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
   LEGACY_FROM=$(stored_plugin_version)
 fi
 echo "    stored version before: ${LEGACY_FROM:-unstamped}"
+echo "    the arm left an options row: ${REHEARSE_ARM_OPTIONS:-present} (REHEARSE_ARM_OPTIONS)"
 
 # THE CONTROL THAT WAS MISSING. Every assertion this leg makes is conditional on the leg having
 # work to do, and "has work to do" is exactly `stored < the version of the code now installed`.
@@ -922,7 +923,7 @@ drop_ref "$OLD_REF"; drop_ref "$NEW_REF"
 # {"cell":"upgrade-u1","status":"PASS"} is a claim with no subject — Run 63's two verdicts said
 # exactly that, and they are gone anyway, which is the other half of what this fixes.
 write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" \
-  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
+  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"arm_options\":\"${REHEARSE_ARM_OPTIONS:-present}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
   2>/dev/null || true
 
 # $ART is under /tmp, and /tmp is why Run 63's verdicts do not exist to be read. This copies the
