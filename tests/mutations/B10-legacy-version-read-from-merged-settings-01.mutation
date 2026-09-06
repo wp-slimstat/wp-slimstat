@@ -1,7 +1,7 @@
 target:    tests/docker/rehearse-upgrade.sh
 gate:      php tests/rehearsal-vintage-corpus-test.php
 kind:      restore-defect
-expect:    the stored version is read from the options row
+expect:    nothing reads $settings["version"] any more
 rationale: The defect as it shipped and as Run 65 cell 7a found it. `wp_slimstat::$settings` is array_merge(init_options(), $stored) with stored winning, and init_options() carries `version => SLIMSTAT_ANALYTICS_VERSION` -- so an options row with no version key reads back as the version of the code doing the reading. A 4.8.1 arm introduced itself to update_tables_and_options() as 6.0.0, every version_compare block decided it had already run, and the cell printed "the legacy upgrade path completed -- 1 pass(es), 3.1s" having executed none of the 4.8.x DDL or the notes conversion. Nothing downstream can distinguish that from a fast upgrade: the timing looks good, the pass count looks good, and the five checks that then fail all name symptoms three legs away from the cause.
 ---
 --- a/tests/docker/rehearse-upgrade.sh

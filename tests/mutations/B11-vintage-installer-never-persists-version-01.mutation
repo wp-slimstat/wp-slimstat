@@ -1,7 +1,7 @@
 target:    tests/docker/lib.sh
 gate:      php tests/rehearsal-vintage-corpus-test.php
 kind:      restore-defect
-expect:    the installer persists what init_tables only set in memory
+expect:    the vintage installer persists the version its own init_tables only set in memory
 rationale: Every vintage's init_tables() closes with a comment saying it saves the version in the database and an assignment that only touches the in-memory array; the arm persists it from slimstat_save_options() on the shutdown of a real request, and `wp eval` has no shutdown. Drop these two lines and the options row carries no version key, which is not a visible state -- every later read goes through the defaults merge and returns a plausible version. The corpus builder shares this helper, so the same silence would be baked into the corpus the cell is then judged against.
 ---
 --- a/tests/docker/lib.sh

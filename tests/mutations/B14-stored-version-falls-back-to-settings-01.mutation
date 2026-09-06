@@ -1,7 +1,7 @@
 target:    tests/docker/lib.sh
 gate:      php tests/rehearsal-vintage-corpus-test.php
 kind:      restore-defect
-expect:    no fallback to the merged settings
+expect:    reads it from the options row ONLY
 rationale: The back door, which is the repair a reader reaches for on seeing stored_plugin_version() return empty. It looks defensive -- the caller always gets a version now -- and it restores the entire defect: the value it falls back to is the current release, so the unstamped branch that exists to handle precisely this case is stepped over on the way past and the cell reports upgrading FROM the version it is upgrading TO. Empty is the correct answer to "what version does this row say" when the row does not say; the caller is the only place that can decide what to do about it.
 ---
 --- a/tests/docker/lib.sh

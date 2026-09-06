@@ -1,7 +1,7 @@
 target:    tests/docker/rehearse-upgrade.sh
 gate:      php tests/rehearsal-vintage-corpus-test.php
 kind:      restore-defect
-expect:    the leg proves it has something to upgrade FROM
+expect:    the legacy leg proves it has something to upgrade FROM before claiming it did
 rationale: Removes the control and leaves the assertions it guards. Every claim the legacy leg makes is conditional on `stored < installed`; when it is not, update_tables_and_options() returns true on its first pass without entering a block, and the leg reports completion. The control is checked BEFORE the run so that its reason is the one the verdict carries -- without it the verdict names the missed notes conversion, which is a symptom, and a reader chases the conversion code instead of the version read.
 ---
 --- a/tests/docker/rehearse-upgrade.sh
