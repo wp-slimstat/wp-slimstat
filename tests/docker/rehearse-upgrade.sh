@@ -822,6 +822,44 @@ FP_CORE_1=$(fingerprint_core)
 [ "$FP_CORE_1" = "$FP_CORE_0" ] && check "the eight columns nothing may touch are unchanged" 0 "$FP_CORE_1" \
   || check "the eight columns nothing may touch are unchanged" 1 "$FP_CORE_0 -> $FP_CORE_1"
 
+# THE DRIFT RECORD IS DURABLE, AND NOTHING HAD RE-OBSERVED IT SINCE BEFORE THE MIGRATION.
+# `slimstat_schema_column_drift` is written by init_tables() and deliberately CANNOT age out, so
+# the copy this leg read was the one the DEFERRED WINDOW wrote -- v6 code on a v5 schema. It still
+# said `vid_hash (absent)` about a column R3 had just added: a snapshot of the world BEFORE the leg
+# under test, reported as a statement about the world after it. The product does not have that
+# defect. refresh_column_drift_notice() re-observes on admin_init and persist_column_drift([])
+# clears the option when the drift is gone -- "the durable fact is the thing that is true, and the
+# notice is synthesised from it". The cell simply never gave it an admin_init. Drive one, exactly
+# where an admin's next page load would. PITFALLS 137.
+wpc eval '
+  delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);
+  wp_slimstat_admin::refresh_column_drift_notice();
+' >/dev/null 2>&1
+
+# Observed HERE, not read back from the option, and the difference is the whole point: on an arm
+# that never drifted there is no option at all, and refresh_column_drift_notice() returns early
+# without looking at a single column. Deciding from the option would print PASS on a cell where
+# nothing had ever been measured. columnDrift() always looks, and repairs nothing while it does.
+DRIFT_NOW=$(wpc eval '
+  $d   = SlimStat\Schema\Schema::columnDrift(
+      SlimStat\Migration\MigrationService::analyticsConnection(), $GLOBALS["wpdb"]->prefix);
+  $out = [];
+  foreach ($d["missing"] as $c)        { $out[] = $c . " (absent)"; }
+  foreach ($d["narrow"] as $c => $w)   { $out[] = $c . " (" . $w . ")"; }
+  sort($out);
+  echo implode(", ", $out);' 2>/dev/null | tr -d '\n')
+[ -z "$DRIFT_NOW" ] && check "the upgrade left no column drift behind" 0 \
+  || check "the upgrade left no column drift behind" 1 "$DRIFT_NOW"
+
+# And the durable record now says the same thing the schema does. This is the check that would
+# have caught the stale snapshot on its own: it compares what is STORED against what is TRUE,
+# so a record written before the migration and never re-derived fails here whether or not the
+# drift it describes has healed.
+DRIFT_STORED=$(wpc eval '
+  echo implode(", ", (array) get_option(wp_slimstat_admin::COLUMN_DRIFT_OPTION, []));' 2>/dev/null | tr -d '\n')
+[ "$DRIFT_STORED" = "$DRIFT_NOW" ] && check "and the durable record was re-derived, not replayed" 0 "${DRIFT_NOW:-none}" \
+  || check "and the durable record was re-derived, not replayed" 1 "stored '${DRIFT_STORED:-none}' vs on disk '${DRIFT_NOW:-none}'"
+
 # The KEYS and their messages, not a count. "1 recorded" names no step, so the only way to learn
 # which one degraded was to change this line and run the whole cell again — 90 seconds of docker
 # to ask a question the failing run already had the answer to. A check reports the finding, not

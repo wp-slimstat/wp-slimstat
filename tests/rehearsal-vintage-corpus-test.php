@@ -664,6 +664,44 @@ $check(
         && false !== strpos($reh_src, '"$DEGRADED recorded — ${DEG_DETAIL:-unreadable}"')
 );
 
+// The drift record is DURABLE and is written by init_tables(), so the copy R3 read was the one the
+// deferred window wrote — v6 code on a v5 schema, still naming `vid_hash (absent)` about a column
+// the migration had just added. A leg that reports a durable record must first make the product
+// re-derive it, the way the admin_init pass does on an admin's next page load.
+$vc_refresh  = strpos($reh_src, 'wp_slimstat_admin::refresh_column_drift_notice();');
+$vc_degraded = strpos($reh_src, 'DEGRADED=$(wpc eval');
+$check(
+    'an admin_init refresh is driven before the degradation store is read',
+    false !== $vc_refresh && false !== $vc_degraded && $vc_refresh < $vc_degraded
+        && false !== strpos($reh_src, 'delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);')
+);
+// And the drift itself is OBSERVED, not read back. Reading the option would print PASS on any arm
+// that never drifted, because there is no option to read and nothing looked at a single column.
+$check(
+    'the drift leg re-observes the schema instead of reading back the record',
+    false !== strpos($reh_src, 'DRIFT_NOW=$(wpc eval')
+        && false !== strpos($reh_src, 'SlimStat\Schema\Schema::columnDrift(')
+        && false !== strpos($reh_src, 'the upgrade left no column drift behind')
+);
+// The PLUGIN-side premise that comment rests on: the refresh is a re-derivation of an EXISTING
+// record, never a first observation. If it ever starts observing unconditionally, deciding the
+// leg from the option would become sound and the paragraph above becomes wrong rather than stale.
+$admin_src = is_file($plugin_root . '/admin/index.php')
+    ? (string) file_get_contents($plugin_root . '/admin/index.php')
+    : '';
+$check(
+    'the premise still holds: the notice refresh returns early when there is no record',
+    false !== strpos($admin_src, '$stored = get_option(self::COLUMN_DRIFT_OPTION, []);')
+        && false !== strpos($admin_src, 'if (!is_array($stored) || [] === $stored) {')
+);
+// Stored against live. This is the check that catches the stale snapshot on its own terms —
+// it fails whether or not the drift the record describes has since healed.
+$check(
+    'the stored record is compared against the live one, so a stale snapshot fails',
+    false !== strpos($reh_src, 'DRIFT_STORED=$(wpc eval')
+        && false !== strpos($reh_src, '[ "$DRIFT_STORED" = "$DRIFT_NOW" ]')
+);
+
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";
 if ([] !== $failures) {
     fwrite(STDERR, "FAIL: rehearsal vintage corpus\n  - " . implode("\n  - ", $failures) . "\n");
