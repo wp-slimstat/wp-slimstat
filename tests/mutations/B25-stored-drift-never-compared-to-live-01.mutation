@@ -1,0 +1,26 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the stored record is compared against the live one, so a stale snapshot fails
+rationale: This is the leg that catches the stale-snapshot class on its own terms. Observing live drift alone still passes a cell whose durable record describes a world three legs old, as long as the schema itself is clean. Stored versus true fails on the staleness whether or not the drift the record names has since healed.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index 38920b60..ba77dc2f 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -851,15 +851,6 @@ DRIFT_NOW=$(wpc eval '
+ [ -z "$DRIFT_NOW" ] && check "the upgrade left no column drift behind" 0 \
+   || check "the upgrade left no column drift behind" 1 "$DRIFT_NOW"
+ 
+-# And the durable record now says the same thing the schema does. This is the check that would
+-# have caught the stale snapshot on its own: it compares what is STORED against what is TRUE,
+-# so a record written before the migration and never re-derived fails here whether or not the
+-# drift it describes has healed.
+-DRIFT_STORED=$(wpc eval '
+-  echo implode(", ", (array) get_option(wp_slimstat_admin::COLUMN_DRIFT_OPTION, []));' 2>/dev/null | tr -d '\n')
+-[ "$DRIFT_STORED" = "$DRIFT_NOW" ] && check "and the durable record was re-derived, not replayed" 0 "${DRIFT_NOW:-none}" \
+-  || check "and the durable record was re-derived, not replayed" 1 "stored '${DRIFT_STORED:-none}' vs on disk '${DRIFT_NOW:-none}'"
+-
+ # The KEYS and their messages, not a count. "1 recorded" names no step, so the only way to learn
+ # which one degraded was to change this line and run the whole cell again — 90 seconds of docker
+ # to ask a question the failing run already had the answer to. A check reports the finding, not

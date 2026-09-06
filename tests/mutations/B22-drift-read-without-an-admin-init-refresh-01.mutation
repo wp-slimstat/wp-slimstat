@@ -1,0 +1,22 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    an admin_init refresh is driven before the degradation store is read
+rationale: `slimstat_schema_column_drift` is written by init_tables() and deliberately cannot age out, so the copy this leg reads is the one the deferred window wrote — v6 code on a v5 schema. Without the refresh the leg names `vid_hash (absent)` about a column R3 had just added: a snapshot of the world before the leg under test, reported as a statement about the world after it. The product heals this on admin_init; the cell has to give it one.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index 38920b60..630b9b8f 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -831,11 +831,6 @@ FP_CORE_1=$(fingerprint_core)
+ # clears the option when the drift is gone -- "the durable fact is the thing that is true, and the
+ # notice is synthesised from it". The cell simply never gave it an admin_init. Drive one, exactly
+ # where an admin's next page load would. PITFALLS 137.
+-wpc eval '
+-  delete_transient(wp_slimstat_admin::COLUMN_DRIFT_CHECK_TRANSIENT);
+-  wp_slimstat_admin::refresh_column_drift_notice();
+-' >/dev/null 2>&1
+-
+ # Observed HERE, not read back from the option, and the difference is the whole point: on an arm
+ # that never drifted there is no option at all, and refresh_column_drift_notice() returns early
+ # without looking at a single column. Deciding from the option would print PASS on a cell where
