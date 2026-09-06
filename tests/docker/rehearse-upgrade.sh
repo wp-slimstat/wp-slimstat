@@ -138,11 +138,24 @@ SCEN_SLUG="u${SCENARIO#U}"
 # convention; reuse it there rather than adding a third.
 HTTP_PORT="${4:-$(( 18980 + SCEN_N ))}"
 DB_PORT="${5:-$(( 13980 + SCEN_N ))}"
-PHP="${TOPOLOGY_PHP:-8.2}"
-WP="${TOPOLOGY_WP:-6.7}"
+# H8 · the topology is a PIN, not a default. rehearsal-cells.tsv states which WordPress and which
+# PHP each cell runs on and why — 4.8.1 belongs on a MODERN core, because a site stuck on a 2019
+# plugin is a site whose core kept auto-updating while its plugins did not. Environment still
+# wins, so "does it also fail on 8.2?" is one variable away; a cell with no row keeps the
+# defaults below, which is what an uncharacterised cell should do.
+CELL_KEY="${REHEARSAL_CELL:-$(cell_for_ref "$OLD_REF")}"
+CELL_WP=$(cell_field "$CELL_KEY" 4)
+CELL_PHP=$(cell_field "$CELL_KEY" 5)
+PHP="${TOPOLOGY_PHP:-${CELL_PHP:-8.2}}"
+WP="${TOPOLOGY_WP:-${CELL_WP:-6.7}}"
 
+# lib.sh owns "newest dump in the baselines directory", and the caveat that goes with it: as of
+# 2026-09-05 the newest one is a MIGRATED dump carrying vid_hash, so the convenient default now
+# selects a corpus C1 refuses outright. It fails loudly rather than quietly, which is correct,
+# but the message has to say what to pass instead — otherwise the default reads as a broken
+# harness rather than as a dump that is the wrong subject.
 if [ -z "$DUMP" ]; then
-  DUMP=$(ls -t "$HOME"/slimstat-v6-baselines/slim-analytics-*.sql.gz 2>/dev/null | head -1)
+  DUMP=$(latest_baseline_dump)
 fi
 [ -n "$DUMP" ] && [ -f "$DUMP" ] || { err "no dump: pass one, or run jaan-to/bin/slimstat-db.sh dump"; exit 1; }
 
@@ -179,18 +192,66 @@ check() { # <label> <condition-exit> <detail>
 # 443,543 rows before the migration with 443,544 after it and reports the migration changed the
 # data — when what changed it was the test. The subject is "did the rows that were already there
 # survive", so the row set has to be the rows that were already there.
+#
+# ── H5 · the one column the upgrade is ALLOWED to rewrite ───────────────────────────────────
+#
+# Eight of the nine columns below are vintage-portable: no block in any upgrade path touches
+# them, so "unchanged" is the right assertion on every arm. `notes` is not. Coming from below
+# 4.8.8, the 4.8.8 block runs convert_notes_to_brackets() and rewrites every unconverted value
+# from `a:1;b:2` to `[a:1][b:2]` — legitimately, deliberately, and by design. A fingerprint that
+# demanded `notes` be byte-identical would turn a correct upgrade red on exactly the four cells
+# that exist to rehearse it.
+#
+# The obvious repair is to drop `notes` from the fingerprint on pre-4.8.8 arms. That is the
+# repair this cell must NOT make: it would also pass a conversion that emptied the column,
+# truncated it at the first `;`, or wrote the same value into all 443,543 rows. The column the
+# upgrade is most likely to damage would become the one column nobody checks.
+#
+# So the transform is the assertion. The BEFORE fingerprint projects `notes` through the
+# plugin's own forward expression — rendered from lib.sh's single copy of it, so it cannot drift
+# from admin/index.php — for exactly the rows the migration's own predicate will select, and
+# leaves every other row alone. The AFTER fingerprint reads `notes` raw. If those two numbers
+# agree, then for every row in the baseline set the migration's output IS forward(input) where
+# it converted and IS the input where it did not. Equality now MEANS the transform was applied
+# correctly, rather than meaning nothing.
+#
+# Non-vacuity is asserted separately (R1 counts the pending rows, R3 requires that count to
+# reach zero), because a corpus with nothing to convert would satisfy the equality trivially.
+FP_NOTES_EXPR="notes"
+
 FP_SQL_TEMPLATE="SELECT COUNT(*), SUM(CRC32(CONCAT_WS(CHAR(0),
           COALESCE(id,'~'), COALESCE(ip,'~'), COALESCE(resource,'~'), COALESCE(dt,'~'),
           COALESCE(visit_id,'~'), COALESCE(browser,'~'), COALESCE(country,'~'),
-          COALESCE(referer,'~'), COALESCE(notes,'~')))) FROM wordpress.wp_slim_stats WHERE id <= %s"
+          COALESCE(referer,'~'), COALESCE(%s,'~')))) FROM wordpress.wp_slim_stats WHERE id <= %s"
+
+# The same tuple minus `notes`, never projected on any arm. It answers the half of the question
+# that is identical across every vintage — "did the eight columns nobody may touch survive" —
+# and it answers it without depending on the projection above being right. Two numbers, two
+# claims: this one cannot be talked out of failing by an argument about the notes expression.
+FP_CORE_TEMPLATE="SELECT COUNT(*), SUM(CRC32(CONCAT_WS(CHAR(0),
+          COALESCE(id,'~'), COALESCE(ip,'~'), COALESCE(resource,'~'), COALESCE(dt,'~'),
+          COALESCE(visit_id,'~'), COALESCE(browser,'~'), COALESCE(country,'~'),
+          COALESCE(referer,'~')))) FROM wordpress.wp_slim_stats WHERE id <= %s"
 BASE_MAX_ID=""
 
-mysql_q() { dc exec -T db mysql -uroot -proot -N -e "$1" 2>/dev/null; }
 fingerprint() {
   [ -n "$BASE_MAX_ID" ] || { echo "unpinned"; return; }
-  mysql_q "$(printf "$FP_SQL_TEMPLATE" "$BASE_MAX_ID")" | tr -d '\r' | tr '\t' ':'
+  mysql_q "$(printf "$FP_SQL_TEMPLATE" "$FP_NOTES_EXPR" "$BASE_MAX_ID")" | tr -d '\r' | tr '\t' ':'
 }
-row_count() { mysql_q "SELECT COUNT(*) FROM wordpress.wp_slim_stats;" | tr -d '[:space:]'; }
+fingerprint_core() {
+  [ -n "$BASE_MAX_ID" ] || { echo "unpinned"; return; }
+  mysql_q "$(printf "$FP_CORE_TEMPLATE" "$BASE_MAX_ID")" | tr -d '\r' | tr '\t' ':'
+}
+# How many rows are still in the pre-4.8.8 form, within the pinned baseline set. lib.sh renders
+# the predicate from the same template the migration's WHERE clause uses.
+notes_pending_rows() {
+  [ -n "$BASE_MAX_ID" ] || { echo ""; return; }
+  scalar_q "SELECT COUNT(*) FROM wordpress.wp_slim_stats
+              WHERE id <= $BASE_MAX_ID AND $(notes_pending notes);"
+}
+
+# lib.sh owns row_count <schema> <table>; this cell only ever asks about one table.
+stats_rows() { row_count wordpress wp_slim_stats; }
 has_column() { mysql_q "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='wp_slim_stats' AND COLUMN_NAME='$1';" | tr -d '[:space:]'; }
 
 # H1's control, and the reason the vintage arms are trustworthy at all. `resolve_arm_zip` proves
@@ -203,7 +264,7 @@ has_column() { mysql_q "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TA
 assert_arm_vintage() { # <ref>
   [ -n "${ARM_FREE_VERSION:-}" ] || return 0   # git arms: the sha is the identity, not a version
   local got
-  got=$(wpc plugin get wp-slimstat --field=version 2>/dev/null | tr -d '[:space:]')
+  got=$(arm_installed_version)
   [ "$got" = "$ARM_FREE_VERSION" ] \
     && check "the installed arm is the vintage requested ($1)" 0 "WordPress reports $got" \
     || check "the installed arm is the vintage requested ($1)" 1 \
@@ -313,12 +374,24 @@ echo "CONTROLS"
 echo "  dump:        $(basename "$DUMP")"
 echo "  old ref:     $OLD_REF"
 echo "  new ref:     $NEW_REF"
+# H8 · say where the topology came from. "WP 6.7 / PHP 7.4" printed alone is indistinguishable
+# from a default that happens to match, and the difference is exactly what a recorded run needs.
+if [ -n "${CELL_KEY:-}" ]; then
+  echo "  topology:    WP $WP / PHP $PHP (cell $CELL_KEY, pinned in rehearsal-cells.tsv)"
+  echo "               $(cell_field "$CELL_KEY" 6)"
+else
+  echo "  topology:    WP $WP / PHP $PHP (no row in rehearsal-cells.tsv for $OLD_REF — defaults)"
+fi
 
 # ── C1: the dump is a genuine v5 schema ─────────────────────────────────────
 # Asserted on the FILE, before anything imports it. A dump that already carried the v6 columns
 # would make every assertion below vacuous while looking identical in the output.
-gz_has() { gzip -dc "$DUMP" | grep -qE "$1"; }
-gz_has '`vid_hash`|`ua_id`' && { err "the dump already carries v6 columns — nothing here could fail"; exit 1; }
+if dump_has_v6_columns "$DUMP"; then
+  err "$(basename "$DUMP") already carries v6 columns — nothing below this line could fail."
+  err "  It is a post-migration dump, not a v5 corpus. Pass an earlier one explicitly:"
+  err "  ls -t ~/slimstat-v6-baselines/slim-analytics-*.sql.gz"
+  exit 1
+fi
 check "the dump is a pre-migration v5 schema" 0 "no vid_hash, no ua_id"
 
 use_ref "$OLD_REF" || exit 1
@@ -354,25 +427,10 @@ if [ "$WITH_PRO" = 1 ]; then
     || check "Pro's code loaded alongside free" 1 "EmailReportsAddon did not load under $(pro_arm_desc)"
 fi
 # ── H2 · the arm's OWN installer builds the arm's OWN tables ────────────────
-# The single line this replaces named `admin/index.php`, which 4.8.1 does not ship: that vintage
-# keeps the same class, and the same `wp_slimstat_admin::init_tables($_wpdb='')` signature, in
-# admin/wp-slimstat-admin.php. include_once on a missing path is a warning, not a fatal, so the
-# old line would have gone to install.log and the cell would have carried on with NO wp_slim_stats
-# at all -- and then the hydration below creates the table itself, from the dump, and every
-# schema assertion downstream describes the DUMP's shape while claiming to describe the arm's.
-# Which file ran is echoed back so the verdict names it rather than assuming it.
-run_vintage_installer() {
-  wpc eval '
-    $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
-    $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
-       : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");
-    if ($f === "") { echo "NOFILE"; }
-    else {
-      include_once($dir . $f);
-      if (!method_exists("wp_slimstat_admin", "init_tables")) { echo "NOMETHOD"; }
-      else { wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo $f; }
-    }'
-}
+# lib.sh owns run_vintage_installer(): 4.8.1 ships no admin/index.php, and include_once on a
+# missing path warns rather than fatals, so a hard-coded path would leave this cell with no
+# wp_slim_stats of its own and the hydration below would silently supply one from the dump.
+# downgrade-corpus.sh runs the identical helper, which is why it is there and not here.
 INSTALLER=$(run_vintage_installer 2>>"$ART/install.log" | tr -d '[:space:]')
 case "$INSTALLER" in
   admin/*) check "the arm's own installer ran" 0 "$INSTALLER" ;;
@@ -408,7 +466,7 @@ log "[$CELL] hydrating $(basename "$DUMP")"
 gzip -dc "$DUMP" | dc exec -T db mysql -uroot -proot wordpress 2>"$ART/import.err" \
   || { err "hydration failed — see $ART/import.err"; exit 1; }
 
-ROWS_0=$(row_count)
+ROWS_0=$(stats_rows)
 # C2: the corpus is the real one. COUNT(*), never information_schema.TABLE_ROWS, which is an
 # estimate and reported 427,582 for this same table once.
 [ "${ROWS_0:-0}" -gt 400000 ] && check "the corpus is the real dataset" 0 "$ROWS_0 rows" \
@@ -420,10 +478,32 @@ check "ua_id is absent before the migration"    "$([ "$(has_column ua_id)" = 0 ]
 
 echo
 echo "── R1 · baseline under the OLD code ─────────────────────────────────────"
-BASE_MAX_ID=$(mysql_q "SELECT MAX(id) FROM wordpress.wp_slim_stats;" | tr -d '[:space:]')
+BASE_MAX_ID=$(scalar_q "SELECT MAX(id) FROM wordpress.wp_slim_stats;")
 [ -n "$BASE_MAX_ID" ] || { err "could not pin the baseline row set"; exit 1; }
+
+# H5 · arm the notes projection, if and only if this arm predates the block that rewrites the
+# column. `version_lt` is component-wise and numeric, because 4.8.10 is above 4.8.9 and a string
+# compare says otherwise — and the vintages this cell installs contain that case.
+# ARM_FREE_VERSION is empty for git arms: those are builds of the current tree, the conversion
+# ran long ago in their history, and `notes` is byte-stable across their upgrade. Empty therefore
+# means "do not project", which is also the safe default if the version is ever unreadable.
+NOTES_PENDING_0=""
+if [ -n "${ARM_FREE_VERSION:-}" ] && version_lt "$ARM_FREE_VERSION" "4.8.8"; then
+  FP_NOTES_EXPR="IF( $(notes_pending notes), $(notes_forward notes), notes )"
+  NOTES_PENDING_0=$(notes_pending_rows)
+  echo "  arm $ARM_FREE_VERSION predates 4.8.8: the fingerprint projects notes through the"
+  echo "    plugin's own forward transform, so the 4.8.8 conversion is asserted, not excused"
+  # A corpus with nothing to convert makes the equality unfalsifiable — green, and evidence of
+  # nothing. downgrade-corpus.sh asserts the same count on the way out; this is the receiving end.
+  if [ "${NOTES_PENDING_0:-0}" -gt 0 ]; then _r=0; else _r=1; fi
+  check "the corpus gives the 4.8.8 conversion something to convert" "$_r" \
+        "${NOTES_PENDING_0:-0} rows in the pre-4.8.8 form"
+fi
+
 FP_0=$(fingerprint)
+FP_CORE_0=$(fingerprint_core)
 echo "  v5 fingerprint over id <= $BASE_MAX_ID: $FP_0"
+echo "  the eight columns nothing may touch:    $FP_CORE_0"
 
 # U4's mixed window, first half. SCOPE_OLD was already READ by C5 above, which needed it to
 # prove Pro loaded; reported here so the two halves of the transition sit beside their values.
@@ -482,7 +562,7 @@ RES_1=$(hit_resource "${HIT_1:-0}")
 [ "$RES_1" = "/rehearse-deferred-window" ] && check "the row it wrote is the row it asked for" 0 "$RES_1" \
   || check "the row it wrote is the row it asked for" 1 "resource is '${RES_1:-empty}'"
 
-ROWS_1=$(row_count)
+ROWS_1=$(stats_rows)
 [ "$ROWS_1" -eq $((ROWS_0 + 1)) ] && check "it landed exactly once" 0 "$ROWS_0 -> $ROWS_1" \
   || check "it landed exactly once" 1 "$ROWS_0 -> $ROWS_1"
 
@@ -512,6 +592,72 @@ UNKNOWN=$(grep -c 'Unknown column' "$DEBUG_LOG" 2>/dev/null)
 
 echo
 echo "── R3 · the migration ───────────────────────────────────────────────────"
+
+# ── H5 · the LEGACY upgrade, which is what a 4.8 site actually runs first ───
+#
+# Everything below this block drives MigrationManager. MigrationManager is not the code path a
+# site coming from 4.8.1 takes first, and for four of this programme's cells it is not even the
+# code path that does most of the work: the 4.8.2 / 4.8.4 / 4.8.4.1 / 4.8.8 / 5.4.0 / 5.4.1
+# blocks live in wp_slimstat_admin::update_tables_and_options(), reached from admin_init on the
+# first wp-admin page load after the plugin files change. ADD COLUMN email, DROP COLUMN plugins,
+# ADD fingerprint / tz_offset, and the whole notes conversion are there, not in src/Migration.
+#
+# So a vintage cell that only ran MigrationManager rehearsed the second half of an upgrade whose
+# first half had not happened — and the H5 fingerprint projection armed at R1 would then compare
+# a projected BEFORE against an unconverted AFTER and report the plugin had corrupted a column it
+# had not touched yet. The projection is only meaningful if the code that does the conversion is
+# actually driven, which is why this leg exists and why it comes first.
+#
+# `wp_set_current_user(1)` because may_run_schema_ddl() requires manage_options and WP-CLI runs
+# as nobody. The other three refusals it can make — ajax, cron, REST — are all false under
+# `wp eval`, so this is the one that has to be arranged, and arranging it is honest: an admin
+# loading wp-admin is exactly the request the real path gates on.
+echo "  the legacy upgrade path (wp_slimstat_admin::update_tables_and_options)"
+LEGACY_FROM=$(wpc eval 'echo isset(wp_slimstat::$settings["version"]) ? wp_slimstat::$settings["version"] : "";' 2>/dev/null | tr -d '[:space:]')
+if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
+  # The arm's own installer was invoked directly (H2) rather than through its activation hook, so
+  # the stored version may never have been stamped. Unstamped reads as "older than everything"
+  # and every block runs — which is nearly right but leaves the cell unable to SAY what it
+  # upgraded from. Stating it is the difference between a rehearsal and an anecdote.
+  wpc eval "wp_slimstat::\$settings['version'] = '$ARM_FREE_VERSION'; wp_slimstat::update_option('version', '$ARM_FREE_VERSION');" >/dev/null 2>&1 \
+    || wpc eval "\$o = get_option('slimstat_options', []); \$o['version'] = '$ARM_FREE_VERSION'; update_option('slimstat_options', \$o);" >/dev/null 2>&1
+  LEGACY_FROM=$(wpc eval 'echo isset(wp_slimstat::$settings["version"]) ? wp_slimstat::$settings["version"] : "";' 2>/dev/null | tr -d '[:space:]')
+fi
+echo "    stored version before: ${LEGACY_FROM:-unstamped}"
+
+# LOOPED, for the same reason the offered fact-table rebuild below is looped: the 4.8.8 block
+# converts `notes` in batches and returns FALSE without stamping the version when there is more
+# to do. One call on a 443k-row table therefore reports false meaning "resume me", and asserting
+# a single call returns true reads a working resumable upgrade as a broken one.
+LEGACY=$(wpc eval '
+  wp_set_current_user(1);
+  require_once WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php";
+  $t0 = microtime(true); $passes = 0; $last = null;
+  do { $last = wp_slimstat_admin::update_tables_and_options(); $passes++; }
+  while ($last === false && $passes < 500);
+  printf("%s %.1f %d", $last === false ? "unfinished" : "done", microtime(true) - $t0, $passes);
+' 2>>"$ART/legacy-upgrade.log")
+LEG_OK=$(echo "$LEGACY" | awk '{print $1}'); LEG_S=$(echo "$LEGACY" | awk '{print $2}'); LEG_P=$(echo "$LEGACY" | awk '{print $3}')
+if [ "$LEG_OK" = "done" ]; then
+  check "the legacy upgrade path completed" 0 "${LEG_P} pass(es), ${LEG_S}s from ${LEGACY_FROM:-unstamped}"
+else
+  # 500 passes without finishing is a finding about the batch size on a real table, not a
+  # harness bug — and it is the kind of finding this cell exists to produce. It is still red.
+  check "the legacy upgrade path completed" 1 "still ${LEG_OK:-no output} after ${LEG_P:-0} passes"
+fi
+
+# H5's non-vacuity, receiving end. R1 counted the rows in the pre-4.8.8 form; the conversion's
+# whole job is to leave none of them. Zero here plus a nonzero count at R1 is what makes the
+# fingerprint equality below a statement about a transform that ran, rather than about one that
+# had nothing to do.
+if [ -n "$NOTES_PENDING_0" ]; then
+  NOTES_PENDING_1=$(notes_pending_rows)
+  if [ "${NOTES_PENDING_1:-1}" -eq 0 ]; then _r=0; else _r=1; fi
+  check "the 4.8.8 conversion left no row in the old form" "$_r" \
+        "$NOTES_PENDING_0 -> ${NOTES_PENDING_1:-unknown}"
+fi
+
+echo
 # EVERY migration in the tree, discovered from the directory rather than named here.
 #
 # The first version of this leg registered two by hand — AddVisitIdentity and
@@ -589,13 +735,43 @@ else
   note NOTE "the offered fact-table rebuild is NOT exercised (REHEARSE_OFFERED=1 to include it); measured past 8 minutes on this dataset"
 fi
 
-ROWS_2=$(row_count)
+ROWS_2=$(stats_rows)
 [ "$ROWS_2" -eq "$ROWS_1" ] && check "not one row was lost or duplicated" 0 "$ROWS_2 rows" \
   || check "not one row was lost or duplicated" 1 "$ROWS_1 -> $ROWS_2"
+
+# ── H6 · the column is not the claim; the INDEX is ─────────────────────────
+# `vid_hash exists` above is satisfied by a column full of NULLs with nothing on it. What the P1
+# read path needs is the composite `(vid_hash, dt)`, in that order — Schema.php:280 declares
+# `idx_vid_hash_dt => 'vid_hash, dt'`, and the whole point of the identity column is that a
+# visit lookup becomes a ref on it instead of a scan. An index built with the columns reversed
+# still answers, still reports "index present", and does not serve the range on `dt` at all.
+#
+# So the assertion is the column LIST in SEQ order, not existence. This is also where a legacy
+# COMPACT/utf8 table would fail if it ever fails, which is why it is asserted on a real one.
+IDX_COLS=$(index_columns wp_slim_stats idx_vid_hash_dt)
+if [ "$IDX_COLS" = "vid_hash,dt" ]; then _r=0; else _r=1; fi
+check "idx_vid_hash_dt is built on (vid_hash, dt), in that order" "$_r" \
+      "${IDX_COLS:-the index does not exist}"
+
+# ── H5 · disarm the projection ─────────────────────────────────────────────
+# From here on `notes` is read raw. FP_0 was computed with the pre-4.8.8 rows projected THROUGH
+# the plugin's own forward transform; FP_1 reads what the plugin actually wrote. Equality is
+# therefore the transform equality — `notes_after = forward(notes_before)` for every converted
+# row and `notes_after = notes_before` for every other — expressed as one comparison rather than
+# as a weakening. On arms at or above 4.8.8 the projection was never armed and this is a no-op.
+FP_NOTES_EXPR="notes"
 
 FP_1=$(fingerprint)
 [ "$FP_1" = "$FP_0" ] && check "every pre-existing v5 value is byte-identical" 0 "$FP_1" \
   || check "every pre-existing v5 value is byte-identical" 1 "$FP_0 -> $FP_1"
+
+# The eight columns nothing in any upgrade path is permitted to touch, compared without any
+# projection on either side. It is deliberately redundant with the line above on modern arms —
+# and it is the only line that stays meaningful if the notes projection is ever wrong, because
+# no argument about the notes expression can make this one pass.
+FP_CORE_1=$(fingerprint_core)
+[ "$FP_CORE_1" = "$FP_CORE_0" ] && check "the eight columns nothing may touch are unchanged" 0 "$FP_CORE_1" \
+  || check "the eight columns nothing may touch are unchanged" 1 "$FP_CORE_0 -> $FP_CORE_1"
 
 DEGRADED=$(wpc eval 'echo count((array) get_option("slimstat_degradations", []));' 2>/dev/null | tr -d '[:space:]')
 [ "${DEGRADED:-0}" -eq 0 ] && check "no degradation was recorded" 0 \
@@ -686,6 +862,17 @@ HIT_3=$(track_hit "rehearse-rollback")
 FP_2=$(fingerprint)
 [ "$FP_2" = "$FP_0" ] && check "rollback left every pre-existing v5 value intact" 0 \
   || check "rollback left every pre-existing v5 value intact" 1 "$FP_0 -> $FP_2"
+FP_CORE_2=$(fingerprint_core)
+[ "$FP_CORE_2" = "$FP_CORE_0" ] && check "and the eight columns nothing may touch are still unchanged" 0 \
+  || check "and the eight columns nothing may touch are still unchanged" 1 "$FP_CORE_0 -> $FP_CORE_2"
+
+# H6, after the rollback. The index the P1 read path needs must survive the OLD code being put
+# back — a rollback that leaves the column but loses the composite gives a downgraded site a
+# scan where it had a ref, which is a performance regression nobody would attribute to the
+# rollback. Asserted, because "the schema is additive" is a claim about indexes too.
+IDX_COLS_2=$(index_columns wp_slim_stats idx_vid_hash_dt)
+if [ "$IDX_COLS_2" = "vid_hash,dt" ]; then _r=0; else _r=1; fi
+check "idx_vid_hash_dt survived the rollback intact" "$_r" "${IDX_COLS_2:-the index is gone}"
 
 # lib.sh's scan_debug_log owns what counts as a fatal — it returns 0 when it finds
 # `PHP (Fatal|Parse) error.*wp-slimstat`. The hand-rolled grep that used to sit here was
@@ -699,11 +886,25 @@ fi
 
 drop_ref "$OLD_REF"; drop_ref "$NEW_REF"
 
-write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" 2>/dev/null || true
+# ── H7/H8 · a verdict that outlives the container ──────────────────────────
+# The extra fragment carries the four facts that make a recorded PASS re-readable a year from
+# now: which arms, on which topology, over which corpus. A cell.json that says only
+# {"cell":"upgrade-u1","status":"PASS"} is a claim with no subject — Run 63's two verdicts said
+# exactly that, and they are gone anyway, which is the other half of what this fixes.
+write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" \
+  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
+  2>/dev/null || true
+
+# $ART is under /tmp, and /tmp is why Run 63's verdicts do not exist to be read. This copies the
+# verdict into the tracked programme directory, where the next session finds it without having
+# to rerun a 90-minute cell to learn what the last one concluded.
+DEST=$(publish_verdict "$ART" "$CELL" legacy-upgrade.log import.err 2>/dev/null || true)
+[ -n "${DEST:-}" ] && echo "  verdict: $DEST/cell.json"
 
 echo
 if [ "$status" = "PASS" ]; then
   echo "VERDICT: the upgrade is safe on this data — $ROWS_2 rows, v5 fingerprint unchanged across the migration"
+  echo "  from ${ARM_FREE_VERSION:-$OLD_REF} to $NEW_REF on WP $WP / PHP $PHP, over $(basename "$DUMP")"
   exit 0
 fi
 echo "VERDICT: FAILED — $reason"

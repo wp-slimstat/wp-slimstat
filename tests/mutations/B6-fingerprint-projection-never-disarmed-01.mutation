@@ -1,0 +1,17 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    disarmed before the AFTER fingerprint is taken
+rationale: The projection is armed at R1 so the BEFORE fingerprint reads notes as the migration will write them. Leave it armed and the AFTER fingerprint projects the ALREADY-converted rows a second time -- `[a:1][b:2]` becomes `[[a:1][b:2]]` -- so every vintage cell goes red on a correct upgrade. The failure is not silent, which is why it needs a gate anyway: a red cell on a correct upgrade is exactly the pressure that gets the notes column dropped from the fingerprint entirely, and then a conversion that emptied the column would pass. The switch has two halves and the gate asserts both, in order.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -759,8 +759,6 @@
+ # therefore the transform equality — `notes_after = forward(notes_before)` for every converted
+ # row and `notes_after = notes_before` for every other — expressed as one comparison rather than
+ # as a weakening. On arms at or above 4.8.8 the projection was never armed and this is a no-op.
+-FP_NOTES_EXPR="notes"
+-
+ FP_1=$(fingerprint)
+ [ "$FP_1" = "$FP_0" ] && check "every pre-existing v5 value is byte-identical" 0 "$FP_1" \
+   || check "every pre-existing v5 value is byte-identical" 1 "$FP_0 -> $FP_1"

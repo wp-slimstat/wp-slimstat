@@ -221,9 +221,14 @@ $check(
     $call_sites >= 2,
     $call_sites . ' call site(s)'
 );
+// The reading itself moved into lib.sh when the corpus builder became a second caller (H3), so
+// the literal is no longer in this file — but the control is only a control if it still asks
+// WordPress. Both halves are named: the cell calls the helper, and the helper runs the command.
+$libsrc = is_file(dirname($rehearse) . '/lib.sh') ? (string) file_get_contents(dirname($rehearse) . '/lib.sh') : '';
 $check(
     'the control compares against what WordPress reports, not against the ref',
-    false !== strpos($rehearse_src, 'wpc plugin get wp-slimstat --field=version')
+    false !== strpos($rehearse_src, 'arm_installed_version')
+        && false !== strpos($libsrc, 'wpc plugin get wp-slimstat --field=version')
 );
 
 echo "\nSLIMSTAT-REHEARSAL-ARM-RESOLUTION checks=" . $checks . ' failures=' . count($failures) . "\n";

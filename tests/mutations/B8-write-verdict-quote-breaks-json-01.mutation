@@ -1,0 +1,18 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    a quote in the reason cannot break the JSON
+rationale: This is the defect as it actually shipped, restored. `${reason//\"/\'}` looks like it substitutes a single quote; bash does not treat a backslash as an escape in the replacement half, so it substituted a literal BACKSLASH followed by a quote -- and `\'` is not a valid JSON escape, so the verdict file parsed as nothing. It failed on exactly the FAIL path, where the reason is non-empty and the verdict is the only record of what went wrong; every PASS verdict written so far had an empty reason and could not expose it. The two obvious repairs are both wrong (`\'` above, and a bare `'` which opens a quoted section inside the double-quoted expansion and swallows the rest of the file), which is why the fix goes through a variable and why this is worth a mutation rather than a comment.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -398,8 +398,7 @@
+   # Both failed on exactly the FAIL path, where the reason is non-empty and the verdict matters
+   # most; every PASS verdict written so far had an empty reason and could not show it. Found by
+   # the quote-in-reason case in tests/rehearsal-vintage-corpus-test.php. PITFALLS 132.
+-  local sq="'"
+-  reason="${reason//\"/$sq}"
++  reason="${reason//\"/\'}"
+   [ -z "$extra" ] || extra="${extra%,},"
+   printf '{"cell":"%s","php":"%s","wp":"%s","status":"%s","reason":"%s",%s"ts":"%s"}\n' \
+     "$cell" "$php" "$wp" "$status" "$reason" "$extra" "$(date -u +%FT%TZ)" > "$art/cell.json"

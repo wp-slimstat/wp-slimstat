@@ -406,6 +406,15 @@ $recorded     = [
     // the tokenised half vouch for this one. Added after the ADR-17 seam fixed six PHP
     // percentage sites and left five JS twins dividing first (ADR-17; PITFALLS 72).
     'rounding-contract-test.php'                 => 'exempt — its raw half scans JAVASCRIPT line by line; the PHP half is tokenised',
+    // The subject IS the string literal. This gate exists to prove that lib.sh renders, byte for
+    // byte, the SQL that admin/index.php issues for the notes conversion — the two writers of one
+    // transform, and the whole H5 argument rests on them agreeing. Both helpers would delete the
+    // evidence: slimstat_strip_comments_and_strings() removes the string being compared, and
+    // slimstat_blank_comments() leaves it but the match is a string-literal match either way.
+    // The same applies to Schema.php's index manifest, where the claim is about the declared
+    // column list `'vid_hash, dt'`. Two reads, both of literals, both quoted in the failure
+    // message so a drift is legible rather than a boolean.
+    'rehearsal-vintage-corpus-test.php'          => 'exempt — the raw subjects are STRING LITERALS in production source (the notes UPDATE in admin/index.php, the index manifest in Schema.php), which is exactly what a string-stripping tokeniser removes',
     // Every gettext call site IS tokenised. The one raw read is the plugin header's
     // `Text Domain:` line, which lives inside a doc comment — so blanking comments before
     // matching would delete the exact bytes it needs. Reading the declared domain from the

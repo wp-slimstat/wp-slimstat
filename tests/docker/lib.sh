@@ -114,6 +114,117 @@ resolve_arm_zip() { # <ref>
   printf '%s\n' "$zip"
 }
 
+# ── Talking to the cell's database ─────────────────────────────────────────
+# One row per line, tab-separated, no column headers — the shape every helper below parses.
+# It lived in rehearse-upgrade.sh and downgrade-corpus.sh needs the identical thing, which is the
+# point at which a private copy becomes drift. A caller may still define its own after sourcing
+# this file (tests/rehearsal-column-control-test.php stubs it exactly that way, and the later
+# definition wins).
+mysql_q() { dc exec -T db mysql -uroot -proot -N -e "$1" 2>/dev/null; }
+
+# One value, whitespace stripped. Every `COUNT(*)` call site was writing the same `tr -d` after
+# mysql_q, and one that forgot it compared "114507\n" against "114507".
+scalar_q() { # <sql>
+  mysql_q "$1" | tr -d '[:space:]'
+}
+
+row_count() { # <schema> <table>
+  scalar_q "SELECT COUNT(*) FROM \`$1\`.\`$2\`;"
+}
+
+# A statement run for its EFFECT, where the server's error text is the thing worth keeping.
+# mysql_q swallows stderr — correct when parsing a result set, wrong when a failing INSERT is the
+# finding — so this one captures both streams to a log and returns the client's exit status.
+mysql_exec() { # <sql> <logfile>
+  dc exec -T db mysql -uroot -proot -e "$1" > "$2" 2>&1
+}
+
+# A gzipped dump into a named schema. The redirection has to be built here rather than at the
+# call site: `gzip -dc … | dc exec` is the only shape that streams a 100 MB dump without landing
+# it in the container first.
+import_gz_into_schema() { # <dump.gz> <schema> <errlog>
+  gzip -dc "$1" | dc exec -T db mysql -uroot -proot "$2" 2>"$3"
+}
+
+# The reverse. --no-tablespaces because the client has no PROCESS privilege on 8.0 and the dump
+# fails without it; --single-transaction so the count cannot move underneath the dump.
+dump_schema_gz() { # <schema> <out.sql.gz> <errlog> <table...>
+  local schema="$1" out="$2" errlog="$3"
+  shift 3
+  dc exec -T db mysqldump -uroot -proot --no-tablespaces --single-transaction "$schema" "$@" \
+    2>"$errlog" | gzip -c > "$out"
+  # PIPESTATUS, not $?: gzip succeeds on the empty stream a failed mysqldump leaves behind, and
+  # the result would be a valid .gz containing no corpus at all.
+  [ "${PIPESTATUS[0]}" -eq 0 ]
+}
+
+# ── Which dump is the corpus? ──────────────────────────────────────────────
+# Newest first, and the caller still has to decide whether it is a v5 corpus: as of 2026-09-05
+# the newest dump in the baselines directory is a MIGRATED one carrying vid_hash, so `ls -t |
+# head -1` now selects a file every vintage cell must refuse. Both halves live here so the
+# refusal is one function rather than a grep each caller writes slightly differently.
+latest_baseline_dump() {
+  ls -t "$HOME"/slimstat-v6-baselines/slim-analytics-*.sql.gz 2>/dev/null | head -1
+}
+
+dump_has_v6_columns() { # <dump.gz> — true (0) when the dump is post-migration
+  gzip -dc "$1" 2>/dev/null | grep -qE '`vid_hash`|`ua_id`'
+}
+
+# ── The cell's topology, pinned rather than defaulted (H8) ─────────────────
+# rehearsal-cells.tsv holds one row per WS4 cell: cell, old_ref, new_ref, wp, php, rationale.
+# A cell with no row keeps the caller's defaults — this is additive, and a cell that has not been
+# characterised yet should not be blocked by the file that characterises the ones that have.
+REHEARSAL_CELLS="${REHEARSAL_CELLS:-$HARNESS_DIR/rehearsal-cells.tsv}"
+
+cell_field() { # <cell> <1-based field> — empty when the cell has no row
+  [ -f "$REHEARSAL_CELLS" ] || return 0
+  awk -F'\t' -v c="$1" -v n="$2" '$1 == c { print $n; exit }' "$REHEARSAL_CELLS"
+}
+
+# Which cell is this run? Keyed off the OLD ref, because that is what actually distinguishes
+# 7a from 7d — the arm a site is upgrading from — and because it means a caller states the arm
+# once on the command line rather than also naming a cell that has to agree with it.
+cell_for_ref() { # <old_ref>
+  [ -f "$REHEARSAL_CELLS" ] || return 0
+  awk -F'\t' -v r="$1" '$2 == r { print $1; exit }' "$REHEARSAL_CELLS"
+}
+
+# ── The vintage arm's own installer (H2) ───────────────────────────────────
+# The single line this replaced named `admin/index.php`, which 4.8.1 does not ship: that vintage
+# keeps the same class, and the same `wp_slimstat_admin::init_tables($_wpdb='')` signature, in
+# admin/wp-slimstat-admin.php. include_once on a missing path is a WARNING, not a fatal, so the
+# old line went to a log and the caller carried on with NO wp_slim_stats at all — and then the
+# hydration creates the table itself, from the dump, and every schema assertion downstream
+# describes the DUMP's shape while claiming to describe the arm's.
+#
+# Which file ran is echoed back, so a caller's verdict NAMES it rather than assuming it, and the
+# two failure modes are distinct strings rather than one silent empty line.
+#
+# Lives here because two scripts run it: rehearse-upgrade.sh (before hydrating a corpus) and
+# downgrade-corpus.sh (before projecting one), and they must build the same tables the same way
+# or the corpus does not fit the cell it was built for.
+run_vintage_installer() {
+  wpc eval '
+    $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
+    $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
+       : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");
+    if ($f === "") { echo "NOFILE"; }
+    else {
+      include_once($dir . $f);
+      if (!method_exists("wp_slimstat_admin", "init_tables")) { echo "NOMETHOD"; }
+      else { wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo $f; }
+    }'
+}
+
+# What WordPress says is installed, which is a different claim from what resolve_arm_zip
+# verified. `wp plugin install --force` can succeed on a ZIP whose folder name collides with an
+# existing plugin directory, leaving the previous arm in place — and then every assertion
+# downstream describes the wrong vintage.
+arm_installed_version() {
+  wpc plugin get wp-slimstat --field=version 2>/dev/null | tr -d '[:space:]'
+}
+
 # ── What shape is this table, and what shape is that corpus? ────────────────
 # H3. A vintage cell is only a vintage cell if the CORPUS matches the arm. The existing C1 asks
 # the dump for `vid_hash`/`ua_id` and stops there, which a 5.5-shaped dump passes under a 4.8.1
@@ -128,10 +239,20 @@ resolve_arm_zip() { # <ref>
 # the dump's shape and the question can no longer be asked).
 
 # The live column set of a table, sorted, comma-joined. Empty when the table does not exist.
-table_columns() { # <table>
+# The schema defaults to the cell's own `wordpress`; downgrade-corpus.sh asks the identical
+# question of its scratch schema, and one function that takes the schema beats two that differ
+# by a string literal — the pair would drift in the sort order and the difference would read as
+# a schema difference.
+table_columns() { # <table> [schema]
   mysql_q "SELECT COLUMN_NAME FROM information_schema.COLUMNS
-             WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='$1' ORDER BY COLUMN_NAME;" \
+             WHERE TABLE_SCHEMA='${2:-wordpress}' AND TABLE_NAME='$1' ORDER BY COLUMN_NAME;" \
     | tr -d '\r' | sed '/^$/d' | sort | tr '\n' ',' | sed 's/,$//'
+}
+
+# How many columns are in one of those comma-joined sets. Counting `,`+1 is wrong for the empty
+# set (it would say 1), and that case is precisely the one a caller is trying to detect.
+count_columns() { # <set>
+  printf '%s\n' "$1" | tr ',' '\n' | sed '/^$/d' | grep -c '' || true
 }
 
 # The column set a gzipped dump declares for a table, in the same shape. Reads only that CREATE
@@ -161,12 +282,127 @@ columns_missing_from() { # <set-a> <set-b>
   done | tr '\n' ',' | sed 's/,$//'
 }
 
-# Write a cell's verdict JSON. Args: art_dir cell php wp status reason
+# ── Which vintage is this, and is it older than the block under test? ───────
+# H4/H5. A vintage cell's corpus and its fingerprint both branch on the arm's version: the notes
+# column is semicolon-separated below 4.8.8 and bracketed at and above it, and `plugins` /
+# `email` / `fingerprint` / `tz_offset` split at 4.8.4.1. `sort -V` is not portable enough to
+# decide that (BSD sort grew -V late, and this runs on the host, not in the container), and
+# `version_compare` lives in PHP. awk is everywhere and the comparison is four lines.
+#
+# Component-wise and numeric, so 4.8.10 is above 4.8.9 — which is exactly what a string compare
+# gets wrong, and the vintages this programme installs (4.8.1 … 5.4.12) contain the case.
+# Missing components are 0, so 4.8 < 4.8.1 and 4.8.0 == 4.8.
+version_lt() { # <a> <b> — true (0) when a is strictly older than b
+  awk -v a="$1" -v b="$2" 'BEGIN{
+    na = split(a, A, "."); nb = split(b, B, ".");
+    n = (na > nb) ? na : nb;
+    for (i = 1; i <= n; i++) {
+      x = (i <= na) ? A[i] + 0 : 0; y = (i <= nb) ? B[i] + 0 : 0;
+      if (x < y) exit 0;
+      if (x > y) exit 1;
+    }
+    exit 1 }'
+}
+
+# ── The notes transform, in ONE place ──────────────────────────────────────
+# H5. Below 4.8.8 `notes` is `k:v;k:v`; at 4.8.8 the upgrade rewrites it to `[k:v][k:v]`. That
+# transform is written in admin/index.php (convert_notes_to_brackets), and a vintage cell needs
+# it twice more: downgrade-corpus.sh applies its INVERSE to build a pre-4.8.8 corpus, and
+# rehearse-upgrade.sh projects it forward so the v5 fingerprint can be compared ACROSS a
+# migration that legitimately rewrites the column.
+#
+# Three copies of a transform is how the rehearsal ends up asserting its own idea of the
+# conversion instead of the plugin's. So the expression lives here once, and
+# tests/rehearsal-vintage-corpus-test.php asserts that what this renders is character-for-
+# character the statement admin/index.php issues. Change the plugin's transform and the gate goes
+# red until the rehearsal follows it — which is the only arrangement under which the rehearsal's
+# equality is evidence about the plugin rather than about itself.
+#
+# printf templates, not strings with a name substituted: the forward expression is applied to
+# `notes` in the cell and to the INVERSE EXPRESSION in the corpus builder's round-trip guard, and
+# a substitution that matched the bare word `notes` inside `REPLACE( notes, ...)` would rewrite
+# the wrong occurrence.
+NOTES_FORWARD_TEMPLATE="CONCAT( '[', REPLACE( %s, ';', '][' ), ']' )"
+# The rows the conversion is OWED, as admin/index.php's own WHERE clause states them: not NULL
+# (NULL NOT LIKE '[%' is NULL, so NULL was already excluded — stated rather than relied upon),
+# not empty (the empty string satisfies NOT LIKE '[%' and would become the literal '[]'), and not
+# already bracketed.
+NOTES_PENDING_TEMPLATE="%s IS NOT NULL AND %s <> '' AND %s NOT LIKE '[%%'"
+# The inverse: strip the outer brackets, then `][` back to `;`. Used only by the corpus builder.
+NOTES_INVERSE_TEMPLATE="REPLACE( SUBSTRING( %s, 2, CHAR_LENGTH(%s) - 2 ), '][', ';' )"
+
+notes_forward() { printf "$NOTES_FORWARD_TEMPLATE" "${1:-notes}"; }
+notes_pending() { printf "$NOTES_PENDING_TEMPLATE" "${1:-notes}" "${1:-notes}" "${1:-notes}"; }
+notes_inverse() { printf "$NOTES_INVERSE_TEMPLATE" "${1:-notes}" "${1:-notes}"; }
+
+# ── Indexes (H6) ───────────────────────────────────────────────────────────
+# `SHOW INDEX` appeared nowhere in this harness, so every index claim in the programme rested on
+# the COLUMN existing. P1 is "the upgraded install ends with idx_vid_hash_dt", and a column check
+# cannot fail when the index is the thing that is missing — which is the one failure V1 registers
+# a mutation for: Schema::ensure() skips a manifest index over a column the same pass adds, so an
+# UPGRADED install can carry the column and no index while a FRESH one has both.
+#
+# information_schema.STATISTICS rather than SHOW INDEX because it is queryable: SHOW returns a
+# result set shaped for a human and cannot be filtered or ordered in SQL.
+index_columns() { # <table> <index> — the index's columns in SEQ order, comma-joined; empty if absent
+  mysql_q "SELECT COLUMN_NAME FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='$1' AND INDEX_NAME='$2'
+             ORDER BY SEQ_IN_INDEX;" \
+    | tr -d '\r' | sed '/^$/d' | tr '\n' ',' | sed 's/,$//'
+}
+
+# Present at all. Deliberately NOT the whole assertion a cell makes: an index of the right name
+# over the wrong columns answers yes here and is useless to the query it exists for, so the cells
+# assert index_columns() and use this only where presence really is the question.
+has_index() { # <table> <index>
+  [ -n "$(index_columns "$1" "$2")" ]
+}
+
+# ── Verdicts that outlive /tmp (H7) ────────────────────────────────────────
+# Run 63 filed two cell verdicts and both are gone: WORK_ROOT is /tmp/php-matrix, and the record
+# in VERIFICATION-PROTOCOL.md cites paths that no longer exist. A verdict nobody can open is a
+# claim, not evidence.
+#
+# The destination is under jaan-to/outputs/, i.e. the ROOT repo rather than this submodule, and
+# that directory's .gitignore excludes runs/ wholesale — so the exception for run65-rehearsal/ is
+# committed beside this, otherwise the copy lands somewhere `git status` will never mention and
+# the next session loses it exactly the way Run 63 did.
+publish_verdict() { # <art_dir> <cell> [extra artifact basenames...]
+  local art="$1" cell="$2" dest f
+  shift 2
+  dest="${REHEARSAL_RUNS_DIR:-$PLUGIN_SRC/../jaan-to/outputs/dev/v6-performance/runs/run65-rehearsal}/$cell"
+  mkdir -p "$dest" 2>/dev/null || { warn "could not create $dest — the verdict stays in $art only"; return 1; }
+  cp "$art/cell.json" "$dest/cell.json" 2>/dev/null \
+    || { warn "no cell.json in $art to publish"; return 1; }
+  for f in "$@"; do
+    [ -f "$art/$f" ] && cp "$art/$f" "$dest/$f" 2>/dev/null
+  done
+  printf '%s\n' "$dest"
+}
+
+# Write a cell's verdict JSON. Args: art_dir cell php wp status reason [extra json fields]
+#
+# The 7th argument is a pre-formatted JSON fragment WITHOUT the surrounding braces, spliced in
+# before `ts`. It exists because a durable verdict (publish_verdict, H7) has to answer "which arm,
+# which corpus, which topology" a year from now, and cell/php/wp/status/reason cannot. Optional,
+# so run-cell.sh and run-topology.sh keep calling this unchanged; read_verdict_status is
+# unaffected either way, since it reads `status` by name and not by position.
 write_verdict() {
-  local art="$1" cell="$2" php="$3" wp="$4" status="$5" reason="$6"
-  reason="${reason//\"/\'}"
-  printf '{"cell":"%s","php":"%s","wp":"%s","status":"%s","reason":"%s","ts":"%s"}\n' \
-    "$cell" "$php" "$wp" "$status" "$reason" "$(date -u +%FT%TZ)" > "$art/cell.json"
+  local art="$1" cell="$2" php="$3" wp="$4" status="$5" reason="$6" extra="${7:-}"
+  # A double quote in the reason would close the JSON string early, so it becomes a single one.
+  # Via a VARIABLE holding that quote, and neither obvious spelling works: `\'` is not an escape
+  # in the replacement half of ${var//pat/repl}, so it substituted a literal backslash-quote and
+  # `\'` is not valid JSON — the verdict parsed as nothing. A bare `'` there does not survive
+  # either: inside the double-quoted expansion it OPENS a quoted section and swallows the rest of
+  # the file, which `bash -n` reports 200 lines later as an unbalanced paren in build_pro_arm.
+  # Both failed on exactly the FAIL path, where the reason is non-empty and the verdict matters
+  # most; every PASS verdict written so far had an empty reason and could not show it. Found by
+  # the quote-in-reason case in tests/rehearsal-vintage-corpus-test.php. PITFALLS 132.
+  local sq="'"
+  reason="${reason//\"/$sq}"
+  [ -z "$extra" ] || extra="${extra%,},"
+  printf '{"cell":"%s","php":"%s","wp":"%s","status":"%s","reason":"%s",%s"ts":"%s"}\n' \
+    "$cell" "$php" "$wp" "$status" "$reason" "$extra" "$(date -u +%FT%TZ)" > "$art/cell.json"
 }
 
 # Wait until a command succeeds or times out. Args: tries sleep cmd...

@@ -294,25 +294,40 @@ $check(
 );
 
 // H2: the include is vintage-aware, and the cell asserts the installer actually ran.
+//
+// The definition MOVED to lib.sh when downgrade-corpus.sh (H4) needed the identical helper —
+// two scripts that build the vintage's tables differently would produce a corpus that does not
+// fit the cell it was built for. So these three read $libsrc, and the fourth still reads the
+// cell: the cell is where the RESULT has to be asserted rather than assumed.
+//
 // Asserted as a file_exists() CANDIDATE, not as a string present in the file: the first draft
 // looked for 'admin/wp-slimstat-admin.php' anywhere, and the comment three lines above the code
 // satisfied it — a mutation that deleted the 4.8 branch outright SURVIVED the gate.
+$libsrc = is_file($lib) ? (string) file_get_contents($lib) : '';
 $check(
     'the installer include tries the modern path',
-    false !== strpos($src, 'file_exists($dir . "admin/index.php")')
+    false !== strpos($libsrc, 'file_exists($dir . "admin/index.php")')
 );
 $check(
     'and the 4.8 path, which is the only one that vintage ships',
-    false !== strpos($src, 'file_exists($dir . "admin/wp-slimstat-admin.php")')
+    false !== strpos($libsrc, 'file_exists($dir . "admin/wp-slimstat-admin.php")')
+);
+$check(
+    'and a missing file fails the cell instead of warning into a log',
+    false !== strpos($libsrc, 'NOFILE') && false !== strpos($libsrc, 'NOMETHOD')
 );
 $check(
     'the file that ran is reported, not assumed',
     false !== strpos($src, 'INSTALLER=$(run_vintage_installer')
         && false !== strpos($src, 'check "the arm\'s own installer ran"')
 );
+// Both callers run the SAME helper. A private copy in either one is the drift this move exists
+// to prevent, and it would be invisible until a corpus silently did not fit its cell.
 $check(
-    'and a missing file fails the cell instead of warning into a log',
-    false !== strpos($src, 'NOFILE') && false !== strpos($src, 'NOMETHOD')
+    'lib.sh is the only definition — both callers run the same installer',
+    1 === preg_match_all('/^run_vintage_installer\(\)/m', $libsrc)
+        && 0 === preg_match_all('/^run_vintage_installer\(\)/m', $src)
+        && false !== strpos((string) @file_get_contents($plugin_root . '/tests/docker/downgrade-corpus.sh'), 'run_vintage_installer')
 );
 
 array_map('unlink', [$gz_55, $gz_48]);

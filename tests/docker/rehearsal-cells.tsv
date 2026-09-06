@@ -1,0 +1,41 @@
+# tests/docker/rehearsal-cells.tsv — the WS4 rehearsal cells and the topology each one pins.
+#
+# WHY THIS FILE EXISTS (H8). A rehearsal cell has two version axes and only one of them was ever
+# written down. The arm — which wp-slimstat a site is upgrading FROM — is pinned in arms.sha256.
+# The topology — which WordPress and which PHP that site is running WHILE it upgrades — was a
+# default in rehearse-upgrade.sh (WP 6.7 / PHP 8.2) that every cell silently inherited, and a
+# default is not a pin: it moves when the default moves, and a recorded PASS then describes a
+# topology nobody can reconstruct.
+#
+# It matters more than a bookkeeping fix, because the obvious pairing is the WRONG one. The
+# tempting reading of "rehearse the 4.8.1 upgrade" is 2019 plugin on 2019 WordPress on 2019 PHP.
+# That is not what the 12.9 % of installs still on 4.8.x are. A site stuck on a 2019 plugin is
+# overwhelmingly a site whose WordPress core kept auto-updating and whose host kept moving PHP
+# forward underneath it — the plugin is old precisely BECAUSE nobody has touched it, and core
+# updates itself while plugins do not. So the cell that matters is 4.8.1 on a MODERN WordPress.
+#
+# PHP is the other half, and it is pinned DOWN rather than up for the vintages: 4.8.1 predates
+# PHP 8 by two years, and the question a 4.8.1 cell has to answer first is whether that code
+# even loads before the upgrade can start. 7.4 is the oldest PHP this programme supports and the
+# newest one 4.8.1 was written against, which makes it the version where a fatal is a finding
+# about the upgrade rather than a foregone conclusion.
+#
+# If the 4.8.1 arm fatals on WP 6.7 before the upgrade path is reached, THAT IS THE FINDING and
+# the cell records it as such. It is not a reason to soften the topology until the cell goes
+# green: a site that cannot load the old plugin on current WordPress cannot take the upgrade
+# either, and knowing that is worth more than a green cell that pretended otherwise.
+#
+# HOW IT IS USED. run-topologies.sh and rehearse-upgrade.sh read the row for their cell and
+# export TOPOLOGY_WP / TOPOLOGY_PHP from it; the values land in the cell's verdict, so a recorded
+# result names the topology it was produced on. Environment still wins for a one-off, which is
+# how a "does it also fail on 8.2?" question gets asked without editing this file.
+#
+# tests/rehearsal-vintage-corpus-test.php asserts every cell here declares both pins and that
+# each arm version appears in arms.sha256 — an undeclared pin is the default coming back.
+#
+# cell	old_ref	new_ref	wp	php	why this topology
+7a	wp.org:4.8.1	development	6.7	7.4	12.9% of installs; the oldest arm, on current core, on the oldest PHP the programme supports
+7b	wp.org:5.1.5	development	6.7	7.4	the 4.9-5.1 "other" bucket, 19.1%; still predates the 5.4 blocks
+7c	wp.org:5.2.13	development	6.7	8.1	11.1% of installs; contemporary with PHP 7.4-8.0, run one step up to catch 8.x deprecations
+7d	wp.org:5.4.12	development	6.7	8.2	7.5% of installs; the last line before 5.5, on the modern default
+9	wp.org:5.5.0	development	6.7	8.2	41.1% of installs — the majority case, and the one the release notes are written for
