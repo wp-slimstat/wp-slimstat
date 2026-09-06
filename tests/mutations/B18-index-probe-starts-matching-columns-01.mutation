@@ -1,0 +1,19 @@
+target:    src/Schema/Schema.php
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      introduce-defect
+expect:    the premise still holds: the index probe matches on Key_name and nothing else
+rationale: The C4 control drops a mutilated index by name because the migration cannot see that it is mutilated, and the paragraph saying so is only true while indexState() reads SHOW INDEX column 2. Column 4 is Column_name: reading that instead makes $have a set of COLUMN names, so every manifest index whose key name is not also a column name reads as missing, and reconcileColumnIndexes() starts issuing CREATE INDEX for indexes that already exist. The premise check is what notices that the harness comment and the plugin have parted company -- without it the comment quietly becomes a story about code that no longer exists.
+---
+diff --git a/src/Schema/Schema.php b/src/Schema/Schema.php
+index c11428fa..d467093a 100644
+--- a/src/Schema/Schema.php
++++ b/src/Schema/Schema.php
+@@ -1278,7 +1278,7 @@ final class Schema
+         }
+ 
+         $suppressed = $db->suppress_errors(true);
+-        $found      = $db->get_col(sprintf('SHOW INDEX FROM `%s`', $prefix . $suffix), 2);
++        $found      = $db->get_col(sprintf('SHOW INDEX FROM `%s`', $prefix . $suffix), 4);
+         $error      = (string) $db->last_error;
+         $db->suppress_errors($suppressed);
+ 
