@@ -613,7 +613,15 @@ echo "── R3 · the migration ───────────────�
 # `wp eval`, so this is the one that has to be arranged, and arranging it is honest: an admin
 # loading wp-admin is exactly the request the real path gates on.
 echo "  the legacy upgrade path (wp_slimstat_admin::update_tables_and_options)"
-LEGACY_FROM=$(wpc eval 'echo isset(wp_slimstat::$settings["version"]) ? wp_slimstat::$settings["version"] : "";' 2>/dev/null | tr -d '[:space:]')
+# READ THE OPTIONS ROW, NOT THE MERGED SETTINGS. `wp_slimstat::$settings` is
+# array_merge(init_options(), $stored) with stored winning, and init_options() carries
+# `version => SLIMSTAT_ANALYTICS_VERSION`. A row with no version key therefore reads back as the
+# version of the code doing the reading -- 6.0.0 -- so every `version_compare($v, "4.8.8", "<")`
+# block in update_tables_and_options() decides it has already run, and the cell prints "the
+# legacy upgrade path completed -- 1 pass(es), 3.1s" having executed none of it. The `-z`
+# fallback immediately below was written for precisely the unstamped case and could never fire,
+# because the value it tested is never empty. Run 65 cell 7a, PITFALLS 133.
+LEGACY_FROM=$(stored_plugin_version)
 if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
   # The arm's own installer was invoked directly (H2) rather than through its activation hook, so
   # the stored version may never have been stamped. Unstamped reads as "older than everything"
@@ -621,9 +629,24 @@ if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
   # upgraded from. Stating it is the difference between a rehearsal and an anecdote.
   wpc eval "wp_slimstat::\$settings['version'] = '$ARM_FREE_VERSION'; wp_slimstat::update_option('version', '$ARM_FREE_VERSION');" >/dev/null 2>&1 \
     || wpc eval "\$o = get_option('slimstat_options', []); \$o['version'] = '$ARM_FREE_VERSION'; update_option('slimstat_options', \$o);" >/dev/null 2>&1
-  LEGACY_FROM=$(wpc eval 'echo isset(wp_slimstat::$settings["version"]) ? wp_slimstat::$settings["version"] : "";' 2>/dev/null | tr -d '[:space:]')
+  LEGACY_FROM=$(stored_plugin_version)
 fi
 echo "    stored version before: ${LEGACY_FROM:-unstamped}"
+
+# THE CONTROL THAT WAS MISSING. Every assertion this leg makes is conditional on the leg having
+# work to do, and "has work to do" is exactly `stored < the version of the code now installed`.
+# When it is not, update_tables_and_options() returns true on its first pass without entering a
+# single block, and the timing line reads like a fast upgrade instead of an absent one. It is
+# checked BEFORE the run so that its reason -- not the missed conversion downstream of it, and
+# not the five further symptoms downstream of that -- is the reason the verdict carries.
+#
+# version_compare is asked of PHP rather than of sort -V, because PHP is what the plugin uses and
+# a vintage like 4.8.4.1 is exactly where the two disagree.
+NEW_VERSION=$(wpc eval 'echo defined("SLIMSTAT_ANALYTICS_VERSION") ? SLIMSTAT_ANALYTICS_VERSION : "";' 2>/dev/null | tr -d '[:space:]')
+VER_LT=$(wpc eval "echo version_compare('${LEGACY_FROM:-0}', '${NEW_VERSION:-0}', '<') ? 'yes' : 'no';" 2>/dev/null | tr -d '[:space:]')
+if [ -n "$LEGACY_FROM" ] && [ "$VER_LT" = "yes" ]; then _r=0; else _r=1; fi
+check "the legacy upgrade path has something to upgrade FROM" "$_r" \
+      "stored ${LEGACY_FROM:-unstamped}, code ${NEW_VERSION:-unknown}"
 
 # LOOPED, for the same reason the offered fact-table rebuild below is looped: the 4.8.8 block
 # converts `notes` in batches and returns FALSE without stamping the version when there is more
@@ -834,6 +857,13 @@ echo "── C4 · the control: a broken migration must turn this cell RED ─�
 # to be able to print anything else. This drops the column the migration adds and re-asserts the
 # two checks that are supposed to notice — on the real table, so the control runs the same code
 # path the assertions do. Then it puts the column back.
+# The baseline is taken HERE, not borrowed from R1. FP_0 is R1's reading, and on any cell whose
+# migration legs have already gone red the current fingerprint differs from FP_0 for reasons that
+# have nothing to do with vid_hash -- so this control announced "C4 fingerprint is not v5-scoped",
+# a diagnosis about a property it had not tested, on a run where the real fault was two legs
+# earlier. A control that can only be believed when the cell is already green is not a control.
+# Run 65 cell 7a, PITFALLS 133.
+FP_PRE_C4=$(fingerprint)
 mysql_q "ALTER TABLE wordpress.wp_slim_stats DROP COLUMN vid_hash;" >/dev/null 2>&1
 if [ "$(has_column vid_hash)" = 0 ]; then
   note PASS "the column check NOTICES a missing column (it reports absent when it is absent)"
@@ -841,7 +871,7 @@ else
   note FAIL "the column check cannot see a dropped column"; fail "C4 column check is blind"
 fi
 FP_BROKEN=$(fingerprint)
-if [ "$FP_BROKEN" != "$FP_0" ]; then
+if [ "$FP_BROKEN" != "$FP_PRE_C4" ]; then
   note FAIL "the fingerprint changed when only an ADDED column was dropped"; fail "C4 fingerprint is not v5-scoped"
 else
   note PASS "the fingerprint ignores columns the migration added, as its scope requires"

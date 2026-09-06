@@ -52,6 +52,29 @@ $admin_php   = $plugin_root . '/admin/index.php';
 $failures    = [];
 $checks      = 0;
 
+/**
+ * A shell source with its narration removed: `#` comment lines, and the PHP `/* ... *|/` blocks
+ * that live inside the single-quoted `wp eval` payloads.
+ *
+ * Needed because the sharpest assertions here are ABSENCES — "nothing reads $settings["version"]
+ * any more" — and the best comment about a bug quotes the bug. A negative that cannot tell the
+ * two apart makes explaining the defect a gate failure, which is a rule that would delete the
+ * only record of why the code is shaped this way.
+ */
+function vc_code_only(string $src): string
+{
+    $src = (string) preg_replace('#/\*.*?\*/#s', '', $src);
+    $out = [];
+    foreach (explode("\n", $src) as $line) {
+        if (preg_match('/^\s*#/', $line)) {
+            continue;
+        }
+        $out[] = $line;
+    }
+
+    return implode("\n", $out);
+}
+
 /** Run one bash snippet with lib.sh loaded. Returns [rc, stdout, stderr]. */
 function vc_bash(string $lib, string $body): array
 {
@@ -490,6 +513,63 @@ $check(
 $check(
     'the recorded verdict names the topology it was produced on',
     false !== strpos($reh_src, '\\"ws4_cell\\":\\"${CELL_KEY:-unpinned}\\"')
+);
+
+// ── The stored version, which is not the merged one (PITFALLS 133) ─────────────────────────
+//
+// Run 65's first live cell rehearsed a 4.8.1 upgrade in which not one 4.8.x block executed, and
+// reported "the legacy upgrade path completed — 1 pass(es), 3.1s" while it happened. The cause is
+// one substitution away from invisible: `wp_slimstat::$settings["version"]` is not the stored
+// version, it is `array_merge(init_options(), $stored)["version"]`, and init_options() supplies
+// the CURRENT release as the default. An arm whose options row has no version key therefore
+// introduces itself to its own upgrade path as the newest version there is.
+//
+// The three checks below pin the fix at each of the three points it has to hold, and the fourth
+// pins the PLUGIN-side premise the other three depend on: if init_options() ever stopped
+// carrying `version`, or init() stopped merging defaults underneath the stored row, the comments
+// in lib.sh and rehearse-upgrade.sh would become a story about code that no longer exists.
+$check(
+    'the vintage installer persists the version its own init_tables only set in memory',
+    false !== strpos($lib_src, 'slimstat_save_options')
+        && false !== strpos($lib_src, 'update_option("slimstat_options", wp_slimstat::$settings)')
+);
+$check(
+    'lib.sh can read the STORED version, and reads it from the options row ONLY',
+    false !== strpos($lib_src, 'stored_plugin_version()')
+        && false !== strpos($lib_src, 'get_option("slimstat_options", [])')
+        // No back door. A fallback to $settings when the row has no key restores the whole bug
+        // and looks like defensive coding while doing it: the caller gets a version, it is the
+        // current one, and the "unstamped" branch that exists to handle exactly this case is
+        // stepped over on the way past.
+        && false === strpos(vc_code_only($lib_src), 'wp_slimstat::$settings["version"]')
+);
+// The negative half is the load-bearing one: the fix is not "also read the row", it is "never
+// ask $settings this question", and only an absence can say that.
+$check(
+    'and the cell asks it that way — nothing reads $settings["version"] any more',
+    false !== strpos($reh_src, 'LEGACY_FROM=$(stored_plugin_version)')
+        && false === strpos(vc_code_only($reh_src), 'wp_slimstat::$settings["version"]')
+);
+$check(
+    'the legacy leg proves it has something to upgrade FROM before claiming it did',
+    false !== strpos($reh_src, 'the legacy upgrade path has something to upgrade FROM')
+        && false !== strpos($reh_src, "version_compare('\${LEGACY_FROM:-0}', '\${NEW_VERSION:-0}', '<')")
+);
+$plugin_src = is_file($plugin_root . '/wp-slimstat.php')
+    ? (string) file_get_contents($plugin_root . '/wp-slimstat.php')
+    : '';
+$check(
+    'the premise still holds: init_options() defaults `version` to the running release',
+    false !== strpos($plugin_src, "'version'                => SLIMSTAT_ANALYTICS_VERSION,")
+        && false !== strpos($plugin_src, 'self::$settings = array_merge(self::init_options(), self::$settings);')
+);
+// C4 is a required-red control, and a control that borrows R1's reading can only be believed on
+// a cell that was already green — on cell 7a it announced a fault in the fingerprint's scope
+// while the actual fault was two legs upstream.
+$check(
+    'the C4 control measures against its own baseline, not against R1',
+    false !== strpos($reh_src, 'FP_PRE_C4=$(fingerprint)')
+        && false !== strpos($reh_src, 'if [ "$FP_BROKEN" != "$FP_PRE_C4" ]; then')
 );
 
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";

@@ -213,8 +213,41 @@ run_vintage_installer() {
     else {
       include_once($dir . $f);
       if (!method_exists("wp_slimstat_admin", "init_tables")) { echo "NOMETHOD"; }
-      else { wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo $f; }
+      else {
+        wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
+        /* init_tables ends, in every vintage, with a comment that says it is saving the version
+           in the database and an assignment that does nothing of the kind:
+               if (empty(wp_slimstat::$settings["version"])) { ... = wp_slimstat::$version; }
+           The write is to the in-memory array. The arm persists it from slimstat_save_options()
+           on the shutdown of a REAL request, and `wp eval` has no such shutdown -- so without
+           the two lines below the options row carries no version key at all, and the next code
+           to read it gets array_merge(init_options(), $stored), whose default IS the reading
+           code own version. A 4.8.1 arm then looks like 6.0.0 to its own upgrade path and every
+           4.8.x block is skipped. Persisted through the ARM own saver wherever it has one, so
+           this reproduces what a real first request leaves behind rather than inventing a row.
+           PITFALLS 133. */
+        if (method_exists("wp_slimstat", "slimstat_save_options")) { wp_slimstat::slimstat_save_options(); }
+        else { update_option("slimstat_options", wp_slimstat::$settings); }
+        echo $f;
+      }
     }'
+}
+
+# The version in the OPTIONS ROW. This is NOT the same question as
+# `wp_slimstat::$settings["version"]`, and the difference is the whole of PITFALLS 133: init()
+# builds $settings as array_merge(init_options(), $stored) with stored winning, and
+# init_options() supplies `version => SLIMSTAT_ANALYTICS_VERSION`. So a row with no version key
+# reads back through $settings as the version of the code asking -- never empty, never wrong
+# looking, and exactly the value that makes every upgrade block skip itself.
+#
+# Empty output means the row genuinely has no version key, which is a state a caller has to
+# handle rather than paper over: it is the difference between "upgrading from 4.8.1" and "we do
+# not know what this is upgrading from".
+stored_plugin_version() {
+  wpc eval '
+    $o = get_option("slimstat_options", []);
+    if (!is_array($o)) { $o = []; }
+    echo isset($o["version"]) ? $o["version"] : "";' 2>/dev/null | tr -d '[:space:]'
 }
 
 # What WordPress says is installed, which is a different claim from what resolve_arm_zip
