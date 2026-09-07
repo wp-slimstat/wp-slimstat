@@ -387,4 +387,24 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
 
     expect(errors, 'No chart-related console errors or warnings').toEqual([]);
   });
+
+  test('chart and date changes remain free of browser errors after reload', async ({ page }) => {
+    const errors: string[] = [];
+    // Attach before the first navigation so initialization failures are covered.
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await goToOverview(page);
+    await waitForChartInitialized(page);
+    await setGranularity(page, 'daily');
+    await page.locator('.slimstat-date-range-btn').click();
+    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 Days$/ }).click();
+    await expect(page).toHaveURL(/type=last_28_days/);
+    await waitForChartInitialized(page);
+    await page.reload({ waitUntil: 'networkidle' });
+    await waitForChartInitialized(page);
+    expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
+  });
+
 });

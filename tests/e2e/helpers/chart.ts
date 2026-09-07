@@ -40,7 +40,7 @@ function wpCli(args: string, timeout = 30_000): string {
       ? `npx wp-env run tests-cli -- wp ${args}`
       : `wp ${args} --path="${WP_ROOT}"`;
 
-  return execSync(`${command} 2>/dev/null`, { encoding: 'utf8', timeout });
+  return execSync(command, { encoding: 'utf8', timeout });
 }
 
 /**
@@ -59,6 +59,16 @@ function writeScratchPhp(name: string, code: string): { hostPath: string; cliPat
     hostPath,
     cliPath: IN_CONTAINER ? `${CONTAINER_PLUGIN_DIR}/tests/e2e/.tmp/${name}` : hostPath,
   };
+}
+
+/** Execute an isolated WP fixture through the same checked container routing as charts. */
+export function runWordPressFixture(code: string): string {
+  const file = writeScratchPhp(`fixture-${process.pid}-${Date.now()}.php`, code);
+  try {
+    return wpCli(`eval-file "${file.cliPath}"`);
+  } finally {
+    fs.unlinkSync(file.hostPath);
+  }
 }
 
 // ─── HTTP-driven AJAX helpers (used by browser-context specs) ───────────────
