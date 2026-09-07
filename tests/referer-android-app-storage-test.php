@@ -57,6 +57,8 @@ namespace SlimStat\Utils {
 
 namespace {
 
+    class wp_slimstat { public static $wpdb; }
+
     $assertions = 0;
 
     function assert_same($expected, $actual, string $message): void
