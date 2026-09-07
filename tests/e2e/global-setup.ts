@@ -86,7 +86,20 @@ async function loginAndSave(
   await page.fill('#user_login', username);
   await page.fill('#user_pass', password);
   await page.click('#wp-submit');
-  await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
+  try {
+    await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
+  } catch (error) {
+    const artifacts = path.join(__dirname, 'run-artifacts');
+    fs.mkdirSync(artifacts, { recursive: true });
+    fs.writeFileSync(path.join(artifacts, `login-failure-${username}.json`), JSON.stringify({
+      url: page.url(),
+      loginError: await page.locator('#login_error').textContent().catch(() => null),
+      body: await page.locator('body').innerText().catch(() => ''),
+    }, null, 2));
+    await page.screenshot({ path: path.join(artifacts, 'login-failure.png') });
+    await browser.close();
+    throw error;
+  }
 
   // Never bake the tracker's offline queue into the saved auth state.
   //
