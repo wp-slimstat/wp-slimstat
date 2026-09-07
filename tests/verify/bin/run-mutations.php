@@ -307,6 +307,19 @@ function mut_evaluate(string $repo, array $spec): array
 // tool exists to prevent, so it must demonstrate the distinction on fixtures.
 // ---------------------------------------------------------------------------
 if (in_array('--selftest', $argv, true)) {
+    // Git hooks export repository-local variables, including the caller's index path.
+    // A different cwd does not override them: git add in the fixture then overwrites
+    // the real staged index. Clear Git's own inventory before creating the throwaway repo.
+    $gitLocalEnvironment = [];
+    exec('git rev-parse --local-env-vars', $gitLocalEnvironment, $gitEnvironmentExit);
+    if (0 !== $gitEnvironmentExit) {
+        fwrite(STDERR, "Cannot isolate the selftest Git environment\n");
+        exit(1);
+    }
+    foreach ($gitLocalEnvironment as $variable) {
+        putenv($variable);
+    }
+
     $tmp = sys_get_temp_dir() . '/mut-selftest-' . getmypid();
     mkdir($tmp);
     mut_run('git init -q . && git config user.email t@t && git config user.name t', $tmp);

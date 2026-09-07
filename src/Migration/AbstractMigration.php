@@ -406,6 +406,15 @@ abstract class AbstractMigration implements MigrationInterface
 		$state = \SlimStat\Schema\Schema::indexState($this->wpdb, $suffix, $prefix);
 
 		foreach ($wanted as $index) {
+			if (in_array($index, $state['malformed'], true)) {
+				\wp_slimstat::record_degradation(
+					$degradationKey,
+					sprintf('Index %s on %s has an unexpected definition; automatic repair was skipped.',
+						\SlimStat\Schema\Schema::resolve($index, $prefix), $prefix . $suffix),
+					\wp_slimstat::DEGRADATION_OPERATIONAL
+				);
+				continue;
+			}
 			if (!in_array($index, $state['missing'], true)) {
 				continue;
 			}

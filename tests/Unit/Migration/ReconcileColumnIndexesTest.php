@@ -67,6 +67,16 @@ class ReconcileColumnIndexesTest extends WpSlimstatTestCase
         $this->assertTrue((new AddVisitIdentity($wpdb))->run());
     }
 
+    public function test_a_malformed_same_name_index_is_not_recreated(): void
+    {
+        $wpdb = $this->addVisitIdentityDb(true, static function () {
+            return [['Key_name' => 'idx_vid_hash_dt', 'Seq_in_index' => 1, 'Column_name' => 'dt',
+                'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A']];
+        });
+        $wpdb->shouldReceive('query')->never();
+        $this->assertTrue((new AddVisitIdentity($wpdb))->run());
+    }
+
     /** @test */
     public function test_an_unreadable_table_builds_nothing(): void
     {

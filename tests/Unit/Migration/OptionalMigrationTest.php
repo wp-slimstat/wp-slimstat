@@ -97,6 +97,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         return new class ($this->db()) extends AbstractMigration {
             /** @var bool */
             public $ran = false;
+            public $result = true;
 
             public function getId(): string
             {
@@ -129,7 +130,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             public function run(): bool
             {
                 $this->ran = true;
-                return true;
+                return $this->result;
             }
         };
     }
@@ -403,6 +404,76 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         $wpdb->shouldReceive('get_var')->andReturn(null);
 
         return new \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4($wpdb, $this->db());
+    }
+
+    public function test_apply_all_and_run_one_cannot_stamp_malformed_or_unreadable_indexes_complete(): void
+    {
+        foreach (['malformed', 'unreadable'] as $case) {
+            $GLOBALS['slimstat_test_options'] = [];
+            $db = \Mockery::mock(\wpdb::class);
+            $db->prefix = 'wp_';
+            $db->last_error = 'unreadable' === $case ? 'access denied' : '';
+            $db->shouldReceive('suppress_errors')->andReturn(false);
+            $db->shouldReceive('get_results')->andReturn([
+                ['Key_name' => 'idx_dt_out', 'Seq_in_index' => 1, 'Column_name' => 'dt',
+                    'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+            ]);
+            $db->shouldReceive('query')->never();
+            $manager = $this->manager([new \SlimStat\Migration\Migrations\CreateDtOutIndex($db)]);
+            $this->assertFalse($manager->runAll()['create-dt-out-index'], $case);
+            $this->assertFalse($manager->runOne('create-dt-out-index'), $case);
+            $this->assertFalse($manager->getStatus()['create-dt-out-index'], $case);
+            $this->assertNotContains('create-dt-out-index', MigrationManager::completedMigrationIds(), $case);
+        }
+    }
+
+    public function test_apply_all_accepts_a_valid_existing_index_without_ddl(): void
+    {
+        $db = \Mockery::mock(\wpdb::class);
+        $db->prefix = 'wp_';
+        $db->last_error = '';
+        $db->shouldReceive('suppress_errors')->andReturn(false);
+        $db->shouldReceive('get_results')->once()->andReturn([
+            ['Key_name' => 'idx_dt_out', 'Seq_in_index' => 1, 'Column_name' => 'dt_out',
+                'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+        ]);
+        $db->shouldReceive('query')->never();
+        $manager = $this->manager([new \SlimStat\Migration\Migrations\CreateDtOutIndex($db)]);
+        $this->assertTrue($manager->runAll()['create-dt-out-index']);
+        $this->assertTrue($manager->runOne('create-dt-out-index'));
+        $this->assertTrue($manager->getStatus()['create-dt-out-index']);
+    }
+
+    public function test_optional_completion_survives_apply_all_and_a_later_failed_attempt(): void
+    {
+        $offered = $this->offered();
+        $manager = $this->manager([$offered, $this->owed()]);
+        $this->assertTrue($manager->runOne('offered-migration'));
+        $manager->runAll();
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+        $offered->result = false;
+        $this->assertFalse($manager->runOne('offered-migration'));
+        $this->assertFalse($manager->getStatus()['offered-migration']);
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+    }
+
+    public function test_legacy_success_is_preserved_before_status_is_overwritten(): void
+    {
+        $GLOBALS['slimstat_test_options']['slimstat_migration_status'] = ['offered-migration' => true];
+        $manager = $this->manager([$this->offered(), $this->owed()]);
+        $manager->runAll();
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+    }
+
+    public function test_declined_or_failed_optional_migration_is_never_claimed_completed(): void
+    {
+        $offered = $this->offered();
+        $offered->result = false;
+        $manager = $this->manager([$offered]);
+        $manager->runAll();
+        $this->assertNotContains('offered-migration', MigrationManager::completedMigrationIds());
+        $this->assertFalse($manager->runOne('offered-migration'));
+        $this->assertNotContains('offered-migration', MigrationManager::completedMigrationIds());
     }
 
     public function test_an_offered_migration_can_still_be_run_by_name(): void

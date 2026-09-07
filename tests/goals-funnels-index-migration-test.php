@@ -58,6 +58,7 @@ if (!class_exists('wp_slimstat')) {
         }
     }
 }
+if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
 if (!class_exists('wpdb')) {
     class wpdb
     {
@@ -66,6 +67,7 @@ if (!class_exists('wpdb')) {
         public $queryReturn = 1;
         /** @var mixed */
         public $getVarReturn = null;
+        public $indexRows = [];
         public $lastQuery = '';
 
         public function query($sql)
@@ -92,6 +94,11 @@ if (!class_exists('wpdb')) {
         public function get_var($sql)
         {
             return $this->getVarReturn;
+        }
+
+        public function get_results($sql, $output = null)
+        {
+            return $this->indexRows;
         }
 
         public function prepare($query, ...$args)
@@ -146,9 +153,17 @@ foreach ($spec as $short => $expectedSql) {
     // below gets a fresh instance, which is how callers use it: a migration object lives
     // for one request, and the only thing that changes the answer mid-request is run(),
     // which invalidates its own cache.
-    $fresh = static function ($indexPresent) use ($class, $short) {
+    $fresh = static function ($indexPresent) use ($class, $short, $expectedSql) {
         $db = new wpdb();
-        $db->getVarReturn = $indexPresent ? $short : null;  // non-empty -> index present
+        if ($indexPresent) {
+            preg_match('/CREATE INDEX (\w+) ON \w+ \((.*)\)$/', $expectedSql, $index);
+            foreach (explode(',', $index[2]) as $position => $part) {
+                preg_match('/^(\w+)(?:\((\d+)\))?$/', trim($part), $column);
+                $db->indexRows[] = ['Key_name' => $index[1], 'Seq_in_index' => $position + 1,
+                    'Column_name' => $column[1], 'Sub_part' => $column[2] ?? null,
+                    'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'];
+            }
+        }
         return [new $class($db), $db];
     };
 
@@ -192,7 +207,8 @@ foreach ($spec as $short => $expectedSql) {
     [$m, $db] = $fresh(false);
     $db->queryReturn = 0;
     $m->run();
-    $db->getVarReturn = $short;  // the index now exists
+    [, $healthyDb] = $fresh(true);
+    $db->indexRows = $healthyDb->indexRows;  // the index now exists
     $db->lastQuery    = '';
     gfim_assert($m->run() === true && $db->lastQuery === '', "{$short}: run() twice does not re-issue the DDL", $failures);
 }

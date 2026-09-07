@@ -514,6 +514,7 @@ function slimstat_uninstall($_wpdb = '')
 
     // Migration / index bookkeeping.
     delete_option('slimstat_migration_status');
+    delete_option('slimstat_migration_completed');
     delete_option('slimstat_permalink_structure_updated');
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_dt_out_indexed');

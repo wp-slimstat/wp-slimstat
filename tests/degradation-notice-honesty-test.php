@@ -403,6 +403,17 @@ if (null === $observe) {
         . 'Re-observing drift on every admin_init must not be able to change the schema';
 }
 
+// Both producers must use the same required/optional policy and durable completion history.
+// The pure Schema tests cover the policy; these checks ensure its result reaches the notice.
+foreach (['record_column_drift' => 'required', 'observe_column_drift' => 'drift'] as $method => $variable) {
+    $body = slimstat_find_function_body($adminCode, $method) ?? '';
+    if (!preg_match('/\$' . $variable . '\s*=\s*Schema::requiredColumnDrift\(/', $body)
+        || false === strpos($body, 'MigrationManager::completedMigrationIds()')
+        || !preg_match('/format_column_drift\(\s*\$' . $variable . '\[/', $body)) {
+        $failures[] = $method . ' must format required drift using durable migration completion history';
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: degradation notice honesty (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

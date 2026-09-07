@@ -696,10 +696,11 @@ class wp_slimstat_admin
      */
     private static function record_column_drift($report)
     {
-        $drift = self::persist_column_drift(self::format_column_drift(
-            $report['columns_missing'] ?? [],
-            $report['columns_narrow'] ?? []
-        ));
+        $required = Schema::requiredColumnDrift([
+            'missing' => $report['columns_missing'] ?? [],
+            'narrow' => $report['columns_narrow'] ?? [],
+        ], \SlimStat\Migration\MigrationManager::completedMigrationIds());
+        $drift = self::persist_column_drift(self::format_column_drift($required['missing'], $required['narrow']));
 
         if ([] === $drift) {
             return;
@@ -788,6 +789,7 @@ class wp_slimstat_admin
             $GLOBALS['wpdb']->prefix
         );
 
+        $drift = Schema::requiredColumnDrift($drift, \SlimStat\Migration\MigrationManager::completedMigrationIds());
         return self::format_column_drift($drift['missing'], $drift['narrow']);
     }
 
@@ -1154,9 +1156,15 @@ class wp_slimstat_admin
     {
         $my_wpdb        = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
         $upgrade_began  = time();
+        $recover_settings = !empty(wp_slimstat::$settings['_settings_recovery']);
+
+        if ($recover_settings && !\SlimStat\Migration\MissingSettingsRecovery::repairLegacyColumns($my_wpdb, $GLOBALS['wpdb']->prefix, $upgrade_began + self::SCHEMA_UPGRADE_TIME_BUDGET)) {
+            wp_slimstat::record_degradation('settings recovery', 'Could not verify or restore the legacy analytics columns.', wp_slimstat::DEGRADATION_OPERATIONAL);
+            return false;
+        }
 
         // --- Updates for version 4.8.2 ---
-        if (version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
+        if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.2', '<')) {
             // Add new email column to database.
             //
             // The width comes from the manifest, and it did not used to: this block declared
@@ -1176,7 +1184,7 @@ class wp_slimstat_admin
         // --- END: Updates for version 4.8.2 ---
 
         // --- Updates for version 4.8.4 ---
-        if (version_compare(wp_slimstat::$settings['version'], '4.8.4', '<')) {
+        if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4', '<')) {
             // Switch option to track WP users (from track to ignore)
             wp_slimstat::$settings['ignore_wp_users'] = (!empty(wp_slimstat::$settings['track_users']) && 'no' == wp_slimstat::$settings['track_users']) ? 'on' : 'no';
 
@@ -1202,7 +1210,7 @@ class wp_slimstat_admin
         // --- END: Updates for version 4.8.4 ---
 
         // --- Updates for version 4.8.4.1 ---
-        if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
+        if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
             // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
             // manifest still declares — the same guard as the ADD side, pointing the other way.
             wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));
@@ -1221,7 +1229,7 @@ class wp_slimstat_admin
         // --- END: Updates for version 4.8.4.1 ---
 
         // --- Updates for version 4.8.8 ---
-        if (version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
+        if ($recover_settings || version_compare(wp_slimstat::$settings['version'], '4.8.8', '<')) {
             // The fingerprint index this block used to add is in the manifest, and the
             // reconciliation below honours the same `db_indexes` setting this branch checked.
 
@@ -1265,6 +1273,9 @@ class wp_slimstat_admin
         // Cost on a healthy install is one SHOW TABLES and one SHOW INDEX per table and no
         // writes, against the fourteen single-index probes across six call sites it replaces.
         $schema_report = self::init_tables($my_wpdb);
+        if (!empty($schema_report['failed'])) {
+            return false;
+        }
 
         // #318: only claim the goals indexes are done once all three are CONFIRMED present. A
         // large-table ALTER that times out leaves this unset, which is what makes
@@ -1316,6 +1327,7 @@ class wp_slimstat_admin
         update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
 
         // Now we can update the version stored in the database
+        unset(wp_slimstat::$settings['_settings_recovery']);
         wp_slimstat::$settings['version']            = SLIMSTAT_ANALYTICS_VERSION;
         wp_slimstat::$settings['notice_latest_news'] = 'on';
         wp_slimstat::update_option('slimstat_options', wp_slimstat::$settings);
@@ -4208,6 +4220,7 @@ class wp_slimstat_admin
             'schema upgrade'       => __('Database schema upgrade', 'wp-slimstat'),
             'schema repair from the tracking path' => __('Database repair during tracking', 'wp-slimstat'),
             'notes format migration' => __('Notes format migration', 'wp-slimstat'),
+            'settings recovery' => __('Analytics settings recovery', 'wp-slimstat'),
             'utf8mb4 conversion'   => __('Character-set conversion', 'wp-slimstat'),
             'migration_db_unreachable' => __('Database unreachable during migration', 'wp-slimstat'),
             'add_visit_identity'   => __('Migration: visit identity column', 'wp-slimstat'),

@@ -853,6 +853,7 @@ DRIFT_REFRESHED=$(wpc eval '
 DRIFT_NOW=$(wpc eval '
   $d   = SlimStat\Schema\Schema::columnDrift(
       SlimStat\Migration\MigrationService::analyticsConnection(), $GLOBALS["wpdb"]->prefix);
+  $d = SlimStat\Schema\Schema::requiredColumnDrift($d, SlimStat\Migration\MigrationManager::completedMigrationIds());
   $out = [];
   foreach ($d["missing"] as $c)        { $out[] = $c . " (absent)"; }
   foreach ($d["narrow"] as $c => $w)   { $out[] = $c . " (" . $w . ")"; }
@@ -861,7 +862,7 @@ DRIFT_NOW=$(wpc eval '
 [ -z "$DRIFT_NOW" ] && check "the upgrade left no column drift behind" 0 \
   || check "the upgrade left no column drift behind" 1 "$DRIFT_NOW"
 
-# And the durable record now says the same thing the schema does. This is the check that would
+# And the durable record agrees with required drift; unrun optional columns are expected. This is the check that would
 # have caught the stale snapshot on its own: it compares what is STORED against what is TRUE,
 # so a record written before the migration and never re-derived fails here whether or not the
 # drift it describes has healed.
@@ -965,8 +966,8 @@ else
 fi
 # DROP COLUMN is not a scalpel. MySQL removes the column from every index it takes part in, so
 # the statement above also rewrote idx_vid_hash_dt down to (dt) — and re-adding the COLUMN does
-# not rebuild the INDEX, because Schema::indexState() matches on Key_name alone: an index of the
-# right name over the wrong columns reads as present, and reconcileColumnIndexes() skips it. So
+# not rebuild the INDEX. Schema::indexState() now reports the wrong definition as malformed,
+# but reconciliation deliberately does not DROP user indexes automatically. Historically
 # this control handed R7 a schema THIS CONTROL had broken, and R7 reported "idx_vid_hash_dt
 # survived the rollback intact — dt" about a rollback that had touched nothing. A control that
 # does not put the world back does not test the next leg, it writes the next leg's verdict.

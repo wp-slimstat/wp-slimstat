@@ -59,6 +59,9 @@ abstract class AbstractIndexMigration extends AbstractMigration
      */
     private $shouldRunCache;
 
+    /** @var array{present:string[], missing:string[], malformed:string[]}|null */
+    private $indexState;
+
     public function run(): bool
     {
         if ($this->shouldRun()) {
@@ -77,9 +80,11 @@ abstract class AbstractIndexMigration extends AbstractMigration
 
             // The index now exists; a later shouldRun() in this request must say so.
             $this->shouldRunCache = null;
+            return true;
         }
 
-        return true;
+        // A refused/unknown definition is not a completed migration.
+        return in_array($this->getIndexName(), $this->indexState['present'] ?? [], true);
     }
 
     /**
@@ -96,35 +101,30 @@ abstract class AbstractIndexMigration extends AbstractMigration
             return $this->shouldRunCache;
         }
 
-        // Use backticks for table name to avoid issues with %i placeholder
-        $table_name = $this->getTableName();
-
-        $suppressed = $this->wpdb->suppress_errors(true);
-        $exists     = $this->wpdb->get_var($this->wpdb->prepare(
-            sprintf('SHOW INDEX FROM `%s` WHERE Key_name = %%s', $table_name),
-            $this->getIndexName()
-        ));
-        $this->wpdb->suppress_errors($suppressed);
-
-        // A SHOW INDEX against a table this connection cannot see is an ERROR, and
-        // get_var() answers null for that exactly as it does for "no such index" — so
-        // empty(null) made this say "yes, run me", permanently, on every external-DB
-        // install, with a button that failed on every click. Errors are suppressed
-        // above because this is a probe, not a failure, and an unconfigured custom
-        // database should not paint the admin red on every page load.
+        $this->indexState = Schema::indexState($this->wpdb, $this->getTableSuffix(), $this->tablePrefix());
         if ($this->probeFailed()) {
             return $this->shouldRunCache = false;
         }
+        if (in_array($this->getIndexKey(), $this->indexState['malformed'], true)) {
+            \wp_slimstat::record_degradation(
+                'index-definition-' . $this->getId(),
+                sprintf('Index %s on %s has an unexpected definition. Automatic repair was skipped; '
+                    . 'ask your database administrator to review the index definition before rebuilding it.',
+                    $this->getIndexName(), $this->getTableName()),
+                \wp_slimstat::DEGRADATION_OPERATIONAL
+            );
+        }
 
-        return $this->shouldRunCache = empty($exists);
+        return $this->shouldRunCache = in_array($this->getIndexKey(), $this->indexState['missing'], true);
     }
 
     public function getDiagnostics(): array
     {
+        $this->shouldRun();
         return [
             [
                 'key'     => $this->getIndexName(),
-                'exists'  => !$this->shouldRun(),
+                'exists'  => in_array($this->getIndexName(), $this->indexState['present'], true),
                 'table'   => $this->getTableName(),
                 'columns' => implode(', ', $this->getIndexColumns()),
             ]

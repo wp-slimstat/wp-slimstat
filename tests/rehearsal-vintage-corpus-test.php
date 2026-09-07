@@ -593,29 +593,23 @@ $check(
 // than the upgrade: a control that broke the schema the next leg measured (PITFALLS 135), and a
 // rollback leg asserting through an API convention its own arm does not have (PITFALLS 136).
 
-// C4 drops vid_hash to prove the cell can go red. MySQL takes the column out of every index it
-// belongs to on the way, so the drop also rewrote idx_vid_hash_dt to (dt) — and the restore, which
-// re-runs the migration, cannot rebuild it: the migration's probe matches on Key_name, and the
-// mutilated index still answers to the name. The next leg then read `dt` and called it a rollback
-// defect. Both halves are asserted: the explicit drop that makes the probe see work, and the
-// check that the index came back before R7 is allowed to have an opinion about it.
+// C4 drops vid_hash and MySQL removes that column from idx_vid_hash_dt. The plugin now
+// detects the malformed definition but deliberately declines automatic destructive repair.
+// The control owns its mutation, so it must explicitly remove the damaged index before the
+// migration can restore it, then check both column and index before the next leg runs.
 $check(
     'the C4 control restores the index its own DROP COLUMN mutilated, not just the column',
     false !== strpos($reh_src, 'DROP INDEX idx_vid_hash_dt ON wordpress.wp_slim_stats')
         && false !== strpos($reh_src, 'IDX_COLS_C4=$(index_columns wp_slim_stats idx_vid_hash_dt)')
         && false !== strpos($reh_src, 'and so was the index the drop took with it')
 );
-// The PLUGIN-side premise that comment rests on. If indexState() ever starts comparing the
-// columns as well as the name, the mutilated index becomes visible to the migration, the explicit
-// drop above becomes unnecessary, and the paragraph explaining why it is there becomes a story
-// about code that no longer exists.
 $schema_src = is_file($plugin_root . '/src/Schema/Schema.php')
     ? (string) file_get_contents($plugin_root . '/src/Schema/Schema.php')
     : '';
 $check(
-    'the premise still holds: the index probe matches on Key_name and nothing else',
-    false !== strpos($schema_src, "\$found      = \$db->get_col(sprintf('SHOW INDEX FROM `%s`', \$prefix . \$suffix), 2);")
-        && false !== strpos($schema_src, 'if (isset($have[self::resolve($name, $prefix)])) {')
+    'the index probe validates definitions and separates malformed indexes from missing',
+    false !== strpos($schema_src, 'elseif (self::indexMatches($rows, $definition))')
+        && false !== strpos($schema_src, "\$state['malformed'][] = \$name;")
 );
 
 // 4.8.1's slimtrack() is a filter callback: every return hands back $_argument, never an id. A
@@ -681,6 +675,7 @@ $check(
     'the drift leg re-observes the schema instead of reading back the record',
     false !== strpos($reh_src, 'DRIFT_NOW=$(wpc eval')
         && false !== strpos($reh_src, 'SlimStat\Schema\Schema::columnDrift(')
+        && false !== strpos($reh_src, 'SlimStat\Schema\Schema::requiredColumnDrift($d, SlimStat\Migration\MigrationManager::completedMigrationIds())')
         && false !== strpos($reh_src, 'the upgrade left no column drift behind')
 );
 // The PLUGIN-side premise that comment rests on: the refresh is a re-derivation of an EXISTING

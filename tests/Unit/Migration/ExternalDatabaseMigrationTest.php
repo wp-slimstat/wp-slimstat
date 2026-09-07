@@ -103,6 +103,13 @@ class ExternalDatabaseMigrationTest extends WpSlimstatTestCase
         $wpdb->shouldReceive('suppress_errors')->andReturn(false);
         $wpdb->shouldReceive('get_var')->andReturnUsing($answer);
         $wpdb->shouldReceive('get_row')->andReturnUsing($answer);
+        $wpdb->shouldReceive('get_results')->byDefault()->andReturnUsing(static function ($sql) use ($answer) {
+            $name = $answer($sql);
+            return null === $name ? [] : [
+                ['Key_name' => $name, 'Seq_in_index' => 1, 'Column_name' => 'dt_out',
+                    'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+            ];
+        });
 
         return $wpdb;
     }
@@ -145,6 +152,21 @@ class ExternalDatabaseMigrationTest extends WpSlimstatTestCase
     public function test_index_probe_reports_an_existing_index_as_done(): void
     {
         $this->assertFalse((new CreateDtOutIndex($this->fakeWpdb('wp_', static fn($sql) => 'idx_dt_out')))->shouldRun());
+    }
+
+    public function test_malformed_index_is_not_reported_healthy_or_blindly_rebuilt(): void
+    {
+        $db = $this->fakeWpdb('wp_', static fn () => 'idx_dt_out');
+        $db->shouldReceive('get_results')->andReturn([
+            ['Key_name' => 'idx_dt_out', 'Seq_in_index' => 1, 'Column_name' => 'dt',
+                'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+        ]);
+        $db->shouldReceive('query')->never();
+        $migration = new CreateDtOutIndex($db);
+        $this->assertFalse($migration->shouldRun());
+        $this->assertFalse($migration->getDiagnostics()[0]['exists']);
+        $this->assertFalse($migration->run());
+        $this->assertNotEmpty($this->recordedDegradations());
     }
 
     // ── The two-handle contract ──────────────────────────────────────────────

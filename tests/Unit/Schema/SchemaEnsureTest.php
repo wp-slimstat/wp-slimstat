@@ -86,10 +86,6 @@ class SchemaEnsureTest extends WpSlimstatTestCase
                     ));
                 }
 
-                if (preg_match('/SHOW INDEX FROM `(.+)`/', $sql, $m)) {
-                    return $indexes[$m[1]] ?? [];
-                }
-
                 return [];
             }
         );
@@ -98,8 +94,31 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         // — written before columns were probed at all — keep describing a healthy install rather
         // than suddenly reporting every column missing.
         $wpdb->shouldReceive('get_results')->andReturnUsing(
-            static function ($sql, $output = null) use ($tables, $columns, &$probes) {
+            static function ($sql, $output = null) use ($tables, $columns, $indexes, &$probes) {
                 $probes[] = $sql;
+
+                if (preg_match('/SHOW INDEX FROM `(.+)`/', $sql, $m)) {
+                    $rows = [];
+                    $suffix = preg_replace('/^wp_/', '', $m[1]);
+                    foreach ($indexes[$m[1]] ?? [] as $index) {
+                        if (is_array($index)) {
+                            $rows[] = $index;
+                            continue;
+                        }
+                        foreach (Schema::indexes($suffix) as $name => $definition) {
+                            if (Schema::resolve($name, 'wp_') !== $index) {
+                                continue;
+                            }
+                            foreach (explode(',', $definition) as $position => $part) {
+                                preg_match('/^([a-z0-9_]+)(?:\(([0-9]+)\))?$/i', trim($part), $match);
+                                $rows[] = ['Key_name' => $index, 'Seq_in_index' => $position + 1,
+                                    'Column_name' => $match[1], 'Sub_part' => $match[2] ?? null,
+                                    'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'];
+                            }
+                        }
+                    }
+                    return $rows;
+                }
 
                 if (!preg_match('/SHOW COLUMNS FROM `(.+)`/', $sql, $m)) {
                     return [];
@@ -138,6 +157,19 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         });
 
         return $wpdb;
+    }
+
+    public function test_malformed_index_is_reported_without_rebuild_or_success_stamp(): void
+    {
+        [$tables, $indexes] = $this->healthy();
+        $indexes['wp_slim_events'] = ['wp_slim_stat_events_idx',
+            ['Key_name' => 'idx_events_notes_dt', 'Seq_in_index' => 1, 'Column_name' => 'id',
+                'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A']];
+        $report = Schema::ensure($this->db($tables, $indexes), 'wp_', static fn () => 'utf8mb4_unicode_ci');
+        $this->assertSame([], $this->queries);
+        $this->assertContains('idx_events_notes_dt', $report['failed']);
+        $this->assertNotContains('idx_events_notes_dt', $report['present']);
+        $this->assertNotContains('idx_events_notes_dt', $report['indexes']);
     }
 
     /** Every table present, every manifest index present. */
@@ -501,6 +533,40 @@ class SchemaEnsureTest extends WpSlimstatTestCase
         $state = Schema::columnState($this->db($tables, $indexes, '', ['wp_slim_stats' => $columns]), 'slim_stats', 'wp_');
 
         $this->assertSame(['plugins'], $state['undeclared']);
+    }
+
+    public function test_optional_column_absence_is_expected_until_completion_but_physical_state_stays_honest(): void
+    {
+        [$tables, $indexes] = $this->healthy();
+        $columns = [];
+        foreach (['slim_stats', 'slim_stats_archive'] as $suffix) {
+            foreach (Schema::columns($suffix) as $field => $definition) {
+                if (!in_array($field, ['ua_id', 'vid_hash'], true)) {
+                    $columns['wp_' . $suffix][$field] = strtolower(explode(' ', $definition)[0]);
+                }
+            }
+        }
+        $db = $this->db($tables, $indexes, '', $columns);
+        $raw = Schema::columnDrift($db, 'wp_');
+        $this->assertContains('ua_id', Schema::columnState($db, 'slim_stats', 'wp_')['missing']);
+        $this->assertContains('ua_id', Schema::columnState($db, 'slim_stats_archive', 'wp_')['missing']);
+        $required = Schema::requiredColumnDrift($raw, []);
+        foreach (['slim_stats', 'slim_stats_archive'] as $suffix) {
+            $this->assertNotContains($suffix . '.ua_id', $required['missing']);
+            $this->assertContains($suffix . '.vid_hash', $required['missing']);
+        }
+        $this->assertSame($raw, Schema::requiredColumnDrift($raw, ['add-user-agent-dimension']));
+        $this->assertSame([], $this->queries);
+    }
+
+    public function test_partial_optional_install_does_not_hide_required_or_narrow_columns(): void
+    {
+        $raw = ['missing' => ['slim_stats_archive.ua_id', 'slim_stats.vid_hash'],
+            'narrow' => ['slim_stats.city' => '255, declared 256', 'slim_stats.username' => '254, declared 256']];
+        $required = Schema::requiredColumnDrift($raw, []);
+        $this->assertSame(['slim_stats.vid_hash'], $required['missing']);
+        $this->assertSame($raw['narrow'], $required['narrow']);
+        $this->assertSame($raw, Schema::requiredColumnDrift($raw, ['add-user-agent-dimension']));
     }
 
     public function testEnsureReportsColumnDriftWithoutRepairingIt(): void

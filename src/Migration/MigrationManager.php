@@ -9,6 +9,8 @@ class MigrationManager
 {
     private const OPTION_STATUS = 'slimstat_migration_status';
 
+    private const OPTION_COMPLETED = 'slimstat_migration_completed';
+
     /**
      * Single-flight claim for runAll(). Not autoloaded: it is written on the admin path,
      * lives for the duration of one run, and joining `alloptions` for that would invalidate
@@ -305,6 +307,41 @@ class MigrationManager
     }
 
     /**
+     * Migrations known to have completed at least once, independent of the last attempt.
+     * Existing true statuses are accepted for backwards compatibility. A false/missing
+     * historical status cannot prove completion and is deliberately not guessed from schema.
+     *
+     * @return string[]
+     */
+    public static function completedMigrationIds(): array
+    {
+        $completed = [];
+        foreach ([self::OPTION_COMPLETED, self::OPTION_STATUS] as $option) {
+            $status = get_option($option, []);
+            foreach (is_array($status) ? $status : [] as $id => $ok) {
+                if (true === $ok && is_string($id)) {
+                    $completed[$id] = true;
+                }
+            }
+        }
+        return array_keys($completed);
+    }
+
+    /** Preserve legacy completion before a latest-result write can replace it. */
+    private static function rememberCompletedMigrations(array $results): void
+    {
+        $completed = array_fill_keys(self::completedMigrationIds(), true);
+        foreach ($results as $id => $ok) {
+            if (true === $ok && is_string($id)) {
+                $completed[$id] = true;
+            }
+        }
+        if ([] !== $completed) {
+            update_option(self::OPTION_COMPLETED, $completed, false);
+        }
+    }
+
+    /**
      * Run one migration by id, under the same single-flight claim as runAll().
      *
      * This is the branch the concurrency hazard actually travels. migration.js posts
@@ -365,6 +402,7 @@ class MigrationManager
             $ok = $target->run();
 
             $status = $this->getStatus();
+            self::rememberCompletedMigrations([$target->getId() => $ok]);
             $status[$target->getId()] = $ok;
             update_option(self::OPTION_STATUS, $status, false);
 
@@ -402,8 +440,11 @@ class MigrationManager
                     continue;
                 }
 
-                // Only run if needed, but always record status
-                $ok = !$migration->shouldRun() || $migration->run();
+                // An index can decline DDL because its definition is malformed or unreadable.
+                // Its idempotent run() distinguishes that refusal from a healthy existing index.
+                $ok = $migration instanceof AbstractIndexMigration
+                    ? $migration->run()
+                    : (!$migration->shouldRun() || $migration->run());
                 $results[$migration->getId()] = $ok;
             }
         } finally {
@@ -412,6 +453,7 @@ class MigrationManager
             delete_option(self::OPTION_RUN_CLAIM);
         }
 
+        self::rememberCompletedMigrations($results);
         update_option(self::OPTION_STATUS, $results, false);
 
         // Re-probe against the database we just changed, not against the answer cached

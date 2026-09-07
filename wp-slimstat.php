@@ -270,14 +270,13 @@ class wp_slimstat
             self::$settings = get_option('slimstat_options', []);
         }
 
-        // Knowable only here: once the defaults are written, a fresh install and a 5.4.0
-        // upgrader are indistinguishable by their settings, and the migration below needs to
-        // tell them apart.
-        $_fresh_install = empty(self::$settings);
-        if ($_fresh_install) {
-            // Fresh install: set defaults including geolocation_provider=dbip
+        // Preserve whether settings were missing before defaults hide that distinction.
+        // Physical freshness is checked after the custom analytics database is resolved.
+        $_missing_settings = !is_array(self::$settings) || empty(self::$settings);
+        $_needs_version_recovery = $_missing_settings || empty(self::$settings['version']) || !is_string(self::$settings['version']);
+        $_fresh_install = $_missing_settings;
+        if ($_missing_settings) {
             self::$settings = self::get_fresh_defaults();
-            self::update_option('slimstat_options', self::$settings);
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
@@ -302,7 +301,9 @@ class wp_slimstat
             if ($_legacy['ip_notice']) {
                 set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
             }
-            self::update_option('slimstat_options', self::$settings);
+            if (!$_needs_version_recovery) {
+                self::update_option('slimstat_options', self::$settings);
+            }
         }
         unset($_legacy);
 
@@ -337,6 +338,16 @@ class wp_slimstat
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+
+        if ($_needs_version_recovery) {
+            // Resolve after add-on settings filters: the physical analytics database,
+            // not an absent options row, determines whether there is an upgrade to do.
+            if (!\SlimStat\Migration\MissingSettingsRecovery::isFresh(self::$wpdb, $GLOBALS['wpdb']->prefix)) {
+                self::$settings['version'] = 'recovery';
+                self::$settings['_settings_recovery'] = true;
+            }
+            self::update_option('slimstat_options', self::$settings);
+        }
 
         // Define the folder where to store the geolocation database (shared among sites in a network, by default)
         if (defined('UPLOADS')) {
