@@ -2426,39 +2426,30 @@ class wp_slimstat
             $blog_id = (int) array_shift($pending);
 
             if ($blog_id === $attempting) {
-                // THE POISON PILL, and it is the cost of the at-least-once rule below. This
-                // blog was started on an earlier pass and that pass never came back, so the
-                // request died inside its DDL rather than throwing. Retrying it would start
-                // the same fatal work every pass forever — and because a pass always starts
-                // its first site, no site BEHIND it would ever be reached, while the notice
-                // went on promising progress. Once is a retry; twice is a loop.
-                // switch_to_blog() around it for the same reason the catch branch below
-                // relies on being inside one: record_degradation() writes to whichever blog is
-                // current. Without this the skip landed in the MAIN site's options under a key
-                // naming a subsite, while the catch branch landed on the subsite — one step
-                // key, two stores, and the paragraph below claiming per-blog recording.
+                // A killed request proves no completion. Report it without more DDL in
+                // this pass, retaining the cursor so a later request can retry the site.
                 switch_to_blog($blog_id);
 
                 self::record_degradation(
                     'activation (blog ' . $blog_id . ')',
                     new \RuntimeException(
-                        'setting up this site did not finish, so it was skipped; the rest of '
-                            . 'the network continues'
+                        'setting up this site did not finish; it remains pending and will '
+                            . 'be retried on a later network-admin request'
                     ),
                     self::DEGRADATION_OPERATIONAL
                 );
 
                 restore_current_blog();
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+                return count($pending) + 1;
             } else {
                 // Recorded BEFORE the work, which is the only ordering that can survive the
                 // request dying inside it: the pending list is written AFTER, so a blog whose
                 // request died is still at the head when the next pass reads it, and this
                 // marker is the only thing that can tell "died" from "not started yet".
                 //
-                // What that buys is ONE attempt for a blog that kills its request, not two —
-                // an earlier draft of this comment said "retried once", which is true of a
-                // blog that THROWS (caught, cursor advances) and false of the case the marker
-                // exists for.
+                // A prior killed request is reported before retrying on a later request.
+                // A caught failure clears the marker immediately and stays pending.
                 update_site_option(self::ACTIVATION_ATTEMPT_OPTION, $blog_id);
 
                 switch_to_blog($blog_id);

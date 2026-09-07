@@ -354,6 +354,15 @@ class wp_slimstat_admin
             $left = wp_slimstat::walk_pending_activation_sites(60);
             break;
 
+        case 'interrupted-resumes':
+            $GLOBALS['__network_options']['slimstat_network_activation_pending'] = [11, 12, 13];
+            $GLOBALS['__network_options']['slimstat_network_activation_attempting'] = 11;
+            wp_slimstat::walk_pending_activation_sites(60);
+            $GLOBALS['__failed_cursor'] = $GLOBALS['__network_options']['slimstat_network_activation_pending'] ?? null;
+            $GLOBALS['__failed_marker'] = $GLOBALS['__network_options']['slimstat_network_activation_attempting'] ?? null;
+            $left = wp_slimstat::walk_pending_activation_sites(60);
+            break;
+
         case 'one-site-refuses':
             // A caught setup failure remains pending for the next request.
             $GLOBALS['__throw_on'] = 12;
@@ -604,24 +613,27 @@ if ($reactivated) {
     nab_same(null, $reactivated['markerNow'], 'and the walk ends with no marker outstanding');
 }
 
-// ── 6. The poison pill: once is a retry, twice is a loop ─────────────────────
+// ── 6. Interrupted setup is retained, reported, and retried ─────────────────────
 
 $poisoned = nab_run('poison-pill');
 if ($poisoned) {
-    nab_same(
-        [12, 13],
-        $poisoned['inits'],
-        'a blog whose setup never returned is SKIPPED on the next pass, not started again — '
-            . 'otherwise it blocks every site behind it forever, because a pass always starts '
-            . 'its first site'
-    );
-    nab_same(0, $poisoned['left'], 'and the rest of the network completes');
+    nab_same([], $poisoned['inits'], 'the interrupted pass is reported before starting more DDL');
+    nab_same(3, $poisoned['left'], 'every uncompleted site remains owed after interruption');
+    nab_same([11, 12, 13], $poisoned['cursorNow'], 'the interrupted site stays at the cursor head');
+    nab_same(null, $poisoned['markerNow'], 'the next request may retry the interrupted site');
     $skipped = json_encode($poisoned['options'][11]['slimstat_degradations'] ?? []);
     nab_check(
         false !== strpos((string) $skipped, 'blog 11'),
-        'the skipped blog is recorded on ITS OWN options rather than dropped in silence, or '
+        'the interrupted blog is recorded on ITS OWN options rather than dropped in silence, or '
             . 'filed against the main site; got: ' . $skipped
     );
+}
+
+$interruptedResume = nab_run('interrupted-resumes');
+if ($interruptedResume) {
+    nab_same([11, 12, 13], $interruptedResume['failedCursor'], 'interrupted setup remains pending before retry');
+    nab_same([11, 12, 13], $interruptedResume['inits'], 'a later request retries the interrupted site before completing later sites');
+    nab_same(0, $interruptedResume['left'], 'transient interruption can complete on the next request');
 }
 
 // ── 7. Source level: the consumer is a DIFFERENT hook, and the deadline is compared ──
