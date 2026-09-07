@@ -177,11 +177,21 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertMatchesRegularExpression('/browser\s*=\s*/', $sql);
     }
 
+    public function test_filter_identifiers_reject_sql_and_values_remain_bound(): void
+    {
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('browser OR 1=1 --', 'equals', 'x'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('browser', 'equals', 'x', 't1; DROP TABLE x'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_combined_where('', '*', true, 't1; DROP TABLE x'));
+        $this->assertSame("browser = ''", \wp_slimstat_db::get_single_where_clause('browser', 'equals', ''));
+        $this->assertSame("browser = '0'", \wp_slimstat_db::get_single_where_clause('browser', 'equals', '0'));
+        $this->assertSame("t1.user_login = 'author'", \wp_slimstat_db::get_single_where_clause('user_login', 'equals', 'author', 't1'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('screen_width', 'between', '320'));
+    }
+
     /**
      * BUG GUARD (M1, query layer) — build_goal_where() must drop a value-bearing
-     * operator that has an empty value, because get_single_where_clause() would
-     * otherwise return an unprepared fragment containing a literal "%s" placeholder
-     * (it skips prepare() when the value is empty), which breaks the funnel/goal SQL.
+     * operator that has an empty value, preserving the goal validation contract
+     * for legacy stored goals as well as newly saved goals.
      *
      * @test
      */

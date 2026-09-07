@@ -288,6 +288,11 @@ class wp_slimstat_db
     {
         global $wpdb;
 
+        // Aliases are SQL identifiers, never SQL fragments; retain custom add-on names.
+        if (!is_string($_slim_stats_table_alias) || ('' !== $_slim_stats_table_alias && !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_slim_stats_table_alias))) {
+            return '1=0';
+        }
+
         $dt_with_alias = 'dt';
         if (!empty($_slim_stats_table_alias)) {
             $dt_with_alias = $_slim_stats_table_alias . '.' . $dt_with_alias;
@@ -379,6 +384,12 @@ class wp_slimstat_db
      */
     public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '')
     {
+        // Keep extension columns (including Pro's user_login), but reject SQL syntax.
+        if (!is_string($_dimension) || !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_dimension)
+            || !is_string($_slim_stats_table_alias) || ('' !== $_slim_stats_table_alias && !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_slim_stats_table_alias))) {
+            return '1=0';
+        }
+
         // Auto-upgrade operators for multi-value columns where exact match
         // never works (values stored as concatenated strings in a single field).
         $multi_value_like_columns = ['outbound_resource', 'notes'];
@@ -453,11 +464,11 @@ class wp_slimstat_db
                 break;
 
             case 'is_empty':
-                $where = [sprintf('%s %s', $column_with_alias, $filter_empty), ''];
+                $where = [sprintf('%s %s', $column_with_alias, $filter_empty), null];
                 break;
 
             case 'is_not_empty':
-                $where = [sprintf('%s %s', $column_with_alias, $filter_not_empty), ''];
+                $where = [sprintf('%s %s', $column_with_alias, $filter_not_empty), null];
                 break;
 
             case 'is_greater_than':
@@ -470,6 +481,9 @@ class wp_slimstat_db
 
             case 'between':
                 $range = explode(',', $_value);
+                if (2 !== count($range)) {
+                    return '1=0';
+                }
                 $where[0] = sprintf('%s BETWEEN %%d AND %%d', $column_with_alias);
                 $where[1] = [intval($range[0]), intval($range[1])];
                 break;
@@ -487,7 +501,7 @@ class wp_slimstat_db
                 break;
         }
 
-        if (isset($where[1]) && '' != $where[1]) {
+        if (null !== $where[1]) {
             // Handle array of values for operators like 'between'
             if (is_array($where[1])) {
                 return $GLOBALS['wpdb']->prepare($where[0], ...$where[1]);
@@ -2083,12 +2097,8 @@ class wp_slimstat_db
             return '';
         }
 
-        // Defense-in-depth: a value-bearing operator with an empty value makes
-        // get_single_where_clause() return an unprepared fragment that still
-        // contains a literal "%s" placeholder (it skips prepare() when the value
-        // is empty). sanitize_goal() already rejects this at save time, but guard
-        // the query layer too so such a clause can never reach $wpdb->query().
-        // Only the valueless operators (is_empty / is_not_empty) may run without a value.
+        // Preserve goal validation for legacy stored values as well as new saves:
+        // only valueless operators may run without a value.
         if ('' === $value && !in_array($operator, self::$valueless_operators, true)) {
             return '';
         }
