@@ -2464,13 +2464,16 @@ class wp_slimstat
                 switch_to_blog($blog_id);
 
                 try {
-                    wp_slimstat_admin::init_environment();
+                    if (false === wp_slimstat_admin::init_environment()) {
+                        throw new \RuntimeException('Analytics schema setup did not complete.');
+                    }
                 } catch (\Throwable $e) {
-                    // Per-site, so one refusing database does not leave every LATER site
-                    // tables-less as well. Each failure is recorded on the blog it belongs to —
-                    // switch_to_blog() has already pointed the degradation option at that
-                    // site's own wp_options.
+                    // A returned/caught failure is retryable, unlike a killed request.
+                    // Leave this site at the persisted cursor head for the next request.
                     self::record_degradation('activation (blog ' . $blog_id . ')', $e);
+                    delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+                    restore_current_blog();
+                    return count($pending) + 1;
                 }
 
                 restore_current_blog();

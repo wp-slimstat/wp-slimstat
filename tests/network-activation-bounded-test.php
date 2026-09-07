@@ -90,6 +90,14 @@ if ($scenario !== false && $scenario !== '') {
     $GLOBALS['__switches']        = [];
     $GLOBALS['__notice_html']     = '';
 
+    require_once __DIR__ . '/lib/source-scan.php';
+    $environmentBody = slimstat_find_function_body(file_get_contents(__DIR__ . '/../admin/index.php'), 'init_environment');
+    if (null === $environmentBody) { throw new RuntimeException('Missing real initializer'); }
+    $GLOBALS['wpdb'] = new stdClass();
+    eval('namespace SlimStat\\Tracker; class VisitIdGenerator { public static function initializeCounter() {} }');
+    function apply_filters($hook, $value) { return $value; }
+    function flush_rewrite_rules() { return true; }
+
     // A stub admin bundle, so `include_once plugin_dir_path(__FILE__) . 'admin/index.php'`
     // reaches a wp_slimstat_admin that records rather than one that runs DDL.
     $stub_root = sys_get_temp_dir() . '/slimstat-activation-' . getmypid();
@@ -97,13 +105,14 @@ if ($scenario !== false && $scenario !== '') {
     file_put_contents($stub_root . '/admin/index.php', '<?php
 class wp_slimstat_admin
 {
-    public static function init_environment()
+    public static function init_environment() {' . $environmentBody . '}
+    public static function init_tables($db)
     {
         $GLOBALS["__inits"][] = $GLOBALS["__current_blog"];
         if (!empty($GLOBALS["__throw_on"]) && $GLOBALS["__current_blog"] === $GLOBALS["__throw_on"]) {
             throw new RuntimeException("this blog refuses");
         }
-        return true;
+        return ["failed" => !empty($GLOBALS["__false_on"]) && $GLOBALS["__current_blog"] === $GLOBALS["__false_on"] ? ["ssnw_slim_stats"] : []];
     }
 }');
     $GLOBALS['__stub_root'] = $stub_root;
@@ -346,10 +355,19 @@ class wp_slimstat_admin
             break;
 
         case 'one-site-refuses':
-            // A refusing blog must not strand the ones behind it, and must not be retried
-            // forever either — it comes off the cursor like any other.
+            // A caught setup failure remains pending for the next request.
             $GLOBALS['__throw_on'] = 12;
             $GLOBALS['__network_options']['slimstat_network_activation_pending'] = [11, 12, 13];
+            $left = wp_slimstat::walk_pending_activation_sites(60);
+            break;
+
+        case 'false-site-resumes':
+            $GLOBALS['__false_on'] = 12;
+            $GLOBALS['__network_options']['slimstat_network_activation_pending'] = [11, 12, 13];
+            wp_slimstat::walk_pending_activation_sites(60);
+            $GLOBALS['__failed_cursor'] = $GLOBALS['__network_options']['slimstat_network_activation_pending'] ?? null;
+            $GLOBALS['__failed_marker'] = $GLOBALS['__network_options']['slimstat_network_activation_attempting'] ?? null;
+            $GLOBALS['__false_on'] = null;
             $left = wp_slimstat::walk_pending_activation_sites(60);
             break;
 
@@ -363,6 +381,8 @@ class wp_slimstat_admin
     @rmdir($stub_root);
 
     echo json_encode([
+        'failedCursor'  => $GLOBALS['__failed_cursor'] ?? null,
+        'failedMarker'  => $GLOBALS['__failed_marker'] ?? null,
         'left'          => $left,
         'inits'         => $GLOBALS['__inits'],
         'switches'      => $GLOBALS['__switches'],
@@ -500,10 +520,20 @@ if ($stale) {
     nab_same(1, $stale['markerDeletes'], 'and the attempt marker goes with it, so the two never outlive each other');
 }
 
+$retried = nab_run('false-site-resumes');
+if ($retried) {
+    nab_same([12, 13], $retried['failedCursor'], 'returned setup failure remains pending');
+    nab_same(null, $retried['failedMarker'], 'returned failure is not classified as a killed request');
+    nab_same([11, 12, 12, 13], $retried['inits'], 'the recovered request retries the failed site before later sites');
+    nab_same(0, $retried['left'], 'recovered setup completes the remaining network');
+}
+
 $refused = nab_run('one-site-refuses');
 if ($refused) {
-    nab_same([11, 12, 13], $refused['inits'], 'a blog that throws does not strand the blogs behind it');
-    nab_same(0, $refused['left'], 'and the walk still completes');
+    nab_same([11, 12], $refused['inits'], 'a caught failure stops this pass before claiming later work');
+    nab_same(2, $refused['left'], 'the failed and later sites remain owed');
+    nab_same([12, 13], $refused['cursorNow'], 'the caught failure remains pending');
+    nab_same(null, $refused['markerNow'], 'caught failure clears fatal-attempt marker for retry');
 
     // THE PROPERTY ONLY THIS SCENARIO CAN PIN, and it was missing: the failing blog is
     // RECORDED. Measured before this assertion existed — deleting the record_degradation()

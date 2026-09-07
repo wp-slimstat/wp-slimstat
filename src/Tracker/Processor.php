@@ -926,7 +926,9 @@ class Processor
 
         try {
             include_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
-            \wp_slimstat_admin::init_environment();
+            if (false === \wp_slimstat_admin::init_environment()) {
+                return false;
+            }
         } catch (\Throwable $e) {
             \wp_slimstat::record_degradation(
                 'schema repair from the tracking path',

@@ -662,7 +662,11 @@ class wp_slimstat_admin
         // blocks that used to live here were four of the six independent index creators C11
         // enumerated; they duplicated entries init_tables() already handled, each with its own
         // `SHOW INDEX` round trip and its own unconditional "yes" stamp.
-        self::init_tables($my_wpdb);
+        $report = self::init_tables($my_wpdb);
+        if (!empty($report['failed'])) {
+            wp_slimstat::record_degradation('activation', 'Analytics schema setup did not complete.', wp_slimstat::DEGRADATION_OPERATIONAL);
+            return false;
+        }
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
         \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
