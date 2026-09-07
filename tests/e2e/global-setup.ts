@@ -142,23 +142,26 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     path.join(AUTH_DIR, 'admin.json')
   );
 
-  // Login as author — override via WP_AUTHOR_USER / WP_AUTHOR_PASS env vars.
-  // Non-fatal; some test environments lack this user.
-  const authorUser = AUTHOR_USER;
-  const authorPass = AUTHOR_PASS;
-  try {
-    await loginAndSave(
-      baseURL,
-      authorUser,
-      authorPass,
-      path.join(AUTH_DIR, 'author.json')
-    );
-  } catch (e) {
-    console.warn('Author login failed, using admin fallback:', (e as Error).message);
-    const adminPath = path.join(AUTH_DIR, 'admin.json');
-    const authorPath = path.join(AUTH_DIR, 'author.json');
-    if (fs.existsSync(adminPath) && !fs.existsSync(authorPath)) {
-      fs.copyFileSync(adminPath, authorPath);
+  // Permission coverage requires the real author account; never substitute admin.
+  await loginAndSave(baseURL, AUTHOR_USER, AUTHOR_PASS, path.join(AUTH_DIR, 'author.json'));
+  for (const [role, username] of [['administrator', ADMIN_USER], ['author', AUTHOR_USER]]) {
+    const state = role === 'administrator' ? 'admin' : 'author';
+    const ctx = await playwrightRequest.newContext({
+      storageState: path.join(AUTH_DIR, `${state}.json`),
+      ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
+    });
+    try {
+      const response = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
+        form: { action: 'test_current_identity' },
+      });
+      const body = await response.json();
+      if (!response.ok() || !body.success || body.data?.login !== username
+          || !Array.isArray(body.data?.roles) || !body.data.roles.includes(role)
+          || (role === 'author' && body.data.can_manage_options !== false)) {
+        throw new Error(`HARNESS IDENTITY FAILED: ${state} storage state is not the configured ${role}`);
+      }
+    } finally {
+      await ctx.dispose();
     }
   }
 

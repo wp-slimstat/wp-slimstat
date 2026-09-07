@@ -1494,7 +1494,8 @@ class wp_slimstat_admin
     public static function print_goals_funnels_dom()
     {
         static $printed = false;
-        if ($printed) {
+        // Dashboard goals/funnels use the compact, read-only widget renderers.
+        if ($printed || 'index.php' === ($GLOBALS['pagenow'] ?? '')) {
             return;
         }
         if (!self::needs_goals_funnels_assets()) {

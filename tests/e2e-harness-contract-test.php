@@ -261,6 +261,21 @@ if ($chart_helper !== null) {
     }
 }
 
+// Auth storage is not permission evidence unless the server confirms identity and role.
+$setup = $read('tests/e2e/global-setup.ts');
+if ($setup !== null) {
+    $checks++;
+    foreach (['test_current_identity', 'body.data?.login !== username',
+        'body.data.roles.includes(role)', 'body.data.can_manage_options !== false'] as $guard) {
+        if (strpos($setup, $guard) === false) {
+            $failures[] = 'E2E identity preflight missing: ' . $guard;
+        }
+    }
+    if (strpos($setup, 'fs.copyFileSync(adminPath, authorPath)') !== false) {
+        $failures[] = 'Author authentication must fail instead of using admin state';
+    }
+}
+
 // ── Sec.4 — the run artifacts must be collected ───────────────────────────────────────
 //
 // playwright.config.ts writes the JSON and blob reports under tests/e2e/run-artifacts/. Only the

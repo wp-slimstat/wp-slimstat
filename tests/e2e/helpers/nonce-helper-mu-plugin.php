@@ -26,3 +26,13 @@ add_action('wp_ajax_test_create_nonce', function () {
     $nonce = wp_create_nonce($nonce_action);
     wp_send_json_success(['nonce' => $nonce]);
 });
+
+// Authenticated self-inspection only, inside the test-environment guard above.
+add_action('wp_ajax_test_current_identity', function () {
+    $user = wp_get_current_user();
+    wp_send_json_success([
+        'login' => $user->user_login,
+        'roles' => array_values($user->roles),
+        'can_manage_options' => current_user_can('manage_options'),
+    ]);
+});
