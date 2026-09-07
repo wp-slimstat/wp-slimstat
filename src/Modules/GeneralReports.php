@@ -51,27 +51,88 @@ class GeneralReports
     private const GATED_REPORT_IDS = ['slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06'];
 
     /**
-     * The free tier's gating chrome — the `is-gated` postbox class the blur
-     * CSS keys off, and the "Unlock full report with Pro" overlay.
+     * The General reports that get the free-tier "upgrade to Pro" footer.
      *
-     * Both go through the SAME public filters Goals & Funnels uses for its
-     * own header chrome (slimstat_reports_info /
-     * slimstat_report_header_after_title, see
-     * wp_slimstat_admin::register_goals_funnels_header_hooks()), so the
+     * Goals only, deliberately not Funnels: show_funnels_compact() already
+     * renders its own full upgrade overlay when max_funnels is 0 (the free
+     * default), so adding this footer there stacked a second, identical
+     * "Upgrade to Pro" button under the first.
+     */
+    private const PRO_CTA_REPORT_IDS = ['slim_p10_08'];
+
+    /**
+     * The free tier's gating chrome: the per-row marker class the blur keys
+     * off, and the "Unlock full report with Pro" overlay.
+     *
+     * Both go through public filters — slimstat_report_row_classes and
+     * slimstat_report_header_after_title, the latter being the one Goals &
+     * Funnels already uses for its own header chrome (see
+     * wp_slimstat_admin::register_goals_funnels_header_hooks()) — so the
      * shared renderer keeps rendering these four reports exactly as it
-     * renders every other top-N report — no fork, no General-only branch
+     * renders every other top-N report: no fork, no General-only branch
      * inside raw_results_to_html().
+     *
+     * Deliberately NOT hooked on slimstat_reports_info to stamp a class onto
+     * the postbox: wp_slimstat_reports::init() memoizes $reports and is
+     * called from wp_slimstat_admin::init() BEFORE the line that registers
+     * these hooks, so a registry filter added here never runs and the gate
+     * fails open — silently showing every free user their synthetic rows
+     * unblurred. Both callbacks below decide per render instead, so they
+     * cannot be outrun by initialisation order.
      */
     public static function register_hooks(): void
     {
-        add_filter('slimstat_reports_info', [self::class, 'markGatedReports']);
         add_filter('slimstat_report_header_after_title', [self::class, 'injectUnlockCta'], 10, 2);
         add_filter('slimstat_report_row_classes', [self::class, 'markSyntheticRows'], 10, 3);
+        add_filter('slimstat_report_pagination_html', [self::class, 'suppressGatedPagination'], 10, 2);
+        add_filter('slimstat_report_after_body', [self::class, 'injectProCta'], 10, 2);
     }
 
     /**
-     * Tags the synthetic rows of a gated General table with
-     * `slimstat-row-synthetic`, which the CSS blurs.
+     * Drops the pager from a gated table. The free tier renders a fixed,
+     * truncated row set, so both the arrows and the "Showing 1 - 5 of 5"
+     * count would describe pages it cannot reach — and the count would leak
+     * how much real data is being withheld.
+     *
+     * @param string               $html
+     * @param array<string, mixed> $args The report's callback args.
+     */
+    public static function suppressGatedPagination($html = '', $args = [])
+    {
+        return self::isGatedRender($args) ? '' : $html;
+    }
+
+    /**
+     * True when this render is one of the General tables AND the free tier is
+     * active — i.e. when the gate applies.
+     *
+     * Keyed on the report id (carried in callback_args by _check_args()), the
+     * same discriminator injectUnlockCta() uses, so the blur, the pager
+     * suppression and the overlay that sits on top of them all agree on which
+     * reports are gated. An earlier revision matched the report's `raw`
+     * callable against this class instead, which identifies a DATA SOURCE, not
+     * a screen: any future report reusing topColumnRaw() would silently have
+     * inherited the blur.
+     *
+     * Decided per render, never from a class stamped onto the registry
+     * earlier: wp_slimstat_reports::init() memoizes $reports and runs before
+     * this class's hooks are registered, so a registry filter never fires and
+     * the gate fails OPEN — which is exactly how synthetic rows once reached
+     * the browser unblurred.
+     *
+     * @param array<string, mixed> $args The report's callback args.
+     */
+    private static function isGatedRender($args): bool
+    {
+        $reportId = is_array($args) ? ($args['report_id'] ?? '') : '';
+
+        return in_array($reportId, self::GATED_REPORT_IDS, true)
+            && !\wp_slimstat::pro_is_installed();
+    }
+
+    /**
+     * Tags a gated table's synthetic rows with `slimstat-row-synthetic`,
+     * which the CSS blurs.
      *
      * By class rather than by CSS position: the renderer emits its debug
      * message and its "Showing x - y of z" pagination as <p> siblings of the
@@ -86,36 +147,11 @@ class GeneralReports
      */
     public static function markSyntheticRows($classes = '', $args = [], $index = 0)
     {
-        $raw = is_array($args) ? ($args['raw'] ?? null) : null;
-        $isGeneralTable = is_array($raw) && isset($raw[0]) && self::class === $raw[0];
-
-        if (!$isGeneralTable || \wp_slimstat::pro_is_installed() || $index < self::FREE_ROWS) {
+        if (!self::isGatedRender($args) || $index < self::FREE_ROWS) {
             return $classes;
         }
 
         return trim($classes . ' slimstat-row-synthetic');
-    }
-
-    /**
-     * Adds the `is-gated` class to the four table reports when the free tier
-     * is active, so the CSS knows which boxes to blur past FREE_ROWS.
-     *
-     * @param array<string, array<string, mixed>> $reports
-     * @return array<string, array<string, mixed>>
-     */
-    public static function markGatedReports($reports)
-    {
-        if (!is_array($reports) || \wp_slimstat::pro_is_installed()) {
-            return $reports;
-        }
-
-        foreach (self::GATED_REPORT_IDS as $aReportId) {
-            if (isset($reports[$aReportId]['classes']) && is_array($reports[$aReportId]['classes'])) {
-                $reports[$aReportId]['classes'][] = 'is-gated';
-            }
-        }
-
-        return $reports;
     }
 
     /**
@@ -129,7 +165,15 @@ class GeneralReports
             return $html;
         }
 
-        return $html . '<a class="slimstat-gated-cta" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">'
+        // Centre of the synthetic tail, as a percentage of the row block:
+        // rows FREE_ROWS..GATED_TOTAL_ROWS are the blurred ones, so their
+        // midpoint is (FREE_ROWS + GATED_TOTAL_ROWS) / 2 / GATED_TOTAL_ROWS.
+        // Computed from the constants rather than hard-coded in the CSS, so
+        // changing either one moves the button with it instead of silently
+        // leaving it over rows the reader is meant to be able to read.
+        $tailMidpoint = round(((self::FREE_ROWS + self::GATED_TOTAL_ROWS) / 2 / self::GATED_TOTAL_ROWS) * 100);
+
+        return $html . '<a class="slimstat-gated-cta" style="--ss-gated-cta-top:' . esc_attr($tailMidpoint) . '%" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">'
             . self::LOCK_ICON
             . '<span>' . esc_html__('Unlock full report with Pro', 'wp-slimstat') . '</span>'
             . '</a>';
@@ -363,30 +407,33 @@ class GeneralReports
     }
 
     /**
-     * The bottom-of-page Goals & Custom Events Pro-upsell banner. Renders
-     * nothing at all on Pro (the report is still registered/looped so its
-     * position in the layout is customizable, but there is nothing to
-     * upsell once the features are unlocked).
+     * The free tier's "you can create more of these with Pro" footer under
+     * the Goals section.
+     *
+     * Appended after the report's own output rather than replacing it: that
+     * box now renders the REAL goals (via the same compact renderer the
+     * dashboard widget uses), so this is a footer under real data, not a
+     * banner standing in for it.
+     *
+     * @param string $html
+     * @param string $reportId
      */
-    public static function goalsUpsell(array $args = []): void
+    public static function injectProCta($html = '', $reportId = '')
     {
-        if (\wp_slimstat::pro_is_installed()) {
-            return;
+        if (!in_array($reportId, self::PRO_CTA_REPORT_IDS, true) || \wp_slimstat::pro_is_installed()) {
+            return $html;
         }
-        ?>
-        <section class="pro-card" data-upgrade tabindex="0" role="button" aria-label="<?php esc_attr_e('Unlock Goals and Custom Events with Pro', 'wp-slimstat'); ?>">
-            <div class="blurred" aria-hidden="true">
-                <div style="font-size:15px;font-weight:700;margin-bottom:14px"><?php esc_html_e('Goals & Custom Events', 'wp-slimstat'); ?></div>
-            </div>
-            <div class="veil">
-                <span class="lock"><?php echo self::LOCK_ICON; ?></span>
-                <span class="cap"><?php esc_html_e('See which actions turn visitors into customers — track goals, funnels, and conversions', 'wp-slimstat'); ?></span>
-                <button class="btn-pro" type="button" data-upgrade><?php esc_html_e('Unlock Goals & Funnels with Pro', 'wp-slimstat'); ?></button>
-            </div>
-        </section>
-        <div class="slimstat-general-scrim"></div>
-        <?php
-        \wp_slimstat_admin::get_template('slimstat-pro-modal');
+
+        return $html
+            . '<div class="slimstat-general-pro-cta">'
+            . '<span class="slimstat-general-pro-cta__copy">'
+            . esc_html__('Track unlimited goals and see which actions turn visitors into customers.', 'wp-slimstat')
+            . '</span>'
+            . '<a class="slimstat-general-pro-cta__button" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">'
+            . self::LOCK_ICON
+            . '<span>' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</span>'
+            . '</a>'
+            . '</div>';
     }
 
     /**

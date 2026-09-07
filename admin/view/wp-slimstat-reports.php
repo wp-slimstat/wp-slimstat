@@ -1061,15 +1061,36 @@ class wp_slimstat_reports
                 'pinned'        => true,
                 'tooltip'       => __('Traffic attributed to marketing campaigns via utm_source / utm_campaign parameters.', 'wp-slimstat'),
             ],
+            // Real Goals and Funnels data, not a promo banner. Both reuse the
+            // SAME compact renderers the dashboard widget uses — show_goals()
+            // / show_funnels() delegate to show_goals_compact() /
+            // show_funnels_compact() when 'is_widget' is set — so this page
+            // shows the actual goals and funnels rather than a picture of
+            // them, and inherits their existing free-tier handling.
+            // GeneralReports::injectProCta() adds the upgrade CTA underneath
+            // on the free tier.
             'slim_p10_08' => [
-                'title'          => __('Goals & Custom Events', 'wp-slimstat'),
-                'callback'       => [\SlimStat\Modules\GeneralReports::class, 'goalsUpsell'],
-                'callback_args'  => [],
-                'classes'        => ['full-width', 'general-upsell'],
-                'locations'      => ['slimgeneral'],
-                'pinned'         => true,
-                'postbox_config' => ['hide_header' => true, 'no_border' => true, 'no_background' => true],
-                'tooltip'        => __('Track conversions for custom goals and see visitors turn into customers.', 'wp-slimstat'),
+                'title'         => __('Goals', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_goals'],
+                // is_widget selects the compact renderer (the same one the
+                // dashboard widget uses). The free-tier upgrade footer is
+                // keyed to this report's id, which _check_args() carries into
+                // callback_args, so it cannot follow the shared renderer onto
+                // the dashboard widget or the shortcode.
+                'callback_args' => ['is_widget' => true],
+                'classes'       => ['large'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('Track conversions for custom goals and see which actions turn visitors into customers.', 'wp-slimstat'),
+            ],
+            'slim_p10_09' => [
+                'title'         => __('Funnels', 'wp-slimstat'),
+                'callback'      => [self::class, 'show_funnels'],
+                'callback_args' => ['is_widget' => true],
+                'classes'       => ['large'],
+                'locations'     => ['slimgeneral'],
+                'pinned'        => true,
+                'tooltip'       => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
             ],
         ];
 
@@ -1804,7 +1825,15 @@ class wp_slimstat_reports
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '</div>';
             }
-            echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
+            // Filterable so a report can suppress its own pager. The General
+            // page's free tier uses this: it renders a fixed, truncated set of
+            // rows, so "Showing 1 - 5 of 5" and the paging arrows would both
+            // be describing a page count the tier cannot actually navigate.
+            echo apply_filters(
+                'slimstat_report_pagination_html',
+                self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results)),
+                $_args
+            );
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '<div>';
             }
@@ -2153,6 +2182,10 @@ class wp_slimstat_reports
         if ($is_widget) {
             $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
+            // Emitted here, not from the caller: on the async path this method
+            // die()s immediately below, so anything appended after
+            // callback_wrapper() returns would never render for this report.
+            echo apply_filters('slimstat_report_after_body', '', $_args['report_id'] ?? '');
             if (wp_doing_ajax()) {
                 die();
             }
@@ -2294,6 +2327,9 @@ class wp_slimstat_reports
             $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
             $funnels     = $max_funnels > 0 ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($max_funnels, $funnels);
+            // See the matching call in show_goals(): this method die()s on the
+            // async path, so the footer has to be emitted before that.
+            echo apply_filters('slimstat_report_after_body', '', $_args['report_id'] ?? '');
             if (wp_doing_ajax()) {
                 die();
             }
@@ -3032,6 +3068,16 @@ class wp_slimstat_reports
                 'locations'     => [],
                 'tooltip'       => '',
             ], self::$reports[$report_id]);
+        }
+
+        // Carry the resolved report id into callback_args. _check_args()
+        // already computed it above and then dropped it, so every callback and
+        // every filter downstream had to re-derive "which report is this?"
+        // from whatever else was to hand — the row-class and pagination
+        // filters were reduced to sniffing the report's `raw` callable, which
+        // identifies a data source, not a screen.
+        if ('' !== $report_id && 0 !== $report_id) {
+            $_args['callback_args']['report_id'] = $report_id;
         }
 
         // Default callback args

@@ -1578,16 +1578,6 @@ class wp_slimstat_admin
             self::set_slimstat_script_translations('slimstat-goals-funnels');
         }
 
-        // General page's Pro-upsell modal open/close — only loaded on its own screen.
-        if ('slimgeneral' === self::$current_screen) {
-            wp_enqueue_script(
-                'slimstat-general',
-                plugins_url('/admin/assets/js/general.js', __DIR__),
-                ['jquery'],
-                SLIMSTAT_ANALYTICS_VERSION,
-                true
-            );
-        }
     }
 
     // END: wp_slimstat_enqueue_scripts

@@ -189,10 +189,6 @@
     width: 100%;
 }
 
-.slimstat-general-page .meta-box-sortables .postbox.extralarge {
-    width: 66.1%;
-}
-
 .slimstat-general-page .meta-box-sortables .postbox.large {
     width: 49.1%;
 }
@@ -300,21 +296,24 @@
  * non-AJAX path, so counting rows in CSS — from either end — shifts or stops
  * matching depending on the render path and the debug setting.
  */
-.slimstat-general-page .postbox.is-gated p.slimstat-row-synthetic {
+.slimstat-general-page p.slimstat-row-synthetic {
     filter: blur(4px);
     opacity: 0.55;
     pointer-events: none;
     user-select: none;
 }
 
-/* The gated box hides its pagination: there is nothing further to page to. */
-.slimstat-general-page .postbox.is-gated .pagination {
-    display: none;
-}
-
+/*
+ * Centred over the BLURRED region, not the whole box. The filter injects this
+ * after the <h3> (that is the insertion point the shared renderer offers), so
+ * it is positioned against the .postbox. The offset arrives as an inline
+ * --ss-gated-cta-top computed by GeneralReports::injectUnlockCta() from
+ * FREE_ROWS and GATED_TOTAL_ROWS, so this file holds no copy of the row split
+ * to drift out of step; the fallback only applies if the property is missing.
+ */
 .slimstat-general-page .slimstat-gated-cta {
     position: absolute;
-    top: 50%;
+    top: var(--ss-gated-cta-top, 70%);
     left: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -388,125 +387,49 @@
     background: var(--ss-surface-tint);
 }
 
-/* Full-width blurred pro card */
-.slimstat-general-page .pro-card {
-    position: relative;
-    border: 1px solid var(--ss-border);
-    border-radius: var(--ss-radius-md);
-    overflow: hidden;
-    background: var(--ss-surface);
-    cursor: pointer;
-    transition: transform var(--ss-duration-base) var(--ss-easing-out),
-        box-shadow var(--ss-duration-base) var(--ss-easing-out),
-        border-color var(--ss-duration-base) var(--ss-easing-out);
-}
-
-.slimstat-general-page .pro-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--ss-shadow-raised);
-    border-color: var(--ss-brand-300);
-}
-
-.slimstat-general-page .pro-card .blurred {
-    filter: blur(6px);
-    opacity: 0.5;
-    pointer-events: none;
-    user-select: none;
-    padding: var(--ss-space-5);
-    min-height: 140px;
-    background: linear-gradient(135deg, var(--ss-brand-100), var(--ss-surface-tint));
-}
-
 /*
- * Semi-transparent glass veil over a brand-tinted gradient — borrowing the
- * transparency/boldness language of live-analytics.php's
- * .live-analytics-promo-overlay (a full chart-replacement promo) scaled down
- * for this smaller in-page banner, rather than the flatter near-opaque
- * --ss-overlay veil this used before.
+ * ---------- Free-tier footer under Goals / Funnels ----------
+ * Those two boxes render the REAL goals and funnels (the same compact
+ * renderers the dashboard widget uses); this sits underneath them on the
+ * free tier only, via GeneralReports::injectProCta().
  */
-.slimstat-general-page .pro-card .veil {
-    position: absolute;
-    inset: 0;
+.slimstat-general-page .slimstat-general-pro-cta {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
     gap: var(--ss-space-3);
-    text-align: center;
-    padding: var(--ss-space-5);
-    background: linear-gradient(135deg, rgba(232, 41, 76, 0.16), rgba(255, 255, 255, 0.55));
-    backdrop-filter: blur(6px);
+    margin-top: auto;
+    padding: var(--ss-space-4) var(--ss-space-5);
+    border-top: 1px solid var(--ss-border-soft);
+    background: var(--ss-surface-tint);
 }
 
-.slimstat-general-page .pro-card .veil .lock {
-    width: 46px;
-    height: 46px;
-    border-radius: var(--ss-radius-md);
-    background: linear-gradient(135deg, var(--ss-brand-700), var(--ss-brand-500));
-    color: #fff;
+.slimstat-general-page .slimstat-general-pro-cta__copy {
+    font-size: var(--ss-text-sm);
+    color: var(--ss-text-secondary);
+}
+
+.slimstat-general-page .slimstat-general-pro-cta__button {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    box-shadow: var(--ss-shadow-raised);
-}
-
-.slimstat-general-page .pro-card .veil .cap {
-    max-width: 34em;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.4;
-    color: var(--ss-text-primary);
-}
-
-.slimstat-general-page .pro-card .veil .btn-pro {
-    font: inherit;
-    font-size: var(--ss-text-base);
-    font-weight: 700;
-    padding: 11px 24px;
+    gap: 8px;
+    flex: 0 0 auto;
+    padding: 10px 20px;
     border-radius: var(--ss-radius-pill);
-    border: none;
     background: var(--ss-brand-500);
     color: #fff;
-    cursor: pointer;
-    box-shadow: var(--ss-shadow-raised);
-    transition: transform var(--ss-duration-fast) var(--ss-easing-out),
-        background var(--ss-duration-fast) var(--ss-easing-out);
+    font-size: var(--ss-text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--ss-duration-base) var(--ss-easing-out);
 }
 
-.slimstat-general-page .pro-card .veil .btn-pro:hover {
+.slimstat-general-page .slimstat-general-pro-cta__button:hover,
+.slimstat-general-page .slimstat-general-pro-cta__button:focus-visible {
     background: var(--ss-brand-700);
-    transform: scale(1.04);
-}
-
-/*
- * Modal is the shared .slimstat-pro-modal partial. Its own base rule
- * (admin.scss) is `position: fixed` with no default-hidden state — it relies
- * on each consumer page to control visibility. email-report.php forces it
- * always-visible via `.slimstat-pro-modal-backdrop { display: block }`, but
- * that backdrop class is never actually rendered anywhere in this plugin
- * (dead selector) and that page is 100% Pro-gated anyway. General shows real
- * free-tier data underneath, so the modal must stay a click-triggered
- * overlay — hidden by default, opened on [data-upgrade] click by general.js,
- * with our own scrim (not the unused legacy backdrop class) behind it.
- */
-.wrap-slimstat .slimstat-pro-modal {
-    display: none;
-}
-
-.wrap-slimstat .slimstat-pro-modal.is-open {
-    display: block;
-}
-
-.slimstat-general-scrim {
-    position: fixed;
-    inset: 0;
-    background: var(--ss-overlay-scrim);
-    z-index: 29;
-    display: none;
-}
-
-.slimstat-general-scrim.is-open {
-    display: block;
+    color: #fff;
 }
 
 /*

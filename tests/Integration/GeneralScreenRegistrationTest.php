@@ -157,7 +157,7 @@ class GeneralScreenRegistrationTest extends TestCase
     {
         $php = file_get_contents($this->reportsPath());
 
-        foreach (['slim_p10_01', 'slim_p10_02', 'slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06', 'slim_p10_07', 'slim_p10_08'] as $report_id) {
+        foreach (['slim_p10_01', 'slim_p10_02', 'slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06', 'slim_p10_07', 'slim_p10_08', 'slim_p10_09'] as $report_id) {
             $this->assertMatchesRegularExpression(
                 "/'{$report_id}'\\s*=>\\s*\\[[\\s\\S]*?'locations'\\s*=>\\s*\\['slimgeneral'\\][\\s\\S]*?'pinned'\\s*=>\\s*true/",
                 $php,
@@ -180,7 +180,6 @@ class GeneralScreenRegistrationTest extends TestCase
             'slim_p10_01' => 'statsRow',
             'slim_p10_02' => 'pageviewsChart',
             'slim_p10_07' => 'campaigns',
-            'slim_p10_08' => 'goalsUpsell',
         ];
 
         foreach ($expected as $report_id => $method) {
@@ -309,11 +308,12 @@ class GeneralScreenRegistrationTest extends TestCase
 
         $methods = [
             // Reports that render themselves.
-            'statsRow', 'pageviewsChart', 'campaigns', 'goalsUpsell',
+            'statsRow', 'pageviewsChart', 'campaigns',
             // `raw` data-source callables for the shared renderer.
             'trafficSourcesRaw', 'topColumnRaw',
             // Free-tier gating chrome, hooked in wp_slimstat_admin::init().
-            'register_hooks', 'markGatedReports', 'injectUnlockCta',
+            'register_hooks', 'injectUnlockCta', 'markSyntheticRows',
+            'suppressGatedPagination', 'injectProCta',
         ];
 
         foreach ($methods as $method) {
@@ -340,6 +340,94 @@ class GeneralScreenRegistrationTest extends TestCase
                 "GeneralReports::{$needle}() must not come back — the tables render through raw_results_to_html()"
             );
         }
+    }
+
+    /**
+     * The gate must not depend on a class stamped onto the registry.
+     *
+     * This is a regression guard for a gate that shipped failing OPEN: the
+     * blur was keyed to an `is-gated` postbox class added via the
+     * `slimstat_reports_info` filter, but wp_slimstat_reports::init()
+     * memoizes $reports and wp_slimstat_admin::init() calls it BEFORE the
+     * line registering that filter — so the class never landed, the blur
+     * never applied, and every free user saw the synthetic rows in plain
+     * text. Nothing about that failure was visible in the markup: it looked
+     * like ordinary rows.
+     *
+     * The gate now decides per render (GeneralReports::isGatedRender()), so
+     * it cannot be outrun by initialisation order.
+     */
+    public function test_gate_does_not_depend_on_registry_filter_ordering(): void
+    {
+        $php = file_get_contents(dirname(__DIR__, 2) . '/src/Modules/GeneralReports.php');
+
+        $this->assertDoesNotMatchRegularExpression(
+            "/add_filter\\(\\s*'slimstat_reports_info'/",
+            $php,
+            'the gate must not hook slimstat_reports_info — init() memoizes the registry before these hooks are registered, so such a filter never runs'
+        );
+
+        $this->assertStringContainsString(
+            'isGatedRender',
+            $php,
+            'the gate must be decided per render, not from a pre-stamped registry class'
+        );
+
+        $this->assertStringNotContainsString(
+            'is-gated',
+            file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/general.css'),
+            'the blur must not require an is-gated ancestor class'
+        );
+    }
+
+    /**
+     * The gate must be scoped by report id, not by the data-source callable.
+     *
+     * An earlier revision decided "is this gated?" by comparing the report's
+     * `raw` callable to GeneralReports — which identifies a DATA SOURCE, not a
+     * screen. Any other report pointing `raw` at topColumnRaw() would have
+     * silently inherited the blur and lost its pager. Report ids are the same
+     * discriminator injectUnlockCta() uses, so the blur, the pager suppression
+     * and the overlay above them all agree on which reports are gated.
+     */
+    public function test_gate_is_scoped_by_report_id_not_by_data_source(): void
+    {
+        $php = file_get_contents(dirname(__DIR__, 2) . '/src/Modules/GeneralReports.php');
+
+        $this->assertMatchesRegularExpression(
+            '/isGatedRender[\s\S]{0,600}?GATED_REPORT_IDS/',
+            $php,
+            'isGatedRender() must match against GATED_REPORT_IDS'
+        );
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/function isGatedRender[\s\S]{0,400}?\$args\[.raw.\]/',
+            $php,
+            "isGatedRender() must not key off the report's raw callable — that is a data source, not a screen"
+        );
+
+        $this->assertStringContainsString(
+            "\$_args['callback_args']['report_id'] = \$report_id;",
+            file_get_contents($this->reportsPath()),
+            '_check_args() must carry the resolved report id into callback_args for the filters to key off'
+        );
+    }
+
+    /**
+     * Funnels must NOT get the free-tier upgrade footer: show_funnels_compact()
+     * already renders its own full upgrade overlay when max_funnels is 0 (the
+     * free default), so adding the footer there stacked a second, identical
+     * "Upgrade to Pro" button under the first.
+     */
+    public function test_pro_cta_footer_is_goals_only(): void
+    {
+        $php = file_get_contents(dirname(__DIR__, 2) . '/src/Modules/GeneralReports.php');
+
+        $this->assertMatchesRegularExpression(
+            "/PRO_CTA_REPORT_IDS\\s*=\\s*\\['slim_p10_08'\\]/",
+            $php,
+            'only Goals (slim_p10_08) may carry the upgrade footer; Funnels renders its own'
+        );
     }
 
     /**
