@@ -1,5 +1,8 @@
-<!-- Header File-->
 <?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 use SlimStat\Components\View;
 use SlimStat\Services\Admin\Notification\NotificationFactory;

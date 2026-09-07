@@ -1,6 +1,6 @@
 <?php
-if (!function_exists('add_action')) {
-    exit();
+if (!defined('ABSPATH')) {
+    exit;
 }
 
 $is_pro = wp_slimstat::pro_is_installed();
@@ -42,4 +42,3 @@ if (!$is_pro) {
     <?php
 }
 ?>
-

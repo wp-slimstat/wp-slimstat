@@ -1,8 +1,7 @@
 <?php
 
-// Avoid direct access
-if (!function_exists('add_action')) {
-    exit(0);
+if (!defined('ABSPATH')) {
+    exit;
 }
 
 $is_dashboard = empty($_REQUEST['page']) || 'slimview1' != $_REQUEST['page'];

@@ -1,7 +1,6 @@
 <?php
-// Avoid direct access to this piece of code
-if (!function_exists('add_action')) {
-    exit(0);
+if (!defined('ABSPATH')) {
+    exit;
 }
 
 // Update license keys, if needed

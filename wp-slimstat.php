@@ -14,6 +14,10 @@
  * Requires PHP: 7.4
 */
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /**
  * THE PHP FLOOR, CHECKED BEFORE ANYTHING IS LOADED.
  *

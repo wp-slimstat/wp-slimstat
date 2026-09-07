@@ -1,4 +1,8 @@
 <?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 // Keep track of multiple occurrences of the same report, to allow users to delete duplicates
 $already_seen = [];
 ?>
