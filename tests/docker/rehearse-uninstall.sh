@@ -133,6 +133,12 @@ for spec in keep:local:0 keep-no:local:0 keep:external:1 delete:local:0 delete:e
     wpc plugin activate wp-slimstat-pro --network >>"$case_art/activation.log" 2>&1
     wpc plugin is-active wp-slimstat-pro --network >>"$case_art/activation.log" 2>&1
   fi
+  if [ -n "${QUALIFICATION_FREE_ZIP:-}" ]; then
+    verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_WP_DIR/wp-content/plugins" >"$case_art/free-installed.json"
+    if [ "$paired" = 1 ]; then
+      verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_WP_DIR/wp-content/plugins" >"$case_art/pro-installed.json"
+    fi
+  fi
   wpc plugin deactivate --all --network >>"$case_art/activation.log" 2>&1
   wpc --skip-plugins --skip-themes eval-file /tmp/probe-uninstall.php seed "$mode" "$owner" >"$case_art/seed.log" 2>&1
   grep -q '^UNINSTALL-SEEDED$' "$case_art/seed.log"

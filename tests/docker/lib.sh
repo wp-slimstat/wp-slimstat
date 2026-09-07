@@ -473,6 +473,10 @@ extract_qualification_artifact() { # <zip> <sha256> <slug> <empty destination>
   python3 "$HARNESS_DIR/extract-artifact.py" "$1" "$2" "$3" "$4"
 }
 
+verify_qualification_artifact() { # <zip> <sha256> <slug> <plugins directory>
+  python3 "$HARNESS_DIR/extract-artifact.py" "$1" "$2" "$3" "$4" --verify-installed
+}
+
 # ── Pro measurement arm ─────────────────────────────────────────────────────
 # Resolve which shipped wp-slimstat-pro build a two-arm measurement installs: '-' = the sibling
 # checkout's committed HEAD, a ref = that exact commit. build/build-dist.sh owns the only scoper

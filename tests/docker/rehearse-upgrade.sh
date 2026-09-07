@@ -812,6 +812,15 @@ else
   note NOTE "the offered fact-table rebuild is NOT exercised (REHEARSE_OFFERED=1 to include it); measured past 8 minutes on this dataset"
 fi
 
+if [ -n "${QUALIFICATION_FREE_ZIP:-}" ]; then
+  verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json"
+  check "installed Free shipping files remain the checksummed candidate" "$?" "see free-installed.json"
+fi
+if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
+  verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WP_DIR/wp-content/plugins" >"$ART/pro-installed.json"
+  check "installed Pro shipping files remain the checksummed candidate" "$?" "see pro-installed.json"
+fi
+
 ROWS_2=$(stats_rows)
 [ "$ROWS_2" -eq "$ROWS_1" ] && check "not one row was lost or duplicated" 0 "$ROWS_2 rows" \
   || check "not one row was lost or duplicated" 1 "$ROWS_1 -> $ROWS_2"

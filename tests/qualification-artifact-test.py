@@ -28,7 +28,12 @@ with tempfile.TemporaryDirectory() as temp:
         if valid:
             assert (root / name / slug / (slug + '.php')).read_text() == '<?php // artifact fixture'
             assert subprocess.run(command, capture_output=True).returncode != 0, 'nonempty extraction accepted'
+            verified = subprocess.run(command + ['--verify-installed'], capture_output=True)
+            assert verified.returncode == 0, verified.stderr
+            (root / name / slug / (slug + '.php')).write_text('tampered after install')
+            assert subprocess.run(command + ['--verify-installed'], capture_output=True).returncode != 0, 'installed edit accepted'
             command[3] = '0' * 64
+            command.insert(1, '-O')
             assert subprocess.run(command, capture_output=True).returncode != 0, 'wrong digest accepted'
 print('PASS: exact Free/Pro bytes, checksum refusal, unsafe paths, missing header, nonempty destination')
 

@@ -28,7 +28,7 @@ import json,sys
 log,observed,out=sys.argv[1:]
 rows=[x.split(':',1)[1] for x in open(log) if x.startswith('DDL-WORKER:')]
 assert len(rows)==1, 'worker failed without a migration outcome'
-r=json.loads(rows[0]); assert isinstance(r,dict) and False in r.values(), 'interruption not reported as migration failure'
+r=json.loads(rows[0]); assert isinstance(r,dict) and any(value is False for value in r.values()), 'interruption not reported as migration failure'
 thread,state,sql=open(observed).read().strip().split('\t',2)
 json.dump(dict(operation='KILL QUERY',connection_id=int(thread),observed_state=state,observed_sql=sql,migrations=r,resume_required=True),open(out,'w'),indent=2)
 PY

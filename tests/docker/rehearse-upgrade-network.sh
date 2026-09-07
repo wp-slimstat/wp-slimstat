@@ -200,4 +200,8 @@ assert set(counts)==set(range(1,102)) and all(n==1 for n in counts.values()), co
 assert not open(sys.argv[2]).read().strip(), 'Unexpected actual htaccess writes'
 PY
 [ "$(digest "$FIXTURE")" = "$FIXTURE_HASH" ] || die 'Source fixture changed'
+if [ -n "${QUALIFICATION_FREE_ZIP:-}" ] && [ "$MUTATION" = none ]; then
+  verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_WP_DIR/wp-content/plugins" >"$ART/free-installed.json"
+  verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_WP_DIR/wp-content/plugins" >"$ART/pro-installed.json"
+fi
 status=PASS; reason='101 sites complete after actual boundary SIGKILL and authenticated HTTP continuation'
