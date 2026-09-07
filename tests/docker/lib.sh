@@ -468,6 +468,11 @@ wait_for() {
 # Callers declare `status="PASS"; reason=""` before use; write_verdict reads both.
 fail() { status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 
+# Final qualification supplies both an artifact and its independently recorded digest.
+extract_qualification_artifact() { # <zip> <sha256> <slug> <empty destination>
+  python3 "$HARNESS_DIR/extract-artifact.py" "$1" "$2" "$3" "$4"
+}
+
 # ── Pro measurement arm ─────────────────────────────────────────────────────
 # Resolve which shipped wp-slimstat-pro build a two-arm measurement installs: '-' = the sibling
 # checkout's committed HEAD, a ref = that exact commit. build/build-dist.sh owns the only scoper
@@ -478,11 +483,16 @@ fail() { status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 # owner, like the bring-up helpers above.
 build_pro_arm() { # <pro_ref|-> <cell_dir> <art_dir>
   local ref="$1" cell_dir="$2" art="$3"
-  PRO_CHECKOUT="$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro"
+  PRO_CHECKOUT="${PRO_REPO:-$(cd "$PLUGIN_SRC/.." && pwd)/wp-slimstat-pro}"
   PRO_WT=""
   [ "$ref" = "-" ] && ref=HEAD
   PRO_RESOLVED_REF=$(git -C "$PRO_CHECKOUT" rev-parse "$ref^{commit}") \
     || { err "cannot resolve Pro ref $ref"; return 1; }
+  if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
+    extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}" wp-slimstat-pro "$cell_dir/pro-artifact" || return 1
+    ARM_PRO_ZIP="$QUALIFICATION_PRO_ZIP"
+    return 0
+  fi
   ARM_PRO_ZIP="$HARNESS_DIR/build/wp-slimstat-pro-${PRO_RESOLVED_REF:0:8}.zip"
   PRO_REF_OVERRIDE="$PRO_RESOLVED_REF" PRO_ZIP_OUT="$ARM_PRO_ZIP" \
     PRO_BUILD_LOG="$art/build-pro.log" bash "$HARNESS_DIR/build-pro.sh" \
@@ -498,6 +508,12 @@ cleanup_pro_arm() {
 # a detached worktree of exactly that ref. Sets FREE_SRC and FREE_WT ('' = working tree).
 build_free_arm() { # <free_ref|-> <cell_dir>
   FREE_SRC="$PLUGIN_SRC"; FREE_WT=""
+  if [ -n "${QUALIFICATION_FREE_ZIP:-}" ]; then
+    extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}" wp-slimstat "$2/free-artifact" || return 1
+    FREE_SRC="$2/free-artifact/wp-slimstat"
+    ARM_FREE_ZIP="$QUALIFICATION_FREE_ZIP"
+    return 0
+  fi
   if [ "$1" != "-" ]; then
     FREE_WT="$2/free-src"; rm -rf "$FREE_WT"
     git -C "$PLUGIN_SRC" worktree add --detach "$FREE_WT" "$1" >/dev/null 2>&1 \

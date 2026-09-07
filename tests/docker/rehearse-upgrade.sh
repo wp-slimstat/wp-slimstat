@@ -21,9 +21,8 @@
 #                     rollback, not a mixed window — a real site in the window has an UNmigrated
 #                     one, because old free never migrates — and nothing Pro-side is read there
 #                     at all. A second run with an older PRO_REF reaches the new-free/old-Pro
-#                     corner but ASSERTS NOTHING about it: that Pro predates the floor, so the
-#                     scope leg records NOMETHOD and moves on. That corner — old Pro calling a
-#                     changed free API — is the actual risk and is still owed.
+#                     corner. Its own report output must consume the real tracked row through
+#                     the new Free report API; absence of the newer floor method earns no credit.
 #
 # WHAT HAPPENS TO A REAL SITE'S DATA WHEN IT UPDATES, rehearsed on that site's real data.
 #
@@ -275,7 +274,15 @@ use_ref() { # <ref>
   local ref="$1"
   local full sha zip rc
   # wp.org:<version> and *.zip resolve to bytes; anything else is a git ref and gets built.
-  zip=$(resolve_arm_zip "$ref"); rc=$?
+  if [ "$ref" = "$NEW_REF" ] && [ -n "${QUALIFICATION_FREE_ZIP:-}" ]; then
+    if [ ! -d "$CELL_DIR/candidate-artifact" ]; then
+      extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}" wp-slimstat "$CELL_DIR/candidate-artifact" || return 1
+    fi
+    [ "$(digest "$QUALIFICATION_FREE_ZIP")" = "$QUALIFICATION_FREE_SHA256" ] || return 1
+    zip="$QUALIFICATION_FREE_ZIP"; rc=0
+  else
+    zip=$(resolve_arm_zip "$ref"); rc=$?
+  fi
   if [ "$rc" = 1 ]; then
     return 1
   elif [ "$rc" = 0 ]; then
@@ -570,9 +577,7 @@ if [ "$WITH_PRO" = 1 ]; then
   # No NOCLASS arm: C5 above already failed the run on it, before a row was hydrated.
   case "$SCOPE_OLD" in
     NOMETHOD)
-      # A Pro older than the floor cannot have it. That is the OTHER mixed-window corner, and it
-      # is not a failure -- but it must be visible, or a green U4 would imply a floor was checked.
-      note NOTE "Pro $PRO_REF predates authorScopedReportBlocked() — floor not exercised; this run covers the old-Pro corner (boot, track, migrate) only" ;;
+      note NOTE "Pro $PRO_REF predates the floor method; boot, exact tracking and real report/CSV assertions below are required" ;;
     BLOCKED)
       [ "$SCOPE_NEW" = "PERMITTED" ] \
         && check "author-scoped reports: BLOCKED on old free, PERMITTED on new" 0 "$SCOPE_OLD -> $SCOPE_NEW" \
@@ -599,6 +604,14 @@ RES_1=$(hit_resource "${HIT_1:-0}")
 ROWS_1=$(stats_rows)
 [ "$ROWS_1" -eq $((ROWS_0 + 1)) ] && check "it landed exactly once" 0 "$ROWS_0 -> $ROWS_1" \
   || check "it landed exactly once" 1 "$ROWS_0 -> $ROWS_1"
+
+if [ "$WITH_PRO" = 1 ]; then
+  dc cp "$HARNESS_DIR/probe-pro-mixed-window.php" wp:/tmp/probe-pro-mixed-window.php >/dev/null || exit 1
+  wpc eval-file /tmp/probe-pro-mixed-window.php >"$ART/pro-mixed-window.log" 2>&1
+  PRO_FEATURE_RC=$?
+  [ "$PRO_FEATURE_RC" = 0 ] && grep -q '^PRO-MIXED-WINDOW:' "$ART/pro-mixed-window.log"
+  check "Pro renders the exactly-once tracked hit through the new Free report API" "$?" "see pro-mixed-window.log"
+fi
 
 NEEDS=$(wpc eval '
   $a = SlimStat\Migration\MigrationService::analyticsConnection();
@@ -729,6 +742,12 @@ echo
 # CreateGoalQueriesIndex is the one this matters most for: `resource(191), dt, fingerprint(20)`
 # lands three bytes under the 767-byte prefix limit a legacy COMPACT/utf8 table imposes, so a
 # real v5 table is where it would fail if it ever fails.
+if [ "${REHEARSE_INTERRUPT_DDL:-0}" = 1 ]; then
+  source "$HARNESS_DIR/interrupt-ddl.sh"
+  interrupt_migration_ddl
+  check "an executing migration DDL was interrupted and reported failure" "$?" "see ddl-interruption.json; normal migration run below must resume"
+fi
+
 MIG=$(wpc eval '
   $a = SlimStat\Migration\MigrationService::analyticsConnection();
   $m = new SlimStat\Migration\MigrationManager();
@@ -1065,7 +1084,7 @@ DEST=$(publish_verdict "$ART" "$CELL" legacy-upgrade.log import.err 2>/dev/null 
 
 echo
 if [ "$status" = "PASS" ]; then
-  echo "VERDICT: the upgrade is safe on this data — $ROWS_2 rows, v5 fingerprint unchanged across the migration"
+  echo "VERDICT: required assertions passed on this data — $ROWS_2 rows, v5 fingerprint unchanged across the migration"
   echo "  from ${ARM_FREE_VERSION:-$OLD_REF} to $NEW_REF on WP $WP / PHP $PHP, over $(basename "$DUMP")"
   exit 0
 fi

@@ -5,7 +5,7 @@
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-PRO_REPO="$(cd "$PLUGIN_SRC/../wp-slimstat-pro" && pwd)"
+PRO_REPO="${PRO_REPO:-$(cd "$PLUGIN_SRC/../wp-slimstat-pro" && pwd)}"
 REF="${PRO_REF_OVERRIDE:-HEAD}"
 FULL=$(git -C "$PRO_REPO" rev-parse "$REF^{commit}")
 SHA=${FULL:0:8}

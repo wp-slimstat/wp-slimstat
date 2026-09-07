@@ -60,15 +60,24 @@ services:
       - /var/lib/mysql
 YAML
 build_free_arm "$FREE_SHA" "$CELL_DIR"
-git -C "$PRO_REPO" archive "$PRO_SHA" | tar -xf - -C "$CELL_DIR/pro-src"
+if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
+  extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}" wp-slimstat-pro "$CELL_DIR/pro-artifact"
+  rmdir "$CELL_DIR/pro-src"
+  mv "$CELL_DIR/pro-artifact/wp-slimstat-pro" "$CELL_DIR/pro-src"
+else
+  git -C "$PRO_REPO" archive "$PRO_SHA" | tar -xf - -C "$CELL_DIR/pro-src"
+fi
+[ -z "${QUALIFICATION_FREE_ZIP:-}${QUALIFICATION_PRO_ZIP:-}" ] || {
+  : "${QUALIFICATION_FREE_ZIP:?Both packaged artifacts required}" "${QUALIFICATION_PRO_ZIP:?Both packaged artifacts required}"
+}
 cp "$FIXTURE" "$ART/fixture.json"
 cp "$HARNESS_DIR/uninstall-oracle.php" "$ART/oracle.php"
-python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$FIXTURE_SHA" "$STARTED" "$MUTATION" "$HARNESS_DIR" <<'PY'
+python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$FIXTURE_SHA" "$STARTED" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" <<'PY'
 import hashlib,json,pathlib,sys
-out,free,pro,fixture,start,mutation,harness=sys.argv[1:]
-files=['rehearse-uninstall.sh','probe-uninstall.php','uninstall-oracle.php','lib.sh','docker-compose.yml','Dockerfile.wp']
+out,free,pro,fixture,start,mutation,harness,fzip,pzip=sys.argv[1:]
+files=['rehearse-uninstall.sh','probe-uninstall.php','uninstall-oracle.php','lib.sh','extract-artifact.py','docker-compose.yml','Dockerfile.wp']
 json.dump(dict(free_sha=free,pro_sha=pro,fixture_sha256=fixture,started=start,mutation=mutation,
- old_zip_sha256=None,old_zip_reason='synthetic uninstall fixture; no vintage import',artifact_kind='committed-source',
+ old_zip_sha256=None,old_zip_reason='synthetic uninstall fixture; no vintage import',artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,
  source_hashes={f:hashlib.sha256((pathlib.Path(harness)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
 PY
 reason='disposable stack boot failed'; boot_stack "$ART" "$PHP_VERSION"

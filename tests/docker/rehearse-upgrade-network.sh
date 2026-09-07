@@ -49,13 +49,22 @@ PY
 }
 trap finish EXIT
 build_free_arm "$FREE_SHA" "$CELL_DIR"
-git -C "$PRO_REPO" archive "$PRO_SHA" | tar -xf - -C "$CELL_DIR/pro-src"
+if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
+  extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}" wp-slimstat-pro "$CELL_DIR/pro-artifact"
+  rmdir "$CELL_DIR/pro-src"
+  mv "$CELL_DIR/pro-artifact/wp-slimstat-pro" "$CELL_DIR/pro-src"
+else
+  git -C "$PRO_REPO" archive "$PRO_SHA" | tar -xf - -C "$CELL_DIR/pro-src"
+fi
+[ -z "${QUALIFICATION_FREE_ZIP:-}${QUALIFICATION_PRO_ZIP:-}" ] || {
+  : "${QUALIFICATION_FREE_ZIP:?Both packaged artifacts required}" "${QUALIFICATION_PRO_ZIP:?Both packaged artifacts required}"
+}
 cp "$FIXTURE" "$ART/fixture.json"
-python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$OLD_HASH" "$FIXTURE_HASH" "$MUTATION" "$HARNESS_DIR" <<'PY'
+python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$OLD_HASH" "$FIXTURE_HASH" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" <<'PY'
 import json,hashlib,pathlib,sys
-out,free,pro,old,fixture,mutation,h=sys.argv[1:]
-files=['rehearse-upgrade-network.sh','probe-network-rehearsal.php','network-rehearsal-observer.php','network-rehearsal-oracle.php','watch-network-htaccess.py','lib.sh','Dockerfile.wp','docker-compose.yml']
-json.dump(dict(free_sha=free,pro_sha=pro,old_zip_sha256=old,fixture_sha256=fixture,mutation=mutation,artifact_kind='committed-source',interruption='SIGKILL after durable site completion; interior DDL not covered',source_hashes={f:hashlib.sha256((pathlib.Path(h)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
+out,free,pro,old,fixture,mutation,h,fzip,pzip=sys.argv[1:]
+files=['rehearse-upgrade-network.sh','probe-network-rehearsal.php','network-rehearsal-observer.php','network-rehearsal-oracle.php','watch-network-htaccess.py','lib.sh','extract-artifact.py','Dockerfile.wp','docker-compose.yml']
+json.dump(dict(free_sha=free,pro_sha=pro,old_zip_sha256=old,fixture_sha256=fixture,mutation=mutation,artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,interruption='SIGKILL after durable site completion; interior DDL not covered',source_hashes={f:hashlib.sha256((pathlib.Path(h)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
 PY
 reason='stack boot failed'; boot_stack "$ART" "$PHP_VERSION"
 BASE_URL="http://localhost:$(dc port wp 80 | sed 's/.*://')"
