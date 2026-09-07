@@ -21,8 +21,8 @@ import { insertRows, clearTestData } from './helpers/chart';
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const OVERVIEW_URL = `${BASE_URL}/wp-admin/admin.php?page=slimlayout`;
-const ACCESS_LOG_URL = `${BASE_URL}/wp-admin/admin.php?page=slimview2`;
+const OVERVIEW_URL = `${BASE_URL}/wp-admin/admin.php?page=slimview2&type=last_90_days`;
+const ACCESS_LOG_URL = `${BASE_URL}/wp-admin/admin.php?page=slimview1`;
 const SETTINGS_URL = `${BASE_URL}/wp-admin/admin.php?page=slimconfig&tab=1`;
 
 /** CSS selector for the granularity <select> on the Overview page */
@@ -215,12 +215,12 @@ test.describe('Chart granularity persistence (#265)', () => {
   });
 
   /**
-   * v5.4.7 regression: granularity persists in sessionStorage after change.
+   * v5.4.7 regression: granularity persists in localStorage after change.
    *
-   * Verifies that the JS writes the selected granularity to sessionStorage
+   * Verifies that the JS writes the selected granularity to localStorage
    * and that on page reload the dropdown is restored from that stored value.
    */
-  test('v547-fix: granularity persists in sessionStorage after change', async ({ page }) => {
+  test('v547-fix: granularity persists in localStorage after change', async ({ page }) => {
     // Seed stats data so chart renders with granularity select visible
     await clearTestData();
     const now = Math.floor(Date.now() / 1000);
@@ -236,20 +236,19 @@ test.describe('Chart granularity persistence (#265)', () => {
     await setGranularity(page, 'daily');
     expect(await getSelectedGranularity(page)).toBe('daily');
 
-    // Verify sessionStorage has the value (key is slimstat_chart_granularity_ + chartId)
+    // Verify localStorage has the value (shared key is slimstat_chart_granularity)
     const storedValue = await page.evaluate(() => {
       const chartEl = document.querySelector('[id^="slimstat_chart_data_"]');
       if (!chartEl || !chartEl.id) return null;
-      const chartId = chartEl.id.replace('slimstat_chart_data_', '');
-      return sessionStorage.getItem('slimstat_chart_granularity_' + chartId);
+      return localStorage.getItem('slimstat_chart_granularity');
     });
 
-    console.log('v547-fix: sessionStorage granularity value:', storedValue);
+    console.log('v547-fix: localStorage granularity value:', storedValue);
 
     // The stored value should reflect 'daily'
     expect(
       storedValue,
-      'v547-fix: granularity should be stored in sessionStorage after selection change',
+      'v547-fix: granularity should be stored in localStorage after selection change',
     ).toBeTruthy();
     expect(storedValue).toBe('daily');
 
@@ -262,7 +261,7 @@ test.describe('Chart granularity persistence (#265)', () => {
     console.log('v547-fix: granularity after reload:', afterReload);
     expect(
       afterReload,
-      'v547-fix: granularity must persist as "daily" after page reload via sessionStorage',
+      'v547-fix: granularity must persist as "daily" after page reload via localStorage',
     ).toBe('daily');
   });
 });
