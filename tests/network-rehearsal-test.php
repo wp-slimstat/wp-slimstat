@@ -29,6 +29,11 @@ $observer = file_get_contents(__DIR__ . '/docker/network-rehearsal-observer.php'
 $check(false !== strpos($observer, "add_action('update_site_option',"), 'observer uses the actual core post-write action');
 $installer = file_get_contents(__DIR__ . '/docker/lib.sh');
 $check(false !== strpos($installer, 'array_merge(wp_slimstat::init_options(),'), 'vintage fixtures include arm-owned defaults');
+$product = file_get_contents(dirname(__DIR__) . '/wp-slimstat.php');
+$check(
+    false !== strpos($product, "self::\$settings['auto_purge'] ?? 0"),
+    'purge health check tolerates settings that are not initialized during activation'
+);
 $src = file_get_contents(__DIR__ . '/docker/rehearse-upgrade-network.sh');
 foreach (['resolve_arm_zip', 'run_vintage_installer "$site_url" </dev/null', 'installed_sites" -eq 101', 'kill -9', 'interrupted.json', '/wp-admin/network/', 'no-resume', 'write_verdict', 'publish_verdict', 'image inspect', 'fixture_sha256'] as $needle) {
     $check(false !== strpos($src, $needle), 'network harness: ' . $needle);

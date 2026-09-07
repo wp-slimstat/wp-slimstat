@@ -2135,7 +2135,7 @@ class wp_slimstat
      */
     public static function purge_is_stale(): bool
     {
-        if (intval(self::$settings['auto_purge']) <= 0) {
+        if (intval(self::$settings['auto_purge'] ?? 0) <= 0) {
             return false;   // purging is off; silence is correct
         }
 
