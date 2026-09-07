@@ -19,8 +19,8 @@ class wp_slimstat_admin
      */
     const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';
 
-    /** Throttles the admin_init re-observation. Self-expiring, so nothing has to clear it. */
-    const COLUMN_DRIFT_CHECK_TRANSIENT = 'slimstat_column_drift_checked';
+    /** Throttles admin_init re-observation; successful migrations invalidate the check. */
+    const COLUMN_DRIFT_CHECK_TRANSIENT = Schema::COLUMN_DRIFT_CHECK_TRANSIENT;
 
     public static $screens_info      = [];
     public static $config_url        = '';
@@ -4224,6 +4224,7 @@ class wp_slimstat_admin
             'utf8mb4 conversion'   => __('Character-set conversion', 'wp-slimstat'),
             'migration_db_unreachable' => __('Database unreachable during migration', 'wp-slimstat'),
             'add_visit_identity'   => __('Migration: visit identity column', 'wp-slimstat'),
+            'legacy_column_width_repair' => __('Migration: legacy column widths', 'wp-slimstat'),
             'add_user_agent_dimension' => __('Migration: browser dimension column', 'wp-slimstat'),
             'event insert stored no row' => __('Event could not be recorded', 'wp-slimstat'),
             'anonymous visit reuse'      => __('Cookieless visit grouping', 'wp-slimstat'),

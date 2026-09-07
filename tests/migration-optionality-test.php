@@ -53,6 +53,7 @@ $declared = [
     // A write-blocking rebuild whose benefit is real (11x on the Pro user join) but whose
     // timing is the owner's to choose. ADR-6.
     'ConvertTablesToUtf8mb4'           => true,
+    'RepairLegacyColumnWidths'         => true,
     // Index builds. Online on every supported server, and the reports are slow without them.
     'CreateCountryDtIndex'             => false,
     'CreateDtBrowserIndex'             => false,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace SlimStat\Migration;
 
 use SlimStat\Utils\OptionClaim;
+use SlimStat\Schema\Schema;
 
 class MigrationManager
 {
@@ -260,12 +261,16 @@ class MigrationManager
      * Anything that changes what the probe would answer — running a migration, dismissing
      * the notice, undismissing it — has to call this, or the UI reports the previous state.
      */
-    public function forgetProbe(): void
+    public function forgetProbe(bool $migrationSucceeded = false): void
     {
         $this->needsMemo   = null;
         $this->offeredMemo = null;
         delete_transient(self::TRANSIENT_PROBE);
         delete_transient(self::TRANSIENT_OFFERED);
+        if ($migrationSucceeded) {
+            // Keep the recorded drift until the next ordinary admin observation verifies it.
+            delete_transient(Schema::COLUMN_DRIFT_CHECK_TRANSIENT);
+        }
     }
 
     /**
@@ -406,7 +411,7 @@ class MigrationManager
             $status[$target->getId()] = $ok;
             update_option(self::OPTION_STATUS, $status, false);
 
-            $this->forgetProbe();
+            $this->forgetProbe($ok);
 
             return $ok;
         } finally {
@@ -458,7 +463,7 @@ class MigrationManager
 
         // Re-probe against the database we just changed, not against the answer cached
         // before we changed it.
-        $this->forgetProbe();
+        $this->forgetProbe(in_array(true, $results, true));
 
         if (!$this->needsMigration()) {
             $this->dismissNotice();

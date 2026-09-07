@@ -5,6 +5,7 @@ namespace SlimStat\Migration;
 
 use SlimStat\Migration\Admin\MigrationAdmin;
 use SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4;
+use SlimStat\Migration\Migrations\RepairLegacyColumnWidths;
 use SlimStat\Migration\Migrations\CreateCountryDtIndex;
 use SlimStat\Migration\Migrations\CreateDtBrowserIndex;
 use SlimStat\Migration\Migrations\AddUserAgentDimension;
@@ -125,6 +126,7 @@ class MigrationService
             $manager->register(new CreateEventsNotesDtIndex($analytics, $core));
             $manager->register(new RecoverCorruptedHeatmapPositions($analytics, $core));
             $manager->register(new ConvertTablesToUtf8mb4($analytics, $core));
+            $manager->register(new RepairLegacyColumnWidths($analytics, $core));
 
             $admin = new MigrationAdmin($manager);
             $admin->hooks();

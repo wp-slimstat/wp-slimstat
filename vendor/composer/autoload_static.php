@@ -510,6 +510,7 @@ class ComposerStaticInit218de6ada5bccdc9e632ba1181c21f7e
         'SlimStat\\Migration\\Migrations\\CreateFunnelQueriesIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateFunnelQueriesIndex.php',
         'SlimStat\\Migration\\Migrations\\CreateGoalQueriesIndex' => __DIR__ . '/../..' . '/src/Migration/Migrations/CreateGoalQueriesIndex.php',
         'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => __DIR__ . '/../..' . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
+        'SlimStat\\Migration\\Migrations\\RepairLegacyColumnWidths' => __DIR__ . '/../..' . '/src/Migration/Migrations/RepairLegacyColumnWidths.php',
         'SlimStat\\Migration\\MissingSettingsRecovery' => __DIR__ . '/../..' . '/src/Migration/MissingSettingsRecovery.php',
         'SlimStat\\Modules\\Chart' => __DIR__ . '/../..' . '/src/Modules/Chart.php',
         'SlimStat\\Providers\\IPHashProvider' => __DIR__ . '/../..' . '/src/Providers/IPHashProvider.php',

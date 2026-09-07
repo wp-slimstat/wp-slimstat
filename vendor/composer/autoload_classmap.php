@@ -495,6 +495,7 @@ return array(
     'SlimStat\\Migration\\Migrations\\CreateFunnelQueriesIndex' => $baseDir . '/src/Migration/Migrations/CreateFunnelQueriesIndex.php',
     'SlimStat\\Migration\\Migrations\\CreateGoalQueriesIndex' => $baseDir . '/src/Migration/Migrations/CreateGoalQueriesIndex.php',
     'SlimStat\\Migration\\Migrations\\RecoverCorruptedHeatmapPositions' => $baseDir . '/src/Migration/Migrations/RecoverCorruptedHeatmapPositions.php',
+    'SlimStat\\Migration\\Migrations\\RepairLegacyColumnWidths' => $baseDir . '/src/Migration/Migrations/RepairLegacyColumnWidths.php',
     'SlimStat\\Migration\\MissingSettingsRecovery' => $baseDir . '/src/Migration/MissingSettingsRecovery.php',
     'SlimStat\\Modules\\Chart' => $baseDir . '/src/Modules/Chart.php',
     'SlimStat\\Providers\\IPHashProvider' => $baseDir . '/src/Providers/IPHashProvider.php',

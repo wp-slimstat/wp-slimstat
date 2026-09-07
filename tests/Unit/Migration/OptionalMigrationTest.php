@@ -182,7 +182,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             // OptionClaim invalidates the option cache after a write it won.
             'wp_cache_delete'  => static fn() => true,
             'wp_cache_set'     => static fn() => true,
-            'get_transient'    => static fn($k) => $transients[$k] ?? false,
+            'get_transient'    => static function ($k) use (&$transients) { return $transients[$k] ?? false; },
             'set_transient'    => static function ($k, $v) use (&$transients) {
                 $transients[$k] = $v;
                 return true;
@@ -192,6 +192,64 @@ class OptionalMigrationTest extends WpSlimstatTestCase
                 return true;
             },
         ]);
+    }
+
+    public function test_successful_execution_invalidates_only_the_drift_check_cache(): void
+    {
+        $key = 'slimstat_column_drift_checked';
+        update_option('slimstat_schema_column_drift', ['observed-drift']);
+        foreach (['one', 'all'] as $mode) {
+            set_transient($key, 1);
+            $this->assertSame(1, get_transient($key), 'The fixture must actually cache a check.');
+            $manager = $this->manager([$this->owed()]);
+            if ('one' === $mode) {
+                $this->assertTrue($manager->runOne('owed-migration'));
+            } else {
+                $this->assertSame(['owed-migration' => true], $manager->runAll());
+            }
+            $this->assertFalse(get_transient($key));
+            $this->assertSame(['observed-drift'], get_option('slimstat_schema_column_drift'));
+        }
+    }
+
+    public function test_unsuccessful_or_unrelated_invalidation_preserves_drift_throttle(): void
+    {
+        $key = 'slimstat_column_drift_checked';
+        set_transient($key, 1);
+        $migration = $this->offered();
+        $migration->result = false;
+        $manager = $this->manager([$migration]);
+        $this->assertFalse($manager->runOne($migration->getId()));
+        $this->assertSame(1, get_transient($key));
+        $this->assertSame([], $manager->runAll());
+        $manager->forgetProbe();
+        $manager->dismissNotice();
+        $manager->resetDismissal();
+        $this->assertSame(1, get_transient($key));
+    }
+
+    public function test_width_repair_manager_cannot_stamp_blocked_or_unreadable_columns_complete(): void
+    {
+        foreach (['varchar(254)', 'unreadable', 'varchar(256)'] as $shape) {
+            $GLOBALS['slimstat_test_options'] = [];
+            $db = $this->db();
+            $db->last_error = '';
+            $db->shouldReceive('suppress_errors')->andReturn(false);
+            $columns = [];
+            foreach (['city', 'username'] as $field) {
+                $columns[] = ['Field' => $field, 'Type' => $shape, 'Collation' => 'utf8mb4_unicode_ci',
+                    'Null' => 'YES', 'Default' => null, 'Extra' => '', 'Comment' => ''];
+            }
+            $db->shouldReceive('get_results')->andReturn('unreadable' === $shape ? null : $columns);
+            $db->shouldNotReceive('query');
+            $migration = new \SlimStat\Migration\Migrations\RepairLegacyColumnWidths($db);
+            $manager = $this->manager([$migration]);
+            $this->assertSame([], $manager->runAll(), 'Apply All never executes optional repairs.');
+            $this->assertSame([], MigrationManager::completedMigrationIds());
+            $healthy = 'varchar(256)' === $shape;
+            $this->assertSame($healthy, $manager->runOne($migration->getId()));
+            $this->assertSame($healthy ? [$migration->getId()] : [], MigrationManager::completedMigrationIds());
+        }
     }
 
     protected function tearDown(): void

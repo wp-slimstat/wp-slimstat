@@ -63,6 +63,9 @@ use wpdb;
  */
 final class Schema
 {
+    /** Shared by admin observation and successful migration invalidation. */
+    public const COLUMN_DRIFT_CHECK_TRANSIENT = 'slimstat_column_drift_checked';
+
     /**
      * Unconditional. See C42 in the class docblock — this is the whole fix.
      */
@@ -1400,4 +1403,43 @@ final class Schema
 
         return self::TABLES[$suffix];
     }
+    /**
+     * Online-only repair for the shipped city/username VARCHAR(255) legacy shape.
+     * Preserve physical nullability and collation. Custom defaults/comments/extra clauses
+     * are refused because FULL COLUMNS cannot round-trip them consistently across engines.
+     *
+     * @param array<int,array<string,mixed>> $columns SHOW FULL COLUMNS rows to widen
+     */
+    public static function widenLegacyColumnsSql(string $suffix, string $prefix, array $columns): string
+    {
+        if (!in_array($suffix, ['slim_stats', 'slim_stats_archive'], true) || [] === $columns) {
+            throw new \InvalidArgumentException('Unsupported legacy width repair table or empty selection');
+        }
+        $clauses = [];
+        foreach ($columns as $column) {
+            foreach (['Field', 'Type', 'Collation', 'Null', 'Default', 'Extra', 'Comment'] as $field) {
+                if (!array_key_exists($field, $column)) {
+                    throw new \InvalidArgumentException('Incomplete column metadata');
+                }
+            }
+            $name = $column['Field'];
+            if (!in_array($name, ['city', 'username'], true)
+                || 'varchar(255)' !== strtolower((string) $column['Type'])
+                || !in_array($column['Null'], ['YES', 'NO'], true)
+                || null !== $column['Default'] || '' !== $column['Extra'] || '' !== $column['Comment']
+                || !is_string($column['Collation'])
+                || !preg_match('/^([a-z][a-z0-9]*)_[a-z0-9_]+$/D', $column['Collation'], $collation)
+                || !preg_match('/^VARCHAR\((256)\)/i', self::columns($suffix)[$name], $target)
+                || isset($clauses[$name])
+            ) {
+                throw new \InvalidArgumentException('Unsupported legacy column attributes; no automatic ALTER is safe');
+            }
+            $clauses[$name] = sprintf('MODIFY COLUMN `%s` VARCHAR(%d) CHARACTER SET `%s` COLLATE `%s` %s',
+                $name, (int) $target[1], $collation[1], $column['Collation'],
+                'YES' === $column['Null'] ? 'NULL DEFAULT NULL' : 'NOT NULL');
+        }
+        return sprintf('ALTER TABLE `%s` %s, ALGORITHM=INPLACE, LOCK=NONE',
+            $prefix . $suffix, implode(', ', $clauses));
+    }
+
 }
