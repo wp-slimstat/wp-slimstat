@@ -770,7 +770,7 @@ echo
 if [ "${REHEARSE_INTERRUPT_DDL:-0}" = 1 ]; then
   source "$HARNESS_DIR/interrupt-ddl.sh"
   interrupt_migration_ddl
-  check "an executing migration DDL was interrupted and reported failure" "$?" "see ddl-interruption.json; normal migration run below must resume"
+  check "an executing migration DDL lost its worker and remained incomplete" "$?" "see ddl-interruption.json; normal migration run below must resume"
 fi
 
 MIG=$(wpc eval '

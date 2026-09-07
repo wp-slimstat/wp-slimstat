@@ -1,14 +1,23 @@
 <?php
-// Real migration worker; the host interrupts a server-observed, executing ALTER TABLE.
+// Real migration worker; the host kills this process during its server-observed ALTER.
 if (!defined('ABSPATH')) { exit(2); }
 $a = SlimStat\Migration\MigrationService::analyticsConnection();
 $m = new SlimStat\Migration\MigrationManager();
-foreach (glob(WP_PLUGIN_DIR . '/wp-slimstat/src/Migration/Migrations/*.php') as $file) {
-    $class = 'SlimStat\\Migration\\Migrations\\' . basename($file, '.php');
-    if (class_exists($class)) { $m->register(new $class($a, $GLOBALS['wpdb'])); }
-}
+$m->register(new SlimStat\Migration\Migrations\AddVisitIdentity($a, $GLOBALS['wpdb']));
 $m->forgetProbe();
-$result = $m->runAll();
+if (($args[0] ?? '') === 'claim') {
+    $held = (int) get_option('slimstat_migration_run_claim');
+    $ttl = (new ReflectionClass($m))->getConstant('RUN_CLAIM_STALE_AFTER');
+    if ($held <= 0 || !is_int($ttl) || $ttl <= 0) { throw new RuntimeException('Missing interrupted run claim'); }
+    echo json_encode(['held' => $held, 'ttl' => $ttl, 'now' => time()]);
+    return;
+}
+if (($args[0] ?? '') === 'refused') {
+    if ($m->runOne('add-visit-identity') !== null) { throw new RuntimeException('Unexpired interrupted claim was not respected'); }
+    echo "DDL-CLAIM-REFUSED\n";
+    return;
+}
+file_put_contents('/tmp/ddl-worker.json', json_encode(['pid' => getmypid(), 'connection' => (int) $a->get_var('SELECT CONNECTION_ID()')]));
+$result = $m->runOne('add-visit-identity');
 echo 'DDL-WORKER:' . json_encode($result) . "\n";
-// An interrupted migration must report failure, not be silently marked complete.
-exit(in_array(false, $result, true) ? 1 : 0);
+exit($result === true ? 0 : 1);
