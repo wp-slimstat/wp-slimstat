@@ -713,8 +713,8 @@ var SlimStat = (function () {
             var method = order[i];
             var url = endpoints[method];
             if (!url) return trySend(i + 1);
-            if (useBeacon && navigator.sendBeacon && i === 0) {
-                // Beacon is fire-and-forget; we assume success for queue processing
+            if (useBeacon && !requiresIdResponse && navigator.sendBeacon && i === 0) {
+                // Fire-and-forget is only valid once the pageview ID is known.
                 var ok = navigator.sendBeacon(url, payload);
                 if (ok) {
                     debugRecord(method, url, 0, "beacon", null, null);
