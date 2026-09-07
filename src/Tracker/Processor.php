@@ -675,18 +675,8 @@ class Processor
                             }
                         }
 
-                        // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
-                        $next_visit_id = VisitIdGenerator::generateNextVisitId();
-                        if ($next_visit_id <= 0) {
-                            $next_visit_id = time();
-                        }
-
-                        $stat['visit_id'] = intval($next_visit_id);
-
-                        // Sync visit_id to ensure session continuity
-                        if (!empty($stat['visit_id']) && isset($existing_record->visit_id) && $stat['visit_id'] != $existing_record->visit_id) {
-                            $update_data['visit_id'] = $stat['visit_id'];
-                        }
+                        // Consent enriches the existing session; it must not allocate a new visit.
+                        $stat['visit_id'] = intval($existing_record->visit_id);
 
                         // Update the existing record
                         if (!empty($update_data)) {
@@ -723,8 +713,10 @@ class Processor
                             \wp_slimstat::set_stat($stat);
                             Query::setProcessingTimestamp(null);
 
-                            // Ensure tracking cookie is set after upgrade
-                            if (empty($stat['visit_id']) && !empty($stat['id'])) {
+                            // Match the cookie to the preserved session after ensureVisitId's provisional allocation.
+                            if (!empty($stat['visit_id'])) {
+                                Session::setTrackingCookie($stat['visit_id'], 'visit');
+                            } elseif (!empty($stat['id'])) {
                                 Session::setTrackingCookie($stat['id'], 'id', 2678400);
                             }
 

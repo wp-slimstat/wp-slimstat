@@ -433,6 +433,17 @@ test.describe('Session & Cookie Management — #199', () => {
       upgradeVisitId,
       `Upgrade row visit_id (${upgradeVisitId}) should match Phase 2 row (${earlierVisitId})`,
     ).toBe(earlierVisitId);
+    const visitCookie = (await ctx.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
+    expect(visitCookie?.value.split('.')[0], 'Consent cookie must retain the original visit').toBe(String(preUpgradeVisitId));
+    expect(visitCookie?.httpOnly).toBe(true);
+    expect(upgradedRows).toHaveLength(1);
+
+    const subsequentMarker = `consent-subsequent-${ts}`;
+    await testPage.goto(`${BASE_URL}/?e2e_marker=${subsequentMarker}`, { waitUntil: 'networkidle' });
+    const subsequentRows = await waitForStatRows(subsequentMarker, 1, 10_000);
+    expect(subsequentRows).toHaveLength(1);
+    expect(Number(subsequentRows[0].visit_id)).toBe(preUpgradeVisitId);
+    expect(subsequentRows[0].ip).toBe(upgradedIp);
 
     await testPage.close();
     await ctx.close();

@@ -277,6 +277,18 @@ class Ajax
                 return Utils::getValueWithChecksum($stat['id']);
             }
 
+            if ($isConsentUpgrade && empty($data_js['pos'])) {
+                // The verified existing ID must use the session-wide consent merge,
+                // rather than the ordinary one-row update path below.
+                \wp_slimstat::set_stat(Utils::getClientInfo($data_js, $stat));
+                $id = Processor::process();
+                if (empty($id) || $id < 0) {
+                    return $id ?: 0;
+                }
+                do_action('slimstat_track_success');
+                return Utils::getValueWithChecksum($id);
+            }
+
             // Process IP according to consent status (cookie set only by consent upgrade handler)
             // $isConsentUpgrade already defined above
             // Pass explicit consent flag if this is a consent upgrade request
