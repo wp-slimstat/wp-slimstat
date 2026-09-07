@@ -838,6 +838,9 @@ class Query
     protected function getCacheKeyForQuery($query, $args = [])
     {
         $data = [
+            // Identical table names and SQL can refer to different analytics databases.
+            // wpdb exposes connection metadata without a query; credentials are excluded.
+            'connection' => [(string) ($this->db->dbhost ?? ''), (string) ($this->db->dbname ?? '')],
             'query' => $query,
             'args'  => $args,
         ];

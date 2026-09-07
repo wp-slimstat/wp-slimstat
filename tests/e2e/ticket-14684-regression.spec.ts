@@ -157,11 +157,15 @@ async function deleteWpOption(name: string): Promise<void> {
 test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB', () => {
 	test.setTimeout(120_000);
 
+	const externalDatabase = `slimstat_e2e_${Date.now()}`;
+	const externalTable = `${externalDatabase}.wp_slim_stats`;
+	let createdExternalDatabase = false;
+
 	const now = Math.floor(Date.now() / 1000);
 	const rangeStart = now - 7 * 86400;
 	const rangeEnd = now;
 
-	test.beforeAll(() => {
+	test.beforeAll(async () => {
 		installOptionMutator();
 		installMuPluginByName('custom-db-simulator-mu-plugin.php');
 	});
@@ -169,14 +173,18 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 	test.afterAll(async () => {
 		uninstallOptionMutator();
 		uninstallMuPluginByName('custom-db-simulator-mu-plugin.php');
-		await getPool().execute('DROP TABLE IF EXISTS slimext_slim_stats');
-		await deleteWpOption('slimstat_test_use_custom_db');
+		if (createdExternalDatabase) await getPool().execute(`DROP DATABASE ${externalDatabase}`);
 		await closeDb();
 	});
 
 	test.beforeEach(async ({ page }) => {
+		await getPool().execute(`CREATE DATABASE ${externalDatabase}`);
+		createdExternalDatabase = true;
+		console.log(`Owned external fixture: ${externalDatabase}`);
 		await snapshotSlimstatOptions();
 		await snapshotOption('slimstat_test_use_custom_db');
+		await snapshotOption('slimstat_test_custom_database');
+		await setWpOption('slimstat_test_custom_database', externalDatabase);
 		await clearStatsTable();
 		await setSlimstatOption(page, 'gdpr_enabled', 'off');
 		await setSlimstatOption(page, 'ignore_wp_users', 'off');
@@ -185,7 +193,11 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 	test.afterEach(async () => {
 		await restoreSlimstatOptions();
 		await restoreOption('slimstat_test_use_custom_db');
-		await getPool().execute('DROP TABLE IF EXISTS slimext_slim_stats');
+		await restoreOption('slimstat_test_custom_database');
+		if (createdExternalDatabase) {
+			await getPool().execute(`DROP DATABASE ${externalDatabase}`);
+			createdExternalDatabase = false;
+		}
 	});
 
 	test('external DB: tracker writes should go to external table, not internal', async ({
@@ -193,7 +205,7 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 	}) => {
 		/**
 		 * When slimstat_custom_wpdb filter returns a custom wpdb pointing to
-		 * a different prefix (slimext_), Storage.php must write to slimext_slim_stats.
+		 * a separate database with the WordPress prefix, Storage.php must write to slimext_slim_stats.
 		 *
 		 * BEFORE FIX: Query.php uses global $wpdb → data goes to wp_slim_stats
 		 * AFTER FIX:  Query.php uses wp_slimstat::$wpdb → data goes to slimext_slim_stats
@@ -201,7 +213,7 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 
 		// Create external table
 		await getPool().execute(
-			'CREATE TABLE IF NOT EXISTS slimext_slim_stats LIKE wp_slim_stats'
+			`CREATE TABLE ${externalTable} LIKE wp_slim_stats`
 		);
 
 		// Activate custom DB filter
@@ -217,7 +229,7 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 
 		// Check if data landed in the external table
 		const [extRows] = (await getPool().execute(
-			'SELECT COUNT(*) as cnt FROM slimext_slim_stats WHERE resource LIKE ?',
+			`SELECT COUNT(*) as cnt FROM ${externalTable} WHERE resource LIKE ?`,
 			[`%${marker}%`]
 		)) as any;
 		const extCount = parseInt(extRows[0].cnt, 10);
@@ -248,6 +260,7 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 			extCount,
 			'Data went to internal wp_slim_stats instead of external slimext_slim_stats — Query.php is not using wp_slimstat::$wpdb'
 		).toBeGreaterThan(0);
+		expect(intCount, 'External tracking must not duplicate into the internal table').toBe(0);
 	});
 
 	test('external DB: chart must read from external table when filter is active', async ({
@@ -263,12 +276,12 @@ test.describe('Bug 1: Query builder must use wp_slimstat::$wpdb for external DB'
 
 		// Create external table and seed data there
 		await getPool().execute(
-			'CREATE TABLE IF NOT EXISTS slimext_slim_stats LIKE wp_slim_stats'
+			`CREATE TABLE ${externalTable} LIKE wp_slim_stats`
 		);
-		await insertRows(now - 3600, 5, 'ext-chart', 'slimext_slim_stats');
+		await insertRows(now - 3600, 5, 'ext-chart', externalTable);
 
 		// Verify data is in external table, NOT in internal
-		const extCount = await countRows('slimext_slim_stats');
+		const extCount = await countRows(externalTable);
 		const intCount = await countRows('wp_slim_stats');
 		expect(extCount).toBe(5);
 		expect(intCount).toBe(0);

@@ -122,4 +122,32 @@ class QueryGetVarCacheTest extends WpSlimstatTestCase
         $result = $query->getVar();
         $this->assertEquals('50', $result);
     }
+    public function testIdenticalSqlDoesNotReuseAnotherDatabaseOrHostsCachedResult(): void
+    {
+        $cache = [];
+        Functions\stubs([
+            'get_transient' => static function ($key) use (&$cache) { return $cache[$key] ?? false; },
+            'set_transient' => static function ($key, $value) use (&$cache) { $cache[$key] = $value; return true; },
+        ]);
+        $saved = \wp_slimstat::$wpdb;
+        try {
+            $connections = [];
+            foreach ([['db-a', 'external', '5'], ['db-a', 'wordpress', '7'], ['db-b', 'wordpress', '9']] as $case) {
+                $db = Mockery::mock('stdClass');
+                $db->dbhost = $case[0];
+                $db->dbname = $case[1];
+                $db->prefix = 'wp_';
+                $db->shouldReceive('get_var')->once()->andReturn($case[2]);
+                $connections[] = $db;
+            }
+            foreach ([0, 1, 2, 0] as $index) {
+                \wp_slimstat::$wpdb = $connections[$index];
+                $actual = Query::select('COUNT(id)')->from('wp_slim_stats')->allowCaching(true)->getVar();
+                $this->assertSame(['5', '7', '9'][$index], $actual);
+            }
+        } finally {
+            \wp_slimstat::$wpdb = $saved;
+        }
+    }
+
 }
