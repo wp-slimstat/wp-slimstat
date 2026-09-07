@@ -17,10 +17,10 @@ function sanitize_text_field($text) { return strip_tags($text); }
 function sanitize_key($text) { return preg_replace('/[^a-z0-9_-]/', '', strtolower($text)); }
 function wp_unslash($value) { return is_array($value) ? array_map('wp_unslash', $value) : stripslashes($value); }
 function wp_verify_nonce($nonce, $action) { return $nonce === 'valid'; }
-function current_user_can($cap) { return $GLOBALS['allowed']; }
+function current_user_can($cap) { return $cap === 'manage_network_options' ? ($GLOBALS['network_allowed'] ?? false) : $GLOBALS['allowed']; }
 function wp_die($message) { throw new LogicException($message); }
 function wp_nonce_field(...$args) {}
-function is_network_admin() { return false; }
+function is_network_admin() { return $GLOBALS['network'] ?? false; }
 class wp_slimstat {
     public static $wpdb;
     public static $settings = [];
@@ -41,7 +41,8 @@ $end = strpos($source, '    // Some of them require extra processing', $start);
 check($start !== false && $end !== false, 'settings boundary disappeared');
 $boundary = substr($source, $start, $end - $start) . "\n}";
 foreach (['reset-settings', 'truncate-table'] as $action) {
-    $settings = [1 => ['rows' => []]];
+    $current_tab = 1;
+    $settings = [1 => ['rows' => ['option' => ['type' => 'text']]]];
     $_REQUEST = ['slimstat_update_settings' => 'valid'];
     $_GET = ['action' => $action];
     $_POST = [];
@@ -68,6 +69,20 @@ foreach (['not-an-array', ['option' => ['nested']]] as $options) {
     catch (LogicException $error) { check($error->getMessage() === 'Invalid settings data.', 'wrong shape denial'); }
     check($GLOBALS['writes'] === 0, 'malformed settings caused writes');
 }
+$_POST = ['options' => ['extension_payload' => ['nested' => 'preserved']]];
+$_GET = [];
+eval($boundary);
+check($posted_options['extension_payload']['nested'] === 'preserved', 'unknown extension payload rejected');
+$GLOBALS['network'] = true;
+$GLOBALS['network_allowed'] = false;
+$_GET = ['action' => 'reset-settings'];
+$GLOBALS['writes'] = 0;
+try { eval($boundary); throw new RuntimeException('site admin changed network settings'); }
+catch (LogicException $error) { check($GLOBALS['writes'] === 0, 'network authorization follows writes'); }
+$GLOBALS['network_allowed'] = true;
+eval($boundary);
+check($GLOBALS['writes'] > 0, 'network administrator action refused');
+$GLOBALS['network'] = false;
 $current_tab = 1;
 $GLOBALS['wp_locale'] = (object) ['text_direction' => 'ltr'];
 $settings = [1 => ['title' => 'Settings', 'rows' => ['hostile' => [

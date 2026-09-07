@@ -298,7 +298,7 @@ $settings = [
             ],
             'geolocation_db_actions' => [
                 'title'             => __('Geolocation Database', 'wp-slimstat'),
-                'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . wp_create_nonce('slimstat_geoip_action') . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . __('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . __('Check Database', 'wp-slimstat') . '</a>',
+                'after_input_field' => '<input type="hidden" id="slimstat-geoip-nonce" value="' . esc_attr(wp_create_nonce('slimstat_geoip_action')) . '" /><a href="#" id="slimstat-update-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . esc_attr__('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . esc_html__('Update Database', 'wp-slimstat') . '</a> <a href="#" id="slimstat-check-geoip-database" class="button-secondary noslimstat" style="vertical-align: middle" data-error-message="' . esc_attr__('An error occurred while updating the GeoIP database.', 'wp-slimstat') . '">' . esc_html__('Check Database', 'wp-slimstat') . '</a>',
                 'type'              => 'plain-text',
 					'description'       => __('Download or refresh the selected geolocation database. <strong>DB-IP/MaxMind only</strong>: "Update Database" runs it now; after saving settings, Slimstat also schedules a background update. "Check Database" verifies that the file exists and is readable. <strong>Cloudflare</strong>: No database is required—the header is used at request time.', 'wp-slimstat'),
             ],
@@ -686,13 +686,13 @@ $settings = [
             'last_tracker_error' => [
                 'title'             => __('Tracker Error', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => empty($last_tracker_error) ? __('So far so good.', 'wp-slimstat') : '<strong>[' . date_i18n(get_option('date_format'), $last_tracker_error[1], true) . ' ' . date_i18n(get_option('time_format'), $last_tracker_error[1], true) . '] ' . $last_tracker_error[0] . ' ' . wp_slimstat_i18n::get_string('e-' . $last_tracker_error[0]) . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-tracker-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>',
+                'after_input_field' => empty($last_tracker_error) ? __('So far so good.', 'wp-slimstat') : '<strong>[' . date_i18n(get_option('date_format'), $last_tracker_error[1], true) . ' ' . date_i18n(get_option('time_format'), $last_tracker_error[1], true) . '] ' . esc_html($last_tracker_error[0]) . ' ' . esc_html(wp_slimstat_i18n::get_string('e-' . $last_tracker_error[0])) . '</strong><a class="slimstat-font-cancel" title="' . esc_attr__('Reset this error', 'wp-slimstat') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-tracker-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>',
                 'description'       => __('The information here above is useful to troubleshoot issues with the tracker. <strong>Errors</strong> are returned when the tracker could not record a page view for some reason, and are indicative of some kind of malfunction.', 'wp-slimstat'),
             ],
             'last_geoip_error' => [
                 'title'             => __('GeoIP Database Error', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => empty($last_geoip_error) ? __('So far so good.', 'wp-slimstat') : '<strong>[' . date_i18n(get_option('date_format'), $last_geoip_error['time'], true) . ' ' . date_i18n(get_option('time_format'), $last_geoip_error['time'], true) . '] ' . $last_geoip_error['error'] . '</strong><a class="slimstat-font-cancel" title="' . htmlentities(__('Reset this error', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-geoip-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>',
+                'after_input_field' => empty($last_geoip_error) ? __('So far so good.', 'wp-slimstat') : '<strong>[' . date_i18n(get_option('date_format'), $last_geoip_error['time'], true) . ' ' . date_i18n(get_option('time_format'), $last_geoip_error['time'], true) . '] ' . esc_html($last_geoip_error['error']) . '</strong><a class="slimstat-font-cancel" title="' . esc_attr__('Reset this error', 'wp-slimstat') . '" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-geoip-error&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '"></a>',
                 'description'       => __("The information here above is useful to troubleshoot issues with the GeoIP Database. <strong>Errors</strong> are returned when the GeoIP Database can't update or retrieve a visitor's location, indicating some malfunction.", 'wp-slimstat'),
             ],
             'last_geoip_dl' => [
@@ -730,13 +730,13 @@ $settings = [
             'delete_all_records' => [
                 'title'             => __('Data', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . __('Please confirm that you want to PERMANENTLY DELETE ALL the records from your database.', 'wp-slimstat') . '\' ) )">' . __('Delete Records', 'wp-slimstat') . '</a>',
+                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=truncate-table&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Please confirm that you want to PERMANENTLY DELETE ALL the records from your database.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Delete Records', 'wp-slimstat') . '</a>',
                 'description'       => __('Delete all the information collected by Slimstat so far, but not the archived records (stored in <code>wp_slim_stats_archive</code>). This operation <strong>does not</strong> reset your settings and it can be undone by manually copying your records from the archive table, if you have the corresponding option enabled.', 'wp-slimstat'),
             ],
             'reset_all_settings' => [
                 'title'             => __('Settings', 'wp-slimstat'),
                 'type'              => 'plain-text',
-                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . __('Please confirm that you want to RESET your settings.', 'wp-slimstat') . '\' ) )">' . __('Factory Reset', 'wp-slimstat') . '</a>',
+                'after_input_field' => '<a class="button-primary" href="' . wp_slimstat_admin::$config_url . $current_tab . '&amp;action=reset-settings&amp;slimstat_update_settings=' . wp_create_nonce('slimstat_update_settings') . '" onclick="return( confirm( \'' . esc_js(__('Please confirm that you want to RESET your settings.', 'wp-slimstat')) . '\' ) )">' . esc_html__('Factory Reset', 'wp-slimstat') . '</a>',
                 'description'       => __('Restore all the settings to their default value. This action DOES NOT delete any records collected by the plugin.', 'wp-slimstat'),
             ],
             'delete_data_on_uninstall' => [
@@ -764,15 +764,24 @@ $settings = apply_filters('slimstat_options_on_page', $settings);
 $save_messages = [];
 if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_string($_REQUEST['slimstat_update_settings']) && wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['slimstat_update_settings'])), 'slimstat_update_settings')) {
     // Authorize before destructive GET actions as well as ordinary settings saves.
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can(is_network_admin() ? 'manage_network_options' : 'manage_options')) {
         wp_die(esc_html__('Insufficient permissions.', 'wp-slimstat'));
     }
     $posted_options = [];
     if (isset($_POST['options'])) {
-        if (!is_array($_POST['options']) || array_filter($_POST['options'], static function ($value) { return !is_string($value); })) {
+        if (!is_array($_POST['options'])) {
             wp_die(esc_html__('Invalid settings data.', 'wp-slimstat'));
         }
         $posted_options = wp_unslash($_POST['options']);
+        foreach ($posted_options as $slug => $value) {
+            // Unknown/custom payloads belong to extension hooks. Built-in controls
+            // and the special handlers below accept scalar HTML form values only.
+            $type = $settings[$current_tab]['rows'][$slug]['type'] ?? '';
+            if (!is_string($value) && (in_array($type, ['toggle', 'select', 'text', 'integer', 'textarea', 'rich_text'], true)
+                || in_array($slug, ['db_indexes', 'enable_browscap', 'geolocation_country', 'geolocation_provider', 'maxmind_license_key', 'tracking_request_method'], true))) {
+                wp_die(esc_html__('Invalid settings data.', 'wp-slimstat'));
+            }
+        }
     }
     if (!empty($_GET['action']) && is_string($_GET['action'])) {
         switch (sanitize_key(wp_unslash($_GET['action']))) {
@@ -987,10 +996,6 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
     }
 }
 
-$index_enabled = wp_slimstat::$wpdb->get_results(
-    sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%sstats_resource_idx'", $GLOBALS[ 'wpdb' ]->prefix, $GLOBALS[ 'wpdb' ]->prefix)
-);
-
 $index_names = [
     $GLOBALS[ 'wpdb' ]->prefix . 'stats_resource_idx',
     $GLOBALS[ 'wpdb' ]->prefix . 'stats_browser_idx',
@@ -1144,7 +1149,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
                     case 'rich_text':
                         $editor_content = empty(wp_slimstat::$settings[$a_setting_slug]) ? '' : wp_kses_post(wp_slimstat::$settings[$a_setting_slug]);
                         $editor_settings = [
-                            'textarea_name' => 'options[' . esc_attr($a_setting_slug) . ']',
+                            'textarea_name' => 'options[' . $a_setting_slug . ']',
                             'textarea_rows' => 8,
                             'media_buttons' => false,
                             'teeny' => true,
