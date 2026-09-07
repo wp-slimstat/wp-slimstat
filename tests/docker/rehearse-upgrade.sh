@@ -170,6 +170,8 @@ export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
 existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$volumes" ] || die 'project volumes already exist; refuse an inherited database'
 [ -z "$existing" ] || die 'rehearsal project already exists; serialize and clean its owner first'
 STARTED=$(now)
 status="PASS"; reason=""

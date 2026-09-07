@@ -61,6 +61,8 @@ YAML
 fi
 
 existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$volumes" ] || die 'project volumes already exist; refuse an inherited database'
 [ -z "$existing" ] || die 'ssbench project already exists; serialize and clean its owner first'
 
 # KEEP_BENCH=1 leaves the container up so a measurement can run against the seeded database.

@@ -55,7 +55,7 @@ import os
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
     fake = root / 'docker'
-    fake.write_text('#!/bin/sh\n[ "$1" = ps ] && exit 0\nexit 1\n')
+    fake.write_text('#!/bin/sh\n[ "$1" = ps ] && exit 0\n[ "$1" = volume ] && exit 0\nexit 1\n')
     fake.chmod(0o755)
     for explicit in [False, True]:
         case = root / str(explicit)
