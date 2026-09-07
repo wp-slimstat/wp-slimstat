@@ -10,6 +10,13 @@
  */
 namespace SlimStat\Dependencies\Symfony\Contracts\Service;
 
+// Scoped SlimStat module: allow plugin/CLI autoload, deny direct web execution.
+if (!defined('ABSPATH') && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+    http_response_code(403);
+    exit;
+}
+
+
 use SlimStat\Dependencies\Psr\Container\ContainerInterface;
 use SlimStat\Dependencies\Symfony\Contracts\Service\Attribute\Required;
 use SlimStat\Dependencies\Symfony\Contracts\Service\Attribute\SubscribedService;
