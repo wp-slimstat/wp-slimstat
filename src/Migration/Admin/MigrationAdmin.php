@@ -276,7 +276,7 @@ class MigrationAdmin
         }
 
         echo '<p class="wp-core-ui">';
-        echo '<a href="' . $url . '" class="button button-primary">' . esc_html__('Go to Migration Page', 'wp-slimstat') . '</a>';
+        echo '<a href="' . esc_url($url) . '" class="button button-primary">' . esc_html__('Go to Migration Page', 'wp-slimstat') . '</a>';
         echo '</p>';
         echo '</div>';
 	}

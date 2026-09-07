@@ -930,7 +930,7 @@ class wp_slimstat
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
 
                 ob_start();
-                echo wp_slimstat_reports::report_header($w);
+                wp_slimstat_reports::report_header($w);
                 call_user_func(wp_slimstat_reports::$reports[$w]['callback'], wp_slimstat_reports::$reports[$w]['callback_args']);
                 wp_slimstat_reports::report_footer();
                 $output = ob_get_contents();
@@ -2809,6 +2809,7 @@ class slimstat_widget extends WP_Widget
         ], $_instance));
 
         if (!empty($slimstat_widget_title)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Core register_sidebar supplies theme-owned wrapper HTML; the stored widget title is escaped here.
             echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . esc_html($slimstat_widget_title) . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
         }
         if (!empty($slimstat_widget_id)) {
@@ -2838,27 +2839,27 @@ class slimstat_widget extends WP_Widget
         $select_options = '';
 
         foreach (wp_slimstat_reports::$reports as $a_report_id => $a_report_info) {
-            $select_options .= sprintf("<option value='%s' ", $a_report_id) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', $a_report_info[ 'title' ]);
+            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'title' ]));
         }
         ?>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php _e('Report', 'wp-slimstat') ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php esc_html_e('Report', 'wp-slimstat') ?></label>
             <select class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_id')); ?>">
                 <option value="">Select a widget</option>
-                <?php echo $select_options ?>
+                <?php echo wp_kses($select_options, ['option' => ['value' => true, 'selected' => true]]); ?>
             </select>
         </p>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>"><?php _e('Title', 'wp-slimstat') ?></label>
-            <input type="text" class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_title')); ?>" value="<?php echo trim(strip_tags($slimstat_widget_title)) ?>">
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>"><?php esc_html_e('Title', 'wp-slimstat') ?></label>
+            <input type="text" class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_title')); ?>" value="<?php echo esc_attr(trim(wp_strip_all_tags($slimstat_widget_title))) ?>">
         </p>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php _e('Optional filters', 'wp-slimstat'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php esc_html_e('Optional filters', 'wp-slimstat'); ?></label>
             <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
-            <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo trim(strip_tags($slimstat_widget_filters)) ?></textarea>
+            <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo esc_textarea(trim(wp_strip_all_tags($slimstat_widget_filters))) ?></textarea>
         </p>
         <?php
 

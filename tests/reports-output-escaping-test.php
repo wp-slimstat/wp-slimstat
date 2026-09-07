@@ -567,5 +567,28 @@ assert_not_contains('javascript:', $summary, 'Summary details strips unsafe URLs
 assert_contains('<strong>Visits</strong>', $summary, 'Summary metric preserves intended formatting');
 assert_contains('<em>42</em>', $summary, 'Summary value preserves intended formatting');
 
+// The new report API must filter tooltip text without removing its fixed SVG icon.
+require_once __DIR__ . '/../src/Reports/Contracts/ReportInterface.php';
+require_once __DIR__ . '/../src/Reports/Contracts/RenderableInterface.php';
+require_once __DIR__ . '/../src/Reports/Abstracts/AbstractReport.php';
+class TooltipEscapingReport extends \SlimStat\Reports\Abstracts\AbstractReport {
+    public $test_tooltip;
+    protected function init(): void {}
+    public function get_data(): array { return []; }
+    public function get_renderer(): string { return ''; }
+    public function get_id(): string { return 'tooltip-test'; }
+    public function get_tooltip(): ?string { return $this->test_tooltip; }
+    public function tooltip_html(): string { return $this->get_header_tooltip(); }
+}
+$tooltip_report = (new ReflectionClass(TooltipEscapingReport::class))->newInstanceWithoutConstructor();
+$tooltip_report->test_tooltip = '<strong>Help</strong><img src=x onerror="attack()"><a href="javascript:attack()">Unsafe</a>';
+$tooltip_html = $tooltip_report->tooltip_html();
+assert_contains('<svg ', $tooltip_html, 'Fixed tooltip SVG icon remains');
+assert_contains('<strong>Help</strong>', $tooltip_html, 'Tooltip permitted formatting remains');
+assert_not_contains('onerror=', $tooltip_html, 'Tooltip rejects event handlers');
+assert_not_contains('javascript:', $tooltip_html, 'Tooltip rejects unsafe URL');
+$tooltip_report->test_tooltip = null;
+assert_contains('tooltip-test', $tooltip_report->tooltip_html(), 'Absent tooltip uses escaped report ID');
+
 $GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";
