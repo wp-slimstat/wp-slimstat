@@ -139,10 +139,11 @@ class Storage
 			// A probe that could not read the table answers "unknown", not "none" — an
 			// empty list here would make the intersection empty and drop the whole row,
 			// which is the get_var()-null-conflation family all over again.
-			$columns[$key] = is_array($found) ? $found : [];
+			// Retain the handle so PHP cannot reuse its object hash for another connection.
+			$columns[$key] = ['db' => $db, 'columns' => is_array($found) ? $found : []];
 		}
 
-		return $columns[$key];
+		return $columns[$key]['columns'];
 	}
 
 	/**

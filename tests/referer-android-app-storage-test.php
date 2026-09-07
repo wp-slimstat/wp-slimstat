@@ -111,6 +111,7 @@ namespace {
 
     $GLOBALS['wpdb'] = new class {
         public string $prefix = 'wp_';
+        public string $last_error = '';
     };
 
     // WriteResult BEFORE Storage: this script hand-requires its subject rather than using the
