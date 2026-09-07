@@ -68,6 +68,8 @@ $walk('test:all');
 // Standalone by design. Each entry states WHY, because "it is in the list" is not a reason, and
 // a list anyone may append to without argument is not a gate.
 $standalone = [
+    'test:pot-freshness' => 'runs in the dedicated catalog CI job with pinned WP-CLI 2.12.0; '
+        . 'requires the catalog generator, not a plugin PHP runtime dependency',
     'test:phpstan' => 'runs in its own PHPStan lane with vendor installed; static analysis is not '
         . 'a test suite and its baseline is ratcheted separately by phpstan-baseline-ratchet',
     'test:mutations' => 'runs as its own ci.yml step on all six Tier 1 lanes. It applies patches '
