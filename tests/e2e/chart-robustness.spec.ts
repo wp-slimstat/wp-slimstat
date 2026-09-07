@@ -210,14 +210,14 @@ test.describe('Chart browser AJAX', () => {
     const wpcliSum = sumV1(wpcliJson);
     expect(wpcliSum).toBe(30);
 
-    // Navigate to slimview2 as admin
-    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+    // Use the same explicit range as the reference query, independent of today.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2026-02-18&to=2026-03-17`, {
       waitUntil: 'networkidle',
     });
     await ensureAdminLoggedIn(page);
     // Re-navigate after login if needed
     if (!page.url().includes('slimview2')) {
-      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2026-02-18&to=2026-03-17`, {
         waitUntil: 'networkidle',
       });
     }
@@ -256,12 +256,13 @@ test.describe('Chart browser AJAX', () => {
       await insertRows(utcMidnight(d), 5, d.replace(/-/g, ''));
     }
 
-    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+    // Keep all seeded months inside the selected report range.
+    await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2025-11-01&to=2026-03-17`, {
       waitUntil: 'networkidle',
     });
     await ensureAdminLoggedIn(page);
     if (!page.url().includes('slimview2')) {
-      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+      await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=2025-11-01&to=2026-03-17`, {
         waitUntil: 'networkidle',
       });
     }

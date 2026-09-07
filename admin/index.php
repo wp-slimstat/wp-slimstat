@@ -764,6 +764,17 @@ class wp_slimstat_admin
         if ([] === $drift) {
             // Cleared by the ABSENCE of drift, not by the passage of time.
             delete_option(self::COLUMN_DRIFT_OPTION);
+            // The physical observation also resolves the notice recorded before repair.
+            // Preserve every unrelated degradation and never clear on a failed probe.
+            $degradations = get_option(wp_slimstat::DEGRADATION_OPTION, []);
+            if (is_array($degradations) && isset($degradations['schema column drift'])) {
+                unset($degradations['schema column drift']);
+                if ($degradations) {
+                    update_option(wp_slimstat::DEGRADATION_OPTION, $degradations, false);
+                } else {
+                    delete_option(wp_slimstat::DEGRADATION_OPTION);
+                }
+            }
 
             return [];
         }

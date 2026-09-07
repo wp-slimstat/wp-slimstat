@@ -414,6 +414,32 @@ foreach (['record_column_drift' => 'required', 'observe_column_drift' => 'drift'
     }
 }
 
+// Execute the production persistence body: repaired drift must clear its notice only.
+class wp_slimstat { const DEGRADATION_OPTION = 'slimstat_degradations'; }
+function get_option($key, $default = false) { return $GLOBALS['drift_options'][$key] ?? $default; }
+function update_option($key, $value, $autoload = null) { $GLOBALS['drift_options'][$key] = $value; }
+function delete_option($key) { unset($GLOBALS['drift_options'][$key]); }
+$persistBody = slimstat_find_function_body($adminRaw, 'persist_column_drift');
+eval('class DriftPersistenceProbe { const COLUMN_DRIFT_OPTION = "slimstat_schema_column_drift"; public static function run(array $drift) {' . $persistBody . '} }');
+$GLOBALS['drift_options'] = [
+    'slimstat_schema_column_drift' => ['still narrow'],
+    'slimstat_degradations' => ['schema column drift' => ['message' => 'old drift'], 'purge' => ['message' => 'keep']],
+];
+DriftPersistenceProbe::run(['still narrow']);
+if (!isset($GLOBALS['drift_options']['slimstat_degradations']['schema column drift'])) {
+    $failures[] = 'unresolved drift must retain its degradation';
+}
+DriftPersistenceProbe::run([]);
+if (isset($GLOBALS['drift_options']['slimstat_schema_column_drift'])
+    || get_option('slimstat_degradations') !== ['purge' => ['message' => 'keep']]) {
+    $failures[] = 'verified repaired drift must remove its stale degradation and preserve unrelated failures';
+}
+$GLOBALS['drift_options']['slimstat_degradations'] = ['schema column drift' => ['message' => 'old drift']];
+DriftPersistenceProbe::run([]);
+if (isset($GLOBALS['drift_options']['slimstat_degradations'])) {
+    $failures[] = 'last repaired drift must remove the empty degradation option';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: degradation notice honesty (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {

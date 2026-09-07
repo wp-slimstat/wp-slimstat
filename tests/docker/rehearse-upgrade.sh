@@ -811,6 +811,27 @@ if [ "$IDX_COLS" = "vid_hash,dt" ]; then _r=0; else _r=1; fi
 check "idx_vid_hash_dt is built on (vid_hash, dt), in that order" "$_r" \
       "${IDX_COLS:-the index does not exist}"
 
+# Explicit optional-repair arm. The ordinary upgrade never opts a site into DDL.
+# Existing fingerprints below still compare every historical value after this leg.
+if [ "${REHEARSE_WIDTH_REPAIR:-0}" = 1 ]; then
+  WIDTH_REPAIR=$(wpc eval '
+    $a = SlimStat\Migration\MigrationService::analyticsConnection();
+    $m = new SlimStat\Migration\MigrationManager();
+    $r = new SlimStat\Migration\Migrations\RepairLegacyColumnWidths($a, $GLOBALS["wpdb"]);
+    $m->register($r);
+    $offered = $r->shouldRun();
+    $first = $m->runOne($r->getId());
+    $second = $m->runOne($r->getId());
+    echo json_encode(["offered" => $offered, "first" => $first, "second" => $second]);
+  ' 2>"$ART/width-repair.stderr")
+  printf '%s\n' "$WIDTH_REPAIR" > "$ART/width-repair.json"
+  if [ "$WIDTH_REPAIR" = '{"offered":true,"first":true,"second":true}' ]; then
+    check "explicit legacy width repair is offered, succeeds, and is idempotent" 0
+  else
+    check "explicit legacy width repair is offered, succeeds, and is idempotent" 1 "$WIDTH_REPAIR"
+  fi
+fi
+
 # ── H5 · disarm the projection ─────────────────────────────────────────────
 # From here on `notes` is read raw. FP_0 was computed with the pre-4.8.8 rows projected THROUGH
 # the plugin's own forward transform; FP_1 reads what the plugin actually wrote. Equality is
@@ -1033,7 +1054,7 @@ drop_ref "$OLD_REF"; drop_ref "$NEW_REF"
 # {"cell":"upgrade-u1","status":"PASS"} is a claim with no subject — Run 63's two verdicts said
 # exactly that, and they are gone anyway, which is the other half of what this fixes.
 write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" \
-  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"arm_options\":\"${REHEARSE_ARM_OPTIONS:-present}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
+  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"arm_options\":\"${REHEARSE_ARM_OPTIONS:-present}\",\"width_repair_opt_in\":\"${REHEARSE_WIDTH_REPAIR:-0}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
   2>/dev/null || true
 
 # $ART is under /tmp, and /tmp is why Run 63's verdicts do not exist to be read. This copies the
