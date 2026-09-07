@@ -556,7 +556,7 @@ class wp_slimstat_admin
     {
         // Check nonce
         if (!wp_verify_nonce($_REQUEST['_wpnonce'], 'reset_layout')) {
-            wp_die(__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
+            wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
         }
 
         $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_admin_page_slimlayout%%'", $GLOBALS['wpdb']->prefix));
@@ -1531,7 +1531,9 @@ class wp_slimstat_admin
      */
     public static function wp_slimstat_userdefined_stylesheet()
     {
-        echo '<style type="text/css" media="screen">' . wp_slimstat::$settings['custom_css'] . '</style>';
+        // CSS does not decode HTML entities; preserve child combinators while
+        // removing the '<' byte that can terminate a raw-text style element.
+        echo wp_kses('<style type="text/css" media="screen">' . str_replace('<', '', wp_strip_all_tags((string) wp_slimstat::$settings['custom_css'])) . '</style>', ['style' => ['type' => true, 'media' => true]]);
     }
 
     // END: wp_slimstat_userdefined_stylesheet
@@ -2196,9 +2198,9 @@ class wp_slimstat_admin
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"><span class="screen-reader-text">' . __('Views', 'wp-slimstat') . '</span></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . esc_attr(sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval'])) . '"><span class="screen-reader-text">' . esc_html__('Views', 'wp-slimstat') . '</span></span>';
         } else {
-            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval']) . '"></span>';
+            $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . esc_attr(sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval'])) . '"></span>';
         }
 
         return $_columns;
@@ -2217,7 +2219,7 @@ class wp_slimstat_admin
 
         $count = empty(self::$data_for_column['count'][$_post_id]) ? 0 : self::$data_for_column['count'][$_post_id];
 
-        echo '<a href="' . wp_slimstat_reports::fs_url('resource starts_with ' . self::$data_for_column['url'][$_post_id] . '&&&interval equals -' . wp_slimstat::$settings['posts_column_day_interval']) . '">' . $count . '</a>';
+        echo '<a href="' . esc_url(wp_slimstat_reports::fs_url('resource starts_with ' . self::$data_for_column['url'][$_post_id] . '&&&interval equals -' . wp_slimstat::$settings['posts_column_day_interval'])) . '">' . esc_html($count) . '</a>';
         return null;
     }
 
@@ -2232,12 +2234,12 @@ class wp_slimstat_admin
             return 0;
         }
 
-        $_message = wpautop(wp_kses_post($_message));
+        $_message = wpautop($_message);
 
         if (!empty($_dismiss_handle)) {
-            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . $_message . '</div>';
+            echo '<div id="slimstat-notice-' . esc_attr($_dismiss_handle) . '" class="notice is-dismissible slimstat-notice notice-' . esc_attr($_type) . '">' . wp_kses_post($_message) . '</div>';
         } else {
-            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . $_message . '</div>';
+            echo '<div class="notice notice-' . esc_attr($_type) . ' slimstat-notice">' . wp_kses_post($_message) . '</div>';
         }
 
         return null;
@@ -2949,16 +2951,28 @@ class wp_slimstat_admin
         wp_slimstat_reports::init();
 
         $saved_filters = get_option('slimstat_filters', []);
+        if (!is_array($saved_filters)) {
+            wp_die(esc_html__('Invalid saved filter data.', 'wp-slimstat'), '', ['response' => 400]);
+        }
 
-        switch (sanitize_key(wp_unslash($_POST['type'] ?? ''))) {
+        $filter_action = isset($_POST['type']) && is_string($_POST['type']) ? sanitize_key(wp_unslash($_POST['type'])) : '';
+        switch ($filter_action) {
             case 'save':
-                $new_filter = json_decode(stripslashes_deep(sanitize_text_field($_POST['filter_array'])), true);
+                $new_filter = isset($_POST['filter_array']) && is_string($_POST['filter_array']) ? json_decode(wp_unslash($_POST['filter_array']), true) : null;
+                if (!is_array($new_filter) || !$new_filter) {
+                    wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
+                }
+                foreach ($new_filter as $label => $details) {
+                    if (!is_string($label) || !is_array($details) || !isset($details[0], $details[1]) || !is_string($details[0]) || !is_scalar($details[1])) {
+                        wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
+                    }
+                }
 
                 // Check if this filter is already saved
                 foreach ($saved_filters as $a_saved_filter) {
                     $filter_found = 0;
 
-                    if (count($a_saved_filter) !== count($new_filter) || count(array_intersect_key($a_saved_filter, $new_filter)) !== count($new_filter)) {
+                    if (!is_array($a_saved_filter) || count($a_saved_filter) !== count($new_filter) || count(array_intersect_key($a_saved_filter, $new_filter)) !== count($new_filter)) {
                         $filter_found = 1;
                         continue;
                     }
@@ -2968,7 +2982,7 @@ class wp_slimstat_admin
                     }
 
                     if (0 == $filter_found) {
-                        echo __('Already saved', 'wp-slimstat');
+                        echo esc_html__('Already saved', 'wp-slimstat');
                         break;
                     }
                 }
@@ -2976,13 +2990,16 @@ class wp_slimstat_admin
                 if (empty($saved_filters) || $filter_found > 0) {
                     $saved_filters[] = $new_filter;
                     update_option('slimstat_filters', $saved_filters);
-                    echo __('Saved', 'wp-slimstat');
+                    echo esc_html__('Saved', 'wp-slimstat');
                 }
 
                 break;
 
             case 'delete':
-                unset($saved_filters[intval($_POST['filter_id'])]);
+                if (!isset($_POST['filter_id']) || !is_string($_POST['filter_id']) || !ctype_digit($_POST['filter_id'])) {
+                    wp_die(esc_html__('Invalid filter data.', 'wp-slimstat'), '', ['response' => 400]);
+                }
+                unset($saved_filters[(int) $_POST['filter_id']]);
                 update_option('slimstat_filters', $saved_filters);
 
                 // no break here - We want to return the new list of filters!
@@ -2990,16 +3007,22 @@ class wp_slimstat_admin
             default:
                 echo '<div id="slim_filters_overlay">';
                 foreach ($saved_filters as $a_filter_id => $a_filter_data) {
+                    if (!is_array($a_filter_data)) {
+                        continue;
+                    }
 
                     $filter_html    = [];
                     $filter_strings = [];
                     foreach ($a_filter_data as $a_filter_label => $a_filter_details) {
+                        if (!is_array($a_filter_details) || !isset($a_filter_details[0], $a_filter_details[1]) || !is_string($a_filter_details[0]) || !is_scalar($a_filter_details[1])) {
+                            continue;
+                        }
                         $filter_value_no_slashes = htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-                        $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . ' ' . $filter_value_no_slashes;
+                        $filter_html[]           = strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0] ?? $a_filter_label) . ' ' . (wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . ' ' . $filter_value_no_slashes;
                         $filter_strings[]        = sprintf('%s %s %s', $a_filter_label, $a_filter_details[0], $filter_value_no_slashes);
                     }
 
-                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . __('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . wp_slimstat_reports::fs_url(implode('&&&', $filter_strings)) . '">' . implode(', ', $filter_html) . '</a></p>';
+                    echo '<p><a class="slimstat-font-cancel slimstat-delete-filter" data-filter-id="' . esc_attr($a_filter_id) . '" title="' . esc_attr__('Delete this filter', 'wp-slimstat') . '" href="#"></a> <a class="slimstat-filter-link" data-reset-filters="true" href="' . esc_url(wp_slimstat_reports::fs_url(implode('&&&', $filter_strings))) . '">' . wp_kses_post(implode(', ', $filter_html)) . '</a></p>';
                 }
 
                 echo '</div>';
@@ -4400,14 +4423,14 @@ class wp_slimstat_admin
         }
 
         echo '<div class="notice slimstat-indexes-notice slimstat-notice" style="border-left: 6px solid #0073aa; background: #fff; box-shadow: 0 2px 8px #0001; padding: 24px 24px 16px 24px; margin-bottom: 24px; position: relative; min-width: 400px; max-width: 700px;">';
-        echo '<h2 style="margin-top:0; font-size:1.3em; color:#0073aa;">' . __('Improve SlimStat Report Performance', 'wp-slimstat') . '</h2>';
-        echo '<p style="margin-bottom:18px;">' . __('To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data.', 'wp-slimstat') . '</p>';
+        echo '<h2 style="margin-top:0; font-size:1.3em; color:#0073aa;">' . esc_html__('Improve SlimStat Report Performance', 'wp-slimstat') . '</h2>';
+        echo '<p style="margin-bottom:18px;">' . esc_html__('To speed up SlimStat reports, please apply the following database optimizations. These changes are safe and will not affect your data.', 'wp-slimstat') . '</p>';
         echo '<ul id="slimstat-index-list" style="list-style:none; margin:0 0 18px 0; padding:0;">';
         foreach ($pending as $idx) {
-            echo '<li id="slimstat-index-' . $idx['id'] . '" style="margin-bottom:12px; display:flex; align-items:center;">'
+            echo '<li id="slimstat-index-' . esc_attr($idx['id']) . '" style="margin-bottom:12px; display:flex; align-items:center;">'
                 . '<div style="flex:1 1 0;">'
-                . '<div class="slimstat-index-label" style="font-weight:600;">' . $idx['label'] . '</div>'
-                . '<div class="slimstat-index-desc" style="color:#666; font-size:0.97em; margin-top:2px;">' . $idx['desc'] . '</div>'
+                . '<div class="slimstat-index-label" style="font-weight:600;">' . esc_html($idx['label']) . '</div>'
+                . '<div class="slimstat-index-desc" style="color:#666; font-size:0.97em; margin-top:2px;">' . wp_kses_post($idx['desc']) . '</div>'
                 . '</div>'
                 . '<span class="slimstat-index-lamp" style="margin-left:18px; min-width:30px; display:inline-block; font-size:1.5em; vertical-align:middle;">'
                 . '<span class="dashicons dashicons-lightbulb" style="color:#ccc;"></span>'
@@ -4419,8 +4442,8 @@ class wp_slimstat_admin
         echo '<div id="slimstat-index-progress-bar" style="height:8px; background:#e5e5e5; border-radius:4px; overflow:hidden; margin-bottom:10px;">'
             . '<div id="slimstat-index-progress" style="height:100%; width:0; background:linear-gradient(90deg,#0073aa,#00c3aa); transition:width 0.4s;"></div>'
             . '</div>';
-        echo '<button class="button button-primary" id="slimstat-apply-all" style="margin-bottom:10px; min-width:120px; font-size:1.1em;">' . __('Apply All', 'wp-slimstat') . '</button>';
-        echo '<div style="color:#888; font-size:0.95em;">' . __('Do not close this tab until all optimizations are complete.', 'wp-slimstat') . '</div>';
+        echo '<button class="button button-primary" id="slimstat-apply-all" style="margin-bottom:10px; min-width:120px; font-size:1.1em;">' . esc_html__('Apply All', 'wp-slimstat') . '</button>';
+        echo '<div style="color:#888; font-size:0.95em;">' . esc_html__('Do not close this tab until all optimizations are complete.', 'wp-slimstat') . '</div>';
         echo '</div>';
         ?>
         <script>
@@ -4456,7 +4479,7 @@ class wp_slimstat_admin
                     var idx = indexes[i];
                     var li = $('#slimstat-index-'+idx.id);
                     li.find('.slimstat-index-status').html('<span style="color:#0073aa;">' + '<?php echo esc_js(__('In progress...', 'wp-slimstat')); ?>' + '</span> <span class="spinner is-active" style="float:none;display:inline-block;vertical-align:middle;"></span>');
-                    $.post('<?php echo $ajax_url; ?>', {
+                    $.post('<?php echo esc_js($ajax_url); ?>', {
                         action: idx.ajax,
                         _ajax_nonce: nonces[idx.ajax]
                     }, function(response){

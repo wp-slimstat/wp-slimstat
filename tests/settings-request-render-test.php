@@ -100,3 +100,47 @@ check(strpos($html, '&lt;/textarea&gt;&lt;script&gt;') !== false, 'textarea brea
 check(strpos($html, '\\literal') !== false, 'literal backslash lost on render');
 check(strpos($html, 'name="trusted-extension"') !== false, 'extension field markup removed');
 echo "PASS: settings capabilities precede destructive actions; malformed nonce/options refuse writes; textarea escaped without stripping extension fields\n";
+
+// Execute shared admin sinks, preserving CSS child combinators and valid text.
+require_once __DIR__ . '/lib/source-scan.php';
+function wp_strip_all_tags($text) { return strip_tags(preg_replace('#<(script|style)[^>]*>.*?</\1>#is', '', $text)); }
+function wp_kses($text, $allowed) { return strip_tags($text, '<' . implode('><', array_keys($allowed)) . '>'); }
+function wpautop($text) { return '<p>' . $text . '</p>'; }
+function get_option($name, $default = []) { return $GLOBALS['saved_filters_fixture'] ?? $default; }
+class wp_slimstat_reports { public static function fs_url($filters) { return '/admin?filter="onmouseover="attack'; } }
+$admin = file_get_contents(__DIR__ . '/../admin/index.php');
+$methods = '';
+foreach (['wp_slimstat_userdefined_stylesheet' => '', 'add_column_header' => '$_columns = []', 'add_post_column' => '$_column_name, $_post_id', 'show_message' => '$_message = "", $_type = "info", $_dismiss_handle = ""'] as $name => $args) {
+    $methods .= 'public static function ' . $name . '(' . $args . ') {' . slimstat_function_body($admin, $name) . '}';
+}
+eval('class SlimstatAdminRenderProbe { public static $data_for_column = []; ' . $methods . '}');
+wp_slimstat::$settings['custom_css'] = 'body > p { color: red; }</style><script>attack()</script>';
+ob_start(); SlimstatAdminRenderProbe::wp_slimstat_userdefined_stylesheet(); $css = ob_get_clean();
+check(strpos($css, '<script') === false && substr_count($css, '</style>') === 1, 'custom CSS breaks out of style element');
+check(strpos($css, 'body > p') !== false && strpos($css, '&gt;') === false, 'CSS child combinator encoded');
+wp_slimstat::$settings['posts_column_pageviews'] = 'on';
+wp_slimstat::$settings['posts_column_day_interval'] = '" onmouseover="attack';
+$header = SlimstatAdminRenderProbe::add_column_header();
+check(strpos($header['wp-slimstat'], '&quot; onmouseover=&quot;') !== false, 'column header attribute unescaped');
+SlimstatAdminRenderProbe::$data_for_column = ['url' => [7 => '/page'], 'count' => [7 => '<script>attack</script>']];
+ob_start(); SlimstatAdminRenderProbe::add_post_column('wp-slimstat', 7); $column = ob_get_clean();
+check(strpos($column, '<script>') === false && strpos($column, '&lt;script&gt;') !== false, 'column count unescaped');
+check(strpos($column, 'filter=&quot;onmouseover=&quot;') !== false, 'column URL attribute unescaped');
+ob_start(); SlimstatAdminRenderProbe::show_message('<strong>Keep</strong><script>attack</script>'); $notice = ob_get_clean();
+check(strpos($notice, '<strong>Keep</strong>') !== false && strpos($notice, '<script>') === false, 'notice markup not filtered at output');
+
+$handler = slimstat_function_body($admin, 'manage_filters');
+$start = strpos($handler, '$new_filter =');
+$end = strpos($handler, '// Check if this filter is already saved', $start);
+check($start !== false && $end !== false, 'saved filter validation missing');
+$validation = substr($handler, $start, $end - $start);
+foreach (['null', 'false', '"scalar"', '{broken', '[]', '{"resource":["equals",[]]}'] as $bad) {
+    $_POST = ['filter_array' => $bad];
+    try { eval($validation); throw new RuntimeException('malformed filter accepted: ' . $bad); }
+    catch (LogicException $error) { check($error->getMessage() === 'Invalid filter data.', 'wrong filter rejection'); }
+}
+$filter = ['resource' => ['contains', '<tag> & "literal"'], 'content_id' => ['equals', 123]];
+$_POST = ['filter_array' => addslashes(json_encode($filter))];
+eval($validation);
+check($new_filter === $filter, 'valid saved filter values changed during JSON parsing');
+echo "PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved\n";
