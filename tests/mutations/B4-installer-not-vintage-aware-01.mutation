@@ -7,8 +7,8 @@ rationale: 4.8.1 ships no admin/index.php: the class and the init_tables() signa
 --- a/tests/docker/lib.sh
 +++ b/tests/docker/lib.sh
 @@ -207,8 +207,7 @@
- run_vintage_installer() {
-   wpc eval '
+ run_vintage_installer() { # optional site URL for per-blog lifecycle rehearsal
+   wpc ${1:+--url="$1"} eval '
      $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
 -    $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
 -       : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");

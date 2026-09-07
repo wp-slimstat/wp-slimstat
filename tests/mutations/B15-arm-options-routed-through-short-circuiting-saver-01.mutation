@@ -6,12 +6,12 @@ rationale: The obvious repair, which is silently a no-op: use the arm own slimst
 ---
 --- a/tests/docker/lib.sh
 +++ b/tests/docker/lib.sh
-@@ -238,7 +238,7 @@
-         if (getenv("REHEARSE_ARM_OPTIONS") !== "absent") {
-           $row = get_option("slimstat_options", []);
-           if (!is_array($row) || !isset($row["version"])) {
--            update_option("slimstat_options", wp_slimstat::$settings);
-+            wp_slimstat::slimstat_save_options();
-           }
+@@ -241,7 +241,7 @@
+              Save the vintage defaults as its settings screen would, not a partial row that
+              makes the next network activation read undefined keys such as auto_purge. */
+           wp_slimstat::$settings = array_merge(wp_slimstat::init_options(), is_array($row) ? $row : [], wp_slimstat::$settings);
+-          update_option("slimstat_options", wp_slimstat::$settings);
++          wp_slimstat::slimstat_save_options();
          }
          /* The return value stays the installer FILENAME and nothing else: both callers compare it
+            to a path, and appending a status word here would have failed that comparison in a way

@@ -204,8 +204,8 @@ cell_for_ref() { # <old_ref>
 # Lives here because two scripts run it: rehearse-upgrade.sh (before hydrating a corpus) and
 # downgrade-corpus.sh (before projecting one), and they must build the same tables the same way
 # or the corpus does not fit the cell it was built for.
-run_vintage_installer() {
-  wpc eval '
+run_vintage_installer() { # optional site URL for per-blog lifecycle rehearsal
+  wpc ${1:+--url="$1"} eval '
     $dir = WP_PLUGIN_DIR . "/wp-slimstat/";
     $f = file_exists($dir . "admin/index.php") ? "admin/index.php"
        : (file_exists($dir . "admin/wp-slimstat-admin.php") ? "admin/wp-slimstat-admin.php" : "");
@@ -237,9 +237,11 @@ run_vintage_installer() {
            which one it ran. */
         if (getenv("REHEARSE_ARM_OPTIONS") !== "absent") {
           $row = get_option("slimstat_options", []);
-          if (!is_array($row) || !isset($row["version"])) {
-            update_option("slimstat_options", wp_slimstat::$settings);
-          }
+          /* CLI activation can leave only the installer version in memory/on disk.
+             Save the vintage defaults as its settings screen would, not a partial row that
+             makes the next network activation read undefined keys such as auto_purge. */
+          wp_slimstat::$settings = array_merge(wp_slimstat::init_options(), is_array($row) ? $row : [], wp_slimstat::$settings);
+          update_option("slimstat_options", wp_slimstat::$settings);
         }
         /* The return value stays the installer FILENAME and nothing else: both callers compare it
            to a path, and appending a status word here would have failed that comparison in a way
