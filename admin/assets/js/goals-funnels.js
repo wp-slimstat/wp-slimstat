@@ -824,24 +824,35 @@
     // load above to repaint it. Guarded so it only acts when the active tab was reset
     // away from the user's selection (never on funnel[0], the default). Goals (no
     // tabs) already refreshes every row, so only the Funnels box needs this.
+    //
+    // Both Funnels boxes are watched: slim_p9_02 on Goals & Funnels and
+    // slim_p10_09, its copy on the General page. They render the same card
+    // through the same callback, so the same refresh behaviour applies to
+    // both — keyed to one id, the General copy would silently lose the fix.
     $(function () {
-        var box = document.getElementById('slim_p9_02');
-        if (!box || typeof MutationObserver === 'undefined') {
+        if (typeof MutationObserver === 'undefined') {
             return;
         }
-        var restoring = false;
-        new MutationObserver(function () {
-            if (restoring || lastActiveFunnelIndex === null || lastActiveFunnelIndex === '0') {
+
+        ['slim_p9_02', 'slim_p10_09'].forEach(function (boxId) {
+            var box = document.getElementById(boxId);
+            if (!box) {
                 return;
             }
-            var $tab = $(box).find('.slimstat-gf-tab[data-funnel-index="' + lastActiveFunnelIndex + '"]');
-            if (!$tab.length || $tab.hasClass('is-active')) {
-                return;
-            }
-            restoring = true;
-            $tab.trigger('click');
-            window.setTimeout(function () { restoring = false; }, 0);
-        }).observe(box, { childList: true, subtree: true });
+            var restoring = false;
+            new MutationObserver(function () {
+                if (restoring || lastActiveFunnelIndex === null || lastActiveFunnelIndex === '0') {
+                    return;
+                }
+                var $tab = $(box).find('.slimstat-gf-tab[data-funnel-index="' + lastActiveFunnelIndex + '"]');
+                if (!$tab.length || $tab.hasClass('is-active')) {
+                    return;
+                }
+                restoring = true;
+                $tab.trigger('click');
+                window.setTimeout(function () { restoring = false; }, 0);
+            }).observe(box, { childList: true, subtree: true });
+        });
     });
 
     // ============================================================

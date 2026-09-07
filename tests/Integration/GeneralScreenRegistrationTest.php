@@ -313,7 +313,7 @@ class GeneralScreenRegistrationTest extends TestCase
             'trafficSourcesRaw', 'topColumnRaw',
             // Free-tier gating chrome, hooked in wp_slimstat_admin::init().
             'register_hooks', 'injectUnlockCta', 'markSyntheticRows',
-            'suppressGatedPagination', 'injectProCta',
+            'suppressGatedPagination',
         ];
 
         foreach ($methods as $method) {
@@ -414,20 +414,68 @@ class GeneralScreenRegistrationTest extends TestCase
     }
 
     /**
-     * Funnels must NOT get the free-tier upgrade footer: show_funnels_compact()
-     * already renders its own full upgrade overlay when max_funnels is 0 (the
-     * free default), so adding the footer there stacked a second, identical
-     * "Upgrade to Pro" button under the first.
+     * The General page's Goals and Funnels boxes must be true copies of the
+     * slimview6 cards: same callbacks, same callback_args, and crucially NOT
+     * 'is_widget' — that flag selects the compact dashboard-widget renderer,
+     * whereas the request was for the full cards (usage pill, "+ Add" CTA,
+     * tier limit notice, inline editor, locked-funnels example).
+     *
+     * Because they are the same code, every tier and limit state behaves
+     * identically on both screens for free.
      */
-    public function test_pro_cta_footer_is_goals_only(): void
+    public function test_general_goals_and_funnels_mirror_the_slimview6_cards(): void
     {
-        $php = file_get_contents(dirname(__DIR__, 2) . '/src/Modules/GeneralReports.php');
+        $php = file_get_contents($this->reportsPath());
 
-        $this->assertMatchesRegularExpression(
-            "/PRO_CTA_REPORT_IDS\\s*=\\s*\\['slim_p10_08'\\]/",
-            $php,
-            'only Goals (slim_p10_08) may carry the upgrade footer; Funnels renders its own'
+        // Compared against the ORIGINALS rather than against hardcoded
+        // expectations: if slim_p9_01/02 ever change their callback, columns
+        // or data source, a test that only knew today's values would keep
+        // passing while the copies silently diverged — which is the drift this
+        // guard exists to catch, in either direction.
+        foreach (['slim_p9_01' => 'slim_p10_08', 'slim_p9_02' => 'slim_p10_09'] as $origin => $copy) {
+            $originEntry = $this->registryEntry($php, $origin);
+            $copyEntry   = $this->registryEntry($php, $copy);
+
+            foreach (['callback', 'columns', 'raw'] as $key) {
+                $this->assertSame(
+                    $this->registryValue($originEntry, $key),
+                    $this->registryValue($copyEntry, $key),
+                    "{$copy} must declare the same '{$key}' as {$origin} — they are meant to be the same card"
+                );
+            }
+
+            $this->assertStringNotContainsString(
+                'is_widget',
+                $copyEntry,
+                "{$copy} must NOT pass is_widget — that renders the compact widget instead of the full card"
+            );
+        }
+    }
+
+    /**
+     * The cards' chrome, assets and shared DOM are all gated on report id, so
+     * every one of those gates has to know about the General copies too.
+     * Miss one and the copies render without their pill, their stylesheet, or
+     * their drawer — looking like the real card but half-broken.
+     */
+    public function test_goals_funnels_chrome_and_assets_cover_the_general_copies(): void
+    {
+        $admin = file_get_contents(dirname(__DIR__, 2) . '/admin/index.php');
+
+        $this->assertStringContainsString("['slim_p9_01', 'slim_p10_08']", $admin, 'the goals copy needs the header pill/CTA and subtitle');
+        $this->assertStringContainsString("['slim_p9_02', 'slim_p10_09']", $admin, 'the funnels copy needs the header pill/CTA and subtitle');
+        $this->assertStringContainsString(
+            "\$gf_report_ids = ['slim_p9_01', 'slim_p9_02', 'slim_p10_08', 'slim_p10_09'];",
+            $admin,
+            'the asset + shared-DOM gate must cover the General copies, or their CSS/JS never loads'
         );
+
+        $css = file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/goals-funnels.css');
+        $this->assertStringContainsString('#slim_p10_08 .slimstat-gf-card h3', $css, 'the id-scoped card rules must cover the goals copy');
+        $this->assertStringContainsString('#slim_p10_09 .slimstat-gf-card h3', $css, 'the id-scoped card rules must cover the funnels copy');
+
+        $js = file_get_contents(dirname(__DIR__, 2) . '/admin/assets/js/goals-funnels.js');
+        $this->assertStringContainsString("['slim_p9_02', 'slim_p10_09']", $js, 'the funnel tab-restore observer must watch both funnels boxes');
     }
 
     /**
@@ -464,6 +512,28 @@ class GeneralScreenRegistrationTest extends TestCase
             file_get_contents($this->reportsPath()),
             'raw_results_to_html() must expose the per-row class filter the marker relies on'
         );
+    }
+
+    /** One registry entry's source, by report id. */
+    private function registryEntry(string $php, string $reportId): string
+    {
+        $start = strpos($php, "'{$reportId}' => [");
+        $this->assertNotFalse($start, "{$reportId} must be registered");
+
+        return substr($php, $start, strpos($php, "\n            ],", $start) - $start);
+    }
+
+    /** One `'key' => value,` line's value from a registry entry's source. */
+    private function registryValue(string $entry, string $key): string
+    {
+        $this->assertMatchesRegularExpression(
+            "/'{$key}'\\s*=>/",
+            $entry,
+            "registry entry must declare '{$key}'"
+        );
+        preg_match("/'{$key}'\\s*=>\\s*(.+?),?\\n/", $entry, $m);
+
+        return trim($m[1] ?? '');
     }
 
     private function reportsPath(): string

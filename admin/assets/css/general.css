@@ -388,51 +388,6 @@
 }
 
 /*
- * ---------- Free-tier footer under Goals / Funnels ----------
- * Those two boxes render the REAL goals and funnels (the same compact
- * renderers the dashboard widget uses); this sits underneath them on the
- * free tier only, via GeneralReports::injectProCta().
- */
-.slimstat-general-page .slimstat-general-pro-cta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: var(--ss-space-3);
-    margin-top: auto;
-    padding: var(--ss-space-4) var(--ss-space-5);
-    border-top: 1px solid var(--ss-border-soft);
-    background: var(--ss-surface-tint);
-}
-
-.slimstat-general-page .slimstat-general-pro-cta__copy {
-    font-size: var(--ss-text-sm);
-    color: var(--ss-text-secondary);
-}
-
-.slimstat-general-page .slimstat-general-pro-cta__button {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    flex: 0 0 auto;
-    padding: 10px 20px;
-    border-radius: var(--ss-radius-pill);
-    background: var(--ss-brand-500);
-    color: #fff;
-    font-size: var(--ss-text-sm);
-    font-weight: 700;
-    text-decoration: none;
-    white-space: nowrap;
-    transition: background var(--ss-duration-base) var(--ss-easing-out);
-}
-
-.slimstat-general-page .slimstat-general-pro-cta__button:hover,
-.slimstat-general-page .slimstat-general-pro-cta__button:focus-visible {
-    background: var(--ss-brand-700);
-    color: #fff;
-}
-
-/*
  * ---------- Equal-height table boxes ----------
  * Every table box reserves 5 rows' worth of body height whether it is full,
  * partly filled, or empty, so boxes sharing a flex-wrap row line up at the

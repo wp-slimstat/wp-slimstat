@@ -51,16 +51,6 @@ class GeneralReports
     private const GATED_REPORT_IDS = ['slim_p10_03', 'slim_p10_04', 'slim_p10_05', 'slim_p10_06'];
 
     /**
-     * The General reports that get the free-tier "upgrade to Pro" footer.
-     *
-     * Goals only, deliberately not Funnels: show_funnels_compact() already
-     * renders its own full upgrade overlay when max_funnels is 0 (the free
-     * default), so adding this footer there stacked a second, identical
-     * "Upgrade to Pro" button under the first.
-     */
-    private const PRO_CTA_REPORT_IDS = ['slim_p10_08'];
-
-    /**
      * The free tier's gating chrome: the per-row marker class the blur keys
      * off, and the "Unlock full report with Pro" overlay.
      *
@@ -85,7 +75,6 @@ class GeneralReports
         add_filter('slimstat_report_header_after_title', [self::class, 'injectUnlockCta'], 10, 2);
         add_filter('slimstat_report_row_classes', [self::class, 'markSyntheticRows'], 10, 3);
         add_filter('slimstat_report_pagination_html', [self::class, 'suppressGatedPagination'], 10, 2);
-        add_filter('slimstat_report_after_body', [self::class, 'injectProCta'], 10, 2);
     }
 
     /**
@@ -404,36 +393,6 @@ class GeneralReports
         echo '<span class="big">' . esc_html__('No data yet', 'wp-slimstat') . '</span>';
         echo '<span>' . esc_html__('Campaign tracking is not collected in this version of SlimStat.', 'wp-slimstat') . '</span>';
         echo '</div>';
-    }
-
-    /**
-     * The free tier's "you can create more of these with Pro" footer under
-     * the Goals section.
-     *
-     * Appended after the report's own output rather than replacing it: that
-     * box now renders the REAL goals (via the same compact renderer the
-     * dashboard widget uses), so this is a footer under real data, not a
-     * banner standing in for it.
-     *
-     * @param string $html
-     * @param string $reportId
-     */
-    public static function injectProCta($html = '', $reportId = '')
-    {
-        if (!in_array($reportId, self::PRO_CTA_REPORT_IDS, true) || \wp_slimstat::pro_is_installed()) {
-            return $html;
-        }
-
-        return $html
-            . '<div class="slimstat-general-pro-cta">'
-            . '<span class="slimstat-general-pro-cta__copy">'
-            . esc_html__('Track unlimited goals and see which actions turn visitors into customers.', 'wp-slimstat')
-            . '</span>'
-            . '<a class="slimstat-general-pro-cta__button" href="' . esc_url(self::PRICING_URL) . '" target="_blank" rel="noopener">'
-            . self::LOCK_ICON
-            . '<span>' . esc_html__('Upgrade to Pro', 'wp-slimstat') . '</span>'
-            . '</a>'
-            . '</div>';
     }
 
     /**

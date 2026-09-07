@@ -64,26 +64,36 @@
    paragraphs (FN-10). Neutralize the bleed and re-assert the modern spacing at
    id specificity so those rules can't win. */
 #slim_p9_01 .slimstat-gf-card h3,
+#slim_p10_08 .slimstat-gf-card h3,
 #slim_p9_02 .slimstat-gf-card h3,
+#slim_p10_09 .slimstat-gf-card h3,
 #slim_p9_01 .slimstat-gf-card p,
-#slim_p9_02 .slimstat-gf-card p {
+#slim_p10_08 .slimstat-gf-card p,
+#slim_p9_02 .slimstat-gf-card p,
+#slim_p10_09 .slimstat-gf-card p {
     background: transparent;
     border-bottom: 0;
     padding: 0;
 }
 
 #slim_p9_01 .slimstat-gf-empty__title,
-#slim_p9_02 .slimstat-gf-empty__title {
+#slim_p10_08 .slimstat-gf-empty__title,
+#slim_p9_02 .slimstat-gf-empty__title,
+#slim_p10_09 .slimstat-gf-empty__title {
     margin: 0 0 var(--ss-space-2);
 }
 
 #slim_p9_01 .slimstat-gf-empty__body,
-#slim_p9_02 .slimstat-gf-empty__body {
+#slim_p10_08 .slimstat-gf-empty__body,
+#slim_p9_02 .slimstat-gf-empty__body,
+#slim_p10_09 .slimstat-gf-empty__body {
     margin: 0 auto var(--ss-space-3);
 }
 
 #slim_p9_01 .slimstat-gf-empty__note,
-#slim_p9_02 .slimstat-gf-empty__note {
+#slim_p10_08 .slimstat-gf-empty__note,
+#slim_p9_02 .slimstat-gf-empty__note,
+#slim_p10_09 .slimstat-gf-empty__note {
     margin: 0 auto var(--ss-space-5);
 }
 
@@ -131,7 +141,9 @@
 }
 
 #slim_p9_01 .slimstat-header-buttons,
-#slim_p9_02 .slimstat-header-buttons {
+#slim_p10_08 .slimstat-header-buttons,
+#slim_p9_02 .slimstat-header-buttons,
+#slim_p10_09 .slimstat-header-buttons {
     display: inline-flex;
     align-items: center;
     gap: var(--ss-space-2);
@@ -165,13 +177,16 @@
    softens to a pill and reserves the brand accent for hover/focus so it never
    competes with the primary CTA. Id-scoped to win over `.wp-core-ui .button`
    without a specificity fight. (#7) */
-#slim_p9_02 .slimstat-gf-see-templates {
+#slim_p9_02 .slimstat-gf-see-templates,
+#slim_p10_09 .slimstat-gf-see-templates {
     border-radius: var(--ss-radius-pill);
     font-weight: 600;
 }
 
 #slim_p9_02 .slimstat-gf-see-templates:hover,
-#slim_p9_02 .slimstat-gf-see-templates:focus-visible {
+#slim_p10_09 .slimstat-gf-see-templates:hover,
+#slim_p9_02 .slimstat-gf-see-templates:focus-visible,
+#slim_p10_09 .slimstat-gf-see-templates:focus-visible {
     border-color: var(--ss-brand-500);
     color: var(--ss-brand-700);
 }
@@ -1282,7 +1297,9 @@
     /* The header actions float right via admin.css; drop the float so the
        pill + CTA wrap full-width under the title instead of colliding. */
     #slim_p9_01 .slimstat-header-buttons,
-    #slim_p9_02 .slimstat-header-buttons {
+    #slim_p10_08 .slimstat-header-buttons,
+    #slim_p9_02 .slimstat-header-buttons,
+    #slim_p10_09 .slimstat-header-buttons {
         float: none;
         width: 100%;
         flex-wrap: wrap;

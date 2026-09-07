@@ -1369,11 +1369,12 @@ class wp_slimstat_admin
             return false;
         }
 
+        $gf_report_ids = self::goals_funnels_report_ids();
+
         $pagenow = $GLOBALS['pagenow'] ?? '';
         if ('index.php' === $pagenow) {
             $dashboard_reports = wp_slimstat_reports::$user_reports['dashboard'] ?? [];
-            if (in_array('slim_p9_01', (array) $dashboard_reports, true)
-                || in_array('slim_p9_02', (array) $dashboard_reports, true)) {
+            if (!empty(array_intersect($gf_report_ids, (array) $dashboard_reports))) {
                 return $memo = true;
             }
         }
@@ -1381,13 +1382,38 @@ class wp_slimstat_admin
         $current = self::$current_screen;
         if (!empty($current)) {
             $reports_on_screen = wp_slimstat_reports::$user_reports[$current] ?? [];
-            if (in_array('slim_p9_01', (array) $reports_on_screen, true)
-                || in_array('slim_p9_02', (array) $reports_on_screen, true)) {
+            if (!empty(array_intersect($gf_report_ids, (array) $reports_on_screen))) {
                 return $memo = true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * The report ids that render a Goals or Funnels card.
+     *
+     * Two of each: the originals on the Goals & Funnels screen, and the
+     * General page's copies, which render the same cards through the same
+     * callbacks. Every gate keyed to these ids — the asset/shared-DOM check
+     * above, and the two header-chrome filters below — reads this one list,
+     * so a third instance cannot be added to some of them and missed in
+     * others. (The CSS and JS keep their own copies of the pairing; the
+     * integration test asserts all four sites literally.)
+     *
+     * @param string $which 'goals', 'funnels', or '' for both.
+     * @return array<int, string>
+     */
+    private static function goals_funnels_report_ids(string $which = ''): array
+    {
+        $ids = [
+            'goals'   => ['slim_p9_01', 'slim_p10_08'],
+            'funnels' => ['slim_p9_02', 'slim_p10_09'],
+        ];
+
+        return '' === $which
+            ? array_merge($ids['goals'], $ids['funnels'])
+            : ($ids[$which] ?? []);
     }
 
     /**
@@ -3900,11 +3926,15 @@ class wp_slimstat_admin
      */
     public static function inject_goals_funnels_header_actions($_header_buttons = '', $_report_id = '')
     {
-        if ('slim_p9_01' === $_report_id) {
+        // The General page's copies render through the same callbacks, so
+        // they need the same header chrome — without this the usage pill and
+        // "+ Add" CTA would be missing there and the copies would not be
+        // copies.
+        if (in_array($_report_id, self::goals_funnels_report_ids('goals'), true)) {
             $actions = \wp_slimstat_reports::render_goals_card_actions();
             return $actions . $_header_buttons;
         }
-        if ('slim_p9_02' === $_report_id) {
+        if (in_array($_report_id, self::goals_funnels_report_ids('funnels'), true)) {
             $actions = \wp_slimstat_reports::render_funnels_card_actions();
             return $actions . $_header_buttons;
         }
@@ -3917,10 +3947,12 @@ class wp_slimstat_admin
      */
     public static function inject_goals_funnels_header_subtitle($_html = '', $_report_id = '')
     {
-        if ('slim_p9_01' === $_report_id) {
+        // See inject_goals_funnels_header_actions(): the General page's
+        // copies take the same subtitle.
+        if (in_array($_report_id, self::goals_funnels_report_ids('goals'), true)) {
             return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('A Goal is one question you ask of your traffic.', 'wp-slimstat') . '</p>';
         }
-        if ('slim_p9_02' === $_report_id) {
+        if (in_array($_report_id, self::goals_funnels_report_ids('funnels'), true)) {
             return '<p class="slimstat-gf-postbox-subtitle">' . esc_html__('String 2 to 5 steps into a journey. A funnel shows the conversion rate and exact drop-off at each stage.', 'wp-slimstat') . '</p>';
         }
         return $_html;

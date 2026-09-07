@@ -1061,36 +1061,45 @@ class wp_slimstat_reports
                 'pinned'        => true,
                 'tooltip'       => __('Traffic attributed to marketing campaigns via utm_source / utm_campaign parameters.', 'wp-slimstat'),
             ],
-            // Real Goals and Funnels data, not a promo banner. Both reuse the
-            // SAME compact renderers the dashboard widget uses — show_goals()
-            // / show_funnels() delegate to show_goals_compact() /
-            // show_funnels_compact() when 'is_widget' is set — so this page
-            // shows the actual goals and funnels rather than a picture of
-            // them, and inherits their existing free-tier handling.
-            // GeneralReports::injectProCta() adds the upgrade CTA underneath
-            // on the free tier.
+            // Second instances of the Goals & Funnels cards, identical to
+            // slim_p9_01 / slim_p9_02 above except for the id and location —
+            // same callbacks, same callback_args, deliberately NOT 'is_widget'
+            // (that selects the compact widget renderer; these render the same
+            // full cards slimview6 does, with the usage pill, the "+ Add" CTA,
+            // the tier limit notice, the inline editor and the locked-funnels
+            // example). Every tier and limit state therefore behaves here
+            // exactly as it does on slimview6, because it is the same code.
             'slim_p10_08' => [
                 'title'         => __('Goals', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_goals'],
-                // is_widget selects the compact renderer (the same one the
-                // dashboard widget uses). The free-tier upgrade footer is
-                // keyed to this report's id, which _check_args() carries into
-                // callback_args, so it cannot follow the shared renderer onto
-                // the dashboard widget or the shortcode.
-                'callback_args' => ['is_widget' => true],
-                'classes'       => ['large'],
-                'locations'     => ['slimgeneral'],
-                'pinned'        => true,
-                'tooltip'       => __('Track conversions for custom goals and see which actions turn visitors into customers.', 'wp-slimstat'),
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'goal_name',
+                    'raw'     => ['wp_slimstat_db', 'get_goals_raw'],
+                    'exportable' => function () {
+                        return !empty(self::get_goals_card_state()['goals']);
+                    },
+                ],
+                'classes'   => ['full-width', 'tall'],
+                'locations' => ['slimgeneral'],
+                'pinned'    => true,
+                'tooltip'   => __('Track conversions for custom goals you define. Goals are evaluated retroactively against existing data.', 'wp-slimstat'),
             ],
             'slim_p10_09' => [
                 'title'         => __('Funnels', 'wp-slimstat'),
                 'callback'      => [self::class, 'show_funnels'],
-                'callback_args' => ['is_widget' => true],
-                'classes'       => ['large'],
-                'locations'     => ['slimgeneral'],
-                'pinned'        => true,
-                'tooltip'       => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
+                'callback_args' => [
+                    'type'    => 'top',
+                    'columns' => 'funnel_step',
+                    'raw'     => ['wp_slimstat_db', 'get_funnels_raw'],
+                    'exportable' => function () {
+                        return !empty(self::get_funnels_card_state()['funnels']);
+                    },
+                ],
+                'classes'   => ['full-width', 'extralarge'],
+                'locations' => ['slimgeneral'],
+                'pinned'    => true,
+                'tooltip'   => __('Visualize conversion funnels with step-by-step drop-off analysis.', 'wp-slimstat'),
             ],
         ];
 
@@ -2182,10 +2191,6 @@ class wp_slimstat_reports
         if ($is_widget) {
             $goals = get_option('slimstat_goals', []);
             self::show_goals_compact($goals);
-            // Emitted here, not from the caller: on the async path this method
-            // die()s immediately below, so anything appended after
-            // callback_wrapper() returns would never render for this report.
-            echo apply_filters('slimstat_report_after_body', '', $_args['report_id'] ?? '');
             if (wp_doing_ajax()) {
                 die();
             }
@@ -2327,9 +2332,6 @@ class wp_slimstat_reports
             $max_funnels = (int) apply_filters('slimstat_max_funnels', 0);
             $funnels     = $max_funnels > 0 ? get_option('slimstat_funnels', []) : [];
             self::show_funnels_compact($max_funnels, $funnels);
-            // See the matching call in show_goals(): this method die()s on the
-            // async path, so the footer has to be emitted before that.
-            echo apply_filters('slimstat_report_after_body', '', $_args['report_id'] ?? '');
             if (wp_doing_ajax()) {
                 die();
             }
