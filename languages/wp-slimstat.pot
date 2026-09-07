@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-07T19:49:01+00:00\n"
+"POT-Creation-Date: 2026-09-07T19:52:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -982,6 +982,7 @@ msgstr ""
 
 #: admin/config/index.php:768
 #: admin/index.php:4168
+#: admin/view/addons.php:10
 msgid "Insufficient permissions."
 msgstr ""
 
@@ -1916,50 +1917,67 @@ msgstr ""
 msgid "Error: "
 msgstr ""
 
-#: admin/view/addons.php:22
+#: admin/view/addons.php:13
+#: admin/view/addons.php:17
+msgid "Invalid license data."
+msgstr ""
+
+#: admin/view/addons.php:33
 #, php-format
 msgid "There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s"
 msgstr ""
 
-#: admin/view/addons.php:33
+#: admin/view/addons.php:58
 msgid "There was an error decoding the add-ons list from the server. Please try again later."
 msgstr ""
 
-#: admin/view/addons.php:38
+#: admin/view/addons.php:63
 msgid "Add-ons"
 msgstr ""
 
-#: admin/view/addons.php:39
+#: admin/view/addons.php:64
 msgid "Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it."
 msgstr ""
 
-#: admin/view/addons.php:42
+#: admin/view/addons.php:67
 #, php-format
 msgid "This list is refreshed once daily: <a href=\"%s&amp;force_refresh=true\" class=\"noslimstat\">click here</a> to clear the cache."
 msgstr ""
 
-#: admin/view/addons.php:57
+#: admin/view/addons.php:82
 msgid "Add-on"
 msgstr ""
 
-#: admin/view/addons.php:58
+#: admin/view/addons.php:83
 msgid "Description"
 msgstr ""
 
-#: admin/view/addons.php:69
+#: admin/view/addons.php:94
 msgid "Repo Version"
 msgstr ""
 
-#: admin/view/addons.php:69
+#: admin/view/addons.php:94
 msgid "Version"
 msgstr ""
 
-#: admin/view/addons.php:80
+#: admin/view/addons.php:105
 msgid "Your Version:"
 msgstr ""
 
-#: admin/view/addons.php:82
+#: admin/view/addons.php:107
 msgid "Installed and Active"
+msgstr ""
+
+#: admin/view/addons.php:111
+msgid "Price:"
+msgstr ""
+
+#: admin/view/addons.php:119
+msgid "License Key"
+msgstr ""
+
+#: admin/view/addons.php:127
+msgid "Save License Keys"
 msgstr ""
 
 #: admin/view/email-report.php:31

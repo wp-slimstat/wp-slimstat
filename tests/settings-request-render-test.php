@@ -157,3 +157,39 @@ SlimstatSummaryProbe::raw_results_to_html(['columns' => '', 'raw' => static func
 $summary = ob_get_clean();
 check(strpos($summary, '<script>') === false && strpos($summary, '<strong>Visits</strong>') !== false, 'summary branches must filter markup without removing formatting');
 echo "PASS: summary metric, value and details use contextual HTML filtering (real WordPress KSES control in reports-output-escaping-test.php)\n";
+
+// The legacy add-on list is a separate remote-data and license-write boundary.
+function esc_html_e($text, $domain = '') { echo esc_html($text); }
+function sanitize_title($text) { return strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', $text)); }
+function get_transient($key) { return $GLOBALS['addon_response']; }
+function wp_remote_retrieve_body($response) { return is_array($response) && isset($response['body']) ? $response['body'] : ''; }
+function is_plugin_active($plugin) { return false; }
+if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+$addons = file_get_contents(__DIR__ . '/../admin/view/addons.php');
+$start = strpos($addons, '// Update license keys');
+$end = strpos($addons, '$response      =', $start);
+$license_boundary = substr($addons, $start, $end - $start);
+$_POST = ['licenses' => ['wp-slimstat-addon' => 'key'], 'slimstat_update_licenses' => 'valid'];
+$GLOBALS['allowed'] = false;
+$GLOBALS['writes'] = 0;
+try { eval($license_boundary); throw new RuntimeException('unauthorized license write accepted'); }
+catch (LogicException $error) { check($GLOBALS['writes'] === 0, 'unauthorized license write executed'); }
+$GLOBALS['allowed'] = true;
+foreach ([['../outside' => 'key'], ['wp-addon' => ['nested']]] as $bad) {
+    $_POST['licenses'] = $bad;
+    try { eval($license_boundary); throw new RuntimeException('malformed license data accepted'); }
+    catch (LogicException $error) { check($GLOBALS['writes'] === 0, 'invalid license write executed'); }
+}
+$_POST = [];
+$_GET = [];
+$_SERVER['REQUEST_URI'] = '/admin?page=slimaddons';
+$GLOBALS['addon_response'] = ['body' => json_encode([['slug' => 'wp-addon', 'name' => '<script>name</script>', 'download_url' => '/addon', 'description' => '<strong>Keep</strong>', 'price' => '<script>price</script>', 'version' => '<script>version</script>']])];
+ob_start(); include __DIR__ . '/../admin/view/addons.php'; $addon_html = ob_get_clean();
+check(strpos($addon_html, '<script>') === false && strpos($addon_html, '&lt;script&gt;price') !== false, 'remote add-on metadata not escaped');
+check(strpos($addon_html, '<strong>Keep</strong>') !== false, 'remote add-on description formatting lost');
+foreach ([(object) ['error' => 'network failure'], ['body' => '{bad'], ['body' => '[{"slug":"../outside"}]']] as $bad) {
+    $GLOBALS['addon_response'] = $bad;
+    ob_start(); include __DIR__ . '/../admin/view/addons.php'; $addon_html = ob_get_clean();
+    check(strpos($addon_html, 'slimstat-addons') === false, 'malformed remote response rendered as valid list');
+}
+echo "PASS: legacy license writes authorized and validated; remote add-on metadata escaped; malformed remote responses fail closed\n";
