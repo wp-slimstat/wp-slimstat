@@ -49,3 +49,27 @@ for script in ['rehearse-uninstall.sh', 'rehearse-upgrade-network.sh', 'rehearse
     for match in re.finditer(r"<<'(?P<tag>PY\w*)'\n(?P<code>.*?)\n(?P=tag)(?:\n|$)", source, re.S):
         compile(match['code'], script + ':' + match['tag'], 'exec')
 print('PASS: embedded Python syntax in artifact, seed and interruption harnesses')
+
+# Inspect generated engine arguments without starting Docker. A caller's explicit overlay wins.
+import os
+with tempfile.TemporaryDirectory() as temp:
+    root = pathlib.Path(temp)
+    fake = root / 'docker'
+    fake.write_text('#!/bin/sh\n[ "$1" = ps ] && exit 0\nexit 1\n')
+    fake.chmod(0o755)
+    for explicit in [False, True]:
+        case = root / str(explicit)
+        env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH'], WORK_ROOT=str(case))
+        for key in ['SEED_VINTAGE_REF', 'DC_EXTRA_FILE', 'SEED_DUMP_OUT', 'REHEARSAL_RUNS_DIR']:
+            env.pop(key, None)
+        if explicit:
+            overlay = root / 'caller.yml'
+            overlay.write_text('services: {}\n')
+            env['DC_EXTRA_FILE'] = str(overlay)
+        r = subprocess.run(['bash', str(seed), '1'], env=env, capture_output=True)
+        assert r.returncode != 0, 'fake Docker unexpectedly booted'
+        generated = list(case.glob('bench/seed.*/compose-seed.yml'))
+        assert bool(generated) != explicit, 'caller engine overlay was replaced'
+        if generated:
+            assert '--skip-log-bin' in generated[0].read_text(), 'large-corpus binary logging left enabled'
+print('PASS: default corpus binary logging disabled; explicit engine overlay preserved')

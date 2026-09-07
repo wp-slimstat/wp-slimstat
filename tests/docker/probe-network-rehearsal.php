@@ -11,7 +11,7 @@ $mode = $args[0] ?? '';
 $must = static function ($ok, $label) { if (!$ok) { throw new RuntimeException($label); } };
 if ('create' === $mode) {
     for ($i = 1; $i <= $fixture['subsites']; ++$i) {
-        $id = wp_insert_site(['domain' => get_network()->domain, 'path' => '/site-' . $i . '/', 'network_id' => get_current_network_id(), 'title' => 'Rehearsal ' . $i, 'user_id' => 1]);
+        $id = wp_insert_site(['domain' => is_subdomain_install() ? 'site-' . $i . '.' . get_network()->domain : get_network()->domain, 'path' => is_subdomain_install() ? '/' : '/site-' . $i . '/', 'network_id' => get_current_network_id(), 'title' => 'Rehearsal ' . $i, 'user_id' => 1]);
         $must(!is_wp_error($id), 'Site creation failed');
     }
     echo "NETWORK-CREATED\n";
@@ -65,7 +65,7 @@ foreach ($sites as $site) {
         $must('' === $wpdb->last_error, 'Unreadable table metadata');
     }
     $result['blogs'][$id] = ['fingerprint' => hash('sha256', serialize($rows)), 'columns' => $columns,
-        'archived' => '1' === (string) $site->archived, 'missing' => $missing];
+        'archived' => '1' === (string) $site->archived, 'domain' => $site->domain, 'path' => $site->path, 'missing' => $missing];
 }
 if ('baseline' === $mode) { file_put_contents('/tmp/network-before.json', json_encode($result)); }
 echo 'NETWORK-JSON:' . json_encode($result) . "\n";

@@ -9,6 +9,10 @@ OLD_REF="${1:?old ref}"; FREE_REF="${2:?Free commit}"; PRO_REF="${3:?Pro commit}
 : "${REHEARSAL_RUNS_DIR:?Use outputs/dev/v6-finalization/network-upgrade-proof}"
 [ "$OLD_REF" = wp.org:5.5.0 ] || die 'Only pinned 5.5.0 is characterized; other vintages require their own projection'
 PRO_REPO="${PRO_REPO:-$PLUGIN_SRC/../wp-slimstat-pro}"
+NETWORK_SUBDOMAINS="${NETWORK_SUBDOMAINS:-0}"
+case "$NETWORK_SUBDOMAINS" in 0|1) ;; *) die 'NETWORK_SUBDOMAINS must be 0 or 1';; esac
+NETWORK_INSTALL_ARGS=()
+[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARGS+=(--subdomains)
 FREE_SHA=$(git -C "$PLUGIN_SRC" rev-parse "$FREE_REF^{commit}")
 PRO_SHA=$(git -C "$PRO_REPO" rev-parse "$PRO_REF^{commit}")
 OLD_ZIP=$(resolve_arm_zip "$OLD_REF"); OLD_HASH=$(digest "$OLD_ZIP"); FIXTURE_HASH=$(digest "$FIXTURE")
@@ -60,11 +64,11 @@ fi
   : "${QUALIFICATION_FREE_ZIP:?Both packaged artifacts required}" "${QUALIFICATION_PRO_ZIP:?Both packaged artifacts required}"
 }
 cp "$FIXTURE" "$ART/fixture.json"
-python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$OLD_HASH" "$FIXTURE_HASH" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" <<'PY'
+python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$OLD_HASH" "$FIXTURE_HASH" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" "$NETWORK_SUBDOMAINS" <<'PY'
 import json,hashlib,pathlib,sys
-out,free,pro,old,fixture,mutation,h,fzip,pzip=sys.argv[1:]
+out,free,pro,old,fixture,mutation,h,fzip,pzip,subdomains=sys.argv[1:]
 files=['rehearse-upgrade-network.sh','probe-network-rehearsal.php','network-rehearsal-observer.php','network-rehearsal-oracle.php','watch-network-htaccess.py','lib.sh','extract-artifact.py','Dockerfile.wp','docker-compose.yml']
-json.dump(dict(free_sha=free,pro_sha=pro,old_zip_sha256=old,fixture_sha256=fixture,mutation=mutation,artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,interruption='SIGKILL after durable site completion; interior DDL not covered',source_hashes={f:hashlib.sha256((pathlib.Path(h)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
+json.dump(dict(free_sha=free,pro_sha=pro,old_zip_sha256=old,fixture_sha256=fixture,mutation=mutation,network_mode='subdomain' if subdomains=='1' else 'subdirectory',artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,interruption='SIGKILL after durable site completion; interior DDL not covered',source_hashes={f:hashlib.sha256((pathlib.Path(h)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
 PY
 reason='stack boot failed'; boot_stack "$ART" "$PHP_VERSION"
 BASE_URL="http://localhost:$(dc port wp 80 | sed 's/.*://')"
@@ -73,10 +77,12 @@ wpc core download --version="${TOPOLOGY_WP:-6.7}" --force >"$ART/install.log" 2>
 wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:3306 --dbprefix=ssnw_ --skip-check >>"$ART/install.log" 2>&1
 wpc config set SLIMSTAT_NETWORK_REHEARSAL disposable >>"$ART/install.log" 2>&1
 wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1
-wpc core multisite-install --url="$BASE_URL" --title=NetworkRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
+wpc core multisite-install "${NETWORK_INSTALL_ARGS[@]}" --url="$BASE_URL" --title=NetworkRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
 for map in "$HARNESS_DIR/probe-network-rehearsal.php:network-probe.php" "$FREE_SRC/src/Schema/Schema.php:network-schema.php" "$FIXTURE:network-fixture.json" "$OLD_ZIP:old.zip" "$HARNESS_DIR/watch-network-htaccess.py:watch-htaccess.py"; do dc cp "${map%:*}" "wp:/tmp/${map##*:}" >/dev/null; done
 wpc --skip-plugins eval-file /tmp/network-probe.php create >>"$ART/install.log" 2>&1
 grep -q '^NETWORK-CREATED$' "$ART/install.log"
+wpc --skip-plugins eval 'echo is_subdomain_install() ? "subdomain" : "subdirectory";' >"$ART/network-mode.txt"
+[ "$(cat "$ART/network-mode.txt")" = "$([ "$NETWORK_SUBDOMAINS" = 1 ] && echo subdomain || echo subdirectory)" ] || die 'installed network mode differs from requested mode'
 for image_id in $(dc images -q | sort -u); do docker image inspect "$image_id" --format '{{json .}}'; done >"$ART/images.jsonl"
 wpc core version >"$ART/wp-version.txt"; dc exec -T wp php -r 'echo PHP_VERSION;' >"$ART/php-version.txt"; mysql_q 'SELECT VERSION()' >"$ART/database-version.txt"
 

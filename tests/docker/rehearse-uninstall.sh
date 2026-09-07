@@ -7,6 +7,10 @@ set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 FREE_REF="${1:?Free commit required}"; PRO_REF="${2:?Pro commit required}"; FIXTURE="${3:?Explicit synthetic fixture required}"
 PRO_REPO="${PRO_REPO:-$PLUGIN_SRC/../wp-slimstat-pro}"
+NETWORK_SUBDOMAINS="${NETWORK_SUBDOMAINS:-0}"
+case "$NETWORK_SUBDOMAINS" in 0|1) ;; *) die 'NETWORK_SUBDOMAINS must be 0 or 1';; esac
+NETWORK_INSTALL_ARGS=()
+[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARGS+=(--subdomains)
 : "${REHEARSAL_RUNS_DIR:?Set a durable evidence directory}"
 [ -f "$FIXTURE" ] || die 'fixture absent'
 FREE_SHA=$(git -C "$PLUGIN_SRC" rev-parse "$FREE_REF^{commit}")
@@ -72,12 +76,12 @@ fi
 }
 cp "$FIXTURE" "$ART/fixture.json"
 cp "$HARNESS_DIR/uninstall-oracle.php" "$ART/oracle.php"
-python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$FIXTURE_SHA" "$STARTED" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" <<'PY'
+python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$FIXTURE_SHA" "$STARTED" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" "$NETWORK_SUBDOMAINS" <<'PY'
 import hashlib,json,pathlib,sys
-out,free,pro,fixture,start,mutation,harness,fzip,pzip=sys.argv[1:]
+out,free,pro,fixture,start,mutation,harness,fzip,pzip,subdomains=sys.argv[1:]
 files=['rehearse-uninstall.sh','probe-uninstall.php','uninstall-oracle.php','lib.sh','extract-artifact.py','docker-compose.yml','Dockerfile.wp']
 json.dump(dict(free_sha=free,pro_sha=pro,fixture_sha256=fixture,started=start,mutation=mutation,
- old_zip_sha256=None,old_zip_reason='synthetic uninstall fixture; no vintage import',artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,
+ old_zip_sha256=None,old_zip_reason='synthetic uninstall fixture; no vintage import',network_mode='subdomain' if subdomains=='1' else 'subdirectory',artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,
  source_hashes={f:hashlib.sha256((pathlib.Path(harness)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
 PY
 reason='disposable stack boot failed'; boot_stack "$ART" "$PHP_VERSION"
@@ -88,13 +92,15 @@ wpc core download --version="${TOPOLOGY_WP:-6.7}" --force >"$ART/install.log" 2>
 wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:3306 --dbprefix=ssun_ --skip-check >>"$ART/install.log" 2>&1
 wpc config set SLIMSTAT_UNINSTALL_REHEARSAL disposable >>"$ART/install.log" 2>&1
 wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1
-wpc core multisite-install --url="$BASE_URL" --title=UninstallRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
+wpc core multisite-install "${NETWORK_INSTALL_ARGS[@]}" --url="$BASE_URL" --title=UninstallRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
 wpc site create --slug=second >>"$ART/install.log" 2>&1
 for mapping in "$HARNESS_DIR/probe-uninstall.php:probe-uninstall.php" "$FREE_SRC/src/Schema/Schema.php:uninstall-schema.php" "$FREE_SRC/src/cron-hooks.php:uninstall-cron-hooks.php" "$CELL_DIR/pro-src/uninstall.php:uninstall-pro.php" "$ART/fixture.json:uninstall-fixture.json"; do
   dc cp "${mapping%:*}" "wp:/tmp/${mapping##*:}" >/dev/null
  done
 # Image IDs bind the actual runtime, not mutable tags. Capture versions from running services.
 dc images --format json >"$ART/images.json"
+wpc --skip-plugins eval 'echo is_subdomain_install() ? "subdomain" : "subdirectory";' >"$ART/network-mode.txt"
+[ "$(cat "$ART/network-mode.txt")" = "$([ "$NETWORK_SUBDOMAINS" = 1 ] && echo subdomain || echo subdirectory)" ] || die 'installed network mode differs from requested mode'
 for image_id in $(dc images -q | sort -u); do docker image inspect "$image_id" --format '{{json .}}'; done >"$ART/image-inspect.jsonl"
 wpc core version >"$ART/wp-version.txt"
 dc exec -T wp php -r 'echo PHP_VERSION;' >"$ART/php-version.txt"
