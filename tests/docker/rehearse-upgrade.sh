@@ -159,7 +159,8 @@ fi
 [ -n "$DUMP" ] && [ -f "$DUMP" ] || { err "no dump: pass one, or run jaan-to/bin/slimstat-db.sh dump"; exit 1; }
 
 CELL="upgrade-$SCEN_SLUG"
-CELL_DIR="$WORK_ROOT/rehearse/$CELL"
+mkdir -p "$WORK_ROOT/rehearse"
+CELL_DIR=$(mktemp -d "$WORK_ROOT/rehearse/$CELL.XXXXXXXX")
 WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
@@ -168,10 +169,26 @@ export COMPOSE_PROJECT_NAME="ssrehearse$SCEN_SLUG" PHP_VERSION="$PHP" HTTP_PORT 
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+[ -z "$existing" ] || die 'rehearsal project already exists; serialize and clean its owner first'
+STARTED=$(now)
 status="PASS"; reason=""
 cleanup() {
+  local rc=$?
   cleanup_pro_arm
-  [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >/dev/null 2>&1 || true
+  [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >"$ART/cleanup.log" 2>&1 || true
+  [ -f "$ART/cell.json" ] || write_verdict "$ART" "$CELL" "$PHP" "$WP" FAIL "rehearsal aborted with exit $rc"
+  python3 - "$ART" "$PLUGIN_SRC" "$STARTED" "$rc" "$OLD_REF" "$NEW_REF" "${PRO_RESOLVED_REF:-}" "${CANDIDATE_ZIP_HASH:-}" "${PRO_ZIP_HASH:-}" "$(digest "$DUMP")" "${OLD_ZIP_HASH:-}" <<'PYARCHIVE'
+import datetime,hashlib,json,os,pathlib,subprocess,sys
+art,source,started,rc,old,new,pro,fzip,pzip,corpus,oldzip=sys.argv[1:]; p=pathlib.Path(art); src=pathlib.Path(source)
+files=['lib.sh','rehearse-upgrade.sh','extract-artifact.py','interrupt-ddl.sh','probe-interrupt-ddl.php','probe-pro-mixed-window.php','Dockerfile.wp','docker-compose.yml']
+free=subprocess.run(['git','-C',source,'rev-parse',new+'^{commit}'],capture_output=True,text=True)
+json.dump(dict(started=started,finished=datetime.datetime.now(datetime.timezone.utc).isoformat(),exit_status=int(rc),old_zip_sha256=oldzip or None,ddl_interruption_requested=os.environ.get('REHEARSE_INTERRUPT_DDL','0')=='1',old_ref=old,new_ref=new,free_sha=free.stdout.strip() if free.returncode==0 else None,pro_sha=pro or None,free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,corpus_sha256=corpus,instrument_sha=subprocess.check_output(['git','-C',source,'rev-parse','HEAD'],text=True).strip(),instrument_hashes={f:hashlib.sha256((src/'tests/docker'/f).read_bytes()).hexdigest() for f in files}),open(p/'manifest.json','w'),indent=2)
+json.dump({str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in p.rglob('*') if f.is_file() and f.name!='artifacts.sha256.json'},open(p/'artifacts.sha256.json','w'),indent=2)
+PYARCHIVE
+  local durable="${REHEARSAL_RUNS_DIR:-$PLUGIN_SRC/../jaan-to/outputs/dev/v6-performance/runs/run65-rehearsal}/$(basename "$CELL_DIR")"
+  mkdir -p "$durable"
+  cp -R "$ART/." "$durable/"
 }
 trap cleanup EXIT
 
@@ -297,6 +314,8 @@ use_ref() { # <ref>
     FREE_ZIP_OUT="$ARM_FREE_ZIP" bash "$HARNESS_DIR/build-free.sh" "$full" \
       > "$ART/build-free-$sha.log" 2>&1 || { err "Free ZIP build at $ref failed"; return 1; }
   fi
+  [ "$ref" != "$NEW_REF" ] || CANDIDATE_ZIP_HASH=$(digest "$ARM_FREE_ZIP")
+  [ "$ref" != "$OLD_REF" ] || OLD_ZIP_HASH=$(digest "$ARM_FREE_ZIP")
   # The first arm is selected before WordPress exists; provision_wp_cell installs it. Every
   # later transition goes through WordPress's upgrader, never through a source-tree rsync.
   if [ -f "$WP_DIR/wp-config.php" ]; then
@@ -345,6 +364,10 @@ hit_resource() { mysql_q "SELECT resource FROM wordpress.wp_slim_stats WHERE id=
 
 log "[$CELL] build + up (PHP $PHP, WP $WP)"
 boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
+
+for image_id in $(dc images -q | sort -u); do docker image inspect "$image_id" --format '{{json .}}'; done >"$ART/images.jsonl"
+dc exec -T wp php -r 'echo PHP_VERSION;' >"$ART/php-version.txt"
+mysql_q 'SELECT VERSION()' >"$ART/database-version.txt"
 
 echo
 # ── U4's own instrument ─────────────────────────────────────────────────────────────────────
@@ -422,8 +445,10 @@ use_ref "$OLD_REF" || exit 1
 if [ "$WITH_PRO" = 1 ]; then
   log "[$CELL] building the Pro arm at ${PRO_REF}"
   build_pro_arm "$PRO_REF" "$CELL_DIR" "$ART" || exit 1
+  PRO_ZIP_HASH=$(digest "$ARM_PRO_ZIP")
 fi
 provision_wp_cell "$ART" "$WP" "$BASE_URL" "$PLUGIN_SRC" || exit 1
+wpc core version >"$ART/wp-version.txt"
 assert_arm_vintage "$OLD_REF"   # the first arm is installed by provision_wp_cell, not by use_ref
 
 # C5 (U4 only). A post-provision property, so it cannot sit in the CONTROLS block above, whose

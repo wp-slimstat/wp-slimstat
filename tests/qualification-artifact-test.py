@@ -44,7 +44,7 @@ print('PASS: 5M source-less seeding refused before Docker')
 
 # bash -n cannot see malformed Python inside a heredoc.
 import re
-for script in ['rehearse-uninstall.sh', 'rehearse-upgrade-network.sh', 'seed-bench.sh', 'interrupt-ddl.sh']:
+for script in ['rehearse-uninstall.sh', 'rehearse-upgrade-network.sh', 'rehearse-upgrade.sh', 'seed-bench.sh', 'interrupt-ddl.sh']:
     source = (helper.parent / script).read_text()
     for match in re.finditer(r"<<'(?P<tag>PY\w*)'\n(?P<code>.*?)\n(?P=tag)(?:\n|$)", source, re.S):
         compile(match['code'], script + ':' + match['tag'], 'exec')
