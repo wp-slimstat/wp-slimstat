@@ -144,7 +144,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     expect(result.body).not.toContain("Class 'SlimStat\\Services\\GeoIP' not found");
 
     // Should show either geo data or DB-missing message
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'Should show geo data or DB-missing message').toBeTruthy();
   });
@@ -168,7 +168,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     if (hasGeoData) {
       // Country data should be present in the normalized output
       const hasCountry =
@@ -198,7 +198,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'Should show geo data or DB-missing message').toBeTruthy();
   });
@@ -315,7 +315,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     expect(dbipResult.body).not.toContain('Fatal error');
 
     // Both should produce valid (non-fatal) responses
-    const hasGeoData = dbipResult.body.includes('IP Geolocation Information');
+    const hasGeoData = dbipResult.body.includes('Current IP geolocation lookup');
     const hasDbMissing = dbipResult.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'DB-IP should produce valid response after switch').toBeTruthy();
   });

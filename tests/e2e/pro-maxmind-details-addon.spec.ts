@@ -116,7 +116,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain("Class 'SlimStat\\Services\\GeoIP' not found");
 
     // Should show either geo data HTML or actionable DB-missing message
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'Should show geo data or DB-missing message').toBeTruthy();
   });
@@ -213,7 +213,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain('Fatal error');
 
     // If the MaxMind database is available, verify city/lat/lon are populated
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     if (hasGeoData) {
       // The response HTML should contain city, latitude, and longitude data
       // for Google's public DNS IP (8.8.8.8) — typically resolves to a US location
