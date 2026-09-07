@@ -3,7 +3,7 @@
  *
  * Verifies that the external tracking snippet shown on Settings > Tracker tab
  * includes the correct multi-transport parameters (transport, ajaxurl_ajax)
- * and uses a versioned CDN URL instead of trunk/.
+ * and uses the installed tracker asset instead of an unpublished external tag.
  *
  * Also verifies that external page tracking works end-to-end when the snippet
  * is used with proper SlimStatParams.
@@ -18,6 +18,8 @@ import {
   clearStatsTable,
   closeDb,
   getPool,
+  waitForTrackerId,
+  waitForPageviewRow,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
 
@@ -64,10 +66,13 @@ test.describe('External Page Tracking Snippet — Issue #220', () => {
     expect(snippetText).toContain('ajaxurl_ajax:');
   });
 
-  test('Settings page snippet uses versioned CDN URL (not trunk/)', async ({ page }) => {
+  test('Settings page snippet uses the reachable installed tracker asset', async ({ page }) => {
     const snippetText = await getSnippetText(page);
     expect(snippetText).not.toContain('trunk/wp-slimstat.min.js');
-    expect(snippetText).toMatch(/tags\/[\d.]+\/wp-slimstat\.min\.js/);
+    const asset = snippetText.match(/src="([^"]+\/wp-slimstat\.min\.js)"/)?.[1];
+    expect(asset).toBeTruthy();
+    expect(new URL(asset!).origin).toBe(new URL(BASE_URL).origin);
+    expect((await page.request.get(asset!)).ok()).toBe(true);
   });
 
   test('Snippet ajaxurl and ajaxurl_ajax both point to admin-ajax.php', async ({ page }) => {
@@ -173,4 +178,26 @@ var SlimStatParams = { ajaxurl: "${ajaxUrl}" };
     expect(params.transport).toBeUndefined();
     expect(params.ajaxurl_ajax).toBeUndefined();
   });
+
+  test('copied settings snippet executes and records the external page', async ({ page, browser }) => {
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    await setSlimstatOption(page, 'ignore_bots', 'off');
+    const snippet = await getSnippetText(page);
+    const context = await browser.newContext();
+    try {
+      const visitor = await context.newPage();
+      const errors: string[] = [];
+      visitor.on('pageerror', error => errors.push(error.message));
+      const marker = `external-copied-${Date.now()}`;
+      await visitor.route(`**/${marker}`, route => route.fulfill({ status: 200, contentType: 'text/html', body: `<!doctype html><html><body><h1>Copied snippet</h1>${snippet}</body></html>` }));
+      await visitor.goto(`${BASE_URL}/${marker}`, { waitUntil: 'networkidle' });
+      expect(errors, 'The actual rendered snippet must parse and execute without rewriting it in the fixture').toEqual([]);
+      await waitForTrackerId(visitor);
+      expect(await waitForPageviewRow(marker)).not.toBeNull();
+    } finally {
+      await context.close();
+    }
+  });
+
 });
