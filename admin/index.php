@@ -554,20 +554,45 @@ class wp_slimstat_admin
      */
     public static function handle_reset_layout()
     {
-        // Check nonce
-        if (!wp_verify_nonce($_REQUEST['_wpnonce'], 'reset_layout')) {
+        $scope = isset($_POST['slimstat_layout_scope']) && is_string($_POST['slimstat_layout_scope']) ? $_POST['slimstat_layout_scope'] : 'personal';
+        $network = 'network' === $scope;
+        $nonce_action = $network ? 'reset_layout_network' : 'reset_layout';
+        if ((isset($_POST['slimstat_layout_scope']) && !is_string($_POST['slimstat_layout_scope'])) || !in_array($scope, ['personal', 'network'], true) || !isset($_REQUEST['_wpnonce']) || !is_string($_REQUEST['_wpnonce'])
+            || !wp_verify_nonce(sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])), $nonce_action)) {
             wp_die(esc_html__('Sorry, you are not allowed to access this page.', 'wp-slimstat'));
         }
 
-        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_admin_page_slimlayout%%'", $GLOBALS['wpdb']->prefix));
-        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%mmetaboxhidden_admin_page_slimview%%'", $GLOBALS['wpdb']->prefix));
-        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS['wpdb']->prefix));
-        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS['wpdb']->prefix));
-        $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS['wpdb']->prefix));
+        if ($network) {
+            if (!is_multisite() || !current_user_can('manage_network_options')) {
+                wp_die(esc_html__('Insufficient permissions.', 'wp-slimstat'));
+            }
+            // Existing network layout reads are deliberately attached to user 1.
+            $user_id = 1;
+        } else {
+            $user = wp_get_current_user();
+            $whitelist = preg_split('/[\s,]+/', (string) (wp_slimstat::$settings['can_customize'] ?? ''), -1, PREG_SPLIT_NO_EMPTY);
+            $capability = wp_slimstat::$settings['capability_can_customize'] ?? 'manage_options';
+            if (!$user->ID || !(current_user_can('manage_options') || current_user_can($capability ?: 'read')
+                || (current_user_can('read') && in_array($user->user_login, $whitelist, true)))) {
+                wp_die(esc_html__('Insufficient permissions.', 'wp-slimstat'));
+            }
+            $user_id = (int) $user->ID;
+        }
 
-        // Redirect to layout page
-        wp_safe_redirect(admin_url('admin.php?page=slimlayout'));
-        die();
+        // Delete only this scope's SlimStat layout keys through the metadata API,
+        // including legacy blog-prefixed keys. Never delete another user's data,
+        // personal keys during a network reset, or ordinary WP dashboard ordering.
+        $prefix = $GLOBALS['wpdb']->get_blog_prefix();
+        $suffix = $network ? '-network' : '';
+        foreach (array_keys(get_user_meta($user_id)) as $meta_key) {
+            $key = strpos($meta_key, $prefix) === 0 ? substr($meta_key, strlen($prefix)) : $meta_key;
+            if (preg_match('/^(?:meta-box-order|metaboxhidden|mmetaboxhidden|closedpostboxes|screen_layout)_(?:admin|slimstat)_page_slim(?:layout|view[0-9]*)' . $suffix . '$/D', $key)) {
+                delete_user_meta($user_id, $meta_key);
+            }
+        }
+
+        wp_safe_redirect($network ? network_admin_url('admin.php?page=slimlayout') : admin_url('admin.php?page=slimlayout'));
+        exit;
     }
 
     /**

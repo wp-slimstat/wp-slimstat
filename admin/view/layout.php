@@ -25,8 +25,9 @@ if (is_network_admin()) {
 
         <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>"/></form>
 
-        <form action="admin-post.php" method="post">
-            <?php wp_nonce_field('reset_layout'); ?>
+        <form action="<?php echo esc_url(admin_url('admin-post.php')); ?>" method="post">
+            <?php wp_nonce_field(is_network_admin() ? 'reset_layout_network' : 'reset_layout'); ?>
+            <input type="hidden" name="slimstat_layout_scope" value="<?php echo is_network_admin() ? 'network' : 'personal'; ?>">
             <input type="hidden" name="action" value="slimstat_reset_layout">
             <input type="submit" value="<?php _e('Reset Layout', 'wp-slimstat') ?>" class="button"/>
         </form>
