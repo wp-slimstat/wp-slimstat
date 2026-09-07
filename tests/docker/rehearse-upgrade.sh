@@ -48,8 +48,9 @@
 #                               it does not rewrite
 #   R4  idempotence             a second run issues no ALTER
 #   R5  kill switch             SLIMSTAT_DISABLE_MIGRATIONS refuses, and tracking still lands
-#   R7  rollback                the OLD code on the migrated schema still tracks, and the v5
+#   R7  code downgrade          the OLD code on the migrated schema still tracks, and the v5
 #                               values are still intact
+#   R8  backup recovery          exact pre-migration database/schema restored; later writes lost
 #
 # CONTROLS come first and are printed before any result, per the programme's standing rule.
 #
@@ -83,6 +84,7 @@
 # deferred-window install: v6 code, v5 schema, 443,543 rows, no vid_hash and no ua_id.
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+source "$HARNESS_DIR/backup-recovery.sh"
 [ -f "$HARNESS_DIR/matrix.env" ] && source "$HARNESS_DIR/matrix.env"
 
 OLD_REF="${1:?old ref (the version a site is updating FROM)}"
@@ -183,7 +185,7 @@ cleanup() {
   python3 - "$ART" "$PLUGIN_SRC" "$STARTED" "$rc" "$OLD_REF" "$NEW_REF" "${PRO_RESOLVED_REF:-}" "${CANDIDATE_ZIP_HASH:-}" "${PRO_ZIP_HASH:-}" "$(digest "$DUMP")" "${OLD_ZIP_HASH:-}" <<'PYARCHIVE'
 import datetime,hashlib,json,os,pathlib,subprocess,sys
 art,source,started,rc,old,new,pro,fzip,pzip,corpus,oldzip=sys.argv[1:]; p=pathlib.Path(art); src=pathlib.Path(source)
-files=['lib.sh','rehearse-upgrade.sh','extract-artifact.py','interrupt-ddl.sh','probe-interrupt-ddl.php','probe-pro-mixed-window.php','Dockerfile.wp','docker-compose.yml']
+files=['lib.sh','backup-recovery.sh','rehearse-upgrade.sh','extract-artifact.py','interrupt-ddl.sh','probe-interrupt-ddl.php','probe-pro-mixed-window.php','Dockerfile.wp','docker-compose.yml']
 free=subprocess.run(['git','-C',source,'rev-parse',new+'^{commit}'],capture_output=True,text=True)
 json.dump(dict(started=started,finished=datetime.datetime.now(datetime.timezone.utc).isoformat(),exit_status=int(rc),old_zip_sha256=oldzip or None,ddl_interruption_requested=os.environ.get('REHEARSE_INTERRUPT_DDL','0')=='1',old_ref=old,new_ref=new,free_sha=free.stdout.strip() if free.returncode==0 else None,pro_sha=pro or None,free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,corpus_sha256=corpus,instrument_sha=subprocess.check_output(['git','-C',source,'rev-parse','HEAD'],text=True).strip(),instrument_hashes={f:hashlib.sha256((src/'tests/docker'/f).read_bytes()).hexdigest() for f in files}),open(p/'manifest.json','w'),indent=2)
 json.dump({str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in p.rglob('*') if f.is_file() and f.name!='artifacts.sha256.json'},open(p/'artifacts.sha256.json','w'),indent=2)
@@ -563,6 +565,7 @@ HIT_0=$(track_hit "rehearse-old-code-baseline")
 # R2 counts its single row from HERE. The control above has just written one, and a delta still
 # anchored to the hydrated count would absorb it — which is a delta that would absorb a duplicate.
 ROWS_0=$(stats_rows)
+capture_recovery_backup || { fail "pre-migration recovery backup failed"; exit 1; }
 
 # U4's mixed window, first half. SCOPE_OLD was already READ by C5 above, which needed it to
 # prove Pro loaded; reported here so the two halves of the transition sit beside their values.
@@ -1071,7 +1074,7 @@ IDX_COLS_C4=$(index_columns wp_slim_stats idx_vid_hash_dt)
   || { note FAIL "the control left idx_vid_hash_dt as '${IDX_COLS_C4:-gone}'"; fail "C4 left the index it broke"; }
 
 echo
-echo "── R7 · rollback to the OLD code on the migrated schema ─────────────────"
+echo "── R7 · code downgrade to OLD on the migrated schema ─────────────────"
 use_ref "$OLD_REF" || exit 1
 HIT_3=$(track_hit "rehearse-rollback")
 [ "${HIT_3:-0}" -gt 0 ] && check "the previous version still tracks after a migration" 0 "row id $HIT_3" \
@@ -1089,7 +1092,12 @@ FP_CORE_2=$(fingerprint_core)
 # rollback. Asserted, because "the schema is additive" is a claim about indexes too.
 IDX_COLS_2=$(index_columns wp_slim_stats idx_vid_hash_dt)
 if [ "$IDX_COLS_2" = "vid_hash,dt" ]; then _r=0; else _r=1; fi
-check "idx_vid_hash_dt survived the rollback intact" "$_r" "${IDX_COLS_2:-the index is gone}"
+check "idx_vid_hash_dt survived the code downgrade intact" "$_r" "${IDX_COLS_2:-the index is gone}"
+
+echo
+echo "── R8 · restore the exact pre-migration database backup ─────────────────"
+prove_backup_recovery && check "backup restores schema/data and explicitly loses later writes" 0 \
+  || { check "backup restores schema/data and explicitly loses later writes" 1; exit 1; }
 
 # lib.sh's scan_debug_log owns what counts as a fatal — it returns 0 when it finds
 # `PHP (Fatal|Parse) error.*wp-slimstat`. The hand-rolled grep that used to sit here was

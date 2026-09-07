@@ -25,4 +25,4 @@ index cf049d04..d45d820c 100755
 -  || { note FAIL "the control left idx_vid_hash_dt as '${IDX_COLS_C4:-gone}'"; fail "C4 left the index it broke"; }
  
  echo
- echo "── R7 · rollback to the OLD code on the migrated schema ─────────────────"
+ echo "── R7 · code downgrade to OLD on the migrated schema ─────────────────"

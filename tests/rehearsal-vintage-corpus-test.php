@@ -305,8 +305,8 @@ $check(
         && false !== strpos($reh_src, 'if [ "$IDX_COLS" = "vid_hash,dt" ]')
 );
 $check(
-    'and re-asserts it after the rollback',
-    false !== strpos($reh_src, 'check "idx_vid_hash_dt survived the rollback intact"')
+    'and re-asserts it after the code downgrade',
+    false !== strpos($reh_src, 'check "idx_vid_hash_dt survived the code downgrade intact"')
 );
 
 // ── H4 · the projection is lossless-or-loud ────────────────────────────────
