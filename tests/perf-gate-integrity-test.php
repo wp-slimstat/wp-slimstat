@@ -247,6 +247,14 @@ $main_yaml = (string) @file_get_contents($main_path);
 // exactly that — the deploy fully ungated again while this assertion stayed green.
 $main_code = (string) preg_replace('/^\s*#.*$/m', '', $main_yaml);
 
+// Development qualification cannot satisfy beta/human/release authorization by CI success alone.
+if (!preg_match('/^  tag:\s*\n\s*if:\s*\$\{\{\s*false\s*\}\}/m', $main_code)) {
+    $failures[] = 'Free production deploy development launch hold is missing';
+}
+if (strpos($main_code, 'python3 .github/qualify-deploy.py') === false) {
+    $failures[] = 'Free deploy no longer validates fresh complete exact-SHA receipts';
+}
+
 // The gate asks GitHub about THIS commit and refuses on anything but success. It used to be
 // pinned on the literal `check-runs`, which named one endpoint rather than the property.
 // That endpoint turned out to be the wrong one: the nightly cron re-runs CI on the default

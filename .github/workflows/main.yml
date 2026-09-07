@@ -5,6 +5,8 @@ on:
     - "*"
 jobs:
   tag:
+    # Development launch hold: beta, human review and explicit release authorization remain required.
+    if: ${{ false }}
     name: New tag
     runs-on: ubuntu-latest
 
@@ -101,6 +103,10 @@ jobs:
           fi
         done < "${RUNNER_TEMP:?}/expected.txt"
         [ "$fail" -eq 0 ] || exit 1
+        gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}" > "${RUNNER_TEMP:?}/run.json"
+        python3 .github/qualify-deploy.py --sha "$GITHUB_SHA" \
+          --run "${RUNNER_TEMP:?}/run.json" --jobs "${RUNNER_TEMP:?}/jobs.json" \
+          --expected "${RUNNER_TEMP:?}/expected.txt"
         echo "All expected lanes concluded success."
 
     - name: Install required dependencies

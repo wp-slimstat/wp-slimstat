@@ -404,7 +404,8 @@
       "@test:browscap-fileinfo-preflight",
       "@test:consent-filter-context",
       "@test:settings-request-render",
-      "@test:reset-layout-scope"
+      "@test:reset-layout-scope",
+      "@test:free-deploy-evidence"
     ],
     "test:unit": "phpunit --configuration phpunit.xml.dist --testsuite=Unit --log-junit build/junit-unit.xml",
     "test:integration": "phpunit --configuration phpunit.xml.dist --testsuite=Integration --bootstrap tests/bootstrap-integration.php --log-junit build/junit-integration.xml",
@@ -418,9 +419,10 @@
     "i18n:check": "python3 tests/check-pot.py",
     "test:pot-freshness": "php tests/pot-freshness-test.php",
     "test:settings-request-render": "php tests/settings-request-render-test.php",
-    "test:reset-layout-scope": "php tests/reset-layout-scope-test.php"
+    "test:reset-layout-scope": "php tests/reset-layout-scope-test.php",
+    "test:free-deploy-evidence": "python3 tests/free-deploy-evidence-test.py"
   },
   "scripts-descriptions": {
-    "test:reports-escaping": "XSS gate over the report render path. Needs a live WordPress, so it is not in test:source-level; its CI home is the Tier 2 wp-env lane (.github/workflows/ci.yml), because membership of test:all meant it ran in no job at all. Locally it needs the DB socket passed to PHP — see CLAUDE.md."
+    "test:reports-escaping": "XSS gate over the report render path. Needs a live WordPress, so it is not in test:source-level; its CI home is the Tier 2 wp-env lane (.github/workflows/ci.yml), because membership of test:all meant it ran in no job at all. Locally it needs the DB socket passed to PHP \u2014 see CLAUDE.md."
   }
 }
