@@ -363,15 +363,13 @@ test.describe('Session & Cookie Management — #199', () => {
     // Click the REAL Accept button — this triggers the full production
     // banner handler: cookie set → sendConsentChangeToServer → requestConsentUpgrade
     // No manual cookie injection, no force:true, no direct JS calls.
+    const upgradeResponse = testPage.waitForResponse(response =>
+      response.ok() && isSlimstatTrackingRequest(response.request()) &&
+      (response.request().postData() || '').includes('consent_upgrade=1'));
     await testPage.locator('[data-consent="accepted"]').click();
-
-    // Wait for the consent upgrade tracking request to complete.
-    // The banner handler sends a REST/AJAX request with consent_upgrade=1.
-    // Poll trackingRequests instead of a blind timeout.
-    const upgradeDeadline = Date.now() + 15_000;
-    while (trackingRequests.length === 0 && Date.now() < upgradeDeadline) {
-      await new Promise((r) => setTimeout(r, 500));
-    }
+    const completedUpgrade = await upgradeResponse;
+    expect(completedUpgrade.ok(), 'Consent upgrade response must succeed').toBe(true);
+    await completedUpgrade.finished();
 
     // Verify the consent cookie is now 'accepted'
     const postAcceptCookies = await ctx.cookies();

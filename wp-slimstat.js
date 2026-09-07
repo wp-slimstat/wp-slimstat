@@ -1601,7 +1601,7 @@ var SlimStat = (function () {
         lastPageviewPayload = payloadBase;
         lastPageviewSentAt = now;
         var waitForId = SlimStat.empty(params.id) || parseInt(params.id, 10) <= 0; // when new pageview
-        var useBeacon = !waitForId; // need sync response when creating id
+        var useBeacon = !waitForId && !options.consentUpgrade; // creation and consent upgrades need an acknowledged response
 
         // Avoid parallel initial pageview duplication
         if (inflightPageview && waitForId) {

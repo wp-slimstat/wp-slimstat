@@ -76,3 +76,10 @@ scope.resetPageviewFlags();
 assert.equal(sent, 1, 'completion must deliver exactly one queued grant');
 assert.equal(scope.pendingConsentUpgrade, null);
 console.log('PASS: consent granted during an in-flight pageview is delivered once after completion');
+
+const beaconDeclaration = source.match(/var useBeacon = ([^;]+); \/\/ creation and consent upgrades/);
+assert(beaconDeclaration, 'pageview beacon decision must be present');
+for (const [waitForId, consentUpgrade, expected] of [[true, false, false], [false, true, false], [false, false, true]]) {
+    assert.equal(vm.runInNewContext(beaconDeclaration[1], {waitForId, options: {consentUpgrade}}), expected);
+}
+console.log('PASS: consent upgrades await acknowledged response and retain transport fallback');
