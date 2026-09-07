@@ -1081,12 +1081,12 @@ class wp_slimstat_reports
         if (is_admin() && !$hide_header) {
             // Show the refresh button only if the time range is not in the past
             if (wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
-                $header_buttons = '<a class="noslimstat refresh" title="' . __('Refresh', 'wp-slimstat') . '" href="' . self::fs_url() . '"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.44215 9.33359C2.50187 5.19973 5.89666 1.875 10.0656 1.875C12.8226 1.875 15.239 3.32856 16.5777 5.50601C16.7584 5.80006 16.6666 6.18499 16.3726 6.36576C16.0785 6.54654 15.6936 6.45471 15.5128 6.16066C14.3937 4.34037 12.3735 3.125 10.0656 3.125C6.57859 3.125 3.75293 5.89808 3.69234 9.33181L4.02599 9.00077C4.27102 8.75765 4.66675 8.75921 4.90986 9.00424C5.15298 9.24928 5.15143 9.645 4.90639 9.88812L3.50655 11.277C3.26288 11.5188 2.86982 11.5188 2.62614 11.277L1.2263 9.88812C0.981267 9.645 0.979713 9.24928 1.22283 9.00424C1.46595 8.75921 1.86167 8.75765 2.10671 9.00077L2.44215 9.33359ZM16.4885 8.72215C16.732 8.4815 17.1238 8.4815 17.3672 8.72215L18.7724 10.111C19.0179 10.3537 19.0202 10.7494 18.7776 10.9949C18.5349 11.2404 18.1392 11.2427 17.8937 11.0001L17.5521 10.6624C17.4943 14.8003 14.0846 18.125 9.90191 18.125C7.13633 18.125 4.71134 16.6725 3.3675 14.4949C3.18622 14.2012 3.2774 13.8161 3.57114 13.6348C3.86489 13.4535 4.24997 13.5447 4.43125 13.8384C5.5545 15.6586 7.58316 16.875 9.90191 16.875C13.4071 16.875 16.2433 14.0976 16.302 10.6641L15.962 11.0001C15.7165 11.2427 15.3208 11.2404 15.0782 10.9949C14.8355 10.7494 14.8378 10.3537 15.0833 10.111L16.4885 8.72215Z" fill="#676E74"/></svg></a>';
+                $header_buttons = '<a class="noslimstat refresh" title="' . esc_attr__('Refresh', 'wp-slimstat') . '" href="' . esc_url(self::fs_url()) . '"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M2.44215 9.33359C2.50187 5.19973 5.89666 1.875 10.0656 1.875C12.8226 1.875 15.239 3.32856 16.5777 5.50601C16.7584 5.80006 16.6666 6.18499 16.3726 6.36576C16.0785 6.54654 15.6936 6.45471 15.5128 6.16066C14.3937 4.34037 12.3735 3.125 10.0656 3.125C6.57859 3.125 3.75293 5.89808 3.69234 9.33181L4.02599 9.00077C4.27102 8.75765 4.66675 8.75921 4.90986 9.00424C5.15298 9.24928 5.15143 9.645 4.90639 9.88812L3.50655 11.277C3.26288 11.5188 2.86982 11.5188 2.62614 11.277L1.2263 9.88812C0.981267 9.645 0.979713 9.24928 1.22283 9.00424C1.46595 8.75921 1.86167 8.75765 2.10671 9.00077L2.44215 9.33359ZM16.4885 8.72215C16.732 8.4815 17.1238 8.4815 17.3672 8.72215L18.7724 10.111C19.0179 10.3537 19.0202 10.7494 18.7776 10.9949C18.5349 11.2404 18.1392 11.2427 17.8937 11.0001L17.5521 10.6624C17.4943 14.8003 14.0846 18.125 9.90191 18.125C7.13633 18.125 4.71134 16.6725 3.3675 14.4949C3.18622 14.2012 3.2774 13.8161 3.57114 13.6348C3.86489 13.4535 4.24997 13.5447 4.43125 13.8384C5.5545 15.6586 7.58316 16.875 9.90191 16.875C13.4071 16.875 16.2433 14.0976 16.302 10.6641L15.962 11.0001C15.7165 11.2427 15.3208 11.2404 15.0782 10.9949C14.8355 10.7494 14.8378 10.3537 15.0833 10.111L16.4885 8.72215Z" fill="#676E74"/></svg></a>';
             }
 
             $tooltip_base = '<span class="header-tooltip slimstat-tooltip-trigger corner"><svg width="17" height="18" viewBox="0 0 17 18" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M8.6665 13.3125C8.97716 13.3125 9.229 13.0607 9.229 12.75V8.25C9.229 7.93934 8.97716 7.6875 8.6665 7.6875C8.35584 7.6875 8.104 7.93934 8.104 8.25V12.75C8.104 13.0607 8.35584 13.3125 8.6665 13.3125Z" fill="#9BA1A6"/> <path d="M8.6665 5.25C9.08072 5.25 9.4165 5.58579 9.4165 6C9.4165 6.41421 9.08072 6.75 8.6665 6.75C8.25229 6.75 7.9165 6.41421 7.9165 6C7.9165 5.58579 8.25229 5.25 8.6665 5.25Z" fill="#9BA1A6"/> <path fill-rule="evenodd" clip-rule="evenodd" d="M0.604004 9C0.604004 4.5472 4.21371 0.9375 8.6665 0.9375C13.1193 0.9375 16.729 4.5472 16.729 9C16.729 13.4528 13.1193 17.0625 8.6665 17.0625C4.21371 17.0625 0.604004 13.4528 0.604004 9ZM8.6665 2.0625C4.83503 2.0625 1.729 5.16852 1.729 9C1.729 12.8315 4.83503 15.9375 8.6665 15.9375C12.498 15.9375 15.604 12.8315 15.604 9C15.604 5.16852 12.498 2.0625 8.6665 2.0625Z" fill="#9BA1A6"/></svg><span class="slimstat-tooltip-content">';
             // $tooltip_base   = '<span class="header-tooltip dashicons dashicons-editor-help slimstat-tooltip-trigger corner"><span class="slimstat-tooltip-content">';
-            $header_tooltip = $tooltip_base . (empty(self::$reports[$_report_id]['tooltip']) ? esc_html($_report_id) : self::$reports[$_report_id]['tooltip'] . '<br /><br />' . esc_html($_report_id)) . '</span></span>';
+            $header_tooltip = $tooltip_base . (empty(self::$reports[$_report_id]['tooltip']) ? esc_html($_report_id) : wp_kses_post(self::$reports[$_report_id]['tooltip']) . '<br /><br />' . esc_html($_report_id)) . '</span></span>';
 
             // Allow third-party code to add more buttons
             $header_buttons = apply_filters('slimstat_report_header_buttons', $header_buttons, $_report_id);
@@ -1106,6 +1106,8 @@ class wp_slimstat_reports
             $style_attrs .= "; height: " . esc_attr($custom_height);
         }
 
+        // Header hooks intentionally accept developer HTML/SVG; built-in attributes and tooltip data are escaped above.
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Preserve slimstat_report_header_buttons/after_title HTML contracts.
         echo "<div class='postbox " . esc_attr($header_classes) . "' style='" . esc_attr($style_attrs) . "' id='" . esc_attr($_report_id) . sprintf("'>%s %s <div class='inside'>", $header_buttons, $widget_title);
         return null;
     }
@@ -1275,14 +1277,14 @@ class wp_slimstat_reports
             foreach ($all_results as $a_result) {
                 echo '<p>';
 
-                echo sprintf('%s <span>%s</span>', $a_result[ 'metric' ], $a_result[ 'value' ]);
+                echo sprintf('%s <span>%s</span>', wp_kses_post($a_result['metric']), wp_kses_post($a_result['value']));
 
                 if (!empty($a_result['tooltip'])) {
                     self::inline_help($a_result['tooltip']);
                 }
 
                 if (!empty($a_result['details'])) {
-                    echo sprintf("<b class='slimstat-tooltip-content'>%s</b>", $a_result[ 'details' ]);
+                    echo sprintf("<b class='slimstat-tooltip-content'>%s</b>", wp_kses_post($a_result['details']));
                 }
 
                 echo '</p>';
@@ -1304,7 +1306,7 @@ class wp_slimstat_reports
             $count_page_results = count($results);
 
             if (0 == $count_page_results) {
-                echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
+                echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
 
                 if (defined('DOING_AJAX') && DOING_AJAX) {
                     die();
@@ -1649,13 +1651,13 @@ class wp_slimstat_reports
                     $row_output = preg_replace('/<a (.*?)>(.*?)<\/a>/', '\\2', $row_output);
                 }
 
-                echo $row_output;
+                echo wp_kses_post($row_output);
 
             }
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '</div>';
             }
-            echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
+            echo wp_kses_post(self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results)));
             if (!defined('DOING_AJAX') || !DOING_AJAX) {
                 echo '<div>';
             }
@@ -1703,7 +1705,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
+            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -1742,7 +1744,7 @@ class wp_slimstat_reports
             $has_tooltip = false;
             if (!empty($a_result['dt'])) {
                 $date_time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $a_result['dt'], true);
-                echo '<b class="slimstat-tooltip-content">' . __('IP', 'wp-slimstat') . ': ' . esc_html($a_result['ip']) . '<br/>' . __('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url($blog_url . $a_result['resource']), esc_html($blog_url . $a_result['resource'])) . __('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html($a_result['position'])) . __('Date', 'wp-slimstat') . (': ' . $date_time);
+                echo '<b class="slimstat-tooltip-content">' . esc_html__('IP', 'wp-slimstat') . ': ' . esc_html($a_result['ip']) . '<br/>' . esc_html__('Page', 'wp-slimstat') . sprintf(": <a href='%s'>%s</a><br>", esc_url($blog_url . $a_result['resource']), esc_html($blog_url . $a_result['resource'])) . esc_html__('Coordinates', 'wp-slimstat') . sprintf(': %s<br>', esc_html($a_result['position'])) . esc_html__('Date', 'wp-slimstat') . (': ' . esc_html($date_time));
                 $has_tooltip = true;
             } elseif (is_array($note_data)) {
                 // For "top" mode (no dt), show full JSON breakdown in tooltip
@@ -1753,7 +1755,7 @@ class wp_slimstat_reports
                     }
                 }
                 if (!empty($tooltip_parts)) {
-                    echo '<b class="slimstat-tooltip-content">' . implode('<br/>', $tooltip_parts);
+                    echo '<b class="slimstat-tooltip-content">' . wp_kses_post(implode('<br/>', $tooltip_parts));
                     $has_tooltip = true;
                 }
             }
@@ -1766,7 +1768,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
+        echo wp_kses_post(self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results)));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }
@@ -2288,7 +2290,7 @@ class wp_slimstat_reports
             }
 
             echo '<div class="slimstat-funnel-chart' . ($deferred ? ' slimstat-funnel-deferred' : '')
-                . '" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>';
+                . '" data-funnel-index="' . (int) $idx . '"' . $panel_attrs . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- panel_attrs contains only fixed role plus esc_attr IDs built above.
             echo '<h4>' . esc_html($funnel['name']) . '</h4>';
 
             if ($deferred) {
@@ -2369,7 +2371,7 @@ class wp_slimstat_reports
         $count_page_results = count($results);
 
         if (0 == $count_page_results) {
-            echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
+            echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
 
             if (defined('DOING_AJAX') && DOING_AJAX) {
                 die();
@@ -2418,7 +2420,7 @@ class wp_slimstat_reports
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '</div>';
         }
-        echo self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results));
+        echo wp_kses_post(self::report_pagination($count_page_results, self::get_report_total_count($_args, $all_results)));
         if (! defined('DOING_AJAX') || ! DOING_AJAX) {
             echo '<div>';
         }
@@ -2487,7 +2489,7 @@ class wp_slimstat_reports
         }
 
         foreach ($rankings as $a_ranking) {
-            echo '<p>' . self::inline_help($a_ranking[2], false) . $a_ranking[1] . '<span>' . $a_ranking[0] . '</span></p>';
+            echo '<p>' . wp_kses_post(self::inline_help($a_ranking[2], false)) . esc_html($a_ranking[1]) . '<span>' . esc_html($a_ranking[0]) . '</span></p>';
         }
 
         if (defined('DOING_AJAX') && DOING_AJAX) {
@@ -2571,7 +2573,7 @@ class wp_slimstat_reports
                         }
                     }
                     if ($uses_db && $db_missing) {
-                        echo sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), $settings_url . '2#wp-slimstat-third-party-libraries');
+                        echo wp_kses_post(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }
                     ?>
@@ -2588,9 +2590,9 @@ class wp_slimstat_reports
                             </div>
                             <strong><?php echo esc_html($country['name']) ?></strong>
                             <div class="bar-container">
-                                <div class="bar-fill" style="width: <?php echo $country['percent'] ?>%;"></div>
+                                <div class="bar-fill" style="width: <?php echo esc_attr($country['percent']) ?>%;"></div>
                             </div>
-                            <span><?php echo $country['percent']; ?>%</span>
+                            <span><?php echo esc_html($country['percent']); ?>%</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -2852,7 +2854,7 @@ class wp_slimstat_reports
             $wrapped_text = '';
         }
         if ($_echo) {
-            echo $wrapped_text;
+            echo wp_kses_post($wrapped_text);
         } else {
             return $wrapped_text;
         }

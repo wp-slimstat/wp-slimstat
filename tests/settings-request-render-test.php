@@ -144,3 +144,16 @@ $_POST = ['filter_array' => addslashes(json_encode($filter))];
 eval($validation);
 check($new_filter === $filter, 'valid saved filter values changed during JSON parsing');
 echo "PASS: admin CSS, headers, links and notices escape by context; malformed saved filters refused; valid filter JSON preserved\n";
+
+function is_admin() { return true; }
+class wp_slimstat_db { public static $debug_message = ''; }
+$reports = file_get_contents(__DIR__ . '/../admin/view/wp-slimstat-reports.php');
+eval('class SlimstatSummaryProbe { public static function raw_results_to_html($_args = []) {' . slimstat_function_body($reports, 'raw_results_to_html') . '} }');
+wp_slimstat::$settings['async_load'] = 'no';
+ob_start();
+SlimstatSummaryProbe::raw_results_to_html(['columns' => '', 'raw' => static function () {
+    return [['metric' => '<strong>Visits</strong><script>attack()</script>', 'value' => '<script>attack()</script>42', 'details' => '<script>attack()</script>detail']];
+}]);
+$summary = ob_get_clean();
+check(strpos($summary, '<script>') === false && strpos($summary, '<strong>Visits</strong>') !== false, 'summary branches must filter markup without removing formatting');
+echo "PASS: summary metric, value and details use contextual HTML filtering (real WordPress KSES control in reports-output-escaping-test.php)\n";

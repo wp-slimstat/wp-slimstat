@@ -549,5 +549,22 @@ assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)"
 assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
 assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
 
+// Summary providers share a separate empty-columns branch; defend all three HTML sinks.
+ob_start();
+wp_slimstat_reports::raw_results_to_html([
+    'columns' => '',
+    'raw' => make_data_callback([[
+        'metric' => '<strong>Visits</strong><img src=x onerror="attack()">',
+        'value' => '<em>42</em><script>attack()</script>',
+        'details' => '<a href="javascript:attack()">Details</a>',
+    ]]),
+]);
+$summary = ob_get_clean();
+assert_not_contains('onerror=', $summary, 'Summary metric strips event handlers');
+assert_not_contains('<script>', $summary, 'Summary value strips script markup');
+assert_not_contains('javascript:', $summary, 'Summary details strips unsafe URLs');
+assert_contains('<strong>Visits</strong>', $summary, 'Summary metric preserves intended formatting');
+assert_contains('<em>42</em>', $summary, 'Summary value preserves intended formatting');
+
 $GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

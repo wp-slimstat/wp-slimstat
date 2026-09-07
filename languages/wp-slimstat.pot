@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-07T19:45:14+00:00\n"
+"POT-Creation-Date: 2026-09-07T19:49:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -1101,7 +1101,7 @@ msgstr ""
 #: admin/index.php:4031
 #: admin/view/partials/goals-funnels/funnels-card.php:55
 #: admin/view/partials/goals-funnels/goals-card.php:171
-#: admin/view/wp-slimstat-reports.php:2228
+#: admin/view/wp-slimstat-reports.php:2230
 msgid "Upgrade to Pro"
 msgstr ""
 
@@ -1517,7 +1517,7 @@ msgid "2-letter code (us, ru, de, it, ...)"
 msgstr ""
 
 #: admin/index.php:3919
-#: admin/view/wp-slimstat-reports.php:1745
+#: admin/view/wp-slimstat-reports.php:1747
 msgid "IP"
 msgstr ""
 
@@ -1977,7 +1977,7 @@ msgstr ""
 
 #: admin/view/index.php:104
 #: admin/view/index.php:107
-#: admin/view/wp-slimstat-reports.php:2574
+#: admin/view/wp-slimstat-reports.php:2576
 #, php-format
 msgid "GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor."
 msgstr ""
@@ -2180,7 +2180,7 @@ msgstr ""
 #. translators: 1: number of steps, 2: conversion rate
 #. translators: 1: step count, 2: conversion rate
 #: admin/view/partials/goals-funnels/funnel-summary.php:51
-#: admin/view/wp-slimstat-reports.php:2315
+#: admin/view/wp-slimstat-reports.php:2317
 #: admin/assets/js/goals-funnels.js:711
 #, php-format,js-format
 msgid "%1$d-step funnel · %2$s%% conversion rate"
@@ -2261,7 +2261,7 @@ msgid "Landing → Form → Thank-you (only if you redirect after submit)"
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:102
-#: admin/view/wp-slimstat-reports.php:1986
+#: admin/view/wp-slimstat-reports.php:1988
 msgid "+ Add funnel"
 msgstr ""
 
@@ -2274,7 +2274,7 @@ msgid "Templates pre-fill the dimension and operator. You fill in the URLs or ev
 msgstr ""
 
 #: admin/view/partials/goals-funnels/funnels-card.php:132
-#: admin/view/wp-slimstat-reports.php:2253
+#: admin/view/wp-slimstat-reports.php:2255
 msgid "Configured funnels"
 msgstr ""
 
@@ -2362,7 +2362,7 @@ msgid "Unique visitors who matched this goal at least once."
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:110
-#: admin/view/wp-slimstat-reports.php:2094
+#: admin/view/wp-slimstat-reports.php:2096
 msgid "Uniques"
 msgstr ""
 
@@ -2371,7 +2371,7 @@ msgid "Matching pageviews. A single visitor can match several times, so Total is
 msgstr ""
 
 #: admin/view/partials/goals-funnels/goals-card.php:114
-#: admin/view/wp-slimstat-reports.php:2095
+#: admin/view/wp-slimstat-reports.php:2097
 msgid "Total"
 msgstr ""
 
@@ -2527,9 +2527,9 @@ msgid "Syndication Reader"
 msgstr ""
 
 #: admin/view/right-now.php:51
-#: admin/view/wp-slimstat-reports.php:1307
-#: admin/view/wp-slimstat-reports.php:1706
-#: admin/view/wp-slimstat-reports.php:2372
+#: admin/view/wp-slimstat-reports.php:1309
+#: admin/view/wp-slimstat-reports.php:1708
+#: admin/view/wp-slimstat-reports.php:2374
 msgid "No data to display"
 msgstr ""
 
@@ -2563,9 +2563,9 @@ msgid "Date and Time"
 msgstr ""
 
 #: admin/view/right-now.php:242
-#: admin/view/wp-slimstat-reports.php:1613
-#: admin/view/wp-slimstat-reports.php:1621
-#: admin/view/wp-slimstat-reports.php:2399
+#: admin/view/wp-slimstat-reports.php:1615
+#: admin/view/wp-slimstat-reports.php:1623
+#: admin/view/wp-slimstat-reports.php:2401
 msgid "Open this URL in a new window"
 msgstr ""
 
@@ -2647,7 +2647,7 @@ msgid "-- Advanced filters --"
 msgstr ""
 
 #: admin/view/wp-slimstat-db.php:80
-#: admin/view/wp-slimstat-reports.php:1745
+#: admin/view/wp-slimstat-reports.php:1747
 msgid "Coordinates"
 msgstr ""
 
@@ -3203,7 +3203,7 @@ msgid "Top Search Terms"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:222
-#: admin/view/wp-slimstat-reports.php:2552
+#: admin/view/wp-slimstat-reports.php:2554
 msgid "Top Countries"
 msgstr ""
 
@@ -3483,7 +3483,7 @@ msgid "Funnels"
 msgstr ""
 
 #: admin/view/wp-slimstat-reports.php:957
-#: admin/view/wp-slimstat-reports.php:2227
+#: admin/view/wp-slimstat-reports.php:2229
 msgid "Visualize conversion funnels with step-by-step drop-off analysis."
 msgstr ""
 
@@ -3496,49 +3496,49 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1163
+#: admin/view/wp-slimstat-reports.php:1165
 #, php-format
 msgid "Showing %s - %s of %s"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1166
+#: admin/view/wp-slimstat-reports.php:1168
 msgid "Refresh in"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1381
+#: admin/view/wp-slimstat-reports.php:1383
 msgid "Tag"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1384
-#: admin/view/wp-slimstat-reports.php:1393
+#: admin/view/wp-slimstat-reports.php:1386
+#: admin/view/wp-slimstat-reports.php:1395
 msgid "ID"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1390
+#: admin/view/wp-slimstat-reports.php:1392
 msgid "Category"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1411
-#: admin/view/wp-slimstat-reports.php:1443
-#: admin/view/wp-slimstat-reports.php:1448
+#: admin/view/wp-slimstat-reports.php:1413
+#: admin/view/wp-slimstat-reports.php:1445
+#: admin/view/wp-slimstat-reports.php:1450
 msgid "Code"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1491
+#: admin/view/wp-slimstat-reports.php:1493
 msgid "URL"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1511
+#: admin/view/wp-slimstat-reports.php:1513
 msgid "No referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1514
+#: admin/view/wp-slimstat-reports.php:1516
 #: src/Services/Privacy/DataExporter.php:68
 msgid "Referrer"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1534
-#: admin/view/wp-slimstat-reports.php:1562
+#: admin/view/wp-slimstat-reports.php:1536
+#: admin/view/wp-slimstat-reports.php:1564
 #: languages/index.php:11
 #: languages/index.php:14
 #: languages/index.php:15
@@ -3551,133 +3551,133 @@ msgstr ""
 msgid "Unknown"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1538
-#: admin/view/wp-slimstat-reports.php:1566
+#: admin/view/wp-slimstat-reports.php:1540
+#: admin/view/wp-slimstat-reports.php:1568
 msgid "Guest"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1745
+#: admin/view/wp-slimstat-reports.php:1747
 msgid "Page"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1745
+#: admin/view/wp-slimstat-reports.php:1747
 msgid "Date"
 msgstr ""
 
 #. translators: 1: used count, 2: maximum count
-#: admin/view/wp-slimstat-reports.php:1926
+#: admin/view/wp-slimstat-reports.php:1928
 #, php-format
 msgid "%1$d of %2$d used"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1955
+#: admin/view/wp-slimstat-reports.php:1957
 msgid "+ Add goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:1979
+#: admin/view/wp-slimstat-reports.php:1981
 #: admin/assets/js/goals-funnels.js:503
 msgid "See templates"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2024
-#: admin/view/wp-slimstat-reports.php:2128
+#: admin/view/wp-slimstat-reports.php:2026
+#: admin/view/wp-slimstat-reports.php:2130
 msgid "Goal data reflects visitors who provided statistics consent."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2084
+#: admin/view/wp-slimstat-reports.php:2086
 msgid "No goals defined yet."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2093
+#: admin/view/wp-slimstat-reports.php:2095
 msgid "Goal"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2096
+#: admin/view/wp-slimstat-reports.php:2098
 msgid "CR%"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2112
+#: admin/view/wp-slimstat-reports.php:2114
 msgid "Not shown here — open the Goals report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2217
+#: admin/view/wp-slimstat-reports.php:2219
 msgid "Step 1"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2217
+#: admin/view/wp-slimstat-reports.php:2219
 msgid "Step 2"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2217
+#: admin/view/wp-slimstat-reports.php:2219
 msgid "Step 3"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2226
+#: admin/view/wp-slimstat-reports.php:2228
 msgid "Visualize every step of the journey"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2234
+#: admin/view/wp-slimstat-reports.php:2236
 msgid "No funnels configured."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2298
+#: admin/view/wp-slimstat-reports.php:2300
 msgid "Not shown here — open the Funnels report."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2308
+#: admin/view/wp-slimstat-reports.php:2310
 msgid "No matching visitors in this date range."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2408
 #: admin/view/wp-slimstat-reports.php:2410
+#: admin/view/wp-slimstat-reports.php:2412
 msgid "Filter by element in a group"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2447
+#: admin/view/wp-slimstat-reports.php:2449
 msgid "Moz Domain Authority"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2448
+#: admin/view/wp-slimstat-reports.php:2450
 msgid "A normalized 100-point score representing the likelihood of a domain to rank well in search engine results."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2452
+#: admin/view/wp-slimstat-reports.php:2454
 msgid "Moz Backlinks"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2453
+#: admin/view/wp-slimstat-reports.php:2455
 msgid "Number of external equity links to your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2457
+#: admin/view/wp-slimstat-reports.php:2459
 msgid "Moz Links"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2458
+#: admin/view/wp-slimstat-reports.php:2460
 msgid "The number of links (external, equity or nonequity or not) to your homepage."
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2643
+#: admin/view/wp-slimstat-reports.php:2645
 msgid "Edit user profile"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2658
+#: admin/view/wp-slimstat-reports.php:2660
 msgid "src"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2662
+#: admin/view/wp-slimstat-reports.php:2664
 msgid "serp"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2689
+#: admin/view/wp-slimstat-reports.php:2691
 msgid "Remove filter for"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2694
+#: admin/view/wp-slimstat-reports.php:2696
 msgid "Save"
 msgstr ""
 
-#: admin/view/wp-slimstat-reports.php:2698
+#: admin/view/wp-slimstat-reports.php:2700
 msgid "Reset All"
 msgstr ""
 
