@@ -81,6 +81,7 @@ class wp_slimstat_admin
 
         // Action for reset layout
         add_action('admin_post_slimstat_reset_layout', ['wp_slimstat_admin', 'handle_reset_layout']);
+        add_action('wp_ajax_meta-box-order', ['wp_slimstat_admin', 'save_network_layout'], 0);
 
         // Define the default screens
         $has_network_reports = get_user_option('meta-box-order_slimstat_page_slimlayout-network', 1);
@@ -593,6 +594,41 @@ class wp_slimstat_admin
 
         wp_safe_redirect($network ? network_admin_url('admin.php?page=slimlayout') : admin_url('admin.php?page=slimlayout'));
         exit;
+    }
+
+    /** Saves only explicit network-customizer requests; core owns personal metabox order. */
+    public static function save_network_layout()
+    {
+        $page = $_POST['page'] ?? null;
+        $network_pages = ['admin_page_slimlayout-network', 'slimstat_page_slimlayout-network'];
+        // Also guard direct core requests that omit our explicit scope field.
+        if (($_POST['slimstat_layout_scope'] ?? '') !== 'network' && !in_array($page, $network_pages, true)) {
+            return;
+        }
+        if (!is_multisite() || !current_user_can('manage_network_options')) {
+            wp_send_json_error(esc_html__('Insufficient permissions.', 'wp-slimstat'), 403);
+        }
+        check_ajax_referer('slimstat_network_layout', '_slimstat_nonce');
+        $order = $_POST['order'] ?? null;
+        if (!is_string($page) || !in_array($page, $network_pages, true)
+            || !is_array($order) || !$order) {
+            wp_send_json_error(esc_html__('Invalid settings data.', 'wp-slimstat'), 400);
+        }
+        foreach ($order as $location => $reports) {
+            if (!is_string($location) || !isset(self::$screens_info[$location]) || !is_string($reports)) {
+                wp_send_json_error(esc_html__('Invalid settings data.', 'wp-slimstat'), 400);
+            }
+        }
+        $order = array_map('sanitize_text_field', wp_unslash($order));
+        $key = 'meta-box-order_' . $page;
+        $legacy_key = $GLOBALS['wpdb']->get_blog_prefix() . $key;
+        if (metadata_exists('user', 1, $legacy_key)) {
+            $key = $legacy_key;
+        }
+        if (!update_user_meta(1, $key, wp_slash($order)) && get_user_meta(1, $key, true) !== $order) {
+            wp_send_json_error(esc_html__('Settings could not be saved.', 'wp-slimstat'), 500);
+        }
+        wp_send_json_success();
     }
 
     /**
@@ -1649,6 +1685,8 @@ class wp_slimstat_admin
             'datepicker_image'  => plugins_url('/admin/assets/images/datepicker.png', __DIR__),
             'refresh_interval'  => intval(wp_slimstat::$settings['refresh_interval']),
             'page_location'     => self::$page_location,
+            'layout_scope'      => is_network_admin() ? 'network' : 'personal',
+            'network_layout_nonce' => is_network_admin() && current_user_can('manage_network_options') ? wp_create_nonce('slimstat_network_layout') : '',
             'clear_cache_nonce' => wp_create_nonce('slimstat_clear_cache'),
             'goals_nonce'       => wp_create_nonce('slimstat_goals_nonce'),
             'ajax_url'          => admin_url('admin-ajax.php'),
