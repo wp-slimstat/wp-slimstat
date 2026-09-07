@@ -391,6 +391,46 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(recoveredId).not.toBe(staleId);
   });
 
+  test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
+    await setSlimstatOptions(page, { tracking_request_method: 'ajax', javascript_mode: 'on' });
+    const ctx = await browser.newContext();
+    try {
+      const visitor = await ctx.newPage();
+      const marker = `recovery-real-offline-${Date.now()}`;
+      await visitor.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      await visitor.evaluate(() => {
+        const link = document.createElement('a');
+        link.id = 'offline-link';
+        link.href = 'https://example.com/offline-replay';
+        link.target = '_blank';
+        link.textContent = 'Offline interaction';
+        document.body.appendChild(link);
+      });
+      visitor.on('popup', popup => { void popup.close(); });
+      const eventsBefore = await getTotalEventCount();
+      await ctx.setOffline(true);
+      await visitor.click('#offline-link');
+      const offlineQueue = () => visitor.evaluate(() =>
+        JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
+      await expect.poll(offlineQueue).toHaveLength(1);
+      expect(await getTotalEventCount()).toBe(eventsBefore);
+
+      await ctx.setOffline(false);
+      await expect.poll(getTotalEventCount, { timeout: 20_000 }).toBe(eventsBefore + 1);
+      await expect.poll(offlineQueue).toHaveLength(0);
+      await ctx.setOffline(true);
+      await ctx.setOffline(false);
+      await visitor.reload({ waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      expect(await offlineQueue()).toHaveLength(0);
+      expect(await getTotalEventCount()).toBe(eventsBefore + 1);
+      expect(await getStatCountForMarker(marker)).toBe(2);
+    } finally {
+      await ctx.close();
+    }
+  });
+
   test('stale pageview id retries once without id and assigns a fresh pageview id', async ({ page }) => {
     await setSlimstatOptions(page, {
       tracking_request_method: 'ajax',

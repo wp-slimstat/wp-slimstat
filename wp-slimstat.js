@@ -407,6 +407,13 @@ var SlimStat = (function () {
         if (isEmpty(payload)) return false;
         opts = opts || {};
 
+        // Beacon acceptance does not mean delivery while the browser is offline.
+        if (navigator.onLine === false) {
+            storeOffline(payload);
+            if (typeof opts.onComplete === "function") opts.onComplete(false);
+            return true;
+        }
+
         // All requests now go through the queue to ensure consistent handling.
         // Immediate sends are pushed to the front.
         var item = { payload: payload, useBeacon: useBeacon, opts: opts, attempts: 0 };
@@ -1697,14 +1704,17 @@ var SlimStat = (function () {
     function storeOffline(payload) {
         try {
             var offline = loadOfflineQueue();
-            offline.push({ p: payload, t: Date.now() });
-            saveOfflineQueue(offline);
+            if (!offline.some(function (item) { return item.p === payload; })) {
+                offline.push({ p: payload, t: Date.now() });
+                saveOfflineQueue(offline);
+            }
         } catch (e) {
             // Silently fail if localStorage is not available
         }
     }
 
     function flushOfflineQueue() {
+        if (navigator.onLine === false) return;
         try {
             var offline = loadOfflineQueue();
             if (!offline.length) return;
