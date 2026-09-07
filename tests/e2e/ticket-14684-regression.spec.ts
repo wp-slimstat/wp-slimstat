@@ -462,6 +462,8 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 
 		const rangeStart = ts - 86400;
 		const rangeEnd = now + 3600;
+		const fromDate = new Date(rangeStart * 1000).toISOString().slice(0, 10);
+		const toDate = new Date(rangeEnd * 1000).toISOString().slice(0, 10);
 
 		// Path 1: AJAX chart (SQL CONVERT_TZ → DataBuckets.addRow)
 		const nonce = await extractChartNonce(page);
@@ -475,7 +477,7 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 		const ajaxSum = sumV1(ajaxJson);
 
 		// Path 2: Server-rendered chart (same path but via initial page load)
-		await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2`, {
+		await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview2&type=custom&from=${fromDate}&to=${toDate}`, {
 			waitUntil: 'domcontentloaded',
 		});
 		await page.waitForSelector('[id^="slimstat_chart_data_"]', {
@@ -491,7 +493,7 @@ test.describe('Bug 2: Chart timezone offset must match DataBuckets offset', () =
 
 		// Both paths should show the same count
 		expect(ajaxSum).toBe(dbCount);
-		// Server-rendered may include wider date range, so >= is acceptable
+		// The server page was given the same explicit range as AJAX.
 		if (serverSum >= 0) {
 			expect(serverSum).toBeGreaterThanOrEqual(dbCount);
 		}
@@ -609,7 +611,7 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 		).toBe(true);
 	});
 
-	test('server-side mode (javascript_mode=off) does NOT send JS tracking request', async ({
+	test('server-side mode records once and only permits a same-row consent update', async ({
 		page,
 	}) => {
 		/**
@@ -620,7 +622,7 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 
 		await setSlimstatOption(page, 'javascript_mode', 'off');
 
-		let jsTrackingRequest = false;
+		const jsTrackingRequests: Array<{ url: string; body: string }> = [];
 		page.on('request', (req) => {
 			const url = req.url();
 			if (
@@ -629,25 +631,33 @@ test.describe('Bug 3: javascript_mode migration must not be gated on banner flag
 					(url.includes('admin-ajax.php') &&
 						(req.postData() || '').includes('action=slimtrack')))
 			) {
-				jsTrackingRequest = true;
+				jsTrackingRequests.push({ url, body: req.postData() || '' });
 			}
 		});
 
+		const marker = `servermode-test-${Date.now()}`;
 		await page.goto(
-			`${BASE_URL}/?e2e=servermode-test-${Date.now()}`,
+			`${BASE_URL}/?e2e=${marker}`,
 			{ waitUntil: 'networkidle' }
 		);
 		await page.waitForTimeout(3000);
+		const [rows] = (await getPool().execute(
+			'SELECT COUNT(*) AS cnt FROM wp_slim_stats WHERE resource LIKE ?',
+			[`%${marker}%`]
+		)) as any;
+		const recordedRows = parseInt(rows[0].cnt, 10);
 
 		console.log(
-			`Server-side mode — JS tracking request sent: ${jsTrackingRequest}`
+			`Server-side mode — rows=${recordedRows}, requests=${JSON.stringify(jsTrackingRequests)}`
 		);
 
-		// In server-side mode, PHP already tracked the visit. JS should NOT send a duplicate.
-		expect(
-			jsTrackingRequest,
-			'JS tracking request was sent in server-side mode — params.id guard (line 1511) is not working'
-		).toBe(false);
+		// PHP owns the initial pageview in server-side mode. A consent upgrade may
+		// update that same row; it is not a second pageview.
+		expect(recordedRows, 'Server-side mode must record exactly one pageview').toBe(1);
+		for (const request of jsTrackingRequests) {
+			expect(request.body, 'Any server-mode POST must be a consent update').toContain('consent_upgrade=1');
+			expect(request.body, 'Consent update must target the PHP-created pageview').toContain('pageview_id=');
+		}
 	});
 
 	// v547-fix test removed — duplicate of the test above (line 512) which covers
@@ -694,73 +704,21 @@ test.describe('Bug 4: Stale params.id from cached pages must not block tracking'
 
 		// Start in server-side mode
 		await setSlimstatOption(page, 'javascript_mode', 'off');
-		await page.goto(`${BASE_URL}/?e2e=cache-test-1`, {
-			waitUntil: 'networkidle',
-		});
-
-		// Check that server-side mode DOES set params.id
-		const serverModeHasId = await page.evaluate(() => {
-			const scripts = document.querySelectorAll('script');
-			for (const s of scripts) {
-				if (
-					s.textContent &&
-					s.textContent.includes('slimstat') &&
-					s.textContent.includes('"id"')
-				) {
-					return true;
-				}
-			}
-			// Also check for wp_localize_script output
-			return !!(window as any).SlimStatParams?.id;
-		});
-
-		console.log(`Server-side mode has params.id: ${serverModeHasId}`);
+		const serverResponse = await page.request.get(`${BASE_URL}/?e2e=cache-test-1`);
+		const serverHtml = await serverResponse.text();
+		expect(serverHtml, 'Server-side HTML must contain the PHP-created pageview ID')
+			.toMatch(/var SlimStatParams = \{[^;]*"id":"\d+/);
 
 		// Switch to client-side mode
 		await setSlimstatOption(page, 'javascript_mode', 'on');
-		await page.goto(`${BASE_URL}/?e2e=cache-test-2`, {
-			waitUntil: 'networkidle',
-		});
-
-		// Check that client-side mode does NOT set params.id (uses ci instead)
-		const clientModeParams = await page.evaluate(() => {
-			const w = window as any;
-			// Check various ways the params could be passed
-			const params =
-				w.SlimStatParams || w.slimstat_data || w.ss_params || null;
-			if (params) {
-				return {
-					hasId: !!params.id && parseInt(params.id, 10) > 0,
-					hasCi: !!params.ci,
-				};
-			}
-			// Fallback: scan inline scripts
-			const scripts = document.querySelectorAll('script');
-			for (const s of scripts) {
-				const text = s.textContent || '';
-				if (text.includes('slimstat')) {
-					// Look for "id":"<number>.<hash>" pattern
-					const idMatch = text.match(/"id"\s*:\s*"(\d+)/);
-					const ciMatch = text.match(/"ci"\s*:\s*"/);
-					return {
-						hasId: !!idMatch && parseInt(idMatch[1], 10) > 0,
-						hasCi: !!ciMatch,
-					};
-				}
-			}
-			return { hasId: false, hasCi: false };
-		});
-
-		console.log(
-			`Client-side mode: hasId=${clientModeParams.hasId}, hasCi=${clientModeParams.hasCi}`
-		);
-
-		// After switching to client-side: params.id must NOT be set
-		// (if it is, the JS guard at line 1511 would skip tracking)
-		expect(
-			clientModeParams.hasId,
-			'params.id is still set after switching to client-side mode — cached pages with this HTML would block tracking'
-		).toBe(false);
+		const clientResponse = await page.request.get(`${BASE_URL}/?e2e=cache-test-2`);
+		const clientHtml = await clientResponse.text();
+		const localized = clientHtml.match(/var SlimStatParams = (\{[^;]+\});/);
+		expect(localized, 'Client-side HTML must localize SlimStatParams').toBeTruthy();
+		const clientModeParams = JSON.parse(localized![1]);
+		expect(clientModeParams.ci, 'Client-side HTML must carry content identity').toBeTruthy();
+		expect(clientModeParams, 'Client-side HTML must not carry a stale pageview ID')
+			.not.toHaveProperty('id');
 	});
 
 	test('navigation event bypasses params.id guard even if stale id exists', async ({
