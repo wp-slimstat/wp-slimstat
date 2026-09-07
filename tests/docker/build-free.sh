@@ -53,6 +53,11 @@ for required in wp-slimstat/wp-slimstat.php wp-slimstat/uninstall.php wp-slimsta
                 wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php; do
   grep -qxF "$required" "$LIST" || { err "Free ZIP is missing $required"; exit 1; }
 done
+# Independent deny rule: the private vendor CLI password executable is not a plugin runtime asset.
+if grep -qxF 'wp-slimstat/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
+  err "Free ZIP contains private Windows interactive-console executable"
+  exit 1
+fi
 while IFS= read -r pattern; do
   case "$pattern" in ''|'#'*) continue ;; esac
   if ! awk -v pattern="$pattern" '

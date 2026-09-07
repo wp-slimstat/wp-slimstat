@@ -121,6 +121,26 @@ if ($leaks) {
         count($leaks), implode(', ', array_slice(array_values($leaks), 0, 5)));
 }
 
+// WordPress does not expose the private vendor Windows password prompt. Keep PHP classes,
+// omit its executable, and fail if a first-party caller is later introduced.
+$console_binary = 'src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe';
+if (!is_file($plugin_root . '/' . $console_binary) || isset($package_set[$console_binary])) {
+    $failures[] = 'private Windows console binary must remain in source but never ship';
+}
+if (!isset($package_set['src/Dependencies/Symfony/Component/Console/Helper/QuestionHelper.php'])) {
+    $failures[] = 'omit only the private executable, not Symfony PHP classes';
+}
+foreach ($package as $path) {
+    if (substr($path, -4) !== '.php' || strpos($path, 'src/Dependencies/') === 0 || strpos($path, 'vendor/') === 0) {
+        continue;
+    }
+    $code = (string) file_get_contents($plugin_root . '/' . $path);
+    if (strpos($code, 'QuestionHelper') !== false || strpos($code, 'hiddeninput.exe') !== false
+        || preg_match('/Symfony[\\\\]+Component[\\\\]+Console/', $code)) {
+        $failures[] = 'first-party console reference needs packaged Windows prompt review: ' . $path;
+    }
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: dist manifest (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
