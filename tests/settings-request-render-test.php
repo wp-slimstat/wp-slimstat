@@ -193,3 +193,15 @@ foreach ([(object) ['error' => 'network failure'], ['body' => '{bad'], ['body' =
     check(strpos($addon_html, 'slimstat-addons') === false, 'malformed remote response rendered as valid list');
 }
 echo "PASS: legacy license writes authorized and validated; remote add-on metadata escaped; malformed remote responses fail closed\n";
+
+// The external-page code must be copyable JavaScript, not literal backslash-n text.
+function admin_url($path, $scheme = null) { return ($scheme === 'relative' ? '/wp-admin/' : 'https://example.test/wp-admin/') . $path; }
+function plugins_url($path, $plugin = '') { return 'https://example.test/wp-content/plugins/wp-slimstat' . $path; }
+$start = strpos($source, "'external_pages_script' => [");
+$end = strpos($source, "'enable_browscap' => [", $start);
+check($start !== false && $end !== false, 'external-page settings row missing');
+$external_row = eval('return [' . substr($source, $start, $end - $start) . '];');
+$copyable_code = html_entity_decode(strip_tags($external_row['external_pages_script']['markup']), ENT_QUOTES, 'UTF-8');
+check(strpos($copyable_code, '\\n') === false && strpos($copyable_code, "\nvar SlimStatParams") !== false, 'external tracking snippet contains literal backslash-n instead of JavaScript line breaks');
+check(strpos($copyable_code, 'https://example.test/wp-content/plugins/wp-slimstat/wp-slimstat.min.js') !== false, 'external snippet must use installed local tracker');
+echo "PASS: external tracking snippet renders real line breaks and the installed tracker URL\n";
