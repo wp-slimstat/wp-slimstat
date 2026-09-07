@@ -215,7 +215,8 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 							}
 
 							$error_message = sprintf(
-								__('.mmdb file was found but could not be moved or copied to destination. Source: %s, Destination: %s', 'wp-slimstat'),
+								/* translators: 1: source database file path, 2: destination file path. */
+								__('.mmdb file was found but could not be moved or copied to destination. Source: %1$s, Destination: %2$s', 'wp-slimstat'),
 								$source,
 								$this->dbPath
 							);

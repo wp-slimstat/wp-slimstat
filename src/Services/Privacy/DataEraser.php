@@ -286,7 +286,8 @@ class DataEraser
 		if ($updated > 0) {
 			$items_removed = true; // Technically anonymized, not removed
 			$messages[] = sprintf(
-				__('Anonymized %d record(s) with IP %s in SlimStat.', 'wp-slimstat'),
+				/* translators: 1: anonymized record count, 2: IP address. */
+				__('Anonymized %1$d record(s) with IP %2$s in SlimStat.', 'wp-slimstat'),
 				$updated,
 				$ip_address
 			);

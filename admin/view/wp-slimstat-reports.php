@@ -1162,7 +1162,8 @@ class wp_slimstat_reports
             $pagination_buttons .= '<a class="refresh slimstat-font-angle-double-' . $direction_prev . '" href="' . wp_slimstat_reports::fs_url('start_from equals 0') . '"></a> ';
         }
 
-        $pagination = '<p class="pagination">' . sprintf(__('Showing %s - %s of %s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
+        $pagination = '<p class="pagination">' . sprintf(/* translators: 1: first displayed row, 2: last displayed row, 3: total row count. */
+                __('Showing %1$s - %2$s of %3$s', 'wp-slimstat'), number_format_i18n($effective_start + 1), number_format_i18n($endpoint), number_format_i18n($_count_all_results) . (($_count_all_results == wp_slimstat::$settings['limit_results']) ? '+' : ''));
 
         if ($_show_refresh_countdown && wp_slimstat::$settings['refresh_interval'] > 0 && wp_slimstat_db::$filters_normalized['utime']['end'] >= date_i18n('U') - 300) {
             $pagination .= ' <span class="refresh-countdown">[' . __('Refresh in', 'wp-slimstat') . ' <i class="refresh-timer"></i>]</span>';
@@ -2688,7 +2689,7 @@ class wp_slimstat_reports
                 }
 
                 $a_filter_value_no_slashes = in_array($a_filter_details[0], wp_slimstat_db::$valueless_operators, true) ? '' : htmlentities(str_replace('\\', '', $a_filter_details[1]), ENT_QUOTES, 'UTF-8');
-                $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . __(str_replace('_', ' ', $a_filter_details[0]), 'wp-slimstat') . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
+                $filters_html .= '<li>' . strtolower(wp_slimstat_db::$columns_names[$a_filter_label][0]) . ' ' . esc_html(wp_slimstat_db::$operator_names[$a_filter_details[0]] ?? str_replace('_', ' ', $a_filter_details[0])) . sprintf(" %s <a class='slimstat-filter-link slimstat-font-cancel' title='", $a_filter_value_no_slashes) . htmlentities(__('Remove filter for', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . ' ' . wp_slimstat_db::$columns_names[$a_filter_label][0] . "' href='" . self::fs_url($a_filter_label . ' equals ') . "'></a></li>";
             }
         }
 

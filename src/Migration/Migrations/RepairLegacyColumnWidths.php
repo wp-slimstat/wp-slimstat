@@ -20,11 +20,7 @@ class RepairLegacyColumnWidths extends AbstractMigration
 
     public function getDescription(): string
     {
-        return __('Widens legacy city and username columns from 255 to 256 characters in analytics and archived data. '
-            . 'Runs only when you choose it here. Existing values, nullability and collation are preserved. '
-            . 'Only online InnoDB changes are attempted; the repair stops if the server requires blocking writes or finds '
-            . 'custom column attributes. A brief metadata lock may still be needed. Large tables can take longer '
-            . 'than one request; retry resumes from the remaining table.', 'wp-slimstat');
+        return __('Widens legacy city and username columns from 255 to 256 characters in analytics and archived data. Runs only when you choose it here. Existing values, nullability and collation are preserved. Only online InnoDB changes are attempted; the repair stops if the server requires blocking writes or finds custom column attributes. A brief metadata lock may still be needed. Large tables can take longer than one request; retry resumes from the remaining table.', 'wp-slimstat');
     }
 
     private function readColumns(string $suffix): ?array
