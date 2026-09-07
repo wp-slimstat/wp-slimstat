@@ -886,6 +886,7 @@ var SlimStat = (function () {
 
     // -------------------------- Consent Helpers -------------------------- //
     var lastConsentSnapshot = null;
+    var pendingConsentUpgrade = null;
     var CONSENT_UPGRADE_STATE_KEY = "slimstat_consent_upgrade_state";
     var CONSENT_UPGRADE_TS_KEY = "slimstat_consent_upgrade_ts";
 
@@ -956,6 +957,16 @@ var SlimStat = (function () {
 
     function requestConsentUpgrade(extraOptions) {
         extraOptions = extraOptions || {};
+        var decision = slimstatConsentAllowed(currentSlimStatParams(), { isConsentRetry: true });
+        if (!decision.allowed || decision.mode !== "full") {
+            return false;
+        }
+        // A grant can arrive before the anonymous pageview has released its lock.
+        // Keep that grant until completion instead of consuming its upgrade slot.
+        if (window.sendingSlimStatPageview) {
+            pendingConsentUpgrade = extraOptions;
+            return false;
+        }
         var force = extraOptions.force === true;
 
         if (!claimConsentUpgradeSlot(force)) {
@@ -1445,13 +1456,18 @@ var SlimStat = (function () {
 
             if (cmpAllows === null) {
                 if (anonMode) {
-                    cmpAllows = true;
+                    // Permission to count anonymously is not permission to collect PII.
+                    cmpAllows = false;
                 } else if (collectsPII && integrationKey && integrationKey !== "") {
                     cmpAllows = false;
                 } else {
                     cmpAllows = true;
                 }
             }
+        }
+
+        if (cmpAllows === false) {
+            markConsentUpgradeDone(false);
         }
 
         if (anonMode) {
@@ -1601,13 +1617,18 @@ var SlimStat = (function () {
                 pageviewInProgress = false;
                 window.sendingSlimStatPageview = false;
                 delete window[requestKey];
+                if (pendingConsentUpgrade) {
+                    var upgrade = pendingConsentUpgrade;
+                    pendingConsentUpgrade = null;
+                    requestConsentUpgrade(upgrade);
+                }
             }, 200);
         };
 
         var onComplete = function (success) {
             try {
                 if (options.consentUpgrade) {
-                    markConsentUpgradeDone(!!success);
+                    markConsentUpgradeDone(!!success && consentDecision.mode === "full");
                 }
             } finally {
                 resetPageviewFlags();
@@ -2062,10 +2083,10 @@ if (!window.requestIdleCallback) {
 
                     // Clear consent upgrade state when consent is denied
                     if (!hasConsent) {
-                        markConsentUpgradeDone(false);
+                        SlimStat.consent.checkAllowed(params, {});
                     }
 
-                    var parsedConsent = normalizeConsent({
+                    var parsedConsent = SlimStat.consent.normalize({
                         statistics: hasConsent ? "allow" : "deny",
                     });
 
@@ -2074,7 +2095,7 @@ if (!window.requestIdleCallback) {
                         pageviewId = parseInt(params.id, 10);
                     }
 
-                    sendConsentChangeToServer("wp_consent_api", parsedConsent, pageviewId);
+                    SlimStat.consent.sendChange("wp_consent_api", parsedConsent, pageviewId);
                 } catch (consentError) {}
             }
         }
@@ -2099,8 +2120,8 @@ if (!window.requestIdleCallback) {
         }
 
         if (integrationKey === "real_cookie_banner" || integrationKey === "rcb" || integrationKey === "realcookie") {
-            var rcbConsent = detectRealCookieBannerConsent(selectedCategory);
-            if (rcbConsent === false) {
+            var rcbConsent = SlimStat.consent.checkAllowed(params, { isConsentRetry: true });
+            if (!rcbConsent.allowed || rcbConsent.mode !== "full") {
                 return;
             }
         }
@@ -2169,12 +2190,12 @@ if (!window.requestIdleCallback) {
 
             // Send consent change to server via REST API
             try {
-                var parsedConsent = normalizeConsent(consentData || { statistics: ok });
+                var parsedConsent = SlimStat.consent.normalize(consentData || { statistics: ok });
                 var pageviewId = null;
                 if (params.id && parseInt(params.id, 10) > 0) {
                     pageviewId = parseInt(params.id, 10);
                 }
-                sendConsentChangeToServer("real_cookie_banner", parsedConsent, pageviewId);
+                SlimStat.consent.sendChange("real_cookie_banner", parsedConsent, pageviewId);
             } catch (rcbError) {}
 
             if (!ok) {
@@ -2617,12 +2638,12 @@ if (!window.requestIdleCallback) {
 
                 // Send consent change to server via REST API
                 try {
-                    var parsedConsent = normalizeConsent(consent);
+                    var parsedConsent = SlimStat.consent.normalize(consent);
                     var pageviewId = null;
                     if (params.id && parseInt(params.id, 10) > 0) {
                         pageviewId = parseInt(params.id, 10);
                     }
-                    sendConsentChangeToServer("slimstat_banner", parsedConsent, pageviewId);
+                    SlimStat.consent.sendChange("slimstat_banner", parsedConsent, pageviewId);
                 } catch (apiError) {}
 
                 try {
@@ -2631,8 +2652,8 @@ if (!window.requestIdleCallback) {
             } else if (consent === "denied") {
                 // Send consent change to server via REST API
                 try {
-                    var parsedConsentDenied = normalizeConsent(consent);
-                    sendConsentChangeToServer("slimstat_banner", parsedConsentDenied, null);
+                    var parsedConsentDenied = SlimStat.consent.normalize(consent);
+                    SlimStat.consent.sendChange("slimstat_banner", parsedConsentDenied, null);
                 } catch (apiError) {}
 
                 // Call revocation handler to delete tracking cookie

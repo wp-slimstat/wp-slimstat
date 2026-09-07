@@ -807,6 +807,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // The reveal is collapsed by default; clicking it shows the same 6 cards.
         const panel = page.locator('[data-role="funnels-templates-panel"]');
+        // toBeHidden also accepts a missing node while async reports are loading.
+        await expect(panel).toBeAttached();
         await expect(panel).toBeHidden();
         const toggle = page.locator('[data-action="toggle-funnel-templates"]');
         await expect(toggle).toBeVisible();

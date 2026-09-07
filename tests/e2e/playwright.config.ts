@@ -50,7 +50,7 @@ export default defineConfig({
     {
       name: 'author',
       use: { storageState: path.join(__dirname, '.auth/author.json') },
-      testMatch: '**/*author*.spec.ts',
+      testMatch: '**/*.author.spec.ts',
     },
   ],
 });
