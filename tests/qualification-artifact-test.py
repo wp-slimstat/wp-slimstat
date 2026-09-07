@@ -52,6 +52,14 @@ print('PASS: embedded Python syntax in artifact, seed and interruption harnesses
 
 # Inspect generated engine arguments without starting Docker. A caller's explicit overlay wins.
 import os
+artifact_inputs = ['QUALIFICATION_FREE_ZIP', 'QUALIFICATION_FREE_SHA256', 'QUALIFICATION_PRO_ZIP', 'QUALIFICATION_PRO_SHA256']
+for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh']:
+    for missing in artifact_inputs:
+        env = dict(os.environ, **{name: 'fixture' for name in artifact_inputs})
+        env.pop(missing)
+        refused = subprocess.run(['bash', str(helper.parent / script)], env=env, capture_output=True)
+        assert refused.returncode != 0 and missing.encode() in refused.stderr, (script, missing, refused.stderr)
+print('PASS: network/lifecycle qualification refuses each missing paired artifact input before Docker')
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
     fake = root / 'docker'

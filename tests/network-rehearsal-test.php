@@ -3,17 +3,18 @@ declare(strict_types=1);
 $file = __DIR__ . '/docker/network-rehearsal-oracle.php';
 if (!is_file($file)) { fwrite(STDERR, "FAIL: network rehearsal oracle absent\n"); exit(1); }
 require $file;
-$before = ['blogs' => ['1' => ['fingerprint' => 'one', 'missing' => ['meta'], 'archived' => false, 'domain' => 'example.test', 'path' => '/'],
-    '2' => ['fingerprint' => 'two', 'missing' => ['meta'], 'archived' => true, 'domain' => 'example.test', 'path' => '/site-2/']], 'pending' => []];
+$before = ['owner' => 'external', 'network_credentials_present' => true, 'blogs' => ['1' => ['fingerprint' => 'one', 'missing' => ['meta'], 'archived' => false, 'domain' => 'example.test', 'path' => '/', 'isolation_fingerprint' => 'decoy-one', 'credentials_present' => true],
+    '2' => ['fingerprint' => 'two', 'missing' => ['meta'], 'archived' => true, 'domain' => 'example.test', 'path' => '/site-2/', 'isolation_fingerprint' => 'decoy-two', 'credentials_present' => true]], 'pending' => []];
 $after = $before;
 foreach ($after['blogs'] as &$blog) { $blog['missing'] = []; }
 unset($blog);
 $n = 0;
 $check = static function ($ok, $label) use (&$n) { ++$n; if (!$ok) { fwrite(STDERR, "FAIL: $label\n"); exit(1); } };
 $check([] === slimstat_network_rehearsal_compare($before, $after), 'healthy per-blog completion');
-foreach (['missing', 'fingerprint', 'archived', 'domain', 'path', 'pending'] as $kind) {
+foreach (['missing', 'fingerprint', 'archived', 'domain', 'path', 'pending', 'isolation_fingerprint', 'credentials_present', 'owner'] as $kind) {
     $bad = $after;
     if ('pending' === $kind) { $bad['pending'] = [2]; }
+    elseif ('owner' === $kind) { $bad['owner'] = 'local'; }
     elseif ('missing' === $kind) { $bad['blogs']['2'][$kind] = ['meta']; }
     elseif ('archived' === $kind) { $bad['blogs']['2'][$kind] = false; }
     else { $bad['blogs']['2'][$kind] = 'one'; }
@@ -44,6 +45,20 @@ foreach ([false, true] as $subdomains) {
 $bad = $before;
 unset($bad['blogs']['2']['domain']);
 $check([] !== slimstat_network_rehearsal_compare($bad, $after), 'missing topology evidence refused');
+$offline = ['owner' => 'external', 'pending' => [2], 'local_unchanged' => true, 'analytics_unavailable' => true, 'outage_hit_lost' => true];
+$offlineBefore = ['owner' => 'external', 'pending' => [2]];
+$check([] === slimstat_network_offline_compare($offlineBefore, $offline), 'offline preserves pending work and isolation');
+foreach (array_keys($offline) as $key) {
+    $bad = $offline;
+    unset($bad[$key]);
+    $check([] !== slimstat_network_offline_compare($offlineBefore, $bad), 'offline missing evidence ' . $key);
+}
+$bad = $offline;
+$bad['pending'] = [];
+$check([] !== slimstat_network_offline_compare($offlineBefore, $bad), 'offline cannot credit exhausted cursor');
+$bad = $offline;
+$bad['local_unchanged'] = false;
+$check([] !== slimstat_network_offline_compare($offlineBefore, $bad), 'offline cannot fork into local database');
 $observer = file_get_contents(__DIR__ . '/docker/network-rehearsal-observer.php');
 $check(false !== strpos($observer, "add_action('update_site_option',"), 'observer uses the actual core post-write action');
 $installer = file_get_contents(__DIR__ . '/docker/lib.sh');

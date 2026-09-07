@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Disposable X0/X1/X3/X4 lifecycle proof. No production dumps or existing stacks are accepted.
 # Usage: REHEARSAL_RUNS_DIR=/durable/runs PRO_REPO=/path/to/pro bash rehearse-uninstall.sh FREE_SHA PRO_SHA fixture.json
-# Pro is an immutable source archive (not a scoped release ZIP). Lifecycle/ownership only.
+# Both exact paired ZIPs are required. Lifecycle/ownership only.
 # Required-red reruns: UNINSTALL_MUTATION=credentials|drop-retained|retain-deleted.
 set -euo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+: "${QUALIFICATION_FREE_ZIP:?Exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP hash required}" "${QUALIFICATION_PRO_ZIP:?Exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP hash required}"
 FREE_REF="${1:?Free commit required}"; PRO_REF="${2:?Pro commit required}"; FIXTURE="${3:?Explicit synthetic fixture required}"
 PRO_REPO="${PRO_REPO:-$PLUGIN_SRC/../wp-slimstat-pro}"
 NETWORK_SUBDOMAINS="${NETWORK_SUBDOMAINS:-0}"
@@ -28,7 +29,7 @@ CELL_DIR=$(mktemp -d "$WORK_ROOT/uninstall.XXXXXXXX")
 export COMPOSE_PROJECT_NAME="ssuninstall$(basename "$CELL_DIR" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9')"
 [ -z "$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME")" ] || die 'project collision refused'
 export CELL_WP_DIR="$CELL_DIR/wp" PHP_VERSION="${TOPOLOGY_PHP:-8.2}" HTTP_PORT=0 DB_PORT=0
-export DC_EXTRA_FILE="$CELL_DIR/compose-extra.yml"
+export DC_EXTRA_FILE="$HARNESS_DIR/docker-compose.analytics.yml"
 ART="$CELL_DIR/artifacts"; mkdir -p "$ART" "$CELL_WP_DIR" "$CELL_DIR/pro-src"
 STARTED=$(now); status=FAIL; reason='setup incomplete'; FINISHED=0
 preserve_artifacts() {
@@ -53,33 +54,16 @@ finish() {
   exit "$rc"
 }
 trap finish EXIT
-cat > "$DC_EXTRA_FILE" <<'YAML'
-services:
-  analytics-db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: analytics
-    tmpfs:
-      - /var/lib/mysql
-YAML
 build_free_arm "$FREE_SHA" "$CELL_DIR"
-if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
-  extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}" wp-slimstat-pro "$CELL_DIR/pro-artifact"
-  rmdir "$CELL_DIR/pro-src"
-  mv "$CELL_DIR/pro-artifact/wp-slimstat-pro" "$CELL_DIR/pro-src"
-else
-  git -C "$PRO_REPO" archive "$PRO_SHA" | tar -xf - -C "$CELL_DIR/pro-src"
-fi
-[ -z "${QUALIFICATION_FREE_ZIP:-}${QUALIFICATION_PRO_ZIP:-}" ] || {
-  : "${QUALIFICATION_FREE_ZIP:?Both packaged artifacts required}" "${QUALIFICATION_PRO_ZIP:?Both packaged artifacts required}"
-}
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact"
+rmdir "$CELL_DIR/pro-src"
+mv "$CELL_DIR/pro-artifact/wp-slimstat-pro" "$CELL_DIR/pro-src"
 cp "$FIXTURE" "$ART/fixture.json"
 cp "$HARNESS_DIR/uninstall-oracle.php" "$ART/oracle.php"
 python3 - "$ART/manifest.json" "$FREE_SHA" "$PRO_SHA" "$FIXTURE_SHA" "$STARTED" "$MUTATION" "$HARNESS_DIR" "${QUALIFICATION_FREE_SHA256:-}" "${QUALIFICATION_PRO_SHA256:-}" "$NETWORK_SUBDOMAINS" <<'PY'
 import hashlib,json,pathlib,sys
 out,free,pro,fixture,start,mutation,harness,fzip,pzip,subdomains=sys.argv[1:]
-files=['rehearse-uninstall.sh','probe-uninstall.php','uninstall-oracle.php','lib.sh','extract-artifact.py','docker-compose.yml','Dockerfile.wp']
+files=['rehearse-uninstall.sh','probe-uninstall.php','uninstall-oracle.php','lib.sh','extract-artifact.py','docker-compose.yml','docker-compose.analytics.yml','Dockerfile.wp']
 json.dump(dict(free_sha=free,pro_sha=pro,fixture_sha256=fixture,started=start,mutation=mutation,
  old_zip_sha256=None,old_zip_reason='synthetic uninstall fixture; no vintage import',network_mode='subdomain' if subdomains=='1' else 'subdirectory',artifact_kind='checksummed-zip' if fzip and pzip else 'committed-source',free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,
  source_hashes={f:hashlib.sha256((pathlib.Path(harness)/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
