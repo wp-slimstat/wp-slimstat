@@ -49,7 +49,7 @@
     --ss-border-tooltip: #e0e0e0;
 
     /* ─── Color — semantic ─── */
-    --ss-success-fg: #18A456;
+    --ss-success-fg: #087a37; /* AA text on white and the success tint */
     --ss-success-bg: #18A4561A;
 
     --ss-warning-fg: #dba617;
