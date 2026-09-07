@@ -1037,7 +1037,7 @@ foreach ($settings as $a_tab_id => $a_tab_info) {
 
         <?php if (!empty($settings[$current_tab]['rows'])) : ?>
 
-            <form action="<?php echo esc_url(wp_slimstat_admin::$config_url . $current_tab) ?>" method="post" id="slimstat-options-<?php echo esc_attr($current_tab) ?>">
+            <form action="<?php echo esc_url(wp_slimstat_admin::$config_url . $current_tab) ?>" method="post" id="slimstat-options-<?php echo esc_attr((string) $current_tab) ?>">
                 <?php wp_nonce_field('slimstat_update_settings', 'slimstat_update_settings'); ?>
                 <?php wp_nonce_field('slimstat_save_settings'); ?>
                 <table class="form-table widefat <?php echo esc_attr($GLOBALS['wp_locale']->text_direction) ?>">

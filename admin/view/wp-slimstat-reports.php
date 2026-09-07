@@ -2590,9 +2590,9 @@ class wp_slimstat_reports
                             </div>
                             <strong><?php echo esc_html($country['name']) ?></strong>
                             <div class="bar-container">
-                                <div class="bar-fill" style="width: <?php echo esc_attr($country['percent']) ?>%;"></div>
+                                <div class="bar-fill" style="width: <?php echo esc_attr((string) $country['percent']) ?>%;"></div>
                             </div>
-                            <span><?php echo esc_html($country['percent']); ?>%</span>
+                            <span><?php echo esc_html((string) $country['percent']); ?>%</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
