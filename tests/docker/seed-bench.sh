@@ -47,6 +47,19 @@ export COMPOSE_PROJECT_NAME="ssbench" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
+# A synthetic SQL-dump corpus has no replication/PITR claim. Binary logs otherwise fill
+# Docker's bounded tmpfs before 5M rows; explicit engine overlays remain caller-owned.
+if [ -z "${DC_EXTRA_FILE:-}" ]; then
+  export DC_EXTRA_FILE="$CELL_DIR/compose-seed.yml"
+  cat >"$DC_EXTRA_FILE" <<'YAML'
+services:
+  db:
+    command:
+      - --max_allowed_packet=64M
+      - --skip-log-bin
+YAML
+fi
+
 existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
 [ -z "$existing" ] || die 'ssbench project already exists; serialize and clean its owner first'
 
@@ -79,6 +92,8 @@ boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
 for image_id in $(dc images -q | sort -u); do docker image inspect "$image_id" --format '{{json .}}'; done >"$ART/images.jsonl"
 dc exec -T wp php -r 'echo PHP_VERSION;' >"$ART/php-version.txt"
 mysql_q 'SELECT VERSION()' >"$ART/database-version.txt"
+mysql_q "SHOW VARIABLES LIKE 'log_bin';" >"$ART/binary-log-setting.txt"
+dc config >"$ART/compose-resolved.yml"
 
 wpc core download --version="$WP" --force > "$ART/install.log" 2>&1 || { err "core download failed"; exit 1; }
 wp_config_debug "$ART/install.log"
