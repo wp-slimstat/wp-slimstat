@@ -6,7 +6,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 source "$HARNESS_DIR/matrix.env"
 
 export STRICT_DEPRECATIONS RUN_E2E
+mkdir -p "$WORK_ROOT"
+WORK_ROOT=$(mktemp -d "$WORK_ROOT/matrix.XXXXXXXX")
+export WORK_ROOT
 mkdir -p "$WORK_ROOT/cells"
+EXPECTED_CELLS=()
 
 command -v docker >/dev/null || { err "docker not found"; exit 1; }
 # Build the Pro artifact if it's not already there — one command to run the matrix.
@@ -29,7 +33,7 @@ idx=0; running=0
 for wp in "${WPS[@]}"; do
   for php in "${PHPS[@]}"; do
     http=$((BASE_HTTP_PORT + idx)); db=$((BASE_DB_PORT + idx)); idx=$((idx+1))
-    cell="php${php}-wp${wp}"; mkdir -p "$WORK_ROOT/cells/$cell/artifacts"
+    cell="php${php}-wp${wp}"; EXPECTED_CELLS+=("$cell"); mkdir -p "$WORK_ROOT/cells/$cell/artifacts"
     log "launching $cell (http $http, db $db)"
     bash "$HARNESS_DIR/run-cell.sh" "$php" "$wp" "$http" "$db" \
       > "$WORK_ROOT/cells/$cell/run.log" 2>&1 &
@@ -62,14 +66,13 @@ SUMMARY="$WORK_ROOT/matrix-summary.md"
   echo "_BLOCKED = WordPress core can't boot on that PHP (not a plugin failure)._"
 } | tee "$SUMMARY"
 
-cat "$WORK_ROOT"/cells/*/artifacts/cell.json 2>/dev/null | (command -v jq >/dev/null && jq -s '.' || cat) \
-  > "$WORK_ROOT/matrix-summary.json" 2>/dev/null || true
+python3 "$HARNESS_DIR/check-matrix.py" "$WORK_ROOT" "${EXPECTED_CELLS[@]}" >"$WORK_ROOT/matrix-summary.json"
+MATRIX_RC=$?
 
 # Mirror durable reports out of /tmp.
 DEST="$PLUGIN_SRC/../jaan-to/outputs/dev/php-matrix/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$DEST" 2>/dev/null && cp "$SUMMARY" "$WORK_ROOT/matrix-summary.json" "$DEST/" 2>/dev/null \
   && log "summary mirrored to $DEST"
 
-fails=$(grep -l '"status":"FAIL"' "$WORK_ROOT"/cells/*/artifacts/cell.json 2>/dev/null | wc -l | tr -d ' ')
-log "done. plugin FAILs: $fails (BLOCKED cells are not failures)."
-[ "$fails" -eq 0 ]
+log "done. matrix qualification exit: $MATRIX_RC; see matrix-summary.json for every missing or failed lane"
+exit "$MATRIX_RC"
