@@ -665,7 +665,7 @@ read_verdict_status() {
 dc() { docker compose -f "$HARNESS_DIR/docker-compose.yml" ${DC_EXTRA_FILE:+-f "$DC_EXTRA_FILE"} "$@"; }
 
 # WP-CLI inside the cell's wp container.
-wpc() { dc exec -T -u www-data wp wp --path=/var/www/html "$@"; }
+wpc() { dc exec -T -u www-data -e REHEARSE_ARM_OPTIONS="${REHEARSE_ARM_OPTIONS:-present}" wp wp --path=/var/www/html "$@"; }
 
 # Build the image and bring the stack up, waiting for MySQL. Args: art_dir php
 boot_stack() {

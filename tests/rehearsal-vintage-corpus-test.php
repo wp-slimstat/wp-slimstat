@@ -549,6 +549,12 @@ $check(
         && false !== strpos($reh_src, '\\"arm_options\\":\\"${REHEARSE_ARM_OPTIONS:-present}\\"')
 );
 $check(
+    'the absent-options condition reaches Docker and is observed before NEW boot',
+    false !== strpos($lib_src, '-e REHEARSE_ARM_OPTIONS=')
+        && false !== strpos($reh_src, 'wpc --skip-plugins eval \'delete_option("slimstat_options");\'')
+        && false !== strpos($reh_src, '[ "$OPTIONS_BEFORE_NEW" = ABSENT ]')
+);
+$check(
     'lib.sh can read the STORED version, and reads it from the options row ONLY',
     false !== strpos($lib_src, 'stored_plugin_version()')
         && false !== strpos($lib_src, 'get_option("slimstat_options", [])')

@@ -549,6 +549,15 @@ echo
 echo "── R2 · the DEFERRED WINDOW: v6 code, v5 schema, no migration yet ───────"
 use_ref "$NEW_REF" || exit 1
 
+# An old-arm request may save its settings again after installer setup. Establish and
+# READ BACK this fixture after the file replacement, before NEW code first boots.
+if [ "${REHEARSE_ARM_OPTIONS:-present}" = absent ]; then
+  wpc --skip-plugins eval 'delete_option("slimstat_options");' >> "$ART/install.log" 2>&1 || exit 1
+  OPTIONS_BEFORE_NEW=$(wpc --skip-plugins eval 'echo false === get_option("slimstat_options", false) ? "ABSENT" : "PRESENT";' 2>/dev/null)
+  [ "$OPTIONS_BEFORE_NEW" = ABSENT ] || { err "missing-settings fixture was not established"; exit 2; }
+  check "the options row is absent before NEW code first boots" 0 "$OPTIONS_BEFORE_NEW"
+fi
+
 # U4's mixed window, second half. WordPress updates plugins ONE AT A TIME, so on day one a real
 # site runs new free beside old Pro, or old free beside new Pro, for as long as it takes the
 # second updater to run. Pro 3.0.0's author-scoped reports require free 6.0.0 and must degrade to
@@ -657,7 +666,7 @@ if [ -z "$LEGACY_FROM" ] && [ -n "${ARM_FREE_VERSION:-}" ]; then
   LEGACY_FROM=$(stored_plugin_version)
 fi
 echo "    stored version before: ${LEGACY_FROM:-unstamped}"
-echo "    the arm left an options row: ${REHEARSE_ARM_OPTIONS:-present} (REHEARSE_ARM_OPTIONS)"
+echo "    settings condition at Free upgrade: ${REHEARSE_ARM_OPTIONS:-present} (REHEARSE_ARM_OPTIONS)"
 
 # THE CONTROL THAT WAS MISSING. Every assertion this leg makes is conditional on the leg having
 # work to do, and "has work to do" is exactly `stored < the version of the code now installed`.
