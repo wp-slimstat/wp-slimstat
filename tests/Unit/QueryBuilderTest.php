@@ -101,6 +101,8 @@ class QueryBuilderTest extends WpSlimstatTestCase
                 }, $query);
             });
 
+        $this->wpdb->shouldReceive('esc_like')->andReturnUsing(static fn ($value) => addcslashes($value, '_%\\'));
+
         $GLOBALS['wpdb'] = $this->wpdb;
 
         // Ensure the wp_slimstat stub has expected settings.
@@ -376,22 +378,37 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
-     *
-     * These tests intentionally expect escaped values. The implementation
-     * currently passes raw values, which is a known bug. When esc_like() is
-     * added to the LIKE operators in wp-slimstat-db.php, these tests will
-     * start passing.
      */
     public function test_single_where_escapes_percent_in_like(): void
     {
-        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
-
         // The 'contains' operator wraps with %...% — an embedded % in the value
         // must be escaped to \% so it matches a literal percent sign, not a wildcard.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', '100%');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('100\%', $sql);
+        $this->assertStringContainsString(addslashes('100\%25'), $sql, 'resource is URL-encoded before LIKE escaping');
+    }
+
+    public function test_literal_like_operators_escape_wildcards_and_backslashes(): void
+    {
+        $literal = 'a%b_c\\d';
+        $escaped = 'a\\%b\\_c\\\\d';
+        foreach (['contains' => ['LIKE', '%' . $escaped . '%'],
+            'does_not_contain' => ['NOT LIKE', '%' . $escaped . '%'],
+            'starts_with' => ['LIKE', $escaped . '%'],
+            'ends_with' => ['LIKE', '%' . $escaped]] as $operator => [$sqlOperator, $pattern]) {
+            $sql = \wp_slimstat_db::get_single_where_clause('browser', $operator, $literal);
+            $this->assertSame("browser " . $sqlOperator . " '" . addslashes($pattern) . "' ESCAPE 0x5c", $sql, $operator);
+        }
+    }
+
+    public function test_regex_operators_preserve_the_explicit_pattern_contract(): void
+    {
+        foreach (['matches' => 'REGEXP', 'does_not_match' => 'NOT REGEXP'] as $operator => $sqlOperator) {
+            $pattern = '^a.*[0-9]_%$';
+            $this->assertSame("browser " . $sqlOperator . " '" . $pattern . "'",
+                \wp_slimstat_db::get_single_where_clause('browser', $operator, $pattern));
+        }
     }
 
     /**
@@ -410,22 +427,15 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
-     *
-     * These tests intentionally expect escaped values. The implementation
-     * currently passes raw values, which is a known bug. When esc_like() is
-     * added to the LIKE operators in wp-slimstat-db.php, these tests will
-     * start passing.
      */
     public function test_single_where_handles_underscore_in_like(): void
     {
-        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
-
         // Underscore is a LIKE wildcard in MySQL; it must be escaped to \_
         // so it matches a literal underscore, not any single character.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', 'my_page');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('my\_page', $sql);
+        $this->assertStringContainsString(addslashes('my\_page'), $sql);
     }
 
     // ------------------------------------------------------------------

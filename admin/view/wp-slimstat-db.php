@@ -424,8 +424,11 @@ class wp_slimstat_db
                 $where[0] = sprintf('%s <> %%s', $column_with_alias);
                 break;
 
+            // These operators match literal text. Escape LIKE metacharacters after resource
+            // encoding and before prepare(). Explicit ESCAPE keeps NO_BACKSLASH_ESCAPES servers
+            // literal too; matches/does_not_match retain their regex syntax.
             case 'contains':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), '%' . $_value . '%'];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'includes_in_set':
@@ -434,15 +437,15 @@ class wp_slimstat_db
                 break;
 
             case 'does_not_contain':
-                $where = [sprintf('%s NOT LIKE %%s', $column_with_alias), '%' . $_value . '%'];
+                $where = [sprintf('%s NOT LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'starts_with':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), $_value . '%'];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'ends_with':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), '%' . $_value];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value)];
                 break;
 
             case 'sounds_like':
