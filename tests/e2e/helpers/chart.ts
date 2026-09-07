@@ -22,7 +22,11 @@ import { WP_ROOT, PLUGIN_DIR, BASE_URL } from './env';
 // continue-on-error.
 //
 // So the call site declares WHAT it wants and this decides HOW to run it.
-const IN_CONTAINER = process.env.CI === 'true' || process.env.USE_WP_ENV === '1';
+const WP_CLI_DOCKER_CONTAINER = process.env.WP_CLI_DOCKER_CONTAINER || '';
+if (WP_CLI_DOCKER_CONTAINER && !/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(WP_CLI_DOCKER_CONTAINER)) {
+  throw new Error('WP_CLI_DOCKER_CONTAINER contains invalid characters');
+}
+const IN_CONTAINER = process.env.CI === 'true' || process.env.USE_WP_ENV === '1' || Boolean(WP_CLI_DOCKER_CONTAINER);
 
 /** The plugin's mount point inside wp-env's containers (basename of the checkout). */
 const CONTAINER_PLUGIN_DIR = '/var/www/html/wp-content/plugins/wp-slimstat';
@@ -30,9 +34,11 @@ const CONTAINER_PLUGIN_DIR = '/var/www/html/wp-content/plugins/wp-slimstat';
 function wpCli(args: string, timeout = 30_000): string {
   // `--path` is meaningless inside the container (WP is at the image's own root) and
   // required outside it.
-  const command = IN_CONTAINER
-    ? `npx wp-env run tests-cli -- wp ${args}`
-    : `wp ${args} --path="${WP_ROOT}"`;
+  const command = WP_CLI_DOCKER_CONTAINER
+    ? `docker exec ${WP_CLI_DOCKER_CONTAINER} wp ${args} --allow-root`
+    : IN_CONTAINER
+      ? `npx wp-env run tests-cli -- wp ${args}`
+      : `wp ${args} --path="${WP_ROOT}"`;
 
   return execSync(`${command} 2>/dev/null`, { encoding: 'utf8', timeout });
 }
