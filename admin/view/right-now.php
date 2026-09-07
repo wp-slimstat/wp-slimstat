@@ -45,10 +45,10 @@ $count_all_results  = min(wp_slimstat_db::count_records('id'), intval(wp_slimsta
 $count_page_results = count($results);
 
 // Echo the debug message
-echo wp_slimstat_db::$debug_message;
+echo wp_kses_post(wp_slimstat_db::$debug_message);
 
 if (0 == $count_page_results) {
-    echo '<p class="nodata">' . __('No data to display', 'wp-slimstat') . '</p>';
+    echo '<p class="nodata">' . esc_html__('No data to display', 'wp-slimstat') . '</p>';
     return 0;
 }
 
@@ -226,7 +226,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
             $row_output = preg_replace('/<a (.*?)>(.*?)<\/a>/', '\\2', $row_output);
         }
 
-        echo $row_output;
+        echo wp_kses_post($row_output);
     }
 
     // Permalink: find post title, if available
@@ -352,7 +352,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
         $row_output = preg_replace('/<a (.*?)>(.*?)<\/a>/', '\\2', $row_output);
     }
 
-    echo $row_output;
+    echo wp_kses_post($row_output);
 }
 
 if (! defined('DOING_AJAX') || ! DOING_AJAX) {
@@ -360,7 +360,7 @@ if (! defined('DOING_AJAX') || ! DOING_AJAX) {
 }
 
 // Pagination
-echo wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, !$is_dashboard, wp_slimstat::$settings['number_results_raw_data']);
+echo wp_kses_post(wp_slimstat_reports::report_pagination($count_page_results, $count_all_results, !$is_dashboard, wp_slimstat::$settings['number_results_raw_data']));
 if (! defined('DOING_AJAX') || ! DOING_AJAX) {
     echo '<div>';
 }

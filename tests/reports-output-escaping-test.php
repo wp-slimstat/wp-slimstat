@@ -367,8 +367,9 @@ function render_column(string $column, string $value): string
 
 function extract_href(string $html): string
 {
-    if (preg_match("/href='([^']+)'/", $html, $matches)) {
-        return $matches[1];
+    // KSES may normalize single-quoted attributes to double quotes.
+    if (preg_match('/href=([\'"])(.*?)\\1/', $html, $matches)) {
+        return $matches[2];
     }
 
     return '';
@@ -403,7 +404,7 @@ assert_not_contains("onclick='alert(1)'", $html, 'Raw onclick must not appear in
 // Test 6: The filter link href uses real esc_url() output and is not double-escaped.
 $html = render_column('fingerprint', 'testvalue');
 $href = extract_href($html);
-assert_contains('&#038;fs%5Bfingerprint%5D=', $href, 'Real esc_url() must HTML-escape query separators');
+assert_true(1 === preg_match('/&(?:#038|amp);fs%5Bfingerprint%5D=/', $href), 'Real esc_url() and KSES must HTML-escape query separators');
 assert_not_contains('&amp;amp;', $html, 'href must not be double-escaped');
 
 // Test 7: Filter values are pre-encoded before fs_url() so parse_filters preserves delimiters.

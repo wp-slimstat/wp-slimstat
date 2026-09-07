@@ -10,19 +10,19 @@ use SlimStat\Components\DateRangeHelper;
     <div class="wrap-slimstat">
         <?php wp_slimstat_admin::get_template('header', ['is_pro' => wp_slimstat::pro_is_installed()]); ?>
 
-        <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php _e('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat'); ?></div>
+        <div class="notice slimstat-notice slimstat-tooltip-content" style="background-color:#ffa;border:0;padding:10px"><?php echo wp_kses_post(__('<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href="https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work" target="_blank">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets.', 'wp-slimstat')); ?></div>
 
         <form action="<?php echo esc_url(wp_slimstat_reports::fs_url()); ?>" method="post" id="slimstat-filters-form">
             <fieldset id="slimstat-filters"><?php
-                $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . __('Dimension', 'wp-slimstat') . '</option>';
+                $filter_name_html = '<div class="form-field"><select name="f" id="slimstat-filter-name"><option value="" disabled selected>' . esc_html__('Dimension', 'wp-slimstat') . '</option>';
 foreach (wp_slimstat_db::$columns_names as $a_filter_label => $a_filter_info) {
-    $filter_name_html .= sprintf("<option value='%s'>%s</option>", $a_filter_label, $a_filter_info[0]);
+    $filter_name_html .= sprintf("<option value='%s'>%s</option>", esc_attr($a_filter_label), esc_html($a_filter_info[0]));
 }
 $filter_name_html .= '</select></div>';
 
 $filter_operator_html = '<div class="form-field"><select name="o" id="slimstat-filter-operator">';
 foreach (wp_slimstat_db::$operator_names as $a_operator_label => $a_operator_name) {
-    $filter_operator_html .= sprintf("<option value='%s'>%s</option>", $a_operator_label, $a_operator_name);
+    $filter_operator_html .= sprintf("<option value='%s'>%s</option>", esc_attr($a_operator_label), esc_html($a_operator_name));
 }
 $filter_operator_html .= '</select></div>';
 
@@ -31,16 +31,18 @@ $filter_value_html = '<div class="form-field">
 </div>';
 
 if ('on' == wp_slimstat::$settings['enable_sov']) {
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Fixed input/select markup; option values and labels escaped at construction above.
     echo $filter_value_html . $filter_operator_html . $filter_name_html;
 } else {
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Same escaped option fragments, ordered for subject-object-verb languages.
     echo $filter_name_html . $filter_operator_html . $filter_value_html;
 }
 
-echo '<input type="submit" value="' . __('Apply', 'wp-slimstat') . '" class="button-secondary">';
+echo '<input type="submit" value="' . esc_attr__('Apply', 'wp-slimstat') . '" class="button-secondary">';
 
 $saved_filters = get_option('slimstat_filters', []);
 if (!empty($saved_filters)) {
-    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . __('Saved Filters', 'wp-slimstat') . '</a>';
+    echo '<a href="#" id="slimstat-load-saved-filters" class="button-secondary noslimstat" title="Saved Filters">' . esc_html__('Saved Filters', 'wp-slimstat') . '</a>';
 }
 ?></fieldset><!-- #slimstat-filters -->
 
@@ -137,7 +139,7 @@ if (file_exists(dirname(plugin_dir_path(__FILE__), 4) . '/advanced-cache.php') &
 
 $filters_html = wp_slimstat_reports::get_filters_html(wp_slimstat_db::$filters_normalized['columns']);
 if (!empty($filters_html)) {
-    echo sprintf("<div id='slimstat-current-filters'>%s</div>", $filters_html);
+    echo sprintf("<div id='slimstat-current-filters'>%s</div>", wp_kses_post($filters_html));
 }
 ?>
 
@@ -156,7 +158,7 @@ if (!empty($filters_html)) {
         <?php endif; ?>
 
         <div class="meta-box-sortables">
-            <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo wp_create_nonce('meta-box-order') ?>"/></form><?php
+            <form method="get" action=""><input type="hidden" id="meta-box-order-nonce" name="meta-box-order-nonce" value="<?php echo esc_attr(wp_create_nonce('meta-box-order')) ?>"/></form><?php
 
     foreach (wp_slimstat_reports::$user_reports[wp_slimstat_admin::$current_screen] as $a_report_id) {
         // A report could have been deprecated...
