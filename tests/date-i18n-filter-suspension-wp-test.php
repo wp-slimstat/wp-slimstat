@@ -52,4 +52,56 @@ if ($expected !== $GLOBALS['wp_filter']['date_i18n']->callbacks) {
     throw new RuntimeException('exception path did not restore the exact callback registry');
 }
 
+$assert_restored = static function ($path) use ($expected) {
+    if ($expected !== $GLOBALS['wp_filter']['date_i18n']->callbacks) {
+        throw new RuntimeException($path . ' did not restore the exact callback registry');
+    }
+};
+
+$parse_exception = new RuntimeException('parse exception');
+$throwing_wp_date = static function () use ($parse_exception) { throw $parse_exception; };
+add_filter('wp_date', $throwing_wp_date);
+try {
+    wp_slimstat_db::parse_filters('day equals tomorrow');
+    throw new RuntimeException('parse exception control did not throw');
+} catch (RuntimeException $caught) {
+    if ($caught !== $parse_exception) { throw $caught; }
+} finally {
+    remove_filter('wp_date', $throwing_wp_date);
+}
+$assert_restored('filter parsing exception path');
+
+$saved_settings = wp_slimstat::$settings;
+wp_slimstat::$settings['limit_results'] = 10;
+wp_slimstat::$settings['use_current_month_timespan'] = 'off';
+wp_slimstat::$settings['posts_column_day_interval'] = [];
+try {
+    wp_slimstat_db::init_filters('');
+    throw new RuntimeException('filter initialization exception control did not throw');
+} catch (TypeError $caught) {
+    // abs(array) deliberately throws after the date_i18n registry is suspended.
+} finally {
+    wp_slimstat::$settings = $saved_settings;
+}
+$assert_restored('filter initialization exception path');
+
+$saved_pageviews = wp_slimstat_db::$pageviews;
+$saved_filters = wp_slimstat_db::$filters_normalized;
+wp_slimstat_db::$pageviews = 1;
+wp_slimstat_db::$filters_normalized = ['utime' => ['start' => 0, 'end' => 86400]];
+$summary_exception = new RuntimeException('summary exception');
+$throwing_format = static function () use ($summary_exception) { throw $summary_exception; };
+add_filter('number_format_i18n', $throwing_format);
+try {
+    wp_slimstat_db::get_overview_summary();
+    throw new RuntimeException('summary exception control did not throw');
+} catch (RuntimeException $caught) {
+    if ($caught !== $summary_exception) { throw $caught; }
+} finally {
+    remove_filter('number_format_i18n', $throwing_format);
+    wp_slimstat_db::$pageviews = $saved_pageviews;
+    wp_slimstat_db::$filters_normalized = $saved_filters;
+}
+$assert_restored('overview summary exception path');
+
 echo "PASS: real WP_Hook callbacks are suppressed and exactly restored across normal, nested, and exception paths\n";

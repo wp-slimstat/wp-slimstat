@@ -748,33 +748,35 @@ class wp_slimstat_db
                             $filters_parsed['date'][$a_filter[1]] = intval($a_filter[3]);
                         } else {
                             // Try to apply strtotime to value
-                            self::toggle_date_i18n_filters(false);
-                            switch ($a_filter[1]) {
-                                case 'minute':
-                                    $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                            wp_slimstat::toggle_date_i18n_filters(false);
+                            try {
+                                switch ($a_filter[1]) {
+                                    case 'minute':
+                                        $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'hour':
-                                    $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'hour':
+                                        $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'day':
-                                    $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'day':
+                                        $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'month':
-                                    $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'month':
+                                        $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'year':
-                                    $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'year':
+                                        $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                default:
-                                    break;
+                                    default:
+                                        break;
+                                }
+                            } finally {
+                                wp_slimstat::toggle_date_i18n_filters(true);
                             }
-
-                            self::toggle_date_i18n_filters(true);
 
                             if (false === $filters_parsed['date'][$a_filter[1]]) {
                                 unset($filters_parsed['date'][$a_filter[1]]);
@@ -841,6 +843,7 @@ class wp_slimstat_db
 
         // Normalize the various date values
         wp_slimstat::toggle_date_i18n_filters(false);
+        try {
 
         // Intervals
         // If neither an interval nor interval_hours were specified...
@@ -930,8 +933,9 @@ class wp_slimstat_db
             $fn['utime']['end'] = self::live_window_end();
         }
 
-        // Turn the date_i18n filters back on
-        wp_slimstat::toggle_date_i18n_filters(true);
+        } finally {
+            wp_slimstat::toggle_date_i18n_filters(true);
+        }
 
         // Apply third-party filters
         $fn = apply_filters('slimstat_db_filters_normalized', $fn, $_filters_raw);
@@ -1358,6 +1362,7 @@ class wp_slimstat_db
 
         // Turn date_i18n filters off
         wp_slimstat::toggle_date_i18n_filters(false);
+        try {
 
         // Ensure pageviews is initialized for Dashboard widgets
         if (0 === self::$pageviews) {
@@ -1392,8 +1397,9 @@ class wp_slimstat_db
         $results[7]['metric'] = __('Yesterday', 'wp-slimstat');
         $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))), false));
 
-        // Turn date_i18n filters back on
-        wp_slimstat::toggle_date_i18n_filters(true);
+        } finally {
+            wp_slimstat::toggle_date_i18n_filters(true);
+        }
 
         return $results;
     }
