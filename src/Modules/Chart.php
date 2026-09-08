@@ -60,6 +60,9 @@ class Chart
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
+        if (!class_exists('\wp_slimstat_admin')) {
+            include_once SLIMSTAT_DIR . '/admin/index.php';
+        }
         if (!\wp_slimstat_admin::can_view_stats()) {
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
         }

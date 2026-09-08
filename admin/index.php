@@ -178,7 +178,7 @@ class wp_slimstat_admin
         self::$screens_info = apply_filters('slimstat_screens_info', self::$screens_info);
 
         // If the plugin was network activated, the tables might not have been created for this specific site
-        $table_list = wp_slimstat::$wpdb->get_results(sprintf("SHOW TABLES LIKE '%sslim_stats'", $GLOBALS['wpdb']->prefix));
+        $table_list = wp_slimstat::$wpdb->get_results(wp_slimstat::$wpdb->prepare("SHOW TABLES LIKE %s", wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats')));
         if (empty($table_list)) {
             self::init_environment();
         }
@@ -191,7 +191,7 @@ class wp_slimstat_admin
         }
 
         // Current Screen
-        if (!empty($_REQUEST['page']) && array_key_exists($_REQUEST['page'], self::$screens_info)) {
+        if (!empty($_REQUEST['page']) && is_string($_REQUEST['page']) && array_key_exists($_REQUEST['page'], self::$screens_info)) {
             self::$current_screen = $_REQUEST['page'];
         }
 
@@ -201,7 +201,11 @@ class wp_slimstat_admin
         }
 
         // Is the menu position setting being updated?
-        if (!empty($_POST['slimstat_update_settings']) && wp_verify_nonce($_POST['slimstat_update_settings'], 'slimstat_update_settings') && !empty($_POST['options']['use_separate_menu'])) {
+        if (!empty($_POST['slimstat_update_settings']) && is_string($_POST['slimstat_update_settings'])
+            && current_user_can(wp_slimstat::$settings['capability_can_admin'])
+            && wp_verify_nonce(wp_unslash($_POST['slimstat_update_settings']), 'slimstat_update_settings')
+            && isset($_POST['options']) && is_array($_POST['options'])
+            && isset($_POST['options']['use_separate_menu']) && is_string($_POST['options']['use_separate_menu'])) {
             wp_slimstat::$settings['use_separate_menu'] = ('on' == $_POST['options']['use_separate_menu']) ? 'on' : 'no';
         }
 
@@ -229,7 +233,7 @@ class wp_slimstat_admin
         }
 
         // Display a notice that hightlights this version's features
-        if (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
+        if (!empty($_GET['page']) && is_string($_GET['page']) && false !== strpos($_GET['page'], 'slimview') && (!empty(self::$admin_notice) && 'on' == wp_slimstat::$settings['notice_latest_news'] && is_super_admin())) {
             add_action('admin_notices', [self::class, 'show_latest_news']);
 
         }
@@ -267,7 +271,7 @@ class wp_slimstat_admin
                     add_action(sprintf('manage_%s_posts_custom_column', $a_post_type), [self::class, 'add_post_column'], 10, 2);
                 }
 
-                if (false !== strpos($_SERVER['REQUEST_URI'], 'edit.php')) {
+                if (isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) && false !== strpos($_SERVER['REQUEST_URI'], 'edit.php')) {
                     add_action('admin_enqueue_scripts', [self::class, 'wp_slimstat_stylesheet']);
                     add_action('wp', [self::class, 'init_data_for_column']);
                 }
@@ -280,7 +284,7 @@ class wp_slimstat_admin
         }
 
         // Initialize Reports system for SlimStat pages and AJAX requests
-        $is_slimstat_page = (!empty($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
+        $is_slimstat_page = (!empty($_GET['page']) && is_string($_GET['page']) && 0 === strpos($_GET['page'], 'slim'));
         $is_slimstat_ajax = (!empty($_POST['action']) && (
             'slimstat_load_report' === $_POST['action'] ||
             'slimstat_get_live_analytics_data' === $_POST['action']
@@ -296,8 +300,8 @@ class wp_slimstat_admin
             include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-reports.php');
             wp_slimstat_reports::init();
 
-            if (!empty($_POST['report_id'])) {
-                $report_id = sanitize_title($_POST['report_id'], 'slim_p0_00');
+            if (!empty($_POST['report_id']) && is_string($_POST['report_id'])) {
+                $report_id = sanitize_title(wp_unslash($_POST['report_id']), 'slim_p0_00');
 
                 if (!empty(wp_slimstat_reports::$reports[$report_id])) {
                     add_action('wp_ajax_slimstat_load_report', ['wp_slimstat_reports', 'callback_wrapper'], 10, 2);
@@ -307,7 +311,7 @@ class wp_slimstat_admin
 
         // Dashboard Widgets
         if ('on' == wp_slimstat::$settings['add_dashboard_widgets']) {
-            $sanitized_uri  = sanitize_url(wp_unslash($_SERVER['REQUEST_URI']));
+            $sanitized_uri  = sanitize_url(wp_unslash(is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : ''));
             $request_length = strlen($sanitized_uri);
             $temp           = $request_length - 10;
 
@@ -1630,8 +1634,8 @@ class wp_slimstat_admin
 
         // Enqueue date range picker assets for report pages
         $should_load_datepicker = false;
-        if (isset($_GET['page'])) {
-            $page = sanitize_text_field($_GET['page']);
+        if (isset($_GET['page']) && is_string($_GET['page'])) {
+            $page = sanitize_text_field(wp_unslash($_GET['page']));
             if (false !== strpos($page, 'slim') && false === strpos($page, 'setting')) {
                 $should_load_datepicker = true;
             }
@@ -2370,7 +2374,8 @@ class wp_slimstat_admin
     {
         $tag = current_filter();
 
-        if (!empty($tag) && current_user_can('manage_options') && wp_verify_nonce($_POST['security'], 'meta-box-order')) {
+        if (!empty($tag) && current_user_can('manage_options') && isset($_POST['security']) && is_string($_POST['security'])
+            && wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             $tag                         = str_replace('wp_ajax_slimstat_', '', $tag);
             wp_slimstat::$settings[$tag] = 'no';
 
@@ -2504,6 +2509,11 @@ class wp_slimstat_admin
     {
         if (!is_array($raw)) {
             return false;
+        }
+        foreach (['id', 'name', 'dimension', 'operator', 'value', 'active'] as $key) {
+            if (isset($raw[$key]) && !is_scalar($raw[$key])) {
+                return false;
+            }
         }
         $raw        = wp_unslash($raw);
         // Funnel steps accept only action-oriented dimensions; goals accept all.
@@ -2694,8 +2704,8 @@ class wp_slimstat_admin
             $steps[] = $step;
         }
 
-        $raw_funnel_name = isset($_POST['funnel_name']) ? wp_unslash((string) $_POST['funnel_name']) : '';
-        $incoming_id     = !empty($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
+        $raw_funnel_name = isset($_POST['funnel_name']) && is_string($_POST['funnel_name']) ? wp_unslash($_POST['funnel_name']) : '';
+        $incoming_id     = !empty($_POST['funnel_id']) && is_scalar($_POST['funnel_id']) ? intval(wp_unslash($_POST['funnel_id'])) : 0;
         $funnel = [
             // Provisional id; reassigned with a server-side value for creates below
             // (never microtime — it collides on sub-ms saves / overflows on 32-bit).
@@ -2975,14 +2985,14 @@ class wp_slimstat_admin
     public static function delete_pageview()
     {
         $my_wpdb     = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
-        $pageview_id = intval($_POST['pageview_id']);
+        $pageview_id = isset($_POST['pageview_id']) && is_string($_POST['pageview_id']) && ctype_digit($_POST['pageview_id']) ? intval($_POST['pageview_id']) : 0;
 
         // Delete page view if user has enough access
         $current_user_can_delete = (current_user_can(wp_slimstat::$settings['capability_can_admin']) && !is_network_admin());
-        if (!$current_user_can_delete || !wp_verify_nonce($_POST['security'], 'meta-box-order')) {
+        if (!$current_user_can_delete || $pageview_id <= 0 || !isset($_POST['security']) || !is_string($_POST['security']) || !wp_verify_nonce(wp_unslash($_POST['security']), 'meta-box-order')) {
             return;
         }
-        $my_wpdb->query(sprintf('DELETE ts FROM %sslim_stats ts WHERE ts.id = %d', $GLOBALS['wpdb']->prefix, $pageview_id));
+        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE id = %d', $pageview_id));
         exit();
     }
 
@@ -3492,7 +3502,7 @@ class wp_slimstat_admin
             return;
         }
 
-        $dimension = sanitize_text_field($_POST['dimension'] ?? '');
+        $dimension = isset($_POST['dimension']) && is_string($_POST['dimension']) ? sanitize_text_field(wp_unslash($_POST['dimension'])) : '';
 
         // Validate dimension exists in columns_names
         include_once(plugin_dir_path(__FILE__) . 'view/wp-slimstat-db.php');
@@ -3575,7 +3585,7 @@ class wp_slimstat_admin
         $search_raw = $_POST['search'] ?? '';
         $search = '';
         if (is_string($search_raw)) {
-            $search = trim(sanitize_text_field($search_raw));
+            $search = trim(sanitize_text_field(wp_unslash($search_raw)));
             if (strlen($search) < 2 || strlen($search) > 64) {
                 $search = '';
             }
