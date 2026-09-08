@@ -141,6 +141,8 @@ class wp_slimstat
 
     protected static $date_i18n_filters = [];
 
+    protected static $date_i18n_filter_depth = 0;
+
     /**
      * Gets the current data_js array (for internal tracking use only)
      *
@@ -1258,17 +1260,31 @@ class wp_slimstat
      */
     public static function toggle_date_i18n_filters($_turn_on = true)
     {
-        if ($_turn_on && !empty(self::$date_i18n_filters) && is_array(self::$date_i18n_filters)) {
-            foreach (self::$date_i18n_filters as $i18n_priority => $i18n_func_list) {
-                foreach ($i18n_func_list as $func_args) {
-                    if (!empty($func_args['function']) && is_string($func_args['function'])) {
-                        add_filter('date_i8n', $func_args['function'], $i18n_priority, intval($func_args['accepted_args']));
-                    }
+        if (!$_turn_on) {
+            self::$date_i18n_filter_depth++;
+            if (1 < self::$date_i18n_filter_depth) {
+                return;
+            }
+
+            $hook = $GLOBALS['wp_filter']['date_i18n'] ?? null;
+            self::$date_i18n_filters = $hook instanceof \WP_Hook ? $hook->callbacks : [];
+            remove_all_filters('date_i18n');
+            return;
+        }
+
+        if (0 === self::$date_i18n_filter_depth || 0 < --self::$date_i18n_filter_depth) {
+            return;
+        }
+
+        $filters = self::$date_i18n_filters;
+        self::$date_i18n_filters = [];
+        remove_all_filters('date_i18n');
+        foreach ($filters as $priority => $callbacks) {
+            foreach ($callbacks as $callback) {
+                if (isset($callback['function']) && is_callable($callback['function'])) {
+                    add_filter('date_i18n', $callback['function'], $priority, (int) $callback['accepted_args']);
                 }
             }
-        } elseif (!empty($GLOBALS['wp_filter']['date_i18n']['callbacks']) && is_array($GLOBALS['wp_filter']['date_i18n']['callbacks'])) {
-            self::$date_i18n_filters = $GLOBALS['wp_filter']['date_i18n']['callbacks'];
-            remove_all_filters('date_i18n');
         }
     }
     // end toggle_date_i18n_filters
@@ -1315,10 +1331,11 @@ class wp_slimstat
     public static function date_i18n($_format, $_timestamp = false)
     {
         self::toggle_date_i18n_filters(false);
-        $date = date_i18n($_format, $_timestamp);
-        self::toggle_date_i18n_filters(true);
-
-        return $date;
+        try {
+            return date_i18n($_format, $_timestamp);
+        } finally {
+            self::toggle_date_i18n_filters(true);
+        }
     }
     // end date_i18n
 

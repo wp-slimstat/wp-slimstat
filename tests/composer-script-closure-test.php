@@ -80,6 +80,8 @@ $standalone = [
         . 'executes; PITFALLS 93 rule 2 is why it exists separately from test:fp-negative',
     'test:settings-cache-family-wp' => 'requires a disposable WordPress site and native database; '
         . 'run it with WP-CLI against the packaged candidate during qualification',
+    'test:date-i18n-filter-suspension-wp' => 'requires the real WordPress WP_Hook implementation; '
+        . 'run it with WP-CLI against the candidate during qualification',
 ];
 
 // `test:reports-escaping` is deliberately NOT here. It needs a live WordPress and its CI home is
