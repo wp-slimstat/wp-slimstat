@@ -3,6 +3,9 @@
 # Runs ONE PHP×WP cell end-to-end and writes a PASS|FAIL|BLOCKED-BY-WP-CORE verdict.
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+# Qualification never substitutes a working tree or an implicit Pro build.
+: "${QUALIFICATION_FREE_ZIP:?exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}"
+: "${QUALIFICATION_PRO_ZIP:?exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}"
 # Remember any caller-provided toggles — these win over matrix.env's defaults.
 _env_run_e2e="${RUN_E2E:-}"; _env_strict="${STRICT_DEPRECATIONS:-}"
 # Pull config (CORE_SPECS + defaults) from matrix.env so it's the single edit point,
@@ -38,7 +41,7 @@ export CELL_WP_DIR="$WP_DIR"
 existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
 volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
 [ -z "$existing$volumes" ] || die 'matrix project already owned; refusing shared database'
-rm -rf "$WP_DIR" "$ART"    # fresh install and verdict; never inherit a previous PASS
+[ ! -e "$CELL_DIR" ] || die 'matrix evidence directory already exists'
 mkdir -p "$WP_DIR" "$ART"
 
 fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
@@ -113,10 +116,13 @@ if [ "$home_code" = "500" ] && verified_core_fatal "$WP_DIR/wp-content/debug.log
 fi
 : > "$WP_DIR/wp-content/debug.log" 2>/dev/null || true   # reset log AFTER core boots clean
 
-# ── plugins: free (copied in) + Pro (built zip) ─────────────────────────────
+# ── plugins: exact paired qualification artifacts ─────────────────────────────
 log "[$CELL] install plugins"
-sync_plugin_src "$WP_DIR"
-mkdir -p "$WP_DIR/wp-content/plugins/.pro"; cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.json" || { fail 'Free artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.json" || { fail 'Pro artifact rejected'; exit 1; }
+sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
+mkdir -p "$WP_DIR/wp-content/plugins/.pro"
+cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 
 wpc plugin activate wp-slimstat                                            >"$ART/activate.log" 2>&1 || fail "free activate failed"
@@ -232,5 +238,7 @@ if [ -f "$LOG" ]; then
   fi
 fi
 
+verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json" || fail 'installed Free shipping bytes changed'
+verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WP_DIR/wp-content/plugins" >"$ART/pro-installed.json" || fail 'installed Pro shipping bytes changed'
 runtime_checks_complete=true
 [ "$status" = "PASS" ] && exit 0 || exit 1

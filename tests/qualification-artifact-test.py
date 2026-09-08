@@ -53,13 +53,13 @@ print('PASS: embedded Python syntax in artifact, seed and interruption harnesses
 # Inspect generated engine arguments without starting Docker. A caller's explicit overlay wins.
 import os
 artifact_inputs = ['QUALIFICATION_FREE_ZIP', 'QUALIFICATION_FREE_SHA256', 'QUALIFICATION_PRO_ZIP', 'QUALIFICATION_PRO_SHA256']
-for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh']:
+for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh', 'run-cell.sh', 'run-topology.sh', 'run-matrix.sh']:
     for missing in artifact_inputs:
         env = dict(os.environ, **{name: 'fixture' for name in artifact_inputs})
         env.pop(missing)
         refused = subprocess.run(['bash', str(helper.parent / script)], env=env, capture_output=True)
         assert refused.returncode != 0 and missing.encode() in refused.stderr, (script, missing, refused.stderr)
-print('PASS: network/lifecycle qualification refuses each missing paired artifact input before Docker')
+print('PASS: network/lifecycle/matrix/topology qualification refuses each missing paired artifact input before Docker')
 # Execute the actual optional-flag call under the platform Bash nounset mode.
 with tempfile.TemporaryDirectory() as temp:
     for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh']:
@@ -115,3 +115,23 @@ with tempfile.TemporaryDirectory() as temp:
         if collision == 'output':
             assert output.read_bytes() == b'preserved'
 print('PASS: corpus preparation preserves existing output and refuses container/volume collisions')
+
+# Standalone cells refuse previous evidence, even when no Docker resources remain.
+with tempfile.TemporaryDirectory() as temp:
+    root = pathlib.Path(temp)
+    fake = root / 'docker'
+    fake.write_text('#!/bin/sh\n[ "$1" = ps ] && exit 0\n[ "$1" = volume ] && exit 0\nexit 1\n')
+    fake.chmod(0o755)
+    for script, args, relative in [
+        ('run-cell.sh', ['8.2', '6.7', '19877', '14877'], 'cells/php8.2-wp6.7'),
+        ('run-topology.sh', ['A', '19877', '14877'], 'topologies/topology-A'),
+    ]:
+        evidence = root / relative
+        evidence.mkdir(parents=True)
+        marker = evidence / 'previous.json'
+        marker.write_text('preserve')
+        env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH'], WORK_ROOT=str(root), **{name: 'fixture' for name in artifact_inputs})
+        result = subprocess.run(['bash', str(helper.parent / script), *args], env=env, capture_output=True)
+        assert result.returncode != 0 and b'evidence directory already exists' in result.stdout, result.stderr
+        assert marker.read_text() == 'preserve'
+print('PASS: standalone matrix/topology cells preserve previous evidence')

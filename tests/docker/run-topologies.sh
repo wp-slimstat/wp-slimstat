@@ -22,15 +22,19 @@ HTTP_BASE="${TOPOLOGY_HTTP_BASE:-18900}"
 DB_BASE="${TOPOLOGY_DB_BASE:-13900}"
 CONCURRENCY="${CONCURRENCY:-2}"
 
+mkdir -p "$WORK_ROOT"
+WORK_ROOT=$(mktemp -d "$WORK_ROOT/topologies.XXXXXXXX")
+export WORK_ROOT
+mkdir -p "$WORK_ROOT/logs"
+
 i=0
 running=0
 
 for t in "${TOPOLOGIES[@]}"; do
   i=$((i + 1))
-  mkdir -p "$WORK_ROOT/topologies/topology-$t/artifacts"
   log "launching $t (http $((HTTP_BASE + i)), db $((DB_BASE + i)))"
   bash "$HERE/run-topology.sh" "$t" $((HTTP_BASE + i)) $((DB_BASE + i)) \
-    > "$WORK_ROOT/topologies/topology-$t/run.log" 2>&1 &
+    > "$WORK_ROOT/logs/topology-$t.log" 2>&1 &
   running=$((running + 1))
   if [ "$running" -ge "$CONCURRENCY" ]; then wait -n 2>/dev/null || wait; running=$((running - 1)); fi
 done
