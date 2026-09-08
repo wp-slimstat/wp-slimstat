@@ -726,12 +726,17 @@ class wp_slimstat_db
                 switch ($a_filter[1]) {
                     case 'strtotime':
                         $custom_date = strtotime($a_filter[3], wp_slimstat::now());
+                        if (false === $custom_date) {
+                            break;
+                        }
 
-                        $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
-                        $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
-                        $filters_parsed['date']['day']    = intval(date('j', $custom_date));
-                        $filters_parsed['date']['month']  = intval(date('n', $custom_date));
-                        $filters_parsed['date']['year']   = intval(date('Y', $custom_date));
+                        // The legacy clock already contains the site offset; never apply it twice.
+
+                        $filters_parsed['date']['minute'] = intval(gmdate('i', $custom_date));
+                        $filters_parsed['date']['hour']   = intval(gmdate('H', $custom_date));
+                        $filters_parsed['date']['day']    = intval(gmdate('j', $custom_date));
+                        $filters_parsed['date']['month']  = intval(gmdate('n', $custom_date));
+                        $filters_parsed['date']['year']   = intval(gmdate('Y', $custom_date));
                         break;
 
                     case 'minute':

@@ -1,7 +1,7 @@
 <?php
 // Execute the real shared request parser; isolate date normalization and SQL reads.
 require __DIR__ . '/lib/source-scan.php';
-class wp_slimstat { public static $settings = ['geolocation_country' => 'off', 'restrict_authors_view' => 'on']; }
+class wp_slimstat { public static function now() { return 1767227400; } public static $settings = ['geolocation_country' => 'off', 'restrict_authors_view' => 'on']; }
 function __($text, $domain) { return $text; }
 function apply_filters($hook, $value) { return $value; }
 function sanitize_key($value) { return is_scalar($value) ? strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', (string) $value)) : ''; }
@@ -40,3 +40,19 @@ foreach (['hour equals 0', "browser equals O'Brien", 'country equals gb', 'resou
 }
 if (7 !== wp_slimstat_db::$pageviews) { throw new RuntimeException('Report initialization skipped'); }
 echo "PASS: malformed request shapes ignored without fatal errors; valid zero, custom, author and explicit filters preserved\n";
+
+// Run the shared date parser too: valid wall-clock dates survive, malformed dates do not become 1970.
+$parse_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'), 'parse_filters');
+eval('class DateParser extends wp_slimstat_db { const NON_COLUMN_FILTER_KEYS = ["strtotime"]; public static $valueless_operators = []; public static function parse_filters($_filters_raw) {' . $parse_body . '} }');
+DateParser::$all_columns_names = ['strtotime' => 'Date'];
+$original_zone = date_default_timezone_get();
+date_default_timezone_set('UTC'); // WordPress core configures UTC; wp_slimstat::now already contains the site offset.
+try {
+    $valid = DateParser::parse_filters('strtotime equals 2026-01-02 03:04:00');
+    if ($valid['date'] !== ['minute' => 4, 'hour' => 3, 'day' => 2, 'month' => 1, 'year' => 2026]) { throw new RuntimeException('Valid wall-clock date changed'); }
+    $relative = DateParser::parse_filters('strtotime equals yesterday');
+    if ($relative['date']['year'] !== 2025 || $relative['date']['day'] !== 31 || $relative['date']['month'] !== 12) { throw new RuntimeException('Relative year boundary changed'); }
+    $invalid = DateParser::parse_filters('strtotime equals invalid-date-fixture');
+    if ($invalid['date'] !== []) { throw new RuntimeException('Invalid date became an epoch filter'); }
+} finally { date_default_timezone_set($original_zone); }
+echo "PASS: date filters preserve legacy site clock and reject unparseable dates\n";
