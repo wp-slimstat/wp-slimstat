@@ -276,11 +276,11 @@ b=0
 while [ "$b" -lt "$BLOCKS" ]; do
   # A-B-B-A: even blocks lead with BEFORE, odd blocks lead with AFTER.
   if [ $((b % 2)) -eq 0 ]; then
-    answers_for "$BEFORE" "$ART/before.json" || exit 1 || exit 1
-    answers_for "$AFTER"  "$ART/after.json" || exit 1 || exit 1
+    answers_for "$BEFORE" "$ART/before.json" || exit 1
+    answers_for "$AFTER"  "$ART/after.json" || exit 1
   else
-    answers_for "$AFTER"  "$ART/after.json"
-    answers_for "$BEFORE" "$ART/before.json"
+    answers_for "$AFTER"  "$ART/after.json" || exit 1
+    answers_for "$BEFORE" "$ART/before.json" || exit 1
   fi
   b=$((b + 1))
 done

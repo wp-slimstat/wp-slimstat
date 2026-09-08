@@ -51,3 +51,13 @@ with tempfile.TemporaryDirectory() as temp:
     (installed / 'wp-slimstat-pro/wp-slimstat-pro.php').write_text('changed shipping bytes')
     assert run(data, installed, mode=['--verify-installed', 'after']).returncode != 0
 print('PASS: exact paired comparison artifacts, identity/hash prerequisites, null pairing and installed tamper control')
+
+# Exercise the real interleaved loop: any arm failure must stop every block.
+loop_source = (pathlib.Path(__file__).parent / 'docker/compare-answers.sh').read_text()
+loop = loop_source[loop_source.index('b=0\nwhile '):loop_source.index('# ── CONTROLS, before any result')]
+for fail_call in range(1, 9):
+    harness = 'set -u\nBLOCKS=4\nBEFORE=old\nAFTER=new\nART=/tmp\nn=0\n'
+    harness += 'answers_for() { n=$((n+1)); echo "$n"; [ "$n" -ne ' + str(fail_call) + ' ]; }\n'
+    result = subprocess.run(['bash', '-c', harness + loop], capture_output=True, text=True)
+    assert result.returncode != 0 and result.stdout.splitlines() == [str(n) for n in range(1, fail_call + 1)], result
+print('PASS: all eight interleaved capture positions stop on failure')
