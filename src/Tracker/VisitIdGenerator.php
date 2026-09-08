@@ -25,41 +25,18 @@ class VisitIdGenerator
     /**
      * Generate the next visit ID atomically.
      *
-     * The counter row is created once and then incremented with a single
-     * INSERT ... ON DUPLICATE KEY UPDATE statement. WordPress exposes the
-     * LAST_INSERT_ID() value through $wpdb->insert_id for INSERT statements.
+     * The counter is seeded before use and incremented with one atomic UPDATE.
+     * Native WordPress mysqli connections expose LAST_INSERT_ID without a query.
      *
      * @return int The next unique visit ID
      */
     public static function generateNextVisitId(): int
     {
-        $created  = false;
-        $visit_id = self::runAtomicIncrement($created);
-
-        // The increment tells us whether the counter already existed, so nothing needs to
-        // look it up first. That lookup used to run unconditionally — a
-        // `SELECT COUNT(*) FROM wp_options` on every single tracked hit, to answer a
-        // question the very next statement answers for free.
-        //
-        // It cannot simply be dropped: a counter created from nothing starts at 1, and
-        // reissuing visit ID 1 on a site that already holds millions would attach a new
-        // visitor to an existing visit's history. So when the row turns out to be new,
-        // reseed past everything stored and take a fresh number. Once per install.
-        //
-        // Both signals are required. `rows_affected` alone is not a safe "inserted" flag:
-        // a connection opened with CLIENT_FOUND_ROWS (wpdb passes MYSQL_CLIENT_FLAGS
-        // straight through) reports *matched* rows, so an ON DUPLICATE KEY UPDATE also
-        // returns 1 — and this branch would then fire on every hit, reseeding the counter
-        // and turning one query into six. A genuine insert stores LAST_INSERT_ID(1) and so
-        // always yields exactly 1; an update yields option_value + 1.
-        if (1 === $visit_id && $created) {
-            self::resetCounter(self::getInitialCounterValue());
-            $visit_id = self::runAtomicIncrement();
-        }
+        $visit_id = self::runAtomicIncrement();
 
         if ($visit_id <= 0) {
-            // The statement failed outright. Seeding is idempotent — add_option() no-ops
-            // when the row is already there — so it doubles as the repair path.
+            // A missing counter is seeded before any ID can be issued. INSERT IGNORE
+            // preserves a concurrent initializer's counter rather than resetting it.
             self::initializeCounter();
             $visit_id = self::runAtomicIncrement();
         }
@@ -75,7 +52,7 @@ class VisitIdGenerator
      * Initialize the counter with the current maximum visit_id from the stats table.
      *
      * Called on plugin activation, and as the repair path when an increment fails.
-     * Idempotent: an existing row is left alone and its current value returned.
+     * INSERT IGNORE leaves an existing row alone, including racing initializers.
      *
      * @return int The initialized counter value
      */
@@ -83,13 +60,17 @@ class VisitIdGenerator
     {
         $initial_value = self::getInitialCounterValue();
 
-        $added = add_option(self::OPTION_NAME, $initial_value, '', 'no');
+        global $wpdb;
+        $added = $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)",
+            self::OPTION_NAME,
+            $initial_value,
+            'no'
+        ));
+        wp_cache_delete(self::OPTION_NAME, 'options');
+        wp_cache_delete('notoptions', 'options');
 
-        if (! $added) {
-            return (int) get_option(self::OPTION_NAME, $initial_value);
-        }
-
-        return $initial_value;
+        return 1 === $added ? $initial_value : (int) get_option(self::OPTION_NAME, $initial_value);
     }
 
     /**
@@ -158,39 +139,28 @@ class VisitIdGenerator
         return update_option(self::OPTION_NAME, max($value, 0), false);
     }
 
-    /**
-     * Run the atomic increment query and return the incremented value.
-     *
-     * @param-out bool $created
-     *
-     * @param bool|null $created Set to true when the statement created the counter row
-     *                           rather than bumping it, as reported by the affected-row
-     *                           count: 1 for an insert, 2 for an update that changed the
-     *                           row (0 if it changed nothing, which cannot happen here
-     *                           because the value always moves). See generateNextVisitId()
-     *                           for why this signal is corroborated rather than trusted.
-     * @return int The incremented visit ID, or 0 on failure
-     */
-    private static function runAtomicIncrement(?bool &$created = null): int
+    /** Increment an existing counter; a missing row cannot issue an unseeded ID. */
+    private static function runAtomicIncrement(): int
     {
         global $wpdb;
 
         $result = $wpdb->query($wpdb->prepare(
-            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload)
-            VALUES (%s, LAST_INSERT_ID(%d), %s)
-            ON DUPLICATE KEY UPDATE option_value = LAST_INSERT_ID(option_value + 1)",
-            self::OPTION_NAME,
-            1,
-            'no'
+            "UPDATE {$wpdb->options} SET option_value = LAST_INSERT_ID(option_value + 1) WHERE option_name = %s",
+            self::OPTION_NAME
         ));
-
-        $created = (1 === (int) $wpdb->rows_affected);
-
-        if (false === $result) {
+        if (false === $result || 0 === (int) $result) {
             return 0;
         }
 
-        return (int) $wpdb->insert_id;
+        // wpdb only updates its public insert_id for INSERT/REPLACE. The mysqli
+        // connection exposes UPDATE's LAST_INSERT_ID without another query.
+        $dbh = $wpdb->dbh ?? null;
+        if ($dbh instanceof \mysqli) {
+            return (int) mysqli_insert_id($dbh);
+        }
+
+        // Non-mysqli database drop-ins retain correctness with one extra read.
+        return (int) $wpdb->get_var('SELECT LAST_INSERT_ID()');
     }
 
     /**
