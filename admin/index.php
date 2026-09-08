@@ -2218,7 +2218,7 @@ class wp_slimstat_admin
         }
 
         foreach ($GLOBALS['wp_query']->posts as $a_post) {
-            self::$data_for_column['url'][$a_post->ID] = parse_url(get_permalink($a_post->ID));
+            self::$data_for_column['url'][$a_post->ID] = wp_parse_url(get_permalink($a_post->ID));
             self::$data_for_column['url'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID]['path'] . (empty(self::$data_for_column['url'][$a_post->ID]['query']) ? '' : '?' . self::$data_for_column['url'][$a_post->ID]['query']);
             self::$data_for_column['sql'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID] . '%';
         }
@@ -3163,7 +3163,7 @@ class wp_slimstat_admin
         $today_start     = strtotime('today', current_time('timestamp'));
         $yesterday_start = $today_start - DAY_IN_SECONDS;
         $yesterday_end   = $today_start - 1;
-        $site_host       = parse_url(home_url(), PHP_URL_HOST);
+        $site_host       = wp_parse_url(home_url(), PHP_URL_HOST);
         $referer_like    = '%' . $wpdb->esc_like((string) $site_host) . '%';
 
         // Sessions + views: 1 query instead of 4, using conditional aggregates.

@@ -189,7 +189,7 @@ class wp_slimstat_reports
                     'as_column'    => 'referer',
                     'filter_op'    => 'contains',
                     'where'        => 'referer NOT LIKE %s',
-                    'where_params' => ['%' . str_replace('www.', '', parse_url(home_url(), PHP_URL_HOST)) . '%'],
+                    'where_params' => ['%' . str_replace('www.', '', wp_parse_url(home_url(), PHP_URL_HOST)) . '%'],
                     'raw'          => ['wp_slimstat_db', 'get_top'],
                 ],
                 'classes'   => ['normal'],
@@ -1610,7 +1610,7 @@ class wp_slimstat_reports
                 if ('resource' == $_args['columns'] && !empty($_args['where']) && false === strpos($_args['where'], '404')) {
                     $base_url = '';
                     if (isset($results[$i]['blog_id'])) {
-                        $base_url = parse_url(get_site_url($results[$i]['blog_id']));
+                        $base_url = wp_parse_url(get_site_url($results[$i]['blog_id']));
                         $base_url = $base_url['scheme'] . '://' . $base_url['host'];
                     }
                     $element_value = '<a target="_blank" class="slimstat-font-logout" title="' . esc_attr(__('Open this URL in a new window', 'wp-slimstat')) . '" href="' . esc_url($base_url . $results[$i]['resource']) . '"></a> ' . esc_html($base_url) . $element_value;
@@ -2395,7 +2395,7 @@ class wp_slimstat_reports
             // admin's own site, which is the wrong site for every subsite row.
             $base_url = '';
             if (isset($a_result['blog_id'])) {
-                $parsed   = parse_url(get_site_url($a_result['blog_id']));
+                $parsed   = wp_parse_url(get_site_url($a_result['blog_id']));
                 $base_url = $parsed['scheme'] . '://' . $parsed['host'];
             }
 
@@ -2436,7 +2436,7 @@ class wp_slimstat_reports
     {
         // Remove Alexa ranking code and references
         $options  = ['timeout' => 30, 'headers' => ['Accept' => 'application/json']];
-        $site_url = parse_url(home_url(), PHP_URL_HOST);
+        $site_url = wp_parse_url(home_url(), PHP_URL_HOST);
         if (!empty(wp_slimstat_db::$filters_normalized['resource']) && 'equals' == wp_slimstat_db::$filters_normalized['resource'][0]) {
             $site_url .= wp_slimstat_db::$filters_normalized['resource'][1];
         }

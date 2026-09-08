@@ -241,7 +241,7 @@ class Processor
 
 
             $stat['searchterms'] = Utils::getSearchTerms($stat['referer']);
-            $parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
+            $parsed_site_url = wp_parse_url(get_site_url(), PHP_URL_HOST);
             if (isset($parsed_url['host']) && ('' !== $parsed_url['host'] && '0' !== $parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != \wp_slimstat::$settings['track_same_domain_referers']) {
                 unset($stat['referer']);
             }

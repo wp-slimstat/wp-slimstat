@@ -212,8 +212,8 @@ class Ajax
         $data_js   = \wp_slimstat::get_data_js();
         $stat      = \wp_slimstat::get_stat();
 
-        $site_host = parse_url(get_site_url(), PHP_URL_HOST);
-        $home_host = parse_url(home_url(), PHP_URL_HOST);
+        $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
+        $home_host = wp_parse_url(home_url(), PHP_URL_HOST);
         $http_host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
         $allowed_hosts = array_filter([$site_host, $home_host, $http_host]);
         $normalize_host = static function ($host) {
@@ -318,7 +318,7 @@ class Ajax
                     $parsed_resource = parse_url($resource ?: '');
 
                     // Security: Validate host is from current site domain
-                    $site_host = parse_url(get_site_url(), PHP_URL_HOST);
+                    $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
                     if (false !== $parsed_resource && !empty($parsed_resource['host'])) {
                         // Security: Whitelist validation - only allow current site domain
                         if (!$is_allowed_host($parsed_resource['host'])) {

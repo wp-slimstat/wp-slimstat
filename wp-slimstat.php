@@ -1620,7 +1620,7 @@ class wp_slimstat
             $params['ajaxurl'] = $rest_url;
         }
 
-        $baseurl           = parse_url(get_home_url());
+        $baseurl           = wp_parse_url(get_home_url());
         $params['baseurl'] = empty($baseurl['path']) ? '/' : $baseurl['path'];
 
         if (!empty(self::$settings['do_not_track_outbound_classes_rel_href'])) {
