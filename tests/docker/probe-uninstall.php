@@ -65,6 +65,10 @@ if ('seed' === $mode) {
                 $execute($db, "INSERT IGNORE INTO `$table` VALUES (42)");
             }
         }
+        update_user_meta(1, $wpdb->prefix . 'metaboxhidden_slimstat_page_slimlayout', 'owned-layout');
+        foreach (['other_meta-box-order_slimstat_page_slimlayout', 'metaboxhidden_slimstat_page_slimlayout_other', 'closedpostboxesXslimstat_page_slimlayout'] as $near) {
+            update_user_meta(1, $wpdb->prefix . $near, 'unrelated-layout-' . $blogId);
+        }
         $settings = ['is_tracking' => 'on', 'addon_heatmap_enable' => 'on', 'addon_licenses' => 'fixture',
             'addon_custom_db_dbhost' => 'analytics-db:3306', 'addon_custom_db_dbname' => 'analytics',
             'addon_custom_db_dbuser' => 'root', 'addon_custom_db_dbpass' => 'root'];
@@ -108,8 +112,12 @@ foreach ($blogs as $blogId) {
     $settings = get_option('slimstat_options', null);
     $scheduled = static function (array $hooks): array { $state = []; foreach ($hooks as $hook) { $state[$hook] = false !== wp_next_scheduled($hook); } return $state; };
     $snapshot['blogs'][(string) $blogId] = ['settings' => is_array($settings), 'credentials' => $credentials($settings),
+        'layout_metadata' => '' !== get_user_meta(1, $wpdb->prefix . 'metaboxhidden_slimstat_page_slimlayout', true),
         'free_setting' => $settings['is_tracking'] ?? null, 'pro_setting' => isset($settings['addon_heatmap_enable']),
         'free_cron' => $scheduled($freeHooks), 'pro_cron' => $scheduled($proHooks)];
+    foreach (['other_meta-box-order_slimstat_page_slimlayout', 'metaboxhidden_slimstat_page_slimlayout_other', 'closedpostboxesXslimstat_page_slimlayout'] as $near) {
+        $snapshot['sentinels']['usermeta.' . $blogId . '.' . $near] = get_user_meta(1, $wpdb->prefix . $near, true);
+    }
     $snapshot['sentinels']['cron.' . $blogId] = wp_next_scheduled('unrelated_rehearsal_cron');
     restore_current_blog();
 }

@@ -25,7 +25,7 @@ function slimstat_uninstall_compare(array $before, array $after, string $mode, s
         foreach ($blog as $key => $value) {
             $expected = $value;
             if (in_array($mode, ['keep', 'delete'], true) && in_array($key, ['credentials', 'free_cron'], true)) { $expected = false; }
-            if ('delete' === $mode && in_array($key, ['settings', 'pro_setting'], true)) { $expected = false; }
+            if ('delete' === $mode && in_array($key, ['settings', 'pro_setting', 'layout_metadata'], true)) { $expected = false; }
             if ('delete' === $mode && 'free_setting' === $key) { $expected = null; }
             if ('pro' === $mode && in_array($key, ['pro_setting', 'pro_cron'], true)) { $expected = false; }
             if (false === $expected && is_array($value)) { $expected = array_fill_keys(array_keys($value), false); }

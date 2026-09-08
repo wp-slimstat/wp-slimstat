@@ -4,7 +4,7 @@ $oracle = __DIR__ . '/docker/uninstall-oracle.php';
 if (!is_file($oracle)) { fwrite(STDERR, "FAIL: uninstall oracle absent\n"); exit(1); }
 require $oracle;
 $before = ['tables' => ['local' => ['owned' => 'row-hash'], 'external' => ['owned' => 'row-hash']],
-    'sentinels' => ['unrelated' => 'sentinel-hash'], 'blogs' => ['1' => ['settings' => true, 'credentials' => true,
+    'sentinels' => ['unrelated' => 'sentinel-hash'], 'blogs' => ['1' => ['settings' => true, 'layout_metadata' => true, 'credentials' => true,
     'free_setting' => 'on', 'pro_setting' => true, 'free_cron' => ['first' => true, 'second' => true], 'pro_cron' => ['pro' => true]]],
     'network_credentials' => true, 'network_free_setting' => 'on', 'network_pro_setting' => true,
     'files' => ['geo' => 'geo-hash', 'cache' => 'cache-hash', 'unrelated' => 'sentinel-hash'],
@@ -30,6 +30,7 @@ foreach (['credential', 'data', 'sentinel', 'hook', 'partial-cron'] as $control)
 $deleted = $after;
 $deleted['tables']['external']['owned'] = null;
 $deleted['blogs']['1']['settings'] = false;
+$deleted['blogs']['1']['layout_metadata'] = false;
 $deleted['blogs']['1']['free_setting'] = null;
 $deleted['blogs']['1']['pro_setting'] = false;
 $deleted['files']['geo'] = null;
@@ -54,7 +55,7 @@ $proAfter['network_pro_setting'] = false;
 $assert([] === slimstat_uninstall_compare($proBefore, $proAfter, 'pro', 'external', true), 'validate intermediate Pro uninstall');
 $final = $proAfter;
 $final['tables']['external']['owned'] = null;
-$final['blogs']['1'] = ['settings' => false, 'credentials' => false, 'free_setting' => null,
+$final['blogs']['1'] = ['settings' => false, 'layout_metadata' => false, 'credentials' => false, 'free_setting' => null,
     'pro_setting' => false, 'free_cron' => ['first' => false, 'second' => false], 'pro_cron' => ['pro' => false]];
 $final['network_credentials'] = false;
 $final['files']['geo'] = null;

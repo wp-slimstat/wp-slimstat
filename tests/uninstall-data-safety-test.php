@@ -182,6 +182,7 @@ if ($case !== false && $case !== '') {
         public $prefix      = 'wp_';
         public $base_prefix = 'wp_';
         public $options     = 'wp_options';
+        public $usermeta    = 'wp_usermeta';
         public $blogs       = 'wp_blogs';
         public $siteid      = 1;
         public $queries     = [];
@@ -432,6 +433,30 @@ function run_case($case)
 
 // The cron hooks themselves are pinned statically by cron-hook-cleanup-test.php;
 // here we only prove the clearing path is REACHED on each of the three routes.
+
+// Inspect the SQL produced by the real uninstall execution against owned and near-match keys.
+$layout_result = run_case('on');
+$layout_pattern = null;
+foreach ($layout_result['sql'] as $sql) {
+    if (preg_match("/^DELETE FROM wp_usermeta WHERE meta_key REGEXP '([^']+)'$/", $sql, $match)) {
+        $layout_pattern = $match[1];
+    }
+}
+assert_true(is_string($layout_pattern), 'layout deletion uses the core usermeta table and a bound owned-key pattern');
+foreach ([
+    'meta-box-order_slimstat_page_slimlayout' => true,
+    'wp_metaboxhidden_admin_page_slimview1' => true,
+    'closedpostboxes_slimstat_page_slimlayout-network' => true,
+    'mmetaboxhidden_admin_page_slimlayout' => true,
+    'screen_layout_slimstat_page_slimview' => true,
+    'another_meta-box-order_slimstat_page_slimlayout' => false,
+    'meta-box-order_slimstat_page_slimlayout_unrelated' => false,
+    'metaboxhiddenXslimstat_page_slimlayout' => false,
+    'wp_2_meta-box-order_slimstat_page_slimlayout' => false,
+    'meta-box-order_dashboard' => false,
+] as $key => $owned) {
+    assert_same($owned, 1 === preg_match('~' . $layout_pattern . '~D', $key), 'layout ownership: ' . $key);
+}
 
 // Cases 1 & 2 — no opt-in. `absent` is the #327 population (never saved the
 // Maintenance tab); `no` is what the toggle actually writes when switched off.
@@ -722,7 +747,7 @@ assert_true(
 // compares the SETS, so a step added to one branch has to be accounted for without anyone
 // editing this file.
 $multisite_block = (string) strstr(
-    (string) strstr($uninstall_src, 'foreach ($blogids as $blog_id) {'),
+    (string) strstr($uninstall_src, 'foreach ($slimstat_blogids as $blog_id) {'),
     'restore_current_blog();',
     true
 );
