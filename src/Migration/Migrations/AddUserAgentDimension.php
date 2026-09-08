@@ -217,7 +217,7 @@ class AddUserAgentDimension extends AbstractMigration
             // INSERT IGNORE: if two passes race, or a previous run already inserted this tuple,
             // the loser is a no-op. No read, no lock, no retry — the same property that makes
             // the derived key worth having.
-            $this->wpdb->query($this->wpdb->prepare(
+            if (false === $this->wpdb->query($this->wpdb->prepare(
                 "INSERT IGNORE INTO `{$dimension}`
                     (ua_id, browser, browser_version, browser_type, platform, first_seen)
                  VALUES (%s, %s, %s, %d, %s, %d)",
@@ -227,7 +227,9 @@ class AddUserAgentDimension extends AbstractMigration
                 (int) $row['browser_type'],
                 $row['platform'],
                 time()
-            ));
+            ))) {
+                return false;
+            }
 
             // Stamp every fact row sharing this tuple. Bounded by the tuple, not the table.
             //
@@ -257,10 +259,12 @@ class AddUserAgentDimension extends AbstractMigration
                 $args[]  = $value;
             }
 
-            $this->wpdb->query($this->wpdb->prepare(
+            if (false === $this->wpdb->query($this->wpdb->prepare(
                 "UPDATE `{$stats}` SET ua_id = %s WHERE " . implode(' AND ', $where),
                 $args
-            ));
+            ))) {
+                return false;
+            }
 
             $stamped += max(0, (int) $this->wpdb->rows_affected);
         }
