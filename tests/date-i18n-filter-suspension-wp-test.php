@@ -2,6 +2,10 @@
 /** Run with wp eval-file in a disposable site with the candidate plugin active. */
 if (PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') { http_response_code(403); exit(1); }
 if (!class_exists('WP_Hook') || !class_exists('wp_slimstat')) { fwrite(STDERR, "Load WordPress and the candidate plugin with wp eval-file.\n"); exit(2); }
+if (!class_exists('wp_slimstat_db')) {
+    require_once dirname((new ReflectionClass('wp_slimstat'))->getFileName()) . '/admin/view/wp-slimstat-db.php';
+}
+if (!class_exists('wp_slimstat_db')) { fwrite(STDERR, "Candidate report database class is unavailable.\n"); exit(2); }
 
 $calls = [];
 $object = new class($calls) {
@@ -72,16 +76,23 @@ try {
 $assert_restored('filter parsing exception path');
 
 $saved_settings = wp_slimstat::$settings;
+$saved_columns = wp_slimstat_db::$all_columns_names;
 wp_slimstat::$settings['limit_results'] = 10;
 wp_slimstat::$settings['use_current_month_timespan'] = 'off';
-wp_slimstat::$settings['posts_column_day_interval'] = [];
+wp_slimstat::$settings['posts_column_day_interval'] = 30;
+wp_slimstat_db::$all_columns_names['interval_hours'] = ['Interval hours', 'int'];
+$init_exception = new RuntimeException('initialization exception');
+$throwing_bucket = static function () use ($init_exception) { throw $init_exception; };
+add_filter('slimstat_live_window_bucket_seconds', $throwing_bucket);
 try {
-    wp_slimstat_db::init_filters('');
+    wp_slimstat_db::init_filters('interval_hours equals -1');
     throw new RuntimeException('filter initialization exception control did not throw');
-} catch (TypeError $caught) {
-    // abs(array) deliberately throws after the date_i18n registry is suspended.
+} catch (RuntimeException $caught) {
+    if ($caught !== $init_exception) { throw $caught; }
 } finally {
+    remove_filter('slimstat_live_window_bucket_seconds', $throwing_bucket);
     wp_slimstat::$settings = $saved_settings;
+    wp_slimstat_db::$all_columns_names = $saved_columns;
 }
 $assert_restored('filter initialization exception path');
 
@@ -104,4 +115,4 @@ try {
 }
 $assert_restored('overview summary exception path');
 
-echo "PASS: real WP_Hook callbacks are suppressed and exactly restored across normal, nested, and exception paths\n";
+echo "PASS: real WP_Hook callbacks are restored across wrapper, filter parsing, initialization and overview exception paths\n";
