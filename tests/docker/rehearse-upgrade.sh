@@ -184,7 +184,7 @@ cleanup() {
   local rc=$?
   cleanup_pro_arm
   [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >"$ART/cleanup.log" 2>&1 || true
-  [ -f "$ART/cell.json" ] || write_verdict "$ART" "$CELL" "$PHP" "$WP" FAIL "rehearsal aborted with exit $rc"
+  [ -f "$ART/cell.json" ] || write_verdict "$ART" "$CELL" "$PHP" "$WP" FAIL "${reason:-rehearsal aborted with exit $rc}"
   python3 - "$ART" "$PLUGIN_SRC" "$STARTED" "$rc" "$OLD_REF" "$NEW_REF" "${PRO_RESOLVED_REF:-}" "${CANDIDATE_ZIP_HASH:-}" "${PRO_ZIP_HASH:-}" "$(digest "$DUMP")" "${OLD_ZIP_HASH:-}" <<'PYARCHIVE'
 import datetime,hashlib,json,os,pathlib,subprocess,sys
 art,source,started,rc,old,new,pro,fzip,pzip,corpus,oldzip=sys.argv[1:]; p=pathlib.Path(art); src=pathlib.Path(source)
@@ -509,7 +509,7 @@ ONLY_DUMP=$(columns_missing_from "$DUMP_COLS" "$ARM_COLS")
 if [ -z "$ONLY_ARM" ] && [ -z "$ONLY_DUMP" ]; then
   check "the corpus is the arm's own vintage" 0 "$ARM_COL_N columns, identical sets"
 else
-  check "the corpus is the arm's own vintage" 1 \
+  must "the corpus is the arm's own vintage" 1 \
         "arm-only: ${ONLY_ARM:-none}; dump-only: ${ONLY_DUMP:-none}"
 fi
 

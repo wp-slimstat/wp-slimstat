@@ -282,7 +282,7 @@ $check(
 );
 $check(
     'the verdict line exists',
-    false !== strpos($src, 'check "the corpus is the arm\'s own vintage"')
+    false !== strpos($src, 'must "the corpus is the arm\'s own vintage"')
 );
 
 $pos_control = strpos($src, 'DUMP_COLS=$(dump_columns');
