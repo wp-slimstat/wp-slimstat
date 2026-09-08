@@ -15,6 +15,11 @@ $raw = new ReflectionMethod('wp_slimstat_db', 'window_is_cacheable');
 if (PHP_VERSION_ID < 80100) { $raw->setAccessible(true); }
 $enable = new ReflectionMethod('wp_slimstat_db', 'maybe_enable_query_cache');
 if (PHP_VERSION_ID < 80100) { $enable->setAccessible(true); }
+require_once __DIR__ . '/lib/source-scan.php';
+$chart_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/src/Modules/Chart.php'), 'fetchChartData');
+// Execute the real date/quantisation path; intercept immediately before SQL generation.
+$chart_prefix = substr($chart_body, 0, strpos($chart_body, '$prevArgs ='));
+eval('class ChartClock { const DAY = 86400; const CACHE_LIVE_BUCKET_SECONDS = 60; public function window($args) {' . $chart_prefix . ' return [$isLive, $args["end"]]; } }');
 $utc_midnight = strtotime(gmdate('Y-m-d') . ' 00:00:00 UTC');
 $original = date_default_timezone_get();
 try {
@@ -24,6 +29,8 @@ try {
             wp_slimstat::$clock = $now;
             $midnight = intdiv($now, 86400) * 86400;
             foreach ([$midnight - 1 => true, $midnight => false, $now => false] as $end => $expected) {
+                $chart = (new ChartClock())->window(['end' => $end]);
+                if ($chart !== [!$expected, $expected ? $end : (int) (floor($end / 60) * 60)]) { throw new RuntimeException('Chart cache day or quantisation disagrees with site clock'); }
                 wp_slimstat_db::$filters_normalized = ['utime' => ['end' => $end]];
                 if ($raw->invoke(null) !== $expected) { throw new RuntimeException('Raw cache disagrees with site wall-clock day'); }
                 $query = new SlimStat\Utils\Query();

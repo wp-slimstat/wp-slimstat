@@ -1895,7 +1895,7 @@ class wp_slimstat_admin
      * @since 5.6.0
      * @return bool
      */
-    private static function can_view_stats()
+    public static function can_view_stats()
     {
         return current_user_can(self::stats_view_capability());
     }
