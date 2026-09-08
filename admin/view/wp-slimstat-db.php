@@ -7,7 +7,7 @@ use SlimStat\Components\DateRangeHelper;
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
 {
-    // Per-request memo of the fact table's ACTUAL columns, keyed by table prefix
+    // Per-request memo of the fact table's ACTUAL columns, keyed by database and table prefix
     // (multisite: switch_to_blog changes the prefix mid-request). `true` means the
     // probe could not read and the manifest is assumed. Never durable on purpose —
     // a transient would survive the migration that adds the column and keep
@@ -2168,7 +2168,7 @@ class wp_slimstat_db
     /**
      * Does the fact table in front of us actually have this column?
      *
-     * One SHOW COLUMNS per request per prefix, memoised in $fact_columns_present —
+     * One SHOW COLUMNS per request per database/prefix, memoised in $fact_columns_present —
      * not per funnel step, not per query. Runs on the analytics handle
      * (wp_slimstat::$wpdb) because that is the connection every caller of
      * visitor_id_expr() queries; under an external DB (C44) probing the WordPress
@@ -2187,7 +2187,9 @@ class wp_slimstat_db
     {
         $prefix = $GLOBALS['wpdb']->prefix;
 
-        if (!array_key_exists($prefix, self::$fact_columns_present)) {
+        $db = wp_slimstat::$wpdb;
+        $key = (is_object($db) ? spl_object_hash($db) : 'unavailable') . ':' . $prefix;
+        if (!array_key_exists($key, self::$fact_columns_present)) {
             // BOTH preconditions guarded, not just the class: this file also runs
             // inside bare-PHP test harnesses and half-booted sites where the
             // autoloader is absent (#325) — and columnState() type-hints wpdb, so a
@@ -2200,13 +2202,15 @@ class wp_slimstat_db
 
             // A readable slim_stats always reports columns (id at minimum), so an
             // empty `present` means the probe could not read — assume the manifest.
-            self::$fact_columns_present[$prefix] = [] === $state['present']
-                ? true
-                : array_flip($state['present']);
+            // Keep the handle alive so PHP cannot reuse its hash for another database.
+            self::$fact_columns_present[$key] = [
+                'db' => $db,
+                'columns' => [] === $state['present'] ? true : array_flip($state['present']),
+            ];
         }
 
-        return true === self::$fact_columns_present[$prefix]
-            || isset(self::$fact_columns_present[$prefix][$column]);
+        return true === self::$fact_columns_present[$key]['columns']
+            || isset(self::$fact_columns_present[$key]['columns'][$column]);
     }
 
     /**

@@ -1057,4 +1057,14 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertSame('2.00 KB', \wp_slimstat_db::get_data_size());
     }
 
+    public function test_same_prefix_on_another_database_uses_its_actual_columns(): void
+    {
+        $first = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $this->assertStringContainsString('vid_hash', $first);
+        $second = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource']);
+        $this->assertStringNotContainsString('vid_hash', $second);
+        $this->assertStringNotContainsString('fingerprint', $second);
+        $this->assertSame($second, $this->invokeVisitorIdExpr());
+    }
+
 }
