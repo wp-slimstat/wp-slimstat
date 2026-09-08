@@ -36,6 +36,12 @@ if (!function_exists('wp_strip_all_tags')) {
         return strip_tags((string) $text);
     }
 }
+if (!function_exists('wp_parse_url')) {
+    function wp_parse_url($url, $component = -1)
+    {
+        return parse_url((string) $url, $component);
+    }
+}
 
 // ── WordPress constants needed by source files ────────────────────────────
 if (!defined('DAY_IN_SECONDS')) {
