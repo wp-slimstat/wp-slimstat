@@ -181,7 +181,7 @@ fi # committed-source or immutable-artifact preparation
 log "[$CELL] build + up"
 boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
 
-wpc core download --version="$WP" --force > "$ART/install.log" 2>&1 || { err "core download failed"; exit 1; }
+stage_wp_core "$ART" "$WP" || exit 1
 wp_config_debug "$ART/install.log"
 wpc core install --url="http://127.0.0.1:${HTTP_PORT}" --title="SS answers" --admin_user=admin \
     --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \

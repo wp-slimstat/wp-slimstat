@@ -581,11 +581,8 @@ pro_arm_desc() {
 }
 
 # ── Shared WP cell provisioning ─────────────────────────────────────────────
-# download → config → install → free source → pro zip → both activations. The third
-# script to need this block is what got it extracted, same as build_pro_arm. Cell-specific
-# steps (posts, users, WP_DEBUG_DISPLAY) stay in the callers, after this returns.
-provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
-  local art="$1" wp="$2" base_url="$3" free_src="$4"
+stage_wp_core() { # <art> <wp_version>
+  local art="$1" wp="$2"
   if [ -n "${WP_CORE_SOURCE_DIR:-}" ]; then
     [ -d "$WP_CORE_SOURCE_DIR/wp-admin" ] && [ -f "$WP_CORE_SOURCE_DIR/wp-includes/version.php" ] \
       || { fail "local core source is incomplete"; return 1; }
@@ -600,6 +597,14 @@ provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
       || { fail "core download failed"; return 1; }
   fi
   chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
+}
+
+# download → config → install → free source → pro zip → both activations. The third
+# script to need this block is what got it extracted, same as build_pro_arm. Cell-specific
+# steps (posts, users, WP_DEBUG_DISPLAY) stay in the callers, after this returns.
+provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
+  local art="$1" wp="$2" base_url="$3" free_src="$4"
+  stage_wp_core "$art" "$wp" || return 1
   wp_config_debug "$art/install.log"
   wpc core install --url="$base_url" --title="$COMPOSE_PROJECT_NAME" --admin_user=admin \
       --admin_password=admin --admin_email=qa@example.com --skip-email >>"$art/install.log" 2>&1 \

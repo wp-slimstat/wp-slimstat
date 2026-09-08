@@ -46,6 +46,7 @@ $plugin_root = dirname(__DIR__);
 $lib         = $plugin_root . '/tests/docker/lib.sh';
 $rehearse    = $plugin_root . '/tests/docker/rehearse-upgrade.sh';
 $downgrade   = $plugin_root . '/tests/docker/downgrade-corpus.sh';
+$answers     = $plugin_root . '/tests/docker/compare-answers.sh';
 $cells_tsv   = $plugin_root . '/tests/docker/rehearsal-cells.tsv';
 $arms_sha    = $plugin_root . '/tests/docker/arms.sha256';
 $admin_php   = $plugin_root . '/admin/index.php';
@@ -120,6 +121,7 @@ $check = function (string $label, bool $ok, string $detail = '') use (&$failures
 $lib_src  = is_file($lib) ? (string) file_get_contents($lib) : '';
 $reh_src  = is_file($rehearse) ? (string) file_get_contents($rehearse) : '';
 $down_src = is_file($downgrade) ? (string) file_get_contents($downgrade) : '';
+$answers_src = is_file($answers) ? (string) file_get_contents($answers) : '';
 
 echo "SLIMSTAT-REHEARSAL-VINTAGE-CORPUS\n";
 
@@ -743,6 +745,13 @@ $check(
 $check(
     'the ordinary provision path still downloads the requested core when no source is supplied',
     false !== strpos($lib_src, 'wpc core download --version="$wp" --force')
+);
+$check(
+    'one core staging helper serves both cell provisioning and answer comparison',
+    1 === preg_match_all('/^stage_wp_core\(\)/m', $lib_src)
+        && false !== strpos($lib_src, 'stage_wp_core "$art" "$wp" || return 1')
+        && false !== strpos($answers_src, 'stage_wp_core "$ART" "$WP" || exit 1')
+        && false === strpos(vc_code_only($answers_src), 'wpc core download')
 );
 $check(
     'a serialized U1 run may use an isolated validated project without changing the default',
