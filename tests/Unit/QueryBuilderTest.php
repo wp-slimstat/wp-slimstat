@@ -1046,4 +1046,15 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
         $this->assertSame($this->recentManifest(), $this->invokeRecentColumns());
     }
+    public function test_data_size_uses_literal_table_name_on_analytics_handle(): void
+    {
+        Functions\when('number_format_i18n')->alias(static fn ($value, $decimals) => number_format($value, $decimals));
+        $analytics = Mockery::mock('wpdb');
+        $analytics->shouldReceive('esc_like')->once()->with('wp_slim_stats')->andReturn('wp\\_slim\\_stats');
+        $analytics->shouldReceive('prepare')->once()->with('SHOW TABLE STATUS LIKE %s', 'wp\\_slim\\_stats')->andReturn('prepared-exact-table');
+        $analytics->shouldReceive('get_row')->once()->with('prepared-exact-table', 'ARRAY_A', 0)->andReturn(['Data_length' => 1024, 'Index_length' => 1024]);
+        \wp_slimstat::$wpdb = $analytics;
+        $this->assertSame('2.00 KB', \wp_slimstat_db::get_data_size());
+    }
+
 }

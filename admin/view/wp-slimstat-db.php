@@ -1175,7 +1175,7 @@ class wp_slimstat_db
     {
         $suffix = 'KB';
 
-        $sql           = 'SHOW TABLE STATUS LIKE "' . $GLOBALS['wpdb']->prefix . 'slim_stats"';
+        $sql = wp_slimstat::$wpdb->prepare('SHOW TABLE STATUS LIKE %s', wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats'));
         $table_details = wp_slimstat::$wpdb->get_row($sql, 'ARRAY_A', 0);
 
         $table_size = ($table_details['Data_length'] / 1024) + ($table_details['Index_length'] / 1024);
