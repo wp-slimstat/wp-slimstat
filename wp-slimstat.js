@@ -1564,6 +1564,7 @@ var SlimStat = (function () {
         });
 
         if (!consentDecision.allowed) {
+            clearSessionState(PENDING_SESSION_KEY);
             window.sendingSlimStatPageview = false;
             delete window[requestKey];
             return;

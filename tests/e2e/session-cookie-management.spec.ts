@@ -192,19 +192,23 @@ test.describe('Session & Cookie Management — #199', () => {
     }
   });
 
-  test('pending session identity is absent before consent, in anonymous mode, and with cookies off', async ({ page, browser }) => {
+  test('pending session identity is cleared after consent revocation and in cookieless modes', async ({ page, browser }) => {
     const cases = [
-      { gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
-      { gdpr_enabled: 'on', anonymous_tracking: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
-      { gdpr_enabled: 'off', anonymous_tracking: 'off', consent_integration: '', set_tracker_cookie: 'off' },
+      { gdpr_enabled: 'on', anonymous_tracking: 'off', use_slimstat_banner: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on', denied: true },
+      { gdpr_enabled: 'on', anonymous_tracking: 'on', use_slimstat_banner: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
+      { gdpr_enabled: 'off', anonymous_tracking: 'off', use_slimstat_banner: 'off', consent_integration: '', set_tracker_cookie: 'off' },
     ];
 
-    for (const settings of cases) {
+    for (const { denied, ...settings } of cases) {
       for (const [name, value] of Object.entries({ ...settings, javascript_mode: 'on', ignore_wp_users: 'no' })) {
         await setSlimstatOption(page, name, value);
       }
       const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
       try {
+        await context.addInitScript(() => sessionStorage.setItem('slimstat_pending_session', 'a'.repeat(32)));
+        if (denied) {
+          await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'denied', url: BASE_URL }]);
+        }
         const visitor = await context.newPage();
         await visitor.goto(`${BASE_URL}/?e2e_marker=no-pending-session-${Date.now()}`, { waitUntil: 'networkidle' });
         expect(await visitor.evaluate(() => sessionStorage.getItem('slimstat_pending_session'))).toBeNull();

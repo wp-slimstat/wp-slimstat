@@ -173,6 +173,7 @@ test.describe('Cached page: stale nonce', () => {
     for (const request of [...requests, ...ajaxRequests]) {
       expect(request.headers['x-wp-nonce'], 'Fallback must preserve the authenticated request nonce').toBe('stale_nonce_from_cache_12345');
     }
+    expect(await waitForPageviewRow('cached-stale-nonce'), 'Fallback must store the anonymous cached-page hit').toBeTruthy();
 
     await ctx.close();
   });
