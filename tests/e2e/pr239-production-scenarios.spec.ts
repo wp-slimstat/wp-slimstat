@@ -133,13 +133,18 @@ test.describe('Cached page: stale nonce', () => {
   });
   test.afterEach(async () => { await restoreOptions(); });
 
-  test('admin-cached page (is_logged_in=1, stale nonce) — 403 then retry succeeds', async ({ browser }) => {
-    // Edge case: admin triggers cache build → HTML has is_logged_in='1' + stale nonce.
-    // Anonymous visitor gets this cached page. JS sees is_logged_in='1' → sends nonce
-    // → 403 (stale nonce) → retry without nonce → 200. One wasted round-trip.
-    // This is acceptable: most caches exclude logged-in users, and the retry handles it.
+  test('admin-cached stale nonce remains attached across transport fallback', async ({ browser }) => {
+    // Cached authenticated markup must not make transport recovery strip its nonce.
+    // A REST 403 may fall back to AJAX, preserving the same authentication header.
     const { ctx, page } = await anonContext(browser);
     const { requests, responses } = trackRestHits(page);
+
+    const ajaxRequests: Array<{ headers: Record<string, string> }> = [];
+    page.on('request', request => {
+      if (request.url().includes('admin-ajax.php') && (request.postData() || '').includes('action=slimtrack')) {
+        ajaxRequests.push({ headers: request.headers() });
+      }
+    });
 
     const cachedParams = {
       transport: 'rest',
@@ -163,11 +168,11 @@ test.describe('Cached page: stale nonce', () => {
     const has403 = responses.some((r) => r.status === 403);
     expect(has403, 'Stale nonce causes 403 (expected for admin-cached pages)').toBe(true);
 
-    // JS should retry — at least 2 requests
-    expect(requests.length, 'JS retries after 403').toBeGreaterThanOrEqual(2);
-
-    // First request has the stale nonce
-    expect(requests[0].headers['x-wp-nonce']).toBe('stale_nonce_from_cache_12345');
+    expect(requests.length, 'Initial REST request must be observed').toBeGreaterThan(0);
+    expect(ajaxRequests.length, 'REST rejection exercises AJAX fallback').toBeGreaterThan(0);
+    for (const request of [...requests, ...ajaxRequests]) {
+      expect(request.headers['x-wp-nonce'], 'Fallback must preserve the authenticated request nonce').toBe('stale_nonce_from_cache_12345');
+    }
 
     await ctx.close();
   });

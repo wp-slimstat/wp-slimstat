@@ -15,7 +15,7 @@ test('new anonymous contexts have no inherited WordPress authentication', async 
     expect(before.response.data.login).toBe(ADMIN_USER);
     expect(before.response.data.can_manage_options).toBe(true);
     expect(before.cookies.some(name => name.startsWith('wordpress_logged_in_'))).toBe(true);
-    expect(after.response.data).toEqual({ login: '', roles: [], can_manage_options: false });
+    expect(after.response.data).toEqual({ login: false, roles: [], can_manage_options: false });
     expect(after.cookies).toEqual([]);
   } finally {
     await inherited.close();
