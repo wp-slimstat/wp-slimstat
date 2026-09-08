@@ -85,6 +85,12 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                 ARRAY_A
             );
 
+            if ($this->probeFailed()) {
+                $this->shouldRunCache = null;
+
+                return false;
+            }
+
             if (empty($rows)) {
                 break;
             }
@@ -215,6 +221,10 @@ class RecoverCorruptedHeatmapPositions extends AbstractMigration
                 $this->watermark()
             )
         );
+
+        if ($this->probeFailed()) {
+            return false;
+        }
 
         $this->shouldRunCache = !empty($result);
 
