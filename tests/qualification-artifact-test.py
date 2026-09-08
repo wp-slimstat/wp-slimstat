@@ -60,6 +60,19 @@ for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh']:
         refused = subprocess.run(['bash', str(helper.parent / script)], env=env, capture_output=True)
         assert refused.returncode != 0 and missing.encode() in refused.stderr, (script, missing, refused.stderr)
 print('PASS: network/lifecycle qualification refuses each missing paired artifact input before Docker')
+# Execute the actual optional-flag call under the platform Bash nounset mode.
+with tempfile.TemporaryDirectory() as temp:
+    for script in ['rehearse-upgrade-network.sh', 'rehearse-uninstall.sh']:
+        source = (helper.parent / script).read_text()
+        line = next(line for line in source.splitlines() if line.startswith('wpc core multisite-install '))
+        for flag in ['', '--subdomains']:
+            shell = 'set -eu; NETWORK_INSTALL_ARG="$1"; ART="$2"; BASE_URL=http://example.test; wpc() { printf "%s\\n" "$@"; }; ' + line
+            result = subprocess.run(['bash', '-c', shell, 'test', flag, temp], capture_output=True)
+            assert result.returncode == 0, (script, flag, result.stderr)
+            args = (pathlib.Path(temp) / 'install.log').read_text().splitlines()
+            assert ('--subdomains' in args) == bool(flag), (script, flag, args)
+            (pathlib.Path(temp) / 'install.log').unlink()
+print('PASS: native subdirectory/subdomain routing works with platform Bash nounset')
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
     fake = root / 'docker'

@@ -10,8 +10,8 @@ FREE_REF="${1:?Free commit required}"; PRO_REF="${2:?Pro commit required}"; FIXT
 PRO_REPO="${PRO_REPO:-$PLUGIN_SRC/../wp-slimstat-pro}"
 NETWORK_SUBDOMAINS="${NETWORK_SUBDOMAINS:-0}"
 case "$NETWORK_SUBDOMAINS" in 0|1) ;; *) die 'NETWORK_SUBDOMAINS must be 0 or 1';; esac
-NETWORK_INSTALL_ARGS=()
-[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARGS+=(--subdomains)
+NETWORK_INSTALL_ARG=''
+[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARG=--subdomains
 : "${REHEARSAL_RUNS_DIR:?Set a durable evidence directory}"
 [ -f "$FIXTURE" ] || die 'fixture absent'
 FREE_SHA=$(git -C "$PLUGIN_SRC" rev-parse "$FREE_REF^{commit}")
@@ -43,8 +43,10 @@ PYHASH
 }
 finish() {
   local rc=$?
+  [ "$status" = PASS ] || rc=1
   trap - EXIT
   if [ "$FINISHED" -ne 1 ]; then
+    rc=1
     write_verdict "$ART" "$COMPOSE_PROJECT_NAME" "$PHP_VERSION" "${TOPOLOGY_WP:-6.7}" FAIL "$reason"
     publish_verdict "$ART" "$COMPOSE_PROJECT_NAME" manifest.json install.log build.log up.log >/dev/null || true
   fi
@@ -76,7 +78,7 @@ wpc core download --version="${TOPOLOGY_WP:-6.7}" --force >"$ART/install.log" 2>
 wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:3306 --dbprefix=ssun_ --skip-check >>"$ART/install.log" 2>&1
 wpc config set SLIMSTAT_UNINSTALL_REHEARSAL disposable >>"$ART/install.log" 2>&1
 wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1
-wpc core multisite-install "${NETWORK_INSTALL_ARGS[@]}" --url="$BASE_URL" --title=UninstallRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
+wpc core multisite-install ${NETWORK_INSTALL_ARG:+"$NETWORK_INSTALL_ARG"} --url="$BASE_URL" --title=UninstallRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
 wpc site create --slug=second >>"$ART/install.log" 2>&1
 for mapping in "$HARNESS_DIR/probe-uninstall.php:probe-uninstall.php" "$FREE_SRC/src/Schema/Schema.php:uninstall-schema.php" "$FREE_SRC/src/cron-hooks.php:uninstall-cron-hooks.php" "$CELL_DIR/pro-src/uninstall.php:uninstall-pro.php" "$ART/fixture.json:uninstall-fixture.json"; do
   dc cp "${mapping%:*}" "wp:/tmp/${mapping##*:}" >/dev/null

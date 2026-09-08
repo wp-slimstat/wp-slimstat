@@ -14,8 +14,8 @@ OLD_REF="${1:?old ref}"; FREE_REF="${2:?Free commit}"; PRO_REF="${3:?Pro commit}
 PRO_REPO="${PRO_REPO:-$PLUGIN_SRC/../wp-slimstat-pro}"
 NETWORK_SUBDOMAINS="${NETWORK_SUBDOMAINS:-0}"
 case "$NETWORK_SUBDOMAINS" in 0|1) ;; *) die 'NETWORK_SUBDOMAINS must be 0 or 1';; esac
-NETWORK_INSTALL_ARGS=()
-[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARGS+=(--subdomains)
+NETWORK_INSTALL_ARG=''
+[ "$NETWORK_SUBDOMAINS" = 0 ] || NETWORK_INSTALL_ARG=--subdomains
 FREE_SHA=$(git -C "$PLUGIN_SRC" rev-parse "$FREE_REF^{commit}")
 PRO_SHA=$(git -C "$PRO_REPO" rev-parse "$PRO_REF^{commit}")
 OLD_ZIP=$(resolve_arm_zip "$OLD_REF"); OLD_HASH=$(digest "$OLD_ZIP"); FIXTURE_HASH=$(digest "$FIXTURE")
@@ -35,6 +35,7 @@ ART="$CELL_DIR/artifacts"; mkdir -p "$ART" "$CELL_WP_DIR" "$CELL_DIR/pro-src"
 STARTED=$(now); reason='setup incomplete'; status=FAIL; reached=0
 finish() {
   local rc=$?
+  [ "$status" = PASS ] || rc=1
   trap - EXIT
   [ "$rc" = 0 ] || status=FAIL
   dc cp wp:/tmp/network-progress.jsonl "$ART/progress.jsonl" >/dev/null 2>&1 || true
@@ -76,7 +77,7 @@ wpc config create --dbname=wordpress --dbuser=root --dbpass=root --dbhost=db:330
 wpc config set SLIMSTAT_NETWORK_REHEARSAL disposable >>"$ART/install.log" 2>&1
 wpc config set SLIMSTAT_NETWORK_STORAGE "$NETWORK_STORAGE" >>"$ART/install.log" 2>&1
 wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1
-wpc core multisite-install "${NETWORK_INSTALL_ARGS[@]}" --url="$BASE_URL" --title=NetworkRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
+wpc core multisite-install ${NETWORK_INSTALL_ARG:+"$NETWORK_INSTALL_ARG"} --url="$BASE_URL" --title=NetworkRehearsal --admin_user=admin --admin_password=disposable --admin_email=qa@example.invalid --skip-email >>"$ART/install.log" 2>&1
 for map in "$HARNESS_DIR/probe-network-rehearsal.php:network-probe.php" "$FREE_SRC/src/Schema/Schema.php:network-schema.php" "$FIXTURE:network-fixture.json" "$OLD_ZIP:old.zip" "$HARNESS_DIR/watch-network-htaccess.py:watch-htaccess.py"; do dc cp "${map%:*}" "wp:/tmp/${map##*:}" >/dev/null; done
 wpc --skip-plugins eval-file /tmp/network-probe.php create >>"$ART/install.log" 2>&1
 grep -q '^NETWORK-CREATED$' "$ART/install.log"
