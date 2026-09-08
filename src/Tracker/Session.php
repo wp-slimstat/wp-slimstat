@@ -97,6 +97,28 @@ class Session
 			return true;
 		}
 
+		// Bridge navigations made before the first tracking response can set its
+		// HttpOnly cookie. The random browser token is HMACed before storage and is
+		// used only while visit cookies are enabled and no cookie has arrived yet.
+		$pending_session = $data_js['sid'] ?? '';
+		if (!$hasTrackingCookie
+			&& 'on' === (\wp_slimstat::$settings['set_tracker_cookie'] ?? 'off')
+			&& is_string($pending_session)
+			&& preg_match('/^[0-9a-f]{32}$/', $pending_session)) {
+			$stat = \wp_slimstat::get_stat();
+			$vid_hash = bin2hex(substr(hash_hmac('sha256', 'pending-session|' . $pending_session, self::getSecureKey(), true), 0, 16));
+			$stat['vid_hash'] = $vid_hash;
+			$current_timestamp = !empty($stat['dt']) ? intval($stat['dt']) : intval(\wp_slimstat::date_i18n('U'));
+			$existing_visit_id = self::findExistingAnonymousVisitId($vid_hash, $current_timestamp);
+			if ($existing_visit_id > 0) {
+				$stat['visit_id'] = $existing_visit_id;
+				\wp_slimstat::set_stat($stat);
+				self::setTrackingCookie($existing_visit_id, 'visit');
+				return false;
+			}
+			\wp_slimstat::set_stat($stat);
+		}
+
 		if (isset($_COOKIE['slimstat_tracking_code'])) {
 			$identifier = Utils::getValueWithoutChecksum(sanitize_text_field(wp_unslash($_COOKIE['slimstat_tracking_code'])));
 			if (false === $identifier) {

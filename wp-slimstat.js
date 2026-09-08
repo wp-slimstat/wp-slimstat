@@ -50,6 +50,24 @@ var SlimStat = (function () {
 
     // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
+    var PENDING_SESSION_KEY = "slimstat_pending_session";
+
+    function pendingSessionToken() {
+        try {
+            var token = sessionStorage.getItem(PENDING_SESSION_KEY) || "";
+            if (/^[0-9a-f]{32}$/.test(token)) return token;
+            if (!window.crypto || !window.crypto.getRandomValues) return "";
+            var bytes = new Uint8Array(16);
+            window.crypto.getRandomValues(bytes);
+            token = Array.prototype.map.call(bytes, function (byte) {
+                return ("0" + byte.toString(16)).slice(-2);
+            }).join("");
+            sessionStorage.setItem(PENDING_SESSION_KEY, token);
+            return token;
+        } catch (e) {
+            return "";
+        }
+    }
 
     // -------------------------- Generic Helpers -------------------------- //
     function utf8Encode(string) {
@@ -638,6 +656,7 @@ var SlimStat = (function () {
                     if (xhr.status === 200) {
                         var response = classifyResponseBody(xhr.responseText);
                         if (response.isPositive) {
+                            clearSessionState(PENDING_SESSION_KEY);
                             // Write to current global params (not local ref which may be stale
                             // if extractSlimStatParams replaced window.SlimStatParams)
                             currentSlimStatParams().id = response.responseBody;
@@ -1509,6 +1528,8 @@ var SlimStat = (function () {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
         var base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
         if (!isEmpty(params.ci)) base += "&ci=" + params.ci;
+        var pendingSession = pendingSessionToken();
+        if (pendingSession) base += "&sid=" + pendingSession;
         return base;
     }
 
