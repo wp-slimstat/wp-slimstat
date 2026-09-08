@@ -13,18 +13,6 @@
  * @since 6.0.0
  */
 
-/*
- * One table-body height, used as BOTH the floor every table box reserves and
- * the ceiling the Pro-tier row list scrolls inside. The two are load-bearingly
- * coupled — boxes only come out equal-height because the cap equals the
- * reserve — so they read one value rather than repeating a literal that could
- * drift apart. See the "Equal-height table boxes" section below for how the
- * figure is derived.
- */
-.slimstat-general-page {
-    --ss-table-body-height: 215px;
-}
-
 .slimstat-general-page .page {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
@@ -135,6 +123,17 @@
     margin-bottom: var(--ss-space-5);
 }
 
+/*
+ * Deliberately NOT `display: flex` and NOT any height of its own. admin.css
+ * already lays these boxes out as plain blocks and gives every report body a
+ * fixed, scrolling viewport (`[id^="slim_"] .inside{height:240px;overflow:auto}`,
+ * which matches because report_header() prints id="slim_p10_XX"). An earlier
+ * revision of this file made the postbox a flex column and re-imposed its own
+ * min/max-height on .inside — re-solving a problem the plugin had already
+ * solved, at a different value, which is what made these rows sit and wrap
+ * differently from the identical markup on slim_p1_08. `position: relative`
+ * stays: the free tier's unlock overlay anchors to it.
+ */
 .slimstat-general-page .meta-box-sortables .postbox {
     position: relative;
     width: 32.8%;
@@ -142,8 +141,6 @@
     border: 1px solid var(--ss-border);
     border-radius: var(--ss-radius-md);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
     margin: 0;
 }
 
@@ -233,14 +230,6 @@
     font-weight: 700;
     color: var(--ss-text-primary);
     white-space: nowrap;
-}
-
-.slimstat-general-page .meta-box-sortables .postbox .inside {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    margin: 0;
-    padding: 0;
 }
 
 .slimstat-general-page .meta-box-sortables .postbox.slimstat-hide-padding .inside {
@@ -415,51 +404,6 @@
 }
 
 /*
- * ---------- Equal-height table boxes ----------
- * Every table box reserves 5 rows' worth of body height whether it is full,
- * partly filled, or empty, so boxes sharing a flex-wrap row line up at the
- * bottom as well as the top (the .postbox > h3 fix above handles the top).
- *
- * 215px ~= 5 rows: admin.css gives each row `.inside p{padding:10px 25px}`
- * plus this markup's own 4px top/bottom margin over ~15px line-height for
- * its 12px text, so ~43px a row. An approximation on purpose — the exact
- * figure lives in admin.css, which this page deliberately does not fork.
- */
-.slimstat-general-page .meta-box-sortables .postbox.large .inside {
-    min-height: var(--ss-table-body-height);
-}
-
-/*
- * ...and no MORE than that either. A Pro account gets the full page of rows
- * (rows_to_show, 20 by default), which stretched the box to ~20 rows tall and
- * left it towering over its neighbour in the same flex-wrap row. Capping the
- * body at the same 5-row height and scrolling the overflow keeps every box
- * the same size no matter how many rows it holds; the pager arrows below are
- * unaffected, because raw_results_to_html() emits the pagination as a SIBLING
- * after .inside (and admin.js's refresh handler strips .pagination out of the
- * AJAX response and updates the existing element separately), so it stays
- * pinned under the scroll area on both the first paint and after a refresh.
- *
- * Free tier is deliberately excluded, via the presence of a synthetic row —
- * the marker GeneralReports::markSyntheticRows() puts on the blurred rows,
- * and the only thing in the DOM that distinguishes a gated box. (NOT an
- * `is-gated` postbox class: that was removed when the gate moved to a
- * per-render decision, so `:not(.is-gated)` would match everything and quietly
- * cap the free tier too.) A gated box renders exactly GATED_TOTAL_ROWS rows,
- * which already fit, and has no pager to scroll toward — a scroll container
- * there would only put a scrollbar on the blurred rows.
- *
- * A gated box holding FEWER rows than the free limit is the one case this
- * selector does cap — gateRows() returns early without adding synthetic rows —
- * but a box that short is nowhere near the cap, so the scroll container never
- * engages.
- */
-.slimstat-general-page .meta-box-sortables .postbox.large .inside:not(:has(p.slimstat-row-synthetic)) {
-    max-height: var(--ss-table-body-height);
-    overflow-y: auto;
-}
-
-/*
  * The shared renderer's own empty state (<p class="nodata">) and the one
  * campaigns() prints (.empty) — centred in that reserved space rather than
  * clinging to the top of an otherwise blank box.
@@ -470,22 +414,13 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    flex: 1;
+    min-height: 240px;
     gap: var(--ss-space-2);
     margin: 0;
     padding: var(--ss-space-6) var(--ss-space-5);
     text-align: center;
     color: var(--ss-text-muted);
     font-size: var(--ss-text-sm);
-}
-
-/*
- * Only for boxes outside the .large grid — campaigns() (slim_p10_07) is a
- * 'normal' box, so the rule above does not reserve its height. Inside a
- * .large box this is already covered there, and `flex: 1` does the filling.
- */
-.slimstat-general-page .meta-box-sortables .postbox:not(.large) .empty {
-    min-height: var(--ss-table-body-height);
 }
 
 .slimstat-general-page .empty .big {

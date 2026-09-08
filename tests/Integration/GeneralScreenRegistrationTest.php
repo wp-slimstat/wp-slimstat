@@ -479,41 +479,41 @@ class GeneralScreenRegistrationTest extends TestCase
     }
 
     /**
-     * Table boxes are exactly one height, floor and ceiling.
+     * The General page must not re-solve report-body sizing.
      *
-     * A Pro account renders a full page of rows (rows_to_show, 20 by default),
-     * which stretched one box far taller than its neighbour in the same
-     * flex-wrap row. The cap only produces equal-height boxes because it is the
-     * SAME value the floor reserves, so both must read one custom property
-     * rather than repeating a literal that could drift apart.
+     * admin.css already gives every report body a fixed scrolling viewport
+     * (`[id^="slim_"] .inside{height:240px;overflow:auto}`, which matches
+     * because report_header() prints id="slim_p10_XX"). An earlier revision
+     * made the postbox a flex column and imposed its own min/max-height and
+     * overflow on .inside — solving the same problem again at a different
+     * value, which is exactly why these rows sat and wrapped differently from
+     * the identical markup rendered by slim_p1_08.
      */
-    public function test_table_boxes_share_one_body_height(): void
+    public function test_general_does_not_override_shared_report_body_sizing(): void
     {
-        $css = file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/general.css');
+        $css = preg_replace('#/\*.*?\*/#s', '', file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/general.css'));
 
-        $this->assertSame(
-            1,
-            substr_count($css, '--ss-table-body-height:'),
-            'the table body height must be declared exactly once'
-        );
-        $this->assertSame(
-            3,
-            substr_count($css, 'var(--ss-table-body-height)'),
-            'the floor, the ceiling and the empty-state reserve must all read that one value'
-        );
+        foreach (['max-height', 'overflow-y', 'flex: 1', '--ss-table-body-height'] as $needle) {
+            $this->assertStringNotContainsString(
+                $needle,
+                $css,
+                "general.css must not reintroduce '{$needle}' on the report body — admin.css already sizes and scrolls it"
+            );
+        }
+
         $this->assertDoesNotMatchRegularExpression(
-            '/(min|max)-height:\s*215px/',
+            '/\.postbox \{[^}]*display:\s*flex/',
             $css,
-            'no hardcoded height may remain alongside the token'
+            'the postbox must stay a plain block, as it is on every other report screen'
         );
 
-        // The cap must skip the free tier, whose gated boxes render a fixed
-        // short row set and have no pager to scroll toward. Keyed to the
-        // synthetic-row marker because the postbox carries no gated class.
+        // The row's own containing block must stay, though: .postbox keeps
+        // position:relative for the unlock overlay, and without this the
+        // absolutely-positioned percentage bars re-anchor to the whole box.
         $this->assertStringContainsString(
-            '.postbox.large .inside:not(:has(p.slimstat-row-synthetic))',
+            'p.slimstat-tooltip-trigger {',
             $css,
-            'the height cap must exclude gated (free-tier) boxes via the synthetic-row marker'
+            'rows must keep their own containing block so the bars anchor per row'
         );
     }
 
