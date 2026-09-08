@@ -48,6 +48,14 @@ var SlimStat = (function () {
         }
     }
 
+    function rebaseQueuedInteractions(id) {
+        requestQueue.forEach(function (queued) {
+            if (queued.opts && queued.opts.interactionRaw) {
+                queued.payload = "action=slimtrack&id=" + id + queued.opts.interactionRaw;
+            }
+        });
+    }
+
     // Offline persistence helpers will be defined in the outer scope and assigned here
     var OFFLINE_KEY = "slimstat_offline_queue";
     var PENDING_SESSION_KEY = "slimstat_pending_session";
@@ -661,6 +669,7 @@ var SlimStat = (function () {
                             // if extractSlimStatParams replaced window.SlimStatParams)
                             currentSlimStatParams().id = response.responseBody;
                             params.id = response.responseBody; // keep local ref in sync too
+                            if (requiresIdResponse) rebaseQueuedInteractions(response.responseBody);
                             // Mark that we've successfully tracked the initial pageview for this load
                             try {
                                 window.slimstatPageviewTracked = true;

@@ -413,6 +413,45 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     }
   });
 
+  test('one stale-id recovery rebases two queued sibling interactions', async ({ page }) => {
+    await setSlimstatOptions(page, {
+      tracking_request_method: 'ajax',
+      javascript_mode: 'on',
+    });
+
+    const marker = `recovery-stale-siblings-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+    const originalId = await waitForTrackerId(page);
+    const countsBefore = {
+      stats: await getStatCountForMarker(marker),
+      events: await getTotalEventCount(),
+    };
+    const staleId = `${originalId.slice(0, -1)}${originalId.slice(-1) === '0' ? '1' : '0'}`;
+
+    await page.evaluate((invalidId) => {
+      (window as any).SlimStatParams.id = invalidId;
+      (window as any).slimstatPageviewTracked = false;
+      ['first', 'second'].forEach((name, index) => {
+        const link = document.createElement('a');
+        link.href = `https://example.com/recovery-${name}`;
+        link.textContent = name;
+        document.body.appendChild(link);
+        (window as any).SlimStat.ss_track({
+          type: 'click',
+          target: link,
+          pageX: 10 + index,
+          pageY: 20 + index,
+        }, '', false);
+      });
+    }, staleId);
+
+    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 2);
+    expect(await getStatCountForMarker(marker)).toBe(countsBefore.stats + 1);
+    const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
+    expect(recoveredId).toBeTruthy();
+    expect(recoveredId).not.toBe(staleId);
+  });
+
   test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
     await setSlimstatOptions(page, { tracking_request_method: 'ajax', javascript_mode: 'on' });
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
