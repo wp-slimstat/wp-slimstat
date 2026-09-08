@@ -162,7 +162,7 @@ $normalise = static function (string $html): string {
 $extract_numbers = static function (string $html): array {
     $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES, 'UTF-8');
     preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
-    return array_slice($m[1], 0, 200);
+    return $m[1];
 };
 
 /**
@@ -271,6 +271,8 @@ foreach ($wanted as $cell => $filters) {
 
         $clean = $normalise($html);
         $snapshot['cells'][$cell][$report_id] = [
+            'raw_html' => $html,
+            'normalized_html' => $clean,
             'hash'    => $error === null ? md5($clean) : null,
             'bytes'   => strlen($clean),
             'numbers' => $error === null ? $extract_numbers($clean) : [],

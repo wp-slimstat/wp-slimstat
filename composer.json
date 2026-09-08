@@ -231,7 +231,7 @@
     "test:group-by-conformance": "php tests/group-by-conformance-test.php",
     "test:surplus-arguments": "php tests/surplus-argument-scan-test.php",
     "test:assertion-floor": "php tests/assertion-floor-check.php",
-    "test:parity-exemption-grain": "php tests/parity-exemption-grain-test.php",
+    "test:parity-exemption-grain": ["php tests/parity-exemption-grain-test.php", "python3 tests/parity-fail-closed-test.py"],
     "test:checksum-timing": "php tests/checksum-timing-safety-test.php",
     "test:run-qa-oracle": "php tests/run-qa-oracle-test.php",
     "test:ci-comment-metrics": "php tests/ci-comment-metrics-test.php",

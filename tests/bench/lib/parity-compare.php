@@ -3,7 +3,7 @@
 //
 //   wp eval-file tests/bench/lib/parity-compare.php <before.json> <after.json>
 //
-// Exit signal is the VERDICT line, as elsewhere in this harness.
+// VERDICT is human-readable; failures also return a nonzero process status.
 //   PASS    nothing a user sees changed
 //   FAIL    at least one report renders differently
 //   ERROR   the two snapshots are not comparable
@@ -26,7 +26,7 @@ $after_path  = (string) ($args[1] ?? '');
 if ($before_path === '' || $after_path === '') {
     echo "usage: wp eval-file parity-compare.php <before.json> <after.json>\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 $before = json_decode((string) @file_get_contents($before_path), true);
@@ -35,11 +35,46 @@ $after  = json_decode((string) @file_get_contents($after_path), true);
 if (!is_array($before) || !is_array($after)) {
     printf("ERROR: could not read both snapshots (%s, %s)\n", $before_path, $after_path);
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 // ── Comparability ──────────────────────────────────────────────────────────
 $blockers = [];
+foreach (['before' => $before, 'after' => $after] as $arm => $snapshot) {
+    foreach (['fingerprint_hash', 'stats_rows', 'anchor_date', 'cells'] as $field) {
+        if (!isset($snapshot[$field]) || $snapshot[$field] === '' || $snapshot[$field] === []) {
+            $blockers[] = "{$arm}: missing {$field}";
+        }
+    }
+    if (!is_array($snapshot['cells'] ?? null)) {
+        $blockers[] = "{$arm}: invalid cells";
+        continue;
+    }
+    foreach ($snapshot['cells'] as $cell => $reports) {
+        if (!is_array($reports) || $reports === []) {
+            $blockers[] = "{$arm}/{$cell}: no reports";
+            continue;
+        }
+        foreach ($reports as $id => $report) {
+            if (!is_array($report) || !array_key_exists('error', $report)
+                || !isset($report['hash'], $report['bytes'], $report['numbers'], $report['pairs'])
+                || !is_array($report['numbers']) || !is_array($report['pairs'])
+                || !is_int($report['bytes']) || $report['bytes'] <= 0) {
+                $blockers[] = "{$arm}/{$cell}/{$id}: incomplete or non-answering report";
+            }
+        }
+    }
+}
+foreach (['before' => $before, 'after' => $after] as $arm => $snapshot) {
+    $other = $arm === 'before' ? $after : $before;
+    foreach (($snapshot['cells'] ?? []) as $cell => $reports) {
+        foreach (is_array($reports) ? $reports : [] as $id => $report) {
+            if (!isset($other['cells'][$cell][$id])) {
+                $blockers[] = "{$cell}/{$id}: absent from the other arm";
+            }
+        }
+    }
+}
 if (($before['fingerprint_hash'] ?? null) !== ($after['fingerprint_hash'] ?? null)) {
     $blockers[] = sprintf('environment fingerprint differs (%s vs %s) — server settings changed',
         $before['fingerprint_hash'] ?? '?', $after['fingerprint_hash'] ?? '?');
@@ -87,7 +122,7 @@ if ($blockers !== []) {
         echo "  - {$b}\n";
     }
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 // ── Reports that legitimately move between two runs of identical code ──────
@@ -161,7 +196,8 @@ foreach ($after['cells'] as $cell => $reports) {
             continue;
         }
         if ($was['error'] !== null && $now['error'] !== null) {
-            continue; // still failing the same way; not a parity change
+            $new_errors[] = "{$cell}/{$report_id}: both arms failed; no answer compared";
+            continue;
         }
 
         if ($was['hash'] === $now['hash']) {
@@ -371,12 +407,14 @@ if ($live_moves !== []) {
 if ($compared === 0) {
     echo "ERROR: nothing was compared — refusing to report parity\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
-if ($changed === [] && $new_errors === []) {
+if ($changed === [] && $new_errors === [] && $fixed_errors === [] && $missing === []) {
     printf("VERDICT: PASS — %d snapshots identical\n", $compared);
     return;
 }
 
 printf("VERDICT: FAIL — %d changed, %d newly failing\n", count($changed), count($new_errors));
+
+exit(1);
