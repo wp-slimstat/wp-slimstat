@@ -2,12 +2,14 @@
 """Required-red controls for complete matrix enumeration and honest core attribution."""
 import hashlib
 import json
+import os
 import pathlib
 import subprocess
 import tempfile
 
 helper = pathlib.Path(__file__).parent / 'docker/check-matrix.py'
 cell = 'php7.4-wp5.6'
+env = dict(os.environ, QUALIFICATION_FREE_SHA256='a' * 64, QUALIFICATION_PRO_SHA256='b' * 64)
 with tempfile.TemporaryDirectory() as temp:
     root = pathlib.Path(temp)
     art = root / 'cells' / cell / 'artifacts'
@@ -19,16 +21,25 @@ with tempfile.TemporaryDirectory() as temp:
     def base():
         for f in art.iterdir():
             f.unlink()
+        put('free-installed.json', dict(slug='wp-slimstat', zip_sha256='a' * 64, shipping_files_verified=1))
+        put('pro-installed.json', dict(slug='wp-slimstat-pro', zip_sha256='b' * 64, shipping_files_verified=1))
         put('cell.json', dict(cell=cell, php='7.4', wp='5.6', status='PASS', runtime_checks_complete=True))
         (art / 'wp-download.log').write_text('Downloaded WordPress 5.6')
         put('wp-availability.json', dict(requested_version='5.6', available=True, exit_status=0, log_sha256=hashlib.sha256((art / 'wp-download.log').read_bytes()).hexdigest()))
         put('core-requirements.json', dict(kind='declared-php-floor', wp_version='5.6', required_php='5.6.20', actual_php='7.4.33'))
 
     def run(expected, label, cells=None):
-        r = subprocess.run(['python3', '-O', str(helper), str(root), *(cells or [cell])], capture_output=True)
+        r = subprocess.run(['python3', '-O', str(helper), str(root), *(cells or [cell])], env=env, capture_output=True)
         assert (r.returncode == 0) == expected, (label, r.stdout, r.stderr)
 
     base(); run(True, 'complete cell')
+    for name in ['free-installed.json', 'pro-installed.json']:
+        base(); (art / name).unlink(); run(False, 'missing installed bytes proof')
+        base(); put(name, dict(slug='wp-slimstat', zip_sha256='c' * 64, shipping_files_verified=1)); run(False, 'wrong artifact digest')
+        base(); put(name, dict(slug='wp-slimstat' if name.startswith('free') else 'wp-slimstat-pro', zip_sha256=('a' if name.startswith('free') else 'b') * 64, shipping_files_verified=0)); run(False, 'no shipping files verified')
+    base()
+    missing = dict(env); missing.pop('QUALIFICATION_FREE_SHA256')
+    assert subprocess.run(['python3', '-O', str(helper), str(root), cell], env=missing, capture_output=True).returncode != 0
     base(); (art / 'cell.json').unlink(); run(False, 'missing cell')
     base(); (art / 'cell.json').write_text('{'); run(False, 'truncated cell')
     for status in ['FAIL', 'UNKNOWN', 'UNAVAILABLE-PREREQUISITE']:

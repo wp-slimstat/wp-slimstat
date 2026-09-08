@@ -118,8 +118,8 @@ fi
 
 # ── plugins: exact paired qualification artifacts ─────────────────────────────
 log "[$CELL] install plugins"
-extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.json" || { fail 'Free artifact rejected'; exit 1; }
-extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.json" || { fail 'Pro artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.log" || { fail 'Free artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.log" || { fail 'Pro artifact rejected'; exit 1; }
 sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
 mkdir -p "$WP_DIR/wp-content/plugins/.pro"
 cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }

@@ -16,8 +16,8 @@ mkdir -p "$WORK_ROOT/cells" "$WORK_ROOT/logs"
 EXPECTED_CELLS=()
 
 command -v docker >/dev/null || { err "docker not found"; exit 1; }
-extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WORK_ROOT/free-artifact" >"$WORK_ROOT/free-artifact.json" || exit 1
-extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WORK_ROOT/pro-artifact" >"$WORK_ROOT/pro-artifact.json" || exit 1
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WORK_ROOT/free-artifact" >"$WORK_ROOT/free-artifact.log" || exit 1
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WORK_ROOT/pro-artifact" >"$WORK_ROOT/pro-artifact.log" || exit 1
 
 # Pre-build the PHP images once so cells don't each pay the build cost.
 log "pre-building ${#PHPS[@]} PHP images…"

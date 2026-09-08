@@ -2,6 +2,7 @@
 """Fail a compatibility matrix unless every enumerated lane has an answering verdict."""
 import hashlib
 import json
+import os
 import pathlib
 import re
 import sys
@@ -21,6 +22,11 @@ def version(value):
     require(isinstance(value, str) and re.fullmatch(r'\d+\.\d+(?:\.\d+)?', value), 'unrecognized runtime version')
     return tuple((list(map(int, value.split('.'))) + [0])[:3])
 
+
+artifacts = {slug: os.environ.get('QUALIFICATION_' + kind + '_SHA256', '')
+             for kind, slug in [('FREE', 'wp-slimstat'), ('PRO', 'wp-slimstat-pro')]}
+for digest in artifacts.values():
+    require(re.fullmatch(r'[0-9a-f]{64}', digest), 'exact paired artifact digests required')
 
 results = []
 errors = []
@@ -44,6 +50,10 @@ for cell in expected:
         require(actual[:2] == version(php)[:2], 'actual PHP lane mismatch')
         if result['status'] == 'PASS':
             require(result.get('runtime_checks_complete') is True and actual >= floor, 'runtime checks incomplete or unsupported core PHP floor')
+            for kind, slug in [('free', 'wp-slimstat'), ('pro', 'wp-slimstat-pro')]:
+                installed = json.loads((art / (kind + '-installed.json')).read_text())
+                require(installed.get('slug') == slug and installed.get('zip_sha256') == artifacts[slug], 'installed artifact identity mismatch')
+                require(type(installed.get('shipping_files_verified')) is int and installed['shipping_files_verified'] > 0, 'shipping bytes not verified')
             continue
         evidence = json.loads((art / 'core-incompatibility.json').read_text())
         if evidence.get('kind') == 'declared-php-floor':
@@ -57,5 +67,5 @@ for cell in expected:
             require(not re.search(r'/wp-content/(plugins|mu-plugins)/', text), 'plugin-origin failure is not core incompatibility')
     except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
         errors.append({'cell': cell, 'error': str(exc)})
-print(json.dumps({'expected_cells': expected, 'results': results, 'errors': errors, 'status': 'FAIL' if errors else 'PASS'}, indent=2))
+print(json.dumps({'artifacts': artifacts, 'expected_cells': expected, 'results': results, 'errors': errors, 'status': 'FAIL' if errors else 'PASS'}, indent=2))
 raise SystemExit(bool(errors))
