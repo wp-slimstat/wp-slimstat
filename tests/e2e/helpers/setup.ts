@@ -583,6 +583,9 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("TRUNCATE TABLE wp_slim_stats");
   await pool.execute("TRUNCATE TABLE wp_slim_events");
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
+  await pool.execute(
+    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_wp\\_slimstat\\_query\\_%' OR option_name LIKE '\\_transient\\_timeout\\_wp\\_slimstat\\_query\\_%'"
+  );
 }
 
 /**
