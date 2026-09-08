@@ -1524,11 +1524,12 @@ var SlimStat = (function () {
         return allowedResult;
     }
 
-    function buildPageviewBase(params) {
+    function buildPageviewBase(params, allowPendingSession) {
         if (!isEmpty(params.id) && parseInt(params.id, 10) > 0) return "action=slimtrack&id=" + params.id;
         var base = "action=slimtrack&ref=" + base64Encode(document.referrer) + "&res=" + base64Encode(window.location.href);
         if (!isEmpty(params.ci)) base += "&ci=" + params.ci;
-        var pendingSession = pendingSessionToken();
+        if (!allowPendingSession) clearSessionState(PENDING_SESSION_KEY);
+        var pendingSession = allowPendingSession ? pendingSessionToken() : "";
         if (pendingSession) base += "&sid=" + pendingSession;
         return base;
     }
@@ -1596,7 +1597,10 @@ var SlimStat = (function () {
             params.id = null;
         }
 
-        var payloadBase = buildPageviewBase(params);
+        var payloadBase = buildPageviewBase(
+            params,
+            consentDecision.mode === "full" && params.set_tracker_cookie === "on"
+        );
 
         if (!payloadBase) {
             window.sendingSlimStatPageview = false;

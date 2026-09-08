@@ -192,6 +192,28 @@ test.describe('Session & Cookie Management — #199', () => {
     }
   });
 
+  test('pending session identity is absent before consent, in anonymous mode, and with cookies off', async ({ page, browser }) => {
+    const cases = [
+      { gdpr_enabled: 'on', anonymous_tracking: 'off', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
+      { gdpr_enabled: 'on', anonymous_tracking: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
+      { gdpr_enabled: 'off', anonymous_tracking: 'off', consent_integration: '', set_tracker_cookie: 'off' },
+    ];
+
+    for (const settings of cases) {
+      for (const [name, value] of Object.entries({ ...settings, javascript_mode: 'on', ignore_wp_users: 'no' })) {
+        await setSlimstatOption(page, name, value);
+      }
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+      try {
+        const visitor = await context.newPage();
+        await visitor.goto(`${BASE_URL}/?e2e_marker=no-pending-session-${Date.now()}`, { waitUntil: 'networkidle' });
+        expect(await visitor.evaluate(() => sessionStorage.getItem('slimstat_pending_session'))).toBeNull();
+      } finally {
+        await context.close();
+      }
+    }
+  });
+
   test('clearing cookies creates a new session with a different visit_id', async ({ browser }) => {
     await clearStatsTable();
 
