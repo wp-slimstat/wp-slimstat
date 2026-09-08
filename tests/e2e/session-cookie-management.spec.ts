@@ -15,6 +15,8 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
+  installMuPluginByName,
+  uninstallMuPluginByName,
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
@@ -154,11 +156,47 @@ test.describe('Session & Cookie Management — #199', () => {
   //   visit again. The second visit must get a different visit_id.
   // ═══════════════════════════════════════════════════════════════════
 
+  test('session survives rapid navigation while the first tracking response is delayed', async ({ page, browser }, testInfo) => {
+    await clearStatsTable();
+    for (const [name, value] of Object.entries({ gdpr_enabled: 'off', javascript_mode: 'on', set_tracker_cookie: 'on', tracking_request_method: 'rest', ignore_wp_users: 'no' })) {
+      await setSlimstatOption(page, name, value);
+    }
+    await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'");
+    installMuPluginByName('delayed-tracker-response-mu-plugin.php');
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const visitor = await context.newPage();
+      const marker = `session-delayed-${Date.now()}`;
+      const firstRequest = visitor.waitForRequest(isSlimstatTrackingRequest);
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
+      await firstRequest; // Confirm in-flight; deliberately do not await its response.
+      const beforeSecond = await context.cookies();
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
+      const beforeThird = await context.cookies();
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
+      let delayProof: any;
+      await expect.poll(async () => {
+        const [proofRows] = await getPool().execute("SELECT option_value FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'") as any;
+        delayProof = proofRows.length ? JSON.parse(proofRows[0].option_value) : {};
+        return delayProof.finished ? delayProof.finished - delayProof.started : 0;
+      }).toBeGreaterThanOrEqual(0.9);
+      const rows = await waitForStatRows(marker, 3, 20_000);
+      await testInfo.attach('delayed-session-evidence', { body: JSON.stringify({ beforeSecond, beforeThird, delayProof, cookiesAfter: await context.cookies(), rows }, null, 2), contentType: 'application/json' });
+      expect(rows).toHaveLength(3);
+      expect(new Set(rows.map(row => Number(row.visit_id))).size).toBe(1);
+      expect(Number(rows[0].visit_id)).toBeGreaterThan(0);
+    } finally {
+      await context.close();
+      uninstallMuPluginByName('delayed-tracker-response-mu-plugin.php');
+      await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'");
+    }
+  });
+
   test('clearing cookies creates a new session with a different visit_id', async ({ browser }) => {
     await clearStatsTable();
 
     // Use a fresh context so we control cookie lifecycle completely
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
 
     try {

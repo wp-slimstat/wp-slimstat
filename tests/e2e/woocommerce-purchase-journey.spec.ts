@@ -13,7 +13,7 @@ test('WooCommerce purchase preserves session, attribution and excludes checkout 
   const runId = `woo-journey-${Date.now()}`;
   await snapshotSlimstatOptions();
   installMuPluginByName('mail-sink-mu-plugin.php');
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   try {
     // Missing WooCommerce is an explicit prerequisite failure, never excluded shipping coverage.
     const store = fixture('seed', runId);

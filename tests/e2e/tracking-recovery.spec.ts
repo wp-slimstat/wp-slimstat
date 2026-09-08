@@ -116,7 +116,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
     const requestOrder: string[] = [];
@@ -170,7 +170,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
 
@@ -209,7 +209,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       javascript_mode: 'on',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let sawQueryRoute = false;
 
@@ -256,7 +256,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     try {
       await flushRewrites(page);
 
-      const ctx = await browser.newContext();
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
       const anonPage = await ctx.newPage();
       let queryRouteUrl = '';
 
@@ -393,7 +393,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
 
   test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
     await setSlimstatOptions(page, { tracking_request_method: 'ajax', javascript_mode: 'on' });
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     try {
       const visitor = await ctx.newPage();
       const marker = `recovery-real-offline-${Date.now()}`;
@@ -474,6 +474,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await flushRewrites(page);
 
     const ctx = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
       userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
     });
     const anonPage = await ctx.newPage();
@@ -511,7 +512,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let requestAttempts = 0;
 

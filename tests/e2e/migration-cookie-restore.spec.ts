@@ -363,14 +363,13 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
           { timeout: 15_000 },
         );
 
-        // Click Accept
+        // Await the successful upgrade response, not the initial pageview request
+        // already in trackingRequests before the visitor accepted.
+        const upgradeResponse = anonPage.waitForResponse(response =>
+          isSlimstatTrackingRequest(response.request()) &&
+          (response.request().postData() || '').includes('consent_upgrade=1') && response.ok());
         await anonPage.locator('[data-consent="accepted"]').click();
-
-        // Wait for consent upgrade request
-        const deadline = Date.now() + 15_000;
-        while (trackingRequests.length === 0 && Date.now() < deadline) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+        await upgradeResponse;
 
         // After consent: tracking cookie SHOULD be set
         cookies = await ctx.cookies();

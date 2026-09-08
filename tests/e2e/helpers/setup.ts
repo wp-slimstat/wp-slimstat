@@ -78,6 +78,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
   { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
   { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
+  { sourceFile: 'delayed-tracker-response-mu-plugin.php', deployedFile: 'delayed-tracker-response-mu-plugin.php' },
   { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
   { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
   { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
@@ -904,7 +905,7 @@ export async function waitForStatWithIp(marker: string, timeoutMs = 10_000, inte
 // ─── Anonymous visit helper ──────────────────────────────────────
 
 export async function visitAsAnonymous(browser: import('@playwright/test').Browser, url: string): Promise<import('@playwright/test').Page> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   return page;

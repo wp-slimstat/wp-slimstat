@@ -71,7 +71,7 @@ async function loginAsGerlando(
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
 }> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/wp-login.php`, {
     waitUntil: 'domcontentloaded',
@@ -86,7 +86,8 @@ async function loginAsGerlando(
   return { context, page };
 }
 
-function getUserOverviewData(page: import('@playwright/test').Page) {
+async function getUserOverviewData(page: import('@playwright/test').Page) {
+  await expect(page.locator('#slim_p8_01 table')).toBeVisible();
   return page.evaluate(() => {
     const panel = document.getElementById('slim_p8_01');
     if (!panel) return null;
@@ -96,7 +97,6 @@ function getUserOverviewData(page: import('@playwright/test').Page) {
     const users: Record<string, Record<string, string>> = {};
     const headers = [
       'username',
-      'company',
       'fullName',
       'email',
       'registered',
@@ -232,6 +232,7 @@ test.describe('User Overview (slim_p8_01)', () => {
         waitUntil: 'domcontentloaded',
       });
 
+      await expect(page.locator('#slim_p8_01 table')).toBeVisible();
       const columns = await page.evaluate(() => {
         const panel = document.getElementById('slim_p8_01');
         if (!panel) return [];

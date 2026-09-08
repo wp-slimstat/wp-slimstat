@@ -38,7 +38,7 @@ const restoreOptions = restoreSlimstatOptions;
 const setOption = setSlimstatSetting;
 
 async function anonContext(browser: any): Promise<{ ctx: BrowserContext; page: Page }> {
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   return { ctx, page: await ctx.newPage() };
 }
 
@@ -390,7 +390,7 @@ test.describe('Concurrent anonymous sessions', () => {
   test('3 parallel anonymous visitors — all tracked, zero 403s, zero nonces', async ({ browser }) => {
     const sessions = await Promise.all(
       [1, 2, 3].map(async (i) => {
-        const ctx = await browser.newContext();
+        const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
         const page = await ctx.newPage();
         const reqs: Array<{ url: string; headers: Record<string, string> }> = [];
         const resps: Array<{ status: number }> = [];

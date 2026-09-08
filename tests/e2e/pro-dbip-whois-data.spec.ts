@@ -266,7 +266,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await clearStatsTable();
 
     // Visit as anonymous user with CF headers injecting a public IP
-    const anonContext = await browser.newContext();
+    const anonContext = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await anonContext.setExtraHTTPHeaders({
       'CF-Ray': 'test-e2e-dbip-whois-data',
       'CF-Connecting-IP': '8.8.8.8',

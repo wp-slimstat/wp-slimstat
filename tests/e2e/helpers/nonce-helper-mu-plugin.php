@@ -36,3 +36,13 @@ add_action('wp_ajax_test_current_identity', function () {
         'can_manage_options' => current_user_can('manage_options'),
     ]);
 });
+
+// Anonymous identity control uses the same guarded test route; no shipping endpoint.
+add_action('wp_ajax_nopriv_test_current_identity', function () {
+    $user = wp_get_current_user();
+    wp_send_json_success([
+        'login' => $user->user_login,
+        'roles' => array_values($user->roles),
+        'can_manage_options' => current_user_can('manage_options'),
+    ]);
+});

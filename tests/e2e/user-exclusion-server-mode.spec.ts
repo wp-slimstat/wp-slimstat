@@ -70,7 +70,7 @@ async function loginAsAdmin(browser: import('@playwright/test').Browser): Promis
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
 }> {
-  const context = await browser.newContext({ javaScriptEnabled: false });
+  const context = await browser.newContext({ javaScriptEnabled: false, storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/wp-login.php`, { waitUntil: 'domcontentloaded' });
   await page.fill('#user_login', ADMIN_USER);

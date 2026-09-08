@@ -124,14 +124,14 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
     const marker = `visit-ctx-${Date.now()}`;
 
     // Context A (separate session)
-    const ctxA = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
+    const ctxA = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
     const pageA = await ctxA.newPage();
     await pageA.goto(`${BASE_URL}/?e2e=${marker}-ctxA`);
     await pageA.waitForLoadState('load');
     await pageA.waitForTimeout(3000);
 
     // Context B (separate session)
-    const ctxB = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
+    const ctxB = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
     const pageB = await ctxB.newPage();
     await pageB.goto(`${BASE_URL}/?e2e=${marker}-ctxB`);
     await pageB.waitForLoadState('load');
@@ -167,7 +167,7 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
     // Create 3 separate browser contexts (3 distinct visitors)
     for (let i = 0; i < 3; i++) {
-      const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
+      const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
       const pg = await ctx.newPage();
       await pg.goto(`${BASE_URL}/?e2e=${marker}-v${i}`);
       await pg.waitForLoadState('load');
@@ -217,7 +217,7 @@ test.describe('Visitor Count & Visit ID Correlation (AC-TRK-003/007)', () => {
 
   test('first visit on empty table creates a valid visit_id', async ({ browser }) => {
     // Use a fresh context to ensure a new session
-    const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off' } as any);
+    const ctx = await browser.newContext({ recordVideo: undefined, trace: 'off', storageState: { cookies: [], origins: [] } } as any);
     const pg = await ctx.newPage();
 
     const marker = `visit-first-${Date.now()}`;

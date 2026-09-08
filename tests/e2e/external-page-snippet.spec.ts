@@ -184,7 +184,7 @@ var SlimStatParams = { ajaxurl: "${ajaxUrl}" };
     await setSlimstatOption(page, 'javascript_mode', 'on');
     await setSlimstatOption(page, 'ignore_bots', 'off');
     const snippet = await getSnippetText(page);
-    const context = await browser.newContext();
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     try {
       const visitor = await context.newPage();
       const errors: string[] = [];
