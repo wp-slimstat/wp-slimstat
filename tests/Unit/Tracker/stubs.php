@@ -86,6 +86,13 @@ if (!class_exists('wp_slimstat')) {
          */
         public static array $degradations = [];
 
+        // Fixed unscoped fixture for unit callers; real author/DB scopes are exercised
+        // by tests/report-author-scope-test.php using the actual production helper.
+        public static function report_scope(): array
+        {
+            return ['where' => '1=1', 'cache' => 'unit-default-report-scope'];
+        }
+
         public static function record_degradation($step, $e): void
         {
             self::$degradations[$step] = $e instanceof \Throwable ? $e->getMessage() : (string) $e;
