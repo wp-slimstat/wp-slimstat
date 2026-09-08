@@ -158,7 +158,7 @@ class wp_slimstat_db
         $filters_array = [];
 
         // Handle type parameter for date presets and custom ranges
-        if (isset($_GET['type'])) {
+        if (isset($_GET['type']) && is_string($_GET['type'])) {
             // Sanitize the type parameter to prevent XSS
             $type = sanitize_key($_GET['type']);
 
@@ -180,7 +180,7 @@ class wp_slimstat_db
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }
-            } elseif (isset($_GET['from']) && isset($_GET['to'])) {
+            } elseif (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
                 // Sanitize date inputs to prevent XSS
                 $from_date = sanitize_text_field($_GET['from']);
                 $to_date = sanitize_text_field($_GET['to']);
@@ -206,6 +206,9 @@ class wp_slimstat_db
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
+                if (!is_string($a_request_filter_value)) {
+                    continue;
+                }
                 $safe_name  = sanitize_text_field(wp_unslash($a_request_filter_name));
                 $safe_value = str_replace('&&&', '', sanitize_text_field(wp_unslash($a_request_filter_value)));
                 $filters_array[$safe_name] = sprintf('%s %s', $safe_name, $safe_value);
@@ -214,13 +217,14 @@ class wp_slimstat_db
 
         // Date filters (input fields) - Please note: interval_minutes is not exposed via the web interface, that's why it's not listed here below
         foreach (['hour', 'day', 'month', 'year', 'interval', 'interval_hours'] as $a_date_time_filter_name) {
-            if (isset($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
+            if (isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
                 $filters_array[$a_date_time_filter_name] = $a_date_time_filter_name . ' equals ' . intval($_POST[$a_date_time_filter_name]);
             }
         }
 
         // Fields and drop downs
-        if (!empty($_POST['f']) && !empty($_POST['o'])) {
+        if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
+            && (!isset($_POST['v']) || is_string($_POST['v']))) {
             $filters_array[sanitize_text_field($_POST['f'])] = sprintf('%s %s ', sanitize_text_field($_POST[ 'f' ]), sanitize_text_field($_POST[ 'o' ])) . (isset($_POST['v']) ? sanitize_text_field($_POST['v']) : '');
         }
 
@@ -253,7 +257,7 @@ class wp_slimstat_db
         self::$filters_normalized = self::init_filters($filters_raw);
 
         // Retrieve data that will be used by multiple reports
-        if (empty($_REQUEST['page']) || false !== strpos($_REQUEST['page'], 'slimview')) {
+        if (empty($_REQUEST['page']) || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview'))) {
             self::$pageviews = wp_slimstat_db::count_records();
         }
     }
