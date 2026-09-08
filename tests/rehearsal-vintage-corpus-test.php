@@ -727,6 +727,22 @@ $check(
         && false !== strpos($admin_src, "const COLUMN_DRIFT_OPTION = 'slimstat_schema_column_drift';")
 );
 
+// A historical retry must be able to reuse a previously verified official core when the
+// wordpress.org transfer fails. The path is explicit, excludes runtime state, and is verified
+// inside the actual PHP container before installation.
+$check(
+    'an explicit local core source is copied without runtime state and verified before install',
+    false !== strpos($lib_src, 'if [ -n "${WP_CORE_SOURCE_DIR:-}" ]; then')
+        && false !== strpos($lib_src, '--exclude wp-config.php')
+        && false !== strpos($lib_src, "--exclude 'wp-content/plugins/***'")
+        && false !== strpos($lib_src, 'wpc core verify-checksums --version="$wp"')
+        && strpos($lib_src, 'wpc core verify-checksums --version="$wp"') < strpos($lib_src, 'wp_config_debug "$art/install.log"')
+);
+$check(
+    'the ordinary provision path still downloads the requested core when no source is supplied',
+    false !== strpos($lib_src, 'wpc core download --version="$wp" --force')
+);
+
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";
 if ([] !== $failures) {
     fwrite(STDERR, "FAIL: rehearsal vintage corpus\n  - " . implode("\n  - ", $failures) . "\n");

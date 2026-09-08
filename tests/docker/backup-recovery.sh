@@ -8,8 +8,8 @@ backup_recovery_snapshot() {
   : >"$out/schema.txt"; : >"$out/checksum.txt"
   while IFS= read -r table; do
     [[ "$table" =~ ^[a-zA-Z0-9_]+$ ]] || return 1
-    mysql_q "SHOW CREATE TABLE wordpress.\`$table\`;" >>"$out/schema.txt" || return 1
-    checksum=$(mysql_q "CHECKSUM TABLE wordpress.\`$table\` EXTENDED;") || return 1
+    mysql_q "SHOW CREATE TABLE wordpress.\`$table\`;" </dev/null >>"$out/schema.txt" || return 1
+    checksum=$(mysql_q "CHECKSUM TABLE wordpress.\`$table\` EXTENDED;" </dev/null) || return 1
     [[ "$checksum" =~ [[:space:]][0-9]+$ ]] || return 1
     printf '%s\n' "$checksum" >>"$out/checksum.txt"
   done <"$out/tables.txt"

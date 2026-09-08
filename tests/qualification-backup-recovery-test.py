@@ -14,7 +14,7 @@ digest() { shasum -a 256 "$1" | awk '{print $1}'; }
 mysql_q() {
   case "$1" in
     'SHOW TABLES'*) [ "$state" = missing-options ] || echo wp_options; echo wp_slim_stats;;
-    *'SHOW CREATE'*) [ "$state" = migrated ] && echo 'schema-new' || echo 'schema-old';;
+    *'SHOW CREATE'*) read -r _consume_loop_input || true; [ "$state" = migrated ] && echo 'schema-new' || echo 'schema-old';;
     *'CHECKSUM TABLE'*) printf 'wordpress.table\t%s\n' "$state" | sed 's/baseline/123/;s/migrated/456/;s/incomplete/789/;s/missing-options/123/';;
   esac
 }
@@ -31,6 +31,8 @@ import_gz_into_schema() {
   case "$mode" in incomplete-import) state=incomplete;; missing-options-import) state=missing-options;; *) state=baseline;; esac
 }
 capture_recovery_backup || exit 1
+[ "$(wc -l < "$ART/backup-recovery/before/schema.txt" | tr -d ' ')" = 2 ] || exit 1
+[ "$(wc -l < "$ART/backup-recovery/before/checksum.txt" | tr -d ' ')" = 2 ] || exit 1
 state=migrated
 prove_backup_recovery || exit 1
 [ "$restores" = 2 ] || exit 1
@@ -45,4 +47,4 @@ with tempfile.TemporaryDirectory() as temp:
             assert report['writes_since_backup_lost'] == 2
             assert report['schema_restored'] and report['wrong_backup_control'] and report['incomplete_restore_control']
             assert report['tables_restored'] == ['wp_options', 'wp_slim_stats']
-print('PASS: exact backup restoration, explicit later-write loss, wrong backup and incomplete restoration controls')
+print('PASS: every table survives stdin-isolated snapshotting, exact restoration, later-write loss, and controls')
