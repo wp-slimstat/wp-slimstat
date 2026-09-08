@@ -30,6 +30,12 @@ if (!function_exists('delete_option')) {
         return true;
     }
 }
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags($text)
+    {
+        return strip_tags((string) $text);
+    }
+}
 
 // ── WordPress constants needed by source files ────────────────────────────
 if (!defined('DAY_IN_SECONDS')) {
