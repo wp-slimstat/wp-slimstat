@@ -234,6 +234,7 @@ class Browscap
             if (is_wp_error($response) || 200 != wp_remote_retrieve_response_code($response)) {
                 $http_code = is_wp_error($response) ? $response->get_error_message() : wp_remote_retrieve_response_code($response);
                 @unlink($browscap_zip);
+                /* translators: %s: HTTP status code or download error message. */
                 return [7, sprintf(__('There was an error downloading the Browscap data file (%s). Please try again later.', 'wp-slimstat'), $http_code)];
             }
 
@@ -262,6 +263,7 @@ class Browscap
             // We're ready to unzip the file
             $result = unzip_file($browscap_zip, wp_slimstat::$upload_dir);
             if (is_wp_error($result)) {
+                /* translators: %s: archive extraction error message. */
                 return [9, sprintf(__('There was an error uncompressing the Browscap data file: %s', 'wp-slimstat'), $result->get_error_message())];
             }
 

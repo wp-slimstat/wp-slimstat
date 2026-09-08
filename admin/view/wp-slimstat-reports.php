@@ -2574,6 +2574,7 @@ class wp_slimstat_reports
                         }
                     }
                     if ($uses_db && $db_missing) {
+                        /* translators: %s: URL of the geolocation settings section. */
                         echo wp_kses_post(sprintf(__("GeoIP collection is not enabled. Please go to <a href='%s' class='noslimstat'>setting page</a> to enable GeoIP for getting more information and location (country) from the visitor.", 'wp-slimstat'), esc_url($settings_url . '2#wp-slimstat-third-party-libraries')));
                         echo '<br>';
                     }

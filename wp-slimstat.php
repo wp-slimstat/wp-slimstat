@@ -2222,6 +2222,7 @@ class wp_slimstat
         $content .= '<p><strong>' . __('How long we retain your data', 'wp-slimstat') . '</strong></p>';
         $retention_days = intval(self::$settings['auto_purge'] ?? 420);
         if ($retention_days > 0) {
+            /* translators: %d: configured number of days before analytics data is deleted. */
             $content .= '<p>' . sprintf(__('Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements.', 'wp-slimstat'), $retention_days) . '</p>';
         } else {
             $content .= '<p>' . __('Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies.', 'wp-slimstat') . '</p>';
@@ -2986,5 +2987,6 @@ function wp_slimstat_clear_cache_handler()
         delete_option($transient);
         $count++;
     }
+    /* translators: %d: number of cache items cleared. */
     wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
 }

@@ -229,6 +229,7 @@ class Processor
             }
 
             if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), self::REFERER_ALLOWED_SCHEMES)) {
+                /* translators: %s: referring URL rejected as an attempted XSS injection. */
                 $stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
                 unset($stat['referer']);
             }

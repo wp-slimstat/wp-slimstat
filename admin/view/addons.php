@@ -30,6 +30,7 @@ if (!empty($_GET['force_refresh']) || false === $response) {
     $response = wp_remote_get('https://www.wp-slimstat.com/update-checker/', ['headers' => ['referer' => get_site_url()]]);
     if (is_wp_error($response) || 200 != $response['response']['code']) {
         $error_message = is_wp_error($response) ? $response->get_error_message() : $response['response']['code'] . ' ' . $response['response']['message'];
+        /* translators: %s: error message returned while retrieving the add-ons list. */
         $error_message = sprintf(__('There was an error retrieving the add-ons list from the server. Please try again later. Error Message: %s', 'wp-slimstat'), $error_message);
     } else {
         set_transient('wp_slimstat_addon_list', $response, 86400);
@@ -64,6 +65,7 @@ if (!is_array($list_addons)) {
     <p><?php echo wp_kses_post(__('Add-ons extend the functionality of Slimstat in many interesting ways. We offer both free and premium (paid) extensions. Each add-on can be installed as a separate plugin, which will receive regular updates via the WordPress Plugins panel. In order to be notified when a new version of a premium add-on is available, please enter the <strong>license key</strong> you received when you purchased it.', 'wp-slimstat')); ?><?php
 if (empty($_GET['force_refresh'])) {
     echo ' ';
+    /* translators: %s: current settings page URL, before the force-refresh parameter. */
     echo wp_kses_post(sprintf(__('This list is refreshed once daily: <a href="%s&amp;force_refresh=true" class="noslimstat">click here</a> to clear the cache.', 'wp-slimstat'), esc_url(isset($_SERVER['REQUEST_URI']) && is_string($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '')));
 }
 

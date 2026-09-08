@@ -305,6 +305,7 @@ $settings = [
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),
                 'type'        => 'toggle',
+                /* translators: %s: installed Browscap data version, wrapped in strong tags. */
                 'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (empty(\SlimStat\Services\Browscap::$browscap_local_version) ? '' : ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>')),
             ],
 
@@ -362,6 +363,7 @@ $settings = [
             'enable_browscap' => [
                 'title'       => __('Browscap Library', 'wp-slimstat'),
                 'type'        => 'toggle',
+                /* translators: %s: installed Browscap data version, wrapped in strong tags. */
                 'description' => __("We are contributing to the <a href='https://browscap.org/' target='_blank'>Browscap Capabilities Project</a>, which we use to decode your visitors' user agent string into browser name and operating system. We use an <a href='https://github.com/slimstat/browscap-cache' target='_blank'>optimized version of their data structure</a>, for improved performance. When enabled, Slimstat uses this library in addition to the built-in heuristic function, to determine your visitors' browser information. Updates are downloaded automatically every week, when available.", 'wp-slimstat') . (empty(\SlimStat\Services\Browscap::$browscap_local_version) ? '' : ' ' . sprintf(__('You are currently using version %s.', 'wp-slimstat'), '<strong>' . \SlimStat\Services\Browscap::$browscap_local_version . '</strong>')),
             ],
         ],
@@ -1011,6 +1013,7 @@ foreach ($index_names as $idx) {
 }
 if ([] !== $missing_indexes) {
     echo '<div class="notice notice-warning"><b>' . esc_html__('Performance Notice:', 'wp-slimstat') . '</b> ' . sprintf(
+        /* translators: %s: comma-separated list of missing database index names. */
         esc_html__('The following DB indexes are missing and should be created for optimal performance: %s. Please visit the Slimstat settings or re-activate the plugin to trigger index creation.', 'wp-slimstat'),
         '<code>' . esc_html(implode(', ', $missing_indexes)) . '</code>'
     ) . '</div>';

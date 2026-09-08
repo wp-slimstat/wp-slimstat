@@ -1955,6 +1955,7 @@ class wp_slimstat_admin
                 'security'  => wp_create_nonce('meta-box-order'),
                 'is_pro'    => wp_slimstat::pro_is_installed(),
                 'i18n'      => [
+                    /* translators: %s: formatted count for the previous day. */
                     'was_last_day' => esc_html__('was %s last day', 'wp-slimstat'),
                     'online_users' => esc_html__('Online Users', 'wp-slimstat'),
                     'count_label'  => esc_html__('Count', 'wp-slimstat'),
@@ -2047,6 +2048,7 @@ class wp_slimstat_admin
         $GLOBALS['wp_admin_bar']->add_menu([
             'id'    => 'slimstat-header',
             'title' => '<span class="ab-icon dashicons dashicons-chart-area" style="font-size:1rem;margin-top:3px"></span>'
+                     /* translators: %s: formatted online visitor count inside its updating HTML span. */
                      . sprintf(__('Online: %s', 'wp-slimstat'), '<span id="slimstat-adminbar-online-header">' . number_format_i18n($online_count) . '</span>'),
             'href'  => $overview_url,
         ]);
@@ -2074,6 +2076,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Sessions Today', 'wp-slimstat') . '</div>'
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-sessions-count">' . number_format_i18n($sessions_today) . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-sessions-compare">'
+            /* translators: %s: formatted session count for the previous day. */
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), number_format_i18n($sessions_yesterday))
             . '</div></div>'
             // Views Today (bottom left) - blur for non-Pro
@@ -2081,6 +2084,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Views Today', 'wp-slimstat') . '</div>'
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-views-count">' . $views_display . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-views-compare">'
+            /* translators: %s: formatted pageview count for the previous day. */
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $views_yesterday_display)
             . '</div></div>'
             // Referrals Today (bottom right) - blur for non-Pro
@@ -2088,6 +2092,7 @@ class wp_slimstat_admin
             . '<div class="slimstat-adminbar__stat-title">' . esc_html__('Referrals Today', 'wp-slimstat') . '</div>'
             . '<div class="slimstat-adminbar__stat-count" id="slimstat-adminbar-referrals-count">' . $referrals_display . '</div>'
             . '<div class="slimstat-adminbar__stat-comparison" id="slimstat-adminbar-referrals-compare">'
+            /* translators: %s: formatted referral count for the previous day. */
             . sprintf(esc_html__('was %s last day', 'wp-slimstat'), $referrals_yesterday_display)
             . '</div></div>'
             . '</div>';
@@ -2265,8 +2270,10 @@ class wp_slimstat_admin
         }
 
         if ('on' == wp_slimstat::$settings['posts_column_pageviews']) {
+            /* translators: %s: number of days in the reporting interval. */
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . esc_attr(sprintf(__('Pageviews in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval'])) . '"><span class="screen-reader-text">' . esc_html__('Views', 'wp-slimstat') . '</span></span>';
         } else {
+            /* translators: %s: number of days in the reporting interval. */
             $_columns['wp-slimstat'] = '<span class="slimstat-icon" title="' . esc_attr(sprintf(__('Unique IPs in the last %s days', 'wp-slimstat'), wp_slimstat::$settings['posts_column_day_interval'])) . '"></span>';
         }
 
@@ -2711,6 +2718,7 @@ class wp_slimstat_admin
             if (count($funnels) >= $max_funnels) {
                 wp_send_json_error([
                     'message' => sprintf(
+                        /* translators: %d: maximum number of funnels allowed. */
                         __('Funnel limit reached (%d).', 'wp-slimstat'),
                         $max_funnels
                     ),
@@ -3911,6 +3919,7 @@ class wp_slimstat_admin
 				}
 				$geoip_error = get_option('slimstat_geoip_error', []);
 				if (!empty($geoip_error) && !empty($geoip_error['error'])) {
+					/* translators: %s: geolocation database error details. */
 					$error_message .= ' ' . sprintf(__('Details: %s', 'wp-slimstat'), $geoip_error['error']);
 				}
 				wp_send_json_error($error_message);
