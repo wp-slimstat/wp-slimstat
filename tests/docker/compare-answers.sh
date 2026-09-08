@@ -67,6 +67,16 @@ export COMPOSE_PROJECT_NAME="ssanswers" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
+# Fixed-name project: refuse a concurrent run before installing an EXIT cleanup.
+existing=$(docker ps -aq --filter label=com.docker.compose.project=ssanswers) || exit 1
+[ -z "$existing" ] || { err 'ssanswers is already owned by another run'; exit 1; }
+ARTIFACT_INPUT="${SLIMSTAT_COMPARISON_ARTIFACTS:-}"
+ARTIFACT_ARMS="$CELL_DIR/artifact-arms"
+if [ -n "$ARTIFACT_INPUT" ]; then
+  [ ! -e "$CELL_DIR" ] || { err 'artifact comparison requires a fresh WORK_ROOT'; exit 1; }
+  BEFORE=$(git -C "$PLUGIN_SRC" rev-parse "$BEFORE^{commit}") || exit 1
+  AFTER=$(git -C "$PLUGIN_SRC" rev-parse "$AFTER^{commit}") || exit 1
+fi
 cleanup() { dc down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
@@ -107,6 +117,11 @@ for ref in "$BEFORE" "$AFTER"; do
   fi
   echo "  arm '$ref': $(git -C "$PLUGIN_SRC" rev-parse --short "$ref^{commit}" 2>/dev/null || echo 'UNRESOLVABLE')"
 done
+
+if [ -n "$ARTIFACT_INPUT" ]; then
+  python3 "$HARNESS_DIR/comparison-artifacts.py" "$ARTIFACT_INPUT" "$BEFORE" "$AFTER" "$ARTIFACT_ARMS" || exit 1
+  cp "$ARTIFACT_ARMS/manifest.json" "$ART/artifacts.json" || exit 1
+else
 
 for ref in "$BEFORE" "$AFTER"; do
   if [ "$ref" = "-" ]; then
@@ -161,6 +176,8 @@ for ref in "$BEFORE" "$AFTER"; do
   fi
 done
 
+fi # committed-source or immutable-artifact preparation
+
 log "[$CELL] build + up"
 boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
 
@@ -175,8 +192,16 @@ use_arm() {
   local arm_dir="$WORKTREES/$1"
   [ "$1" = "-" ] && arm_dir="$WORKTREES/worktree"
   rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat"
-  rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
-        "$arm_dir/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1
+  if [ -n "$ARTIFACT_INPUT" ]; then
+    local arm=before
+    [ "$1" != "$AFTER" ] || arm=after
+    cp -R "$ARTIFACT_ARMS/$arm/free/wp-slimstat" "$WP_DIR/wp-content/plugins/" || return 1
+    rm -rf "$WP_DIR/wp-content/plugins/wp-slimstat-pro"
+    cp -R "$ARTIFACT_ARMS/$arm/pro/wp-slimstat-pro" "$WP_DIR/wp-content/plugins/" || return 1
+  else
+    rsync -a --delete --exclude '.git' --exclude 'node_modules' --exclude 'tests/e2e/node_modules' \
+          "$arm_dir/" "$WP_DIR/wp-content/plugins/wp-slimstat/" >/dev/null 2>&1 || return 1
+  fi
   # INSTRUMENTS ALWAYS COME FROM THE CURRENT TREE, NEVER FROM THE ARM. A probe that differs
   # between arms measures itself as well as the change.
   #
@@ -193,8 +218,11 @@ use_arm() {
 }
 
 # Seed once, under the AFTER arm's schema, then never touch the data again.
-use_arm "$AFTER"
+use_arm "$AFTER" || exit 1
 wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || { err "activate failed"; exit 1; }
+if [ -n "$ARTIFACT_INPUT" ]; then
+  wpc plugin activate wp-slimstat-pro >>"$ART/install.log" 2>&1 || { err 'paired Pro activation failed'; exit 1; }
+fi
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' \
     >>"$ART/install.log" 2>&1
 
@@ -212,12 +240,18 @@ WIN_START=$((NOW - 30 * 86400))
 
 answers_for() {
   local ref="$1" out="$2"
-  use_arm "$ref"
+  use_arm "$ref" || return 1
   dc exec -T -u www-data \
      -e SLIMSTAT_ANSWERS_START="$WIN_START" -e SLIMSTAT_ANSWERS_END="$WIN_END" \
      -e SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" wp \
      wp --path=/var/www/html eval-file \
-     wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1
+     wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1 || return 1
+  if [ -n "$ARTIFACT_INPUT" ]; then
+    local arm=before
+    [ "$ref" != "$AFTER" ] || arm=after
+    python3 "$HARNESS_DIR/comparison-artifacts.py" "$ART/artifacts.json" "$BEFORE" "$AFTER" \
+      "$WP_DIR/wp-content/plugins" --verify-installed "$arm" >>"$ART/installed-artifacts.jsonl" || return 1
+  fi
   grep -h 'SLIMSTAT-ANSWERS' "$out.raw" | sed 's/^SLIMSTAT-ANSWERS //' > "$out"
   grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json"
   # The capability/status record is EXTRACTED, not left in the .raw. Without this the extended
@@ -242,8 +276,8 @@ b=0
 while [ "$b" -lt "$BLOCKS" ]; do
   # A-B-B-A: even blocks lead with BEFORE, odd blocks lead with AFTER.
   if [ $((b % 2)) -eq 0 ]; then
-    answers_for "$BEFORE" "$ART/before.json"
-    answers_for "$AFTER"  "$ART/after.json"
+    answers_for "$BEFORE" "$ART/before.json" || exit 1 || exit 1
+    answers_for "$AFTER"  "$ART/after.json" || exit 1 || exit 1
   else
     answers_for "$AFTER"  "$ART/after.json"
     answers_for "$BEFORE" "$ART/before.json"

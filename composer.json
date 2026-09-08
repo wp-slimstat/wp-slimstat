@@ -94,7 +94,7 @@
     "test:fingerprint-v2": "php tests/fingerprint-v2-encoding-test.php",
     "test:export-fidelity": "php tests/export-fidelity-test.php",
     "test:fingerprint-v2-py": "python3 tests/oracle/encoding_v1_test.py",
-    "test:qualification-artifact": "python3 tests/qualification-artifact-test.py",
+    "test:qualification-artifact": "python3 tests/qualification-artifact-test.py && python3 tests/comparison-artifacts-test.py",
     "test:qualification-ddl": "python3 tests/qualification-ddl-test.py",
     "test:qualification-pro-window": "python3 tests/qualification-pro-window-test.py",
     "test:report-request-shape": "php tests/report-request-shape-test.php",
