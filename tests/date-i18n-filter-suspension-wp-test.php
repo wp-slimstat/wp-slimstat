@@ -62,6 +62,12 @@ $assert_restored = static function ($path) use ($expected) {
     }
 };
 
+$saved_columns = wp_slimstat_db::$all_columns_names;
+wp_slimstat_db::$all_columns_names += [
+    'day' => ['Day', 'int'],
+    'year' => ['Year', 'int'],
+    'interval_hours' => ['Interval hours', 'int'],
+];
 $parse_exception = new RuntimeException('parse exception');
 $throwing_wp_date = static function () use ($parse_exception) { throw $parse_exception; };
 add_filter('wp_date', $throwing_wp_date);
@@ -76,16 +82,14 @@ try {
 $assert_restored('filter parsing exception path');
 
 $saved_settings = wp_slimstat::$settings;
-$saved_columns = wp_slimstat_db::$all_columns_names;
 wp_slimstat::$settings['limit_results'] = 10;
 wp_slimstat::$settings['use_current_month_timespan'] = 'off';
 wp_slimstat::$settings['posts_column_day_interval'] = 30;
-wp_slimstat_db::$all_columns_names['interval_hours'] = ['Interval hours', 'int'];
 $init_exception = new RuntimeException('initialization exception');
 $throwing_bucket = static function () use ($init_exception) { throw $init_exception; };
 add_filter('slimstat_live_window_bucket_seconds', $throwing_bucket);
 try {
-    wp_slimstat_db::init_filters('interval_hours equals -1');
+    wp_slimstat_db::init_filters('year equals 2100&&&interval_hours equals -1');
     throw new RuntimeException('filter initialization exception control did not throw');
 } catch (RuntimeException $caught) {
     if ($caught !== $init_exception) { throw $caught; }
