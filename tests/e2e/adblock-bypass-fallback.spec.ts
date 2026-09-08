@@ -101,7 +101,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     const anonPage = await ctx.newPage();
 
     // Block REST and Admin-AJAX endpoints — force the tracker to use adblock bypass
-    await anonPage.route('**/wp-json/slimstat/**', (route) => {
+    await anonPage.route((url) => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/'), (route) => {
       route.abort('blockedbyclient');
     });
     await anonPage.route('**/admin-ajax.php', (route) => {
@@ -136,7 +136,7 @@ test.describe('Ad-Blocker Bypass Fallback Tracking', () => {
     });
 
     // Block ALL tracking endpoints
-    await anonPage.route('**/wp-json/slimstat/**', (route) => {
+    await anonPage.route((url) => url.pathname.includes('/wp-json/slimstat/') || (url.searchParams.get('rest_route') || '').startsWith('/slimstat/'), (route) => {
       route.abort('blockedbyclient');
     });
     await anonPage.route('**/admin-ajax.php', (route) => {

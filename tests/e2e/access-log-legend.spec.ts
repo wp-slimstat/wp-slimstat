@@ -114,9 +114,9 @@ test.describe('Access Log row colours — per visitor type (seeds; throwaway DB 
 
   test('each visitor type gets its matching header highlight colour', async ({ page }) => {
     await openAccessLog(page);
-    await expect(page.locator('#slim_p7_02 p.header.is-known-user')).toHaveCount(1);   // WP user
-    await expect(page.locator('#slim_p7_02 p.header.is-known-visitor')).toHaveCount(1); // commenter
-    await expect(page.locator('#slim_p7_02 p.header.is-direct')).toHaveCount(1);        // direct human
+    await expect(page.locator('#slim_p7_02 p.header.is-known-user').filter({ hasText: 'e2e_wp_user' })).toHaveCount(1);   // WP user
+    await expect(page.locator('#slim_p7_02 p.header.is-known-visitor').filter({ hasText: 'e2e_commenter' })).toHaveCount(1); // commenter
+    await expect(page.locator('#slim_p7_02 p.header.is-direct').filter({ hasText: '10.0.0.4' })).toHaveCount(1);        // direct human
     // The bot row's header carries none of the human/user highlight classes.
     const botRow = page.locator('#slim_p7_02 p.header').filter({ has: page.locator('img[title="Bot/Crawler"]') });
     await expect(botRow).toHaveCount(1);

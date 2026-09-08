@@ -283,8 +283,7 @@ test.describe('Transport fallback: REST → AJAX', () => {
         ajaxRequests.push({ url: req.url(), headers: req.headers() });
     });
 
-    await page.route('**/wp-json/slimstat/v1/hit', (route) => route.abort('connectionfailed'));
-    await page.route('**/?rest_route=/slimstat/v1/hit*', (route) => route.abort('connectionfailed'));
+    await page.route((url) => url.pathname.endsWith('/wp-json/slimstat/v1/hit') || url.searchParams.get('rest_route') === '/slimstat/v1/hit', (route) => route.abort('connectionfailed'));
 
     const marker = `fallback-${Date.now()}`;
     await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
