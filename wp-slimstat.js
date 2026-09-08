@@ -578,11 +578,11 @@ var SlimStat = (function () {
                 if (raw) {
                     bufferInteraction(raw);
                 }
+                requiresIdResponse = true;
+                payload = buildPageviewBase(currentSlimStatParams(), false) + buildSlimStatData({});
+                item.payload = payload;
                 debugRecord(transport, url, 200, "stale_id_recovery", null, -101);
-                setTimeout(function () {
-                    SlimStat._send_pageview({ isIdRecovery: true });
-                }, 0);
-                callback({ success: false, handled: true });
+                sendXHR(url, onFail, xhrOpts);
                 return true;
             }
 

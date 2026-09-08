@@ -350,7 +350,22 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(typeof health.last_tracker_warning.label).toBe('string');
   });
 
-  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }) => {
+  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }, testInfo) => {
+    const trackerResponses: Array<{ url: string; request: string; status: number; response: string }> = [];
+    page.on('response', async response => {
+      const request = response.request();
+      if (request.method() !== 'POST' || !/admin-ajax\.php|slimstat\/v1\/hit|\/request\//.test(response.url())) return;
+      try {
+        trackerResponses.push({
+          url: response.url(),
+          request: request.postData() || '',
+          status: response.status(),
+          response: await response.text(),
+        });
+      } catch {
+        // A navigation can dispose a response body; the server/database assertions remain authoritative.
+      }
+    });
     await setSlimstatOptions(page, {
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
@@ -383,12 +398,19 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
 
     await page.click('#recover-link');
 
-    await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
-    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
+    try {
+      await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
+      await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
 
-    const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
-    expect(recoveredId).toBeTruthy();
-    expect(recoveredId).not.toBe(staleId);
+      const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
+      expect(recoveredId).toBeTruthy();
+      expect(recoveredId).not.toBe(staleId);
+    } finally {
+      await testInfo.attach('stale-id-transports', {
+        body: JSON.stringify(trackerResponses, null, 2),
+        contentType: 'application/json',
+      });
+    }
   });
 
   test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
