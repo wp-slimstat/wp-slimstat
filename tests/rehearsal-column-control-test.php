@@ -282,7 +282,8 @@ $check(
 );
 $check(
     'the verdict line exists',
-    false !== strpos($src, 'must "the corpus is the arm\'s own vintage"')
+    false !== strpos($src, 'check "the corpus is the arm\'s own vintage"')
+        && false !== strpos($src, '"arm-only: ${ONLY_ARM:-none}; dump-only: ${ONLY_DUMP:-none}"' . "\n  exit 1")
 );
 
 $pos_control = strpos($src, 'DUMP_COLS=$(dump_columns');

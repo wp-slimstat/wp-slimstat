@@ -509,8 +509,9 @@ ONLY_DUMP=$(columns_missing_from "$DUMP_COLS" "$ARM_COLS")
 if [ -z "$ONLY_ARM" ] && [ -z "$ONLY_DUMP" ]; then
   check "the corpus is the arm's own vintage" 0 "$ARM_COL_N columns, identical sets"
 else
-  must "the corpus is the arm's own vintage" 1 \
+  check "the corpus is the arm's own vintage" 1 \
         "arm-only: ${ONLY_ARM:-none}; dump-only: ${ONLY_DUMP:-none}"
+  exit 1
 fi
 
 log "[$CELL] hydrating $(basename "$DUMP")"
