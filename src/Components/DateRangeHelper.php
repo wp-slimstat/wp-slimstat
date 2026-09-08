@@ -180,12 +180,12 @@ class DateRangeHelper
 
         // Calculate interval in days (SlimStat style)
         // Normalize to midnight to avoid DST issues and off-by-one errors
-        $start_day = strtotime(date('Y-m-d', $start_timestamp));
-        $end_day = strtotime(date('Y-m-d', $end_timestamp));
+        $start_day = strtotime(gmdate('Y-m-d', $start_timestamp));
+        $end_day = strtotime(gmdate('Y-m-d', $end_timestamp));
         $interval_days = (($end_day - $start_day) / 86400) + 1;
 
         return [
-            'strtotime' => date('Y-m-d', $end_timestamp),
+            'strtotime' => gmdate('Y-m-d', $end_timestamp),
             'interval' => -$interval_days
         ];
     }
