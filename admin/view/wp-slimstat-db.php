@@ -525,8 +525,8 @@ class wp_slimstat_db
     {
         // Use the end date from normalized filters (if available)
         if (!empty(self::$filters_normalized['utime']['end'])) {
-            // Convert to Y-m-d for comparison (Query expects string date)
-            $to = wp_date('Y-m-d', self::$filters_normalized['utime']['end']);
+            // dt already contains the site offset; passing through wp_date adds it twice.
+            $to = (int) self::$filters_normalized['utime']['end'];
             if (method_exists($query, 'canUseCacheForDateRange')) {
                 $query->canUseCacheForDateRange($to);
             }
@@ -621,7 +621,7 @@ class wp_slimstat_db
             return false;
         }
 
-        return (int) self::$filters_normalized['utime']['end'] < strtotime(date('Y-m-d 00:00:00'));
+        return (int) self::$filters_normalized['utime']['end'] < intdiv(wp_slimstat::now(), 86400) * 86400;
     }
 
     protected static function is_simple_count_query($sql)
