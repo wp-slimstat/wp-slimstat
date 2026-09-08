@@ -78,6 +78,8 @@ $standalone = [
     'test:fp-negative-linux' => 'builds a Docker image and runs the fp-negative suite under dash. '
         . 'It cannot run on a host without Docker, so it must not be in an aggregate every lane '
         . 'executes; PITFALLS 93 rule 2 is why it exists separately from test:fp-negative',
+    'test:settings-cache-family-wp' => 'requires a disposable WordPress site and native database; '
+        . 'run it with WP-CLI against the packaged candidate during qualification',
 ];
 
 // `test:reports-escaping` is deliberately NOT here. It needs a live WordPress and its CI home is

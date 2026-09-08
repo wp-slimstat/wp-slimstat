@@ -2980,7 +2980,11 @@ function wp_slimstat_clear_cache_handler()
 
     global $wpdb;
     $transients = $wpdb->get_col(
-        sprintf("SELECT option_name FROM %s WHERE option_name LIKE '_transient_wp_slimstat_query_%%' OR option_name LIKE '_transient_timeout_wp_slimstat_query_%%'", $wpdb->options)
+        $wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+            $wpdb->esc_like('_transient_wp_slimstat_query_') . '%',
+            $wpdb->esc_like('_transient_timeout_wp_slimstat_query_') . '%'
+        )
     );
     $count = 0;
     foreach ($transients as $transient) {
