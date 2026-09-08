@@ -19,7 +19,7 @@ test('WooCommerce purchase preserves session, attribution and excludes checkout 
     const store = fixture('seed', runId);
     await testInfo.attach('woocommerce-version', { body: store.version, contentType: 'text/plain' });
     await clearStatsTable();
-    await setSlimstatOptions(page, { gdpr_enabled: 'off', javascript_mode: 'on', set_tracker_cookie: 'on', tracking_request_method: 'ajax', ignore_wp_users: 'no', ignore_bots: 'off' });
+    await setSlimstatOptions(page, { gdpr_enabled: 'off', javascript_mode: 'on', set_tracker_cookie: 'on', tracking_request_method: 'ajax', track_same_domain_referers: 'on', ignore_wp_users: 'no', ignore_bots: 'off' });
     const shopper = await context.newPage();
     const result = await shopperJourney(shopper, runId, store);
     const rows = await getCorrelatedRows(runId);

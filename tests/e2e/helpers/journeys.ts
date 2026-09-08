@@ -42,7 +42,7 @@ export async function shopperJourney(page: Page, runId: string, store: { product
   await page.locator('label[for="payment_method_bacs"]').click();
   await page.locator('#place_order').click();
   await expect(page).toHaveURL(/order-received/);
-  await expect(page.locator('.woocommerce-order')).toBeVisible();
+  await expect(page.getByText('Thank you. Your order has been received.', { exact: true })).toBeVisible();
   await waitForTracking(page, runId, 4);
   return { orderUrl: page.url() };
 }
