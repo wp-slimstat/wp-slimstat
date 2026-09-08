@@ -8,7 +8,12 @@ backup_recovery_snapshot() {
   : >"$out/schema.txt"; : >"$out/checksum.txt"
   while IFS= read -r table; do
     [[ "$table" =~ ^[a-zA-Z0-9_]+$ ]] || return 1
-    mysql_q "SHOW CREATE TABLE wordpress.\`$table\`;" </dev/null >>"$out/schema.txt" || return 1
+    # MySQL may add a redundant per-column CHARACTER SET after dump/import even when
+    # the collation is unchanged. Restrict normalization to a column definition's type clause;
+    # quoted defaults, comments, constraints and indexes remain byte-exact evidence.
+    mysql_q "SHOW CREATE TABLE wordpress.\`$table\`;" </dev/null \
+      | sed -E 's/(\\n  `[^`]+` [[:alnum:]]+(\([^)]*\))?( unsigned)?( zerofill)?) CHARACTER SET [[:alnum:]_]+ COLLATE /\1 COLLATE /g' \
+      >>"$out/schema.txt" || return 1
     checksum=$(mysql_q "CHECKSUM TABLE wordpress.\`$table\` EXTENDED;" </dev/null) || return 1
     [[ "$checksum" =~ [[:space:]][0-9]+$ ]] || return 1
     printf '%s\n' "$checksum" >>"$out/checksum.txt"
