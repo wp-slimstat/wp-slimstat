@@ -4,7 +4,7 @@
  * Provides WP-CLI AJAX simulation, DB seeding, data extractors, and
  * timestamp helpers used across all chart-related test files.
  */
-import { execSync } from 'child_process';
+import { execFileSync, execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPool } from './setup';
@@ -44,9 +44,8 @@ function wpCli(args: string, timeout = 30_000): string {
 }
 
 /**
- * Write a scratch PHP file where BOTH sides can read it, and return the path to pass to
- * WP-CLI. /tmp is the runner's /tmp, which the container cannot see; the plugin directory
- * is mounted, so a file under it is visible from both.
+ * Write a scratch PHP file and return its host and WP-CLI paths. wp-env sees the mounted
+ * plugin path; an explicitly named Docker container receives the file through docker cp.
  */
 function writeScratchPhp(name: string, code: string): { hostPath: string; cliPath: string } {
   const dir = path.join(PLUGIN_DIR, 'tests', 'e2e', '.tmp');
@@ -57,15 +56,28 @@ function writeScratchPhp(name: string, code: string): { hostPath: string; cliPat
 
   return {
     hostPath,
-    cliPath: IN_CONTAINER ? `${CONTAINER_PLUGIN_DIR}/tests/e2e/.tmp/${name}` : hostPath,
+    cliPath: WP_CLI_DOCKER_CONTAINER ? `/tmp/${name}` : IN_CONTAINER ? `${CONTAINER_PLUGIN_DIR}/tests/e2e/.tmp/${name}` : hostPath,
   };
+}
+
+function runScratchPhp(file: { hostPath: string; cliPath: string }): string {
+  if (WP_CLI_DOCKER_CONTAINER) {
+    execFileSync('docker', ['cp', file.hostPath, `${WP_CLI_DOCKER_CONTAINER}:${file.cliPath}`]);
+  }
+  try {
+    return wpCli(`eval-file "${file.cliPath}"`);
+  } finally {
+    if (WP_CLI_DOCKER_CONTAINER) {
+      execFileSync('docker', ['exec', WP_CLI_DOCKER_CONTAINER, 'rm', '-f', file.cliPath]);
+    }
+  }
 }
 
 /** Execute an isolated WP fixture through the same checked container routing as charts. */
 export function runWordPressFixture(code: string): string {
   const file = writeScratchPhp(`fixture-${process.pid}-${Date.now()}.php`, code);
   try {
-    return wpCli(`eval-file "${file.cliPath}"`);
+    return runScratchPhp(file);
   } finally {
     fs.unlinkSync(file.hostPath);
   }
@@ -140,7 +152,7 @@ echo \$output;
   const scratch = writeScratchPhp(scratchName, phpCode);
 
   try {
-    const raw = wpCli(`eval-file "${scratch.cliPath}"`);
+    const raw = runScratchPhp(scratch);
     const parsed = extractJson(raw);
     if (parsed) return parsed;
     throw new Error(`No JSON in output: ${raw.substring(0, 300)}`);
