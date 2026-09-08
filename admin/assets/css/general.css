@@ -13,6 +13,18 @@
  * @since 6.0.0
  */
 
+/*
+ * One table-body height, used as BOTH the floor every table box reserves and
+ * the ceiling the Pro-tier row list scrolls inside. The two are load-bearingly
+ * coupled — boxes only come out equal-height because the cap equals the
+ * reserve — so they read one value rather than repeating a literal that could
+ * drift apart. See the "Equal-height table boxes" section below for how the
+ * figure is derived.
+ */
+.slimstat-general-page {
+    --ss-table-body-height: 215px;
+}
+
 .slimstat-general-page .page {
     background: var(--ss-surface);
     border-radius: var(--ss-radius-lg);
@@ -399,7 +411,37 @@
  * figure lives in admin.css, which this page deliberately does not fork.
  */
 .slimstat-general-page .meta-box-sortables .postbox.large .inside {
-    min-height: 215px;
+    min-height: var(--ss-table-body-height);
+}
+
+/*
+ * ...and no MORE than that either. A Pro account gets the full page of rows
+ * (rows_to_show, 20 by default), which stretched the box to ~20 rows tall and
+ * left it towering over its neighbour in the same flex-wrap row. Capping the
+ * body at the same 5-row height and scrolling the overflow keeps every box
+ * the same size no matter how many rows it holds; the pager arrows below are
+ * unaffected, because raw_results_to_html() emits the pagination as a SIBLING
+ * after .inside (and admin.js's refresh handler strips .pagination out of the
+ * AJAX response and updates the existing element separately), so it stays
+ * pinned under the scroll area on both the first paint and after a refresh.
+ *
+ * Free tier is deliberately excluded, via the presence of a synthetic row —
+ * the marker GeneralReports::markSyntheticRows() puts on the blurred rows,
+ * and the only thing in the DOM that distinguishes a gated box. (NOT an
+ * `is-gated` postbox class: that was removed when the gate moved to a
+ * per-render decision, so `:not(.is-gated)` would match everything and quietly
+ * cap the free tier too.) A gated box renders exactly GATED_TOTAL_ROWS rows,
+ * which already fit, and has no pager to scroll toward — a scroll container
+ * there would only put a scrollbar on the blurred rows.
+ *
+ * A gated box holding FEWER rows than the free limit is the one case this
+ * selector does cap — gateRows() returns early without adding synthetic rows —
+ * but a box that short is nowhere near the cap, so the scroll container never
+ * engages.
+ */
+.slimstat-general-page .meta-box-sortables .postbox.large .inside:not(:has(p.slimstat-row-synthetic)) {
+    max-height: var(--ss-table-body-height);
+    overflow-y: auto;
 }
 
 /*
@@ -428,7 +470,7 @@
  * .large box this is already covered there, and `flex: 1` does the filling.
  */
 .slimstat-general-page .meta-box-sortables .postbox:not(.large) .empty {
-    min-height: 215px;
+    min-height: var(--ss-table-body-height);
 }
 
 .slimstat-general-page .empty .big {

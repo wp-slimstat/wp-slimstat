@@ -479,6 +479,45 @@ class GeneralScreenRegistrationTest extends TestCase
     }
 
     /**
+     * Table boxes are exactly one height, floor and ceiling.
+     *
+     * A Pro account renders a full page of rows (rows_to_show, 20 by default),
+     * which stretched one box far taller than its neighbour in the same
+     * flex-wrap row. The cap only produces equal-height boxes because it is the
+     * SAME value the floor reserves, so both must read one custom property
+     * rather than repeating a literal that could drift apart.
+     */
+    public function test_table_boxes_share_one_body_height(): void
+    {
+        $css = file_get_contents(dirname(__DIR__, 2) . '/admin/assets/css/general.css');
+
+        $this->assertSame(
+            1,
+            substr_count($css, '--ss-table-body-height:'),
+            'the table body height must be declared exactly once'
+        );
+        $this->assertSame(
+            3,
+            substr_count($css, 'var(--ss-table-body-height)'),
+            'the floor, the ceiling and the empty-state reserve must all read that one value'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/(min|max)-height:\s*215px/',
+            $css,
+            'no hardcoded height may remain alongside the token'
+        );
+
+        // The cap must skip the free tier, whose gated boxes render a fixed
+        // short row set and have no pager to scroll toward. Keyed to the
+        // synthetic-row marker because the postbox carries no gated class.
+        $this->assertStringContainsString(
+            '.postbox.large .inside:not(:has(p.slimstat-row-synthetic))',
+            $css,
+            'the height cap must exclude gated (free-tier) boxes via the synthetic-row marker'
+        );
+    }
+
+    /**
      * The free-tier blur must key off the server-applied marker class, never
      * off row position.
      *
