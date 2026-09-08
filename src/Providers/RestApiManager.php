@@ -178,7 +178,8 @@ class RestApiManager
 
         self::prepareAdblockTrackingResponse();
 
-        if ('POST' !== strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET')) {
+        $request_method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        if (!is_string($request_method) || 'POST' !== strtoupper(wp_unslash($request_method))) {
             status_header(405);
             header('Allow: POST');
             exit;

@@ -506,7 +506,15 @@ $res = $cc->handle_consent_change($req);
 
 assert_true($res instanceof \WP_Error, 'consent-change should return WP_Error for logged-in with bad nonce');
 
-// ─── Test 14: ConsentHandler::handleConsentRevoked rejects bad nonce ───
+// ─── Test 14: malformed tracking cookies cannot reach hashing ───
+
+$_COOKIE['slimstat_tracking_code'] = ['malformed'];
+$cc = new \SlimStat\Controllers\Rest\ConsentChangeRestController();
+$cache_key = new \ReflectionMethod($cc, 'getConsentCacheKey');
+assert_same('', $cache_key->invoke($cc), 'array tracking cookie should disable visitor-scoped consent caching');
+unset($_COOKIE['slimstat_tracking_code']);
+
+// ─── Test 15: ConsentHandler::handleConsentRevoked rejects bad nonce ───
 // handleConsentRevoked uses check_ajax_referer which dies on failure.
 // Our stub throws RuntimeException.
 
