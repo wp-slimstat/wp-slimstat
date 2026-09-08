@@ -182,8 +182,8 @@ class wp_slimstat_db
                 }
             } elseif (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
                 // Sanitize date inputs to prevent XSS
-                $from_date = sanitize_text_field($_GET['from']);
-                $to_date = sanitize_text_field($_GET['to']);
+                $from_date = sanitize_text_field(wp_unslash($_GET['from']));
+                $to_date = sanitize_text_field(wp_unslash($_GET['to']));
 
                 // Validate date format (YYYY-MM-DD)
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
@@ -225,7 +225,7 @@ class wp_slimstat_db
         // Fields and drop downs
         if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
             && (!isset($_POST['v']) || is_string($_POST['v']))) {
-            $filters_array[sanitize_text_field($_POST['f'])] = sprintf('%s %s ', sanitize_text_field($_POST[ 'f' ]), sanitize_text_field($_POST[ 'o' ])) . (isset($_POST['v']) ? sanitize_text_field($_POST['v']) : '');
+            $filters_array[sanitize_text_field(wp_unslash($_POST['f']))] = sprintf('%s %s ', sanitize_text_field(wp_unslash($_POST[ 'f' ])), sanitize_text_field(wp_unslash($_POST[ 'o' ]))) . (isset($_POST['v']) ? sanitize_text_field(wp_unslash($_POST['v'])) : '');
         }
 
         // Filters set via the plugin options

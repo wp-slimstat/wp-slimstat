@@ -32,10 +32,10 @@ foreach ($cases as $case) {
  wp_slimstat_db::init();
  if ('author equals author-fixture' !== wp_slimstat_db::$filters_normalized) { throw new RuntimeException('Malformed filter became an unintended constraint'); }
 }
-$_GET = []; $_POST = ['hour' => '0', 'f' => 'browser', 'o' => 'equals', 'v' => 'Firefox'];
+$_GET = []; $_POST = ['hour' => '0', 'f' => 'browser', 'o' => 'equals', 'v' => "O\\'Brien"];
 $_REQUEST = ['page' => 'slimview1', 'fs' => ['country' => 'equals gb']];
 wp_slimstat_db::init('resource contains news');
-foreach (['hour equals 0', 'browser equals Firefox', 'country equals gb', 'resource contains news', 'author equals author-fixture'] as $filter) {
+foreach (['hour equals 0', "browser equals O'Brien", 'country equals gb', 'resource contains news', 'author equals author-fixture'] as $filter) {
  if (false === strpos(wp_slimstat_db::$filters_normalized, $filter)) { throw new RuntimeException('Valid filter lost: ' . $filter); }
 }
 if (7 !== wp_slimstat_db::$pageviews) { throw new RuntimeException('Report initialization skipped'); }
