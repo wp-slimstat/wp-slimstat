@@ -81,6 +81,13 @@ async function disableCustomDb(): Promise<void> {
   );
 }
 
+async function clearAdminbarOnlineCache(): Promise<void> {
+  await getPool().execute(
+    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_slimstat\\_adminbar\\_online\\_%' " +
+    "OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_adminbar\\_online\\_%'"
+  );
+}
+
 async function clearCustomDbStatsTable(): Promise<void> {
   const pool = getPool();
   const [tables] = (await pool.execute(
@@ -242,6 +249,10 @@ test.describe('Live Analytics — Timezone & Custom DB Scenarios', () => {
       // Wait for new tracking row(s) to appear in DB
       const rows = await waitForNewRows(beforeId, 1);
       expect(rows.length).toBeGreaterThanOrEqual(1);
+      // The frontend admin bar can cache zero before its asynchronous tracker stores
+      // this visit. This case validates the timezone query, so force its next read to
+      // observe the row whose arrival was just established above.
+      await clearAdminbarOnlineCache();
 
       // Navigate to slimview1 to get nonces
       await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, {
