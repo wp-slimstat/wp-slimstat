@@ -1,5 +1,13 @@
 services:
+  wp:
+    cpus: 2
+    mem_limit: 1g
+  db:
+    cpus: 2
+    mem_limit: 2g
   analytics-db:
+    cpus: 2
+    mem_limit: 2g
     image: mysql:8.0
     environment:
       MYSQL_ROOT_PASSWORD: root
