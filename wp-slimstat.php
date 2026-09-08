@@ -2733,6 +2733,16 @@ class wp_slimstat
     }
     // end get_lossy_url
 
+    /** Internal scope for report SQL and cached answers, including external databases. */
+    public static function report_scope(): array
+    {
+        $author = 'on' === (self::$settings['restrict_authors_view'] ?? 'off') && !current_user_can('manage_options')
+            ? (string) ($GLOBALS['current_user']->user_login ?? '') : '';
+        $where = '' !== $author ? self::$wpdb->prepare('author = %s', $author) : '1=1';
+        $context = [$GLOBALS['wpdb']->prefix, self::$wpdb->dbhost ?? '', self::$wpdb->dbname ?? '', $author];
+        return ['where' => $where, 'cache' => md5(serialize($context))];
+    }
+
     /**
      * Check if slimstat pro plugin is installed
      */

@@ -9,7 +9,14 @@ class wp_slimstat { public static $settings = ['capability_can_admin' => 'manage
 $GLOBALS['wpdb'] = new class {
     public $prefix = 'wp_', $queries = [];
     public function prepare($sql, $id) { return str_replace('%d', (string) $id, $sql); }
-    public function query($sql) { $this->queries[] = $sql; return 1; }
+    public function query($sql) {
+        if (empty($GLOBALS['expect_delete']) || $sql !== 'DELETE FROM wp_slim_stats WHERE id = 1' || $this->queries !== []) {
+            throw new RuntimeException('Deletion escaped the authorized, exact-id request');
+        }
+        $this->queries[] = $sql;
+        echo "PASS: deletion rejects malformed and unauthorized requests; valid id remains bound\n";
+        return 1;
+    }
 };
 $body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/index.php'), 'delete_pageview');
 eval('class AdminRequest { public static function delete_pageview() {' . $body . '} }');
@@ -23,6 +30,6 @@ $GLOBALS['allowed'] = false;
 $_POST = ['pageview_id' => '1', 'security' => 'valid']; AdminRequest::delete_pageview();
 if ($GLOBALS['wpdb']->queries !== []) { throw new RuntimeException('Unauthorized request deleted a pageview'); }
 $GLOBALS['allowed'] = true;
+$GLOBALS['expect_delete'] = true;
 AdminRequest::delete_pageview();
-if ($GLOBALS['wpdb']->queries !== ['DELETE FROM wp_slim_stats WHERE id = 1']) { throw new RuntimeException('Valid deletion did not target exactly one id'); }
-echo "PASS: deletion rejects malformed and unauthorized requests; valid id remains bound\n";
+throw new RuntimeException('Valid deletion did not terminate its AJAX response');

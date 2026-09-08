@@ -3168,7 +3168,8 @@ class wp_slimstat_admin
      */
     private static function adminbar_today_stats()
     {
-        $transient_key = 'slimstat_adminbar_today_' . get_current_blog_id();
+        $scope = wp_slimstat::report_scope();
+        $transient_key = 'slimstat_adminbar_today_' . get_current_blog_id() . '_' . $scope['cache'];
         $today_stats   = get_transient($transient_key);
 
         if (is_array($today_stats)) {
@@ -3192,7 +3193,7 @@ class wp_slimstat_admin
                 SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS views_today,
                 SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS views_yesterday
             FROM {$table}
-            WHERE dt >= %d",
+            WHERE ({$scope['where']}) AND dt >= %d",
             $today_start,
             $yesterday_start, $yesterday_end,
             $today_start,
@@ -3213,7 +3214,7 @@ class wp_slimstat_admin
                     SUM(CASE WHEN dt >= %d THEN 1 ELSE 0 END) AS referrals_today,
                     SUM(CASE WHEN dt BETWEEN %d AND %d THEN 1 ELSE 0 END) AS referrals_yesterday
                 FROM {$table}
-                WHERE dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
+                WHERE ({$scope['where']}) AND dt >= %d AND referer IS NOT NULL AND referer NOT LIKE %s",
                 $today_start,
                 $yesterday_start, $yesterday_end,
                 $yesterday_start,
@@ -3257,7 +3258,8 @@ class wp_slimstat_admin
      */
     private static function online_count()
     {
-        $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id();
+        $scope = wp_slimstat::report_scope();
+        $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id() . '_' . $scope['cache'];
         $cached        = get_transient($transient_key);
 
         // Strict check: a legitimate count of 0 must not read as a cache miss, or an
@@ -3287,6 +3289,7 @@ class wp_slimstat_admin
     private static function query_online_count()
     {
         $wpdb = wp_slimstat::$wpdb;
+        $scope = wp_slimstat::report_scope();
         $table = "{$GLOBALS['wpdb']->prefix}slim_stats";
         $current_minute_start = (int) floor(wp_slimstat::now() / 60) * 60;
         $window_start = $current_minute_start - (29 * 60); // 30-minute window
@@ -3300,7 +3303,7 @@ class wp_slimstat_admin
                     END
                 ) AS last_activity
                 FROM {$table}
-                WHERE visit_id > 0
+                WHERE ({$scope['where']}) AND visit_id > 0
                     AND (dt >= %d OR (dt_out IS NOT NULL AND dt_out >= %d))
                 GROUP BY visit_id
                 HAVING (FLOOR(last_activity / 60) * 60 + 59) >= %d
@@ -3611,7 +3614,8 @@ class wp_slimstat_admin
         }
 
         // Build SQL query directly to avoid Query class interference with global filters
-        $where_clauses = [];
+        $scope = wp_slimstat::report_scope();
+        $where_clauses = [$scope['where']];
 
         // Apply time range filter
         if (!empty($time_start) && !empty($time_end)) {
@@ -3852,7 +3856,8 @@ class wp_slimstat_admin
         $dbhost_hash = substr(md5($dbhost), 0, 8);
         $can_view        = (string) (wp_slimstat::$settings['can_view'] ?? '');
         $capability      = (string) (wp_slimstat::$settings['capability_can_view'] ?? '');
-        $capability_hash = substr(md5($capability . '|' . $can_view), 0, 8);
+        $scope = wp_slimstat::report_scope();
+        $capability_hash = md5($capability . '|' . $can_view . '|' . $scope['cache']);
         $ts_start_bucket = $time_start ? (int) floor((int) $time_start / 3600) : 0;
         $ts_end_bucket   = $time_end ? (int) floor((int) $time_end / 3600) : 0;
         $search_hash     = $search === '' ? '' : substr(md5($search), 0, 8);

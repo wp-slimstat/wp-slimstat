@@ -38,6 +38,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 * @var array<string, mixed>|null
 	 */
 	private $data_memo = null;
+	private $data_memo_scope = '';
 
 	/**
 	 * {@inheritDoc}
@@ -91,7 +92,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		// fresh report, and get_data() re-reads it. A static memo could be warmed
 		// before that rewrite and would then serve the wrong series on every
 		// refresh. A fresh instance per request is structurally immune.
-		if ( null !== $this->data_memo ) {
+		$scope_key = \wp_slimstat::report_scope()['cache'];
+		if ( $this->data_memo !== null && $this->data_memo_scope === $scope_key ) {
 			return $this->data_memo;
 		}
 
@@ -106,6 +108,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$chart_data = $this->get_chart_data_for_metric( $selected_metric );
 		$live_counts = $this->get_all_live_counts();
 
+		$this->data_memo_scope = $scope_key;
 		$this->data_memo = [
 			'users_live'              => $live_counts['users'] ?? 0,
 			'pages_live'              => $live_counts['pages'] ?? 0,
@@ -178,6 +181,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$row          = Query::select( "COUNT(DISTINCT NULLIF(resource,'')) AS pages_count, COUNT(DISTINCT NULLIF(country,'')) AS countries_count" )
 			->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 			->where( 'dt', '>=', $threshold_30 )
+			->whereRaw( \wp_slimstat::report_scope()['where'] )
 			->getRow();
 
 		return [
@@ -195,6 +199,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	private function get_sessions_count_within_window( int $window_seconds ): int {
 		$wpdb = \wp_slimstat::$wpdb;
+		$scope = \wp_slimstat::report_scope();
 
 		$window_seconds = max( 60, $window_seconds );
 		$table          = "{$GLOBALS['wpdb']->prefix}slim_stats";
@@ -216,7 +221,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 					END
 				) AS last_activity
 				FROM {$table}
-				WHERE visit_id > 0
+				WHERE ({$scope['where']}) AND visit_id > 0
 					AND (
 						dt >= %d
 						OR ( dt_out IS NOT NULL AND dt_out >= %d )
@@ -283,6 +288,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 				->from( "{$GLOBALS['wpdb']->prefix}slim_stats" )
 				->where( 'dt', '>=', $start_minute )
 					->whereRaw( $condition )
+					->whereRaw( \wp_slimstat::report_scope()['where'] )
 					// Use the select alias in GROUP BY and ORDER BY for MySQL 5.7 compatibility
 					->groupBy( 'minute_timestamp' )
 					->orderBy( 'minute_timestamp ASC' )
@@ -310,6 +316,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	public function get_users_chart_data(): array {
 		$wpdb = \wp_slimstat::$wpdb;
+		$scope = \wp_slimstat::report_scope();
 
 		if ( ! $this->is_tracking_enabled() ) {
 			$empty = $this->get_empty_chart_data();
@@ -318,7 +325,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 			return $empty;
 		}
 
-		$cache_key = 'slimstat_chart_data_users_' . get_current_blog_id();
+		$generation = get_transient( 'slimstat_chart_data_users_' . get_current_blog_id() );
+		$cache_key = 'slimstat_chart_data_users_' . get_current_blog_id() . '_' . md5( $scope['cache'] . serialize( $generation ) );
 		$cached    = get_transient( $cache_key );
 		if ( false !== $cached && is_array( $cached ) ) {
 			$cache_time = $cached['cache_time'] ?? 0;
@@ -371,7 +379,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 						END
 					) / 60 ) * 60 AS last_minute
 				FROM {$table}
-				WHERE visit_id > 0
+				WHERE ({$scope['where']}) AND visit_id > 0
 					AND dt <= %d
 					AND (
 						dt >= %d
@@ -744,7 +752,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		$blog_id = get_current_blog_id();
 
 		// Clear manual transient cache (only used for users chart with complex JOIN)
-		delete_transient( 'slimstat_chart_data_users_' . $blog_id );
+		// Rotate one shared generation so this public invalidator reaches every author/DB scope.
+		set_transient( 'slimstat_chart_data_users_' . $blog_id, wp_generate_uuid4(), MINUTE_IN_SECONDS );
 
 		// Note: Query class cache is cleared automatically based on query signature
 		// No need to manually clear cache for pages/countries metrics
