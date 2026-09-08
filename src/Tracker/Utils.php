@@ -416,23 +416,26 @@ class Utils
 
 	public static function base64UrlDecode($input = '')
 	{
-		return strip_tags(trim(base64_decode(strtr($input, '._-', '+/='))));
+		return wp_strip_all_tags(trim(base64_decode(strtr($input, '._-', '+/='))));
 	}
 
 	public static function getRemoteIp()
 	{
 		$ipArray = ['', ''];
 
-		if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
-			$ipArray[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+		$remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '';
+		$remoteAddr = is_string($remoteAddr) ? sanitize_text_field(wp_unslash($remoteAddr)) : '';
+		if (false !== filter_var($remoteAddr, FILTER_VALIDATE_IP)) {
+			$ipArray[0] = $remoteAddr;
 		}
 
 		// CF-Connecting-IP is handled separately via getCfClientIp() with CF-Ray validation.
 		// Including it here would bypass that check and allow IP spoofing on non-CF origins.
 		$originatingIpHeaders = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
 		foreach ($originatingIpHeaders as $header) {
-			if (!empty($_SERVER[$header])) {
-				$headerValue = sanitize_text_field(wp_unslash($_SERVER[$header]));
+			$headerValue = $_SERVER[$header] ?? '';
+			if (is_string($headerValue) && '' !== $headerValue) {
+				$headerValue = sanitize_text_field(wp_unslash($headerValue));
 				foreach (explode(',', $headerValue) as $ip) {
 					$ip = trim($ip);
 					if (false !== filter_var($ip, FILTER_VALIDATE_IP) && $ip != $ipArray[0]) {
@@ -489,7 +492,7 @@ class Utils
 		$search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
 		$search_engines = json_decode($search_engines, true);
 
-		$parsed_url = @parse_url($url ?: '');
+		$parsed_url = wp_parse_url($url ?: '');
 		if (empty($search_engines) || empty($parsed_url) || empty($parsed_url['host'])) {
 			return '';
 		}
@@ -635,7 +638,7 @@ class Utils
 	public static function getClientInfo($dataJs = [], $stat = [])
 	{
 		if (!empty($dataJs['bw'])) {
-			$stat['resolution'] = strip_tags(trim($dataJs['bw'] . 'x' . $dataJs['bh']));
+			$stat['resolution'] = wp_strip_all_tags(trim($dataJs['bw'] . 'x' . $dataJs['bh']));
 		}
 
 		if (!empty($dataJs['sw'])) {
