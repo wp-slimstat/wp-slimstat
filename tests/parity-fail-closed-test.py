@@ -58,3 +58,22 @@ if ($normalise('1700000000') === $normalise('1700000001')) { exit(3); }
 '''
 subprocess.run(['php', '-r', probe, str(comparator.with_name('parity-snapshot.php'))], check=True)
 print('PASS: snapshot preserves dates, chart epochs and all 250 numeric values')
+bootstrap_probe = r'''
+namespace SlimStat\Reports {
+    class Bootstrap {
+        static function get_instance() { return new self; }
+        function init() { throw new \RuntimeException('registry failed'); }
+    }
+}
+namespace {
+    function is_user_logged_in() { return true; }
+    class wp_slimstat { public static $settings = []; }
+    class wp_slimstat_reports { public static $reports = []; static function init() {} }
+    require $argv[1];
+    try { slimstat_bench_bootstrap_reports(); }
+    catch (\RuntimeException $e) { exit($e->getMessage() === 'registry failed' ? 0 : 2); }
+    exit(1);
+}
+'''
+subprocess.run(['php', '-r', bootstrap_probe, str(comparator.with_name('reports-bootstrap.php'))], check=True)
+print('PASS: report registry initialization failure cannot become a partial snapshot')

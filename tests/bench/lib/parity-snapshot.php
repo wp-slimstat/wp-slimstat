@@ -35,7 +35,7 @@ $out_path = (string) ($args[0] ?? '');
 if ($out_path === '') {
     echo "usage: wp eval-file parity-snapshot.php <out.json> [cell,cell,...]\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 define('SLIMSTAT_BENCH_FINGERPRINT_LIB', true);
@@ -44,7 +44,7 @@ require_once __DIR__ . '/fingerprint.php';
 if (!class_exists('wp_slimstat')) {
     echo "ERROR: wp_slimstat is not loaded — is the plugin active?\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 $db = wp_slimstat::$wpdb instanceof wpdb ? wp_slimstat::$wpdb : $GLOBALS['wpdb'];
@@ -65,7 +65,7 @@ $max_dt = (int) $db->get_var("SELECT MAX(dt) FROM `{$db->prefix}slim_stats`");
 if ($max_dt <= 0) {
     echo "ERROR: no rows in slim_stats — nothing to snapshot\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 // Quantised to the day it lands in: only the day/month/year are used to build
 // the filter, so carrying a to-the-second value would make two snapshots taken
@@ -230,15 +230,13 @@ $snapshot = [
     // boundary, so the comparator matches on this resolved value rather than on the bucket
     // size. 0 when unpinned.
     'live_window_end'  => 0,
+    'report_ids'       => array_keys($reports),
     'cells'            => [],
 ];
 
 foreach ($wanted as $cell => $filters) {
     printf("cell %s\n", $cell);
     foreach ($reports as $report_id => $report) {
-        if (empty($report['callback'])) {
-            continue;
-        }
         wp_slimstat_db::init($filters);
 
         if (strpos($cell, 'straddling') === 0) {
@@ -248,6 +246,9 @@ foreach ($wanted as $cell => $filters) {
         $html  = '';
         $error = null;
         try {
+            if (empty($report['callback'])) {
+                throw new \RuntimeException('Registered report has no callable callback');
+            }
             ob_start();
             wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
             $html = (string) ob_get_clean();
