@@ -242,6 +242,7 @@
     "phpstan": "phpstan analyse --memory-limit=2G",
     "test:phpstan": "@phpstan",
     "test:source-level": [
+      "php tests/settings-maintenance-result-test.php",
       "@test:source-scan-strength",
       "@test:control-wiring",
       "@test:fp-negative",

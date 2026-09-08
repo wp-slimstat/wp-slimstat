@@ -803,11 +803,19 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
                 break;
 
             case 'truncate-table':
-                wp_slimstat::$wpdb->query(sprintf('DELETE te FROM %sslim_events te', $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('OPTIMIZE TABLE %sslim_events', $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('DELETE t1 FROM %sslim_stats t1', $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat::$wpdb->query(sprintf('OPTIMIZE TABLE %sslim_stats', $GLOBALS[ 'wpdb' ]->prefix));
-                wp_slimstat_admin::show_message(__('All your records were successfully deleted.', 'wp-slimstat'));
+                $slimstat_deleted = true;
+                foreach (['DELETE te FROM %sslim_events te', 'OPTIMIZE TABLE %sslim_events', 'DELETE t1 FROM %sslim_stats t1', 'OPTIMIZE TABLE %sslim_stats'] as $slimstat_statement) {
+                    if (false === wp_slimstat::$wpdb->query(sprintf($slimstat_statement, $GLOBALS['wpdb']->prefix))) {
+                        $slimstat_deleted = false;
+                        break;
+                    }
+                }
+                wp_slimstat_admin::show_message(
+                    $slimstat_deleted
+                        ? __('All your records were successfully deleted.', 'wp-slimstat')
+                        : __('Database maintenance failed. Some records may already have been deleted. Check the database connection and retry.', 'wp-slimstat'),
+                    $slimstat_deleted ? 'updated' : 'error'
+                );
                 break;
 
             default:
@@ -835,23 +843,36 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
             $slimstat_prefix       = $GLOBALS['wpdb']->prefix;
             $slimstat_toggle_group = \SlimStat\Schema\Schema::optionalGroup('db_indexes');
 
-            if ('on' == $posted_options['db_indexes'] && 'no' == wp_slimstat::$settings['db_indexes']) {
+            if (in_array($posted_options['db_indexes'], ['on', 'no'], true) && $posted_options['db_indexes'] !== wp_slimstat::$settings['db_indexes']) {
+                $slimstat_indexes_changed = true;
                 foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
-                    wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix));
+                    $slimstat_state = \SlimStat\Schema\Schema::indexState(wp_slimstat::$wpdb, $slimstat_suffix, $slimstat_prefix);
+                    $slimstat_resolved = \SlimStat\Schema\Schema::resolve($slimstat_index, $slimstat_prefix);
+                    $slimstat_present = in_array($slimstat_resolved, $slimstat_state['present'], true);
+                    $slimstat_missing = in_array($slimstat_index, $slimstat_state['missing'], true);
+                    $slimstat_malformed = in_array($slimstat_index, $slimstat_state['malformed'], true);
+                    if (!$slimstat_present && !$slimstat_missing && !$slimstat_malformed) {
+                        $slimstat_indexes_changed = false;
+                        break;
+                    }
+                    if ('on' === $posted_options['db_indexes']) {
+                        if ($slimstat_malformed || ($slimstat_missing && false === wp_slimstat::$wpdb->query(\SlimStat\Schema\Schema::createIndexSql($slimstat_suffix, $slimstat_index, $slimstat_prefix)))) {
+                            $slimstat_indexes_changed = false;
+                            break;
+                        }
+                    } elseif (!$slimstat_missing && false === wp_slimstat::$wpdb->query(sprintf('ALTER TABLE %s DROP INDEX %s', $slimstat_prefix . $slimstat_suffix, $slimstat_resolved))) {
+                        $slimstat_indexes_changed = false;
+                        break;
+                    }
                 }
-                $save_messages[]                     = __('Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat');
-                wp_slimstat::$settings['db_indexes'] = 'on';
-            } elseif ('no' == $posted_options['db_indexes'] && 'on' == wp_slimstat::$settings['db_indexes']) {
-                // An empty value means that the toggle has been switched to "Off"
-                foreach ($slimstat_toggle_group as [$slimstat_suffix, $slimstat_index]) {
-                    wp_slimstat::$wpdb->query(sprintf(
-                        'ALTER TABLE %s DROP INDEX %s',
-                        $slimstat_prefix . $slimstat_suffix,
-                        \SlimStat\Schema\Schema::resolve($slimstat_index, $slimstat_prefix)
-                    ));
+                if ($slimstat_indexes_changed) {
+                    wp_slimstat::$settings['db_indexes'] = $posted_options['db_indexes'];
+                    $save_messages[] = 'on' === $posted_options['db_indexes']
+                        ? __('Congratulations! Slimstat Analytics is now optimized for <a href="https://www.youtube.com/watch?v=ygE01sOhzz0" target="_blank">ludicrous speed</a>.', 'wp-slimstat')
+                        : __('Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat');
+                } else {
+                    $save_messages[] = __('The database index change could not be completed. The saved preference is unchanged; check the database and retry.', 'wp-slimstat');
                 }
-                $save_messages[]                     = __('Table indexes have been disabled. Enjoy the extra database space!', 'wp-slimstat');
-                wp_slimstat::$settings['db_indexes'] = 'no';
             }
         }
 
@@ -926,7 +947,7 @@ if (!empty($settings) && isset($_REQUEST['slimstat_update_settings']) && is_stri
 
         // All other options
         foreach ($posted_options as $a_post_slug => $a_post_value) {
-            if (empty($settings[$current_tab]['rows'][$a_post_slug]) || !empty($settings[$current_tab]['rows'][$a_post_slug]['readonly']) || in_array($settings[$current_tab]['rows'][$a_post_slug]['type'], ['section_header', 'plain-text']) || in_array($a_post_slug, ['enable_maxmind', 'enable_browscap'])) {
+            if (empty($settings[$current_tab]['rows'][$a_post_slug]) || !empty($settings[$current_tab]['rows'][$a_post_slug]['readonly']) || in_array($settings[$current_tab]['rows'][$a_post_slug]['type'], ['section_header', 'plain-text']) || in_array($a_post_slug, ['enable_maxmind', 'enable_browscap', 'db_indexes'])) {
                 continue;
             }
 
@@ -1006,7 +1027,7 @@ $index_names = [
 ];
 $missing_indexes = [];
 foreach ($index_names as $idx) {
-    $exists = wp_slimstat::$wpdb->get_results(sprintf("SHOW INDEX FROM %sslim_stats WHERE Key_name = '%s'", $GLOBALS[ 'wpdb' ]->prefix, $idx));
+    $exists = wp_slimstat::$wpdb->get_results(wp_slimstat::$wpdb->prepare("SHOW INDEX FROM {$GLOBALS['wpdb']->prefix}slim_stats WHERE Key_name = %s", $idx));
     if (empty($exists)) {
         $missing_indexes[] = $idx;
     }

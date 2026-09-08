@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-08T06:09:11+00:00\n"
+"POT-Creation-Date: 2026-09-08T07:32:22+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-slimstat\n"
@@ -132,13 +132,13 @@ msgstr ""
 
 #: admin/config/index.php:87
 #: admin/view/wp-slimstat-db.php:135
-#: admin/view/wp-slimstat-db.php:1898
-#: admin/view/wp-slimstat-db.php:1905
-#: admin/view/wp-slimstat-db.php:1912
-#: admin/view/wp-slimstat-db.php:1919
-#: admin/view/wp-slimstat-db.php:1926
-#: admin/view/wp-slimstat-db.php:1933
-#: admin/view/wp-slimstat-db.php:1940
+#: admin/view/wp-slimstat-db.php:1902
+#: admin/view/wp-slimstat-db.php:1909
+#: admin/view/wp-slimstat-db.php:1916
+#: admin/view/wp-slimstat-db.php:1923
+#: admin/view/wp-slimstat-db.php:1930
+#: admin/view/wp-slimstat-db.php:1937
+#: admin/view/wp-slimstat-db.php:1944
 msgid "Hits"
 msgstr ""
 
@@ -662,7 +662,7 @@ msgid "If enabled, visits from users identified as spammers by third-party tools
 msgstr ""
 
 #: admin/config/index.php:513
-#: admin/view/wp-slimstat-db.php:2003
+#: admin/view/wp-slimstat-db.php:2007
 msgid "Bots"
 msgstr ""
 
@@ -1002,64 +1002,72 @@ msgstr ""
 msgid "All settings were successfully reset to their default values."
 msgstr ""
 
-#: admin/config/index.php:810
+#: admin/config/index.php:815
 msgid "All your records were successfully deleted."
 msgstr ""
 
-#: admin/config/index.php:822
+#: admin/config/index.php:816
+msgid "Database maintenance failed. Some records may already have been deleted. Check the database connection and retry."
+msgstr ""
+
+#: admin/config/index.php:830
 #: admin/index.php:563
 #: src/Migration/Admin/MigrationAdmin.php:204
 msgid "Sorry, you are not allowed to access this page."
 msgstr ""
 
-#: admin/config/index.php:842
+#: admin/config/index.php:871
 msgid "Congratulations! Slimstat Analytics is now optimized for <a href=\"https://www.youtube.com/watch?v=ygE01sOhzz0\" target=\"_blank\">ludicrous speed</a>."
 msgstr ""
 
-#: admin/config/index.php:853
+#: admin/config/index.php:872
 msgid "Table indexes have been disabled. Enjoy the extra database space!"
 msgstr ""
 
-#: admin/config/index.php:896
-msgid "The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now."
-msgstr ""
-
-#: admin/config/index.php:914
-msgid "The Browscap data file has been uninstalled from your server."
+#: admin/config/index.php:874
+msgid "The database index change could not be completed. The saved preference is unchanged; check the database and retry."
 msgstr ""
 
 #: admin/config/index.php:917
+msgid "The geolocation database update has been scheduled in the background. You can also use the Update Database button below to start it now."
+msgstr ""
+
+#: admin/config/index.php:935
+msgid "The Browscap data file has been uninstalled from your server."
+msgstr ""
+
+#: admin/config/index.php:938
 msgid "There was an error deleting the Browscap data folder on your server. Please check your permissions."
 msgstr ""
 
-#: admin/config/index.php:996
+#: admin/config/index.php:1017
 msgid "Your new settings have been saved."
 msgstr ""
 
-#: admin/config/index.php:1015
+#: admin/config/index.php:1036
 msgid "Performance Notice:"
 msgstr ""
 
 #. translators: %s: comma-separated list of missing database index names.
-#: admin/config/index.php:1017
+#: admin/config/index.php:1038
 #, php-format
 msgid "The following DB indexes are missing and should be created for optimal performance: %s. Please visit the Slimstat settings or re-activate the plugin to trigger index creation."
 msgstr ""
 
-#: admin/config/index.php:1038
+#: admin/config/index.php:1059
 #: admin/view/index.php:13
 msgid "<strong>AdBlock browser extension detected</strong> - If you see this notice, it means that your browser is not loading our stylesheet and/or Javascript files correctly. This could be caused by an overzealous ad blocker feature enabled in your browser (AdBlock Plus and friends). <a href=\"https://wp-slimstat.com/resources/the-reports-are-not-being-rendered-correctly-or-buttons-do-not-work\" target=\"_blank\">Please make sure to add an exception</a> to your configuration and allow the browser to load these assets."
 msgstr ""
 
-#: admin/config/index.php:1109
+#: admin/config/index.php:1130
 msgid "On"
 msgstr ""
 
-#: admin/config/index.php:1110
+#: admin/config/index.php:1131
 msgid "Off"
 msgstr ""
 
-#: admin/config/index.php:1214
+#: admin/config/index.php:1235
 msgid "Save Changes"
 msgstr ""
 
@@ -2859,240 +2867,240 @@ msgstr ""
 msgid "Offset"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1358
-#: admin/view/wp-slimstat-db.php:1854
+#: admin/view/wp-slimstat-db.php:1362
+#: admin/view/wp-slimstat-db.php:1858
 #: admin/view/wp-slimstat-reports.php:47
 #: admin/view/wp-slimstat-reports.php:116
 #: admin/view/wp-slimstat-reports.php:125
 msgid "Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1360
-#: admin/view/wp-slimstat-db.php:1856
+#: admin/view/wp-slimstat-db.php:1364
+#: admin/view/wp-slimstat-db.php:1860
 msgid "A pageview is a request to load a single HTML page on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1362
+#: admin/view/wp-slimstat-db.php:1366
 msgid "Days in Range"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1365
+#: admin/view/wp-slimstat-db.php:1369
 msgid "Average Daily Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1367
+#: admin/view/wp-slimstat-db.php:1371
 msgid "How many daily pageviews have been generated on average."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1369
+#: admin/view/wp-slimstat-db.php:1373
 msgid "From Any SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1371
+#: admin/view/wp-slimstat-db.php:1375
 msgid "Visitors who landed on your site after searching for a keyword on a search engine and clicking on the corresponding search result link. This value includes both internal and external search result pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1373
-#: admin/view/wp-slimstat-db.php:1987
+#: admin/view/wp-slimstat-db.php:1377
+#: admin/view/wp-slimstat-db.php:1991
 #: admin/view/wp-slimstat-reports.php:126
 #: admin/view/wp-slimstat-reports.php:305
 #: admin/view/wp-slimstat-reports.php:574
 msgid "Unique IPs"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1375
+#: admin/view/wp-slimstat-db.php:1379
 msgid "Used to differentiate between multiple requests to download a file from one internet address (IP) and requests originating from many distinct addresses."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1377
+#: admin/view/wp-slimstat-db.php:1381
 msgid "Last 30 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1380
+#: admin/view/wp-slimstat-db.php:1384
 #: src/Components/DateRangeHelper.php:199
 #: src/Modules/Chart.php:144
 msgid "Today"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1383
+#: admin/view/wp-slimstat-db.php:1387
 #: src/Components/DateRangeHelper.php:200
 msgid "Yesterday"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1858
+#: admin/view/wp-slimstat-db.php:1862
 msgid "Unique Referrers"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1860
+#: admin/view/wp-slimstat-db.php:1864
 msgid "A referrer (or referring site) is a site that a visitor previously visited before following a link to your site."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1862
+#: admin/view/wp-slimstat-db.php:1866
 msgid "Direct Pageviews"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1864
+#: admin/view/wp-slimstat-db.php:1868
 msgid "Visitors who typed your website URL directly into their browser address bar. It can also refer to visitors who clicked on one of their bookmarked links, untagged links within emails, or links in documents that don't include tracking variables."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1866
+#: admin/view/wp-slimstat-db.php:1870
 msgid "From External SERP"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1868
+#: admin/view/wp-slimstat-db.php:1872
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP). This metric only counts visits coming from EXTERNAL search pages."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1870
+#: admin/view/wp-slimstat-db.php:1874
 msgid "Unique Landing Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1872
+#: admin/view/wp-slimstat-db.php:1876
 msgid "A landing page is the first page on your website that a visitors opens, also known as <em>entrance page</em>. For example, if they search for 'Brooklyn Office Space,' and they land on a page on your website, this page gets counted (for that visit) as a landing page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1874
+#: admin/view/wp-slimstat-db.php:1878
 msgid "Bounce Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1876
+#: admin/view/wp-slimstat-db.php:1880
 msgid "Number of single-page visits tracked over the selected period of time."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1878
+#: admin/view/wp-slimstat-db.php:1882
 msgid "New Visitors Rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1880
+#: admin/view/wp-slimstat-db.php:1884
 msgid "Percentage of single-page visits, i.e. visits in which the person left your site from the entrance page."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1882
+#: admin/view/wp-slimstat-db.php:1886
 msgid "Currently from search engines"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1884
+#: admin/view/wp-slimstat-db.php:1888
 msgid "Visitors who clicked on a link to your website listed on a search engine result page (SERP), tracked in the last 5 minutes."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1896
+#: admin/view/wp-slimstat-db.php:1900
 msgid "0 - 30 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1903
+#: admin/view/wp-slimstat-db.php:1907
 msgid "31 - 60 seconds"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1910
+#: admin/view/wp-slimstat-db.php:1914
 msgid "1 - 3 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1917
+#: admin/view/wp-slimstat-db.php:1921
 msgid "3 - 5 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1924
+#: admin/view/wp-slimstat-db.php:1928
 msgid "5 - 7 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1931
+#: admin/view/wp-slimstat-db.php:1935
 msgid "7 - 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1938
+#: admin/view/wp-slimstat-db.php:1942
 msgid "More than 10 minutes"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1959
+#: admin/view/wp-slimstat-db.php:1963
 msgid "Average Visit Duration"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1983
+#: admin/view/wp-slimstat-db.php:1987
 #: admin/view/wp-slimstat-reports.php:304
 msgid "Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1985
+#: admin/view/wp-slimstat-db.php:1989
 msgid "A visit is a group of pageviews within a 30-minute time span. Returning visitors are counted multiple times if they start a new visit."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1989
+#: admin/view/wp-slimstat-db.php:1993
 msgid "It includes only traffic generated by human visitors."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1991
+#: admin/view/wp-slimstat-db.php:1995
 msgid "Bounce rate"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1993
+#: admin/view/wp-slimstat-db.php:1997
 msgid "Total number of one-page visits divided by the total number of entries to a website. Please see the <a href=\"https://support.google.com/analytics/answer/1009409?hl=en\" target=\"_blank\">official Google docs</a> for more information."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1995
+#: admin/view/wp-slimstat-db.php:1999
 msgid "Known visitors"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1997
+#: admin/view/wp-slimstat-db.php:2001
 msgid "Visitors who have previously left a comment on your blog."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:1999
+#: admin/view/wp-slimstat-db.php:2003
 msgid "Single-page Visits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2001
+#: admin/view/wp-slimstat-db.php:2005
 msgid "Human users that generated one single page view on your website."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2006
+#: admin/view/wp-slimstat-db.php:2010
 msgid "Pageviews per visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2009
+#: admin/view/wp-slimstat-db.php:2013
 msgid "Longest visit"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2010
+#: admin/view/wp-slimstat-db.php:2014
 msgid "hits"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2028
+#: admin/view/wp-slimstat-db.php:2032
 msgid "Content Items"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2030
+#: admin/view/wp-slimstat-db.php:2034
 msgid "This value includes not only posts and pages, but any custom post type, regardless of their status."
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2032
+#: admin/view/wp-slimstat-db.php:2036
 msgid "Posts"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2035
+#: admin/view/wp-slimstat-db.php:2039
 msgid "Pages"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2038
+#: admin/view/wp-slimstat-db.php:2042
 msgid "Attachments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2041
+#: admin/view/wp-slimstat-db.php:2045
 msgid "Revisions"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2044
+#: admin/view/wp-slimstat-db.php:2048
 msgid "Comments"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2047
+#: admin/view/wp-slimstat-db.php:2051
 msgid "Avg Comments per Post"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2050
+#: admin/view/wp-slimstat-db.php:2054
 msgid "Avg Server Latency"
 msgstr ""
 
-#: admin/view/wp-slimstat-db.php:2052
+#: admin/view/wp-slimstat-db.php:2056
 msgid "Latency is the amount of time it takes for the host server to receive and process a request for a page object. The amount of latency depends largely on how far away the user is from the server."
 msgstr ""
 
