@@ -98,7 +98,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		}
 
 		// Get the selected metric from request or default to 'users'
-		$selected_metric = sanitize_text_field( $_GET['metric'] ?? $_POST['metric'] ?? 'users' );
+		$selected_metric = sanitize_text_field( wp_unslash( $_GET['metric'] ?? $_POST['metric'] ?? 'users' ) );
 
 		// Validate metric
 		if ( ! in_array( $selected_metric, [ 'users', 'pages', 'countries' ], true ) ) {
@@ -331,7 +331,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		if ( false !== $cached && is_array( $cached ) ) {
 			$cache_time = $cached['cache_time'] ?? 0;
 			$now        = \wp_slimstat::now();
-			$seconds    = (int) date( 's', $now );
+			$seconds    = (int) gmdate( 's', $now );
 
 			// Cache is valid only if we're NOT at :00 of the minute
 			// This aligns with the JS update schedule
@@ -614,7 +614,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		}
 
 		// Verify nonce
-		$nonce = sanitize_text_field( $_POST['nonce'] ?? '' );
+		$nonce = sanitize_text_field( wp_unslash( $_POST['nonce'] ?? '' ) );
 		if ( ! wp_verify_nonce( $nonce, 'slimstat_ajax_nonce' ) ) {
 			wp_send_json_error( [
 				'message' => __( 'Security check failed', 'wp-slimstat' ),
@@ -634,8 +634,8 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 		}
 
 		// Validate and sanitize all input parameters
-		$requested_metric = sanitize_text_field( $_POST['metric'] ?? 'users' );
-		$report_id = sanitize_text_field( $_POST['report_id'] ?? '' );
+		$requested_metric = sanitize_text_field( wp_unslash( $_POST['metric'] ?? 'users' ) );
+		$report_id = sanitize_text_field( wp_unslash( $_POST['report_id'] ?? '' ) );
 
 		// Validate metric
 		if ( ! in_array( $requested_metric, [ 'users', 'pages', 'countries' ], true ) ) {
@@ -682,7 +682,7 @@ class LiveAnalyticsReport extends AbstractReport implements ReportInterface, Ren
 	 */
 	private static function check_rate_limit(): bool {
 		$user_id = get_current_user_id();
-		$ip_address = $_SERVER['REMOTE_ADDR'] ?? '';
+		$ip_address = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
 		$cache_key = 'slimstat_rate_limit_' . md5( $user_id . $ip_address );
 
 		// Get current request count

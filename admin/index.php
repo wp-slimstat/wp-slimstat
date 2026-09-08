@@ -1462,14 +1462,26 @@ class wp_slimstat_admin
      */
     public static function remove_spam($_new_status = '', $_old_status = '', $_comment = '')
     {
-        $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
-
-        if ('spam' == $_new_status && !empty($_comment->comment_author) && !empty($_comment->comment_author_IP)) {
-            $my_wpdb->query(wp_slimstat::$wpdb->prepare("
-				DELETE ts
-				FROM {$GLOBALS['wpdb']->prefix}slim_stats ts
-				WHERE username = %s OR INET_NTOA(ip) = %s", $_comment->comment_author, $_comment->comment_author_IP));
+        if ('spam' !== $_new_status || empty($_comment->comment_author_IP)
+            || !filter_var($_comment->comment_author_IP, FILTER_VALIDATE_IP)) {
+            return;
         }
+        $my_wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+        // Compare text explicitly: integer-era tables must not coerce dotted IPs to 1.
+        $where = 'CAST(ip AS CHAR) = %s';
+        $params = [$_comment->comment_author_IP];
+        if (filter_var($_comment->comment_author_IP, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            $where .= ' OR CAST(ip AS CHAR) = %s';
+            $params[] = sprintf('%u', ip2long($_comment->comment_author_IP));
+        }
+        // A guest can type anyone's display name. Only WordPress's associated user
+        // identifies a login whose tracking rows may be removed.
+        $user = !empty($_comment->user_id) ? get_userdata((int) $_comment->user_id) : false;
+        if ($user) {
+            $where .= ' OR username = %s';
+            $params[] = $user->user_login;
+        }
+        $my_wpdb->query($my_wpdb->prepare('DELETE FROM ' . $GLOBALS['wpdb']->prefix . 'slim_stats WHERE ' . $where, $params));
     }
 
     // END: remove_spam
@@ -2232,7 +2244,7 @@ class wp_slimstat_admin
         foreach ($GLOBALS['wp_query']->posts as $a_post) {
             self::$data_for_column['url'][$a_post->ID] = wp_parse_url(get_permalink($a_post->ID));
             self::$data_for_column['url'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID]['path'] . (empty(self::$data_for_column['url'][$a_post->ID]['query']) ? '' : '?' . self::$data_for_column['url'][$a_post->ID]['query']);
-            self::$data_for_column['sql'][$a_post->ID] = self::$data_for_column['url'][$a_post->ID] . '%';
+            self::$data_for_column['sql'][$a_post->ID] = wp_slimstat::$wpdb->esc_like(self::$data_for_column['url'][$a_post->ID]) . '%';
         }
 
         /**
@@ -2245,7 +2257,7 @@ class wp_slimstat_admin
         wp_slimstat_db::init('interval equals -' . wp_slimstat::$settings['posts_column_day_interval']);
 
         $column = ('on' == wp_slimstat::$settings['posts_column_pageviews']) ? 'id' : 'ip';
-        $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s')) . ')', '*', true);
+        $where  = wp_slimstat_db::get_combined_where('(' . implode(' OR ', array_fill(1, count(self::$data_for_column['url']), 'resource LIKE %s ESCAPE 0x5c')) . ')', '*', true);
 
         $sql = wp_slimstat::$wpdb->prepare("
 			SELECT resource, COUNT( DISTINCT {$column} ) as counthits
@@ -2956,8 +2968,8 @@ class wp_slimstat_admin
         // the IDENTICAL [start,end] (and funnel cache key) as the SSR render, so two
         // identical funnels share one result instead of re-resolving the preset in the
         // site timezone while the SSR path used legacy UTC day boundaries. (#1)
-        $pinned_start = isset($_POST['gf_utime_start']) ? (int) $_POST['gf_utime_start'] : 0;
-        $pinned_end   = isset($_POST['gf_utime_end']) ? (int) $_POST['gf_utime_end'] : 0;
+        $pinned_start = isset($_POST['gf_utime_start']) && (is_int($_POST['gf_utime_start']) || (is_string($_POST['gf_utime_start']) && ctype_digit($_POST['gf_utime_start']))) ? (int) $_POST['gf_utime_start'] : 0;
+        $pinned_end   = isset($_POST['gf_utime_end']) && (is_int($_POST['gf_utime_end']) || (is_string($_POST['gf_utime_end']) && ctype_digit($_POST['gf_utime_end']))) ? (int) $_POST['gf_utime_end'] : 0;
         if ($pinned_start > 0 && $pinned_end > 0) {
             $start = $pinned_start;
             $end   = $pinned_end;
@@ -3003,15 +3015,20 @@ class wp_slimstat_admin
      */
     public static function rmdir($path)
     {
-        if (!file_exists($path)) {
+        if (!file_exists($path) && !is_link($path)) {
             return true;
         }
 
-        if (!is_dir($path)) {
+        // Delete the owned link itself; never traverse into another directory.
+        if (is_link($path) || !is_dir($path)) {
             return unlink($path);
         }
 
-        foreach (scandir($path) as $a_item) {
+        $items = scandir($path);
+        if (false === $items) {
+            return false;
+        }
+        foreach ($items as $a_item) {
             if ('.' === $a_item || '..' === $a_item) {
                 continue;
             }
@@ -3256,7 +3273,7 @@ class wp_slimstat_admin
      * @since 5.6.0
      * @return int
      */
-    private static function online_count()
+    public static function online_count()
     {
         $scope = wp_slimstat::report_scope();
         $transient_key = 'slimstat_adminbar_online_' . get_current_blog_id() . '_' . $scope['cache'];
@@ -3549,7 +3566,7 @@ class wp_slimstat_admin
             ];
         }
 
-        if (empty($dimension) || !isset(wp_slimstat_db::$columns_names[$dimension])) {
+        if (empty($dimension) || !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $dimension) || !isset(wp_slimstat_db::$columns_names[$dimension])) {
             wp_send_json_error('Invalid dimension');
             return;
         }

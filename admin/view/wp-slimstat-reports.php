@@ -1494,7 +1494,7 @@ class wp_slimstat_reports
                             $row_details = __('URL', 'wp-slimstat') . ': ' . htmlentities($results[$i][$_args['columns']], ENT_QUOTES, 'UTF-8');
                         }
                         if (!empty($_args['where']) && false !== strpos($_args['where'], 'download')) {
-                            $clean_extension = pathinfo(strtolower(parse_url($results[$i][$_args['columns']] ?? '', PHP_URL_PATH)), PATHINFO_EXTENSION);
+                            $clean_extension = pathinfo(strtolower(wp_parse_url($results[$i][$_args['columns']] ?? '', PHP_URL_PATH)), PATHINFO_EXTENSION);
                             if (in_array($clean_extension, ['jpg', 'gif', 'png', 'jpeg', 'bmp'])) {
                                 $row_details = '<br><img src="' . esc_url($results[$i][$_args['columns']]) . '" style="width:100px">';
                             }
@@ -1509,7 +1509,7 @@ class wp_slimstat_reports
                     case 'searchterms':
                         if ('recent' == $_args['type']) {
                             if (isset($results[$i]['referer']) && $results[$i]['referer']) {
-                                $domain = parse_url($results[$i]['referer'], PHP_URL_HOST);
+                                $domain = wp_parse_url($results[$i]['referer'], PHP_URL_HOST);
                             } else {
                                 $domain = __('No referrer', 'wp-slimstat');
                             }
@@ -2716,8 +2716,8 @@ class wp_slimstat_reports
         $request_uri .= '?page=' . wp_slimstat_admin::$current_screen;
 
         // Avoid XSS attacks ( why would the owner try to hack into his/her own website though? )
-        if (!empty($_SERVER['HTTP_REFERER'])) {
-            $parsed_referer = parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
+        if (!empty($_SERVER['HTTP_REFERER']) && is_string($_SERVER['HTTP_REFERER'])) {
+            $parsed_referer = wp_parse_url(sanitize_url(wp_unslash($_SERVER['HTTP_REFERER'])) ?: '');
             if (!$parsed_referer || (isset($parsed_referer['scheme']) && ('' !== $parsed_referer['scheme'] && '0' !== $parsed_referer['scheme']) && !in_array(strtolower($parsed_referer['scheme']), ['http', 'https']))) {
                 return '';
             }
@@ -2811,7 +2811,7 @@ class wp_slimstat_reports
         else {
             $term_names    = [];
             $home_url      = get_home_url();
-            $relative_home = parse_url($home_url, PHP_URL_PATH);
+            $relative_home = wp_parse_url($home_url, PHP_URL_PATH);
 
             // PHP ^v8 compatibility
             if (!$relative_home) {

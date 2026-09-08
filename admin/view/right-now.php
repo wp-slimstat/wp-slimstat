@@ -98,7 +98,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
     if (0 == $i || $results[$i - 1]['visit_id'] != $results[$i]['visit_id'] || $results[$i - 1]['ip'] != $results[$i]['ip'] || $results[$i - 1]['browser'] != $results[$i]['browser'] || $results[$i - 1]['platform'] != $results[$i]['platform'] || $results[$i - 1]['username'] != $results[$i]['username'] || (!empty($results[$i]['fingerprint']) && ($results[$i - 1]['fingerprint'] ?? '') != $results[$i]['fingerprint'])) {
 
         // Color-coded headers
-        $sek           = isset($results[$i]['referer']) ? wp_slimstat::get_lossy_url(parse_url($results[$i]['referer'], PHP_URL_HOST)) : '';
+        $sek           = isset($results[$i]['referer']) ? wp_slimstat::get_lossy_url(wp_parse_url($results[$i]['referer'], PHP_URL_HOST)) : '';
         $highlight_row = empty($search_engines[$sek]) ? (1 != $results[$i]['browser_type'] ? ' is-direct' : '') : (' is-search-engine');
 
         // Country
@@ -288,7 +288,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
     $time_on_page = '';
     if (!$is_dashboard && !empty($results[$i]['dt_out'])) {
         $duration     = $results[$i]['dt_out'] - $results[$i]['dt'];
-        $time_on_page = "<i class='slimstat-font-stopwatch spaced slimstat-tooltip-trigger' title='" . __('Time spent on this page', 'wp-slimstat') . "'></i> " . date(($duration > 3599 ? 'H:i:s' : 'i:s'), $duration);
+        $time_on_page = "<i class='slimstat-font-stopwatch spaced slimstat-tooltip-trigger' title='" . __('Time spent on this page', 'wp-slimstat') . "'></i> " . gmdate(($duration > 3599 ? 'H:i:s' : 'i:s'), $duration);
     }
 
     // Pageview Notes
@@ -306,7 +306,7 @@ for ($i = 0; $i < $count_page_results; $i++) {
 
     $login_logout = '';
     if (!$is_dashboard) {
-        $domain                      = parse_url($results[$i]['referer'] ?: '');
+        $domain                      = wp_parse_url($results[$i]['referer'] ?: '');
         $domain                      = empty($domain['host']) ? __('Invalid Referrer', 'wp-slimstat') : $domain['host'];
         $results[$i]['referer']      = (!empty($results[$i]['referer']) && empty($results[$i]['searchterms'])) ? "<a class='spaced slimstat-font-login slimstat-tooltip-trigger' target='_blank' title='" . htmlentities(__('Open this referrer in a new window', 'wp-slimstat'), ENT_QUOTES, 'UTF-8') . sprintf("' href='%s'></a> %s", esc_url($results[$i]['referer']), esc_html($domain)) : '';
         $results[$i]['content_type'] = empty($results[$i]['content_type']) ? '' : "<i class='spaced slimstat-font-doc slimstat-tooltip-trigger' title='" . __('Content Type', 'wp-slimstat') . "'></i> <a class='slimstat-filter-link' href='" . wp_slimstat_reports::fs_url('content_type equals ' . $results[$i]['content_type']) . sprintf("'>%s</a> ", esc_html($results[$i]['content_type']));
