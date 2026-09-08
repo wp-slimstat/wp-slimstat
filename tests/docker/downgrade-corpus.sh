@@ -83,6 +83,7 @@ fi
 if [ -z "$OUT" ]; then
   OUT="$HOME/slimstat-v6-baselines/corpus-$ARM_VERSION-$(basename "$SRC_DUMP" .sql.gz).sql.gz"
 fi
+[ ! -e "$OUT" ] || { err "refusing to overwrite existing corpus: $OUT"; exit 2; }
 
 # H8: a 2019 plugin on a modern WordPress is what a real 4.8 site is today — not a 2019
 # WordPress. The corpus builder pins the same topology the cell will use, so the tables it
@@ -93,7 +94,8 @@ HTTP_PORT="${HTTP_PORT:-18995}"
 DB_PORT="${DB_PORT:-13995}"
 
 CELL="corpus-$ARM_VERSION"
-CELL_DIR="$WORK_ROOT/rehearse/$CELL"
+mkdir -p "$WORK_ROOT/rehearse"
+CELL_DIR=$(mktemp -d "$WORK_ROOT/rehearse/$CELL.XXXXXXXX")
 WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
@@ -104,11 +106,15 @@ export PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$existing$volumes" ] || die 'Refusing existing corpus project containers or volumes'
+
 status="PASS"; reason=""
 cleanup() { [ "${KEEP_CELL:-0}" = "1" ] || dc down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-rm -rf "$WP_DIR" "$ART"; mkdir -p "$WP_DIR" "$ART"
+mkdir -p "$WP_DIR" "$ART"
 
 note()  { printf '  [%s] %s\n' "$1" "$2"; }
 check() { if [ "$2" -eq 0 ]; then note PASS "$1${3:+ — $3}"; else note FAIL "$1${3:+ — $3}"; status=FAIL; reason="${reason:-$1}"; fi; }

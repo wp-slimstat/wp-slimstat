@@ -455,7 +455,10 @@ foreach (explode("\n", (string) @file_get_contents($cells_tsv)) as $line) {
     }
     $rows[] = explode("\t", $line);
 }
-$check('it declares at least the four vintage cells', count($rows) >= 4, count($rows) . ' rows');
+foreach (['4.8.1', '5.1.5', '5.2.13', '5.3.5', '5.4.12', '5.5.0'] as $requiredVersion) {
+    $check('required historical version has an explicit topology: ' . $requiredVersion,
+        in_array('wp.org:' . $requiredVersion, array_column($rows, 1), true));
+}
 $arms = (string) @file_get_contents($arms_sha);
 foreach ($rows as $r) {
     $cell = $r[0] ?? '?';

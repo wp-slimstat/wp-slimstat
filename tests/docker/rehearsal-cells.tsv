@@ -38,4 +38,5 @@
 7b	wp.org:5.1.5	development	6.7	7.4	the 4.9-5.1 "other" bucket, 19.1%; still predates the 5.4 blocks
 7c	wp.org:5.2.13	development	6.7	8.1	11.1% of installs; contemporary with PHP 7.4-8.0, run one step up to catch 8.x deprecations
 7d	wp.org:5.4.12	development	6.7	8.2	7.5% of installs; the last line before 5.5, on the modern default
+7e	wp.org:5.3.5	development	6.7	8.1	Required 5.3 historical upgrade coverage, on the same modern topology as the 5.2 arm
 9	wp.org:5.5.0	development	6.7	8.2	41.1% of installs — the majority case, and the one the release notes are written for

@@ -94,3 +94,24 @@ with tempfile.TemporaryDirectory() as temp:
         if generated:
             assert '--skip-log-bin' in generated[0].read_text(), 'large-corpus binary logging left enabled'
 print('PASS: default corpus binary logging disabled; explicit engine overlay preserved')
+
+# Corpus preparation must preserve previous outputs and refuse shared project resources.
+import gzip
+with tempfile.TemporaryDirectory() as temp:
+    root = pathlib.Path(temp)
+    source = root / 'source.sql.gz'
+    source.write_bytes(gzip.compress(b'CREATE TABLE wp_slim_stats (id int);\n'))
+    fake = root / 'docker'
+    fake.write_text('#!/bin/sh\ncase "$1" in ps) [ "$CORPUS_COLLISION" != container ] || echo occupied; exit 0;; volume) [ "$CORPUS_COLLISION" != volume ] || echo occupied; exit 0;; *) exit 99;; esac\n')
+    fake.chmod(0o755)
+    for collision in ['output', 'container', 'volume']:
+        output = root / (collision + '.sql.gz')
+        if collision == 'output':
+            output.write_bytes(b'preserved')
+        env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ['PATH'], WORK_ROOT=str(root / collision), CORPUS_COLLISION=collision)
+        r = subprocess.run(['bash', str(helper.parent / 'downgrade-corpus.sh'), 'wp.org:5.3.5', str(source), str(output)], env=env, capture_output=True)
+        expected = b'refusing to overwrite existing corpus' if collision == 'output' else b'Refusing existing corpus project'
+        assert r.returncode != 0 and expected in r.stdout, (collision, r.stdout, r.stderr)
+        if collision == 'output':
+            assert output.read_bytes() == b'preserved'
+print('PASS: corpus preparation preserves existing output and refuses container/volume collisions')
