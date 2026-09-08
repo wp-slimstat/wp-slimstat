@@ -599,6 +599,7 @@ provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
     wpc core download --version="$wp" --force > "$art/install.log" 2>&1 \
       || { fail "core download failed"; return 1; }
   fi
+  chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
   wp_config_debug "$art/install.log"
   wpc core install --url="$base_url" --title="$COMPOSE_PROJECT_NAME" --admin_user=admin \
       --admin_password=admin --admin_email=qa@example.com --skip-email >>"$art/install.log" 2>&1 \
@@ -606,7 +607,6 @@ provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
   if [ -n "${ARM_FREE_ZIP:-}" ]; then
     mkdir -p "$CELL_WP_DIR/wp-content/plugins/.free"
     cp "$ARM_FREE_ZIP" "$CELL_WP_DIR/wp-content/plugins/.free/wp-slimstat.zip"
-    chmod -R a+rwX "$CELL_WP_DIR/wp-content" 2>/dev/null || true
     wpc plugin install /var/www/html/wp-content/plugins/.free/wp-slimstat.zip --activate --force \
       >>"$art/install.log" 2>&1 || { fail "Free ZIP install failed"; return 1; }
   else

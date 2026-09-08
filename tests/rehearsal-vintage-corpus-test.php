@@ -737,6 +737,7 @@ $check(
         && false !== strpos($lib_src, 'rsync -a --no-perms --delete')
         && false !== strpos($lib_src, "--exclude 'wp-content/plugins/***'")
         && false !== strpos($lib_src, 'wpc core verify-checksums --version="$wp"')
+        && strpos($lib_src, 'chmod -R a+rwX "$CELL_WP_DIR/wp-content"') < strpos($lib_src, 'wpc core install --url=')
         && strpos($lib_src, 'wpc core verify-checksums --version="$wp"') < strpos($lib_src, 'wp_config_debug "$art/install.log"')
 );
 $check(
