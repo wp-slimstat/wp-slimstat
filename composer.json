@@ -139,7 +139,7 @@
     "test:report-get-data-memo": "php tests/report-get-data-memoization-test.php",
     "test:tracker-option-writes": "php tests/tracker-option-write-budget-test.php",
     "test:tracker-rate-limit-cost": "php tests/tracker-rate-limit-cost-test.php",
-    "test:visit-id-query-budget": "php tests/visit-id-counter-query-budget-test.php",
+    "test:visit-id-query-budget": ["php tests/visit-id-counter-query-budget-test.php", "php tests/visit-counter-upgrade-test.php"],
     "test:goals-cache-key": "php tests/goals-cache-key-stability-test.php",
     "test:goals-funnels-bound": "php tests/goals-funnels-widget-cap-test.php",
     "test:is-new-visitor": "php tests/is-new-visitor-bounded-test.php",

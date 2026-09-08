@@ -669,7 +669,10 @@ class wp_slimstat_admin
         }
 
         // Initialize atomic visit ID counter (fix for issue #155 - performance regression)
-        \SlimStat\Tracker\VisitIdGenerator::initializeCounter();
+        if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0) {
+            wp_slimstat::record_degradation('activation', 'Visit counter initialization did not complete.', wp_slimstat::DEGRADATION_OPERATIONAL);
+            return false;
+        }
 
         // Hard-flush rewrite rules so the adblock bypass rewrite is written to .htaccess.
         // Caching plugins (WP Rocket, W3TC) route requests via .htaccess before WordPress
@@ -1401,6 +1404,11 @@ class wp_slimstat_admin
         // are recomputed immediately rather than lingering for the 5–15 min
         // transient TTL after the uniques identity changed. (#3)
         update_option('slimstat_goals_cache_ver', (string) microtime(true), false);
+
+        // Do not declare the upgrade complete while historical visit IDs could be reused.
+        if (\SlimStat\Tracker\VisitIdGenerator::initializeCounter() < 0) {
+            throw new \RuntimeException('Visit counter initialization did not complete.');
+        }
 
         // Now we can update the version stored in the database
         unset(wp_slimstat::$settings['_settings_recovery']);
