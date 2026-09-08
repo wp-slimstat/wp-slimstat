@@ -88,7 +88,8 @@ class Session
 			// (it re-seeds from MAX(visit_id)).
 			$next_visit_id = VisitIdGenerator::generateNextVisitId();
 			if ($next_visit_id <= 0) {
-				$next_visit_id = time();
+				\wp_slimstat::set_stat([]);
+				return false;
 			}
 
 			$stat['visit_id'] = intval($next_visit_id);
@@ -119,7 +120,8 @@ class Session
 			// Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
 			$next_visit_id = VisitIdGenerator::generateNextVisitId();
 			if ($next_visit_id <= 0) {
-				$next_visit_id = time();
+				\wp_slimstat::set_stat([]);
+				return false;
 			}
 
 			$stat = \wp_slimstat::get_stat();

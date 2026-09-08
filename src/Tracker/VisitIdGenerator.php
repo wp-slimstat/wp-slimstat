@@ -32,17 +32,27 @@ class VisitIdGenerator
      */
     public static function generateNextVisitId(): int
     {
+        // Frontend tracking may precede the admin-only upgrade. Repair legacy
+        // counters before allocating; current-version requests retain the one-query path.
+        if (defined('SLIMSTAT_ANALYTICS_VERSION') && isset(\wp_slimstat::$settings['version'])
+            && SLIMSTAT_ANALYTICS_VERSION !== \wp_slimstat::$settings['version']
+            && self::initializeCounter() < 0) {
+            return 0;
+        }
         $visit_id = self::runAtomicIncrement();
 
         if ($visit_id <= 0) {
-            // A missing counter is seeded before any ID can be issued. INSERT IGNORE
-            // preserves a concurrent initializer's counter rather than resetting it.
-            self::initializeCounter();
+            // A missing counter is seeded before any ID can be issued. A monotonic upsert
+            // preserves a concurrent initializer's higher counter.
+            if (self::initializeCounter() < 0) {
+                return 0;
+            }
             $visit_id = self::runAtomicIncrement();
         }
 
         if ($visit_id <= 0) {
-            return self::fallbackGenerateVisitId('Unable to atomically increment the visit ID counter.');
+            self::logAllocationFailure('Unable to atomically increment the visit ID counter.');
+            return 0;
         }
 
         return $visit_id;
@@ -52,17 +62,22 @@ class VisitIdGenerator
      * Initialize the counter with the current maximum visit_id from the stats table.
      *
      * Called on plugin activation, and as the repair path when an increment fails.
-     * INSERT IGNORE leaves an existing row alone, including racing initializers.
+     * The monotonic upsert repairs low counters without reducing a concurrent allocation.
      *
      * @return int The initialized counter value
      */
     public static function initializeCounter(): int
     {
         $initial_value = self::getInitialCounterValue();
+        if ($initial_value < 0) {
+            self::logAllocationFailure('Unable to read the existing visit ID maximum.');
+            return -1;
+        }
 
         global $wpdb;
         $added = $wpdb->query($wpdb->prepare(
-            "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)",
+            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
+            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), VALUES(option_value))",
             self::OPTION_NAME,
             $initial_value,
             'no'
@@ -70,48 +85,7 @@ class VisitIdGenerator
         wp_cache_delete(self::OPTION_NAME, 'options');
         wp_cache_delete('notoptions', 'options');
 
-        return 1 === $added ? $initial_value : (int) get_option(self::OPTION_NAME, $initial_value);
-    }
-
-    /**
-     * Fallback visit ID generation using timestamp and additional entropy.
-     *
-     * Used only if the atomic counter fails (e.g., database issues).
-     *
-     * @param string $reason Optional reason for logging why the fallback was used.
-     * @return int A fallback visit ID based on current timestamp
-     */
-    private static function fallbackGenerateVisitId(string $reason = ''): int
-    {
-        self::logFallbackUsage($reason);
-
-        try {
-            $random_entropy = random_int(0, 99999);
-        } catch (\Exception $exception) {
-            $random_entropy = mt_rand(0, 99999);
-        }
-
-        $process_entropy = function_exists('getmypid') ? (int) getmypid() : 0;
-
-        try {
-            $nonce_bytes = random_bytes(4);
-            $nonce_data  = unpack('Nnonce', $nonce_bytes);
-            $nonce_entropy = isset($nonce_data['nonce']) ? (int) $nonce_data['nonce'] : mt_rand(0, 0xFFFF);
-        } catch (\Exception $exception) {
-            $nonce_entropy = mt_rand(0, 0xFFFF);
-        }
-
-        $entropy = sprintf(
-            '%.6F|%d|%d|%d',
-            microtime(true),
-            $random_entropy,
-            $process_entropy,
-            $nonce_entropy
-        );
-
-        $visit_id = abs((int) hexdec(substr(hash('sha256', $entropy), 0, 8)));
-
-        return max($visit_id, (int) time());
+        return false === $added ? -1 : (int) get_option(self::OPTION_NAME, $initial_value);
     }
 
     /**
@@ -179,7 +153,10 @@ class VisitIdGenerator
         $table = $stats_db->prefix . 'slim_stats';
 
         $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
-        $initial_value = max((int) $max_visit_id, 0);
+        if (null === $max_visit_id || !ctype_digit((string) $max_visit_id)) {
+            return -1;
+        }
+        $initial_value = (int) $max_visit_id;
 
         $auto_increment = $stats_db->get_var($stats_db->prepare(
             "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
@@ -197,14 +174,14 @@ class VisitIdGenerator
     }
 
     /**
-     * Emit a log entry when the fallback generator is used.
+     * Record a refused allocation without inventing an unverified identifier.
      *
-     * @param string $reason Optional reason for the fallback.
+     * @param string $reason Reason allocation was refused.
      * @return void
      */
-    private static function logFallbackUsage(string $reason): void
+    private static function logAllocationFailure(string $reason): void
     {
-        $message = 'Visit ID generator fallback path used.';
+        $message = 'Visit ID allocation failed.';
 
         if ('' !== $reason) {
             $message .= ' ' . $reason;

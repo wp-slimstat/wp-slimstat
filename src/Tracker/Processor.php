@@ -428,6 +428,10 @@ class Processor
         }
         $cookie_has_been_set = Session::ensureVisitId($forceVisitIdAssign);
         $stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
+        if ([] === $stat) {
+            Query::setProcessingTimestamp(null);
+            return Utils::logError(500);
+        }
 
         $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
         do_action('slimstat_track_pageview', $stat);

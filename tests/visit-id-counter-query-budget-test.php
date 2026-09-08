@@ -48,11 +48,12 @@ class VicqbFakeWpdb
 
     /** @var int Highest visit_id already stored. */
     public $max_visit_id = 0;
+    public $max_read_fails = false;
 
     /** @var bool Force the increment to fail. */
     public $increment_fails = false;
 
-    /** A concurrent initializer may win after MAX is read but before INSERT IGNORE. */
+    /** A concurrent initializer may win after MAX is read but before the monotonic upsert. */
     public $concurrent_seed = null;
 
     public function __construct(?int $counter, int $max_visit_id)
@@ -82,11 +83,10 @@ class VicqbFakeWpdb
             $this->insert_id = 123456;
             return $this->rows_affected = 1;
         }
-        if (stripos(ltrim($sql), 'INSERT IGNORE') === 0) {
+        if (stripos(ltrim($sql), 'INSERT') === 0) {
             if (null !== $this->concurrent_seed) $this->counter = $this->concurrent_seed;
-            if (null !== $this->counter) return 0;
             preg_match("/VALUES \(.*?, (\\d+),/", $sql, $match);
-            $this->counter = (int) $match[1];
+            $this->counter = max($this->counter ?? 0, (int) $match[1]);
             $GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = $this->counter;
             return 1;
         }
@@ -100,7 +100,7 @@ class VicqbFakeWpdb
 
         if (stripos($sql, 'LAST_INSERT_ID()') !== false) return (string) $this->counter;
         if (stripos($sql, 'MAX(visit_id)') !== false) {
-            return (string) $this->max_visit_id;
+            return $this->max_read_fails ? null : (string) $this->max_visit_id;
         }
         if (stripos($sql, 'AUTO_INCREMENT') !== false) {
             return null;
@@ -178,6 +178,7 @@ if (!class_exists('wp_slimstat')) {
     class wp_slimstat
     {
         public static $wpdb = null;
+        public static $settings = ['version' => '6.0.0'];
         public static function log($message, $level = 'info') {}
     }
 }
@@ -263,21 +264,45 @@ $id = VisitIdGenerator::generateNextVisitId();
 vicqb_assert('concurrent initializer is not reset', $id === 5000011);
 vicqb_assert('wpdb stale insert_id is not returned', $id !== $db->insert_id);
 
-// ── 5. A failing increment still yields a usable ID ─────────────────────────
+// ── 5. A failing increment refuses an unverified ID ─────────────────────────
 $db = vicqb_boot(5000, 4999);
 $db->increment_fails = true;
 $id = VisitIdGenerator::generateNextVisitId();
 vicqb_assert(
-    'a failed increment falls back to a non-zero ID',
-    $id > 0,
+    'a failed increment refuses an unverified ID',
+    $id === 0,
     "fallback produced {$id}"
 );
+
+$db = vicqb_boot(null, 5000000);
+$db->max_read_fails = true;
+$id = VisitIdGenerator::generateNextVisitId();
+vicqb_assert('failed historical MAX refuses an ID', $id === 0);
+vicqb_assert('failed MAX never seeds a zero counter', $db->counter === null);
+vicqb_assert('failed MAX does not execute seed INSERT', !in_array('INSERT', $db->log, true));
 
 $db = vicqb_boot(5000, 4999);
 $db->dbh = null;
 $id = VisitIdGenerator::generateNextVisitId();
 vicqb_assert('non-mysqli drop-in reads the connection ID', $id === 5001);
 vicqb_assert('non-mysqli drop-in uses one documented extra read', $db->log === ['INCREMENT', 'READ-ID']);
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+vicqb_assert('explicit upgrade repairs an existing low counter', VisitIdGenerator::generateNextVisitId() === 5000001);
+$db = vicqb_boot(5000010, 5000000);
+VisitIdGenerator::initializeCounter();
+vicqb_assert('upgrade never reduces a higher live counter', VisitIdGenerator::generateNextVisitId() === 5000011);
+
+define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
+\wp_slimstat::$settings['version'] = '5.5.0';
+$db = vicqb_boot(3, 5000000);
+vicqb_assert('legacy allocation repairs before returning an ID', VisitIdGenerator::generateNextVisitId() === 5000001);
+$db = vicqb_boot(3, 5000000);
+$db->max_read_fails = true;
+vicqb_assert('legacy failed MAX refuses an ID', VisitIdGenerator::generateNextVisitId() === 0);
+vicqb_assert('legacy failed MAX preserves existing counter', $db->counter === 3);
+\wp_slimstat::$settings['version'] = '6.0.0';
 
 // ── Report ──────────────────────────────────────────────────────────────────
 if ($failures !== []) {
