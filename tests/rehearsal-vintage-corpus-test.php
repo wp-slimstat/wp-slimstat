@@ -744,6 +744,11 @@ $check(
     'the ordinary provision path still downloads the requested core when no source is supplied',
     false !== strpos($lib_src, 'wpc core download --version="$wp" --force')
 );
+$check(
+    'a serialized U1 run may use an isolated validated project without changing the default',
+    false !== strpos($reh_src, 'COMPOSE_PROJECT_NAME="${REHEARSAL_PROJECT_NAME:-ssrehearse$SCEN_SLUG}"')
+        && false !== strpos($reh_src, "grep -qE '^[a-z0-9][a-z0-9_-]*$'")
+);
 
 echo "\nSLIMSTAT-REHEARSAL-VINTAGE-CORPUS checks=" . $checks . ' failures=' . count($failures) . "\n";
 if ([] !== $failures) {

@@ -167,7 +167,10 @@ WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
 
-export COMPOSE_PROJECT_NAME="ssrehearse$SCEN_SLUG" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
+COMPOSE_PROJECT_NAME="${REHEARSAL_PROJECT_NAME:-ssrehearse$SCEN_SLUG}"
+printf '%s' "$COMPOSE_PROJECT_NAME" | grep -qE '^[a-z0-9][a-z0-9_-]*$' \
+  || { err "invalid rehearsal project name: '$COMPOSE_PROJECT_NAME'"; exit 2; }
+export COMPOSE_PROJECT_NAME PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
