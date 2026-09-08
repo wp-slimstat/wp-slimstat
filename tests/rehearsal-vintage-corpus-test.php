@@ -734,6 +734,7 @@ $check(
     'an explicit local core source is copied without runtime state and verified before install',
     false !== strpos($lib_src, 'if [ -n "${WP_CORE_SOURCE_DIR:-}" ]; then')
         && false !== strpos($lib_src, '--exclude wp-config.php')
+        && false !== strpos($lib_src, 'rsync -a --no-perms --delete')
         && false !== strpos($lib_src, "--exclude 'wp-content/plugins/***'")
         && false !== strpos($lib_src, 'wpc core verify-checksums --version="$wp"')
         && strpos($lib_src, 'wpc core verify-checksums --version="$wp"') < strpos($lib_src, 'wp_config_debug "$art/install.log"')

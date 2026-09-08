@@ -589,7 +589,7 @@ provision_wp_cell() { # <art> <wp_version> <base_url> <free_src_fallback>
   if [ -n "${WP_CORE_SOURCE_DIR:-}" ]; then
     [ -d "$WP_CORE_SOURCE_DIR/wp-admin" ] && [ -f "$WP_CORE_SOURCE_DIR/wp-includes/version.php" ] \
       || { fail "local core source is incomplete"; return 1; }
-    rsync -a --delete --exclude wp-config.php --exclude .htaccess --exclude wp-content/debug.log \
+    rsync -a --no-perms --delete --exclude wp-config.php --exclude .htaccess --exclude wp-content/debug.log \
       --exclude 'wp-content/plugins/***' --exclude 'wp-content/uploads/***' --exclude 'wp-content/upgrade/***' \
       "$WP_CORE_SOURCE_DIR/" "$CELL_WP_DIR/" > "$art/install.log" 2>&1 \
       || { fail "local core copy failed"; return 1; }
