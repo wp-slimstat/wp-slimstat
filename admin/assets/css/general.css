@@ -286,12 +286,27 @@
 
 /*
  * Rows come from wp_slimstat_reports::raw_results_to_html() — the shared
- * renderer every other report screen uses — so all of the row, bar and
- * percentage styling already arrives from admin.css's
+ * renderer every other report screen uses — so the row, bar and percentage
+ * styling arrives from admin.css's
  * `.wrap-slimstat .meta-box-sortables .postbox .slimstat-tooltip-trigger ...`
- * rules. Nothing is restyled here; the only General-specific behaviour is
- * the free-tier gate below.
+ * rules, and is not restyled here.
+ *
+ * One exception, fixing something this page introduced. The shared rule
+ * positions the bar `absolute; top:0; height:100%` but sets no `position` on
+ * the row <p>, so it resolves against whatever ancestor happens to be
+ * positioned — on other screens, the row, only because nothing else is.
+ * `.postbox { position: relative }` above (needed to centre the free tier's
+ * unlock overlay) captured every bar: each stretched to the FULL BOX height
+ * and stacked at its top-left instead of sitting behind its own row.
+ *
+ * Giving each row its own containing block restores the intended geometry
+ * without touching the shared rule other screens depend on. The proper fix
+ * belongs in that shared rule, but it would change stacking on six report
+ * screens plus Pro, so it wants its own branch and visual diffs.
  */
+.slimstat-general-page .meta-box-sortables .postbox p.slimstat-tooltip-trigger {
+    position: relative;
+}
 
 /*
  * ---------- Free-tier gating ----------
