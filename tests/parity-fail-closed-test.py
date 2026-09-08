@@ -45,3 +45,16 @@ with tempfile.TemporaryDirectory() as directory:
     changed['cells']['historical']['report']['hash'] = 'different'
     check(base, changed, False)
 print('PASS: real parity comparator rejects missing reports, incomplete evidence, errors and differences')
+# Execute the snapshot's actual extraction closures without booting WordPress.
+probe = r'''
+function wp_strip_all_tags($s) { return strip_tags($s); }
+$s = file_get_contents($argv[1]);
+$start = strpos($s, '$normalise =');
+$end = strpos($s, '/**', strpos($s, '$extract_numbers ='));
+eval(substr($s, $start, $end - $start));
+if (count($extract_numbers(implode(' ', range(1, 250)))) !== 250) { exit(1); }
+if ($normalise('2026-01-01 12:00:00') === $normalise('2026-01-02 12:00:00')) { exit(2); }
+if ($normalise('1700000000') === $normalise('1700000001')) { exit(3); }
+'''
+subprocess.run(['php', '-r', probe, str(comparator.with_name('parity-snapshot.php'))], check=True)
+print('PASS: snapshot preserves dates, chart epochs and all 250 numeric values')

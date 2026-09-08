@@ -138,18 +138,7 @@ $normalise = static function (string $html): string {
         '/\?ver=[\w.\-]+/'                                    => '?ver=VER',
         // Relative times ("3 mins ago") move with the wall clock.
         '/\b\d+\s+(second|minute|min|hour|day|week|month|year)s?\s+ago\b/i' => 'RELTIME ago',
-        // Absolute timestamps rendered from now().
-        '/\b\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?\b/'     => 'TIMESTAMP',
-        // Raw UNIX epochs (2023-2033) embedded in markup — charts ship the
-        // window in data-args as {"start":…,"end":…}, and init_filters() clamps
-        // that end to the CURRENT SECOND, so two renders a second apart differ.
-        // Users never see an epoch, so normalising it hides nothing from them.
-        //
-        // Worth noting rather than only working around: this is the same
-        // second-precision clamp that gives goal transients a cache key which
-        // can never be hit twice (defect D33). The oracle rediscovered it
-        // independently.
-        '/\b1[7-9]\d{8}\b/'                                   => 'EPOCH',
+        // Dates and chart-window epochs are report data and must remain comparable.
         // DOM ids that embed a counter or random suffix.
         '/id="[\w\-]*?(chart|canvas)[\w\-]*?\d+"/i'          => 'id="DYNAMIC"',
         // Whitespace noise.
