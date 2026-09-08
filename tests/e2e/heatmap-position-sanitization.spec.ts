@@ -312,6 +312,15 @@ test.describe('Heatmap position sanitization', () => {
     });
 
     try {
+      await context.addCookies([{
+        name: 'wp_consent_statistics',
+        value: 'allow',
+        url: BASE_URL,
+      }, {
+        name: 'cookieyes-consent',
+        value: 'consentid:e2e,consent:yes,action:yes,necessary:yes,functional:yes,analytics:yes,performance:yes,advertisement:yes',
+        url: BASE_URL,
+      }]);
       const marker = `heatmap-consent-allow-${Date.now()}`;
       const capture = captureTrackingPayloads(anonPage);
 
@@ -354,6 +363,15 @@ test.describe('Heatmap position sanitization', () => {
     });
 
     try {
+      await context.addCookies([{
+        name: 'wp_consent_statistics',
+        value: 'deny',
+        url: BASE_URL,
+      }, {
+        name: 'cookieyes-consent',
+        value: 'consentid:e2e,consent:no,action:yes,necessary:yes,functional:no,analytics:no,performance:no,advertisement:no',
+        url: BASE_URL,
+      }]);
       const marker = `heatmap-consent-deny-${Date.now()}`;
       const capture = captureTrackingPayloads(anonPage);
 
