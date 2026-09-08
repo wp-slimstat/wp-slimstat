@@ -54,7 +54,7 @@ async function seedAuthorRows(now: number): Promise<void> {
     ],
   );
   await getPool().execute(
-    "DELETE FROM wp_options WHERE option_name LIKE '_transient_slimstat_%' OR option_name LIKE '_transient_timeout_slimstat_%'",
+    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_slimstat\\_%' OR option_name LIKE '\\_transient\\_timeout\\_slimstat\\_%'",
   );
 }
 
