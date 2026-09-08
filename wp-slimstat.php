@@ -268,7 +268,7 @@ class wp_slimstat
         }
 
         // Load all the settings
-        if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
+        if (is_network_admin() && (!isset($_GET['page']) || !is_string($_GET['page']) || false === strpos(wp_unslash($_GET['page']), 'slimview'))) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
             self::$settings = get_option('slimstat_options', []);

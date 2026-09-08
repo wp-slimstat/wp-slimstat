@@ -275,8 +275,8 @@ class DateRangeHelper
         $defaults = self::get_range_by_preset('last_30_days');
 
         // Check URL parameters - prioritize type parameter
-        if (isset($_GET['type'])) {
-            $type = sanitize_key($_GET['type']);
+        if (isset($_GET['type']) && is_string($_GET['type'])) {
+            $type = sanitize_key(wp_unslash($_GET['type']));
             if ($type !== 'custom') {
                 $preset_range = self::get_range_by_preset($type);
                 if ($preset_range) {
@@ -290,9 +290,9 @@ class DateRangeHelper
         }
         
         // Check from/to parameters if no valid type parameter
-        if (isset($_GET['from']) && isset($_GET['to'])) {
-            $from_date = sanitize_text_field($_GET['from']);
-            $to_date = sanitize_text_field($_GET['to']);
+        if (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
+            $from_date = sanitize_text_field(wp_unslash($_GET['from']));
+            $to_date = sanitize_text_field(wp_unslash($_GET['to']));
             
             // Validate date format before processing
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
@@ -399,4 +399,3 @@ class DateRangeHelper
         return $start_date . ' – ' . $end_date;
     }
 }
-
