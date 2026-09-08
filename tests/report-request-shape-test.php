@@ -13,7 +13,9 @@ $body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view
 eval('class wp_slimstat_db {
  public static $columns_names, $operator_names, $all_columns_names, $filters_normalized, $pageviews;
  public static function init_filters($raw) { return $raw; }
- public static function count_records() { return 7; }
+ public static $queries = []; public static function count_records(...$args) { self::$queries[] = $args; return 7; }
+ public static function count_records_having(...$args) { return 1; }
+ public static function count_bouncing_pages() { return 1; }
  public static function init($_filters = "") {' . $body . '}
 }');
 $GLOBALS['current_user'] = (object) ['user_login' => 'author-fixture'];
@@ -56,3 +58,15 @@ try {
     if ($invalid['date'] !== []) { throw new RuntimeException('Invalid date became an epoch filter'); }
 } finally { date_default_timezone_set($original_zone); }
 echo "PASS: date filters preserve legacy site clock and reject unparseable dates\n";
+
+function home_url() { return 'https://canonical.example/site'; }
+function wp_parse_url($url, $component) { return parse_url($url, $component); }
+function number_format_i18n($number, $decimals = 0) { return number_format($number, $decimals); }
+$GLOBALS['wpdb'] = new class { public function esc_like($value) { return addcslashes($value, '_%\\'); } };
+$summary_body = slimstat_function_body(file_get_contents(dirname(__DIR__) . '/admin/view/wp-slimstat-db.php'), 'get_traffic_sources_summary');
+eval('class TrafficSummary extends wp_slimstat_db { public static function summary() {' . $summary_body . '} }');
+unset($_SERVER['SERVER_NAME']);
+TrafficSummary::summary();
+$referrer_query = array_values(array_filter(wp_slimstat_db::$queries, static function ($args) { return ($args[0] ?? null) === 'referer'; }));
+if ($referrer_query[0][3] !== ['%canonical.example%']) { throw new RuntimeException('Referrer report lost canonical hostname in CLI'); }
+echo "PASS: referrer summary uses the canonical site host without SERVER_NAME\n";
