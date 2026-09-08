@@ -247,20 +247,33 @@ answers_for() {
      wp --path=/var/www/html eval-file \
      wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1 || return 1
   if [ -n "$ARTIFACT_INPUT" ]; then
+    local side="$(basename "${out%.json}")" rep=0
+    mkdir -p "$ART/rendered/$side" || return 1
+    while [ "$rep" -lt "${SLIMSTAT_TIMING_REPS:-5}" ]; do
+      dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+        wp-content/plugins/wp-slimstat/tests/bench/lib/parity-snapshot.php /tmp/slimstat-parity.json \
+        >"$ART/rendered/$side/block-$b-rep-$rep.log" 2>&1 || return 1
+      dc exec -T wp cat /tmp/slimstat-parity.json \
+        >"$ART/rendered/$side/block-$b-rep-$rep.json" || return 1
+      rep=$((rep + 1))
+    done
     local arm=before
     [ "$ref" != "$AFTER" ] || arm=after
     python3 "$HARNESS_DIR/comparison-artifacts.py" "$ART/artifacts.json" "$BEFORE" "$AFTER" \
       "$WP_DIR/wp-content/plugins" --verify-installed "$arm" >>"$ART/installed-artifacts.jsonl" || return 1
   fi
-  grep -h 'SLIMSTAT-ANSWERS' "$out.raw" | sed 's/^SLIMSTAT-ANSWERS //' > "$out"
-  grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json"
+  grep -h 'SLIMSTAT-ANSWERS' "$out.raw" | sed 's/^SLIMSTAT-ANSWERS //' > "$out" || return 1
+  grep -h 'SLIMSTAT-TIMING'  "$out.raw" | sed 's/^SLIMSTAT-TIMING //'  > "${out%.json}-timing.json" || return 1
   # The capability/status record is EXTRACTED, not left in the .raw. Without this the extended
   # tier's verdict had no reader at all: the instrument's WARN goes to stderr, which lands in a
   # .raw that nothing greps, that verify-change.sh does not copy into the adjudication packet, and
   # that each of the four interleaved blocks overwrites — so a surface that errored on one arm was
   # "recorded loudly" into a file deleted seven times. An extracted file is what makes the claim
   # true. It is deliberately NOT copied into the blind packet: it names capabilities per era.
-  grep -h 'SLIMSTAT-CAPS'    "$out.raw" | sed 's/^SLIMSTAT-CAPS //'    > "${out%.json}-caps.json"
+  grep -h 'SLIMSTAT-CAPS'    "$out.raw" | sed 's/^SLIMSTAT-CAPS //'    > "${out%.json}-caps.json" || return 1
+  local capture_dir="$ART/captures/$(basename "${out%.json}")/block-$b"
+  mkdir -p "$capture_dir" || return 1
+  cp "$out" "$out.raw" "${out%.json}-timing.json" "${out%.json}-caps.json" "$capture_dir/" || return 1
 }
 
 # ── INTERLEAVED, not one block per arm ──────────────────────────────────────
