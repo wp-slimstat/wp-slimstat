@@ -472,6 +472,13 @@ assert_arm_vintage "$OLD_REF"   # the first arm is installed by provision_wp_cel
 # U4 that quietly failed to load Pro would repeat PITFALLS 21 exactly: five topologies reporting
 # PASS having exercised none of the code they exist to test.
 if [ "$WITH_PRO" = 1 ]; then
+  PRO_HEADER_VERSION=$(wpc plugin get wp-slimstat-pro --field=version 2>/dev/null | tr -d '[:space:]')
+  case "$PRO_REF" in
+    v[0-9]*)
+      [ "$PRO_HEADER_VERSION" = "${PRO_REF#v}" ] \
+        && check "the installed Pro header matches the requested release" 0 "$PRO_HEADER_VERSION" \
+        || check "the installed Pro header matches the requested release" 1 "got ${PRO_HEADER_VERSION:-none}, expected ${PRO_REF#v}" ;;
+  esac
   SCOPE_OLD=$(pro_author_scope)
   [ "$SCOPE_OLD" != "NOCLASS" ] \
     && check "Pro's code loaded alongside free" 0 "arm $(pro_arm_desc)" \
