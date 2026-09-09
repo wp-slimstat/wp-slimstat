@@ -12,7 +12,7 @@ rationale: This is the defect as it actually shipped, restored. `${reason//\"/\'
    # the quote-in-reason case in tests/rehearsal-vintage-corpus-test.php. PITFALLS 132.
 -  local sq="'"
 -  reason="${reason//\"/$sq}"
-+  reason="${reason//\"/\'}"
++  reason="$reason"
    [ -z "$extra" ] || extra="${extra%,},"
    printf '{"cell":"%s","php":"%s","wp":"%s","status":"%s","reason":"%s",%s"ts":"%s"}\n' \
      "$cell" "$php" "$wp" "$status" "$reason" "$extra" "$(date -u +%FT%TZ)" > "$art/cell.json"

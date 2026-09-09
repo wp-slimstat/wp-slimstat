@@ -526,14 +526,18 @@ jobs:
           # web worker sees the mounted plugin. Keep the assertion, but allow that
           # runner-only propagation window; local macOS/ARM did not reproduce it.
           BODY=""
+          SEARCH_BODY=""
           for attempt in $(seq 1 15); do
             BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
-            case "${BODY}" in
+            # wp_json_encode() escapes URL slashes (slimstat\/v1). Search a copy
+            # without JSON escape backslashes; keep BODY intact for diagnostics.
+            SEARCH_BODY="${BODY//\\/}"
+            case "${SEARCH_BODY}" in
               *'"namespaces"'*'slimstat/v1'*) break ;;
             esac
             sleep 2
           done
-          case "${BODY}" in
+          case "${SEARCH_BODY}" in
             *'"namespaces"'*) ;;
             *)
               echo "::error::GET ${TEST_BASE_URL}/wp-json/ was not answered by WordPress on the"
@@ -545,7 +549,7 @@ jobs:
               printf '%s' "${BODY}" | head -c 400
               exit 1 ;;
           esac
-          case "${BODY}" in
+          case "${SEARCH_BODY}" in
             *'slimstat/v1'*) ;;
             *)
               echo "::error::/wp-json/ routes, but slimstat/v1 is not among its namespaces, so"
