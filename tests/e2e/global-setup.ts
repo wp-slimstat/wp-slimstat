@@ -155,12 +155,27 @@ async function loginAndSave(
   } catch (error) {
     const artifacts = path.join(__dirname, 'run-artifacts');
     fs.mkdirSync(artifacts, { recursive: true });
-    fs.writeFileSync(path.join(artifacts, `login-failure-${username}.json`), JSON.stringify({
+    const diagnosis = {
       url: page.url(),
       loginError: await page.locator('#login_error').textContent().catch(() => null),
       body: await page.locator('body').innerText().catch(() => ''),
-    }, null, 2));
+    };
+    fs.writeFileSync(path.join(artifacts, `login-failure-${username}.json`), JSON.stringify(diagnosis, null, 2));
     await page.screenshot({ path: path.join(artifacts, 'login-failure.png') });
+
+    // Print it as well as writing it. A file in an uploaded artifact is only evidence
+    // to someone who can download the artifact; this failure has been red on the CI
+    // lanes since 09-05 and every diagnosis of it stalled on exactly that. The three
+    // fields separate the three causes: an #login_error text is credentials, a URL
+    // still on /wp-login.php with no error is the cookie/redirect path, and a URL
+    // that moved but never reached /wp-admin/ is a redirect chain to follow.
+    console.error(
+      `\nloginAndSave(${username}) never reached /wp-admin/. Diagnosis:\n` +
+        `  url:        ${diagnosis.url}\n` +
+        `  loginError: ${diagnosis.loginError ?? '(no #login_error on the page)'}\n` +
+        `  body:       ${diagnosis.body.slice(0, 600).replace(/\n/g, ' | ') || '(empty)'}\n`
+    );
+
     await browser.close();
     throw error;
   }
