@@ -862,6 +862,51 @@ if [ -n "${QUALIFICATION_PRO_ZIP:-}" ]; then
   check "installed Pro shipping files remain the checksummed candidate" "$?" "see pro-installed.json"
 fi
 
+# ── C14 · Pro must still be OPERATIONAL after a REAL authenticated wp-admin request ──
+#
+# Every probe above this line reaches WordPress through `wp eval`, where is_admin() is false.
+# A plugin that refuses its prerequisites and — on an interactive admin request only —
+# deactivates itself is therefore invisible to all of them, and the artifact check immediately
+# above compares bytes on disk, which a switched-off plugin passes unchanged. That pair let Pro
+# 3.0.0 (21204b6c) turn itself off on the first dashboard view of every site and still collect a
+# full round of green qualification evidence (A0, 2026-09-09).
+#
+# U4's arm is Pro 2.0.0, which has no free-version floor and cannot fail this. The assertion is
+# here anyway because it costs one login and two reads, and because the next arm that grows a
+# prerequisite check must not be able to reach a customer through this cell either.
+if [ "$WITH_PRO" = 1 ]; then
+  CJ="$ART/admin-cookies.txt"
+  curl -s -c "$CJ" -b "wordpress_test_cookie=WP+Cookie+check" \
+       -d "log=admin&pwd=admin&wp-submit=Log+In&redirect_to=$BASE_URL/wp-admin/&testcookie=1" \
+       "$BASE_URL/wp-login.php" -o "$ART/login.html"
+  ADMIN_CODE=$(curl -s -b "$CJ" -o "$ART/first-admin.html" -w '%{http_code}' "$BASE_URL/wp-admin/")
+  # Keep both responses: a prerequisite notice is echoed on exactly these two pages and nowhere
+  # later, so discarding them is how the notice half of this class of defect stays unseen.
+  [ "$ADMIN_CODE" = "200" ] \
+    && check "the dashboard renders for a logged-in admin" 0 "HTTP $ADMIN_CODE" \
+    || check "the dashboard renders for a logged-in admin" 1 "HTTP ${ADMIN_CODE:-no response} — see login.html, first-admin.html"
+
+  wpc plugin list --status=active --field=name >"$ART/active-post-admin.txt" 2>/dev/null
+  grep -qi 'slimstat-pro' "$ART/active-post-admin.txt"
+  check "Pro is still active after that request" "$?" "see active-post-admin.txt"
+
+  wpc option get slimstat_degradations --format=json >"$ART/degradations-post-admin.json" 2>/dev/null \
+    || printf '{}' >"$ART/degradations-post-admin.json"
+  grep -q '"pro_' "$ART/degradations-post-admin.json" && _r=1 || _r=0
+  check "Pro recorded no degradation on that request" "$_r" \
+        "$(tr -d '\n' <"$ART/degradations-post-admin.json" | cut -c1-200)"
+
+  # The positive half. Pro's init() catches \Throwable, so "nothing was recorded" is not proof of
+  # anything on its own; a report id only reaches this filter once UserOverviewAddon's constructor
+  # has run, which needs the service providers to have been loaded and booted. slim_p8_01 is
+  # declared by both arms this cell can install (v2.0.0 src/Addon/Addons/UserOverviewAddon.php:11
+  # and 3.0.0 alike), so it is the one signal that means the same thing on either side.
+  PRO_SIGNAL=$(wpc eval '$r = apply_filters("slimstat_reports_info", array()); echo isset($r["slim_p8_01"]) ? "PROBOOT_OK" : "PROBOOT_MISSING";' 2>>"$ART/pro-probe.log" | tr -d '[:space:]')
+  [ "$PRO_SIGNAL" = "PROBOOT_OK" ] \
+    && check "and its own report is registered at runtime" 0 "slim_p8_01" \
+    || check "and its own report is registered at runtime" 1 "${PRO_SIGNAL:-no output} — service providers never booted"
+fi
+
 ROWS_2=$(stats_rows)
 [ "$ROWS_2" -eq "$ROWS_1" ] && check "not one row was lost or duplicated" 0 "$ROWS_2 rows" \
   || check "not one row was lost or duplicated" 1 "$ROWS_1 -> $ROWS_2"
