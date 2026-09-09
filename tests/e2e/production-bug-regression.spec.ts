@@ -114,7 +114,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
     // Set the problematic value: 'slimstat' (not 'slimstat_banner')
     // Before the fix, this caused PHP to block cookies → visit_id=0
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'slimstat',
       use_slimstat_banner: 'off',
@@ -169,7 +169,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
 
   test('Bug 1&2: online count > 0 after tracked pageview', async ({ page, browser }) => {
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',
@@ -274,7 +274,7 @@ test.describe('Production Bug Regressions (v5.4.7 QA)', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       set_tracker_cookie: 'on',

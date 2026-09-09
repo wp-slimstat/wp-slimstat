@@ -88,7 +88,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await clearDiagnosticOptions();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       javascript_mode: 'on',
       ignore_wp_users: 'no',
@@ -110,7 +110,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('adblock HTML failure falls back to AJAX and records the first pageview', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
@@ -164,7 +164,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('aborted first adblock request falls back to AJAX on the same load', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
@@ -204,7 +204,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('REST pretty failure falls back to rest_route query transport', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'rest',
       javascript_mode: 'on',
     });
@@ -243,7 +243,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('REST query fallback uses index.php routing on index-permalink installs', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'rest',
       javascript_mode: 'on',
     });
@@ -366,7 +366,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
         // A navigation can dispose a response body; the server/database assertions remain authoritative.
       }
     });
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
     });
@@ -414,7 +414,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('one stale-id recovery rebases two queued sibling interactions', async ({ page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
     });
@@ -453,7 +453,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
-    await setSlimstatOptions(page, { tracking_request_method: 'ajax', javascript_mode: 'on' });
+    await setSlimstatOptions({ tracking_request_method: 'ajax', javascript_mode: 'on' });
     const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     try {
       const visitor = await ctx.newPage();
@@ -493,7 +493,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('stale pageview id retries once without id and assigns a fresh pageview id', async ({ page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
     });
@@ -526,7 +526,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('explicit negative rejection does not queue offline retries and stays rejected', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
       ignore_bots: 'on',
@@ -567,7 +567,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('transport memory prefers the last known good fallback after a transport-only failure', async ({ page, browser }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });
@@ -613,7 +613,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
   });
 
   test('GET requests to the adblock endpoint return 405 with no-store cache headers', async ({ page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       tracking_request_method: 'adblock_bypass',
       javascript_mode: 'on',
     });

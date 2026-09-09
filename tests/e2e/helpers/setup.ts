@@ -496,11 +496,21 @@ export async function deleteSlimstatOption(_page: import('@playwright/test').Pag
 /**
  * Set multiple slimstat options in a single DB roundtrip.
  * Reads the serialized options once, updates all keys, writes back once.
+ *
+ * This took a `page` first argument for its whole life and never used it. Nothing type-checks the
+ * suite — Playwright transpiles without tsc — so `setSlimstatOptions({ add_posts_column: 'on' })`
+ * put the options object into `_page`, left `opts` undefined, and `Object.assign(current,
+ * undefined)` wrote the settings back untouched without a word. The spec that did it
+ * (php80-posts-column-interval-flip) then failed on the column it thought it had switched on, and
+ * was carried as a product failure through a whole qualification round. The parameter is gone, so
+ * that call is now the correct one; the guard below catches the next shape of the same mistake.
  */
 export async function setSlimstatOptions(
-  _page: import('@playwright/test').Page,
   opts: Record<string, string>,
 ): Promise<void> {
+  if (!opts || typeof opts !== 'object' || Array.isArray(opts) || Object.keys(opts).length === 0) {
+    throw new Error(`setSlimstatOptions() needs a non-empty options object, got: ${JSON.stringify(opts)}`);
+  }
   const pool = getPool();
   const [rows] = await pool.execute(
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"

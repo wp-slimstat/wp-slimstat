@@ -98,7 +98,7 @@ test.describe('Interaction type detection (tel / mailto / submit)', () => {
     // not free: on a populated install it destroys the dataset the report parity
     // oracle is measured against.
     await snapshotSlimstatOptions();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       is_tracking: 'on',
       ignore_wp_users: 'off',
       gdpr_enabled: 'off',
