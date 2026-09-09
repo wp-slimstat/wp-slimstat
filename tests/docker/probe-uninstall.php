@@ -17,13 +17,20 @@ $databases = ['local' => $wpdb, 'external' => $external];
 $blogs = get_sites(['fields' => 'ids', 'number' => 0]);
 if (count($blogs) !== 2) { throw new RuntimeException('Expected two disposable blogs'); }
 $freeHooks = require '/tmp/uninstall-cron-hooks.php';
-$proHooks = ['slimstat_pro_rehearsal_cron'];
-// Load just the literal declared hook inventory, not Pro's uninstall implementation.
+// Load just the literal declared hook inventory, not Pro's uninstall implementation. Anchor on the
+// `return array(...)` itself, never on the function's closing brace: the file under test is the
+// SCOPED BUILD, where php-scoper wraps everything in a namespace block and indents every function,
+// so a `\n}` anchor ran past this function to the namespace's own brace at the end of the file and
+// captured every string literal in between as a cron hook. That is how 9/9 became 7/9 — the probe
+// scheduled dozens of invented hooks, found them still scheduled, and blamed Pro's uninstall.
 $proSource = file_get_contents('/tmp/uninstall-pro.php');
-if (preg_match('/function slimstat_pro_uninstall_cron_hooks\(\)\s*\{(.*?)\n\}/s', $proSource, $match)) {
-    preg_match_all("/'([^']+)'/", $match[1], $hooks);
-    $proHooks = $hooks[1];
+if (!preg_match('/function\s+slimstat_pro_uninstall_cron_hooks\s*\(\s*\)\s*\{\s*return\s*(?:array\s*\(|\[)(.*?)(?:\)|\])\s*;/s', $proSource, $match)) {
+    throw new RuntimeException('Cannot read slimstat_pro_uninstall_cron_hooks() from the built Pro uninstall.php');
 }
+preg_match_all("/'([^']+)'/", $match[1], $hooks);
+$proHooks = $hooks[1];
+// An empty inventory would make every pro_cron assertion vacuously true.
+if ([] === $proHooks) { throw new RuntimeException('Pro declares no cron hooks; the extraction is wrong, not Pro'); }
 $base = WP_CONTENT_DIR . '/uploads';
 $files = ['geo' => $base . '/wp-slimstat/manual.mmdb', 'cache' => $base . '/wp-slimstat/browscap-cache-master/cache', 'unrelated' => $base . '/unrelated-proof'];
 $must = static function ($ok, string $label): void { if (!$ok) { throw new RuntimeException($label); } };
