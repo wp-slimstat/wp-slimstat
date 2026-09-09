@@ -288,14 +288,13 @@ jobs:
       # One WP lane failing must not cancel the others.
       fail-fast: false
       matrix:
-        # WordPress floor→current, each paired with a PHP its core supports
-        # (5.6/5.9/6.0 can't cleanly boot PHP 8.2). 6.4 is the committed-baseline
-        # lane — its override omits core/phpVersion so .wp-env.json values stand.
+        # WordPress baseline→current, each paired with a PHP its core supports.
+        # 2026-09-09: wp-env's PHP 7.4 image fails `apt-get update` because its
+        # Debian security Release file is expired. The four 7.4 lanes are replaced
+        # by the release-qualification Docker cells (including Playwright JSON and
+        # the in-cell escaping gate); keep 6.4 as the full-suite baseline on PHP 8.2.
         include:
-          - { wp: "5.6", php: "7.4" }
-          - { wp: "5.9", php: "7.4" }
-          - { wp: "6.0", php: "7.4" }
-          - { wp: "6.4", php: "7.4" }
+          - { wp: "6.4", php: "8.2" }
           - { wp: "6.6", php: "8.2" }
           - { wp: "6.9", php: "8.2" }
           - { wp: "7.0", php: "8.2" }
@@ -427,7 +426,7 @@ jobs:
           COOKIE_LAW_ZIP="https://downloads.wordpress.org/plugin/cookie-law-info.3.5.5.zip"
           PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
           if [ "${WP_VERSION}" = "6.4" ]; then
-            printf '{"plugins":[%s]}\n' "${PLUGINS}" > .wp-env.override.json
+            printf '{"phpVersion":"%s","plugins":[%s]}\n' "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
           elif [ "${WP_VERSION}" = "5.6" ]; then
             # Floor lane: enable debug.log so the floor fatal/deprecation guard has a log to read.
             printf '{"core":"WordPress/WordPress#%s","phpVersion":"%s","plugins":[%s],"config":{"WP_DEBUG":true,"WP_DEBUG_LOG":true}}\n' "${WP_REF}" "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
@@ -523,7 +522,17 @@ jobs:
         run: |
           npx wp-env run tests-cli -- wp rewrite structure '/%postname%/' --hard
           npx wp-env run tests-cli -- wp rewrite flush --hard
-          BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+          # Fresh Linux runners can answer the REST index before the post-activation
+          # web worker sees the mounted plugin. Keep the assertion, but allow that
+          # runner-only propagation window; local macOS/ARM did not reproduce it.
+          BODY=""
+          for attempt in $(seq 1 15); do
+            BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+            case "${BODY}" in
+              *'"namespaces"'*'slimstat/v1'*) break ;;
+            esac
+            sleep 2
+          done
           case "${BODY}" in
             *'"namespaces"'*) ;;
             *)

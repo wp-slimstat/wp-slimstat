@@ -6,11 +6,21 @@ rationale: Verifies the permalink structure by reading back the option the line 
 ---
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -512,26 +512,11 @@
+@@ -522,36 +522,11 @@
          run: |
            npx wp-env run tests-cli -- wp rewrite structure '/%postname%/' --hard
            npx wp-env run tests-cli -- wp rewrite flush --hard
--          BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+-          # Fresh Linux runners can answer the REST index before the post-activation
+-          # web worker sees the mounted plugin. Keep the assertion, but allow that
+-          # runner-only propagation window; local macOS/ARM did not reproduce it.
+-          BODY=""
+-          for attempt in $(seq 1 15); do
+-            BODY="$(curl -sS --max-time 30 "${TEST_BASE_URL}/wp-json/" || true)"
+-            case "${BODY}" in
+-              *'"namespaces"'*'slimstat/v1'*) break ;;
+-            esac
+-            sleep 2
+-          done
 -          case "${BODY}" in
 -            *'"namespaces"'*) ;;
 -            *)

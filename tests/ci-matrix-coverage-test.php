@@ -212,7 +212,10 @@ foreach ($job_blocks as $block) {
 // PHPUnit lane can exist below it; 7.4 gets its execution coverage from the Tier 2 E2E lanes
 // instead. 8.0 appears in NO E2E pair, so it has static coverage only — a real hole, named
 // here so it is visible in the gate's own output rather than hidden behind a green.
-$execution_exempt = ['8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only'];
+$execution_exempt = [
+    '7.4' => 'wp-env PHP 7.4 image has expired Debian metadata; release qualification uses the PHP 7.4 Docker cells',
+    '8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only',
+];
 
 $uncovered = array_diff($required_versions, array_keys($execution), array_keys($static));
 if ($uncovered) {

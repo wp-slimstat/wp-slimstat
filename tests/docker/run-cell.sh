@@ -204,8 +204,16 @@ if [ "$RUN_E2E" = "1" ]; then
     MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
     WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
     WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" \
+    npx playwright test --list --config=tests/e2e/playwright.config.ts --project admin \
+      ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright-expected.txt" 2>&1
+    TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
+    MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
+    MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
+    WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
+    WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" PLAYWRIGHT_JSON_OUTPUT_NAME="$ART/playwright.json" \
     npx playwright test --config=tests/e2e/playwright.config.ts --project admin \
-      --timeout=20000 --reporter=list ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright.log" 2>&1 )
+      --timeout=20000 --reporter=list,json ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright.log" 2>&1
+    printf '%s\n' "$?" > "$ART/playwright-exit.txt" )
   # Informational totals.
   grep -oE '[0-9]+ (passed|failed|skipped)' "$ART/playwright.log" | tail -3 | tr '\n' ' ' > "$ART/playwright-summary.txt"
   # Which spec FILES failed?
@@ -236,6 +244,10 @@ if [ -f "$LOG" ]; then
   if [ "$STRICT_DEPRECATIONS" = "1" ] && grep -iE 'Deprecated.*(wp-slimstat|SlimStat)' "$LOG" >/dev/null 2>&1; then
     fail "wp-slimstat deprecation (strict mode)"
   fi
+fi
+
+if [ -n "${PRE_CLEANUP_HOOK:-}" ]; then
+  bash "$PRE_CLEANUP_HOOK" "$ART" || fail "pre-cleanup hook failed"
 fi
 
 verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json" || fail 'installed Free shipping bytes changed'
