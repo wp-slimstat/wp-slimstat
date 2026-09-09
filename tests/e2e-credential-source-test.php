@@ -47,9 +47,11 @@ preg_match_all(
     PREG_SET_ORDER
 );
 
-$owned = [];
+$owned       = [];
+$credentials = [];
 foreach ($m as $hit) {
     $owned[$hit[4]] = true;
+    $credentials[$hit[1] . '_' . $hit[2]] = $hit[4];
 }
 $owned = array_keys($owned);
 
@@ -100,6 +102,29 @@ foreach ($files as $path) {
             $failures[] = sprintf('%s fills a login field with the string literal %s%s%s. The '
                 . 'credential must come from a constant — from env.ts, or from one the spec '
                 . 'provisions itself with ensureWpUser()', $rel, $hit[1], $hit[2], $hit[1]);
+        }
+    }
+}
+
+// The standard CI job starts from a fresh wp-env site. Its admin exists by default, but the
+// author account does not; global setup authenticates both before any spec can run. Pin the
+// provisioning contract so a missing author is reported here instead of as a 60-second browser
+// navigation timeout in every matrix lane.
+$ci_source = (string) file_get_contents($plugin_root . '/.github/workflows/ci.yml');
+if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci_source, $ci_match)) {
+    $failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
+} else {
+    $standard_job = $ci_match[0];
+    $required_ci_fragments = [
+        'WP_AUTHOR_USER: ' . ($credentials['AUTHOR_USER'] ?? ''),
+        'WP_AUTHOR_PASS: ' . ($credentials['AUTHOR_PASS'] ?? ''),
+        'wp user create "${WP_AUTHOR_USER}"',
+        '--role=author',
+        '--user_pass="${WP_AUTHOR_PASS}"',
+    ];
+    foreach ($required_ci_fragments as $fragment) {
+        if (false === strpos($standard_job, $fragment)) {
+            $failures[] = "Tier 2 does not provision the configured author account: missing `{$fragment}`";
         }
     }
 }

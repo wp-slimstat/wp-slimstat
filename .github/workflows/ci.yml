@@ -307,6 +307,8 @@ jobs:
       TEST_BASE_URL: http://localhost:8889
       WP_VERSION: ${{ matrix.wp }}
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
+      WP_AUTHOR_USER: dordane
+      WP_AUTHOR_PASS: testpass123
 
     steps:
       - name: Checkout
@@ -498,6 +500,11 @@ jobs:
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
           npx wp-env run tests-cli -- wp user update admin --user_pass=password
+          if npx wp-env run tests-cli -- wp user get "${WP_AUTHOR_USER}" --field=ID >/dev/null 2>&1; then
+            npx wp-env run tests-cli -- wp user update "${WP_AUTHOR_USER}" --role=author --user_pass="${WP_AUTHOR_PASS}"
+          else
+            npx wp-env run tests-cli -- wp user create "${WP_AUTHOR_USER}" "${WP_AUTHOR_USER}@example.invalid" --role=author --user_pass="${WP_AUTHOR_PASS}"
+          fi
           npx wp-env run tests-cli -- wp eval '
             include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
             wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
