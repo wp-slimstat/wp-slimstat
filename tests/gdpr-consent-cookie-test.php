@@ -511,6 +511,7 @@ assert_true($res instanceof \WP_Error, 'consent-change should return WP_Error fo
 $_COOKIE['slimstat_tracking_code'] = ['malformed'];
 $cc = new \SlimStat\Controllers\Rest\ConsentChangeRestController();
 $cache_key = new \ReflectionMethod($cc, 'getConsentCacheKey');
+$cache_key->setAccessible(true);
 assert_same('', $cache_key->invoke($cc), 'array tracking cookie should disable visitor-scoped consent caching');
 unset($_COOKIE['slimstat_tracking_code']);
 
