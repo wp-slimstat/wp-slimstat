@@ -29,6 +29,7 @@ import {
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, WP_ROOT } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,15 +71,6 @@ function uninstallVersionFloorPlugin(): void {
 }
 
 // ─── AJAX helpers ─────────────────────────────────────────────────
-
-async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'e2e_get_slimstat_version' },
-  });
-  if (!res.ok()) return false;
-  const json = await res.json();
-  return json.data?.pro_active === true;
-}
 
 async function getWhoisNonce(page: import('@playwright/test').Page): Promise<string> {
   const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
@@ -130,8 +122,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -155,8 +146,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -185,8 +175,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -209,8 +198,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -235,8 +223,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -255,8 +242,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -295,8 +281,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -326,8 +311,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -349,8 +333,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -367,8 +350,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -388,8 +370,7 @@ test.describe('Pro DB-IP Whois Data — Suite 04 (REQ-AC3)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 

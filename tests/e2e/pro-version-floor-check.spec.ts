@@ -21,6 +21,7 @@ import {
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, WP_ROOT } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,7 +137,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     const info = await getSlimstatVersionInfo(page);
 
     // Skip remaining tests if Pro is not active
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     expect(info.version).toBeTruthy();
     expect(info.pro_version).toBeTruthy();
@@ -150,7 +151,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     // Core version should be >= 5.4.0
     expect(info.version).toBeTruthy();
@@ -166,7 +167,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     expect(info.pro_version).toBeTruthy();
     // Should be a valid semver-like version string
@@ -180,7 +181,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -201,7 +202,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     const adminPages = [
       '/wp-admin/',
@@ -249,7 +250,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     // This test verifies that version floor logic is present by confirming the
     // actual installed version PASSES the check (since env uses core >= 5.4.0)
@@ -274,7 +275,7 @@ test.describe('Pro Version Floor Check — Suite 04 (REQ-AC5)', () => {
     await expect(page).toHaveTitle(/Dashboard/);
 
     const info = await getSlimstatVersionInfo(page);
-    test.skip(!info.pro_active, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     // When Pro is active, both version and pro_version must be populated
     expect(info.version).toBeTruthy();

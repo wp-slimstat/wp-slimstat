@@ -19,6 +19,7 @@ import {
   ensureWpUser,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 // ─── DB helpers ──────────────────────────────────────────────────
 
@@ -120,7 +121,18 @@ async function getUserOverviewData(page: import('@playwright/test').Page) {
 test.describe('User Overview (slim_p8_01)', () => {
   test.setTimeout(90_000);
 
-  test.beforeAll(async () => {
+  // Every assertion below belongs to Pro's UserOverviewAddon (report slim_p8_01 and the
+  // [loggedin:…] note it writes). Six of these failed for a whole census against a Pro
+  // that was switched on and dead, and the spec had no way to say so. Now it does: this
+  // skips only where Pro is absent from the machine, and FAILS where Pro is installed
+  // but never booted.
+  test.beforeAll(async ({ browser }) => {
+    const probe = await browser.newPage();
+    try {
+      await requireProBooted(probe);
+    } finally {
+      await probe.close();
+    }
     enableDisableWpCron();
     testUserId = await ensureWpUser(TEST_USER, TEST_USER_PASS);
     await snapshotSlimstatOptions();

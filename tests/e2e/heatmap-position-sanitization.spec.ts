@@ -18,6 +18,7 @@ import {
   waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
@@ -47,15 +48,6 @@ function captureTrackingPayloads(page: import('@playwright/test').Page): { paylo
       payloads.length = 0;
     },
   };
-}
-
-async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'e2e_get_slimstat_version' },
-  });
-  if (!res.ok()) return false;
-  const json = await res.json();
-  return json.data?.pro_active === true;
 }
 
 async function getHeatmapNonce(page: import('@playwright/test').Page): Promise<string> {
@@ -239,7 +231,7 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('heatmap endpoint excludes corrupted positions and returns x/y/value entries', async ({ page }) => {
-    test.skip(!(await isProActive(page)), 'WP SlimStat Pro is not installed/active');
+    await requireProBooted(page);
 
     await setSlimstatOptions(page, { addon_heatmap_enable: 'on' });
 
@@ -265,7 +257,7 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('multiple clicks aggregate correctly in heatmap data', async ({ page }) => {
-    test.skip(!(await isProActive(page)), 'WP SlimStat Pro is not installed/active');
+    await requireProBooted(page);
 
     await setSlimstatOptions(page, { addon_heatmap_enable: 'on' });
 

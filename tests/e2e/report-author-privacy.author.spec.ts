@@ -10,6 +10,7 @@ import {
   snapshotSlimstatOptions,
 } from './helpers/setup';
 import { AUTHOR_USER, BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 let wpNow = 0;
 
@@ -93,6 +94,10 @@ test.describe('author report privacy boundaries', () => {
   });
 
   test('forged chart filters, admin bar, and autosuggest remain in the author scope', async ({ page }) => {
+    // :is_pro below is a Pro assertion. Gate it on Pro having actually BOOTED, so an
+    // active-but-dead Pro fails here by name instead of arriving as an opaque
+    // `expect(is_pro).toBe(true)` mismatch attributed to author scoping.
+    await requireProBooted(page);
     await setSlimstatSetting('capability_can_view', 'read');
     await seedAuthorRows(wpNow);
     const validChartNonce = await chartNonce(page);

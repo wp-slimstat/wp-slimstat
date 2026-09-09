@@ -40,7 +40,13 @@ function isAuthFresh(statePath: string): boolean {
  * a reason it does not state.
  */
 async function assertNonceHelperReachable(baseURL: string, adminStatePath: string): Promise<void> {
-  const ctx = await playwrightRequest.newContext({ storageState: adminStatePath });
+  const ctx = await playwrightRequest.newContext({
+    storageState: adminStatePath,
+    // Same gate as every other context here; without it this canary reports the LocalWP
+    // self-signed cert as "the mu-plugin is unreachable", which is the one thing it exists
+    // not to do. No-op in CI, where PW_IGNORE_HTTPS is unset.
+    ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
+  });
   try {
     const res = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
       form: { action: 'test_create_nonce', nonce_action: 'slimstat_chart_nonce' },
@@ -62,6 +68,64 @@ async function assertNonceHelperReachable(baseURL: string, adminStatePath: strin
         'the copy still reports success; (2) WP_ROOT names the tests site, not development; ' +
         '(3) SLIMSTAT_E2E_TESTING is defined in that site\'s wp-config.php. ' +
         'tests/e2e-harness-contract-test.php pins (1) and (2) at source level.'
+      );
+    }
+  } finally {
+    await ctx.dispose();
+  }
+}
+
+/**
+ * ABORT THE RUN when Pro is installed but did not boot.
+ *
+ * On 2026-09-09 a 137-minute zero-retry census ran against a Pro 3.0.0 that deactivated
+ * itself on the login request in global setup: WordPress loads 'wp-slimstat-pro/…' before
+ * 'wp-slimstat/…' on the sorted active_plugins order, so Pro's minimum-Free guard read an
+ * undefined SLIMSTAT_ANALYTICS_VERSION as "free is too old". Ten failures were then filed
+ * against MaxMind, User Overview and author scoping, and seven more tests skipped themselves
+ * with "Pro is not installed/active". One fact, misread seventeen ways.
+ *
+ * Costs one POST. Fails in minute one, with the reason, rather than in hour three, without it.
+ * "Not installed" is the ONLY tolerated state — the Free CI lanes carry no Pro by declaration
+ * (ci.yml: private repository, no deploy key), and it is reported so the log says which run
+ * this was.
+ */
+async function assertProBootedIfInstalled(baseURL: string, adminStatePath: string): Promise<void> {
+  const ctx = await playwrightRequest.newContext({
+    storageState: adminStatePath,
+    ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
+  });
+  try {
+    const res = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
+      form: { action: 'e2e_get_slimstat_version' },
+    });
+    const text = await res.text();
+    let data: any = null;
+    try { data = JSON.parse(text)?.data; } catch { /* reported below as the raw body */ }
+    if (!res.ok() || !data) {
+      throw new Error(
+        `HARNESS PRO PROBE FAILED: e2e_get_slimstat_version returned HTTP ${res.status()} with body ${text.slice(0, 300)}`
+      );
+    }
+
+    if (!data.pro_installed) {
+      console.log('[global-setup] wp-slimstat-pro is not installed — Pro specs will skip (declared Free-only lane).');
+      return;
+    }
+
+    if (!data.pro_activated || !data.pro_booted) {
+      const degradations = Array.isArray(data.pro_degradations) && data.pro_degradations.length
+        ? data.pro_degradations.join(', ')
+        : '(none recorded)';
+      throw new Error(
+        'PRO BOOT FAILED — aborting the run before any spec can misattribute it.\n' +
+        `  is_plugin_active: ${data.pro_activated}\n` +
+        `  report slim_p8_01 registered on slimstat_reports_info: ${data.pro_booted}\n` +
+        `  slimstat_degradations pro_* keys: ${degradations}\n` +
+        `  free version: ${data.version ?? '(undefined)'}   pro version: ${data.pro_version ?? '(unknown)'}\n\n` +
+        'Pro is switched on and dead, or was deactivated by the login request above. Check the ' +
+        'site debug.log for "requires SlimStat Analytics" and wp-slimstat-pro.php _checkRequirements(); ' +
+        'tests/free-floor-load-order-test.php in the Pro repo covers the load-order case.'
       );
     }
   } finally {
@@ -181,4 +245,8 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
   // LAST, and only once the admin session exists -- the endpoint requires manage_options, so
   // running this before login would report 'forbidden' for a helper that is in fact loaded.
   await assertNonceHelperReachable(baseURL, path.join(AUTH_DIR, 'admin.json'));
+
+  // Same reason, same place: the login above is exactly the interactive admin request that
+  // a Pro with a broken requirements guard deactivates itself on.
+  await assertProBootedIfInstalled(baseURL, path.join(AUTH_DIR, 'admin.json'));
 }
