@@ -20,6 +20,8 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   closeDb,
+  installMuPluginByName,
+  uninstallMuPluginByName,
 } from './helpers/setup';
 import { BASE_URL, WP_ROOT } from './helpers/env';
 import { requireProBooted } from './helpers/pro-state';
@@ -29,8 +31,6 @@ const __dirname = path.dirname(__filename);
 
 // ─── MU-Plugin management ─────────────────────────────────────────
 const MU_PLUGINS = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const VERSION_FLOOR_SRC = path.join(__dirname, 'helpers', 'version-floor-test-mu-plugin.php');
-const VERSION_FLOOR_DEST = path.join(MU_PLUGINS, 'version-floor-test-mu-plugin.php');
 const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
 const WP_CONFIG = path.join(WP_ROOT, 'wp-config.php');
 
@@ -54,13 +54,12 @@ function restoreWpConfig(): void {
 }
 
 function installVersionFloorPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(VERSION_FLOOR_SRC, VERSION_FLOOR_DEST);
+  installMuPluginByName('version-floor-test-mu-plugin.php');
   injectWpConfigLine(E2E_TESTING_LINE);
 }
 
 function uninstallVersionFloorPlugin(): void {
-  if (fs.existsSync(VERSION_FLOOR_DEST)) fs.unlinkSync(VERSION_FLOOR_DEST);
+  uninstallMuPluginByName('version-floor-test-mu-plugin.php');
 }
 
 // ─── AJAX helpers ─────────────────────────────────────────────────
