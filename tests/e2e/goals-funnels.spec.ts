@@ -36,6 +36,23 @@ async function gotoSlimview6(page: Page): Promise<void> {
     await page.goto(SLIMVIEW6, { waitUntil: 'domcontentloaded' });
 }
 
+/**
+ * Type a value into the goal drawer's Value field the way a user does.
+ *
+ * `[data-role="goal-value"]` is the raw input, and SlimStatSearchableSelect hides it
+ * (display:none) the moment the combobox mounts, so `page.fill()` on it fails with
+ * "element is not visible" — not because the drawer is broken, but because the spec is
+ * driving the pre-combobox DOM. The widget's syncTypedValue commits the typed text to
+ * the hidden input on blur, so the input still carries the value that gets saved.
+ */
+async function fillGoalValue(page: Page, value: string): Promise<void> {
+    const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
+    await wrap.locator('.slimstat-select-display').click();
+    await wrap.locator('.slimstat-select-search input').fill(value);
+    await page.locator('[data-role="goal-name"]').click(); // blur commits
+    await expect(page.locator('[data-role="goal-value"]')).toHaveValue(value);
+}
+
 test.describe('Goals & Funnels redesign (slimview6)', () => {
     test.beforeEach(async () => {
         await clearAll();
@@ -389,7 +406,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
 
         await page.fill('[data-role="goal-name"]', 'E2E Test Goal');
-        await page.fill('[data-role="goal-value"]', '/e2e');
+        await fillGoalValue(page, '/e2e');
         await Promise.all([
             page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
             page.click('[data-action="save-goal"]'),
@@ -612,13 +629,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
         await page.fill('[data-role="goal-name"]', 'Custom Value Goal');
 
-        // Type a value through the combobox search; syncTypedValue commits it to
-        // the hidden input even though it is not in the suggestion list.
-        const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
-        await wrap.locator('.slimstat-select-display').click();
-        await wrap.locator('.slimstat-select-search input').fill('/totally-custom-xyz');
-        await page.locator('[data-role="goal-name"]').click(); // blur to commit
-        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('/totally-custom-xyz');
+        // A custom value that is not in the suggestion list still reaches the input.
+        await fillGoalValue(page, '/totally-custom-xyz');
 
         await Promise.all([
             page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
