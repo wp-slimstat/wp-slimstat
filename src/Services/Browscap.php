@@ -113,6 +113,21 @@ class Browscap
         return $browser;
     }
 
+    /**
+     * Whether ext-fileinfo is available, asked from inside this namespace.
+     *
+     * The admin notice in admin/view/index.php used to call extension_loaded('fileinfo')
+     * itself. That file has no namespace, so the call resolved straight to the PHP
+     * built-in and nothing in userland could answer it differently: the E2E simulation
+     * of a fileinfo-less host could never make the notice render, and the companion
+     * "no notice when Browscap is off" assertion passed vacuously on every host that
+     * has the extension. Admin code asks Browscap, which owns the requirement.
+     */
+    public static function has_fileinfo(): bool
+    {
+        return extension_loaded('fileinfo');
+    }
+
     public static function get_browser_from_browscap($_browser = [], $_cache_path = '')
     {
         // Flysystem's LocalFilesystemAdapter eagerly constructs FinfoMimeTypeDetector,
