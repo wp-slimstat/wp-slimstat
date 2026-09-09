@@ -45,14 +45,18 @@ async function getSelectedGranularity(page: Page): Promise<string> {
 /**
  * Wait for the chart to be fully initialized by JS (canvas has a Chart instance).
  * This is critical for async_load tests where the chart may be re-rendered.
+ *
+ * The `canvas` in the selector is load-bearing. `chart-view.php` renders
+ * `<div id="slimstat_chart_data_X">` (line 78) BEFORE `<canvas id="slimstat_chart_X">`
+ * (line 108), so a bare `[id^="slimstat_chart_"]` returns the data div and never the
+ * canvas. Chart.js is asked through its own registry: `getChart()` resolves a canvas
+ * to its live instance, which is the fact this helper is claiming to have observed.
  */
 async function waitForChartInitialized(page: Page): Promise<void> {
   await page.waitForFunction(
     () => {
-      const canvas = document.querySelector<HTMLCanvasElement>('[id^="slimstat_chart_"]');
-      // Chart.js stores the instance on the canvas element
-      return canvas && (canvas as any).__chartjs_instance !== undefined
-        || (typeof Chart !== 'undefined' && Chart.getChart(canvas!) !== undefined);
+      const canvas = document.querySelector<HTMLCanvasElement>('canvas[id^="slimstat_chart_"]');
+      return !!(canvas && typeof Chart !== 'undefined' && Chart.getChart(canvas));
     },
     { timeout: 20_000 },
   );
