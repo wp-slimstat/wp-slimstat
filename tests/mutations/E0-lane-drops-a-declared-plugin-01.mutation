@@ -14,4 +14,4 @@ rationale: Drops cookie-law-info from the lane's plugin set, restoring half of t
 +          COOKIE_LAW_ZIP=""
            PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
            if [ "${WP_VERSION}" = "6.4" ]; then
-             printf '{"plugins":[%s]}\n' "${PLUGINS}" > .wp-env.override.json
+             printf '{"phpVersion":"%s","plugins":[%s]}\n' "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json

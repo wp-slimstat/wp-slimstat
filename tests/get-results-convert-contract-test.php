@@ -120,6 +120,7 @@ class SlimstatRecorderWpdb
 
 class wp_slimstat
 {
+    public static function now() { return time(); }
     public static $settings = ['show_sql_debug' => 'no'];
 
     public static $wpdb;

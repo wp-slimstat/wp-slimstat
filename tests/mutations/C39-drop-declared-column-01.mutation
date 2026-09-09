@@ -9,7 +9,7 @@ index 68f343c6..f22b23db 100644
 --- a/admin/index.php
 +++ b/admin/index.php
 @@ -1004,7 +1004,7 @@ class wp_slimstat_admin
-         if (version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
+         if (!$recover_settings && version_compare(wp_slimstat::$settings['version'], '4.8.4.1', '<')) {
              // Goodbye, browser plugins. Rendered from Schema, which refuses to drop anything the
              // manifest still declares — the same guard as the ADD side, pointing the other way.
 -            wp_slimstat::$wpdb->query(Schema::dropColumnSql('slim_stats', 'plugins', $GLOBALS['wpdb']->prefix));

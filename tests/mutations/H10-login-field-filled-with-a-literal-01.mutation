@@ -1,0 +1,17 @@
+target:    tests/e2e/chart-robustness.spec.ts
+gate:      php tests/e2e-credential-source-test.php
+kind:      restore-defect
+expect:    fills a login field with the string literal
+rationale: A credential env.ts has never heard of, typed straight into the password field. The owned-literal scan cannot see it -- that list is derived from env.ts -- so this is the half of the gate that catches a NEW hardcoded account rather than the two already recorded. Killed by the general form.
+---
+--- a/tests/e2e/chart-robustness.spec.ts
++++ b/tests/e2e/chart-robustness.spec.ts
+@@ -28,7 +28,7 @@
+   if (needsLogin) {
+     await page.goto(`${BASE_URL}/wp-login.php`);
+     await page.fill('#user_login', ADMIN_USER);
+-    await page.fill('#user_pass', ADMIN_PASS);
++    await page.fill('#user_pass', 'testpass1234');
+     await page.click('#wp-submit');
+     await page.waitForURL('**/wp-admin/**', { timeout: 30_000 });
+   }

@@ -198,7 +198,7 @@ class Processor
         $stat['resource'] = preg_replace_callback('/[^\x20-\x7E]/', function ($m) {
             return '%' . bin2hex($m[0]);
         }, $stat['resource']);
-        $parsed_url = parse_url($stat['resource'] ?? '');
+        $parsed_url = wp_parse_url($stat['resource'] ?? '');
         if (!$parsed_url) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(203);
@@ -211,24 +211,26 @@ class Processor
             return Utils::logError(305);
         }
 
-        if (empty($stat['referer']) && !empty($_SERVER['HTTP_REFERER'])) {
+        $http_referer = $_SERVER['HTTP_REFERER'] ?? '';
+        if (empty($stat['referer']) && is_string($http_referer) && '' !== $http_referer) {
             // sanitize_url() with android-app added to the allow-list: app-scheme referers
             // (android-app://com.google.android.googlequicksearchbox/, Google Discover) survive,
             // disallowed schemes (javascript:, data:) are emptied at the boundary, and — unlike
             // sanitize_text_field — percent-encoded query octets are preserved so getSearchTerms()
             // below can still decode non-Latin / spaced search terms. See #306.
-            $stat['referer'] = sanitize_url(wp_unslash($_SERVER['HTTP_REFERER']), self::REFERER_ALLOWED_SCHEMES);
+            $stat['referer'] = sanitize_url(wp_unslash($http_referer), self::REFERER_ALLOWED_SCHEMES);
         }
 
 
         if (!empty($stat['referer'])) {
-            $parsed_url = parse_url($stat['referer'] ?? '');
+            $parsed_url = wp_parse_url($stat['referer'] ?? '');
             if (!$parsed_url) {
                 Query::setProcessingTimestamp(null);
                 return Utils::logError(201);
             }
 
             if (isset($parsed_url['scheme']) && ('' !== $parsed_url['scheme'] && '0' !== $parsed_url['scheme']) && !in_array(strtolower($parsed_url['scheme']), self::REFERER_ALLOWED_SCHEMES)) {
+                /* translators: %s: referring URL rejected as an attempted XSS injection. */
                 $stat['notes'][] = sprintf(__('Attempted XSS Injection: %s', 'wp-slimstat'), $stat['referer']);
                 unset($stat['referer']);
             }
@@ -240,14 +242,15 @@ class Processor
 
 
             $stat['searchterms'] = Utils::getSearchTerms($stat['referer']);
-            $parsed_site_url = parse_url(get_site_url(), PHP_URL_HOST);
+            $parsed_site_url = wp_parse_url(get_site_url(), PHP_URL_HOST);
             if (isset($parsed_url['host']) && ('' !== $parsed_url['host'] && '0' !== $parsed_url['host']) && $parsed_url['host'] == $parsed_site_url && 'on' != \wp_slimstat::$settings['track_same_domain_referers']) {
                 unset($stat['referer']);
             }
         }
 
-        if (empty($stat['searchterms']) && !empty($_POST['s'])) {
-            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($_POST['s'])));
+        $posted_search = $_POST['s'] ?? '';
+        if (empty($stat['searchterms']) && is_string($posted_search) && '' !== $posted_search) {
+            $stat['searchterms'] = sanitize_text_field(str_replace('\\', '', wp_unslash($posted_search)));
         }
 
         if (!isset($stat['content_type'])) {
@@ -277,7 +280,9 @@ class Processor
             $stat['notes'][] = 'results:' . intval($GLOBALS['wp_query']->found_posts);
         }
 
-        if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || (!empty($_GET['page']) && false !== strpos($_GET['page'], 'slimview'))) {
+        $admin_page = $_GET['page'] ?? '';
+        $admin_page = is_string($admin_page) ? sanitize_text_field(wp_unslash($admin_page)) : '';
+        if ((isset($stat['resource']) && ($stat['resource'] !== '' && $stat['resource'] !== '0') && false !== strpos($stat['resource'], 'wp-admin/admin-ajax.php')) || ('' !== $admin_page && false !== strpos($admin_page, 'slimview'))) {
             Query::setProcessingTimestamp(null);
             return Utils::logError(308);
         }
@@ -333,12 +338,14 @@ class Processor
                 $stat['username'] = $spam_comment->comment_author;
                 $stat['email']    = $spam_comment->comment_author_email;
             } else {
-                if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
-                    $stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+                $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
+                if (is_string($comment_author) && '' !== $comment_author) {
+                    $stat['username'] = sanitize_user(wp_unslash($comment_author));
                 }
 
-                if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
-                    $stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+                $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
+                if (is_string($comment_email) && '' !== $comment_email) {
+                    $stat['email'] = sanitize_email(wp_unslash($comment_email));
                 }
             }
         }
@@ -389,7 +396,11 @@ class Processor
             }
         }
 
-        if ((isset($_SERVER['HTTP_X_MOZ']) && ('prefetch' === strtolower($_SERVER['HTTP_X_MOZ']))) || (isset($_SERVER['HTTP_X_PURPOSE']) && ('preview' === strtolower($_SERVER['HTTP_X_PURPOSE'])))) {
+        $x_moz = $_SERVER['HTTP_X_MOZ'] ?? '';
+        $x_moz = is_string($x_moz) ? sanitize_text_field(wp_unslash($x_moz)) : '';
+        $x_purpose = $_SERVER['HTTP_X_PURPOSE'] ?? '';
+        $x_purpose = is_string($x_purpose) ? sanitize_text_field(wp_unslash($x_purpose)) : '';
+        if ('prefetch' === strtolower($x_moz) || 'preview' === strtolower($x_purpose)) {
             if ('on' == \wp_slimstat::$settings['ignore_prefetch']) {
                 Query::setProcessingTimestamp(null);
                 return Utils::logError(312);
@@ -427,6 +438,10 @@ class Processor
         }
         $cookie_has_been_set = Session::ensureVisitId($forceVisitIdAssign);
         $stat = \wp_slimstat::get_stat(); // Get updated stat after ensureVisitId
+        if ([] === $stat) {
+            Query::setProcessingTimestamp(null);
+            return Utils::logError(500);
+        }
 
         $stat = apply_filters('slimstat_filter_pageview_stat', $stat);
         do_action('slimstat_track_pageview', $stat);
@@ -456,8 +471,9 @@ class Processor
 				// Allow explicit visit_id from client to target original anonymous record
 				// Security: Only accept visit_id with valid checksum to prevent targeting arbitrary records
 				$requestedVisitId = 0;
-				if (!empty($_REQUEST['visit_id'])) {
-					$visitIdRaw = sanitize_text_field(wp_unslash($_REQUEST['visit_id']));
+				$requestedVisitIdRaw = $_REQUEST['visit_id'] ?? '';
+				if (is_scalar($requestedVisitIdRaw) && '' !== (string) $requestedVisitIdRaw) {
+					$visitIdRaw = sanitize_text_field(wp_unslash((string) $requestedVisitIdRaw));
 					$visitIdValue = Utils::getValueWithoutChecksum($visitIdRaw);
 					if (false !== $visitIdValue) {
 						$requestedVisitId = intval($visitIdValue);
@@ -675,18 +691,8 @@ class Processor
                             }
                         }
 
-                        // Use atomic counter for thread-safe visit ID generation (O(1) instead of O(n))
-                        $next_visit_id = VisitIdGenerator::generateNextVisitId();
-                        if ($next_visit_id <= 0) {
-                            $next_visit_id = time();
-                        }
-
-                        $stat['visit_id'] = intval($next_visit_id);
-
-                        // Sync visit_id to ensure session continuity
-                        if (!empty($stat['visit_id']) && isset($existing_record->visit_id) && $stat['visit_id'] != $existing_record->visit_id) {
-                            $update_data['visit_id'] = $stat['visit_id'];
-                        }
+                        // Consent enriches the existing session; it must not allocate a new visit.
+                        $stat['visit_id'] = intval($existing_record->visit_id);
 
                         // Update the existing record
                         if (!empty($update_data)) {
@@ -723,8 +729,10 @@ class Processor
                             \wp_slimstat::set_stat($stat);
                             Query::setProcessingTimestamp(null);
 
-                            // Ensure tracking cookie is set after upgrade
-                            if (empty($stat['visit_id']) && !empty($stat['id'])) {
+                            // Match the cookie to the preserved session after ensureVisitId's provisional allocation.
+                            if (!empty($stat['visit_id'])) {
+                                Session::setTrackingCookie($stat['visit_id'], 'visit');
+                            } elseif (!empty($stat['id'])) {
                                 Session::setTrackingCookie($stat['id'], 'id', 2678400);
                             }
 
@@ -934,7 +942,9 @@ class Processor
 
         try {
             include_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
-            \wp_slimstat_admin::init_environment();
+            if (false === \wp_slimstat_admin::init_environment()) {
+                return false;
+            }
         } catch (\Throwable $e) {
             \wp_slimstat::record_degradation(
                 'schema repair from the tracking path',

@@ -4,16 +4,20 @@
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 source "$HARNESS_DIR/matrix.env"
+# Qualification never substitutes a working tree or an implicit Pro build.
+: "${QUALIFICATION_FREE_ZIP:?exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}"
+: "${QUALIFICATION_PRO_ZIP:?exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}"
 
 export STRICT_DEPRECATIONS RUN_E2E
-mkdir -p "$WORK_ROOT/cells"
+mkdir -p "$WORK_ROOT"
+WORK_ROOT=$(mktemp -d "$WORK_ROOT/matrix.XXXXXXXX")
+export WORK_ROOT
+mkdir -p "$WORK_ROOT/cells" "$WORK_ROOT/logs"
+EXPECTED_CELLS=()
 
 command -v docker >/dev/null || { err "docker not found"; exit 1; }
-# Build the Pro artifact if it's not already there — one command to run the matrix.
-if [ ! -f "$PRO_ZIP" ]; then
-  log "Pro shipped ZIP missing — building it through build/build-dist.sh…"
-  bash "$HARNESS_DIR/build-pro.sh" || { err "Pro build failed"; exit 1; }
-fi
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WORK_ROOT/free-artifact" >"$WORK_ROOT/free-artifact.log" || exit 1
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WORK_ROOT/pro-artifact" >"$WORK_ROOT/pro-artifact.log" || exit 1
 
 # Pre-build the PHP images once so cells don't each pay the build cost.
 log "pre-building ${#PHPS[@]} PHP images…"
@@ -29,10 +33,10 @@ idx=0; running=0
 for wp in "${WPS[@]}"; do
   for php in "${PHPS[@]}"; do
     http=$((BASE_HTTP_PORT + idx)); db=$((BASE_DB_PORT + idx)); idx=$((idx+1))
-    cell="php${php}-wp${wp}"; mkdir -p "$WORK_ROOT/cells/$cell/artifacts"
+    cell="php${php}-wp${wp}"; EXPECTED_CELLS+=("$cell")
     log "launching $cell (http $http, db $db)"
     bash "$HARNESS_DIR/run-cell.sh" "$php" "$wp" "$http" "$db" \
-      > "$WORK_ROOT/cells/$cell/run.log" 2>&1 &
+      > "$WORK_ROOT/logs/$cell.log" 2>&1 &
     running=$((running+1))
     if [ "$running" -ge "$CONCURRENCY" ]; then wait -n 2>/dev/null || wait; running=$((running-1)); fi
   done
@@ -62,14 +66,13 @@ SUMMARY="$WORK_ROOT/matrix-summary.md"
   echo "_BLOCKED = WordPress core can't boot on that PHP (not a plugin failure)._"
 } | tee "$SUMMARY"
 
-cat "$WORK_ROOT"/cells/*/artifacts/cell.json 2>/dev/null | (command -v jq >/dev/null && jq -s '.' || cat) \
-  > "$WORK_ROOT/matrix-summary.json" 2>/dev/null || true
+python3 "$HARNESS_DIR/check-matrix.py" "$WORK_ROOT" "${EXPECTED_CELLS[@]}" >"$WORK_ROOT/matrix-summary.json"
+MATRIX_RC=$?
 
 # Mirror durable reports out of /tmp.
 DEST="$PLUGIN_SRC/../jaan-to/outputs/dev/php-matrix/$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$DEST" 2>/dev/null && cp "$SUMMARY" "$WORK_ROOT/matrix-summary.json" "$DEST/" 2>/dev/null \
   && log "summary mirrored to $DEST"
 
-fails=$(grep -l '"status":"FAIL"' "$WORK_ROOT"/cells/*/artifacts/cell.json 2>/dev/null | wc -l | tr -d ' ')
-log "done. plugin FAILs: $fails (BLOCKED cells are not failures)."
-[ "$fails" -eq 0 ]
+log "done. matrix qualification exit: $MATRIX_RC; see matrix-summary.json for every missing or failed lane"
+exit "$MATRIX_RC"

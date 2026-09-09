@@ -126,6 +126,8 @@ class SlimstatRecorderWpdb
         return 0;
     }
 
+    public function esc_like($value) { return addcslashes($value, '_%\\'); }
+
     public function prepare($sql, ...$args)
     {
         foreach ($args as $a) {

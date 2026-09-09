@@ -71,7 +71,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
       slimstat_debug: 'on',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture the AJAX tracking response
@@ -118,7 +118,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture response headers from the adblock bypass endpoint
@@ -158,7 +158,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     await anonPage.goto(`${BASE_URL}/?e2e=js-debug-${Date.now()}`, { waitUntil: 'networkidle' });
@@ -194,7 +194,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
       slimstat_debug: 'off',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     await anonPage.goto(`${BASE_URL}/?e2e=no-debug-${Date.now()}`, { waitUntil: 'networkidle' });
@@ -257,7 +257,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
   // ─────────────────────────────────────────────────────────────────
 
   test('tracker-health endpoint returns 401 for anonymous users', async ({ browser }) => {
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const response = await anonPage.request.get(`${BASE_URL}/wp-json/slimstat/v1/tracker-health`);
@@ -297,7 +297,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     const nonce = await page.evaluate(() => (window as any).wpApiSettings?.nonce ?? '');
 
     // Step 2: Visit as anonymous user (simulates real visitor)
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     // Capture all tracking responses
@@ -386,7 +386,7 @@ test.describe('Tracker Observability — Production Scenario', () => {
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
 
     const marker = `regression-guard-${Date.now()}`;

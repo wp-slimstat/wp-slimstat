@@ -69,7 +69,7 @@ async function withAnonymousContext(
   cookies?: { name: string; value: string; domain: string; path: string }[],
 ): Promise<{ page: import('@playwright/test').Page; trackingRequests: string[]; cleanup: () => Promise<void> }> {
   const browser = page.context().browser()!;
-  const ctx = await browser.newContext();
+  const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const newPage = await ctx.newPage();
 
   if (cookies) {
@@ -210,7 +210,7 @@ test.describe('AC-CON-001/002: WP Consent API Accept/Reject Flows', () => {
 
   test('consent denial persists across page navigations', async ({ page }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies([
       { name: 'wp_consent_statistics', value: 'deny', domain: COOKIE_DOMAIN, path: '/' },
     ]);
@@ -319,7 +319,7 @@ test.describe('AC-CNS-004: CookieYes (cookie-law-info) Accept/Reject Flows', () 
 
   test('CookieYes: reject persists across page navigation', async ({ page }) => {
     const browser = page.context().browser()!;
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     await ctx.addCookies([
       { name: 'cookielawinfo-checkbox-analytics', value: 'no', domain: COOKIE_DOMAIN, path: '/' },
       { name: 'cookielawinfo-checkbox-necessary', value: 'yes', domain: COOKIE_DOMAIN, path: '/' },

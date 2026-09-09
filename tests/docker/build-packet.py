@@ -34,9 +34,41 @@ for index,arm in enumerate(("arm-1","arm-2")):
     values=json.load(source.open()); captured[arm]=values
     clean=scrub_values(values)
     (run/f"packet/{arm}/answers.json").write_text(json.dumps(clean,sort_keys=True,separators=(",",":"))+"\n")
+    if (artifacts/"artifacts.json").is_file():
+        # Exact-artifact qualification includes the complete rendered registry, every repetition.
+        configuration=json.loads((artifacts/"run.json").read_text())
+        blocks,reps=configuration["blocks"],configuration["timing_reps"]
+        if type(blocks) is not int or type(reps) is not int or blocks<4 or reps<5:
+            raise SystemExit("SEAL REFUSED: rendered qualification requires at least five repetitions and four blocks")
+        expected={f"block-{block}-rep-{rep}.json" for block in range(blocks) for rep in range(reps)}
+        directory=artifacts/"rendered"/side
+        if {path.name for path in directory.glob("*.json")} != expected:
+            raise SystemExit("SEAL REFUSED: missing or unexpected rendered captures")
+        rendered={}
+        for name in sorted(expected):
+            snapshot=json.loads((directory/name).read_text())
+            ids=snapshot.get("report_ids")
+            if not isinstance(ids,list) or not ids or len(set(ids))!=len(ids):
+                raise SystemExit("SEAL REFUSED: rendered registry is missing or duplicated")
+            cells=snapshot.get("cells",{})
+            if set(cells)!={"historical-unfiltered","historical-filtered","straddling-unfiltered","straddling-filtered"}:
+                raise SystemExit("SEAL REFUSED: rendered comparison cells incomplete")
+            for reports in cells.values():
+                if set(reports)!=set(ids):
+                    raise SystemExit("SEAL REFUSED: rendered report population incomplete")
+                for report in reports.values():
+                    if not isinstance(report.get("raw_html"),str) or not isinstance(report.get("normalized_html"),str):
+                        raise SystemExit("SEAL REFUSED: full rendered evidence missing")
+                    if report.get("error", "missing") is not None or not report["normalized_html"].strip():
+                        raise SystemExit("SEAL REFUSED: rendered report did not answer")
+                    # Keep raw HTML privately; asset versions are era markers. The existing
+                    # literal audit below independently rejects identity leaks in normalized HTML.
+                    report.pop("raw_html")
+            rendered[name]=scrub_values(snapshot)
+        (run/f"packet/{arm}/rendered-reports.json").write_text(json.dumps(rendered,sort_keys=True)+"\n")
     timing=artifacts/f"{side}-timing.json"
     if timing.is_file(): shutil.copyfile(timing,run/f"timing/{arm}.timing.json")
-(run/"packet/contract.md").write_text("# Blind adjudication contract\n\nJudge only the arm answers and declared report semantics.\n")
+(run/"packet/contract.md").write_text("# Blind adjudication contract\n\nJudge the arm answers and, when present, every cell/report/repetition in rendered-reports.json. Missing or non-answering reports block qualification; no report-level exemption establishes correctness.\n")
 # THE LITERALS THIS RUN CARRIES, handed to the audit rather than left to a regex to guess.
 # `_arm_fingerprint` is the strongest era marker in the capture — 945c4fdf… identified the OLD
 # arm in R20260824-a51bf2 and appears nowhere else — and `_arm_version` is "5.5.1" against

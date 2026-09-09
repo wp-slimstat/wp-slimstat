@@ -26,6 +26,7 @@ test.describe('PHP 8.0 posts-column interval fallback @compat', () => {
     await snapshotSlimstatOptions();
     // Enable the pageviews column and clear the interval (the cleared-field case).
     await setSlimstatOptions({
+      add_posts_column: 'on',
       posts_column_pageviews: 'on',
       posts_column_day_interval: '',
     });

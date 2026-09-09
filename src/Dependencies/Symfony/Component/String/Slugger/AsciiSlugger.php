@@ -10,6 +10,13 @@
  */
 namespace SlimStat\Dependencies\Symfony\Component\String\Slugger;
 
+// Scoped SlimStat module: allow plugin/CLI autoload, deny direct web execution.
+if (!defined('ABSPATH') && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+    http_response_code(403);
+    exit;
+}
+
+
 use Symfony\Component\Intl\Transliterator\EmojiTransliterator;
 use SlimStat\Dependencies\Symfony\Component\String\AbstractUnicodeString;
 use SlimStat\Dependencies\Symfony\Component\String\UnicodeString;

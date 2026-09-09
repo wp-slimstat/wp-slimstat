@@ -8,7 +8,7 @@ REF="${1:?free ref}"
 FULL=$(git -C "$PLUGIN_SRC" rev-parse "$REF^{commit}")
 SHA=${FULL:0:8}
 OUT="${FREE_ZIP_OUT:-$HARNESS_DIR/build/wp-slimstat-$SHA.zip}"
-BUILD="/private/tmp/wpss-free-$SHA"
+BUILD="${WPSS_FREE_BUILD_DIR:-/tmp/wpss-free-$SHA}"  # /tmp, not /private/tmp: same dir on macOS, exists on Linux (PITFALLS 115)
 REF_STAMP="$OUT.ref"
 HASH_STAMP="$OUT.sha256"
 DISTIGNORE="$BUILD/distignore"
@@ -53,6 +53,11 @@ for required in wp-slimstat/wp-slimstat.php wp-slimstat/uninstall.php wp-slimsta
                 wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php; do
   grep -qxF "$required" "$LIST" || { err "Free ZIP is missing $required"; exit 1; }
 done
+# Independent deny rule: the private vendor CLI password executable is not a plugin runtime asset.
+if grep -qxF 'wp-slimstat/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
+  err "Free ZIP contains private Windows interactive-console executable"
+  exit 1
+fi
 while IFS= read -r pattern; do
   case "$pattern" in ''|'#'*) continue ;; esac
   if ! awk -v pattern="$pattern" '

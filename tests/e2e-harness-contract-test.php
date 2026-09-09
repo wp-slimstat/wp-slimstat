@@ -248,6 +248,34 @@ if ($ci !== null) {
     }
 }
 
+// ── Sec.3b — chart WP-CLI helpers must support isolated Docker rehearsals ──────────────
+
+$chart_helper = $read('tests/e2e/helpers/chart.ts');
+if ($chart_helper !== null) {
+    $checks++;
+    if (strpos($chart_helper, 'WP_CLI_DOCKER_CONTAINER') === false
+        || strpos($chart_helper, 'docker exec ${WP_CLI_DOCKER_CONTAINER} wp') === false) {
+        $failures[] = 'tests/e2e/helpers/chart.ts cannot route WP-CLI through an explicitly '
+            . 'named Docker container. Isolated rehearsal wp-config.php files resolve DB_HOST '
+            . 'inside Docker, so host WP-CLI fails before any chart assertion runs';
+    }
+}
+
+// Auth storage is not permission evidence unless the server confirms identity and role.
+$setup = $read('tests/e2e/global-setup.ts');
+if ($setup !== null) {
+    $checks++;
+    foreach (['test_current_identity', 'body.data?.login !== username',
+        'body.data.roles.includes(role)', 'body.data.can_manage_options !== false'] as $guard) {
+        if (strpos($setup, $guard) === false) {
+            $failures[] = 'E2E identity preflight missing: ' . $guard;
+        }
+    }
+    if (strpos($setup, 'fs.copyFileSync(adminPath, authorPath)') !== false) {
+        $failures[] = 'Author authentication must fail instead of using admin state';
+    }
+}
+
 // ── Sec.4 — the run artifacts must be collected ───────────────────────────────────────
 //
 // playwright.config.ts writes the JSON and blob reports under tests/e2e/run-artifacts/. Only the

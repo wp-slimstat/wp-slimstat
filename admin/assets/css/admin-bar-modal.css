@@ -188,7 +188,7 @@
     display: inline-flex !important;
     align-items: center !important;
     gap: 5px !important;
-    background: linear-gradient(135deg, #18A456 0%, #14904A 100%) !important;
+    background: linear-gradient(135deg, var(--ss-success-fg, #087a37) 0%, #086b31 100%) !important;
     color: #FFFFFF !important;
     font-size: 10px !important;
     font-weight: 700 !important;

@@ -27,11 +27,19 @@ ROWS="${1:-150000}"
 DAYS="${2:-180}"
 HTTP_PORT="${3:-18960}"
 DB_PORT="${4:-13960}"
+VINTAGE_REF="${SEED_VINTAGE_REF:-}"
+# The I8 writer uses the 5.5 column/notes contract. Earlier corpora use downgrade-corpus.sh.
+[ -z "$VINTAGE_REF" ] || [ "$VINTAGE_REF" = wp.org:5.5.0 ] || die 'I8 vintage seeding currently requires pinned wp.org:5.5.0'
+[[ "$ROWS" =~ ^[1-9][0-9]*$ ]] && [[ "$DAYS" =~ ^[1-9][0-9]*$ ]] || die 'rows and days must be positive integers'
+[ "$ROWS" -lt 5000000 ] || [ -n "$VINTAGE_REF" ] || die '5M qualification corpus requires SEED_VINTAGE_REF'
+VINTAGE_ZIP=""
+[ -z "$VINTAGE_REF" ] || VINTAGE_ZIP=$(resolve_arm_zip "$VINTAGE_REF") || exit 1
 PHP="${TOPOLOGY_PHP:-8.2}"
 WP="${TOPOLOGY_WP:-6.7}"
 
 CELL="bench-fixture"
-CELL_DIR="$WORK_ROOT/bench/$CELL"
+mkdir -p "$WORK_ROOT/bench"
+CELL_DIR=$(mktemp -d "$WORK_ROOT/bench/seed.XXXXXXXX")
 WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 
@@ -39,16 +47,55 @@ export COMPOSE_PROJECT_NAME="ssbench" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
 
+# A synthetic SQL-dump corpus has no replication/PITR claim. Binary logs otherwise fill
+# Docker's bounded tmpfs before 5M rows; explicit engine overlays remain caller-owned.
+if [ -z "${DC_EXTRA_FILE:-}" ]; then
+  export DC_EXTRA_FILE="$CELL_DIR/compose-seed.yml"
+  cat >"$DC_EXTRA_FILE" <<'YAML'
+services:
+  db:
+    command:
+      - --max_allowed_packet=64M
+      - --skip-log-bin
+YAML
+fi
+
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$volumes" ] || die 'project volumes already exist; refuse an inherited database'
+[ -z "$existing" ] || die 'ssbench project already exists; serialize and clean its owner first'
+
 # KEEP_BENCH=1 leaves the container up so a measurement can run against the seeded database.
 keep="${KEEP_BENCH:-0}"
-cleanup() { [ "$keep" = "1" ] || dc down -v --remove-orphans >/dev/null 2>&1 || true; }
+STARTED=$(now)
+cleanup() {
+  local rc=$?
+  [ "$keep" = "1" ] || dc down -v --remove-orphans >"$ART/cleanup.log" 2>&1 || true
+  write_verdict "$ART" "$CELL" "$PHP" "$WP" "$([ "$rc" = 0 ] && echo PASS || echo FAIL)" "seed process exit $rc" "\"started\":\"$STARTED\",\"exit_status\":$rc"
+  if [ -n "${REHEARSAL_RUNS_DIR:-}" ]; then
+    mkdir -p "$REHEARSAL_RUNS_DIR/$(basename "$CELL_DIR")"
+    cp -R "$ART/." "$REHEARSAL_RUNS_DIR/$(basename "$CELL_DIR")/"
+  fi
+}
 trap cleanup EXIT
 
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART"
 
+python3 - "$ART/source.json" "$PLUGIN_SRC" "$ROWS" "$DAYS" <<'PYSOURCE'
+import hashlib,json,pathlib,subprocess,sys
+out,source,rows,days=sys.argv[1:]; p=pathlib.Path(source)
+files=['tests/docker/seed-bench.sh','tests/docker/lib.sh','tests/bench/lib/seeder.php','tests/bench/lib/seed.php','tests/bench/seed-profile-i8.json','tests/bench/seed-profile.json']
+json.dump(dict(source_sha=subprocess.check_output(['git','-C',source,'rev-parse','HEAD'],text=True).strip(),rows=int(rows),days=int(days),instrument_hashes={f:hashlib.sha256((p/f).read_bytes()).hexdigest() for f in files}),open(out,'w'),indent=2)
+PYSOURCE
 log "[$CELL] build + up (PHP $PHP, WP $WP)"
 boot_stack "$ART" "$PHP" || { err "stack did not come up"; exit 1; }
+
+for image_id in $(dc images -q | sort -u); do docker image inspect "$image_id" --format '{{json .}}'; done >"$ART/images.jsonl"
+dc exec -T wp php -r 'echo PHP_VERSION;' >"$ART/php-version.txt"
+mysql_q 'SELECT VERSION()' >"$ART/database-version.txt"
+mysql_q "SHOW VARIABLES LIKE 'log_bin';" >"$ART/binary-log-setting.txt"
+dc config >"$ART/compose-resolved.yml"
 
 wpc core download --version="$WP" --force > "$ART/install.log" 2>&1 || { err "core download failed"; exit 1; }
 wp_config_debug "$ART/install.log"
@@ -56,10 +103,30 @@ wpc core install --url="http://127.0.0.1:${HTTP_PORT}" --title="SS bench" --admi
     --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \
     || { err "core install failed"; exit 1; }
 
-sync_plugin_src "$WP_DIR"
-wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || { err "activate failed"; exit 1; }
-wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "tables";' \
-    >>"$ART/install.log" 2>&1 || { err "init_tables failed"; exit 1; }
+if [ -n "$VINTAGE_ZIP" ]; then
+  dc cp "$VINTAGE_ZIP" wp:/tmp/seed-vintage.zip >/dev/null
+  wpc plugin install /tmp/seed-vintage.zip --activate --force >>"$ART/install.log" 2>&1 || die 'vintage install failed'
+  installer=$(run_vintage_installer 2>>"$ART/install.log")
+  [ "$installer" = admin/index.php ] || die 'vintage installer did not complete'
+  [ "$(arm_installed_version)" = "${VINTAGE_REF#wp.org:}" ] || die 'installed vintage header mismatch'
+  [ "$(stored_plugin_version)" = "${VINTAGE_REF#wp.org:}" ] || die 'stored vintage version mismatch'
+  columns=$(table_columns wp_slim_stats)
+  [ -n "$columns" ] || die 'vintage schema absent'
+  case ",$columns," in *,vid_hash,*|*,ua_id,*) die 'vintage schema already migrated';; esac
+  mysql_q 'SHOW CREATE TABLE wordpress.wp_slim_stats; SHOW CREATE TABLE wordpress.wp_slim_stats_archive;' >"$ART/vintage-schema.sql" || die 'vintage schema capture failed'
+  python3 - "$ART/vintage.json" "$VINTAGE_REF" "$(digest "$VINTAGE_ZIP")" "$columns" "$(digest "$ART/vintage-schema.sql")" <<'PYVINTAGE'
+import json,sys
+out,ref,sha,columns,schema=sys.argv[1:]
+json.dump(dict(ref=ref,zip_sha256=sha,installed_version=ref.split(':')[1],stored_version=ref.split(':')[1],columns=columns.split(','),schema_sha256=schema),open(out,'w'),indent=2)
+PYVINTAGE
+else
+  sync_plugin_src "$WP_DIR"
+  wpc plugin activate wp-slimstat >>"$ART/install.log" 2>&1 || die 'activate failed'
+  installer=$(run_vintage_installer 2>>"$ART/install.log")
+  [ "$installer" = admin/index.php ] || die 'init_tables failed'
+fi
+# Seeder is an instrument outside the installed plugin; historical/package bytes stay intact.
+dc cp "$PLUGIN_SRC/tests/bench" wp:/tmp/qualification-bench >/dev/null || die 'seeder copy failed'
 
 # ── EXERCISE_FRESH runs BEFORE seeding, on a virgin install ─────────────────
 # Some properties only exist on a fresh site — that it is born with the right columns, and that
@@ -75,8 +142,9 @@ fi
 
 log "[$CELL] seeding $ROWS rows over $DAYS days with the I8 overlay"
 dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
-   wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" seed-profile-i8.json \
+   /tmp/qualification-bench/lib/seed.php "$ROWS" "$DAYS" seed-profile-i8.json \
    2>&1 | tee "$ART/seed.log" | tail -6
+[ "${PIPESTATUS[0]}" -eq 0 ] || die 'seeding failed'
 
 # ── the two properties, asserted ────────────────────────────────────────────
 read -r ROWS_ALL ROWS_90 ROWS_30 DISTINCT_RES DISTINCT_REF <<<"$(
@@ -104,6 +172,7 @@ printf '    distinct referer  %s\n' "${DISTINCT_REF:-0}"
 echo
 
 fail=0
+[ "${ROWS_ALL:-0}" -ge "$ROWS" ] || { err 'seeded row count below requested target'; fail=1; }
 if [ "${DISTINCT_RES:-0}" -le 2048 ]; then
   err "distinct resources = ${DISTINCT_RES:-0}, not > 2048 — A4's MEMORY temp-table cliff stays unreachable"
   fail=1
@@ -129,6 +198,11 @@ if [ -n "${EXERCISE:-}" ]; then
   [ "$ex_rc" -eq 0 ] || { err "the exercised probe failed"; exit 1; }
 fi
 
+if [ -n "${SEED_DUMP_OUT:-}" ]; then
+  [ ! -e "$SEED_DUMP_OUT" ] || die 'refusing to overwrite a corpus'
+  dump_schema_gz wordpress "$SEED_DUMP_OUT" "$ART/dump.log" wp_slim_stats wp_slim_stats_archive || die 'corpus dump failed'
+  digest "$SEED_DUMP_OUT" >"$ART/dump.sha256"
+fi
 log "[$CELL] fixture is usable: ranges separate, cardinality past the cliff"
 [ "$keep" = "1" ] && log "[$CELL] container left up on http://127.0.0.1:${HTTP_PORT} (KEEP_BENCH=1)"
 exit 0

@@ -299,8 +299,8 @@ $chart_id = 'live_chart_' . uniqid();
 			max_value: <?php echo wp_json_encode( $max_value ); ?>,
 			auto_refresh: <?php echo $auto_refresh ? 'true' : 'false'; ?>,
 			refresh_interval: <?php echo intval( $refresh_interval ); ?>,
-			ajax_url: '<?php echo admin_url( 'admin-ajax.php' ); ?>',
-			nonce: '<?php echo wp_create_nonce( 'slimstat_ajax_nonce' ); ?>',
+			ajax_url: '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>',
+			nonce: '<?php echo esc_js( wp_create_nonce( 'slimstat_ajax_nonce' ) ); ?>',
 			current_metric: '<?php echo esc_js( $selected_metric ); ?>'
 		};
 
@@ -312,8 +312,8 @@ $chart_id = 'live_chart_' . uniqid();
 	<script type="text/javascript">
 	document.addEventListener('DOMContentLoaded', function() {
 		var reportId = '<?php echo esc_js( $report_id ); ?>';
-		var ajaxUrl = '<?php echo admin_url( 'admin-ajax.php' ); ?>';
-		var nonce = '<?php echo wp_create_nonce( 'slimstat_ajax_nonce' ); ?>';
+		var ajaxUrl = '<?php echo esc_js( admin_url( 'admin-ajax.php' ) ); ?>';
+		var nonce = '<?php echo esc_js( wp_create_nonce( 'slimstat_ajax_nonce' ) ); ?>';
 		var lastTriggerMinute = -1;
 
 		function formatNumber(num) {

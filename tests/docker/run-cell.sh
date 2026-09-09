@@ -3,6 +3,9 @@
 # Runs ONE PHP×WP cell end-to-end and writes a PASS|FAIL|BLOCKED-BY-WP-CORE verdict.
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+# Qualification never substitutes a working tree or an implicit Pro build.
+: "${QUALIFICATION_FREE_ZIP:?exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}"
+: "${QUALIFICATION_PRO_ZIP:?exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}"
 # Remember any caller-provided toggles — these win over matrix.env's defaults.
 _env_run_e2e="${RUN_E2E:-}"; _env_strict="${STRICT_DEPRECATIONS:-}"
 # Pull config (CORE_SPECS + defaults) from matrix.env so it's the single edit point,
@@ -30,19 +33,37 @@ WP_DIR="$CELL_DIR/wp"
 ART="$CELL_DIR/artifacts"
 PROJECT="ssqa_${PHP//./}_${WP//./}"
 BASE_URL="http://127.0.0.1:${HTTP_PORT}"
-status="PASS"; reason=""
+status="PASS"; reason=""; runtime_checks_complete=false
 
 export COMPOSE_PROJECT_NAME="$PROJECT" PHP_VERSION="$PHP" HTTP_PORT DB_PORT
 export MYSQL_IMAGE="${MYSQL_IMAGE:-mysql:8.0}"
 export CELL_WP_DIR="$WP_DIR"
-rm -rf "$WP_DIR"            # fresh WP install per run (host bind-mount persists otherwise)
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$existing$volumes" ] || die 'matrix project already owned; refusing shared database'
+[ ! -e "$CELL_DIR" ] || die 'matrix evidence directory already exists'
 mkdir -p "$WP_DIR" "$ART"
 
 fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 blocked(){ status="BLOCKED-BY-WP-CORE"; reason="$1"; warn "BLOCKED: $1"; }
+unavailable(){ status="UNAVAILABLE-PREREQUISITE"; reason="$1"; warn "UNAVAILABLE: $1"; }
+verified_core_fatal() {
+  grep -qiE 'Fatal error|Parse error|Uncaught' "$1" && grep -qE '/var/www/html/(wp-includes/|wp-admin/|wp-[a-z-]+\.php)' "$1" \
+    && ! grep -qE '/wp-content/(plugins|mu-plugins)/' "$1"
+}
+record_core_block() { # <phase> <log>
+  cp "$2" "$ART/core-incompatibility.log"
+  python3 - "$ART" "$1" <<'PYCORE'
+import hashlib,json,pathlib,sys
+p=pathlib.Path(sys.argv[1]); log=p/'core-incompatibility.log'
+json.dump(dict(kind='plugin-free-core-fatal',phase=sys.argv[2],log_sha256=hashlib.sha256(log.read_bytes()).hexdigest()),open(p/'core-incompatibility.json','w'))
+PYCORE
+}
 
 finish() {
-  write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason"
+  local rc=$?
+  if [ "$rc" -ne 0 ] && [ "$status" = PASS ]; then fail "cell exited $rc before completion"; fi
+  write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" "\"runtime_checks_complete\":$runtime_checks_complete"
   dc down -v --remove-orphans >/dev/null 2>&1 || true
   log "$CELL → $status ${reason:+($reason)}"
 }
@@ -57,11 +78,23 @@ case $? in
 esac
 wait_for 30 2 bash -c "curl -fsS -o /dev/null '$BASE_URL/' || [ \"\$(curl -s -o /dev/null -w '%{http_code}' '$BASE_URL/')\" != 000 ]" || true
 
-# ── WP core download (BLOCKED detection #1) ─────────────────────────────────
+# Download availability is a prerequisite, never proof of a PHP/core incompatibility.
 log "[$CELL] download WordPress $WP"
-if ! wpc core download --version="$WP" --force > "$ART/wp-install.log" 2>&1; then
-  blocked "wp core download failed for WP $WP"; exit 0
+wpc core download --version="$WP" --force >"$ART/wp-download.log" 2>&1
+DOWNLOAD_RC=$?
+python3 - "$ART" "$WP" "$DOWNLOAD_RC" <<'PYAVAIL'
+import datetime,hashlib,json,pathlib,sys
+p=pathlib.Path(sys.argv[1]); log=p/'wp-download.log'
+json.dump(dict(requested_version=sys.argv[2],available=int(sys.argv[3])==0,exit_status=int(sys.argv[3]),checked_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),log_sha256=hashlib.sha256(log.read_bytes()).hexdigest()),open(p/'wp-availability.json','w'))
+PYAVAIL
+[ "$DOWNLOAD_RC" = 0 ] || { unavailable "WordPress $WP could not be fetched; see wp-download.log"; exit 1; }
+dc exec -T wp php -r 'include "/var/www/html/wp-includes/version.php"; echo json_encode(["kind"=>"declared-php-floor","wp_version"=>$wp_version,"required_php"=>$required_php_version,"actual_php"=>PHP_VERSION]); exit(version_compare(PHP_VERSION,$required_php_version,">=")?0:3);' >"$ART/core-requirements.json" 2>"$ART/core-requirements-error.log"
+CORE_REQUIREMENTS_RC=$?
+if [ "$CORE_REQUIREMENTS_RC" = 3 ]; then
+  cp "$ART/core-requirements.json" "$ART/core-incompatibility.json"
+  blocked "downloaded WordPress $WP declares a PHP floor above PHP $PHP"; exit 0
 fi
+[ "$CORE_REQUIREMENTS_RC" = 0 ] || { unavailable 'downloaded core requirements could not be inspected'; exit 1; }
 
 # ── config + install (BLOCKED detection #2: WP core fatal on this PHP) ───────
 wp_config_debug "$ART/wp-install.log"
@@ -69,22 +102,27 @@ wp_config_debug "$ART/wp-install.log"
 if ! wpc core install --url="$BASE_URL" --title="SS QA $CELL" \
        --admin_user=admin --admin_password=admin --admin_email=qa@example.com \
        --skip-email >>"$ART/wp-install.log" 2>&1; then
-  if has_wp_core_fatal "$ART/wp-install.log"; then
+  if verified_core_fatal "$ART/wp-install.log"; then
+    record_core_block core-install "$ART/wp-install.log"
     blocked "$(grep -iE "$WP_CORE_FATAL_PATTERNS" "$ART/wp-install.log" | head -1 | cut -c1-160)"; exit 0
   fi
   fail "wp core install failed (non-core)"; exit 1
 fi
 # Boot probe: home 500 with a core fatal while no plugin is active = WP-core.
 home_code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/")
-if [ "$home_code" = "500" ] && has_wp_core_fatal "$WP_DIR/wp-content/debug.log"; then
+if [ "$home_code" = "500" ] && verified_core_fatal "$WP_DIR/wp-content/debug.log"; then
+  record_core_block core-http-boot "$WP_DIR/wp-content/debug.log"
   blocked "WP core WSOD on PHP $PHP (home HTTP 500)"; exit 0
 fi
 : > "$WP_DIR/wp-content/debug.log" 2>/dev/null || true   # reset log AFTER core boots clean
 
-# ── plugins: free (copied in) + Pro (built zip) ─────────────────────────────
+# ── plugins: exact paired qualification artifacts ─────────────────────────────
 log "[$CELL] install plugins"
-sync_plugin_src "$WP_DIR"
-mkdir -p "$WP_DIR/wp-content/plugins/.pro"; cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.log" || { fail 'Free artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.log" || { fail 'Pro artifact rejected'; exit 1; }
+sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
+mkdir -p "$WP_DIR/wp-content/plugins/.pro"
+cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 
 wpc plugin activate wp-slimstat                                            >"$ART/activate.log" 2>&1 || fail "free activate failed"
@@ -161,13 +199,23 @@ if [ "$RUN_E2E" = "1" ]; then
   if [ "${E2E_CORE_ONLY:-0}" = "1" ]; then E2E_SPECS=("${CORE_SPECS[@]}"); e2e_mode="core-only"; fi
   log "[$CELL] Playwright E2E ($e2e_mode; verdict gated on core specs)"
   ( cd "$PLUGIN_SRC"
+    rm -f tests/e2e/.auth/admin.json tests/e2e/.auth/author.json
     TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
     MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
     MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
     WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
     WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" \
-    npx playwright test --config=tests/e2e/playwright.config.ts --project admin \
-      --timeout=20000 --reporter=list ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright.log" 2>&1 )
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --list --config=tests/e2e/playwright.config.ts --project admin > "$ART/playwright-expected.txt" 2>&1
+    TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
+    MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
+    MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
+    WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
+    WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" PLAYWRIGHT_JSON_OUTPUT_NAME="$ART/playwright.json" \
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --config=tests/e2e/playwright.config.ts --project admin \
+      --timeout=20000 --reporter=list,json > "$ART/playwright.log" 2>&1
+    printf '%s\n' "$?" > "$ART/playwright-exit.txt" )
   # Informational totals.
   grep -oE '[0-9]+ (passed|failed|skipped)' "$ART/playwright.log" | tail -3 | tr '\n' ' ' > "$ART/playwright-summary.txt"
   # Which spec FILES failed?
@@ -200,4 +248,11 @@ if [ -f "$LOG" ]; then
   fi
 fi
 
+if [ -n "${PRE_CLEANUP_HOOK:-}" ]; then
+  bash "$PRE_CLEANUP_HOOK" "$ART" || fail "pre-cleanup hook failed"
+fi
+
+verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json" || fail 'installed Free shipping bytes changed'
+verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WP_DIR/wp-content/plugins" >"$ART/pro-installed.json" || fail 'installed Pro shipping bytes changed'
+runtime_checks_complete=true
 [ "$status" = "PASS" ] && exit 0 || exit 1

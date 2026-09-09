@@ -36,14 +36,7 @@ if (!function_exists('slimstat_bench_bootstrap_reports')) {
         }
 
         if (class_exists('\SlimStat\Reports\Bootstrap')) {
-            try {
-                \SlimStat\Reports\Bootstrap::get_instance()->init();
-            } catch (\Throwable $e) {
-                // A failure here means fewer reports, not wrong ones — surface it
-                // rather than silently measuring a smaller set.
-                echo 'WARNING: Reports\\Bootstrap::init() failed — OO reports will be missing ('
-                    . $e->getMessage() . ")\n";
-            }
+            \SlimStat\Reports\Bootstrap::get_instance()->init();
         }
 
         if (!class_exists('wp_slimstat_reports')) {

@@ -114,7 +114,11 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
 
   // ─── Test 4: CF-Connecting-IP with CF-Ray resolves correct IP ──
 
-  test('CF-Connecting-IP with CF-Ray records the CF IP address', async ({ page }) => {
+  test('CF-Connecting-IP controls geolocation while storage retains the connection IP', async ({ page }) => {
+    const baselineMarker = `ip-origin-${Date.now()}`;
+    await page.goto(`/?p=${baselineMarker}`);
+    const baseline = await waitForStatWithIp(baselineMarker);
+    expect(baseline).toBeTruthy();
     setHeaderOverrides({
       'CF-Ray': 'test-ip-detection-record',
       'CF-Connecting-IP': '1.0.16.0',        // JP
@@ -126,18 +130,9 @@ test.describe('AC-GEO-005/006: IP Detection Header Priority', () => {
     const stat = await waitForStatWithIp(marker);
     expect(stat).toBeTruthy();
     expect(stat!.country).toBe('jp');
-    // The ip column stores the visitor IP. With header-injector mu-plugin,
-    // CF-Connecting-IP is used for geolocation (country=jp proves it works)
-    // but the stored IP may be REMOTE_ADDR (::1 on local dev) depending on
-    // whether SlimStat's IP detection also picks up CF-Connecting-IP for storage.
-    const ip = stat!.ip;
-    const isExpectedCfIp = ip === '1.0.16.0';
-    const isHashedIp = /^[a-f0-9]{32}$/.test(ip);
-    const isLoopback = ip === '::1' || ip === '127.0.0.1' || ip === '::';
-    expect(
-      isExpectedCfIp || isHashedIp || isLoopback,
-      `Expected CF IP "1.0.16.0", MD5 hash, or loopback, got "${ip}"`
-    ).toBe(true);
+    // Geolocation uses the validated CF header; getRemoteIp stores the connection
+    // address separately. Compare the actual host origin instead of assuming loopback.
+    expect(stat!.ip).toBe(baseline!.ip);
   });
 
   // ─── Test 5: No proxy headers falls back to REMOTE_ADDR ───────

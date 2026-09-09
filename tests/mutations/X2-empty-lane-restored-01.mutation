@@ -1,0 +1,16 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:ci-lane-executes-something
+kind:      restore-defect
+expect:    php 8.5" reaches no step that runs a test command
+rationale: Conditions Tier 3's only test step away from PHP 8.5, the one version Tier 1 does not cover either; that cell then reaches no test command and reports success having run nothing.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -684,6 +684,7 @@
+         run: composer dump-autoload -o --no-interaction
+ 
+       - name: Run full PHPUnit suite
++        if: ${{ matrix.php != '8.5' }}
+         # composer test:all runs phpunit + all standalone PHP test scripts.
+         # Individual scripts may exit non-zero on CI if they depend on a live DB
+         # or environment; run phpunit directly for the nightly matrix gate.

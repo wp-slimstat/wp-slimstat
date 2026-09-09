@@ -78,6 +78,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'version-floor-test-mu-plugin.php', deployedFile: 'version-floor-test-mu-plugin.php' },
   { sourceFile: 'early-textdomain-mu-plugin.php', deployedFile: 'early-textdomain-mu-plugin.php' },
   { sourceFile: 'mail-sink-mu-plugin.php', deployedFile: 'mail-sink-mu-plugin.php' },
+  { sourceFile: 'delayed-tracker-response-mu-plugin.php', deployedFile: 'delayed-tracker-response-mu-plugin.php' },
   { sourceFile: 'rewrite-flush-mu-plugin.php', deployedFile: 'rewrite-flush-mu-plugin.php' },
   { sourceFile: 'plugin-lifecycle-mu-plugin.php', deployedFile: 'plugin-lifecycle-mu-plugin.php' },
   { sourceFile: 'custom-db-simulator-mu-plugin.php', deployedFile: 'custom-db-simulator-mu-plugin.php' },
@@ -196,6 +197,67 @@ export function getPool(): mysql.Pool {
     pool = mysql.createPool(MYSQL_CONFIG);
   }
   return pool;
+}
+
+/**
+ * Make sure a WordPress user exists with this login and password, and return its ID.
+ *
+ * A spec that logs in as a named user was, until Run 65, betting on that user existing —
+ * `gerlando` exists on one developer's LocalWP install and on nothing else, so ten tests in
+ * user-overview-login-tracking spent 45 s each waiting for a wp-admin URL that a failed login
+ * never produced (H-LOGIN, the second-largest family of the 132). The ID matters as much as
+ * the login: the login notes those specs seed carry `[user:N]`, and N was hardcoded to the ID
+ * the user happened to have on that one machine.
+ *
+ * The password is stored as a bare MD5. WordPress has accepted that as a legacy hash since
+ * before phpass and rehashes it on the first successful login, which is exactly what we want:
+ * no PHP process is needed to create a usable account, and the row self-upgrades in place.
+ */
+export async function ensureWpUser(
+  login: string,
+  password: string,
+  role: string = 'administrator'
+): Promise<number> {
+  const pool = getPool();
+  const [existing] = (await pool.execute(
+    'SELECT ID FROM wp_users WHERE user_login = ?',
+    [login]
+  )) as any;
+
+  let id: number;
+  if (existing.length > 0) {
+    id = existing[0].ID;
+    // Reset the password rather than trusting it: an account left over from an earlier run
+    // (or from a developer's own install) can carry any hash at all, and a wrong one fails
+    // exactly like a missing user.
+    await pool.execute('UPDATE wp_users SET user_pass = MD5(?) WHERE ID = ?', [password, id]);
+  } else {
+    const [result] = (await pool.execute(
+      `INSERT INTO wp_users (user_login, user_pass, user_nicename, user_email, user_registered, display_name)
+       VALUES (?, MD5(?), ?, ?, NOW(), ?)`,
+      [login, password, login, `${login}@e2e.invalid`, login]
+    )) as any;
+    id = result.insertId;
+  }
+
+  const caps = `a:1:{s:${role.length}:"${role}";b:1;}`;
+  const level = 'administrator' === role ? '10' : '0';
+  for (const [key, value] of [
+    ['wp_capabilities', caps],
+    ['wp_user_level', level],
+    ['nickname', login],
+  ]) {
+    // Delete-then-insert, not ON DUPLICATE KEY UPDATE: wp_usermeta's (user_id, meta_key)
+    // pair carries no unique index, so the upsert clause never fires and every run would
+    // add a second wp_capabilities row instead of replacing the first.
+    await pool.execute('DELETE FROM wp_usermeta WHERE user_id = ? AND meta_key = ?', [id, key]);
+    await pool.execute(
+      'INSERT INTO wp_usermeta (user_id, meta_key, meta_value) VALUES (?, ?, ?)',
+      [id, key, value]
+    );
+  }
+
+  return id;
 }
 
 export async function closeDb(): Promise<void> {
@@ -521,6 +583,9 @@ export async function clearStatsTable(): Promise<void> {
   await pool.execute("TRUNCATE TABLE wp_slim_stats");
   await pool.execute("TRUNCATE TABLE wp_slim_events");
   await pool.execute("SET FOREIGN_KEY_CHECKS = 1");
+  await pool.execute(
+    "DELETE FROM wp_options WHERE option_name LIKE '\\_transient\\_wp\\_slimstat\\_query\\_%' OR option_name LIKE '\\_transient\\_timeout\\_wp\\_slimstat\\_query\\_%'"
+  );
 }
 
 /**
@@ -843,7 +908,7 @@ export async function waitForStatWithIp(marker: string, timeoutMs = 10_000, inte
 // ─── Anonymous visit helper ──────────────────────────────────────
 
 export async function visitAsAnonymous(browser: import('@playwright/test').Browser, url: string): Promise<import('@playwright/test').Page> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   return page;

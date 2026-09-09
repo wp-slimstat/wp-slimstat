@@ -242,7 +242,16 @@ if (!is_readable($runner)) {
 } else {
     $out = [];
     $rc  = 0;
-    exec('php ' . escapeshellarg($runner) . ' --selftest 2>&1', $out, $rc);
+    // Reproduce the hook's exported index safely: temporary-repository selftests must not
+    // overwrite their caller's index. Invalid sentinel bytes also catch attempts to read it.
+    $indexSentinel = tempnam(sys_get_temp_dir(), 'slimstat-index-sentinel-');
+    file_put_contents($indexSentinel, 'caller index must remain unchanged');
+    exec('env GIT_INDEX_FILE=' . escapeshellarg($indexSentinel) . ' php '
+        . escapeshellarg($runner) . ' --selftest 2>&1', $out, $rc);
+    if ('caller index must remain unchanged' !== file_get_contents($indexSentinel)) {
+        $failures[] = 'runner selftest overwrote the caller Git index';
+    }
+    unlink($indexSentinel);
     if (0 !== $rc) {
         $failures[] = "the runner's --selftest fails, so no verdict it produces can be trusted:\n      "
             . implode("\n      ", array_slice($out, -6));

@@ -28,6 +28,7 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/source-scan.php';  // hoisted: the condition rule now lives in the lib and is called above the old require
 $plugin_root = dirname(__DIR__);
 
 $header = file_get_contents($plugin_root . '/wp-slimstat.php');
@@ -78,7 +79,7 @@ if ($ci_yaml === false) {
 //               catches a runtime fatal, which is the defect this gate exists for.
 //   STATIC    — source-level scans and the mutation registry. Real tests, and they run on
 //               every lane, but they read source; they never execute the plugin.
-$job_blocks = preg_split('/(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)/m', $ci_yaml);
+$job_blocks = slimstat_ci_job_blocks($ci_yaml); // any two-space key, not the "Tier" naming convention
 
 // Does this step run for $version? BOTH conditional forms, and both quote styles.
 //
@@ -88,21 +89,46 @@ $job_blocks = preg_split('/(?=^\s{2}\w+:\s*\n\s+name:\s*"Tier)/m', $ci_yaml);
 // so a PHPUnit step that runs on 8.2 alone would have satisfied 7.4 and 8.0. That is the
 // same over-crediting the rewrite exists to end, reintroduced through the other operator.
 // `==` is an allow-list: if a step names the versions it runs for, everything else is out.
-$step_runs_for = static function (string $step_block, string $version): bool {
-    if (!preg_match('/^[^\S\n]+if:.*$/m', $step_block, $m)) {
-        return true; // no condition: runs on every version in the matrix
-    }
-    $cond = $m[0];
-
-    if (preg_match_all('/matrix\.php\s*==\s*[\'"]([0-9.]+)[\'"]/', $cond, $inc) && [] !== $inc[1]) {
-        return in_array($version, $inc[1], true);
-    }
-
-    return !preg_match('/matrix\.php\s*!=\s*[\'"]' . preg_quote($version, '/') . '[\'"]/', $cond);
-};
+// The rule lives in the lib (slimstat_ci_step_runs_for, with fixtures in source-scan-strength);
+// the history above is why it understands both operators.
 
 $execution = [];
 $static    = [];
+
+// ── Which Tier 2 lanes can fail the job ─────────────────────────────────────────────────
+//
+// Read from the E2E step's `continue-on-error`, which is
+// `${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}` — false, i.e. blocking, for the
+// versions in the list. perf-gate-integrity §7 is what pins that list to .wp-env.json's core
+// and the newest matrix lane; this file only has to read it, and must refuse to guess if it
+// cannot. Guessing in either direction is worse than failing: assume blocking and the credit
+// is the false one this change is removing; assume soft and every E2E-only version reports a
+// hole that does not exist.
+$blocking_wp = [];
+$e2e_step    = slimstat_ci_steps_containing(slimstat_ci_steps(slimstat_yaml_strip_comments($ci_yaml)), 'npm run test:e2e');
+
+if (1 !== count($e2e_step) || !preg_match('/continue-on-error\s*:\s*(.+)/', $e2e_step[0], $cm)) {
+    fwrite(STDERR, "FAIL: cannot find the Tier 2 E2E step's continue-on-error in ci.yml, so this gate\n"
+        . "cannot tell which lanes may fail the job — and an E2E lane that cannot fail the job is\n"
+        . "not execution coverage. Fix the read rather than letting the credit default either way.\n");
+    exit(1);
+}
+
+$soft_value = trim($cm[1]);
+if (in_array($soft_value, ['true', "'true'", '"true"'], true)) {
+    $blocking_wp = [];                       // soft everywhere: no E2E lane earns execution credit
+} elseif (in_array($soft_value, ['false', "'false'", '"false"'], true)) {
+    $blocking_wp = ['*'];                    // blocking everywhere
+} elseif (preg_match('/!\s*contains\(\s*fromJSON\(\s*\'(\[[^\']*\])\'\s*\)/', $soft_value, $jm)) {
+    $decoded     = json_decode($jm[1], true);
+    $blocking_wp = is_array($decoded) ? array_map('strval', $decoded) : [];
+}
+
+if ([] === $blocking_wp && !in_array($soft_value, ['true', "'true'", '"true"'], true)) {
+    fwrite(STDERR, "FAIL: the E2E step's continue-on-error is `{$soft_value}`, which this gate cannot\n"
+        . "read as a blocking set. See perf-gate-integrity §7 for the supported shape.\n");
+    exit(1);
+}
 
 foreach ($job_blocks as $block) {
     $versions = [];
@@ -116,8 +142,13 @@ foreach ($job_blocks as $block) {
     // Tier 2 style: `include:` pairs of { wp: "6.4", php: "7.4" }. Invisible to the old
     // scan, which is why 7.4's only genuine EXECUTION coverage went uncounted.
     $is_e2e_lane = false;
-    if ([] === $versions && preg_match_all('/\{\s*wp:\s*"[0-9.]+",\s*php:\s*"([0-9.]+)"\s*\}/', $block, $im)) {
-        $versions    = array_unique($im[1]);
+    $e2e_wp_for  = [];   // php version => the WP versions paired with it
+    if ([] === $versions
+        && preg_match_all('/\{\s*wp:\s*"([0-9.]+)",\s*php:\s*"([0-9.]+)"\s*\}/', $block, $im, PREG_SET_ORDER)) {
+        foreach ($im as $pair) {
+            $e2e_wp_for[$pair[2]][] = $pair[1];
+        }
+        $versions    = array_keys($e2e_wp_for);
         $is_e2e_lane = true;
     }
 
@@ -153,7 +184,7 @@ foreach ($job_blocks as $block) {
 
     foreach ($versions as $v) {
         foreach ($steps as $step) {
-            if (!$step_runs_for($step, $v)) continue;
+            if (!slimstat_ci_step_runs_for($step, 'php', $v)) continue;
 
             if (preg_match('/(vendor\/bin\/phpunit|\bphpunit\b|composer\s+test:(unit|integration|all))/', $step)) {
                 $execution[$v] = true;
@@ -161,8 +192,19 @@ foreach ($job_blocks as $block) {
                 $static[$v] = true;
             }
         }
-        // An E2E lane boots WordPress with the plugin active: execution by definition.
-        if ($is_e2e_lane) $execution[$v] = true;
+        // An E2E lane boots WordPress with the plugin active — but only a BLOCKING one counts.
+        //
+        // This line used to read `if ($is_e2e_lane) $execution[$v] = true;`, and for the whole v6
+        // programme that credit was false. Every Tier 2 lane carried `continue-on-error: true`:
+        // the plugin was loaded, the suite ran, 50 tests failed, 480 never ran, and the job
+        // concluded `success` (run 33771753689). A lane that executes the plugin and then throws
+        // the verdict away is a rehearsal, not coverage — the fatal in admin/index.php that this
+        // whole gate exists for would have been found and then discarded. So the credit is now
+        // conditional on the WP version being one the E2E step can actually fail on.
+        if ($is_e2e_lane
+            && (in_array('*', $blocking_wp, true) || array_intersect($e2e_wp_for[$v] ?? [], $blocking_wp))) {
+            $execution[$v] = true;
+        }
     }
 }
 
@@ -170,7 +212,10 @@ foreach ($job_blocks as $block) {
 // PHPUnit lane can exist below it; 7.4 gets its execution coverage from the Tier 2 E2E lanes
 // instead. 8.0 appears in NO E2E pair, so it has static coverage only — a real hole, named
 // here so it is visible in the gate's own output rather than hidden behind a green.
-$execution_exempt = ['8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only'];
+$execution_exempt = [
+    '7.4' => 'wp-env PHP 7.4 image has expired Debian metadata; release qualification uses the PHP 7.4 Docker cells',
+    '8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only',
+];
 
 $uncovered = array_diff($required_versions, array_keys($execution), array_keys($static));
 if ($uncovered) {

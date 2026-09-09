@@ -76,14 +76,7 @@ class AddVisitIdentity extends AbstractMigration
         return sprintf(
             /* translators: %s: a measured cost, e.g. "about 8 seconds on a 440,000-row table (MySQL 8)". */
             __(
-                'Adds a private, full-width identity column for visitors tracked without cookies. '
-                    . 'Until it runs, anonymous pageviews are still recorded but cost extra '
-                    . 'database work on every hit and cannot be grouped into visits reliably. The '
-                    . 'analytics table and its archive are each rebuilt in place — %s, so roughly '
-                    . 'double that if you also have archived data, and longer on bigger tables. '
-                    . 'Tracking and reports normally keep working while it runs, but a server that '
-                    . 'cannot rebuild online will pause tracking writes until it finishes. No '
-                    . 'existing data is changed or removed.',
+                'Adds a private, full-width identity column for visitors tracked without cookies. Until it runs, anonymous pageviews are still recorded but cost extra database work on every hit and cannot be grouped into visits reliably. The analytics table and its archive are each rebuilt in place — %s, so roughly double that if you also have archived data, and longer on bigger tables. Tracking and reports normally keep working while it runs, but a server that cannot rebuild online will pause tracking writes until it finishes. No existing data is changed or removed.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()

@@ -1,0 +1,12 @@
+target:    composer.json
+gate:      composer test:no-orphan-test-files
+kind:      guard-removal
+expect:    is invoked by no composer script and no workflow
+rationale: Deletes the composer script that runs consent-filter-context-test.php; the file stays in tests/ with nothing invoking it. context=1 on purpose: the first version carried four neighbouring script definitions as context and stopped applying the moment a new gate was inserted two lines above it -- the same anchoring hazard as Pro's C1, one repo over and one commit later.
+---
+--- a/composer.json
++++ b/composer.json
+@@ -179,3 +179,2 @@
+     "test:browscap-fileinfo-preflight": "php tests/browscap-fileinfo-preflight-test.php",
+-    "test:consent-filter-context": "php tests/consent-filter-context-test.php",
+     "test:failsoft-visibility": "php tests/failsoft-visibility-test.php",

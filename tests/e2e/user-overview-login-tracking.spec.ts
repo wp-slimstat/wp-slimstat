@@ -16,6 +16,7 @@ import {
   restoreSlimstatOptions,
   enableDisableWpCron,
   restoreWpConfig,
+  ensureWpUser,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
 
@@ -48,19 +49,35 @@ async function deleteTransientCaches(): Promise<void> {
   );
 }
 
+// The subject of this spec is a second, non-admin-named WordPress user: it seeds login notes
+// for that user and reads them back out of the User Overview panel. `gerlando` existed on one
+// developer's install and nowhere else, so on any other machine the login below never reached
+// wp-admin and all ten tests died on the 45 s navigation wait rather than on their subject
+// (H-LOGIN, uncapped census Run 65). The spec provisions the user in beforeAll now, and its
+// ID -- which the seeded `[user:N]` notes carry -- comes back from that call instead of being
+// the 6 it happened to be on that machine.
+const TEST_USER = 'gerlando';
+const TEST_USER_PASS = 'gerlando';
+let testUserId = 0;
+
+/** The notes string the plugin writes for this user; `[user:N]` must name the real row. */
+function userNote(prefix: string = ''): string {
+  return `${prefix}[user:${testUserId}]`;
+}
+
 async function loginAsGerlando(
   browser: import('@playwright/test').Browser
 ): Promise<{
   context: import('@playwright/test').BrowserContext;
   page: import('@playwright/test').Page;
 }> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto(`${BASE_URL}/wp-login.php`, {
     waitUntil: 'domcontentloaded',
   });
-  await page.fill('#user_login', 'gerlando');
-  await page.fill('#user_pass', 'gerlando');
+  await page.fill('#user_login', TEST_USER);
+  await page.fill('#user_pass', TEST_USER_PASS);
   await page.click('#wp-submit');
   await page.waitForURL('**/wp-admin/**', {
     timeout: 45_000,
@@ -69,7 +86,8 @@ async function loginAsGerlando(
   return { context, page };
 }
 
-function getUserOverviewData(page: import('@playwright/test').Page) {
+async function getUserOverviewData(page: import('@playwright/test').Page) {
+  await expect(page.locator('#slim_p8_01 table')).toBeVisible();
   return page.evaluate(() => {
     const panel = document.getElementById('slim_p8_01');
     if (!panel) return null;
@@ -79,7 +97,6 @@ function getUserOverviewData(page: import('@playwright/test').Page) {
     const users: Record<string, Record<string, string>> = {};
     const headers = [
       'username',
-      'company',
       'fullName',
       'email',
       'registered',
@@ -105,6 +122,7 @@ test.describe('User Overview (slim_p8_01)', () => {
 
   test.beforeAll(async () => {
     enableDisableWpCron();
+    testUserId = await ensureWpUser(TEST_USER, TEST_USER_PASS);
     await snapshotSlimstatOptions();
     await setSlimstatSetting('gdpr_enabled', 'off');
     await setSlimstatSetting('is_tracking', 'on');
@@ -128,7 +146,7 @@ test.describe('User Overview (slim_p8_01)', () => {
       browser,
     }) => {
       const now = Math.floor(Date.now() / 1000);
-      await seedPageviewWithNotes('gerlando', '[user:6]', now);
+      await seedPageviewWithNotes('gerlando', userNote(), now);
 
       const { context, page } = await loginAsGerlando(browser);
       await page.waitForTimeout(2000);
@@ -168,7 +186,7 @@ test.describe('User Overview (slim_p8_01)', () => {
       browser,
     }) => {
       const twoHoursAgo = Math.floor(Date.now() / 1000) - 7200;
-      const rowId = await seedPageviewWithNotes('gerlando', '[user:6]', twoHoursAgo);
+      const rowId = await seedPageviewWithNotes('gerlando', userNote(), twoHoursAgo);
 
       const { context, page } = await loginAsGerlando(browser);
       await page.waitForTimeout(2000);
@@ -177,7 +195,7 @@ test.describe('User Overview (slim_p8_01)', () => {
         'SELECT notes FROM wp_slim_stats WHERE id = ?',
         [rowId]
       )) as any;
-      expect(rows[0].notes).toBe('[user:6]');
+      expect(rows[0].notes).toBe(userNote());
       expect(rows[0].notes).not.toContain('loggedin:');
 
       await context.close();
@@ -214,6 +232,7 @@ test.describe('User Overview (slim_p8_01)', () => {
         waitUntil: 'domcontentloaded',
       });
 
+      await expect(page.locator('#slim_p8_01 table')).toBeVisible();
       const columns = await page.evaluate(() => {
         const panel = document.getElementById('slim_p8_01');
         if (!panel) return [];
@@ -240,9 +259,9 @@ test.describe('User Overview (slim_p8_01)', () => {
       await deleteTransientCaches();
 
       const now = Math.floor(Date.now() / 1000);
-      await seedPageviewWithNotes('gerlando', '[loggedin:gerlando][user:6]', now, 1);
-      await seedPageviewWithNotes('gerlando', '[loggedin:gerlando][user:6]', now - 3600, 2);
-      await seedPageviewWithNotes('gerlando', '[loggedin:gerlando][user:6]', now - 7200, 3);
+      await seedPageviewWithNotes('gerlando', userNote('[loggedin:gerlando]'), now, 1);
+      await seedPageviewWithNotes('gerlando', userNote('[loggedin:gerlando]'), now - 3600, 2);
+      await seedPageviewWithNotes('gerlando', userNote('[loggedin:gerlando]'), now - 7200, 3);
 
       const { context, page } = await loginAsGerlando(browser);
       await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview3`, {
@@ -292,7 +311,7 @@ test.describe('User Overview (slim_p8_01)', () => {
 
       const now = Math.floor(Date.now() / 1000);
       for (let i = 0; i < 5; i++) {
-        await seedPageviewWithNotes('gerlando', '[user:6]', now - i * 60, i + 1);
+        await seedPageviewWithNotes('gerlando', userNote(), now - i * 60, i + 1);
       }
 
       const { context, page } = await loginAsGerlando(browser);
@@ -316,7 +335,7 @@ test.describe('User Overview (slim_p8_01)', () => {
       await deleteTransientCaches();
 
       const yesterday = Math.floor(Date.now() / 1000) - 86400;
-      await seedPageviewWithNotes('gerlando', '[user:6]', yesterday);
+      await seedPageviewWithNotes('gerlando', userNote(), yesterday);
 
       const { context, page } = await loginAsGerlando(browser);
       await page.goto(

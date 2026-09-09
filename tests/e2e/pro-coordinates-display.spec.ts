@@ -136,7 +136,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     expect(result.body).not.toContain('Fatal error');
 
     // If MaxMind DB is available, coordinates should be in the response
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
 
     if (hasGeoData) {
@@ -172,7 +172,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
 
     if (hasGeoData) {
@@ -253,7 +253,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
 
     if (hasGeoData) {
       // The Google Maps embed should be present with coordinate parameters

@@ -1,0 +1,16 @@
+target:    .distignore
+gate:      composer test:dist-manifest
+kind:      guard-removal
+expect:    development-only file(s) would ship
+rationale: Removes `/tests` from .distignore; the simulated package then carries the test tree and the denylist (written in the gate, not derived from .distignore) names it.
+---
+--- a/.distignore
++++ b/.distignore
+@@ -4,7 +4,6 @@
+ /.githooks
+ /.github
+ /node_modules
+-/tests
+ /test-results
+ /admin/assets/scss
+ 

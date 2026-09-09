@@ -191,22 +191,12 @@ test.describe('WP Consent API Safe Guard', () => {
 
 // ─── Test 5: DB index migration ──────────────────────────────────────
 test.describe('Index Migration', () => {
-  test('(dt, visit_id) covering index exists in schema definition', async () => {
-    const fs = await import('fs');
-    const schemaPath = path.join(PLUGIN_DIR, 'admin/index.php');
-    const content = fs.readFileSync(schemaPath, 'utf8');
-
-    // Verify index in CREATE TABLE schema
-    expect(content).toContain('stats_dt_visit_idx (dt, visit_id)');
-
-    // Verify version-gated migration block
-    expect(content).toContain("version_compare(wp_slimstat::$settings['version'], '5.4.3', '<')");
-
-    // Verify AJAX handler is registered via consolidated index definitions
-    expect(content).toContain('slimstat_add_dt_visit_index');
-
-    // Verify show_indexes_notice entry
-    expect(content).toContain('slimstat_dt_visit_indexed');
+  test('(dt, visit_id) covering index exists in the deployed schema', async () => {
+    const [rows] = await db.execute(
+      "SHOW INDEX FROM wp_slim_stats WHERE Key_name = 'wp_stats_dt_visit_idx'"
+    ) as any;
+    expect(rows.sort((a: any, b: any) => a.Seq_in_index - b.Seq_in_index)
+      .map((row: any) => row.Column_name)).toEqual(['dt', 'visit_id']);
   });
 
   test('upgrade migration creates the index on version bump', async () => {

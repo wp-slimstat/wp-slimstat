@@ -1,0 +1,17 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    does not route that through the arm saver, which short-circuits on an unchanged signature
+rationale: The obvious repair, which is silently a no-op: use the arm own slimstat_save_options() instead of writing the row. It reads as the more faithful choice -- the plugin own saver, rather than our idea of what it would write -- and it writes nothing, because the signature is taken AFTER defaults are merged over the stored row, so a request that changed nothing compares equal and returns early. The cell then proceeds against a site with no options row while every line of the harness says it arranged one.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -241,7 +241,7 @@
+              Save the vintage defaults as its settings screen would, not a partial row that
+              makes the next network activation read undefined keys such as auto_purge. */
+           wp_slimstat::$settings = array_merge(wp_slimstat::init_options(), is_array($row) ? $row : [], wp_slimstat::$settings);
+-          update_option("slimstat_options", wp_slimstat::$settings);
++          wp_slimstat::slimstat_save_options();
+         }
+         /* The return value stays the installer FILENAME and nothing else: both callers compare it
+            to a path, and appending a status word here would have failed that comparison in a way

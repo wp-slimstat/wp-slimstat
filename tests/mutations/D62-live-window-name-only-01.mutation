@@ -6,7 +6,7 @@ rationale: THE canonical name-not-construct mutation. It removes one of the two 
 ---
 --- a/admin/view/wp-slimstat-db.php
 +++ b/admin/view/wp-slimstat-db.php
-@@ -912,7 +912,8 @@ class wp_slimstat_db
+@@ -930,5 +930,6 @@ class wp_slimstat_db
  
          // If end is in the future, set it to now
          if ($fn['utime']['end'] > date_i18n('U')) {
@@ -14,5 +14,3 @@ rationale: THE canonical name-not-construct mutation. It removes one of the two 
 +            // clamped via self::live_window_end() above
 +            $fn['utime']['end'] = intval(date_i18n('U'));
          }
- 
-         // Turn the date_i18n filters back on

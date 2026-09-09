@@ -101,6 +101,8 @@ class QueryBuilderTest extends WpSlimstatTestCase
                 }, $query);
             });
 
+        $this->wpdb->shouldReceive('esc_like')->andReturnUsing(static fn ($value) => addcslashes($value, '_%\\'));
+
         $GLOBALS['wpdb'] = $this->wpdb;
 
         // Ensure the wp_slimstat stub has expected settings.
@@ -175,11 +177,21 @@ class QueryBuilderTest extends WpSlimstatTestCase
         $this->assertMatchesRegularExpression('/browser\s*=\s*/', $sql);
     }
 
+    public function test_filter_identifiers_reject_sql_and_values_remain_bound(): void
+    {
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('browser OR 1=1 --', 'equals', 'x'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('browser', 'equals', 'x', 't1; DROP TABLE x'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_combined_where('', '*', true, 't1; DROP TABLE x'));
+        $this->assertSame("browser = ''", \wp_slimstat_db::get_single_where_clause('browser', 'equals', ''));
+        $this->assertSame("browser = '0'", \wp_slimstat_db::get_single_where_clause('browser', 'equals', '0'));
+        $this->assertSame("t1.user_login = 'author'", \wp_slimstat_db::get_single_where_clause('user_login', 'equals', 'author', 't1'));
+        $this->assertSame('1=0', \wp_slimstat_db::get_single_where_clause('screen_width', 'between', '320'));
+    }
+
     /**
      * BUG GUARD (M1, query layer) — build_goal_where() must drop a value-bearing
-     * operator that has an empty value, because get_single_where_clause() would
-     * otherwise return an unprepared fragment containing a literal "%s" placeholder
-     * (it skips prepare() when the value is empty), which breaks the funnel/goal SQL.
+     * operator that has an empty value, preserving the goal validation contract
+     * for legacy stored goals as well as newly saved goals.
      *
      * @test
      */
@@ -376,22 +388,37 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
-     *
-     * These tests intentionally expect escaped values. The implementation
-     * currently passes raw values, which is a known bug. When esc_like() is
-     * added to the LIKE operators in wp-slimstat-db.php, these tests will
-     * start passing.
      */
     public function test_single_where_escapes_percent_in_like(): void
     {
-        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
-
         // The 'contains' operator wraps with %...% — an embedded % in the value
         // must be escaped to \% so it matches a literal percent sign, not a wildcard.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', '100%');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('100\%', $sql);
+        $this->assertStringContainsString(addslashes('100\%25'), $sql, 'resource is URL-encoded before LIKE escaping');
+    }
+
+    public function test_literal_like_operators_escape_wildcards_and_backslashes(): void
+    {
+        $literal = 'a%b_c\\d';
+        $escaped = 'a\\%b\\_c\\\\d';
+        foreach (['contains' => ['LIKE', '%' . $escaped . '%'],
+            'does_not_contain' => ['NOT LIKE', '%' . $escaped . '%'],
+            'starts_with' => ['LIKE', $escaped . '%'],
+            'ends_with' => ['LIKE', '%' . $escaped]] as $operator => [$sqlOperator, $pattern]) {
+            $sql = \wp_slimstat_db::get_single_where_clause('browser', $operator, $literal);
+            $this->assertSame("browser " . $sqlOperator . " '" . addslashes($pattern) . "' ESCAPE 0x5c", $sql, $operator);
+        }
+    }
+
+    public function test_regex_operators_preserve_the_explicit_pattern_contract(): void
+    {
+        foreach (['matches' => 'REGEXP', 'does_not_match' => 'NOT REGEXP'] as $operator => $sqlOperator) {
+            $pattern = '^a.*[0-9]_%$';
+            $this->assertSame("browser " . $sqlOperator . " '" . $pattern . "'",
+                \wp_slimstat_db::get_single_where_clause('browser', $operator, $pattern));
+        }
     }
 
     /**
@@ -410,22 +437,15 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
     /**
      * @test
-     *
-     * These tests intentionally expect escaped values. The implementation
-     * currently passes raw values, which is a known bug. When esc_like() is
-     * added to the LIKE operators in wp-slimstat-db.php, these tests will
-     * start passing.
      */
     public function test_single_where_handles_underscore_in_like(): void
     {
-        $this->markTestIncomplete('Requires esc_like() fix in wp_slimstat_db — see E-DEV-WPSLIMSTAT-XXX');
-
         // Underscore is a LIKE wildcard in MySQL; it must be escaped to \_
         // so it matches a literal underscore, not any single character.
         $sql = \wp_slimstat_db::get_single_where_clause('resource', 'contains', 'my_page');
 
         $this->assertStringContainsString('LIKE', $sql);
-        $this->assertStringContainsString('my\_page', $sql);
+        $this->assertStringContainsString(addslashes('my\_page'), $sql);
     }
 
     // ------------------------------------------------------------------
@@ -1026,4 +1046,25 @@ class QueryBuilderTest extends WpSlimstatTestCase
 
         $this->assertSame($this->recentManifest(), $this->invokeRecentColumns());
     }
+    public function test_data_size_uses_literal_table_name_on_analytics_handle(): void
+    {
+        Functions\when('number_format_i18n')->alias(static fn ($value, $decimals) => number_format($value, $decimals));
+        $analytics = Mockery::mock('wpdb');
+        $analytics->shouldReceive('esc_like')->once()->with('wp_slim_stats')->andReturn('wp\\_slim\\_stats');
+        $analytics->shouldReceive('prepare')->once()->with('SHOW TABLE STATUS LIKE %s', 'wp\\_slim\\_stats')->andReturn('prepared-exact-table');
+        $analytics->shouldReceive('get_row')->once()->with('prepared-exact-table', 'ARRAY_A', 0)->andReturn(['Data_length' => 1024, 'Index_length' => 1024]);
+        \wp_slimstat::$wpdb = $analytics;
+        $this->assertSame('2.00 KB', \wp_slimstat_db::get_data_size());
+    }
+
+    public function test_same_prefix_on_another_database_uses_its_actual_columns(): void
+    {
+        $first = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource', 'fingerprint', 'vid_hash']);
+        $this->assertStringContainsString('vid_hash', $first);
+        $second = $this->visitorIdExprWithSchema(['id', 'ip', 'dt', 'visit_id', 'resource']);
+        $this->assertStringNotContainsString('vid_hash', $second);
+        $this->assertStringNotContainsString('fingerprint', $second);
+        $this->assertSame($second, $this->invokeVisitorIdExpr());
+    }
+
 }

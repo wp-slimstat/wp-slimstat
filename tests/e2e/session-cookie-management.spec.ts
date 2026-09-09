@@ -15,6 +15,8 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   clearStatsTable,
+  installMuPluginByName,
+  uninstallMuPluginByName,
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
@@ -154,11 +156,73 @@ test.describe('Session & Cookie Management — #199', () => {
   //   visit again. The second visit must get a different visit_id.
   // ═══════════════════════════════════════════════════════════════════
 
+  test('session survives rapid navigation while the first tracking response is delayed', async ({ page, browser }, testInfo) => {
+    await clearStatsTable();
+    for (const [name, value] of Object.entries({ gdpr_enabled: 'off', javascript_mode: 'on', set_tracker_cookie: 'on', tracking_request_method: 'rest', ignore_wp_users: 'no' })) {
+      await setSlimstatOption(page, name, value);
+    }
+    await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'");
+    installMuPluginByName('delayed-tracker-response-mu-plugin.php');
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const visitor = await context.newPage();
+      const marker = `session-delayed-${Date.now()}`;
+      const firstRequest = visitor.waitForRequest(isSlimstatTrackingRequest);
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p1`);
+      await firstRequest; // Confirm in-flight; deliberately do not await its response.
+      const beforeSecond = await context.cookies();
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p2`);
+      const beforeThird = await context.cookies();
+      await visitor.goto(`${BASE_URL}/?e2e_marker=${marker}-p3`);
+      let delayProof: any;
+      await expect.poll(async () => {
+        const [proofRows] = await getPool().execute("SELECT option_value FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'") as any;
+        delayProof = proofRows.length ? JSON.parse(proofRows[0].option_value) : {};
+        return delayProof.finished ? delayProof.finished - delayProof.started : 0;
+      }).toBeGreaterThanOrEqual(0.9);
+      const rows = await waitForStatRows(marker, 3, 20_000);
+      await testInfo.attach('delayed-session-evidence', { body: JSON.stringify({ beforeSecond, beforeThird, delayProof, cookiesAfter: await context.cookies(), rows }, null, 2), contentType: 'application/json' });
+      expect(rows).toHaveLength(3);
+      expect(new Set(rows.map(row => Number(row.visit_id))).size).toBe(1);
+      expect(Number(rows[0].visit_id)).toBeGreaterThan(0);
+    } finally {
+      await context.close();
+      uninstallMuPluginByName('delayed-tracker-response-mu-plugin.php');
+      await getPool().execute("DELETE FROM wp_options WHERE option_name = 'slimstat_e2e_response_delay'");
+    }
+  });
+
+  test('pending session identity is cleared after consent revocation and in cookieless modes', async ({ page, browser }) => {
+    const cases = [
+      { gdpr_enabled: 'on', anonymous_tracking: 'off', use_slimstat_banner: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on', denied: true },
+      { gdpr_enabled: 'on', anonymous_tracking: 'on', use_slimstat_banner: 'on', consent_integration: 'slimstat_banner', set_tracker_cookie: 'on' },
+      { gdpr_enabled: 'off', anonymous_tracking: 'off', use_slimstat_banner: 'off', consent_integration: '', set_tracker_cookie: 'off' },
+    ];
+
+    for (const { denied, ...settings } of cases) {
+      for (const [name, value] of Object.entries({ ...settings, javascript_mode: 'on', ignore_wp_users: 'no' })) {
+        await setSlimstatOption(page, name, value);
+      }
+      const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+      try {
+        await context.addInitScript(() => sessionStorage.setItem('slimstat_pending_session', 'a'.repeat(32)));
+        if (denied) {
+          await context.addCookies([{ name: 'slimstat_gdpr_consent', value: 'denied', url: BASE_URL }]);
+        }
+        const visitor = await context.newPage();
+        await visitor.goto(`${BASE_URL}/?e2e_marker=no-pending-session-${Date.now()}`, { waitUntil: 'networkidle' });
+        expect(await visitor.evaluate(() => sessionStorage.getItem('slimstat_pending_session'))).toBeNull();
+      } finally {
+        await context.close();
+      }
+    }
+  });
+
   test('clearing cookies creates a new session with a different visit_id', async ({ browser }) => {
     await clearStatsTable();
 
     // Use a fresh context so we control cookie lifecycle completely
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await ctx.newPage();
 
     try {
@@ -363,15 +427,13 @@ test.describe('Session & Cookie Management — #199', () => {
     // Click the REAL Accept button — this triggers the full production
     // banner handler: cookie set → sendConsentChangeToServer → requestConsentUpgrade
     // No manual cookie injection, no force:true, no direct JS calls.
+    const upgradeResponse = testPage.waitForResponse(response =>
+      response.ok() && isSlimstatTrackingRequest(response.request()) &&
+      (response.request().postData() || '').includes('consent_upgrade=1'));
     await testPage.locator('[data-consent="accepted"]').click();
-
-    // Wait for the consent upgrade tracking request to complete.
-    // The banner handler sends a REST/AJAX request with consent_upgrade=1.
-    // Poll trackingRequests instead of a blind timeout.
-    const upgradeDeadline = Date.now() + 15_000;
-    while (trackingRequests.length === 0 && Date.now() < upgradeDeadline) {
-      await new Promise((r) => setTimeout(r, 500));
-    }
+    const completedUpgrade = await upgradeResponse;
+    expect(completedUpgrade.ok(), 'Consent upgrade response must succeed').toBe(true);
+    await completedUpgrade.finished();
 
     // Verify the consent cookie is now 'accepted'
     const postAcceptCookies = await ctx.cookies();
@@ -435,6 +497,17 @@ test.describe('Session & Cookie Management — #199', () => {
       upgradeVisitId,
       `Upgrade row visit_id (${upgradeVisitId}) should match Phase 2 row (${earlierVisitId})`,
     ).toBe(earlierVisitId);
+    const visitCookie = (await ctx.cookies()).find(cookie => cookie.name === 'slimstat_tracking_code');
+    expect(visitCookie?.value.split('.')[0], 'Consent cookie must retain the original visit').toBe(String(preUpgradeVisitId));
+    expect(visitCookie?.httpOnly).toBe(true);
+    expect(upgradedRows).toHaveLength(1);
+
+    const subsequentMarker = `consent-subsequent-${ts}`;
+    await testPage.goto(`${BASE_URL}/?e2e_marker=${subsequentMarker}`, { waitUntil: 'networkidle' });
+    const subsequentRows = await waitForStatRows(subsequentMarker, 1, 10_000);
+    expect(subsequentRows).toHaveLength(1);
+    expect(Number(subsequentRows[0].visit_id)).toBe(preUpgradeVisitId);
+    expect(subsequentRows[0].ip).toBe(upgradedIp);
 
     await testPage.close();
     await ctx.close();

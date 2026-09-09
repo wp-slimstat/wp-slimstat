@@ -367,8 +367,9 @@ function render_column(string $column, string $value): string
 
 function extract_href(string $html): string
 {
-    if (preg_match("/href='([^']+)'/", $html, $matches)) {
-        return $matches[1];
+    // KSES may normalize single-quoted attributes to double quotes.
+    if (preg_match('/href=([\'"])(.*?)\\1/', $html, $matches)) {
+        return $matches[2];
     }
 
     return '';
@@ -403,7 +404,7 @@ assert_not_contains("onclick='alert(1)'", $html, 'Raw onclick must not appear in
 // Test 6: The filter link href uses real esc_url() output and is not double-escaped.
 $html = render_column('fingerprint', 'testvalue');
 $href = extract_href($html);
-assert_contains('&#038;fs%5Bfingerprint%5D=', $href, 'Real esc_url() must HTML-escape query separators');
+assert_true(1 === preg_match('/&(?:#038|amp);fs%5Bfingerprint%5D=/', $href), 'Real esc_url() and KSES must HTML-escape query separators');
 assert_not_contains('&amp;amp;', $html, 'href must not be double-escaped');
 
 // Test 7: Filter values are pre-encoded before fs_url() so parse_filters preserves delimiters.
@@ -548,6 +549,46 @@ assert_contains("src=\"' . esc_url(\$image_url) . '\"", $reports_src, 'Country c
 assert_contains("preg_match('/^[a-z0-9]{2}\$/i', (string) \$last_language_part)", $reports_src, 'Language flag must validate the subtag before the flag path lookup');
 assert_contains("esc_html(wp_slimstat_i18n::get_string('l-' . \$lang_value))", $reports_src, 'Language name must be esc_html()-escaped');
 assert_not_contains("alt=\"' . \$results[\$i][\$_args['columns']] . '\"", $reports_src, 'Language flag alt must not echo the raw language value');
+
+// Summary providers share a separate empty-columns branch; defend all three HTML sinks.
+ob_start();
+wp_slimstat_reports::raw_results_to_html([
+    'columns' => '',
+    'raw' => make_data_callback([[
+        'metric' => '<strong>Visits</strong><img src=x onerror="attack()">',
+        'value' => '<em>42</em><script>attack()</script>',
+        'details' => '<a href="javascript:attack()">Details</a>',
+    ]]),
+]);
+$summary = ob_get_clean();
+assert_not_contains('onerror=', $summary, 'Summary metric strips event handlers');
+assert_not_contains('<script>', $summary, 'Summary value strips script markup');
+assert_not_contains('javascript:', $summary, 'Summary details strips unsafe URLs');
+assert_contains('<strong>Visits</strong>', $summary, 'Summary metric preserves intended formatting');
+assert_contains('<em>42</em>', $summary, 'Summary value preserves intended formatting');
+
+// The new report API must filter tooltip text without removing its fixed SVG icon.
+require_once __DIR__ . '/../src/Reports/Contracts/ReportInterface.php';
+require_once __DIR__ . '/../src/Reports/Contracts/RenderableInterface.php';
+require_once __DIR__ . '/../src/Reports/Abstracts/AbstractReport.php';
+class TooltipEscapingReport extends \SlimStat\Reports\Abstracts\AbstractReport {
+    public $test_tooltip;
+    protected function init(): void {}
+    public function get_data(): array { return []; }
+    public function get_renderer(): string { return ''; }
+    public function get_id(): string { return 'tooltip-test'; }
+    public function get_tooltip(): ?string { return $this->test_tooltip; }
+    public function tooltip_html(): string { return $this->get_header_tooltip(); }
+}
+$tooltip_report = (new ReflectionClass(TooltipEscapingReport::class))->newInstanceWithoutConstructor();
+$tooltip_report->test_tooltip = '<strong>Help</strong><img src=x onerror="attack()"><a href="javascript:attack()">Unsafe</a>';
+$tooltip_html = $tooltip_report->tooltip_html();
+assert_contains('<svg ', $tooltip_html, 'Fixed tooltip SVG icon remains');
+assert_contains('<strong>Help</strong>', $tooltip_html, 'Tooltip permitted formatting remains');
+assert_not_contains('onerror=', $tooltip_html, 'Tooltip rejects event handlers');
+assert_not_contains('javascript:', $tooltip_html, 'Tooltip rejects unsafe URL');
+$tooltip_report->test_tooltip = null;
+assert_contains('tooltip-test', $tooltip_report->tooltip_html(), 'Absent tooltip uses escaped report ID');
 
 $GLOBALS['reports_escaping_verdict_reached'] = true;
 echo "All {$assertions} assertions passed in reports-output-escaping-test.php\n";

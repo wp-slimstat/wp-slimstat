@@ -1,12 +1,12 @@
 /**
  * E2E: Chart granularity persistence — bugfix regression tests
  *
- * Tests the three fixes applied to sessionStorage-based chart granularity
+ * Tests the three fixes applied to localStorage-based chart granularity
  * persistence (issue #265, PR #267):
  *
- *   1. sessionStorage write is immediate (not inside 300ms debounce)
+ *   1. localStorage write is immediate (not inside 300ms debounce)
  *   2. async_load race condition: chart re-init after AJAX HTML injection
- *   3. refresh_report reads granularity from sessionStorage when select is gone
+ *   3. refresh_report reads granularity from localStorage when select is gone
  *
  * These tests complement the existing chart-granularity-persistence.spec.ts
  * by focusing on the specific failure modes that caused the original fix to
@@ -25,7 +25,7 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────
 
-const OVERVIEW_URL = `${BASE_URL}/wp-admin/admin.php?page=slimview2`;
+const OVERVIEW_URL = `${BASE_URL}/wp-admin/admin.php?page=slimview2&type=last_90_days`;
 const GRANULARITY_SELECT = 'select.slimstat-granularity-select';
 const CHART_DATA_DIV = '[id^="slimstat_chart_data_"]';
 
@@ -84,14 +84,14 @@ async function setGranularity(page: Page, value: string): Promise<void> {
 }
 
 /**
- * Read the sessionStorage granularity key for the first chart on the page.
+ * Read the localStorage granularity key for the first chart on the page.
  */
 async function getSessionStorageGranularity(page: Page): Promise<string | null> {
   return page.evaluate(() => {
     const el = document.querySelector('[id^="slimstat_chart_data_"]');
     if (!el || !el.id) return null;
     const chartId = el.id.replace('slimstat_chart_data_', '');
-    return sessionStorage.getItem('slimstat_chart_granularity_' + chartId);
+    return localStorage.getItem('slimstat_chart_granularity');
   });
 }
 
@@ -124,9 +124,9 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await closeDb();
   });
 
-  // ─── Fix 1: Immediate sessionStorage write ───────────────────────
+  // ─── Fix 1: Immediate localStorage write ───────────────────────
 
-  test('sessionStorage is written immediately on change, not after debounce', async ({ page }) => {
+  test('localStorage is written immediately on change, not after debounce', async ({ page }) => {
     await goToOverview(page);
 
     const initial = await getSelectedGranularity(page);
@@ -136,19 +136,19 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     const select = page.locator(GRANULARITY_SELECT).first();
     await select.selectOption(target);
 
-    // Check sessionStorage IMMEDIATELY (well before the 300ms debounce)
+    // Check localStorage IMMEDIATELY (well before the 300ms debounce)
     // If the fix works, the value is written synchronously on the change event
     const stored = await page.evaluate((expected) => {
       const el = document.querySelector('[id^="slimstat_chart_data_"]');
       if (!el || !el.id) return null;
       const chartId = el.id.replace('slimstat_chart_data_', '');
-      return sessionStorage.getItem('slimstat_chart_granularity_' + chartId);
+      return localStorage.getItem('slimstat_chart_granularity');
     }, target);
 
-    expect(stored, 'sessionStorage should be written immediately, not after 300ms debounce').toBe(target);
+    expect(stored, 'localStorage should be written immediately, not after 300ms debounce').toBe(target);
   });
 
-  test('sessionStorage survives rapid change + immediate navigation', async ({ page }) => {
+  test('localStorage survives rapid change + immediate navigation', async ({ page }) => {
     await goToOverview(page);
 
     // Change to "daily" and IMMEDIATELY navigate away (no time for debounce)
@@ -158,10 +158,10 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     // Navigate away within ~50ms (well under 300ms debounce)
     await page.goto(`${BASE_URL}/wp-admin/edit.php`, { waitUntil: 'domcontentloaded' });
 
-    // Navigate back — sessionStorage should still have "daily"
+    // Navigate back — localStorage should still have "daily"
     await goToOverview(page);
 
-    // Wait for JS to restore from sessionStorage
+    // Wait for JS to restore from localStorage
     await page.waitForTimeout(1_000);
 
     const afterNav = await getSelectedGranularity(page);
@@ -180,9 +180,9 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await setGranularity(page, 'daily');
     expect(await getSelectedGranularity(page)).toBe('daily');
 
-    // Verify sessionStorage was written
+    // Verify localStorage was written
     const stored = await getSessionStorageGranularity(page);
-    expect(stored, 'sessionStorage should hold "daily"').toBe('daily');
+    expect(stored, 'localStorage should hold "daily"').toBe('daily');
 
     // Reload — with async_load ON, admin.js will re-render charts via AJAX
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -247,16 +247,16 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
     await setSlimstatOption(page, 'async_load', 'off');
   });
 
-  // ─── Fix 3: sessionStorage fallback in refresh_report ────────────
+  // ─── Fix 3: localStorage fallback in refresh_report ────────────
 
-  test('manual report refresh preserves granularity from sessionStorage', async ({ page }) => {
+  test('manual report refresh preserves granularity from localStorage', async ({ page }) => {
     await goToOverview(page);
 
     // Set to "monthly"
     await setGranularity(page, 'monthly');
     expect(await getSelectedGranularity(page)).toBe('monthly');
 
-    // Verify sessionStorage has the value
+    // Verify localStorage has the value
     const stored = await getSessionStorageGranularity(page);
     expect(stored).toBe('monthly');
 
@@ -273,7 +273,7 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
       const afterRefresh = await getSelectedGranularity(page);
       expect(
         afterRefresh,
-        'Granularity should be restored from sessionStorage after manual refresh',
+        'Granularity should be restored from localStorage after manual refresh',
       ).toBe('monthly');
     }
     // If no refresh button, the test is still valid — the async_load test above covers the same path
@@ -387,4 +387,24 @@ test.describe('Chart granularity bugfixes (#265 fix verification)', () => {
 
     expect(errors, 'No chart-related console errors or warnings').toEqual([]);
   });
+
+  test('chart and date changes remain free of browser errors after reload', async ({ page }) => {
+    const errors: string[] = [];
+    // Attach before the first navigation so initialization failures are covered.
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await goToOverview(page);
+    await waitForChartInitialized(page);
+    await setGranularity(page, 'daily');
+    await page.locator('.slimstat-date-range-btn').click();
+    await page.locator('.daterangepicker:visible .ranges li').filter({ hasText: /^Last 28 Days$/ }).click();
+    await expect(page).toHaveURL(/type=last_28_days/);
+    await waitForChartInitialized(page);
+    await page.reload({ waitUntil: 'networkidle' });
+    await waitForChartInitialized(page);
+    expect(errors, 'Initial chart, granularity, date selection and reload must not log browser errors').toEqual([]);
+  });
+
 });

@@ -123,15 +123,18 @@ class Tracker
     {
         $ip_array = ['', ''];
 
-        if (!empty($_SERVER['REMOTE_ADDR']) && false !== filter_var($_SERVER['REMOTE_ADDR'], FILTER_VALIDATE_IP)) {
-            $ip_array[0] = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
+        $remote_addr = $_SERVER['REMOTE_ADDR'] ?? '';
+        $remote_addr = is_string($remote_addr) ? sanitize_text_field(wp_unslash($remote_addr)) : '';
+        if (false !== filter_var($remote_addr, FILTER_VALIDATE_IP)) {
+            $ip_array[0] = $remote_addr;
         }
 
         // CF-Connecting-IP is handled separately via Utils::getCfClientIp() with CF-Ray validation.
         $originating_ip_headers = ['HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR', 'HTTP_CLIENT_IP', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_X_REAL_IP', 'HTTP_INCAP_CLIENT_IP'];
         foreach ($originating_ip_headers as $a_header) {
-            if (!empty($_SERVER[$a_header])) {
-                $header_value = sanitize_text_field(wp_unslash($_SERVER[$a_header]));
+            $header_value = $_SERVER[$a_header] ?? '';
+            if (is_string($header_value) && '' !== $header_value) {
+                $header_value = sanitize_text_field(wp_unslash($header_value));
                 foreach (explode(',', $header_value) as $a_ip) {
                     $a_ip = trim($a_ip);
                     if (false !== filter_var($a_ip, FILTER_VALIDATE_IP) && $a_ip != $ip_array[0]) {
@@ -168,7 +171,7 @@ class Tracker
         $search_engines = file_get_contents(SLIMSTAT_ANALYTICS_DIR . 'admin/assets/data/matomo-searchengine.json');
         $search_engines = json_decode($search_engines, true);
 
-        $parsed_url = @parse_url($_url);
+        $parsed_url = wp_parse_url($_url);
 
         if (empty($search_engines) || empty($parsed_url) || empty($parsed_url['host'])) {
             return '';
@@ -318,7 +321,7 @@ class Tracker
     public static function _get_client_info($_data_js = [], $_stat = [])
     {
         if (!empty($_data_js['bw'])) {
-            $_stat['resolution'] = strip_tags(trim($_data_js['bw'] . 'x' . $_data_js['bh']));
+            $_stat['resolution'] = wp_strip_all_tags(trim($_data_js['bw'] . 'x' . $_data_js['bh']));
         }
 
         if (!empty($_data_js['sw'])) {
@@ -456,6 +459,6 @@ class Tracker
 
     public static function _base64_url_decode($_input = '')
     {
-        return strip_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
+        return wp_strip_all_tags(trim(base64_decode(strtr($_input, '._-', '+/='))));
     }
 }

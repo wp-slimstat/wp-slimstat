@@ -63,6 +63,9 @@ use wpdb;
  */
 final class Schema
 {
+    /** Shared by admin observation and successful migration invalidation. */
+    public const COLUMN_DRIFT_CHECK_TRANSIENT = 'slimstat_column_drift_checked';
+
     /**
      * Unconditional. See C42 in the class docblock — this is the whole fix.
      */
@@ -1014,6 +1017,9 @@ final class Schema
 
             $state             = self::indexState($db, $suffix, $prefix, $disabledGroups);
             $report['present'] = array_merge($report['present'], $state['present']);
+            foreach ($state['malformed'] as $index) {
+                $report['failed'][] = self::resolve($index, $prefix);
+            }
 
             $columns_absent = array_flip($columns['missing']);
 
@@ -1150,6 +1156,28 @@ final class Schema
     }
 
     /**
+     * Required drift for the admin notice, distinct from physical schema observations.
+     *
+     * The optional user-agent dimension is not needed by v6 tracking or reports. Its two
+     * fact-table columns may be absent until the user opts in. Once the migration completed,
+     * their disappearance is real drift. Never filter narrow columns or required vid_hash.
+     *
+     * @param array{missing:string[], narrow:array<string,string>} $drift
+     * @param string[] $completedMigrationIds
+     * @return array{missing:string[], narrow:array<string,string>}
+     */
+    public static function requiredColumnDrift(array $drift, array $completedMigrationIds): array
+    {
+        if (!in_array('add-user-agent-dimension', $completedMigrationIds, true)) {
+            $drift['missing'] = array_values(array_diff($drift['missing'], [
+                'slim_stats.ua_id', 'slim_stats_archive.ua_id',
+            ]));
+        }
+
+        return $drift;
+    }
+
+    /**
      * Qualify one table's column state as `<table>.<column>` drift entries.
      *
      * One owner for the naming rule. Two callers construct drift lists and a third compares
@@ -1251,8 +1279,8 @@ final class Schema
      * Which manifest indexes are on the table, and which are not.
      *
      * Reports NEITHER when the table cannot be read. `SHOW INDEX` against a table this
-     * connection cannot see is an ERROR, and `get_col()` answers `[]` for that exactly as it
-     * does for a table with no keys — so treating the empty answer as "nothing is indexed" would
+     * connection cannot see is an ERROR, and an empty result can look exactly like
+     * the result for a table with no keys — so treating the empty answer as "nothing is indexed" would
      * issue thirteen `CREATE INDEX` statements against a table that is not there. The same
      * conflation, in `AbstractIndexMigration`, is what made all eight index migrations claim
      * they had to run on an install with no tables at all (C41). An unreadable table must
@@ -1265,12 +1293,15 @@ final class Schema
      * on a per-request path. Five of its six queries were pure duplication, since each returns
      * the whole key list anyway.
      *
+     * Same-name mismatches are `malformed`, never `missing`: rebuilding them requires an
+     * explicit repair decision, and treating them as absent would issue duplicate-name DDL.
+     *
      * @param  string[] $disabledGroups
-     * @return array{present:string[], missing:string[]}
+     * @return array{present:string[], missing:string[], malformed:string[]}
      */
     public static function indexState(wpdb $db, string $suffix, string $prefix, array $disabledGroups = []): array
     {
-        $state  = ['present' => [], 'missing' => []];
+        $state  = ['present' => [], 'missing' => [], 'malformed' => []];
         $wanted = self::wantedIndexes($suffix, $disabledGroups);
 
         if ($wanted === []) {
@@ -1278,26 +1309,75 @@ final class Schema
         }
 
         $suppressed = $db->suppress_errors(true);
-        $found      = $db->get_col(sprintf('SHOW INDEX FROM `%s`', $prefix . $suffix), 2);
+        $found      = $db->get_results(sprintf('SHOW INDEX FROM `%s`', $prefix . $suffix), ARRAY_A);
         $error      = (string) $db->last_error;
         $db->suppress_errors($suppressed);
 
-        if ('' !== $error) {
+        if ('' !== $error || !is_array($found)) {
             return $state;
         }
 
-        $have = array_flip(array_map('strval', (array) $found));
-
-        foreach (array_keys($wanted) as $name) {
-            if (isset($have[self::resolve($name, $prefix)])) {
-                $state['present'][] = self::resolve($name, $prefix);
-                continue;
+        $have = [];
+        foreach ($found as $row) {
+            // Without the key name even absence is unknowable. Do not authorize any DDL.
+            if (!is_array($row) || !isset($row['Key_name']) || !is_string($row['Key_name']) || '' === $row['Key_name']) {
+                return $state;
             }
+            $have[strtolower($row['Key_name'])][] = $row;
+        }
 
-            $state['missing'][] = $name;
+        foreach ($wanted as $name => $definition) {
+            $resolved = self::resolve($name, $prefix);
+            $rows = $have[strtolower($resolved)] ?? null;
+            if (null === $rows) {
+                $state['missing'][] = $name;
+            } elseif (self::indexMatches($rows, $definition)) {
+                $state['present'][] = $resolved;
+            } else {
+                $state['malformed'][] = $name;
+            }
         }
 
         return $state;
+    }
+
+    /** Compare ordinary ascending, non-unique BTREE indexes declared in the manifest. */
+    private static function indexMatches(array $rows, string $definition): bool
+    {
+        $expected = [];
+        foreach (explode(',', $definition) as $part) {
+            if (!preg_match('/^([a-z0-9_]+)(?:\(([0-9]+)\))?$/i', trim($part), $match)) {
+                return false;
+            }
+            $expected[] = [strtolower($match[1]), isset($match[2]) ? (int) $match[2] : null];
+        }
+
+        $actual = [];
+        foreach ($rows as $row) {
+            foreach (['Seq_in_index', 'Column_name', 'Sub_part', 'Non_unique', 'Index_type', 'Collation'] as $field) {
+                if (!array_key_exists($field, $row)) {
+                    return false;
+                }
+            }
+            if (!ctype_digit((string) $row['Seq_in_index']) || (int) $row['Seq_in_index'] < 1
+                || !is_string($row['Column_name']) || '' === $row['Column_name']
+                || (null !== $row['Sub_part'] && (!ctype_digit((string) $row['Sub_part']) || (int) $row['Sub_part'] < 1))
+                || '1' !== (string) $row['Non_unique'] || 'BTREE' !== strtoupper((string) $row['Index_type'])
+                || 'A' !== strtoupper((string) $row['Collation'])
+                || (isset($row['Visible']) && 'YES' !== strtoupper((string) $row['Visible']))
+                || (isset($row['Ignored']) && 'NO' !== strtoupper((string) $row['Ignored']))
+            ) {
+                return false;
+            }
+            $position = (int) $row['Seq_in_index'];
+            if (isset($actual[$position])) {
+                return false;
+            }
+            $actual[$position] = [strtolower($row['Column_name']), null === $row['Sub_part'] ? null : (int) $row['Sub_part']];
+        }
+        ksort($actual);
+
+        return array_keys($actual) === range(1, count($expected)) && array_values($actual) === $expected;
     }
 
     private static function tableExists(wpdb $db, string $table): bool
@@ -1323,4 +1403,43 @@ final class Schema
 
         return self::TABLES[$suffix];
     }
+    /**
+     * Online-only repair for the shipped city/username VARCHAR(255) legacy shape.
+     * Preserve physical nullability and collation. Custom defaults/comments/extra clauses
+     * are refused because FULL COLUMNS cannot round-trip them consistently across engines.
+     *
+     * @param array<int,array<string,mixed>> $columns SHOW FULL COLUMNS rows to widen
+     */
+    public static function widenLegacyColumnsSql(string $suffix, string $prefix, array $columns): string
+    {
+        if (!in_array($suffix, ['slim_stats', 'slim_stats_archive'], true) || [] === $columns) {
+            throw new \InvalidArgumentException('Unsupported legacy width repair table or empty selection');
+        }
+        $clauses = [];
+        foreach ($columns as $column) {
+            foreach (['Field', 'Type', 'Collation', 'Null', 'Default', 'Extra', 'Comment'] as $field) {
+                if (!array_key_exists($field, $column)) {
+                    throw new \InvalidArgumentException('Incomplete column metadata');
+                }
+            }
+            $name = $column['Field'];
+            if (!in_array($name, ['city', 'username'], true)
+                || 'varchar(255)' !== strtolower((string) $column['Type'])
+                || !in_array($column['Null'], ['YES', 'NO'], true)
+                || null !== $column['Default'] || '' !== $column['Extra'] || '' !== $column['Comment']
+                || !is_string($column['Collation'])
+                || !preg_match('/^([a-z][a-z0-9]*)_[a-z0-9_]+$/D', $column['Collation'], $collation)
+                || !preg_match('/^VARCHAR\((256)\)/i', self::columns($suffix)[$name], $target)
+                || isset($clauses[$name])
+            ) {
+                throw new \InvalidArgumentException('Unsupported legacy column attributes; no automatic ALTER is safe');
+            }
+            $clauses[$name] = sprintf('MODIFY COLUMN `%s` VARCHAR(%d) CHARACTER SET `%s` COLLATE `%s` %s',
+                $name, (int) $target[1], $collation[1], $column['Collation'],
+                'YES' === $column['Null'] ? 'NULL DEFAULT NULL' : 'NOT NULL');
+        }
+        return sprintf('ALTER TABLE `%s` %s, ALGORITHM=INPLACE, LOCK=NONE',
+            $prefix . $suffix, implode(', ', $clauses));
+    }
+
 }

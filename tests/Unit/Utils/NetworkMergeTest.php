@@ -61,7 +61,7 @@ class NetworkMergeTest extends WpSlimstatTestCase
         $this->assertSame(NetworkMerge::DISTINCT, NetworkMerge::intentForColumn($column));
     }
 
-    public function distinctColumns(): array
+    public static function distinctColumns(): array
     {
         return [['ip'], ['resource'], ['referer'], ['browser'], ['fingerprint'], ['username']];
     }

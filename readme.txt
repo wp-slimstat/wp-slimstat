@@ -64,6 +64,7 @@ Love the free plugin? Pro is for sites that live by their numbers. It adds the h
 4. Make sure your template calls `wp_footer()` or the equivalent hook somewhere (possibly just before the `</body>` tag)
 
 == Please note ==
+* **Optional database downloads:** If an administrator enables or updates browser detection or DB-IP geolocation, SlimStat downloads the Browscap database from GitHub and the DB-IP Lite database from jsDelivr. No analytics data is sent with these requests.
 * **Your stats survive uninstalling.** Deleting Slimstat Analytics keeps every visit, setting and table in your database, so reinstalling picks up exactly where you left off.
 * If you *want* the data gone — decommissioning a site, or honouring a data-erasure request — turn on **Settings → Maintenance → "Delete Data on Uninstall"** *before* deleting the plugin, then delete it. That is the only one-step option that removes **everything**, archive tables included. Deleting the plugin on its own will not clear the database.
 * **Delete Records** (Settings → Maintenance) clears your live records but **not** the archived ones in `wp_slim_stats_archive` / `wp_slim_events_archive`, which still count as retained data under GDPR. If you are handling an erasure request and want to keep the plugin installed, clear the records *and* empty those archive tables.
@@ -109,7 +110,7 @@ An extensive knowledge base is available on our [website](https://www.wp-slimsta
 == Upgrade Notice ==
 
 = 6.0.0 =
-Major release. Back up your database first. Faster dashboards and tracking, GDPR-grade anonymous identity, multisite and external-database fixes. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — the changelog lists each one. Going back to 5.5.x: the update only ADDS database columns and never removes a row, and older versions keep working on the updated tables — but the added columns stay, so keep the backup you took.
+Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
 
 
 = 5.5.1 =

@@ -247,6 +247,14 @@ $main_yaml = (string) @file_get_contents($main_path);
 // exactly that — the deploy fully ungated again while this assertion stayed green.
 $main_code = (string) preg_replace('/^\s*#.*$/m', '', $main_yaml);
 
+// Development qualification cannot satisfy beta/human/release authorization by CI success alone.
+if (!preg_match('/^  tag:\s*\n\s*if:\s*\$\{\{\s*false\s*\}\}/m', $main_code)) {
+    $failures[] = 'Free production deploy development launch hold is missing';
+}
+if (strpos($main_code, 'python3 .github/qualify-deploy.py') === false) {
+    $failures[] = 'Free deploy no longer validates fresh complete exact-SHA receipts';
+}
+
 // The gate asks GitHub about THIS commit and refuses on anything but success. It used to be
 // pinned on the literal `check-runs`, which named one endpoint rather than the property.
 // That endpoint turned out to be the wrong one: the nightly cron re-runs CI on the default
@@ -277,6 +285,203 @@ if ('' === $main_yaml) {
     }
 }
 
+// ── 5a. The deploy job must not create files inside the checkout ───────────
+// The step above used to redirect into ./jobs.json and ./expected.txt — the workspace root,
+// which IS the tree the deploy step rsyncs into the wordpress.org SVN repository. .distignore
+// is that rsync's only exclusion list and neither name was in it, so every tag would have
+// published two CI scratch files to ~70,000 installs. Fixed by writing to $RUNNER_TEMP; pinned
+// here as the CLASS, because the next scratch file will have a different name and adding names
+// to .distignore is a list somebody has to remember.
+//
+// The matcher is proved in both directions on fixtures below. A scan for `>` over a workflow
+// file that currently redirects twice is exactly what a scan that has stopped matching also
+// produces, and this file's own §8 has already recorded one false PASS of that shape.
+$workspace_redirects = static function (string $code): array {
+    $targets = [];
+    if (preg_match_all('/(?<![0-9<>&=-])>>?[ \t]*([^\s|;&]+)/', $code, $rm)) {
+        foreach ($rm[1] as $target) {
+            if ('/dev/null' === $target || preg_match('/^&[12]$/', $target)) {
+                continue;
+            }
+            // $RUNNER_TEMP is outside the checkout. The GitHub file commands are runner-owned
+            // paths, not workspace paths, and appending to them is how a step exports a value.
+            if (false !== strpos($target, 'RUNNER_TEMP')
+                || preg_match('/GITHUB_(ENV|OUTPUT|PATH|STEP_SUMMARY)/', $target)) {
+                continue;
+            }
+            $targets[] = $target;
+        }
+    }
+
+    return $targets;
+};
+
+foreach ([
+    ['> jobs.json',                         true],
+    ['--paginate --slurp > ./expected.txt', true],
+    ['> "$GITHUB_WORKSPACE/out.txt"',       true],
+    ['> "${RUNNER_TEMP:?}/jobs.json"',      false],
+    ['>> "$GITHUB_ENV"',                    false],
+    ['2>&1',                                false],
+    ['> /dev/null',                         false],
+] as [$fixture, $should_fire]) {
+    if (([] !== $workspace_redirects($fixture)) !== $should_fire) {
+        $failures[] = sprintf(
+            '§5a control: the workspace-redirect matcher %s on `%s` — it cannot say which of '
+                . "main.yml's redirects lands in the tree that gets rsynced to wordpress.org",
+            $should_fire ? 'did NOT fire' : 'fired',
+            $fixture
+        );
+    }
+}
+
+foreach ($workspace_redirects($main_code) as $target) {
+    $failures[] = sprintf(
+        'main.yml redirects into `%s`, a path inside the checkout. The deploy step rsyncs this '
+            . 'checkout to the wordpress.org SVN repository and .distignore is its only exclusion '
+            . 'list, so that file ships to every install. Write to "$RUNNER_TEMP/…" instead',
+        $target
+    );
+}
+
+// ── 5b. The required lanes are the lanes ci.yml actually declares ──────────
+// The deploy gate's expected set was PHPStan + Tier 1 only. Tier 2 also carries the
+// `Reports output-escaping gate` step, which is blocking and is the ONLY CI home
+// tests/reports-output-escaping-test.php has (§8) — so a tag on a commit whose XSS gate had
+// failed found a red Tier 2 job, a green expected set, and deployed.
+//
+// EXECUTED, NOT READ. The derivation lives in .github/expected-lanes.sh so that this section
+// can run it and compare its output against the same set computed here through a different
+// reader — slimstat_ci_wp_lanes() and slimstat_ci_step_runs_for(), which carry their own
+// mutations. Two readers of one file that must agree exactly; a grep for "Tier 2" in main.yml
+// would have been satisfied by the word appearing in the comment explaining its absence, which
+// is precisely how §8 was fooled once already.
+$lanes_script = $plugin_root . '/.github/expected-lanes.sh';
+if (!is_file($lanes_script)) {
+    $failures[] = '.github/expected-lanes.sh does not exist — main.yml derives the lanes a tag '
+        . 'must find green from it, so the deploy gate now names nothing';
+} elseif (false === strpos($main_code, 'expected-lanes.sh')) {
+    $failures[] = 'main.yml no longer runs .github/expected-lanes.sh — the script this section '
+        . 'proves correct is not the one the deploy gate uses, so this check guards nothing';
+} else {
+    $script_out = [];
+    $script_rc  = 0;
+    exec('bash ' . escapeshellarg($lanes_script) . ' 2>/dev/null', $script_out, $script_rc);
+    $script_lanes = array_values(array_filter(array_map('trim', $script_out), 'strlen'));
+
+    $deploy_ci_code = slimstat_yaml_strip_comments($ci_yaml);
+    $deploy_jobs    = slimstat_ci_job_blocks($deploy_ci_code);
+    $deploy_steps   = slimstat_ci_steps($deploy_ci_code);
+
+    // The job NAME is the thing GitHub reports a conclusion under, so it is what the deploy
+    // gate compares against — read it from ci.yml rather than retyping it here. A retyped
+    // name is PITFALLS 124 one file over: it stops matching and nothing says so.
+    $job_name = static function (string $block): string {
+        return preg_match('/^[ ]{4}name:[ ]*"?(.+?)"?[ ]*$/m', $block, $m) ? $m[1] : '';
+    };
+
+    $escaping = slimstat_ci_steps_containing($deploy_steps, 'reports-output-escaping-test.php');
+
+    // The second family of release-gating Tier 2 lanes, read here through slimstat_ci_steps()
+    // where the script reads it through sed. Until the `continue-on-error` flip the escaping
+    // gate was the only blocking step in Tier 2, so deriving from it alone was complete; now
+    // the E2E step itself fails the job on the baseline and newest lanes, and a WP version
+    // could join that list without joining the escaping gate's `if:`. Such a lane blocks CI,
+    // does not gate the tag, and reads as correct in either file taken alone.
+    //
+    // Unioned rather than substituted: the escaping gate still runs on lanes whose E2E step is
+    // advisory, and those still gate the release. Today the blocking set is a subset of the
+    // escaping set and the expected lanes do not move.
+    $deploy_e2e   = slimstat_ci_steps_containing($deploy_steps, 'npm run test:e2e');
+    $blocking_wp  = [];
+    $blocking_all = false;
+    if (1 !== count($deploy_e2e)
+        || !preg_match('/continue-on-error\s*:\s*(.+)/', $deploy_e2e[0], $dm)) {
+        $failures[] = sprintf('§5b: %d ci.yml step(s) run npm run test:e2e and this section could '
+            . 'not read a continue-on-error on one — so it cannot say which Tier 2 lanes fail the '
+            . 'job, and the deploy gate would derive its required set from half its sources',
+            count($deploy_e2e));
+    } else {
+        $soft_expr = trim($dm[1]);
+        if ('true' === $soft_expr) {
+            $blocking_wp = [];                    // advisory everywhere
+        } elseif ('false' === $soft_expr) {
+            $blocking_all = true;                 // blocking everywhere
+        } elseif (preg_match('/!\s*contains\(\s*fromJSON\(\s*\'(\[[^\']*\])\'\s*\)/', $soft_expr, $bm)) {
+            $decoded     = json_decode($bm[1], true);
+            $blocking_wp = is_array($decoded) ? array_map('strval', $decoded) : [];
+            if ([] === $blocking_wp) {
+                $failures[] = '§5b: the Tier 2 continue-on-error names an empty or unreadable '
+                    . 'version list, which would quietly drop the blocking family from the union';
+            }
+        } else {
+            $failures[] = sprintf('§5b: cannot read the Tier 2 continue-on-error `%s` as a '
+                . 'blocking set. Guessing advisory drops a gating lane from the deploy gate',
+                $soft_expr);
+        }
+    }
+
+    $expected_lanes = [];
+    foreach (['phpstan' => [], 'fast' => ['php'], 'standard' => ['wp', 'php']] as $job => $keys) {
+        $name = $job_name($deploy_jobs[$job] ?? '');
+        if ('' === $name) {
+            $failures[] = sprintf('ci.yml declares no job `%s` with a name — the deploy gate '
+                . 'derives its expected lanes from that name, and cannot', $job);
+            continue;
+        }
+        if ([] === $keys) {
+            $expected_lanes[] = $name;
+            continue;
+        }
+        if ('fast' === $job) {
+            foreach (slimstat_ci_matrix_cells($deploy_jobs[$job]) as [, $php]) {
+                $expected_lanes[] = str_replace('${{ matrix.php }}', $php, $name);
+            }
+            continue;
+        }
+        // Tier 2: only the lanes the blocking escaping gate runs on. `1 !== count` is §8's
+        // failure to report, not this one's, but a silent skip here would leave the Tier 2
+        // requirement vacuous — which is the defect being fixed.
+        if (1 !== count($escaping)) {
+            $failures[] = sprintf('%d ci.yml step(s) run reports-output-escaping-test.php; the '
+                . 'deploy gate cannot tell which Tier 2 lanes are blocking', count($escaping));
+            continue;
+        }
+        foreach (slimstat_ci_wp_lanes($ci_yaml) as $wp => $php) {
+            if (slimstat_ci_step_runs_for($escaping[0], 'wp', (string) $wp)
+                || $blocking_all
+                || in_array((string) $wp, $blocking_wp, true)) {
+                $expected_lanes[] = str_replace(
+                    ['${{ matrix.wp }}', '${{ matrix.php }}'],
+                    [(string) $wp, $php],
+                    $name
+                );
+            }
+        }
+    }
+
+    sort($script_lanes);
+    sort($expected_lanes);
+
+    if (0 !== $script_rc) {
+        $failures[] = sprintf('.github/expected-lanes.sh exited %d — the deploy gate refuses '
+            . 'every tag until it can derive its lanes', $script_rc);
+    } elseif ($script_lanes !== $expected_lanes) {
+        $failures[] = sprintf(
+            '.github/expected-lanes.sh and ci.yml disagree about which lanes gate the deploy. '
+                . 'The script names [%s]; ci.yml declares [%s]',
+            implode(', ', $script_lanes),
+            implode(', ', $expected_lanes)
+        );
+    } elseif ([] === array_filter($expected_lanes, static function (string $n): bool {
+        return 0 === strpos($n, 'Tier 2');
+    })) {
+        $failures[] = 'the deploy gate requires no Tier 2 lane. Tier 2 carries the blocking '
+            . 'escaping gate, the only CI home the report-render XSS assertions have, so a tag '
+            . 'on a commit whose XSS gate failed would deploy';
+    }
+}
+
 // ── 6. Every k6 script is wired somewhere; an unreferenced script measures nothing ──
 // Five of six scripts sat orphaned while "npm run test:perf" ran exactly one — coverage
 // that reads as "perf tested" while five scenarios never execute anywhere.
@@ -294,13 +499,26 @@ foreach ($k6_scripts as $k6_file) {
     }
 }
 
-// ── 7. continue-on-error demands a stated reason beside it ─────────────────
-// One deliberate instance exists (Tier-2 E2E, reason in the adjacent comment). The shape
-// to prevent is the SILENT one: a gate that stops failing with nothing explaining why.
+// ── 7. continue-on-error demands a stated reason, and the blocking set is not free-form ──
+//
+// THIS SECTION MATCHED THE LITERAL `continue-on-error: true` AND NOTHING ELSE. The moment the
+// Tier 2 E2E step became `continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp)
+// }}` — the flip that makes the baseline and newest lanes blocking — the loop below matched zero
+// lines, and every check in this section was satisfied by a file it had stopped reading. Widening
+// it is therefore not a nicety attached to the flip: flipping without it REMOVES a guard in the
+// act of tightening a lane, which is why the two land in one commit.
+//
+// The second half is the one the widening buys. Once the value is an expression, the version list
+// inside it is ordinary text that any edit can widen back to everything — restoring the old
+// advisory lane while the line still looks like a flip. So the list is pinned to the same two
+// facts §8 pins the escaping gate to, read from structure rather than retyped: the committed
+// baseline in .wp-env.json's `core`, and the newest lane declared in the matrix.
+$soft_lines = 0;
 foreach (explode("\n", $ci_yaml) as $i => $line) {
-    if (false === strpos($line, 'continue-on-error: true')) {
+    if (!preg_match('/^\s*continue-on-error\s*:/', $line)) {
         continue;
     }
+    $soft_lines++;
     // Any '#' is too weak in a file that is 47%% comment lines — a section divider
     // within six lines satisfied it. The non-brittle demand: the comment must mention
     // the SETTING it excuses (the one legitimate instance already does).
@@ -312,6 +530,81 @@ foreach (explode("\n", $ci_yaml) as $i => $line) {
             . 'this file exists to prevent',
             $i + 1
         );
+    }
+}
+
+// VACUITY FLOOR for the loop above. Its whole failure mode is matching nothing, and it has
+// already done so once — this section's own history is the evidence.
+if (0 === $soft_lines) {
+    $failures[] = 'ci.yml declares no continue-on-error at all. Either the Tier 2 E2E step lost '
+        . 'the setting (every lane now blocking, so the job fails on host-environment debt rather '
+        . 'than on defects), or this scan has stopped matching — and a scan that matches nothing '
+        . 'reports it in the same words as a clean file';
+}
+
+// ── 7b. The E2E lane's blocking set ─────────────────────────────────────────────────────
+$soft_ci_code = slimstat_yaml_strip_comments($ci_yaml);
+$e2e_steps    = slimstat_ci_steps_containing(slimstat_ci_steps($soft_ci_code), 'npm run test:e2e');
+
+// Derived, not retyped. §8 pins the escaping gate to exactly these two versions for exactly this
+// reason: the baseline is the only lane that runs the full suite, and the newest lane is the one
+// the readme's "Tested up to" claims. A literal pair here would go stale the day the matrix gains
+// a version, and would go stale silently.
+$soft_wp_env   = json_decode((string) file_get_contents($plugin_root . '/.wp-env.json'), true);
+$soft_baseline = preg_match('/#([0-9]+\.[0-9]+)$/', (string) ($soft_wp_env['core'] ?? ''), $bm) ? $bm[1] : '';
+$soft_lanes    = array_keys(slimstat_ci_wp_lanes($ci_yaml));
+usort($soft_lanes, 'version_compare');
+
+if (1 !== count($e2e_steps)) {
+    $failures[] = sprintf('%d ci.yml step(s) run `npm run test:e2e`; exactly one is expected, and '
+        . 'without it this section cannot tell which lanes the E2E suite may fail', count($e2e_steps));
+} elseif ('' === $soft_baseline || count($soft_lanes) < 5) {
+    $failures[] = sprintf('cannot derive the blocking set (baseline "%s" from .wp-env.json, %d '
+        . 'Tier 2 lanes from the matrix); an empty must-block set is green on anything, including '
+        . 'a lane that blocks nowhere', $soft_baseline, count($soft_lanes));
+} else {
+    $blocking = array_values(array_unique([$soft_baseline, (string) end($soft_lanes)]));
+    usort($blocking, 'version_compare');
+
+    if (!preg_match('/continue-on-error\s*:\s*(.+)/', $e2e_steps[0], $cm)) {
+        $failures[] = 'the E2E step declares no continue-on-error. Every Tier 2 lane would block, '
+            . 'including the interior version-drift lanes, and the job would go red on '
+            . 'host-environment debt rather than on defects';
+    } elseif (in_array(trim($cm[1]), ['true', "'true'", '"true"'], true)) {
+        $failures[] = sprintf('the E2E step is soft on every lane (`continue-on-error: true`). WP '
+            . '%s runs the full suite and WP %s is the newest version the readme claims; a suite '
+            . 'that cannot fail either is a report, not a gate', $blocking[0], end($blocking));
+    } elseif (!preg_match('/fromJSON\(\s*\'(\[[^\']*\])\'\s*\)/', $cm[1], $jm)) {
+        $failures[] = 'the E2E step\'s continue-on-error is neither `true` nor the '
+            . '`!contains(fromJSON(\'[…]\'), matrix.wp)` form this section can read. Rewriting it '
+            . 'into a shape nothing parses is how the blocking set stops being checked';
+    } else {
+        $declared = json_decode($jm[1], true);
+        $declared = is_array($declared) ? array_map('strval', $declared) : [];
+        usort($declared, 'version_compare');
+
+        if ($declared !== $blocking) {
+            $failures[] = sprintf(
+                'the E2E step blocks on [%s]; the derived blocking set is [%s] — WP %s is the '
+                    . 'committed baseline (.wp-env.json boots it, and it is the only lane running '
+                    . 'the full suite) and WP %s is the newest lane in the matrix. Widening this '
+                    . 'list back toward every lane restores the advisory lane while still looking '
+                    . 'like a flip; narrowing it drops the coverage the flip was for',
+                implode(', ', $declared),
+                implode(', ', $blocking),
+                $blocking[0],
+                end($blocking)
+            );
+        }
+
+        // The polarity, which is the half a version list cannot express. `contains(...)` without
+        // the `!` blocks the interior lanes and softens exactly the two that matter — the same
+        // line, the same versions, the opposite lane set.
+        if (!preg_match('/!\s*contains\s*\(\s*fromJSON/', $cm[1])) {
+            $failures[] = 'the E2E step\'s continue-on-error names the right versions but does not '
+                . 'NEGATE the contains(). continue-on-error is false where the lane blocks, so '
+                . 'without the `!` the blocking set and the soft set are exactly swapped';
+        }
     }
 }
 
@@ -340,13 +633,10 @@ foreach (explode("\n", $ci_yaml) as $i => $line) {
 // sections away from the E0 gate where I had just fixed it, in the same commit.
 $ci_code = slimstat_yaml_strip_comments($ci_yaml);
 
-$escaping_step = '';
-foreach (slimstat_ci_steps($ci_code) as $step) {
-    if (false !== strpos($step, 'reports-output-escaping-test.php')) {
-        $escaping_step = $step;
-        break;
-    }
-}
+$steps = slimstat_ci_steps($ci_code);
+
+$escaping_steps = slimstat_ci_steps_containing($steps, 'reports-output-escaping-test.php');
+$escaping_step  = 1 === count($escaping_steps) ? $escaping_steps[0] : '';
 
 if ('' === $escaping_step) {
     $failures[] = 'no ci.yml step runs tests/reports-output-escaping-test.php. It is in '
@@ -358,34 +648,81 @@ if ('' === $escaping_step) {
             . 'report, not a gate';
     }
 
-    // The newest WordPress in the matrix must be among the versions it runs on.
+    // EVERY lane that carries the suite must be among the versions it runs on — not only the
+    // newest. The first version checked the newest lane alone, and a reviewer narrowed the
+    // condition to `matrix.wp == '7.1'`: §8 stayed green while the XSS gate silently stopped
+    // covering the lane that runs the FULL suite. Both of this section's comments then claimed
+    // "every blocking version". They lied by one.
+    //
+    // THE BASELINE COMES FROM .wp-env.json, WHICH IS THE TRUTH. ci.yml spells `6.4` four times
+    // — the matrix, the tag resolver, the override branch, the full-suite branch — and nothing
+    // pinned any of them to `.wp-env.json`'s `core`, the value wp-env actually boots. The second
+    // version of this section derived the baseline from one of those four copies, which made
+    // §8 a consumer of the duplication rather than its pin. Now the structured value is read
+    // and each copy is required to agree with it.
     $lanes = array_keys(slimstat_ci_wp_lanes($ci_yaml));
+
+    $wp_env   = json_decode((string) file_get_contents($plugin_root . '/.wp-env.json'), true);
+    $baseline = '';
+    if (preg_match('/#([0-9]+\.[0-9]+)$/', (string) ($wp_env['core'] ?? ''), $cm)) {
+        $baseline = $cm[1];
+    }
 
     if (count($lanes) < 5) {
         $failures[] = sprintf('only %d Tier 2 WP lanes found — the matrix scan has stopped '
             . 'matching, so the coverage check below proves nothing', count($lanes));
+    } elseif ('' === $baseline) {
+        $failures[] = '.wp-env.json has no `core: WordPress/WordPress#X.Y`; §8 cannot tell which '
+            . 'lane is the committed baseline, and a check with an empty must-cover set is green '
+            . 'on anything';
     } else {
+        if (!in_array($baseline, $lanes, true)) {
+            $failures[] = sprintf('.wp-env.json boots WordPress %s but no Tier 2 lane names it; '
+                . 'the committed baseline runs nowhere', $baseline);
+        }
+
+        $full_suite_steps = slimstat_ci_steps_containing($steps, 'npm run test:e2e');
+        if (1 !== count($full_suite_steps)
+            || !preg_match('/WP_VERSION\}?"?\s*=\s*"' . preg_quote($baseline, '/') . '"/', $full_suite_steps[0])) {
+            $failures[] = sprintf('the E2E step does not run the full suite on WP %s, the version '
+                . '.wp-env.json boots; the full-suite lane must be the committed baseline', $baseline);
+        }
+
         usort($lanes, 'version_compare');
         $newest = end($lanes);
 
-        if (false === strpos($escaping_step, "matrix.wp == '{$newest}'")) {
-            $failures[] = sprintf(
-                'the escaping gate does not run on WP %s, the newest lane in the matrix. Its '
-                    . 'subject is core\'s html-api file set, which is exactly what moves in a '
-                    . 'new WordPress — so the newest lane is the one it least affords to skip',
-                $newest
-            );
+        foreach (array_unique([$newest, $baseline]) as $must) {
+            if (false === strpos($escaping_step, "matrix.wp == '{$must}'")) {
+                $failures[] = sprintf(
+                    'the escaping gate does not run on WP %s (%s); its `if:` must include '
+                        . "matrix.wp == '%s'",
+                    $must,
+                    $must === $newest ? 'the newest lane in the matrix' : 'the full-suite baseline lane',
+                    $must
+                );
+            }
         }
     }
 }
 
+// The file the step runs must exist — a step naming a deleted file is a step that fails, not
+// one that guards, and until now nothing here asked.
+if (!is_file($plugin_root . '/tests/reports-output-escaping-test.php')) {
+    $failures[] = 'tests/reports-output-escaping-test.php does not exist. The CI step and the '
+        . 'composer script both name it; both would now fail rather than guard';
+}
+
 // The composer script must invoke the same path the CI step does, or renaming the file leaves
-// one of them pointing at nothing while the other still looks wired.
+// one of them pointing at nothing while the other still looks wired. Checked on the
+// `test:reports-escaping` KEY, not the whole file: a whole-file strpos was satisfied by the
+// path appearing in the script's own `_comment-` description while the script itself was gone.
 $composer_json = (string) file_get_contents($plugin_root . '/composer.json');
-if (false === strpos($composer_json, 'tests/reports-output-escaping-test.php')) {
-    $failures[] = 'composer.json no longer invokes tests/reports-output-escaping-test.php — the '
-        . 'CI step and the composer script must name the same file, or a rename silently '
-        . 'unwires one of them';
+$composer      = json_decode($composer_json, true);
+$escaping_script = (string) ($composer['scripts']['test:reports-escaping'] ?? '');
+if (false === strpos($escaping_script, 'tests/reports-output-escaping-test.php')) {
+    $failures[] = 'composer.json\'s `test:reports-escaping` script no longer invokes '
+        . 'tests/reports-output-escaping-test.php — the CI step and the composer script must '
+        . 'name the same file, or a rename silently unwires one of them';
 }
 
 // ── 9. A missing WordPress tag must fail, not silently become trunk ────────────
@@ -397,29 +734,115 @@ if (false === strpos($composer_json, 'tests/reports-output-escaping-test.php')) 
 // ci.yml ENTIRELY left this section green, so the guard could be removed wholesale — or
 // replaced by any other silent fallback — and nothing noticed. A check that only forbids one
 // spelling of a defect is not a check for the defect.
-$override_step = '';
-foreach (slimstat_ci_steps($ci_code) as $step) {
-    if (false !== strpos($step, '.wp-env.override.json') && false !== strpos($step, 'ls-remote')) {
-        $override_step = $step;
-        break;
-    }
-}
+$override_steps = slimstat_ci_steps_containing($steps, '.wp-env.override.json', 'ls-remote');
+$override_step  = 1 === count($override_steps) ? $override_steps[0] : '';
 
 if ('' === $override_step) {
     $failures[] = 'no ci.yml step checks that the WordPress tag a lane names actually exists '
         . '(no `ls-remote` beside the wp-env override). Without it a lane labelled for a version '
         . 'that is not there boots something else and reports green';
 } else {
-    if (false !== strpos($override_step, 'WP_REF="trunk"') || false !== strpos($override_step, "WP_REF='trunk'")) {
-        $failures[] = 'ci.yml falls back to WordPress trunk when a tag does not resolve. A lane '
-            . 'named for a version it is not running is a coverage claim nobody can check: fail '
-            . 'the lane instead, so a WordPress that does not exist is reported as such';
+    // THE MECHANISM, NOT A SPELLING. The first version forbade `WP_REF="trunk"` and
+    // `WP_REF='trunk'`; a reviewer replayed it against `WP_REF=trunk` and against
+    // `FALLBACK=trunk; WP_REF="${FALLBACK}"`: both green. What the step may do is assign WP_REF
+    // exactly once, from the matrix — so the list of assignments IS the assertion.
+    preg_match_all('/\bWP_REF=(\S*)/', $override_step, $wm);
+    if ($wm[1] !== ['"${WP_VERSION}"']) {
+        $failures[] = sprintf(
+            'the wp-env override step assigns WP_REF as [%s]; exactly one assignment, '
+                . 'WP_REF="${WP_VERSION}", is allowed. Any other is a fallback under some spelling '
+                . '— trunk, a pinned tag, an indirection — and a lane running a WordPress other '
+                . 'than the one it is named for is a coverage claim nobody can check',
+            implode(', ', $wm[1])
+        );
     }
 
-    if (false === strpos($override_step, 'exit 1')) {
-        $failures[] = 'the WordPress tag check does not fail the lane. Warning and continuing is '
-            . 'the fallback under another name: the message lands in a log nobody reads and the '
-            . 'status everyone reads stays green';
+    // AND THE MISSING-TAG BRANCH ITSELF MUST FAIL. The previous positive half looked for
+    // `exit 1` anywhere in the step, and the step has two; delete the second and the first kept
+    // the gate green, so "the tag check fails the lane" was certified by another branch's exit.
+    if (!preg_match('/if \[ -z "\$\{wp_tag_refs\}" \]; then(.*?)\n\s*fi\b/s', $override_step, $missing_tag)) {
+        $failures[] = 'the override step has no `if [ -z "${wp_tag_refs}" ]` branch — the tag-'
+            . 'existence check moved or is gone';
+    } elseif (false === strpos($missing_tag[1], 'exit 1')) {
+        $failures[] = 'the missing-WordPress-tag branch does not `exit 1`; warning and continuing '
+            . 'is the fallback under another name';
+    }
+}
+
+// ── 9b. The booted WordPress is the one the lane is named for ───────────────────────────
+//
+// §9 reads the script's text. The defect is "the lane boots a WordPress other than the one it
+// is named for", and a static count cannot see a pinned-tag fallback spelled some new way, an
+// indirection two lines apart, or a stale wp-env cache serving last week's core. One step after
+// `wp-env start` asks the running site — `wp core version` — and fails the lane on a mismatch.
+// That is the assertion; the count above is its tripwire.
+//
+// "AFTER" WAS PROSE ONLY until 2026-09-04. This section asserted that exactly one step contains
+// `wp core version`, that it compares, exits 1 and is not soft — never where it sits. Found in
+// Pro's twin, where a reviewer swapped the check with the step that starts wp-env (the site asked
+// for its version before it existed: PASS) and then moved it into a job that boots no wp-env at
+// all (PASS). Both fail at RUNTIME — `wp-env run` against a stopped environment prints nothing
+// and exits 1 — so this was an overstated claim rather than a silent hole, which is the only
+// reason it is a note here and not a shipped defect.
+//
+// The window is asked PER JOB, so it cannot straddle one by construction. Free has two wp-env
+// jobs (Tier 2 and Tier 3); over a flat step list, Tier 2's start pairs with Tier 3's stop the
+// moment Tier 2's own stop goes missing, and a version check sitting in any job between them
+// reads as "inside". The first draft recovered job identity by sniffing a two-space key in the
+// span between steps — a FOURTH copy of the rule slimstat_ci_job_blocks() owns, and a divergent
+// one: it rejected a key line ending in a tab, which that helper accepts, so one whitespace
+// character reintroduced exactly this hazard. Split by job and the caveat stops existing.
+$booted = slimstat_ci_step_indexes($steps, 'wp core version');
+
+if (1 !== count($booted)) {
+    $failures[] = sprintf('%d ci.yml step(s) check `wp core version` after wp-env starts; exactly '
+        . 'one is expected. Without it nothing proves the lane booted the WordPress it is named '
+        . 'for — every static check on the override script reasons about a boot nobody observed',
+        count($booted));
+} else {
+    $booted_step = $steps[$booted[0]];
+
+    // NOT chained to the position check below: a step that had lost its `exit 1` AND moved out of
+    // the window would otherwise report only the first of the two.
+    if (false === strpos($booted_step, 'WP_VERSION') || false === strpos($booted_step, 'exit 1')
+        || false !== strpos($booted_step, 'continue-on-error')) {
+        $failures[] = 'the `wp core version` step does not compare against WP_VERSION and `exit 1` on '
+            . 'a mismatch, or is continue-on-error; printing the version is a log line, not a gate';
+    }
+
+    $host_job = null;
+    foreach (slimstat_ci_job_blocks($ci_code) as $job => $job_block) {
+        $job_steps = slimstat_ci_steps($job_block);
+        $at        = slimstat_ci_step_indexes($job_steps, 'wp core version');
+        if (!$at) {
+            continue;
+        }
+
+        $host_job = $job;
+        $opens    = array_values(array_filter(
+            slimstat_ci_step_indexes($job_steps, 'wp-env start'),
+            static fn(int $i): bool => $i < $at[0]
+        ));
+        $closes   = array_values(array_filter(
+            slimstat_ci_step_indexes($job_steps, 'wp-env stop'),
+            static fn(int $i): bool => $i > $at[0]
+        ));
+
+        if (!$opens || !$closes) {
+            $failures[] = sprintf('the `wp core version` step in job `%s` is outside the running '
+                . 'window: `wp-env start` before it at (%s), `wp-env stop` after it at (%s). Asking '
+                . 'a site for its version before it boots, or from a job that never boots one, is '
+                . 'not an observation',
+                $job,
+                $opens ? implode(', ', $opens) : 'none',
+                $closes ? implode(', ', $closes) : 'none');
+        }
+        break;
+    }
+
+    if (null === $host_job) {
+        $failures[] = 'the `wp core version` step belongs to no job block — slimstat_ci_job_blocks() '
+            . 'cannot place it, so the window below was never asked and this section is inert';
     }
 }
 
@@ -478,23 +901,23 @@ if ('' === $nightly_block) {
         . 'by having nothing to read';
 }
 
+// The hand-rolled position walk this replaced was the only other one in tests/, in the file
+// that motivated extracting slimstat_ci_step_indexes() in the first place. Its two implicit
+// rules — LAST k6 step, and the last activation BEFORE it — are stated here rather than
+// emerging from the order of three ifs sharing one loop.
 $nightly_steps = slimstat_ci_steps($nightly_block);
-$k6_index      = null;
+$k6_indexes    = slimstat_ci_step_indexes($nightly_steps, 'npm run test:perf');
+$k6_index      = $k6_indexes ? (int) end($k6_indexes) : null;
 $activate_idx  = null;
-$explain_step  = '';
+$explain_steps = slimstat_ci_steps_containing($nightly_steps, 'explain-gate.sh');
+$explain_step  = $explain_steps ? (string) end($explain_steps) : '';
 
-foreach ($nightly_steps as $i => $step) {
-    if (false !== strpos($step, 'npm run test:perf')) {
-        $k6_index = $i;
-    }
-    if (false !== strpos($step, 'init_environment()') && false !== strpos($step, 'wp plugin activate')) {
-        if (null === $k6_index) {
-            $activate_idx = $i;
-        }
-    }
-    if (false !== strpos($step, 'explain-gate.sh')) {
-        $explain_step = $step;
-    }
+if (null !== $k6_index) {
+    $before_k6 = array_filter(
+        slimstat_ci_step_indexes($nightly_steps, 'init_environment()', 'wp plugin activate'),
+        static fn(int $i): bool => $i < $k6_index
+    );
+    $activate_idx = $before_k6 ? (int) end($before_k6) : null;
 }
 
 if (null === $k6_index) {

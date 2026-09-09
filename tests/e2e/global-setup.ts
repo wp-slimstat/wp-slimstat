@@ -7,7 +7,7 @@ import { chromium, request as playwrightRequest, FullConfig } from '@playwright/
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import { BASE_URL, ADMIN_USER, ADMIN_PASS } from './helpers/env';
+import { BASE_URL, ADMIN_USER, ADMIN_PASS, AUTHOR_USER, AUTHOR_PASS } from './helpers/env';
 import { installAllTestMuPlugins, installCptMuPlugin, enableE2eTesting } from './helpers/setup';
 import { backupAnalyticsTables } from './helpers/backup';
 
@@ -86,7 +86,20 @@ async function loginAndSave(
   await page.fill('#user_login', username);
   await page.fill('#user_pass', password);
   await page.click('#wp-submit');
-  await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
+  try {
+    await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
+  } catch (error) {
+    const artifacts = path.join(__dirname, 'run-artifacts');
+    fs.mkdirSync(artifacts, { recursive: true });
+    fs.writeFileSync(path.join(artifacts, `login-failure-${username}.json`), JSON.stringify({
+      url: page.url(),
+      loginError: await page.locator('#login_error').textContent().catch(() => null),
+      body: await page.locator('body').innerText().catch(() => ''),
+    }, null, 2));
+    await page.screenshot({ path: path.join(artifacts, 'login-failure.png') });
+    await browser.close();
+    throw error;
+  }
 
   // Never bake the tracker's offline queue into the saved auth state.
   //
@@ -142,23 +155,26 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     path.join(AUTH_DIR, 'admin.json')
   );
 
-  // Login as author — override via WP_AUTHOR_USER / WP_AUTHOR_PASS env vars.
-  // Non-fatal; some test environments lack this user.
-  const authorUser = process.env.WP_AUTHOR_USER ?? 'dordane';
-  const authorPass = process.env.WP_AUTHOR_PASS ?? 'testpass123';
-  try {
-    await loginAndSave(
-      baseURL,
-      authorUser,
-      authorPass,
-      path.join(AUTH_DIR, 'author.json')
-    );
-  } catch (e) {
-    console.warn('Author login failed, using admin fallback:', (e as Error).message);
-    const adminPath = path.join(AUTH_DIR, 'admin.json');
-    const authorPath = path.join(AUTH_DIR, 'author.json');
-    if (fs.existsSync(adminPath) && !fs.existsSync(authorPath)) {
-      fs.copyFileSync(adminPath, authorPath);
+  // Permission coverage requires the real author account; never substitute admin.
+  await loginAndSave(baseURL, AUTHOR_USER, AUTHOR_PASS, path.join(AUTH_DIR, 'author.json'));
+  for (const [role, username] of [['administrator', ADMIN_USER], ['author', AUTHOR_USER]]) {
+    const state = role === 'administrator' ? 'admin' : 'author';
+    const ctx = await playwrightRequest.newContext({
+      storageState: path.join(AUTH_DIR, `${state}.json`),
+      ignoreHTTPSErrors: process.env.PW_IGNORE_HTTPS === '1',
+    });
+    try {
+      const response = await ctx.post(`${baseURL}/wp-admin/admin-ajax.php`, {
+        form: { action: 'test_current_identity' },
+      });
+      const body = await response.json();
+      if (!response.ok() || !body.success || body.data?.login !== username
+          || !Array.isArray(body.data?.roles) || !body.data.roles.includes(role)
+          || (role === 'author' && body.data.can_manage_options !== false)) {
+        throw new Error(`HARNESS IDENTITY FAILED: ${state} storage state is not the configured ${role}`);
+      }
+    } finally {
+      await ctx.dispose();
     }
   }
 

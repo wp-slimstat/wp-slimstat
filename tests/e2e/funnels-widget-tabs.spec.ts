@@ -15,7 +15,12 @@
 import { test, expect, Page } from '@playwright/test';
 import { BASE_URL, WP_ROOT } from './helpers/env';
 import * as path from 'path';
-import { closeDb } from './helpers/setup';
+import {
+  closeDb,
+  restoreSlimstatOptions,
+  setSlimstatOption,
+  snapshotSlimstatOptions,
+} from './helpers/setup';
 import { seedFunnels, clearAll, forceLimits, restoreDefaultLimits, pinReportToDashboard } from './helpers/goals-funnels';
 
 const WP_CONTENT = path.join(WP_ROOT, 'wp-content');
@@ -28,6 +33,11 @@ async function openDashboard(page: Page): Promise<void> {
 test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () => {
   test.setTimeout(60_000);
 
+  test.beforeAll(async () => {
+    await snapshotSlimstatOptions();
+    await setSlimstatOption(null!, 'async_load', 'no');
+  });
+
   test.beforeEach(async () => {
     await clearAll();
     await forceLimits(5, 3, WP_CONTENT); // Pro: funnels unlocked
@@ -37,6 +47,7 @@ test.describe('Dashboard Funnels widget — all funnels with tabs (Fix 2)', () =
   test.afterAll(async () => {
     await restoreDefaultLimits(WP_CONTENT);
     await clearAll();
+    await restoreSlimstatOptions();
     await closeDb();
   });
 

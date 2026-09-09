@@ -86,7 +86,7 @@ class MigrationDeadlineTest extends WpSlimstatTestCase
         $wpdb->last_error = '';
 
         $wpdb->shouldReceive('prepare')->andReturnUsing(static fn ($sql) => $sql);
-        $wpdb->shouldReceive('get_results')->andReturnUsing(
+        $wpdb->shouldReceive('get_results')->byDefault()->andReturnUsing(
             static function () use (&$batches) {
                 return array_shift($batches) ?? [];
             }
@@ -178,6 +178,47 @@ class MigrationDeadlineTest extends WpSlimstatTestCase
             $written,
             'progress up to the last GOOD batch is kept, and the failing batch is not counted'
         );
+    }
+
+    public function test_failed_candidate_select_preserves_completed_batches_and_fails(): void
+    {
+        $written = [];
+        $this->captureWatermark($written);
+        $wpdb = $this->db([]);
+        $calls = 0;
+        $wpdb->shouldReceive('get_results')->andReturnUsing(function () use ($wpdb, &$calls) {
+            if (++$calls === 1) {
+                return $this->rows(1, self::BATCH);
+            }
+            $wpdb->last_error = 'analytics connection unavailable';
+            return [];
+        });
+        $migration = new RecoverCorruptedHeatmapPositions($wpdb);
+
+        $this->assertFalse($migration->run());
+        $this->assertSame([self::BATCH], $written);
+        $this->assertTrue($migration->probeUnavailable());
+    }
+
+    public function test_failed_pending_probe_is_unavailable_and_not_cached_as_complete(): void
+    {
+        $written = [];
+        $this->captureWatermark($written, 500);
+        $wpdb = $this->db([]);
+        $wpdb->shouldReceive('get_var')->once()->andReturnUsing(static function () use ($wpdb) {
+            $wpdb->last_error = 'analytics connection unavailable';
+            return null;
+        });
+        $wpdb->shouldReceive('get_var')->once()->andReturnUsing(static function () use ($wpdb) {
+            $wpdb->last_error = '';
+            return '1';
+        });
+        $migration = new RecoverCorruptedHeatmapPositions($wpdb);
+
+        $this->assertFalse($migration->shouldRun());
+        $this->assertTrue($migration->probeUnavailable());
+        $this->assertTrue($migration->shouldRun(), 'a repaired connection must be probed again');
+        $this->assertSame([], $written);
     }
 
     /** @test */

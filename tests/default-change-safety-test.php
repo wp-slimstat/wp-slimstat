@@ -55,16 +55,16 @@ if ('' === $fresh || !preg_match('/init_options\(\)/', $fresh)) {
     $failures[] = 'get_fresh_defaults() no longer derives from init_options(), so a new '
         . 'install would not receive the shipped defaults';
 }
-// Match the ASSIGNMENT and the WRITE together. `update_option('slimstat_options'` appears
-// elsewhere in this file, so looking for it anywhere passes even when the install path has
-// stopped persisting anything.
-if (!preg_match(
-    "/=\s*self::get_fresh_defaults\(\)\s*;\s*self::update_option\(\s*'slimstat_options'/s",
-    $source
-)) {
-    $failures[] = 'a fresh install no longer persists its defaults immediately after '
-        . 'computing them. Unstored keys fall through to init_options() forever, so any '
-        . 'future default change would reach existing sites silently';
+// Persist on the missing-version path after resolving the analytics handle. Writing
+// immediately after defaults used to stamp an existing database current merely because
+// its options row had disappeared (PITFALLS 134).
+$init = slimstat_function_body($source, 'init');
+if (!preg_match('/\$_needs_version_recovery\s*=\s*\$_missing_settings\s*\|\|/', $init)
+    || !preg_match('/if \(\$_missing_settings\)\s*\{\s*self::\$settings = self::get_fresh_defaults\(\);\s*\}/', $init)
+    || !preg_match("/if \(\\\$_needs_version_recovery\)\s*\{.*?MissingSettingsRecovery::isFresh.*?self::update_option\(\s*'slimstat_options',\s*self::\\\$settings\s*\);\s*\}/s", $init)
+) {
+    $failures[] = 'missing settings must receive and persist defaults after the physical '
+        . 'database freshness check; an absent options row alone cannot prove a new install';
 }
 
 // ── 3. The two changed defaults are what we think they are ──────────────────

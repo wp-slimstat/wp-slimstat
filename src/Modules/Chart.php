@@ -60,29 +60,53 @@ class Chart
     {
         check_ajax_referer('slimstat_chart_nonce', 'nonce');
 
-        // Additional capability check - users must be able to view stats
-        $minimum_capability = 'read';
-        if (!current_user_can($minimum_capability)) {
+        if (!class_exists('\wp_slimstat_admin')) {
+            include_once SLIMSTAT_DIR . '/admin/index.php';
+        }
+        if (!\wp_slimstat_admin::can_view_stats()) {
             wp_send_json_error(['message' => __('Insufficient permissions', 'wp-slimstat')]);
         }
 
-        $args        = isset($_POST['args']) ? json_decode(stripslashes($_POST['args']), true) : [];
-        $granularity = isset($_POST['granularity']) ? sanitize_text_field($_POST['granularity']) : 'daily';
-
-        if (!in_array($granularity, ['yearly', 'monthly', 'weekly', 'daily', 'hourly'], true)) {
+        $args = isset($_POST['args']) && is_string($_POST['args'])
+            ? json_decode(wp_unslash($_POST['args']), true) : null;
+        $granularity = $_POST['granularity'] ?? 'daily';
+        if (!is_string($granularity) || !in_array($granularity, self::GRANULARITIES, true)) {
             wp_send_json_error(['message' => __('Invalid granularity', 'wp-slimstat')]);
         }
-        
-        // Validate and sanitize start/end timestamps
-        if (isset($args['start'])) {
-            $args['start'] = absint($args['start']);
+        if (!is_array($args)) {
+            wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
         }
-        if (isset($args['end'])) {
-            $args['end'] = absint($args['end']);
+        foreach (['start', 'end'] as $key) {
+            $timestamp = filter_var($args[$key] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]);
+            if ((!is_int($args[$key] ?? null) && !is_string($args[$key] ?? null)) || false === $timestamp) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+            $args[$key] = $timestamp;
+        }
+        if ($args['end'] < $args['start']) {
+            wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+        }
+        foreach (['chart_data', 'filters', 'chart_labels'] as $key) {
+            if (isset($args[$key]) && !is_array($args[$key])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+        }
+        foreach (['data1', 'data2', 'where'] as $key) {
+            if (isset($args['chart_data'][$key]) && !is_string($args['chart_data'][$key])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
+        }
+        foreach ($args['filters'] ?? [] as $filter) {
+            if (!is_array($filter) || !isset($filter[0], $filter[1])
+                || !is_string($filter[0]) || !is_scalar($filter[1])) {
+                wp_send_json_error(['message' => __('Invalid chart arguments', 'wp-slimstat')]);
+            }
         }
 
         if (!class_exists('\wp_slimstat_db')) {
             include_once SLIMSTAT_DIR . '/admin/view/wp-slimstat-db.php';
+        }
+        if (empty(\wp_slimstat_db::$columns_names) || empty(\wp_slimstat_db::$filters_normalized)) {
             \wp_slimstat_db::init();
         }
 
@@ -94,6 +118,12 @@ class Chart
                     \wp_slimstat_db::$filters_normalized['columns'][$col] = $val;
                 }
             }
+        }
+
+        // Posted chart state must never replace the server-enforced author scope.
+        if ('on' === (\wp_slimstat::$settings['restrict_authors_view'] ?? 'off')
+            && !current_user_can('manage_options') && !empty($GLOBALS['current_user']->user_login)) {
+            \wp_slimstat_db::$filters_normalized['columns']['author'] = ['equals', $GLOBALS['current_user']->user_login];
         }
 
         \wp_slimstat_db::$filters_normalized['utime']['start'] = $args['start'];
@@ -186,7 +216,7 @@ class Chart
     private function detectGranularity(array $args): string
     {
         if (!empty($_REQUEST['granularity']) && in_array($_REQUEST['granularity'], self::GRANULARITIES, true)) {
-            return sanitize_text_field($_REQUEST['granularity']);
+            return sanitize_text_field(wp_unslash($_REQUEST['granularity']));
         }
 
         $diff = $args['end'] - $args['start'];
@@ -232,7 +262,7 @@ class Chart
         //      and discard the other's counts.
         //   4. getAll() takes the split path whenever it matches, regardless of whether
         //      caching is on, so this would apply even with the cache disabled.
-        $todayStart = strtotime(date('Y-m-d 00:00:00'));
+        $todayStart = intdiv((int) \wp_slimstat::now(), self::DAY) * self::DAY;
         $isLive     = ($args['end'] >= $todayStart);
 
         if ($isLive) {
@@ -712,7 +742,7 @@ class Chart
             'slimstat_chart',
             plugins_url('/admin/assets/js/slimstat-chart.js', SLIMSTAT_FILE),
             ['slimstat_chartjs'],
-            '1.3',
+            SLIMSTAT_ANALYTICS_VERSION,
             true
         );
         wp_localize_script('slimstat_chart', 'slimstat_chart_vars', [
@@ -720,7 +750,7 @@ class Chart
             'ajax_url'        => admin_url('admin-ajax.php', 'relative'),
             'nonce'           => wp_create_nonce('slimstat_chart_nonce'),
             'end_date'        => $this->args['end'] ?? null,
-            'end_date_string' => isset($this->args['end']) ? date('Y/m/d H:i:s', $this->args['end']) : null,
+            'end_date_string' => isset($this->args['end']) ? gmdate('Y/m/d H:i:s', $this->args['end']) : null,
             'timezone'        => get_option('timezone_string') ?: 'UTC',
             'start_of_week'   => get_option('start_of_week', 1),
         ]);

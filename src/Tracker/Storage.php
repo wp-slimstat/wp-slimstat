@@ -92,7 +92,8 @@ class Storage
 			->values($data)
 			->execute();
 
-		$error = (string) $GLOBALS['wpdb']->last_error;
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$error = (string) $db->last_error;
 
 		if (false === $outcome || '' !== $error) {
 			return WriteResult::failed($error);
@@ -125,22 +126,24 @@ class Storage
 	{
 		static $columns = [];
 
-		if (!array_key_exists($table, $columns)) {
+		$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+		$key = spl_object_hash($db) . ':' . $table;
+		if (!array_key_exists($key, $columns)) {
 			// Suppressed like every other fail-allowed probe in the tree (OptionClaim,
 			// AbstractIndexMigration, PurgeArchive): wpdb::query() calls print_error()
 			// under WP_DEBUG_DISPLAY, which would emit an HTML error block into an
 			// anonymous tracking response.
-			$db         = $GLOBALS['wpdb'];
 			$suppressed = $db->suppress_errors(true);
 			$found      = $db->get_col('SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '`');
 			$db->suppress_errors($suppressed);
 			// A probe that could not read the table answers "unknown", not "none" — an
 			// empty list here would make the intersection empty and drop the whole row,
 			// which is the get_var()-null-conflation family all over again.
-			$columns[$table] = is_array($found) ? $found : [];
+			// Retain the handle so PHP cannot reuse its object hash for another connection.
+			$columns[$key] = ['db' => $db, 'columns' => is_array($found) ? $found : []];
 		}
 
-		return $columns[$table];
+		return $columns[$key]['columns'];
 	}
 
 	/**
@@ -236,7 +239,8 @@ class Storage
 		}
 
 		if (false === $query->execute()) {
-			return WriteResult::failed((string) $GLOBALS['wpdb']->last_error);
+			$db = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+			return WriteResult::failed((string) $db->last_error);
 		}
 
 		// An UPDATE that matched no rows is not a failure — the heartbeat for a row the

@@ -49,14 +49,14 @@ if ($slimstat_has_external_db) {
 // is NOT: it resolves to one shared path for the whole network, so it is handled
 // once, after the loop.
 if (function_exists('is_multisite') && is_multisite()) {
-    $blogids = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare("
+    $slimstat_blogids = $GLOBALS['wpdb']->get_col($GLOBALS['wpdb']->prepare("
 		SELECT blog_id
 		FROM {$GLOBALS[ 'wpdb' ]->blogs}
 		WHERE site_id = %d
 			AND deleted = 0
 			AND spam = 0", $GLOBALS['wpdb']->siteid));
 
-    foreach ($blogids as $blog_id) {
+    foreach ($slimstat_blogids as $blog_id) {
         switch_to_blog($blog_id);
         slimstat_uninstall_cron();
         slimstat_uninstall_transients();
@@ -514,6 +514,7 @@ function slimstat_uninstall($_wpdb = '')
 
     // Migration / index bookkeeping.
     delete_option('slimstat_migration_status');
+    delete_option('slimstat_migration_completed');
     delete_option('slimstat_permalink_structure_updated');
     delete_option('slimstat_goals_funnels_since');
     delete_option('slimstat_dt_out_indexed');
@@ -553,8 +554,12 @@ delete_option('slimstat_heatmap_recovery_watermark');
     // which runs on BOTH uninstall paths rather than only this one — two sweepers for one job
     // is how the list came to name four prefixes out of sixteen.
 
-    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%meta-box-order_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
-    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%metaboxhidden_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
-    $GLOBALS['wpdb']->query(sprintf("DELETE FROM %susermeta WHERE meta_key LIKE '%%closedpostboxes_slimstat%%'", $GLOBALS[ 'wpdb' ]->prefix));
+    // The core usermeta table is shared on multisite. Match only this blog's
+    // optional prefix and the exact SlimStat screen families, including network layouts.
+    $layout_keys = '^(' . $GLOBALS['wpdb']->prefix . ')?(meta-box-order|metaboxhidden|mmetaboxhidden|closedpostboxes|screen_layout)_(admin|slimstat)_page_slim(layout|view[0-9]*)(-network)?$';
+    $GLOBALS['wpdb']->query($GLOBALS['wpdb']->prepare(
+        "DELETE FROM {$GLOBALS['wpdb']->usermeta} WHERE meta_key REGEXP %s",
+        $layout_keys
+    ));
 
 }

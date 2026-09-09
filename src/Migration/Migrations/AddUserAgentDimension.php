@@ -106,15 +106,7 @@ class AddUserAgentDimension extends AbstractMigration
         return sprintf(
             /* translators: %s: a measured cost, e.g. "more than 8 minutes on a 440,000-row table (MySQL 8)". */
             __(
-                'Optional. Adds a compact browser key to the analytics table AND to the archive '
-                    . 'table, and builds a lookup of browsers and platforms — groundwork for a '
-                    . 'future release. It does not make any report faster today, and it is by far '
-                    . 'the slowest step here: %s — and that run was stopped before it finished, so '
-                    . 'it is a minimum and not an estimate. On a larger table you may not be able '
-                    . 'to complete it from this screen at all. Your existing data is not modified, '
-                    . 'and reports keep working while it runs. Tracking normally keeps working '
-                    . 'too, but a server that cannot rebuild the table online will pause tracking '
-                    . 'writes for the whole rebuild, so on a large site prefer a quiet period.',
+                'Optional. Adds a compact browser key to the analytics table AND to the archive table, and builds a lookup of browsers and platforms — groundwork for a future release. It does not make any report faster today, and it is by far the slowest step here: %s — and that run was stopped before it finished, so it is a minimum and not an estimate. On a larger table you may not be able to complete it from this screen at all. Your existing data is not modified, and reports keep working while it runs. Tracking normally keeps working too, but a server that cannot rebuild the table online will pause tracking writes for the whole rebuild, so on a large site prefer a quiet period.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()
@@ -225,7 +217,7 @@ class AddUserAgentDimension extends AbstractMigration
             // INSERT IGNORE: if two passes race, or a previous run already inserted this tuple,
             // the loser is a no-op. No read, no lock, no retry — the same property that makes
             // the derived key worth having.
-            $this->wpdb->query($this->wpdb->prepare(
+            if (false === $this->wpdb->query($this->wpdb->prepare(
                 "INSERT IGNORE INTO `{$dimension}`
                     (ua_id, browser, browser_version, browser_type, platform, first_seen)
                  VALUES (%s, %s, %s, %d, %s, %d)",
@@ -235,7 +227,9 @@ class AddUserAgentDimension extends AbstractMigration
                 (int) $row['browser_type'],
                 $row['platform'],
                 time()
-            ));
+            ))) {
+                return false;
+            }
 
             // Stamp every fact row sharing this tuple. Bounded by the tuple, not the table.
             //
@@ -265,10 +259,12 @@ class AddUserAgentDimension extends AbstractMigration
                 $args[]  = $value;
             }
 
-            $this->wpdb->query($this->wpdb->prepare(
+            if (false === $this->wpdb->query($this->wpdb->prepare(
                 "UPDATE `{$stats}` SET ua_id = %s WHERE " . implode(' AND ', $where),
                 $args
-            ));
+            ))) {
+                return false;
+            }
 
             $stamped += max(0, (int) $this->wpdb->rows_affected);
         }

@@ -120,9 +120,7 @@ class ConvertTablesToUtf8mb4 extends AbstractMigration
         return sprintf(
             /* translators: %s: a measured cost, e.g. "about 12 seconds on a 440,000-row table (MySQL 8)". */
             __(
-                'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store '
-                    . 'emoji and match the collation WordPress uses for users. This rebuilds each '
-                    . 'table and pauses tracking writes while it runs — %s for the largest of them.',
+                'Converts the SlimStat tables from utf8 (3-byte) to utf8mb4 so they can store emoji and match the collation WordPress uses for users. This rebuilds each table and pauses tracking writes while it runs — %s for the largest of them.',
                 'wp-slimstat'
             ),
             $this->measuredCostPhrase()

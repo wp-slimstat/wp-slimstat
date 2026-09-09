@@ -14,6 +14,43 @@
  * Requires PHP: 7.4
 */
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * THE PHP FLOOR, CHECKED BEFORE ANYTHING IS LOADED.
+ *
+ * WordPress honours `Requires PHP: 7.4` only in the update/activation UI; an already-installed
+ * plugin on a downgraded host loads regardless, and below the floor the requires below are
+ * parse errors — uncatchable, fatal to the whole site including wp-admin. This returns instead,
+ * with a notice. The notice function is declared INSIDE the branch so the common path pays
+ * nothing for it, and it is not translated or recorded because the textdomain and the
+ * degradation store both belong to the class that has not loaded.
+ *
+ * REACH: PHP 7.0–7.3. This file itself needs 7.0 to parse (`??` throughout) — proven by running
+ * php:7.0-cli against it and pinned by a Tier 1 step — so on older runtimes the guard is never
+ * reached and WordPress's header check is the only guard; 5.5.0 declared the same floor.
+ * `tests/php-floor-test.php` is the record: what is proven, what is ratcheted, and what
+ * widening this would cost.
+ */
+if (PHP_VERSION_ID < 70400) {
+    if (!function_exists('wp_slimstat_render_php_floor_notice')) {
+        function wp_slimstat_render_php_floor_notice()
+        {
+            echo '<div class="notice notice-error"><p>'
+                . 'SlimStat Analytics requires PHP 7.4 or newer. This site is running PHP '
+                . esc_html(PHP_VERSION)
+                . ', so SlimStat has not been loaded. Your analytics data is untouched.'
+                . '</p></div>';
+        }
+    }
+
+    add_action('admin_notices', 'wp_slimstat_render_php_floor_notice');
+
+    return;
+}
+
 // check if composer autoloader exists
 if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     return;
@@ -103,6 +140,8 @@ class wp_slimstat
     protected static $stat              = [];
 
     protected static $date_i18n_filters = [];
+
+    protected static $date_i18n_filter_depth = 0;
 
     /**
      * Gets the current data_js array (for internal tracking use only)
@@ -231,131 +270,48 @@ class wp_slimstat
         }
 
         // Load all the settings
-        if (is_network_admin() && (empty($_GET['page']) || false === strpos($_GET['page'], 'slimview'))) {
+        if (is_network_admin() && (!isset($_GET['page']) || !is_string($_GET['page']) || false === strpos(wp_unslash($_GET['page']), 'slimview'))) {
             self::$settings = get_site_option('slimstat_options', []);
         } else {
             self::$settings = get_option('slimstat_options', []);
         }
 
-        if (empty(self::$settings)) {
-            // Fresh install: set defaults including geolocation_provider=dbip
+        // Preserve whether settings were missing before defaults hide that distinction.
+        // Physical freshness is checked after the custom analytics database is resolved.
+        $_missing_settings = !is_array(self::$settings) || empty(self::$settings);
+        $_needs_version_recovery = $_missing_settings || empty(self::$settings['version']) || !is_string(self::$settings['version']);
+        $_fresh_install = $_missing_settings;
+        if ($_missing_settings) {
             self::$settings = self::get_fresh_defaults();
-            self::update_option('slimstat_options', self::$settings);
         }
 
         self::$settings = array_merge(self::init_options(), self::$settings);
 
-        // One-shot migration: runs once on first boot after installing this build.
-        // '_migration_5460' is absent from all pre-5.4.6 installs; array_merge fills it
-        // with '0' from init_options(). After running, the flag stores the version that ran it.
-        // On downgrade→re-upgrade, the stored version will differ from SLIMSTAT_ANALYTICS_VERSION,
-        // allowing the migration to re-run if needed. '0' = never ran, version string = ran.
-        $_migration_ran = self::$settings['_migration_5460'] ?? '0';
-
-        // One boundary, derived once. Both the consent-intent mapping and the one-time
-        // resets below are 5.3.x-era migrations; the resets additionally skip fresh
-        // installs. Spelling the comparison twice invited them to drift apart.
-        $_pre_547 = version_compare($_migration_ran, '5.4.7', '<');
-        if ('0' === $_migration_ran || (is_string($_migration_ran) && '0' !== $_migration_ran && version_compare($_migration_ran, SLIMSTAT_ANALYTICS_VERSION, '<'))) {
-            // --- Consent intent detection (pre-5.4.7 installs only) ---
-            //
-            // This maps legacy v5.3.x privacy settings onto the GDPR system. It is a
-            // ONE-TIME migration and must stay bounded to installs that predate 5.4.7,
-            // for the same reason the one-time resets below are bounded.
-            //
-            // Unbounded, it re-ran on every version bump (the outer gate fires whenever
-            // the stored flag is older than SLIMSTAT_ANALYTICS_VERSION) and rewrote the
-            // site's consent configuration from 5.3.x evidence that no longer described
-            // its choices — in both directions:
-            //
-            //   - a site that enabled GDPR through the 5.4+ UI has no legacy opt-out or
-            //     opt-in keys and no third-party CMP, so it fell to the else branch and
-            //     had gdpr_enabled set to 'off' — consent silently switched off;
-            //   - a site carrying a stale display_opt_out = 'on' that had deliberately
-            //     turned GDPR off had it forced back on, and with GDPR on and no consent
-            //     cookie, tracking stops.
-            //
-            // Fresh installs ('0') still enter here, and the else branch writes exactly
-            // the shipped defaults, so their outcome is unchanged. The one-time resets
-            // below share this boundary and additionally skip fresh installs.
-            if ($_pre_547) {
-                // Read legacy v5.3.x consent settings to detect if user had configured privacy.
-                // These survive through v5.3.x → v5.4.x upgrades because array_merge preserves DB values.
-                $_had_opt_out_banner  = ('on' === (self::$settings['display_opt_out'] ?? 'no'));
-                $_had_opt_out_cookies = !empty(trim(self::$settings['opt_out_cookie_names'] ?? ''));
-                $_had_opt_in_cookies  = !empty(trim(self::$settings['opt_in_cookie_names'] ?? ''));
-
-                // Check if user deliberately chose a third-party CMP in v5.4.x
-                $_current_integration = self::$settings['consent_integration'] ?? '';
-                $_has_third_party_cmp = in_array($_current_integration, ['wp_consent_api', 'real_cookie_banner'], true);
-
-                if ($_has_third_party_cmp) {
-                    // User deliberately configured a third-party CMP — preserve their setup
-                    self::$settings['gdpr_enabled'] = 'on';
-                } elseif ($_had_opt_out_banner || $_had_opt_out_cookies || $_had_opt_in_cookies) {
-                    // User had consent/privacy config in v5.3.x — map to GDPR system
-                    self::$settings['gdpr_enabled'] = 'on';
-                    self::$settings['use_slimstat_banner'] = 'on';
-                    // Auto-detect best CMP: if opt-in cookies were set (third-party plugin)
-                    // and WP Consent API is installed, use it. Otherwise use SlimStat Banner.
-                    if ($_had_opt_in_cookies && function_exists('wp_has_consent')) {
-                        self::$settings['consent_integration'] = 'wp_consent_api';
-                    } else {
-                        self::$settings['consent_integration'] = 'slimstat_banner';
-                    }
-                } else {
-                    // No consent config ever — pure v5.3.x behavior: all tracked, no banner
-                    self::$settings['gdpr_enabled'] = 'off';
-                    self::$settings['consent_integration'] = '';
-                    self::$settings['use_slimstat_banner'] = 'off';
-                }
-
-                unset($_had_opt_out_banner, $_had_opt_out_cookies, $_had_opt_in_cookies,
-                      $_current_integration, $_has_third_party_cmp);
+        // One-shot settings migration for installs that ran v5.4.0–v5.4.5. The logic lives in
+        // SlimStat\Migration\LegacySettings5460 so the unit test exercises THIS code rather than
+        // a transcription of it — the transcription had drifted from this block in three places,
+        // and the one that mattered hid a 6.0.0 regression: `'0' !== $_migration_ran` skipped
+        // the resets on fresh installs AND on every upgrader from 5.4.0–5.4.5, who never had the
+        // key. Whether the options row existed is the discriminator, and only this method knows.
+        //
+        // No rewrite flush here: activation and settings-change paths own that, and a flush on
+        // plugins_loaded fires before the rule is registered on 'init' and wastes a DB write.
+        $_legacy = \SlimStat\Migration\LegacySettings5460::apply(
+            self::$settings,
+            SLIMSTAT_ANALYTICS_VERSION,
+            $_fresh_install,
+            function_exists('wp_has_consent')
+        );
+        if ($_legacy['ran']) {
+            self::$settings = $_legacy['settings'];
+            if ($_legacy['ip_notice']) {
+                set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
             }
-
-            // One-time resets for settings broken by v5.4.0-5.4.6 defaults.
-            // Gated on < 5.4.7 so future upgrades (5.4.8+) don't override admin choices.
-            // Skip for fresh installs ('0' = never ran, no broken settings to fix).
-            if ($_pre_547 && '0' !== $_migration_ran) {
-                // Restore session cookie — Consent::piiAllowed() in Session.php gates
-                // the actual setcookie() call at runtime, not this setting.
-                if ('off' === (self::$settings['set_tracker_cookie'] ?? 'on')) {
-                    self::$settings['set_tracker_cookie'] = 'on';
-                }
-
-                // javascript_mode='off' baked a stale per-visitor stat ID into cached HTML.
-                // Always reset — server-side mode was a v5.4.0 default, not a user choice.
-                if ('off' === (self::$settings['javascript_mode'] ?? 'on')) {
-                    self::$settings['javascript_mode'] = 'on';
-                }
-
-                // anonymize_ip='on' and hash_ip='on' were v5.4.1 defaults that changed IP storage.
-                $_ss_ip_was_anonymized = ('on' === (self::$settings['anonymize_ip'] ?? 'off'));
-                $_ss_ip_was_hashed     = ('on' === (self::$settings['hash_ip'] ?? 'off'));
-                if ($_ss_ip_was_anonymized) {
-                    self::$settings['anonymize_ip'] = 'off';
-                }
-                if ($_ss_ip_was_hashed) {
-                    self::$settings['hash_ip'] = 'off';
-                }
-                if ($_ss_ip_was_anonymized || $_ss_ip_was_hashed) {
-                    set_transient('slimstat_migration_5460_ip_notice', '1', 7 * DAY_IN_SECONDS);
-                }
+            if (!$_needs_version_recovery) {
+                self::update_option('slimstat_options', self::$settings);
             }
-
-            unset($_ss_ip_was_anonymized, $_ss_ip_was_hashed);
-            // Mark done — store the version so downgrade→re-upgrade can re-trigger if needed.
-            self::$settings['_migration_5460'] = SLIMSTAT_ANALYTICS_VERSION;
-            self::update_option('slimstat_options', self::$settings);
-
-            // Rewrite rules are flushed via two other paths:
-            // 1. Activation hook: admin/index.php init_environment() calls flush_rewrite_rules()
-            // 2. Settings change: RestApiManager sets 'slimstat_permalink_structure_updated' option,
-            //    which triggers flush_rewrite_rules() on next init via rewriteRuleRequest()
-            // No flush needed here — doing so during migration (plugins_loaded) would fire before
-            // the rewrite rule is registered on 'init' and waste a DB write.
         }
+        unset($_legacy);
 
         // Allow third party tools to edit the options
 		self::$settings = apply_filters('slimstat_init_options', self::$settings);
@@ -388,6 +344,16 @@ class wp_slimstat
 
         // Allow third-party tools to use a custom database for Slimstat
         self::$wpdb = apply_filters('slimstat_custom_wpdb', $GLOBALS['wpdb']);
+
+        if ($_needs_version_recovery) {
+            // Resolve after add-on settings filters: the physical analytics database,
+            // not an absent options row, determines whether there is an upgrade to do.
+            if (!\SlimStat\Migration\MissingSettingsRecovery::isFresh(self::$wpdb, $GLOBALS['wpdb']->prefix)) {
+                self::$settings['version'] = 'recovery';
+                self::$settings['_settings_recovery'] = true;
+            }
+            self::update_option('slimstat_options', self::$settings);
+        }
 
         // Define the folder where to store the geolocation database (shared among sites in a network, by default)
         if (defined('UPLOADS')) {
@@ -966,7 +932,7 @@ class wp_slimstat
                 wp_slimstat_reports::$reports[$w]['callback_args']['is_widget'] = true;
 
                 ob_start();
-                echo wp_slimstat_reports::report_header($w);
+                wp_slimstat_reports::report_header($w);
                 call_user_func(wp_slimstat_reports::$reports[$w]['callback'], wp_slimstat_reports::$reports[$w]['callback_args']);
                 wp_slimstat_reports::report_footer();
                 $output = ob_get_contents();
@@ -1294,17 +1260,31 @@ class wp_slimstat
      */
     public static function toggle_date_i18n_filters($_turn_on = true)
     {
-        if ($_turn_on && !empty(self::$date_i18n_filters) && is_array(self::$date_i18n_filters)) {
-            foreach (self::$date_i18n_filters as $i18n_priority => $i18n_func_list) {
-                foreach ($i18n_func_list as $func_args) {
-                    if (!empty($func_args['function']) && is_string($func_args['function'])) {
-                        add_filter('date_i8n', $func_args['function'], $i18n_priority, intval($func_args['accepted_args']));
-                    }
+        if (!$_turn_on) {
+            self::$date_i18n_filter_depth++;
+            if (1 < self::$date_i18n_filter_depth) {
+                return;
+            }
+
+            $hook = $GLOBALS['wp_filter']['date_i18n'] ?? null;
+            self::$date_i18n_filters = $hook instanceof \WP_Hook ? $hook->callbacks : [];
+            remove_all_filters('date_i18n');
+            return;
+        }
+
+        if (0 === self::$date_i18n_filter_depth || 0 < --self::$date_i18n_filter_depth) {
+            return;
+        }
+
+        $filters = self::$date_i18n_filters;
+        self::$date_i18n_filters = [];
+        remove_all_filters('date_i18n');
+        foreach ($filters as $priority => $callbacks) {
+            foreach ($callbacks as $callback) {
+                if (isset($callback['function']) && is_callable($callback['function'])) {
+                    add_filter('date_i18n', $callback['function'], $priority, (int) $callback['accepted_args']);
                 }
             }
-        } elseif (!empty($GLOBALS['wp_filter']['date_i18n']['callbacks']) && is_array($GLOBALS['wp_filter']['date_i18n']['callbacks'])) {
-            self::$date_i18n_filters = $GLOBALS['wp_filter']['date_i18n']['callbacks'];
-            remove_all_filters('date_i18n');
         }
     }
     // end toggle_date_i18n_filters
@@ -1351,10 +1331,11 @@ class wp_slimstat
     public static function date_i18n($_format, $_timestamp = false)
     {
         self::toggle_date_i18n_filters(false);
-        $date = date_i18n($_format, $_timestamp);
-        self::toggle_date_i18n_filters(true);
-
-        return $date;
+        try {
+            return date_i18n($_format, $_timestamp);
+        } finally {
+            self::toggle_date_i18n_filters(true);
+        }
     }
     // end date_i18n
 
@@ -1656,7 +1637,7 @@ class wp_slimstat
             $params['ajaxurl'] = $rest_url;
         }
 
-        $baseurl           = parse_url(get_home_url());
+        $baseurl           = wp_parse_url(get_home_url());
         $params['baseurl'] = empty($baseurl['path']) ? '/' : $baseurl['path'];
 
         if (!empty(self::$settings['do_not_track_outbound_classes_rel_href'])) {
@@ -2175,7 +2156,7 @@ class wp_slimstat
      */
     public static function purge_is_stale(): bool
     {
-        if (intval(self::$settings['auto_purge']) <= 0) {
+        if (intval(self::$settings['auto_purge'] ?? 0) <= 0) {
             return false;   // purging is off; silence is correct
         }
 
@@ -2258,6 +2239,7 @@ class wp_slimstat
         $content .= '<p><strong>' . __('How long we retain your data', 'wp-slimstat') . '</strong></p>';
         $retention_days = intval(self::$settings['auto_purge'] ?? 420);
         if ($retention_days > 0) {
+            /* translators: %d: configured number of days before analytics data is deleted. */
             $content .= '<p>' . sprintf(__('Analytics data is automatically deleted after %d days, in compliance with GDPR data retention requirements.', 'wp-slimstat'), $retention_days) . '</p>';
         } else {
             $content .= '<p>' . __('Analytics data retention is currently disabled. Please contact the site administrator for information about data retention policies.', 'wp-slimstat') . '</p>';
@@ -2462,51 +2444,45 @@ class wp_slimstat
             $blog_id = (int) array_shift($pending);
 
             if ($blog_id === $attempting) {
-                // THE POISON PILL, and it is the cost of the at-least-once rule below. This
-                // blog was started on an earlier pass and that pass never came back, so the
-                // request died inside its DDL rather than throwing. Retrying it would start
-                // the same fatal work every pass forever — and because a pass always starts
-                // its first site, no site BEHIND it would ever be reached, while the notice
-                // went on promising progress. Once is a retry; twice is a loop.
-                // switch_to_blog() around it for the same reason the catch branch below
-                // relies on being inside one: record_degradation() writes to whichever blog is
-                // current. Without this the skip landed in the MAIN site's options under a key
-                // naming a subsite, while the catch branch landed on the subsite — one step
-                // key, two stores, and the paragraph below claiming per-blog recording.
+                // A killed request proves no completion. Report it without more DDL in
+                // this pass, retaining the cursor so a later request can retry the site.
                 switch_to_blog($blog_id);
 
                 self::record_degradation(
                     'activation (blog ' . $blog_id . ')',
                     new \RuntimeException(
-                        'setting up this site did not finish, so it was skipped; the rest of '
-                            . 'the network continues'
+                        'setting up this site did not finish; it remains pending and will '
+                            . 'be retried on a later network-admin request'
                     ),
                     self::DEGRADATION_OPERATIONAL
                 );
 
                 restore_current_blog();
+                delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+                return count($pending) + 1;
             } else {
                 // Recorded BEFORE the work, which is the only ordering that can survive the
                 // request dying inside it: the pending list is written AFTER, so a blog whose
                 // request died is still at the head when the next pass reads it, and this
                 // marker is the only thing that can tell "died" from "not started yet".
                 //
-                // What that buys is ONE attempt for a blog that kills its request, not two —
-                // an earlier draft of this comment said "retried once", which is true of a
-                // blog that THROWS (caught, cursor advances) and false of the case the marker
-                // exists for.
+                // A prior killed request is reported before retrying on a later request.
+                // A caught failure clears the marker immediately and stays pending.
                 update_site_option(self::ACTIVATION_ATTEMPT_OPTION, $blog_id);
 
                 switch_to_blog($blog_id);
 
                 try {
-                    wp_slimstat_admin::init_environment();
+                    if (false === wp_slimstat_admin::init_environment()) {
+                        throw new \RuntimeException('Analytics schema setup did not complete.');
+                    }
                 } catch (\Throwable $e) {
-                    // Per-site, so one refusing database does not leave every LATER site
-                    // tables-less as well. Each failure is recorded on the blog it belongs to —
-                    // switch_to_blog() has already pointed the degradation option at that
-                    // site's own wp_options.
+                    // A returned/caught failure is retryable, unlike a killed request.
+                    // Leave this site at the persisted cursor head for the next request.
                     self::record_degradation('activation (blog ' . $blog_id . ')', $e);
+                    delete_site_option(self::ACTIVATION_ATTEMPT_OPTION);
+                    restore_current_blog();
+                    return count($pending) + 1;
                 }
 
                 restore_current_blog();
@@ -2774,6 +2750,16 @@ class wp_slimstat
     }
     // end get_lossy_url
 
+    /** Internal scope for report SQL and cached answers, including external databases. */
+    public static function report_scope(): array
+    {
+        $author = 'on' === (self::$settings['restrict_authors_view'] ?? 'off') && !current_user_can('manage_options')
+            ? (string) ($GLOBALS['current_user']->user_login ?? '') : '';
+        $where = '' !== $author ? self::$wpdb->prepare('author = %s', $author) : '1=1';
+        $context = [$GLOBALS['wpdb']->prefix, self::$wpdb->dbhost ?? '', self::$wpdb->dbname ?? '', $author];
+        return ['where' => $where, 'cache' => md5(serialize($context))];
+    }
+
     /**
      * Check if slimstat pro plugin is installed
      */
@@ -2845,6 +2831,7 @@ class slimstat_widget extends WP_Widget
         ], $_instance));
 
         if (!empty($slimstat_widget_title)) {
+            // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Core register_sidebar supplies theme-owned wrapper HTML; the stored widget title is escaped here.
             echo (empty($_args['before_title']) ? '<h2 class="widget-title">' : $_args['before_title']) . esc_html($slimstat_widget_title) . (empty($_args['after_title']) ? '</h2>' : $_args['after_title']);
         }
         if (!empty($slimstat_widget_id)) {
@@ -2874,27 +2861,27 @@ class slimstat_widget extends WP_Widget
         $select_options = '';
 
         foreach (wp_slimstat_reports::$reports as $a_report_id => $a_report_info) {
-            $select_options .= sprintf("<option value='%s' ", $a_report_id) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', $a_report_info[ 'title' ]);
+            $select_options .= sprintf("<option value='%s' ", esc_attr($a_report_id)) . (($slimstat_widget_id == $a_report_id) ? 'selected="selected"' : '') . sprintf('>%s</option>', esc_html($a_report_info[ 'title' ]));
         }
         ?>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php _e('Report', 'wp-slimstat') ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>"><?php esc_html_e('Report', 'wp-slimstat') ?></label>
             <select class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_id')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_id')); ?>">
                 <option value="">Select a widget</option>
-                <?php echo $select_options ?>
+                <?php echo wp_kses($select_options, ['option' => ['value' => true, 'selected' => true]]); ?>
             </select>
         </p>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>"><?php _e('Title', 'wp-slimstat') ?></label>
-            <input type="text" class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_title')); ?>" value="<?php echo trim(strip_tags($slimstat_widget_title)) ?>">
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>"><?php esc_html_e('Title', 'wp-slimstat') ?></label>
+            <input type="text" class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_title')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_title')); ?>" value="<?php echo esc_attr(trim(wp_strip_all_tags($slimstat_widget_title))) ?>">
         </p>
 
         <p>
-            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php _e('Optional filters', 'wp-slimstat'); ?></label>
+            <label for="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>"><?php esc_html_e('Optional filters', 'wp-slimstat'); ?></label>
             <a href="https://wp-slimstat.com/resources/what-is-the-syntax-of-a-slimstat-shortcode-#slimstat-operators" target="_blank">[?]</a>
-            <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo trim(strip_tags($slimstat_widget_filters)) ?></textarea>
+            <textarea class="widefat" id="<?php echo esc_attr($this->get_field_id('slimstat_widget_filters')); ?>" name="<?php echo esc_attr($this->get_field_name('slimstat_widget_filters')); ?>"><?php echo esc_textarea(trim(wp_strip_all_tags($slimstat_widget_filters))) ?></textarea>
         </p>
         <?php
 
@@ -3020,12 +3007,17 @@ function wp_slimstat_clear_cache_handler()
 
     global $wpdb;
     $transients = $wpdb->get_col(
-        sprintf("SELECT option_name FROM %s WHERE option_name LIKE '_transient_wp_slimstat_query_%%' OR option_name LIKE '_transient_timeout_wp_slimstat_query_%%'", $wpdb->options)
+        $wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
+            $wpdb->esc_like('_transient_wp_slimstat_query_') . '%',
+            $wpdb->esc_like('_transient_timeout_wp_slimstat_query_') . '%'
+        )
     );
     $count = 0;
     foreach ($transients as $transient) {
         delete_option($transient);
         $count++;
     }
+    /* translators: %d: number of cache items cleared. */
     wp_send_json_success(sprintf(__('Slimstat cache cleared (%d items)', 'wp-slimstat'), $count));
 }

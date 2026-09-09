@@ -35,7 +35,7 @@ $out_path = (string) ($args[0] ?? '');
 if ($out_path === '') {
     echo "usage: wp eval-file parity-snapshot.php <out.json> [cell,cell,...]\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 define('SLIMSTAT_BENCH_FINGERPRINT_LIB', true);
@@ -44,7 +44,7 @@ require_once __DIR__ . '/fingerprint.php';
 if (!class_exists('wp_slimstat')) {
     echo "ERROR: wp_slimstat is not loaded — is the plugin active?\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 
 $db = wp_slimstat::$wpdb instanceof wpdb ? wp_slimstat::$wpdb : $GLOBALS['wpdb'];
@@ -65,7 +65,7 @@ $max_dt = (int) $db->get_var("SELECT MAX(dt) FROM `{$db->prefix}slim_stats`");
 if ($max_dt <= 0) {
     echo "ERROR: no rows in slim_stats — nothing to snapshot\n";
     echo "VERDICT: ERROR\n";
-    return;
+    exit(2);
 }
 // Quantised to the day it lands in: only the day/month/year are used to build
 // the filter, so carrying a to-the-second value would make two snapshots taken
@@ -138,18 +138,7 @@ $normalise = static function (string $html): string {
         '/\?ver=[\w.\-]+/'                                    => '?ver=VER',
         // Relative times ("3 mins ago") move with the wall clock.
         '/\b\d+\s+(second|minute|min|hour|day|week|month|year)s?\s+ago\b/i' => 'RELTIME ago',
-        // Absolute timestamps rendered from now().
-        '/\b\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?\b/'     => 'TIMESTAMP',
-        // Raw UNIX epochs (2023-2033) embedded in markup — charts ship the
-        // window in data-args as {"start":…,"end":…}, and init_filters() clamps
-        // that end to the CURRENT SECOND, so two renders a second apart differ.
-        // Users never see an epoch, so normalising it hides nothing from them.
-        //
-        // Worth noting rather than only working around: this is the same
-        // second-precision clamp that gives goal transients a cache key which
-        // can never be hit twice (defect D33). The oracle rediscovered it
-        // independently.
-        '/\b1[7-9]\d{8}\b/'                                   => 'EPOCH',
+        // Dates and chart-window epochs are report data and must remain comparable.
         // DOM ids that embed a counter or random suffix.
         '/id="[\w\-]*?(chart|canvas)[\w\-]*?\d+"/i'          => 'id="DYNAMIC"',
         // Whitespace noise.
@@ -162,7 +151,7 @@ $normalise = static function (string $html): string {
 $extract_numbers = static function (string $html): array {
     $text = html_entity_decode(wp_strip_all_tags($html), ENT_QUOTES, 'UTF-8');
     preg_match_all('/(?<![\w.])(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*%?/', $text, $m);
-    return array_slice($m[1], 0, 200);
+    return $m[1];
 };
 
 /**
@@ -241,15 +230,13 @@ $snapshot = [
     // boundary, so the comparator matches on this resolved value rather than on the bucket
     // size. 0 when unpinned.
     'live_window_end'  => 0,
+    'report_ids'       => array_keys($reports),
     'cells'            => [],
 ];
 
 foreach ($wanted as $cell => $filters) {
     printf("cell %s\n", $cell);
     foreach ($reports as $report_id => $report) {
-        if (empty($report['callback'])) {
-            continue;
-        }
         wp_slimstat_db::init($filters);
 
         if (strpos($cell, 'straddling') === 0) {
@@ -259,6 +246,9 @@ foreach ($wanted as $cell => $filters) {
         $html  = '';
         $error = null;
         try {
+            if (empty($report['callback'])) {
+                throw new \RuntimeException('Registered report has no callable callback');
+            }
             ob_start();
             wp_slimstat_reports::callback_wrapper(['id' => $report_id]);
             $html = (string) ob_get_clean();
@@ -271,6 +261,8 @@ foreach ($wanted as $cell => $filters) {
 
         $clean = $normalise($html);
         $snapshot['cells'][$cell][$report_id] = [
+            'raw_html' => $html,
+            'normalized_html' => $clean,
             'hash'    => $error === null ? md5($clean) : null,
             'bytes'   => strlen($clean),
             'numbers' => $error === null ? $extract_numbers($clean) : [],

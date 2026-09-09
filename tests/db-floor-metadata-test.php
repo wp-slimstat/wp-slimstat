@@ -133,26 +133,28 @@ foreach ($sources as $file) {
 // stay. "One-way" would overstate it and contradict this programme's own rollback leg — so
 // this requires the three facts rather than a slogan, and each is checked separately so a
 // rewrite that drops one is a named failure rather than a silent loss.
-// SCOPED TO THE ENTRY BEING OFFERED, and derived from `Stable tag:` so it moves with the
-// release rather than being pinned to a value that goes stale.
-//
-// The first version matched against the WHOLE Upgrade Notice section, which holds every
-// version's entry — and review proved it vacuous by moving the sentence verbatim into the
-// `= 5.5.1 =` entry, where a 6.0.0 upgrader will never see it, because wordpress.org renders
-// only the entry matching the version it is offering. The gate stayed green while the warning
-// had moved somewhere nobody reads it, which is the exact property its own comment claims.
+// SECTION FIRST, THEN THE ENTRY `Stable tag:` NAMES — and each half was got wrong once. The
+// first version matched the whole Upgrade Notice section (review moved the sentence into
+// `= 5.5.1 =` and it stayed green); the second matched the whole FILE and read a dateless
+// changelog heading as the notice — `D8-upgrade-notice-moved-to-changelog-01` replays that.
 $readme_txt = (string) file_get_contents($plugin_root . '/readme.txt');
 
-$stable_tag = '';
-if (preg_match('/^\s*Stable tag:\s*(\S+)\s*$/m', $readme_txt, $st)) {
-    $stable_tag = $st[1];
+$stable_tag = (string) slimstat_header_field($readme_txt, 'Stable tag');
+
+$notice_section = '';
+if (preg_match('/^== Upgrade Notice ==[ \t]*$(.*?)(?=^== |\Z)/ms', $readme_txt, $ns)) {
+    $notice_section = $ns[1];
 }
 
 $upgrade_notice = '';
 if ('' === $stable_tag) {
     $failures[] = 'readme.txt declares no `Stable tag:` — the Upgrade Notice check below cannot '
         . 'tell which entry wordpress.org will show, so it would have to read them all';
-} elseif (preg_match('/^= ' . preg_quote($stable_tag, '/') . ' =$(.*?)(?=^= |\Z)/ms', $readme_txt, $un)) {
+} elseif ('' === trim($notice_section)) {
+    $failures[] = 'readme.txt has no `== Upgrade Notice ==` section at all. wordpress.org renders '
+        . 'it on the Plugins screen before the update button; without it a site owner reads '
+        . 'nothing';
+} elseif (preg_match('/^= ' . preg_quote($stable_tag, '/') . ' =$(.*?)(?=^= |\Z)/ms', $notice_section, $un)) {
     $upgrade_notice = $un[1];
 }
 
@@ -164,6 +166,29 @@ if ('' === trim($upgrade_notice)) {
         $stable_tag
     );
 } else {
+    // AT MOST 300 CHARACTERS, ROLLBACK FIRST. wordpress.org's sample readme says an upgrade
+    // notice is "no more than 300 characters" — a GUIDELINE. Its parser applies no length cap
+    // (checked: `class-parser.php` trims other sections, not this one) and core renders the
+    // notice in full on Dashboard → Updates. The first version of this check claimed a hard
+    // truncation "from the end"; no public source supports that, and the claim is withdrawn.
+    // What stands: the entry was 484 characters against a 300 guideline with the rollback fact
+    // starting at 285 — the part a reader skimming to the guideline's length would miss — so
+    // the length is held to the guideline and the rollback sentence leads.
+    //
+    // WHERE IT IS READ. Dashboard → Updates, in full. NOT the Plugins-screen row: core hands the
+    // notice only to `in_plugin_update_message-{file}`, which this plugin now hooks
+    // (admin/index.php) so the warning sits beside the update link a site owner actually clicks.
+    $notice_length = strlen(trim($upgrade_notice));
+    if ($notice_length > 300) {
+        $failures[] = sprintf(
+            'the `= %s =` Upgrade Notice entry is %d characters, past the 300-character guideline '
+                . 'wordpress.org sets for the field; keep it inside the guideline with the '
+                . 'rollback sentence first, and put the long form in the changelog',
+            $stable_tag,
+            $notice_length
+        );
+    }
+
     $rollback_facts = [
         'that older versions keep working on the updated tables'
             => '/older versions keep working|keep working on the updated tables/i',
@@ -191,6 +216,35 @@ if ($scanned < 20) {
             . 'version_compare prohibition above proves nothing',
         $scanned
     );
+}
+
+// ── The notice reaches the Plugins screen ───────────────────────────────────────────────
+//
+// Core does not render `upgrade_notice` in the Plugins-screen row; it hands it to
+// `in_plugin_update_message-{file}` and nothing else. Without the hook, everything above pins
+// a warning that appears only on Dashboard → Updates — not beside the update link a site owner
+// clicks. So the hook is required, on this plugin's own basename, and its callback must escape
+// what wordpress.org sends: the notice is remote text printed into wp-admin.
+$admin = slimstat_blank_comments((string) file_get_contents($plugin_root . '/admin/index.php'));
+
+if (!preg_match("/add_action\s*\(\s*'in_plugin_update_message-'\s*\.\s*plugin_basename\s*\(\s*SLIMSTAT_FILE\s*\)\s*,\s*\[\s*self::class\s*,\s*'(\w+)'\s*\]/", $admin, $hm)) {
+    $failures[] = "admin/index.php does not hook `in_plugin_update_message-` . plugin_basename(SLIMSTAT_FILE). "
+        . 'Core renders the Upgrade Notice on Dashboard → Updates only; without this hook the '
+        . 'rollback warning never appears beside the update link on the Plugins screen';
+} else {
+    $callback = slimstat_find_function_body($admin, $hm[1]); // nullable; slimstat_function_body() throws on absence
+    if (null === $callback) {
+        $failures[] = sprintf('admin/index.php hooks in_plugin_update_message to %s(), which is not defined', $hm[1]);
+    } else {
+        if (false === strpos($callback, 'upgrade_notice')) {
+            $failures[] = sprintf('%s() never reads $response->upgrade_notice, so it prints something '
+                . 'other than the readme notice this file pins', $hm[1]);
+        }
+        if (false === strpos($callback, 'esc_html(')) {
+            $failures[] = sprintf('%s() prints the update offer without esc_html(); upgrade_notice is '
+                . 'remote text from wordpress.org rendered inside wp-admin', $hm[1]);
+        }
+    }
 }
 
 if ($failures) {

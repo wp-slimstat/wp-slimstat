@@ -11,6 +11,7 @@
  * the highest-impact admin surface to cover with E2E tests.
  */
 import { test, expect } from '@playwright/test';
+import { setSettingsToggle } from './helpers/settings';
 import { unserialize as phpUnserialize } from 'php-serialize';
 import {
   snapshotSlimstatOptions,
@@ -103,9 +104,9 @@ test.describe('Admin Settings Persistence', () => {
 
     // Flip the toggle: if checked, uncheck; if unchecked, check
     if (wasChecked) {
-      await checkbox.uncheck();
+      await setSettingsToggle(checkbox, false);
     } else {
-      await checkbox.check();
+      await setSettingsToggle(checkbox, true);
     }
 
     // Submit the form
@@ -158,15 +159,15 @@ test.describe('Admin Settings Persistence', () => {
 
     // Flip both toggles and change the select
     if (jsWasChecked) {
-      await jsModeCheckbox.uncheck();
+      await setSettingsToggle(jsModeCheckbox, false);
     } else {
-      await jsModeCheckbox.check();
+      await setSettingsToggle(jsModeCheckbox, true);
     }
 
     if (dashWasChecked) {
-      await dashWidgetsCheckbox.uncheck();
+      await setSettingsToggle(dashWidgetsCheckbox, false);
     } else {
-      await dashWidgetsCheckbox.check();
+      await setSettingsToggle(dashWidgetsCheckbox, true);
     }
 
     await requestMethodSelect.selectOption(newMethod);
@@ -211,9 +212,9 @@ test.describe('Admin Settings Persistence', () => {
     const wasChecked = await postsColCheckbox.isChecked();
 
     if (wasChecked) {
-      await postsColCheckbox.uncheck();
+      await setSettingsToggle(postsColCheckbox, false);
     } else {
-      await postsColCheckbox.check();
+      await setSettingsToggle(postsColCheckbox, true);
     }
 
     // Submit and wait for confirmation

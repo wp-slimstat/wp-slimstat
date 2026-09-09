@@ -97,6 +97,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         return new class ($this->db()) extends AbstractMigration {
             /** @var bool */
             public $ran = false;
+            public $result = true;
 
             public function getId(): string
             {
@@ -129,7 +130,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             public function run(): bool
             {
                 $this->ran = true;
-                return true;
+                return $this->result;
             }
         };
     }
@@ -181,7 +182,7 @@ class OptionalMigrationTest extends WpSlimstatTestCase
             // OptionClaim invalidates the option cache after a write it won.
             'wp_cache_delete'  => static fn() => true,
             'wp_cache_set'     => static fn() => true,
-            'get_transient'    => static fn($k) => $transients[$k] ?? false,
+            'get_transient'    => static function ($k) use (&$transients) { return $transients[$k] ?? false; },
             'set_transient'    => static function ($k, $v) use (&$transients) {
                 $transients[$k] = $v;
                 return true;
@@ -191,6 +192,64 @@ class OptionalMigrationTest extends WpSlimstatTestCase
                 return true;
             },
         ]);
+    }
+
+    public function test_successful_execution_invalidates_only_the_drift_check_cache(): void
+    {
+        $key = 'slimstat_column_drift_checked';
+        update_option('slimstat_schema_column_drift', ['observed-drift']);
+        foreach (['one', 'all'] as $mode) {
+            set_transient($key, 1);
+            $this->assertSame(1, get_transient($key), 'The fixture must actually cache a check.');
+            $manager = $this->manager([$this->owed()]);
+            if ('one' === $mode) {
+                $this->assertTrue($manager->runOne('owed-migration'));
+            } else {
+                $this->assertSame(['owed-migration' => true], $manager->runAll());
+            }
+            $this->assertFalse(get_transient($key));
+            $this->assertSame(['observed-drift'], get_option('slimstat_schema_column_drift'));
+        }
+    }
+
+    public function test_unsuccessful_or_unrelated_invalidation_preserves_drift_throttle(): void
+    {
+        $key = 'slimstat_column_drift_checked';
+        set_transient($key, 1);
+        $migration = $this->offered();
+        $migration->result = false;
+        $manager = $this->manager([$migration]);
+        $this->assertFalse($manager->runOne($migration->getId()));
+        $this->assertSame(1, get_transient($key));
+        $this->assertSame([], $manager->runAll());
+        $manager->forgetProbe();
+        $manager->dismissNotice();
+        $manager->resetDismissal();
+        $this->assertSame(1, get_transient($key));
+    }
+
+    public function test_width_repair_manager_cannot_stamp_blocked_or_unreadable_columns_complete(): void
+    {
+        foreach (['varchar(254)', 'unreadable', 'varchar(256)'] as $shape) {
+            $GLOBALS['slimstat_test_options'] = [];
+            $db = $this->db();
+            $db->last_error = '';
+            $db->shouldReceive('suppress_errors')->andReturn(false);
+            $columns = [];
+            foreach (['city', 'username'] as $field) {
+                $columns[] = ['Field' => $field, 'Type' => $shape, 'Collation' => 'utf8mb4_unicode_ci',
+                    'Null' => 'YES', 'Default' => null, 'Extra' => '', 'Comment' => ''];
+            }
+            $db->shouldReceive('get_results')->andReturn('unreadable' === $shape ? null : $columns);
+            $db->shouldNotReceive('query');
+            $migration = new \SlimStat\Migration\Migrations\RepairLegacyColumnWidths($db);
+            $manager = $this->manager([$migration]);
+            $this->assertSame([], $manager->runAll(), 'Apply All never executes optional repairs.');
+            $this->assertSame([], MigrationManager::completedMigrationIds());
+            $healthy = 'varchar(256)' === $shape;
+            $this->assertSame($healthy, $manager->runOne($migration->getId()));
+            $this->assertSame($healthy ? [$migration->getId()] : [], MigrationManager::completedMigrationIds());
+        }
     }
 
     protected function tearDown(): void
@@ -403,6 +462,76 @@ class OptionalMigrationTest extends WpSlimstatTestCase
         $wpdb->shouldReceive('get_var')->andReturn(null);
 
         return new \SlimStat\Migration\Migrations\ConvertTablesToUtf8mb4($wpdb, $this->db());
+    }
+
+    public function test_apply_all_and_run_one_cannot_stamp_malformed_or_unreadable_indexes_complete(): void
+    {
+        foreach (['malformed', 'unreadable'] as $case) {
+            $GLOBALS['slimstat_test_options'] = [];
+            $db = \Mockery::mock(\wpdb::class);
+            $db->prefix = 'wp_';
+            $db->last_error = 'unreadable' === $case ? 'access denied' : '';
+            $db->shouldReceive('suppress_errors')->andReturn(false);
+            $db->shouldReceive('get_results')->andReturn([
+                ['Key_name' => 'idx_dt_out', 'Seq_in_index' => 1, 'Column_name' => 'dt',
+                    'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+            ]);
+            $db->shouldReceive('query')->never();
+            $manager = $this->manager([new \SlimStat\Migration\Migrations\CreateDtOutIndex($db)]);
+            $this->assertFalse($manager->runAll()['create-dt-out-index'], $case);
+            $this->assertFalse($manager->runOne('create-dt-out-index'), $case);
+            $this->assertFalse($manager->getStatus()['create-dt-out-index'], $case);
+            $this->assertNotContains('create-dt-out-index', MigrationManager::completedMigrationIds(), $case);
+        }
+    }
+
+    public function test_apply_all_accepts_a_valid_existing_index_without_ddl(): void
+    {
+        $db = \Mockery::mock(\wpdb::class);
+        $db->prefix = 'wp_';
+        $db->last_error = '';
+        $db->shouldReceive('suppress_errors')->andReturn(false);
+        $db->shouldReceive('get_results')->once()->andReturn([
+            ['Key_name' => 'idx_dt_out', 'Seq_in_index' => 1, 'Column_name' => 'dt_out',
+                'Sub_part' => null, 'Non_unique' => 1, 'Index_type' => 'BTREE', 'Collation' => 'A'],
+        ]);
+        $db->shouldReceive('query')->never();
+        $manager = $this->manager([new \SlimStat\Migration\Migrations\CreateDtOutIndex($db)]);
+        $this->assertTrue($manager->runAll()['create-dt-out-index']);
+        $this->assertTrue($manager->runOne('create-dt-out-index'));
+        $this->assertTrue($manager->getStatus()['create-dt-out-index']);
+    }
+
+    public function test_optional_completion_survives_apply_all_and_a_later_failed_attempt(): void
+    {
+        $offered = $this->offered();
+        $manager = $this->manager([$offered, $this->owed()]);
+        $this->assertTrue($manager->runOne('offered-migration'));
+        $manager->runAll();
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+        $offered->result = false;
+        $this->assertFalse($manager->runOne('offered-migration'));
+        $this->assertFalse($manager->getStatus()['offered-migration']);
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+    }
+
+    public function test_legacy_success_is_preserved_before_status_is_overwritten(): void
+    {
+        $GLOBALS['slimstat_test_options']['slimstat_migration_status'] = ['offered-migration' => true];
+        $manager = $this->manager([$this->offered(), $this->owed()]);
+        $manager->runAll();
+        $this->assertContains('offered-migration', MigrationManager::completedMigrationIds());
+    }
+
+    public function test_declined_or_failed_optional_migration_is_never_claimed_completed(): void
+    {
+        $offered = $this->offered();
+        $offered->result = false;
+        $manager = $this->manager([$offered]);
+        $manager->runAll();
+        $this->assertNotContains('offered-migration', MigrationManager::completedMigrationIds());
+        $this->assertFalse($manager->runOne('offered-migration'));
+        $this->assertNotContains('offered-migration', MigrationManager::completedMigrationIds());
     }
 
     public function test_an_offered_migration_can_still_be_run_by_name(): void

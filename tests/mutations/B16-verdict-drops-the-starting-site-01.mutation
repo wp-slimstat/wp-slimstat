@@ -1,0 +1,17 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the two starting sites are selectable, and the cell records which one it ran
+rationale: Drops the starting site from the verdict. Present and absent are not a strict and a lenient setting, they are two different sites -- one that has been used and one freshly activated -- and only one of them reproduces PITFALLS 134. A verdict that omits which was rehearsed is unreadable in the only way that matters: a PASS could mean the upgrade is safe, or that the cell ran the variant where the upgrade never happened.
+---
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -923,7 +923,7 @@
+ # {"cell":"upgrade-u1","status":"PASS"} is a claim with no subject — Run 63's two verdicts said
+ # exactly that, and they are gone anyway, which is the other half of what this fixes.
+ write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason" \
+-  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"arm_options\":\"${REHEARSE_ARM_OPTIONS:-present}\",\"width_repair_opt_in\":\"${REHEARSE_WIDTH_REPAIR:-0}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
++  "\"ws4_cell\":\"${CELL_KEY:-unpinned}\",\"old_ref\":\"$OLD_REF\",\"new_ref\":\"$NEW_REF\",\"arm_version\":\"${ARM_FREE_VERSION:-git}\",\"width_repair_opt_in\":\"${REHEARSE_WIDTH_REPAIR:-0}\",\"corpus\":\"$(basename "$DUMP")\",\"corpus_sha256\":\"$(digest "$DUMP")\",\"rows\":${ROWS_2:-0},\"base_max_id\":${BASE_MAX_ID:-0},\"notes_pending\":${NOTES_PENDING_0:-0},\"fp\":\"$FP_0\",\"fp_core\":\"$FP_CORE_0\"" \
+   2>/dev/null || true
+ 
+ # $ART is under /tmp, and /tmp is why Run 63's verdicts do not exist to be read. This copies the

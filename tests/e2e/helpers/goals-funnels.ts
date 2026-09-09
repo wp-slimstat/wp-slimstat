@@ -7,7 +7,7 @@
  */
 import { serialize as phpSerialize } from 'php-serialize';
 import { getPool } from './setup';
-import { assertSafeTestDatabase } from './env';
+import { ADMIN_USER, assertSafeTestDatabase } from './env';
 
 export interface Goal {
     id?: number;
@@ -133,7 +133,7 @@ export async function seedStats(rows: StatRow[]): Promise<void> {
  */
 export async function pinReportToDashboard(
     boxId: string,
-    login: string = process.env.WP_ADMIN_USER ?? 'parhumm',
+    login: string = ADMIN_USER,
 ): Promise<void> {
     const metaKey = 'meta-box-order_admin_page_slimlayout';
     const value = `a:1:{s:9:"dashboard";s:${boxId.length}:"${boxId}";}`;
@@ -190,8 +190,8 @@ export async function forceLimits(maxGoals: number, maxFunnels: number, wpConten
  * Plugin Name: SlimStat Goals & Funnels — E2E Limit Forcer (test harness)
  * Description: Forces slimstat_max_goals / slimstat_max_funnels for E2E tests.
  */
-add_filter('slimstat_max_goals',   static fn() => ${maxGoals});
-add_filter('slimstat_max_funnels', static fn() => ${maxFunnels});
+add_filter('slimstat_max_goals',   static fn() => ${maxGoals}, PHP_INT_MAX);
+add_filter('slimstat_max_funnels', static fn() => ${maxFunnels}, PHP_INT_MAX);
 `;
     fs.mkdirSync(path.dirname(muPlugin), { recursive: true });
     fs.writeFileSync(muPlugin, contents, 'utf8');

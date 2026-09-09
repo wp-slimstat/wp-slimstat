@@ -1,0 +1,17 @@
+target:    .github/expected-lanes.sh
+gate:      composer test:perf-gate-integrity
+kind:      construct-removal
+expect:    disagree about which lanes gate the deploy
+rationale: Stops the deploy-gate derivation emitting its Tier 2 lanes -- the state main.yml was in until 2026-09-05, when the expected set was PHPStan plus Tier 1 only. Tier 2 carries the blocking Reports output-escaping step, the ONLY CI home tests/reports-output-escaping-test.php has, so a tag on a commit whose XSS gate failed found a red Tier 2 job and a green deploy gate. Killed by section 5b, which EXECUTES the script and compares its output against the same set read out of ci.yml by slimstat_ci_wp_lanes() and slimstat_ci_step_runs_for(); one reader cannot drift without the other disagreeing.
+---
+diff --git a/.github/expected-lanes.sh b/.github/expected-lanes.sh
+--- a/.github/expected-lanes.sh
++++ b/.github/expected-lanes.sh
+@@ -80,7 +80,6 @@
+     echo "expected-lanes: ci.yml runs the escaping gate on WP ${wp}, but the Tier 2 matrix declares no such lane" >&2
+     exit 1
+   fi
+-  echo "Tier 2 · standard · E2E · WP $wp · PHP $php"
+ done
+ 
+ # ---- Vacuity floors, one per family ----------------------------------------------------

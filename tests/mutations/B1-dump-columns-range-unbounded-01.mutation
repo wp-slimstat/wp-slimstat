@@ -1,0 +1,26 @@
+target:    tests/docker/lib.sh
+gate:      php tests/rehearsal-column-control-test.php
+kind:      restore-defect
+expect:    a second table in the same dump does not leak in
+rationale: A dump holds every Slimstat table, and the sed range is the only thing keeping the reader inside the one it was asked about. Unbounded, wp_slim_browsers' columns join wp_slim_stats' set and the two sides of the control disagree for a reason that has nothing to do with the vintage -- which is worse than no control, because a cell then stops on a corpus that was in fact correct and the next person deletes the check. The gate notices because the fixture dump declares a second table on purpose.
+---
+--- a/tests/docker/lib.sh
++++ b/tests/docker/lib.sh
+@@ -140,7 +140,7 @@
+ # file cannot leak in.
+ dump_columns() { # <dump.gz> <table>
+   gzip -dc "$1" \
+-    | sed -n "/^CREATE TABLE \`$2\` (/,/^)/p" \
++    | sed -n "/^CREATE TABLE \`$2\` (/,$ p" \
+     | sed -n 's/^  `\([^`]*\)`.*/\1/p' \
+     | sort | tr '\n' ',' | sed 's/,$//'
+ }
+@@ -152,7 +152,7 @@
+   # `printf '%s\n'`, not `printf '%s'`: BSD sed does not add the trailing newline the input
+   # lacks, and `read` returns false on a final unterminated line WITHOUT running the body, so the
+   # LAST column silently dropped out of every difference. Caught by the empty-second-set case in
+-  # tests/rehearsal-column-control-test.php, which is why that case is there. PITFALLS 131.
++  # tests/rehearsal-column-control-test.php, which is why that case is there.
+   printf '%s\n' "$1" | tr ',' '\n' | sed '/^$/d' | while IFS= read -r c; do
+     case "$haystack" in
+       *",$c,"*) : ;;

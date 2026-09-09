@@ -559,16 +559,15 @@ class Query
     /**
      * Get the timestamp for the start of today.
      * If a processing timestamp has been set, calculates "today" based on that timestamp.
-     * Otherwise, uses the current server time.
+     * Otherwise, uses the site wall-clock timestamp stored in dt.
      *
      * @return int The timestamp for the start of today (midnight).
      */
     protected function getTodayDate()
     {
-        if (null !== self::$processingTimestamp) {
-            return strtotime(date('Y-m-d 00:00:00', self::$processingTimestamp));
-        }
-        return strtotime(date('Y-m-d 00:00:00'));
+        $timestamp = self::$processingTimestamp ?? \wp_slimstat::now();
+        // dt has the WP offset already applied; PHP's timezone must not add another.
+        return intdiv((int) $timestamp, 86400) * 86400;
     }
 
     // Removed: getCacheKey() / getCachedResult() / setCachedResult().
@@ -838,6 +837,9 @@ class Query
     protected function getCacheKeyForQuery($query, $args = [])
     {
         $data = [
+            // Identical table names and SQL can refer to different analytics databases.
+            // wpdb exposes connection metadata without a query; credentials are excluded.
+            'connection' => [(string) ($this->db->dbhost ?? ''), (string) ($this->db->dbname ?? '')],
             'query' => $query,
             'args'  => $args,
         ];

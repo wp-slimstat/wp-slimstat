@@ -1,0 +1,13 @@
+target:    src/Migration/LegacySettings5460.php
+gate:      composer test:v5460-migration
+kind:      restore-defect
+expect:    TEST 1: javascript_mode must be reset to on
+rationale: Restores the guard that shipped: `'0' !== $ran` in place of `!$freshInstall`. The flag is '0' on a fresh install AND on every upgrader from 5.4.0-5.4.5, who never had the key, so that guard skipped the one-time resets for exactly the cohort they exist for. v5.5.0 in the field has no such guard; this was a 6.0.0 regression. The file's FIRST fixture is what goes red -- it had been red against production for six months while passing against a transcription of production.
+---
+--- a/src/Migration/LegacySettings5460.php
++++ b/src/Migration/LegacySettings5460.php
+@@ -100,3 +100,3 @@
+         // every pre-5.4.6 upgrader also reads '0', and they are exactly who this is for.
+-        if ($pre_547 && !$freshInstall) {
++        if ($pre_547 && '0' !== $ran) {
+             // Restore the session cookie — Consent::piiAllowed() gates the actual setcookie()

@@ -3,11 +3,11 @@
  * MU-Plugin: Custom DB Simulator
  *
  * Simulates the slimstat_custom_wpdb filter used by the external database addon.
- * When the WP option "slimstat_test_use_custom_db" is set to "yes", this plugin
- * hooks into the filter and returns a cloned wpdb instance with a different table
- * prefix (slimext_), simulating an external database configuration.
+ * When "slimstat_test_use_custom_db" is "yes", returns a separate wpdb handle
+ * with the WordPress prefix. A uniquely named slimstat_e2e_<digits> database
+ * can be selected with "slimstat_test_custom_database" for physical DB isolation;
+ * otherwise it clones the default handle for the existing prefix-parity specs.
  *
- * Used exclusively by E2E tests for the DataBuckets custom-db accuracy spec.
  * Remove this file (or set the option to anything other than "yes") to disable.
  */
 
@@ -24,6 +24,14 @@ if (!defined('SLIMSTAT_E2E_TESTING') || !SLIMSTAT_E2E_TESTING) {
 add_filter('slimstat_custom_wpdb', function ($current_wpdb) {
     if (get_option('slimstat_test_use_custom_db') !== 'yes') {
         return $current_wpdb;
+    }
+
+    // A dedicated disposable schema proves handle routing; prefix changes alone do not.
+    $database = get_option('slimstat_test_custom_database', '');
+    if (is_string($database) && preg_match('/^slimstat_e2e_[0-9]+$/D', $database)) {
+        $custom = new wpdb(DB_USER, DB_PASSWORD, $database, DB_HOST);
+        $custom->set_prefix($GLOBALS['wpdb']->prefix);
+        return $custom;
     }
 
     // Use $GLOBALS to avoid PHP 8.2 fatal: cannot use global with same name as parameter

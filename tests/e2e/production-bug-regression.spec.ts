@@ -23,15 +23,15 @@ import {
   clearStatsTable,
   closeDb,
 } from './helpers/setup';
-import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
+import { ADMIN_PASS, ADMIN_USER, BASE_URL, MYSQL_CONFIG } from './helpers/env';
 
 const COOKIE_DOMAIN = new URL(BASE_URL).hostname;
 
 /** Re-authenticate if the page was redirected to wp-login.php */
 async function ensureAdminLoggedIn(page: import('@playwright/test').Page): Promise<void> {
   if (page.url().includes('wp-login.php')) {
-    const user = process.env.WP_ADMIN_USER || 'parhumm';
-    const pass = process.env.WP_ADMIN_PASS || 'testpass123';
+    const user = ADMIN_USER;
+    const pass = ADMIN_PASS;
     await page.fill('#user_login', user);
     await page.fill('#user_pass', pass);
     await page.click('#wp-submit');

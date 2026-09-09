@@ -57,6 +57,8 @@ namespace SlimStat\Utils {
 
 namespace {
 
+    class wp_slimstat { public static $wpdb; }
+
     $assertions = 0;
 
     function assert_same($expected, $actual, string $message): void
@@ -109,6 +111,7 @@ namespace {
 
     $GLOBALS['wpdb'] = new class {
         public string $prefix = 'wp_';
+        public string $last_error = '';
     };
 
     // WriteResult BEFORE Storage: this script hand-requires its subject rather than using the

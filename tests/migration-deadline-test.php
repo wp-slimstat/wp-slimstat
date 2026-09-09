@@ -68,6 +68,7 @@ $classification = [
     'RecoverCorruptedHeatmapPositions.php' => 'unbounded',
 
     // ── bounded: a fixed number of statements ──
+    'RepairLegacyColumnWidths.php' => 'bounded', // at most two online ALTERs, with a between-table deadline
     'AddVisitIdentity.php'      => 'bounded',   // two ALTERs plus one index build
     'CreateCountryDtIndex.php'  => 'bounded',   // one CREATE INDEX
     'CreateDtBrowserIndex.php'  => 'bounded',

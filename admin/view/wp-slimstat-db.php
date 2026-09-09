@@ -7,7 +7,7 @@ use SlimStat\Components\DateRangeHelper;
 // Let's define the main class with all the methods that we need
 class wp_slimstat_db
 {
-    // Per-request memo of the fact table's ACTUAL columns, keyed by table prefix
+    // Per-request memo of the fact table's ACTUAL columns, keyed by database and table prefix
     // (multisite: switch_to_blog changes the prefix mid-request). `true` means the
     // probe could not read and the manifest is assumed. Never durable on purpose —
     // a transient would survive the migration that adds the column and keep
@@ -158,7 +158,7 @@ class wp_slimstat_db
         $filters_array = [];
 
         // Handle type parameter for date presets and custom ranges
-        if (isset($_GET['type'])) {
+        if (isset($_GET['type']) && is_string($_GET['type'])) {
             // Sanitize the type parameter to prevent XSS
             $type = sanitize_key($_GET['type']);
 
@@ -180,10 +180,10 @@ class wp_slimstat_db
                         $filters_array['interval'] = 'interval equals -' . absint($interval_days);
                     }
                 }
-            } elseif (isset($_GET['from']) && isset($_GET['to'])) {
+            } elseif (isset($_GET['from'], $_GET['to']) && is_string($_GET['from']) && is_string($_GET['to'])) {
                 // Sanitize date inputs to prevent XSS
-                $from_date = sanitize_text_field($_GET['from']);
-                $to_date = sanitize_text_field($_GET['to']);
+                $from_date = sanitize_text_field(wp_unslash($_GET['from']));
+                $to_date = sanitize_text_field(wp_unslash($_GET['to']));
 
                 // Validate date format (YYYY-MM-DD)
                 if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
@@ -206,6 +206,9 @@ class wp_slimstat_db
         // Filters are set via javascript as hidden fields and submitted as a POST request. They override anything passed through the regular input fields
         if (!empty($_REQUEST['fs']) && is_array($_REQUEST['fs'])) {
             foreach ($_REQUEST['fs'] as $a_request_filter_name => $a_request_filter_value) {
+                if (!is_string($a_request_filter_value)) {
+                    continue;
+                }
                 $safe_name  = sanitize_text_field(wp_unslash($a_request_filter_name));
                 $safe_value = str_replace('&&&', '', sanitize_text_field(wp_unslash($a_request_filter_value)));
                 $filters_array[$safe_name] = sprintf('%s %s', $safe_name, $safe_value);
@@ -214,14 +217,15 @@ class wp_slimstat_db
 
         // Date filters (input fields) - Please note: interval_minutes is not exposed via the web interface, that's why it's not listed here below
         foreach (['hour', 'day', 'month', 'year', 'interval', 'interval_hours'] as $a_date_time_filter_name) {
-            if (isset($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
+            if (isset($_POST[$a_date_time_filter_name]) && is_string($_POST[$a_date_time_filter_name]) && strlen($_POST[$a_date_time_filter_name]) > 0) { // here we use isset instead of !empty to handle ZERO as a valid input value
                 $filters_array[$a_date_time_filter_name] = $a_date_time_filter_name . ' equals ' . intval($_POST[$a_date_time_filter_name]);
             }
         }
 
         // Fields and drop downs
-        if (!empty($_POST['f']) && !empty($_POST['o'])) {
-            $filters_array[sanitize_text_field($_POST['f'])] = sprintf('%s %s ', sanitize_text_field($_POST[ 'f' ]), sanitize_text_field($_POST[ 'o' ])) . (isset($_POST['v']) ? sanitize_text_field($_POST['v']) : '');
+        if (!empty($_POST['f']) && is_string($_POST['f']) && !empty($_POST['o']) && is_string($_POST['o'])
+            && (!isset($_POST['v']) || is_string($_POST['v']))) {
+            $filters_array[sanitize_text_field(wp_unslash($_POST['f']))] = sprintf('%s %s ', sanitize_text_field(wp_unslash($_POST[ 'f' ])), sanitize_text_field(wp_unslash($_POST[ 'o' ]))) . (isset($_POST['v']) ? sanitize_text_field(wp_unslash($_POST['v'])) : '');
         }
 
         // Filters set via the plugin options
@@ -253,7 +257,7 @@ class wp_slimstat_db
         self::$filters_normalized = self::init_filters($filters_raw);
 
         // Retrieve data that will be used by multiple reports
-        if (empty($_REQUEST['page']) || false !== strpos($_REQUEST['page'], 'slimview')) {
+        if (empty($_REQUEST['page']) || (is_string($_REQUEST['page']) && false !== strpos($_REQUEST['page'], 'slimview'))) {
             self::$pageviews = wp_slimstat_db::count_records();
         }
     }
@@ -287,6 +291,11 @@ class wp_slimstat_db
     public static function get_combined_where($_where = '', $_column = '*', $_use_date_filters = true, $_slim_stats_table_alias = '', $where_params = null)
     {
         global $wpdb;
+
+        // Aliases are SQL identifiers, never SQL fragments; retain custom add-on names.
+        if (!is_string($_slim_stats_table_alias) || ('' !== $_slim_stats_table_alias && !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_slim_stats_table_alias))) {
+            return '1=0';
+        }
 
         $dt_with_alias = 'dt';
         if (!empty($_slim_stats_table_alias)) {
@@ -379,6 +388,12 @@ class wp_slimstat_db
      */
     public static function get_single_where_clause($_dimension = 'id', $_operator = 'equals', $_value = '', $_slim_stats_table_alias = '')
     {
+        // Keep extension columns (including Pro's user_login), but reject SQL syntax.
+        if (!is_string($_dimension) || !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_dimension)
+            || !is_string($_slim_stats_table_alias) || ('' !== $_slim_stats_table_alias && !preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', $_slim_stats_table_alias))) {
+            return '1=0';
+        }
+
         // Auto-upgrade operators for multi-value columns where exact match
         // never works (values stored as concatenated strings in a single field).
         $multi_value_like_columns = ['outbound_resource', 'notes'];
@@ -424,8 +439,11 @@ class wp_slimstat_db
                 $where[0] = sprintf('%s <> %%s', $column_with_alias);
                 break;
 
+            // These operators match literal text. Escape LIKE metacharacters after resource
+            // encoding and before prepare(). Explicit ESCAPE keeps NO_BACKSLASH_ESCAPES servers
+            // literal too; matches/does_not_match retain their regex syntax.
             case 'contains':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), '%' . $_value . '%'];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'includes_in_set':
@@ -434,15 +452,15 @@ class wp_slimstat_db
                 break;
 
             case 'does_not_contain':
-                $where = [sprintf('%s NOT LIKE %%s', $column_with_alias), '%' . $_value . '%'];
+                $where = [sprintf('%s NOT LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'starts_with':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), $_value . '%'];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), $GLOBALS['wpdb']->esc_like($_value) . '%'];
                 break;
 
             case 'ends_with':
-                $where = [sprintf('%s LIKE %%s', $column_with_alias), '%' . $_value];
+                $where = [sprintf('%s LIKE %%s ESCAPE 0x5c', $column_with_alias), '%' . $GLOBALS['wpdb']->esc_like($_value)];
                 break;
 
             case 'sounds_like':
@@ -450,11 +468,11 @@ class wp_slimstat_db
                 break;
 
             case 'is_empty':
-                $where = [sprintf('%s %s', $column_with_alias, $filter_empty), ''];
+                $where = [sprintf('%s %s', $column_with_alias, $filter_empty), null];
                 break;
 
             case 'is_not_empty':
-                $where = [sprintf('%s %s', $column_with_alias, $filter_not_empty), ''];
+                $where = [sprintf('%s %s', $column_with_alias, $filter_not_empty), null];
                 break;
 
             case 'is_greater_than':
@@ -467,6 +485,9 @@ class wp_slimstat_db
 
             case 'between':
                 $range = explode(',', $_value);
+                if (2 !== count($range)) {
+                    return '1=0';
+                }
                 $where[0] = sprintf('%s BETWEEN %%d AND %%d', $column_with_alias);
                 $where[1] = [intval($range[0]), intval($range[1])];
                 break;
@@ -484,7 +505,7 @@ class wp_slimstat_db
                 break;
         }
 
-        if (isset($where[1]) && '' != $where[1]) {
+        if (null !== $where[1]) {
             // Handle array of values for operators like 'between'
             if (is_array($where[1])) {
                 return $GLOBALS['wpdb']->prepare($where[0], ...$where[1]);
@@ -504,8 +525,8 @@ class wp_slimstat_db
     {
         // Use the end date from normalized filters (if available)
         if (!empty(self::$filters_normalized['utime']['end'])) {
-            // Convert to Y-m-d for comparison (Query expects string date)
-            $to = wp_date('Y-m-d', self::$filters_normalized['utime']['end']);
+            // dt already contains the site offset; passing through wp_date adds it twice.
+            $to = (int) self::$filters_normalized['utime']['end'];
             if (method_exists($query, 'canUseCacheForDateRange')) {
                 $query->canUseCacheForDateRange($to);
             }
@@ -600,7 +621,7 @@ class wp_slimstat_db
             return false;
         }
 
-        return (int) self::$filters_normalized['utime']['end'] < strtotime(date('Y-m-d 00:00:00'));
+        return (int) self::$filters_normalized['utime']['end'] < intdiv(wp_slimstat::now(), 86400) * 86400;
     }
 
     protected static function is_simple_count_query($sql)
@@ -705,12 +726,17 @@ class wp_slimstat_db
                 switch ($a_filter[1]) {
                     case 'strtotime':
                         $custom_date = strtotime($a_filter[3], wp_slimstat::now());
+                        if (false === $custom_date) {
+                            break;
+                        }
 
-                        $filters_parsed['date']['minute'] = intval(date('i', $custom_date));
-                        $filters_parsed['date']['hour']   = intval(date('H', $custom_date));
-                        $filters_parsed['date']['day']    = intval(date('j', $custom_date));
-                        $filters_parsed['date']['month']  = intval(date('n', $custom_date));
-                        $filters_parsed['date']['year']   = intval(date('Y', $custom_date));
+                        // The legacy clock already contains the site offset; never apply it twice.
+
+                        $filters_parsed['date']['minute'] = intval(gmdate('i', $custom_date));
+                        $filters_parsed['date']['hour']   = intval(gmdate('H', $custom_date));
+                        $filters_parsed['date']['day']    = intval(gmdate('j', $custom_date));
+                        $filters_parsed['date']['month']  = intval(gmdate('n', $custom_date));
+                        $filters_parsed['date']['year']   = intval(gmdate('Y', $custom_date));
                         break;
 
                     case 'minute':
@@ -722,33 +748,35 @@ class wp_slimstat_db
                             $filters_parsed['date'][$a_filter[1]] = intval($a_filter[3]);
                         } else {
                             // Try to apply strtotime to value
-                            self::toggle_date_i18n_filters(false);
-                            switch ($a_filter[1]) {
-                                case 'minute':
-                                    $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                            wp_slimstat::toggle_date_i18n_filters(false);
+                            try {
+                                switch ($a_filter[1]) {
+                                    case 'minute':
+                                        $filters_parsed['date']['minute'] = intval(wp_date('i', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'hour':
-                                    $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'hour':
+                                        $filters_parsed['date']['hour'] = intval(wp_date('H', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'day':
-                                    $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'day':
+                                        $filters_parsed['date']['day'] = intval(wp_date('j', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'month':
-                                    $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'month':
+                                        $filters_parsed['date']['month'] = intval(wp_date('n', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                case 'year':
-                                    $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
-                                    break;
+                                    case 'year':
+                                        $filters_parsed['date']['year'] = intval(wp_date('Y', strtotime($a_filter[3], date_i18n('U'))));
+                                        break;
 
-                                default:
-                                    break;
+                                    default:
+                                        break;
+                                }
+                            } finally {
+                                wp_slimstat::toggle_date_i18n_filters(true);
                             }
-
-                            self::toggle_date_i18n_filters(true);
 
                             if (false === $filters_parsed['date'][$a_filter[1]]) {
                                 unset($filters_parsed['date'][$a_filter[1]]);
@@ -815,6 +843,7 @@ class wp_slimstat_db
 
         // Normalize the various date values
         wp_slimstat::toggle_date_i18n_filters(false);
+        try {
 
         // Intervals
         // If neither an interval nor interval_hours were specified...
@@ -904,8 +933,9 @@ class wp_slimstat_db
             $fn['utime']['end'] = self::live_window_end();
         }
 
-        // Turn the date_i18n filters back on
-        wp_slimstat::toggle_date_i18n_filters(true);
+        } finally {
+            wp_slimstat::toggle_date_i18n_filters(true);
+        }
 
         // Apply third-party filters
         $fn = apply_filters('slimstat_db_filters_normalized', $fn, $_filters_raw);
@@ -1154,7 +1184,7 @@ class wp_slimstat_db
     {
         $suffix = 'KB';
 
-        $sql           = 'SHOW TABLE STATUS LIKE "' . $GLOBALS['wpdb']->prefix . 'slim_stats"';
+        $sql = wp_slimstat::$wpdb->prepare('SHOW TABLE STATUS LIKE %s', wp_slimstat::$wpdb->esc_like($GLOBALS['wpdb']->prefix . 'slim_stats'));
         $table_details = wp_slimstat::$wpdb->get_row($sql, 'ARRAY_A', 0);
 
         $table_size = ($table_details['Data_length'] / 1024) + ($table_details['Index_length'] / 1024);
@@ -1332,6 +1362,7 @@ class wp_slimstat_db
 
         // Turn date_i18n filters off
         wp_slimstat::toggle_date_i18n_filters(false);
+        try {
 
         // Ensure pageviews is initialized for Dashboard widgets
         if (0 === self::$pageviews) {
@@ -1366,8 +1397,9 @@ class wp_slimstat_db
         $results[7]['metric'] = __('Yesterday', 'wp-slimstat');
         $results[7]['value']  = number_format_i18n(wp_slimstat_db::count_records('id', 'dt BETWEEN ' . (wp_slimstat::date_i18n('U', mktime(0, 0, 0, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))) . ' AND ' . (wp_slimstat::date_i18n('U', mktime(23, 59, 59, (int) wp_slimstat::date_i18n('m'), (int) wp_slimstat::date_i18n('d') - 1, (int) wp_slimstat::date_i18n('Y')))), false));
 
-        // Turn date_i18n filters back on
-        wp_slimstat::toggle_date_i18n_filters(true);
+        } finally {
+            wp_slimstat::toggle_date_i18n_filters(true);
+        }
 
         return $results;
     }
@@ -1828,7 +1860,7 @@ class wp_slimstat_db
         // (exactly 3.125) printed 3.12 where every other percentage in the product gives
         // 3.13. Issue #334; the operand order is ADR-17's and is unchanged.
         $new_visitors_rate = ($total_human_hits > 0) ? round((100 * $new_visitors / $total_human_hits), 2) : 0;
-        $server_name       = sanitize_text_field(wp_unslash($_SERVER['SERVER_NAME']));
+        $server_name       = (string) wp_parse_url(home_url(), PHP_URL_HOST);
 
         if (intval($new_visitors_rate) > 99) {
             $new_visitors_rate = '100';
@@ -2080,12 +2112,8 @@ class wp_slimstat_db
             return '';
         }
 
-        // Defense-in-depth: a value-bearing operator with an empty value makes
-        // get_single_where_clause() return an unprepared fragment that still
-        // contains a literal "%s" placeholder (it skips prepare() when the value
-        // is empty). sanitize_goal() already rejects this at save time, but guard
-        // the query layer too so such a clause can never reach $wpdb->query().
-        // Only the valueless operators (is_empty / is_not_empty) may run without a value.
+        // Preserve goal validation for legacy stored values as well as new saves:
+        // only valueless operators may run without a value.
         if ('' === $value && !in_array($operator, self::$valueless_operators, true)) {
             return '';
         }
@@ -2151,7 +2179,7 @@ class wp_slimstat_db
     /**
      * Does the fact table in front of us actually have this column?
      *
-     * One SHOW COLUMNS per request per prefix, memoised in $fact_columns_present —
+     * One SHOW COLUMNS per request per database/prefix, memoised in $fact_columns_present —
      * not per funnel step, not per query. Runs on the analytics handle
      * (wp_slimstat::$wpdb) because that is the connection every caller of
      * visitor_id_expr() queries; under an external DB (C44) probing the WordPress
@@ -2170,7 +2198,9 @@ class wp_slimstat_db
     {
         $prefix = $GLOBALS['wpdb']->prefix;
 
-        if (!array_key_exists($prefix, self::$fact_columns_present)) {
+        $db = wp_slimstat::$wpdb;
+        $key = (is_object($db) ? spl_object_hash($db) : 'unavailable') . ':' . $prefix;
+        if (!array_key_exists($key, self::$fact_columns_present)) {
             // BOTH preconditions guarded, not just the class: this file also runs
             // inside bare-PHP test harnesses and half-booted sites where the
             // autoloader is absent (#325) — and columnState() type-hints wpdb, so a
@@ -2183,13 +2213,15 @@ class wp_slimstat_db
 
             // A readable slim_stats always reports columns (id at minimum), so an
             // empty `present` means the probe could not read — assume the manifest.
-            self::$fact_columns_present[$prefix] = [] === $state['present']
-                ? true
-                : array_flip($state['present']);
+            // Keep the handle alive so PHP cannot reuse its hash for another database.
+            self::$fact_columns_present[$key] = [
+                'db' => $db,
+                'columns' => [] === $state['present'] ? true : array_flip($state['present']),
+            ];
         }
 
-        return true === self::$fact_columns_present[$prefix]
-            || isset(self::$fact_columns_present[$prefix][$column]);
+        return true === self::$fact_columns_present[$key]['columns']
+            || isset(self::$fact_columns_present[$key]['columns'][$column]);
     }
 
     /**

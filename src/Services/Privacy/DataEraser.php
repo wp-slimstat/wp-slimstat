@@ -56,6 +56,7 @@ class DataEraser
 			if ($deleted > 0) {
 				$items_removed = true;
 				$messages[] = sprintf(
+					/* translators: %d: number of pageview records removed. */
 					__('Removed %d pageview record(s) from SlimStat.', 'wp-slimstat'),
 					$deleted
 				);
@@ -79,6 +80,7 @@ class DataEraser
 				if ($deleted_archive > 0) {
 					$items_removed = true;
 					$messages[] = sprintf(
+						/* translators: %d: number of archived pageview records removed. */
 						__('Removed %d archived pageview record(s) from SlimStat.', 'wp-slimstat'),
 						$deleted_archive
 					);
@@ -166,6 +168,7 @@ class DataEraser
 			if ($deleted > 0) {
 				$items_removed = true;
 				$messages[] = sprintf(
+					/* translators: %d: number of event records removed. */
 					__('Removed %d event record(s) from SlimStat.', 'wp-slimstat'),
 					$deleted
 				);
@@ -182,6 +185,7 @@ class DataEraser
 				if ($deleted_archive > 0) {
 					$items_removed = true;
 					$messages[] = sprintf(
+						/* translators: %d: number of archived event records removed. */
 						__('Removed %d archived event record(s) from SlimStat.', 'wp-slimstat'),
 						$deleted_archive
 					);
@@ -286,7 +290,8 @@ class DataEraser
 		if ($updated > 0) {
 			$items_removed = true; // Technically anonymized, not removed
 			$messages[] = sprintf(
-				__('Anonymized %d record(s) with IP %s in SlimStat.', 'wp-slimstat'),
+				/* translators: 1: anonymized record count, 2: IP address. */
+				__('Anonymized %1$d record(s) with IP %2$s in SlimStat.', 'wp-slimstat'),
 				$updated,
 				$ip_address
 			);

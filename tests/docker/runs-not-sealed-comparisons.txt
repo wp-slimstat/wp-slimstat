@@ -37,4 +37,10 @@ run58-s6-blind-seal
 run60-s7-canary
 run61-s8-closure-audit
 run64-s0a-336-trigger
+# WS4's upgrade rehearsals. A cell is one site walked forward through its own upgrade, not two
+# arms answering the same question, so there is nothing to blind and nothing to flip: the
+# comparison a cell makes is against ITSELF before the migration, and the fingerprint it
+# compares is deterministic rather than adjudicated. Sealing it would produce a mapping over a
+# single arm, which is a ceremony that asserts nothing.
+run65-rehearsal
 s6-design

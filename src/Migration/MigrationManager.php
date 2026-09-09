@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace SlimStat\Migration;
 
 use SlimStat\Utils\OptionClaim;
+use SlimStat\Schema\Schema;
 
 class MigrationManager
 {
     private const OPTION_STATUS = 'slimstat_migration_status';
+
+    private const OPTION_COMPLETED = 'slimstat_migration_completed';
 
     /**
      * Single-flight claim for runAll(). Not autoloaded: it is written on the admin path,
@@ -258,12 +261,16 @@ class MigrationManager
      * Anything that changes what the probe would answer — running a migration, dismissing
      * the notice, undismissing it — has to call this, or the UI reports the previous state.
      */
-    public function forgetProbe(): void
+    public function forgetProbe(bool $migrationSucceeded = false): void
     {
         $this->needsMemo   = null;
         $this->offeredMemo = null;
         delete_transient(self::TRANSIENT_PROBE);
         delete_transient(self::TRANSIENT_OFFERED);
+        if ($migrationSucceeded) {
+            // Keep the recorded drift until the next ordinary admin observation verifies it.
+            delete_transient(Schema::COLUMN_DRIFT_CHECK_TRANSIENT);
+        }
     }
 
     /**
@@ -302,6 +309,41 @@ class MigrationManager
     {
         $status = get_option(self::OPTION_STATUS, []);
         return is_array($status) ? $status : [];
+    }
+
+    /**
+     * Migrations known to have completed at least once, independent of the last attempt.
+     * Existing true statuses are accepted for backwards compatibility. A false/missing
+     * historical status cannot prove completion and is deliberately not guessed from schema.
+     *
+     * @return string[]
+     */
+    public static function completedMigrationIds(): array
+    {
+        $completed = [];
+        foreach ([self::OPTION_COMPLETED, self::OPTION_STATUS] as $option) {
+            $status = get_option($option, []);
+            foreach (is_array($status) ? $status : [] as $id => $ok) {
+                if (true === $ok && is_string($id)) {
+                    $completed[$id] = true;
+                }
+            }
+        }
+        return array_keys($completed);
+    }
+
+    /** Preserve legacy completion before a latest-result write can replace it. */
+    private static function rememberCompletedMigrations(array $results): void
+    {
+        $completed = array_fill_keys(self::completedMigrationIds(), true);
+        foreach ($results as $id => $ok) {
+            if (true === $ok && is_string($id)) {
+                $completed[$id] = true;
+            }
+        }
+        if ([] !== $completed) {
+            update_option(self::OPTION_COMPLETED, $completed, false);
+        }
     }
 
     /**
@@ -365,10 +407,11 @@ class MigrationManager
             $ok = $target->run();
 
             $status = $this->getStatus();
+            self::rememberCompletedMigrations([$target->getId() => $ok]);
             $status[$target->getId()] = $ok;
             update_option(self::OPTION_STATUS, $status, false);
 
-            $this->forgetProbe();
+            $this->forgetProbe($ok);
 
             return $ok;
         } finally {
@@ -402,8 +445,11 @@ class MigrationManager
                     continue;
                 }
 
-                // Only run if needed, but always record status
-                $ok = !$migration->shouldRun() || $migration->run();
+                // An index can decline DDL because its definition is malformed or unreadable.
+                // Its idempotent run() distinguishes that refusal from a healthy existing index.
+                $ok = $migration instanceof AbstractIndexMigration
+                    ? $migration->run()
+                    : (!$migration->shouldRun() || $migration->run());
                 $results[$migration->getId()] = $ok;
             }
         } finally {
@@ -412,11 +458,12 @@ class MigrationManager
             delete_option(self::OPTION_RUN_CLAIM);
         }
 
+        self::rememberCompletedMigrations($results);
         update_option(self::OPTION_STATUS, $results, false);
 
         // Re-probe against the database we just changed, not against the answer cached
         // before we changed it.
-        $this->forgetProbe();
+        $this->forgetProbe(in_array(true, $results, true));
 
         if (!$this->needsMigration()) {
             $this->dismissNotice();

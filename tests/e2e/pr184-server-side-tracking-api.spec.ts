@@ -280,7 +280,7 @@ test.describe('PR #184: Server-Side Tracking API (Issue #171)', () => {
   // ─── Test 10: Unauthenticated request handling ──────────────
   test('unauthenticated request is handled safely', async ({ page, browser }) => {
     // Create a fresh anonymous context without auth cookies
-    const anonCtx = await browser.newContext();
+    const anonCtx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await anonCtx.newPage();
 
     try {

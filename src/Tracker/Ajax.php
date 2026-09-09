@@ -141,7 +141,7 @@ class Ajax
     public static function sanitizeReferer($rawEncoded)
     {
         $referer    = Utils::base64UrlDecode($rawEncoded);
-        $parsed_ref = parse_url($referer ?: '');
+        $parsed_ref = wp_parse_url($referer ?: '');
 
         // Security: Validate referer format
         if (false === $parsed_ref) {
@@ -200,7 +200,8 @@ class Ajax
             return Utils::logError(204);
         }
 
-        $remote_ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
+        $remote_ip = $_SERVER['REMOTE_ADDR'] ?? '';
+        $remote_ip = is_string($remote_ip) ? sanitize_text_field(wp_unslash($remote_ip)) : '';
         if (!empty($remote_ip) && self::isRateLimited($remote_ip)) {
             return Utils::logError(429);
         }
@@ -212,8 +213,8 @@ class Ajax
         $data_js   = \wp_slimstat::get_data_js();
         $stat      = \wp_slimstat::get_stat();
 
-        $site_host = parse_url(get_site_url(), PHP_URL_HOST);
-        $home_host = parse_url(home_url(), PHP_URL_HOST);
+        $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
+        $home_host = wp_parse_url(home_url(), PHP_URL_HOST);
         $http_host = isset($_SERVER['HTTP_HOST']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_HOST'])) : '';
         $allowed_hosts = array_filter([$site_host, $home_host, $http_host]);
         $normalize_host = static function ($host) {
@@ -277,6 +278,18 @@ class Ajax
                 return Utils::getValueWithChecksum($stat['id']);
             }
 
+            if ($isConsentUpgrade && empty($data_js['pos'])) {
+                // The verified existing ID must use the session-wide consent merge,
+                // rather than the ordinary one-row update path below.
+                \wp_slimstat::set_stat(Utils::getClientInfo($data_js, $stat));
+                $id = Processor::process();
+                if (empty($id) || $id < 0) {
+                    return $id ?: 0;
+                }
+                do_action('slimstat_track_success');
+                return Utils::getValueWithChecksum($id);
+            }
+
             // Process IP according to consent status (cookie set only by consent upgrade handler)
             // $isConsentUpgrade already defined above
             // Pass explicit consent flag if this is a consent upgrade request
@@ -288,12 +301,14 @@ class Ajax
                     $stat['email']    = $GLOBALS['current_user']->data->user_email;
                     $stat['notes'][]  = 'user:' . $GLOBALS['current_user']->data->ID;
                 } elseif (isset($_COOKIE['comment_author_' . COOKIEHASH])) {
-                    if (!empty($_COOKIE['comment_author_' . COOKIEHASH])) {
-                        $stat['username'] = sanitize_user($_COOKIE['comment_author_' . COOKIEHASH]);
+                    $comment_author = $_COOKIE['comment_author_' . COOKIEHASH] ?? '';
+                    if (is_string($comment_author) && '' !== $comment_author) {
+                        $stat['username'] = sanitize_user(wp_unslash($comment_author));
                     }
 
-                    if (!empty($_COOKIE['comment_author_email_' . COOKIEHASH])) {
-                        $stat['email'] = sanitize_email($_COOKIE['comment_author_email_' . COOKIEHASH]);
+                    $comment_email = $_COOKIE['comment_author_email_' . COOKIEHASH] ?? '';
+                    if (is_string($comment_email) && '' !== $comment_email) {
+                        $stat['email'] = sanitize_email(wp_unslash($comment_email));
                     }
                 }
             }
@@ -303,10 +318,10 @@ class Ajax
                 // This ensures we track the correct page for navigation requests while preventing injection attacks
                 if (!empty($data_js['res'])) {
                     $resource = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource ?: '');
+                    $parsed_resource = wp_parse_url($resource ?: '');
 
                     // Security: Validate host is from current site domain
-                    $site_host = parse_url(get_site_url(), PHP_URL_HOST);
+                    $site_host = wp_parse_url(get_site_url(), PHP_URL_HOST);
                     if (false !== $parsed_resource && !empty($parsed_resource['host'])) {
                         // Security: Whitelist validation - only allow current site domain
                         if (!$is_allowed_host($parsed_resource['host'])) {
@@ -486,7 +501,7 @@ class Ajax
 
                 if (!empty($data_js['res'])) {
                     $resource        = Utils::base64UrlDecode($data_js['res']);
-                    $parsed_resource = parse_url($resource ?: '');
+                    $parsed_resource = wp_parse_url($resource ?: '');
                     if (false === $parsed_resource || empty($parsed_resource['host'])) {
                         return Utils::logError(203);
                     }
@@ -530,7 +545,7 @@ class Ajax
             $stat['resource'] = '';
             if (!empty($data_js['res'])) {
                 $stat['resource'] = Utils::base64UrlDecode($data_js['res']);
-                if (false === parse_url($stat['resource'] ?: '')) {
+                if (false === wp_parse_url($stat['resource'] ?: '')) {
                     return Utils::logError(203);
                 }
             }

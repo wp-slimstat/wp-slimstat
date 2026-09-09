@@ -1,0 +1,18 @@
+# Explicit large-corpus rehearsal override: rebuilding a 5M-row table needs both old and
+# replacement tables. The default ~4GiB tmpfs cannot hold them; use disposable disk storage.
+# Invoke with DC_EXTRA_FILE=tests/docker/docker-compose.scale.yml. `down -v` removes it.
+services:
+  wp:
+    cpus: 2
+    mem_limit: 1g
+  db:
+    cpus: 4
+    mem_limit: 4g
+    command:
+      - --max_allowed_packet=64M
+      - --skip-log-bin
+    tmpfs: !reset []
+    volumes:
+      - scale-db:/var/lib/mysql
+volumes:
+  scale-db:

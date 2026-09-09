@@ -49,14 +49,24 @@ trait AddVisitIdentityDouble
 
         $wpdb->shouldReceive('suppress_errors')->andReturn(false);
         $wpdb->shouldReceive('get_results')->andReturnUsing(
-            static fn ($sql = '') => $present((string) $sql)
+            static function ($sql = '') use ($present, $indexes, $wpdb) {
+                if (false === strpos((string) $sql, 'SHOW INDEX')) {
+                    return $present((string) $sql);
+                }
+                if ($indexes instanceof \Closure) {
+                    return $indexes($wpdb);
+                }
+                $rows = [];
+                foreach ($indexes as $name) {
+                    foreach ('PRIMARY' === $name ? ['id'] : ['vid_hash', 'dt'] as $position => $column) {
+                        $rows[] = ['Key_name' => $name, 'Seq_in_index' => $position + 1,
+                            'Column_name' => $column, 'Sub_part' => null, 'Non_unique' => 'PRIMARY' === $name ? 0 : 1,
+                            'Index_type' => 'BTREE', 'Collation' => 'A'];
+                    }
+                }
+                return $rows;
+            }
         );
-
-        if ($indexes instanceof \Closure) {
-            $wpdb->shouldReceive('get_col')->andReturnUsing(fn () => $indexes($wpdb));
-        } else {
-            $wpdb->shouldReceive('get_col')->andReturn($indexes);
-        }
 
         return $wpdb;
     }

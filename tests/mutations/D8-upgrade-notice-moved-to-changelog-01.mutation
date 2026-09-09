@@ -1,0 +1,26 @@
+target:    readme.txt
+gate:      composer test:db-floor-metadata
+kind:      restore-defect
+expect:    has no `= 6.0.0 =` entry under `== Upgrade Notice ==`
+rationale: Deletes the Upgrade Notice entry and makes the changelog heading `= 6.0.0 =` (dateless) so a whole-file regex finds it first; only the section-scoped extraction distinguishes the two.
+---
+--- a/readme.txt
++++ b/readme.txt
+@@ -108,16 +108,12 @@
+ 
+ == Upgrade Notice ==
+ 
+-= 6.0.0 =
+-Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
+-
+-
+ = 5.5.1 =
+ Deleting the plugin no longer erases your analytics. Data is now kept by default and removed only if you enabled Settings → Maintenance → "Delete Data on Uninstall" first. Also fixes a rare blank-screen/admin-lockout on plugin load.
+ 
+ == Changelog ==
+ 
+-= 6.0.0 - 2026-09-01 =
++= 6.0.0 =
+ 
+ **Performance — measured, not estimated**
+ * Admin charts read about half as many database rows: totals now ride the same query as their buckets. Measured on the weekly chart over the 150,000-row reference bench corpus, as deterministic counters rather than timings: rows read 304,454 -> 152,227 and sort work 212,301 -> 106,141. That change alone leaves report output byte-identical; the separate previous-period correction below does move two numbers, on purpose.

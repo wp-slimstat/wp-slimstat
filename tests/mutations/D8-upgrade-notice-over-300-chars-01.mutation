@@ -1,0 +1,17 @@
+target:    readme.txt
+gate:      composer test:db-floor-metadata
+kind:      introduce-defect
+expect:    past the 300-character guideline
+rationale: Appends one sentence to the 6.0.0 notice, taking it to 345 characters; the three rollback-fact regexes still match, so only the length check can fire.
+---
+--- a/readme.txt
++++ b/readme.txt
+@@ -109,7 +109,7 @@
+ == Upgrade Notice ==
+ 
+ = 6.0.0 =
+-Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog.
++Back up your database first. This update only ADDS columns and never removes a row; older versions keep working on the updated tables, but the added columns stay. A Migration screen appears after updating; its steps wait for your click. Some numbers change on purpose — see the changelog. Read the full notes on wordpress.org before you begin.
+ 
+ 
+ = 5.5.1 =

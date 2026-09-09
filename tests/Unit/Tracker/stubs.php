@@ -30,6 +30,18 @@ if (!function_exists('delete_option')) {
         return true;
     }
 }
+if (!function_exists('wp_strip_all_tags')) {
+    function wp_strip_all_tags($text)
+    {
+        return strip_tags((string) $text);
+    }
+}
+if (!function_exists('wp_parse_url')) {
+    function wp_parse_url($url, $component = -1)
+    {
+        return parse_url((string) $url, $component);
+    }
+}
 
 // ── WordPress constants needed by source files ────────────────────────────
 if (!defined('DAY_IN_SECONDS')) {
@@ -85,6 +97,13 @@ if (!class_exists('wp_slimstat')) {
          * @var array<string,string>
          */
         public static array $degradations = [];
+
+        // Fixed unscoped fixture for unit callers; real author/DB scopes are exercised
+        // by tests/report-author-scope-test.php using the actual production helper.
+        public static function report_scope(): array
+        {
+            return ['where' => '1=1', 'cache' => 'unit-default-report-scope'];
+        }
 
         public static function record_degradation($step, $e): void
         {

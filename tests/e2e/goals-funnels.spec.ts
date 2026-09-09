@@ -72,7 +72,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(funnelCtas.first()).toHaveText(/Upgrade to Pro/);
 
         // No deprecated Pro labels on this view.
-        await expect(page.locator('body')).not.toContainText(/Unlock SlimStat Pro/);
+        await expect(page.locator('#wpbody-content')).not.toContainText(/Unlock SlimStat Pro/);
     });
 
     // ─── State: Free × has-data ─────────────────────────────────
@@ -89,7 +89,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(goalCard.locator('.slimstat-gf-rule-chip code')).toContainText('/pricing');
 
         // Usage pill at cap.
-        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
+        await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('1 of 1');
 
         // Yellow upsell strip visible.
         await expect(page.locator('.slimstat-gf-upsell')).toBeVisible();
@@ -120,7 +120,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(pausedGoal.locator('.slimstat-gf-goal__metrics')).toHaveCount(0);
 
         // Usage pill counts active goals only.
-        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
+        await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('1 of 1');
     });
 
     test('free-autopause-excess: Free auto-pauses all but the newest active goal', async ({ page }) => {
@@ -139,7 +139,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('.slimstat-gf-goal[data-active="true"] .slimstat-gf-goal__name'))
             .toContainText('Newer Active');
         // Pill reflects the enforced single active goal.
-        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('1 of 1');
+        await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('1 of 1');
     });
 
     test('paused-pro-placeholder: Pro keeps paused goals but shows a placeholder, not metrics', async ({ page }) => {
@@ -221,10 +221,10 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await gotoSlimview6(page);
 
         // Goal usage pill shows 2 of 5.
-        await expect(page.locator('.slimstat-gf-goals [data-role="usage"]')).toContainText('2 of 5');
+        await expect(page.locator('#slim_p9_01 [data-role="usage"]')).toContainText('2 of 5');
 
         // Funnel usage pill shows 2 of 3.
-        await expect(page.locator('.slimstat-gf-funnels [data-role="usage"]')).toContainText('2 of 3');
+        await expect(page.locator('#slim_p9_02 [data-role="usage"]')).toContainText('2 of 3');
 
         // Pill-segmented tab bar appears with 2 tabs.
         await expect(page.locator('.slimstat-gf-tabs')).toBeVisible();
@@ -447,7 +447,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         ]);
 
         await expect(page.locator('.slimstat-gf-funnel-panel__name')).toContainText('E2E Funnel');
-        await expect(page.locator('.slimstat-gf-funnels [data-role="usage"]')).toContainText('1 of 3');
+        await expect(page.locator('#slim_p9_02 [data-role="usage"]')).toContainText('1 of 3');
     });
 
     test('funnel-step-dimensions-action-only: builder step dropdown omits attribute dimensions (#17)', async ({ page }) => {
@@ -807,6 +807,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // The reveal is collapsed by default; clicking it shows the same 6 cards.
         const panel = page.locator('[data-role="funnels-templates-panel"]');
+        // toBeHidden also accepts a missing node while async reports are loading.
+        await expect(panel).toBeAttached();
         await expect(panel).toBeHidden();
         const toggle = page.locator('[data-action="toggle-funnel-templates"]');
         await expect(toggle).toBeVisible();
@@ -881,7 +883,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         // Funnels subtitle (now under postbox <h3>, not inside the card).
         await expect(page.locator('#slim_p9_02 .slimstat-gf-postbox-subtitle'))
-            .toContainText('String 2–5 goals into a journey');
+            .toContainText('String 2 to 5 steps into a journey');
     });
 
     test('copy-prototype-templates: template cards use prototype labels', async ({ page }) => {

@@ -134,6 +134,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 				// Attempt 2: Fallback to download_url helper
 				$downloaded_file = download_url($this->dbUrl, 300);
 				if (is_wp_error($downloaded_file)) {
+					/* translators: %s: database download network error message. */
 					Utils::logGeoIpError(sprintf(__('Network error downloading MaxMind database: %s', 'wp-slimstat'), $downloaded_file->get_error_message()));
 					$cleanup();
 					return false;
@@ -208,6 +209,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 								$error_details[] = __('Source file is not readable', 'wp-slimstat');
 							}
 							if (!$wp_filesystem->is_writable(dirname($this->dbPath))) {
+								/* translators: %s: destination directory path. */
 								$error_details[] = sprintf(__('Destination directory is not writable: %s', 'wp-slimstat'), dirname($this->dbPath));
 							}
 							if ($wp_filesystem->exists($this->dbPath) && !$wp_filesystem->is_writable($this->dbPath)) {
@@ -215,12 +217,14 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 							}
 
 							$error_message = sprintf(
-								__('.mmdb file was found but could not be moved or copied to destination. Source: %s, Destination: %s', 'wp-slimstat'),
+								/* translators: 1: source database file path, 2: destination file path. */
+								__('.mmdb file was found but could not be moved or copied to destination. Source: %1$s, Destination: %2$s', 'wp-slimstat'),
 								$source,
 								$this->dbPath
 							);
 
 							if (!empty($error_details)) {
+								/* translators: %s: semicolon-separated diagnostic details. */
 								$error_message .= ' ' . sprintf(__('Diagnostic info: %s', 'wp-slimstat'), implode('; ', $error_details));
 							}
 
@@ -237,6 +241,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 			if (!$mmdb_found) {
 				$file_list = implode(', ', array_unique($files_in_archive));
+				/* translators: %s: comma-separated list of files found in the archive. */
 				Utils::logGeoIpError(sprintf(__('No .mmdb file found in MaxMind database archive. Files found: %s', 'wp-slimstat'), $file_list));
 				$cleanup();
 				return false;
@@ -252,6 +257,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			$cleanup();
 			return $final_exists;
 		} catch (\Exception $exception) {
+			/* translators: %s: database extraction exception message. */
 			Utils::logGeoIpError(sprintf(__('Error extracting MaxMind database: %s', 'wp-slimstat'), $exception->getMessage()));
 			// Ensure cleanup happens even when exception is thrown
 			$cleanup();
@@ -259,6 +265,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 		}
 		} catch (\Exception $e) {
 			// Catch any fatal errors in the entire updateDatabase method
+			/* translators: %s: database update error message. */
 			Utils::logGeoIpError(sprintf(__('Fatal error updating MaxMind database: %s', 'wp-slimstat'), $e->getMessage()));
 			return false;
 		}
@@ -278,16 +285,19 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 			$host = 'download.maxmind.com';
 			$ip = gethostbyname($host);
 			if ($ip === $host) {
+				/* translators: %s: hostname whose DNS lookup failed. */
 				Utils::logGeoIpError(sprintf(__('DNS resolution failed for %s. Please check your internet connection and DNS settings.', 'wp-slimstat'), $host));
 				return false;
 			}
 			$test_response = wp_remote_get('https://download.maxmind.com/', ['timeout' => 30]);
 			if (is_wp_error($test_response)) {
+				/* translators: %s: network connection error message. */
 				Utils::logGeoIpError(sprintf(__('Cannot connect to MaxMind servers. Network error: %s', 'wp-slimstat'), $test_response->get_error_message()));
 				return false;
 			}
 			return true;
 		} catch (\Exception $e) {
+			/* translators: %s: connectivity check exception message. */
 			Utils::logGeoIpError(sprintf(__('Network connectivity check failed: %s', 'wp-slimstat'), $e->getMessage()));
 			return false;
 		}
@@ -295,6 +305,7 @@ class MaxmindGeoIPProvider extends AbstractGeoIPProvider
 
 	protected function getDetailedHttpError($response_code, $response_body)
 	{
+		/* translators: %d: HTTP response status code. */
 		$base_msg = sprintf(__('HTTP %d error downloading MaxMind database', 'wp-slimstat'), $response_code);
 		switch ($response_code) {
 			case 401:

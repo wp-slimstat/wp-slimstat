@@ -97,6 +97,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 2: Whois AJAX works with DB-backed provider ──────────────
 
   test('whois AJAX responds without fatal error', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -112,7 +116,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain("Class 'SlimStat\\Services\\GeoIP' not found");
 
     // Should show either geo data HTML or actionable DB-missing message
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     const hasDbMissing = result.body.includes('geolocation database is not available');
     expect(hasGeoData || hasDbMissing, 'Should show geo data or DB-missing message').toBeTruthy();
   });
@@ -120,6 +124,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 3: Cloudflare provider → explicit unsupported message ────
 
   test('cloudflare provider blocks whois with explicit message', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'cloudflare');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -143,6 +151,10 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
   // ─── Test 4: Geolocation disabled → actionable settings message ────
 
   test('disabled geolocation shows settings message on AJAX call', async ({ page }) => {
+    // The whois endpoint IS the Pro addon. CI deliberately does not install Pro
+    // (ci.yml:374), so without this the same absent plugin is a skip in five tests
+    // of this file and a failure in three -- H-PROGATE in the uncapped census.
+    test.skip(!await isProActive(page), 'Pro plugin is not active — the whois AJAX endpoint does not exist');
     await setSlimstatOption(page, 'geolocation_provider', 'disable');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
 
@@ -201,7 +213,7 @@ test.describe('Pro MaxMindDetailsAddon — Advanced Whois (#182)', () => {
     expect(result.body).not.toContain('Fatal error');
 
     // If the MaxMind database is available, verify city/lat/lon are populated
-    const hasGeoData = result.body.includes('IP Geolocation Information');
+    const hasGeoData = result.body.includes('Current IP geolocation lookup');
     if (hasGeoData) {
       // The response HTML should contain city, latitude, and longitude data
       // for Google's public DNS IP (8.8.8.8) — typically resolves to a US location

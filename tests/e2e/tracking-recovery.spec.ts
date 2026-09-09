@@ -116,7 +116,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
     const requestOrder: string[] = [];
@@ -170,7 +170,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let adblockAttempts = 0;
 
@@ -209,7 +209,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
       javascript_mode: 'on',
     });
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let sawQueryRoute = false;
 
@@ -256,7 +256,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     try {
       await flushRewrites(page);
 
-      const ctx = await browser.newContext();
+      const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
       const anonPage = await ctx.newPage();
       let queryRouteUrl = '';
 
@@ -350,7 +350,22 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     expect(typeof health.last_tracker_warning.label).toBe('string');
   });
 
-  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }) => {
+  test('stale interaction id triggers pageview recovery and flushes the buffered event', async ({ page }, testInfo) => {
+    const trackerResponses: Array<{ url: string; request: string; status: number; response: string }> = [];
+    page.on('response', async response => {
+      const request = response.request();
+      if (request.method() !== 'POST' || !/admin-ajax\.php|slimstat\/v1\/hit|\/request\//.test(response.url())) return;
+      try {
+        trackerResponses.push({
+          url: response.url(),
+          request: request.postData() || '',
+          status: response.status(),
+          response: await response.text(),
+        });
+      } catch {
+        // A navigation can dispose a response body; the server/database assertions remain authoritative.
+      }
+    });
     await setSlimstatOptions(page, {
       tracking_request_method: 'ajax',
       javascript_mode: 'on',
@@ -383,12 +398,98 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
 
     await page.click('#recover-link');
 
-    await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
-    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
+    try {
+      await expect.poll(async () => getStatCountForMarker(marker), { timeout: 20_000 }).toBe(countsBefore.stats + 1);
+      await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 1);
 
+      const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
+      expect(recoveredId).toBeTruthy();
+      expect(recoveredId).not.toBe(staleId);
+    } finally {
+      await testInfo.attach('stale-id-transports', {
+        body: JSON.stringify(trackerResponses, null, 2),
+        contentType: 'application/json',
+      });
+    }
+  });
+
+  test('one stale-id recovery rebases two queued sibling interactions', async ({ page }) => {
+    await setSlimstatOptions(page, {
+      tracking_request_method: 'ajax',
+      javascript_mode: 'on',
+    });
+
+    const marker = `recovery-stale-siblings-${Date.now()}`;
+    await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+    const originalId = await waitForTrackerId(page);
+    const countsBefore = {
+      stats: await getStatCountForMarker(marker),
+      events: await getTotalEventCount(),
+    };
+    const staleId = `${originalId.slice(0, -1)}${originalId.slice(-1) === '0' ? '1' : '0'}`;
+
+    await page.evaluate((invalidId) => {
+      (window as any).SlimStatParams.id = invalidId;
+      (window as any).slimstatPageviewTracked = false;
+      ['first', 'second'].forEach((name, index) => {
+        const link = document.createElement('a');
+        link.href = `https://example.com/recovery-${name}`;
+        link.textContent = name;
+        document.body.appendChild(link);
+        (window as any).SlimStat.ss_track({
+          type: 'click',
+          target: link,
+          pageX: 10 + index,
+          pageY: 20 + index,
+        }, '', false);
+      });
+    }, staleId);
+
+    await expect.poll(async () => getTotalEventCount(), { timeout: 20_000 }).toBe(countsBefore.events + 2);
+    expect(await getStatCountForMarker(marker)).toBe(countsBefore.stats + 1);
     const recoveredId = await page.evaluate(() => (window as any).SlimStatParams?.id || '');
     expect(recoveredId).toBeTruthy();
     expect(recoveredId).not.toBe(staleId);
+  });
+
+  test('real offline interaction replays once after reconnect without duplicate rows', async ({ page, browser }) => {
+    await setSlimstatOptions(page, { tracking_request_method: 'ajax', javascript_mode: 'on' });
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
+    try {
+      const visitor = await ctx.newPage();
+      const marker = `recovery-real-offline-${Date.now()}`;
+      await visitor.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      await visitor.evaluate(() => {
+        const link = document.createElement('a');
+        link.id = 'offline-link';
+        link.href = 'https://example.com/offline-replay';
+        link.target = '_blank';
+        link.textContent = 'Offline interaction';
+        document.body.appendChild(link);
+      });
+      visitor.on('popup', popup => { void popup.close(); });
+      const eventsBefore = await getTotalEventCount();
+      await ctx.setOffline(true);
+      await visitor.click('#offline-link');
+      const offlineQueue = () => visitor.evaluate(() =>
+        JSON.parse(localStorage.getItem('slimstat_offline_queue') || '[]'));
+      await expect.poll(offlineQueue).toHaveLength(1);
+      expect(await getTotalEventCount()).toBe(eventsBefore);
+
+      await ctx.setOffline(false);
+      await expect.poll(getTotalEventCount, { timeout: 20_000 }).toBe(eventsBefore + 1);
+      await expect.poll(offlineQueue).toHaveLength(0);
+      await ctx.setOffline(true);
+      await ctx.setOffline(false);
+      await visitor.reload({ waitUntil: 'networkidle' });
+      await waitForTrackerId(visitor);
+      expect(await offlineQueue()).toHaveLength(0);
+      expect(await getTotalEventCount()).toBe(eventsBefore + 1);
+      expect(await getStatCountForMarker(marker)).toBe(2);
+    } finally {
+      await ctx.close();
+    }
   });
 
   test('stale pageview id retries once without id and assigns a fresh pageview id', async ({ page }) => {
@@ -434,6 +535,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     await flushRewrites(page);
 
     const ctx = await browser.newContext({
+      storageState: { cookies: [], origins: [] },
       userAgent: 'Googlebot/2.1 (+http://www.google.com/bot.html)',
     });
     const anonPage = await ctx.newPage();
@@ -471,7 +573,7 @@ test.describe('Tracking Recovery for Cached/CDN-style client-side tracking', () 
     });
     await flushRewrites(page);
 
-    const ctx = await browser.newContext();
+    const ctx = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const anonPage = await ctx.newPage();
     let requestAttempts = 0;
 

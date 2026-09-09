@@ -23,6 +23,7 @@ class SessionTest extends WpSlimstatTestCase
         // Reset global state before each test.
         \wp_slimstat::$settings['anonymous_tracking'] = 'off';
         \wp_slimstat::$settings['gdpr_enabled']       = 'off';
+        \wp_slimstat::$settings['consent_integration'] = '';
         \wp_slimstat::$settings['javascript_mode']    = 'off';
         \wp_slimstat::$settings['session_duration']   = 1800;
         \wp_slimstat::$settings['set_tracker_cookie'] = 'off';
@@ -45,15 +46,14 @@ class SessionTest extends WpSlimstatTestCase
      * The test verifies the return value and that setcookie() is NOT called
      * (cookies are PII and require explicit consent in anonymous mode).
      *
-     * @todo Requires Patchwork or a seam on Session::findExistingAnonymousVisitId()
-     *       to avoid a real DB lookup.  The test is marked incomplete when DB
-     *       classes are unavailable.
-     *
      * @test
      */
     public function test_ensure_visit_id_anonymous_no_consent_returns_true(): void
     {
         \wp_slimstat::$settings['anonymous_tracking'] = 'on';
+        \wp_slimstat::$settings['gdpr_enabled'] = 'on';
+        \wp_slimstat::$settings['consent_integration'] = 'wp_consent_api';
+        Functions\stubs(['wp_has_consent' => false, 'wp_get_consent_type' => 'optin']);
 
         // Stub WP functions used inside ensureVisitId / Consent.
         Functions\stubs([
@@ -72,15 +72,44 @@ class SessionTest extends WpSlimstatTestCase
 
         \wp_slimstat::set_stat(['dt' => time(), 'notes' => [], 'resource' => '/test']);
 
+        $GLOBALS['slimstat_test_options']['slimstat_daily_salt'] = ['date' => gmdate('Y-m-d'), 'salt' => 'a-fixed-test-salt'];
+        Functions\stubs(['wp_salt' => 'a-fixed-test-key-longer-than-thirty-two-characters']);
+        $this->stubTransientCacheMiss();
+        $db = \Mockery::mock(\wpdb::class);
+        $db->prefix = 'wp_';
+        $db->options = 'wp_options';
+        $db->last_error = '';
+        $db->rows_affected = 2;
+        $db->insert_id = 42;
+        $db->shouldReceive('flush')->once();
+        $db->shouldReceive('suppress_errors')->andReturn(false);
+        $db->shouldReceive('prepare')->andReturnUsing(static fn($sql) => $sql);
+        $db->shouldReceive('get_var')->with('SELECT LAST_INSERT_ID()')->once()->andReturn(42);
+        $db->shouldReceive('get_var')->once()->andReturn(null);
+        $db->shouldReceive('query')->once()->with(\Mockery::pattern('/UPDATE wp_options/'))->andReturn(1);
+        $hadGlobal = array_key_exists('wpdb', $GLOBALS);
+        $originalGlobal = $GLOBALS['wpdb'] ?? null;
+        $originalAnalytics = \wp_slimstat::$wpdb;
+        $GLOBALS['wpdb'] = \wp_slimstat::$wpdb = $db;
+        $cookieCalls = 0;
+        class_exists(\SlimStat\Tracker\Session::class);
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::setTrackingCookie', static function () use (&$cookieCalls) {
+            $cookieCalls++;
+            return true;
+        });
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
-            // In anonymous mode without existing records the method returns true.
-            $this->assertTrue($result, 'ensureVisitId() must return true for a new anonymous session');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'ensureVisitId() requires DB for findExistingAnonymousVisitId(): ' . $e->getMessage()
-            );
+            $this->assertTrue($result, 'new anonymous session must be created');
+            $stat = \wp_slimstat::get_stat();
+            $this->assertSame(42, $stat['visit_id']);
+            $this->assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $stat['vid_hash']);
+            $this->assertSame(0, $cookieCalls, 'anonymous identity must not attempt a tracking cookie');
+            $this->assertArrayNotHasKey('slimstat_tracking_code', $_COOKIE);
+        } finally {
+            \wp_slimstat::$wpdb = $originalAnalytics;
+            if ($hadGlobal) { $GLOBALS['wpdb'] = $originalGlobal; } else { unset($GLOBALS['wpdb']); }
         }
+
     }
 
     /**
@@ -121,10 +150,6 @@ class SessionTest extends WpSlimstatTestCase
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
             // Existing session — not a new visit.
             $this->assertFalse($result, 'ensureVisitId() must return false when re-using existing session');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete(
-                'ensureVisitId() path threw an exception: ' . $e->getMessage()
-            );
         } finally {
             unset($_COOKIE['slimstat_tracking_code']);
         }
@@ -151,11 +176,31 @@ class SessionTest extends WpSlimstatTestCase
         try {
             $result = \SlimStat\Tracker\Session::ensureVisitId(false);
             $this->assertFalse($result, 'ensureVisitId() must return false for an invalid cookie checksum');
-        } catch (\Throwable $e) {
-            $this->markTestIncomplete('Unexpected exception: ' . $e->getMessage());
         } finally {
             unset($_COOKIE['slimstat_tracking_code']);
         }
+    }
+
+    public function test_failed_allocation_never_invents_time_id_or_sets_cookie(): void
+    {
+        class_exists(\SlimStat\Tracker\VisitIdGenerator::class);
+        class_exists(\SlimStat\Tracker\Session::class);
+        class_exists(\SlimStat\Utils\Consent::class);
+        \Patchwork\redefine('SlimStat\\Tracker\\VisitIdGenerator::generateNextVisitId', static fn() => 0);
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::generateAnonymousVidHash', static fn() => str_repeat('a', 32));
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::findExistingAnonymousVisitId', static fn() => 0);
+        \Patchwork\redefine('SlimStat\\Utils\\Consent::getIntegrationKey', static fn() => '');
+        $cookieCalls = 0;
+        \Patchwork\redefine('SlimStat\\Tracker\\Session::setTrackingCookie', static function () use (&$cookieCalls) { $cookieCalls++; return true; });
+        foreach (['off', 'on'] as $anonymous) {
+            \wp_slimstat::$settings['anonymous_tracking'] = $anonymous;
+            \wp_slimstat::$settings['javascript_mode'] = 'on';
+            \wp_slimstat::set_stat(['resource' => '/must-not-store', 'dt' => time()]);
+            \Patchwork\redefine('SlimStat\\Utils\\Consent::piiAllowed', static fn() => 'off' === $anonymous);
+            $this->assertFalse(\SlimStat\Tracker\Session::ensureVisitId(true));
+            $this->assertSame([], \wp_slimstat::get_stat());
+        }
+        $this->assertSame(0, $cookieCalls);
     }
 
     // -----------------------------------------------------------------------

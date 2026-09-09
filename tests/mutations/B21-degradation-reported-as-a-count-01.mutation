@@ -1,0 +1,26 @@
+target:    tests/docker/rehearse-upgrade.sh
+gate:      php tests/rehearsal-vintage-corpus-test.php
+kind:      restore-defect
+expect:    the degradation check names what it found, not how much of it there was
+rationale: "1 recorded" names no step, no message and no reason. The finding was sitting in the container the failing run then tore down, so the only way to learn which migration degraded was to edit this line and spend another 90 seconds of docker re-running a cell that had already held the answer. A check that reports the cardinality of the findings has not reported the finding.
+---
+diff --git a/tests/docker/rehearse-upgrade.sh b/tests/docker/rehearse-upgrade.sh
+index cf049d04..58c5187c 100755
+--- a/tests/docker/rehearse-upgrade.sh
++++ b/tests/docker/rehearse-upgrade.sh
+@@ -827,14 +827,8 @@ FP_CORE_1=$(fingerprint_core)
+ # to ask a question the failing run already had the answer to. A check reports the finding, not
+ # the cardinality of the findings. PITFALLS 136.
+ DEGRADED=$(wpc eval 'echo count((array) get_option("slimstat_degradations", []));' 2>/dev/null | tr -d '[:space:]')
+-DEG_DETAIL=$(wpc eval '
+-  $out = [];
+-  foreach ((array) get_option("slimstat_degradations", []) as $k => $v) {
+-      $out[] = $k . ": " . (is_array($v) && isset($v["message"]) ? $v["message"] : "(no message)");
+-  }
+-  echo implode(" | ", $out);' 2>/dev/null | tr -d '\n')
+ [ "${DEGRADED:-0}" -eq 0 ] && check "no degradation was recorded" 0 \
+-  || check "no degradation was recorded" 1 "$DEGRADED recorded — ${DEG_DETAIL:-unreadable}"
++  || check "no degradation was recorded" 1 "$DEGRADED recorded"
+ 
+ echo
+ echo "── R4 · idempotence ─────────────────────────────────────────────────────"

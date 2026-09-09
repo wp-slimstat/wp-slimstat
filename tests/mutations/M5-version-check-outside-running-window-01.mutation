@@ -1,0 +1,38 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:perf-gate-integrity
+kind:      introduce-defect
+expect:    outside the running window
+rationale: Swaps the version check with the step that starts wp-env, so the lane asks a site for its version before that site exists. Section 9b asserted only that exactly one such step EXISTS while its own comment said 'one step after wp-env start' -- the position was discarded at the helper boundary, because slimstat_ci_steps_containing() returns step text. Found in Pro's twin first.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -433,2 +433,14 @@
+ 
++      - name: Booted WordPress is the version this lane is named for
++        # Everything above reasons about which WordPress the lane WILL boot; this asks the running
++        # site. Exact match: an x.y release tag reports `x.y`, so a booted `6.4.7` is a stale cache
++        # or a fallback — the very thing this exists to catch. Pinned by perf-gate §9b.
++        run: |
++          booted="$(npx wp-env run tests-cli -- wp core version 2>/dev/null | tr -d '[:space:]')"
++          echo "lane WP ${WP_VERSION} booted WordPress ${booted}"
++          case "${booted}" in
++            "${WP_VERSION}") ;;
++            *) echo "::error::this lane is named for WordPress ${WP_VERSION} but booted ${booted}"; exit 1 ;;
++          esac
++
+       - name: Start wp-env
+@@ -439,14 +451,2 @@
+         timeout-minutes: 5
+-
+-      - name: Booted WordPress is the version this lane is named for
+-        # Everything above reasons about which WordPress the lane WILL boot; this asks the running
+-        # site. Exact match: an x.y release tag reports `x.y`, so a booted `6.4.7` is a stale cache
+-        # or a fallback — the very thing this exists to catch. Pinned by perf-gate §9b.
+-        run: |
+-          booted="$(npx wp-env run tests-cli -- wp core version 2>/dev/null | tr -d '[:space:]')"
+-          echo "lane WP ${WP_VERSION} booted WordPress ${booted}"
+-          case "${booted}" in
+-            "${WP_VERSION}") ;;
+-            *) echo "::error::this lane is named for WordPress ${WP_VERSION} but booted ${booted}"; exit 1 ;;
+-          esac
+ 

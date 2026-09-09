@@ -109,12 +109,6 @@ parameters:
 			path: admin/view/right-now.php
 
 		-
-			message: '#^Call to an undefined static method wp_slimstat_db\:\:toggle_date_i18n_filters\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 2
-			path: admin/view/wp-slimstat-db.php
-
-		-
 			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1
@@ -881,12 +875,6 @@ parameters:
 			identifier: return.unresolvableType
 			count: 1
 			path: src/ralouphie/getallheaders/getallheaders.php
-
-		-
-			message: '#^Variable \$has_required_migrations might not be defined\.$#'
-			identifier: variable.undefined
-			count: 1
-			path: src/view/migration-page.php
 
 		-
 			message: '#^Action callback returns string but should not return anything\.$#'

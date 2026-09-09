@@ -10,6 +10,13 @@
  */
 namespace SlimStat\Dependencies\Symfony\Contracts\Service\Test;
 
+// Scoped SlimStat module: allow plugin/CLI autoload, deny direct web execution.
+if (!defined('ABSPATH') && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {
+    http_response_code(403);
+    exit;
+}
+
+
 class_alias(ServiceLocatorTestCase::class, ServiceLocatorTest::class);
 if (false) {
     /**

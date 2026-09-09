@@ -52,3 +52,6 @@ CONTRIBUTING.md
 README.md
 LICENSE
 security.md
+
+# Private Symfony Windows interactive-console helper; no plugin entrypoint uses it.
+/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe

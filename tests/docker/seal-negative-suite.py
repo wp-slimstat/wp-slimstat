@@ -307,6 +307,35 @@ with tempfile.TemporaryDirectory(prefix="slimstat-seal-negative-") as temp:
     check("T19c",shell(unset+shlex.quote(str(HERE/"verify-change.sh"))+" HEAD HEAD~1",floor),0,
           "SEAL DRYRUN",True)
 
+    # Exact ZIP qualification must carry every rendered cell in all 5 x 4 captures.
+    for case,code,needle in [("complete",0,"blind packet built"),
+                             ("missing",1,"missing or unexpected rendered captures"),
+                             ("partial",1,"rendered report population incomplete"),
+                             ("error",1,"rendered report did not answer"),
+                             ("leak",5,"seal-literal")]:
+        run,art=fixture(root/("rendered-"+case),reports=False,build=False)
+        (art/"artifacts.json").write_text('{}')
+        (art/"run.json").write_text(json.dumps({"blocks":4,"timing_reps":5}))
+        for side in ("before","after"):
+            directory=art/"rendered"/side; directory.mkdir(parents=True)
+            for block in range(4):
+                for rep in range(5):
+                    report={"raw_html":"<p>12</p>","normalized_html":"<p>12</p>","error":None}
+                    if case=="error": report["error"]="render failed"
+                    if case=="leak": report["normalized_html"]="fingerprint-a"
+                    cells={cell:{"report":report} for cell in (
+                        "historical-unfiltered","historical-filtered","straddling-unfiltered","straddling-filtered")}
+                    if case=="partial": cells["historical-filtered"]={}
+                    if case=="missing" and block==3 and rep==4: continue
+                    (directory/f"block-{block}-rep-{rep}.json").write_text(json.dumps({"report_ids":["report"],"cells":cells}))
+        result=command([str(HERE/"build-packet.sh"),str(run),str(art),REF_A,REF_B])
+        if result.returncode!=code or needle not in result.stdout+result.stderr:
+            raise AssertionError((case,result.returncode,result.stdout,result.stderr))
+        if case=="complete":
+            public=(run/"packet/arm-1/rendered-reports.json").read_text()
+            assert 'raw_html' not in public and len(json.loads(public))==20
+    print("PASS: complete rendered sealed captures, missing/partial/error refusals and literal-leak control")
+
 expected=["T1","T2-ii","T2b","T2c","T3","T3b","T3c","T4","T4b","T4c","T5a","T5b","T6","T6b","T6c","T7a","T7b","T7c","T8","T9","T10","T10b","T11","T12","T14","T15","T17","T18","T19","T19b"]
 if required!=expected or controls!=["T0","T2-i","T7d","T11b","T12b","T13","T16","T19c"]:
     print(f"SEAL SUITE: declaration/execution mismatch required={required} controls={controls}",file=sys.stderr); raise SystemExit(6)

@@ -21,6 +21,9 @@
 # a private copy of it.
 set -uo pipefail
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+# Qualification never substitutes a working tree or an implicit Pro build.
+: "${QUALIFICATION_FREE_ZIP:?exact Free ZIP required}" "${QUALIFICATION_FREE_SHA256:?Free ZIP digest required}"
+: "${QUALIFICATION_PRO_ZIP:?exact Pro ZIP required}" "${QUALIFICATION_PRO_SHA256:?Pro ZIP digest required}"
 [ -f "$HARNESS_DIR/matrix.env" ] && source "$HARNESS_DIR/matrix.env"
 
 TOPOLOGY="${1:?topology (A|C-subdir|C-subdomain|C-mainonly|D|E)}"
@@ -49,12 +52,18 @@ if [ "$TOPOLOGY" = "D" ]; then
   export DC_EXTRA_FILE="$HARNESS_DIR/docker-compose.db2.yml"
   export DB2_PORT="$((DB_PORT + 500))"
 fi
+existing=$(docker ps -aq --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker project inspection failed'
+volumes=$(docker volume ls -q --filter "label=com.docker.compose.project=$COMPOSE_PROJECT_NAME") || die 'Docker volume inspection failed'
+[ -z "$existing$volumes" ] || die 'topology project already owned; refusing shared database'
+[ ! -e "$CELL_DIR" ] || die 'topology evidence directory already exists'
 rm -rf "$WP_DIR"
 mkdir -p "$WP_DIR" "$ART"
 
 fail(){ status="FAIL"; reason="${reason:-$1}"; err "$1"; }
 
 finish() {
+  local rc=$?
+  if [ "$rc" -ne 0 ] && [ "$status" = PASS ]; then fail "topology exited $rc before completion"; fi
   # A plugin fatal raised while provisioning four blogs across two networks used to land in a
   # log nobody read: WP_DEBUG_LOG was set and never inspected.
   if scan_debug_log "$WP_DIR" "$ART"; then
@@ -63,6 +72,7 @@ finish() {
   write_verdict "$ART" "$CELL" "$PHP" "$WP" "$status" "$reason"
   dc down -v --remove-orphans >/dev/null 2>&1 || true
   log "$CELL → $status ${reason:+($reason)}"
+  [ "$status" != FAIL ] || exit 1
 }
 trap finish EXIT
 
@@ -135,17 +145,15 @@ if [ "$TOPOLOGY" = "E" ]; then
   [ "${networks_now:-0}" -ge 2 ] || fail "expected >=2 networks, wp_site holds ${networks_now:-0}"
 fi
 
-# ── plugins: free from the working tree, Pro from the built zip ─────────────
+# ── plugins: exact paired qualification artifacts ─────────────
 # Pro is not optional here. Network aggregation lives in Pro's NetworkViewAddon, so a topology
 # container without it exercises none of the code these shapes exist to test — the harness would
 # be provisioning a network and then measuring a single-site query.
-sync_plugin_src "$WP_DIR"
+extract_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$CELL_DIR/free-artifact" >"$ART/free-artifact.log" || { fail 'Free artifact rejected'; exit 1; }
+extract_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$CELL_DIR/pro-artifact" >"$ART/pro-artifact.log" || { fail 'Pro artifact rejected'; exit 1; }
+sync_plugin_src "$WP_DIR" "$CELL_DIR/free-artifact/wp-slimstat"
 mkdir -p "$WP_DIR/wp-content/plugins/.pro"
-if [ -f "$PRO_ZIP" ]; then
-  cp "$PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip"
-else
-  fail "PRO_ZIP not found at $PRO_ZIP — run tests/docker/build-pro.sh (the shipped-builder wrapper) first"
-fi
+cp "$QUALIFICATION_PRO_ZIP" "$WP_DIR/wp-content/plugins/.pro/wp-slimstat-pro.zip" || { fail 'Pro artifact copy failed'; exit 1; }
 chmod -R a+rwX "$WP_DIR/wp-content" 2>/dev/null || true
 
 # Per-site activation, NOT network-wide: D10's defect is that a per-site-activated network
@@ -394,4 +402,6 @@ printf '{"topology":"%s","networks":%s,"blogs":%s,"php":"%s","wp":"%s","network_
   "$TOPOLOGY" "${networks:-0}" "${blogs:-0}" "$PHP" "$WP" "${probe:-null}" > "$ART/shape.json"
 
 log "[$CELL] shape: $networks network(s), $blogs blog(s)"
-exit 0
+verify_qualification_artifact "$QUALIFICATION_FREE_ZIP" "$QUALIFICATION_FREE_SHA256" wp-slimstat "$WP_DIR/wp-content/plugins" >"$ART/free-installed.json" || fail 'installed Free shipping bytes changed'
+verify_qualification_artifact "$QUALIFICATION_PRO_ZIP" "$QUALIFICATION_PRO_SHA256" wp-slimstat-pro "$WP_DIR/wp-content/plugins" >"$ART/pro-installed.json" || fail 'installed Pro shipping bytes changed'
+[ "$status" = PASS ] && exit 0 || exit 1

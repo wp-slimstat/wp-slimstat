@@ -1474,7 +1474,9 @@ jQuery(function () {
                 var data = {
                     action: "meta-box-order",
                     _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
-                    page: SlimStatAdminParams.page_location + "_page_slimlayout",
+                    page: SlimStatAdminParams.page_location + "_page_slimlayout" + (SlimStatAdminParams.layout_scope === "network" ? "-network" : ""),
+                    slimstat_layout_scope: SlimStatAdminParams.layout_scope,
+                    _slimstat_nonce: SlimStatAdminParams.network_layout_nonce,
                     page_columns: 0,
                 };
 
@@ -1503,7 +1505,9 @@ jQuery(function () {
         var data = {
             action: "meta-box-order",
             _ajax_nonce: jQuery("#meta-box-order-nonce").val(),
-            page: SlimStatAdminParams.page_location + "_page_slimlayout",
+            page: SlimStatAdminParams.page_location + "_page_slimlayout" + (SlimStatAdminParams.layout_scope === "network" ? "-network" : ""),
+                    slimstat_layout_scope: SlimStatAdminParams.layout_scope,
+                    _slimstat_nonce: SlimStatAdminParams.network_layout_nonce,
             page_columns: 0,
         };
 

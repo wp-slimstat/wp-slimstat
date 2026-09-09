@@ -25,47 +25,34 @@ class VisitIdGenerator
     /**
      * Generate the next visit ID atomically.
      *
-     * The counter row is created once and then incremented with a single
-     * INSERT ... ON DUPLICATE KEY UPDATE statement. WordPress exposes the
-     * LAST_INSERT_ID() value through $wpdb->insert_id for INSERT statements.
+     * The counter is seeded before use and incremented with one atomic UPDATE.
+     * Native WordPress mysqli connections expose LAST_INSERT_ID without a query.
      *
      * @return int The next unique visit ID
      */
     public static function generateNextVisitId(): int
     {
-        $created  = false;
-        $visit_id = self::runAtomicIncrement($created);
+        // Frontend tracking may precede the admin-only upgrade. Repair legacy
+        // counters before allocating; current-version requests retain the one-query path.
+        if (defined('SLIMSTAT_ANALYTICS_VERSION') && isset(\wp_slimstat::$settings['version'])
+            && SLIMSTAT_ANALYTICS_VERSION !== \wp_slimstat::$settings['version']
+            && self::initializeCounter() < 0) {
+            return 0;
+        }
+        $visit_id = self::runAtomicIncrement();
 
-        // The increment tells us whether the counter already existed, so nothing needs to
-        // look it up first. That lookup used to run unconditionally — a
-        // `SELECT COUNT(*) FROM wp_options` on every single tracked hit, to answer a
-        // question the very next statement answers for free.
-        //
-        // It cannot simply be dropped: a counter created from nothing starts at 1, and
-        // reissuing visit ID 1 on a site that already holds millions would attach a new
-        // visitor to an existing visit's history. So when the row turns out to be new,
-        // reseed past everything stored and take a fresh number. Once per install.
-        //
-        // Both signals are required. `rows_affected` alone is not a safe "inserted" flag:
-        // a connection opened with CLIENT_FOUND_ROWS (wpdb passes MYSQL_CLIENT_FLAGS
-        // straight through) reports *matched* rows, so an ON DUPLICATE KEY UPDATE also
-        // returns 1 — and this branch would then fire on every hit, reseeding the counter
-        // and turning one query into six. A genuine insert stores LAST_INSERT_ID(1) and so
-        // always yields exactly 1; an update yields option_value + 1.
-        if (1 === $visit_id && $created) {
-            self::resetCounter(self::getInitialCounterValue());
+        if ($visit_id <= 0) {
+            // A missing counter is seeded before any ID can be issued. A monotonic upsert
+            // preserves a concurrent initializer's higher counter.
+            if (self::initializeCounter() < 0) {
+                return 0;
+            }
             $visit_id = self::runAtomicIncrement();
         }
 
         if ($visit_id <= 0) {
-            // The statement failed outright. Seeding is idempotent — add_option() no-ops
-            // when the row is already there — so it doubles as the repair path.
-            self::initializeCounter();
-            $visit_id = self::runAtomicIncrement();
-        }
-
-        if ($visit_id <= 0) {
-            return self::fallbackGenerateVisitId('Unable to atomically increment the visit ID counter.');
+            self::logAllocationFailure('Unable to atomically increment the visit ID counter.');
+            return 0;
         }
 
         return $visit_id;
@@ -75,62 +62,30 @@ class VisitIdGenerator
      * Initialize the counter with the current maximum visit_id from the stats table.
      *
      * Called on plugin activation, and as the repair path when an increment fails.
-     * Idempotent: an existing row is left alone and its current value returned.
+     * The monotonic upsert repairs low counters without reducing a concurrent allocation.
      *
      * @return int The initialized counter value
      */
     public static function initializeCounter(): int
     {
         $initial_value = self::getInitialCounterValue();
-
-        $added = add_option(self::OPTION_NAME, $initial_value, '', 'no');
-
-        if (! $added) {
-            return (int) get_option(self::OPTION_NAME, $initial_value);
+        if ($initial_value < 0) {
+            self::logAllocationFailure('Unable to read the existing visit ID maximum.');
+            return -1;
         }
 
-        return $initial_value;
-    }
+        global $wpdb;
+        $added = $wpdb->query($wpdb->prepare(
+            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %d, %s)
+            ON DUPLICATE KEY UPDATE option_value = GREATEST(CAST(option_value AS UNSIGNED), VALUES(option_value))",
+            self::OPTION_NAME,
+            $initial_value,
+            'no'
+        ));
+        wp_cache_delete(self::OPTION_NAME, 'options');
+        wp_cache_delete('notoptions', 'options');
 
-    /**
-     * Fallback visit ID generation using timestamp and additional entropy.
-     *
-     * Used only if the atomic counter fails (e.g., database issues).
-     *
-     * @param string $reason Optional reason for logging why the fallback was used.
-     * @return int A fallback visit ID based on current timestamp
-     */
-    private static function fallbackGenerateVisitId(string $reason = ''): int
-    {
-        self::logFallbackUsage($reason);
-
-        try {
-            $random_entropy = random_int(0, 99999);
-        } catch (\Exception $exception) {
-            $random_entropy = mt_rand(0, 99999);
-        }
-
-        $process_entropy = function_exists('getmypid') ? (int) getmypid() : 0;
-
-        try {
-            $nonce_bytes = random_bytes(4);
-            $nonce_data  = unpack('Nnonce', $nonce_bytes);
-            $nonce_entropy = isset($nonce_data['nonce']) ? (int) $nonce_data['nonce'] : mt_rand(0, 0xFFFF);
-        } catch (\Exception $exception) {
-            $nonce_entropy = mt_rand(0, 0xFFFF);
-        }
-
-        $entropy = sprintf(
-            '%.6F|%d|%d|%d',
-            microtime(true),
-            $random_entropy,
-            $process_entropy,
-            $nonce_entropy
-        );
-
-        $visit_id = abs((int) hexdec(substr(hash('sha256', $entropy), 0, 8)));
-
-        return max($visit_id, (int) time());
+        return false === $added ? -1 : (int) get_option(self::OPTION_NAME, $initial_value);
     }
 
     /**
@@ -158,39 +113,28 @@ class VisitIdGenerator
         return update_option(self::OPTION_NAME, max($value, 0), false);
     }
 
-    /**
-     * Run the atomic increment query and return the incremented value.
-     *
-     * @param-out bool $created
-     *
-     * @param bool|null $created Set to true when the statement created the counter row
-     *                           rather than bumping it, as reported by the affected-row
-     *                           count: 1 for an insert, 2 for an update that changed the
-     *                           row (0 if it changed nothing, which cannot happen here
-     *                           because the value always moves). See generateNextVisitId()
-     *                           for why this signal is corroborated rather than trusted.
-     * @return int The incremented visit ID, or 0 on failure
-     */
-    private static function runAtomicIncrement(?bool &$created = null): int
+    /** Increment an existing counter; a missing row cannot issue an unseeded ID. */
+    private static function runAtomicIncrement(): int
     {
         global $wpdb;
 
         $result = $wpdb->query($wpdb->prepare(
-            "INSERT INTO {$wpdb->options} (option_name, option_value, autoload)
-            VALUES (%s, LAST_INSERT_ID(%d), %s)
-            ON DUPLICATE KEY UPDATE option_value = LAST_INSERT_ID(option_value + 1)",
-            self::OPTION_NAME,
-            1,
-            'no'
+            "UPDATE {$wpdb->options} SET option_value = LAST_INSERT_ID(option_value + 1) WHERE option_name = %s",
+            self::OPTION_NAME
         ));
-
-        $created = (1 === (int) $wpdb->rows_affected);
-
-        if (false === $result) {
+        if (false === $result || 0 === (int) $result) {
             return 0;
         }
 
-        return (int) $wpdb->insert_id;
+        // wpdb only updates its public insert_id for INSERT/REPLACE. The mysqli
+        // connection exposes UPDATE's LAST_INSERT_ID without another query.
+        $dbh = $wpdb->dbh ?? null;
+        if ($dbh instanceof \mysqli) {
+            return (int) mysqli_insert_id($dbh);
+        }
+
+        // Non-mysqli database drop-ins retain correctness with one extra read.
+        return (int) $wpdb->get_var('SELECT LAST_INSERT_ID()');
     }
 
     /**
@@ -209,7 +153,10 @@ class VisitIdGenerator
         $table = $stats_db->prefix . 'slim_stats';
 
         $max_visit_id = $stats_db->get_var("SELECT COALESCE(MAX(visit_id), 0) FROM `{$table}`");
-        $initial_value = max((int) $max_visit_id, 0);
+        if (null === $max_visit_id || !ctype_digit((string) $max_visit_id)) {
+            return -1;
+        }
+        $initial_value = (int) $max_visit_id;
 
         $auto_increment = $stats_db->get_var($stats_db->prepare(
             "SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s",
@@ -227,14 +174,14 @@ class VisitIdGenerator
     }
 
     /**
-     * Emit a log entry when the fallback generator is used.
+     * Record a refused allocation without inventing an unverified identifier.
      *
-     * @param string $reason Optional reason for the fallback.
+     * @param string $reason Reason allocation was refused.
      * @return void
      */
-    private static function logFallbackUsage(string $reason): void
+    private static function logAllocationFailure(string $reason): void
     {
-        $message = 'Visit ID generator fallback path used.';
+        $message = 'Visit ID allocation failed.';
 
         if ('' !== $reason) {
             $message .= ' ' . $reason;
