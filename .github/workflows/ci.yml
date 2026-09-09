@@ -497,6 +497,7 @@ jobs:
         run: |
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
+          npx wp-env run tests-cli -- wp user update admin --user_pass=password
           npx wp-env run tests-cli -- wp eval '
             include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
             wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);

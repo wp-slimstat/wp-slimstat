@@ -1,17 +1,14 @@
-target:    .github/workflows/ci.yml
+target:    tests/ci-matrix-coverage-test.php
 gate:      php tests/ci-matrix-coverage-test.php
-kind:      restore-defect
+kind:      guard-removal
 expect:    PHP 7.4
-rationale: The coupling this commit created, read from the other end. PHP 7.4 has no PHPUnit lane and no static-only exemption -- the 6.4 E2E include pair is the only thing in CI that loads the plugin on it, which is why the pair-aware scan was added in the first place. Dropping 6.4 from the blocking list leaves that pair in the matrix and still running, so nothing about the matrix looks different; what changes is that its verdict is thrown away again, exactly as in run 33771753689. Before the credit became conditional this edit was invisible to every gate in the repo. Now it costs 7.4 its only execution coverage and the failure names the version, not the workflow line.
+rationale: PHP 7.4 lost its wp-env execution lanes because their Debian metadata expired. Removing the explicit Docker replacement exception would make the coverage report silently claim a complete matrix while 7.4 has only static CI coverage. Killed because every static-only supported runtime must carry a named replacement-evidence reason.
 ---
---- a/.github/workflows/ci.yml
-+++ b/.github/workflows/ci.yml
-@@ -657,7 +657,7 @@
-         # everything, dropping either version, or reverting to a bare `true` all
-         # fail that gate. §7 used to match only the literal `continue-on-error:
-         # true`, so before this commit it would have matched nothing here.
--        continue-on-error: ${{ !contains(fromJSON('["6.4","7.1"]'), matrix.wp) }}
-+        continue-on-error: ${{ !contains(fromJSON('["7.1"]'), matrix.wp) }}
-         env:
-           # wp-env creates a fresh WordPress with default admin credentials.
-           # Override WP_ADMIN_USER / WP_ADMIN_PASS in global-setup.ts.
+--- a/tests/ci-matrix-coverage-test.php
++++ b/tests/ci-matrix-coverage-test.php
+@@ -213,5 +213,4 @@
+ // here so it is visible in the gate's own output rather than hidden behind a green.
+ $execution_exempt = [
+-    '7.4' => 'wp-env PHP 7.4 image has expired Debian metadata; release qualification uses the PHP 7.4 Docker cells',
+     '8.0' => 'PHPUnit needs PHP ^8.1 and no Tier 2 E2E pair uses 8.0; static scans only',
+ ];
