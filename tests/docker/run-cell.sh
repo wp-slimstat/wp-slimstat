@@ -199,20 +199,22 @@ if [ "$RUN_E2E" = "1" ]; then
   if [ "${E2E_CORE_ONLY:-0}" = "1" ]; then E2E_SPECS=("${CORE_SPECS[@]}"); e2e_mode="core-only"; fi
   log "[$CELL] Playwright E2E ($e2e_mode; verdict gated on core specs)"
   ( cd "$PLUGIN_SRC"
+    rm -f tests/e2e/.auth/admin.json tests/e2e/.auth/author.json
     TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
     MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
     MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
     WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
     WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" \
-    npx playwright test --list --config=tests/e2e/playwright.config.ts --project admin \
-      ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright-expected.txt" 2>&1
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --list --config=tests/e2e/playwright.config.ts --project admin > "$ART/playwright-expected.txt" 2>&1
     TEST_BASE_URL="$BASE_URL" WP_ROOT="$WP_DIR" \
     MYSQL_SOCKET="" MYSQL_HOST=127.0.0.1 MYSQL_PORT="$DB_PORT" \
     MYSQL_USER=root MYSQL_PASSWORD=root MYSQL_DATABASE=wordpress \
     WP_ADMIN_USER=admin WP_ADMIN_PASS=admin WP_AUTHOR_USER=dordane WP_AUTHOR_PASS=testpass123 \
     WP_VERSION="$WP" WP_ENV_PHP_VERSION="$PHP" PLAYWRIGHT_JSON_OUTPUT_NAME="$ART/playwright.json" \
-    npx playwright test --config=tests/e2e/playwright.config.ts --project admin \
-      --timeout=20000 --reporter=list,json ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} > "$ART/playwright.log" 2>&1
+    npx playwright test ${E2E_SPECS[@]+"${E2E_SPECS[@]}"} \
+      --config=tests/e2e/playwright.config.ts --project admin \
+      --timeout=20000 --reporter=list,json > "$ART/playwright.log" 2>&1
     printf '%s\n' "$?" > "$ART/playwright-exit.txt" )
   # Informational totals.
   grep -oE '[0-9]+ (passed|failed|skipped)' "$ART/playwright.log" | tail -3 | tr '\n' ' ' > "$ART/playwright-summary.txt"
