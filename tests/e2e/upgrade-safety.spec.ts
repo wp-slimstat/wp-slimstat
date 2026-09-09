@@ -146,7 +146,7 @@ test.describe('Upgrade Safety', () => {
     // visit_id is int unsigned NOT NULL default 0
     const visitIdCol = schema.find((c: ColumnInfo) => c.Field === 'visit_id');
     expect(visitIdCol).toBeTruthy();
-    expect(visitIdCol!.Type).toBe('int unsigned');
+    expect(visitIdCol!.Type.replace(/\(\d+\)/, '')).toBe('int unsigned');
 
     // id is auto_increment primary key
     const idCol = schema.find((c: ColumnInfo) => c.Field === 'id');
@@ -315,16 +315,7 @@ test.describe('Upgrade Safety', () => {
     }
   });
 
-  // ─── Test 6: Version downgrade guard ─────────────────────────────
-
-  test.fixme('version downgrade guard', () => {
-    // manual-needed: version downgrade requires different plugin version
-    // This test would verify that downgrading from a newer version to an older
-    // one is handled gracefully (e.g., no schema errors, no data loss).
-    // Requires installing two different plugin versions sequentially.
-  });
-
-  // ─── Test 7: No PHP errors after admin + frontend load ─────────
+  // ─── Test 6: No PHP errors after admin + frontend load ─────────
 
   test('no PHP fatal errors or warnings on admin and frontend pages', async ({ page }) => {
     // Load frontend
