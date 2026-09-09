@@ -307,6 +307,13 @@ jobs:
       TEST_BASE_URL: http://localhost:8889
       WP_VERSION: ${{ matrix.wp }}
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
+      # The suite's second-role account (tests/e2e/helpers/env.ts AUTHOR_USER —
+      # its default is a local-site username that does not exist here, which is
+      # why global-setup's loginAndSave() failed with "not registered on this
+      # site"). Defined at job level so the `wp user create` below and Playwright
+      # read the same value and cannot drift apart.
+      WP_AUTHOR_USER: e2e_author
+      WP_AUTHOR_PASS: password
 
     steps:
       - name: Checkout
@@ -498,6 +505,9 @@ jobs:
           npx wp-env run tests-cli -- wp plugin deactivate wp-slimstat 2>/dev/null || true
           npx wp-env run tests-cli -- wp plugin activate wp-slimstat
           npx wp-env run tests-cli -- wp user update admin --user_pass=password
+          # wp-env creates only `admin`; the permission specs need a real author.
+          npx wp-env run tests-cli -- wp user create "$WP_AUTHOR_USER" "$WP_AUTHOR_USER@example.com" \
+            --role=author --user_pass="$WP_AUTHOR_PASS"
           npx wp-env run tests-cli -- wp eval '
             include_once(WP_PLUGIN_DIR . "/wp-slimstat/admin/index.php");
             wp_slimstat_admin::init_tables($GLOBALS["wpdb"]);
