@@ -671,7 +671,7 @@ jobs:
         # Read "blocking on 7.1" literally. The branch below runs the full suite
         # only when WP_VERSION is the baseline; every other lane runs
         # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
-        # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
+        # target of this flip is the 6.4/PHP 8.2 lane running the full suite. The interior
         # lanes stay soft on purpose: they are version-drift signal, not a merge
         # gate, and making them blocking would fail the job on host-environment
         # debt rather than on defects.
