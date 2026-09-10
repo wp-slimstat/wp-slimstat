@@ -3,7 +3,7 @@
  * and installs all MU-plugins needed by the test suite.
  * Reuses cached auth files if they are less than 30 minutes old.
  */
-import { chromium, request as playwrightRequest, FullConfig } from '@playwright/test';
+import { chromium, request as playwrightRequest, FullConfig, Page } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -133,6 +133,26 @@ async function assertProBootedIfInstalled(baseURL: string, adminStatePath: strin
   }
 }
 
+/**
+ * Fill a login field and prove it kept the value.
+ *
+ * The login page enqueues the profile password scripts, and one of them clears
+ * `#user_pass` shortly after load: a bare `page.fill()` lands before that clear
+ * roughly one run in three on a warm LocalWP, and the form then submits with an
+ * empty password. What that looks like downstream is the login page again with
+ * no `#login_error` at all — indistinguishable, in the diagnosis JSON, from a
+ * cookie or redirect problem, which is how it cost an afternoon. Re-fill instead
+ * of raising the timeout: the field is not slow, it is being emptied.
+ */
+async function fillAndConfirm(page: Page, selector: string, value: string): Promise<void> {
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    await page.fill(selector, value);
+    await page.waitForTimeout(200);
+    if (await page.inputValue(selector) === value) return;
+  }
+  throw new Error(`${selector} would not hold its value after 5 attempts — something on the login page is clearing it`);
+}
+
 async function loginAndSave(
   baseURL: string,
   username: string,
@@ -147,8 +167,8 @@ async function loginAndSave(
   const page = await context.newPage();
 
   await page.goto('/wp-login.php');
-  await page.fill('#user_login', username);
-  await page.fill('#user_pass', password);
+  await fillAndConfirm(page, '#user_login', username);
+  await fillAndConfirm(page, '#user_pass', password);
   await page.click('#wp-submit');
   try {
     await page.waitForURL('**/wp-admin/**', { timeout: 60_000 });
