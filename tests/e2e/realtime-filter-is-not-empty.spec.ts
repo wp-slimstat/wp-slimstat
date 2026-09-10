@@ -133,8 +133,19 @@ test.describe('Real-time filter — is_empty / is_not_empty (#305)', () => {
     await page.goto(`${BASE_URL}/wp-admin/admin.php?page=slimview1`, { waitUntil: 'networkidle' });
 
     await page.selectOption('#slimstat-filter-name', 'email');
+
+    // Picking a dimension mounts a combobox over #slimstat-filter-value and hides the
+    // raw input (initFilterValueAutoSuggest -> SlimStatSearchableSelect), so `.fill()`
+    // on that input is a race: it wins while the options AJAX is slow and fails with
+    // "element is not visible" when it is fast. On CI it is fast, and that is the only
+    // reason this test was red there. Type where a user types — syncTypedValue() writes
+    // through to the hidden input on every keystroke, which is what the assertions below
+    // are about. Same idiom as filter-ip-beyond-500-limit.spec.ts:219-221.
+    await page.waitForSelector('.slimstat-searchable-select');
     await page.selectOption('#slimstat-filter-operator', 'equals');
-    await page.fill('#slimstat-filter-value', 'stale_garbage_from_ui');
+    await page.click('.slimstat-select-display');
+    await page.fill('.slimstat-select-search input', 'stale_garbage_from_ui');
+    await expect(page.locator('#slimstat-filter-value')).toHaveValue('stale_garbage_from_ui');
 
     await page.selectOption('#slimstat-filter-operator', 'is_not_empty');
 
