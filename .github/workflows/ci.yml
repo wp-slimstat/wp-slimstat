@@ -263,7 +263,7 @@ jobs:
 
 ##############################################################################
 # TIER 2 — standard (Playwright E2E via @wordpress/env, target <12 min)
-# Runs on: push or PR targeting main or development branches only
+# Runs on: push or PR targeting master, main, or development
 ##############################################################################
   standard:
     name: "Tier 2 · standard · E2E · WP ${{ matrix.wp }} · PHP ${{ matrix.php }}"
@@ -656,7 +656,7 @@ jobs:
         # The upstream npm package is republished monthly at the same URL, so the
         # cache key has to move with it or CI pins a database that ages out.
         if: ${{ matrix.wp == '6.4' }}
-        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> $GITHUB_ENV
+        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> "$GITHUB_ENV"
 
       - name: Cache the DB-IP City Lite database
         if: ${{ matrix.wp == '6.4' }}
@@ -727,7 +727,7 @@ jobs:
         # Read "blocking on 7.1" literally. The branch below runs the full suite
         # only when WP_VERSION is the baseline; every other lane runs
         # --grep "@compat". So 7.1 blocking gates the @compat subset, and the real
-        # target of this flip is 6.4/PHP 7.4 running all 748 tests. The interior
+        # target of this flip is the 6.4/PHP 8.2 lane running the full suite. The interior
         # lanes stay soft on purpose: they are version-drift signal, not a merge
         # gate, and making them blocking would fail the job on host-environment
         # debt rather than on defects.
@@ -745,7 +745,7 @@ jobs:
           WP_ADMIN_USER: admin
           WP_ADMIN_PASS: password
         run: |
-          if [ "${WP_VERSION}" = "6.4" ]; then
+          if [ "${{ github.event_name }}" != "pull_request" ] && [ "${WP_VERSION}" = "6.4" ]; then
             npm run test:e2e
           else
             npm run test:e2e -- --grep "@compat"
