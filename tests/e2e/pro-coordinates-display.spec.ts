@@ -90,6 +90,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     installOptionMutator();
     installNonceHelper();
     installVersionFloorPlugin();
+    installMuPluginByName('google-maps-key-mu-plugin.php');
   });
 
   test.beforeEach(async () => {
@@ -222,9 +223,9 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     }
   });
 
-  // ─── TC-AC6-005: Google Maps embed renders with valid IP ────────
+  // ─── TC-AC6-005: Google Maps embed renders only with a configured key ────────
 
-  test('Google Maps embed URL present in whois response for public IP', async ({ page }) => {
+  test('Google Maps embed appears only when the site owner has configured a key', async ({ page }) => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
@@ -239,16 +240,26 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('Current IP geolocation lookup');
+    // Default state: no map. MaxMindDetailsAddon emits the embed only when a site owner
+    // filters in their own key (`slimstat_pro_google_maps_api_key`, Pro 792f59d — a
+    // distributed plugin must not spend someone else's Maps quota), so a build with no
+    // key configured renders the coordinates and no iframe. This test used to assert the
+    // embed outright and failed on precisely the behaviour the product ships.
+    expect(
+      result.body,
+      'with no key filtered in, the whois view must not load the Maps API',
+    ).not.toContain('maps.googleapis.com');
 
-    if (hasGeoData) {
-      // The Google Maps embed should be present with coordinate parameters
-      const hasMapsEmbed =
-        result.body.includes('maps.google') ||
-        result.body.includes('google.com/maps');
-      expect(hasMapsEmbed, 'Whois response should include Google Maps embed for geolocated IP').toBeTruthy();
-    }
-    // If no geo data, DB may not be present — not a failure for this test
+    // Configured state: the branch a paying site actually runs. Asserting only the
+    // absence above would leave it untested, which is the same hole in a different
+    // direction. google-maps-key-mu-plugin.php answers the filter from this setting.
+    await setSlimstatOption(page, 'e2e_google_maps_api_key', 'e2e-maps-key');
+
+    const withKey = await callWhoisEndpoint(page, '8.8.8.8', await getWhoisNonce(page));
+    expect(withKey.status).toBeLessThan(500);
+    expect(withKey.body).not.toContain('Fatal error');
+    expect(withKey.body, 'a configured key must load the Maps API').toContain('maps.googleapis.com');
+    expect(withKey.body, 'and render the map container it centres').toContain('id="map"');
   });
 
   // ─── TC-AC6-006: SlimStat detail view accessible with Pro ───────
