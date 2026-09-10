@@ -19,7 +19,7 @@ import { test, expect } from '@playwright/test';
 import { getPool, snapshotOption, restoreOption } from './helpers/setup';
 import {
   fetchChartData, insertRows, clearTestData,
-  sumV1, getV1, getLabels, getV1Prev,
+  sumV1, getV1, getLabels, getV1Prev, liveSafeTodayTs,
 } from './helpers/chart';
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
@@ -32,7 +32,7 @@ test.describe('Chart "today shows zero" regression (Support ticket: acekin26)', 
   const rangeStart = now - 28 * day;
   const rangeEnd = now;
 
-  const todayTs = now - 60;
+  const todayTs = liveSafeTodayTs(now);
   const yesterdayTs = now - day;
   const lastWeekTs = now - 7 * day;
   const twoWeeksAgoTs = now - 14 * day;
