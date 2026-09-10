@@ -1,7 +1,7 @@
 target:    tests/e2e/css-reduced-motion.spec.ts
 gate:      php tests/e2e-quarantine-census-test.php
 kind:      restore-defect
-expect:    `pro` skip site(s); tests/E2E-QUARANTINE-CEILING says 36
+expect:    `pro` skip site(s); tests/E2E-QUARANTINE-CEILING says 1
 rationale: The reason the ceiling is three numbers instead of one. This rewrites a bare `test.skip()` in a spec that has nothing to do with Pro into a Pro-shaped guard: a single total would not move at all, and the census would stay green while a permanently disabled test walked into the deliberate carve-out. Under per-class counts the same edit raises `pro` and lowers `unconditional`, so it fails twice and names both halves.
 ---
 --- a/tests/e2e/css-reduced-motion.spec.ts

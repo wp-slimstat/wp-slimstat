@@ -91,7 +91,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
   test.beforeEach(async ({ page }) => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       ignore_wp_users: 'no',
       gdpr_enabled: 'off',
       _migration_5460: '5.4.6',
@@ -114,7 +114,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'off',
       tracking_request_method: 'ajax',
     });
@@ -161,7 +161,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'off',
       tracking_request_method: 'adblock_bypass',
     });
@@ -214,7 +214,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'ajax',
     });
@@ -248,7 +248,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     page,
     browser,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'adblock_bypass',
     });
@@ -304,7 +304,7 @@ test.describe('Adblock Bypass URL Resource Pollution', () => {
     browser,
   }) => {
     // Restore default: client mode + AJAX
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       javascript_mode: 'on',
       tracking_request_method: 'ajax',
     });

@@ -142,9 +142,13 @@ grep -qi 'slimstat-pro' "$ART/active-plugins.txt"        || fail "wp-slimstat-pr
 
 # ── (b) authed admin smoke pages ────────────────────────────────────────────
 CJ="$ART/cookies.txt"
+# Keep the login response and the first dashboard render: a plugin that fails its
+# prerequisites renders its notice on exactly these two pages and (when the request
+# is interactive) deactivates itself there. Discarding them hid A0 for a full cycle.
 curl -s -c "$CJ" -b "wordpress_test_cookie=WP+Cookie+check" \
      -d "log=admin&pwd=admin&wp-submit=Log+In&redirect_to=$BASE_URL/wp-admin/&testcookie=1" \
-     "$BASE_URL/wp-login.php" -o /dev/null
+     "$BASE_URL/wp-login.php" -o "$ART/login.html"
+curl -s -b "$CJ" -o "$ART/first-admin.html" -w '%{http_code}' "$BASE_URL/wp-admin/" > "$ART/first-admin-code.txt"
 for slug in slimview1 slimview3 slimview6 "slimconfig&tab=1"; do
   name="${slug%%&*}"
   code=$(curl -s -b "$CJ" -o "$ART/smoke-$name.html" -w '%{http_code}' "$BASE_URL/wp-admin/admin.php?page=$slug")
@@ -152,6 +156,30 @@ for slug in slimview1 slimview3 slimview6 "slimconfig&tab=1"; do
     fail "admin smoke $name (HTTP $code)"
   fi
 done
+
+# ── (b2) Pro must still be OPERATIONAL after those admin requests ───────────
+# (a) above runs before the first authenticated request and the artifact check at
+# the end of the cell only compares bytes on disk, so a Pro that switched itself
+# off during the dashboard render used to pass a cell unnoticed (A0, 2026-09-09).
+# Three assertions, in increasing strength: still active, no recorded degradation,
+# and a Pro-only report actually registered at runtime.
+wpc plugin list --status=active --field=name > "$ART/active-plugins-post-admin.txt" 2>/dev/null
+grep -qi 'slimstat-pro' "$ART/active-plugins-post-admin.txt" \
+  || fail "wp-slimstat-pro deactivated during authenticated admin requests"
+
+wpc option get slimstat_degradations --format=json > "$ART/degradations.json" 2>/dev/null \
+  || printf '{}' > "$ART/degradations.json"
+! grep -q '"pro_' "$ART/degradations.json" \
+  || fail "Pro recorded a degradation: $(tr -d '\n' < "$ART/degradations.json" | cut -c1-200)"
+
+# Positive proof the providers booted: the addon registers slim_p8_01 on
+# slimstat_reports_info from its constructor, which only runs once
+# _loadServiceProviders() is reached. init() swallows \Throwable, so "no error"
+# is not proof — this is.
+wpc eval '$r = apply_filters("slimstat_reports_info", array()); echo isset($r["slim_p8_01"]) ? "PROBOOT_OK" : "PROBOOT_MISSING";' \
+  > "$ART/pro-runtime-signal.txt" 2>&1
+grep -q 'PROBOOT_OK' "$ART/pro-runtime-signal.txt" \
+  || fail "Pro report slim_p8_01 not registered at runtime (service providers never booted)"
 
 # ── (c) tracking hit → a wp_slim_stats row ──────────────────────────────────
 before=$(wpc db query "SELECT COUNT(*) FROM wp_slim_stats;" --skip-column-names 2>/dev/null | tr -dc '0-9')

@@ -11,7 +11,7 @@
  *   - dashboard widget renders without drawer/builder/confirm-sheet DOM
  *
  */
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Locator, Page } from '@playwright/test';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { BASE_URL, WP_ROOT } from './helpers/env';
@@ -34,6 +34,42 @@ const SLIMVIEW6 = `${BASE_URL}/wp-admin/admin.php?page=slimview6`;
 
 async function gotoSlimview6(page: Page): Promise<void> {
     await page.goto(SLIMVIEW6, { waitUntil: 'domcontentloaded' });
+}
+
+/**
+ * Type a value into the goal drawer's Value field the way a user does.
+ *
+ * `[data-role="goal-value"]` is the raw input, and SlimStatSearchableSelect hides it
+ * (display:none) the moment the combobox mounts, so `page.fill()` on it fails with
+ * "element is not visible" — not because the drawer is broken, but because the spec is
+ * driving the pre-combobox DOM. The widget's syncTypedValue commits the typed text to
+ * the hidden input on blur, so the input still carries the value that gets saved.
+ */
+async function fillGoalValue(page: Page, value: string): Promise<void> {
+    const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
+    await wrap.locator('.slimstat-select-display').click();
+    await wrap.locator('.slimstat-select-search input').fill(value);
+    await page.locator('[data-role="goal-name"]').click(); // blur commits
+    await expect(page.locator('[data-role="goal-value"]')).toHaveValue(value);
+}
+
+/**
+ * The same thing for a funnel-builder step row.
+ *
+ * initStepRowsAutoSuggest() mounts a combobox over every `[data-role="step-value"]`
+ * as soon as the per-dimension options AJAX resolves, so a plain `.fill()` on that
+ * input is a race: it passes when the request is slow and fails with "element is not
+ * visible" when it is fast. On CI it is fast — all five funnel tests that type a step
+ * value failed that way on the WP 6.4 lane's first complete run, none of them for a
+ * reason in the product. Waiting for the combobox and typing into it removes the race
+ * in both directions.
+ */
+async function fillStepValue(row: Locator, value: string): Promise<void> {
+    const wrap = row.locator('.slimstat-searchable-select');
+    await wrap.locator('.slimstat-select-display').click();
+    await wrap.locator('.slimstat-select-search input').fill(value);
+    await row.locator('[data-role="step-name"]').click(); // blur commits
+    await expect(row.locator('[data-role="step-value"]')).toHaveValue(value);
 }
 
 test.describe('Goals & Funnels redesign (slimview6)', () => {
@@ -389,7 +425,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
 
         await page.fill('[data-role="goal-name"]', 'E2E Test Goal');
-        await page.fill('[data-role="goal-value"]', '/e2e');
+        await fillGoalValue(page, '/e2e');
         await Promise.all([
             page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
             page.click('[data-action="save-goal"]'),
@@ -437,9 +473,9 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         const rows = page.locator('.slimstat-gf-step-row');
         await expect(rows).toHaveCount(2);
         await rows.nth(0).locator('[data-role="step-name"]').fill('Landing');
-        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
+        await fillStepValue(rows.nth(0), '/');
         await rows.nth(1).locator('[data-role="step-name"]').fill('Pricing');
-        await rows.nth(1).locator('[data-role="step-value"]').fill('/pricing');
+        await fillStepValue(rows.nth(1), '/pricing');
 
         await Promise.all([
             page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
@@ -569,8 +605,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         const rows = page.locator('.slimstat-gf-step-row');
         await expect(rows).toHaveCount(2);
-        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
-        await rows.nth(1).locator('[data-role="step-value"]').fill('/pricing');
+        await fillStepValue(rows.nth(0), '/');
+        await fillStepValue(rows.nth(1), '/pricing');
 
         // Wait for the value comboboxes to mount (autosuggest replaces the plain
         // input with .slimstat-searchable-select once the options AJAX resolves).
@@ -612,13 +648,8 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-goal-drawer.is-open')).toBeVisible();
         await page.fill('[data-role="goal-name"]', 'Custom Value Goal');
 
-        // Type a value through the combobox search; syncTypedValue commits it to
-        // the hidden input even though it is not in the suggestion list.
-        const wrap = page.locator('#slimstat-gf-goal-drawer .slimstat-searchable-select');
-        await wrap.locator('.slimstat-select-display').click();
-        await wrap.locator('.slimstat-select-search input').fill('/totally-custom-xyz');
-        await page.locator('[data-role="goal-name"]').click(); // blur to commit
-        await expect(page.locator('[data-role="goal-value"]')).toHaveValue('/totally-custom-xyz');
+        // A custom value that is not in the suggestion list still reaches the input.
+        await fillGoalValue(page, '/totally-custom-xyz');
 
         await Promise.all([
             page.waitForURL(SLIMVIEW6, { timeout: 15_000 }),
@@ -711,7 +742,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await page.fill('[data-role="funnel-name"]', 'Bad Funnel');
 
         const rows = page.locator('.slimstat-gf-step-row');
-        await rows.nth(0).locator('[data-role="step-value"]').fill('/');
+        await fillStepValue(rows.nth(0), '/');
         // Leave step 2's value empty, then save.
         await page.click('[data-action="save-funnel"]');
 
@@ -730,7 +761,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
 
         const firstRow = page.locator('.slimstat-gf-step-row').nth(0);
         await firstRow.locator('[data-role="step-name"]').fill('Home');
-        await firstRow.locator('[data-role="step-value"]').fill('/');
+        await fillStepValue(firstRow, '/');
 
         const req = page.waitForRequest(r =>
             r.url().includes('admin-ajax.php') &&
@@ -753,7 +784,7 @@ test.describe('Goals & Funnels redesign (slimview6)', () => {
         await expect(page.locator('#slimstat-gf-funnel-builder.is-open')).toBeVisible();
 
         const firstRow = page.locator('.slimstat-gf-step-row').nth(0);
-        await firstRow.locator('[data-role="step-value"]').fill('/');
+        await fillStepValue(firstRow, '/');
 
         const req = page.waitForRequest(r =>
             r.url().includes('admin-ajax.php') &&

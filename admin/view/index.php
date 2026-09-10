@@ -121,7 +121,7 @@ if (PHP_VERSION_ID >= 70100 && !file_exists(wp_slimstat::$upload_dir . '/browsca
 // FinfoMimeTypeDetector unconditionally. Without ext-fileinfo the tracker
 // REST endpoint returns HTTP 500 on every hit (#303). Warn the admin when
 // Browscap is enabled but the extension is missing.
-if ('on' == wp_slimstat::$settings['enable_browscap'] && !extension_loaded('fileinfo') && 'on' == wp_slimstat::$settings['notice_browscap_fileinfo']) {
+if ('on' == wp_slimstat::$settings['enable_browscap'] && !\SlimStat\Services\Browscap::has_fileinfo() && 'on' == wp_slimstat::$settings['notice_browscap_fileinfo']) {
     wp_slimstat_admin::show_message(
         sprintf(
             __("Slimstat's Browscap browser-detection library requires the PHP %1\$sfileinfo%2\$s extension, which is not enabled on your server. Browser detection has been safely disabled to keep tracking working — ask your host to enable %1\$sfileinfo%2\$s, or %3\$sturn off the Browscap Library%4\$s in the settings to hide this notice.", 'wp-slimstat'),

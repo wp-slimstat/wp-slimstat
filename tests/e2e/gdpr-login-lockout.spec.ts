@@ -26,7 +26,7 @@ test.describe('GDPR banner must not white-screen front-end or login @compat', ()
     await snapshotSlimstatOptions();
     // Enable SlimStat's own banner. `consent_integration:''` keeps the boot-time
     // consent-sync from forcing use_slimstat_banner back off.
-    await setSlimstatOptions(null as any, {
+    await setSlimstatOptions({
       consent_integration: '',
       gdpr_enabled: 'on',
       use_slimstat_banner: 'on',

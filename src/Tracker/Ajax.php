@@ -278,9 +278,19 @@ class Ajax
                 return Utils::getValueWithChecksum($stat['id']);
             }
 
-            if ($isConsentUpgrade && empty($data_js['pos'])) {
+            if ($isConsentUpgrade && empty($data_js['pos']) && 'on' === (\wp_slimstat::$settings['anonymous_tracking'] ?? 'off')) {
                 // The verified existing ID must use the session-wide consent merge,
-                // rather than the ordinary one-row update path below.
+                // rather than the ordinary one-row update path below. Only when
+                // anonymous tracking is on, though: that merge (Processor::process(),
+                // the `$isAnonymousTracking && $piiAllowed` block) is the only thing
+                // process() does for an upgrade, and with anonymous tracking off it
+                // fell through to a plain INSERT — a second row for one pageview,
+                // whose resource was the tracker endpoint itself, because process()
+                // falls back to REQUEST_URI and its self-tracking guard names only
+                // admin-ajax.php, never the REST route. The ordinary update path
+                // below is what an upgrade of one known, already-identified row
+                // means: re-process the IP under the new consent, collect the PII
+                // consent now permits, and leave the resource alone.
                 \wp_slimstat::set_stat(Utils::getClientInfo($data_js, $stat));
                 $id = Processor::process();
                 if (empty($id) || $id < 0) {

@@ -20,16 +20,17 @@ import {
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
   closeDb,
+  installMuPluginByName,
+  uninstallMuPluginByName,
 } from './helpers/setup';
 import { BASE_URL, WP_ROOT } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ─── MU-Plugin management ─────────────────────────────────────────
 const MU_PLUGINS = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const VERSION_FLOOR_SRC = path.join(__dirname, 'helpers', 'version-floor-test-mu-plugin.php');
-const VERSION_FLOOR_DEST = path.join(MU_PLUGINS, 'version-floor-test-mu-plugin.php');
 const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
 const WP_CONFIG = path.join(WP_ROOT, 'wp-config.php');
 
@@ -53,25 +54,15 @@ function restoreWpConfig(): void {
 }
 
 function installVersionFloorPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(VERSION_FLOOR_SRC, VERSION_FLOOR_DEST);
+  installMuPluginByName('version-floor-test-mu-plugin.php');
   injectWpConfigLine(E2E_TESTING_LINE);
 }
 
 function uninstallVersionFloorPlugin(): void {
-  if (fs.existsSync(VERSION_FLOOR_DEST)) fs.unlinkSync(VERSION_FLOOR_DEST);
+  uninstallMuPluginByName('version-floor-test-mu-plugin.php');
 }
 
 // ─── AJAX helpers ─────────────────────────────────────────────────
-
-async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'e2e_get_slimstat_version' },
-  });
-  if (!res.ok()) return false;
-  const json = await res.json();
-  return json.data?.pro_active === true;
-}
 
 async function getWhoisNonce(page: import('@playwright/test').Page): Promise<string> {
   const response = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
@@ -99,6 +90,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     installOptionMutator();
     installNonceHelper();
     installVersionFloorPlugin();
+    installMuPluginByName('google-maps-key-mu-plugin.php');
   });
 
   test.beforeEach(async () => {
@@ -123,8 +115,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'maxmind');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -160,8 +151,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -192,8 +182,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     // Test with both providers to ensure array notation works everywhere
     for (const provider of ['dbip', 'maxmind']) {
@@ -216,8 +205,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -235,14 +223,13 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     }
   });
 
-  // ─── TC-AC6-005: Google Maps embed renders with valid IP ────────
+  // ─── TC-AC6-005: Google Maps embed renders only with a configured key ────────
 
-  test('Google Maps embed URL present in whois response for public IP', async ({ page }) => {
+  test('Google Maps embed appears only when the site owner has configured a key', async ({ page }) => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');
@@ -253,16 +240,26 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     expect(result.status).toBeLessThan(500);
     expect(result.body).not.toContain('Fatal error');
 
-    const hasGeoData = result.body.includes('Current IP geolocation lookup');
+    // Default state: no map. MaxMindDetailsAddon emits the embed only when a site owner
+    // filters in their own key (`slimstat_pro_google_maps_api_key`, Pro 792f59d — a
+    // distributed plugin must not spend someone else's Maps quota), so a build with no
+    // key configured renders the coordinates and no iframe. This test used to assert the
+    // embed outright and failed on precisely the behaviour the product ships.
+    expect(
+      result.body,
+      'with no key filtered in, the whois view must not load the Maps API',
+    ).not.toContain('maps.googleapis.com');
 
-    if (hasGeoData) {
-      // The Google Maps embed should be present with coordinate parameters
-      const hasMapsEmbed =
-        result.body.includes('maps.google') ||
-        result.body.includes('google.com/maps');
-      expect(hasMapsEmbed, 'Whois response should include Google Maps embed for geolocated IP').toBeTruthy();
-    }
-    // If no geo data, DB may not be present — not a failure for this test
+    // Configured state: the branch a paying site actually runs. Asserting only the
+    // absence above would leave it untested, which is the same hole in a different
+    // direction. google-maps-key-mu-plugin.php answers the filter from this setting.
+    await setSlimstatOption(page, 'e2e_google_maps_api_key', 'e2e-maps-key');
+
+    const withKey = await callWhoisEndpoint(page, '8.8.8.8', await getWhoisNonce(page));
+    expect(withKey.status).toBeLessThan(500);
+    expect(withKey.body).not.toContain('Fatal error');
+    expect(withKey.body, 'a configured key must load the Maps API').toContain('maps.googleapis.com');
+    expect(withKey.body, 'and render the map container it centres').toContain('id="map"');
   });
 
   // ─── TC-AC6-006: SlimStat detail view accessible with Pro ───────
@@ -271,8 +268,7 @@ test.describe('Pro Coordinates Display — Suite 04 (REQ-AC6)', () => {
     await page.goto('/wp-admin/');
     await expect(page).toHaveTitle(/Dashboard/);
 
-    const proActive = await isProActive(page);
-    test.skip(!proActive, 'WP SlimStat Pro is not installed/active — skipping');
+    await requireProBooted(page);
 
     await setSlimstatOption(page, 'geolocation_provider', 'dbip');
     await setSlimstatOption(page, 'addon_maxmind_enable', 'on');

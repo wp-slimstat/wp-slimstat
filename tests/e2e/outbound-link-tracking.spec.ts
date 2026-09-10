@@ -13,7 +13,7 @@
  *   - Clicking a same-domain link does NOT set outbound_resource.
  *   - AJAX transport produces the same outbound tracking result as REST.
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 import {
   installOptionMutator,
   uninstallOptionMutator,
@@ -81,6 +81,46 @@ async function injectExternalLink(
   );
 }
 
+/**
+ * Record every tracking request the page makes, and what came back.
+ *
+ * The REST-transport test below failed on the WP 6.4 CI lane with nothing but
+ * "expected not null, received null" — the outbound update never reached the DB, and
+ * the report said nothing about whether the browser sent anything, where to, or what
+ * the server answered. The tracker cannot fill that gap itself: its debug buffer only
+ * records the initial pageview (wp-slimstat.js debugFinalize() writes lastPageview
+ * only when requiresIdResponse), and the outbound hit goes out via navigator.sendBeacon,
+ * which is fire-and-forget by definition. Two listeners cost nothing and turn a null
+ * into a transport, a URL and a status code.
+ */
+function recordTrackingRequests(page: Page): () => Promise<string> {
+  const lines: string[] = [];
+  const bodies: Promise<void>[] = [];
+  const isTracking = (url: string) =>
+    /wp-json\/slimstat|rest_route=.*slimstat|admin-ajax\.php|wp-slimstat\.php/.test(url);
+
+  page.on('request', (r) => {
+    if (isTracking(r.url())) {
+      lines.push(`  -> ${r.method()} ${r.url()} ${(r.postData() ?? '').slice(0, 200)}`);
+    }
+  });
+  page.on('response', (r) => {
+    if (!isTracking(r.url())) return;
+    const i = lines.push(`  <- ${r.status()} ${r.url()} (body pending)`) - 1;
+    bodies.push(
+      r.text().then(
+        (t) => { lines[i] = `  <- ${r.status()} ${r.url()} ${t.slice(0, 200)}`; },
+        () => { lines[i] = `  <- ${r.status()} ${r.url()} (body unavailable)`; },
+      ),
+    );
+  });
+
+  return async () => {
+    await Promise.all(bodies);
+    return lines.length ? `tracking traffic:\n${lines.join('\n')}` : 'tracking traffic: none observed';
+  };
+}
+
 // ─── Test suite ──────────────────────────────────────────────────────────────
 
 test.describe('Outbound Link Tracking — DOM click path', () => {
@@ -90,7 +130,10 @@ test.describe('Outbound Link Tracking — DOM click path', () => {
     installOptionMutator();
   });
 
+  let dumpTracking: () => Promise<string>;
+
   test.beforeEach(async ({ page }) => {
+    dumpTracking = recordTrackingRequests(page);
     await snapshotSlimstatOptions();
     await clearStatsTable();
     await setSlimstatOption(page, 'is_tracking', 'on');
@@ -134,7 +177,10 @@ test.describe('Outbound Link Tracking — DOM click path', () => {
     await page.click('#e2e-ext-rest');
 
     const updated = await waitForOutboundUpdate(rowId);
-    expect(updated, 'outbound_resource should be set after clicking an external link').not.toBeNull();
+    expect(
+      updated,
+      `outbound_resource should be set after clicking an external link\n${await dumpTracking()}`,
+    ).not.toBeNull();
     expect(updated!.outbound_resource).toContain('example.com');
     expect(updated!.dt_out).toBeGreaterThan(0);
   });
@@ -212,7 +258,10 @@ test.describe('Outbound Link Tracking — DOM click path', () => {
     await page.click('#e2e-ext-ajax');
 
     const updated = await waitForOutboundUpdate(rowId);
-    expect(updated, 'outbound_resource should be set with AJAX transport').not.toBeNull();
+    expect(
+      updated,
+      `outbound_resource should be set with AJAX transport\n${await dumpTracking()}`,
+    ).not.toBeNull();
     expect(updated!.outbound_resource).toContain('example.com');
     expect(updated!.dt_out).toBeGreaterThan(0);
   });

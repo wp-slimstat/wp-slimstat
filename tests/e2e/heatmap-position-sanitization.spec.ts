@@ -18,6 +18,7 @@ import {
   waitForTrackerId,
 } from './helpers/setup';
 import { BASE_URL } from './helpers/env';
+import { requireProBooted } from './helpers/pro-state';
 
 const EMPTY_STORAGE_STATE = { cookies: [], origins: [] };
 
@@ -47,15 +48,6 @@ function captureTrackingPayloads(page: import('@playwright/test').Page): { paylo
       payloads.length = 0;
     },
   };
-}
-
-async function isProActive(page: import('@playwright/test').Page): Promise<boolean> {
-  const res = await page.request.post(`${BASE_URL}/wp-admin/admin-ajax.php`, {
-    form: { action: 'e2e_get_slimstat_version' },
-  });
-  if (!res.ok()) return false;
-  const json = await res.json();
-  return json.data?.pro_active === true;
 }
 
 async function getHeatmapNonce(page: import('@playwright/test').Page): Promise<string> {
@@ -144,7 +136,7 @@ test.describe('Heatmap position sanitization', () => {
     await snapshotSlimstatOptions();
     await clearStatsTable();
     clearHeaderOverrides();
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       is_tracking: 'on',
       javascript_mode: 'on',
       ignore_wp_users: 'off',
@@ -172,7 +164,7 @@ test.describe('Heatmap position sanitization', () => {
 
   test('click event preserves comma-separated position via REST transport', async ({ page }) => {
     const marker = `heatmap-pos-rest-${Date.now()}`;
-    await setSlimstatOptions(page, { gdpr_enabled: 'off', tracking_request_method: 'rest' });
+    await setSlimstatOptions({ gdpr_enabled: 'off', tracking_request_method: 'rest' });
 
     await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
 
@@ -196,7 +188,7 @@ test.describe('Heatmap position sanitization', () => {
 
   test('click event preserves comma-separated position via AJAX transport', async ({ page }) => {
     const marker = `heatmap-pos-ajax-${Date.now()}`;
-    await setSlimstatOptions(page, { gdpr_enabled: 'off', tracking_request_method: 'ajax' });
+    await setSlimstatOptions({ gdpr_enabled: 'off', tracking_request_method: 'ajax' });
 
     await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
 
@@ -216,7 +208,7 @@ test.describe('Heatmap position sanitization', () => {
 
   test('default position 0,0 is preserved', async ({ page }) => {
     const marker = `heatmap-pos-origin-${Date.now()}`;
-    await setSlimstatOptions(page, { gdpr_enabled: 'off', tracking_request_method: 'rest' });
+    await setSlimstatOptions({ gdpr_enabled: 'off', tracking_request_method: 'rest' });
 
     await page.goto(`${BASE_URL}/?e2e=${marker}`, { waitUntil: 'domcontentloaded' });
 
@@ -239,9 +231,9 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('heatmap endpoint excludes corrupted positions and returns x/y/value entries', async ({ page }) => {
-    test.skip(!(await isProActive(page)), 'WP SlimStat Pro is not installed/active');
+    await requireProBooted(page);
 
-    await setSlimstatOptions(page, { addon_heatmap_enable: 'on' });
+    await setSlimstatOptions({ addon_heatmap_enable: 'on' });
 
     const resourcePrefix = `/heatmap-test-${Date.now()}-`;
     await seedPageviews({ count: 1, resourcePrefix });
@@ -265,9 +257,9 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('multiple clicks aggregate correctly in heatmap data', async ({ page }) => {
-    test.skip(!(await isProActive(page)), 'WP SlimStat Pro is not installed/active');
+    await requireProBooted(page);
 
-    await setSlimstatOptions(page, { addon_heatmap_enable: 'on' });
+    await setSlimstatOptions({ addon_heatmap_enable: 'on' });
 
     const resourcePrefix = `/heatmap-aggregate-${Date.now()}-`;
     await seedPageviews({ count: 1, resourcePrefix });
@@ -294,7 +286,7 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('GDPR enabled with granted consent records interaction position via browser click', async ({ browser, page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'wp_consent_api',
       tracking_request_method: 'rest',
@@ -345,7 +337,7 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('GDPR enabled with denied consent does not send interaction tracking', async ({ browser, page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       consent_integration: 'wp_consent_api',
       tracking_request_method: 'rest',
@@ -391,7 +383,7 @@ test.describe('Heatmap position sanitization', () => {
   });
 
   test('browser DNT signal blocks interaction tracking requests', async ({ browser, page }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       do_not_track: 'on',
       tracking_request_method: 'rest',
       gdpr_enabled: 'off',

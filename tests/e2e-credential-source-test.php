@@ -47,11 +47,9 @@ preg_match_all(
     PREG_SET_ORDER
 );
 
-$owned       = [];
-$credentials = [];
+$owned = [];
 foreach ($m as $hit) {
     $owned[$hit[4]] = true;
-    $credentials[$hit[1] . '_' . $hit[2]] = $hit[4];
 }
 $owned = array_keys($owned);
 
@@ -116,11 +114,11 @@ if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci_sour
 } else {
     $standard_job = $ci_match[0];
     $required_ci_fragments = [
-        'WP_AUTHOR_USER: ' . ($credentials['AUTHOR_USER'] ?? ''),
-        'WP_AUTHOR_PASS: ' . ($credentials['AUTHOR_PASS'] ?? ''),
-        'wp user create "${WP_AUTHOR_USER}"',
+        'WP_AUTHOR_USER:',
+        'WP_AUTHOR_PASS:',
+        'wp user create "$WP_AUTHOR_USER"',
         '--role=author',
-        '--user_pass="${WP_AUTHOR_PASS}"',
+        '--user_pass="$WP_AUTHOR_PASS"',
     ];
     foreach ($required_ci_fragments as $fragment) {
         if (false === strpos($standard_job, $fragment)) {

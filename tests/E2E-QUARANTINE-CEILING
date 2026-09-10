@@ -6,10 +6,16 @@
 # If a change REMOVES a skip, lower the number in the same commit — leaving the old value is
 # headroom for the next one, and headroom is how a ratchet becomes a dial.
 #
-#   pro            skips guarded on Pro being ABSENT. CI installs no Pro (ci.yml overwrites
-#                  .wp-env.json to {"plugins":["."]}), so this number measures the lane's
+#   pro            skips guarded on Pro being ABSENT FROM THE DISK. CI installs no Pro (ci.yml
+#                  overwrites .wp-env.json to {"plugins":["."]}), so this number measures the lane's
 #                  configuration, not the suite's health. It is its own line so it can never be
 #                  confused with the rest, and so it visibly collapses if Pro ever joins the lane.
+#                  It is 1, and 1 is the design: helpers/pro-state.ts requireProBooted() is the
+#                  only site, and it skips only on "Pro is not installed here". Installed-but-off
+#                  and active-but-never-booted are expect()s that FAIL. The 34 guards it replaced
+#                  read "Pro is not installed/active" and skipped on exactly the state A0 produced,
+#                  which is how a Pro that deactivated itself on the first admin request survived a
+#                  full qualification round looking like a configuration skip.
 #   conditional    every other guarded skip: consent plugins absent, a missing es_ES .po, a
 #                  project filter, a precondition the test could not establish.
 #   unconditional  bare test.skip(), and declaration-form test.skip('title', fn) / test.fixme(...).
@@ -24,9 +30,9 @@
 # the rest, which Playwright reports as skipped. They are downstream of the 132 failures and
 # return to the denominator as those are fixed, so counting them here would ratchet the cascade
 # into the contract and this file could never descend past it. Reading source is what keeps them
-# out. The three Pro guards added to pro-maxmind-details-addon.spec.ts on this branch move three
-# tests from failing to skipping, so the next uncapped run should annotate 46, not 43.
+# out. Run 65's 33 annotated Pro skips are gone at source: on a lane WITH Pro the next uncapped run
+# should annotate 10, and on the Pro-less CI lanes the same tests still skip, through one site.
 
-pro            36
-conditional    31
+pro            1
+conditional    28
 unconditional  19

@@ -126,7 +126,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - gdpr_enabled='on' (v5.4.0 forced this)
     // - _migration_5460='0' (force migration to re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -179,7 +179,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the bugged state directly (as migration would leave it)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'off', // <-- the bug
       javascript_mode: 'on',
@@ -263,7 +263,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     page,
   }) => {
     // Same pre-migration state as Test 1
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -312,7 +312,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     await clearStatsTable();
 
     // Set the FIXED state: gdpr on + cookie on + slimstat banner
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'on',
       set_tracker_cookie: 'on', // <-- the fix
       use_slimstat_banner: 'on',
@@ -428,7 +428,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   test('FIXED: cookie set immediately when gdpr_enabled=off', async ({ page, browser }) => {
     await clearStatsTable();
 
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       gdpr_enabled: 'off',
       set_tracker_cookie: 'on',
       javascript_mode: 'on',
@@ -507,7 +507,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
 
   test('clean install: migration correctly sets gdpr=off and cookie=on', async ({ page }) => {
     // Simulate v5.4.0 state with NO legacy consent settings
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',     // v5.3.x default — no banner
       opt_out_cookie_names: '',   // no legacy cookies
       opt_in_cookie_names: '',    // no legacy cookies
@@ -548,7 +548,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
   test('third-party CMP: migration preserves gdpr=on and restores cookie=on', async ({
     page,
   }) => {
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'no',
       opt_out_cookie_names: '',
       opt_in_cookie_names: '',
@@ -595,7 +595,7 @@ test.describe('Migration cookie restore bug — no cookies after 5.4.0', () => {
     // - display_opt_out='on' (legacy v5.3.x consent → triggers gdpr_enabled='on' path)
     // - set_tracker_cookie='off' (broken v5.4.0 default)
     // - _migration_5460='0' (force migration re-run)
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       display_opt_out: 'on',
       set_tracker_cookie: 'off',
       javascript_mode: 'on',

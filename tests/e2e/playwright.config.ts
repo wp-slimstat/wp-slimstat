@@ -46,6 +46,13 @@ export default defineConfig({
     {
       name: 'admin',
       use: { storageState: path.join(__dirname, '.auth/admin.json') },
+      // Author specs assert what an AUTHOR may see. Run under the admin storage state they
+      // assert the opposite of the truth -- "capability denies" fails because an admin really
+      // does have manage_options, and a scope check counting one row sees every row -- so the
+      // admin project ran each of them a second time purely to report two failures that were
+      // the config's own doing (census de0045b0/21204b6c, report-author-privacy [admin] x2).
+      // The author project below already claims them by testMatch; this is the other half.
+      testIgnore: '**/*.author.spec.ts',
     },
     {
       name: 'author',

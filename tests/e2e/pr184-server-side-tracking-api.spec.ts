@@ -24,6 +24,8 @@ import {
   uninstallOptionMutator,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
+  installMuPluginByName,
+  uninstallMuPluginByName,
 } from './helpers/setup';
 import { BASE_URL, WP_ROOT } from './helpers/env';
 
@@ -32,8 +34,6 @@ const __dirname = path.dirname(__filename);
 
 // ─── MU-Plugin management ─────────────────────────────────────────
 const MU_PLUGINS = path.join(WP_ROOT, 'wp-content', 'mu-plugins');
-const SERVER_TRACKING_SRC = path.join(__dirname, 'helpers', 'server-tracking-mu-plugin.php');
-const SERVER_TRACKING_DEST = path.join(MU_PLUGINS, 'server-tracking-mu-plugin.php');
 const E2E_TESTING_LINE = "define('SLIMSTAT_E2E_TESTING', true);";
 const WP_CONFIG = path.join(WP_ROOT, 'wp-config.php');
 
@@ -57,13 +57,12 @@ function restoreWpConfig(): void {
 }
 
 function installServerTrackingPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(SERVER_TRACKING_SRC, SERVER_TRACKING_DEST);
+  installMuPluginByName('server-tracking-mu-plugin.php');
   injectWpConfigLine(E2E_TESTING_LINE);
 }
 
 function uninstallServerTrackingPlugin(): void {
-  if (fs.existsSync(SERVER_TRACKING_DEST)) fs.unlinkSync(SERVER_TRACKING_DEST);
+  uninstallMuPluginByName('server-tracking-mu-plugin.php');
 }
 
 // ─── AJAX call helper ──────────────────────────────────────────────

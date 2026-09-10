@@ -65,6 +65,20 @@ export function removeWpConfigLine(line: string): void {
 
 // ─── MU-Plugin manifest ───────────────────────────────────────────
 
+/**
+ * Deploy a mu-plugin over whatever is already there.
+ *
+ * `fs.copyFileSync` keeps the source mode and cannot overwrite a read-only
+ * destination (EACCES). A checkout whose files are mode 444 — a pinned
+ * qualification checkout, for instance — therefore made every install after
+ * `installAllTestMuPlugins()` fail, taking the whole spec file with it.
+ */
+export function deployMuPlugin(src: string, dest: string): void {
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.rmSync(dest, { force: true });
+  fs.copyFileSync(src, dest);
+}
+
 interface MuPluginEntry { sourceFile: string; deployedFile: string; }
 
 const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
@@ -85,6 +99,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
   { sourceFile: 'calendar-ext-simulator-mu-plugin.php', deployedFile: 'calendar-ext-simulator-mu-plugin.php' },
   { sourceFile: 'browscap-unzip-blocker-mu-plugin.php', deployedFile: 'browscap-unzip-blocker-mu-plugin.php' },
   { sourceFile: 'fileinfo-disabler-mu-plugin.php', deployedFile: 'fileinfo-disabler-mu-plugin.php' },
+  { sourceFile: 'google-maps-key-mu-plugin.php', deployedFile: 'google-maps-key-mu-plugin.php' },
 ];
 
 // ─── Generic MU-Plugin install/uninstall by name ──────────────────
@@ -92,8 +107,7 @@ const MU_PLUGIN_MANIFEST: MuPluginEntry[] = [
 export function installMuPluginByName(name: string): void {
   const entry = MU_PLUGIN_MANIFEST.find((e) => e.sourceFile === name);
   if (!entry) throw new Error(`MU-Plugin "${name}" not found in manifest`);
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+  deployMuPlugin(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
 }
 
 export function uninstallMuPluginByName(name: string): void {
@@ -116,9 +130,8 @@ function isGlobalMuPluginsManaged(): boolean {
 }
 
 export function installAllTestMuPlugins(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
   for (const entry of MU_PLUGIN_MANIFEST) {
-    fs.copyFileSync(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
+    deployMuPlugin(path.join(__dirname, entry.sourceFile), path.join(MU_PLUGINS, entry.deployedFile));
   }
   fs.writeFileSync(GLOBAL_MU_SENTINEL, '', 'utf8');
 }
@@ -134,8 +147,7 @@ export function uninstallAllTestMuPlugins(): void {
 // ─── MU-Plugin manager (legacy) ───────────────────────────────────
 
 export function installMuPlugin(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(LOGGER_SRC, LOGGER_DEST);
+  deployMuPlugin(LOGGER_SRC, LOGGER_DEST);
 }
 
 export function uninstallMuPlugin(): void {
@@ -146,8 +158,7 @@ export function uninstallMuPlugin(): void {
 // ─── Nonce helper MU-Plugin (legacy) ─────────────────────────────
 
 export function installNonceHelper(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
+  deployMuPlugin(NONCE_HELPER_SRC, NONCE_HELPER_DEST);
 }
 
 export function uninstallNonceHelper(): void {
@@ -382,8 +393,7 @@ export function disableE2eTesting(): void {
 }
 
 export function installCronFrontendShim(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(CRON_SHIM_SRC, CRON_SHIM_DEST);
+  deployMuPlugin(CRON_SHIM_SRC, CRON_SHIM_DEST);
   injectWpConfigLine(E2E_TESTING_LINE);
 }
 
@@ -424,8 +434,7 @@ const OPTION_MUTATOR_DEST = path.join(MU_PLUGINS, 'option-mutator-mu-plugin.php'
 const BASE_URL = ENV_BASE_URL;
 
 export function installOptionMutator(): void {
-  fs.mkdirSync(MU_PLUGINS, { recursive: true });
-  fs.copyFileSync(OPTION_MUTATOR_SRC, OPTION_MUTATOR_DEST);
+  deployMuPlugin(OPTION_MUTATOR_SRC, OPTION_MUTATOR_DEST);
 }
 
 export function uninstallOptionMutator(): void {
@@ -496,11 +505,21 @@ export async function deleteSlimstatOption(_page: import('@playwright/test').Pag
 /**
  * Set multiple slimstat options in a single DB roundtrip.
  * Reads the serialized options once, updates all keys, writes back once.
+ *
+ * This took a `page` first argument for its whole life and never used it. Nothing type-checks the
+ * suite — Playwright transpiles without tsc — so `setSlimstatOptions({ add_posts_column: 'on' })`
+ * put the options object into `_page`, left `opts` undefined, and `Object.assign(current,
+ * undefined)` wrote the settings back untouched without a word. The spec that did it
+ * (php80-posts-column-interval-flip) then failed on the column it thought it had switched on, and
+ * was carried as a product failure through a whole qualification round. The parameter is gone, so
+ * that call is now the correct one; the guard below catches the next shape of the same mistake.
  */
 export async function setSlimstatOptions(
-  _page: import('@playwright/test').Page,
   opts: Record<string, string>,
 ): Promise<void> {
+  if (!opts || typeof opts !== 'object' || Array.isArray(opts) || Object.keys(opts).length === 0) {
+    throw new Error(`setSlimstatOptions() needs a non-empty options object, got: ${JSON.stringify(opts)}`);
+  }
   const pool = getPool();
   const [rows] = await pool.execute(
     "SELECT option_value FROM wp_options WHERE option_name = 'slimstat_options'"

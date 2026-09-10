@@ -20,6 +20,12 @@
  *                 to `{"plugins":["."]}`), so a guard that fires on Pro's ABSENCE is configuration
  *                 showing through, not test health. Named as its own number so it can never be
  *                 mistaken for the rest, and so shrinking it is visible if Pro ever joins the lane.
+ *                 Since `helpers/pro-state.ts` landed there is exactly ONE such site in the whole
+ *                 suite: `requireProBooted()` skips only when Pro is not on disk at all, and every
+ *                 other Pro state — installed-but-off, active-but-never-booted — is an `expect`
+ *                 that FAILS. That is the point. A0 (Pro deactivating itself on the first admin
+ *                 request) hid for a full qualification round behind 34 guards that read
+ *                 "Pro is not installed/active" and skipped on the defect they existed to catch.
  *   conditional   every other guarded skip: consent plugins, a missing .po, a project filter, a
  *                 precondition the test could not establish. Some of these are honest fixtures and
  *                 some are defects wearing a fixture's coat; the census does not adjudicate, it
@@ -44,16 +50,17 @@
  * see them by construction — that is the design, not a limitation.
  *
  * The runtime counterpart, for the record: of the 43 annotated skips in Run 65, 33 were Pro and 10
- * were conditional. This branch's three new Pro guards in `pro-maxmind-details-addon.spec.ts` move
- * three tests from failing to skipping, so the next uncapped run should annotate 46, not 43.
+ * were conditional. Those 33 are gone at source — `requireProBooted()` replaced them — so on a
+ * lane WITH Pro installed the next uncapped run should annotate 10, and on the Pro-less CI lanes
+ * the same 33 tests still skip, now through one site instead of 34.
  *
  * ── THE VACUITY FLOOR ───────────────────────────────────────────────────────────────────────
  *
  * A census that parses zero skips reports a clean suite in the same words it uses for a broken
  * scan, and it is the same defect one level up. So: the walk must find the suite it claims to
- * read, the classifier must place sites in every class, and the Pro spec files must actually
- * contribute to `pro`. Four recorded instances in this programme of a scan that went green by
- * reading nothing.
+ * read, the classifier must place sites in every class, the one Pro carve-out site must actually
+ * contribute to `pro`, and the Pro specs must hold no skip site of their own. Four recorded
+ * instances in this programme of a scan that went green by reading nothing.
  *
  * Run: php tests/e2e-quarantine-census-test.php
  */
@@ -83,8 +90,12 @@ $failures    = [];
  * PRESENT, which on a Pro-less lane never fires at all. Run 65 confirms it: the first two are in
  * the artifact's skip list and the third is not. Collapsing the polarity would put a test that
  * always runs into the carve-out's budget.
+ *
+ * `pro_installed` is the live one: `helpers/pro-state.ts` skips on `!state.pro_installed` and on
+ * nothing else. The older names are kept because a spec may reintroduce one, and a predicate this
+ * file does not know lands in `conditional`, where it is invisible.
  */
-$pro_identifiers = '(?:isProActive|proActive|pro_active|isPro)';
+$pro_identifiers = '(?:isProActive|proActive|pro_active|pro_installed|isPro)';
 
 // ── Walk the suite ──────────────────────────────────────────────────────────────────────
 $files = [];
@@ -245,10 +256,13 @@ if (count($files) < 100) {
 }
 
 $total = array_sum($counts);
-if ($total < 60) {
-    $failures[] = sprintf('classified only %d skip site(s); Run 65 alone skipped 79 tests, so a '
-        . 'census this small means the matcher stopped matching. Zero skips and a broken parse '
-        . 'report themselves in the same words', $total);
+// 51 sites stand after the 34 Pro guards collapsed into one helper. The floor sits under that and
+// far above zero: it catches a matcher that stopped matching, it does not pin the total — the
+// ceiling file does that, exactly and per class. Lower it only alongside a real removal.
+if ($total < 45) {
+    $failures[] = sprintf('classified only %d skip site(s); the suite has not held fewer than 50 '
+        . 'since this census was written, so a count this small means the matcher stopped matching. '
+        . 'Zero skips and a broken parse report themselves in the same words', $total);
 }
 
 foreach ($counts as $class => $n) {
@@ -261,16 +275,33 @@ foreach ($counts as $class => $n) {
 
 // Positive control on the carve-out specifically: `pro` is the class a loose predicate list
 // over-counts and a stale one silently empties, and it is the one nobody re-reads.
-$pro_files = [];
-foreach ($sites as [$class, $rel]) {
+$pro_files    = [];
+$sites_by_rel = [];
+foreach ($sites as [$class, $rel, $line]) {
+    $sites_by_rel[$rel][] = $line;
     if ('pro' === $class) {
         $pro_files[$rel] = true;
     }
 }
-foreach (['tests/e2e/pro-dbip-whois-data.spec.ts', 'tests/e2e/pro-version-floor-check.spec.ts'] as $expected) {
-    if (!isset($pro_files[$expected])) {
-        $failures[] = sprintf('%s contributes nothing to the `pro` class, and every test in it is '
-            . 'guarded on Pro. The Pro predicate list has gone stale against the specs', $expected);
+if (!isset($pro_files['tests/e2e/helpers/pro-state.ts'])) {
+    $failures[] = 'tests/e2e/helpers/pro-state.ts contributes nothing to the `pro` class. It holds '
+        . 'the suite\'s only Pro carve-out — `requireProBooted()` skipping on `!state.pro_installed` '
+        . '— so either that guard is gone or the Pro predicate list has gone stale against it';
+}
+
+// The other half of the same control, and the reason A0 survived a qualification round: a Pro spec
+// must FAIL on a Pro that is installed and broken, never skip. Any skip site of its own is a way
+// back to that, so these files must contribute nothing at all, and must route through the helper.
+foreach (['tests/e2e/pro-dbip-whois-data.spec.ts', 'tests/e2e/pro-version-floor-check.spec.ts'] as $spec) {
+    if (isset($sites_by_rel[$spec])) {
+        $failures[] = sprintf('%s carries its own skip site(s) at line(s) %s. A Pro spec skips only '
+            . 'through requireProBooted(), which skips only when Pro is absent from the disk; every '
+            . 'other Pro state is the defect the spec exists to catch', $spec,
+            implode(', ', $sites_by_rel[$spec]));
+    }
+    if (false === strpos((string) file_get_contents($plugin_root . '/' . $spec), 'requireProBooted')) {
+        $failures[] = sprintf('%s never calls requireProBooted(), so nothing in it asserts that Pro '
+            . 'actually booted before its Pro assertions run', $spec);
     }
 }
 
