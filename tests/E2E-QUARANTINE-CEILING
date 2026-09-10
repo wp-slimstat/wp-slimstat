@@ -34,5 +34,5 @@
 # should annotate 10, and on the Pro-less CI lanes the same tests still skip, through one site.
 
 pro            1
-conditional    31
+conditional    28
 unconditional  19
