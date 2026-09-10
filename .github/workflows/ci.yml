@@ -652,6 +652,52 @@ jobs:
           echo "MYSQL_PASSWORD=password" >> $GITHUB_ENV
           echo "MYSQL_DATABASE=$DB_NAME" >> $GITHUB_ENV
 
+      - name: Resolve the DB-IP cache key
+        # The upstream npm package is republished monthly at the same URL, so the
+        # cache key has to move with it or CI pins a database that ages out.
+        if: ${{ matrix.wp == '6.4' }}
+        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> $GITHUB_ENV
+
+      - name: Cache the DB-IP City Lite database
+        if: ${{ matrix.wp == '6.4' }}
+        id: dbip-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/dbip/dbip-city-lite.mmdb
+          key: dbip-city-lite-${{ env.DBIP_MONTH }}
+
+      - name: Download the DB-IP City Lite database
+        # Same URL DbIpProvider::init() ships as its primary source, so CI stages
+        # the bytes a real site would download rather than a lookalike fixture.
+        if: ${{ matrix.wp == '6.4' && steps.dbip-cache.outputs.cache-hit != 'true' }}
+        run: |
+          mkdir -p ~/dbip
+          curl -fsSL --retry 3 --retry-delay 5 \
+            https://cdn.jsdelivr.net/npm/dbip-city-lite/dbip-city-lite.mmdb.gz \
+            -o /tmp/dbip-city-lite.mmdb.gz
+          gunzip -c /tmp/dbip-city-lite.mmdb.gz > ~/dbip/dbip-city-lite.mmdb
+
+      - name: Stage the DB-IP City Lite database into the test site
+        # Without this the dbip provider returns null for every IP and ~11
+        # geolocation tests fail on `country: null` — a missing database that
+        # looks exactly like a broken lookup. The census driver stages the same
+        # file at the same path (census-driver-checkpoint-b.sh:81), which is why
+        # those tests pass there and have never once run here. Validate the bytes
+        # so a CDN error page fails loudly instead of arriving as null countries.
+        if: ${{ matrix.wp == '6.4' }}
+        run: |
+          MMDB=~/dbip/dbip-city-lite.mmdb
+          SIZE=$(wc -c < "$MMDB")
+          if [ "$SIZE" -lt 50000000 ] || ! tail -c 131072 "$MMDB" | grep -qa "MaxMind.com"; then
+            echo "::error::$MMDB is not a MaxMind database (${SIZE} bytes, metadata marker absent)"
+            exit 1
+          fi
+          UPLOADS="$WP_ROOT/wp-content/uploads/wp-slimstat"
+          sudo mkdir -p "$UPLOADS"
+          sudo cp "$MMDB" "$UPLOADS/dbip-city-lite.mmdb"
+          sudo chmod -R a+rX "$WP_ROOT/wp-content/uploads"
+          echo "Staged $(wc -c < "$UPLOADS/dbip-city-lite.mmdb") bytes"
+
       - name: Floor fatal/deprecation guard (debug.log)
         # On the floor lanes, fail fast if the tracker or admin load emitted a
         # polyfill-miss fatal or an own-code deprecation. WP_ROOT is set by the
