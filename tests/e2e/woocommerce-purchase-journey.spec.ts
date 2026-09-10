@@ -66,7 +66,11 @@ test('WooCommerce purchase preserves session, attribution and excludes checkout 
     expect(savedOrder[0].status).toBe('on-hold');
     expect(Number(savedOrder[0].total)).toBe(1);
   } finally {
-    await context.close();
+    // Cleanup first, browser teardown last. Once a test has timed out, every Playwright
+    // call rejects immediately with "Test ended" -- so a context.close() standing in front
+    // of the fixture cleanup skips it, and the NEXT attempt dies at "Unclean Woo fixture
+    // found" instead of at whatever actually broke. That is how run 34522086225 hid its own
+    // cause behind its retry. Nothing below is a Playwright call except the close itself.
     // The fixture saves cleanup state before its first write, including partial failures.
     try {
       fixture('cleanup', runId);
@@ -74,6 +78,7 @@ test('WooCommerce purchase preserves session, attribution and excludes checkout 
       await restoreSlimstatOptions();
       uninstallMuPluginByName('mail-sink-mu-plugin.php');
       await closeDb();
+      await context.close().catch(() => {});
     }
   }
 });
