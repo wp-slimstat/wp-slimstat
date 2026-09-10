@@ -656,7 +656,7 @@ jobs:
         # The upstream npm package is republished monthly at the same URL, so the
         # cache key has to move with it or CI pins a database that ages out.
         if: ${{ matrix.wp == '6.4' }}
-        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> $GITHUB_ENV
+        run: echo "DBIP_MONTH=$(date -u +%Y-%m)" >> "$GITHUB_ENV"
 
       - name: Cache the DB-IP City Lite database
         if: ${{ matrix.wp == '6.4' }}

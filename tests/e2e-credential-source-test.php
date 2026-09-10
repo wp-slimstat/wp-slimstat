@@ -110,21 +110,24 @@ foreach ($files as $path) {
 // navigation timeout in every matrix lane.
 $ci_source = (string) file_get_contents($plugin_root . '/.github/workflows/ci.yml');
 if (!preg_match('/^  standard:\s*$.*?(?=^  [a-zA-Z0-9_-]+:\s*$|\z)/ms', $ci_source, $ci_match)) {
-    $failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
+	$failures[] = 'cannot find the Tier 2 standard job in .github/workflows/ci.yml';
 } else {
-    $standard_job = $ci_match[0];
-    $required_ci_fragments = [
-        'WP_AUTHOR_USER:',
-        'WP_AUTHOR_PASS:',
-        'wp user create "$WP_AUTHOR_USER"',
-        '--role=author',
-        '--user_pass="$WP_AUTHOR_PASS"',
-    ];
-    foreach ($required_ci_fragments as $fragment) {
-        if (false === strpos($standard_job, $fragment)) {
-            $failures[] = "Tier 2 does not provision the configured author account: missing `{$fragment}`";
-        }
-    }
+	$standard_job          = $ci_match[0];
+	$required_ci_fragments = [
+		'WP_AUTHOR_USER:',
+		'WP_AUTHOR_PASS:',
+	];
+	foreach ($required_ci_fragments as $fragment) {
+		if (false === strpos($standard_job, $fragment)) {
+			$failures[] = "Tier 2 does not provision the configured author account: missing `{$fragment}`";
+		}
+	}
+
+	$active_commands = preg_replace('/\\\\\R[\t ]*/', ' ', $standard_job);
+	$author_command  = '/^[\t ]*(?!#)(?:npx\s+wp-env\s+run\s+tests-cli\s+--\s+)?wp\s+user\s+create\s+"\$WP_AUTHOR_USER"[^\r\n]*--role=author[^\r\n]*--user_pass="\$WP_AUTHOR_PASS"[^\r\n]*$/m';
+	if (!preg_match($author_command, $active_commands)) {
+		$failures[] = 'Tier 2 does not provision the configured author account with an active wp user create command';
+	}
 }
 
 if ($failures) {

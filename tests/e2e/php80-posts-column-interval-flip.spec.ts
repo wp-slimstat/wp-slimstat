@@ -22,17 +22,17 @@ import { BASE_URL } from './helpers/env';
 const POSTS_LIST = `${BASE_URL}/wp-admin/edit.php`;
 
 test.describe('PHP 8.0 posts-column interval fallback @compat', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeAll(async () => {
     await snapshotSlimstatOptions();
     // Enable the pageviews column and clear the interval (the cleared-field case).
-    await setSlimstatOptions(page, {
+    await setSlimstatOptions({
       add_posts_column: 'on',
       posts_column_pageviews: 'on',
       posts_column_day_interval: '',
     });
   });
 
-  test.afterEach(async () => {
+  test.afterAll(async () => {
     await restoreSlimstatOptions();
     await closeDb();
   });
