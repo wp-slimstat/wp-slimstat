@@ -6,7 +6,7 @@ rationale: Deletes the WooCommerce activation step while the override step still
 ---
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -615,31 +615,6 @@
+@@ -615,36 +615,6 @@
              fi
            done
  
@@ -23,6 +23,12 @@ rationale: Deletes the WooCommerce activation step while the override step still
 -        # request is Playwright's global-setup login, which would then never reach
 -        # /wp-admin/ and would fail the whole lane in loginAndSave() with a message
 -        # about credentials.
+-        #
+-        # Only the transient. An earlier version also set woocommerce_task_list_hidden,
+-        # which failed the lane on run 34521234912: WooCommerce already stores that value,
+-        # update_option() returns false when nothing changes, and wp-cli reports false as
+-        # "Could not update option" with exit 1. It was belt-and-braces anyway -- the task
+-        # list is admin clutter, the transient is what redirects.
 -        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
 -        run: |
 -          if ! npx wp-env run tests-cli -- wp plugin is-active woocommerce; then
@@ -32,7 +38,6 @@ rationale: Deletes the WooCommerce activation step while the override step still
 -            exit 1
 -          fi
 -          npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
--          npx wp-env run tests-cli -- wp option update woocommerce_task_list_hidden yes
 -          npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
 -
        - name: Expose wp-env filesystem and MySQL to E2E tests
