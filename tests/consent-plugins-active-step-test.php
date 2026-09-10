@@ -10,10 +10,18 @@
  * check stays green while the lane silently returns to "requested, not active", the exact state
  * in which a census measures CI setup rather than test health (DoD 9a).
  *
- * WHAT IS PINNED: a step exists whose run block checks `wp plugin is-active` for every slug the
- * override step installs, fails the lane (`exit 1`) when one is not, and is not soft. The slug
- * list is DERIVED from the override step's zip URLs, so a third consent plugin added to the lane
- * must also be asserted active, or this goes red.
+ * WHAT IS PINNED: every slug the override step installs is checked by some `wp plugin is-active`
+ * step, and every such step fails the lane (`exit 1`) when its plugin is not active and is not
+ * soft. The slug list is DERIVED from the override step's zip URLs, so a third plugin added to
+ * the lane must also be asserted active, or this goes red.
+ *
+ * COVERING SET, not one step. The lane installs `woocommerce` on one WP version only (the lane
+ * that runs `woocommerce-purchase-journey.spec.ts`, which needs a WordPress newer than the
+ * full-suite lane ships), so its activation check carries an `if:` the unconditional consent
+ * check must not have. Requiring exactly one step would force the two into one block, and the
+ * merged block would then have to be soft or conditional to survive the lanes without
+ * WooCommerce -- which is precisely the "requested, not active" hole this gate exists to close.
+ * Deleting either step still turns this red, because a slug loses its cover.
  *
  * Run: php tests/consent-plugins-active-step-test.php
  */
@@ -54,25 +62,36 @@ if (count($slugs) < 2) {
 
 // ── 2. A runtime step asserts each is active, and fails the lane if not ─────────────────
 $active_steps = slimstat_ci_steps_containing($steps, 'wp plugin is-active');
-$active_step  = 1 === count($active_steps) ? $active_steps[0] : '';
 
-if ('' === $active_step) {
-    $failures[] = sprintf('%d ci.yml step(s) run `wp plugin is-active` after wp-env starts; exactly '
-        . 'one is expected. The override step REQUESTS the consent plugins; nothing else proves '
-        . 'they are active', count($active_steps));
+if (!$active_steps) {
+    $failures[] = 'no ci.yml step runs `wp plugin is-active` after wp-env starts. The override '
+        . 'step REQUESTS the plugins; nothing else proves they are active';
 } else {
     foreach ($slugs as $slug) {
-        if (false === strpos($active_step, $slug)) {
-            $failures[] = sprintf('the activation step never checks `%s`, which the override step '
-                . 'installs', $slug);
+        $covered = false;
+        foreach ($active_steps as $step) {
+            // Named anywhere in the step: the consent check passes its slugs through a shell
+            // `for slug in ...` loop, so the literal `is-active <slug>` never appears.
+            if (false !== strpos($step, $slug)) {
+                $covered = true;
+                break;
+            }
+        }
+        if (!$covered) {
+            $failures[] = sprintf('no `wp plugin is-active` step names `%s`, which the override '
+                . 'step installs', $slug);
         }
     }
-    if (false === strpos($active_step, 'exit 1')) {
-        $failures[] = 'the activation step does not `exit 1` when a plugin is inactive';
-    }
-    if (false !== strpos($active_step, 'continue-on-error')) {
-        $failures[] = 'the activation step is soft; a check that cannot fail the lane cannot '
-            . 'protect the census denominator';
+    foreach ($active_steps as $i => $step) {
+        $name = preg_match('/^\s*-\s*name:\s*(.+)$/m', $step, $nm) ? trim($nm[1]) : "step #{$i}";
+        if (false === strpos($step, 'exit 1')) {
+            $failures[] = sprintf('activation step "%s" does not `exit 1` when a plugin is '
+                . 'inactive', $name);
+        }
+        if (false !== strpos($step, 'continue-on-error')) {
+            $failures[] = sprintf('activation step "%s" is soft; a check that cannot fail the lane '
+                . 'cannot protect the census denominator', $name);
+        }
     }
 }
 

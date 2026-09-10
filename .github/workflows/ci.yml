@@ -172,7 +172,7 @@ jobs:
         # A gate wired into nothing is the same vacuity as a gate that asserts nothing, so
         # this runs here rather than living in composer.json unreferenced.
         #
-        # The full registry holds 247 entries. The step took 210-270s per lane across all six
+        # The full registry holds 248 entries. The step took 210-270s per lane across all six
         # Tier 1 lanes on run 33874090767 (2026-09-04). THAT RUN IS THE AUTHORITY for the
         # duration: the seconds in this block are not gate-checked, and no sentence written here
         # can tell you whether they are still current.
@@ -314,6 +314,17 @@ jobs:
       # read the same value and cannot drift apart.
       WP_AUTHOR_USER: e2e_author
       WP_AUTHOR_PASS: password
+      # The one lane that installs WooCommerce and runs the purchase-journey spec.
+      # Named once, read by three steps (override, active-plugin check, E2E grep) so
+      # they cannot drift into "installed here, run there".
+      #
+      # 7.1, not 6.9, for two reasons. WooCommerce 10.6.2 declares `Requires at
+      # least: 6.8`, so the 6.4 full-suite lane cannot host it -- and 7.1 is the only
+      # lane at or above that floor whose E2E step BLOCKS (continue-on-error is false
+      # for the baseline and the newest lane only). On a soft lane a WooCommerce
+      # regression would fail the step and leave the job green, which is the exact
+      # shape of self-skipping this workstream exists to end.
+      WOO_E2E_LANE: "7.1"
 
     steps:
       - name: Checkout
@@ -431,7 +442,21 @@ jobs:
           # SlimStat-shaped message. Bump these deliberately, with a diff someone reads.
           CONSENT_API_ZIP="https://downloads.wordpress.org/plugin/wp-consent-api.2.0.1.zip"
           COOKIE_LAW_ZIP="https://downloads.wordpress.org/plugin/cookie-law-info.3.5.5.zip"
+          # Pinned for the same reason as the two above, and one more: the version is
+          # part of the claim. tests/e2e/woocommerce-purchase-journey.spec.ts is the
+          # only automated proof that checkout PII (buyer name, billing email) never
+          # reaches wp_slim_stats, and "we tested it against WooCommerce" means nothing
+          # without saying which. 10.6.2 is the version the spec was authored against.
+          WOOCOMMERCE_ZIP="https://downloads.wordpress.org/plugin/woocommerce.10.6.2.zip"
           PLUGINS='".","'"${CONSENT_API_ZIP}"'","'"${COOKIE_LAW_ZIP}"'"'
+          # ONE lane, not all of them. WooCommerce brings admin chrome, an onboarding
+          # redirect and a large plugin load into every spec on whatever lane installs
+          # it; adding that to the 6.4 lane -- the only one running all 750+ tests --
+          # would risk the whole suite to cover one spec. So it rides the lane named
+          # by WOO_E2E_LANE, and the E2E step below routes the tagged spec there.
+          if [ "${WP_VERSION}" = "${WOO_E2E_LANE}" ]; then
+            PLUGINS="${PLUGINS}"',"'"${WOOCOMMERCE_ZIP}"'"'
+          fi
           if [ "${WP_VERSION}" = "6.4" ]; then
             printf '{"phpVersion":"%s","plugins":[%s]}\n' "${WP_ENV_PHP_VERSION}" "${PLUGINS}" > .wp-env.override.json
           elif [ "${WP_VERSION}" = "5.6" ]; then
@@ -590,6 +615,31 @@ jobs:
             fi
           done
 
+      - name: WooCommerce lane — active, and not holding the onboarding redirect
+        # Same argument as the step above, for the same reason: naming the zip in the
+        # override proves nothing about what wordpress.org served. If WooCommerce is
+        # absent the purchase-journey spec fails with "UNAVAILABLE PREREQUISITE"
+        # (tests/e2e/helpers/woocommerce-store.php:25 raises rather than skips, on
+        # purpose), which is a truthful failure but a confusing one -- it reads as a
+        # product defect. Fail here instead, where the cause is the message.
+        #
+        # The transient is the second half. WooCommerce sets _wc_activation_redirect on
+        # activation and redirects the FIRST admin request to its setup wizard; that
+        # request is Playwright's global-setup login, which would then never reach
+        # /wp-admin/ and would fail the whole lane in loginAndSave() with a message
+        # about credentials.
+        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+        run: |
+          if ! npx wp-env run tests-cli -- wp plugin is-active woocommerce; then
+            echo "::error::woocommerce is not active on the WP ${WP_VERSION} lane, which is the"
+            echo "::error::only lane that runs woocommerce-purchase-journey.spec.ts -- the only"
+            echo "::error::automated proof that checkout PII stays out of wp_slim_stats."
+            exit 1
+          fi
+          npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
+          npx wp-env run tests-cli -- wp option update woocommerce_task_list_hidden yes
+          npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
+
       - name: Expose wp-env filesystem and MySQL to E2E tests
         # wp-env runs WordPress inside Docker containers. The E2E test helpers
         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
@@ -746,7 +796,13 @@ jobs:
           WP_ADMIN_PASS: password
         run: |
           if [ "${WP_VERSION}" = "6.4" ]; then
-            npm run test:e2e
+            # "Full suite" minus the one spec whose prerequisite this lane cannot have:
+            # WooCommerce 10.6.2 declares `Requires at least: 6.8`. The exclusion is by
+            # TAG, not by filename, so the carve-out and the routing below read the same
+            # marker and a renamed spec cannot silently fall out of both.
+            npm run test:e2e -- --grep-invert "@woocommerce"
+          elif [ "${WP_VERSION}" = "${WOO_E2E_LANE}" ]; then
+            npm run test:e2e -- --grep "@compat|@woocommerce"
           else
             npm run test:e2e -- --grep "@compat"
           fi

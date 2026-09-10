@@ -1,0 +1,40 @@
+target:    .github/workflows/ci.yml
+gate:      composer test:consent-plugins-active-step
+kind:      construct-removal
+expect:    names `woocommerce`
+rationale: Deletes the WooCommerce activation step while the override step still installs the zip. The gate covers each slug across every is-active step rather than requiring one step, so deleting a step must leave its slug uncovered instead of quietly shrinking what is required.
+---
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -615,31 +615,6 @@
+             fi
+           done
+ 
+-      - name: WooCommerce lane — active, and not holding the onboarding redirect
+-        # Same argument as the step above, for the same reason: naming the zip in the
+-        # override proves nothing about what wordpress.org served. If WooCommerce is
+-        # absent the purchase-journey spec fails with "UNAVAILABLE PREREQUISITE"
+-        # (tests/e2e/helpers/woocommerce-store.php:25 raises rather than skips, on
+-        # purpose), which is a truthful failure but a confusing one -- it reads as a
+-        # product defect. Fail here instead, where the cause is the message.
+-        #
+-        # The transient is the second half. WooCommerce sets _wc_activation_redirect on
+-        # activation and redirects the FIRST admin request to its setup wizard; that
+-        # request is Playwright's global-setup login, which would then never reach
+-        # /wp-admin/ and would fail the whole lane in loginAndSave() with a message
+-        # about credentials.
+-        if: ${{ matrix.wp == env.WOO_E2E_LANE }}
+-        run: |
+-          if ! npx wp-env run tests-cli -- wp plugin is-active woocommerce; then
+-            echo "::error::woocommerce is not active on the WP ${WP_VERSION} lane, which is the"
+-            echo "::error::only lane that runs woocommerce-purchase-journey.spec.ts -- the only"
+-            echo "::error::automated proof that checkout PII stays out of wp_slim_stats."
+-            exit 1
+-          fi
+-          npx wp-env run tests-cli -- wp transient delete _wc_activation_redirect
+-          npx wp-env run tests-cli -- wp option update woocommerce_task_list_hidden yes
+-          npx wp-env run tests-cli -- wp plugin get woocommerce --field=version
+-
+       - name: Expose wp-env filesystem and MySQL to E2E tests
+         # wp-env runs WordPress inside Docker containers. The E2E test helpers
+         # (setup.ts) need direct filesystem access to wp-config.php and mu-plugins,
