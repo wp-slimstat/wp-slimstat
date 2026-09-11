@@ -1207,7 +1207,10 @@ class wp_slimstat
                     'enum'        => ['*', 'id', 'ip', 'username', 'email', 'country', 'referer', 'resource', 'searchterms', 'browser', 'platform', 'language', 'resolution', 'content_type', 'content_id', 'tz_offset', 'outbound_resource'],
                 ],
                 'filters' => [
-                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)', 'wp-slimstat'),
+                    'description' => __('This parameter is used to filter a given dimension (resources, browsers, operating systems, etc) so that it satisfies certain conditions (i.e.: browser contains Chrome). Please make sure to urlencode this value, and to use the usual filter format: browser contains Chrome&&&referer contains slim', 'wp-slimstat')
+                        // The urlencoded example is kept out of the translatable string: %20/%26 read as
+                        // printf placeholders to i18n tooling, and the example must not be translated anyway.
+                        . ' (encoded: browser%20contains%20Chrome%26%26%26referer%20contains%20slim)',
                     'type'        => 'string',
                 ],
             ],

@@ -98,7 +98,7 @@
     "test:qualification-ddl": "python3 tests/qualification-ddl-test.py",
     "test:qualification-pro-window": "python3 tests/qualification-pro-window-test.py",
     "test:query-cache-timezone": "php tests/query-cache-timezone-test.php",
-    "test:report-request-shape": "php tests/report-request-shape-test.php && php tests/chart-request-boundary-test.php && php tests/admin-request-boundary-test.php && php tests/report-author-scope-test.php && php tests/spam-cleanup-boundary-test.php",
+    "test:report-request-shape": "php tests/report-request-shape-test.php && php tests/chart-request-boundary-test.php && php tests/admin-request-boundary-test.php && php tests/report-author-scope-test.php && php tests/spam-cleanup-boundary-test.php && php tests/limit-results-int-normalization-test.php",
     "test:qualification-backup-recovery": "python3 tests/qualification-backup-recovery-test.py",
     "test:qualification-matrix": "python3 tests/qualification-matrix-test.py",
     "test:unresolved-differences": "python3 tests/oracle/unresolved_gate_test.py",
