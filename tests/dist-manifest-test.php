@@ -114,6 +114,7 @@ foreach (['wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.p
 // The two packaging entry points must create the ignored runtime autoloader before shipping.
 $builder = (string) @file_get_contents($plugin_root . '/tests/docker/build-free.sh');
 $deploy  = (string) @file_get_contents($plugin_root . '/.github/workflows/main.yml');
+$ci      = (string) @file_get_contents($plugin_root . '/.github/workflows/ci.yml');
 $dump    = strpos($builder, 'composer dump-autoload');
 $copy    = strpos($builder, 'rsync -a');
 if (false === $dump || false === $copy || $dump > $copy
@@ -124,6 +125,12 @@ $generate = strpos($deploy, 'composer run build:autoload');
 $publish  = strpos($deploy, '10up/action-wordpress-plugin-deploy@');
 if (false === $generate || false === $publish || $generate > $publish) {
     $failures[] = 'the wordpress.org workflow must generate the production autoloader before deploy';
+}
+$standard = strpos($ci, 'standard:');
+$ci_generate = false === $standard ? false : strpos($ci, 'composer run build:autoload', $standard);
+$wp_env = false === $standard ? false : strpos($ci, 'npx wp-env start', $standard);
+if (false === $ci_generate || false === $wp_env || $ci_generate > $wp_env) {
+    $failures[] = 'the standard CI job must generate the production autoloader before wp-env mounts the plugin';
 }
 
 // ── 4. …and nothing development-only. A DENYLIST WRITTEN HERE, on purpose ───────────────

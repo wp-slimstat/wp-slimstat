@@ -323,6 +323,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate production autoloader before wp-env mounts the plugin
+        run: composer run build:autoload
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
