@@ -5,6 +5,9 @@
   "license": "MIT",
   "config": {
     "platform-check": false,
+    "platform": {
+      "php": "8.1.0"
+    },
     "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e",
     "allow-plugins": {
       "veronalabs/wp-scoper": true
