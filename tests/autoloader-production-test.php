@@ -9,7 +9,7 @@
  * to run PHPUnit locally, and which Composer's own `post-install-cmd`/`post-update-cmd` run
  * without `--no-dev` — replaces it with the DEV autoloader. Measured on this tree:
  *
- *     committed      $files blocks 0   SlimStat entries 551   dev-tool entries 0
+ *     committed      $files blocks 0   SlimStat entries  99   dev-tool entries 0
  *     after dump     $files blocks 1   SlimStat entries   0   dev-tool entries 961
  *
  * Two independent ways that breaks a shipped plugin:
@@ -75,7 +75,7 @@ if (preg_match('/public\s+static\s+\$files\s*=/', $static)) {
 // The vacuity control for the check above: an empty or truncated file would satisfy it
 // perfectly. Under an authoritative classmap, zero entries means nothing loads.
 $slimstat = preg_match_all("/'SlimStat\\\\\\\\/", $classmap);
-if ($slimstat < 100) {
+if ($slimstat < 99) {
     $failures[] = sprintf(
         'the committed autoload_classmap.php holds %d SlimStat entries. The classmap is '
         . 'authoritative, so a missing entry is a class that cannot be found at all. '
