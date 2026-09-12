@@ -51,8 +51,10 @@ foreach (array(
 try {
     $quoter = new \SlimStat\Dependencies\BrowscapPHP\Helper\Quoter();
     $assert('Mozilla.*' === $quoter->pregQuote('Mozilla*'), 'Browscap helper behavior failed');
-    $string = new \SlimStat\Dependencies\Symfony\Component\String\UnicodeString('hÉLLo world');
-    $assert('Héllo World' === (string)$string->lower()->title(true), 'Symfony Unicode casing/normalization failed');
+    if (PHP_VERSION_ID >= 80000) {
+        $string = new \SlimStat\Dependencies\Symfony\Component\String\UnicodeString('hÉLLo world');
+        $assert('Héllo World' === (string)$string->lower()->title(true), 'Symfony Unicode casing/normalization failed');
+    }
     $assert(class_exists('Normalizer'), 'Normalizer global stub/native class did not resolve');
     $assert(class_exists('PhpToken'), 'PhpToken global stub/native class did not resolve');
     $assert(str_contains('slimstat', 'stat'), 'Php80 bootstrap function failed');
