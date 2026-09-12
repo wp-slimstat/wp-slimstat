@@ -94,15 +94,16 @@ jobs:
       - name: Install Composer dependencies
         # PHPUnit 10.5 requires PHP ^8.1 — skip on 7.4 AND 8.0 (lint + source-level
         # only on those lanes; the source-level scanners are vendor-independent).
-        # mozart post-install hook requires a global mozart binary which is not
-        # available in CI — skip the hook with --no-scripts; the autoloader is
-        # still generated via the next step.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
+      - name: Verify generated dependencies, then enable the dev autoloader
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
-        run: composer dump-autoload -o --no-interaction
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          composer dump-autoload
 
       - name: Run PHPUnit unit tests
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
@@ -127,7 +128,7 @@ jobs:
 
       - name: PHP syntax lint (src/)
         # Lint plugin source only — skip src/Dependencies/ which contains
-        # Mozart-scoped vendor files that may use PHP 8.0+ syntax.
+        # WP-Scoper vendor files that may use PHP 8.0+ syntax.
         # Print only files with errors; grep exits 1 when nothing matches (no
         # errors), so we invert: fail only when errors ARE found.
         run: |
@@ -250,10 +251,14 @@ jobs:
           coverage: none
 
       - name: Install Composer dependencies (with dev — PHPStan + WP stubs)
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
-        run: composer dump-autoload -o --no-interaction
+      - name: Verify generated dependencies, then enable the dev autoloader
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          composer dump-autoload
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
         # phpstan.neon.dist analyzes own code (src/Dependencies excluded); legacy
@@ -892,10 +897,14 @@ jobs:
             composer-${{ matrix.php }}-
 
       - name: Install Composer dependencies
-        run: composer install --no-interaction --no-progress --no-scripts
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Dump autoload (without mozart)
-        run: composer dump-autoload -o --no-interaction
+      - name: Verify generated dependencies, then enable the dev autoloader
+        run: |
+          composer run build:autoload
+          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          composer dump-autoload
 
       - name: Run full PHPUnit suite
         # composer test:all runs phpunit + all standalone PHP test scripts.
@@ -985,7 +994,7 @@ jobs:
           echo "--- .wp-env.override.json ---"; cat .wp-env.override.json
 
       - name: Restore the production autoloader before wp-env mounts the plugin
-        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. "Dump autoload (without mozart)" above
+        # WHY THE NIGHTLY HAS BEEN RED EVERY NIGHT. The dev autoload step above
         # rebuilds the autoloader on a tree that HAS dev dependencies installed, so the
         # checkout now carries a dev autoloader. wp-env mounts that checkout, WordPress loads
         # the plugin, and the container's PHP fatals parsing a union type in the dev

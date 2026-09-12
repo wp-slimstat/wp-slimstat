@@ -115,7 +115,7 @@ For the full release workflow, run `/release-wp-slimstat`.
 ## Static analysis — the PHPStan baseline, disclosed
 
 `composer phpstan` runs PHPStan at level 5 over own code (`src/Dependencies` is excluded — it
-is vendored, Mozart-scoped code). Errors that predate the analysis are parked in
+is vendored, WP-Scoper output). Errors that predate the analysis are parked in
 `phpstan-baseline.neon`, and that file is a **migration tool, not a permission**: it holds
 **160 entries suppressing 312 errors**, and `tests/phpstan-baseline-ratchet-test.php` fails the
 build if either number differs from `tests/PHPSTAN-BASELINE-CEILING` or if the ceiling is ever

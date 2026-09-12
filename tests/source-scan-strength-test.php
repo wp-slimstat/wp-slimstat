@@ -424,6 +424,7 @@ $recorded     = [
     // The subject is readme.txt and README.md — plain text, not PHP. The PHP half of this
     // gate (the version_compare prohibition) DOES route through slimstat_blank_comments().
     'db-floor-metadata-test.php'                 => 'exempt — the raw subject is readme.txt/README.md, which no PHP tokeniser can read',
+    'scoped-runtime-test.php'                    => 'exempt — the raw subjects include generated constant identifiers inside define/defined/constant string arguments; stripping literals would remove the contract',
 
     // ── debt: PHP source matched as raw text; route through the library when next touched ──
     'access-log-author-edit-link-test.php'   => 'debt',

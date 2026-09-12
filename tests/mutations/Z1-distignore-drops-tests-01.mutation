@@ -6,11 +6,12 @@ rationale: Removes `/tests` from .distignore; the simulated package then carries
 ---
 --- a/.distignore
 +++ b/.distignore
-@@ -4,7 +4,6 @@
+@@ -4,8 +4,7 @@
  /.githooks
  /.github
  /node_modules
 -/tests
+ /build
  /test-results
  /admin/assets/scss
  

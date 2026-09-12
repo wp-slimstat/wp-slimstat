@@ -6,8 +6,8 @@ rationale: Conditions Tier 3's only test step away from PHP 8.5, the one version
 ---
 --- a/.github/workflows/ci.yml
 +++ b/.github/workflows/ci.yml
-@@ -684,6 +684,7 @@
-         run: composer dump-autoload -o --no-interaction
+@@ -907,6 +907,7 @@
+           composer dump-autoload
  
        - name: Run full PHPUnit suite
 +        if: ${{ matrix.php != '8.5' }}

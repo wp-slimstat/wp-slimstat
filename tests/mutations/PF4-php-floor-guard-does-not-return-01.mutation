@@ -6,7 +6,7 @@ rationale: Deletes the guard's own `return;` and nothing else; the next block's 
 ---
 --- a/wp-slimstat.php
 +++ b/wp-slimstat.php
-@@ -43,8 +43,6 @@
+@@ -47,8 +47,6 @@
      }
  
      add_action('admin_notices', 'wp_slimstat_render_php_floor_notice');
@@ -14,4 +14,4 @@ rationale: Deletes the guard's own `return;` and nothing else; the next block's 
 -    return;
  }
  
- // check if composer autoloader exists
+ // Both first-party and scoped dependency autoloaders are required.

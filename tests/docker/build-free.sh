@@ -50,11 +50,12 @@ LIST="$BUILD/list.txt"
 unzip -Z1 "$OUT" | grep -v '/$' > "$LIST"
 [ "$(cut -d/ -f1 "$LIST" | sort -u)" = wp-slimstat ] || { err "Free ZIP root is not wp-slimstat/"; exit 1; }
 for required in wp-slimstat/wp-slimstat.php wp-slimstat/uninstall.php wp-slimstat/readme.txt \
-                wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php; do
+                wp-slimstat/vendor/autoload.php wp-slimstat/vendor/composer/autoload_classmap.php \
+                wp-slimstat/src/Dependencies/autoload.php wp-slimstat/src/Dependencies/autoload-classmap.php; do
   grep -qxF "$required" "$LIST" || { err "Free ZIP is missing $required"; exit 1; }
 done
 # Independent deny rule: the private vendor CLI password executable is not a plugin runtime asset.
-if grep -qxF 'wp-slimstat/src/Dependencies/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
+if grep -qxF 'wp-slimstat/src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/Console/Resources/bin/hiddeninput.exe' "$LIST"; then
   err "Free ZIP contains private Windows interactive-console executable"
   exit 1
 fi

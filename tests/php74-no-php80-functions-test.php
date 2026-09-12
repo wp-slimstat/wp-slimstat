@@ -21,7 +21,7 @@
  *
  * Source-level regression: PHP 8.0+ stdlib functions in own code.
  *
- * As of v5.4.17 the Mozart-scoped Symfony/Polyfill/Php80 bootstrap is loaded
+ * As of v5.4.17 the scoped Symfony/Polyfill/Php80 bootstrap is loaded
  * from wp-slimstat.php, so the 7 PHP 8.0 stdlib functions it polyfills are
  * safe to use in own code. This test:
  *
@@ -47,8 +47,9 @@ if (false === $boot) {
     fwrite(STDERR, "FAIL: cannot read wp-slimstat.php\n");
     exit(1);
 }
-if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/Polyfill/Php80/bootstrap\.php[\'"]#', $boot)) {
-    fwrite(STDERR, "FAIL: wp-slimstat.php must `require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';`\n");
+if (false === strpos($boot, "/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/")
+    || !preg_match('#require_once\s+\$slimstat_dependency_root\s*\.\s*[\'"]Php80/bootstrap\.php[\'"]#', $boot)) {
+    fwrite(STDERR, "FAIL: wp-slimstat.php must load the generated Symfony/Polyfill/Php80 bootstrap.\n");
     fwrite(STDERR, "      Without it, str_contains/str_starts_with/etc. fatal on PHP 7.4.\n");
     exit(1);
 }
@@ -56,7 +57,7 @@ if (!preg_match('#require_once\s+__DIR__\s*\.\s*[\'"]/src/Dependencies/Symfony/P
 // ── 2. Scan own code for stdlib functions NOT covered by the bundled polyfill ─
 
 // Symfony/Polyfill/Php80 covers these 7 (verified in
-// src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php). They are safe to use
+// the generated Symfony/Polyfill/Php80 bootstrap). They are safe to use
 // in own code, so they are NOT in $forbidden_functions.
 // NOT read from the shared helper, and the reason is that this file does not use it as a rule.
 // The allowance here IS the absence of these names from $forbidden_functions below; $polyfilled

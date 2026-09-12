@@ -36,6 +36,7 @@
 * Back up your database before upgrading, as with any major release.
 
 **Reliability**
+* Dependency scoping is now reproducible from the Composer lockfile with WP Scoper; the private Browscap/Flysystem bundle, polyfill stubs and PHP 7.4 fallbacks retain their existing namespaces and behavior. ([#339](https://github.com/wp-slimstat/wp-slimstat/issues/339))
 * Fixed: the upgrade step that repairs corrupted heat-map positions could offer itself forever. It asked "is there a candidate row?" but only repaired rows it could resolve unambiguously, so on a site with unresolvable rows it reported success and then offered again, each click re-scanning the events table. "All migrations complete" is now reachable.
 * One schema source of truth — fresh installs are born at the target schema; migrations are kill-switchable, single-flight and checkpointed; failed purges are reported, not forgotten.
 * The full 23-report parity set verified byte-identical across MySQL 5.6, 5.7 and 8.0 on one fingerprint-proven corpus — the declared MySQL floor is tested, not assumed. MariaDB 10.0+ is supported by design and has not yet been exercised in a test cell.

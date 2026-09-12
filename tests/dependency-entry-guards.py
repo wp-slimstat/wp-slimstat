@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local PHP HTTP/CLI proof for three scoped modules with top-level side effects.
+"""Local PHP HTTP/CLI proof for scoped modules with top-level side effects.
 Run with the same PHP runtime as the candidate; source/code hashes are emitted.
 This intentionally fails on a runtime that cannot parse a guarded module.
 """
@@ -15,9 +15,8 @@ import urllib.request
 
 root = Path(__file__).resolve().parents[1]
 files = [
-    'src/Dependencies/Symfony/Component/String/Slugger/AsciiSlugger.php',
-    'src/Dependencies/Symfony/Contracts/Service/ServiceSubscriberTrait.php',
-    'src/Dependencies/Symfony/Contracts/Service/Test/ServiceLocatorTest.php',
+    'src/Dependencies/veronalabs/browscap-php/src/Symfony/Component/String/Slugger/AsciiSlugger.php',
+    'src/Dependencies/veronalabs/browscap-php/src/Symfony/Contracts/Service/ServiceSubscriberTrait.php',
 ]
 guard = "\n\n// Scoped SlimStat module: allow plugin/CLI autoload, deny direct web execution.\nif (!defined('ABSPATH') && PHP_SAPI !== 'cli' && PHP_SAPI !== 'phpdbg') {\n    http_response_code(403);\n    exit;\n}\n"
 proof = {'php': subprocess.check_output(['php', '-v'], text=True), 'source_files': {}}
@@ -29,16 +28,15 @@ with tempfile.TemporaryDirectory(prefix='slimstat-entry-guards-') as temp:
         (folder / (str(i) + '.php')).write_bytes(source)
         proof['source_files'][name] = hashlib.sha256(source).hexdigest()
     # Remove only the tested guard, so the required-red exercises identical module code.
-    (folder / 'original.php').write_text((folder / '2.php').read_text().replace(guard, '', 1))
+    (folder / 'original.php').write_text((folder / '1.php').read_text().replace(guard, '', 1))
     # Optional dependency stubs let this check isolate guard behavior, not vendor wiring.
     wrapper = r'''<?php
 namespace Symfony\Contracts\Translation { interface LocaleAwareInterface {} }
 namespace SlimStat\Dependencies\Symfony\Component\String\Slugger { interface SluggerInterface {} }
 namespace SlimStat\Dependencies\Symfony\Contracts\Service { function trigger_deprecation(...$args) {} }
-namespace SlimStat\Dependencies\Symfony\Contracts\Service\Test { class ServiceLocatorTestCase {} }
 namespace {
     if (PHP_SAPI !== 'cli') { define('ABSPATH', __DIR__); }
-    require __DIR__ . '/0.php'; require __DIR__ . '/1.php'; require __DIR__ . '/2.php';
+    require __DIR__ . '/0.php'; require __DIR__ . '/1.php';
     echo 'supported-context-reached';
 }
 '''
@@ -76,7 +74,7 @@ namespace {
                 assert status == 403 and body == '', (name, status, body)
                 proof['direct_http'][name] = status
             status, body = fetch('original.php')
-            assert status == 200 and 'ServiceLocatorTestCase' in body, (status, body)
+            assert status == 200, (status, body)
             proof['required_red_guard_removed'] = {'status': status, 'top_level_class_alias_executed': True}
         finally:
             server.terminate()

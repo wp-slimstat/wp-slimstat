@@ -51,8 +51,8 @@ if (PHP_VERSION_ID < 70400) {
     return;
 }
 
-// check if composer autoloader exists
-if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
+// Both first-party and scoped dependency autoloaders are required.
+if (!file_exists(__DIR__ . '/vendor/autoload.php') || !file_exists(__DIR__ . '/src/Dependencies/autoload.php')) {
     return;
 }
 
@@ -64,12 +64,18 @@ define('SLIMSTAT_URL', plugins_url('', __FILE__));
 
 // include the autoloader if it exists
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/src/Dependencies/autoload.php';
 
-// Load the Mozart-scoped Symfony/Polyfill/Php80 so own code can use PHP 8.0+
-// stdlib functions (str_contains, str_starts_with, fdiv, get_debug_type, …)
-// on PHP 7.4 hosts. The bootstrap short-circuits on PHP_VERSION_ID >= 80000.
-// Skipping this load on PHP 7.4 is what produced the v5.4.14 wp-admin fatal.
-require_once __DIR__ . '/src/Dependencies/Symfony/Polyfill/Php80/bootstrap.php';
+// Load the scoped polyfill bootstraps in dependency order. Each short-circuits
+// when the native extension/runtime already provides its functions.
+$slimstat_dependency_root = __DIR__ . '/src/Dependencies/veronalabs/browscap-php/src/Symfony/Polyfill/';
+require_once $slimstat_dependency_root . 'Ctype/bootstrap.php';
+require_once $slimstat_dependency_root . 'Mbstring/bootstrap.php';
+require_once $slimstat_dependency_root . 'Intl/Normalizer/bootstrap.php';
+require_once $slimstat_dependency_root . 'Intl/Grapheme/bootstrap.php';
+require_once $slimstat_dependency_root . 'Php73/bootstrap.php';
+require_once $slimstat_dependency_root . 'Php80/bootstrap.php';
+unset($slimstat_dependency_root);
 
 // Include Constants.php to make SLIMSTAT_ANALYTICS_DIR available to traits
 require_once __DIR__ . '/src/Constants.php';

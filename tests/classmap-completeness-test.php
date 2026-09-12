@@ -116,7 +116,7 @@ if (strpos($real_src, 'setClassMapAuthoritative(true)') !== false) {
     exit(1);
 }
 
-// --- walk src/, pruning src/Dependencies/ (third-party, Mozart-scoped) ---
+// --- walk src/, pruning src/Dependencies/ (third-party, WP-Scoper output) ---
 $files = [];
 if (is_dir($src_dir)) {
     $directory = new RecursiveDirectoryIterator($src_dir, RecursiveDirectoryIterator::SKIP_DOTS);

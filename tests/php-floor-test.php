@@ -92,8 +92,12 @@ if (!preg_match('/PHP_VERSION_ID\s*<\s*' . $floor_id . '\b/', $code, $m, PREG_OF
 } else {
     $guard_at = $m[0][1];
 
-    foreach (['vendor/autoload.php', 'Polyfill/Php80/bootstrap.php'] as $required) {
-        if (!preg_match('/require[^;\n]*' . preg_quote($required, '/') . '/', $code, $r, PREG_OFFSET_CAPTURE)) {
+    $required_loads = [
+        'vendor/autoload.php' => '/require[^;\n]*vendor\\/autoload\\.php/',
+        'Polyfill/Php80/bootstrap.php' => '/require_once\\s+\\$slimstat_dependency_root\\s*\\.\\s*[\'"]Php80\\/bootstrap\\.php[\'"]/',
+    ];
+    foreach ($required_loads as $required => $pattern) {
+        if (!preg_match($pattern, $code, $r, PREG_OFFSET_CAPTURE)) {
             $failures[] = sprintf('wp-slimstat.php no longer requires %s; section 2 cannot check '
                 . 'the guard precedes it', $required);
         } elseif ($guard_at > $r[0][1]) {

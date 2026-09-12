@@ -5,7 +5,10 @@
   "license": "MIT",
   "config": {
     "platform-check": false,
-    "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e"
+    "autoloader-suffix": "218de6ada5bccdc9e632ba1181c21f7e",
+    "allow-plugins": {
+      "veronalabs/wp-scoper": true
+    }
   },
   "repositories": [
     {
@@ -19,7 +22,11 @@
   "autoload": {
     "psr-4": {
       "SlimStat\\": "src/"
-    }
+    },
+    "exclude-from-classmap": [
+      "/src/Dependencies/",
+      "/vendor/veronalabs/browscap-php/src/"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
@@ -35,30 +42,26 @@
     "brain/monkey": "^2.6",
     "mockery/mockery": "^1.6",
     "phpstan/phpstan": "^2.2",
-    "szepeviktor/phpstan-wordpress": "^2.0"
+    "szepeviktor/phpstan-wordpress": "^2.0",
+    "veronalabs/wp-scoper": "^1.4.2"
   },
   "extra": {
-    "mozart": {
-      "dep_namespace": "SlimStat\\Dependencies\\",
-      "dep_directory": "/src/Dependencies/",
-      "classmap_directory": "/src/",
-      "classmap_prefix": "SlimStat_",
-      "packages": [
-        "veronalabs/browscap-php",
-        "league/flysystem"
-      ],
-      "delete_vendor_directories": true
+    "wp-scoper": {
+      "namespace_prefix": "SlimStat\\Dependencies",
+      "class_prefix": "SlimStat_",
+      "constant_prefix": "SLIMSTAT_DEPENDENCIES_",
+      "packages": ["veronalabs/browscap-php"],
+      "target_directory": "src/Dependencies",
+      "update_call_sites": false,
+      "delete_vendor_packages": false,
+      "php_compat": true,
+      "exclude_directories": []
     }
   },
   "scripts": {
-    "post-install-cmd": [
-      "~/.composer/vendor/bin/mozart compose",
-      "composer dump-autoload"
-    ],
-    "post-update-cmd": [
-      "~/.composer/vendor/bin/mozart compose",
-      "composer dump-autoload"
-    ],
+    "post-install-cmd": "@scoper:ext-constants",
+    "post-update-cmd": "@scoper:ext-constants",
+    "scoper:ext-constants": "php build/scoper-ext-constants.php src/Dependencies",
     "build:autoload": "composer dump-autoload --no-dev -o",
     "i18n:pot": "wp i18n make-pot . languages/wp-slimstat.pot --domain=wp-slimstat --skip-plugins --skip-themes --exclude=tests,build",
     "i18n:json": "wp i18n make-json languages/ --no-purge --pretty-print",
@@ -165,6 +168,8 @@
     "test:funnels-widget-compact": "php tests/funnels-widget-compact-test.php",
     "test:css-selector-scope": "php tests/css-selector-scope-test.php",
     "test:classmap-completeness": "php tests/classmap-completeness-test.php",
+    "test:scoped-dependencies-parity": "php tests/scoped-dependencies-parity-test.php",
+    "test:scoped-runtime": "php tests/scoped-runtime-test.php",
     "test:gdpr-banner-theme-mode": "php tests/gdpr-banner-theme-mode-test.php",
     "test:rest-api-fail-soft": "php tests/rest-api-fail-soft-test.php",
     "test:gdpr-service-fail-soft": "php tests/gdpr-service-fail-soft-test.php",
@@ -291,6 +296,8 @@
       "@test:funnels-widget-compact",
       "@test:css-selector-scope",
       "@test:classmap-completeness",
+      "@test:scoped-dependencies-parity",
+      "@test:scoped-runtime",
       "@test:gdpr-banner-theme-mode",
       "@test:rest-api-fail-soft",
       "@test:gdpr-service-fail-soft",

@@ -41,8 +41,7 @@ nbproject
 .vscode
 .qodo
 
-#composer.lock
-composer.lock
+# composer.lock is committed so the scoped snapshot is reproducible.
 
 # Composer vendor packages — dev deps (PHPUnit, Mockery) use PHP 8.1+
 # syntax that causes parse errors in wp-env PHP 7.4 containers.
