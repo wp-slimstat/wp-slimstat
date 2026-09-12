@@ -11,6 +11,7 @@
 
 # Build & dev files
 .distignore
+.gitattributes
 .gitignore
 .editorconfig
 .coderabbit.yaml

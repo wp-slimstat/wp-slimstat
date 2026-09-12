@@ -12,10 +12,10 @@
  *
  * ── HOW, WITHOUT AN ARTIFACT ────────────────────────────────────────────────────────────────
  *
- * The wordpress.org package is what `10up/action-wordpress-plugin-deploy` rsyncs from the
- * checkout with `--exclude-from=.distignore` — no `composer install`, no `npm ci` before it — so
- * the population is the TRACKED tree, and this simulates the package from `git ls-files` through
- * `.distignore` with the matcher `build-free.sh` applies to the real ZIP: an anchored entry
+ * The release builder and held wordpress.org workflow generate the ignored production
+ * autoloader before packaging. The rest of the population is the TRACKED tree, and this
+ * simulates that tree from `git ls-files` through `.distignore` with the matcher
+ * `build-free.sh` applies to the real ZIP: an anchored entry
  * (`/tests`) matches by prefix, an unanchored one (`composer.lock`) matches any path segment.
  *
  * Two assertions over the surviving set. It must CONTAIN the runtime non-negotiables, and it
@@ -72,6 +72,10 @@ if (0 !== $git_exit || count($tracked) < 500) {
         . "is nothing to simulate a package from.\n", count($tracked), $git_exit));
     exit(1);
 }
+if (!preg_match('~^/vendor/$~m', (string) @file_get_contents($plugin_root . '/.gitignore'))
+    || preg_grep('~^vendor/~', $tracked)) {
+    $failures[] = 'vendor/ must be ignored and absent from the tracked source tree';
+}
 
 /** build-free.sh's rule: `/x` is a prefix; `x` is any path segment. */
 $is_shipped = static function (string $path) use ($entries): bool {
@@ -100,12 +104,26 @@ if (count($tracked) - count($package) < 200) {
 
 // ── 3. The runtime non-negotiables ship ─────────────────────────────────────────────────
 $package_set = array_flip($package);
-foreach (['wp-slimstat.php', 'uninstall.php', 'readme.txt', 'vendor/autoload.php',
-    'vendor/composer/autoload_classmap.php', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
+foreach (['wp-slimstat.php', 'uninstall.php', 'readme.txt', 'src/Schema/Schema.php', 'admin/index.php'] as $required) {
     if (!isset($package_set[$required])) {
         $failures[] = sprintf('the simulated package lacks `%s`; either .distignore excludes it or it '
             . 'is no longer tracked, and the ZIP would be broken on arrival', $required);
     }
+}
+
+// The two packaging entry points must create the ignored runtime autoloader before shipping.
+$builder = (string) @file_get_contents($plugin_root . '/tests/docker/build-free.sh');
+$deploy  = (string) @file_get_contents($plugin_root . '/.github/workflows/main.yml');
+$dump    = strpos($builder, 'composer dump-autoload');
+$copy    = strpos($builder, 'rsync -a');
+if (false === $dump || false === $copy || $dump > $copy
+    || false === strpos($builder, 'wp-slimstat/vendor/autoload.php')) {
+    $failures[] = 'build-free.sh must generate and require the production autoloader before packaging';
+}
+$generate = strpos($deploy, 'composer run build:autoload');
+$publish  = strpos($deploy, '10up/action-wordpress-plugin-deploy@');
+if (false === $generate || false === $publish || $generate > $publish) {
+    $failures[] = 'the wordpress.org workflow must generate the production autoloader before deploy';
 }
 
 // ── 4. …and nothing development-only. A DENYLIST WRITTEN HERE, on purpose ───────────────

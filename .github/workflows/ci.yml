@@ -77,12 +77,7 @@ jobs:
           # --quiet; --no-progress suppresses download bars without hiding test output.
 
       - name: Cache Composer dependencies
-        # ONLY on lanes that run composer install. The 7.4/8.0 lanes run from the
-        # CHECKOUT alone — the committed autoloader (build:autoload, #325) is exactly
-        # what they exercise — and a prefix-key restore here clobbered that committed
-        # classmap with a stale cached vendor/, failing source-level with "Schema not
-        # found" on the 8.0 lane while 8.1+ stayed green (they rebuild the classmap
-        # via dump-autoload, silently repairing the same clobber).
+        # Only lanes that install development dependencies need this cache.
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         uses: actions/cache@v4
         with:
@@ -101,8 +96,10 @@ jobs:
         if: ${{ matrix.php != '7.4' && matrix.php != '8.0' }}
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
+          php tests/autoloader-production-test.php
+          php tests/classmap-completeness-test.php
           composer dump-autoload
 
       - name: Run PHPUnit unit tests
@@ -163,7 +160,9 @@ jobs:
         # implicit-nullable params (E_DEPRECATED on 8.1+, fatal in 9.0), and the
         # ENCODING_V1 pair — one PHP encoder and one Python encoder held to the same
         # hand-derived fixtures, which is only evidence if BOTH actually run.
-        run: composer test:source-level
+        run: |
+          composer run build:autoload
+          composer test:source-level
 
       - name: Mutation registry
         # Proves the gates can actually FAIL. Writing an assertion is not the work;
@@ -218,18 +217,7 @@ jobs:
         #       BASE_SHA: ${{ github.event.pull_request.base.sha }}
         #     run: composer test:mutations -- "--changed=$BASE_SHA"
         #
-        # The vendor/ restore is load-bearing on the 8.1+ lanes: the dump-autoload step
-        # above rewrites the COMMITTED autoloader (dev-inclusive), and the runner's
-        # clean-tree gate rightly ABORTS on a dirty tree — a mutation cannot be told
-        # from an edit. Scoped to vendor/, the diagnosed perturbation, on purpose: a
-        # blanket `git checkout -- .` would launder ANY future step's tracked-file
-        # edits and the abort that surfaced this very surprise could never fire again.
-        # The gates are vendor-independent and were proven against the committed build
-        # (a bare clone on the 7.4 floor), so the commit under test is the right state
-        # to mutate. Untracked files are unaffected.
-        run: |
-          git checkout -- vendor/
-          composer test:mutations
+        run: composer test:mutations
 
 ##############################################################################
 # PHPStan — static analysis (baseline-gated), every push / PR
@@ -256,8 +244,8 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
           composer dump-autoload
 
       - name: Run PHPStan (level 5, target 7.4, baseline-gated)
@@ -884,11 +872,7 @@ jobs:
 
       - name: Cache Composer dependencies
         # The 7.4/8.0 exclusion this step carried went with those lanes (see the matrix
-        # above). The hazard it described is kept because it is not obvious: a prefix-key
-        # restore clobbered the COMMITTED classmap with a stale cached vendor/, failing
-        # source-level with "Schema not found" on 8.0 while 8.1+ stayed green — they rebuild
-        # it via dump-autoload and silently repair the same clobber. Tier 1 still guards
-        # against it, because Tier 1 still runs those two versions.
+        # above). The ignored vendor tree is rebuilt and checked before use.
         uses: actions/cache@v4
         with:
           path: vendor
@@ -902,8 +886,8 @@ jobs:
       - name: Verify generated dependencies, then enable the dev autoloader
         run: |
           composer run build:autoload
-          git diff --exit-code -- src/Dependencies vendor/autoload.php vendor/composer
-          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies vendor/composer)"
+          git diff --exit-code -- src/Dependencies
+          test -z "$(git ls-files --others --exclude-standard -- src/Dependencies)"
           composer dump-autoload
 
       - name: Run full PHPUnit suite
@@ -1006,12 +990,10 @@ jobs:
         # this pipeline produces — never run. Measured across five consecutive nightlies, all
         # red here, all with both skipped.
         #
-        # Same shape and same remedy as the mutation step in Tier 1 (see its `git checkout --
-        # vendor/` note for the full dev-autoloader rationale); this is that hazard reached
-        # through wp-env's bind mount instead.
+        # Rebuild the ignored vendor tree in its production form before wp-env mounts it.
         if: ${{ matrix.php == '8.2' }}
         run: |
-          git checkout -- vendor/
+          composer run build:autoload
           # Assert rather than print, and check the BOOT path (autoload_real/autoload_static),
           # not the classmap, which is only consulted lazily. Patterns are capitalised because
           # that is how the namespaces appear — and because a lowercase spelling here would be

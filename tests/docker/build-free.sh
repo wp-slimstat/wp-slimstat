@@ -33,6 +33,8 @@ git -C "$PLUGIN_SRC" show "$FULL:.distignore" > "$DISTIGNORE" \
   || { err "Free $SHA has no exported .distignore"; exit 1; }
 
 if [ "$CACHED" -eq 0 ]; then
+  command -v composer >/dev/null 2>&1 || { err "Composer is required to build the Free ZIP"; exit 1; }
+  composer dump-autoload --working-dir="$BUILD/raw" --no-dev -o --no-interaction --no-ansi
   rsync -a --exclude-from="$DISTIGNORE" "$BUILD/raw/" "$BUILD/stage/wp-slimstat/"
 
   VERSION=$(sed -n 's/^ \* Version: *//p' "$BUILD/raw/wp-slimstat.php" | tr -d ' \r')

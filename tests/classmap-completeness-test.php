@@ -1,9 +1,9 @@
 <?php
 /**
  * Source-level regression: every first-party SlimStat class declared under src/
- * is present in the committed Composer classmap.
+ * is present in the generated production Composer classmap.
  *
- * Why (issue #325): the wp.org release ships the committed
+ * Why (issue #325): the release builder generates
  * vendor/composer/autoload_classmap.php. If a class under src/ is declared but
  * missing from that classmap while the loader is classmap-authoritative (no PSR-4
  * filesystem fallback), every request that references the class fatals with
@@ -22,53 +22,10 @@
 declare(strict_types=1);
 
 /**
- * Read a repo file as it is COMMITTED (what ships to wp.org via SVN), not the
- * working-tree copy. CI restores a cached vendor/ over the checkout, so the
- * working-tree autoload_* files can be stale/sparse at test time; the committed
- * blob is what actually ships and is what this gate must validate. Falls back to
- * the working-tree file when git is unavailable (e.g. an exported tarball).
+ * Read a generated production-autoloader file.
  */
-function slimstat_committed_source(string $root, string $rel): string
+function slimstat_generated_source(string $root, string $rel): string
 {
-    // Presence of .git — a directory normally, a FILE when the repo is a submodule
-    // or a linked worktree — is what decides whether a committed blob even exists to
-    // read. If it does and we cannot read it, this gate is broken and must say so;
-    // silently validating the working tree instead would let a bad artifact ship
-    // while still printing OK. The working-tree fallback is legitimate only for a
-    // source export (wp.org SVN, `git archive`), which carries no .git at all.
-    $has_repo = file_exists($root . '/.git');
-
-    $bail = static function (string $why) use ($rel, $has_repo) {
-        if (!$has_repo) {
-            return;
-        }
-        fwrite(STDERR, "FAIL: cannot read the committed blob for {$rel} ({$why}).\n");
-        fwrite(STDERR, "That blob is what ships to wp.org — refusing to validate the working tree instead,\n");
-        fwrite(STDERR, "because doing so would pass this gate without checking what actually gets released.\n");
-        exit(1);
-    };
-
-    // Disabled via disable_functions on hardened hosts. Checking rather than calling
-    // keeps this a clear failure instead of an "undefined function" fatal on PHP 8.
-    if (!function_exists('shell_exec')) {
-        $bail('shell_exec is disabled');
-    } else {
-        // The INDEX first, then HEAD. This gate ran green immediately before the commit that
-        // shipped a classmap with 961 dev classes and zero SlimStat ones — because reading
-        // `HEAD:` validates the PREVIOUS commit, so the blob about to be committed was the one
-        // blob it never looked at. Locally the index is what is about to ship; in CI, with
-        // nothing staged, `git show :path` and `git show HEAD:path` are the same bytes, so this
-        // costs that lane nothing.
-        foreach ([':' . $rel, 'HEAD:' . $rel] as $rev) {
-            $out = @shell_exec('git -C ' . escapeshellarg($root) . ' show ' . escapeshellarg($rev) . ' 2>/dev/null');
-            if (is_string($out) && '' !== $out) {
-                return $out;
-            }
-        }
-
-        $bail('the git binary is unavailable, or the path is neither staged nor committed');
-    }
-
     $path = $root . '/' . $rel;
     return is_file($path) ? (string) file_get_contents($path) : '';
 }
@@ -77,10 +34,10 @@ $plugin_root = dirname(__DIR__);
 $src_dir     = $plugin_root . '/src';
 $deps_prefix = $src_dir . '/Dependencies';
 
-// --- load the committed classmap array (FQCN => absolute path; both are used) ---
-$classmap_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_classmap.php');
+// --- load the generated classmap array (FQCN => absolute path; both are used) ---
+$classmap_src = slimstat_generated_source($plugin_root, 'vendor/composer/autoload_classmap.php');
 if ('' === $classmap_src) {
-    fwrite(STDERR, "FAIL: could not read the committed vendor/composer/autoload_classmap.php\n");
+    fwrite(STDERR, "FAIL: could not read vendor/composer/autoload_classmap.php; run composer run build:autoload\n");
     exit(1);
 }
 // Write the copy INSIDE vendor/composer/ — the classmap header computes
@@ -90,7 +47,7 @@ $classmap_tmp = $plugin_root . '/vendor/composer/.slimstat-classmap-test.php';
 file_put_contents($classmap_tmp, $classmap_src);
 
 // The copy lands inside the repo, so a fatal in the require below (a malformed
-// committed blob — exactly what this gate exists to catch) must not leave it behind
+// generated file — exactly what this gate exists to catch) must not leave it behind
 // for someone to commit by accident.
 register_shutdown_function(static function () use ($classmap_tmp) {
     if (is_file($classmap_tmp)) {
@@ -105,10 +62,10 @@ if (!is_array($classmap)) {
     exit(1);
 }
 
-// --- guard: the committed loader must NOT be classmap-authoritative ---
+// --- guard: the generated loader must NOT be classmap-authoritative ---
 // Authoritative mode disables the PSR-4 filesystem fallback, so a single missing
 // classmap entry becomes a fatal on every request (issue #325). Keep the fallback.
-$real_src = slimstat_committed_source($plugin_root, 'vendor/composer/autoload_real.php');
+$real_src = slimstat_generated_source($plugin_root, 'vendor/composer/autoload_real.php');
 if (strpos($real_src, 'setClassMapAuthoritative(true)') !== false) {
     fwrite(STDERR, "FAIL: vendor/composer/autoload_real.php enables setClassMapAuthoritative(true).\n");
     fwrite(STDERR, "That removes the PSR-4 filesystem fallback and makes any missing class a site-wide fatal (issue #325).\n");
@@ -216,12 +173,12 @@ foreach ($declared as $fqcn => $rel) {
 }
 
 if ($missing) {
-    fwrite(STDERR, "FAIL: SlimStat classes declared under src/ but missing from the committed classmap:\n");
+    fwrite(STDERR, "FAIL: SlimStat classes declared under src/ but missing from the generated classmap:\n");
     foreach ($missing as $m) {
         fwrite(STDERR, "  - {$m}\n");
     }
     fwrite(STDERR, "\nWith a classmap-authoritative loader this is a fatal 'Class not found' on every request (issue #325).\n");
-    fwrite(STDERR, "Fix: regenerate the classmap with `composer run build:autoload` and commit vendor/composer/autoload_*.php.\n");
+    fwrite(STDERR, "Fix: regenerate the classmap with `composer run build:autoload`.\n");
     exit(1);
 }
 
@@ -241,16 +198,16 @@ foreach ($classmap as $fqcn => $path) {
 }
 
 if ($dangling) {
-    fwrite(STDERR, "FAIL: committed classmap entries pointing at files that do not exist:\n");
+    fwrite(STDERR, "FAIL: generated classmap entries pointing at files that do not exist:\n");
     foreach ($dangling as $d) {
         fwrite(STDERR, "  - {$d}\n");
     }
     fwrite(STDERR, "\nThe classmap short-circuits before PSR-4, so these fatal even with the fallback in place.\n");
-    fwrite(STDERR, "Fix: regenerate with `composer run build:autoload` and commit vendor/composer/autoload_*.php.\n");
+    fwrite(STDERR, "Fix: regenerate with `composer run build:autoload`.\n");
     exit(1);
 }
 
-// --- guard: the committed loader must not eagerly require a dev `files` list ---
+// --- guard: the generated loader must not eagerly require a dev `files` list ---
 // A dev-flavoured dump adds an autoload_files.php + $filesToLoad loop that requires
 // packages excluded from the wp.org package by .distignore — that combination has
 // shipped and fatalled more than once.
@@ -261,7 +218,7 @@ if (strpos($real_src, '$filesToLoad') !== false || strpos($real_src, 'autoload_f
     exit(1);
 }
 
-// --- the committed classmap must carry NO development classes ---
+// --- the generated classmap must carry NO development classes ---
 //
 // `composer dump-autoload` (what you run so PHPUnit can load) writes the dev classmap;
 // `composer run build:autoload` writes the shipped one. Staging after the former puts ~961
@@ -292,41 +249,12 @@ if ($dev_found !== []) {
         $summary[] = "{$ns} ({$count})";
     }
 
-    fwrite(STDERR, "FAIL: the committed classmap contains development classes: " . implode(', ', $summary) . "\n");
+    fwrite(STDERR, "FAIL: the generated classmap contains development classes: " . implode(', ', $summary) . "\n");
     fwrite(STDERR, "This is `composer dump-autoload` output, not `composer run build:autoload` output.\n");
     fwrite(STDERR, "It ships to wp.org, is parsed on every request, and references paths .distignore excludes.\n");
-    fwrite(STDERR, "Fix: composer run build:autoload  (never `dump-autoload -a`), then re-stage vendor/composer/.\n");
+    fwrite(STDERR, "Fix: composer run build:autoload  (never `dump-autoload -a`).\n");
     exit(1);
 }
 
-// --- self-check: this gate must FAIL, not pass, when it cannot see the blob ---
-// The worst failure mode for a build gate is a green run that checked nothing. Re-run
-// ourselves with git removed from PATH and require a non-zero exit. The child sets the
-// env guard so it does not recurse.
-if (false === getenv('SLIMSTAT_CLASSMAP_SELFCHECK') && $has_repo_for_selfcheck = file_exists($plugin_root . '/.git')) {
-    $descriptors = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-    $child       = proc_open(
-        escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__),
-        $descriptors,
-        $pipes,
-        null,
-        ['SLIMSTAT_CLASSMAP_SELFCHECK' => '1', 'PATH' => '/nonexistent'] + $_ENV
-    );
-
-    if (is_resource($child)) {
-        stream_get_contents($pipes[1]);
-        stream_get_contents($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
-        if (0 === proc_close($child)) {
-            fwrite(STDERR, "FAIL: with git unavailable this gate still exited 0.\n");
-            fwrite(STDERR, "It would validate the working tree instead of the committed blob and report success —\n");
-            fwrite(STDERR, "a green run that checked nothing. slimstat_committed_source() must bail out instead.\n");
-            exit(1);
-        }
-    }
-}
-
-echo "OK: {$checked} declared SlimStat classes are all present in the committed classmap, "
-    . "all first-party entries resolve, loader is non-authoritative with no eager file list "
-    . "(and the gate fails closed when the blob is unreadable)\n";
+echo "OK: {$checked} declared SlimStat classes are all present in the generated classmap, "
+    . "all first-party entries resolve, loader is non-authoritative with no eager file list\n";
