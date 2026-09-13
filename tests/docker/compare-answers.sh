@@ -52,6 +52,8 @@ WP="${TOPOLOGY_WP:-6.7}"
 SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:?name the corpus (seed-profile-verify.json for the campaign, seed-profile-i8.json to reproduce a pre-Run-58 record)}"
 RESTORE_DUMP="${SLIMSTAT_RESTORE_DUMP:-}"
 RESTORE_SHA256="${SLIMSTAT_RESTORE_SHA256:-}"
+RESTORE_MODE=0
+[ -z "$RESTORE_DUMP" ] || RESTORE_MODE=1
 [ -z "$RESTORE_DUMP" ] || {
   [ -f "$RESTORE_DUMP" ] || { err "restore dump not found: $RESTORE_DUMP"; exit 1; }
   [ -n "$RESTORE_SHA256" ] || { err 'SLIMSTAT_RESTORE_SHA256 is required with SLIMSTAT_RESTORE_DUMP'; exit 1; }
@@ -279,6 +281,7 @@ answers_for() {
   use_arm "$ref" || return 1
   dc exec -T -u www-data \
      -e SLIMSTAT_ANSWERS_START="$WIN_START" -e SLIMSTAT_ANSWERS_END="$WIN_END" \
+     -e SLIMSTAT_RESTORED_CORPUS="$RESTORE_MODE" \
      -e SLIMSTAT_TIMING_REPS="${SLIMSTAT_TIMING_REPS:-5}" wp \
      wp --path=/var/www/html eval-file \
      wp-content/plugins/wp-slimstat/tests/docker/report-answers.php > "$out.raw" 2>&1 || return 1

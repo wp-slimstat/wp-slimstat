@@ -1353,10 +1353,33 @@ ksort($answers);
 // deliberately NOT added to the frozen answers and timing lines.
 $slimstat_caps_json = json_encode($slimstat_caps, JSON_INVALID_UTF8_SUBSTITUTE);
 
+/** A restored corpus may replace only the two clock-moving legacy uniques with their pinned twin. */
+function slimstat_restored_uniques_twin_answers($key, $restored, array $surfaces)
+{
+    $twins = [
+        'uniques_browser' => 'uniques_browser_pinned',
+        'uniques_country' => 'uniques_country_pinned',
+    ];
+    if (!$restored || !isset($twins[$key], $surfaces[$twins[$key]])) {
+        return false;
+    }
+
+    $twin = $surfaces[$twins[$key]];
+    return 'ok' === ($twin['class'] ?? null)
+        && is_array($twin['value'] ?? null)
+        && [] !== $twin['value'];
+}
+
 $hollow  = [];
 $errored = [];
 foreach ($arm_status as $key => $env) {
-    if ('empty' === $env['class'] && null === $env['scalar']) {
+    if ('empty' === $env['class'] && null === $env['scalar']
+        && !slimstat_restored_uniques_twin_answers(
+            $key,
+            '1' === getenv('SLIMSTAT_RESTORED_CORPUS'),
+            $arm_surfaces
+        )
+    ) {
         $hollow[] = $key;
     } elseif ('error' === $env['class']) {
         $errored[] = $key;
