@@ -55,7 +55,8 @@
     "slim_p1_03": ["count_records_id", "count_records_ip", "count_records_resource", "rows_in_window"],
     "slim_p1_08": ["top_resource"],
     "slim_p1_13": ["top_country"],
-    "slim_p2_06": ["top_platform"]
+    "slim_p2_06": ["top_platform"],
+    "slim_p2_18": ["top_browser"]
   },
-  "summary": {"reports": 67, "modeled": 6, "captured_unmodeled": 16, "uncaptured": 45}
+  "summary": {"reports": 67, "modeled": 7, "captured_unmodeled": 15, "uncaptured": 45}
 }

@@ -100,6 +100,16 @@
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
+    },
+    "top_browser": {
+      "report_id": "slim_p2_18",
+      "title": "Top Browser Families",
+      "family": "top",
+      "dimension": "browser",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
     }
   }
 }

@@ -25,6 +25,19 @@ case = json.loads(fixture.stdout)
 contracts = json.loads((ROOT / "tests/oracle/report-contracts.json").read_text())
 contract = contracts["reports"]["top_resource"]
 
+browser = evaluate(
+    "top_browser",
+    contracts["reports"]["top_browser"],
+    [{"blog_id": 1, "browser": "Firefox"}, {"blog_id": 1, "browser": "Chrome"},
+     {"blog_id": 1, "browser": "Firefox"}],
+    200,
+)
+if browser["report_id"] != "slim_p2_18" or browser["rows"] != [
+    {"blog_id": 1, "browser": "Firefox", "counthits": 2},
+    {"blog_id": 1, "browser": "Chrome", "counthits": 1},
+]:
+    fail("top_browser contract is not modeled by the independent top family")
+
 expected = case["expected"]
 result = evaluate("top_resource", contract, case["rows"], expected["limit"])
 
