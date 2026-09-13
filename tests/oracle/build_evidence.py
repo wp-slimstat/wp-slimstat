@@ -91,8 +91,23 @@ def approved_exclusions(data, expected):
     return keys
 
 
-def arm_envelope(surface, values, caps):
-    statuses = caps.get('_arm_status')
+def control_envelope(surface, windows):
+    require(surface in ('window_start', 'window_end'), surface + ': unknown capture control')
+    start, end = windows.get('start'), windows.get('end')
+    require(type(start) is int and type(end) is int and 0 < start < end,
+            'capture_windows must pin positive integer start < end')
+    return {'class': 'ok', 'value': windows[surface.removeprefix('window_')],
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
+
+
+def arm_envelope(surface, values, caps, source='legacy', windows=None):
+    if source == 'legacy-control':
+        # These are harness arguments, explicitly not measured report envelopes.
+        control = control_envelope(surface, windows)
+        require(surface in values and type(values[surface]) is int
+                and values[surface] == control['value'], surface + ': capture control mismatch/missing')
+        return control
+    statuses = caps.get('_arm_surfaces' if source == 'extended' else '_arm_status')
     require(isinstance(statuses, dict) and surface in statuses, surface + ': missing caps row')
     status = statuses[surface]
     require(isinstance(status, dict), surface + ': malformed envelope')
@@ -100,8 +115,13 @@ def arm_envelope(surface, values, caps):
     flags = status.get('flags')
     require(isinstance(flags, dict) and all(isinstance(flags.get(k), bool) for k in
             ('clock_dependent', 'calendar_day_dependent', 'pinned')), surface + ': malformed envelope flags')
-    require(surface in values, surface + ': missing arm value')
-    return {'class': status['class'], 'value': values[surface], 'flags': flags,
+    if source == 'extended':
+        require('value' in status, surface + ': missing extended arm value')
+        value = status['value']
+    else:
+        require(surface in values, surface + ': missing arm value')
+        value = values[surface]
+    return {'class': status['class'], 'value': value, 'flags': flags,
             'error': status.get('error'), '__unsupported': status.get('__unsupported')}
 
 
@@ -131,19 +151,22 @@ def build(manifest_path, output, resolver=oracle_for):
     observed = comparable_keys(data['before'], data['after'])
     unexpected = sorted(set(observed) - set(expected))
     require(not unexpected, 'unexpected capture key(s): ' + ', '.join(unexpected))
-    require(set(required) <= set(observed), 'required key missing from both arms: ' +
-            ', '.join(sorted(set(required) - set(observed))))
+    required_legacy = {key for key in required if expected[key]['source'] != 'extended'}
+    require(required_legacy <= set(observed), 'required key missing from both arms: ' +
+            ', '.join(sorted(required_legacy - set(observed))))
     register_rows = data['register'].get('entries') if isinstance(data['register'], dict) else data['register']
     register = Register(register_rows)
     contracts = data['contracts']
     triples = []
     for surface in required:
         row = expected[surface]
+        source, windows = row['source'], manifest['capture_windows']
         triple = {
             'surface': surface,
-            'old': arm_envelope(surface, data['before'], data['before_caps']),
-            'new': arm_envelope(surface, data['after'], data['after_caps']),
-            'oracle': resolver(data['after_export'], surface, row['adapter'], contracts),
+            'old': arm_envelope(surface, data['before'], data['before_caps'], source, windows),
+            'new': arm_envelope(surface, data['after'], data['after_caps'], source, windows),
+            'oracle': (control_envelope(surface, windows) if source == 'legacy-control' else
+                       resolver(data['after_export'], surface, row['adapter'], contracts)),
         }
         contract = comparison_contract(surface, row['adapter'], contracts)
         if contract:
@@ -179,13 +202,14 @@ def selftest():
             'pro': {'source_sha': 'c' * 40, 'sha256': 'd' * 64}}}
         contracts = {'reports': {}}
 
-        def prepare(name, before, after, before_caps, after_caps, surfaces=('x',), exclusions=(), register=()):
+        def prepare(name, before, after, before_caps, after_caps, surfaces=('x',), exclusions=(), register=(), sources=None):
             case = root / name
             case.mkdir()
             docs = {
                 'before': before, 'after': after, 'before_caps': before_caps, 'after_caps': after_caps,
                 'artifacts': artifacts, 'expected_population': {'schema': 'SLIMSTAT-REPORT-EVIDENCE-INVENTORY-V1',
-                    'surfaces': [{'key': key, 'source': 'legacy', 'adapter': None} for key in surfaces]},
+                    'surfaces': [{'key': key, 'source': (sources or {}).get(key, 'legacy'), 'adapter': None}
+                                 for key in surfaces]},
                 'exclusions': {'schema': 'SLIMSTAT-REPORT-EVIDENCE-EXCLUSIONS-V1', 'approved': list(exclusions)},
                 'register': {'entries': list(register)}, 'contracts': contracts,
             }
@@ -216,6 +240,44 @@ def selftest():
         out = build(changed / 'inputs.json', changed / 'out', resolver)
         gate = [sys.executable, str(HERE / 'unresolved_gate.py'), str(out / 'population.json'), str(out / 'evidence.json')]
         assert subprocess.run(gate, capture_output=True).returncode == 0
+
+        # report-answers.php emits window arguments WITHOUT _arm_status rows and
+        # extended captures as whole envelopes under _arm_surfaces, not in answers.
+        controls = {'window_start': 1, 'window_end': 2}
+        control_sources = {key: 'legacy-control' for key in controls}
+        case = prepare('real-window-shape', controls, controls, caps({}), caps({}),
+                       tuple(controls), sources=control_sources)
+        out = build(case / 'inputs.json', case / 'out')
+        assert all(row['old']['value'] == row['oracle']['value']
+                   for row in read_json(out / 'triples.json'))
+        for name, before, after in (
+                ('window-mismatch', controls, dict(controls, window_end=3)),
+                ('window-missing', controls, {'window_start': 1})):
+            case = prepare(name, before, after, caps({}), caps({}), tuple(controls), sources=control_sources)
+            try:
+                build(case / 'inputs.json', case / 'out')
+                raise AssertionError(name + ' passed')
+            except ValueError:
+                pass
+
+        extended = caps({'get_recent': 'error'})['_arm_status']['get_recent']
+        extended = dict(extended, value=None, rows=None, scalar=None, __unsupported=None)
+        ext_caps = {'_arm_status': {}, '_arm_surfaces': {'get_recent': extended}}
+        case = prepare('real-extended-shape', {}, {}, ext_caps, ext_caps,
+                       ('get_recent',), sources={'get_recent': 'extended'})
+        out = build(case / 'inputs.json', case / 'out')
+        triple = read_json(out / 'triples.json')[0]
+        assert triple['old']['class'] == 'error' and triple['old']['error'] == extended['error']
+        for name, bad_caps in (
+                ('extended-missing', {'_arm_surfaces': {}}),
+                ('extended-malformed', {'_arm_surfaces': {'get_recent': {'class': 'empty', 'value': []}}})):
+            case = prepare(name, {}, {}, ext_caps, bad_caps,
+                           ('get_recent',), sources={'get_recent': 'extended'})
+            try:
+                build(case / 'inputs.json', case / 'out')
+                raise AssertionError(name + ' passed')
+            except ValueError:
+                pass
 
         failures = [
             ('one-arm-drop', {}, {'x': 1}, caps({}), caps({'x': 'ok'}), ('x',), ()),

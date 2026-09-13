@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 """Thin transport adapters from raw SQLite exports to independent oracle families."""
-import json
-from pathlib import Path
 import sqlite3
 
 from families.top import rank_top
@@ -19,9 +17,15 @@ def top(export_path, surface, adapter, contract):
         'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
     if not columns:
         raise ValueError('%s: export has no %s manifest' % (surface, table))
+    if dimension not in columns:
+        raise ValueError('%s: export has no %s dimension' % (surface, dimension))
+    # Raw exports deliberately carry invalid UTF-8 in unrelated fields. Decode
+    # only the fields this family consumes, leaving the fidelity proof byte-exact.
+    columns = list(dict.fromkeys([dimension] + (['blog_id'] if 'blog_id' in columns else [])))
     quoted = ', '.join('"%s"' % name.replace('"', '""') for name in columns)
     rows = [dict(zip(columns, map(_text, row))) for row in conn.execute(
         'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
+    conn.close()
     blog_id = adapter.get('blog_id')
     if blog_id is not None:
         if 'blog_id' in columns:

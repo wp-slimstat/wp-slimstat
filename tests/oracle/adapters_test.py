@@ -12,9 +12,11 @@ with tempfile.TemporaryDirectory() as temp:
     db.executemany('INSERT INTO _manifest VALUES (?, ?, ?, ?, ?, ?)', [
         ('slim_stats', 0, 'id', 'INT UNSIGNED', 0, 0),
         ('slim_stats', 1, 'resource', 'VARCHAR(2048)', 1, 0),
+        ('slim_stats', 2, 'user_agent', 'VARCHAR(2048)', 1, 0),
     ])
-    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?)', [(1, b'/a'), (2, b'/b'), (3, b'/a')])
+    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?)',
+                   [(1, b'/a', b'\xff'), (2, b'/b', b'normal'), (3, b'/a', None)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
