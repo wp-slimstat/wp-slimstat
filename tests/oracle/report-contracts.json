@@ -5,6 +5,7 @@
       "report_id": "slim_p7_02",
       "title": "Access Log",
       "family": "recent",
+      "limit_setting": "limit_results",
       "default_limit": 200,
       "columns": [
         "id", "ip", "dt", "username", "referer", "resource", "browser", "platform",
