@@ -264,3 +264,6 @@ if ($failures) {
 }
 echo "PASS: export fidelity — {$passed} assertions (PHP wrote the values, Python re-encoded them, "
     . "and the chains agree; a one-byte change moves the hash)\n";
+
+passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__DIR__ . '/fixtures/export-report-evidence-handle.php'), $handleTestExit);
+exit($handleTestExit);
