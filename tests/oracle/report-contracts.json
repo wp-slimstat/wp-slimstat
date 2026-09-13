@@ -44,6 +44,26 @@
       "count_field": "counthits",
       "limit_setting": "limit_results",
       "default_limit": 200
+    },
+    "top_country": {
+      "report_id": "slim_p1_13",
+      "title": "Top Countries",
+      "family": "top",
+      "dimension": "country",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
+    },
+    "top_platform": {
+      "report_id": "slim_p2_06",
+      "title": "Top Operating Systems",
+      "family": "top",
+      "dimension": "platform",
+      "grain": ["blog_id"],
+      "count_field": "counthits",
+      "limit_setting": "limit_results",
+      "default_limit": 200
     }
   }
 }

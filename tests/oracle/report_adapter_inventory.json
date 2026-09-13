@@ -52,7 +52,9 @@
   "modeled": {
     "slim_p7_02": ["get_recent"],
     "slim_p1_01": ["chart_daily", "chart_weekly"],
-    "slim_p1_08": ["top_resource"]
+    "slim_p1_08": ["top_resource"],
+    "slim_p1_13": ["top_country"],
+    "slim_p2_06": ["top_platform"]
   },
-  "summary": {"reports": 67, "modeled": 3, "captured_unmodeled": 19, "uncaptured": 45}
+  "summary": {"reports": 67, "modeled": 5, "captured_unmodeled": 17, "uncaptured": 45}
 }
