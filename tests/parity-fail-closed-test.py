@@ -67,6 +67,8 @@ namespace SlimStat\Reports {
 }
 namespace {
     function is_user_logged_in() { return true; }
+    define('SLIMSTAT_ANALYTICS_DIR', '/definitely-not-used/');
+    class wp_slimstat_admin {}
     class wp_slimstat { public static $settings = []; }
     class wp_slimstat_reports { public static $reports = []; static function init() {} }
     require $argv[1];

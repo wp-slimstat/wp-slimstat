@@ -39,6 +39,11 @@ if (!function_exists('slimstat_bench_bootstrap_reports')) {
             \SlimStat\Reports\Bootstrap::get_instance()->init();
         }
 
+        // wp eval-file is not an admin request, but slim_p9_01 renders through this class.
+        if (!class_exists('wp_slimstat_admin')) {
+            require_once SLIMSTAT_ANALYTICS_DIR . 'admin/index.php';
+        }
+
         if (!class_exists('wp_slimstat_reports')) {
             require_once SLIMSTAT_ANALYTICS_DIR . 'admin/view/wp-slimstat-reports.php';
         }

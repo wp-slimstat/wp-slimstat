@@ -321,8 +321,7 @@ printf("  empty          %d\n", $counts['empty']);
 printf("  render_only    %d   (markup but no numbers — uncomparable)\n", $counts['render_only']);
 printf("  value_compared %d   (%.1f%%)\n", $counts['value_compared'], $proportion * 100);
 
-// 0.70 rather than 1.0: slim_p9_01 (Goals) genuinely fatals outside an admin request, and some
-// cells legitimately have no rows in their window. The number exists to make a COLLAPSE
+// 0.70 rather than 1.0: some cells legitimately have no rows in their window. The number exists to make a COLLAPSE
 // impossible, not to pin today's figure — raising it is progress, and it is recorded in the file
 // so a later run can be compared against this one rather than against a memory.
 $floor = 0.70;
