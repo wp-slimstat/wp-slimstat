@@ -127,11 +127,11 @@ def text_hits(value:str,names=None):
 def json_hits(document):
     """Every class against every key, the value classes against every scalar leaf."""
     hits=[]
-    def walk(node):
+    def walk(node, visitor_keys=False):
         if isinstance(node,dict):
             for key,child in node.items():
-                hits.extend(text_hits(str(key)))
-                walk(child)
+                hits.extend(text_hits(str(key), VALUE_CLASSES if visitor_keys else None))
+                walk(child, key == "pairs")
         elif isinstance(node,list):
             for child in node: walk(child)
         elif node is not None and not isinstance(node,bool):
@@ -211,6 +211,7 @@ LEGITIMATE={"top_resource":[
     {"resource":"/development/info.php","counthits":"2"},
     {"resource":"/var/www/html/legacy-import.php","counthits":"1"}],
     "window_start":1784980416,"window_end":1787572416,
+    "pairs":{"New Visitors Rate":"1","/cart/?add-to-cart=x":"2"},
     "top_referer":[{"referer":"https://wordpress.org/support/topic/no-cookies/","counthits":"3"}]}
 
 def selftest(drop=None):
