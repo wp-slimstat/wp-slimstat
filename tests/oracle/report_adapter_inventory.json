@@ -1,0 +1,36 @@
+{
+  "schema": "SLIMSTAT-REPORT-ADAPTER-INVENTORY-V1",
+  "source_registry_sha256": "c11661f896e3794a85b9e75b01684071d95ed5c4bac5cc2e9b288837e730209d",
+  "report_ids": [
+    "slim_p7_02", "slim_p1_01", "slim_p1_03", "slim_p1_04", "slim_p1_06",
+    "slim_p1_08", "slim_p1_10", "slim_p1_11", "slim_p1_12", "slim_p1_13",
+    "slim_p1_15", "slim_p1_17", "slim_p1_18", "slim_p1_19_01", "slim_p2_01",
+    "slim_p2_02", "slim_p2_03", "slim_p2_04", "slim_p2_05", "slim_p2_06",
+    "slim_p2_07", "slim_p2_08", "slim_p2_12", "slim_p2_13", "slim_p2_14",
+    "slim_p2_15", "slim_p2_16", "slim_p2_17", "slim_p2_18", "slim_p2_19",
+    "slim_p2_20", "slim_p2_21", "slim_p2_22_01", "slim_p2_24", "slim_p2_25",
+    "slim_p3_01", "slim_p3_02", "slim_p4_01", "slim_p4_02", "slim_p4_04",
+    "slim_p4_05", "slim_p4_06", "slim_p4_07", "slim_p4_09", "slim_p4_10",
+    "slim_p4_11", "slim_p4_12", "slim_p4_13", "slim_p4_15", "slim_p4_152",
+    "slim_p4_16", "slim_p4_18", "slim_p4_19", "slim_p4_20", "slim_p4_21",
+    "slim_p4_22", "slim_p4_23", "slim_p4_24", "slim_p4_25", "slim_p4_26_01",
+    "slim_p4_27", "slim_p6_01", "slim_p9_01", "slim_p9_02", "slim_p8_01",
+    "slim_p8_02", "slim_live_analytics"
+  ],
+  "legacy_capture_by_report": {
+    "slim_p1_01": ["chart_daily", "chart_weekly", "count_records_ip"],
+    "slim_p1_03": ["count_records_id", "count_records_ip", "count_records_resource", "rows_in_window"],
+    "slim_p1_08": ["top_resource", "top_resource_human", "top_resource_in_window"],
+    "slim_p1_10": ["top_referer", "top_referer_domains"],
+    "slim_p1_13": ["top_country", "uniques_country"],
+    "slim_p2_01": ["count_human_hits", "count_records_visit_id"],
+    "slim_p2_02": ["bouncing_visits", "count_human_hits", "count_records_visit_id"],
+    "slim_p2_06": ["top_platform"],
+    "slim_p2_18": ["top_browser", "uniques_browser"],
+    "slim_p2_19": ["top_platform_prefixed"],
+    "slim_p4_11": ["top_resource_trimmed"],
+    "slim_p4_23": ["bouncing_visits"]
+  },
+  "modeled": {"slim_p1_08": ["top_resource"]},
+  "summary": {"reports": 67, "modeled": 1, "captured_unmodeled": 11, "uncaptured": 55}
+}

@@ -271,6 +271,32 @@ answers_for() {
   # "recorded loudly" into a file deleted seven times. An extracted file is what makes the claim
   # true. It is deliberately NOT copied into the blind packet: it names capabilities per era.
   grep -h 'SLIMSTAT-CAPS'    "$out.raw" | sed 's/^SLIMSTAT-CAPS //'    > "${out%.json}-caps.json" || return 1
+  if [ "${SLIMSTAT_EXPORT_SQLITE:-0}" = 1 ]; then
+    local side="$(basename "${out%.json}")" export_dir="$ART/exports/$(basename "${out%.json}")"
+    local container_export="/var/www/html/wp-content/slimstat-evidence-$side-$b.sqlite"
+    mkdir -p "$export_dir" || return 1
+    wpc eval-file wp-content/plugins/wp-slimstat/tests/bench/export-report-evidence.php "$container_export" \
+      >"$export_dir/block-$b.raw" 2>&1 || return 1
+    grep -h 'SLIMSTAT-EVIDENCE-EXPORT' "$export_dir/block-$b.raw" \
+      | sed 's/^SLIMSTAT-EVIDENCE-EXPORT //' >"$export_dir/block-$b-fingerprints.json" || return 1
+    mv "$WP_DIR/wp-content/slimstat-evidence-$side-$b.sqlite" "$export_dir/block-$b.sqlite" || return 1
+    python3 - "$export_dir/block-$b-fingerprints.json" "$export_dir/block-$b.sqlite" "$HARNESS_DIR" <<'PY' || return 1
+import json, pathlib, subprocess, sys
+fingerprints, export, harness = pathlib.Path(sys.argv[1]), sys.argv[2], pathlib.Path(sys.argv[3])
+expected = json.loads(fingerprints.read_text())
+for table, mysql in expected['mysql'].items():
+    result = subprocess.run(
+        [sys.executable, str(harness.parent / 'oracle' / 'read_export_cli.py'), export, table,
+         expected['order_by'][table], mysql['manifest_hash']],
+        check=True, capture_output=True, text=True,
+    )
+    sqlite = json.loads(result.stdout)
+    if sqlite != mysql or expected['export'][table] != mysql:
+        raise SystemExit('%s export fidelity failed: mysql=%r export=%r sqlite=%r'
+                         % (table, mysql, expected['export'][table], sqlite))
+print('PASS: MySQL/PHP-export/SQLite fidelity for ' + ', '.join(sorted(expected['mysql'])))
+PY
+  fi
   local capture_dir="$ART/captures/$(basename "${out%.json}")/block-$b"
   mkdir -p "$capture_dir" || return 1
   cp "$out" "$out.raw" "${out%.json}-timing.json" "${out%.json}-caps.json" "$capture_dir/" || return 1
@@ -297,6 +323,17 @@ while [ "$b" -lt "$BLOCKS" ]; do
   fi
   b=$((b + 1))
 done
+if [ "${SLIMSTAT_EXPORT_SQLITE:-0}" = 1 ]; then
+  last=$((BLOCKS - 1))
+  python3 - "$ART/exports/before/block-$last-fingerprints.json" \
+    "$ART/exports/after/block-$last-fingerprints.json" <<'PY' || exit 1
+import json, sys
+before, after = (json.load(open(path))['mysql'] for path in sys.argv[1:])
+if before != after:
+    raise SystemExit('before/after exports differ although compare-answers uses one unchanged corpus')
+print('PASS: before/after exports fingerprint the same unchanged corpus')
+PY
+fi
 
 # ── CONTROLS, before any result ─────────────────────────────────────────────
 echo
