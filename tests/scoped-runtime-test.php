@@ -112,14 +112,24 @@ unlink($fixtureFile);
 rmdir($fixture);
 
 $negative = sys_get_temp_dir() . '/slimstat-classmap-' . uniqid('', true);
-$assert(mkdir($negative), 'cannot create classmap fixture');
+$negativeTarget = $negative . '/src/Dependencies';
+$assert(mkdir($negativeTarget, 0777, true), 'cannot create staged classmap fixture');
 $badMap = $map;
 unset($badMap[$required[0]]);
-$badMapFile = $negative . '/autoload-classmap.php';
+$badMapFile = $negativeTarget . '/autoload-classmap.php';
 $assert(false !== file_put_contents($badMapFile, '<?php return ' . var_export($badMap, true) . ';'), 'cannot write classmap fixture');
-$loadedBadMap = require $badMapFile;
-$assert(!isset($loadedBadMap[$required[0]]), 'negative classmap fixture retained the removed entry');
+foreach (array('autoload.php', 'veronalabs') as $entry) {
+    $assert(symlink($target . '/' . $entry, $negativeTarget . '/' . $entry), "cannot stage {$entry}");
+}
+$command = escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__) . ' ' . escapeshellarg($negative) . ' 2>&1';
+exec($command, $negativeOutput, $negativeExit);
+$assert(0 !== $negativeExit, 'validator accepted a staged classmap missing a required entry');
+$assert(false === strpos(implode("\n", $negativeOutput), 'SLIMSTAT-SCOPED-RUNTIME-COMPLETE'), 'failed staged validation emitted COMPLETE');
+unlink($negativeTarget . '/autoload.php');
+unlink($negativeTarget . '/veronalabs');
 unlink($badMapFile);
+rmdir($negativeTarget);
+rmdir($negative . '/src');
 rmdir($negative);
 
 echo "SLIMSTAT-SCOPED-RUNTIME-COMPLETE\n";

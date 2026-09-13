@@ -133,15 +133,16 @@ test.describe('Ad-Blocker Simulation (AC-TRK-001 ad-blocker)', () => {
       route.abort('blockedbyclient');
     });
 
-    let trackingRequestSent = false;
+    const trackingActions: string[] = [];
     page.on('request', (req) => {
       const url = req.url();
-      if (
-        (url.includes('/wp-json/slimstat/v1/hit') ||
-          url.includes('admin-ajax.php')) &&
-        req.method() === 'POST'
-      ) {
-        trackingRequestSent = true;
+      if (req.method() !== 'POST') return;
+      if (url.includes('/wp-json/slimstat/v1/hit')) trackingActions.push('rest-hit');
+      if (url.includes('admin-ajax.php')) {
+        const action = new URLSearchParams(req.postData() ?? '').get('action') ?? '';
+        if (/^(?:slimtrack|slimstat_)/.test(action)) {
+          trackingActions.push(action.replace(/[^a-z0-9_-]/gi, '?').slice(0, 80));
+        }
       }
     });
 
@@ -151,7 +152,7 @@ test.describe('Ad-Blocker Simulation (AC-TRK-001 ad-blocker)', () => {
     await page.waitForTimeout(3000);
 
     // With JS blocked, the client-side tracker should not fire
-    expect(trackingRequestSent).toBe(false);
+    expect(trackingActions, `SlimStat actions sent: ${trackingActions.join(', ')}`).toHaveLength(0);
   });
 
   // ─── Test 4: Graceful degradation — server-side may still track
