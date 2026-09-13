@@ -14,6 +14,8 @@ import {
   setSlimstatOption,
   snapshotSlimstatOptions,
   restoreSlimstatOptions,
+  snapshotOption,
+  restoreOption,
   closeDb,
 } from './helpers/setup';
 import { BASE_URL, MYSQL_CONFIG } from './helpers/env';
@@ -39,6 +41,14 @@ async function getVisitIdCounter(): Promise<number | null> {
 async function deleteVisitIdCounter(): Promise<void> {
   await getPool().execute(
     "DELETE FROM wp_options WHERE option_name = 'slimstat_visit_id_counter'"
+  );
+}
+
+async function setWpOption(name: string, value: string): Promise<void> {
+  await getPool().execute(
+    `INSERT INTO wp_options (option_name, option_value, autoload)
+     VALUES (?, ?, 'yes') ON DUPLICATE KEY UPDATE option_value = ?`,
+    [name, value, value],
   );
 }
 
@@ -325,6 +335,44 @@ test.describe('Visit ID Atomic Counter', () => {
       expect(new Set(visitIds).size).toBe(1);
     } finally {
       await visitor.close();
+    }
+  });
+
+  test('custom DB handle preserves visitor separation and tab continuity', async ({ browser, page }) => {
+    test.setTimeout(90_000);
+
+    await snapshotOption('slimstat_test_use_custom_db');
+    await setWpOption('slimstat_test_use_custom_db', 'yes');
+    await setSlimstatOption(page, 'javascript_mode', 'on');
+    await setSlimstatOption(page, 'set_tracker_cookie', 'on');
+    await setSlimstatOption(page, 'tracking_request_method', 'rest');
+    await setSlimstatOption(page, 'gdpr_enabled', 'off');
+
+    const markers = Array.from({ length: 3 }, (_, i) => `custom-db-${Date.now()}-${i}`);
+    const visitors = await Promise.all([browser.newContext(), browser.newContext()]);
+    const first = await visitors[0].newPage();
+    const second = await visitors[1].newPage();
+    const tab = await visitors[0].newPage();
+    try {
+      const responses = await Promise.all([
+        visit(first, markers[0]),
+        visit(second, markers[1]),
+      ]);
+      expect((await visit(tab, markers[2])).ok()).toBe(true);
+      responses.forEach((response) => expect(response.ok()).toBe(true));
+      await expect.poll(async () => (await trackedRows(markers)).length, { timeout: 20_000 }).toBe(3);
+
+      const rows = await trackedRows(markers);
+      const visitId = (marker: string) => parseInt(
+        rows.find((row) => row.resource.includes(marker))?.visit_id ?? '0',
+        10,
+      );
+      expect(visitId(markers[0])).toBeGreaterThan(0);
+      expect(visitId(markers[1])).not.toBe(visitId(markers[0]));
+      expect(visitId(markers[2])).toBe(visitId(markers[0]));
+    } finally {
+      await Promise.all(visitors.map((visitor) => visitor.close()));
+      await restoreOption('slimstat_test_use_custom_db');
     }
   });
 
