@@ -531,6 +531,7 @@ function slimstat_uninstall($_wpdb = '')
     // VisitIdGenerator::OPTION_NAME. NOT the same key as slimstat_visit_id above — that
     // pair of near-identical names is why this one survived every hand-audit of this list.
     delete_option('slimstat_visit_id_counter');
+    delete_option('slimstat_visit_id_repair_marker');
     // Minted with bare literals rather than constants, so no convention-based scan can
     // see them; they are here because the gate's own residual gap was written down.
     delete_option('wp_slimstat_notifications');

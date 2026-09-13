@@ -22,6 +22,8 @@ class VisitIdGenerator
 {
     public const OPTION_NAME = 'slimstat_visit_id_counter';
 
+    public const REPAIR_MARKER_OPTION = 'slimstat_visit_id_repair_marker';
+
     /**
      * Generate the next visit ID atomically.
      *
@@ -36,6 +38,7 @@ class VisitIdGenerator
         // counters before allocating; current-version requests retain the one-query path.
         if (defined('SLIMSTAT_ANALYTICS_VERSION') && isset(\wp_slimstat::$settings['version'])
             && SLIMSTAT_ANALYTICS_VERSION !== \wp_slimstat::$settings['version']
+            && self::repairMarker() !== get_option(self::REPAIR_MARKER_OPTION)
             && self::initializeCounter() < 0) {
             return 0;
         }
@@ -85,7 +88,14 @@ class VisitIdGenerator
         wp_cache_delete(self::OPTION_NAME, 'options');
         wp_cache_delete('notoptions', 'options');
 
-        return false === $added ? -1 : (int) get_option(self::OPTION_NAME, $initial_value);
+        if (false === $added) {
+            return -1;
+        }
+
+        $counter = (int) get_option(self::OPTION_NAME, $initial_value);
+        update_option(self::REPAIR_MARKER_OPTION, self::repairMarker(), false);
+
+        return $counter;
     }
 
     /**
@@ -110,7 +120,28 @@ class VisitIdGenerator
      */
     public static function resetCounter(int $value): bool
     {
+        self::invalidateRepairMarker();
         return update_option(self::OPTION_NAME, max($value, 0), false);
+    }
+
+    public static function invalidateRepairMarker(): void
+    {
+        delete_option(self::REPAIR_MARKER_OPTION);
+    }
+
+    /** Bind a completed repair to the real analytics dataset and current blog. */
+    private static function repairMarker(): string
+    {
+        $db    = \wp_slimstat::$wpdb ?? $GLOBALS['wpdb'];
+        $table = $db->prefix . 'slim_stats';
+
+        return hash('sha256', implode('|', [
+            (string) $db->dbhost,
+            (string) $db->dbname,
+            $table,
+            (string) get_current_blog_id(),
+            defined('SLIMSTAT_ANALYTICS_VERSION') ? SLIMSTAT_ANALYTICS_VERSION : '',
+        ]));
     }
 
     /** Increment an existing counter; a missing row cannot issue an unseeded ID. */

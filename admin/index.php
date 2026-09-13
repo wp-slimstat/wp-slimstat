@@ -693,6 +693,10 @@ class wp_slimstat_admin
      */
     public static function init_tables($_wpdb = '')
     {
+        // A same-endpoint restore/replacement has the same dataset fingerprint but may carry
+        // higher historical IDs. Force the next legacy allocation/initialization to re-read it.
+        \SlimStat\Tracker\VisitIdGenerator::invalidateRepairMarker();
+
         // One reconciliation, from the manifest, replacing four hand-written CREATE TABLEs and
         // a $index_defs loop that probed five indexes one statement at a time.
         //

@@ -37,6 +37,8 @@ class VicqbFakeWpdb
     public $dbh;
     public $options    = 'wp_options';
     public $prefix     = 'wp_';
+    public $dbhost     = 'db.internal:3306';
+    public $dbname     = 'analytics';
     public $insert_id  = 0;
     public $rows_affected = 0;
 
@@ -161,6 +163,9 @@ if (!function_exists('add_option')) {
 if (!function_exists('get_option')) {
     function get_option($option, $default = false)
     {
+        if (isset($GLOBALS['wpdb'])) {
+            $GLOBALS['wpdb']->log[] = 'OPTION-READ:' . $option;
+        }
         return $GLOBALS['_vicqb_options'][$option] ?? $default;
     }
 }
@@ -172,6 +177,18 @@ if (!function_exists('update_option')) {
         vicqb_mirror_counter($option, $value);
         return true;
     }
+}
+
+if (!function_exists('delete_option')) {
+    function delete_option($option)
+    {
+        unset($GLOBALS['_vicqb_options'][$option]);
+        return true;
+    }
+}
+
+if (!function_exists('get_current_blog_id')) {
+    function get_current_blog_id() { return $GLOBALS['_vicqb_blog_id']; }
 }
 
 if (!class_exists('wp_slimstat')) {
@@ -206,6 +223,7 @@ function vicqb_boot(?int $counter, int $max_visit_id): VicqbFakeWpdb
     $GLOBALS['wpdb']           = $db;
     \wp_slimstat::$wpdb        = $db;
     $GLOBALS['_vicqb_options'] = null === $counter ? [] : [VisitIdGenerator::OPTION_NAME => $counter];
+    $GLOBALS['_vicqb_blog_id'] = 1;
 
     return $db;
 }
@@ -298,10 +316,53 @@ define('SLIMSTAT_ANALYTICS_VERSION', '6.0.0');
 \wp_slimstat::$settings['version'] = '5.5.0';
 $db = vicqb_boot(3, 5000000);
 vicqb_assert('legacy allocation repairs before returning an ID', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('successful legacy repair writes a separate marker', isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+$db->log = [];
+vicqb_assert('marked legacy allocation stays monotonic', VisitIdGenerator::generateNextVisitId() === 5000002);
+vicqb_assert(
+    'marked legacy hits use two queries without rescanning MAX',
+    $db->log === ['OPTION-READ:' . VisitIdGenerator::REPAIR_MARKER_OPTION, 'INCREMENT'],
+    'queries: ' . implode(', ', $db->log)
+);
 $db = vicqb_boot(3, 5000000);
 $db->max_read_fails = true;
 vicqb_assert('legacy failed MAX refuses an ID', VisitIdGenerator::generateNextVisitId() === 0);
 vicqb_assert('legacy failed MAX preserves existing counter', $db->counter === 3);
+vicqb_assert('legacy failed MAX writes no marker', !isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+
+$db = vicqb_boot(null, 5000000);
+$GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION] = 'stale-marker';
+vicqb_assert('a marker never hides a missing counter repair', VisitIdGenerator::generateNextVisitId() === 5000001);
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->dbhost = 'replacement.internal:3306';
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+$db->log = [];
+vicqb_assert('an analytics dataset switch repairs again', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('dataset switch re-reads MAX', in_array('SEED-MAX', $db->log, true));
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+$GLOBALS['_vicqb_blog_id'] = 2;
+$db->log = [];
+vicqb_assert('blog switching cannot reuse another blog marker', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('blog switch re-reads MAX', in_array('SEED-MAX', $db->log, true));
+
+VisitIdGenerator::resetCounter(7);
+vicqb_assert('counter reset invalidates the repair marker', !isset($GLOBALS['_vicqb_options'][VisitIdGenerator::REPAIR_MARKER_OPTION]));
+
+$db = vicqb_boot(3, 5000000);
+VisitIdGenerator::initializeCounter();
+$db->counter = 3;
+$GLOBALS['_vicqb_options'][VisitIdGenerator::OPTION_NAME] = 3;
+VisitIdGenerator::invalidateRepairMarker();
+$db->log = [];
+vicqb_assert('same-scope dataset replacement repairs again', VisitIdGenerator::generateNextVisitId() === 5000001);
+vicqb_assert('same-scope replacement re-reads MAX', in_array('SEED-MAX', $db->log, true));
 \wp_slimstat::$settings['version'] = '6.0.0';
 
 // ── Report ──────────────────────────────────────────────────────────────────
