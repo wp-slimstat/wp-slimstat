@@ -5,6 +5,7 @@ import sqlite3
 from families.top import rank_top
 from families.recent import recent_rows
 from families.chart import pageviews_chart
+from families.count import count_values
 
 
 def _text(value):
@@ -86,16 +87,45 @@ def chart(export_path, surface, adapter, contract, windows):
             'flags': {'clock_dependent': False, 'calendar_day_dependent': True, 'pinned': True}}
 
 
+def count(export_path, surface, adapter, contract, windows):
+    windowed = contract.get('windowed') is True
+    if windowed and (not isinstance(windows, dict)
+                     or type(windows.get('start')) is not int
+                     or type(windows.get('end')) is not int):
+        raise ValueError('%s: count adapter requires the pinned capture window' % surface)
+    conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+    conn.text_factory = bytes
+    table, column = adapter['table'], contract['column']
+    manifest = [_text(row[0]) for row in conn.execute(
+        'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
+    consumed = [column] + (['dt'] if windowed else [])
+    missing = [name for name in consumed if name not in manifest]
+    if missing:
+        raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    quoted = ', '.join('"%s"' % name.replace('"', '""') for name in consumed)
+    rows = [dict(zip(consumed, row)) for row in conn.execute(
+        'SELECT %s FROM "%s"' % (quoted, table.replace('"', '""')))]
+    conn.close()
+    value = count_values(rows, column, contract['distinct'],
+                         windows['start'] if windowed else None,
+                         windows['end'] if windowed else None,
+                         contract.get('equality', 'binary'))
+    return {'class': 'ok', 'value': value,
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': False,
+                      'pinned': windowed}}
+
+
 def oracle_for(export_path, surface, adapter, contracts, windows=None):
     if adapter is None:
         return {'class': 'unmodeled', 'value': None,
                 'reason': 'No independent model for this surface'}
-    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart'):
+    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart', 'count'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
     family = {'top': top, 'recent': recent}.get(adapter['family'])
     if family:
         return family(export_path, surface, adapter, contracts['reports'][surface])
-    return chart(export_path, surface, adapter, contracts['reports'][surface], windows)
+    family = chart if 'chart' == adapter['family'] else count
+    return family(export_path, surface, adapter, contracts['reports'][surface], windows)
 
 
 def comparison_contract(surface, adapter, contracts):

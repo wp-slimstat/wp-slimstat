@@ -67,4 +67,22 @@ with tempfile.TemporaryDirectory() as temp:
     except ValueError:
         pass
 
+    for key, column, distinct, windowed, expected in (
+            ('count_records_id', 'id', False, False, 3),
+            ('count_records_ip', 'ip', True, False, 2),
+            ('rows_in_window', 'id', False, True, 2)):
+        contracts['reports'][key] = {'family': 'count', 'column': column,
+                                     'distinct': distinct, 'windowed': windowed,
+                                     'equality': 'ascii_ci' if distinct else 'binary'}
+        result = oracle_for(path, key, {'family': 'count', 'table': 'slim_stats'},
+                            contracts, {'start': 15, 'end': 20})
+        assert result['value'] == expected, result
+        assert result['flags']['pinned'] is windowed, result
+
+    try:
+        oracle_for(path, 'rows_in_window', {'family': 'count', 'table': 'slim_stats'}, contracts)
+        raise AssertionError('windowed count adapter passed without pinned bounds')
+    except ValueError:
+        pass
+
 print('PASS: report evidence adapters')

@@ -14,6 +14,12 @@ $recentColumns = [
     'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width',
     'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out',
 ];
+$countContracts = [
+    'count_records_id'       => ['id', false, 'binary', false],
+    'count_records_ip'       => ['ip', true, 'ascii_ci', false],
+    'count_records_resource' => ['resource', true, 'ascii_ci', false],
+    'rows_in_window'         => ['id', false, 'binary', true],
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -74,7 +80,9 @@ foreach ($reports as $key => $contract) {
         $failures[] = "{$key}: report_id is absent";
         continue;
     }
-    if (isset($seenIds[$id]) && ('chart' !== $family || 'chart' !== ($reports[$seenIds[$id]]['family'] ?? null))) {
+    if (isset($seenIds[$id])
+        && ($family !== ($reports[$seenIds[$id]]['family'] ?? null) || !in_array($family, ['chart', 'count'], true))
+    ) {
         $failures[] = "{$key}: report_id {$id} is also used by {$seenIds[$id]}";
     }
     $seenIds[$id] = $key;
@@ -89,7 +97,9 @@ foreach ($reports as $key => $contract) {
             ? ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']
             : ('chart' === $family
                 ? ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']
-                : []));
+                : ('count' === $family
+                    ? ['raw_results_to_html', 'raw', 'wp_slimstat_db', 'get_overview_summary']
+                    : [])));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -132,9 +142,16 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: chart contract must pin the captured IP/calendar semantics";
         }
     }
+    if ('count' === $family) {
+        $actual = [$contract['column'] ?? null, $contract['distinct'] ?? null,
+            $contract['equality'] ?? null, $contract['windowed'] ?? null];
+        if (!isset($countContracts[$key]) || $countContracts[$key] !== $actual) {
+            $failures[] = "{$key}: count contract does not match its captured scalar semantics";
+        }
+    }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
-    if ('chart' !== $family
+    if (in_array($family, ['top', 'recent'], true)
         && ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null))
     ) {
         $failures[] = "{$key}: limit must come from limit_results with default 200, not a fixture constant";

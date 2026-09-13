@@ -7,8 +7,8 @@ rationale: Moves the top_resource mapping to a plausible but absent report id. T
 ---
 --- a/tests/oracle/report-contracts.json
 +++ b/tests/oracle/report-contracts.json
-@@ -15,7 +15,7 @@
-       ]
+@@ -67,7 +67,7 @@
+       "windowed": true
      },
      "top_resource": {
 -      "report_id": "slim_p1_08",

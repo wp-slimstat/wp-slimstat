@@ -35,6 +35,42 @@
         "content_id", "outbound_resource", "tz_offset", "dt_out"
       ]
     },
+    "count_records_id": {
+      "report_id": "slim_p1_03",
+      "title": "At a Glance",
+      "family": "count",
+      "column": "id",
+      "distinct": false,
+      "equality": "binary",
+      "windowed": false
+    },
+    "count_records_ip": {
+      "report_id": "slim_p1_03",
+      "title": "At a Glance",
+      "family": "count",
+      "column": "ip",
+      "distinct": true,
+      "equality": "ascii_ci",
+      "windowed": false
+    },
+    "count_records_resource": {
+      "report_id": "slim_p1_03",
+      "title": "At a Glance",
+      "family": "count",
+      "column": "resource",
+      "distinct": true,
+      "equality": "ascii_ci",
+      "windowed": false
+    },
+    "rows_in_window": {
+      "report_id": "slim_p1_03",
+      "title": "At a Glance",
+      "family": "count",
+      "column": "id",
+      "distinct": false,
+      "equality": "binary",
+      "windowed": true
+    },
     "top_resource": {
       "report_id": "slim_p1_08",
       "title": "Top Web Pages",

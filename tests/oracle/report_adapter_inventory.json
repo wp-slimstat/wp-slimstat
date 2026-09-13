@@ -51,10 +51,11 @@
   "unmapped_nonreport_controls": ["count_exit_pages", "get_oldest_visit", "live_window_end"],
   "modeled": {
     "slim_p7_02": ["get_recent"],
-    "slim_p1_01": ["chart_daily", "chart_weekly"],
+    "slim_p1_01": ["chart_daily", "chart_weekly", "count_records_ip"],
+    "slim_p1_03": ["count_records_id", "count_records_ip", "count_records_resource", "rows_in_window"],
     "slim_p1_08": ["top_resource"],
     "slim_p1_13": ["top_country"],
     "slim_p2_06": ["top_platform"]
   },
-  "summary": {"reports": 67, "modeled": 5, "captured_unmodeled": 17, "uncaptured": 45}
+  "summary": {"reports": 67, "modeled": 6, "captured_unmodeled": 16, "uncaptured": 45}
 }
