@@ -209,6 +209,7 @@ class DataBuckets
             $dt     = strtotime(date('Y-m-d H:00:00', $dt));
             $offset = floor(($dt - $base) / 3600);
         } elseif ('DAY' === $this->gran) {
+            $base   = strtotime(date('Y-m-d', $base));
             $offset = floor(($dt - $base) / 86400);
         } elseif ('MONTH' === $this->gran) {
             $start  = new \DateTime('@' . $base);

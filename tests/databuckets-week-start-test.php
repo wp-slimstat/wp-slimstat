@@ -1,7 +1,6 @@
 <?php
 /**
- * Weekly chart buckets follow WordPress's `start_of_week`, not ISO weeks — and a row past the
- * range never lands in a phantom bucket.
+ * Calendar chart buckets align their rows to the same DAY/WEEK boundary as their labels.
  *
  * ── WHERE THIS CAME FROM ────────────────────────────────────────────────────────────────────
  *
@@ -109,6 +108,25 @@ if ([10, 0, 0, 0, 5] !== $out['datasets']['v1']) {
         . 'phantom bucket with no label';
 }
 
+// ── 3. DAY: an inclusive equal-length previous window starts one second after midnight ────
+//
+// Grouped DAY rows are midnight timestamps. Comparing them to the second-bearing range start
+// used to make the first offset -1 and shift every following value one label to the left.
+$dayStart = strtotime('2026-09-08');
+$dayEnd = strtotime('2026-09-10') + 86399;
+$previousStart = strtotime('2026-09-05') + 1;
+$buckets = new \SlimStat\Helpers\DataBuckets('Y/m/d', 'DAY', $dayStart, $dayEnd, $previousStart, $dayStart);
+$buckets->addRow(strtotime('2026-09-05'), 649, 238, 'previous');
+$buckets->addRow(strtotime('2026-09-06'), 579, 233, 'previous');
+$buckets->addRow(strtotime('2026-09-07'), 574, 223, 'previous');
+$out = $buckets->toArray();
+
+if ([649, 579, 574] !== $out['datasets_prev']['v1']) {
+    $failures[] = 'day alignment: expected [649, 579, 574]; got ['
+        . implode(', ', $out['datasets_prev']['v1']) . ']. The first previous day was dropped '
+        . 'and later days shifted because the bucket timestamp preceded its range base by one second';
+}
+
 if ($failures) {
     fwrite(STDERR, 'FAIL: DataBuckets week start (' . count($failures) . " problem(s))\n");
     foreach ($failures as $f) {
@@ -117,5 +135,5 @@ if ($failures) {
     exit(1);
 }
 
-echo "PASS: weekly buckets cut on start_of_week (sow=6 separates Fri 13 / Sat 14 March), and a row "
-    . "one week past the range is dropped rather than parked in a phantom bucket\n";
+echo "PASS: DAY buckets align second-bearing ranges; WEEK buckets cut on start_of_week and drop "
+    . "rows beyond the range\n";
