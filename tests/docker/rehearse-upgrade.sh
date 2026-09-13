@@ -627,7 +627,7 @@ PYF1RESET
 check "counter reset re-arms the 5M repair" "$?" "see visit-id-repair-reset.json"
 
 # A real second schema proves the marker is dataset-scoped, not merely reset-scoped.
-ALT_MAX=$((BASE_MAX_VISIT_ID + 1000000))
+ALT_MAX=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["visit_id"] + 1000000)' "$ART/visit-id-repair-reset.json")
 mysql_exec "DROP DATABASE IF EXISTS slimstat_f1_alt; CREATE DATABASE slimstat_f1_alt; CREATE TABLE slimstat_f1_alt.wp_slim_stats (visit_id BIGINT UNSIGNED NOT NULL) ENGINE=InnoDB; INSERT INTO slimstat_f1_alt.wp_slim_stats VALUES ($ALT_MAX);" "$ART/visit-id-dataset-setup.log" || exit 1
 wpc eval-file /tmp/probe-visit-id-repair.php slimstat_f1_alt >"$ART/visit-id-repair-dataset.json" 2>"$ART/visit-id-repair-dataset.stderr"
 python3 - "$ART/visit-id-repair-dataset.json" "$ALT_MAX" <<'PYF1DATASET'
