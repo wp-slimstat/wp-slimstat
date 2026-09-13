@@ -3,10 +3,33 @@
 import sqlite3
 
 from families.top import rank_top
+from families.recent import recent_rows
 
 
 def _text(value):
     return value.decode('utf-8') if isinstance(value, bytes) else value
+
+
+def recent(export_path, surface, adapter, contract):
+    conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+    conn.text_factory = bytes
+    table = adapter['table']
+    columns = [_text(row[0]) for row in conn.execute(
+        'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
+    expected = contract['columns']
+    if not isinstance(expected, list) or not expected or len(expected) != len(set(expected)):
+        raise ValueError('%s: invalid recent-column contract' % surface)
+    missing = [column for column in expected if column not in columns]
+    if missing:
+        raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    quoted = ', '.join('"%s"' % name.replace('"', '""') for name in expected)
+    rows = [dict(zip(expected, row)) for row in conn.execute(
+        'SELECT %s FROM "%s" ORDER BY dt DESC, id DESC LIMIT ?' %
+        (quoted, table.replace('"', '""')), (contract['default_limit'],))]
+    conn.close()
+    value = recent_rows(rows)
+    return {'class': 'ok' if value else 'empty', 'value': value,
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': False}}
 
 
 def top(export_path, surface, adapter, contract):
@@ -43,13 +66,16 @@ def oracle_for(export_path, surface, adapter, contracts):
     if adapter is None:
         return {'class': 'unmodeled', 'value': None,
                 'reason': 'No independent model for this surface'}
-    if adapter.get('family') != 'top' or surface not in contracts['reports']:
+    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
-    return top(export_path, surface, adapter, contracts['reports'][surface])
+    family = top if adapter['family'] == 'top' else recent
+    return family(export_path, surface, adapter, contracts['reports'][surface])
 
 
 def comparison_contract(surface, adapter, contracts):
     if adapter is None:
         return None
     contract = contracts['reports'][surface]
+    if adapter['family'] != 'top':
+        return None
     return {'limit': contract['default_limit'], 'count_field': contract['count_field']}

@@ -50,6 +50,15 @@ WP="${TOPOLOGY_WP:-6.7}"
 # not from what the default happened to be on the day. So there is no default. A caller that
 # does not name a corpus gets an error instead of a fixture.
 SEED_PROFILE="${SLIMSTAT_SEED_PROFILE:?name the corpus (seed-profile-verify.json for the campaign, seed-profile-i8.json to reproduce a pre-Run-58 record)}"
+RESTORE_DUMP="${SLIMSTAT_RESTORE_DUMP:-}"
+RESTORE_SHA256="${SLIMSTAT_RESTORE_SHA256:-}"
+[ -z "$RESTORE_DUMP" ] || {
+  [ -f "$RESTORE_DUMP" ] || { err "restore dump not found: $RESTORE_DUMP"; exit 1; }
+  [ -n "$RESTORE_SHA256" ] || { err 'SLIMSTAT_RESTORE_SHA256 is required with SLIMSTAT_RESTORE_DUMP'; exit 1; }
+  actual_restore_sha=$(shasum -a 256 "$RESTORE_DUMP" | awk '{print $1}') || exit 1
+  [ "$actual_restore_sha" = "$RESTORE_SHA256" ] || { err 'restore dump SHA256 mismatch'; exit 1; }
+  gzip -t "$RESTORE_DUMP" || { err 'restore dump failed gzip integrity'; exit 1; }
+}
 
 CELL="answers"
 CELL_DIR="$WORK_ROOT/answers/$CELL"
@@ -99,8 +108,8 @@ RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 # control at 1x1 certified a comparison at 5x4, and the mismatch existed only as prose in two
 # log files, one line above the numbers it invalidated. A fact a gate can read, not a variable a
 # reviewer has to trust.
-printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","seed_profile":"%s","rows":%s,"days":%s,"null_control":%s,"timing_reps":%s,"blocks":%s,"php":"%s","wp":"%s"}\n' \
-  "$RUN_ID" "$BEFORE" "$AFTER" "$SEED_PROFILE" "$ROWS" "$DAYS" \
+printf '{"run_id":"%s","before_ref":"%s","after_ref":"%s","corpus":"%s","seed_profile":"%s","restore_dump":"%s","restore_sha256":"%s","rows":%s,"days":%s,"null_control":%s,"timing_reps":%s,"blocks":%s,"php":"%s","wp":"%s"}\n' \
+  "$RUN_ID" "$BEFORE" "$AFTER" "$([ -n "$RESTORE_DUMP" ] && echo restored || echo synthetic)" "$SEED_PROFILE" "$RESTORE_DUMP" "$RESTORE_SHA256" "$ROWS" "$DAYS" \
   "${SLIMSTAT_NULL_CONTROL:-0}" "${SLIMSTAT_TIMING_REPS:-5}" "${SLIMSTAT_BLOCKS:-4}" \
   "$PHP" "$WP" > "$ART/run.json"
 
@@ -186,6 +195,8 @@ wp_config_debug "$ART/install.log"
 wpc core install --url="http://127.0.0.1:${HTTP_PORT}" --title="SS answers" --admin_user=admin \
     --admin_password=admin --admin_email=qa@example.com --skip-email >>"$ART/install.log" 2>&1 \
     || { err "core install failed"; exit 1; }
+wpc config set DISABLE_WP_CRON true --raw >>"$ART/install.log" 2>&1 \
+  || { err 'could not disable WordPress cron'; exit 1; }
 
 use_arm() {
   # '-' resolved to the working-tree copy made above; see the CONTROLS block.
@@ -226,17 +237,42 @@ fi
 wpc eval 'include_once(WP_PLUGIN_DIR."/wp-slimstat/admin/index.php"); wp_slimstat_admin::init_tables($GLOBALS["wpdb"]); echo "t";' \
     >>"$ART/install.log" 2>&1
 
-log "[$CELL] seeding $ROWS rows over $DAYS days ($SEED_PROFILE)"
-dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
-   wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" "$SEED_PROFILE" \
-   > "$ART/seed.log" 2>&1 || { err "seeding failed"; exit 1; }
+if [ -n "$RESTORE_DUMP" ]; then
+  log "[$CELL] restoring pinned analytics dump $RESTORE_SHA256"
+  gzip -dc "$RESTORE_DUMP" | dc exec -T db mysql -uroot -proot wordpress \
+    >"$ART/restore.log" 2>&1 || { err 'restore failed'; exit 1; }
+else
+  log "[$CELL] seeding $ROWS rows over $DAYS days ($SEED_PROFILE)"
+  dc exec -T -u www-data wp wp --path=/var/www/html eval-file \
+     wp-content/plugins/wp-slimstat/tests/bench/lib/seed.php "$ROWS" "$DAYS" "$SEED_PROFILE" \
+     > "$ART/seed.log" 2>&1 || { err "seeding failed"; exit 1; }
+fi
+
+# Freeze the disposable dataset before the first report boot. Cron is disabled in wp-config;
+# these stored settings also make front-end tracking and retention inert on both artifact eras.
+wpc --skip-plugins --skip-themes eval '
+  $o = get_option("slimstat_options", []); if (!is_array($o)) { $o = []; }
+  $o["is_tracking"] = "off"; $o["auto_purge"] = 0; update_option("slimstat_options", $o);
+  wp_clear_scheduled_hook("wp_slimstat_purge");' >>"$ART/install.log" 2>&1 \
+  || { err 'could not freeze analytics writers'; exit 1; }
 
 # Absolute window bounds, computed ONCE and passed to both arms. "Last 30 days" evaluated
 # independently per arm would select different rows on either side of a minute boundary and diff
 # for a reason that is not the code.
-NOW=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
-WIN_END="$NOW"
-WIN_START=$((NOW - 30 * 86400))
+if [ -n "$RESTORE_DUMP" ]; then
+  WIN_END=$(dc exec -T db mysql -uroot -proot -N wordpress \
+    -e 'SELECT MAX(dt) FROM wp_slim_stats;' 2>/dev/null | tr -dc '0-9')
+  [ -n "$WIN_END" ] && [ "$WIN_END" -gt 0 ] || { err 'restored corpus has no positive MAX(dt)'; exit 1; }
+else
+  WIN_END=$(wpc eval 'echo time();' 2>/dev/null | tr -dc '0-9')
+fi
+WIN_START=$((WIN_END - 30 * 86400))
+python3 - "$ART/run.json" "$WIN_START" "$WIN_END" <<'PY' || exit 1
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1]); data = json.loads(p.read_text())
+data['capture_windows'] = {'start': int(sys.argv[2]), 'end': int(sys.argv[3])}
+p.write_text(json.dumps(data, sort_keys=True) + '\n')
+PY
 
 answers_for() {
   local ref="$1" out="$2"
@@ -325,13 +361,13 @@ while [ "$b" -lt "$BLOCKS" ]; do
 done
 if [ "${SLIMSTAT_EXPORT_SQLITE:-0}" = 1 ]; then
   last=$((BLOCKS - 1))
-  python3 - "$ART/exports/before/block-$last-fingerprints.json" \
-    "$ART/exports/after/block-$last-fingerprints.json" <<'PY' || exit 1
+  python3 - "$ART/exports/before/block-0-fingerprints.json" \
+    "$ART/exports/before/block-$last-fingerprints.json" <<'PY' || exit 1
 import json, sys
 before, after = (json.load(open(path))['mysql'] for path in sys.argv[1:])
 if before != after:
-    raise SystemExit('before/after exports differ although compare-answers uses one unchanged corpus')
-print('PASS: before/after exports fingerprint the same unchanged corpus')
+    raise SystemExit('first/final exports differ although analytics writers were disabled')
+print('PASS: first/final exports fingerprint the same immutable capture corpus')
 PY
 fi
 

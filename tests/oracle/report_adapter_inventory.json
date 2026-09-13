@@ -31,6 +31,24 @@
     "slim_p4_11": ["top_resource_trimmed"],
     "slim_p4_23": ["bouncing_visits"]
   },
-  "modeled": {"slim_p1_08": ["top_resource"]},
-  "summary": {"reports": 67, "modeled": 1, "captured_unmodeled": 11, "uncaptured": 55}
+  "extended_capture_by_report": {
+    "slim_p7_02": ["get_recent"],
+    "slim_p1_03": ["get_overview_summary"],
+    "slim_p1_13": ["uniques_country_pinned"],
+    "slim_p2_02": ["bouncing_visits_pinned", "get_visitors_summary", "get_max_and_average_pages_per_visit"],
+    "slim_p2_12": ["get_visits_duration"],
+    "slim_p2_18": ["uniques_browser_pinned"],
+    "slim_p3_02": ["get_traffic_sources_summary", "count_bouncing_pages"],
+    "slim_p4_10": ["get_recent_events"],
+    "slim_p4_12": ["get_top_events"],
+    "slim_p4_21": ["get_top_outbound"],
+    "slim_p4_22": ["get_your_blog"],
+    "slim_p4_23": ["bouncing_visits_pinned", "count_bouncing_pages"],
+    "slim_p4_27": ["get_group_by"],
+    "slim_p9_01": ["get_goals_raw", "get_goal_results"],
+    "slim_p9_02": ["get_funnels_raw", "get_funnel_results"]
+  },
+  "unmapped_nonreport_controls": ["count_exit_pages", "get_oldest_visit", "live_window_end"],
+  "modeled": {"slim_p7_02": ["get_recent"], "slim_p1_08": ["top_resource"]},
+  "summary": {"reports": 67, "modeled": 2, "captured_unmodeled": 20, "uncaptured": 45}
 }

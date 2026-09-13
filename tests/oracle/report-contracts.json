@@ -1,6 +1,19 @@
 {
   "schema": "SLIMSTAT-ORACLE-CONTRACTS-V1",
   "reports": {
+    "get_recent": {
+      "report_id": "slim_p7_02",
+      "title": "Access Log",
+      "family": "recent",
+      "default_limit": 200,
+      "columns": [
+        "id", "ip", "dt", "username", "referer", "resource", "browser", "platform",
+        "country", "city", "content_type", "notes", "visit_id", "server_latency",
+        "page_performance", "browser_version", "browser_type", "language", "fingerprint",
+        "user_agent", "resolution", "screen_width", "screen_height", "category", "author",
+        "content_id", "outbound_resource", "tz_offset", "dt_out"
+      ]
+    },
     "top_resource": {
       "report_id": "slim_p1_08",
       "title": "Top Web Pages",

@@ -38,10 +38,12 @@ def gate(population_path, evidence_path):
     require(len(set(population)) == len(population), 'duplicate population surface')
     evidence = read_json(evidence_path)
     for field, width in [('source_shas', 40), ('artifact_sha256', 64)]:
-        values = evidence[field]
-        require(set(values) == {'free', 'pro'}, 'missing paired ' + field)
-        require(all(isinstance(v, str) and re.fullmatch('[0-9a-f]{%d}' % width, v)
-                    for v in values.values()), 'invalid ' + field)
+        arms = evidence[field]
+        require(set(arms) == {'before', 'after'}, 'missing artifact arms in ' + field)
+        for arm, values in arms.items():
+            require(set(values) == {'free', 'pro'}, 'missing paired ' + arm + ' ' + field)
+            require(all(isinstance(v, str) and re.fullmatch('[0-9a-f]{%d}' % width, v)
+                        for v in values.values()), 'invalid ' + arm + ' ' + field)
     documents = {}
     for name in ('triples', 'classifications', 'register'):
         entry = evidence[name]

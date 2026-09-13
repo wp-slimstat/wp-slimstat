@@ -126,16 +126,18 @@ def arm_envelope(surface, values, caps, source='legacy', windows=None):
 
 
 def artifact_identity(artifacts):
-    after = artifacts.get('after')
-    require(isinstance(after, dict) and set(after) == {'free', 'pro'}, 'missing candidate artifact pair')
     source, artifact = {}, {}
-    for plugin in ('free', 'pro'):
-        item = after[plugin]
-        require(re.fullmatch('[0-9a-f]{40}', item.get('source_sha', '')) is not None,
-                plugin + ': invalid source SHA')
-        require(re.fullmatch('[0-9a-f]{64}', item.get('sha256', '')) is not None,
-                plugin + ': invalid artifact SHA256')
-        source[plugin], artifact[plugin] = item['source_sha'], item['sha256']
+    for arm in ('before', 'after'):
+        pair = artifacts.get(arm)
+        require(isinstance(pair, dict) and set(pair) == {'free', 'pro'}, 'missing ' + arm + ' artifact pair')
+        source[arm], artifact[arm] = {}, {}
+        for plugin in ('free', 'pro'):
+            item = pair[plugin]
+            require(re.fullmatch('[0-9a-f]{40}', item.get('source_sha', '')) is not None,
+                    arm + '.' + plugin + ': invalid source SHA')
+            require(re.fullmatch('[0-9a-f]{64}', item.get('sha256', '')) is not None,
+                    arm + '.' + plugin + ': invalid artifact SHA256')
+            source[arm][plugin], artifact[arm][plugin] = item['source_sha'], item['sha256']
     return source, artifact
 
 
@@ -197,9 +199,9 @@ def build(manifest_path, output, resolver=oracle_for):
 def selftest():
     with tempfile.TemporaryDirectory() as temp:
         root = Path(temp)
-        artifacts = {'before': {}, 'after': {
-            'free': {'source_sha': 'a' * 40, 'sha256': 'b' * 64},
-            'pro': {'source_sha': 'c' * 40, 'sha256': 'd' * 64}}}
+        pair = {'free': {'source_sha': 'a' * 40, 'sha256': 'b' * 64},
+                'pro': {'source_sha': 'c' * 40, 'sha256': 'd' * 64}}
+        artifacts = {'before': pair, 'after': pair}
         contracts = {'reports': {}}
 
         def prepare(name, before, after, before_caps, after_caps, surfaces=('x',), exclusions=(), register=(), sources=None):
@@ -312,6 +314,17 @@ def selftest():
         try:
             build(case / 'inputs.json', case / 'out')
             raise AssertionError('tampered input passed')
+        except ValueError:
+            pass
+
+        case = prepare('missing-old-artifacts', {'x': 1}, {'x': 1}, caps({'x': 'ok'}), caps({'x': 'ok'}))
+        write_json(case / 'artifacts.json', {'before': {}, 'after': pair})
+        inputs = read_json(case / 'inputs.json')
+        inputs['files']['artifacts']['sha256'] = sha256(case / 'artifacts.json')
+        write_json(case / 'inputs.json', inputs)
+        try:
+            build(case / 'inputs.json', case / 'out')
+            raise AssertionError('missing old artifact pair passed')
         except ValueError:
             pass
     print('PASS: build_evidence converter and required refusal controls')

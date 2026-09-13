@@ -6,7 +6,14 @@ declare(strict_types=1);
 $root = dirname(__DIR__);
 $json = json_decode((string) file_get_contents(__DIR__ . '/oracle/report-contracts.json'), true);
 $src  = (string) file_get_contents($root . '/admin/view/wp-slimstat-reports.php');
+$dbSrc = (string) file_get_contents($root . '/admin/view/wp-slimstat-db.php');
 $failures = [];
+$recentColumns = [
+    'id', 'ip', 'dt', 'username', 'referer', 'resource', 'browser', 'platform', 'country', 'city',
+    'content_type', 'notes', 'visit_id', 'server_latency', 'page_performance', 'browser_version',
+    'browser_type', 'language', 'fingerprint', 'user_agent', 'resolution', 'screen_width',
+    'screen_height', 'category', 'author', 'content_id', 'outbound_resource', 'tz_offset', 'dt_out',
+];
 
 if (!is_array($json) || 'SLIMSTAT-ORACLE-CONTRACTS-V1' !== ($json['schema'] ?? null)) {
     $failures[] = 'report-contracts.json is missing schema SLIMSTAT-ORACLE-CONTRACTS-V1';
@@ -75,14 +82,21 @@ foreach ($reports as $key => $contract) {
         $failures[] = "{$key}: real report id {$id} does not exist in wp-slimstat-reports.php";
         continue;
     }
-    // This literal footprint is specific to the top family. Add family dispatch when the second
-    // oracle family lands; a generic abstraction with one case would hide rather than remove work.
-    foreach (['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top'] as $required) {
+    $family = $contract['family'] ?? null;
+    $requiredStrings = 'top' === $family
+        ? ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']
+        : ('recent' === $family
+            ? ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']
+            : []);
+    if (!$requiredStrings) {
+        $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
+    }
+    foreach ($requiredStrings as $required) {
         if (!in_array($required, $strings, true)) {
             $failures[] = "{$key}: report {$id} does not carry literal " . var_export($required, true);
         }
     }
-    foreach (['dimension', 'title'] as $field) {
+    foreach ('top' === $family ? ['dimension', 'title'] : ['title'] as $field) {
         $value = $contract[$field] ?? '';
         if (!is_string($value) || '' === $value) {
             $failures[] = "{$key}: contract is missing {$field}";
@@ -90,8 +104,19 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: report {$id} does not carry literal " . var_export($value, true);
         }
     }
-    if ('top' !== ($contract['family'] ?? null) || 'counthits' !== ($contract['count_field'] ?? null)) {
+    if ('top' === $family && 'counthits' !== ($contract['count_field'] ?? null)) {
         $failures[] = "{$key}: family/count_field must be top/counthits";
+    }
+    if ('recent' === $family) {
+        if ($recentColumns !== ($contract['columns'] ?? null)) {
+            $failures[] = "{$key}: recent contract must contain the exact 29 Access Log columns";
+        }
+        $manifest = '$manifest = [' . implode(', ', array_map(static function (string $column): string {
+            return "'{$column}'";
+        }, $recentColumns)) . '];';
+        if (false === strpos($dbSrc, $manifest)) {
+            $failures[] = "{$key}: wp_slimstat_db::recent_columns() does not match the 29-column contract";
+        }
     }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
@@ -108,4 +133,4 @@ if ($failures) {
     exit(1);
 }
 
-printf("PASS: oracle report contracts — %d contract(s) resolve to real top reports\n", count($reports));
+printf("PASS: oracle report contracts — %d contract(s) resolve to real family reports\n", count($reports));
