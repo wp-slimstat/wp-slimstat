@@ -15,7 +15,7 @@ if (($args[0] ?? '') === 'lock') {
     return;
 }
 if (($args[0] ?? '') === 'refused') {
-    if ($m->runOne('add-visit-identity') !== null) { throw new RuntimeException('Unexpired interrupted claim was not respected'); }
+    if ($m->runOne('add-visit-identity') !== null || !$m->isRunContended()) { throw new RuntimeException('Live migration owner did not cause a contention refusal'); }
     echo "DDL-CLAIM-REFUSED\n";
     return;
 }

@@ -841,12 +841,19 @@ if [ "${REHEARSE_OFFERED:-0}" = "1" ]; then
 UA=$(wpc eval '
   $a = SlimStat\Migration\MigrationService::analyticsConnection();
   $g = new SlimStat\Migration\Migrations\AddUserAgentDimension($a,$GLOBALS["wpdb"]);
+  $manager = new SlimStat\Migration\MigrationManager();
+  $manager->register($g);
   $t0 = microtime(true); $passes = 0;
-  while ($g->shouldRun() && $passes < 500) { $g->run(); $passes++; }
+  while ($g->shouldRun() && $passes < 500) {
+    if (null === $manager->runOne($g->getId())) {
+      throw new RuntimeException($manager->getRunRefusal());
+    }
+    $passes++;
+  }
   printf("%s %.1f %d", $g->shouldRun() ? "unfinished" : "done", microtime(true) - $t0, $passes);
 ' 2>/dev/null)
 UA_OK=$(echo "$UA" | awk '{print $1}'); UA_S=$(echo "$UA" | awk '{print $2}'); UA_P=$(echo "$UA" | awk '{print $3}')
-[ "$UA_OK" = "done" ] && check "and it completes when asked for by name" 0 "${UA_P} pass(es), ${UA_S}s on 443k rows" \
+[ "$UA_OK" = "done" ] && check "and it completes when asked for by name" 0 "${UA_P} pass(es), ${UA_S}s; see pinned corpus row count" \
   || check "and it completes when asked for by name" 1 "still $UA_OK after ${UA_P} passes"
 check "ua_id exists once it has been asked for" "$([ "$(has_column ua_id)" = 1 ] && echo 0 || echo 1)"
 else

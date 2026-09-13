@@ -31,6 +31,17 @@ PYPID
     return 1
   fi
   printf '%s\n' "$observed" >"$ART/ddl-observed.tsv"
+  # Resolve the lock from the owning WordPress handle before killing its client. The
+  # observer's mysql connection has no default schema, so DATABASE() there is NULL.
+  wpc eval-file /tmp/probe-interrupt-ddl.php lock >"$ART/ddl-lock.json" 2>"$ART/ddl-lock-error.log" || return 1
+  lock_name=$(python3 - "$ART/ddl-lock.json" "$thread" <<'PYLOCK'
+import json,sys
+v=json.load(open(sys.argv[1]))
+if v.get('owner') != int(sys.argv[2]) or not isinstance(v.get('name'),str) or not v['name'].startswith('wpss_migrate_'):
+    raise ValueError('named lock is not owned by the observed DDL session')
+print(v['name'])
+PYLOCK
+) || return 1
   dc exec -T wp kill -9 "$php_pid" >"$ART/ddl-kill.log" 2>&1 || { wait "$worker"; return 1; }
   wait "$worker"; worker_rc=$?
   printf '%s\n' "$worker_rc" >"$ART/ddl-worker.exit"
@@ -41,19 +52,8 @@ PYPID
   if [ "$(scalar_q "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE ID=$thread;")" != 0 ]; then
     wpc eval-file /tmp/probe-interrupt-ddl.php refused >"$ART/ddl-lock-refused.log" 2>&1 || return 1
     grep -q '^DDL-CLAIM-REFUSED$' "$ART/ddl-lock-refused.log" || return 1
-    wpc eval-file /tmp/probe-interrupt-ddl.php lock >"$ART/ddl-lock.json" 2>"$ART/ddl-lock-error.log" || return 1
-    lock_name=$(python3 - "$ART/ddl-lock.json" "$thread" <<'PYLOCK'
-import json,sys
-v=json.load(open(sys.argv[1]))
-if v.get('owner') != int(sys.argv[2]) or not isinstance(v.get('name'),str) or not v['name'].startswith('wpss_migrate_'):
-    raise ValueError('named lock is not owned by the interrupted DDL session')
-print(v['name'])
-PYLOCK
-) || return 1
     mysql_exec "KILL QUERY $thread;" "$ART/ddl-query-cancel.log" || \
       [ "$(scalar_q "SELECT COUNT(*) FROM information_schema.PROCESSLIST WHERE ID=$thread;")" = 0 ] || return 1
-  else
-    lock_name=$(scalar_q "SELECT CONCAT('wpss_migrate_', MD5(CONCAT(DATABASE(),'|','wp_')));")
   fi
   [ "$(scalar_q "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='wordpress' AND TABLE_NAME='wp_slim_stats' AND COLUMN_NAME='vid_hash';")" = 0 ] || return 1
   for ((attempt=0; attempt<600; attempt++)); do
