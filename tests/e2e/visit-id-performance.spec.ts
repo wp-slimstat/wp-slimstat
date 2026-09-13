@@ -224,6 +224,7 @@ test.describe('Visit ID Atomic Counter', () => {
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'anonymous_tracking', 'off');
 
     const markers = Array.from({ length: 5 }, (_, i) => `rapid-${Date.now()}-${i}`);
     const contexts = await Promise.all(markers.map(() => browser.newContext()));
@@ -318,6 +319,7 @@ test.describe('Visit ID Atomic Counter', () => {
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'anonymous_tracking', 'off');
     const markers = Array.from({ length: 3 }, (_, i) => `session-${Date.now()}-${i}`);
     const visitor = await browser.newContext();
     const tabs = await Promise.all(markers.map(() => visitor.newPage()));
@@ -347,6 +349,7 @@ test.describe('Visit ID Atomic Counter', () => {
     await setSlimstatOption(page, 'set_tracker_cookie', 'on');
     await setSlimstatOption(page, 'tracking_request_method', 'rest');
     await setSlimstatOption(page, 'gdpr_enabled', 'off');
+    await setSlimstatOption(page, 'anonymous_tracking', 'off');
 
     const markers = Array.from({ length: 3 }, (_, i) => `custom-db-${Date.now()}-${i}`);
     const visitors = await Promise.all([browser.newContext(), browser.newContext()]);
