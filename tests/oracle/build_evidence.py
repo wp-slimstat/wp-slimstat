@@ -168,7 +168,7 @@ def build(manifest_path, output, resolver=oracle_for):
             'old': arm_envelope(surface, data['before'], data['before_caps'], source, windows),
             'new': arm_envelope(surface, data['after'], data['after_caps'], source, windows),
             'oracle': (control_envelope(surface, windows) if source == 'legacy-control' else
-                       resolver(data['after_export'], surface, row['adapter'], contracts)),
+                       resolver(data['after_export'], surface, row['adapter'], contracts, windows)),
         }
         contract = comparison_contract(surface, row['adapter'], contracts)
         if contract:

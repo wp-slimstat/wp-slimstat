@@ -4,6 +4,7 @@ import sqlite3
 
 from families.top import rank_top
 from families.recent import recent_rows
+from families.chart import pageviews_chart
 
 
 def _text(value):
@@ -62,14 +63,39 @@ def top(export_path, surface, adapter, contract):
             'flags': {'clock_dependent': False, 'calendar_day_dependent': False, 'pinned': True}}
 
 
-def oracle_for(export_path, surface, adapter, contracts):
+def chart(export_path, surface, adapter, contract, windows):
+    if not isinstance(windows, dict) or type(windows.get('end')) is not int:
+        raise ValueError('%s: chart adapter requires the pinned capture end' % surface)
+    if contract.get('timezone') != 'UTC':
+        raise ValueError('%s: chart adapter supports only pinned UTC captures' % surface)
+    conn = sqlite3.connect('file:%s?mode=ro' % export_path, uri=True)
+    conn.text_factory = bytes
+    table = adapter['table']
+    columns = [_text(row[0]) for row in conn.execute(
+        'SELECT name FROM _manifest WHERE tbl = ? ORDER BY ord', (table,))]
+    missing = [column for column in ('dt', contract['metric_column']) if column not in columns]
+    if missing:
+        raise ValueError('%s: export %s manifest lacks %s' % (surface, table, ', '.join(missing)))
+    rows = [{'dt': dt, 'ip': metric} for dt, metric in conn.execute(
+        'SELECT "dt", "%s" FROM "%s"' %
+        (contract['metric_column'].replace('"', '""'), table.replace('"', '""')))]
+    conn.close()
+    value = pageviews_chart(rows, windows['end'], contract['duration_days'],
+                            contract['granularity'], contract['start_of_week'])
+    return {'class': 'ok', 'value': value,
+            'flags': {'clock_dependent': False, 'calendar_day_dependent': True, 'pinned': True}}
+
+
+def oracle_for(export_path, surface, adapter, contracts, windows=None):
     if adapter is None:
         return {'class': 'unmodeled', 'value': None,
                 'reason': 'No independent model for this surface'}
-    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent'):
+    if surface not in contracts['reports'] or adapter.get('family') not in ('top', 'recent', 'chart'):
         raise ValueError('%s: unknown or uncontracted adapter' % surface)
-    family = top if adapter['family'] == 'top' else recent
-    return family(export_path, surface, adapter, contracts['reports'][surface])
+    family = {'top': top, 'recent': recent}.get(adapter['family'])
+    if family:
+        return family(export_path, surface, adapter, contracts['reports'][surface])
+    return chart(export_path, surface, adapter, contracts['reports'][surface], windows)
 
 
 def comparison_contract(surface, adapter, contracts):

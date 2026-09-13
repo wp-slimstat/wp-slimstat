@@ -49,6 +49,10 @@
     "slim_p9_02": ["get_funnels_raw", "get_funnel_results"]
   },
   "unmapped_nonreport_controls": ["count_exit_pages", "get_oldest_visit", "live_window_end"],
-  "modeled": {"slim_p7_02": ["get_recent"], "slim_p1_08": ["top_resource"]},
-  "summary": {"reports": 67, "modeled": 2, "captured_unmodeled": 20, "uncaptured": 45}
+  "modeled": {
+    "slim_p7_02": ["get_recent"],
+    "slim_p1_01": ["chart_daily", "chart_weekly"],
+    "slim_p1_08": ["top_resource"]
+  },
+  "summary": {"reports": 67, "modeled": 3, "captured_unmodeled": 19, "uncaptured": 45}
 }

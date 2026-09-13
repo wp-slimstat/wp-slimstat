@@ -69,11 +69,12 @@ $extract = static function (string $reportId) use ($tokens, $literal): array {
 $seenIds = [];
 foreach ($reports as $key => $contract) {
     $id = $contract['report_id'] ?? '';
+    $family = $contract['family'] ?? null;
     if (!is_string($id) || '' === $id) {
         $failures[] = "{$key}: report_id is absent";
         continue;
     }
-    if (isset($seenIds[$id])) {
+    if (isset($seenIds[$id]) && ('chart' !== $family || 'chart' !== ($reports[$seenIds[$id]]['family'] ?? null))) {
         $failures[] = "{$key}: report_id {$id} is also used by {$seenIds[$id]}";
     }
     $seenIds[$id] = $key;
@@ -82,12 +83,13 @@ foreach ($reports as $key => $contract) {
         $failures[] = "{$key}: real report id {$id} does not exist in wp-slimstat-reports.php";
         continue;
     }
-    $family = $contract['family'] ?? null;
     $requiredStrings = 'top' === $family
         ? ['type', 'top', 'columns', 'raw', 'wp_slimstat_db', 'get_top']
         : ('recent' === $family
             ? ['show_access_log', 'type', 'recent', 'columns', '*', 'raw', 'wp_slimstat_db', 'get_recent']
-            : []);
+            : ('chart' === $family
+                ? ['show_chart', 'chart_data', 'data1', 'COUNT( ip )', 'data2', 'COUNT( DISTINCT ip )']
+                : []));
     if (!$requiredStrings) {
         $failures[] = "{$key}: unknown oracle family " . var_export($family, true);
     }
@@ -118,9 +120,23 @@ foreach ($reports as $key => $contract) {
             $failures[] = "{$key}: wp_slimstat_db::recent_columns() does not match the 29-column contract";
         }
     }
+    if ('chart' === $family) {
+        $chartDurations = ['DAY' => 5, 'WEEK' => 60];
+        $granularity = $contract['granularity'] ?? null;
+        if ('ip' !== ($contract['metric_column'] ?? null)
+            || !isset($chartDurations[$granularity])
+            || $chartDurations[$granularity] !== ($contract['duration_days'] ?? null)
+            || 1 !== ($contract['start_of_week'] ?? null)
+            || 'UTC' !== ($contract['timezone'] ?? null)
+        ) {
+            $failures[] = "{$key}: chart contract must pin the captured IP/calendar semantics";
+        }
+    }
     // These literals describe the current runtime contract but do not prove how get_top reads it;
     // the live report/capture gate owns that behavior in S7 and Phase 2.
-    if ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null)) {
+    if ('chart' !== $family
+        && ('limit_results' !== ($contract['limit_setting'] ?? null) || 200 !== ($contract['default_limit'] ?? null))
+    ) {
         $failures[] = "{$key}: limit must come from limit_results with default 200, not a fixture constant";
     }
 }

@@ -15,12 +15,13 @@ with tempfile.TemporaryDirectory() as temp:
         ('slim_stats', 2, 'user_agent', 'VARCHAR(2048)', 1, 0),
         ('slim_stats', 3, 'dt', 'INT UNSIGNED', 1, 0),
         ('slim_stats', 4, 'email', 'VARCHAR(256)', 1, 0),
+        ('slim_stats', 5, 'ip', 'VARCHAR(39)', 1, 0),
     ])
-    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, email BLOB)')
-    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?)',
-                   [(1, b'/a', b'\xff', 10, b'ignored'),
-                    (2, b'/b', b'normal', 20, b'\xff'),
-                    (3, b'/a', None, 20, b'ignored')])
+    db.execute('CREATE TABLE slim_stats (id INTEGER, resource BLOB, user_agent BLOB, dt INTEGER, email BLOB, ip BLOB)')
+    db.executemany('INSERT INTO slim_stats VALUES (?, ?, ?, ?, ?, ?)',
+                   [(1, b'/a', b'\xff', 10, b'ignored', b'a'),
+                    (2, b'/b', b'normal', 20, b'\xff', b'b'),
+                    (3, b'/a', None, 20, b'ignored', None)])
     db.commit()
     db.close()
     contracts = {'reports': {'top_resource': {'family': 'top', 'dimension': 'resource',
@@ -44,6 +45,25 @@ with tempfile.TemporaryDirectory() as temp:
     try:
         oracle_for(path, 'get_recent', {'family': 'recent', 'table': 'slim_stats'}, bad)
         raise AssertionError('missing consumed recent column passed')
+    except ValueError:
+        pass
+
+    contracts['reports']['chart_daily'] = {'family': 'chart', 'metric_column': 'ip',
+        'duration_days': 1, 'granularity': 'DAY', 'start_of_week': 1, 'timezone': 'UTC'}
+    result = oracle_for(path, 'chart_daily', {'family': 'chart', 'table': 'slim_stats'},
+                        contracts, {'end': 86400})
+    assert result['value']['datasets']['v1'] == [2], result
+    try:
+        oracle_for(path, 'chart_daily', {'family': 'chart', 'table': 'slim_stats'}, contracts)
+        raise AssertionError('chart adapter passed without a pinned capture end')
+    except ValueError:
+        pass
+    bad = {'reports': dict(contracts['reports'])}
+    bad['reports']['chart_daily'] = dict(contracts['reports']['chart_daily'], metric_column='missing')
+    try:
+        oracle_for(path, 'chart_daily', {'family': 'chart', 'table': 'slim_stats'},
+                   bad, {'end': 86400})
+        raise AssertionError('chart adapter passed without its consumed metric column')
     except ValueError:
         pass
 

@@ -2,8 +2,8 @@
   "schema": "SLIMSTAT-REPORT-EVIDENCE-INVENTORY-V1",
   "surfaces": [
     {"key":"bouncing_visits","source":"legacy","adapter":null},
-    {"key":"chart_daily","source":"legacy","adapter":null},
-    {"key":"chart_weekly","source":"legacy","adapter":null},
+    {"key":"chart_daily","source":"legacy","adapter":{"family":"chart","table":"slim_stats"}},
+    {"key":"chart_weekly","source":"legacy","adapter":{"family":"chart","table":"slim_stats"}},
     {"key":"count_human_hits","source":"legacy","adapter":null},
     {"key":"count_records_id","source":"legacy","adapter":null},
     {"key":"count_records_ip","source":"legacy","adapter":null},
