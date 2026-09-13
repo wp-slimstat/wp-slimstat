@@ -188,7 +188,7 @@ cleanup() {
   python3 - "$ART" "$PLUGIN_SRC" "$STARTED" "$rc" "$OLD_REF" "$NEW_REF" "${PRO_RESOLVED_REF:-}" "${CANDIDATE_ZIP_HASH:-}" "${PRO_ZIP_HASH:-}" "$(digest "$DUMP")" "${OLD_ZIP_HASH:-}" <<'PYARCHIVE'
 import datetime,hashlib,json,os,pathlib,subprocess,sys
 art,source,started,rc,old,new,pro,fzip,pzip,corpus,oldzip=sys.argv[1:]; p=pathlib.Path(art); src=pathlib.Path(source)
-files=['lib.sh','backup-recovery.sh','rehearse-upgrade.sh','extract-artifact.py','interrupt-ddl.sh','probe-interrupt-ddl.php','probe-pro-mixed-window.php','Dockerfile.wp','docker-compose.yml']
+files=['lib.sh','backup-recovery.sh','rehearse-upgrade.sh','extract-artifact.py','interrupt-ddl.sh','probe-interrupt-ddl.php','probe-visit-id-repair.php','probe-pro-mixed-window.php','Dockerfile.wp','docker-compose.yml']
 free=subprocess.run(['git','-C',source,'rev-parse',new+'^{commit}'],capture_output=True,text=True)
 json.dump(dict(started=started,finished=datetime.datetime.now(datetime.timezone.utc).isoformat(),exit_status=int(rc),old_zip_sha256=oldzip or None,ddl_interruption_requested=os.environ.get('REHEARSE_INTERRUPT_DDL','0')=='1',old_ref=old,new_ref=new,free_sha=free.stdout.strip() if free.returncode==0 else None,pro_sha=pro or None,free_zip_sha256=fzip or None,pro_zip_sha256=pzip or None,corpus_sha256=corpus,instrument_sha=subprocess.check_output(['git','-C',source,'rev-parse','HEAD'],text=True).strip(),instrument_hashes={f:hashlib.sha256((src/'tests/docker'/f).read_bytes()).hexdigest() for f in files}),open(p/'manifest.json','w'),indent=2)
 json.dump({str(f.relative_to(p)):hashlib.sha256(f.read_bytes()).hexdigest() for f in p.rglob('*') if f.is_file() and f.name!='artifacts.sha256.json'},open(p/'artifacts.sha256.json','w'),indent=2)
@@ -256,6 +256,7 @@ FP_CORE_TEMPLATE="SELECT COUNT(*), SUM(CRC32(CONCAT_WS(CHAR(0),
           COALESCE(visit_id,'~'), COALESCE(browser,'~'), COALESCE(country,'~'),
           COALESCE(referer,'~')))) FROM wordpress.wp_slim_stats WHERE id <= %s"
 BASE_MAX_ID=""
+BASE_MAX_VISIT_ID=""
 
 fingerprint() {
   [ -n "$BASE_MAX_ID" ] || { echo "unpinned"; return; }
@@ -539,6 +540,8 @@ echo
 echo "── R1 · baseline under the OLD code ─────────────────────────────────────"
 BASE_MAX_ID=$(scalar_q "SELECT MAX(id) FROM wordpress.wp_slim_stats;")
 [ -n "$BASE_MAX_ID" ] || { err "could not pin the baseline row set"; exit 1; }
+BASE_MAX_VISIT_ID=$(scalar_q "SELECT COALESCE(MAX(visit_id),0) FROM wordpress.wp_slim_stats;")
+[ -n "$BASE_MAX_VISIT_ID" ] || { err "could not pin the baseline visit ID"; exit 1; }
 
 # H5 · arm the notes projection, if and only if this arm predates the block that rewrites the
 # column. `version_lt` is component-wise and numeric, because 4.8.10 is above 4.8.9 and a string
@@ -596,6 +599,45 @@ scan_debug_log "$WP_DIR" "$ART" >/dev/null 2>&1 || true
 echo
 echo "── R2 · the DEFERRED WINDOW: v6 code, v5 schema, no migration yet ───────"
 use_ref "$NEW_REF" || exit 1
+
+# F1: measure the legacy-repair window on this exact corpus. Each allocation is a fresh
+# WordPress process, so the marker read is not hidden by the request-local option cache.
+dc cp "$HARNESS_DIR/probe-visit-id-repair.php" wp:/tmp/probe-visit-id-repair.php >/dev/null || exit 1
+wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-first.json" 2>"$ART/visit-id-repair-first.stderr"
+wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-steady.json" 2>"$ART/visit-id-repair-steady.stderr"
+python3 - "$ART/visit-id-repair-first.json" "$ART/visit-id-repair-steady.json" "$BASE_MAX_VISIT_ID" <<'PYF1'
+import json,sys
+first,steady=(json.load(open(p)) for p in sys.argv[1:3]); baseline=int(sys.argv[3])
+assert first['visit_id'] > baseline, (first['visit_id'],baseline)
+assert first['max_scan_count'] == 1, first
+assert steady['visit_id'] == first['visit_id'] + 1, (first,steady)
+assert steady['max_scan_count'] == 0, steady
+assert steady['query_count'] <= 2, steady
+PYF1
+check "legacy repair scans MAX once; the next fresh request scans zero times within a two-query budget" "$?" "see visit-id-repair-first.json and visit-id-repair-steady.json"
+
+# A reset invalidates the marker and must re-arm the repair on the same 5M dataset.
+wpc eval 'SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-reset.json" 2>"$ART/visit-id-repair-reset.stderr"
+python3 - "$ART/visit-id-repair-reset.json" "$BASE_MAX_VISIT_ID" <<'PYF1RESET'
+import json,sys
+v=json.load(open(sys.argv[1])); assert v['visit_id'] > int(sys.argv[2]); assert v['max_scan_count'] == 1, v
+PYF1RESET
+check "counter reset re-arms the 5M repair" "$?" "see visit-id-repair-reset.json"
+
+# A real second schema proves the marker is dataset-scoped, not merely reset-scoped.
+ALT_MAX=$((BASE_MAX_VISIT_ID + 1000000))
+mysql_exec "DROP DATABASE IF EXISTS slimstat_f1_alt; CREATE DATABASE slimstat_f1_alt; CREATE TABLE slimstat_f1_alt.wp_slim_stats (visit_id BIGINT UNSIGNED NOT NULL) ENGINE=InnoDB; INSERT INTO slimstat_f1_alt.wp_slim_stats VALUES ($ALT_MAX);" "$ART/visit-id-dataset-setup.log" || exit 1
+wpc eval-file /tmp/probe-visit-id-repair.php slimstat_f1_alt >"$ART/visit-id-repair-dataset.json" 2>"$ART/visit-id-repair-dataset.stderr"
+python3 - "$ART/visit-id-repair-dataset.json" "$ALT_MAX" <<'PYF1DATASET'
+import json,sys
+v=json.load(open(sys.argv[1])); assert v['visit_id'] == int(sys.argv[2])+1, v; assert v['max_scan_count'] == 1, v
+PYF1DATASET
+check "an analytics dataset switch re-arms repair against the new MAX" "$?" "see visit-id-repair-dataset.json"
+# Return the counter/marker to the 5M dataset before the actual deferred-window hit.
+wpc eval 'wp_slimstat::$wpdb=$GLOBALS["wpdb"]; SlimStat\Tracker\VisitIdGenerator::resetCounter(3);' >/dev/null 2>&1 || exit 1
+wpc eval-file /tmp/probe-visit-id-repair.php >"$ART/visit-id-repair-restored.json" 2>"$ART/visit-id-repair-restored.stderr"
 
 # An old-arm request may save its settings again after installer setup. Establish and
 # READ BACK this fixture after the file replacement, before NEW code first boots.

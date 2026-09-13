@@ -86,3 +86,30 @@ for refuse in ('0', '1'):
     else:
         assert result.returncode != 0 and 'lock refused' in result.stderr + result.stdout, result
 print('PASS: offered UA uses runOne, resumes incomplete batches and aborts lock refusal')
+
+# The live matrix is intentionally not executed here. Pin its fail-closed inputs and the
+# evidence-bearing controls so a shortened wait or a story-only result cannot enter Docker.
+live = (harness / 'run-migration-lock-controls.sh').read_text()
+for required in [
+    'A1_OWNER_SECONDS must be greater than the retired 900-second lease',
+    'while [ $(( $(date +%s) - age_started )) -le 900 ]',
+    'A1-CLAIM-REFUSED', 'KILL CONNECTION $ddl_thread',
+    "mysql.general_log WHERE command_type='Query'", 'disconnect_no_replay=True',
+    'QUALIFICATION_FREE_ZIP', 'QUALIFICATION_PRO_ZIP',
+    'docker-compose.a1.yml',
+]:
+    assert required in live, required
+subprocess.run(['bash', '-n', harness / 'run-migration-lock-controls.sh'], check=True)
+subprocess.run(['php', '-l', harness / 'probe-migration-lock.php'], check=True, stdout=subprocess.DEVNULL)
+subprocess.run(['php', '-l', harness / 'probe-visit-id-repair.php'], check=True, stdout=subprocess.DEVNULL)
+print('PASS: six-cell live lock runner pins >900s contention, disconnect/no replay/status and exact artifacts')
+
+rehearsal = (harness / 'rehearse-upgrade.sh').read_text()
+for required in [
+    'visit-id-repair-first.json', "first['max_scan_count'] == 1",
+    "steady['max_scan_count'] == 0", "steady['query_count'] <= 2",
+    'visit-id-repair-reset.json', 'slimstat_f1_alt',
+    "v['max_scan_count'] == 1",
+]:
+    assert required in rehearsal, required
+print('PASS: 5M rehearsal records first/steady/reset/dataset-switch visit-ID scan and query budgets')
